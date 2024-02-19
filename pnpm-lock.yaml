@@ -1039,7 +1039,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1133,7 +1133,7 @@ importers:
         version: 4.1.5
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-todomvc
-        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc'
+        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1239,7 +1239,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplesnext-websockets-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1489,8 +1489,8 @@ importers:
   packages/server:
     devDependencies:
       '@fastify/websocket':
-        specifier: ^7.1.2
-        version: 7.1.2
+        specifier: ^9.0.0
+        version: 9.0.0
       '@tanstack/react-query':
         specifier: ^5.0.0
         version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
@@ -1597,8 +1597,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       '@fastify/websocket':
-        specifier: ^7.1.2
-        version: 7.1.2
+        specifier: ^9.0.0
+        version: 9.0.0
       '@miniflare/core':
         specifier: ^2.9.0
         version: 2.11.0
@@ -5821,6 +5821,17 @@ packages:
   /@fastify/websocket@7.1.2:
     resolution: {integrity: sha512-OBaPR3KVkDmhJpCy+RtM8CwwV67ieRRbvWtpHqRNoMt+AnHLBiNmrTwHs3/DKjmnI1cqdGTaQ+NhKtDtkk1l/Q==}
     dependencies:
+      fastify-plugin: 4.5.0
+      ws: 8.16.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+    dev: false
+
+  /@fastify/websocket@9.0.0:
+    resolution: {integrity: sha512-rpHDtDdTaAQ1GuN6VzOZaUEmegXR3HhSA2QAL2e8GgiNGo/cTyy+chwbu7OjDIWnq3HZisitln/0N8Xdn0Fc+w==}
+    dependencies:
+      duplexify: 4.1.2
       fastify-plugin: 4.5.0
       ws: 8.16.0
     transitivePeerDependencies:
@@ -11979,6 +11990,14 @@ packages:
 
   /duplexer@0.1.2:
     resolution: {integrity: sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==}
+
+  /duplexify@4.1.2:
+    resolution: {integrity: sha512-fz3OjcNCHmRP12MJoZMPglx8m4rrFP8rovnk4vT8Fs+aonZoCwGg10dSsQsfP/E62eZcPTMSMP6686fu9Qlqtw==}
+    dependencies:
+      end-of-stream: 1.4.4
+      inherits: 2.0.4
+      readable-stream: 3.6.2
+      stream-shift: 1.0.3
 
   /duration@0.2.2:
     resolution: {integrity: sha512-06kgtea+bGreF5eKYgI/36A6pLXggY7oR4p1pq4SmdFBn1ReOL5D8RhG64VrqfTTKNucqqtBAwEj8aB88mcqrg==}
@@ -20851,6 +20870,9 @@ packages:
       is-stream: 1.1.0
     dev: true
 
+  /stream-shift@1.0.3:
+    resolution: {integrity: sha512-76ORR0DO1o1hlKwTbi/DM3EXWGf3ZJYO8cXX5RJwnul2DEg2oyoZyjLNoQM8WsvZiFKCRfC1O0J7iCvie3RZmQ==}
+
   /streamsearch@1.1.0:
     resolution: {integrity: sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==}
     engines: {node: '>=10.0.0'}
@@ -23158,7 +23180,7 @@ packages:
       prisma:
         optional: true
     dependencies:
-      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplestrpc-next-prisma-starter(prisma@5.8.1)':
@@ -23174,7 +23196,7 @@ packages:
       prisma:
         optional: true
     dependencies:
-      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@5.8.1)':
@@ -23190,10 +23212,10 @@ packages:
       prisma:
         optional: true
     dependencies:
-      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc'
     dev: false
 
-  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter':
+  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplesnext-websockets-starter}
     name: prisma
     version: 5.8.1
@@ -23203,7 +23225,7 @@ packages:
     dependencies:
       '@prisma/engines': 5.8.1
 
-  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter':
+  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-starter}
     name: prisma
     version: 5.8.1
@@ -23213,7 +23235,7 @@ packages:
     dependencies:
       '@prisma/engines': 5.8.1
 
-  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc':
+  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-todomvc}
     name: prisma
     version: 5.8.1
