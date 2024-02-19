@@ -10,9 +10,10 @@ import type {
   ProcedureType,
   TRPCProcedureType,
 } from '@trpc/server';
+import type { Unsubscribable } from '@trpc/server/observable';
 import { observableToPromise } from '@trpc/server/observable';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
-import React, { use, useRef } from 'react';
+import React, { use, useEffect, useRef } from 'react';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return '';
@@ -61,7 +62,19 @@ export function createReactClient<
         setRenderCount((c) => c + 1);
       }, []);
 
-      const map = useRef(new Map<any, any>());
+      type Track = {
+        promise: Promise<unknown>;
+        unsub: Unsubscribable;
+      };
+      const trackRef = useRef(new Map<string, Track>());
+      useEffect(() => {
+        const tracked = trackRef.current;
+        return () => {
+          tracked.forEach((val) => {
+            val.unsub.unsubscribe();
+          });
+        };
+      }, []);
       if (!ctx) {
         throw new Error('No tRPC client found');
       }
@@ -71,26 +84,50 @@ export function createReactClient<
         console.log('opts', opts);
         const path = [...opts.path];
         const type = path.pop()! as TRPCProcedureType;
+        if (type !== 'query') {
+          throw new Error('only queries are supported');
+        }
 
         const input = opts.args[0];
 
         const normalized = normalize({ path, input, type });
 
-        if (!map.current.has(normalized)) {
-          map.current.set(
-            normalized,
-            observableToPromise(
-              untyped.$request({
-                type,
-                input,
-                path: path.join('.'),
-              }),
-            ).promise,
-          );
+        let tracked = trackRef.current.get(normalized);
+        if (!tracked) {
+          tracked = {} as Track;
+          const observable = untyped.$request({
+            type,
+            input,
+            path: path.join('.'),
+          });
+          const first = true;
+          const unsub = observable.subscribe({
+            next() {
+              if (!first) {
+                // something made the observable emit again, probably a cache update
+
+                // reset promise
+                tracked!.promise = observableToPromise(observable).promise;
+
+                // force re-render
+                forceRender();
+              }
+            },
+            error() {
+              // [...?]
+            },
+          });
+
+          const promise = observableToPromise(observable).promise;
+
+          tracked.promise = promise;
+          tracked.unsub = unsub;
+
+          trackRef.current.set(normalized, tracked);
         }
 
-        return map.current.get(normalized);
-      }) as any;
+        return tracked.promise;
+      }) as CreateTRPCClient<TRouter>;
     },
   };
 }
