@@ -1,4 +1,8 @@
-import type { CreateTRPCClient, CreateTRPCClientOptions } from '@trpc/client';
+import type {
+  CreateTRPCClient,
+  CreateTRPCClientOptions,
+  TRPCLinkDecoration,
+} from '@trpc/client';
 import { createTRPCClient, getUntypedClient, TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
@@ -14,19 +18,20 @@ function getUrl() {
   return getBaseUrl() + '/api/trpc';
 }
 
-export function createReactClient<TRouter extends AnyTRPCRouter>(
-  init: () => CreateTRPCClientOptions<TRouter>,
-) {
+export function createReactClient<
+  TRouter extends AnyTRPCRouter,
+  TDecoration extends Partial<TRPCLinkDecoration>,
+>(init: () => CreateTRPCClientOptions<TRouter, TDecoration>) {
   type Context = {
     client: CreateTRPCClient<TRouter>;
   };
   const Provider = React.createContext(null as unknown as Context);
   return {
-    Provider: (props: {
-      children: React.ReactNode;
-      clientOptions: CreateTRPCClientOptions<TRouter>;
-    }) => {
-      const [client] = React.useState(() => createTRPCClient(init()));
+    Provider: (props: { children: React.ReactNode }) => {
+      const [client] = React.useState(() => {
+        const options = init();
+        return createTRPCClient(options);
+      });
 
       return (
         <Provider.Provider value={{ client }}>

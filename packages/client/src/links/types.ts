@@ -28,12 +28,16 @@ export interface OperationContext extends Record<string, unknown> {}
 /**
  * @internal
  */
-export type Operation<TInput = unknown> = {
+export type Operation<
+  TInput = unknown,
+  TDecoration extends Partial<TRPCLinkDecoration> = object,
+> = {
   id: number;
   type: 'mutation' | 'query' | 'subscription';
   input: TInput;
   path: string;
   context: OperationContext;
+  $decoration?: TDecoration;
 };
 
 interface HeadersInitEsque {
@@ -89,8 +93,11 @@ export type OperationResultObserver<
 /**
  * @internal
  */
-export type OperationLink<TInferrable extends InferrableClientTypes> = (opts: {
-  op: Operation;
+export type OperationLink<
+  TInferrable extends InferrableClientTypes,
+  TDecoration extends Partial<TRPCLinkDecoration> = object,
+> = (opts: {
+  op: Operation<TDecoration>;
   next: (op: Operation) => OperationResultObservable<TInferrable>;
 }) => OperationResultObservable<TInferrable>;
 
@@ -106,10 +113,14 @@ export type TRPCLinkDecoration = {
   mutation: object;
   subscription: object;
 };
+
+export type TRPCLinkDecoratorObject<
+  TDecoration extends Partial<TRPCLinkDecoration>,
+> = TDecoration;
 /**
  * @public
  */
 export type TRPCLink<
   TInferrable extends InferrableClientTypes,
-  _TDecoration extends Partial<TRPCLinkDecoration> = object,
-> = (opts: TRPCClientRuntime) => OperationLink<TInferrable>;
+  TDecoration extends Partial<TRPCLinkDecoration> = object,
+> = (opts: TRPCClientRuntime) => OperationLink<TInferrable, TDecoration>;

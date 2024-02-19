@@ -1,5 +1,9 @@
 'use client';
 
+import type {
+  CreateTRPCClientOptions,
+  inferTRPCClientOptionsDecoration,
+} from '@trpc/client';
 import {
   createTRPCClientOptions,
   httpBatchLink,
@@ -8,30 +12,35 @@ import {
 import type { AppRouter } from '~/server/routers/_app';
 import { getUrl } from '~/trpc/shared';
 import superjson from 'superjson';
+import { cacheLink, testDecorationLink } from './_lib/cacheLink';
 import { createReactClient } from './_lib/createReactClient';
 
-const optionsCallback = () =>
-  createTRPCClientOptions<AppRouter>()(() => {
-    return {
-      links: [
-        loggerLink({
-          enabled: (op) => true,
-        }),
-        httpBatchLink({
-          transformer: superjson,
-          url: getUrl(),
-          headers() {
-            return {
-              'x-trpc-source': 'standalone',
-            };
-          },
-        }),
-      ],
-    };
-  });
-type $Decoration = ReturnType<typeof optionsCallback>['$types']['decoration'];
+const getTrpcOptions = createTRPCClientOptions<AppRouter>()(() => ({
+  links: [
+    loggerLink({
+      enabled: (op) => true,
+    }),
+    cacheLink(),
+    // FIXME: this is not working
+    // testDecorationLink(),
+    httpBatchLink({
+      transformer: superjson,
+      url: getUrl(),
+      headers() {
+        return {
+          'x-trpc-source': 'standalone',
+        };
+      },
+    }),
+  ],
+}));
 
-export const standaloneClient = createReactClient<AppRouter>();
+type $Decoration = inferTRPCClientOptionsDecoration<typeof getTrpcOptions>;
+//   ^?
+type $TT = $Decoration['query']['ignoreCache'];
+//    ^?
+
+export const standaloneClient = createReactClient(getTrpcOptions);
 
 export function Provider(props: { children: React.ReactNode }) {
   return (

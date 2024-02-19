@@ -14,6 +14,7 @@ import type {
   OperationLink,
   TRPCClientRuntime,
   TRPCLink,
+  TRPCLinkDecoration,
 } from '../links/types';
 import { TRPCClientError } from '../TRPCClientError';
 
@@ -36,10 +37,10 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 
 /** @internal */
 export type CreateTRPCClientOptions<
-  TRouter extends InferrableClientTypes,
-  TRPCLinkDecoration extends Partial<TRPCLinkDecoration> = object,
+  TRoot extends InferrableClientTypes,
+  TDecoration extends Partial<TRPCLinkDecoration> = object,
 > = {
-  links: TRPCLink<TRouter>[];
+  links: TRPCLink<TRoot, TDecoration>[];
   transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
 };
 

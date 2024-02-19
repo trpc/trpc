@@ -6,6 +6,7 @@ import type {
   OperationResultObservable,
 } from '../types';
 
+type FIXME = any;
 /** @internal */
 export function createChain<TRouter extends AnyRouter>(opts: {
   links: OperationLink<TRouter>[];
@@ -20,7 +21,7 @@ export function createChain<TRouter extends AnyRouter>(opts: {
         );
       }
       const subscription = next({
-        op,
+        op: op as FIXME,
         next(nextOp) {
           const nextObserver = execute(index + 1, nextOp);
 

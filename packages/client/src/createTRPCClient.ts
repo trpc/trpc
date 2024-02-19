@@ -21,6 +21,7 @@ import type {
   UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+import type { TRPCLinkDecoration } from './links';
 import type { TRPCClientError } from './TRPCClientError';
 
 /**
@@ -144,10 +145,14 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
   });
 }
 
-export function createTRPCClient<TRouter extends AnyRouter>(
-  opts: CreateTRPCClientOptions<TRouter>,
+type FIXME = any;
+export function createTRPCClient<
+  TRouter extends AnyRouter,
+  TDecoration extends Partial<TRPCLinkDecoration> = object,
+>(
+  opts: CreateTRPCClientOptions<TRouter, TDecoration>,
 ): CreateTRPCClient<TRouter> {
-  const client = new TRPCUntypedClient(opts);
+  const client = new TRPCUntypedClient(opts as FIXME);
   const proxy = createTRPCClientProxy<TRouter>(client);
   return proxy;
 }
