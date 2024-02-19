@@ -75,7 +75,7 @@ export interface OperationResultEnvelope<TOutput> {
  */
 export type OperationResultObservable<
   TInferrable extends InferrableClientTypes,
-  TOutput,
+  TOutput = unknown,
 > = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TInferrable>>;
 
 /**
@@ -89,20 +89,27 @@ export type OperationResultObserver<
 /**
  * @internal
  */
-export type OperationLink<
-  TInferrable extends InferrableClientTypes,
-  TInput = unknown,
-  TOutput = unknown,
-> = (opts: {
-  op: Operation<TInput>;
-  next: (
-    op: Operation<TInput>,
-  ) => OperationResultObservable<TInferrable, TOutput>;
-}) => OperationResultObservable<TInferrable, TOutput>;
+export type OperationLink<TInferrable extends InferrableClientTypes> = (opts: {
+  op: Operation;
+  next: (op: Operation) => OperationResultObservable<TInferrable>;
+}) => OperationResultObservable<TInferrable>;
 
+/**
+ * @internal
+ * Links can decorate the stuff we use when using a tRPC client
+ */
+export type TRPCLinkDecoration = {
+  /**
+   * Extra params available when calling `.query(undefined, { /* here * /})`
+   */
+  query: object;
+  mutation: object;
+  subscription: object;
+};
 /**
  * @public
  */
-export type TRPCLink<TInferrable extends InferrableClientTypes> = (
-  opts: TRPCClientRuntime,
-) => OperationLink<TInferrable>;
+export type TRPCLink<
+  TInferrable extends InferrableClientTypes,
+  _TDecoration extends Partial<TRPCLinkDecoration> = object,
+> = (opts: TRPCClientRuntime) => OperationLink<TInferrable>;

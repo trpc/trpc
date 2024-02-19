@@ -8,7 +8,7 @@ import { dedupeLink } from './dedupeLink';
 test('dedupeLink', async () => {
   const endingLinkTriggered = vi.fn();
   const timerTriggered = vi.fn();
-  const links: OperationLink<AnyRouter, any, any>[] = [
+  const links: OperationLink<AnyRouter>[] = [
     // "dedupe link"
     dedupeLink()(null as any),
     ({ op }) => {
@@ -33,7 +33,7 @@ test('dedupeLink', async () => {
     },
   ];
   {
-    const call1 = createChain<AnyRouter, unknown, unknown>({
+    const call1 = createChain<AnyRouter>({
       links,
       op: {
         type: 'query',
@@ -44,7 +44,7 @@ test('dedupeLink', async () => {
       },
     });
 
-    const call2 = createChain<AnyRouter, unknown, unknown>({
+    const call2 = createChain<AnyRouter>({
       links,
       op: {
         type: 'query',
@@ -70,7 +70,7 @@ test('dedupeLink', async () => {
 test('dedupe - cancel one does not cancel the other', async () => {
   const endingLinkTriggered = vi.fn();
   const timerTriggered = vi.fn();
-  const links: OperationLink<AnyRouter, any, any>[] = [
+  const links: OperationLink<AnyRouter>[] = [
     // "dedupe link"
     dedupeLink()(null as any),
     ({ op }) => {
@@ -96,7 +96,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
   ];
 
   {
-    const call1 = createChain<AnyRouter, unknown, unknown>({
+    const call1 = createChain<AnyRouter>({
       links,
       op: {
         type: 'query',
@@ -107,7 +107,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
       },
     });
 
-    const call2 = createChain<AnyRouter, unknown, unknown>({
+    const call2 = createChain<AnyRouter>({
       links,
       op: {
         type: 'query',

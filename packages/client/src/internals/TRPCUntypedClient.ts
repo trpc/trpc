@@ -35,7 +35,10 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends InferrableClientTypes> = {
+export type CreateTRPCClientOptions<
+  TRouter extends InferrableClientTypes,
+  TRPCLinkDecoration extends Partial<TRPCLinkDecoration> = object,
+> = {
   links: TRPCLink<TRouter>[];
   transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
 };
@@ -65,7 +68,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     this.links = opts.links.map((link) => link(this.runtime));
   }
 
-  private $request<TInput = unknown, TOutput = unknown>({
+  public $request<TInput = unknown>({
     type,
     input,
     path,
@@ -76,8 +79,8 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     path: string;
     context?: OperationContext;
   }) {
-    const chain$ = createChain<AnyRouter, TInput, TOutput>({
-      links: this.links as OperationLink<any, any, any>[],
+    const chain$ = createChain<AnyRouter>({
+      links: this.links as OperationLink<any>[],
       op: {
         id: ++this.requestId,
         type,
@@ -95,7 +98,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     context?: OperationContext;
     signal?: AbortSignal;
   }): Promise<TOutput> {
-    const req$ = this.$request<TInput, TOutput>(opts);
+    const req$ = this.$request<TInput>(opts);
     type TValue = inferObservableValue<typeof req$>;
     const { promise, abort } = observableToPromise<TValue>(req$);
 

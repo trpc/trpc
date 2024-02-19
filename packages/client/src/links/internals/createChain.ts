@@ -7,14 +7,10 @@ import type {
 } from '../types';
 
 /** @internal */
-export function createChain<
-  TRouter extends AnyRouter,
-  TInput = unknown,
-  TOutput = unknown,
->(opts: {
-  links: OperationLink<TRouter, TInput, TOutput>[];
-  op: Operation<TInput>;
-}): OperationResultObservable<TRouter, TOutput> {
+export function createChain<TRouter extends AnyRouter>(opts: {
+  links: OperationLink<TRouter>[];
+  op: Operation;
+}): OperationResultObservable<TRouter> {
   return observable((observer) => {
     function execute(index = 0, op = opts.op) {
       const next = opts.links[index];
