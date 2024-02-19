@@ -1,6 +1,10 @@
 import type { TRPCLink, TRPCLinkDecoratorObject } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
-import { observable, tap } from '@trpc/server/observable';
+import { observable, share, tap } from '@trpc/server/observable';
+/* istanbul ignore file -- @preserve */
+// We're not actually exporting this link
+import type { Observable, Unsubscribable } from '@trpc/server/observable';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 
 type CacheLinkDecorator = TRPCLinkDecoratorObject<{
   query: {
@@ -68,6 +72,49 @@ export function testDecorationLink<TRouter extends AnyTRPCRouter>(
             }),
           )
           .subscribe(observer);
+      });
+    };
+  };
+}
+
+export function refetchLink<TRouter extends AnyRouter>(): TRPCLink<TRouter> {
+  return () => {
+    return ({ op, next }) => {
+      return observable((observer) => {
+        let next$: Unsubscribable | null = null;
+        let nextTimer: ReturnType<typeof setTimeout> | null = null;
+        let attempts = 0;
+        let isDone = false;
+        function attempt() {
+          console.log('fetching.......');
+          attempts++;
+          next$?.unsubscribe();
+          next$ = next(op).subscribe({
+            error(error) {
+              observer.error(error);
+            },
+            next(result) {
+              observer.next(result);
+
+              if (nextTimer) {
+                clearTimeout(nextTimer);
+              }
+              nextTimer = setTimeout(() => {
+                attempt();
+              }, 3000);
+            },
+            complete() {
+              if (isDone) {
+                observer.complete();
+              }
+            },
+          });
+        }
+        attempt();
+        return () => {
+          isDone = true;
+          next$?.unsubscribe();
+        };
       });
     };
   };

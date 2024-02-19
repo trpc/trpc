@@ -1,9 +1,6 @@
 'use client';
 
-import type {
-  CreateTRPCClientOptions,
-  inferTRPCClientOptionsDecoration,
-} from '@trpc/client';
+import type { inferTRPCClientOptionsDecoration } from '@trpc/client';
 import {
   createTRPCClientOptions,
   httpBatchLink,
@@ -12,7 +9,7 @@ import {
 import type { AppRouter } from '~/server/routers/_app';
 import { getUrl } from '~/trpc/shared';
 import superjson from 'superjson';
-import { cacheLink, testDecorationLink } from './_lib/cacheLink';
+import { cacheLink, refetchLink } from './_lib/cacheLink';
 import { createReactClient } from './_lib/createReactClient';
 
 const getTrpcOptions = createTRPCClientOptions<AppRouter>()(() => ({
@@ -23,6 +20,7 @@ const getTrpcOptions = createTRPCClientOptions<AppRouter>()(() => ({
     cacheLink(),
     // FIXME: this is not working
     // testDecorationLink(),
+    refetchLink(),
     httpBatchLink({
       transformer: superjson,
       url: getUrl(),
