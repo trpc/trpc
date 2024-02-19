@@ -1,10 +1,17 @@
-import type { TRPCLink, TRPCLinkDecoratorObject } from '@trpc/client';
+import type {
+  TRPCClientError,
+  TRPCLink,
+  TRPCLinkDecoratorObject,
+} from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import { observable, share, tap } from '@trpc/server/observable';
 /* istanbul ignore file -- @preserve */
 // We're not actually exporting this link
 import type { Observable, Unsubscribable } from '@trpc/server/observable';
-import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  AnyRouter,
+  ProcedureType,
+} from '@trpc/server/unstable-core-do-not-import';
 
 type CacheLinkDecorator = TRPCLinkDecoratorObject<{
   query: {
@@ -15,6 +22,17 @@ type CacheLinkDecorator = TRPCLinkDecoratorObject<{
   };
 }>;
 
+export const normalize = (opts: {
+  path: string[] | string;
+  input: unknown;
+  type: ProcedureType;
+}) => {
+  return JSON.stringify({
+    path: Array.isArray(opts.path) ? opts.path.join('.') : opts.path,
+    input: opts.input,
+    type: opts.type,
+  });
+};
 /**
  * @link https://trpc.io/docs/v11/client/links/cacheLink
  */
@@ -22,22 +40,45 @@ export function cacheLink<TRouter extends AnyTRPCRouter>(
   // eslint-disable-next-line @typescript-eslint/ban-types
   _opts: {} = {},
 ): TRPCLink<TRouter, CacheLinkDecorator> {
+  // initialized config
   return () => {
-    return ({ op, next }) => {
-      return observable((observer) => {
-        return next(op)
-          .pipe(
-            tap({
-              next(result) {
-                // logResult(result);
-              },
-              error(result) {
-                // logResult(result);
-              },
-            }),
-          )
-          .subscribe(observer);
+    // initialized in app
+    const cache: Record<
+      string,
+      {
+        observable: Observable<unknown, TRPCClientError<TRouter>>;
+      }
+    > = {};
+    return (opts) => {
+      const normalized = normalize({
+        input: opts.op.input,
+        path: opts.op.path,
+        type: opts.op.type,
       });
+
+      let cached = cache[normalized];
+      if (!cached) {
+        cached = cache[normalized] = {
+          observable: observable((observer) => {
+            const subscription = opts.next(opts.op).subscribe({
+              ...observer,
+              error(e) {
+                observer.error(e);
+              },
+              complete() {
+                observer.complete();
+              },
+            });
+            return () => {
+              subscription.unsubscribe();
+            };
+          }).pipe(share()),
+        };
+      }
+
+      console.log({ cached });
+
+      return cached.observable;
     };
   };
 }
