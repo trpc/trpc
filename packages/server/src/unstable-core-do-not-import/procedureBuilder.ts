@@ -239,8 +239,8 @@ export type AnyProcedureBuilder = ProcedureBuilder<
   any,
   any,
   any,
-  any,
-  any,
+  UnsetMarker,
+  UnsetMarker,
   UnsetMarker,
   UnsetMarker
 >;
