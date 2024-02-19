@@ -3,7 +3,8 @@
 //  which can be used with existing components, but has extra data for other use cases
 //
 import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
-import { AnyTRPCProcedureBuilder, TRPCError } from '@trpc/server';
+import type { AnyTRPCProcedureBuilder } from '@trpc/server';
+import { TRPCError } from '@trpc/server';
 import z from 'zod';
 import { t } from './polymorphism.common';
 import { FileExportRequest, FileExportStatus } from './polymorphism.factory';
