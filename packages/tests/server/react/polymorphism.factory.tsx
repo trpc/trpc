@@ -3,7 +3,8 @@
 //  building factories which can produce common functionality over a homologous data source.
 //
 import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
-import { AnyTRPCProcedureBuilder, TRPCError } from '@trpc/server';
+import type { AnyTRPCProcedureBuilder } from '@trpc/server';
+import { TRPCError } from '@trpc/server';
 import z from 'zod';
 import { t } from './polymorphism.common';
 
