@@ -34,7 +34,7 @@ export const appRouter = router({
     )
     .query(async (opts) => {
       console.log('request from', opts.ctx.headers?.['x-trpc-source']);
-      return `hello ${opts.input.text} - ${Math.random()}`;
+      return `hello ${opts.input.text}`;
     }),
 
   secret: publicProcedure.query(async (opts) => {
