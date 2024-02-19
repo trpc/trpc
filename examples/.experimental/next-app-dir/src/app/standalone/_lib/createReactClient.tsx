@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type {
   CreateTRPCClient,
   CreateTRPCClientOptions,
   TRPCLinkDecoration,
 } from '@trpc/client';
-import { createTRPCClient, getUntypedClient, TRPCClient } from '@trpc/client';
-import type { AnyTRPCRouter } from '@trpc/server';
+import { createTRPCClient, getUntypedClient } from '@trpc/client';
+import type { AnyTRPCRouter, TRPCProcedureType } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import React, { use, useRef } from 'react';
 
@@ -21,7 +22,7 @@ function getUrl() {
 export function createReactClient<
   TRouter extends AnyTRPCRouter,
   TDecoration extends Partial<TRPCLinkDecoration>,
->(init: () => CreateTRPCClientOptions<TRouter, TDecoration>) {
+>(getOptions: () => CreateTRPCClientOptions<TRouter, TDecoration>) {
   type Context = {
     client: CreateTRPCClient<TRouter>;
   };
@@ -29,7 +30,7 @@ export function createReactClient<
   return {
     Provider: (props: { children: React.ReactNode }) => {
       const [client] = React.useState(() => {
-        const options = init();
+        const options = getOptions();
         return createTRPCClient(options);
       });
 
@@ -49,9 +50,20 @@ export function createReactClient<
 
       return createRecursiveProxy((opts) => {
         console.log('opts', opts);
+        const path = [...opts.path];
+        const type = path.pop()! as TRPCProcedureType;
+
+        const input = opts.args[0];
+
+        console.log({
+          path,
+          type,
+          input,
+        });
         untyped.$request({
-          type: 'query',
-          input: opts.args[0],
+          type,
+          input,
+          path: path.join('.'),
         });
       }) as any;
     },

@@ -1,12 +1,5 @@
-'use client';
-
-import type { AppRouter } from '~/server/routers/_app';
-import { createReactClient } from './_lib/createReactClient';
-
-const standaloneClient = createReactClient<AppRouter>();
+import { Provider } from './_provider';
 
 export default function Layout(props: { children: React.ReactNode }) {
-  return (
-    <standaloneClient.Provider>{props.children}</standaloneClient.Provider>
-  );
+  return <Provider>{props.children}</Provider>;
 }
