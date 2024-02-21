@@ -11,8 +11,8 @@ import {
   createOutputMiddleware,
   middlewareMarker,
 } from './middleware';
-import { getParseFn } from './parser';
 import type { inferParser, Parser } from './parser';
+import { getParseFn } from './parser';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -226,6 +226,37 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut
   >;
+
+  /**
+   * Combine two procedure builders
+   */
+  unstable_concat<
+    $TContext,
+    $TMeta,
+    $TContextOverrides,
+    $TInputIn,
+    $TInputOut,
+    $TOutputIn,
+    $TOutputOut,
+  >(
+    builder: ProcedureBuilder<
+      $TContext,
+      $TMeta,
+      $TContextOverrides,
+      $TInputIn,
+      $TInputOut,
+      $TOutputIn,
+      $TOutputOut
+    >,
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    Overwrite<TContextOverrides, $TContextOverrides>,
+    Overwrite<TInputIn, $TInputIn>,
+    Overwrite<TInputIn, $TInputOut>,
+    Overwrite<TOutputIn, $TOutputIn>,
+    Overwrite<TOutputOut, $TOutputOut>
+  >;
   /**
    * Query procedure
    * @link https://trpc.io/docs/v11/concepts#vocabulary
@@ -353,6 +384,9 @@ export function createBuilder<TContext, TMeta>(
       return createNewBuilder(_def, {
         middlewares: middlewares,
       });
+    },
+    unstable_concat(builder) {
+      return createNewBuilder(_def, builder._def);
     },
     query(resolver) {
       return createResolver(

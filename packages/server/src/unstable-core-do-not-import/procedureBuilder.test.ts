@@ -262,7 +262,7 @@ describe('concat()', () => {
       bar: 'bar',
     });
 
-    expect(result).toBe({
+    expect(result).toEqual({
       foo: 'foo',
       bar: 'bar',
     });
@@ -326,9 +326,22 @@ describe('concat()', () => {
       bar: 'bar',
     });
 
-    const result = await caller.libProc();
+    const result = await caller.libProc({
+      foo: 'foo',
+    });
 
-    expect(result).toMatchInlineSnapshot();
+    expect(result).toMatchInlineSnapshot(`
+      Object {
+        "ctx": Object {
+          "__fromLib": true,
+          "bar": "bar",
+          "foo": "foo",
+        },
+        "input": Object {
+          "foo": "foo",
+        },
+      }
+    `);
     expect(result.ctx.__fromLib).toBe(true);
     //             ^?
   });
