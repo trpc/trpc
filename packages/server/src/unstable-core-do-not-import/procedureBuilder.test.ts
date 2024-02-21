@@ -344,5 +344,27 @@ describe('concat()', () => {
     `);
     expect(result.ctx.__fromLib).toBe(true);
     //             ^?
+
+    {
+      initTRPC
+        .meta<{
+          foo: string;
+        }>()
+        .create()
+        .procedure.unstable_concat(
+          // @ts-expect-error missing context
+          libBuilder,
+        );
+
+      initTRPC
+        .context<{
+          foo: string;
+        }>()
+        .create()
+        .procedure.unstable_concat(
+          // @ts-expect-error missing meta
+          libBuilder,
+        );
+    }
   });
 });

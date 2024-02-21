@@ -231,31 +231,35 @@ export interface ProcedureBuilder<
    * Combine two procedure builders
    */
   unstable_concat<
-    $TContext,
-    $TMeta,
-    $TContextOverrides,
-    $TInputIn,
-    $TInputOut,
-    $TOutputIn,
-    $TOutputOut,
+    $Context,
+    $Meta,
+    $ContextOverrides,
+    $InputIn,
+    $InputOut,
+    $OutputIn,
+    $OutputOut,
   >(
-    builder: ProcedureBuilder<
-      $TContext,
-      $TMeta,
-      $TContextOverrides,
-      $TInputIn,
-      $TInputOut,
-      $TOutputIn,
-      $TOutputOut
-    >,
+    builder: Overwrite<TContext, TContextOverrides> extends $Context
+      ? TMeta extends $Meta
+        ? ProcedureBuilder<
+            $Context,
+            $Meta,
+            $ContextOverrides,
+            $InputIn,
+            $InputOut,
+            $OutputIn,
+            $OutputOut
+          >
+        : TypeError<'Meta mismatch'>
+      : TypeError<'Context mismatch'>,
   ): ProcedureBuilder<
     TContext,
     TMeta,
-    Overwrite<TContextOverrides, $TContextOverrides>,
-    Overwrite<TInputIn, $TInputIn>,
-    Overwrite<TInputIn, $TInputOut>,
-    Overwrite<TOutputIn, $TOutputIn>,
-    Overwrite<TOutputOut, $TOutputOut>
+    Overwrite<TContextOverrides, $ContextOverrides>,
+    Overwrite<TInputIn, $InputIn>,
+    Overwrite<TInputIn, $InputOut>,
+    Overwrite<TOutputIn, $OutputIn>,
+    Overwrite<TOutputOut, $OutputOut>
   >;
   /**
    * Query procedure
@@ -386,7 +390,7 @@ export function createBuilder<TContext, TMeta>(
       });
     },
     unstable_concat(builder) {
-      return createNewBuilder(_def, builder._def);
+      return createNewBuilder(_def, (builder as AnyProcedureBuilder)._def);
     },
     query(resolver) {
       return createResolver(
