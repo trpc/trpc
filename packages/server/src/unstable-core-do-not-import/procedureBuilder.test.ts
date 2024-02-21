@@ -271,6 +271,31 @@ describe('concat()', () => {
       foo: string;
       bar: string;
     }>();
+
+    // bad call - missing input
+    const err = await waitError(
+      caller.conc(
+        // @ts-expect-error missing "foo"
+        {
+          bar: 'bar',
+        },
+      ),
+      TRPCError,
+    );
+    expect(err.code).toBe('BAD_REQUEST');
+    expect(err.message).toMatchInlineSnapshot(`
+      "[
+        {
+          "code": "invalid_type",
+          "expected": "string",
+          "received": "undefined",
+          "path": [
+            "foo"
+          ],
+          "message": "Required"
+        }
+      ]"
+    `);
   });
 
   test('library reference', async () => {
