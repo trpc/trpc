@@ -272,4 +272,64 @@ describe('concat()', () => {
       bar: string;
     }>();
   });
+
+  test('library reference', async () => {
+    function createLib() {
+      const t = initTRPC
+        .context<{
+          foo: string;
+        }>()
+        .meta<{
+          foo: string;
+        }>()
+        .create();
+
+      return t.procedure
+        .use((opts) => {
+          return opts.next({
+            ctx: {
+              __fromLib: true,
+            },
+          });
+        })
+        .input(
+          z.object({
+            foo: z.string(),
+          }),
+        );
+    }
+
+    // the app using the lib
+    const libBuilder = createLib();
+
+    const t = initTRPC
+      .context<{
+        foo: string;
+        bar: string;
+      }>()
+      .meta<{
+        foo: string;
+        bar: string;
+      }>()
+      .create();
+
+    const libProc = t.procedure.unstable_concat(libBuilder).query((opts) => {
+      return {
+        input: opts.input,
+        ctx: opts.ctx,
+      };
+    });
+
+    const createCaller = t.createCallerFactory(t.router({ libProc }));
+    const caller = createCaller({
+      foo: 'foo',
+      bar: 'bar',
+    });
+
+    const result = await caller.libProc();
+
+    expect(result).toMatchInlineSnapshot();
+    expect(result.ctx.__fromLib).toBe(true);
+    //             ^?
+  });
 });
