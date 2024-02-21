@@ -229,3 +229,47 @@ test('inferProcedureBuilderResolverOptions', async () => {
     expect(err.code).toBe('FORBIDDEN');
   }
 });
+
+describe('concat()', () => {
+  test('basic', async () => {
+    const t = initTRPC.context().create();
+
+    const proc1 = t.procedure.input(
+      z.object({
+        foo: z.string(),
+      }),
+    );
+
+    const proc2 = t.procedure.input(
+      z.object({
+        bar: z.string(),
+      }),
+    );
+
+    const conc = proc1.unstable_concat(proc2).query((opts) => {
+      expectTypeOf(opts.input).toEqualTypeOf<{
+        foo: string;
+        bar: string;
+      }>();
+      return opts.input;
+    });
+
+    const createCaller = t.createCallerFactory(t.router({ conc }));
+    const caller = createCaller({});
+
+    const result = await caller.conc({
+      foo: 'foo',
+      bar: 'bar',
+    });
+
+    expect(result).toBe({
+      foo: 'foo',
+      bar: 'bar',
+    });
+
+    expectTypeOf(result).toEqualTypeOf<{
+      foo: string;
+      bar: string;
+    }>();
+  });
+});
