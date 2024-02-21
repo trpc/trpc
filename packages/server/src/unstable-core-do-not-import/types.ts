@@ -86,7 +86,9 @@ export type WithoutIndexSignature<TObj> = {
  * Only overwrites properties when the type to be overwritten
  * is an object. Otherwise it will just use the type from `TWith`.
  */
-export type Overwrite<TType, TWith> = TWith extends any
+export type Overwrite<TType, TWith> = TType extends UnsetMarker
+  ? TWith
+  : TWith extends any
   ? TType extends object
     ? {
         [K in  // Exclude index signature from keys
@@ -155,3 +157,7 @@ export type TypeError<TMessage extends string> = TMessage & {
   _: typeof ERROR_SYMBOL;
 };
 export type ValueOf<TObj> = TObj[keyof TObj];
+
+/** @internal */
+export const unsetMarker = Symbol('unsetMarker');
+export type UnsetMarker = typeof unsetMarker;
