@@ -263,11 +263,7 @@ Using `experimental_trpcMiddleware` you can create a middleware that explicitly 
 
 ```ts twoslash
 // @target: esnext
-import {
-  experimental_trpcMiddleware,
-  initTRPC,
-  TRPCError,
-} from '@trpc/server';
+import { experimental_trpcMiddleware, initTRPC, TRPCError } from '@trpc/server';
 import * as z from 'zod';
 
 const projectAccessMiddleware = experimental_trpcMiddleware<{
