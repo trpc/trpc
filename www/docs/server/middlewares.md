@@ -246,25 +246,31 @@ barMiddleware.unstable_pipe(fooMiddleware);
 
 ## Experimental: standalone middlewares
 
+:::note
+
+This middleware was called `experimental_standaloneMiddleware()` until `11.0.0-next-beta.0` (and is still aliased for the foreseeable future)
+
+:::
+
 :::info
 Caution: we have prefixed this as `experimental_` and it may change with any tRPC release. [Read more](/docs/faq#experimental).
 :::
 
-tRPC has a new experimental API called `experimental_standaloneMiddleware` which allows you to independently define a middleware that can be used with any tRPC instance. Creating middlewares using `t.middleware` has the limitation that
+tRPC has a new experimental API called `experimental_trpcMiddleware` which allows you to independently define a middleware that can be used with any tRPC instance. Creating middlewares using `t.middleware` has the limitation that
 the `Context` type is tied to the `Context` type of the tRPC instance. This means that you cannot use the same middleware with multiple tRPC instances that have different `Context` types.
 
-Using `experimental_standaloneMiddleware` you can create a middleware that explicitly defines its requirements, i.e. the Context, Input and Meta types:
+Using `experimental_trpcMiddleware` you can create a middleware that explicitly defines its requirements, i.e. the Context, Input and Meta types:
 
 ```ts twoslash
 // @target: esnext
 import {
-  experimental_standaloneMiddleware,
+  experimental_trpcMiddleware,
   initTRPC,
   TRPCError,
 } from '@trpc/server';
 import * as z from 'zod';
 
-const projectAccessMiddleware = experimental_standaloneMiddleware<{
+const projectAccessMiddleware = experimental_trpcMiddleware<{
   ctx: { allowedProjects: string[] }; // defaults to 'object' if not defined
   input: { projectId: string }; // defaults to 'unknown' if not defined
   // 'meta', not defined here, defaults to 'object | undefined'
@@ -313,14 +319,14 @@ Here is an example with multiple standalone middlewares:
 
 ```ts twoslash
 // @target: esnext
-import { experimental_standaloneMiddleware, initTRPC } from '@trpc/server';
+import { experimental_trpcMiddleware, initTRPC } from '@trpc/server';
 import * as z from 'zod';
 
 const t = initTRPC.create();
 const schemaA = z.object({ valueA: z.string() });
 const schemaB = z.object({ valueB: z.string() });
 
-const valueAUppercaserMiddleware = experimental_standaloneMiddleware<{
+const valueAUppercaserMiddleware = experimental_trpcMiddleware<{
   input: z.infer<typeof schemaA>;
 }>().create((opts) => {
   return opts.next({
@@ -328,7 +334,7 @@ const valueAUppercaserMiddleware = experimental_standaloneMiddleware<{
   });
 });
 
-const valueBUppercaserMiddleware = experimental_standaloneMiddleware<{
+const valueBUppercaserMiddleware = experimental_trpcMiddleware<{
   input: z.infer<typeof schemaB>;
 }>().create((opts) => {
   return opts.next({
