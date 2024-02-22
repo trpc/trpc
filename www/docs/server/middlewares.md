@@ -164,7 +164,6 @@ We have prefixed this as `unstable_` as it's a new API, but you're safe to use i
 
 <!-- TODO: add docs with a real-world example of a plugin or something -->
 
-<!-- prettier-ignore-start -->
 ```ts twoslash
 // @target: esnext
 
@@ -207,10 +206,9 @@ export const publicProcedure = t.procedure;
 
 const someProc = publicProcedure
   .unstable_concat(
-    plugin.pluginProc
+    plugin.pluginProc,
   )
   .query(opts => {
-    
     return {
       ctx: opts.ctx,
     }
@@ -219,7 +217,6 @@ const someProc = publicProcedure
 someProc;
 // ^?
 ```
-<!-- prettier-ignore-end -->
 
 ## Extending middlewares
 
