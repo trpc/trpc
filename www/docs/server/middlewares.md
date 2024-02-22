@@ -164,6 +164,63 @@ We have prefixed this as `unstable_` as it's a new API, but you're safe to use i
 
 <!-- TODO: add docs with a real-world example of a plugin or something -->
 
+<!-- prettier-ignore-start -->
+```ts twoslash
+// @target: esnext
+
+// @filename: myPlugin.ts
+import { initTRPC, TRPCError } from '@trpc/server';
+
+const t = initTRPC
+  .context<{
+    // ....
+  }>()
+  .create();
+
+export function createMyPlugin() {
+  return {
+    pluginProc: t.procedure.use((opts) => {
+      return opts.next({
+        ctx: {
+          __fromLib: 'hello',
+        },
+      });
+    }),
+  };
+}
+
+
+// @filename: app.ts
+import { createMyPlugin } from './myPlugin';
+import { initTRPC, TRPCError } from '@trpc/server';
+
+
+const plugin = createMyPlugin();
+
+const t = initTRPC
+  .context<{
+    // ...
+  }>()
+  .create();
+
+export const publicProcedure = t.procedure;
+
+const someProc = publicProcedure
+  .unstable_concat(
+    plugin.pluginProc
+  )
+  .query(opts => {
+    
+    return {
+      ctx: opts.ctx,
+    }
+  })
+
+someProc;
+// ^?
+```
+<!-- prettier-ignore-end -->
+
 ## Extending middlewares
 
 :::info
