@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import { wrap } from '@decs/typeschema';
+import { wrap } from '@typeschema/valibot';
 import { initTRPC } from '@trpc/server';
 import myzod from 'myzod';
 import * as t from 'superstruct';

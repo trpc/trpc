@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { wrap } from '@decs/typeschema';
+import { wrap } from '@typeschema/valibot';
 import { initTRPC } from '@trpc/server';
 import * as arktype from 'arktype';
 import myzod from 'myzod';
