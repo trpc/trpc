@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "@decs/typeschema": "^0.12.0",
     "@fastify/busboy": "^2.0.0",
     "@fastify/websocket": "^7.1.2",
     "@miniflare/core": "^2.9.0",
@@ -29,6 +28,7 @@
     "@trpc/react-query": "10.45.1",
     "@trpc/server": "^10.45.1",
     "@types/node": "^20.10.0",
+    "@typeschema/valibot": "^0.13.0",
     "@vitest/coverage-istanbul": "^1.2.2",
     "@vitest/ui": "^1.2.2",
     "abort-controller": "^3.0.0",
