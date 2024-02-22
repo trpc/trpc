@@ -156,6 +156,14 @@ protectedProcedure.query(({ ctx }) => ctx.user);
 //                                        ^?
 ```
 
+## Using `.concat()` to create reusable middlewares {#concat}
+
+:::info
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
+:::
+
+<!-- TODO: add docs with a real-world example of a plugin or something -->
+
 ## Extending middlewares
 
 :::info
@@ -246,8 +254,8 @@ barMiddleware.unstable_pipe(fooMiddleware);
 
 ## Experimental: standalone middlewares
 
-:::info
-Caution: we have prefixed this as `experimental_` and it may change with any tRPC release. [Read more](/docs/faq#experimental).
+:::warning
+This has been deprecated in favor of `.unstable_concat()`
 :::
 
 tRPC has a new experimental API called `experimental_standaloneMiddleware` which allows you to independently define a middleware that can be used with any tRPC instance. Creating middlewares using `t.middleware` has the limitation that

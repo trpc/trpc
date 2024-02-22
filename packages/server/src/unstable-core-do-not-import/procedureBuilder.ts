@@ -29,16 +29,18 @@ import type {
   Overwrite,
   Simplify,
   TypeError,
-  UnsetMarker,
 } from './types';
 import { mergeWithoutOverrides } from './utils';
 
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
   : TWith extends UnsetMarker
-  ? UnsetMarker
+  ? TType
   : Simplify<TType & TWith>;
 
+/** @internal */
+export const unsetMarker = Symbol('unsetMarker');
+type UnsetMarker = typeof unsetMarker;
 type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
@@ -256,10 +258,10 @@ export interface ProcedureBuilder<
     TContext,
     TMeta,
     Overwrite<TContextOverrides, $ContextOverrides>,
-    Overwrite<TInputIn, $InputIn>,
-    Overwrite<TInputIn, $InputOut>,
-    Overwrite<TOutputIn, $OutputIn>,
-    Overwrite<TOutputOut, $OutputOut>
+    IntersectIfDefined<TInputIn, $InputIn>,
+    IntersectIfDefined<TInputIn, $InputOut>,
+    IntersectIfDefined<TOutputIn, $OutputIn>,
+    IntersectIfDefined<TOutputOut, $OutputOut>
   >;
   /**
    * Query procedure

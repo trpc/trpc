@@ -392,4 +392,96 @@ describe('concat()', () => {
         );
     }
   });
+
+  test('two libraries', async () => {
+    function createLib() {
+      const t = initTRPC
+        .context<{
+          foo: string;
+        }>()
+        .meta<{
+          foo: string;
+        }>()
+        .create();
+
+      return t.procedure
+        .use((opts) => {
+          return opts.next({
+            ctx: {
+              __fromLib: true,
+            },
+          });
+        })
+        .input(
+          z.object({
+            foo: z.string(),
+          }),
+        );
+    }
+
+    // the app using the lib
+    const libBuilder = createLib();
+
+    const t = initTRPC
+      .context<{
+        foo: string;
+        bar: string;
+      }>()
+      .meta<{
+        foo: string;
+        bar: string;
+      }>()
+      .create();
+
+    function createLib2() {
+      const t = initTRPC.context<{ __fromLib: boolean }>().create();
+
+      return t.procedure.use((opts) => {
+        return opts.next({
+          ctx: { __fromLib2: true },
+        });
+      });
+    }
+
+    const libBuilder2 = createLib2();
+
+    const libProc = t.procedure
+      .unstable_concat(libBuilder)
+      .unstable_concat(libBuilder2)
+      .query((opts) => {
+        return {
+          input: opts.input,
+          ctx: opts.ctx,
+        };
+      });
+
+    const createCaller = t.createCallerFactory(t.router({ libProc }));
+
+    const caller = createCaller({
+      foo: 'foo',
+      bar: 'bar',
+    });
+
+    const result = await caller.libProc({
+      foo: 'foo',
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      Object {
+        "ctx": Object {
+          "__fromLib": true,
+          "__fromLib2": true,
+          "bar": "bar",
+          "foo": "foo",
+        },
+        "input": Object {
+          "foo": "foo",
+        },
+      }
+    `);
+    //      ^?
+    result.ctx.__fromLib;
+    result.ctx.__fromLib2;
+    result.input;
+  });
 });
