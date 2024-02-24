@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { HTTPBatchLinkOptions } from '../links';
+import type { HTTPBatchLinkOptions } from '../links';
 import type { CancelFn, PromiseAndCancel } from '../links/types';
 
 type BatchItem<TKey, TValue> = {
