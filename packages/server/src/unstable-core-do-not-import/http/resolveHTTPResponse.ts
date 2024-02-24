@@ -234,12 +234,16 @@ export async function resolveHTTPResponse<
   const contentTypeHandler =
     opts.contentTypeHandler ?? fallbackContentTypeHandler;
   const batchingEnabled = opts.batching?.enabled ?? true;
-  const type =
-    HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
+  let type = HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let paths: string[] | undefined;
 
   const isBatchCall = !!req.query.get('batch');
+  if (isBatchCall) {
+    // batches queries could be POST requests but are always queries
+    type = 'query';
+  }
+
   const isStreamCall =
     isBatchCall &&
     unstable_onHead &&
