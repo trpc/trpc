@@ -93,6 +93,7 @@ export type HTTPBaseRequestOptions = GetInputOptions &
   ResolvedHTTPLinkOptions & {
     type: ProcedureType;
     path: string;
+    method?: 'GET' | 'POST';
   };
 
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
@@ -180,7 +181,7 @@ export async function fetchHTTPResponse(
   };
 
   return getFetch(opts.fetch)(url, {
-    method: METHOD[type],
+    method: opts.method ?? METHOD[type],
     signal: ac?.signal,
     body: body,
     headers,

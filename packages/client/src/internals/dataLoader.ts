@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { HTTPBatchLinkOptions } from '../links';
 import type { CancelFn, PromiseAndCancel } from '../links/types';
 
 type BatchItem<TKey, TValue> = {
@@ -17,6 +18,9 @@ type BatchLoader<TKey, TValue> = {
   fetch: (
     keys: TKey[],
     unitResolver: (index: number, value: NonNullable<TValue>) => void,
+    opts?: {
+      methodOverride?: 'GET' | 'POST';
+    },
   ) => {
     promise: Promise<TValue[]>;
     cancel: CancelFn;
@@ -39,6 +43,7 @@ const throwFatalError = () => {
  */
 export function dataLoader<TKey, TValue>(
   batchLoader: BatchLoader<TKey, TValue>,
+  maxURLMode: Exclude<HTTPBatchLinkOptions<any>['maxURLMode'], undefined>,
 ) {
   let pendingItems: BatchItem<TKey, TValue>[] | null = null;
   let dispatchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -95,11 +100,11 @@ export function dataLoader<TKey, TValue>(
     const groupedItems = groupItems(pendingItems!);
     destroyTimerAndPendingItems();
 
-    // Create batches for each group of items
-    for (const items of groupedItems) {
+    function fetchBatch(items: BatchItem<TKey, TValue>[]) {
       if (!items.length) {
-        continue;
+        return;
       }
+
       const batch: Batch<TKey, TValue> = {
         items,
         cancel: throwFatalError,
@@ -117,6 +122,12 @@ export function dataLoader<TKey, TValue>(
       const { promise, cancel } = batchLoader.fetch(
         batch.items.map((_item) => _item.key),
         unitResolver,
+        {
+          methodOverride:
+            groupedItems.length > 1 && items.length === pendingItems!.length
+              ? 'POST'
+              : undefined,
+        },
       );
       batch.cancel = cancel;
 
@@ -138,7 +149,19 @@ export function dataLoader<TKey, TValue>(
           }
         });
     }
+
+    if (maxURLMode === 'split') {
+      // Create batches for each group of items
+      for (const items of groupedItems) {
+        fetchBatch(items);
+      }
+    }
+
+    if (maxURLMode === 'post') {
+      fetchBatch(pendingItems!);
+    }
   }
+
   function load(key: TKey): PromiseAndCancel<TValue> {
     const item: BatchItem<TKey, TValue> = {
       aborted: false,

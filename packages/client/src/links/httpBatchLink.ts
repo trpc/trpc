@@ -9,12 +9,13 @@ import type { Operation } from './types';
 const batchRequester: RequesterFn<HTTPBatchLinkOptions<AnyRootTypes>> = (
   requesterOpts,
 ) => {
-  return (batchOps) => {
+  return (batchOps, _, batchOpts) => {
     const path = batchOps.map((op) => op.path).join(',');
     const inputs = batchOps.map((op) => op.input);
 
     const { promise, cancel } = jsonHttpRequester({
       ...requesterOpts,
+      method: batchOpts?.methodOverride,
       path,
       inputs,
       headers() {

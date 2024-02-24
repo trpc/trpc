@@ -30,6 +30,9 @@ export type RequesterFn<TOptions extends HTTPBatchLinkOptions<AnyRootTypes>> = (
 ) => (
   batchOps: Operation[],
   unitResolver: (index: number, value: NonNullable<HTTPResult>) => void,
+  opts?: {
+    methodOverride?: 'GET' | 'POST';
+  },
 ) => {
   promise: Promise<HTTPResult[]>;
   cancel: CancelFn;
@@ -46,6 +49,7 @@ export function createHTTPBatchLink(
   ): TRPCLink<TRouter> {
     const resolvedOpts = resolveHTTPLinkOptions(opts);
     const maxURLLength = opts.maxURLLength ?? Infinity;
+    const maxURLMode = opts.maxURLMode ?? 'split';
 
     // initialized config
     return (runtime) => {
@@ -56,6 +60,7 @@ export function createHTTPBatchLink(
             return true;
           }
           const path = batchOps.map((op) => op.path).join(',');
+
           const inputs = batchOps.map((op) => op.input);
 
           const url = getUrl({
@@ -78,12 +83,17 @@ export function createHTTPBatchLink(
         return { validate, fetch };
       };
 
-      const query = dataLoader<Operation, HTTPResult>(batchLoader('query'));
+      const query = dataLoader<Operation, HTTPResult>(
+        batchLoader('query'),
+        maxURLMode,
+      );
       const mutation = dataLoader<Operation, HTTPResult>(
         batchLoader('mutation'),
+        maxURLMode,
       );
       const subscription = dataLoader<Operation, HTTPResult>(
         batchLoader('subscription'),
+        maxURLMode,
       );
 
       const loaders = { query, subscription, mutation };
