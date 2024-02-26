@@ -81,21 +81,22 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
 /**
  * @remark `void` is here due to https://github.com/trpc/trpc/pull/4374
  */
-type CursorInput = {
+type CursorDirectionInput = {
   cursor?: any;
+  direction?: any;
 } | void;
 
 /**
  * @internal
  */
 export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
-  TDef['input'] extends CursorInput
+  TDef['input'] extends CursorDirectionInput
     ? {
         /**
          * @link https://trpc.io/docs/v11/client/react/suspense#useinfinitesuspensequery
          */
         useInfiniteQuery: (
-          input: Omit<TDef['input'], 'cursor'>,
+          input: Omit<TDef['input'], 'cursor' | 'direction'>,
           opts: UseTRPCInfiniteQueryOptions<
             TDef['input'],
             TDef['output'],
@@ -110,7 +111,7 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
          * @link https://trpc.io/docs/v11/client/react/suspense
          */
         useSuspenseInfiniteQuery: (
-          input: Omit<TDef['input'], 'cursor'>,
+          input: Omit<TDef['input'], 'cursor' | 'direction'>,
           opts: UseTRPCSuspenseInfiniteQueryOptions<
             TDef['input'],
             TDef['output'],

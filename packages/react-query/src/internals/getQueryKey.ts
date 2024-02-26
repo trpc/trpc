@@ -37,21 +37,41 @@ export function getQueryKeyInternal(
     return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKey);
   }
 
-  if (
-    type === 'infinite' &&
-    input &&
-    typeof input === 'object' &&
-    'cursor' in input
-  ) {
-    const { cursor: _, ...inputWithoutCursor } = input;
-
-    return [
-      splitPath,
-      {
-        input: inputWithoutCursor,
-        type: 'infinite',
-      },
-    ];
+  if (type === 'infinite' && input && typeof input === 'object') {
+    if ('direction' in input && 'cursor' in input) {
+      const {
+        cursor: _,
+        direction: __,
+        ...inputWithoutCursorAndDirection
+      } = input;
+      return [
+        splitPath,
+        {
+          input: inputWithoutCursorAndDirection,
+          type: 'infinite',
+        },
+      ];
+    }
+    if ('cursor' in input) {
+      const { cursor: _, ...inputWithoutCursor } = input;
+      return [
+        splitPath,
+        {
+          input: inputWithoutCursor,
+          type: 'infinite',
+        },
+      ];
+    }
+    if ('direction' in input) {
+      const { direction: _, ...inputWithoutDirection } = input;
+      return [
+        splitPath,
+        {
+          input: inputWithoutDirection,
+          type: 'infinite',
+        },
+      ];
+    }
   }
   return [
     splitPath,
@@ -64,10 +84,13 @@ export function getQueryKeyInternal(
 
 type GetInfiniteQueryInput<
   TProcedureInput,
-  TInputWithoutCursor = Omit<TProcedureInput, 'cursor'>,
-> = keyof TInputWithoutCursor extends never
+  TInputWithoutCursorAndDirection = Omit<
+    TProcedureInput,
+    'cursor' | 'direction'
+  >,
+> = keyof TInputWithoutCursorAndDirection extends never
   ? undefined
-  : DeepPartial<TInputWithoutCursor> | undefined;
+  : DeepPartial<TInputWithoutCursorAndDirection> | undefined;
 
 /** @internal */
 export type GetQueryProcedureInput<TProcedureInput> = TProcedureInput extends {
