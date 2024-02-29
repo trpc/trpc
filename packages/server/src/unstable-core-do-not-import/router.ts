@@ -201,6 +201,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
             getRawInput: async () => args[0],
             ctx,
             type: procedure._def.type,
+            allowMethodOverride: false,
           });
         });
 
