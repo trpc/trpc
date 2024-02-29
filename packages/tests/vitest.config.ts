@@ -29,10 +29,6 @@ for (const pkg of dirs.sort()) {
 export default defineConfig({
   root: '../',
   clearScreen: false,
-  esbuild: {
-    // allows us to use `using` (https://www.totaltypescript.com/typescript-5-2-new-keyword-using)
-    target: 'es2020',
-  },
   test: {
     environment: 'jsdom',
     globals: true,

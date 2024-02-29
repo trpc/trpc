@@ -36,7 +36,7 @@ const router = t.router({
     .mutation((opts) => `hello ${opts.input?.who ?? 'world'}`),
 });
 
-function startServer(opts: {
+async function startServer(opts: {
   linkOptions: Partial<
     HTTPLinkBaseOptions<inferRouterRootTypes<typeof router>>
   >;
@@ -98,7 +98,7 @@ function startServer(opts: {
     router,
     client,
     requests,
-    [Symbol.asyncDispose]: async () => {
+    close: () => {
       return new Promise<void>((resolve) => {
         server.close(() => {
           resolve();
@@ -107,8 +107,20 @@ function startServer(opts: {
     },
   };
 }
+let app: Awaited<ReturnType<typeof startServer>>;
+async function setup(...args: Parameters<typeof startServer>) {
+  app = await startServer(...args);
+  return app;
+}
+
+afterEach(async () => {
+  if (app) {
+    app.close();
+  }
+});
+
 test('normal queries (sanity check)', async () => {
-  await using t = startServer({
+  const t = await setup({
     linkOptions: {},
     allowMethodOverride: true,
   });
@@ -144,7 +156,7 @@ test('normal queries (sanity check)', async () => {
 });
 
 test('client: sends query as POST when methodOverride=POST', async () => {
-  await using t = startServer({
+  const t = await setup({
     linkOptions: {
       methodOverride: 'POST',
     },
@@ -175,7 +187,7 @@ test('client: sends query as POST when methodOverride=POST', async () => {
 });
 
 test('client/server: e2e batched query as POST', async () => {
-  await using t = startServer({
+  const t = await setup({
     linkOptions: {
       methodOverride: 'POST',
     },
@@ -237,7 +249,7 @@ test('client/server: e2e batched query as POST', async () => {
 });
 
 test('server: rejects method override from client when not enabled on the server', async () => {
-  await using t = startServer({
+  const t = await setup({
     allowMethodOverride: false,
     linkOptions: {
       methodOverride: 'POST',
