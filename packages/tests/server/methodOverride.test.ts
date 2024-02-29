@@ -188,7 +188,7 @@ test('client/server: e2e batched query as POST', async () => {
       methodOverride: 'POST',
     },
     batch: true,
-    allowMethodOverride: false,
+    allowMethodOverride: true,
   });
 
   expect(
@@ -244,7 +244,7 @@ test('client/server: e2e batched query as POST', async () => {
   `);
 });
 
-test.only('server: rejects method override from client when not enabled on the server', async () => {
+test('server: rejects method override from client when not enabled on the server', async () => {
   const t = await setup({
     allowMethodOverride: false,
     linkOptions: {
