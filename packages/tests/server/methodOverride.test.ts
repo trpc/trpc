@@ -37,15 +37,15 @@ const router = t.router({
 });
 
 async function startServer(opts: {
-  linkOptions?: Partial<
+  linkOptions: Partial<
     HTTPLinkBaseOptions<inferRouterRootTypes<typeof router>>
   >;
   batch?: boolean;
-  allowMethodOverride?: boolean;
+  allowMethodOverride: boolean;
 }) {
   const handler = createHTTPHandler({
     router: router,
-    allowMethodOverride: opts.allowMethodOverride ?? true,
+    allowMethodOverride: opts.allowMethodOverride,
   });
   const requests: {
     method: string;
@@ -120,7 +120,10 @@ afterEach(async () => {
 });
 
 test('normal queries (sanity check)', async () => {
-  const t = await setup({});
+  const t = await setup({
+    linkOptions: {},
+    allowMethodOverride: true,
+  });
 
   expect(
     await t.client.q.query({
@@ -157,6 +160,7 @@ test('client: sends query as POST when methodOverride=POST', async () => {
     linkOptions: {
       methodOverride: 'POST',
     },
+    allowMethodOverride: true,
   });
 
   expect(
