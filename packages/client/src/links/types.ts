@@ -112,6 +112,10 @@ export type TRPCLinkDecoration = {
   query: object;
   mutation: object;
   subscription: object;
+  /**
+   * Extra runtime available
+   */
+  runtime: object;
 };
 
 export type TRPCLinkDecoratorObject<
@@ -123,4 +127,6 @@ export type TRPCLinkDecoratorObject<
 export type TRPCLink<
   TInferrable extends InferrableClientTypes,
   TDecoration extends Partial<TRPCLinkDecoration> = object,
-> = (opts: TRPCClientRuntime) => OperationLink<TInferrable, TDecoration>;
+> = (
+  opts: TRPCClientRuntime & Partial<TDecoration['runtime']>,
+) => OperationLink<TInferrable, TDecoration>;

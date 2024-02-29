@@ -20,6 +20,14 @@ type CacheLinkDecorator = TRPCLinkDecoratorObject<{
      */
     ignoreCache: boolean;
   };
+  runtime: {
+    cache: Record<
+      string,
+      {
+        observable: Observable<unknown, TRPCClientError<AnyRouter>>;
+      }
+    >;
+  };
 }>;
 
 export const normalize = (opts: {
@@ -41,7 +49,7 @@ export function cacheLink<TRouter extends AnyTRPCRouter>(
   _opts: {} = {},
 ): TRPCLink<TRouter, CacheLinkDecorator> {
   // initialized config
-  return () => {
+  return (runtime) => {
     // initialized in app
     const cache: Record<
       string,
@@ -49,6 +57,7 @@ export function cacheLink<TRouter extends AnyTRPCRouter>(
         observable: Observable<unknown, TRPCClientError<TRouter>>;
       }
     > = {};
+    runtime.cache = cache;
     return (opts) => {
       const normalized = normalize({
         input: opts.op.input,
