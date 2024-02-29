@@ -1,4 +1,7 @@
-import type { DeepPartial } from '@trpc/server/unstable-core-do-not-import';
+import {
+  isObject,
+  type DeepPartial,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { DecoratedMutation, DecoratedQuery } from '../createTRPCReact';
 import type { DecorateRouterRecord } from '../shared';
 
@@ -37,8 +40,8 @@ export function getQueryKeyInternal(
     return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKey);
   }
 
-  if (type === 'infinite' && input && typeof input === 'object') {
-    if ('direction' in input && 'cursor' in input) {
+  if (type === 'infinite' && isObject(input)) {
+    if ('direction' in input || 'cursor' in input) {
       const {
         cursor: _,
         direction: __,
@@ -48,26 +51,6 @@ export function getQueryKeyInternal(
         splitPath,
         {
           input: inputWithoutCursorAndDirection,
-          type: 'infinite',
-        },
-      ];
-    }
-    if ('cursor' in input) {
-      const { cursor: _, ...inputWithoutCursor } = input;
-      return [
-        splitPath,
-        {
-          input: inputWithoutCursor,
-          type: 'infinite',
-        },
-      ];
-    }
-    if ('direction' in input) {
-      const { direction: _, ...inputWithoutDirection } = input;
-      return [
-        splitPath,
-        {
-          input: inputWithoutDirection,
           type: 'infinite',
         },
       ];
