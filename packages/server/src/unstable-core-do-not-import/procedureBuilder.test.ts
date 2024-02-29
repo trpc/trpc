@@ -229,3 +229,259 @@ test('inferProcedureBuilderResolverOptions', async () => {
     expect(err.code).toBe('FORBIDDEN');
   }
 });
+
+describe('concat()', () => {
+  test('basic', async () => {
+    const t = initTRPC.context().create();
+
+    const proc1 = t.procedure.input(
+      z.object({
+        foo: z.string(),
+      }),
+    );
+
+    const proc2 = t.procedure.input(
+      z.object({
+        bar: z.string(),
+      }),
+    );
+
+    const conc = proc1.unstable_concat(proc2).query((opts) => {
+      expectTypeOf(opts.input).toEqualTypeOf<{
+        foo: string;
+        bar: string;
+      }>();
+      return opts.input;
+    });
+
+    const createCaller = t.createCallerFactory(t.router({ conc }));
+    const caller = createCaller({});
+
+    const result = await caller.conc({
+      foo: 'foo',
+      bar: 'bar',
+    });
+
+    expect(result).toEqual({
+      foo: 'foo',
+      bar: 'bar',
+    });
+
+    expectTypeOf(result).toEqualTypeOf<{
+      foo: string;
+      bar: string;
+    }>();
+
+    // bad call - missing input
+    const err = await waitError(
+      caller.conc(
+        // @ts-expect-error missing "foo"
+        {
+          bar: 'bar',
+        },
+      ),
+      TRPCError,
+    );
+    expect(err.code).toBe('BAD_REQUEST');
+    expect(err.message).toMatchInlineSnapshot(`
+      "[
+        {
+          "code": "invalid_type",
+          "expected": "string",
+          "received": "undefined",
+          "path": [
+            "foo"
+          ],
+          "message": "Required"
+        }
+      ]"
+    `);
+  });
+
+  test('library reference', async () => {
+    function createLib() {
+      const t = initTRPC
+        .context<{
+          foo: string;
+        }>()
+        .meta<{
+          foo: string;
+        }>()
+        .create();
+
+      return t.procedure
+        .use((opts) => {
+          return opts.next({
+            ctx: {
+              __fromLib: true,
+            },
+          });
+        })
+        .input(
+          z.object({
+            foo: z.string(),
+          }),
+        );
+    }
+
+    // the app using the lib
+    const libBuilder = createLib();
+
+    const t = initTRPC
+      .context<{
+        foo: string;
+        bar: string;
+      }>()
+      .meta<{
+        foo: string;
+        bar: string;
+      }>()
+      .create();
+
+    const libProc = t.procedure.unstable_concat(libBuilder).query((opts) => {
+      return {
+        input: opts.input,
+        ctx: opts.ctx,
+      };
+    });
+
+    const createCaller = t.createCallerFactory(t.router({ libProc }));
+    const caller = createCaller({
+      foo: 'foo',
+      bar: 'bar',
+    });
+
+    const result = await caller.libProc({
+      foo: 'foo',
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      Object {
+        "ctx": Object {
+          "__fromLib": true,
+          "bar": "bar",
+          "foo": "foo",
+        },
+        "input": Object {
+          "foo": "foo",
+        },
+      }
+    `);
+    expect(result.ctx.__fromLib).toBe(true);
+    //             ^?
+
+    {
+      initTRPC
+        .meta<{
+          foo: string;
+        }>()
+        .create()
+        .procedure.unstable_concat(
+          // @ts-expect-error missing context
+          libBuilder,
+        );
+
+      initTRPC
+        .context<{
+          foo: string;
+        }>()
+        .create()
+        .procedure.unstable_concat(
+          // @ts-expect-error missing meta
+          libBuilder,
+        );
+    }
+  });
+
+  test('two libraries', async () => {
+    function createLib() {
+      const t = initTRPC
+        .context<{
+          foo: string;
+        }>()
+        .meta<{
+          foo: string;
+        }>()
+        .create();
+
+      return t.procedure
+        .use((opts) => {
+          return opts.next({
+            ctx: {
+              __fromLib: true,
+            },
+          });
+        })
+        .input(
+          z.object({
+            foo: z.string(),
+          }),
+        );
+    }
+
+    // the app using the lib
+    const libBuilder = createLib();
+
+    const t = initTRPC
+      .context<{
+        foo: string;
+        bar: string;
+      }>()
+      .meta<{
+        foo: string;
+        bar: string;
+      }>()
+      .create();
+
+    function createLib2() {
+      const t = initTRPC.context<{ __fromLib: boolean }>().create();
+
+      return t.procedure.use((opts) => {
+        return opts.next({
+          ctx: { __fromLib2: true },
+        });
+      });
+    }
+
+    const libBuilder2 = createLib2();
+
+    const libProc = t.procedure
+      .unstable_concat(libBuilder)
+      .unstable_concat(libBuilder2)
+      .query((opts) => {
+        return {
+          input: opts.input,
+          ctx: opts.ctx,
+        };
+      });
+
+    const createCaller = t.createCallerFactory(t.router({ libProc }));
+
+    const caller = createCaller({
+      foo: 'foo',
+      bar: 'bar',
+    });
+
+    const result = await caller.libProc({
+      foo: 'foo',
+    });
+
+    expect(result).toMatchInlineSnapshot(`
+      Object {
+        "ctx": Object {
+          "__fromLib": true,
+          "__fromLib2": true,
+          "bar": "bar",
+          "foo": "foo",
+        },
+        "input": Object {
+          "foo": "foo",
+        },
+      }
+    `);
+    //      ^?
+    result.ctx.__fromLib;
+    result.ctx.__fromLib2;
+    result.input;
+  });
+});

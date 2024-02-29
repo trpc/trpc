@@ -21,12 +21,6 @@ export default trpcNext.createNextApiHandler({
     }
   },
   /**
-   * Enable query batching
-   */
-  batching: {
-    enabled: true,
-  },
-  /**
    * @link https://trpc.io/docs/v11/caching#api-response-caching
    */
   // responseMeta() {

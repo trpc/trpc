@@ -102,4 +102,24 @@ test('getArrayQueryKey', () => {
         },
       ]
     `);
+  expect(
+    getQueryKeyInternal(
+      ['post', 'byId'],
+      { cursor: 'a', direction: 'forward', id: 1 },
+      'infinite',
+    ),
+  ).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        "post",
+        "byId",
+      ],
+      Object {
+        "input": Object {
+          "id": 1,
+        },
+        "type": "infinite",
+      },
+    ]
+  `);
 });

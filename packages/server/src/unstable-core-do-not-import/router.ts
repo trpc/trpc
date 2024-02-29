@@ -306,13 +306,17 @@ async function getProcedureAtPath(_def: AnyRouter['_def'], path: string) {
  * @internal
  */
 export async function callProcedure(
-  opts: ProcedureCallOptions & { _def: AnyRouter['_def'] },
+  opts: ProcedureCallOptions & {
+    _def: AnyRouter['_def'];
+
+    allowMethodOverride?: boolean;
+  },
 ) {
   const { type, path, _def } = opts;
 
   const procedure = await getProcedureAtPath(_def, path);
 
-  if (procedure._def.type !== type) {
+  if (procedure._def.type !== type && !opts.allowMethodOverride) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: `No "${type}"-procedure on path "${path}"`,
