@@ -134,11 +134,8 @@ export async function nodeHTTPRequestHandler<
     };
 
     await resolveHTTPResponse({
-      batching: opts.batching,
-      responseMeta: opts.responseMeta,
-      path: opts.path,
+      ...opts,
       createContext,
-      router: opts.router,
       req,
       error: bodyResult.ok ? null : bodyResult.error,
       preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
@@ -151,7 +148,6 @@ export async function nodeHTTPRequestHandler<
       contentTypeHandler,
       unstable_onHead,
       unstable_onChunk,
-      allowMethodOverride: opts.allowMethodOverride,
     });
 
     if (isStream) {

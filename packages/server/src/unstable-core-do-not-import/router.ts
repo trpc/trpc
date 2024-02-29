@@ -223,7 +223,7 @@ function isProcedure(
 export function callProcedure(
   opts: ProcedureCallOptions & {
     procedures: RouterRecord;
-    allowMethodOverride: boolean;
+    allowMethodOverride?: boolean;
   },
 ) {
   const { type, path } = opts;
