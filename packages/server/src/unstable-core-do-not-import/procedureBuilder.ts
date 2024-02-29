@@ -11,8 +11,8 @@ import {
   createOutputMiddleware,
   middlewareMarker,
 } from './middleware';
-import { getParseFn } from './parser';
 import type { inferParser, Parser } from './parser';
+import { getParseFn } from './parser';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -34,6 +34,8 @@ import { mergeWithoutOverrides } from './utils';
 
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
+  : TWith extends UnsetMarker
+  ? TType
   : Simplify<TType & TWith>;
 
 /** @internal */
@@ -226,6 +228,41 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut
   >;
+
+  /**
+   * Combine two procedure builders
+   */
+  unstable_concat<
+    $Context,
+    $Meta,
+    $ContextOverrides,
+    $InputIn,
+    $InputOut,
+    $OutputIn,
+    $OutputOut,
+  >(
+    builder: Overwrite<TContext, TContextOverrides> extends $Context
+      ? TMeta extends $Meta
+        ? ProcedureBuilder<
+            $Context,
+            $Meta,
+            $ContextOverrides,
+            $InputIn,
+            $InputOut,
+            $OutputIn,
+            $OutputOut
+          >
+        : TypeError<'Meta mismatch'>
+      : TypeError<'Context mismatch'>,
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    Overwrite<TContextOverrides, $ContextOverrides>,
+    IntersectIfDefined<TInputIn, $InputIn>,
+    IntersectIfDefined<TInputIn, $InputOut>,
+    IntersectIfDefined<TOutputIn, $OutputIn>,
+    IntersectIfDefined<TOutputOut, $OutputOut>
+  >;
   /**
    * Query procedure
    * @link https://trpc.io/docs/v11/concepts#vocabulary
@@ -353,6 +390,9 @@ export function createBuilder<TContext, TMeta>(
       return createNewBuilder(_def, {
         middlewares: middlewares,
       });
+    },
+    unstable_concat(builder) {
+      return createNewBuilder(_def, (builder as AnyProcedureBuilder)._def);
     },
     query(resolver) {
       return createResolver(
