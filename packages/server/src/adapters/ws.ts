@@ -136,6 +136,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           getRawInput: async () => input,
           ctx,
           type,
+          allowMethodOverride: false,
         });
 
         if (type === 'subscription') {
