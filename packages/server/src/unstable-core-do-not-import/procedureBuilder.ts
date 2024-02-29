@@ -448,7 +448,6 @@ export interface ProcedureCallOptions {
   input?: unknown;
   path: string;
   type: ProcedureType;
-  allowMethodOverride: boolean;
 }
 
 const codeblock = `

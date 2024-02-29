@@ -201,7 +201,6 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
             getRawInput: async () => args[0],
             ctx,
             type: procedure._def.type,
-            allowMethodOverride: false,
           });
         });
 
@@ -222,7 +221,10 @@ function isProcedure(
  * @internal
  */
 export function callProcedure(
-  opts: ProcedureCallOptions & { procedures: RouterRecord },
+  opts: ProcedureCallOptions & {
+    procedures: RouterRecord;
+    allowMethodOverride: boolean;
+  },
 ) {
   const { type, path } = opts;
   const proc = opts.procedures[path];
@@ -259,7 +261,6 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
             getRawInput: async () => args[0],
             ctx,
             type: procedure._def.type,
-            allowMethodOverride: false,
           });
 
         if (typeof maybeContext === 'function') {
