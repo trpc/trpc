@@ -58,7 +58,7 @@ export function resolveHTTPLinkOptions(
     fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
     transformer: getTransformer(opts.transformer),
-    methodOverride: opts.methodOverride ?? false,
+    methodOverride: opts.methodOverride,
   };
 }
 
@@ -188,9 +188,9 @@ export async function fetchHTTPResponse(
   };
 
   return getFetch(opts.fetch)(url, {
-    method: opts.methodOverride || METHOD[type],
+    method: opts.methodOverride ?? METHOD[type],
     signal: ac?.signal,
-    body: body,
+    body,
     headers,
   });
 }
