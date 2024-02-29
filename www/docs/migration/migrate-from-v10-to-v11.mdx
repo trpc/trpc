@@ -30,7 +30,13 @@ See [SSR docs](../client/nextjs/ssr.md)
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
-### Added support for bi-directional support for infinite queries
+### Added support for method overriding
+
+Allows you to override the HTTP method for procedures to always be sent with `POST` in order to get around some limitations with e.g. max URL lengths.
+
+Closes [#3910](https://github.com/trpc/trpc/issues/3910)
+
+### Added support for bi-directional infinite queries
 
 See [`useInfiniteQuery()`](../client/react/useInfiniteQuery.md)
 
