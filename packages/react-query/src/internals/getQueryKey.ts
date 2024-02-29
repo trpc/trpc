@@ -40,21 +40,23 @@ export function getQueryKeyInternal(
     return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKey);
   }
 
-  if (type === 'infinite' && isObject(input)) {
-    if ('direction' in input || 'cursor' in input) {
-      const {
-        cursor: _,
-        direction: __,
-        ...inputWithoutCursorAndDirection
-      } = input;
-      return [
-        splitPath,
-        {
-          input: inputWithoutCursorAndDirection,
-          type: 'infinite',
-        },
-      ];
-    }
+  if (
+    type === 'infinite' &&
+    isObject(input) &&
+    ('direction' in input || 'cursor' in input)
+  ) {
+    const {
+      cursor: _,
+      direction: __,
+      ...inputWithoutCursorAndDirection
+    } = input;
+    return [
+      splitPath,
+      {
+        input: inputWithoutCursorAndDirection,
+        type: 'infinite',
+      },
+    ];
   }
   return [
     splitPath,
