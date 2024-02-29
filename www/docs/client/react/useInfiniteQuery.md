@@ -28,6 +28,7 @@ export const appRouter = t.router({
       z.object({
         limit: z.number().min(1).max(100).nullish(),
         cursor: z.number().nullish(), // <-- "cursor" needs to exist, but can be any type
+        direction: z.union(z.enum(['forward', 'backward'])), // optional, useful for bi-directional query
       }),
     )
     .query(async (opts) => {
