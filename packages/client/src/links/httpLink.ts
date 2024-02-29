@@ -1,8 +1,5 @@
+import type { AnyTRPCClientTypes, AnyTRPCRouter } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import type {
-  AnyRootTypes,
-  AnyRouter,
-} from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
@@ -16,7 +13,7 @@ import {
 } from './internals/httpUtils';
 import type { HTTPHeaders, Operation, TRPCLink } from './types';
 
-export type HTTPLinkOptions<TRoot extends AnyRootTypes> =
+export type HTTPLinkOptions<TRoot extends AnyTRPCClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
     /**
      * Headers to be set on outgoing requests or a callback that of said headers
@@ -28,7 +25,7 @@ export type HTTPLinkOptions<TRoot extends AnyRootTypes> =
   };
 
 export function httpLinkFactory(factoryOpts: { requester: Requester }) {
-  return <TRouter extends AnyRouter>(
+  return <TRouter extends AnyTRPCRouter>(
     opts: HTTPLinkOptions<TRouter['_def']['_config']['$types']>,
   ): TRPCLink<TRouter> => {
     const resolvedOpts = resolveHTTPLinkOptions(opts);

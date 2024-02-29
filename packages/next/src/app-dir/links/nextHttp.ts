@@ -4,10 +4,7 @@ import type {
   TRPCLink,
 } from '@trpc/client';
 import { httpBatchLink, httpLink } from '@trpc/client';
-import type {
-  AnyRootTypes,
-  AnyRouter,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { AnyTRPCRootTypes, AnyTRPCRouter } from '@trpc/server';
 import { generateCacheTag } from '../shared';
 
 interface NextLinkBaseOptions {
@@ -15,18 +12,20 @@ interface NextLinkBaseOptions {
   batch?: boolean;
 }
 
-type NextLinkSingleOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
-  Omit<HTTPLinkOptions<TRoot>, 'fetch'> & {
-    batch?: false;
-  };
+type NextLinkSingleOptions<TRoot extends AnyTRPCRootTypes> =
+  NextLinkBaseOptions &
+    Omit<HTTPLinkOptions<TRoot>, 'fetch'> & {
+      batch?: false;
+    };
 
-type NextLinkBatchOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
-  Omit<HTTPBatchLinkOptions<TRoot>, 'fetch'> & {
-    batch: true;
-  };
+type NextLinkBatchOptions<TRoot extends AnyTRPCRootTypes> =
+  NextLinkBaseOptions &
+    Omit<HTTPBatchLinkOptions<TRoot>, 'fetch'> & {
+      batch: true;
+    };
 
 // ts-prune-ignore-next
-export function experimental_nextHttpLink<TRouter extends AnyRouter>(
+export function experimental_nextHttpLink<TRouter extends AnyTRPCRouter>(
   opts:
     | NextLinkSingleOptions<TRouter['_def']['_config']['$types']>
     | NextLinkBatchOptions<TRouter['_def']['_config']['$types']>,
@@ -45,7 +44,7 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
 
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-      const _fetch: NonNullable<HTTPLinkOptions<AnyRootTypes>['fetch']> = (
+      const _fetch: NonNullable<HTTPLinkOptions<AnyTRPCRootTypes>['fetch']> = (
         url,
         fetchOpts,
       ) => {

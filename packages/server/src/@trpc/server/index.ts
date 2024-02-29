@@ -32,6 +32,9 @@ export {
   type RouterRecord as TRPCRouterRecord,
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
   type ProcedureOptions as TRPCProcedureOptions,
+  type RootConfig as TRPCRootConfig,
+  type RootTypes as TRPCRootTypes,
+  type AnyRootTypes as AnyTRPCRootTypes,
 } from '../../unstable-core-do-not-import';
 
 export type {

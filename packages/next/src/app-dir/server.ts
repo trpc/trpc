@@ -4,13 +4,15 @@ import {
   createTRPCUntypedClient,
 } from '@trpc/client';
 import type {
-  AnyProcedure,
-  AnyRootTypes,
-  AnyRouter,
-  inferClientTypes,
+  AnyTRPCProcedure,
+  AnyTRPCRootTypes,
+  AnyTRPCRouter,
   inferProcedureInput,
+  inferTRPCClientTypes,
+  TRPCRootConfig,
+} from '@trpc/server';
+import type {
   MaybePromise,
-  RootConfig,
   Simplify,
   TRPCResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -34,7 +36,7 @@ import type { NextAppDirDecorateRouterRecord } from './types';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
-  TRouter extends AnyRouter,
+  TRouter extends AnyTRPCRouter,
 >(opts: CreateTRPCNextAppRouterOptions<TRouter>) {
   const getClient = cache(() => {
     const config = opts.config();
@@ -73,7 +75,7 @@ export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
 
 export function experimental_createServerActionHandler<
   TInstance extends {
-    _config: RootConfig<AnyRootTypes>;
+    _config: TRPCRootConfig<AnyTRPCRootTypes>;
   },
 >(
   t: TInstance,
@@ -92,10 +94,10 @@ export function experimental_createServerActionHandler<
   const transformer = config.transformer;
 
   // TODO allow this to take a `TRouter` in addition to a `AnyProcedure`
-  return function createServerAction<TProc extends AnyProcedure>(
+  return function createServerAction<TProc extends AnyTRPCProcedure>(
     proc: TProc,
   ): TRPCActionHandler<
-    Simplify<inferActionDef<inferClientTypes<TInstance>, TProc>>
+    Simplify<inferActionDef<inferTRPCClientTypes<TInstance>, TProc>>
   > {
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
