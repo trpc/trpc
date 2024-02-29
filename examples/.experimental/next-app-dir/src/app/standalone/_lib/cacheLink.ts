@@ -92,8 +92,11 @@ export function testDecorationLink<TRouter extends AnyTRPCRouter>(
 ): TRPCLink<
   TRouter,
   TRPCLinkDecoratorObject<{
+    query: {
+      __fromTestLink1: true;
+    };
     mutation: {
-      foo: string;
+      __fromTestLink2: true;
     };
   }>
 > {

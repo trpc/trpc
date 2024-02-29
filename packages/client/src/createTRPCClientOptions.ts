@@ -1,25 +1,46 @@
-import type { AnyTRPCRouter } from '@trpc/server';
+import type {
+  InferrableClientTypes,
+  Simplify,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
-import type { TRPCLinkDecoration } from './links';
+import type { TRPCLink, TRPCLinkDecoration } from './links';
 
-const optionsSymbol = Symbol('createTRPCClientOptions');
+const typesSymbol = Symbol('createTRPCClientOptions');
 
-export function createTRPCClientOptions<TRouter extends AnyTRPCRouter>() {
-  return <$Decoration extends Partial<TRPCLinkDecoration>>(
-    callback: () => CreateTRPCClientOptions<TRouter, $Decoration>,
+type UnionToIntersection<TUnion> = (
+  TUnion extends any ? (x: TUnion) => void : never
+) extends (x: infer I) => void
+  ? I
+  : never;
+
+export function createTRPCClientOptions<TRoot extends InferrableClientTypes>() {
+  return <$Links extends TRPCLink<TRoot, any>>(
+    callback: () => CreateTRPCClientOptions<TRoot, $Links>,
   ) => {
-    return callback as typeof callback & {
-      [optionsSymbol]: {
-        decoration: $Decoration;
-      };
+    type $Declarations = $Links extends TRPCLink<TRoot, infer TDeclarations>
+      ? TDeclarations
+      : never;
+    type $Union = UnionToIntersection<$Declarations>;
+
+    type $Merged = {
+      [TKey in keyof TRPCLinkDecoration]: TKey extends keyof $Union
+        ? Simplify<$Union[TKey]>
+        : // eslint-disable-next-line @typescript-eslint/ban-types
+          {};
     };
+    return callback as CreateTRPCClientOptionCallback<TRoot, $Merged>;
   };
 }
 
-export type inferTRPCClientOptionsDecoration<
+export type CreateTRPCClientOptionCallback<
+  TRoot extends InferrableClientTypes,
+  TDecoration,
+> = (() => CreateTRPCClientOptions<TRoot, any>) & {
+  [typesSymbol]: TDecoration;
+};
+
+export type inferTRPCClientOptionTypes<
   TOptions extends {
-    [optionsSymbol]: {
-      decoration: Partial<TRPCLinkDecoration>;
-    };
+    [typesSymbol]: any;
   },
-> = TOptions[typeof optionsSymbol]['decoration'];
+> = TOptions[typeof typesSymbol];

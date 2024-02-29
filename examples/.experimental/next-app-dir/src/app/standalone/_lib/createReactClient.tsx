@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type {
   CreateTRPCClient,
+  CreateTRPCClientOptionCallback,
   CreateTRPCClientOptions,
   TRPCLinkDecoration,
 } from '@trpc/client';
@@ -34,8 +35,8 @@ const normalize = (opts: {
 };
 export function createReactClient<
   TRouter extends AnyTRPCRouter,
-  TDecoration extends Partial<TRPCLinkDecoration>,
->(getOptions: () => CreateTRPCClientOptions<TRouter, TDecoration>) {
+  TDecoration extends TRPCLinkDecoration,
+>(getOptions: CreateTRPCClientOptionCallback<TRouter, TDecoration>) {
   type Context = {
     client: CreateTRPCClient<TRouter>;
   };
