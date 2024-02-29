@@ -105,11 +105,11 @@ export type OnErrorFunction<TRouter extends AnyRouter, TRequest> = (opts: {
 export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
   onError?: OnErrorFunction<TRouter, TRequest>;
   /**
-   * Batching options
+   * @deprecated use `allowBatching` instead
    */
   batching?: {
     /**
-     * Enable batching
+     * @deprecated use `allowBatching` instead
      * @default true
      */
     enabled: boolean;
@@ -120,4 +120,9 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    * @default false
    */
   allowMethodOverride?: boolean;
+  /**
+   * Allow request batching
+   * @default true
+   */
+  allowBatching?: boolean;
 }
