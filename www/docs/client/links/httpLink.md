@@ -59,7 +59,7 @@ export interface HTTPLinkOptions {
    * The server must separately allow overriding the method. See:
    * @link https://trpc.io/docs/rpc
    */
-  unstable_methodOverride?: 'POST';
+  methodOverride?: 'POST';
 }
 ```
 

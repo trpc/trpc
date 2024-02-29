@@ -252,7 +252,7 @@ export const TRPC_ERROR_CODES_BY_KEY = {
 
 ### Overriding the default HTTP method
 
-To override the HTTP method used for queries/mutations, you can use the `unstable_methodOverride` option:
+To override the HTTP method used for queries/mutations, you can use the `methodOverride` option:
 
 ```tsx title = 'server/httpHandler.ts'
 // Your server must separately allow the client to override the HTTP method
@@ -268,7 +268,7 @@ const client = createTRPCClient<AppRouter>({
   links: [
     httpLink({
       url: `http://localhost:3000`,
-      unstable_methodOverride: 'POST', // all queries and mutations will be sent to the tRPC Server as POST requests.
+      methodOverride: 'POST', // all queries and mutations will be sent to the tRPC Server as POST requests.
     }),
   ],
 });
