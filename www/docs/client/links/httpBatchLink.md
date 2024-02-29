@@ -73,6 +73,8 @@ export interface HTTPLinkOptions {
 
 When sending batch requests, sometimes the URL can become too large causing HTTP errors like [`413 Payload Too Large`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413), [`414 URI Too Long`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414), and [`404 Not Found`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404). The `maxURLLength` option will limit the number of requests that can be sent together in a batch.
 
+> An alternative way of doing this is to
+
 ```ts title="client/index.ts"
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../server';
@@ -82,6 +84,8 @@ const client = createTRPCClient<AppRouter>({
     httpBatchLink({
       url: 'http://localhost:3000',
       maxURLLength: 2083, // a suitable size
+      // alternatively, you can make all RPC-calls to be called with POST
+      // methodOverride: 'POST',
     }),
   ],
 });
