@@ -21,10 +21,4 @@ export default trpcNext.createNextApiHandler<AppRouter>({
       console.error('Something went wrong', error);
     }
   },
-  /**
-   * Enable query batching
-   */
-  batching: {
-    enabled: true,
-  },
 });

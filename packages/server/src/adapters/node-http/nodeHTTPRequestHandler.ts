@@ -151,6 +151,7 @@ export async function nodeHTTPRequestHandler<
       contentTypeHandler,
       unstable_onHead,
       unstable_onChunk,
+      allowMethodOverride: opts.allowMethodOverride,
     });
 
     if (isStream) {

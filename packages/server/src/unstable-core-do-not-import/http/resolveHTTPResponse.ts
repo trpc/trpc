@@ -289,6 +289,7 @@ export async function resolveHTTPResponse<
 
     const errors: TRPCError[] = [];
 
+    const allowMethodOverride = opts.allowMethodOverride ?? false;
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
     >[] = paths.map(async (path, index) => {
@@ -300,6 +301,7 @@ export async function resolveHTTPResponse<
           getRawInput: async () => input,
           ctx,
           type,
+          allowMethodOverride,
         });
         return {
           result: {

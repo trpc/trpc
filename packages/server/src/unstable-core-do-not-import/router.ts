@@ -225,7 +225,11 @@ export function callProcedure(
 ) {
   const { type, path } = opts;
   const proc = opts.procedures[path];
-  if (!proc || !isProcedure(proc) || proc._def.type !== type) {
+  if (
+    !proc ||
+    !isProcedure(proc) ||
+    (proc._def.type !== type && !opts.allowMethodOverride)
+  ) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: `No "${type}"-procedure on path "${path}"`,
