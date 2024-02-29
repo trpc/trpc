@@ -133,10 +133,10 @@ export async function nodeHTTPRequestHandler<
       }
     };
 
-    await resolveHTTPResponse({
+    await resolveHTTPResponse<TRouter, HTTPRequest>({
       ...opts,
-      createContext,
       req,
+      createContext,
       error: bodyResult.ok ? null : bodyResult.error,
       preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
       onError(o) {
