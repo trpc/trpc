@@ -259,6 +259,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
             getRawInput: async () => args[0],
             ctx,
             type: procedure._def.type,
+            allowMethodOverride: false,
           });
 
         if (typeof maybeContext === 'function') {
