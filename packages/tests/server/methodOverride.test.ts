@@ -169,15 +169,26 @@ test('client: sends query as POST when methodOverride=POST', async () => {
   const req = t.requests[0]!;
 
   expect(req.method).toBe('POST');
-  expect(t.requests).toMatchInlineSnapshot();
+  expect(t.requests).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "body": Object {
+          "who": "test1",
+        },
+        "method": "POST",
+        "url": "/q",
+      },
+    ]
+  `);
 });
 
-test.only('client/server: e2e batched query as POST', async () => {
+test('client/server: e2e batched query as POST', async () => {
   const t = await setup({
     linkOptions: {
       methodOverride: 'POST',
     },
     batch: true,
+    allowMethodOverride: false,
   });
 
   expect(
@@ -233,9 +244,9 @@ test.only('client/server: e2e batched query as POST', async () => {
   `);
 });
 
-test('server: rejects method override from client when not enabled on the server', async () => {
+test.only('server: rejects method override from client when not enabled on the server', async () => {
   const t = await setup({
-    allowMethodOverride: true,
+    allowMethodOverride: false,
     linkOptions: {
       methodOverride: 'POST',
     },
@@ -247,7 +258,9 @@ test('server: rejects method override from client when not enabled on the server
     }),
   );
 
-  expect(err).toMatchInlineSnapshot();
+  expect(err).toMatchInlineSnapshot(
+    `[TRPCClientError: No "mutation"-procedure on path "q"]`,
+  );
 
   expect(t.requests).toHaveLength(1);
   const req = t.requests[0]!;
@@ -259,7 +272,7 @@ test('server: rejects method override from client when not enabled on the server
         "who": "test1",
       },
       "method": "POST",
-      "url": "/q?_procedureType=query",
+      "url": "/q",
     }
   `);
 });
