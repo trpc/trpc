@@ -29,6 +29,9 @@ for (const pkg of dirs.sort()) {
 export default defineConfig({
   root: '../',
   clearScreen: false,
+  esbuild: {
+    target: 'es2020',
+  },
   test: {
     environment: 'jsdom',
     globals: true,
