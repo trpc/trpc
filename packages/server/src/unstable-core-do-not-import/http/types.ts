@@ -109,7 +109,7 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
    */
   batching?: {
     /**
-     * @deprecated use `allowBatching` instead
+     * @deprecated use `allowBatching` instead, will be removed in v12
      * @default true
      */
     enabled: boolean;
