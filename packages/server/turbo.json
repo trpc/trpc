@@ -5,6 +5,7 @@
     "codegen-entrypoints": {
       "outputs": [
         "package.json",
+        "dist/**",
         "adapters/**",
         "http/**",
         "observable/**",

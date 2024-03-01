@@ -1,6 +1,6 @@
-import type { inferRootTypes } from '.';
-import type { TRPCRouterRecord } from '..';
-import { initTRPC } from '..';
+import type { TRPCRouterRecord } from '../@trpc/server';
+import { initTRPC } from '../@trpc/server';
+import type { inferClientTypes } from '../unstable-core-do-not-import';
 
 test('mergeRouters', async () => {
   const t = initTRPC.create();
@@ -87,8 +87,8 @@ test('good merge: one has default transformer', async () => {
   await expect(caller.foo()).resolves.toBe('foo');
   await expect(caller.bar()).resolves.toBe('bar');
 
-  expectTypeOf<inferRootTypes<typeof router1>>().toEqualTypeOf<
-    inferRootTypes<typeof merged>
+  expectTypeOf<inferClientTypes<typeof router1>>().toEqualTypeOf<
+    inferClientTypes<typeof merged>
   >();
 });
 test('bad merge: error formatter', async () => {
@@ -110,7 +110,7 @@ test('bad merge: error formatter', async () => {
   expect(() =>
     t1.mergeRouters(router1, router2),
   ).toThrowErrorMatchingInlineSnapshot(
-    `"You seem to have several error formatters"`,
+    `[Error: You seem to have several error formatters]`,
   );
 });
 
@@ -139,6 +139,6 @@ test('bad merge: transformer', async () => {
   expect(() =>
     t1.mergeRouters(router1, router2),
   ).toThrowErrorMatchingInlineSnapshot(
-    `"You seem to have several transformers"`,
+    `[Error: You seem to have several transformers]`,
   );
 });

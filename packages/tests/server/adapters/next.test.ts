@@ -23,7 +23,9 @@ function mockReq({
 
   req.method = method;
   req.query = query;
-  req.headers = {};
+  req.headers = {
+    'content-type': 'application/json',
+  };
 
   const socket = {
     destroy: vi.fn(),
@@ -70,7 +72,7 @@ test('bad setup', async () => {
   const responseJson: any = (json.mock.calls[0] as any)[0];
   expect(responseJson.ok).toMatchInlineSnapshot(`undefined`);
   expect(responseJson.error.message).toMatchInlineSnapshot(
-    `"Query \\"trpc\\" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?"`,
+    `"Query "trpc" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?"`,
   );
   expect(responseJson.statusCode).toMatchInlineSnapshot(`undefined`);
 });
@@ -153,7 +155,7 @@ test('404', async () => {
   const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
 
   expect(json.error.message).toMatchInlineSnapshot(
-    `"No \\"query\\"-procedure on path \\"not-found-path\\""`,
+    `"No "query"-procedure on path "not-found-path""`,
   );
 });
 

@@ -32,7 +32,10 @@ test('req as eventemitter', async () => {
     events.emit('end');
   }, 5);
 
-  (events as any).headers = {};
+  (events as any).headers = {
+    'content-type': 'application/json',
+  };
+
   const result = await getPostBody({
     req: events,
   } as any);
@@ -41,7 +44,7 @@ test('req as eventemitter', async () => {
   expect((result as any).data).toBeTruthy();
   expect(result).toMatchInlineSnapshot(`
     Object {
-      "data": "{\\"hello\\":\\"there\\"}",
+      "data": "{"hello":"there"}",
       "ok": true,
       "preprocessed": false,
     }

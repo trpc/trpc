@@ -13,15 +13,15 @@ export const topSponsors = [
   {
     "name": "Tola",
     "imgSrc": "https://avatars.githubusercontent.com/u/92736868?v=4",
-    "weight": 101,
+    "weight": 90,
     "login": "tolahq",
     "link": "https://tolahq.com/?ref=trpc",
-    "createdAt": 1686098153310
+    "createdAt": 1687281676503
   },
   {
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
-    "weight": 41,
+    "weight": 44,
     "login": "echobind",
     "link": "http://echobind.com/?ref=trpc",
     "createdAt": 1665438965000
@@ -159,6 +159,14 @@ export const allSponsors = [
     "createdAt": 1657794927000
   },
   {
+    "name": "Dyaa",
+    "imgSrc": "https://avatars.githubusercontent.com/u/4283185?u=22749f3ebf75e21997dc31c91526e57c7e7d8a41&v=4",
+    "weight": 6,
+    "login": "dyaa",
+    "link": "https://dyaa.me/?ref=trpc",
+    "createdAt": 1659447497000
+  },
+  {
     "name": "fanvue",
     "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
     "weight": 3,
@@ -177,7 +185,7 @@ export const allSponsors = [
   {
     "name": "Echobind",
     "imgSrc": "https://avatars.githubusercontent.com/u/570840?v=4",
-    "weight": 41,
+    "weight": 44,
     "login": "echobind",
     "link": "http://echobind.com/?ref=trpc",
     "createdAt": 1665438965000
@@ -239,20 +247,20 @@ export const allSponsors = [
     "createdAt": 1683721234000
   },
   {
-    "name": "Tola",
-    "imgSrc": "https://avatars.githubusercontent.com/u/92736868?v=4",
-    "weight": 101,
-    "login": "tolahq",
-    "link": "https://tolahq.com/?ref=trpc",
-    "createdAt": 1686098153310
-  },
-  {
     "name": "Drew Powers",
     "imgSrc": "https://avatars.githubusercontent.com/u/49917220?u=ceb7a6b68f6366882ac7bc599383382f48e41e94&v=4",
     "weight": 2,
     "login": "drwpwrs",
     "link": "https://github.com/drwpwrs",
     "createdAt": 1687018575000
+  },
+  {
+    "name": "Tola",
+    "imgSrc": "https://avatars.githubusercontent.com/u/92736868?v=4",
+    "weight": 90,
+    "login": "tolahq",
+    "link": "https://tolahq.com/?ref=trpc",
+    "createdAt": 1687281676503
   },
   {
     "name": "Drizzle Team",
@@ -287,11 +295,27 @@ export const allSponsors = [
     "createdAt": 1706115991000
   },
   {
-    "name": "mcmaterassi",
-    "imgSrc": "https://avatars.githubusercontent.com/u/157734077?v=4",
+    "name": "Proxidize",
+    "imgSrc": "https://avatars.githubusercontent.com/u/70805857?v=4",
     "weight": 2,
-    "login": "mcmaterassi",
-    "link": "https://github.com/mcmaterassi",
-    "createdAt": 1706203493000
+    "login": "proxidize",
+    "link": "https://proxidize.com/?ref=trpc",
+    "createdAt": 1707060132000
+  },
+  {
+    "name": "Imamuzzaki Abu Salam",
+    "imgSrc": "https://avatars.githubusercontent.com/u/41441643?u=086a755a9734123c705313283b3d892fe3ab8471&v=4",
+    "weight": 1,
+    "login": "ImBIOS",
+    "link": "https://imbios.dev/?ref=trpc",
+    "createdAt": 1707440908000
+  },
+  {
+    "name": "Unkey",
+    "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
+    "weight": 3,
+    "login": "unkeyed",
+    "link": "https://unkey.dev/?ref=trpc",
+    "createdAt": 1708012798000
   }
 ] as const;

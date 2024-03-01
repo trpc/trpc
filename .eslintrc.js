@@ -8,7 +8,6 @@ const config = {
     'plugin:@typescript-eslint/stylistic-type-checked',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
-    'prettier',
   ],
   reportUnusedDisableDirectives: true,
   parserOptions: {

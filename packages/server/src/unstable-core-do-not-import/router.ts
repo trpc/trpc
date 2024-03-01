@@ -1,3 +1,4 @@
+import type { Observable } from '../observable';
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import { TRPCError } from './error/TRPCError';
@@ -14,7 +15,11 @@ export interface RouterRecord {
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = (
   input: inferProcedureInput<TProcedure>,
-) => Promise<TProcedure['_def']['_output_out']>;
+) => Promise<
+  TProcedure['_def']['type'] extends 'subscription'
+    ? Observable<TProcedure['_def']['_output_out'], TRPCError>
+    : TProcedure['_def']['_output_out']
+>;
 
 /**
  * @internal
@@ -216,11 +221,18 @@ function isProcedure(
  * @internal
  */
 export function callProcedure(
-  opts: ProcedureCallOptions & { procedures: RouterRecord },
+  opts: ProcedureCallOptions & {
+    procedures: RouterRecord;
+    allowMethodOverride?: boolean;
+  },
 ) {
   const { type, path } = opts;
   const proc = opts.procedures[path];
-  if (!proc || !isProcedure(proc) || proc._def.type !== type) {
+  if (
+    !proc ||
+    !isProcedure(proc) ||
+    (proc._def.type !== type && !opts.allowMethodOverride)
+  ) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: `No "${type}"-procedure on path "${path}"`,
