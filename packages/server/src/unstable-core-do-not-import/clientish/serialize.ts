@@ -29,6 +29,7 @@ export type Serialize<T> =
   T extends JsonReturnable ? T :
   T extends Map<any, any> | Set<any> ? object :
   T extends NonJsonPrimitive ? never :
+  // eslint-disable-next-line @typescript-eslint/method-signature-style
   T extends { toJSON(): infer U } ? U :
   T extends [] ? [] :
   T extends [unknown, ...unknown[]] ? SerializeTuple<T> :

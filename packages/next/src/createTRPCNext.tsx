@@ -33,11 +33,11 @@ export interface CreateTRPCNextBase<
    *
    * @link https://trpc.io/docs/v11/client/react/useUtils
    */
-  useContext(): CreateReactUtils<TRouter, TSSRContext>;
+  useContext: () => CreateReactUtils<TRouter, TSSRContext>;
   /**
    * @link https://trpc.io/docs/v11/client/react/useUtils
    */
-  useUtils(): CreateReactUtils<TRouter, TSSRContext>;
+  useUtils: () => CreateReactUtils<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
   useQueries: TRPCUseQueries<TRouter>;
   useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;

@@ -91,7 +91,7 @@ export type FileUploadHandlerOptions = {
    * @param contentType
    * @param name
    */
-  filter?(args: FileUploadHandlerFilterArgs): Promise<boolean> | boolean;
+  filter?: (args: FileUploadHandlerFilterArgs) => Promise<boolean> | boolean;
 };
 
 const defaultFilePathResolver: FileUploadHandlerPathResolver = ({

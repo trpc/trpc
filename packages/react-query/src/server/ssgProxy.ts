@@ -59,25 +59,25 @@ type DecorateProcedure<
   /**
    * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
-  fetch(
+  fetch: (
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferTransformedProcedureOutput<TRoot, TProcedure>,
       TRPCClientError<TRoot>
     >,
-  ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
+  ) => Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
   /**
    * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
-  fetchInfinite(
+  fetchInfinite: (
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
       inferTransformedProcedureOutput<TRoot, TProcedure>,
       TRPCClientError<TRoot>
     >,
-  ): Promise<
+  ) => Promise<
     InfiniteData<
       inferTransformedProcedureOutput<TRoot, TProcedure>,
       NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
@@ -87,25 +87,25 @@ type DecorateProcedure<
   /**
    * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
-  prefetch(
+  prefetch: (
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferTransformedProcedureOutput<TRoot, TProcedure>,
       TRPCClientError<TRoot>
     >,
-  ): Promise<void>;
+  ) => Promise<void>;
 
   /**
    * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
-  prefetchInfinite(
+  prefetchInfinite: (
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
       inferTransformedProcedureOutput<TRoot, TProcedure>,
       TRPCClientError<TRoot>
     >,
-  ): Promise<void>;
+  ) => Promise<void>;
 };
 
 /**

@@ -21,6 +21,7 @@ export type ParserYupEsque<TInput> = {
 };
 
 export type ParserScaleEsque<TInput> = {
+  // eslint-disable-next-line @typescript-eslint/method-signature-style
   assert(value: unknown): asserts value is TInput;
 };
 

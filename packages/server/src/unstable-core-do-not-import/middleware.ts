@@ -49,7 +49,7 @@ export interface MiddlewareBuilder<
   /**
    * Create a new builder based on the current middleware builder
    */
-  unstable_pipe<$ContextOverridesOut>(
+  unstable_pipe: <$ContextOverridesOut>(
     fn:
       | MiddlewareFunction<
           TContext,
@@ -64,7 +64,7 @@ export interface MiddlewareBuilder<
           $ContextOverridesOut,
           TInputOut
         >,
-  ): MiddlewareBuilder<
+  ) => MiddlewareBuilder<
     TContext,
     TMeta,
     Overwrite<TContextOverrides, $ContextOverridesOut>,

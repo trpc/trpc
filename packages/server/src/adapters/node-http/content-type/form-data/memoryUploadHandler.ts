@@ -29,7 +29,7 @@ export type MemoryUploadHandlerOptions = {
    * @param mimetype
    * @param encoding
    */
-  filter?(args: MemoryUploadHandlerFilterArgs): Promise<boolean> | boolean;
+  filter?: (args: MemoryUploadHandlerFilterArgs) => Promise<boolean> | boolean;
 };
 
 export function createMemoryUploadHandler({
