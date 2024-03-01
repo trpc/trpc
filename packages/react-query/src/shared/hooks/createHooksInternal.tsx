@@ -364,11 +364,10 @@ export function createRootHooks<
           };
 
           return client.query(
-            ...getClientArgs(
-              queryKey,
-              actualOpts,
-              queryFunctionContext.pageParam ?? opts.initialCursor,
-            ),
+            ...getClientArgs(queryKey, actualOpts, {
+              pageParam: queryFunctionContext.pageParam ?? opts.initialCursor,
+              direction: queryFunctionContext.direction,
+            }),
           );
         },
       },
@@ -417,11 +416,10 @@ export function createRootHooks<
           };
 
           return context.client.query(
-            ...getClientArgs(
-              queryKey,
-              actualOpts,
-              queryFunctionContext.pageParam ?? opts.initialCursor,
-            ),
+            ...getClientArgs(queryKey, actualOpts, {
+              pageParam: queryFunctionContext.pageParam ?? opts.initialCursor,
+              direction: queryFunctionContext.direction,
+            }),
           );
         },
       },

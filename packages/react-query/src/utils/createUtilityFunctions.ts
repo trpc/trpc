@@ -42,9 +42,9 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       return queryClient.fetchInfiniteQuery({
         ...opts,
         queryKey,
-        queryFn: ({ pageParam }) => {
+        queryFn: ({ pageParam, direction }) => {
           return untypedClient.query(
-            ...getClientArgs(queryKey, opts, pageParam),
+            ...getClientArgs(queryKey, opts, { pageParam, direction }),
           );
         },
         initialPageParam: opts?.initialCursor ?? null,
@@ -63,9 +63,9 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       return queryClient.prefetchInfiniteQuery({
         ...opts,
         queryKey,
-        queryFn: ({ pageParam }) => {
+        queryFn: ({ pageParam, direction }) => {
           return untypedClient.query(
-            ...getClientArgs(queryKey, opts, pageParam),
+            ...getClientArgs(queryKey, opts, { pageParam, direction }),
           );
         },
         initialPageParam: opts?.initialCursor ?? null,

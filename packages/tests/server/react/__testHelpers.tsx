@@ -140,6 +140,51 @@ export function createAppRouter() {
           nextCursor,
         };
       }),
+    biDirectionalPaginatedPosts: t.procedure
+      .input(
+        z.object({
+          limit: z.number().min(1).max(100).default(50),
+          cursor: z.number().nullish().default(null),
+          direction: z.union([z.literal('forward'), z.literal('backward')]),
+        }),
+      )
+      .query(({ input }) => {
+        paginatedPosts(input);
+        const items: typeof db.posts = [];
+        const limit = input.limit;
+        const { cursor } = input;
+        let nextCursor: typeof cursor = null;
+        let prevCursor: typeof cursor = null;
+        for (const element of db.posts) {
+          if (
+            cursor != null &&
+            (input.direction === 'forward'
+              ? element.createdAt < cursor
+              : element.createdAt > cursor)
+          ) {
+            continue;
+          }
+          items.push(element);
+          if (items.length >= limit) {
+            break;
+          }
+        }
+        const last = items[items.length - 1];
+        const first = items[0];
+        const nextIndex = db.posts.findIndex((item) => item === last) + 1;
+        const prevIndex = db.posts.findIndex((item) => item === first) - 1;
+        if (db.posts[nextIndex]) {
+          nextCursor = db.posts[nextIndex]!.createdAt;
+        }
+        if (db.posts[prevIndex]) {
+          prevCursor = db.posts[prevIndex]!.createdAt;
+        }
+        return {
+          items,
+          nextCursor,
+          prevCursor,
+        };
+      }),
 
     addPost: t.procedure
       .input(

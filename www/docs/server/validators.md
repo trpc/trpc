@@ -365,8 +365,8 @@ export type AppRouter = typeof appRouter;
 ### With [Valibot](https://github.com/fabian-hiller/valibot)
 
 ```ts twoslash
-import { wrap } from '@decs/typeschema';
 import { initTRPC } from '@trpc/server';
+import { wrap } from '@typeschema/valibot';
 import { object, string } from 'valibot';
 
 export const t = initTRPC.create();

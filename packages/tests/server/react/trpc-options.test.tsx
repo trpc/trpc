@@ -60,7 +60,7 @@ test('useQuery()', async () => {
     expect(utils.container).toHaveTextContent(`__result`);
   });
   expect(ctx.spyLink).toHaveBeenCalledTimes(1);
-  const firstCall = ctx.spyLink.mock.calls[0]![0]!;
+  const firstCall = ctx.spyLink.mock.calls[0]![0];
   expect(firstCall.context['foo']).toBe('bar');
   expect(firstCall).toMatchInlineSnapshot(`
     Object {
@@ -109,7 +109,7 @@ test('useMutation()', async () => {
     expect(utils.container).toHaveTextContent(`__result`);
   });
   expect(ctx.spyLink).toHaveBeenCalledTimes(1);
-  const firstCall = ctx.spyLink.mock.calls[0]![0]!;
+  const firstCall = ctx.spyLink.mock.calls[0]![0];
   expect(firstCall.context['foo']).toBe('bar');
   expect(firstCall).toMatchInlineSnapshot(`
     Object {

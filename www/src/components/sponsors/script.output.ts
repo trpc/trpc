@@ -13,10 +13,10 @@ export const topSponsors = [
   {
     "name": "Tola",
     "imgSrc": "https://avatars.githubusercontent.com/u/92736868?v=4",
-    "weight": 101,
+    "weight": 90,
     "login": "tolahq",
     "link": "https://tolahq.com/?ref=trpc",
-    "createdAt": 1686753485872
+    "createdAt": 1687281676503
   },
   {
     "name": "Echobind",
@@ -159,6 +159,14 @@ export const allSponsors = [
     "createdAt": 1657794927000
   },
   {
+    "name": "Dyaa",
+    "imgSrc": "https://avatars.githubusercontent.com/u/4283185?u=22749f3ebf75e21997dc31c91526e57c7e7d8a41&v=4",
+    "weight": 6,
+    "login": "dyaa",
+    "link": "https://dyaa.me/?ref=trpc",
+    "createdAt": 1659447497000
+  },
+  {
     "name": "fanvue",
     "imgSrc": "https://avatars.githubusercontent.com/u/72873652?v=4",
     "weight": 3,
@@ -239,20 +247,20 @@ export const allSponsors = [
     "createdAt": 1683721234000
   },
   {
-    "name": "Tola",
-    "imgSrc": "https://avatars.githubusercontent.com/u/92736868?v=4",
-    "weight": 101,
-    "login": "tolahq",
-    "link": "https://tolahq.com/?ref=trpc",
-    "createdAt": 1686753485872
-  },
-  {
     "name": "Drew Powers",
     "imgSrc": "https://avatars.githubusercontent.com/u/49917220?u=ceb7a6b68f6366882ac7bc599383382f48e41e94&v=4",
     "weight": 2,
     "login": "drwpwrs",
     "link": "https://github.com/drwpwrs",
     "createdAt": 1687018575000
+  },
+  {
+    "name": "Tola",
+    "imgSrc": "https://avatars.githubusercontent.com/u/92736868?v=4",
+    "weight": 90,
+    "login": "tolahq",
+    "link": "https://tolahq.com/?ref=trpc",
+    "createdAt": 1687281676503
   },
   {
     "name": "Drizzle Team",
@@ -301,5 +309,13 @@ export const allSponsors = [
     "login": "ImBIOS",
     "link": "https://imbios.dev/?ref=trpc",
     "createdAt": 1707440908000
+  },
+  {
+    "name": "Unkey",
+    "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
+    "weight": 3,
+    "login": "unkeyed",
+    "link": "https://unkey.dev/?ref=trpc",
+    "createdAt": 1708012798000
   }
 ] as const;
