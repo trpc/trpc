@@ -10,6 +10,7 @@ import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import type {
   DataTransformerOptions,
+  inferRouterContext,
   OnErrorFunction,
 } from '@trpc/server/unstable-core-do-not-import';
 import fetch from 'node-fetch';
@@ -24,6 +25,7 @@ export type CreateClientCallback<TRouter extends AnyRouter> = (opts: {
   wssUrl: string;
   wsClient: TRPCWebSocketClient;
   transformer?: DataTransformerOptions;
+  createContext?: () => Promise<inferRouterContext<TRouter>>;
 }) => Partial<WithTRPCConfig<TRouter>>;
 
 export function routerToServerAndClientNew<TRouter extends AnyRouter>(

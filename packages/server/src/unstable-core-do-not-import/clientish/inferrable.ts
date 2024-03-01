@@ -1,9 +1,6 @@
 import type { AnyRootTypes } from '../rootConfig';
 
-export type AnyClientTypes = Pick<
-  AnyRootTypes,
-  'errorShape' | 'transformer' | 'ctx'
->;
+export type AnyClientTypes = Pick<AnyRootTypes, 'errorShape' | 'transformer'>;
 
 /**
  * Result of `initTRPC.create()`

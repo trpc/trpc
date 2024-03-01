@@ -15,7 +15,7 @@ import { initTRPC } from '@trpc/server';
 import { observable, observableToPromise } from '@trpc/server/observable';
 import { z } from 'zod';
 
-const mockRuntime: TRPCClientRuntime = {};
+const mockRuntime: TRPCClientRuntime<any> = {};
 test('chainer', async () => {
   let attempt = 0;
   const serverCall = vi.fn();

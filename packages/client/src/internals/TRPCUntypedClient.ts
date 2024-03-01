@@ -5,8 +5,8 @@ import type {
 import { observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
-  inferClientTypes,
   InferrableClientTypes,
+  inferRouterContext,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
@@ -39,9 +39,12 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 export type CreateTRPCClientOptions<TInferrable extends InferrableClientTypes> =
   {
     links: TRPCLink<TInferrable>[];
-    createContext?: () => Promise<inferClientTypes<TInferrable>['ctx']>;
     transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
-  };
+  } & (TInferrable extends AnyRouter
+    ? {
+        createContext?: () => Promise<inferRouterContext<TInferrable>>;
+      }
+    : {});
 
 /** @internal */
 export type UntypedClientProperties =
@@ -62,7 +65,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.requestId = 0;
 
-    this.runtime = { createContext: opts.createContext };
+    this.runtime = { createContext: opts.createContext } as any;
 
     // Initialize the links
     this.links = opts.links.map((link) => link(this.runtime));
