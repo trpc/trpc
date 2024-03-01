@@ -11,15 +11,16 @@ export async function getPostBody(opts: {
   return new Promise((resolve) => {
     if (
       !req.headers['content-type']?.startsWith('application/json') &&
-      req.method !== 'GET' &&
-      req.method !== 'OPTIONS' &&
-      req.method !== 'HEAD'
+      (!req.method ||
+        (req.method !== 'GET' &&
+          req.method !== 'OPTIONS' &&
+          req.method !== 'HEAD'))
     ) {
       resolve({
         ok: false,
         error: new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Invalid content-type header (expected application/json)',
+          code: 'UNSUPPORTED_MEDIA_TYPE',
+          message: 'Invalid Content-Type header (expected application/json)',
         }),
       });
       return;

@@ -196,13 +196,13 @@ test('force content-type on mutations', async () => {
     expect(json).toMatchInlineSnapshot(`
       Object {
         "error": Object {
-          "code": -32600,
+          "code": -32015,
           "data": Object {
-            "code": "BAD_REQUEST",
-            "httpStatus": 400,
+            "code": "UNSUPPORTED_MEDIA_TYPE",
+            "httpStatus": 415,
             "stack": "[redacted]",
           },
-          "message": "Invalid content-type header (expected application/json)",
+          "message": "Invalid Content-Type header (expected application/json)",
         },
       }
     `);
