@@ -1,5 +1,4 @@
 import type { ValueOf } from '../types';
-import { invert } from '../utils';
 
 // reference: https://www.jsonrpc.org/specification
 
@@ -39,8 +38,34 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   CLIENT_CLOSED_REQUEST: -32099, // 499
 } as const;
 
+type KeyFromValue<TValue, TType extends Record<PropertyKey, PropertyKey>> = {
+  [K in keyof TType]: TValue extends TType[K] ? K : never;
+}[keyof TType];
+
+type Invert<TType extends Record<PropertyKey, PropertyKey>> = {
+  [TValue in TType[keyof TType]]: KeyFromValue<TValue, TType>;
+};
+
 // pure
-export const TRPC_ERROR_CODES_BY_NUMBER = invert(TRPC_ERROR_CODES_BY_KEY);
+export const TRPC_ERROR_CODES_BY_NUMBER: Invert<
+  typeof TRPC_ERROR_CODES_BY_KEY
+> = {
+  [-32700]: 'PARSE_ERROR',
+  [-32600]: 'BAD_REQUEST',
+  [-32603]: 'INTERNAL_SERVER_ERROR',
+  [-32001]: 'UNAUTHORIZED',
+  [-32003]: 'FORBIDDEN',
+  [-32004]: 'NOT_FOUND',
+  [-32005]: 'METHOD_NOT_SUPPORTED',
+  [-32008]: 'TIMEOUT',
+  [-32009]: 'CONFLICT',
+  [-32012]: 'PRECONDITION_FAILED',
+  [-32013]: 'PAYLOAD_TOO_LARGE',
+  [-32015]: 'UNSUPPORTED_MEDIA_TYPE',
+  [-32022]: 'UNPROCESSABLE_CONTENT',
+  [-32029]: 'TOO_MANY_REQUESTS',
+  [-32099]: 'CLIENT_CLOSED_REQUEST',
+};
 
 export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
 export type TRPC_ERROR_CODE_KEY = keyof typeof TRPC_ERROR_CODES_BY_KEY;
