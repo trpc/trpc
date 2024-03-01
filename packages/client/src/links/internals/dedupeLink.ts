@@ -3,7 +3,8 @@
 import type { Observable } from '@trpc/server/observable';
 import { observable, share } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
-import type { TRPCLink } from '../types';
+import type { TRPCClientError } from '../../TRPCClientError';
+import type { OperationResultEnvelope, TRPCLink } from '../types';
 
 /**
  * @internal used for testing
@@ -29,7 +30,10 @@ export function dedupeLink<
         return observable((observer) => obs$.subscribe(observer));
       }
 
-      const shared$ = observable((observer) => {
+      const shared$ = observable<
+        OperationResultEnvelope<unknown>,
+        TRPCClientError<TRouter>
+      >((observer) => {
         function reset() {
           delete pending[key];
         }
