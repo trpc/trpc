@@ -18,6 +18,8 @@ const router = t.router({
     .query(({ input }) => ({
       text: `hello ${input?.who}`,
     })),
+  mut: t.procedure.mutation(() => 'mutation'),
+
   exampleError: t.procedure.query(() => {
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
@@ -152,4 +154,57 @@ test('custom host', async () => {
       "text": "hello test",
     }
   `);
+});
+
+// https://github.com/trpc/trpc/issues/5522
+test('force content-type on mutations', async () => {
+  const { port, address } = await startServer({
+    router,
+  });
+
+  const mutUrl = `http://${address}:${port}/mut`;
+  {
+    // good
+    const result = await fetch(mutUrl, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
+
+    expect(result.ok).toBe(true);
+    expect(await result.json()).toMatchInlineSnapshot(`
+      Object {
+        "result": Object {
+          "data": "mutation",
+        },
+      }
+    `);
+  }
+  {
+    // bad
+    const result = await fetch(mutUrl, {
+      method: 'POST',
+    });
+
+    expect(result.ok).toBe(false);
+
+    const json: any = await result.json();
+    if (json.error.data.stack) {
+      json.error.data.stack = '[redacted]';
+    }
+    expect(json).toMatchInlineSnapshot(`
+      Object {
+        "error": Object {
+          "code": -32600,
+          "data": Object {
+            "code": "BAD_REQUEST",
+            "httpStatus": 400,
+            "stack": "[redacted]",
+          },
+          "message": "Invalid content-type header (expected application/json)",
+        },
+      }
+    `);
+  }
 });
