@@ -30,6 +30,12 @@ See [SSR docs](../client/nextjs/ssr.md)
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Explicit Content-Type checks (non-breaking)
+
+We now have explicit checks for the `Content-Type`-header when doing POST-requests. This means that if you send a request with a `Content-Type` that doesn't match the expected one, you will get a `415 Unsupported Media Type`-error.
+
+Our tRPC clients already sends content-type headers, so is only a potential breaking change if you call tRPC manually.
+
 ### Added support for method overriding
 
 Allows you to override the HTTP method for procedures to always be sent with `POST` in order to get around some limitations with e.g. max URL lengths.
