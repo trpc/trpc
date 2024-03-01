@@ -29,7 +29,7 @@ export type Serialize<T> =
   T extends JsonReturnable ? T :
   T extends Map<any, any> | Set<any> ? object :
   T extends NonJsonPrimitive ? never :
-  T extends { toJSON: () => infer U } ? U :
+  T extends { toJSON(): infer U } ? U :
   T extends [] ? [] :
   T extends [unknown, ...unknown[]] ? SerializeTuple<T> :
   T extends readonly (infer U)[] ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :

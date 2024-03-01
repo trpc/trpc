@@ -37,7 +37,7 @@ export type Operation<TInput = unknown> = {
 };
 
 interface HeadersInitEsque {
-  [Symbol.iterator]: () => IterableIterator<[string, string]>;
+  [Symbol.iterator](): IterableIterator<[string, string]>;
 }
 
 /**

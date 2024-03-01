@@ -245,11 +245,11 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
    *
    * @link https://trpc.io/docs/v11/client/react/useUtils
    */
-  useContext: () => CreateReactUtils<TRouter, TSSRContext>;
+  useContext(): CreateReactUtils<TRouter, TSSRContext>;
   /**
    * @link https://trpc.io/docs/v11/client/react/useUtils
    */
-  useUtils: () => CreateReactUtils<TRouter, TSSRContext>;
+  useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
   createClient: CreateClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
