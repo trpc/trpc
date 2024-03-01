@@ -204,7 +204,9 @@ export interface ProcedureBuilder<
    * Add a middleware to the procedure.
    * @link https://trpc.io/docs/v11/server/middlewares
    */
-  use: <$ContextOverridesOut>(
+  // FIXME: this should be short-hand style
+  // eslint-disable-next-line @typescript-eslint/method-signature-style
+  use<$ContextOverridesOut>(
     fn:
       | MiddlewareBuilder<
           Overwrite<TContext, TContextOverrides>,
@@ -219,7 +221,7 @@ export interface ProcedureBuilder<
           $ContextOverridesOut,
           TInputOut
         >,
-  ) => ProcedureBuilder<
+  ): ProcedureBuilder<
     TContext,
     TMeta,
     Overwrite<TContextOverrides, $ContextOverridesOut>,
