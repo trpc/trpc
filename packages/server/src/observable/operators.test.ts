@@ -5,23 +5,25 @@ import { map, share } from './operators';
 interface SubscriptionEvents<TOutput> {
   data: (data: TOutput) => void;
 }
-
+/* eslint-disable @typescript-eslint/method-signature-style */
 declare interface CustomEventEmitter<TOutput> {
-  on: <U extends keyof SubscriptionEvents<TOutput>>(
+  on<U extends keyof SubscriptionEvents<TOutput>>(
     event: U,
     listener: SubscriptionEvents<TOutput>[U],
-  ) => this;
+  ): this;
 
-  once: <U extends keyof SubscriptionEvents<TOutput>>(
+  once<U extends keyof SubscriptionEvents<TOutput>>(
     event: U,
     listener: SubscriptionEvents<TOutput>[U],
-  ) => this;
+  ): this;
 
-  emit: <U extends keyof SubscriptionEvents<TOutput>>(
+  emit<U extends keyof SubscriptionEvents<TOutput>>(
     event: U,
     ...args: Parameters<SubscriptionEvents<TOutput>[U]>
-  ) => boolean;
+  ): boolean;
 }
+/* eslint-enable @typescript-eslint/method-signature-style */
+
 class CustomEventEmitter<TOutput>
   extends EventEmitter
   implements CustomEventEmitter<TOutput> {}
