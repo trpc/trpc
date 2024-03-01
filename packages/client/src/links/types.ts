@@ -37,6 +37,7 @@ export type Operation<TInput = unknown> = {
 };
 
 interface HeadersInitEsque {
+  // eslint-disable-next-line @typescript-eslint/method-signature-style
   [Symbol.iterator](): IterableIterator<[string, string]>;
 }
 
