@@ -1,6 +1,7 @@
 import type { Observable, Observer } from '@trpc/server/observable';
 import type {
   InferrableClientTypes,
+  Overwrite,
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -95,7 +96,7 @@ export type OperationResultObserver<
  */
 export type OperationLink<
   TInferrable extends InferrableClientTypes,
-  TDecoration extends Partial<TRPCLinkDecoration> = object,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
 > = (opts: {
   op: Operation<TDecoration>;
   next: (op: Operation) => OperationResultObservable<TInferrable>;
@@ -120,13 +121,14 @@ export type TRPCLinkDecoration = {
 
 export type TRPCLinkDecoratorObject<
   TDecoration extends Partial<TRPCLinkDecoration>,
-> = TDecoration;
+> = Overwrite<TRPCLinkDecoration, TDecoration>;
+
 /**
  * @public
  */
 export type TRPCLink<
   TInferrable extends InferrableClientTypes,
-  TDecoration extends Partial<TRPCLinkDecoration> = object,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
 > = (
   opts: TRPCClientRuntime & Partial<TDecoration['runtime']>,
 ) => OperationLink<TInferrable, TDecoration>;

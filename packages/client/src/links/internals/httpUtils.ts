@@ -1,4 +1,5 @@
 import type {
+  AnyClientTypes,
   AnyRootTypes,
   CombinedDataTransformer,
   ProcedureType,
@@ -23,7 +24,7 @@ import type { HTTPHeaders, PromiseAndCancel } from '../types';
  * @internal
  */
 export type HTTPLinkBaseOptions<
-  TRoot extends Pick<AnyRootTypes, 'transformer'>,
+  TRoot extends Pick<AnyClientTypes, 'transformer'>,
 > = {
   url: string | URL;
   /**
