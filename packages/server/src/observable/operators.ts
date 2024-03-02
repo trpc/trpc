@@ -10,23 +10,21 @@ export function map<TValueBefore, TError, TValueAfter>(
   project: (value: TValueBefore, index: number) => TValueAfter,
 ): OperatorFunction<TValueBefore, TError, TValueAfter, TError> {
   return (originalObserver) => {
-    return {
-      subscribe(observer) {
-        let index = 0;
-        const subscription = originalObserver.subscribe({
-          next(value) {
-            observer.next?.(project(value, index++));
-          },
-          error(error) {
-            observer.error?.(error);
-          },
-          complete() {
-            observer.complete?.();
-          },
-        });
-        return subscription;
-      },
-    };
+    return observable((sub) => {
+      let index = 0;
+      const subscription = originalObserver.subscribe({
+        next(value) {
+          sub.next(project(value, index++));
+        },
+        error(error) {
+          sub.error(error);
+        },
+        complete() {
+          sub.complete();
+        },
+      });
+      return subscription;
+    });
   };
 }
 
@@ -71,26 +69,24 @@ export function share<TValue, TError>(
       }
     }
 
-    return {
-      subscribe(observer) {
-        refCount++;
+    return observable((sub) => {
+      refCount++;
 
-        observers.push(observer);
-        startIfNeeded();
-        return {
-          unsubscribe() {
-            refCount--;
-            resetIfNeeded();
+      observers.push(sub);
+      startIfNeeded();
+      return {
+        unsubscribe() {
+          refCount--;
+          resetIfNeeded();
 
-            const index = observers.findIndex((v) => v === observer);
+          const index = observers.findIndex((v) => v === sub);
 
-            if (index > -1) {
-              observers.splice(index, 1);
-            }
-          },
-        };
-      },
-    };
+          if (index > -1) {
+            observers.splice(index, 1);
+          }
+        },
+      };
+    });
   };
 }
 
