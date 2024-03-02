@@ -44,42 +44,39 @@ export type CreateWSSContextFn<TRouter extends AnyRouter> = (
   opts: CreateWSSContextFnOptions,
 ) => MaybePromise<inferRouterContext<TRouter>>;
 
+export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
+  BaseHandlerOptions<TRouter, IncomingMessage> &
+    (object extends inferRouterContext<TRouter>
+      ? {
+          /**
+           * @link https://trpc.io/docs/v11/context
+           **/
+          createContext?: CreateWSSContextFn<TRouter>;
+        }
+      : {
+          /**
+           * @link https://trpc.io/docs/v11/context
+           **/
+          createContext: CreateWSSContextFn<TRouter>;
+        });
+
 /**
  * Web socket server handler
  */
-export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
-  TRouter,
-  IncomingMessage
-> &
-  (object extends inferRouterContext<TRouter>
-    ? {
-        /**
-         * @link https://trpc.io/docs/v11/context
-         **/
-        createContext?: CreateWSSContextFn<TRouter>;
-      }
-    : {
-        /**
-         * @link https://trpc.io/docs/v11/context
-         **/
-        createContext: CreateWSSContextFn<TRouter>;
-      }) & {
+export type WSSHandlerOptions<TRouter extends AnyRouter> =
+  WSConnectionHandlerOptions<TRouter> & {
     wss: ws.WebSocketServer;
     process?: NodeJS.Process;
     prefix?: string;
   };
 
-export function applyWSSHandler<TRouter extends AnyRouter>(
-  opts: WSSHandlerOptions<TRouter>,
+export function getWSConnectionHandler<TRouter extends AnyRouter>(
+  opts: WSConnectionHandlerOptions<TRouter>,
 ) {
-  const { wss, createContext, router, prefix } = opts;
-
+  const { createContext, router } = opts;
   const { transformer } = router._def._config;
-  wss.on('connection', async (client, req) => {
-    if (prefix && !req.url?.startsWith(prefix)) {
-      return;
-    }
 
+  return async (client: ws.WebSocket, req: IncomingMessage) => {
     const clientSubscriptions = new Map<number | string, Unsubscribable>();
 
     function respond(untransformedJSON: TRPCResponseMessage) {
@@ -322,6 +319,21 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       }
     }
     await createContextAsync();
+  };
+}
+
+export function applyWSSHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter>,
+) {
+  const { wss, prefix } = opts;
+
+  const onConnection = getWSConnectionHandler(opts);
+  wss.on('connection', async (client, req) => {
+    if (prefix && !req.url?.startsWith(prefix)) {
+      return;
+    }
+
+    await onConnection(client, req);
   });
 
   return {
