@@ -328,12 +328,12 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
   const { wss, prefix } = opts;
 
   const onConnection = getWSConnectionHandler(opts);
-  wss.on('connection', (client, req) => {
+  wss.on('connection', async (client, req) => {
     if (prefix && !req.url?.startsWith(prefix)) {
       return;
     }
 
-    onConnection(client, req);
+    await onConnection(client, req);
   });
 
   return {
