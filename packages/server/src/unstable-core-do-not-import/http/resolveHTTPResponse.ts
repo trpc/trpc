@@ -1,18 +1,18 @@
-import { getErrorShape } from '../error/getErrorShape';
-import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
-import type { ProcedureType } from '../procedure';
+import { getErrorShape } from '../error/getErrorShape.ts';
+import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError.ts';
+import type { ProcedureType } from '../procedure.ts';
 import type {
   AnyRouter,
   inferRouterContext,
   inferRouterError,
-} from '../router';
-import { callProcedure } from '../router';
-import type { TRPCResponse } from '../rpc';
-import { transformTRPCResponse } from '../transformer';
-import type { Maybe } from '../types';
-import type { BaseContentTypeHandler } from './contentType';
-import { getJsonContentTypeInputs } from './contentType';
-import { getHTTPStatusCode } from './getHTTPStatusCode';
+} from '../router.ts';
+import { callProcedure } from '../router.ts';
+import type { TRPCResponse } from '../rpc/index.ts';
+import { transformTRPCResponse } from '../transformer.ts';
+import type { Maybe } from '../types.ts';
+import type { BaseContentTypeHandler } from './contentType.ts';
+import { getJsonContentTypeInputs } from './contentType.ts';
+import { getHTTPStatusCode } from './getHTTPStatusCode.ts';
 import type {
   HTTPBaseHandlerOptions,
   HTTPHeaders,

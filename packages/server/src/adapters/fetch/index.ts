@@ -1,2 +1,2 @@
-export * from './fetchRequestHandler';
-export * from './types';
+export * from './fetchRequestHandler.ts';
+export * from './types.ts';

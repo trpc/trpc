@@ -1,13 +1,13 @@
-import type { Observable } from '../observable';
-import { createRecursiveProxy } from './createProxy';
-import { defaultFormatter } from './error/formatter';
-import { TRPCError } from './error/TRPCError';
-import type { AnyProcedure, inferProcedureInput } from './procedure';
-import type { ProcedureCallOptions } from './procedureBuilder';
-import type { AnyRootTypes, RootConfig } from './rootConfig';
-import { defaultTransformer } from './transformer';
-import type { MaybePromise, ValueOf } from './types';
-import { mergeWithoutOverrides, omitPrototype } from './utils';
+import type { Observable } from '../observable/index.ts';
+import { createRecursiveProxy } from './createProxy.ts';
+import { defaultFormatter } from './error/formatter.ts';
+import { TRPCError } from './error/TRPCError.ts';
+import type { AnyProcedure, inferProcedureInput } from './procedure.ts';
+import type { ProcedureCallOptions } from './procedureBuilder.ts';
+import type { AnyRootTypes, RootConfig } from './rootConfig.ts';
+import { defaultTransformer } from './transformer.ts';
+import type { MaybePromise, ValueOf } from './types.ts';
+import { mergeWithoutOverrides, omitPrototype } from './utils.ts';
 
 export interface RouterRecord {
   [key: string]: AnyProcedure | RouterRecord;

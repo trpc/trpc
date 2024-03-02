@@ -3,7 +3,7 @@ import type {
   Observer,
   OperatorFunction,
   Unsubscribable,
-} from './types';
+} from './types.ts';
 
 export function map<TValueBefore, TError, TValueAfter>(
   project: (value: TValueBefore, index: number) => TValueAfter,

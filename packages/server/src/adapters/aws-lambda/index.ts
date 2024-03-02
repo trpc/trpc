@@ -15,20 +15,20 @@ import type {
   Context as APIGWContext,
 } from 'aws-lambda';
 // @trpc/server
-import type { AnyRouter } from '../../@trpc/server';
+import type { AnyRouter } from '../../@trpc/server/index.ts';
 // @trpc/server
-import { TRPCError } from '../../@trpc/server';
+import { TRPCError } from '../../@trpc/server/index.ts';
 import type {
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
-} from '../../@trpc/server/http';
-import { resolveHTTPResponse } from '../../@trpc/server/http';
+} from '../../@trpc/server/http.ts';
+import { resolveHTTPResponse } from '../../@trpc/server/http.ts';
 import type {
   APIGatewayEvent,
   APIGatewayResult,
   AWSLambdaOptions,
-} from './utils';
+} from './utils.ts';
 import {
   getHTTPMethod,
   getPath,
@@ -36,9 +36,9 @@ import {
   isPayloadV2,
   transformHeaders,
   UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
-} from './utils';
+} from './utils.ts';
 
-export * from './utils';
+export * from './utils.ts';
 
 function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   const query = new URLSearchParams();

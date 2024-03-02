@@ -1,6 +1,6 @@
-import { getJsonContentTypeInputs } from '../../../../@trpc/server/http';
-import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
-import { getPostBody } from './getPostBody';
+import { getJsonContentTypeInputs } from '../../../../@trpc/server/http.ts';
+import { createNodeHTTPContentTypeHandler } from '../../internals/contentType.ts';
+import { getPostBody } from './getPostBody.ts';
 
 export const nodeHTTPJSONContentTypeHandler = createNodeHTTPContentTypeHandler({
   isMatch(opts) {

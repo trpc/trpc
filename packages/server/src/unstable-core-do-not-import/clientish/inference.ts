@@ -1,12 +1,12 @@
-import type { inferObservableValue } from '../../observable';
-import type { AnyProcedure, inferProcedureInput } from '../procedure';
-import type { AnyRouter, RouterRecord } from '../router';
+import type { inferObservableValue } from '../../observable/index.ts';
+import type { AnyProcedure, inferProcedureInput } from '../procedure.ts';
+import type { AnyRouter, RouterRecord } from '../router.ts';
 import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
-} from './inferrable';
-import type { Serialize } from './serialize';
+} from './inferrable.ts';
+import type { Serialize } from './serialize.ts';
 
 /**
  * @internal

@@ -7,17 +7,17 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
-import type * as http from 'http';
+import type * as http from 'node:http';
 // @trpc/server
-import type { AnyRouter, inferRouterContext } from '../../@trpc/server';
+import type { AnyRouter, inferRouterContext } from '../../@trpc/server/index.ts';
 // @trpc/server/http
 import type {
   HTTPBaseHandlerOptions,
   TRPCRequestInfo,
-} from '../../@trpc/server/http';
+} from '../../@trpc/server/http.ts';
 // eslint-disable-next-line no-restricted-imports
-import type { MaybePromise } from '../../unstable-core-do-not-import';
-import type { NodeHTTPContentTypeHandler } from './internals/contentType';
+import type { MaybePromise } from '../../unstable-core-do-not-import.ts';
+import type { NodeHTTPContentTypeHandler } from './internals/contentType.ts';
 
 interface ParsedQs {
   [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;

@@ -9,14 +9,14 @@
  */
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 // @trpc/server
-import type { AnyRouter } from '../@trpc/server';
+import type { AnyRouter } from '../@trpc/server/index.ts';
 // @trpc/server
-import { getErrorShape, TRPCError } from '../@trpc/server';
+import { getErrorShape, TRPCError } from '../@trpc/server/index.ts';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
-} from './node-http';
-import { nodeHTTPRequestHandler } from './node-http';
+} from './node-http/index.ts';
+import { nodeHTTPRequestHandler } from './node-http/index.ts';
 
 export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
   NextApiRequest,

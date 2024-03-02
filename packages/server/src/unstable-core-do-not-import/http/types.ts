@@ -1,12 +1,12 @@
-import type { TRPCError } from '../error/TRPCError';
-import type { ProcedureType } from '../procedure';
+import type { TRPCError } from '../error/TRPCError.ts';
+import type { ProcedureType } from '../procedure.ts';
 import type {
   AnyRouter,
   inferRouterContext,
   inferRouterError,
-} from '../router';
-import type { TRPCResponse } from '../rpc';
-import type { Dict } from '../types';
+} from '../router.ts';
+import type { TRPCResponse } from '../rpc/index.ts';
+import type { Dict } from '../types.ts';
 
 export type HTTPHeaders = Dict<string[] | string>;
 

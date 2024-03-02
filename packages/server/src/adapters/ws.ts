@@ -1,27 +1,27 @@
-import type { IncomingMessage } from 'http';
+import type { IncomingMessage } from 'node:http';
 import type ws from 'ws';
-import type { AnyRouter, inferRouterContext } from '../@trpc/server';
+import type { AnyRouter, inferRouterContext } from '../@trpc/server/index.ts';
 import {
   callProcedure,
   getErrorShape,
   getTRPCErrorFromUnknown,
   transformTRPCResponse,
   TRPCError,
-} from '../@trpc/server';
-import type { BaseHandlerOptions } from '../@trpc/server/http';
-import { parseTRPCMessage } from '../@trpc/server/rpc';
+} from '../@trpc/server/index.ts';
+import type { BaseHandlerOptions } from '../@trpc/server/http.ts';
+import { parseTRPCMessage } from '../@trpc/server/rpc.ts';
 // @trpc/server/rpc
 import type {
   JSONRPC2,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
-} from '../@trpc/server/rpc';
-import { isObservable } from '../observable';
-import type { Unsubscribable } from '../observable';
+} from '../@trpc/server/rpc.ts';
+import { isObservable } from '../observable/index.ts';
+import type { Unsubscribable } from '../observable/index.ts';
 // eslint-disable-next-line no-restricted-imports
-import type { MaybePromise } from '../unstable-core-do-not-import';
-import type { NodeHTTPCreateContextFnOptions } from './node-http';
+import type { MaybePromise } from '../unstable-core-do-not-import.ts';
+import type { NodeHTTPCreateContextFnOptions } from './node-http/index.ts';
 
 /**
  * Importing ws causes a build error

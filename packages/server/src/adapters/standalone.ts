@@ -8,15 +8,15 @@
  * ```
  */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import http from 'http';
+import http from 'node:http';
 // @trpc/server
-import type { AnyRouter } from '../@trpc/server';
-import { toURL } from '../@trpc/server/http';
+import type { AnyRouter } from '../@trpc/server/index.ts';
+import { toURL } from '../@trpc/server/http.ts';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
-} from './node-http';
-import { nodeHTTPRequestHandler } from './node-http';
+} from './node-http/index.ts';
+import { nodeHTTPRequestHandler } from './node-http/index.ts';
 
 export type CreateHTTPHandlerOptions<TRouter extends AnyRouter> =
   NodeHTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;

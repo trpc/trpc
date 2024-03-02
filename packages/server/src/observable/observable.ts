@@ -4,7 +4,7 @@ import type {
   OperatorFunction,
   TeardownLogic,
   UnaryFunction,
-} from './types';
+} from './types.ts';
 
 function identity<TType>(x: TType): TType {
   return x;

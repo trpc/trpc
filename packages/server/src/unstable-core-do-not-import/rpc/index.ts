@@ -1,5 +1,5 @@
-export { TRPC_ERROR_CODES_BY_KEY, TRPC_ERROR_CODES_BY_NUMBER } from './codes';
-export type { TRPC_ERROR_CODE_KEY, TRPC_ERROR_CODE_NUMBER } from './codes';
+export { TRPC_ERROR_CODES_BY_KEY, TRPC_ERROR_CODES_BY_NUMBER } from './codes.ts';
+export type { TRPC_ERROR_CODE_KEY, TRPC_ERROR_CODE_NUMBER } from './codes.ts';
 export type {
   JSONRPC2,
   TRPCClientIncomingMessage,
@@ -17,5 +17,5 @@ export type {
   TRPCResultMessage,
   TRPCSubscriptionStopNotification,
   TRPCSuccessResponse,
-} from './envelopes';
-export { parseTRPCMessage } from './parseTRPCMessage';
+} from './envelopes.ts';
+export { parseTRPCMessage } from './parseTRPCMessage.ts';

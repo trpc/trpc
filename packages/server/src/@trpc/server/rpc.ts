@@ -18,9 +18,9 @@ export type {
   TRPCSuccessResponse,
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
-} from '../../unstable-core-do-not-import';
+} from '../../unstable-core-do-not-import.ts';
 export {
   TRPC_ERROR_CODES_BY_KEY,
   TRPC_ERROR_CODES_BY_NUMBER,
   parseTRPCMessage,
-} from '../../unstable-core-do-not-import';
+} from '../../unstable-core-do-not-import.ts';

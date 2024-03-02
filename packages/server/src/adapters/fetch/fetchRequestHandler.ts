@@ -9,19 +9,19 @@
  */
 // @trpc/server
 
-import type { AnyRouter } from '../../@trpc/server';
+import type { AnyRouter } from '../../@trpc/server/index.ts';
 import type {
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
   ResponseChunk,
-} from '../../@trpc/server/http';
+} from '../../@trpc/server/http.ts';
 import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
   toURL,
-} from '../../@trpc/server/http';
-import type { FetchHandlerOptions } from './types';
+} from '../../@trpc/server/http.ts';
+import type { FetchHandlerOptions } from './types.ts';
 
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
   FetchHandlerOptions<TRouter> & {

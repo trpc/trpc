@@ -1,9 +1,9 @@
-import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
-import type { ProcedureType } from '../procedure';
-import type { AnyRootTypes, RootConfig } from '../rootConfig';
-import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import type { DefaultErrorShape } from './formatter';
-import type { TRPCError } from './TRPCError';
+import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode.ts';
+import type { ProcedureType } from '../procedure.ts';
+import type { AnyRootTypes, RootConfig } from '../rootConfig.ts';
+import { TRPC_ERROR_CODES_BY_KEY } from '../rpc/index.ts';
+import type { DefaultErrorShape } from './formatter.ts';
+import type { TRPCError } from './TRPCError.ts';
 
 /**
  * @internal

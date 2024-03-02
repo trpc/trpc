@@ -1,7 +1,7 @@
-import { procedureTypes, type ProcedureType } from '../procedure';
-import type { CombinedDataTransformer } from '../transformer';
-import { isObject } from '../utils';
-import type { TRPCClientOutgoingMessage } from './envelopes';
+import { procedureTypes, type ProcedureType } from '../procedure.ts';
+import type { CombinedDataTransformer } from '../transformer.ts';
+import { isObject } from '../utils.ts';
+import type { TRPCClientOutgoingMessage } from './envelopes.ts';
 
 /* istanbul ignore next -- @preserve */
 function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {

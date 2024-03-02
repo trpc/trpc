@@ -8,12 +8,12 @@
  * ```
  */
 import type * as express from 'express';
-import type { AnyRouter } from '../@trpc/server';
+import type { AnyRouter } from '../@trpc/server/index.ts';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
-} from './node-http';
-import { nodeHTTPRequestHandler } from './node-http';
+} from './node-http/index.ts';
+import { nodeHTTPRequestHandler } from './node-http/index.ts';
 
 export type CreateExpressContextOptions = NodeHTTPCreateContextFnOptions<
   express.Request,

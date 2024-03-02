@@ -1,4 +1,4 @@
-import type { ValueOf } from '../types';
+import type { ValueOf } from '../types.ts';
 
 // reference: https://www.jsonrpc.org/specification
 

@@ -8,17 +8,17 @@
 /**
  * @link https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
  */
-import * as fs from 'fs/promises';
+import * as fs from 'node:fs/promises';
 import { Readable } from 'node:stream';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore the type definitions for this package are borked
 import { streamMultipart } from '@web3-storage/multipart-parser';
 // @trpc/server
-import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
-import type { NodeHTTPRequest } from '../../types';
-import { NodeOnDiskFile } from './fileUploadHandler';
-import type { UploadHandler, UploadHandlerPart } from './uploadHandler';
-import { MaxBodySizeExceededError } from './uploadHandler';
+import { createNodeHTTPContentTypeHandler } from '../../internals/contentType.ts';
+import type { NodeHTTPRequest } from '../../types.ts';
+import { NodeOnDiskFile } from './fileUploadHandler.ts';
+import type { UploadHandler, UploadHandlerPart } from './uploadHandler.ts';
+import { MaxBodySizeExceededError } from './uploadHandler.ts';
 
 const utfTextDecoder = new TextDecoder('utf-8');
 
@@ -149,14 +149,14 @@ export const nodeHTTPFormDataContentTypeHandler =
 export {
   NodeOnDiskFile as experimental_NodeOnDiskFile,
   createFileUploadHandler as experimental_createFileUploadHandler,
-} from './fileUploadHandler';
-export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } from './memoryUploadHandler';
+} from './fileUploadHandler.ts';
+export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } from './memoryUploadHandler.ts';
 export {
   MaxBodySizeExceededError,
   MaxPartSizeExceededError,
   composeUploadHandlers as experimental_composeUploadHandlers,
   type UploadHandler,
-} from './uploadHandler';
+} from './uploadHandler.ts';
 export {
   isMultipartFormDataRequest as experimental_isMultipartFormDataRequest,
   parseMultipartFormData as experimental_parseMultipartFormData,

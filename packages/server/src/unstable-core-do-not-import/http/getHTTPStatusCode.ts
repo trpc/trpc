@@ -1,7 +1,7 @@
-import type { DefaultErrorData } from '../error/formatter';
-import type { TRPCError } from '../error/TRPCError';
-import type { TRPC_ERROR_CODES_BY_KEY, TRPCResponse } from '../rpc';
-import { TRPC_ERROR_CODES_BY_NUMBER } from '../rpc';
+import type { DefaultErrorData } from '../error/formatter.ts';
+import type { TRPCError } from '../error/TRPCError.ts';
+import type { TRPC_ERROR_CODES_BY_KEY, TRPCResponse } from '../rpc/index.ts';
+import { TRPC_ERROR_CODES_BY_NUMBER } from '../rpc/index.ts';
 
 const JSONRPC2_TO_HTTP_CODE: Record<
   keyof typeof TRPC_ERROR_CODES_BY_KEY,

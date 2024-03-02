@@ -1,8 +1,8 @@
 export {
   getHTTPStatusCode,
   getHTTPStatusCodeFromError,
-} from './getHTTPStatusCode';
-export { resolveHTTPResponse } from './resolveHTTPResponse';
+} from './getHTTPStatusCode.ts';
+export { resolveHTTPResponse } from './resolveHTTPResponse.ts';
 export type {
   BaseHandlerOptions,
   HTTPBaseHandlerOptions,
@@ -16,10 +16,10 @@ export type {
   ResponseMeta,
   ResponseMetaFn,
   TRPCRequestInfo,
-} from './types';
+} from './types.ts';
 
-export { getBatchStreamFormatter } from './batchStreamFormatter';
-export type { BaseContentTypeHandler, BodyResult } from './contentType';
-export { getJsonContentTypeInputs } from './contentType';
+export { getBatchStreamFormatter } from './batchStreamFormatter.ts';
+export type { BaseContentTypeHandler, BodyResult } from './contentType.ts';
+export { getJsonContentTypeInputs } from './contentType.ts';
 
-export { toURL } from './toURL';
+export { toURL } from './toURL.ts';

@@ -9,24 +9,24 @@
  */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 // @trpc/server
-import type { AnyRouter } from '../../@trpc/server';
+import type { AnyRouter } from '../../@trpc/server/index.ts';
 import type {
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
   ResponseChunk,
-} from '../../@trpc/server/http';
+} from '../../@trpc/server/http.ts';
 import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
-} from '../../@trpc/server/http';
-import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
-import type { NodeHTTPContentTypeHandler } from './internals/contentType';
+} from '../../@trpc/server/http.ts';
+import { nodeHTTPJSONContentTypeHandler } from './content-type/json/index.ts';
+import type { NodeHTTPContentTypeHandler } from './internals/contentType.ts';
 import type {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
-} from './types';
+} from './types.ts';
 
 const defaultJSONContentTypeHandler = nodeHTTPJSONContentTypeHandler();
 

@@ -1,18 +1,18 @@
-import type { inferObservableValue } from '../observable';
-import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
+import type { inferObservableValue } from '../observable/index.ts';
+import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError.ts';
 import type {
   AnyMiddlewareFunction,
   MiddlewareBuilder,
   MiddlewareFunction,
   MiddlewareResult,
-} from './middleware';
+} from './middleware.ts';
 import {
   createInputMiddleware,
   createOutputMiddleware,
   middlewareMarker,
-} from './middleware';
-import type { inferParser, Parser } from './parser';
-import { getParseFn } from './parser';
+} from './middleware.ts';
+import type { inferParser, Parser } from './parser.ts';
+import { getParseFn } from './parser.ts';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -22,15 +22,15 @@ import type {
   ProcedureType,
   QueryProcedure,
   SubscriptionProcedure,
-} from './procedure';
+} from './procedure.ts';
 import type {
   GetRawInputFn,
   MaybePromise,
   Overwrite,
   Simplify,
   TypeError,
-} from './types';
-import { mergeWithoutOverrides } from './utils';
+} from './types.ts';
+import { mergeWithoutOverrides } from './utils.ts';
 
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith

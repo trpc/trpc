@@ -1,1 +1,1 @@
-export * from './@trpc/server/rpc';
+export * from './@trpc/server/rpc.ts';

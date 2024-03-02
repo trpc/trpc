@@ -1,21 +1,21 @@
-import { createFlatProxy } from './createProxy';
+import { createFlatProxy } from './createProxy.ts';
 import {
   defaultFormatter,
   type DefaultErrorShape,
   type ErrorFormatter,
-} from './error/formatter';
-import { createMiddlewareFactory } from './middleware';
-import { createBuilder } from './procedureBuilder';
-import type { CreateRootTypes } from './rootConfig';
-import { isServerDefault, type RootConfig } from './rootConfig';
+} from './error/formatter.ts';
+import { createMiddlewareFactory } from './middleware.ts';
+import { createBuilder } from './procedureBuilder.ts';
+import type { CreateRootTypes } from './rootConfig.ts';
+import { isServerDefault, type RootConfig } from './rootConfig.ts';
 import {
   createCallerFactory,
   createRouterFactory,
   mergeRouters,
-} from './router';
-import type { DataTransformerOptions } from './transformer';
-import { defaultTransformer, getDataTransformer } from './transformer';
-import type { Unwrap, ValidateShape } from './types';
+} from './router.ts';
+import type { DataTransformerOptions } from './transformer.ts';
+import { defaultTransformer, getDataTransformer } from './transformer.ts';
+import type { Unwrap, ValidateShape } from './types.ts';
 
 type inferErrorFormatterShape<TType> = TType extends ErrorFormatter<
   any,

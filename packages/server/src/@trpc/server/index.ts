@@ -32,7 +32,7 @@ export {
   type RouterRecord as TRPCRouterRecord,
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
   type ProcedureOptions as TRPCProcedureOptions,
-} from '../../unstable-core-do-not-import';
+} from '../../unstable-core-do-not-import.ts';
 
 export type {
   /**
@@ -78,7 +78,7 @@ export type {
    * @deprecated use `AnyTRPCSubscriptionProcedure` instead
    */
   AnySubscriptionProcedure,
-} from '../../unstable-core-do-not-import';
+} from '../../unstable-core-do-not-import.ts';
 
 export {
   /**
@@ -90,7 +90,7 @@ export {
    * @deprecated use `callTRPCProcedure` instead
    */
   callProcedure,
-} from '../../unstable-core-do-not-import';
+} from '../../unstable-core-do-not-import.ts';
 
 /**
  * @deprecated

@@ -1,4 +1,4 @@
-import type { AnyRootTypes } from '../rootConfig';
+import type { AnyRootTypes } from '../rootConfig.ts';
 
 export type AnyClientTypes = Pick<AnyRootTypes, 'errorShape' | 'transformer'>;
 

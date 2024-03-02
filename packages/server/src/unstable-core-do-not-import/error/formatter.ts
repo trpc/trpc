@@ -1,10 +1,10 @@
-import type { ProcedureType } from '../procedure';
+import type { ProcedureType } from '../procedure.ts';
 import type {
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
   TRPCErrorShape,
-} from '../rpc';
-import type { TRPCError } from './TRPCError';
+} from '../rpc/index.ts';
+import type { TRPCError } from './TRPCError.ts';
 
 /**
  * @internal
