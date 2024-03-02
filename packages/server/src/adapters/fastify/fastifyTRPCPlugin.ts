@@ -14,7 +14,7 @@ import type { FastifyHandlerOptions } from '.';
 import type { AnyRouter } from '../../@trpc/server';
 import type { NodeHTTPCreateContextFnOptions } from '../node-http';
 import type { WSSHandlerOptions } from '../ws';
-import { applyWSSHandler } from '../ws';
+import { getWSConnectionHandler } from '../ws';
 import { fastifyRequestHandler } from './fastifyRequestHandler';
 
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
@@ -43,7 +43,6 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   );
 
   let prefix = opts.prefix ?? '';
-  const websocketPrefix = prefix;
 
   // https://github.com/fastify/fastify-plugin/blob/fe079bef6557a83794bf437e14b9b9edb8a74104/plugin.js#L11
   // @ts-expect-error property 'default' does not exists on type ...
@@ -57,13 +56,13 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   });
 
   if (opts.useWSS) {
-    applyWSSHandler<TRouter>({
+    const onConnection = getWSConnectionHandler<TRouter>({
       ...(opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>),
-      prefix: websocketPrefix,
-      wss: fastify.websocketServer,
     });
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    fastify.get(prefix ?? '/', { websocket: true }, () => {});
+
+    fastify.get(prefix ?? '/', { websocket: true }, ({ socket }, req) =>
+      onConnection(socket, req.raw),
+    );
   }
 
   done();
