@@ -10,6 +10,7 @@ import type {
   ProcedureOptions,
   ProcedureType,
   RouterRecord,
+  Simplify,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createFlatProxy,
@@ -47,7 +48,7 @@ export type Resolver<
   TDecoration extends TRPCLinkDecoration,
 > = (
   input: TDef['input'],
-  opts?: ProcedureOptions & Partial<TDecoration[TType]>,
+  opts?: Simplify<ProcedureOptions & Partial<TDecoration[TType]>>,
 ) => Promise<TDef['output']>;
 
 type SubscriptionResolver<
@@ -58,8 +59,7 @@ type SubscriptionResolver<
   opts?: Partial<
     TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
   > &
-    ProcedureOptions &
-    Partial<TDecoration['subscription']>,
+    Simplify<ProcedureOptions & Partial<TDecoration['subscription']>>,
 ) => Unsubscribable;
 
 type DecorateProcedure<
