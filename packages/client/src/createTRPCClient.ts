@@ -7,7 +7,6 @@ import type {
   inferProcedureInput,
   inferTransformedProcedureOutput,
   IntersectionError,
-  ProcedureOptions,
   ProcedureType,
   RouterRecord,
   Simplify,
@@ -19,6 +18,7 @@ import {
 import type { TRPCDecoratedClientOptions } from './createTRPCClientOptions';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import type {
+  TRPCRequestOptions,
   TRPCSubscriptionObserver,
   UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
@@ -48,7 +48,7 @@ export type Resolver<
   TDecoration extends TRPCLinkDecoration,
 > = (
   input: TDef['input'],
-  opts?: Simplify<ProcedureOptions & Partial<TDecoration[TType]>>,
+  opts?: Simplify<TRPCRequestOptions & Partial<TDecoration[TType]>>,
 ) => Promise<TDef['output']>;
 
 type SubscriptionResolver<
@@ -59,7 +59,7 @@ type SubscriptionResolver<
   opts?: Partial<
     TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
   > &
-    Simplify<ProcedureOptions & Partial<TDecoration['subscription']>>,
+    Simplify<TRPCRequestOptions & Partial<TDecoration['subscription']>>,
 ) => Unsubscribable;
 
 type DecorateProcedure<
