@@ -6,10 +6,6 @@ import type {
   UnaryFunction,
 } from './types';
 
-function identity<TType>(x: TType): TType {
-  return x;
-}
-
 /** @public */
 export type inferObservableValue<TObservable> = TObservable extends Observable<
   infer TValue,
@@ -83,30 +79,14 @@ export function observable<TValue, TError = unknown>(
     pipe(
       ...operations: OperatorFunction<any, any, any, any>[]
     ): Observable<any, any> {
-      return pipeFromArray(operations)(self) as any;
+      return operations.reduce(pipeReducer, self);
     },
   };
   return self;
 }
 
-function pipeFromArray<TSource, TReturn>(
-  fns: UnaryFunction<TSource, TReturn>[],
-): UnaryFunction<TSource, TReturn> {
-  if (fns.length === 0) {
-    return identity as UnaryFunction<any, any>;
-  }
-
-  if (fns.length === 1) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return fns[0]!;
-  }
-
-  return function piped(input: TSource): TReturn {
-    return fns.reduce(
-      (prev: any, fn: UnaryFunction<TSource, TReturn>) => fn(prev),
-      input as any,
-    );
-  };
+function pipeReducer(prev: any, fn: UnaryFunction<any, any>) {
+  return fn(prev);
 }
 
 class ObservableAbortError extends Error {
