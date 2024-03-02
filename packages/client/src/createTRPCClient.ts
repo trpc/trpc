@@ -9,7 +9,6 @@ import type {
   IntersectionError,
   ProcedureType,
   RouterRecord,
-  Simplify,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createFlatProxy,
@@ -18,12 +17,12 @@ import {
 import type { TRPCDecoratedClientOptions } from './createTRPCClientOptions';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import type {
-  TRPCRequestOptions,
   TRPCSubscriptionObserver,
   UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
 import type { TRPCLinkDecoration } from './links';
+import type { TRPCRequestOptions } from './links/types';
 import type { TRPCClientError } from './TRPCClientError';
 
 /**
@@ -48,7 +47,7 @@ export type Resolver<
   TDecoration extends TRPCLinkDecoration,
 > = (
   input: TDef['input'],
-  opts?: Simplify<TRPCRequestOptions & Partial<TDecoration[TType]>>,
+  opts?: Partial<TRPCRequestOptions<TDecoration, TType>>,
 ) => Promise<TDef['output']>;
 
 type SubscriptionResolver<
@@ -57,9 +56,9 @@ type SubscriptionResolver<
 > = (
   input: TDef['input'],
   opts?: Partial<
-    TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
-  > &
-    Simplify<TRPCRequestOptions & Partial<TDecoration['subscription']>>,
+    TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>> &
+      TDecoration['subscription']
+  >,
 ) => Unsubscribable;
 
 type DecorateProcedure<

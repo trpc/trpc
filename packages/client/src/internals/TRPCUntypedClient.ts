@@ -17,16 +17,9 @@ import type {
   TRPCClientRuntime,
   TRPCLink,
   TRPCLinkDecoration,
+  TRPCRequestOptions,
 } from '../links/types';
 import { TRPCClientError } from '../TRPCClientError';
-
-export type TRPCRequestOptions = {
-  /**
-   * Pass additional context to links
-   */
-  context?: OperationContext;
-  signal?: AbortSignal;
-};
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
   onStarted: () => void;
@@ -130,7 +123,11 @@ export class TRPCUntypedClient<
       input,
     });
   }
-  public mutation(path: string, input?: unknown, opts?: TRPCRequestOptions) {
+  public mutation(
+    path: string,
+    input?: unknown,
+    opts?: TRPCRequestOptions<TDecoration, 'mutation'>,
+  ) {
     return this.requestAsPromise<unknown, unknown>({
       ...opts,
       type: 'mutation',
@@ -142,9 +139,9 @@ export class TRPCUntypedClient<
     path: string,
     input: unknown,
     opts: Partial<
-      TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>
-    > &
-      TRPCRequestOptions,
+      TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>> &
+        TRPCRequestOptions<TDecoration, 'subscription'>
+    >,
   ): Unsubscribable {
     const observable$ = this.$request({
       type: 'subscription',

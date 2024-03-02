@@ -59,17 +59,17 @@ export function cacheLink<TRouter extends AnyTRPCRouter>(): TRPCLink<
     runtime.cache = cache;
     return (opts) => {
       const { op } = opts;
+      if (op.type !== 'query') {
+        return opts.next(opts.op);
+      }
       const normalized = normalize({
         input: opts.op.input,
         path: opts.op.path,
         type: opts.op.type,
       });
 
-      if (op.type !== 'query') {
-        return opts.next(opts.op);
-      }
       op.ignoreCache;
-      //  ^?
+      //   ^?
 
       let cached = cache[normalized];
       if (!cached) {

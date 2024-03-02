@@ -2,6 +2,7 @@ import type { Observable, Observer } from '@trpc/server/observable';
 import type {
   InferrableClientTypes,
   Overwrite,
+  ProcedureType,
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -36,18 +37,16 @@ export type Operation<
   id: number;
   input: TInput;
   path: string;
-  context: OperationContext;
-  $decoration?: TDecoration;
 } & (
   | ({
       type: 'query';
-    } & Partial<TDecoration['query']>)
+    } & TRPCRequestOptions<TDecoration, 'query'>)
   | ({
       type: 'mutation';
-    } & Partial<TDecoration['mutation']>)
+    } & TRPCRequestOptions<TDecoration, 'mutation'>)
   | ({
       type: 'subscription';
-    } & Partial<TDecoration['subscription']>)
+    } & TRPCRequestOptions<TDecoration, 'subscription'>)
 );
 
 interface HeadersInitEsque {
@@ -143,3 +142,14 @@ export type TRPCLink<
 > = (
   opts: TRPCClientRuntime & Partial<TDecoration['runtime']>,
 ) => OperationLink<TInferrable, TDecoration>;
+
+export type TRPCRequestOptions<
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
+  TType extends ProcedureType = ProcedureType,
+> = {
+  /**
+   * Pass additional context to links
+   */
+  context: OperationContext;
+  signal?: AbortSignal;
+} & Partial<TDecoration[TType]>;
