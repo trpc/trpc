@@ -23,7 +23,8 @@ import type {
 import type {
   AnyRouter,
   inferRouterContext,
-} from '../../@trpc/server/index.ts'; // import @trpc/server
+} from '../../@trpc/server/index.ts';
+// import @trpc/server
 
 // @trpc/server
 import { TRPCError } from '../../@trpc/server/index.ts';
