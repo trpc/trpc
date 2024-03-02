@@ -15,6 +15,7 @@ import {
   createFlatProxy,
   createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCDecoratedClientOptions } from './createTRPCClientOptions';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import type {
   TRPCSubscriptionObserver,
@@ -27,8 +28,10 @@ import type { TRPCClientError } from './TRPCClientError';
 /**
  * @public
  **/
-export type inferRouterClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
+export type inferRouterClient<
+  TRouter extends AnyRouter,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
+> = DecoratedProcedureRecord<TRouter, TRouter['_def']['record'], TDecoration>;
 
 type ResolverDef = {
   input: any;
@@ -74,10 +77,11 @@ type DecorateProcedure<
 type DecoratedProcedureRecord<
   TRouter extends AnyRouter,
   TRecord extends RouterRecord,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
-      ? DecoratedProcedureRecord<TRouter, $Value>
+      ? DecoratedProcedureRecord<TRouter, $Value, TDecoration>
       : $Value extends AnyProcedure
       ? DecorateProcedure<
           $Value['_def']['type'],
@@ -114,12 +118,14 @@ export const clientCallTypeToProcedureType = (
 /**
  * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
  */
-export type CreateTRPCClient<TRouter extends AnyRouter> =
-  inferRouterClient<TRouter> extends infer $Value
-    ? UntypedClientProperties & keyof $Value extends never
-      ? inferRouterClient<TRouter>
-      : IntersectionError<UntypedClientProperties & keyof $Value>
-    : never;
+export type CreateTRPCClient<
+  TRouter extends AnyRouter,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
+> = inferRouterClient<TRouter, TDecoration> extends infer $Value
+  ? UntypedClientProperties & keyof $Value extends never
+    ? inferRouterClient<TRouter, TDecoration>
+    : IntersectionError<UntypedClientProperties & keyof $Value>
+  : never;
 
 /**
  * @internal
@@ -148,9 +154,11 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 type FIXME = any;
 export function createTRPCClient<
   TRouter extends AnyRouter,
-  TDecoration extends Partial<TRPCLinkDecoration> = object,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
 >(
-  opts: CreateTRPCClientOptions<TRouter, TDecoration>,
+  opts:
+    | CreateTRPCClientOptions<TRouter>
+    | TRPCDecoratedClientOptions<TRouter, TDecoration>,
 ): CreateTRPCClient<TRouter> {
   const client = new TRPCUntypedClient(opts as FIXME);
   const proxy = createTRPCClientProxy<TRouter>(client);

@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type {
   CreateTRPCClient,
-  CreateTRPCClientOptionCallback,
-  CreateTRPCClientOptions,
+  TRPCDecoratedClientOptions,
   TRPCLinkDecoration,
 } from '@trpc/client';
 import { createTRPCClient, getUntypedClient } from '@trpc/client';
@@ -36,12 +35,19 @@ const normalize = (opts: {
 export function createReactClient<
   TRouter extends AnyTRPCRouter,
   TDecoration extends TRPCLinkDecoration,
->(getOptions: CreateTRPCClientOptionCallback<TRouter, TDecoration>) {
+>(getOptions: () => TRPCDecoratedClientOptions<TRouter, TDecoration>) {
+  type $Client = CreateTRPCClient<TRouter, TDecoration>;
   type Context = {
-    client: CreateTRPCClient<TRouter>;
+    client: $Client;
   };
   const Provider = React.createContext(null as unknown as Context);
   return {
+    /**
+     * @deprecated temporary hack to debug types
+     */
+    $types: {} as unknown as {
+      decoration: TDecoration;
+    },
     Provider: (props: { children: React.ReactNode }) => {
       const [client] = React.useState(() => {
         const options = getOptions();
@@ -128,7 +134,7 @@ export function createReactClient<
         }
 
         return tracked.promise;
-      }) as CreateTRPCClient<TRouter>;
+      }) as $Client;
     },
   };
 }

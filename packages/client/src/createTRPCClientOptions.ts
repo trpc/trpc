@@ -1,8 +1,8 @@
 import type {
   InferrableClientTypes,
   Simplify,
+  Unwrap,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import type { TRPCLink, TRPCLinkDecoration } from './links';
 
 const typesSymbol = Symbol('createTRPCClientOptions');
@@ -13,9 +13,16 @@ type UnionToIntersection<TUnion> = (
   ? I
   : never;
 
+/** @internal */
+type CreateTRPCClientOptionsTyped<
+  TRoot extends InferrableClientTypes,
+  TLinks extends TRPCLink<TRoot, any> = TRPCLink<TRoot, object>,
+> = {
+  links: TLinks[];
+};
 export function createTRPCClientOptions<TRoot extends InferrableClientTypes>() {
   return <$Links extends TRPCLink<TRoot, any>>(
-    callback: () => CreateTRPCClientOptions<TRoot, $Links>,
+    callback: () => CreateTRPCClientOptionsTyped<TRoot, $Links>,
   ) => {
     type $Declarations = $Links extends TRPCLink<TRoot, infer TDeclarations>
       ? TDeclarations
@@ -28,19 +35,23 @@ export function createTRPCClientOptions<TRoot extends InferrableClientTypes>() {
         : // eslint-disable-next-line @typescript-eslint/ban-types
           {};
     };
-    return callback as CreateTRPCClientOptionCallback<TRoot, $Merged>;
+    return callback as unknown as () => TRPCDecoratedClientOptions<
+      TRoot,
+      $Merged
+    >;
   };
 }
 
-export type CreateTRPCClientOptionCallback<
+export type TRPCDecoratedClientOptions<
   TRoot extends InferrableClientTypes,
-  TDecoration,
-> = (() => CreateTRPCClientOptions<TRoot, any>) & {
+  TDecoration extends TRPCLinkDecoration,
+> = {
+  links: TRPCLink<TRoot>[];
   [typesSymbol]: TDecoration;
 };
 
 export type inferTRPCClientOptionTypes<
-  TOptions extends {
-    [typesSymbol]: any;
-  },
-> = TOptions[typeof typesSymbol];
+  TOptions extends
+    | TRPCDecoratedClientOptions<any, any>
+    | (() => TRPCDecoratedClientOptions<any, any>),
+> = Unwrap<TOptions>[typeof typesSymbol];

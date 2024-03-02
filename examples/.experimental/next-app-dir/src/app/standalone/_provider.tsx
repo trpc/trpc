@@ -37,7 +37,7 @@ type $Decoration = inferTRPCClientOptionTypes<typeof getTrpcOptions>;
 type T = $Decoration['query'];
 
 export const standaloneClient = createReactClient(getTrpcOptions);
-
+standaloneClient.$types.decoration;
 export function Provider(props: { children: React.ReactNode }) {
   return (
     <standaloneClient.Provider>{props.children}</standaloneClient.Provider>

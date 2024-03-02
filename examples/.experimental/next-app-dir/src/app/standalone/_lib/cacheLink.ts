@@ -13,6 +13,18 @@ import type {
   ProcedureType,
 } from '@trpc/server/unstable-core-do-not-import';
 
+export const normalize = (opts: {
+  path: string[] | string;
+  input: unknown;
+  type: ProcedureType;
+}) => {
+  return JSON.stringify({
+    path: Array.isArray(opts.path) ? opts.path.join('.') : opts.path,
+    input: opts.input,
+    type: opts.type,
+  });
+};
+
 type CacheLinkDecorator = TRPCLinkDecoratorObject<{
   query: {
     /**
@@ -30,24 +42,13 @@ type CacheLinkDecorator = TRPCLinkDecoratorObject<{
   };
 }>;
 
-export const normalize = (opts: {
-  path: string[] | string;
-  input: unknown;
-  type: ProcedureType;
-}) => {
-  return JSON.stringify({
-    path: Array.isArray(opts.path) ? opts.path.join('.') : opts.path,
-    input: opts.input,
-    type: opts.type,
-  });
-};
 /**
  * @link https://trpc.io/docs/v11/client/links/cacheLink
  */
-export function cacheLink<TRouter extends AnyTRPCRouter>(
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  _opts: {} = {},
-): TRPCLink<TRouter, CacheLinkDecorator> {
+export function cacheLink<TRouter extends AnyTRPCRouter>(): TRPCLink<
+  TRouter,
+  CacheLinkDecorator
+> {
   // initialized config
   return (runtime) => {
     // initialized in app
