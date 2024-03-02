@@ -31,15 +31,24 @@ export interface OperationContext extends Record<string, unknown> {}
  */
 export type Operation<
   TInput = unknown,
-  TDecoration extends Partial<TRPCLinkDecoration> = object,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
 > = {
   id: number;
-  type: 'mutation' | 'query' | 'subscription';
   input: TInput;
   path: string;
   context: OperationContext;
   $decoration?: TDecoration;
-};
+} & (
+  | ({
+      type: 'query';
+    } & Partial<TDecoration['query']>)
+  | ({
+      type: 'mutation';
+    } & Partial<TDecoration['mutation']>)
+  | ({
+      type: 'subscription';
+    } & Partial<TDecoration['subscription']>)
+);
 
 interface HeadersInitEsque {
   [Symbol.iterator](): IterableIterator<[string, string]>;
@@ -98,8 +107,10 @@ export type OperationLink<
   TInferrable extends InferrableClientTypes,
   TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
 > = (opts: {
-  op: Operation<TDecoration>;
-  next: (op: Operation) => OperationResultObservable<TInferrable>;
+  op: Operation<TInferrable, TDecoration>;
+  next: (
+    op: Operation<unknown, TDecoration>,
+  ) => OperationResultObservable<TInferrable>;
 }) => OperationResultObservable<TInferrable>;
 
 /**

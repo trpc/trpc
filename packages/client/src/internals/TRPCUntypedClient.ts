@@ -8,12 +8,14 @@ import type {
   InferrableClientTypes,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCDecoratedClientOptions } from '../createTRPCClientOptions';
 import { createChain } from '../links/internals/createChain';
 import type {
   OperationContext,
   OperationLink,
   TRPCClientRuntime,
   TRPCLink,
+  TRPCLinkDecoration,
 } from '../links/types';
 import { TRPCClientError } from '../TRPCClientError';
 
@@ -51,12 +53,19 @@ export type UntypedClientProperties =
   | 'runtime'
   | 'subscription';
 
-export class TRPCUntypedClient<TRouter extends AnyRouter> {
-  private readonly links: OperationLink<AnyRouter>[];
+export class TRPCUntypedClient<
+  TRoot extends InferrableClientTypes,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
+> {
+  private readonly links: OperationLink<TRoot>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
 
-  constructor(opts: CreateTRPCClientOptions<TRouter>) {
+  constructor(
+    opts:
+      | CreateTRPCClientOptions<TRoot>
+      | TRPCDecoratedClientOptions<TRoot, TDecoration>,
+  ) {
     this.requestId = 0;
 
     this.runtime = {};
