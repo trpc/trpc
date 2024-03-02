@@ -9,7 +9,6 @@
  */
 // @trpc/server
 
-import type { AnyRouter } from '../../@trpc/server/index.ts';
 import type {
   HTTPRequest,
   HTTPResponse,
@@ -21,6 +20,7 @@ import {
   resolveHTTPResponse,
   toURL,
 } from '../../@trpc/server/http.ts';
+import type { AnyRouter } from '../../@trpc/server/index.ts';
 import type { FetchHandlerOptions } from './types.ts';
 
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =

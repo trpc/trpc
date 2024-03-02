@@ -1,5 +1,6 @@
 import type { IncomingMessage } from 'node:http';
 import type ws from 'ws';
+import type { BaseHandlerOptions } from '../@trpc/server/http.ts';
 import type { AnyRouter, inferRouterContext } from '../@trpc/server/index.ts';
 import {
   callProcedure,
@@ -8,7 +9,6 @@ import {
   transformTRPCResponse,
   TRPCError,
 } from '../@trpc/server/index.ts';
-import type { BaseHandlerOptions } from '../@trpc/server/http.ts';
 import { parseTRPCMessage } from '../@trpc/server/rpc.ts';
 // @trpc/server/rpc
 import type {

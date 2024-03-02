@@ -9,13 +9,13 @@
  */
 /// <reference types="@fastify/websocket" />
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import type { FastifyHandlerOptions } from './index.ts';
 // @trpc/server
 import type { AnyRouter } from '../../@trpc/server/index.ts';
 import type { NodeHTTPCreateContextFnOptions } from '../node-http/index.ts';
 import type { WSSHandlerOptions } from '../ws.ts';
 import { applyWSSHandler } from '../ws.ts';
 import { fastifyRequestHandler } from './fastifyRequestHandler.ts';
+import type { FastifyHandlerOptions } from './index.ts';
 
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
   prefix?: string;

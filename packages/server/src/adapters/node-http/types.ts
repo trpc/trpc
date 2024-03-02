@@ -8,13 +8,16 @@
  * ```
  */
 import type * as http from 'node:http';
-// @trpc/server
-import type { AnyRouter, inferRouterContext } from '../../@trpc/server/index.ts';
 // @trpc/server/http
 import type {
   HTTPBaseHandlerOptions,
   TRPCRequestInfo,
 } from '../../@trpc/server/http.ts';
+// @trpc/server
+import type {
+  AnyRouter,
+  inferRouterContext,
+} from '../../@trpc/server/index.ts';
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../../unstable-core-do-not-import.ts';
 import type { NodeHTTPContentTypeHandler } from './internals/contentType.ts';

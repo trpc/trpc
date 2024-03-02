@@ -9,9 +9,9 @@
  */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import http from 'node:http';
+import { toURL } from '../@trpc/server/http.ts';
 // @trpc/server
 import type { AnyRouter } from '../@trpc/server/index.ts';
-import { toURL } from '../@trpc/server/http.ts';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,

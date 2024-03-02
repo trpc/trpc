@@ -9,7 +9,6 @@
  */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 // @trpc/server
-import type { AnyRouter } from '../../@trpc/server/index.ts';
 import type {
   HTTPRequest,
   HTTPResponse,
@@ -20,6 +19,7 @@ import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
 } from '../../@trpc/server/http.ts';
+import type { AnyRouter } from '../../@trpc/server/index.ts';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json/index.ts';
 import type { NodeHTTPContentTypeHandler } from './internals/contentType.ts';
 import type {

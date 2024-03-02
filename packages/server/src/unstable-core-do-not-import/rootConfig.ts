@@ -1,5 +1,5 @@
-import type { CombinedDataTransformer } from './transformer.ts';
 import type { DefaultErrorShape, ErrorFormatter } from './error/formatter.ts';
+import type { CombinedDataTransformer } from './transformer.ts';
 
 /**
  * The initial generics that are used in the init function
