@@ -6,6 +6,7 @@ import { observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
   InferrableClientTypes,
+  ProcedureType,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCDecoratedClientOptions } from '../createTRPCClientOptions';
@@ -19,14 +20,13 @@ import type {
 } from '../links/types';
 import { TRPCClientError } from '../TRPCClientError';
 
-type TRPCType = 'mutation' | 'query' | 'subscription';
-export interface TRPCRequestOptions {
+export type TRPCRequestOptions = {
   /**
    * Pass additional context to links
    */
   context?: OperationContext;
   signal?: AbortSignal;
-}
+};
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
   onStarted: () => void;
@@ -80,7 +80,7 @@ export class TRPCUntypedClient<
     path,
     context = {},
   }: {
-    type: TRPCType;
+    type: ProcedureType;
     input: TInput;
     path: string;
     context?: OperationContext;
@@ -98,7 +98,7 @@ export class TRPCUntypedClient<
     return chain$.pipe(share());
   }
   private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
-    type: TRPCType;
+    type: ProcedureType;
     input: TInput;
     path: string;
     context?: OperationContext;
@@ -124,20 +124,18 @@ export class TRPCUntypedClient<
   }
   public query(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({
+      ...opts,
       type: 'query',
       path,
       input,
-      context: opts?.context,
-      signal: opts?.signal,
     });
   }
   public mutation(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({
+      ...opts,
       type: 'mutation',
       path,
       input,
-      context: opts?.context,
-      signal: opts?.signal,
     });
   }
   public subscription(
