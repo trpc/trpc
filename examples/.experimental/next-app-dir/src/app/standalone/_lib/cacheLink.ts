@@ -25,23 +25,6 @@ export const normalize = (opts: {
   });
 };
 
-type CacheLinkDecorator = TRPCLinkDecoratorObject<{
-  query: {
-    /**
-     * If true, the cache will be ignored and the request will be made as if it was the first time
-     */
-    ignoreCache: boolean;
-  };
-  runtime: {
-    cache: Record<
-      string,
-      {
-        observable: Observable<unknown, TRPCClientError<AnyRouter>>;
-      }
-    >;
-  };
-}>;
-
 /**
  * @link https://trpc.io/docs/v11/client/links/cacheLink
  */
