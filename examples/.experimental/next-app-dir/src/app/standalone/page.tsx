@@ -20,9 +20,15 @@ export default function Page() {
   }, []);
 
   const data = use(
-    client.greeting.query({
-      text: 'standalone client',
-    }),
+    client.greeting.query(
+      {
+        text: 'standalone client',
+      },
+      {
+        ignoreCache: true,
+        // wohooo, type and typedoc is inferred from cacheLink
+      },
+    ),
   );
   return (
     <>

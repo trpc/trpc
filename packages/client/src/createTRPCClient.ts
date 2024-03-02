@@ -41,33 +41,42 @@ type ResolverDef = {
 };
 
 /** @internal */
-export type Resolver<TDef extends ResolverDef> = (
+export type Resolver<
+  TDef extends ResolverDef,
+  TType extends ProcedureType,
+  TDecoration extends TRPCLinkDecoration,
+> = (
   input: TDef['input'],
-  opts?: ProcedureOptions,
+  opts?: ProcedureOptions & Partial<TDecoration[TType]>,
 ) => Promise<TDef['output']>;
 
-type SubscriptionResolver<TDef extends ResolverDef> = (
+type SubscriptionResolver<
+  TDef extends ResolverDef,
+  TDecoration extends TRPCLinkDecoration,
+> = (
   input: TDef['input'],
   opts?: Partial<
     TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
   > &
-    ProcedureOptions,
+    ProcedureOptions &
+    Partial<TDecoration['subscription']>,
 ) => Unsubscribable;
 
 type DecorateProcedure<
   TType extends ProcedureType,
   TDef extends ResolverDef,
+  TDecoration extends TRPCLinkDecoration,
 > = TType extends 'query'
   ? {
-      query: Resolver<TDef>;
+      query: Resolver<TDef, 'query', TDecoration>;
     }
   : TType extends 'mutation'
   ? {
-      mutate: Resolver<TDef>;
+      mutate: Resolver<TDef, 'query', TDecoration>;
     }
   : TType extends 'subscription'
   ? {
-      subscribe: SubscriptionResolver<TDef>;
+      subscribe: SubscriptionResolver<TDef, TDecoration>;
     }
   : never;
 
@@ -93,14 +102,15 @@ type DecoratedProcedureRecord<
             >;
             errorShape: inferClientTypes<TRouter>['errorShape'];
             transformer: inferClientTypes<TRouter>['transformer'];
-          }
+          },
+          TDecoration
         >
       : never
     : never;
 };
 
 const clientCallTypeMap: Record<
-  keyof DecorateProcedure<any, any>,
+  keyof DecorateProcedure<any, any, any>,
   ProcedureType
 > = {
   query: 'query',

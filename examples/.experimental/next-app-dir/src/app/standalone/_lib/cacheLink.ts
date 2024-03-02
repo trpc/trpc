@@ -103,9 +103,15 @@ export function testDecorationLink<TRouter extends AnyTRPCRouter>(
   TRouter,
   TRPCLinkDecoratorObject<{
     query: {
+      /**
+       * I'm just here for testing inference
+       */
       __fromTestLink1: true;
     };
     mutation: {
+      /**
+       * I'm just here for testing inference
+       */
       __fromTestLink2: true;
     };
   }>
