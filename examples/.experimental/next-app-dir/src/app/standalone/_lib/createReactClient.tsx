@@ -13,7 +13,7 @@ import type {
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observableToPromise } from '@trpc/server/observable';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
-import React, { use, useEffect, useRef } from 'react';
+import React, { use, useContext, useEffect, useRef } from 'react';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return '';
@@ -61,8 +61,8 @@ export function createReactClient<
       );
     },
     useClient: () => {
-      const ctx = use(Provider);
-      const ref = useRef();
+      const ctx = useContext(Provider);
+
       // force rendered
       const [renderCount, setRenderCount] = React.useState(0);
       const forceRender = React.useCallback(() => {
@@ -74,14 +74,20 @@ export function createReactClient<
         unsub: Unsubscribable;
       };
       const trackRef = useRef(new Map<string, Track>());
+      console.log('--------------', trackRef.current);
       useEffect(() => {
         const tracked = trackRef.current;
         return () => {
+          console.log('unsubscribing');
+
           tracked.forEach((val) => {
             val.unsub.unsubscribe();
           });
         };
       }, []);
+      useEffect(() => {
+        console.log(`rendered ${renderCount}`);
+      }, [renderCount]);
       if (!ctx) {
         throw new Error('No tRPC client found');
       }
@@ -101,35 +107,42 @@ export function createReactClient<
 
         let tracked = trackRef.current.get(normalized);
         if (!tracked) {
+          console.log('tracking new query', normalized, trackRef.current);
+
           tracked = {} as Track;
           const observable = untyped.$request({
             type,
             input,
             path: path.join('.'),
           });
-          const first = true;
-          const unsub = observable.subscribe({
-            next() {
-              if (!first) {
-                // something made the observable emit again, probably a cache update
 
-                // reset promise
-                tracked!.promise = observableToPromise(observable).promise;
+          tracked.promise = new Promise((resolve, reject) => {
+            let first = true;
+            const unsub = observable.subscribe({
+              next(val) {
+                console.log('got new value in useClient');
+                if (first) {
+                  resolve(val.result.data);
+                  first = false;
+                } else {
+                  console.log('cache update');
+                  // something made the observable emit again, probably a cache update
 
-                // force re-render
-                forceRender();
-              }
-            },
-            error() {
-              // [...?]
-            },
+                  // reset promise
+                  tracked!.promise = Promise.resolve(val.result.data);
+
+                  // force re-render
+                  forceRender();
+                }
+              },
+              error() {
+                // [...?]
+              },
+            });
+            tracked!.unsub = unsub;
           });
 
-          const promise = observableToPromise(observable).promise;
-
-          tracked.promise = promise;
-          tracked.unsub = unsub;
-
+          console.log('saving', normalized);
           trackRef.current.set(normalized, tracked);
         }
 

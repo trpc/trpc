@@ -14,21 +14,21 @@ import { createReactClient } from './_lib/createReactClient';
 
 const getTrpcOptions = createTRPCClientOptions<AppRouter>()(() => ({
   links: [
+    cacheLink(),
+    testDecorationLink(),
+    refetchLink(),
     loggerLink({
       enabled: (op) => true,
     }),
-    cacheLink(),
-    testDecorationLink(),
-    // refetchLink(),
-    // httpBatchLink({
-    //   transformer: superjson,
-    //   url: getUrl(),
-    //   headers() {
-    //     return {
-    //       'x-trpc-source': 'standalone',
-    //     };
-    //   },
-    // }),
+    httpBatchLink({
+      transformer: superjson,
+      url: getUrl(),
+      headers() {
+        return {
+          'x-trpc-source': 'standalone',
+        };
+      },
+    }),
   ],
 }));
 

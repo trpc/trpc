@@ -74,10 +74,14 @@ export function cacheLink<TRoot extends InferrableClientTypes>(): TRPCLink<
 
       let cached = cache[normalized];
       if (!cached) {
+        console.log('found cache entry');
         cached = cache[normalized] = {
           observable: observable((observer) => {
             const subscription = opts.next(opts.op).subscribe({
-              ...observer,
+              next(v) {
+                console.log(`got new value for ${normalized} in cacheLink`);
+                observer.next(v);
+              },
               error(e) {
                 observer.error(e);
               },
@@ -146,7 +150,11 @@ export function testDecorationLink<TRoot extends InferrableClientTypes>(
 export function refetchLink<TRouter extends AnyRouter>(): TRPCLink<TRouter> {
   return () => {
     return ({ op, next }) => {
+      if (typeof document === 'undefined') {
+        return next(op);
+      }
       return observable((observer) => {
+        console.log('------------------ fetching refetchLink');
         let next$: Unsubscribable | null = null;
         let nextTimer: ReturnType<typeof setTimeout> | null = null;
         let attempts = 0;

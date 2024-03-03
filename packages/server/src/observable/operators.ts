@@ -44,6 +44,7 @@ export function share<TValue, TError>(
       }
       subscription = source.subscribe({
         next(value) {
+          console.log('share got', value);
           for (const observer of observers) {
             observer.next?.(value);
           }
