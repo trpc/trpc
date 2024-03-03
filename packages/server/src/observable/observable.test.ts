@@ -110,8 +110,12 @@ test('pipe twice', () => {
   };
   const pipe1 = mockFns();
   const pipe2 = mockFns();
+
+  let complete: () => void;
   const obs = observable<number, Error>((observer) => {
     observer.next(1);
+
+    complete = observer.complete;
   })
     .pipe(tap(pipe1))
     .pipe(tap(pipe2));
@@ -129,5 +133,10 @@ test('pipe twice', () => {
     expect(end.next.mock.calls).toHaveLength(1);
     expect(end.error.mock.calls).toHaveLength(0);
     expect(end.complete.mock.calls).toHaveLength(0);
+
+    complete!();
+    expect(pipe1.complete.mock.calls).toHaveLength(1);
+    expect(pipe2.complete.mock.calls).toHaveLength(1);
+    expect(end.complete.mock.calls).toHaveLength(1);
   }
 });
