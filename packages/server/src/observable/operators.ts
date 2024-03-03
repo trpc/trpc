@@ -1,4 +1,4 @@
-import { observable } from '.';
+import { observable } from './observable';
 import type {
   MonoTypeOperatorFunction,
   Observer,
