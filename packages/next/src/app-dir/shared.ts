@@ -1,6 +1,6 @@
 import type {
+  ClientProcedureCall,
   CreateTRPCClientOptions,
-  ProcedureCall,
   TRPCLinkDecoration,
   TRPCUntypedClient,
 } from '@trpc/client';
@@ -28,7 +28,7 @@ export type UseProcedureRecord<
     ? $Value extends RouterRecord
       ? UseProcedureRecord<TRoot, $Value>
       : $Value extends AnyQueryProcedure
-      ? ProcedureCall<
+      ? ClientProcedureCall<
           {
             input: inferProcedureInput<$Value>;
             output: inferTransformedProcedureOutput<TRoot, $Value>;

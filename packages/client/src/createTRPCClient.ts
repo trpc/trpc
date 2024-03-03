@@ -41,7 +41,7 @@ type ResolverDef = {
 };
 
 /** @internal */
-export type Resolver<
+export type ClientProcedureCall<
   TDef extends ResolverDef,
   TType extends ProcedureType,
   TDecoration extends TRPCLinkDecoration,
@@ -67,11 +67,11 @@ type DecorateProcedure<
   TDecoration extends TRPCLinkDecoration,
 > = TType extends 'query'
   ? {
-      query: Resolver<TDef, 'query', TDecoration>;
+      query: ClientProcedureCall<TDef, 'query', TDecoration>;
     }
   : TType extends 'mutation'
   ? {
-      mutate: Resolver<TDef, 'query', TDecoration>;
+      mutate: ClientProcedureCall<TDef, 'query', TDecoration>;
     }
   : TType extends 'subscription'
   ? {

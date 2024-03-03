@@ -10,6 +10,7 @@ import { observable, share, tap } from '@trpc/server/observable';
 import type { Observable, Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyRouter,
+  InferrableClientTypes,
   ProcedureType,
 } from '@trpc/server/unstable-core-do-not-import';
 
@@ -28,8 +29,8 @@ export const normalize = (opts: {
 /**
  * @link https://trpc.io/docs/v11/client/links/cacheLink
  */
-export function cacheLink<TRouter extends AnyTRPCRouter>(): TRPCLink<
-  TRouter,
+export function cacheLink<TRoot extends InferrableClientTypes>(): TRPCLink<
+  TRoot,
   TRPCLinkDecoratorObject<{
     query: {
       /**
@@ -53,7 +54,7 @@ export function cacheLink<TRouter extends AnyTRPCRouter>(): TRPCLink<
     const cache: Record<
       string,
       {
-        observable: Observable<unknown, TRPCClientError<TRouter>>;
+        observable: Observable<unknown, TRPCClientError<TRoot>>;
       }
     > = {};
     runtime.cache = cache;
@@ -101,11 +102,11 @@ export function cacheLink<TRouter extends AnyTRPCRouter>(): TRPCLink<
 /**
  * @link https://trpc.io/docs/v11/client/links/loggerLink
  */
-export function testDecorationLink<TRouter extends AnyTRPCRouter>(
+export function testDecorationLink<TRoot extends InferrableClientTypes>(
   // eslint-disable-next-line @typescript-eslint/ban-types
   _opts: {} = {},
 ): TRPCLink<
-  TRouter,
+  TRoot,
   TRPCLinkDecoratorObject<{
     query: {
       /**

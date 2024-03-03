@@ -14,27 +14,28 @@ import { createReactClient } from './_lib/createReactClient';
 
 const getTrpcOptions = createTRPCClientOptions<AppRouter>()(() => ({
   links: [
-    loggerLink({
-      enabled: (op) => true,
-    }),
+    // loggerLink({
+    //   enabled: (op) => true,
+    // }),
     cacheLink(),
     testDecorationLink(),
-    refetchLink(),
-    httpBatchLink({
-      transformer: superjson,
-      url: getUrl(),
-      headers() {
-        return {
-          'x-trpc-source': 'standalone',
-        };
-      },
-    }),
+    // refetchLink(),
+    // httpBatchLink({
+    //   transformer: superjson,
+    //   url: getUrl(),
+    //   headers() {
+    //     return {
+    //       'x-trpc-source': 'standalone',
+    //     };
+    //   },
+    // }),
   ],
 }));
 
 type $Decoration = inferTRPCClientOptionTypes<typeof getTrpcOptions>;
 //   ^?
 type T = $Decoration['query'];
+//                     ^?
 
 export const standaloneClient = createReactClient(getTrpcOptions);
 standaloneClient.$types.decoration;

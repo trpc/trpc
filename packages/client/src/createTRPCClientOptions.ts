@@ -1,3 +1,4 @@
+import type { AnyTRPCRouter } from '@trpc/server';
 import type {
   InferrableClientTypes,
   Simplify,
@@ -13,18 +14,13 @@ type UnionToIntersection<TUnion> = (
   ? I
   : never;
 
-/** @internal */
-type CreateTRPCClientOptionsTyped<
-  TRoot extends InferrableClientTypes,
-  TLinks extends TRPCLink<TRoot, any> = TRPCLink<TRoot, object>,
-> = {
-  links: TLinks[];
-};
-export function createTRPCClientOptions<TRoot extends InferrableClientTypes>() {
-  return <$Links extends TRPCLink<TRoot, any>>(
-    callback: () => CreateTRPCClientOptionsTyped<TRoot, $Links>,
+export function createTRPCClientOptions<TRouter extends AnyTRPCRouter>() {
+  return <$Links extends TRPCLink<TRouter, any>>(
+    callback: () => {
+      links: $Links[];
+    },
   ) => {
-    type $Declarations = $Links extends TRPCLink<TRoot, infer TDeclarations>
+    type $Declarations = $Links extends TRPCLink<any, infer TDeclarations>
       ? TDeclarations
       : never;
     type $Union = UnionToIntersection<$Declarations>;
@@ -36,7 +32,7 @@ export function createTRPCClientOptions<TRoot extends InferrableClientTypes>() {
           {};
     };
     return callback as unknown as () => TRPCDecoratedClientOptions<
-      TRoot,
+      TRouter,
       $Merged
     >;
   };
