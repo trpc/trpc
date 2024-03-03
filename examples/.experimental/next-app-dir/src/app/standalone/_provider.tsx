@@ -35,6 +35,10 @@ const getTrpcOptions = createTRPCClientOptions<AppRouter>()(() => ({
 type $Decoration = inferTRPCClientOptionTypes<typeof getTrpcOptions>;
 //   ^?
 type T = $Decoration['query'];
+
+// type IsEqual<T1, U> = T extends U ? (U extends T1 ? true : false) : false;
+
+type T2 = $Decoration['_debug']['$Links'][1];
 //                     ^?
 
 export const standaloneClient = createReactClient(getTrpcOptions);

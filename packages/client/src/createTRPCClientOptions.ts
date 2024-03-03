@@ -15,12 +15,12 @@ type UnionToIntersection<TUnion> = (
   : never;
 
 export function createTRPCClientOptions<TRouter extends AnyTRPCRouter>() {
-  return <$Links extends TRPCLink<TRouter, any>>(
+  return <$Links extends TRPCLink<TRouter, any>[]>(
     callback: () => {
-      links: $Links[];
+      links: [...$Links];
     },
   ) => {
-    type $Declarations = $Links extends TRPCLink<any, infer TDeclarations>
+    type $Declarations = $Links extends TRPCLink<any, infer TDeclarations>[]
       ? TDeclarations
       : never;
     type $Union = UnionToIntersection<$Declarations>;
@@ -33,7 +33,11 @@ export function createTRPCClientOptions<TRouter extends AnyTRPCRouter>() {
     };
     return callback as unknown as () => TRPCDecoratedClientOptions<
       TRouter,
-      $Merged
+      $Merged & {
+        _debug: {
+          $Links: $Links;
+        };
+      }
     >;
   };
 }
