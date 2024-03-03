@@ -99,3 +99,44 @@ test('pipe - combine operators', () => {
     }
   `);
 });
+
+test('pipe twice', () => {
+  const mockFns = () => {
+    return {
+      next: vi.fn(),
+      complete: vi.fn(),
+      error: vi.fn(),
+    };
+  };
+  const pipe1 = mockFns();
+  const pipe2 = mockFns();
+
+  let complete: () => void;
+  const obs = observable<number, Error>((observer) => {
+    observer.next(1);
+
+    complete = observer.complete;
+  })
+    .pipe(tap(pipe1))
+    .pipe(tap(pipe2));
+
+  {
+    const end = mockFns();
+    obs.subscribe(end);
+
+    expect(pipe1.next.mock.calls).toHaveLength(1);
+    expect(pipe2.next.mock.calls).toHaveLength(1);
+    expect(pipe1.error.mock.calls).toHaveLength(0);
+    expect(pipe2.error.mock.calls).toHaveLength(0);
+    expect(pipe1.complete.mock.calls).toHaveLength(0);
+    expect(pipe2.complete.mock.calls).toHaveLength(0);
+    expect(end.next.mock.calls).toHaveLength(1);
+    expect(end.error.mock.calls).toHaveLength(0);
+    expect(end.complete.mock.calls).toHaveLength(0);
+
+    complete!();
+    expect(pipe1.complete.mock.calls).toHaveLength(1);
+    expect(pipe2.complete.mock.calls).toHaveLength(1);
+    expect(end.complete.mock.calls).toHaveLength(1);
+  }
+});
