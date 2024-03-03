@@ -14,9 +14,9 @@ import { createReactClient } from './_lib/createReactClient';
 
 const getTrpcOptions = createTRPCClientOptions<AppRouter>()(() => ({
   links: [
-    // loggerLink({
-    //   enabled: (op) => true,
-    // }),
+    loggerLink({
+      enabled: (op) => true,
+    }),
     cacheLink(),
     testDecorationLink(),
     // refetchLink(),
@@ -34,7 +34,10 @@ const getTrpcOptions = createTRPCClientOptions<AppRouter>()(() => ({
 
 type $Decoration = inferTRPCClientOptionTypes<typeof getTrpcOptions>;
 //   ^?
-type T = $Decoration['query'];
+type T = $Decoration['query']['ignoreCache'];
+type T4 = $Decoration['query']['__fromTestLink1'];
+
+type T3 = $Decoration['_debug']['$Declarations'];
 
 // type IsEqual<T1, U> = T extends U ? (U extends T1 ? true : false) : false;
 

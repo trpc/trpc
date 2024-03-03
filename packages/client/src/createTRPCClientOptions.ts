@@ -1,4 +1,3 @@
-import type { AnyTRPCRouter } from '@trpc/server';
 import type {
   InferrableClientTypes,
   Simplify,
@@ -14,27 +13,34 @@ type UnionToIntersection<TUnion> = (
   ? I
   : never;
 
-export function createTRPCClientOptions<TRouter extends AnyTRPCRouter>() {
-  return <$Links extends TRPCLink<TRouter, any>[]>(
+export function createTRPCClientOptions<TRoot extends InferrableClientTypes>() {
+  return <$Links extends TRPCLink<TRoot, any>[]>(
     callback: () => {
       links: [...$Links];
     },
   ) => {
-    type $Declarations = $Links extends TRPCLink<any, infer TDeclarations>[]
-      ? TDeclarations
-      : never;
-    type $Union = UnionToIntersection<$Declarations>;
+    type $Declarations = {
+      [TKey in keyof $Links]: $Links[TKey] extends TRPCLink<
+        any,
+        infer TDeclaration
+      >
+        ? TRPCLinkDecoration extends TDeclaration
+          ? never
+          : TDeclaration
+        : never;
+    }[number];
 
     type $Merged = {
-      [TKey in keyof TRPCLinkDecoration]: TKey extends keyof $Union
-        ? Simplify<$Union[TKey]>
+      [TKey in keyof TRPCLinkDecoration]: TKey extends keyof $Declarations
+        ? Simplify<UnionToIntersection<$Declarations[TKey]>>
         : // eslint-disable-next-line @typescript-eslint/ban-types
           {};
     };
     return callback as unknown as () => TRPCDecoratedClientOptions<
-      TRouter,
+      TRoot,
       $Merged & {
         _debug: {
+          $Declarations: $Declarations;
           $Links: $Links;
         };
       }
