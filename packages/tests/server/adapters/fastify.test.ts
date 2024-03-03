@@ -51,6 +51,9 @@ function createAppRouter() {
     ping: publicProcedure.query(() => {
       return 'pong';
     }),
+    echo: publicProcedure.input(z.string()).query(({ input }) => {
+      return input;
+    }),
     hello: publicProcedure
       .input(
         z
@@ -532,5 +535,26 @@ describe('regression #4820 - content type parser already set', () => {
 
   test('query', async () => {
     expect(await app.client.ping.query()).toMatchInlineSnapshot(`"pong"`);
+  });
+});
+
+// https://github.com/trpc/trpc/issues/5530
+describe('issue #5530 - cannot receive new WebSocket messages after receiving 16 kB', () => {
+  beforeEach(async () => {
+    app = await createApp();
+  });
+
+  afterEach(async () => {
+    await app.stop();
+  });
+
+  test('query', async () => {
+    const data = 'A'.repeat(8192);
+
+    for (let i = 0; i < 4; i++) {
+      expect(await app.client.echo.query(data)).toMatchInlineSnapshot(
+        `"${data}"`,
+      );
+    }
   });
 });
