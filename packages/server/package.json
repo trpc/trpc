@@ -68,6 +68,11 @@
       "require": "./dist/adapters/node-http/index.js",
       "default": "./dist/adapters/node-http/index.js"
     },
+    "./adapters/partykit": {
+      "import": "./dist/adapters/partykit/index.mjs",
+      "require": "./dist/adapters/partykit/index.js",
+      "default": "./dist/adapters/partykit/index.js"
+    },
     "./adapters/standalone": {
       "import": "./dist/adapters/standalone.mjs",
       "require": "./dist/adapters/standalone.js",
@@ -120,8 +125,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {},
-  "peerDependencies": {},
   "devDependencies": {
     "@fastify/websocket": "^7.1.2",
     "@tanstack/react-query": "^5.0.0",
@@ -142,6 +145,7 @@
     "hash-sum": "^2.0.0",
     "myzod": "^1.3.1",
     "next": "^14.0.1",
+    "partykit": "^0.0.98",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rollup": "^4.9.5",
