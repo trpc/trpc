@@ -1,6 +1,7 @@
 import type {
   CreateTRPCClientOptions,
-  Resolver,
+  ProcedureCall,
+  TRPCLinkDecoration,
   TRPCUntypedClient,
 } from '@trpc/client';
 import type {
@@ -27,12 +28,16 @@ export type UseProcedureRecord<
     ? $Value extends RouterRecord
       ? UseProcedureRecord<TRoot, $Value>
       : $Value extends AnyQueryProcedure
-      ? Resolver<{
-          input: inferProcedureInput<$Value>;
-          output: inferTransformedProcedureOutput<TRoot, $Value>;
-          errorShape: TRoot['errorShape'];
-          transformer: TRoot['transformer'];
-        }>
+      ? ProcedureCall<
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<TRoot, $Value>;
+            errorShape: TRoot['errorShape'];
+            transformer: TRoot['transformer'];
+          },
+          'query',
+          TRPCLinkDecoration
+        >
       : never
     : never;
 };

@@ -1,4 +1,4 @@
-import type { Resolver } from '@trpc/client';
+import type { ProcedureCall, TRPCLinkDecoration } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -20,7 +20,7 @@ export type DecorateProcedureServer<
   TDef extends ResolverDef,
 > = TType extends 'query'
   ? {
-      query: Resolver<TDef>;
+      query: ProcedureCall<TDef, 'query', /* FIXME */ TRPCLinkDecoration>;
       revalidate: (
         input?: TDef['input'],
       ) => Promise<
@@ -29,12 +29,10 @@ export type DecorateProcedureServer<
     }
   : TType extends 'mutation'
   ? {
-      mutate: Resolver<TDef>;
+      mutate: ProcedureCall<TDef, 'mutation', TRPCLinkDecoration>;
     }
   : TType extends 'subscription'
-  ? {
-      subscribe: Resolver<TDef>;
-    }
+  ? never
   : never;
 
 export type NextAppDirDecorateRouterRecord<
