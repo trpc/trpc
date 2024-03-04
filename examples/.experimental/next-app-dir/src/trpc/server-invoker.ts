@@ -12,7 +12,7 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
   config() {
     return {
       createContext: () => createContext('invoke'),
-      cacheContext: (ctx) => [ctx.session?.user.id, ctx._userIdMock],
+      contextSelector: (ctx) => [ctx.session?.user.id, ctx._userIdMock],
       links: [
         loggerLink({
           enabled: (_op) => true,

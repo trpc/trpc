@@ -52,11 +52,17 @@ test('server-cacheLink: different contexts should not have a common cache', asyn
   const nonce1 = await page.textContent(
     'text=hello i never hit an api endpoint',
   );
-
-  await page.setExtraHTTPHeaders({ 'x-trpc-user-id': 'bar' });
   await page.reload();
   const nonce2 = await page.textContent(
     'text=hello i never hit an api endpoint',
   );
-  expect(nonce1).not.toBe(nonce2);
+  expect(nonce1).toBe(nonce2);
+
+  // Mock new user
+  await page.setExtraHTTPHeaders({ 'x-trpc-user-id': 'bar' });
+  await page.reload();
+  const nonce3 = await page.textContent(
+    'text=hello i never hit an api endpoint',
+  );
+  expect(nonce1).not.toBe(nonce3);
 });
