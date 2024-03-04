@@ -34,7 +34,6 @@ export type UseProcedureRecord<
           output: inferTransformedProcedureOutput<TRoot, $Value>;
           errorShape: TRoot['errorShape'];
           transformer: TRoot['transformer'];
-          ctx: TRoot['ctx'];
         }>
       : never
     : never;
