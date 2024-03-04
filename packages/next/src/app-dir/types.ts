@@ -62,6 +62,6 @@ export type NextAppDirDecorateRouterRecord<
 
 export type NextAppDirRuntime<TRouter extends AnyTRPCRouter> =
   TRPCClientRuntime & {
-    createContext: () => Promise<inferClientTypes<TRouter>['ctx']>;
+    ctx: inferClientTypes<TRouter>['ctx'];
     cacheContext: (ctx: inferClientTypes<TRouter>['ctx']) => any[];
   };

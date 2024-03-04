@@ -40,18 +40,18 @@ import type {
 export function experimental_createTRPCNextAppDirServer<
   TRouter extends AnyRouter,
 >(opts: CreateTRPCNextAppRouterServerOptions<TRouter>) {
-  const getClient = cache(() => {
+  const getClient = cache(async () => {
     const config = opts.config();
     const client = createTRPCUntypedClient(config);
     const runtime = client.runtime as NextAppDirRuntime<TRouter>;
-    runtime.createContext = config.createContext;
+    runtime.ctx = await config.createContext();
     runtime.cacheContext = config.cacheContext ?? (() => []);
     return client;
   });
 
   return createRecursiveProxy(async (callOpts) => {
     // lazily initialize client
-    const client = getClient();
+    const client = await getClient();
     const runtime = client.runtime as NextAppDirRuntime<TRouter>;
 
     const pathCopy = [...callOpts.path];
@@ -63,7 +63,7 @@ export function experimental_createTRPCNextAppDirServer<
     const cacheTag = await generateCacheTag(
       procedurePath,
       callOpts.args[0],
-      runtime.cacheContext?.(await runtime.createContext?.()),
+      runtime.cacheContext?.(runtime.ctx),
     );
 
     if (action === 'revalidate') {

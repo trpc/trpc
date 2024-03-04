@@ -41,8 +41,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
             : undefined;
         const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-        const promise = runtime
-          .createContext()
+        const promise = generateCacheTag(path, input, runtime.ctx)
           .then(async (ctx) => {
             const cacheTag = await generateCacheTag(path, input, ctx);
             const callProc = async (_cachebuster: string) => {
