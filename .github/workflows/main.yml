@@ -39,13 +39,14 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Test
-        run: pnpm turbo --filter tests test-ci
+      - name: Build tRPC, then test
+        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm test-ci
 
-      - uses: codecov/codecov-action@v4
-        with:
-          # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          directory: ./packages
+      - uses: codecov/codecov-action@v3
+        # with:
+        #   # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+        #   directory: .
 
   e2e:
     name: 'E2E-tests'
