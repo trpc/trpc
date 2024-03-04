@@ -44,8 +44,10 @@ export function experimental_createTRPCNextAppDirServer<
     const config = opts.config();
     const client = createTRPCUntypedClient(config);
     const runtime = client.runtime as NextAppDirRuntime<TRouter>;
-    runtime.ctx = await config.createContext();
-    runtime.cacheContext = config.cacheContext ?? (() => []);
+
+    const ctx = await config.createContext();
+    runtime.ctx = ctx;
+    runtime.cacheTagSeparators = config.contextSelector?.(ctx) ?? [];
     return client;
   });
 
@@ -63,7 +65,7 @@ export function experimental_createTRPCNextAppDirServer<
     const cacheTag = await generateCacheTag(
       procedurePath,
       callOpts.args[0],
-      runtime.cacheContext?.(runtime.ctx),
+      runtime.cacheTagSeparators,
     );
 
     if (action === 'revalidate') {

@@ -100,7 +100,12 @@ export interface CreateTRPCNextAppRouterServerOptions<
 > {
   config: () => CreateTRPCClientOptions<TRouter> & {
     createContext: () => MaybePromise<inferRouterContext<TRouter>>;
-    cacheContext: ((ctx: inferRouterContext<TRouter>) => any[]) | undefined;
+    /**
+     * Select properties from context that should be part of the generated cache tag
+     * This is important to make sure that the cache is not shared between different users
+     * @example `ctx => [ctx.user?.id]`
+     */
+    contextSelector: ((ctx: inferRouterContext<TRouter>) => any[]) | undefined;
   };
 }
 

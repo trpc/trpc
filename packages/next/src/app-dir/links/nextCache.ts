@@ -41,9 +41,12 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
             : undefined;
         const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-        const promise = generateCacheTag(path, input, runtime.ctx)
-          .then(async (ctx) => {
-            const cacheTag = await generateCacheTag(path, input, ctx);
+        const promise = generateCacheTag(
+          path,
+          input,
+          runtime.cacheTagSeparators,
+        )
+          .then(async (cacheTag) => {
             const callProc = async (_cachebuster: string) => {
               //   // _cachebuster is not used by us but to make sure
               //   // that calls with different tags are properly separated
@@ -52,7 +55,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
                 procedures: opts.router._def.procedures,
                 path,
                 getRawInput: async () => input,
-                ctx: ctx,
+                ctx: runtime.ctx,
                 type,
               });
 

@@ -52,7 +52,7 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
         const cacheTag = await generateCacheTag(
           path,
           input,
-          runtime.cacheContext?.(runtime.ctx),
+          runtime.cacheTagSeparators,
         );
         return fetch(url, {
           ...fetchOpts,
