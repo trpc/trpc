@@ -1,9 +1,10 @@
 import { loggerLink } from '@trpc/client';
 import { experimental_nextCacheLink } from '@trpc/next/app-dir/links/nextCache';
 import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
+import { auth } from '~/auth';
 import { appRouter } from '~/server/routers/_app';
+import { cookies } from 'next/headers';
 import superjson from 'superjson';
-import { createContext } from './shared-server';
 
 /**
  * This client invokes procedures directly on the server without fetching over HTTP.
@@ -11,7 +12,13 @@ import { createContext } from './shared-server';
 export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
   config() {
     return {
-      createContext,
+      createContext: async () => ({
+        session: await auth(),
+        headers: {
+          cookie: cookies().toString(),
+          'x-trpc-source': 'rsc-invoke',
+        },
+      }),
       cacheContext: (ctx) => [ctx.session?.user.id],
       links: [
         loggerLink({

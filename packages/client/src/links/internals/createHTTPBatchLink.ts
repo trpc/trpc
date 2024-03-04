@@ -23,7 +23,7 @@ import { getUrl, resolveHTTPLinkOptions } from './httpUtils';
  */
 export type RequesterFn<TOptions extends HTTPBatchLinkOptions<AnyRootTypes>> = (
   requesterOpts: ResolvedHTTPLinkOptions & {
-    runtime: TRPCClientRuntime<AnyRouter>;
+    runtime: TRPCClientRuntime;
     type: ProcedureType;
     opts: TOptions;
   },
