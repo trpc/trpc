@@ -13,7 +13,7 @@ A typesafe wrapper around calling `queryClient.invalidateQueries()`, all it does
 import { trpc } from '../utils/trpc';
 
 // In component:
-const utils = trpc.useContext();
+const utils = trpc.useUtils();
 
 const mutation = trpc.useMutation('post.edit', {
   onSuccess(input) {

@@ -30,6 +30,28 @@ See [SSR docs](../client/nextjs/ssr.md)
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Explicit Content-Type checks (non-breaking)
+
+We now have explicit checks for the `Content-Type`-header when doing POST-requests. This means that if you send a request with a `Content-Type` that doesn't match the expected one, you will get a `415 Unsupported Media Type`-error.
+
+Our tRPC clients already sends content-type headers, so is only a potential breaking change if you call tRPC manually.
+
+### Added support for method overriding
+
+Allows you to override the HTTP method for procedures to always be sent with `POST` in order to get around some limitations with e.g. max URL lengths.
+
+Closes [#3910](https://github.com/trpc/trpc/issues/3910)
+
+### Added support for bi-directional infinite queries
+
+See [`useInfiniteQuery()`](../client/react/useInfiniteQuery.md)
+
+### Added `inferProcedureBuilderResolverOptions<T>`-helper (non-breaking)
+
+Adds a helper to infer the options for a procedure builder resolver. This is useful if you want to create reusable functions for different procedures.
+
+See test [here](https://github.com/trpc/trpc/blob/743fa6aed8ac889d9c60f321c4b4ad060b56e791/packages/server/src/unstable-core-do-not-import/procedureBuilder.test.ts#L36-L231) for a reference on how to use it
+
 ### Transformers are moved to links (breaking)
 
 > TypeScript will guide you through this migration
@@ -119,12 +141,6 @@ The proxy names were due to v9 using the `AbcXyz` names, these have been removed
 - `createSSGHelpers` were for v9 which has now been removed. the v10 equivalent `createProxySSGHelpers` have been renamed to `createSSGHelpers` now instead.
 - `createProxySSGHelpers` is now deprecated but aliased to `createSSGHelpers` for backwards compatibility.
 - Removed exported type `CreateSSGHelpersOptions`
-
-## `.unstable_concat()` removed
-
-To our knowledge, this was never used by anyone. If you need it, please open an issue on GitHub.
-
-We might add it back in the future if there is a need for it.
 
 ### `interop`-mode has been removed
 

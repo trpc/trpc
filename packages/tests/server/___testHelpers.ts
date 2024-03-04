@@ -131,11 +131,12 @@ export async function waitError<TError extends Error = Error>(
    **/
   errorConstructor?: Constructor<TError>,
 ): Promise<TError> {
+  let res;
   try {
     if (typeof fnOrPromise === 'function') {
-      await fnOrPromise();
+      res = await fnOrPromise();
     } else {
-      await fnOrPromise;
+      res = await fnOrPromise;
     }
   } catch (cause) {
     expect(cause).toBeInstanceOf(Error);
@@ -144,6 +145,9 @@ export async function waitError<TError extends Error = Error>(
     }
     return cause as TError;
   }
+
+  // eslint-disable-next-line no-console
+  console.warn('Expected function to throw, but it did not. Result:', res);
   throw new Error('Function did not throw');
 }
 

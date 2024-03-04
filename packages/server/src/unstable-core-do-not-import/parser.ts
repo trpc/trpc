@@ -1,4 +1,4 @@
-// zod / @decs/typeschema
+// zod / typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
   _input: TInput;
   _output: TParsedInput;

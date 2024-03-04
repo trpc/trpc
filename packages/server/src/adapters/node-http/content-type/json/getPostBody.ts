@@ -9,6 +9,22 @@ export async function getPostBody(opts: {
 }): Promise<BodyResult> {
   const { req, maxBodySize = Infinity } = opts;
   return new Promise((resolve) => {
+    if (
+      !req.headers['content-type']?.startsWith('application/json') &&
+      (!req.method ||
+        (req.method !== 'GET' &&
+          req.method !== 'OPTIONS' &&
+          req.method !== 'HEAD'))
+    ) {
+      resolve({
+        ok: false,
+        error: new TRPCError({
+          code: 'UNSUPPORTED_MEDIA_TYPE',
+          message: 'Invalid Content-Type header (expected application/json)',
+        }),
+      });
+      return;
+    }
     if ('body' in req) {
       resolve({
         ok: true,

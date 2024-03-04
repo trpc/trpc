@@ -233,7 +233,9 @@ export async function resolveHTTPResponse<
   }
   const contentTypeHandler =
     opts.contentTypeHandler ?? fallbackContentTypeHandler;
-  const batchingEnabled = opts.batching?.enabled ?? true;
+  const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
+  const allowMethodOverride = opts.allowMethodOverride ?? false;
+
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
@@ -250,7 +252,7 @@ export async function resolveHTTPResponse<
     if (opts.error) {
       throw opts.error;
     }
-    if (isBatchCall && !batchingEnabled) {
+    if (isBatchCall && !allowBatching) {
       throw new Error(`Batching is not enabled on the server`);
     }
     /* istanbul ignore if -- @preserve */
@@ -300,6 +302,7 @@ export async function resolveHTTPResponse<
           getRawInput: async () => input,
           ctx,
           type,
+          allowMethodOverride,
         });
         return {
           result: {
