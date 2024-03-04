@@ -8,7 +8,7 @@ import type {
   AnyRootTypes,
   AnyRouter,
 } from '@trpc/server/unstable-core-do-not-import';
-import { NextAppDirRuntime } from '../server';
+import type { NextAppDirRuntime } from '../server';
 import { generateCacheTag } from '../shared';
 
 interface NextLinkBaseOptions {
