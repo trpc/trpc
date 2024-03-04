@@ -1,10 +1,9 @@
 /// <reference types="next" />
-import type { TRPCClientRuntime } from '@trpc/client';
+
 import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import type { AnyTRPCRouter } from '@trpc/server';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -32,13 +31,10 @@ import type {
   inferActionDef,
 } from './shared';
 import { generateCacheTag, isFormData } from './shared';
-import type { NextAppDirDecorateRouterRecord } from './types';
-
-export type NextAppDirRuntime<TRouter extends AnyTRPCRouter> =
-  TRPCClientRuntime & {
-    ctx: inferClientTypes<TRouter>['ctx'];
-    cacheContext: (ctx: inferClientTypes<TRouter>['ctx']) => any[];
-  };
+import type {
+  NextAppDirDecorateRouterRecord,
+  NextAppDirRuntime,
+} from './types';
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<

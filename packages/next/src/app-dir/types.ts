@@ -1,7 +1,9 @@
-import type { Resolver } from '@trpc/client';
+import type { Resolver, TRPCClientRuntime } from '@trpc/client';
+import type { AnyTRPCRouter } from '@trpc/server';
 import type {
   AnyProcedure,
   AnyRootTypes,
+  inferClientTypes,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProcedureType,
@@ -59,3 +61,9 @@ export type NextAppDirDecorateRouterRecord<
       : never
     : never;
 };
+
+export type NextAppDirRuntime<TRouter extends AnyTRPCRouter> =
+  TRPCClientRuntime & {
+    ctx: inferClientTypes<TRouter>['ctx'];
+    cacheContext: (ctx: inferClientTypes<TRouter>['ctx']) => any[];
+  };

@@ -13,8 +13,8 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
-import type { NextAppDirRuntime } from '../server';
 import { generateCacheTag } from '../shared';
+import type { NextAppDirRuntime } from '../types';
 
 type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
