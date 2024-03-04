@@ -23,7 +23,9 @@ function mockReq({
 
   req.method = method;
   req.query = query;
-  req.headers = {};
+  req.headers = {
+    'content-type': 'application/json',
+  };
 
   const socket = {
     destroy: vi.fn(),

@@ -54,6 +54,12 @@ export interface HTTPLinkOptions {
   headers?:
     | HTTPHeaders
     | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
+  /**
+   * Send all requests as POSTS requests regardless of the procedure type
+   * The server must separately allow overriding the method. See:
+   * @link https://trpc.io/docs/rpc
+   */
+  methodOverride?: 'POST';
 }
 ```
 
