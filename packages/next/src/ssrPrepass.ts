@@ -16,15 +16,10 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
   AppContextType,
-  NextComponentType,
   NextPageContext,
 } from 'next/dist/shared/lib/utils';
 import { createElement } from 'react';
-import type {
-  TRPCPrepassHelper,
-  TRPCPrepassProps,
-  WithTRPCSSROptions,
-} from './withTRPC';
+import type { TRPCPrepassHelper, TRPCPrepassProps } from './withTRPC';
 
 function transformQueryOrMutationCacheErrors<
   TState extends
@@ -49,13 +44,9 @@ function transformQueryOrMutationCacheErrors<
   return result;
 }
 
-export const ssrPrepass: TRPCPrepassHelper = <TRouter extends AnyRouter>(opts: {
-  parent: WithTRPCSSROptions<TRouter>;
-  WithTRPC: NextComponentType<any, any, any>;
-  AppOrPage: NextComponentType<any, any, any>;
-}) => {
+export const ssrPrepass: TRPCPrepassHelper = (opts) => {
   const { parent, WithTRPC, AppOrPage } = opts;
-  type $PrepassProps = TRPCPrepassProps<TRouter, any>;
+  type $PrepassProps = TRPCPrepassProps<AnyRouter, any>;
 
   const transformer = getTransformer(
     (parent as CoercedTransformerParameters).transformer,
@@ -175,7 +166,7 @@ export const ssrPrepass: TRPCPrepassHelper = <TRouter extends AnyRouter>(opts: {
           .map((v) => v.state.error)
           .flatMap((err) =>
             err instanceof Error && err.name === 'TRPCClientError'
-              ? [err as TRPCClientError<TRouter>]
+              ? [err as TRPCClientError<AnyRouter>]
               : [],
           ),
       }) ?? {};
