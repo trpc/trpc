@@ -15,7 +15,7 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
       cacheContext: (ctx) => [ctx.session?.user.id, ctx._userIdMock],
       links: [
         loggerLink({
-          enabled: (op) => true,
+          enabled: (_op) => true,
         }),
         experimental_nextCacheLink({
           // requests are cached for 5 seconds

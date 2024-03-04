@@ -44,6 +44,7 @@ export const createAction = experimental_createServerActionHandler(t, {
 
     return {
       session,
+      _userIdMock: headers().get('x-trpc-user-id'),
       headers: {
         // Pass the cookie header to the API
         cookies: headers().get('cookie') ?? '',

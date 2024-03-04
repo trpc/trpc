@@ -51,7 +51,7 @@ test('server-httpLink: requests are properly separated in the cache', async ({
   await page.waitForSelector('text=hello from server2');
 });
 
-test('server-cacheLink: different contexts should not have a common cache', async ({
+test('server-httpLink: different contexts should not have a common cache', async ({
   page,
 }) => {
   // mocking session data
@@ -59,15 +59,12 @@ test('server-cacheLink: different contexts should not have a common cache', asyn
   await page.goto('/rsc');
   await page.reload();
 
-  await page.waitForSelector('text=hello i never hit an api endpoint');
-  const nonce1 = await page.textContent(
-    'text=hello i never hit an api endpoint',
-  );
+  await page.waitForSelector('text=hello from server1');
+  const nonce1 = await page.textContent('text=hello from server1');
 
   await page.setExtraHTTPHeaders({ 'x-trpc-user-id': 'bar' });
   await page.reload();
-  const nonce2 = await page.textContent(
-    'text=hello i never hit an api endpoint',
-  );
+
+  const nonce2 = await page.textContent('text=hello from server1');
   expect(nonce1).not.toBe(nonce2);
 });
