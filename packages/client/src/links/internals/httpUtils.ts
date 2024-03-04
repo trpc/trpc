@@ -34,6 +34,12 @@ export type HTTPLinkBaseOptions<
    * Add ponyfill for AbortController
    */
   AbortController?: AbortControllerEsque | null;
+  /**
+   * Send all requests `as POST`s requests regardless of the procedure type
+   * The HTTP handler must separately allow overriding the method. See:
+   * @link https://trpc.io/docs/rpc
+   */
+  methodOverride?: 'POST';
 } & TransformerOptions<TRoot>;
 
 export interface ResolvedHTTPLinkOptions {
@@ -41,6 +47,7 @@ export interface ResolvedHTTPLinkOptions {
   fetch?: FetchEsque;
   AbortController: AbortControllerEsque | null;
   transformer: CombinedDataTransformer;
+  methodOverride?: 'POST';
 }
 
 export function resolveHTTPLinkOptions(
@@ -51,6 +58,7 @@ export function resolveHTTPLinkOptions(
     fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
     transformer: getTransformer(opts.transformer),
+    methodOverride: opts.methodOverride,
   };
 }
 
@@ -112,7 +120,7 @@ export const getUrl: GetUrl = (opts) => {
   }
   if (opts.type === 'query') {
     const input = getInput(opts);
-    if (input !== undefined) {
+    if (input !== undefined && opts.methodOverride !== 'POST') {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
     }
   }
@@ -123,7 +131,7 @@ export const getUrl: GetUrl = (opts) => {
 };
 
 export const getBody: GetBody = (opts) => {
-  if (opts.type === 'query') {
+  if (opts.type === 'query' && opts.methodOverride !== 'POST') {
     return undefined;
   }
   const input = getInput(opts);
@@ -180,9 +188,9 @@ export async function fetchHTTPResponse(
   };
 
   return getFetch(opts.fetch)(url, {
-    method: METHOD[type],
+    method: opts.methodOverride ?? METHOD[type],
     signal: ac?.signal,
-    body: body,
+    body,
     headers,
   });
 }

@@ -11,8 +11,8 @@ import {
   createOutputMiddleware,
   middlewareMarker,
 } from './middleware';
-import { getParseFn } from './parser';
 import type { inferParser, Parser } from './parser';
+import { getParseFn } from './parser';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -34,6 +34,8 @@ import { mergeWithoutOverrides } from './utils';
 
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
+  : TWith extends UnsetMarker
+  ? TType
   : Simplify<TType & TWith>;
 
 /** @internal */
@@ -58,10 +60,15 @@ type ProcedureBuilderDef<TMeta> = {
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
 
 /**
- * Procedure resolver options
+ * Procedure resolver options (what the `.query()`, `.mutation()`, and `.subscription()` functions receive)
  * @internal
  */
-interface ResolverOptions<TContext, _TMeta, TContextOverridesIn, TInputOut> {
+export interface ProcedureResolverOptions<
+  TContext,
+  _TMeta,
+  TContextOverridesIn,
+  TInputOut,
+> {
   ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
 }
@@ -71,20 +78,64 @@ interface ResolverOptions<TContext, _TMeta, TContextOverridesIn, TInputOut> {
  */
 type ProcedureResolver<
   TContext,
-  _TMeta,
+  TMeta,
   TContextOverrides,
   TInputOut,
   TOutputParserIn,
   $Output,
-> = (opts: {
-  ctx: Simplify<Overwrite<TContext, TContextOverrides>>;
-  input: TInputOut extends UnsetMarker ? undefined : TInputOut;
-}) => MaybePromise<
+> = (
+  opts: ProcedureResolverOptions<TContext, TMeta, TContextOverrides, TInputOut>,
+) => MaybePromise<
   // If an output parser is defined, we need to return what the parser expects, otherwise we return the inferred type
   DefaultValue<TOutputParserIn, $Output>
 >;
 
 type AnyResolver = ProcedureResolver<any, any, any, any, any, any>;
+export type AnyProcedureBuilder = ProcedureBuilder<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>;
+
+/**
+ * Infer the context type from a procedure builder
+ * Useful to create common helper functions for different procedures
+ */
+export type inferProcedureBuilderResolverOptions<
+  TProcedureBuilder extends AnyProcedureBuilder,
+> = TProcedureBuilder extends ProcedureBuilder<
+  infer TContext,
+  infer TMeta,
+  infer TContextOverrides,
+  infer _TInputIn,
+  infer TInputOut,
+  infer _TOutputIn,
+  infer _TOutputOut
+>
+  ? ProcedureResolverOptions<
+      TContext,
+      TMeta,
+      TContextOverrides,
+      TInputOut extends UnsetMarker
+        ? // if input is not set, we don't want to infer it as `undefined` since a procedure further down the chain might have set an input
+          unknown
+        : TInputOut extends object
+        ? Simplify<
+            TInputOut & {
+              /**
+               * Extra input params might have been added by a `.input()` further down the chain
+               */
+              [keyAddedByInputCallFurtherDown: string]: unknown;
+            }
+          >
+        : TInputOut
+    >
+  : never;
+
 export interface ProcedureBuilder<
   TContext,
   TMeta,
@@ -177,6 +228,41 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut
   >;
+
+  /**
+   * Combine two procedure builders
+   */
+  unstable_concat<
+    $Context,
+    $Meta,
+    $ContextOverrides,
+    $InputIn,
+    $InputOut,
+    $OutputIn,
+    $OutputOut,
+  >(
+    builder: Overwrite<TContext, TContextOverrides> extends $Context
+      ? TMeta extends $Meta
+        ? ProcedureBuilder<
+            $Context,
+            $Meta,
+            $ContextOverrides,
+            $InputIn,
+            $InputOut,
+            $OutputIn,
+            $OutputOut
+          >
+        : TypeError<'Meta mismatch'>
+      : TypeError<'Context mismatch'>,
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    Overwrite<TContextOverrides, $ContextOverrides>,
+    IntersectIfDefined<TInputIn, $InputIn>,
+    IntersectIfDefined<TInputIn, $InputOut>,
+    IntersectIfDefined<TOutputIn, $OutputIn>,
+    IntersectIfDefined<TOutputOut, $OutputOut>
+  >;
   /**
    * Query procedure
    * @link https://trpc.io/docs/v11/concepts#vocabulary
@@ -236,9 +322,8 @@ export interface ProcedureBuilder<
   _def: ProcedureBuilderDef<TMeta>;
 }
 
-type AnyProcedureBuilder = ProcedureBuilder<any, any, any, any, any, any, any>;
 type ProcedureBuilderResolver = (
-  opts: ResolverOptions<any, any, any, any>,
+  opts: ProcedureResolverOptions<any, any, any, any>,
 ) => Promise<unknown>;
 
 function createNewBuilder(
@@ -274,16 +359,6 @@ export function createBuilder<TContext, TMeta>(
     ...initDef,
   };
 
-  type AnyProcedureBuilder = ProcedureBuilder<
-    any,
-    any,
-    any,
-    any,
-    any,
-    any,
-    any
-  >;
-
   const builder: AnyProcedureBuilder = {
     _def,
     input(input) {
@@ -315,6 +390,9 @@ export function createBuilder<TContext, TMeta>(
       return createNewBuilder(_def, {
         middlewares: middlewares,
       });
+    },
+    unstable_concat(builder) {
+      return createNewBuilder(_def, (builder as AnyProcedureBuilder)._def);
     },
     query(resolver) {
       return createResolver(

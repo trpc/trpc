@@ -1,4 +1,7 @@
-import type { DeepPartial } from '@trpc/server/unstable-core-do-not-import';
+import {
+  isObject,
+  type DeepPartial,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { DecoratedMutation, DecoratedQuery } from '../createTRPCReact';
 import type { DecorateRouterRecord } from '../shared';
 
@@ -39,16 +42,18 @@ export function getQueryKeyInternal(
 
   if (
     type === 'infinite' &&
-    input &&
-    typeof input === 'object' &&
-    'cursor' in input
+    isObject(input) &&
+    ('direction' in input || 'cursor' in input)
   ) {
-    const { cursor: _, ...inputWithoutCursor } = input;
-
+    const {
+      cursor: _,
+      direction: __,
+      ...inputWithoutCursorAndDirection
+    } = input;
     return [
       splitPath,
       {
-        input: inputWithoutCursor,
+        input: inputWithoutCursorAndDirection,
         type: 'infinite',
       },
     ];
@@ -64,10 +69,13 @@ export function getQueryKeyInternal(
 
 type GetInfiniteQueryInput<
   TProcedureInput,
-  TInputWithoutCursor = Omit<TProcedureInput, 'cursor'>,
-> = keyof TInputWithoutCursor extends never
+  TInputWithoutCursorAndDirection = Omit<
+    TProcedureInput,
+    'cursor' | 'direction'
+  >,
+> = keyof TInputWithoutCursorAndDirection extends never
   ? undefined
-  : DeepPartial<TInputWithoutCursor> | undefined;
+  : DeepPartial<TInputWithoutCursorAndDirection> | undefined;
 
 /** @internal */
 export type GetQueryProcedureInput<TProcedureInput> = TProcedureInput extends {

@@ -156,6 +156,96 @@ protectedProcedure.query(({ ctx }) => ctx.user);
 //                                        ^?
 ```
 
+## Using `.concat()` to create reusable middlewares and plugins {#concat}
+
+:::info
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
+:::
+
+:::tip
+
+- Creating middlewares using `t.middleware` has the limitation that the `Context` type is tied to the `Context` type of the tRPC instance.
+- Creating middlewares with `experimental_standaloneMiddleware()` has the limitation that you cannot define input parsers and similar tied to your module.
+
+:::
+
+tRPC has an API called `.concat()` which allows you to independently define a partial procedure that can be used with any tRPC instance that matches the context and metadata of the plugin.
+
+This helper primarily targets creating plugins and libraries with tRPC.
+
+<!-- TODO: add docs with a real-world example of a plugin or something -->
+
+```ts twoslash
+// @target: esnext
+// ------------------------------------------------
+// 🧩🧩🧩 a library creating a reusable plugin 🧩🧩🧩
+// @filename: myPlugin.ts
+
+import { initTRPC, TRPCError } from '@trpc/server';
+
+export function createMyPlugin() {
+  // When creating a plugin for tRPC, you use the same API as creating any other tRPC-app
+  // this is the plugin's root `t`-object
+  const t = initTRPC
+    .context<{
+      // the procedure using the plugin will need to extend this context
+    }>()
+    .meta<{
+      // the base `initTRPC`-object of the application using this needs to extend this meta
+    }>()
+    .create();
+
+  return {
+    // you can also add `.input()` if you want your plugin to do input validation
+    pluginProc: t.procedure.use((opts) => {
+      return opts.next({
+        ctx: {
+          fromPlugin: 'hello from myPlugin' as const,
+        },
+      });
+    }),
+  };
+}
+// ------------------------------------
+// 🚀🚀🚀 the app using the plugin 🚀🚀🚀
+// @filename: app.ts
+import { createMyPlugin } from './myPlugin';
+import { initTRPC, TRPCError } from '@trpc/server';
+
+
+// the app's root `t`-object
+const t = initTRPC
+  .context<{
+    // ...
+  }>()
+  .create();
+
+
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+// initialize the plugin (a real-world example would likely take options here)
+const plugin = createMyPlugin();
+
+// create a base procedure using the plugin
+const procedureWithPlugin = publicProcedure
+  .unstable_concat(
+    plugin.pluginProc,
+  )
+  .use(opts => {
+    const { ctx } = opts;
+    //      ^?
+    return opts.next()
+  })
+
+
+export const appRouter = router({
+  hello: procedureWithPlugin.query(opts => {
+    return opts.ctx.fromPlugin;
+  })
+})
+```
+
 ## Extending middlewares
 
 :::info
@@ -247,10 +337,10 @@ barMiddleware.unstable_pipe(fooMiddleware);
 ## Experimental: standalone middlewares
 
 :::info
-Caution: we have prefixed this as `experimental_` and it may change with any tRPC release. [Read more](/docs/faq#experimental).
+This has been deprecated in favor of `.unstable_concat()`
 :::
 
-tRPC has a new experimental API called `experimental_standaloneMiddleware` which allows you to independently define a middleware that can be used with any tRPC instance. Creating middlewares using `t.middleware` has the limitation that
+tRPC has an experimental API called `experimental_standaloneMiddleware` which allows you to independently define a middleware that can be used with any tRPC instance. Creating middlewares using `t.middleware` has the limitation that
 the `Context` type is tied to the `Context` type of the tRPC instance. This means that you cannot use the same middleware with multiple tRPC instances that have different `Context` types.
 
 Using `experimental_standaloneMiddleware` you can create a middleware that explicitly defines its requirements, i.e. the Context, Input and Meta types:
