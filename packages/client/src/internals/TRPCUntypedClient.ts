@@ -35,11 +35,10 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TInferrable extends InferrableClientTypes> =
-  {
-    links: TRPCLink<TInferrable>[];
-    transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
-  };
+export type CreateTRPCClientOptions<TRouter extends InferrableClientTypes> = {
+  links: TRPCLink<TRouter>[];
+  transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
+};
 
 /** @internal */
 export type UntypedClientProperties =

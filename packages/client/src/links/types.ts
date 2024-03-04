@@ -56,9 +56,9 @@ export type TRPCFetch = (
   options?: RequestInit,
 ) => Promise<ResponseEsque>;
 
-export type TRPCClientRuntime = {
-  //
-};
+export interface TRPCClientRuntime {
+  // nothing here anymore
+}
 
 /**
  * @internal
