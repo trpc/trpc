@@ -12,6 +12,7 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
   config() {
     return {
       createContext,
+      cacheContext: (ctx) => [ctx.session?.user.id],
       links: [
         loggerLink({
           enabled: (op) => true,
@@ -21,8 +22,6 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
           revalidate: 5,
           router: appRouter,
           transformer: superjson,
-          // include the user id in the cache key
-          cacheContext: (ctx) => [ctx.session?.user.id],
         }),
       ],
     };

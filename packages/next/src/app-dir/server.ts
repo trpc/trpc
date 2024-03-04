@@ -1,8 +1,10 @@
 /// <reference types="next" />
+import type { TRPCClientRuntime } from '@trpc/client';
 import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
+import type { AnyTRPCRouter } from '@trpc/server';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -26,24 +28,35 @@ import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';
 import type {
   ActionHandlerDef,
-  CreateTRPCNextAppRouterOptions,
+  CreateTRPCNextAppRouterServerOptions,
   inferActionDef,
 } from './shared';
 import { generateCacheTag, isFormData } from './shared';
 import type { NextAppDirDecorateRouterRecord } from './types';
 
+export type NextAppDirRuntime<TRouter extends AnyTRPCRouter> =
+  TRPCClientRuntime & {
+    ctx: inferClientTypes<TRouter>['ctx'];
+    cacheContext: (ctx: inferClientTypes<TRouter>['ctx']) => any[];
+  };
+
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
   TRouter extends AnyRouter,
->(opts: CreateTRPCNextAppRouterOptions<TRouter>) {
-  const getClient = cache(() => {
+>(opts: CreateTRPCNextAppRouterServerOptions<TRouter>) {
+  const getClient = cache(async () => {
     const config = opts.config();
-    return createTRPCUntypedClient(config);
+    const client = createTRPCUntypedClient(config);
+    const ctx = await config.createContext?.();
+    (client.runtime as any).ctx = ctx;
+    (client.runtime as any).cacheContext = config.cacheContext;
+    return client;
   });
 
   return createRecursiveProxy(async (callOpts) => {
     // lazily initialize client
-    const client = getClient();
+    const client = await getClient();
+    const runtime = client.runtime as NextAppDirRuntime<TRouter>;
 
     const pathCopy = [...callOpts.path];
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -54,7 +67,7 @@ export function experimental_createTRPCNextAppDirServer<
     const cacheTag = await generateCacheTag(
       procedurePath,
       callOpts.args[0],
-      await client.runtime.createContext?.(),
+      opts.config().cacheContext?.(runtime.ctx),
     );
 
     if (action === 'revalidate') {

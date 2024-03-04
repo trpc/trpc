@@ -10,7 +10,9 @@ import type {
   AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
+  inferRouterContext,
   inferTransformedProcedureOutput,
+  MaybePromise,
   ProtectedIntersection,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -86,8 +88,21 @@ export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
 /**
  * @internal
  */
-export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
+export interface CreateTRPCNextAppRouterClientOptions<
+  TRouter extends AnyRouter,
+> {
   config: () => CreateTRPCClientOptions<TRouter>;
+}
+/**
+ * @internal
+ */
+export interface CreateTRPCNextAppRouterServerOptions<
+  TRouter extends AnyRouter,
+> {
+  config: () => CreateTRPCClientOptions<TRouter> & {
+    createContext: () => MaybePromise<inferRouterContext<TRouter>>;
+    cacheContext: ((ctx: inferRouterContext<TRouter>) => any[]) | undefined;
+  };
 }
 
 /**

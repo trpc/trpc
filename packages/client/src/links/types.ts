@@ -1,8 +1,6 @@
 import type { Observable, Observer } from '@trpc/server/observable';
 import type {
-  AnyRouter,
   InferrableClientTypes,
-  inferRouterContext,
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -58,13 +56,9 @@ export type TRPCFetch = (
   options?: RequestInit,
 ) => Promise<ResponseEsque>;
 
-export type TRPCClientRuntime<
-  TInferrable extends InferrableClientTypes | never = never,
-> = TInferrable extends AnyRouter
-  ? {
-      createContext?: () => Promise<inferRouterContext<TInferrable>>;
-    }
-  : {};
+export type TRPCClientRuntime = {
+  //
+};
 
 /**
  * @internal
@@ -110,5 +104,5 @@ export type OperationLink<
  * @public
  */
 export type TRPCLink<TInferrable extends InferrableClientTypes> = (
-  opts: TRPCClientRuntime<TInferrable>,
+  opts: TRPCClientRuntime,
 ) => OperationLink<TInferrable>;

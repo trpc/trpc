@@ -10,19 +10,14 @@ import { observable } from '@trpc/server/observable';
 import type {
   AnyRouter,
   inferClientTypes,
-  inferRouterContext,
 } from '@trpc/server/unstable-core-do-not-import';
 import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
+import type { NextAppDirRuntime } from '../server';
 import { generateCacheTag } from '../shared';
 
 type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
-  /**
-   * define which values from the context should be considered into the cache
-   * key
-   */
-  cacheContext: ((ctx: inferRouterContext<TRouter>) => any[]) | undefined;
   /** how many seconds the cache should hold before revalidating */
   revalidate?: number | false;
 } & TransformerOptions<inferClientTypes<TRouter>>;
@@ -32,12 +27,8 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
   const transformer = getTransformer(opts.transformer);
-  return ({ createContext }) => {
-    if (!createContext)
-      throw new Error(
-        '`createContext` is required to be passed to use `experimental_nextCacheLink`.',
-      );
-
+  return (_runtime) => {
+    const runtime = _runtime as NextAppDirRuntime<TRouter>;
     return ({ op }) =>
       observable((observer) => {
         const { path, input, type, context } = op;
@@ -50,14 +41,12 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
             : undefined;
         const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-        const promise = createContext()
-          .then(async (ctx) => {
-            const cacheTag = await generateCacheTag(
-              path,
-              input,
-              opts.cacheContext?.(ctx),
-            );
-
+        const promise = generateCacheTag(
+          path,
+          input,
+          runtime.cacheContext?.(runtime.ctx),
+        )
+          .then((cacheTag) => {
             const callProc = async (_cachebuster: string) => {
               //   // _cachebuster is not used by us but to make sure
               //   // that calls with different tags are properly separated
@@ -66,7 +55,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
                 procedures: opts.router._def.procedures,
                 path,
                 getRawInput: async () => input,
-                ctx: ctx,
+                ctx: runtime.ctx,
                 type,
               });
 
