@@ -7,10 +7,11 @@ export function getTextDecoder(
     return customTextDecoder;
   }
 
+  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
   if (typeof window !== 'undefined' && window.TextDecoder) {
     return new window.TextDecoder();
   }
-
+  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
   if (typeof globalThis !== 'undefined' && globalThis.TextDecoder) {
     return new globalThis.TextDecoder();
   }
