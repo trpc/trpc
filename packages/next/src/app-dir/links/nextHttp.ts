@@ -49,10 +49,11 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
       const _fetch: NonNullable<
         HTTPLinkOptions<AnyRootTypes>['fetch']
       > = async (url, fetchOpts) => {
+        const ctx = await runtime.createContext?.();
         const cacheTag = await generateCacheTag(
           path,
           input,
-          runtime.cacheContext?.(runtime.ctx),
+          runtime.cacheContext?.(ctx),
         );
         return fetch(url, {
           ...fetchOpts,

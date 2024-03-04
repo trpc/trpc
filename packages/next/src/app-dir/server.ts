@@ -40,18 +40,18 @@ import type {
 export function experimental_createTRPCNextAppDirServer<
   TRouter extends AnyRouter,
 >(opts: CreateTRPCNextAppRouterServerOptions<TRouter>) {
-  const getClient = cache(async () => {
+  const getClient = cache(() => {
     const config = opts.config();
     const client = createTRPCUntypedClient(config);
-    const ctx = await config.createContext?.();
-    (client.runtime as any).ctx = ctx;
-    (client.runtime as any).cacheContext = config.cacheContext;
+    const runtime = client.runtime as NextAppDirRuntime<TRouter>;
+    runtime.createContext = config.createContext;
+    runtime.cacheContext = config.cacheContext ?? (() => []);
     return client;
   });
 
   return createRecursiveProxy(async (callOpts) => {
     // lazily initialize client
-    const client = await getClient();
+    const client = getClient();
     const runtime = client.runtime as NextAppDirRuntime<TRouter>;
 
     const pathCopy = [...callOpts.path];
@@ -60,10 +60,11 @@ export function experimental_createTRPCNextAppDirServer<
     const procedurePath = pathCopy.join('.');
     const procedureType = clientCallTypeToProcedureType(action);
 
+    const ctx = await runtime.createContext?.();
     const cacheTag = await generateCacheTag(
       procedurePath,
       callOpts.args[0],
-      opts.config().cacheContext?.(runtime.ctx),
+      runtime.cacheContext?.(ctx),
     );
 
     if (action === 'revalidate') {
