@@ -1,5 +1,5 @@
 import { getServerAndReactClient } from './__reactHelpers';
-import type { InfiniteData } from '@tanstack/react-query';
+import { skipToken, type InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
@@ -116,6 +116,25 @@ describe('useQuery()', () => {
     ).returns;
 
     expectation.toMatchTypeOf<{ data: '__result' }>();
+    expectation.not.toMatchTypeOf<{ data: undefined }>();
+  });
+
+  test('data type with skipToken', () => {
+    const expectation = expectTypeOf(() =>
+      ctx.client.post.byId.useQuery(skipToken),
+    ).returns;
+
+    expectation.toMatchTypeOf<{ data: undefined }>();
+  });
+
+  test('data type with conditional skipToken', () => {
+    const expectation = expectTypeOf(() =>
+      ctx.client.post.byId.useQuery(
+        Math.random() > 0.5 ? skipToken : { id: '1' },
+      ),
+    ).returns;
+
+    expectation.toMatchTypeOf<{ data: '__result' | undefined }>();
     expectation.not.toMatchTypeOf<{ data: undefined }>();
   });
 });
