@@ -7,7 +7,7 @@ slug: /client/react/disabling-queries
 
 To disable queries, you can pass `skipToken` as the first argument to `useQuery` or `useInfiniteQuery`. This will prevent the query from being executed.
 
-### Typesafe disabling of queries using `skipToken`
+### Typesafe conditional queries using `skipToken`
 
 ```tsx
 import { skipToken } from '@trpc/react-query';
