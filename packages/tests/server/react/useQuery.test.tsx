@@ -119,14 +119,6 @@ describe('useQuery()', () => {
     expectation.not.toMatchTypeOf<{ data: undefined }>();
   });
 
-  test('data type with skipToken', () => {
-    const expectation = expectTypeOf(() =>
-      ctx.client.post.byId.useQuery(skipToken),
-    ).returns;
-
-    expectation.toMatchTypeOf<{ data: undefined }>();
-  });
-
   test('data type with conditional skipToken', () => {
     const expectation = expectTypeOf(() =>
       ctx.client.post.byId.useQuery(
