@@ -1,4 +1,6 @@
+import { doNotExecute, ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
+import { skipToken } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -50,4 +52,35 @@ test('useSuspenseQuery()', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result`);
   });
+});
+
+test('useSuspenseQuery()', async () => {
+  const { client, App } = ctx;
+  function MyComponent() {
+    const [data, query1] = client.post.byId.useSuspenseQuery({
+      id: '1',
+    });
+    expectTypeOf(data).toEqualTypeOf<'__result'>();
+
+    type TData = typeof data;
+    expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+    expect(data).toBe('__result');
+    expect(query1.data).toBe('__result');
+
+    return <>{query1.data}</>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent(`__result`);
+  });
+});
+
+test('useSuspenseQuery shouldnt accept skipToken', async () => {
+  // @ts-expect-error skip token not allowed in useSuspenseQuery
+  doNotExecute(() => ctx.client.post.byId.useSuspenseQuery(skipToken));
 });
