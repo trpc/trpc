@@ -402,7 +402,7 @@ export const err = (schema) => (input) => {
 };
 ```
 
-```ts twoslash
+```ts
 import { err, object, string } from '@robolex/sure';
 import { initTRPC } from '@trpc/server';
 
