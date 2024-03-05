@@ -145,11 +145,14 @@ export function createRootHooks<
 
     const defaultOpts = queryClient.getQueryDefaults(queryKey);
 
+    const isInputSkipToken = input === skipToken;
+
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       (opts?.enabled ?? defaultOpts?.enabled) !== false &&
+      !isInputSkipToken &&
       !queryClient.getQueryCache().find({ queryKey })
     ) {
       void prefetchQuery(queryKey, opts as any);
@@ -161,8 +164,6 @@ export function createRootHooks<
 
     const shouldAbortOnUnmount =
       opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
-
-    const isInputSkipToken = input === skipToken;
 
     const hook = __useQuery(
       {
@@ -334,11 +335,14 @@ export function createRootHooks<
 
     const defaultOpts = queryClient.getQueryDefaults(queryKey);
 
+    const isInputSkipToken = input === skipToken;
+
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       (opts?.enabled ?? defaultOpts?.enabled) !== false &&
+      !isInputSkipToken &&
       !queryClient.getQueryCache().find({ queryKey })
     ) {
       void prefetchInfiniteQuery(queryKey, { ...defaultOpts, ...opts } as any);
@@ -351,8 +355,6 @@ export function createRootHooks<
 
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
-
-    const isInputSkipToken = input === skipToken;
 
     const hook = __useInfiniteQuery(
       {
