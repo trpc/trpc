@@ -381,6 +381,11 @@
       "permanent": true
     },
     {
+      "source": "/docs/reactjs/disabling-queries",
+      "destination": "/docs/client/react/disabling-queries",
+      "permanent": true
+    },
+    {
       "source": "/docs/reactjs/getQueryKey",
       "destination": "/docs/client/react/getQueryKey",
       "permanent": true
