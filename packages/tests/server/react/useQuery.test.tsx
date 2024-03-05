@@ -96,6 +96,39 @@ describe('useQuery()', () => {
     });
   });
 
+  test('disabling query with skipToken', async () => {
+    const { client, App } = ctx;
+    function MyComponent() {
+      const query1 = client.post.byId.useQuery(skipToken);
+
+      expect(query1.trpc.path).toBe('post.byId');
+
+      // @ts-expect-error Should not exist
+      client.post.byId.useInfiniteQuery;
+      const utils = client.useUtils();
+
+      useEffect(() => {
+        utils.post.byId.invalidate();
+        // @ts-expect-error Should not exist
+        utils.doesNotExist.invalidate();
+      }, [utils]);
+
+      type TData = (typeof query1)['data'];
+      expectTypeOf<TData>().toMatchTypeOf<'__result' | undefined>();
+
+      return <pre>{JSON.stringify(query1.status ?? 'n/a', null, 4)}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`pending`);
+    });
+  });
+
   test('data type without initialData', () => {
     const expectation = expectTypeOf(() =>
       ctx.client.post.byId.useQuery({ id: '1' }),
