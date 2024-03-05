@@ -7,11 +7,13 @@ import {
   useSuspenseQueries as __useSuspenseQueries,
   useSuspenseQuery as __useSuspenseQuery,
   hashKey,
+  skipToken,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { createTRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import { skip } from 'node:test';
 import * as React from 'react';
 import type { SSRState, TRPCContextState } from '../../internals/context';
 import { TRPCContext } from '../../internals/context';
@@ -160,23 +162,27 @@ export function createRootHooks<
     const shouldAbortOnUnmount =
       opts?.trpc?.abortOnUnmount ?? config?.abortOnUnmount ?? abortOnUnmount;
 
+    const isInputSkipToken = input === skipToken;
+
     const hook = __useQuery(
       {
         ...ssrOpts,
         queryKey: queryKey as any,
-        queryFn: (queryFunctionContext) => {
-          const actualOpts = {
-            ...ssrOpts,
-            trpc: {
-              ...ssrOpts?.trpc,
-              ...(shouldAbortOnUnmount
-                ? { signal: queryFunctionContext.signal }
-                : {}),
-            },
-          };
+        queryFn: isInputSkipToken
+          ? input
+          : (queryFunctionContext) => {
+              const actualOpts = {
+                ...ssrOpts,
+                trpc: {
+                  ...ssrOpts?.trpc,
+                  ...(shouldAbortOnUnmount
+                    ? { signal: queryFunctionContext.signal }
+                    : {}),
+                },
+              };
 
-          return client.query(...getClientArgs(queryKey, actualOpts));
-        },
+              return client.query(...getClientArgs(queryKey, actualOpts));
+            },
       },
       queryClient,
     ) as UseTRPCQueryResult<unknown, TError>;
@@ -346,30 +352,35 @@ export function createRootHooks<
     // request option should take priority over global
     const shouldAbortOnUnmount = opts?.trpc?.abortOnUnmount ?? abortOnUnmount;
 
+    const isInputSkipToken = input === skipToken;
+
     const hook = __useInfiniteQuery(
       {
         ...ssrOpts,
         initialPageParam: opts.initialCursor ?? null,
         persister: opts.persister,
         queryKey: queryKey as any,
-        queryFn: (queryFunctionContext) => {
-          const actualOpts = {
-            ...ssrOpts,
-            trpc: {
-              ...ssrOpts?.trpc,
-              ...(shouldAbortOnUnmount
-                ? { signal: queryFunctionContext.signal }
-                : {}),
-            },
-          };
+        queryFn: isInputSkipToken
+          ? input
+          : (queryFunctionContext) => {
+              const actualOpts = {
+                ...ssrOpts,
+                trpc: {
+                  ...ssrOpts?.trpc,
+                  ...(shouldAbortOnUnmount
+                    ? { signal: queryFunctionContext.signal }
+                    : {}),
+                },
+              };
 
-          return client.query(
-            ...getClientArgs(queryKey, actualOpts, {
-              pageParam: queryFunctionContext.pageParam ?? opts.initialCursor,
-              direction: queryFunctionContext.direction,
-            }),
-          );
-        },
+              return client.query(
+                ...getClientArgs(queryKey, actualOpts, {
+                  pageParam:
+                    queryFunctionContext.pageParam ?? opts.initialCursor,
+                  direction: queryFunctionContext.direction,
+                }),
+              );
+            },
       },
       queryClient,
     ) as UseTRPCInfiniteQueryResult<unknown, TError, unknown>;

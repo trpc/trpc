@@ -1,3 +1,4 @@
+import type { SkipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type {
   AnyProcedure,
@@ -49,7 +50,7 @@ type ResolverDef = {
  */
 export interface ProcedureUseQuery<TDef extends ResolverDef> {
   <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
-    input: TDef['input'],
+    input: TDef['input'] | SkipToken,
     opts: DefinedUseTRPCQueryOptions<
       TQueryFnData,
       TData,
@@ -68,7 +69,7 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
   >;
 
   <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
-    input: TDef['input'],
+    input: TDef['input'] | SkipToken,
     opts?: UseTRPCQueryOptions<
       TQueryFnData,
       TData,
@@ -96,7 +97,7 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
          * @link https://trpc.io/docs/v11/client/react/suspense#useinfinitesuspensequery
          */
         useInfiniteQuery: (
-          input: Omit<TDef['input'], ReservedInfiniteQueryKeys>,
+          input: Omit<TDef['input'], ReservedInfiniteQueryKeys> | SkipToken,
           opts: UseTRPCInfiniteQueryOptions<
             TDef['input'],
             TDef['output'],
