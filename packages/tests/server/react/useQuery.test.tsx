@@ -116,7 +116,7 @@ describe('useQuery()', () => {
       type TData = (typeof query1)['data'];
       expectTypeOf<TData>().toMatchTypeOf<'__result' | undefined>();
 
-      return <pre>{JSON.stringify(query1.status ?? 'n/a', null, 4)}</pre>;
+      return <pre>{query1.status}</pre>;
     }
 
     const utils = render(
