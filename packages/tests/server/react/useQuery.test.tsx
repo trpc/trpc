@@ -1,5 +1,5 @@
 import { getServerAndReactClient } from './__reactHelpers';
-import type { InfiniteData } from '@tanstack/react-query';
+import { skipToken, type InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
@@ -96,6 +96,71 @@ describe('useQuery()', () => {
     });
   });
 
+  test('disabling query with skipToken', async () => {
+    const { client, App } = ctx;
+    function MyComponent() {
+      const query1 = client.post.byId.useQuery(skipToken);
+
+      type TData = (typeof query1)['data'];
+      expectTypeOf<TData>().toMatchTypeOf<'__result' | undefined>();
+
+      return <pre>{query1.status}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`pending`);
+    });
+  });
+
+  test('conditionally enabling query with skipToken', async () => {
+    const { client, App } = ctx;
+    let onEnable: () => void;
+    function MyComponent() {
+      const [enabled, setEnabled] = React.useState(false);
+      const query1 = client.post.byId.useQuery(
+        enabled
+          ? {
+              id: '1',
+            }
+          : skipToken,
+      );
+
+      onEnable = () => {
+        setEnabled(true);
+      };
+
+      return (
+        <pre>
+          {query1.status}:{query1.isFetching ? 'fetching' : 'notFetching'}
+        </pre>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`pending:notFetching`);
+    });
+
+    expect(utils.container).toHaveTextContent(`pending:notFetching`);
+
+    await waitFor(() => {
+      onEnable!();
+      expect(utils.container).toHaveTextContent(`pending:fetching`);
+    });
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`success:notFetching`);
+    });
+  });
+
   test('data type without initialData', () => {
     const expectation = expectTypeOf(() =>
       ctx.client.post.byId.useQuery({ id: '1' }),
@@ -116,6 +181,17 @@ describe('useQuery()', () => {
     ).returns;
 
     expectation.toMatchTypeOf<{ data: '__result' }>();
+    expectation.not.toMatchTypeOf<{ data: undefined }>();
+  });
+
+  test('data type with conditional skipToken', () => {
+    const expectation = expectTypeOf(() =>
+      ctx.client.post.byId.useQuery(
+        Math.random() > 0.5 ? skipToken : { id: '1' },
+      ),
+    ).returns;
+
+    expectation.toMatchTypeOf<{ data: '__result' | undefined }>();
     expectation.not.toMatchTypeOf<{ data: undefined }>();
   });
 });

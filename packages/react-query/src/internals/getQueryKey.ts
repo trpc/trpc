@@ -1,3 +1,4 @@
+import { skipToken } from '@tanstack/react-query';
 import {
   isObject,
   type DeepPartial,
@@ -61,7 +62,8 @@ export function getQueryKeyInternal(
   return [
     splitPath,
     {
-      ...(typeof input !== 'undefined' && { input: input }),
+      ...(typeof input !== 'undefined' &&
+        input !== skipToken && { input: input }),
       ...(type && type !== 'any' && { type: type }),
     },
   ];
