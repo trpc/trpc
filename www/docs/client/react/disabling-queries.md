@@ -10,7 +10,7 @@ To disable queries, you can pass `skipToken` as the first argument to `useQuery`
 ### Typesafe conditional queries using `skipToken`
 
 ```tsx
-import { skipToken } from '@trpc/react-query';
+import { skipToken } from '@tanstack/react-query';
 
 
 export function MyComponent() {
