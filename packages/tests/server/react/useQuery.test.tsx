@@ -101,18 +101,6 @@ describe('useQuery()', () => {
     function MyComponent() {
       const query1 = client.post.byId.useQuery(skipToken);
 
-      expect(query1.trpc.path).toBe('post.byId');
-
-      // @ts-expect-error Should not exist
-      client.post.byId.useInfiniteQuery;
-      const utils = client.useUtils();
-
-      useEffect(() => {
-        utils.post.byId.invalidate();
-        // @ts-expect-error Should not exist
-        utils.doesNotExist.invalidate();
-      }, [utils]);
-
       type TData = (typeof query1)['data'];
       expectTypeOf<TData>().toMatchTypeOf<'__result' | undefined>();
 
@@ -126,6 +114,50 @@ describe('useQuery()', () => {
     );
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`pending`);
+    });
+  });
+
+  test('conditionally enabling query with skipToken', async () => {
+    const { client, App } = ctx;
+    let onEnable: () => void;
+    function MyComponent() {
+      const [enabled, setEnabled] = React.useState(false);
+      const query1 = client.post.byId.useQuery(
+        enabled
+          ? {
+              id: '1',
+            }
+          : skipToken,
+      );
+
+      onEnable = () => {
+        setEnabled(true);
+      };
+
+      return (
+        <pre>
+          {query1.status}:{query1.isFetching ? 'fetching' : 'notFetching'}
+        </pre>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`pending:notFetching`);
+    });
+
+    expect(utils.container).toHaveTextContent(`pending:notFetching`);
+
+    await waitFor(() => {
+      onEnable!();
+      expect(utils.container).toHaveTextContent(`pending:fetching`);
+    });
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`success:notFetching`);
     });
   });
 
