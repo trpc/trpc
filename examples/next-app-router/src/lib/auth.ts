@@ -1,3 +1,4 @@
+import 'server-only';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { db } from '~/db/client';
 import NextAuth, { DefaultSession } from 'next-auth';

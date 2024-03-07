@@ -10,19 +10,21 @@ import { useState } from 'react';
 
 export const trpc = createTRPCReact<AppRouter>();
 
+const createQueryClient = () => new QueryClient();
+
+let clientQueryClientSingleton: QueryClient | undefined = undefined;
+const getQueryClient = () => {
+  if (typeof window === 'undefined') {
+    // Server: always make a new query client
+    return createQueryClient();
+  } else {
+    // Browser: use singleton pattern to keep the same query client
+    return (clientQueryClientSingleton ??= createQueryClient());
+  }
+};
+
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            // Since queries are prefetched on the server, we set a stale time so that
-            // queries aren't immediately refetched on the client
-            staleTime: 1000 * 30,
-          },
-        },
-      }),
-  );
+  const queryClient = getQueryClient();
 
   const [trpcClient] = useState(() =>
     trpc.createClient({
