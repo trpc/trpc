@@ -176,3 +176,5 @@ export const ignoreErrors = async (fn: () => unknown) => {
     release();
   }
 };
+
+export const doNotExecute = (_func: () => void) => true;

@@ -388,6 +388,55 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+### With [@robolex/sure](https://github.com/robolex-app/public_ts)
+
+You're able to define your own Error types and error throwing function if necessary.
+As a convenience `@robolex/sure` provides [sure/src/err.ts](https://github.com/robolex-app/public_ts/blob/main/packages/sure/src/err.ts):
+
+```ts
+// sure/src/err.ts
+export const err = (schema) => (input) => {
+  const [good, result] = schema(input);
+  if (good) return result;
+  throw result;
+};
+```
+
+```ts
+import { err, object, string } from '@robolex/sure';
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(
+      err(
+        object({
+          name: string,
+        }),
+      ),
+    )
+    .output(
+      err(
+        object({
+          greeting: string,
+        }),
+      ),
+    )
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
 ## Contributing your own Validator Library
 
 If you work on a validator library which supports tRPC usage, please feel free to open a PR for this page with equivalent usage to the other examples here, and a link to your docs.

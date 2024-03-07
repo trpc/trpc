@@ -93,6 +93,7 @@ module.exports = {
             'client/react/suspense',
             'client/react/getQueryKey',
             'client/react/aborting-procedure-calls',
+            'client/react/disabling-queries',
           ],
         },
         {

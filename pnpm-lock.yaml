@@ -54,10 +54,10 @@ importers:
         version: 2.7.2
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.0.1
-        version: 7.0.1(@typescript-eslint/parser@7.0.1)(eslint@8.56.0)(typescript@5.3.3)
+        version: 7.0.1(@typescript-eslint/parser@7.0.1)(eslint@8.56.0)(typescript@5.4.2)
       '@typescript-eslint/parser':
         specifier: ^7.0.1
-        version: 7.0.1(eslint@8.56.0)(typescript@5.3.3)
+        version: 7.0.1(eslint@8.56.0)(typescript@5.4.2)
       '@vitest/coverage-istanbul':
         specifier: ^1.2.2
         version: 1.2.2(vitest@1.2.2)
@@ -126,7 +126,7 @@ importers:
         version: 0.11.0(@swc/core@1.3.3)(rollup@4.9.5)
       rollup-plugin-typescript2:
         specifier: ^0.36.0
-        version: 0.36.0(rollup@4.9.5)(typescript@5.3.3)
+        version: 0.36.0(rollup@4.9.5)(typescript@5.4.2)
       superjson:
         specifier: ^1.12.4
         version: 1.12.4
@@ -140,8 +140,8 @@ importers:
         specifier: ^1.10.2
         version: 1.10.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       vite:
         specifier: ^5.1.0
         version: 5.1.4(@types/node@20.10.4)
@@ -161,8 +161,8 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -206,8 +206,8 @@ importers:
         specifier: link:./src/trpc
         version: link:src/trpc
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       zod:
         specifier: ^3.0.0
         version: 3.22.4
@@ -231,8 +231,8 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -277,14 +277,14 @@ importers:
         specifier: ^8.56.0
         version: 8.56.0
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/.test/diagnostics-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -326,8 +326,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/.test/internal-types-export:
     dependencies:
@@ -360,14 +360,14 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/.test/ssg:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -415,14 +415,14 @@ importers:
         specifier: ^1.12.0
         version: 1.14.0
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/.test/ssg-infinite-serialization:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../../packages/client
@@ -467,8 +467,8 @@ importers:
         specifier: ^1.12.0
         version: 1.14.0
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/bun:
     dependencies:
@@ -489,8 +489,8 @@ importers:
         specifier: ^1.12.0
         version: 1.14.0
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       wait-port:
         specifier: ^1.0.1
         version: 1.0.4
@@ -523,8 +523,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       wrangler:
         specifier: ^2.0.17
         version: 2.4.4
@@ -572,8 +572,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       wait-port:
         specifier: ^1.0.1
         version: 1.0.4
@@ -621,8 +621,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       wait-port:
         specifier: ^1.0.1
         version: 1.0.4
@@ -676,8 +676,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       wait-port:
         specifier: ^1.0.1
         version: 1.0.4
@@ -716,8 +716,8 @@ importers:
         specifier: ^12.0.4
         version: 12.0.4(serverless@3.25.0)
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/minimal:
     dependencies:
@@ -744,8 +744,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       wait-port:
         specifier: ^1.0.1
         version: 1.0.4
@@ -768,8 +768,8 @@ importers:
   examples/minimal-react/client:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -799,8 +799,8 @@ importers:
         specifier: ^8.56.0
         version: 8.56.0
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       vite:
         specifier: ^5.1.0
         version: 5.1.4(@types/node@20.10.4)
@@ -830,8 +830,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/next-app-router:
     dependencies:
@@ -852,7 +852,7 @@ importers:
         version: 1.0.2(@types/react@18.2.33)(react@18.2.0)
       '@tanstack/react-query':
         specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -873,7 +873,7 @@ importers:
         version: 0.7.0
       drizzle-orm:
         specifier: ^0.29.3
-        version: 0.29.4(@types/react@18.2.33)(better-sqlite3@9.4.3)(react@18.2.0)
+        version: 0.29.5(@types/react@18.2.33)(better-sqlite3@9.4.3)(react@18.2.0)
       geist:
         specifier: ^1.2.2
         version: 1.2.2(next@14.0.1)
@@ -910,7 +910,7 @@ importers:
     devDependencies:
       '@tanstack/react-query-devtools':
         specifier: ^5.0.0
-        version: 5.0.0(@tanstack/react-query@5.0.0)(react-dom@18.2.0)(react@18.2.0)
+        version: 5.0.0(@tanstack/react-query@5.25.0)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^20.10.0
         version: 20.10.4
@@ -928,7 +928,7 @@ importers:
         version: 8.56.0
       eslint-config-next:
         specifier: ^14.0.1
-        version: 14.0.1(eslint@8.56.0)(typescript@5.3.3)
+        version: 14.0.1(eslint@8.56.0)(typescript@5.4.2)
       postcss:
         specifier: ^8.4.14
         version: 8.4.35
@@ -940,13 +940,13 @@ importers:
         version: 1.0.7(tailwindcss@3.3.0)
       typescript:
         specifier: ^5.3.3
-        version: 5.3.3
+        version: 5.4.2
 
   examples/next-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -988,14 +988,14 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/next-edge-runtime:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1034,14 +1034,14 @@ importers:
         specifier: ^8.56.0
         version: 8.56.0
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/next-minimal-starter:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1080,8 +1080,8 @@ importers:
         specifier: ^8.56.0
         version: 8.56.0
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/next-prisma-starter:
     dependencies:
@@ -1089,8 +1089,8 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplestrpc-next-prisma-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplestrpc-next-prisma-starter(prisma@5.8.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1133,10 +1133,10 @@ importers:
         version: 18.2.33
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.0.1
-        version: 7.0.1(@typescript-eslint/parser@7.0.1)(eslint@8.56.0)(typescript@5.3.3)
+        version: 7.0.1(@typescript-eslint/parser@7.0.1)(eslint@8.56.0)(typescript@5.4.2)
       '@typescript-eslint/parser':
         specifier: ^7.0.1
-        version: 7.0.1(eslint@8.56.0)(typescript@5.3.3)
+        version: 7.0.1(eslint@8.56.0)(typescript@5.4.2)
       autoprefixer:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.14)
@@ -1148,7 +1148,7 @@ importers:
         version: 8.56.0
       eslint-config-next:
         specifier: ^14.0.1
-        version: 14.0.1(eslint@8.56.0)(typescript@5.3.3)
+        version: 14.0.1(eslint@8.56.0)(typescript@5.4.2)
       eslint-plugin-react:
         specifier: ^7.32.2
         version: 7.32.2(eslint@8.56.0)
@@ -1166,7 +1166,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1177,8 +1177,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       vite:
         specifier: ^5.1.0
         version: 5.1.4(@types/node@20.10.4)
@@ -1192,8 +1192,8 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplestrpc-next-prisma-todomvc
         version: '@registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@5.8.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1245,7 +1245,7 @@ importers:
         version: 1.28.1
       '@tanstack/react-query-devtools':
         specifier: ^5.0.0
-        version: 5.0.0(@tanstack/react-query@5.0.0)(react-dom@18.2.0)(react@18.2.0)
+        version: 5.0.0(@tanstack/react-query@5.25.0)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^20.10.0
         version: 20.10.4
@@ -1260,13 +1260,13 @@ importers:
         version: 4.1.5
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-todomvc
-        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc'
+        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/next-prisma-websockets-starter:
     dependencies:
@@ -1274,8 +1274,8 @@ importers:
         specifier: https://registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplesnext-websockets-starter
         version: '@registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplesnext-websockets-starter(prisma@5.8.1)'
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1321,7 +1321,7 @@ importers:
         version: 1.28.1
       '@tanstack/react-query-devtools':
         specifier: ^5.0.0
-        version: 5.0.0(@tanstack/react-query@5.0.0)(react-dom@18.2.0)(react@18.2.0)
+        version: 5.0.0(@tanstack/react-query@5.25.0)(react-dom@18.2.0)(react@18.2.0)
       '@types/node':
         specifier: ^20.10.0
         version: 20.10.4
@@ -1333,10 +1333,10 @@ importers:
         version: 8.5.10
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.0.1
-        version: 7.0.1(@typescript-eslint/parser@7.0.1)(eslint@8.56.0)(typescript@5.3.3)
+        version: 7.0.1(@typescript-eslint/parser@7.0.1)(eslint@8.56.0)(typescript@5.4.2)
       '@typescript-eslint/parser':
         specifier: ^7.0.1
-        version: 7.0.1(eslint@8.56.0)(typescript@5.3.3)
+        version: 7.0.1(eslint@8.56.0)(typescript@5.4.2)
       autoprefixer:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.14)
@@ -1348,7 +1348,7 @@ importers:
         version: 8.56.0
       eslint-config-next:
         specifier: ^14.0.1
-        version: 14.0.1(eslint@8.56.0)(typescript@5.3.3)
+        version: 14.0.1(eslint@8.56.0)(typescript@5.4.2)
       eslint-plugin-react:
         specifier: ^7.32.2
         version: 7.32.2(eslint@8.56.0)
@@ -1366,7 +1366,7 @@ importers:
         version: 2.8.8
       prisma:
         specifier: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplesnext-websockets-starter
-        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter'
+        version: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter'
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -1374,8 +1374,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0(postcss@8.4.14)
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   examples/soa:
     devDependencies:
@@ -1398,8 +1398,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       wait-port:
         specifier: ^1.0.1
         version: 1.0.4
@@ -1444,8 +1444,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       wait-port:
         specifier: ^1.0.1
         version: 1.0.4
@@ -1478,8 +1478,8 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
   packages/client:
     devDependencies:
@@ -1514,8 +1514,8 @@ importers:
   packages/next:
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: 10.45.1
         version: link:../client
@@ -1565,8 +1565,8 @@ importers:
   packages/react-query:
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@trpc/client':
         specifier: 10.45.1
         version: link:../client
@@ -1613,8 +1613,8 @@ importers:
         specifier: ^7.1.2
         version: 7.1.2
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@types/aws-lambda':
         specifier: ^8.10.97
         version: 8.10.115
@@ -1688,11 +1688,11 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       valibot:
-        specifier: ^0.29.0
-        version: 0.29.0
+        specifier: ^0.30.0
+        version: 0.30.0
       ws:
         specifier: ^8.0.0
         version: 8.16.0
@@ -1718,8 +1718,8 @@ importers:
         specifier: ^2.9.0
         version: 2.11.0
       '@tanstack/react-query':
-        specifier: ^5.0.0
-        version: 5.0.0(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.2.0)
       '@testing-library/dom':
         specifier: ^9.0.0
         version: 9.0.0
@@ -1749,7 +1749,7 @@ importers:
         version: 20.10.4
       '@typeschema/valibot':
         specifier: ^0.13.0
-        version: 0.13.0(valibot@0.29.0)
+        version: 0.13.0(valibot@0.30.0)
       abort-controller:
         specifier: ^3.0.0
         version: 3.0.0
@@ -1811,11 +1811,11 @@ importers:
         specifier: 0.23.1
         version: 0.23.1
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
       valibot:
-        specifier: ^0.29.0
-        version: 0.29.0
+        specifier: ^0.30.0
+        version: 0.30.0
       ws:
         specifier: ^8.0.0
         version: 8.16.0
@@ -1920,8 +1920,8 @@ importers:
         specifier: ^8.0.0
         version: 8.0.0
       '@octokit/graphql-schema':
-        specifier: ^14.0.0
-        version: 14.0.0
+        specifier: ^15.0.0
+        version: 15.1.1
       '@tsconfig/docusaurus':
         specifier: ^2.0.0
         version: 2.0.0
@@ -1939,7 +1939,7 @@ importers:
         version: 18.2.14
       '@typeschema/valibot':
         specifier: ^0.13.0
-        version: 0.13.0(valibot@0.29.0)
+        version: 0.13.0(valibot@0.30.0)
       arktype:
         specifier: 1.0.14-alpha
         version: 1.0.14-alpha
@@ -2001,8 +2001,8 @@ importers:
         specifier: npm:typescript@~5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.29.0
-        version: 0.29.0
+        specifier: ^0.30.0
+        version: 0.30.0
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -2035,8 +2035,8 @@ importers:
         specifier: ^18.2.14
         version: 18.2.14
       typescript:
-        specifier: ^5.3.3
-        version: 5.3.3
+        specifier: ^5.4.0
+        version: 5.4.2
 
 packages:
 
@@ -2211,7 +2211,7 @@ packages:
       '@panva/hkdf': 1.1.1
       '@types/cookie': 0.6.0
       cookie: 0.6.0
-      jose: 5.2.2
+      jose: 5.2.3
       oauth4webapi: 2.10.3
       preact: 10.11.3
       preact-render-to-string: 5.2.3(preact@10.11.3)
@@ -2234,7 +2234,7 @@ packages:
       '@panva/hkdf': 1.1.1
       '@types/cookie': 0.6.0
       cookie: 0.6.0
-      jose: 5.2.2
+      jose: 5.2.3
       oauth4webapi: 2.10.3
       preact: 10.11.3
       preact-render-to-string: 5.2.3(preact@10.11.3)
@@ -7345,8 +7345,8 @@ packages:
       universal-user-agent: 6.0.0
     dev: false
 
-  /@octokit/graphql-schema@14.0.0:
-    resolution: {integrity: sha512-U+K9QtIBt6citkoHdcEnXiOPyaicaYazvb5EL6ZFbheFNpZCqeB4gHWVx3OPZlQIuLvgCJXFEzMrSrQw41iQSQ==}
+  /@octokit/graphql-schema@15.1.1:
+    resolution: {integrity: sha512-ufrgF/lBKvDpofCnu3ObSCdWHVj/9aiM/2SVTPnMNIhCtOSpAYNmW51CmpwPsGnP70UWqMHQ9yxJBsjxhi0yzA==}
     dependencies:
       graphql: 16.6.0
       graphql-tag: 2.12.6(graphql@16.6.0)
@@ -7904,7 +7904,7 @@ packages:
       adm-zip: 0.5.9
       archiver: 5.3.1
       axios: 0.21.4(debug@4.3.2)
-      fast-glob: 3.2.12
+      fast-glob: 3.3.2
       https-proxy-agent: 5.0.1(supports-color@8.1.1)
       ignore: 5.2.4
       isomorphic-ws: 4.0.1(ws@7.5.9)
@@ -8415,14 +8415,14 @@ packages:
       defer-to-connect: 2.0.1
     dev: false
 
-  /@tanstack/query-core@5.0.0:
-    resolution: {integrity: sha512-Y1BpiA6BblJd/UlVqxEVeAG7IACn568YJuTTItAiecBI7En+33g780kg+/8lhgl+BzcUPN7o+NjBrSRGJoemyQ==}
+  /@tanstack/query-core@5.25.0:
+    resolution: {integrity: sha512-vlobHP64HTuSE68lWF1mEhwSRC5Q7gaT+a/m9S+ItuN+ruSOxe1rFnR9j0ACWQ314BPhBEVKfBQ6mHL0OWfdbQ==}
 
   /@tanstack/query-devtools@5.0.0:
     resolution: {integrity: sha512-WATg9+nreAmtTRHzxvCFN6j4ucUVbkJNd8ErcYmf7Y6GsJw/BGscd4rWS7cdAP7zfTcPjHjGaRB041pcv8dNvA==}
     dev: true
 
-  /@tanstack/react-query-devtools@5.0.0(@tanstack/react-query@5.0.0)(react-dom@18.2.0)(react@18.2.0):
+  /@tanstack/react-query-devtools@5.0.0(@tanstack/react-query@5.25.0)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-4yw29d89eOqUmliRKGmEOjuq2AGSM3i4jjw/YFMrErg0neVITy2bkoU3fPXZ339czlupqq0b4e20uFVtqkEqGQ==}
     peerDependencies:
       '@tanstack/react-query': ^5.0.0
@@ -8430,26 +8430,18 @@ packages:
       react-dom: ^18.0.0
     dependencies:
       '@tanstack/query-devtools': 5.0.0
-      '@tanstack/react-query': 5.0.0(react-dom@18.2.0)(react@18.2.0)
+      '@tanstack/react-query': 5.25.0(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: true
 
-  /@tanstack/react-query@5.0.0(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-diQoC8FNBcO5Uf5yuaJlXthTtbO1xM8kzOX+pSBUMT9n/cqQ/u1wJGCtukvhDWA+6j07WmIj4bfqNbd2KOB6jQ==}
+  /@tanstack/react-query@5.25.0(react@18.2.0):
+    resolution: {integrity: sha512-u+n5R7mLO7RmeiIonpaCRVXNRWtZEef/aVZ/XGWRPa7trBIvGtzlfo0Ah7ZtnTYfrKEVwnZ/tzRCBcoiqJ/tFw==}
     peerDependencies:
       react: ^18.0.0
-      react-dom: ^18.0.0
-      react-native: '*'
-    peerDependenciesMeta:
-      react-dom:
-        optional: true
-      react-native:
-        optional: true
     dependencies:
-      '@tanstack/query-core': 5.0.0
+      '@tanstack/query-core': 5.25.0
       react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
 
   /@tanstack/react-virtual@3.0.4(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-tiqKW/e2MJVCr7/pRUXulpkyxllaOclkHNfhKTo4pmHjJIqnhMfwIjc1Q1R0Un3PI3kQywywu/791c8z9u0qeA==}
@@ -8963,7 +8955,7 @@ packages:
       '@types/json-schema':
         optional: true
 
-  /@typeschema/valibot@0.13.0(valibot@0.29.0):
+  /@typeschema/valibot@0.13.0(valibot@0.30.0):
     resolution: {integrity: sha512-nfGB2LQzJbn6YgvwGLmbhZkrsPFo/ZoDYcIncXmNNA1qJD9q4qefC8nv+uAaZR7J8icg5lNbGHxXYnqd3VN76g==}
     peerDependencies:
       '@gcornut/valibot-json-schema': ^0.0.23
@@ -8975,11 +8967,11 @@ packages:
         optional: true
     dependencies:
       '@typeschema/core': 0.13.0
-      valibot: 0.29.0
+      valibot: 0.30.0
     transitivePeerDependencies:
       - '@types/json-schema'
 
-  /@typescript-eslint/eslint-plugin@7.0.1(@typescript-eslint/parser@7.0.1)(eslint@8.56.0)(typescript@5.3.3):
+  /@typescript-eslint/eslint-plugin@7.0.1(@typescript-eslint/parser@7.0.1)(eslint@8.56.0)(typescript@5.4.2):
     resolution: {integrity: sha512-OLvgeBv3vXlnnJGIAgCLYKjgMEU+wBGj07MQ/nxAaON+3mLzX7mJbhRYrVGiVvFiXtwFlkcBa/TtmglHy0UbzQ==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
@@ -8991,10 +8983,10 @@ packages:
         optional: true
     dependencies:
       '@eslint-community/regexpp': 4.5.1
-      '@typescript-eslint/parser': 7.0.1(eslint@8.56.0)(typescript@5.3.3)
+      '@typescript-eslint/parser': 7.0.1(eslint@8.56.0)(typescript@5.4.2)
       '@typescript-eslint/scope-manager': 7.0.1
-      '@typescript-eslint/type-utils': 7.0.1(eslint@8.56.0)(typescript@5.3.3)
-      '@typescript-eslint/utils': 7.0.1(eslint@8.56.0)(typescript@5.3.3)
+      '@typescript-eslint/type-utils': 7.0.1(eslint@8.56.0)(typescript@5.4.2)
+      '@typescript-eslint/utils': 7.0.1(eslint@8.56.0)(typescript@5.4.2)
       '@typescript-eslint/visitor-keys': 7.0.1
       debug: 4.3.4(supports-color@8.1.1)
       eslint: 8.56.0
@@ -9002,12 +8994,12 @@ packages:
       ignore: 5.2.4
       natural-compare: 1.4.0
       semver: 7.5.4
-      ts-api-utils: 1.0.1(typescript@5.3.3)
-      typescript: 5.3.3
+      ts-api-utils: 1.0.1(typescript@5.4.2)
+      typescript: 5.4.2
     transitivePeerDependencies:
       - supports-color
 
-  /@typescript-eslint/parser@6.2.1(eslint@8.56.0)(typescript@5.3.3):
+  /@typescript-eslint/parser@6.2.1(eslint@8.56.0)(typescript@5.4.2):
     resolution: {integrity: sha512-Ld+uL1kYFU8e6btqBFpsHkwQ35rw30IWpdQxgOqOh4NfxSDH6uCkah1ks8R/RgQqI5hHPXMaLy9fbFseIe+dIg==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
@@ -9019,16 +9011,16 @@ packages:
     dependencies:
       '@typescript-eslint/scope-manager': 6.2.1
       '@typescript-eslint/types': 6.2.1
-      '@typescript-eslint/typescript-estree': 6.2.1(typescript@5.3.3)
+      '@typescript-eslint/typescript-estree': 6.2.1(typescript@5.4.2)
       '@typescript-eslint/visitor-keys': 6.2.1
       debug: 4.3.4(supports-color@8.1.1)
       eslint: 8.56.0
-      typescript: 5.3.3
+      typescript: 5.4.2
     transitivePeerDependencies:
       - supports-color
     dev: true
 
-  /@typescript-eslint/parser@7.0.1(eslint@8.56.0)(typescript@5.3.3):
+  /@typescript-eslint/parser@7.0.1(eslint@8.56.0)(typescript@5.4.2):
     resolution: {integrity: sha512-8GcRRZNzaHxKzBPU3tKtFNing571/GwPBeCvmAUw0yBtfE2XVd0zFKJIMSWkHJcPQi0ekxjIts6L/rrZq5cxGQ==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
@@ -9040,11 +9032,11 @@ packages:
     dependencies:
       '@typescript-eslint/scope-manager': 7.0.1
       '@typescript-eslint/types': 7.0.1
-      '@typescript-eslint/typescript-estree': 7.0.1(typescript@5.3.3)
+      '@typescript-eslint/typescript-estree': 7.0.1(typescript@5.4.2)
       '@typescript-eslint/visitor-keys': 7.0.1
       debug: 4.3.4(supports-color@8.1.1)
       eslint: 8.56.0
-      typescript: 5.3.3
+      typescript: 5.4.2
     transitivePeerDependencies:
       - supports-color
 
@@ -9063,7 +9055,7 @@ packages:
       '@typescript-eslint/types': 7.0.1
       '@typescript-eslint/visitor-keys': 7.0.1
 
-  /@typescript-eslint/type-utils@7.0.1(eslint@8.56.0)(typescript@5.3.3):
+  /@typescript-eslint/type-utils@7.0.1(eslint@8.56.0)(typescript@5.4.2):
     resolution: {integrity: sha512-YtT9UcstTG5Yqy4xtLiClm1ZpM/pWVGFnkAa90UfdkkZsR1eP2mR/1jbHeYp8Ay1l1JHPyGvoUYR6o3On5Nhmw==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
@@ -9073,12 +9065,12 @@ packages:
       typescript:
         optional: true
     dependencies:
-      '@typescript-eslint/typescript-estree': 7.0.1(typescript@5.3.3)
-      '@typescript-eslint/utils': 7.0.1(eslint@8.56.0)(typescript@5.3.3)
+      '@typescript-eslint/typescript-estree': 7.0.1(typescript@5.4.2)
+      '@typescript-eslint/utils': 7.0.1(eslint@8.56.0)(typescript@5.4.2)
       debug: 4.3.4(supports-color@8.1.1)
       eslint: 8.56.0
-      ts-api-utils: 1.0.1(typescript@5.3.3)
-      typescript: 5.3.3
+      ts-api-utils: 1.0.1(typescript@5.4.2)
+      typescript: 5.4.2
     transitivePeerDependencies:
       - supports-color
 
@@ -9091,7 +9083,7 @@ packages:
     resolution: {integrity: sha512-uJDfmirz4FHib6ENju/7cz9SdMSkeVvJDK3VcMFvf/hAShg8C74FW+06MaQPODHfDJp/z/zHfgawIJRjlu0RLg==}
     engines: {node: ^16.0.0 || >=18.0.0}
 
-  /@typescript-eslint/typescript-estree@6.2.1(typescript@5.3.3):
+  /@typescript-eslint/typescript-estree@6.2.1(typescript@5.4.2):
     resolution: {integrity: sha512-G+UJeQx9AKBHRQBpmvr8T/3K5bJa485eu+4tQBxFq0KoT22+jJyzo1B50JDT9QdC1DEmWQfdKsa8ybiNWYsi0Q==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
@@ -9106,13 +9098,13 @@ packages:
       globby: 11.1.0
       is-glob: 4.0.3
       semver: 7.5.4
-      ts-api-utils: 1.0.1(typescript@5.3.3)
-      typescript: 5.3.3
+      ts-api-utils: 1.0.1(typescript@5.4.2)
+      typescript: 5.4.2
     transitivePeerDependencies:
       - supports-color
     dev: true
 
-  /@typescript-eslint/typescript-estree@7.0.1(typescript@5.3.3):
+  /@typescript-eslint/typescript-estree@7.0.1(typescript@5.4.2):
     resolution: {integrity: sha512-SO9wHb6ph0/FN5OJxH4MiPscGah5wjOd0RRpaLvuBv9g8565Fgu0uMySFEPqwPHiQU90yzJ2FjRYKGrAhS1xig==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
@@ -9128,12 +9120,12 @@ packages:
       is-glob: 4.0.3
       minimatch: 9.0.3
       semver: 7.5.4
-      ts-api-utils: 1.0.1(typescript@5.3.3)
-      typescript: 5.3.3
+      ts-api-utils: 1.0.1(typescript@5.4.2)
+      typescript: 5.4.2
     transitivePeerDependencies:
       - supports-color
 
-  /@typescript-eslint/utils@7.0.1(eslint@8.56.0)(typescript@5.3.3):
+  /@typescript-eslint/utils@7.0.1(eslint@8.56.0)(typescript@5.4.2):
     resolution: {integrity: sha512-oe4his30JgPbnv+9Vef1h48jm0S6ft4mNwi9wj7bX10joGn07QRfqIqFHoMiajrtoU88cIhXf8ahwgrcbNLgPA==}
     engines: {node: ^16.0.0 || >=18.0.0}
     peerDependencies:
@@ -9144,7 +9136,7 @@ packages:
       '@types/semver': 7.5.0
       '@typescript-eslint/scope-manager': 7.0.1
       '@typescript-eslint/types': 7.0.1
-      '@typescript-eslint/typescript-estree': 7.0.1(typescript@5.3.3)
+      '@typescript-eslint/typescript-estree': 7.0.1(typescript@5.4.2)
       eslint: 8.56.0
       semver: 7.5.4
     transitivePeerDependencies:
@@ -9164,7 +9156,7 @@ packages:
     engines: {node: ^16.0.0 || >=18.0.0}
     dependencies:
       '@typescript-eslint/types': 7.0.1
-      eslint-visitor-keys: 3.4.3
+      eslint-visitor-keys: 3.4.1
 
   /@typescript/twoslash@3.1.0:
     resolution: {integrity: sha512-kTwMUQ8xtAZaC4wb2XuLkPqFVBj2dNBueMQ89NWEuw87k2nLBbuafeG5cob/QEr6YduxIdTVUjix0MtC7mPlmg==}
@@ -12121,8 +12113,8 @@ packages:
     resolution: {integrity: sha512-Ny5Ot+r7dMnfkcD+YcdtSmM4LVWoLRGWe/A6AqzcN4h6mqE82EU6KMA53wVI50YqgTOIIrNNI6QJr70rPWebcw==}
     dependencies:
       copy-text-to-clipboard: 3.0.1
-      remark-shiki-twoslash: 3.1.3(typescript@5.3.3)
-      typescript: 5.3.3
+      remark-shiki-twoslash: 3.1.3(typescript@5.4.2)
+      typescript: 5.4.2
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -12254,8 +12246,8 @@ packages:
       - supports-color
     dev: true
 
-  /drizzle-orm@0.29.4(@types/react@18.2.33)(better-sqlite3@9.4.3)(react@18.2.0):
-    resolution: {integrity: sha512-ZnSM8TAxFhzH7p1s3+w3pRE/eKaOeNkH9SKitm717pubDVVcV2I0BCDBPGKV+pe02+wMfw37ntlTcCyo2rA3IA==}
+  /drizzle-orm@0.29.5(@types/react@18.2.33)(better-sqlite3@9.4.3)(react@18.2.0):
+    resolution: {integrity: sha512-jS3+uyzTz4P0Y2CICx8FmRQ1eplURPaIMWDn/yq6k4ShRFj9V7vlJk67lSf2kyYPzQ60GkkNGXcJcwrxZ6QCRw==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
       '@cloudflare/workers-types': '>=3'
@@ -12973,7 +12965,7 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
-  /eslint-config-next@14.0.1(eslint@8.56.0)(typescript@5.3.3):
+  /eslint-config-next@14.0.1(eslint@8.56.0)(typescript@5.4.2):
     resolution: {integrity: sha512-QfIFK2WD39H4WOespjgf6PLv9Bpsd7KGGelCtmq4l67nGvnlsGpuvj0hIT+aIy6p5gKH+lAChYILsyDlxP52yg==}
     peerDependencies:
       eslint: ^7.23.0 || ^8.0.0
@@ -12984,7 +12976,7 @@ packages:
     dependencies:
       '@next/eslint-plugin-next': 14.0.1
       '@rushstack/eslint-patch': 1.5.1
-      '@typescript-eslint/parser': 6.2.1(eslint@8.56.0)(typescript@5.3.3)
+      '@typescript-eslint/parser': 6.2.1(eslint@8.56.0)(typescript@5.4.2)
       eslint: 8.56.0
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.29.0)(eslint@8.56.0)
@@ -12992,7 +12984,7 @@ packages:
       eslint-plugin-jsx-a11y: 6.7.1(eslint@8.56.0)
       eslint-plugin-react: 7.33.2(eslint@8.56.0)
       eslint-plugin-react-hooks: 4.6.0(eslint@8.56.0)
-      typescript: 5.3.3
+      typescript: 5.4.2
     transitivePeerDependencies:
       - eslint-import-resolver-webpack
       - supports-color
@@ -13058,7 +13050,7 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 7.0.1(eslint@8.56.0)(typescript@5.3.3)
+      '@typescript-eslint/parser': 7.0.1(eslint@8.56.0)(typescript@5.4.2)
       debug: 3.2.7
       eslint: 8.56.0
       eslint-import-resolver-node: 0.3.9
@@ -13076,7 +13068,7 @@ packages:
       '@typescript-eslint/parser':
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 7.0.1(eslint@8.56.0)(typescript@5.3.3)
+      '@typescript-eslint/parser': 7.0.1(eslint@8.56.0)(typescript@5.4.2)
       array-includes: 3.1.7
       array.prototype.findlastindex: 1.2.3
       array.prototype.flat: 1.3.2
@@ -13236,6 +13228,10 @@ packages:
     dependencies:
       esrecurse: 4.3.0
       estraverse: 5.3.0
+
+  /eslint-visitor-keys@3.4.1:
+    resolution: {integrity: sha512-pZnmmLwYzf+kWaM/Qgrvpen51upAktaaiI01nsJD/Yr3lMOdNtq0cxkrrg16w64VtisN6okbs7Q8AfGqj4c9fA==}
+    engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
 
   /eslint-visitor-keys@3.4.3:
     resolution: {integrity: sha512-wpc+LXeiyiisxPlEkUzU6svyS1frIO3Mgxj1fdy7Pm8Ygzguax2N3Fa/D/ag1WqbOprdI+uY6wMUl8/a2G+iag==}
@@ -15805,8 +15801,8 @@ packages:
   /jose@4.14.4:
     resolution: {integrity: sha512-j8GhLiKmUAh+dsFXlX1aJCbt5KMibuKb+d7j1JaOJG6s2UjX1PQlW+OKB/sD4a/5ZYF4RcmYmLSndOoU3Lt/3g==}
 
-  /jose@5.2.2:
-    resolution: {integrity: sha512-/WByRr4jDcsKlvMd1dRJnPfS1GVO3WuKyaurJ/vvXcOaUQO8rnNObCQMlv/5uCceVQIq5Q4WLF44ohsdiTohdg==}
+  /jose@5.2.3:
+    resolution: {integrity: sha512-KUXdbctm1uHVL8BYhnyHkgp3zDX5KW8ZhAKVFEfUbU2P8Alpzjb+48hHvjOdQIyPshoblhzsuqOwEEAbtHVirA==}
     dev: false
 
   /js-string-escape@1.0.1:
@@ -16152,7 +16148,7 @@ packages:
       strong-log-transformer: 2.1.0
       tar: 6.1.11
       temp-dir: 1.0.0
-      typescript: 5.3.3
+      typescript: 5.4.2
       upath: 2.0.1
       uuid: 9.0.0
       validate-npm-package-license: 3.0.4
@@ -20203,7 +20199,7 @@ packages:
       xtend: 4.0.2
     dev: false
 
-  /remark-shiki-twoslash@3.1.3(typescript@5.3.3):
+  /remark-shiki-twoslash@3.1.3(typescript@5.4.2):
     resolution: {integrity: sha512-4e8OH3ySOCw5wUbDcPszokOKjKuebOqlP2WlySvC7ITBOq27BiGsFlq+FNWhxppZ+JzhTWah4gQrnMjX3KDbAQ==}
     peerDependencies:
       typescript: '>3'
@@ -20214,9 +20210,9 @@ packages:
       fenceparser: 1.1.1
       regenerator-runtime: 0.13.11
       shiki: 0.10.1
-      shiki-twoslash: 3.1.2(typescript@5.3.3)
+      shiki-twoslash: 3.1.2(typescript@5.4.2)
       tslib: 2.1.0
-      typescript: 5.3.3
+      typescript: 5.4.2
       unist-util-visit: 2.0.3
     transitivePeerDependencies:
       - supports-color
@@ -20428,7 +20424,7 @@ packages:
       rollup-preserve-directives: 1.1.1(rollup@4.9.5)
     dev: false
 
-  /rollup-plugin-typescript2@0.36.0(rollup@4.9.5)(typescript@5.3.3):
+  /rollup-plugin-typescript2@0.36.0(rollup@4.9.5)(typescript@5.4.2):
     resolution: {integrity: sha512-NB2CSQDxSe9+Oe2ahZbf+B4bh7pHwjV5L+RSYpCu7Q5ROuN94F9b6ioWwKfz3ueL3KTtmX4o2MUH2cgHDIEUsw==}
     peerDependencies:
       rollup: '>=1.26.3'
@@ -20440,7 +20436,7 @@ packages:
       rollup: 4.9.5
       semver: 7.5.4
       tslib: 2.6.2
-      typescript: 5.3.3
+      typescript: 5.4.2
     dev: false
 
   /rollup-pluginutils@2.8.2:
@@ -20991,7 +20987,7 @@ packages:
       rechoir: 0.6.2
     dev: false
 
-  /shiki-twoslash@3.1.2(typescript@5.3.3):
+  /shiki-twoslash@3.1.2(typescript@5.4.2):
     resolution: {integrity: sha512-JBcRIIizi+exIA/OUhYkV6jtyeZco0ykCkIRd5sgwIt1Pm4pz+maoaRZpm6SkhPwvif4fCA7xOtJOykhpIV64Q==}
     peerDependencies:
       typescript: '>3'
@@ -21000,7 +20996,7 @@ packages:
       '@typescript/vfs': 1.3.4
       fenceparser: 1.1.1
       shiki: 0.10.1
-      typescript: 5.3.3
+      typescript: 5.4.2
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -22181,13 +22177,13 @@ packages:
     engines: {node: 10.* || >= 12.*}
     dev: false
 
-  /ts-api-utils@1.0.1(typescript@5.3.3):
+  /ts-api-utils@1.0.1(typescript@5.4.2):
     resolution: {integrity: sha512-lC/RGlPmwdrIBFTX59wwNzqh7aR2otPNPR/5brHZm/XKFYKsfqxihXUe9pU3JI+3vGkl+vyCoNNnPhJn3aLK1A==}
     engines: {node: '>=16.13.0'}
     peerDependencies:
       typescript: '>=4.2.0'
     dependencies:
-      typescript: 5.3.3
+      typescript: 5.4.2
 
   /ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
@@ -22497,8 +22493,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  /typescript@5.3.3:
-    resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}
+  /typescript@5.4.2:
+    resolution: {integrity: sha512-+2/g0Fds1ERlP6JsakQQDXjZdZMM+rqpamFZJEKh4kwTIn3iDkgKtby0CeNd5ATNZ4Ry1ax15TMx0W2V+miizQ==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -22887,8 +22883,8 @@ packages:
     resolution: {integrity: sha512-l8lCEmLcLYZh4nbunNZvQCJc5pv7+RCwa8q/LdUx8u7lsWvPDKmpodJAJNwkAhJC//dFY48KuIEmjtd4RViDrA==}
     dev: false
 
-  /valibot@0.29.0:
-    resolution: {integrity: sha512-JhZn08lwZPhAamOCfBwBkv/btQt4KeQhekULPH8crH053zUCLSOGEF2zKExu3bFf245tsj6J1dY0ysd/jUiMIQ==}
+  /valibot@0.30.0:
+    resolution: {integrity: sha512-5POBdbSkM+3nvJ6ZlyQHsggisfRtyT4tVTo1EIIShs6qCdXJnyWU5TJ68vr8iTg5zpOLjXLRiBqNx+9zwZz/rA==}
 
   /validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
@@ -23778,7 +23774,7 @@ packages:
       prisma:
         optional: true
     dependencies:
-      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplestrpc-next-prisma-starter(prisma@5.8.1)':
@@ -23794,7 +23790,7 @@ packages:
       prisma:
         optional: true
     dependencies:
-      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter'
     dev: false
 
   '@registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examplestrpc-next-prisma-todomvc(prisma@5.8.1)':
@@ -23810,10 +23806,10 @@ packages:
       prisma:
         optional: true
     dependencies:
-      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc'
+      prisma: '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc'
     dev: false
 
-  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter':
+  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252525252525252525252540examplesnext-websockets-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplesnext-websockets-starter}
     name: prisma
     version: 5.8.1
@@ -23823,7 +23819,7 @@ packages:
     dependencies:
       '@prisma/engines': 5.8.1
 
-  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter':
+  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-starter':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-starter}
     name: prisma
     version: 5.8.1
@@ -23833,7 +23829,7 @@ packages:
     dependencies:
       '@prisma/engines': 5.8.1
 
-  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%25252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc':
+  '@registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%252525252525252525252525252525252525252525252525252525252525252525252525252540examplestrpc-next-prisma-todomvc':
     resolution: {tarball: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=%40examplestrpc-next-prisma-todomvc}
     name: prisma
     version: 5.8.1

@@ -109,12 +109,9 @@ export async function fastifyRequestHandler<
   };
 
   resolveHTTPResponse({
+    ...opts,
     req,
     createContext,
-    path: opts.path,
-    router: opts.router,
-    batching: opts.batching,
-    responseMeta: opts.responseMeta,
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },

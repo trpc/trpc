@@ -7,6 +7,7 @@ import {
   useSuspenseQueries as __useSuspenseQueries,
   useSuspenseQuery as __useSuspenseQuery,
   hashKey,
+  skipToken,
   useQueryClient,
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
@@ -143,11 +144,14 @@ export function createRootHooks<
 
     const defaultOpts = queryClient.getQueryDefaults(queryKey);
 
+    const isInputSkipToken = input === skipToken;
+
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       (opts?.enabled ?? defaultOpts?.enabled) !== false &&
+      !isInputSkipToken &&
       !queryClient.getQueryCache().find({ queryKey })
     ) {
       void prefetchQuery(queryKey, opts as any);
@@ -164,19 +168,21 @@ export function createRootHooks<
       {
         ...ssrOpts,
         queryKey: queryKey as any,
-        queryFn: (queryFunctionContext) => {
-          const actualOpts = {
-            ...ssrOpts,
-            trpc: {
-              ...ssrOpts?.trpc,
-              ...(shouldAbortOnUnmount
-                ? { signal: queryFunctionContext.signal }
-                : {}),
-            },
-          };
+        queryFn: isInputSkipToken
+          ? input
+          : (queryFunctionContext) => {
+              const actualOpts = {
+                ...ssrOpts,
+                trpc: {
+                  ...ssrOpts?.trpc,
+                  ...(shouldAbortOnUnmount
+                    ? { signal: queryFunctionContext.signal }
+                    : {}),
+                },
+              };
 
-          return client.query(...getClientArgs(queryKey, actualOpts));
-        },
+              return client.query(...getClientArgs(queryKey, actualOpts));
+            },
       },
       queryClient,
     ) as UseTRPCQueryResult<unknown, TError>;
@@ -328,11 +334,14 @@ export function createRootHooks<
 
     const defaultOpts = queryClient.getQueryDefaults(queryKey);
 
+    const isInputSkipToken = input === skipToken;
+
     if (
       typeof window === 'undefined' &&
       ssrState === 'prepass' &&
       opts?.trpc?.ssr !== false &&
       (opts?.enabled ?? defaultOpts?.enabled) !== false &&
+      !isInputSkipToken &&
       !queryClient.getQueryCache().find({ queryKey })
     ) {
       void prefetchInfiniteQuery(queryKey, { ...defaultOpts, ...opts } as any);
@@ -352,24 +361,27 @@ export function createRootHooks<
         initialPageParam: opts.initialCursor ?? null,
         persister: opts.persister,
         queryKey: queryKey as any,
-        queryFn: (queryFunctionContext) => {
-          const actualOpts = {
-            ...ssrOpts,
-            trpc: {
-              ...ssrOpts?.trpc,
-              ...(shouldAbortOnUnmount
-                ? { signal: queryFunctionContext.signal }
-                : {}),
-            },
-          };
+        queryFn: isInputSkipToken
+          ? input
+          : (queryFunctionContext) => {
+              const actualOpts = {
+                ...ssrOpts,
+                trpc: {
+                  ...ssrOpts?.trpc,
+                  ...(shouldAbortOnUnmount
+                    ? { signal: queryFunctionContext.signal }
+                    : {}),
+                },
+              };
 
-          return client.query(
-            ...getClientArgs(queryKey, actualOpts, {
-              pageParam: queryFunctionContext.pageParam ?? opts.initialCursor,
-              direction: queryFunctionContext.direction,
-            }),
-          );
-        },
+              return client.query(
+                ...getClientArgs(queryKey, actualOpts, {
+                  pageParam:
+                    queryFunctionContext.pageParam ?? opts.initialCursor,
+                  direction: queryFunctionContext.direction,
+                }),
+              );
+            },
       },
       queryClient,
     ) as UseTRPCInfiniteQueryResult<unknown, TError, unknown>;
