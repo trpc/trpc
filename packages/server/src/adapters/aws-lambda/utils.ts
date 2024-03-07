@@ -19,9 +19,8 @@ import type { AnyRouter, inferRouterContext } from '../../@trpc/server'; // impo
 // @trpc/server
 import { TRPCError } from '../../@trpc/server';
 import type {
+  HTTPBaseHandlerOptions,
   HTTPHeaders,
-  OnErrorFunction,
-  ResponseMetaFn,
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 
@@ -50,27 +49,21 @@ export type AWSLambdaOptions<
   TRouter extends AnyRouter,
   TEvent extends APIGatewayEvent,
 > =
-  | {
-      router: TRouter;
-      batching?: {
-        enabled: boolean;
-      };
-      onError?: OnErrorFunction<TRouter, TEvent>;
-      responseMeta?: ResponseMetaFn<TRouter>;
-    } & (
-      | {
-          /**
-           * @link https://trpc.io/docs/v11/context
-           **/
-          createContext: AWSLambdaCreateContextFn<TRouter, TEvent>;
-        }
-      | {
-          /**
-           * @link https://trpc.io/docs/v11/context
-           **/
-          createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
-        }
-    );
+  | HTTPBaseHandlerOptions<TRouter, TEvent> &
+      (
+        | {
+            /**
+             * @link https://trpc.io/docs/v11/context
+             **/
+            createContext: AWSLambdaCreateContextFn<TRouter, TEvent>;
+          }
+        | {
+            /**
+             * @link https://trpc.io/docs/v11/context
+             **/
+            createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
+          }
+      );
 
 export function isPayloadV1(
   event: APIGatewayEvent,
