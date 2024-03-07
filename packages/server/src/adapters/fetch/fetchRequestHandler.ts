@@ -118,12 +118,10 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   };
 
   resolveHTTPResponse({
+    ...opts,
     req,
     createContext,
     path,
-    router: opts.router,
-    batching: opts.batching,
-    responseMeta: opts.responseMeta,
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
