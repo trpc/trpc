@@ -4,13 +4,23 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { loggerLink, unstable_httpBatchStreamLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
+import { inferRouterOutputs } from '@trpc/server';
 import { tson } from '~/lib/tson';
 import type { AppRouter } from '~/trpc/routers/_app';
 import { useState } from 'react';
 
 export const trpc = createTRPCReact<AppRouter>();
 
-const createQueryClient = () => new QueryClient();
+const createQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Since queries are prefetched on the server, we set a stale time so that
+        // queries aren't immediately refetched on the client
+        staleTime: 1000 * 30,
+      },
+    },
+  });
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 const getQueryClient = () => {
@@ -58,3 +68,5 @@ function getBaseUrl() {
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return `http://localhost:${process.env.PORT ?? 3000}`;
 }
+
+export type RouterOutputs = inferRouterOutputs<AppRouter>;
