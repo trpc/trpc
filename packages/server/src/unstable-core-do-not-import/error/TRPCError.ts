@@ -83,12 +83,12 @@ export class TRPCError extends Error {
   }
 }
 
-export const errorSymbol = Symbol('errorSymbol');
+export const trpcErrorSymbol = Symbol('errorSymbol');
 
 export function trpcError<
-  TData extends TRPCErrorOptions & Record<string, unknown>,
+  TData extends Partial<TRPCErrorOptions> & Record<string, unknown>,
 >(opts: TData) {
-  const { code, cause, message, ...rest } = opts;
+  const { code = 'BAD_REQUEST', cause, message, stack: _, ...rest } = opts;
 
   const error = new TRPCError({
     code,
@@ -96,12 +96,13 @@ export function trpcError<
     message,
   }) as TRPCError &
     TData & {
-      [errorSymbol]: typeof errorSymbol;
+      [trpcErrorSymbol]: typeof trpcErrorSymbol;
     };
 
-  for (const key in rest as Record<string, unknown>) {
-    (error as any)[key] = opts[key];
+  for (const [key, value] of Object.entries(rest)) {
+    (error as any)[key] = value;
   }
+  error[trpcErrorSymbol] = trpcErrorSymbol;
 
   return error;
 }

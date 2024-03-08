@@ -2,8 +2,8 @@ import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import { getUntypedClient, TRPCClientError, wsLink } from '@trpc/client';
-import type { inferProcedureOutput, TRPCError } from '@trpc/server';
-import { initTRPC } from '@trpc/server';
+import type { inferProcedureOutput } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type { ProcedureBuilder } from '@trpc/server/unstable-core-do-not-import';
@@ -13,6 +13,9 @@ import { z } from 'zod';
 const t = initTRPC
   .context<{
     foo?: 'bar';
+    user?: {
+      id: string;
+    };
   }>()
   .create({
     errorFormatter({ shape }) {
@@ -268,7 +271,7 @@ test('subscriptions', async () => {
   await close();
 });
 
-test('infer errors', () => {
+test('infer errors', async () => {
   type inferError<T> = T extends ProcedureBuilder<
     any,
     any,
@@ -282,22 +285,58 @@ test('infer errors', () => {
     ? U
     : never;
 
-  const proc = procedure.use((opts) => {
-    // if (opts)
-    if (opts.ctx.foo !== 'bar') {
-      return trpcError({
-        code: 'UNAUTHORIZED',
-        foo: 'bar' as const,
-      });
-    }
-    return opts.next();
-  });
+  const proc = procedure
+    .use((opts) => {
+      // if (opts)
+      if (opts.ctx.foo !== 'bar') {
+        return trpcError({
+          code: 'UNAUTHORIZED',
+          foo: 'bar' as const,
+        });
+      }
+      return opts.next();
+    })
+    .use((opts) => {
+      if (opts.ctx.user?.id === '1') {
+        return trpcError({
+          code: 'FORBIDDEN',
+          mw2: 'bar' as const,
+        });
+      }
+      return opts.next();
+    });
 
   type Err = inferError<typeof proc>;
   //   ^?
 
-  expectTypeOf<Err>().toMatchTypeOf<{
-    code: 'UNAUTHORIZED';
-    foo: 'bar';
-  }>();
+  expectTypeOf<Err>().toMatchTypeOf<
+    | {
+        code: 'UNAUTHORIZED';
+        foo: 'bar';
+      }
+    | {
+        code: 'FORBIDDEN';
+        mw2: 'bar';
+      }
+  >();
+
+  const router = t.router({
+    q: proc.query(() => 'q'),
+  });
+
+  {
+    const caller = router.createCaller({});
+    const error = (await waitError(caller.q(), TRPCError)) as Err;
+
+    assert(error.code === 'UNAUTHORIZED');
+    expect(error.code).toBe('UNAUTHORIZED');
+    expect(error.foo).toBe('bar');
+  }
+
+  {
+    const caller = router.createCaller({
+      foo: 'bar',
+    });
+    expect(await caller.q()).toBe('q');
+  }
 });

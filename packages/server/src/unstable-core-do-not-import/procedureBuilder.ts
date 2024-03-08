@@ -1,5 +1,9 @@
 import type { inferObservableValue } from '../observable';
-import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
+import {
+  getTRPCErrorFromUnknown,
+  TRPCError,
+  trpcErrorSymbol,
+} from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
   MiddlewareBuilder,
@@ -234,7 +238,7 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
-    $Error
+    Exclude<$Error | TError, UnsetMarker>
   >;
 
   /**
@@ -521,6 +525,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
             });
           },
         });
+
         return result;
       } catch (cause) {
         return {
@@ -540,6 +545,9 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         message:
           'No result from middlewares - did you forget to `return next()`?',
       });
+    }
+    if (result instanceof TRPCError) {
+      throw result;
     }
     if (!result.ok) {
       // re-throw original error
