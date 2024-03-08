@@ -45,9 +45,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     createContext: ({ req, res }) => ({ req, res }),
     onError: onError as OnError,
     ...(opts?.server ?? {
-      batching: {
-        enabled: true,
-      },
+      allowBatching: true,
     }),
   });
   const server = httpServer.listen(0);
