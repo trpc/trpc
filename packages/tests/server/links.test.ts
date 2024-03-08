@@ -119,9 +119,6 @@ describe('batching', () => {
           metaCall();
           return {};
         },
-        batching: {
-          enabled: true,
-        },
       },
     });
     const links = [
@@ -237,9 +234,6 @@ describe('batching', () => {
           metaCall();
           return {};
         },
-        batching: {
-          enabled: true,
-        },
       },
     });
     const links = [
@@ -324,9 +318,6 @@ describe('batching', () => {
             createContextFn();
             return {};
           },
-          batching: {
-            enabled: true,
-          },
         },
         client: (opts) => ({
           links: [
@@ -397,9 +388,7 @@ describe('batching', () => {
     const { close, router, httpPort, trpcClientOptions } =
       routerToServerAndClientNew(appRouter, {
         server: {
-          batching: {
-            enabled: false,
-          },
+          allowBatching: false,
         },
       });
     const client = createTRPCClient<typeof router>({
