@@ -53,17 +53,19 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   return trpcError;
 }
 
+type TRPCErrorOptions = {
+  message?: string;
+  code: TRPC_ERROR_CODE_KEY;
+  cause?: unknown;
+};
+
 export class TRPCError extends Error {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
   public override readonly cause?: Error;
   public readonly code;
 
-  constructor(opts: {
-    message?: string;
-    code: TRPC_ERROR_CODE_KEY;
-    cause?: unknown;
-  }) {
+  constructor(opts: TRPCErrorOptions) {
     const cause = getCauseFromUnknown(opts.cause);
     const message = opts.message ?? cause?.message ?? opts.code;
 
@@ -79,4 +81,27 @@ export class TRPCError extends Error {
       this.cause = cause;
     }
   }
+}
+
+export const errorSymbol = Symbol('errorSymbol');
+
+export function trpcError<
+  TData extends TRPCErrorOptions & Record<string, unknown>,
+>(opts: TData) {
+  const { code, cause, message, ...rest } = opts;
+
+  const error = new TRPCError({
+    code,
+    cause,
+    message,
+  }) as TRPCError &
+    TData & {
+      [errorSymbol]: typeof errorSymbol;
+    };
+
+  for (const key in rest as Record<string, unknown>) {
+    (error as any)[key] = opts[key];
+  }
+
+  return error;
 }

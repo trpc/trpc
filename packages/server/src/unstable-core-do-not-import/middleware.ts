@@ -1,7 +1,7 @@
 import { TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
-import type { GetRawInputFn, Overwrite, Simplify } from './types';
+import type { GetRawInputFn, MaybePromise, Overwrite, Simplify } from './types';
 import { isObject } from './utils';
 
 /** @internal */
@@ -56,7 +56,9 @@ export interface MiddlewareBuilder<
           TMeta,
           TContextOverrides,
           $ContextOverridesOut,
-          TInputOut
+          TInputOut,
+          // FIXME
+          any
         >
       | MiddlewareBuilder<
           Overwrite<TContext, TContextOverrides>,
@@ -79,7 +81,9 @@ export interface MiddlewareBuilder<
     TMeta,
     TContextOverrides,
     object,
-    TInputOut
+    TInputOut,
+    // FIXME
+    any
   >[];
 }
 
@@ -92,6 +96,7 @@ export type MiddlewareFunction<
   TContextOverridesIn,
   $ContextOverridesOut,
   TInputOut,
+  $ErrorOutput extends TRPCError,
 > = {
   (opts: {
     ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
@@ -110,11 +115,20 @@ export type MiddlewareFunction<
         MiddlewareResult<TContextOverridesIn>
       >;
     };
-  }): Promise<MiddlewareResult<$ContextOverridesOut>>;
+  }):
+    | Promise<MiddlewareResult<$ContextOverridesOut>>
+    | MaybePromise<$ErrorOutput>;
   _type?: string | undefined;
 };
 
-export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
+export type AnyMiddlewareFunction = MiddlewareFunction<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>;
 export type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
 /**
  * @internal
@@ -140,13 +154,14 @@ export function createMiddlewareFactory<
     };
   }
 
-  function createMiddleware<$ContextOverrides>(
+  function createMiddleware<$ContextOverrides, $Error extends TRPCError>(
     fn: MiddlewareFunction<
       TContext,
       TMeta,
       object,
       $ContextOverrides,
-      TInputOut
+      TInputOut,
+      $Error
     >,
   ): MiddlewareBuilder<TContext, TMeta, $ContextOverrides, TInputOut> {
     return createMiddlewareInner([fn]);

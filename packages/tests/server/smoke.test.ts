@@ -2,10 +2,12 @@ import { EventEmitter } from 'events';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import { getUntypedClient, TRPCClientError, wsLink } from '@trpc/client';
-import type { inferProcedureOutput } from '@trpc/server';
+import type { inferProcedureOutput, TRPCError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
+import type { ProcedureBuilder } from '@trpc/server/unstable-core-do-not-import';
+import { trpcError } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 
 const t = initTRPC
@@ -264,4 +266,36 @@ test('subscriptions', async () => {
   });
 
   await close();
+});
+
+test('infer errors', () => {
+  const proc = procedure.use((opts) => {
+    // if (opts)
+    if (opts.ctx.foo !== 'bar') {
+      return trpcError({
+        code: 'UNAUTHORIZED',
+        foo: 'bar' as const,
+      });
+    }
+    return opts.next();
+  });
+  type inferError<T> = T extends ProcedureBuilder<
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    any,
+    infer U
+  >
+    ? U
+    : never;
+
+  type Err = inferError<typeof proc>;
+
+  expectTypeOf<Err>().toMatchTypeOf<{
+    code: 'UNAUTHORIZED';
+    foo: 'bar';
+  }>();
 });

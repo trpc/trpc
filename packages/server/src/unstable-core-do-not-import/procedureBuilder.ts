@@ -98,6 +98,7 @@ export type AnyProcedureBuilder = ProcedureBuilder<
   any,
   any,
   any,
+  any,
   any
 >;
 
@@ -114,7 +115,8 @@ export type inferProcedureBuilderResolverOptions<
   infer _TInputIn,
   infer TInputOut,
   infer _TOutputIn,
-  infer _TOutputOut
+  infer _TOutputOut,
+  infer _TError
 >
   ? ProcedureResolverOptions<
       TContext,
@@ -144,6 +146,7 @@ export interface ProcedureBuilder<
   TInputOut,
   TOutputIn,
   TOutputOut,
+  TError,
 > {
   /**
    * Add an input parser to the procedure.
@@ -168,7 +171,8 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputIn, inferParser<$Parser>['in']>,
     IntersectIfDefined<TInputOut, inferParser<$Parser>['out']>,
     TOutputIn,
-    TOutputOut
+    TOutputOut,
+    TError
   >;
   /**
    * Add an output parser to the procedure.
@@ -183,7 +187,8 @@ export interface ProcedureBuilder<
     TInputIn,
     TInputOut,
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
-    IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>
+    IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
+    TError
   >;
   /**
    * Add a meta data to the procedure.
@@ -198,13 +203,14 @@ export interface ProcedureBuilder<
     TInputIn,
     TInputOut,
     TOutputIn,
-    TOutputOut
+    TOutputOut,
+    TError
   >;
   /**
    * Add a middleware to the procedure.
    * @link https://trpc.io/docs/v11/server/middlewares
    */
-  use<$ContextOverridesOut>(
+  use<$ContextOverridesOut, $Error extends TRPCError = never>(
     fn:
       | MiddlewareBuilder<
           Overwrite<TContext, TContextOverrides>,
@@ -217,7 +223,8 @@ export interface ProcedureBuilder<
           TMeta,
           TContextOverrides,
           $ContextOverridesOut,
-          TInputOut
+          TInputOut,
+          $Error
         >,
   ): ProcedureBuilder<
     TContext,
@@ -226,7 +233,8 @@ export interface ProcedureBuilder<
     TInputIn,
     TInputOut,
     TOutputIn,
-    TOutputOut
+    TOutputOut,
+    $Error
   >;
 
   /**
@@ -250,7 +258,8 @@ export interface ProcedureBuilder<
             $InputIn,
             $InputOut,
             $OutputIn,
-            $OutputOut
+            $OutputOut,
+            TError
           >
         : TypeError<'Meta mismatch'>
       : TypeError<'Context mismatch'>,
@@ -261,7 +270,8 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputIn, $InputIn>,
     IntersectIfDefined<TInputIn, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
-    IntersectIfDefined<TOutputOut, $OutputOut>
+    IntersectIfDefined<TOutputOut, $OutputOut>,
+    TError // FIXME
   >;
   /**
    * Query procedure
@@ -347,6 +357,7 @@ export function createBuilder<TContext, TMeta>(
   TContext,
   TMeta,
   object,
+  UnsetMarker,
   UnsetMarker,
   UnsetMarker,
   UnsetMarker,
