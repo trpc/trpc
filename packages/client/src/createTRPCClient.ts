@@ -7,7 +7,6 @@ import type {
   inferProcedureInput,
   inferTransformedProcedureOutput,
   IntersectionError,
-  ProcedureOptions,
   ProcedureType,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -15,19 +14,24 @@ import {
   createFlatProxy,
   createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCDecoratedClientOptions } from './createTRPCClientOptions';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import type {
   TRPCSubscriptionObserver,
   UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+import type { TRPCLinkDecoration } from './links';
+import type { TRPCRequestOptions } from './links/types';
 import type { TRPCClientError } from './TRPCClientError';
 
 /**
  * @public
  **/
-export type inferRouterClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
+export type inferRouterClient<
+  TRouter extends AnyRouter,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
+> = DecoratedProcedureRecord<TRouter, TRouter['_def']['record'], TDecoration>;
 
 type ResolverDef = {
   input: any;
@@ -37,33 +41,41 @@ type ResolverDef = {
 };
 
 /** @internal */
-export type Resolver<TDef extends ResolverDef> = (
+export type ClientProcedureCall<
+  TDef extends ResolverDef,
+  TType extends ProcedureType,
+  TDecoration extends TRPCLinkDecoration,
+> = (
   input: TDef['input'],
-  opts?: ProcedureOptions,
+  opts?: Partial<TRPCRequestOptions<TDecoration, TType>>,
 ) => Promise<TDef['output']>;
 
-type SubscriptionResolver<TDef extends ResolverDef> = (
+type SubscriptionResolver<
+  TDef extends ResolverDef,
+  TDecoration extends TRPCLinkDecoration,
+> = (
   input: TDef['input'],
   opts?: Partial<
-    TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
-  > &
-    ProcedureOptions,
+    TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>> &
+      TDecoration['subscription']
+  >,
 ) => Unsubscribable;
 
 type DecorateProcedure<
   TType extends ProcedureType,
   TDef extends ResolverDef,
+  TDecoration extends TRPCLinkDecoration,
 > = TType extends 'query'
   ? {
-      query: Resolver<TDef>;
+      query: ClientProcedureCall<TDef, 'query', TDecoration>;
     }
   : TType extends 'mutation'
   ? {
-      mutate: Resolver<TDef>;
+      mutate: ClientProcedureCall<TDef, 'query', TDecoration>;
     }
   : TType extends 'subscription'
   ? {
-      subscribe: SubscriptionResolver<TDef>;
+      subscribe: SubscriptionResolver<TDef, TDecoration>;
     }
   : never;
 
@@ -73,10 +85,11 @@ type DecorateProcedure<
 type DecoratedProcedureRecord<
   TRouter extends AnyRouter,
   TRecord extends RouterRecord,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
-      ? DecoratedProcedureRecord<TRouter, $Value>
+      ? DecoratedProcedureRecord<TRouter, $Value, TDecoration>
       : $Value extends AnyProcedure
       ? DecorateProcedure<
           $Value['_def']['type'],
@@ -88,14 +101,15 @@ type DecoratedProcedureRecord<
             >;
             errorShape: inferClientTypes<TRouter>['errorShape'];
             transformer: inferClientTypes<TRouter>['transformer'];
-          }
+          },
+          TDecoration
         >
       : never
     : never;
 };
 
 const clientCallTypeMap: Record<
-  keyof DecorateProcedure<any, any>,
+  keyof DecorateProcedure<any, any, any>,
   ProcedureType
 > = {
   query: 'query',
@@ -113,12 +127,14 @@ export const clientCallTypeToProcedureType = (
 /**
  * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
  */
-export type CreateTRPCClient<TRouter extends AnyRouter> =
-  inferRouterClient<TRouter> extends infer $Value
-    ? UntypedClientProperties & keyof $Value extends never
-      ? inferRouterClient<TRouter>
-      : IntersectionError<UntypedClientProperties & keyof $Value>
-    : never;
+export type CreateTRPCClient<
+  TRouter extends AnyRouter,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
+> = inferRouterClient<TRouter, TDecoration> extends infer $Value
+  ? UntypedClientProperties & keyof $Value extends never
+    ? inferRouterClient<TRouter, TDecoration>
+    : IntersectionError<UntypedClientProperties & keyof $Value>
+  : never;
 
 /**
  * @internal
@@ -144,10 +160,16 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
   });
 }
 
-export function createTRPCClient<TRouter extends AnyRouter>(
-  opts: CreateTRPCClientOptions<TRouter>,
+type FIXME = any;
+export function createTRPCClient<
+  TRouter extends AnyRouter,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
+>(
+  opts:
+    | CreateTRPCClientOptions<TRouter>
+    | TRPCDecoratedClientOptions<TRouter, TDecoration>,
 ): CreateTRPCClient<TRouter> {
-  const client = new TRPCUntypedClient(opts);
+  const client = new TRPCUntypedClient(opts as FIXME);
   const proxy = createTRPCClientProxy<TRouter>(client);
   return proxy;
 }

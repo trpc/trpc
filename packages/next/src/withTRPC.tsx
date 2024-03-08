@@ -152,7 +152,7 @@ export function withTRPC<
 
     if (opts.ssr) {
       opts.ssrPrepass({
-        parent: opts,
+        parent: opts as any,
         AppOrPage,
         WithTRPC,
       });

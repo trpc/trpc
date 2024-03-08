@@ -14,7 +14,6 @@ import type {
   inferClientTypes,
   InferrableClientTypes,
   MaybePromise,
-  ProcedureOptions,
   Simplify,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -25,8 +24,8 @@ import type { ActionHandlerDef } from './shared';
 import { isFormData } from './shared';
 
 type MutationArgs<TDef extends ActionHandlerDef> = TDef['input'] extends void
-  ? [input?: undefined | void, opts?: ProcedureOptions]
-  : [input: FormData | TDef['input'], opts?: ProcedureOptions];
+  ? [input?: undefined | void, opts?: TRPCRequestOptions]
+  : [input: FormData | TDef['input'], opts?: TRPCRequestOptions];
 
 interface UseTRPCActionBaseResult<TDef extends ActionHandlerDef> {
   mutate: (...args: MutationArgs<TDef>) => void;

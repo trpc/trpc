@@ -15,7 +15,7 @@ test('splitLink', () => {
     observable(() => {
       httpLinkSpy();
     });
-  const links: OperationLink<AnyRouter, any, any>[] = [
+  const links: OperationLink<AnyRouter>[] = [
     // "dedupe link"
     splitLink({
       condition(op) {

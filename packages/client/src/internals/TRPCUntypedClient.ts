@@ -6,25 +6,20 @@ import { observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
   InferrableClientTypes,
+  ProcedureType,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCDecoratedClientOptions } from '../createTRPCClientOptions';
 import { createChain } from '../links/internals/createChain';
 import type {
   OperationContext,
   OperationLink,
   TRPCClientRuntime,
   TRPCLink,
+  TRPCLinkDecoration,
+  TRPCRequestOptions,
 } from '../links/types';
 import { TRPCClientError } from '../TRPCClientError';
-
-type TRPCType = 'mutation' | 'query' | 'subscription';
-export interface TRPCRequestOptions {
-  /**
-   * Pass additional context to links
-   */
-  context?: OperationContext;
-  signal?: AbortSignal;
-}
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
   onStarted: () => void;
@@ -35,8 +30,8 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends InferrableClientTypes> = {
-  links: TRPCLink<TRouter>[];
+export type CreateTRPCClientOptions<TRoot extends InferrableClientTypes> = {
+  links: TRPCLink<TRoot>[];
   transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
 };
 
@@ -51,12 +46,19 @@ export type UntypedClientProperties =
   | 'runtime'
   | 'subscription';
 
-export class TRPCUntypedClient<TRouter extends AnyRouter> {
-  private readonly links: OperationLink<AnyRouter>[];
+export class TRPCUntypedClient<
+  TRoot extends InferrableClientTypes,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
+> {
+  private readonly links: OperationLink<TRoot>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
 
-  constructor(opts: CreateTRPCClientOptions<TRouter>) {
+  constructor(
+    opts:
+      | CreateTRPCClientOptions<TRoot>
+      | TRPCDecoratedClientOptions<TRoot, TDecoration>,
+  ) {
     this.requestId = 0;
 
     this.runtime = {};
@@ -65,19 +67,19 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     this.links = opts.links.map((link) => link(this.runtime));
   }
 
-  private $request<TInput = unknown, TOutput = unknown>({
+  public $request<TInput = unknown>({
     type,
     input,
     path,
     context = {},
   }: {
-    type: TRPCType;
+    type: ProcedureType;
     input: TInput;
     path: string;
     context?: OperationContext;
   }) {
-    const chain$ = createChain<AnyRouter, TInput, TOutput>({
-      links: this.links as OperationLink<any, any, any>[],
+    const chain$ = createChain<AnyRouter>({
+      links: this.links as OperationLink<any>[],
       op: {
         id: ++this.requestId,
         type,
@@ -89,13 +91,13 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     return chain$.pipe(share());
   }
   private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
-    type: TRPCType;
+    type: ProcedureType;
     input: TInput;
     path: string;
     context?: OperationContext;
     signal?: AbortSignal;
   }): Promise<TOutput> {
-    const req$ = this.$request<TInput, TOutput>(opts);
+    const req$ = this.$request<TInput>(opts);
     type TValue = inferObservableValue<typeof req$>;
     const { promise, abort } = observableToPromise<TValue>(req$);
 
@@ -115,29 +117,31 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   }
   public query(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({
+      ...opts,
       type: 'query',
       path,
       input,
-      context: opts?.context,
-      signal: opts?.signal,
     });
   }
-  public mutation(path: string, input?: unknown, opts?: TRPCRequestOptions) {
+  public mutation(
+    path: string,
+    input?: unknown,
+    opts?: TRPCRequestOptions<TDecoration, 'mutation'>,
+  ) {
     return this.requestAsPromise<unknown, unknown>({
+      ...opts,
       type: 'mutation',
       path,
       input,
-      context: opts?.context,
-      signal: opts?.signal,
     });
   }
   public subscription(
     path: string,
     input: unknown,
     opts: Partial<
-      TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>
-    > &
-      TRPCRequestOptions,
+      TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>> &
+        TRPCRequestOptions<TDecoration, 'subscription'>
+    >,
   ): Unsubscribable {
     const observable$ = this.$request({
       type: 'subscription',

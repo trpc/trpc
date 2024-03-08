@@ -4,7 +4,7 @@ import { createChain } from './createChain';
 
 describe('chain', () => {
   test('trivial', () => {
-    const result$ = createChain<AnyRouter, unknown, unknown>({
+    const result$ = createChain<AnyRouter>({
       links: [
         ({ next, op }) => {
           return observable((observer) => {
@@ -45,7 +45,7 @@ describe('chain', () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
   test('multiple responses', () => {
-    const result$ = createChain<AnyRouter, unknown, unknown>({
+    const result$ = createChain<AnyRouter>({
       links: [
         ({ next, op }) => {
           return observable((observer) => {

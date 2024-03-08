@@ -1,6 +1,8 @@
 import type { Observable, Observer } from '@trpc/server/observable';
 import type {
   InferrableClientTypes,
+  Overwrite,
+  ProcedureType,
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -28,13 +30,24 @@ export interface OperationContext extends Record<string, unknown> {}
 /**
  * @internal
  */
-export type Operation<TInput = unknown> = {
+export type Operation<
+  TInput = unknown,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
+> = {
   id: number;
-  type: 'mutation' | 'query' | 'subscription';
   input: TInput;
   path: string;
-  context: OperationContext;
-};
+} & (
+  | ({
+      type: 'query';
+    } & TRPCRequestOptions<TDecoration, 'query'>)
+  | ({
+      type: 'mutation';
+    } & TRPCRequestOptions<TDecoration, 'mutation'>)
+  | ({
+      type: 'subscription';
+    } & TRPCRequestOptions<TDecoration, 'subscription'>)
+);
 
 interface HeadersInitEsque {
   [Symbol.iterator](): IterableIterator<[string, string]>;
@@ -75,7 +88,7 @@ export interface OperationResultEnvelope<TOutput> {
  */
 export type OperationResultObservable<
   TInferrable extends InferrableClientTypes,
-  TOutput,
+  TOutput = unknown,
 > = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TInferrable>>;
 
 /**
@@ -91,18 +104,52 @@ export type OperationResultObserver<
  */
 export type OperationLink<
   TInferrable extends InferrableClientTypes,
-  TInput = unknown,
-  TOutput = unknown,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
 > = (opts: {
-  op: Operation<TInput>;
+  op: Operation<TInferrable, TDecoration>;
   next: (
-    op: Operation<TInput>,
-  ) => OperationResultObservable<TInferrable, TOutput>;
-}) => OperationResultObservable<TInferrable, TOutput>;
+    op: Operation<unknown, TDecoration>,
+  ) => OperationResultObservable<TInferrable>;
+}) => OperationResultObservable<TInferrable>;
+
+/**
+ * @internal
+ * Links can decorate the stuff we use when using a tRPC client
+ */
+export type TRPCLinkDecoration = {
+  /**
+   * Extra params available when calling `.query(undefined, { /* here * /})`
+   */
+  query: object;
+  mutation: object;
+  subscription: object;
+  /**
+   * Extra runtime available
+   */
+  runtime: object;
+};
+
+export type TRPCLinkDecoratorObject<
+  TDecoration extends Partial<TRPCLinkDecoration>,
+> = Overwrite<TRPCLinkDecoration, TDecoration>;
 
 /**
  * @public
  */
-export type TRPCLink<TInferrable extends InferrableClientTypes> = (
-  opts: TRPCClientRuntime,
-) => OperationLink<TInferrable>;
+export type TRPCLink<
+  TInferrable extends InferrableClientTypes,
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
+> = (
+  opts: TRPCClientRuntime & Partial<TDecoration['runtime']>,
+) => OperationLink<TInferrable, TDecoration>;
+
+export type TRPCRequestOptions<
+  TDecoration extends TRPCLinkDecoration = TRPCLinkDecoration,
+  TType extends ProcedureType = ProcedureType,
+> = {
+  /**
+   * Pass additional context to links
+   */
+  context: OperationContext;
+  signal?: AbortSignal;
+} & Partial<TDecoration[TType]>;
