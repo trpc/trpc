@@ -387,7 +387,9 @@ describe('batching', () => {
 
     const { close, router, httpPort, trpcClientOptions } =
       routerToServerAndClientNew(appRouter, {
-        server: {},
+        server: {
+          allowBatching: false,
+        },
       });
     const client = createTRPCClient<typeof router>({
       ...trpcClientOptions,
