@@ -1,9 +1,5 @@
 import type { inferObservableValue } from '../observable';
-import {
-  getTRPCErrorFromUnknown,
-  TRPCError,
-  trpcErrorSymbol,
-} from './error/TRPCError';
+import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
   MiddlewareBuilder,

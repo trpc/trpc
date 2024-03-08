@@ -83,6 +83,15 @@ export class TRPCError extends Error {
   }
 }
 
+export class TRPCInputValidationError extends TRPCError {
+  constructor(cause: unknown) {
+    super({
+      code: 'BAD_REQUEST',
+      cause,
+    });
+  }
+}
+
 export const trpcErrorSymbol = Symbol('errorSymbol');
 
 export function trpcError<

@@ -1,4 +1,4 @@
-import { TRPCError } from './error/TRPCError';
+import { TRPCError, TRPCInputValidationError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
 import type { GetRawInputFn, MaybePromise, Overwrite, Simplify } from './types';
@@ -202,10 +202,7 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
       try {
         parsedInput = await parse(rawInput);
       } catch (cause) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          cause,
-        });
+        throw new TRPCInputValidationError(cause);
       }
 
       // Multiple input parsers
