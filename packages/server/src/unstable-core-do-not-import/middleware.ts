@@ -58,6 +58,7 @@ export interface MiddlewareBuilder<
           $ContextOverridesOut,
           TInputOut,
           // FIXME
+          any,
           any
         >
       | MiddlewareBuilder<
@@ -83,6 +84,7 @@ export interface MiddlewareBuilder<
     object,
     TInputOut,
     // FIXME
+    any,
     any
   >[];
 }
@@ -96,6 +98,7 @@ export type MiddlewareFunction<
   TContextOverridesIn,
   $ContextOverridesOut,
   TInputOut,
+  TInferErrors extends boolean,
   $ErrorOutput extends TRPCError,
 > = {
   (opts: {
@@ -115,13 +118,16 @@ export type MiddlewareFunction<
         MiddlewareResult<TContextOverridesIn>
       >;
     };
-  }):
-    | Promise<MiddlewareResult<$ContextOverridesOut>>
-    | MaybePromise<$ErrorOutput>;
+  }): true extends TInferErrors
+    ?
+        | Promise<MiddlewareResult<$ContextOverridesOut>>
+        | MaybePromise<$ErrorOutput>
+    : Promise<MiddlewareResult<$ContextOverridesOut>>;
   _type?: string | undefined;
 };
 
 export type AnyMiddlewareFunction = MiddlewareFunction<
+  any,
   any,
   any,
   any,
@@ -154,13 +160,18 @@ export function createMiddlewareFactory<
     };
   }
 
-  function createMiddleware<$ContextOverrides, $Error extends TRPCError>(
+  function createMiddleware<
+    $ContextOverrides,
+    TInferErrors extends boolean,
+    $Error extends TRPCError,
+  >(
     fn: MiddlewareFunction<
       TContext,
       TMeta,
       object,
       $ContextOverrides,
       TInputOut,
+      TInferErrors,
       $Error
     >,
   ): MiddlewareBuilder<TContext, TMeta, $ContextOverrides, TInputOut> {

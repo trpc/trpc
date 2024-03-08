@@ -280,12 +280,14 @@ test('infer errors', async () => {
     any,
     any,
     any,
+    any,
     infer U
   >
     ? U
     : never;
 
   const proc = procedure
+    .experimental_inferErrors()
     .use((opts) => {
       // if (opts)
       if (opts.ctx.foo !== 'bar') {
