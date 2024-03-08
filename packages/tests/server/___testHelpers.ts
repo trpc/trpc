@@ -1,3 +1,4 @@
+import http from 'http';
 import type { IncomingMessage } from 'http';
 import type { AddressInfo } from 'net';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
@@ -5,7 +6,10 @@ import { createTRPCClient, createWSClient, httpBatchLink } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
 import type { AnyRouter } from '@trpc/server';
 import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
-import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import {
+  createHTTPHandler,
+  createHTTPServer,
+} from '@trpc/server/adapters/standalone';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import type {
@@ -42,18 +46,29 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     CreateHTTPHandlerOptions<TRouter>['createContext']
   >;
 
-  const onError = vitest.fn<Parameters<OnError>, void>();
-  const createContext = vitest.fn<Parameters<CreateContext>, void>();
-  const httpServer = createHTTPServer({
-    router: router,
-    createContext: (opts) => {
-      (createContext as any)(opts);
-      return opts;
+  const onErrorSpy = vitest.fn<Parameters<OnError>, void>();
+  const createContextSpy = vitest.fn<Parameters<CreateContext>, void>();
+  const serverOverrides: Partial<CreateHTTPHandlerOptions<TRouter>> =
+    opts?.server ?? {};
+
+  const handler = createHTTPHandler({
+    router,
+    ...serverOverrides,
+    onError(it) {
+      onErrorSpy(it);
+      return opts?.server?.onError?.(it);
     },
-    onError: onError as OnError,
-    ...(opts?.server ?? {
-      allowBatching: true,
-    }),
+    createContext(it) {
+      (createContextSpy as any)(it);
+
+      return opts?.server?.createContext?.(it) ?? it;
+    },
+  });
+  const onRequestSpy = vitest.fn<Parameters<typeof handler>, void>();
+
+  const httpServer = http.createServer((...args) => {
+    onRequestSpy(...args);
+    handler(...args);
   });
   const server = httpServer.listen(0);
   const httpPort = (server.address() as AddressInfo).port;
@@ -65,8 +80,11 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   const applyWSSHandlerOpts: WSSHandlerOptions<TRouter> = {
     wss,
     router,
-    createContext: ({ req, res }) => ({ req, res }),
     ...((opts?.wssServer as any) ?? {}),
+    createContext(it) {
+      (createContextSpy as any)(it);
+      return opts?.wssServer?.createContext?.(it) ?? it;
+    },
   };
   const wssHandler = applyWSSHandler(applyWSSHandlerOpts);
   const wssUrl = `ws://localhost:${wssPort}`;
@@ -74,10 +92,6 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   // client
   const wsClient = createWSClient({
     url: wssUrl,
-    lazy: {
-      enabled: true,
-      closeMs: 50,
-    },
     ...opts?.wsClient,
   });
   const trpcClientOptions = {
@@ -119,8 +133,9 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     applyWSSHandlerOpts,
     wssHandler,
     wss,
-    onError,
-    createContext,
+    onErrorSpy,
+    createContextSpy,
+    onRequestSpy,
   };
 }
 

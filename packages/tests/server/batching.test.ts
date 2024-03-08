@@ -34,11 +34,8 @@ test('batching enabled', async () => {
       ]
     `);
 
-  expect(ctx.createContext).toHaveBeenCalledTimes(1);
-  const firstCall = ctx.createContext.mock.calls[0]![0];
-  expect(firstCall.req.url).toMatchInlineSnapshot(
-    `"/hello,hello?batch=1&input=%7B%220%22%3A%221%22%2C%221%22%3A%222%22%7D"`,
-  );
+  expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  expect(ctx.onRequestSpy.mock.calls[0]![0].url).toMatchInlineSnapshot(`"/hello,hello?batch=1&input=%7B%220%22%3A%221%22%2C%221%22%3A%222%22%7D"`);
 
   await ctx.close();
 });
@@ -62,7 +59,8 @@ test('batching disabled', async () => {
     `"Batching is not enabled on the server"`,
   );
 
-  expect(ctx.createContext).toHaveBeenCalledTimes(0);
+  expect(ctx.onRequestSpy).toHaveBeenCalledTimes(1);
+  expect(ctx.onRequestSpy.mock.calls[0]![0].url).toMatchInlineSnapshot(`"/hello,hello?batch=1&input=%7B%220%22%3A%221%22%2C%221%22%3A%222%22%7D"`);
 
   await ctx.close();
 });
