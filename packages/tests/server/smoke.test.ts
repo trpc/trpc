@@ -269,16 +269,6 @@ test('subscriptions', async () => {
 });
 
 test('infer errors', () => {
-  const proc = procedure.use((opts) => {
-    // if (opts)
-    if (opts.ctx.foo !== 'bar') {
-      return trpcError({
-        code: 'UNAUTHORIZED',
-        foo: 'bar' as const,
-      });
-    }
-    return opts.next();
-  });
   type inferError<T> = T extends ProcedureBuilder<
     any,
     any,
@@ -292,7 +282,19 @@ test('infer errors', () => {
     ? U
     : never;
 
+  const proc = procedure.use((opts) => {
+    // if (opts)
+    if (opts.ctx.foo !== 'bar') {
+      return trpcError({
+        code: 'UNAUTHORIZED',
+        foo: 'bar' as const,
+      });
+    }
+    return opts.next();
+  });
+
   type Err = inferError<typeof proc>;
+  //   ^?
 
   expectTypeOf<Err>().toMatchTypeOf<{
     code: 'UNAUTHORIZED';
