@@ -38,11 +38,18 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
 ) {
   // http
   type OnError = OnErrorFunction<TRouter, IncomingMessage>;
+  type CreateContext = NonNullable<
+    CreateHTTPHandlerOptions<TRouter>['createContext']
+  >;
 
   const onError = vitest.fn<Parameters<OnError>, void>();
+  const createContext = vitest.fn<Parameters<CreateContext>, void>();
   const httpServer = createHTTPServer({
     router: router,
-    createContext: ({ req, res }) => ({ req, res }),
+    createContext: (opts) => {
+      (createContext as any)(opts);
+      return opts;
+    },
     onError: onError as OnError,
     ...(opts?.server ?? {
       allowBatching: true,
@@ -67,6 +74,10 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   // client
   const wsClient = createWSClient({
     url: wssUrl,
+    lazy: {
+      enabled: true,
+      closeMs: 50,
+    },
     ...opts?.wsClient,
   });
   const trpcClientOptions = {
@@ -109,6 +120,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     wssHandler,
     wss,
     onError,
+    createContext,
   };
 }
 
