@@ -1,5 +1,5 @@
 import type { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
-import type { Overwrite } from '../types';
+import type { Overwrite, TypeError } from '../types';
 import { isObject } from '../utils';
 
 class UnknownCauseError extends Error {
@@ -96,8 +96,17 @@ export type TypedError<TData> = Overwrite<TRPCError, TData> & {
 
 export function trpcError<
   TData extends Partial<TRPCErrorOptions> & Record<string, unknown>,
->(opts: TData) {
-  const { code = 'BAD_REQUEST', cause, message, stack: _, ...rest } = opts;
+>(
+  data: TData extends {
+    stack?: any;
+  }
+    ? TypeError<"key 'stack' should not be passed to trpcError">
+    : TData,
+) {
+  if ('stack' in data) {
+    throw new Error(`key 'stack' may not be passed to trpcError`);
+  }
+  const { code = 'BAD_REQUEST', cause, message, ...rest } = data as TData;
 
   const error = new TRPCError({
     code,
