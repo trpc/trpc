@@ -1,4 +1,5 @@
 import type { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
+import type { Overwrite } from '../types';
 import { isObject } from '../utils';
 
 class UnknownCauseError extends Error {
@@ -89,6 +90,10 @@ export class TRPCInputValidationError extends TRPCError {
 
 export const trpcErrorSymbol = Symbol('errorSymbol');
 
+export type TypedError<TData> = Overwrite<TRPCError, TData> & {
+  [trpcErrorSymbol]: typeof trpcErrorSymbol;
+};
+
 export function trpcError<
   TData extends Partial<TRPCErrorOptions> & Record<string, unknown>,
 >(opts: TData) {
@@ -98,15 +103,12 @@ export function trpcError<
     code,
     cause,
     message,
-  }) as TRPCError &
-    TData & {
-      [trpcErrorSymbol]: typeof trpcErrorSymbol;
-    };
+  }) as TypedError<TData>;
 
+  error[trpcErrorSymbol] = trpcErrorSymbol;
   for (const [key, value] of Object.entries(rest)) {
     (error as any)[key] = value;
   }
-  error[trpcErrorSymbol] = trpcErrorSymbol;
 
   return error;
 }

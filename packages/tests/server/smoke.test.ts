@@ -286,8 +286,26 @@ test('infer errors', async () => {
     ? U
     : never;
 
+  const schema = z
+    .object({
+      foo: z.string(),
+      deep: z.object({
+        nested: z.object({
+          thing: z.string(),
+        }),
+      }),
+    })
+    .optional();
+  const res = schema.safeParse({});
+  if (!res.success) {
+    res.error.formErrors.fieldErrors.foo;
+    res.error.formErrors.fieldErrors.foo;
+    res.error.formErrors.fieldErrors.deep;
+    const what = res.error.flatten();
+  }
   const proc = procedure
     .experimental_inferErrors()
+    .input(schema)
     .use((opts) => {
       // if (opts)
       if (opts.ctx.foo !== 'bar') {
@@ -332,6 +350,8 @@ test('infer errors', async () => {
 
     assert(error.code === 'UNAUTHORIZED');
     expect(error.code).toBe('UNAUTHORIZED');
+
+    error;
     expect(error.foo).toBe('bar');
   }
 
