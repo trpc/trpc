@@ -103,7 +103,16 @@ export function trpcError<
     code,
     cause,
     message,
-  }) as TypedError<TData>;
+  }) as TypedError<
+    Overwrite<
+      TData,
+      {
+        code: TData['code'] extends TRPC_ERROR_CODE_KEY
+          ? TData['code']
+          : 'BAD_REQUEST';
+      }
+    >
+  >;
 
   error[trpcErrorSymbol] = trpcErrorSymbol;
   for (const [key, value] of Object.entries(rest)) {
