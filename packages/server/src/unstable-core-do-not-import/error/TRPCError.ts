@@ -103,10 +103,13 @@ export function trpcError<
     ? TypeError<"key 'stack' should not be passed to trpcError">
     : TData,
 ) {
-  if ('stack' in data) {
-    throw new Error(`key 'stack' may not be passed to trpcError`);
-  }
-  const { code = 'BAD_REQUEST', cause, message, ...rest } = data as TData;
+  const {
+    code = 'BAD_REQUEST',
+    cause,
+    message,
+    stack: _,
+    ...rest
+  } = data as TData;
 
   const error = new TRPCError({
     code,
