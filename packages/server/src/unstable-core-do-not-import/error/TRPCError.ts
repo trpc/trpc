@@ -90,7 +90,7 @@ export class TRPCInputValidationError extends TRPCError {
 
 export const trpcErrorSymbol = Symbol('errorSymbol');
 
-export type TypedError<TData> = Overwrite<TRPCError, TData> & {
+export type TypedTRPCError<TData> = Overwrite<TRPCError, TData> & {
   [trpcErrorSymbol]: typeof trpcErrorSymbol;
 };
 
@@ -115,7 +115,7 @@ export function trpcError<
     code,
     cause,
     message,
-  }) as TypedError<
+  }) as TypedTRPCError<
     Overwrite<
       TData,
       {
