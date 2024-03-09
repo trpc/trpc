@@ -88,10 +88,10 @@ export class TRPCInputValidationError extends TRPCError {
   }
 }
 
-export const trpcErrorSymbol = Symbol('errorSymbol');
+export const trpcTypedErrorSymbol = Symbol('errorSymbol');
 
 export type TypedTRPCError<TData> = Overwrite<TRPCError, TData> & {
-  [trpcErrorSymbol]: typeof trpcErrorSymbol;
+  [trpcTypedErrorSymbol]: typeof trpcTypedErrorSymbol;
 };
 
 export function trpcError<
@@ -126,7 +126,7 @@ export function trpcError<
     >
   >;
 
-  error[trpcErrorSymbol] = trpcErrorSymbol;
+  error[trpcTypedErrorSymbol] = trpcTypedErrorSymbol;
   for (const [key, value] of Object.entries(rest)) {
     (error as any)[key] = value;
   }
