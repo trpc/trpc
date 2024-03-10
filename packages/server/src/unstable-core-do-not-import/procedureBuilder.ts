@@ -551,6 +551,9 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           },
         });
 
+        if (result instanceof TRPCError) {
+          throw result;
+        }
         return result;
       } catch (cause) {
         return {
@@ -570,9 +573,6 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         message:
           'No result from middlewares - did you forget to `return next()`?',
       });
-    }
-    if (result instanceof TRPCError) {
-      throw result;
     }
     if (!result.ok) {
       // re-throw original error
