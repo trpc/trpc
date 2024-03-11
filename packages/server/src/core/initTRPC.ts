@@ -50,12 +50,14 @@ type ContextCallback = (...args: any[]) => object | Promise<object>;
 
 class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
   context<TNewContext extends object | ContextCallback>() {
+    type $Context = TNewContext extends ContextCallback
+      ? Unwrap<TNewContext>
+      : TNewContext;
+
     type NextParams = Overwrite<
       TParams,
       {
-        ctx: TNewContext extends ContextCallback
-          ? Unwrap<TNewContext>
-          : TNewContext;
+        ctx: $Context;
       }
     >;
 
