@@ -1,6 +1,9 @@
 // Stream parsing adapted from https://www.loginradius.com/blog/engineering/guest-post/http-streaming-with-nodejs-and-fetch-api/
 import type { TRPCResponse } from '@trpc/server/unstable-core-do-not-import';
-import type { WebReadableStreamEsque } from '../../internals/types';
+import type {
+  NodeJSReadableStreamEsque,
+  WebReadableStreamEsque,
+} from '../../internals/types';
 import type { HTTPHeaders } from '../types';
 import type { HTTPBaseRequestOptions, HTTPResult } from './httpUtils';
 import { fetchHTTPResponse, getBody, getUrl } from './httpUtils';
@@ -21,7 +24,7 @@ export async function parseJSONStream<TReturn>(opts: {
   /**
    * As given by `(await fetch(url)).body`
    */
-  readableStream: NodeJS.ReadableStream | WebReadableStreamEsque;
+  readableStream: NodeJSReadableStreamEsque | WebReadableStreamEsque;
   /**
    * Called for each line of the stream
    */
@@ -64,7 +67,7 @@ export async function parseJSONStream<TReturn>(opts: {
  * @param onLine will be called for every line ('\n' delimited) in the stream
  */
 async function readLines(
-  readableStream: NodeJS.ReadableStream | WebReadableStreamEsque,
+  readableStream: NodeJSReadableStreamEsque | WebReadableStreamEsque,
   onLine: (line: string) => void,
   textDecoder: TextDecoderEsque,
 ) {
@@ -101,7 +104,7 @@ async function readLines(
  * Handle NodeJS stream
  */
 function readNodeChunks(
-  stream: NodeJS.ReadableStream,
+  stream: NodeJSReadableStreamEsque,
   onChunk: (chunk: Uint8Array) => void,
 ) {
   return new Promise<void>((resolve) => {

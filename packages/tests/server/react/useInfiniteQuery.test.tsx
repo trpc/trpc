@@ -111,6 +111,127 @@ test('useInfiniteQuery()', async () => {
   `);
 });
 
+test('useInfiniteQuery bi-directional', async () => {
+  const { trpc, App } = factory;
+
+  function MyComponent() {
+    const q = trpc.biDirectionalPaginatedPosts.useInfiniteQuery(
+      {
+        limit: 1,
+      },
+      {
+        initialCursor: 1,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+        getPreviousPageParam: (firstPage) => firstPage.prevCursor,
+      },
+    );
+
+    expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
+
+    return q.status === 'pending' ? (
+      <p>Loading...</p>
+    ) : q.status === 'error' ? (
+      <p>Error: {q.error.message}</p>
+    ) : (
+      <>
+        <div>
+          <button
+            onClick={() => q.fetchPreviousPage()}
+            disabled={!q.hasPreviousPage || q.isFetchingPreviousPage}
+            data-testid="loadPrevious"
+          >
+            {q.isFetchingPreviousPage
+              ? 'Loading previous...'
+              : q.hasPreviousPage
+              ? 'Load Previous'
+              : 'Nothing previous to load'}
+          </button>
+        </div>
+        {q.data?.pages.map((group, i) => (
+          <Fragment key={i}>
+            {group.items.map((msg) => (
+              <Fragment key={msg.id}>
+                <div>{msg.title}</div>
+              </Fragment>
+            ))}
+          </Fragment>
+        ))}
+        <div>
+          <button
+            onClick={() => q.fetchNextPage()}
+            disabled={!q.hasNextPage || q.isFetchingNextPage}
+            data-testid="loadMore"
+          >
+            {q.isFetchingNextPage
+              ? 'Loading more...'
+              : q.hasNextPage
+              ? 'Load More'
+              : 'Nothing more to load'}
+          </button>
+        </div>
+        <div>
+          {q.isFetching && !q.isFetchingNextPage && !q.isFetchingPreviousPage
+            ? 'Fetching...'
+            : null}
+        </div>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('second post');
+  });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('second post');
+    expect(utils.container).not.toHaveTextContent('first post');
+    expect(utils.container).toHaveTextContent('Load Previous');
+    expect(utils.container).not.toHaveTextContent('Load More');
+    expect(utils.container).toHaveTextContent('Nothing more to load');
+  });
+  await userEvent.click(utils.getByTestId('loadPrevious'));
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Loading previous...');
+  });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).toHaveTextContent('second post');
+    expect(utils.container).toHaveTextContent('Nothing previous to load');
+  });
+
+  expect(utils.container).toMatchInlineSnapshot(`
+    <div>
+      <div>
+        <button
+          data-testid="loadPrevious"
+          disabled=""
+        >
+          Nothing previous to load
+        </button>
+      </div>
+      <div>
+        first post
+      </div>
+      <div>
+        second post
+      </div>
+      <div>
+        <button
+          data-testid="loadMore"
+          disabled=""
+        >
+          Nothing more to load
+        </button>
+      </div>
+      <div />
+    </div>
+  `);
+});
+
 test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
   const { trpc, App } = factory;
 

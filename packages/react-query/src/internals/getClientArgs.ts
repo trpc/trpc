@@ -6,14 +6,18 @@ import type { TRPCQueryKey } from './getQueryKey';
 export function getClientArgs<TOptions>(
   queryKey: TRPCQueryKey,
   opts: TOptions,
-  pageParam?: any,
+  infiniteParams?: {
+    pageParam: any;
+    direction: 'forward' | 'backward';
+  },
 ) {
   const path = queryKey[0];
   let input = queryKey[1]?.input;
-  if (pageParam) {
+  if (infiniteParams) {
     input = {
       ...(input ?? {}),
-      cursor: pageParam,
+      ...(infiniteParams.pageParam ? { cursor: infiniteParams.pageParam } : {}),
+      direction: infiniteParams.direction,
     };
   }
   return [path.join('.'), input, (opts as any)?.trpc] as const;
