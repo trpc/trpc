@@ -38,7 +38,7 @@ void app.prepare().then(() => {
   // so sockets stay open even when not HMR.
   const originalOn = server.on.bind(server);
   server.on = function (event, listener) {
-    return (event !== 'upgrade') ? originalOn(event, listener) : server;
+    return event !== 'upgrade' ? originalOn(event, listener) : server;
   };
   server.listen(port);
 
