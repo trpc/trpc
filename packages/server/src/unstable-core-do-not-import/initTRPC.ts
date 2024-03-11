@@ -84,7 +84,8 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
 
     const config: RootConfig<$Root> = {
       transformer: getDataTransformer(opts?.transformer ?? defaultTransformer),
-      isDev: opts?.isDev ?? globalThis.process?.env.NODE_ENV !== 'production',
+      isDev:
+        opts?.isDev ?? globalThis.process?.env['NODE_ENV'] !== 'production',
       allowOutsideOfServer: opts?.allowOutsideOfServer ?? false,
       errorFormatter: opts?.errorFormatter ?? defaultFormatter,
       isServer: opts?.isServer ?? isServerDefault,
