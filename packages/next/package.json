@@ -74,8 +74,8 @@
   "dependencies": {},
   "peerDependencies": {
     "@tanstack/react-query": "^5.25.0",
-    "@trpc/client": "10.45.1",
-    "@trpc/react-query": "10.45.1",
+    "@trpc/client": "10.45.2",
+    "@trpc/react-query": "10.45.2",
     "@trpc/server": "^10.45.1",
     "next": "*",
     "react": ">=16.8.0",
@@ -91,8 +91,8 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.25.0",
-    "@trpc/client": "10.45.1",
-    "@trpc/react-query": "10.45.1",
+    "@trpc/client": "10.45.2",
+    "@trpc/react-query": "10.45.2",
     "@trpc/server": "^10.45.1",
     "@types/express": "^4.17.17",
     "@types/node": "^20.10.0",
