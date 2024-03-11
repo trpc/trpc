@@ -4,14 +4,16 @@ import type { HTTPBaseHandlerOptions } from '../../http';
 import type { MaybePromise } from '../../types';
 import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 
-interface ParsedQs {
-  [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;
-}
-
 export type NodeHTTPRequest = IncomingMessage & {
-  query?: ParsedQs;
   body?: unknown;
+  query?: unknown;
+  /**
+   * Specifies whether the `query` property is pre-parsed in a format that cannot be passed to URLSearchParams.
+   * trpc will utilize `req.url` instead to generate the search parameters in the required format.
+   */
+  invalidTrpcQuery?: boolean;
 };
+
 export type NodeHTTPResponse = ServerResponse & {
   /**
    * Force the partially-compressed response to be flushed to the client.
@@ -72,7 +74,7 @@ export type NodeHTTPHandlerOptions<
      * You can also use it for other needs which a connect/node.js compatible middleware can solve,
      *  though you might wish to consider an alternative solution like the Express adapter if your needs are complex.
      */
-    middleware?: ConnectMiddleware;
+    middleware?: ConnectMiddleware<TRequest, TResponse>;
     maxBodySize?: number;
     experimental_contentTypeHandlers?: NodeHTTPContentTypeHandler<
       TRequest,
