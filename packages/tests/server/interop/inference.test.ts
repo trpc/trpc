@@ -173,7 +173,6 @@ describe('infer mutation input & output', () => {
 });
 
 describe('infer subscription input & output', () => {
-  // @ts-expect-error - ensure "output" is omitted in subscription procedure
   const router = trpc
     .router()
     .subscription('noSubscription', {
@@ -196,6 +195,7 @@ describe('infer subscription input & output', () => {
         });
       },
     })
+    // @ts-expect-error - ensure "output" is omitted in subscription procedure
     .subscription('withOutput', {
       input: z.string(),
       output: z.null(),

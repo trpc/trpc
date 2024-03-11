@@ -40,6 +40,7 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
     transformer: DataTransformerOptions;
   }>;
 
+type ContextCallback = (...args: any[]) => object | Promise<object>;
 /**
  * TODO: This can be improved:
  * - We should be able to chain `.meta()`/`.context()` only once
@@ -48,12 +49,17 @@ type CreateRootConfigTypesFromPartial<TTypes extends PartialRootConfigTypes> =
  */
 
 class TRPCBuilder<TParams extends PartialRootConfigTypes = object> {
-  context<
-    TNewContext extends
-      | RootConfigTypes['ctx']
-      | ((...args: unknown[]) => RootConfigTypes['ctx']),
-  >() {
-    type NextParams = Overwrite<TParams, { ctx: Unwrap<TNewContext> }>;
+  context<TNewContext extends object | ContextCallback>() {
+    type $Context = TNewContext extends ContextCallback
+      ? Unwrap<TNewContext>
+      : TNewContext;
+
+    type NextParams = Overwrite<
+      TParams,
+      {
+        ctx: $Context;
+      }
+    >;
 
     return new TRPCBuilder<NextParams>();
   }
