@@ -79,7 +79,6 @@ export type WebReadableStreamEsque = {
 };
 
 export type NodeJSReadableStreamEsque = {
-  // on(eventName: string | symbol, listener: (...args: any[]) => void): this;
   on(
     eventName: string | symbol,
     listener: (...args: any[]) => void,
