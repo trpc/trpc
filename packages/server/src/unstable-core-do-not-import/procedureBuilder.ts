@@ -149,8 +149,8 @@ export interface ProcedureBuilder<
   TInputOut,
   TOutputIn,
   TOutputOut,
-  TInferErrors extends boolean,
-  TError,
+  TInferErrors extends boolean = never,
+  TError = never,
 > {
   experimental_inferErrors: () => ProcedureBuilder<
     TContext,
@@ -228,7 +228,7 @@ export interface ProcedureBuilder<
    * Add a middleware to the procedure.
    * @link https://trpc.io/docs/v11/server/middlewares
    */
-  use<$ContextOverridesOut, $Error extends TRPCError = never>(
+  use<$ContextOverridesOut, $Error = never>(
     fn:
       | MiddlewareBuilder<
           Overwrite<TContext, TContextOverrides>,
@@ -554,7 +554,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         if (result instanceof TRPCError) {
           throw result;
         }
-        return result;
+        return result as any;
       } catch (cause) {
         return {
           ok: false,

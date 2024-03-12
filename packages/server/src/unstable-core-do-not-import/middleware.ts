@@ -1,3 +1,4 @@
+import type { TypedTRPCError } from './error/TRPCError';
 import { TRPCError, TRPCInputValidationError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
@@ -99,7 +100,7 @@ export type MiddlewareFunction<
   $ContextOverridesOut,
   TInputOut,
   TInferErrors extends boolean,
-  $ErrorOutput extends TRPCError,
+  $ErrorOutput,
 > = {
   (opts: {
     ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
@@ -118,11 +119,10 @@ export type MiddlewareFunction<
         MiddlewareResult<TContextOverridesIn>
       >;
     };
-  }): true extends TInferErrors
-    ?
-        | Promise<MiddlewareResult<$ContextOverridesOut>>
-        | MaybePromise<$ErrorOutput>
-    : Promise<MiddlewareResult<$ContextOverridesOut>>;
+  }): MaybePromise<
+    | MiddlewareResult<$ContextOverridesOut>
+    | (true extends TInferErrors ? TypedTRPCError<$ErrorOutput> : never)
+  >;
   _type?: string | undefined;
 };
 

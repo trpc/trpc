@@ -6,7 +6,10 @@ import type { inferProcedureOutput } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
-import type { ProcedureBuilder } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  ProcedureBuilder,
+  TypedTRPCError,
+} from '@trpc/server/unstable-core-do-not-import';
 import { trpcError } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 
@@ -346,7 +349,10 @@ test('infer errors', async () => {
 
   {
     const caller = router.createCaller({});
-    const error = (await waitError(caller.q(), TRPCError)) as Err;
+    const error = (await waitError(
+      caller.q(),
+      TRPCError,
+    )) as TypedTRPCError<Err>;
 
     assert(error.code === 'UNAUTHORIZED');
     expect(error.code).toBe('UNAUTHORIZED');
