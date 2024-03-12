@@ -58,8 +58,8 @@ export interface MiddlewareBuilder<
           $ContextOverridesOut,
           TInputOut,
           // FIXME
-          any,
-          any
+          never,
+          never
         >
       | MiddlewareBuilder<
           Overwrite<TContext, TContextOverrides>,
