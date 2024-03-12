@@ -163,7 +163,7 @@ export function createMiddlewareFactory<
   function createMiddleware<
     $ContextOverrides,
     TInferErrors extends boolean,
-    $Error extends TRPCError,
+    $Error,
   >(
     fn: MiddlewareFunction<
       TContext,
