@@ -18,7 +18,7 @@ export default async function Home() {
 
       <div style={separator} />
 
-      <div style={{ height: 160 }}>
+      <div style={{ height: 260 }}>
         <Suspense fallback={<>Loading Server...</>}>
           <ServerHttpGreeting />
         </Suspense>
@@ -26,7 +26,7 @@ export default async function Home() {
 
       <div style={separator} />
 
-      <div style={{ height: 160 }}>
+      <div style={{ height: 260 }}>
         <Suspense fallback={<>Loading Server...</>}>
           <ServerInvokedGreeting />
         </Suspense>

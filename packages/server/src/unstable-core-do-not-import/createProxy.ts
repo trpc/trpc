@@ -1,4 +1,4 @@
-interface ProxyCallbackOptions {
+export interface ProxyCallbackOptions {
   path: string[];
   args: unknown[];
 }

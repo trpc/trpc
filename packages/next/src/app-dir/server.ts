@@ -11,6 +11,7 @@ import type {
   inferClientTypes,
   inferProcedureInput,
   MaybePromise,
+  ProxyCallbackOptions,
   RootConfig,
   Simplify,
   TRPCResponse,
@@ -40,20 +41,20 @@ import type {
 export function experimental_createTRPCNextAppDirServer<
   TRouter extends AnyRouter,
 >(opts: CreateTRPCNextAppRouterServerOptions<TRouter>) {
-  const getClient = cache(async () => {
+  const getClient = cache(async (callOpts: ProxyCallbackOptions) => {
     const config = opts.config();
     const client = createTRPCUntypedClient(config);
     const runtime = client.runtime as NextAppDirRuntime<TRouter>;
 
     const ctx = await config.createContext();
     runtime.ctx = ctx;
-    runtime.cacheTagSeparators = config.contextSelector?.(ctx) ?? [];
+    runtime.cacheTagSeparators = config.contextSelector?.(ctx, callOpts) ?? [];
     return client;
   });
 
   return createRecursiveProxy(async (callOpts) => {
     // lazily initialize client
-    const client = await getClient();
+    const client = await getClient(callOpts);
     const runtime = client.runtime as NextAppDirRuntime<TRouter>;
 
     const pathCopy = [...callOpts.path];

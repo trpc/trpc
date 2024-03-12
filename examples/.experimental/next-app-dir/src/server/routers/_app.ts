@@ -26,6 +26,19 @@ export const createPost = publicProcedure
   });
 
 export const appRouter = router({
+  privateGreeting: publicProcedure
+    .input(
+      z.object({
+        text: z.string(),
+      }),
+    )
+    .query(async (opts) => {
+      console.log('request from', opts.ctx.headers?.['x-trpc-source']);
+      return `hello ${opts.input.text} - ${Math.random()} from ${
+        opts.ctx._userIdMock
+      }`;
+    }),
+
   greeting: publicProcedure
     .input(
       z.object({

@@ -14,6 +14,7 @@ import type {
   inferTransformedProcedureOutput,
   MaybePromise,
   ProtectedIntersection,
+  ProxyCallbackOptions,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
@@ -105,7 +106,12 @@ export interface CreateTRPCNextAppRouterServerOptions<
      * This is important to make sure that the cache is not shared between different users
      * @example `ctx => [ctx.user?.id]`
      */
-    contextSelector: ((ctx: inferRouterContext<TRouter>) => any[]) | undefined;
+    contextSelector:
+      | ((
+          ctx: inferRouterContext<TRouter>,
+          callOptions: ProxyCallbackOptions,
+        ) => any[])
+      | undefined;
   };
 }
 

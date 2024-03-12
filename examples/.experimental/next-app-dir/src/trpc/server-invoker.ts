@@ -12,7 +12,11 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
   config() {
     return {
       createContext: () => createContext('invoke'),
-      contextSelector: (ctx) => [ctx.session?.user.id, ctx._userIdMock],
+      contextSelector: (ctx, callOpts) => {
+        if (callOpts.path[0] === 'privateGreeting')
+          return [ctx.session?.user.id, ctx._userIdMock];
+        return [];
+      },
       links: [
         loggerLink({
           enabled: (_op) => true,

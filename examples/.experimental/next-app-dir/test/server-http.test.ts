@@ -59,17 +59,17 @@ test('server-httpLink: different contexts should not have a common cache', async
   await page.goto('/rsc');
   await page.reload();
 
-  await page.waitForSelector('text=hello from server1');
-  const nonce1 = await page.textContent('text=hello from server1');
+  await page.waitForSelector('text=hello from server1 private');
+  const nonce1 = await page.textContent('text=hello from server1 private');
 
   await page.reload();
-  const nonce2 = await page.textContent('text=hello from server1');
+  const nonce2 = await page.textContent('text=hello from server1 private');
   expect(nonce1).toBe(nonce2);
 
   // Mock new user
   await page.setExtraHTTPHeaders({ 'x-trpc-user-id': 'bar' });
   await page.reload();
 
-  const nonce3 = await page.textContent('text=hello from server1');
+  const nonce3 = await page.textContent('text=hello from server1 private');
   expect(nonce1).not.toBe(nonce3);
 });

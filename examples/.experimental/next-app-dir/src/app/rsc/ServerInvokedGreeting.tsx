@@ -11,6 +11,12 @@ export async function ServerInvokedGreeting() {
   const greeting2 = await api.greeting.query({
     text: 'i also never hit an endpoint',
   });
+  const privateGreeting1 = await api.privateGreeting.query({
+    text: 'i never hit a private api endpoint',
+  });
+  const privateGreeting2 = await api.privateGreeting.query({
+    text: 'i also never hit a private endpoint',
+  });
 
   const secret = await api.secret.query();
 
@@ -18,6 +24,8 @@ export async function ServerInvokedGreeting() {
     <div>
       <p>{greeting1}</p>
       <p>{greeting2}</p>
+      <p>{privateGreeting1}</p>
+      <p>{privateGreeting2}</p>
       <p>{secret}</p>
       <form
         action={async () => {
@@ -38,6 +46,26 @@ export async function ServerInvokedGreeting() {
         }}
       >
         <button type="submit">Revalidate Cache 2</button>
+      </form>
+      <form
+        action={async () => {
+          'use server';
+          await api.privateGreeting.revalidate({
+            text: 'i never hit an api endpoint',
+          });
+        }}
+      >
+        <button type="submit">Revalidate Cache 3</button>
+      </form>
+      <form
+        action={async () => {
+          'use server';
+          await api.privateGreeting.revalidate({
+            text: 'i also never hit an endpoint',
+          });
+        }}
+      >
+        <button type="submit">Revalidate Cache 4</button>
       </form>
     </div>
   );
