@@ -184,6 +184,12 @@ export function createFileUploadHandler({
     return new NodeOnDiskFile(filepath, contentType);
   };
 }
+type NodeJSReadableStreamEsque = {
+  on(
+    eventName: string | symbol,
+    listener: (...args: any[]) => void,
+  ): NodeJSReadableStreamEsque;
+};
 
 export class NodeOnDiskFile {
   name: string;
@@ -246,8 +252,8 @@ export class NodeOnDiskFile {
   }
 
   stream(): ReadableStream<any>;
-  stream(): NodeJS.ReadableStream;
-  stream(): NodeJS.ReadableStream | ReadableStream<any> {
+  stream(): NodeJSReadableStreamEsque;
+  stream(): NodeJSReadableStreamEsque | ReadableStream<any> {
     let stream: Readable = createReadStream(this.filepath);
     if (this.slicer) {
       stream = stream.pipe(streamSlice(this.slicer.start, this.slicer.end));

@@ -72,7 +72,7 @@
     "!**/*.test.*"
   ],
   "peerDependencies": {
-    "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-query": "^5.25.0",
     "@trpc/client": "10.45.1",
     "@trpc/react-query": "10.45.1",
     "@trpc/server": "^10.45.1",
@@ -89,7 +89,7 @@
     }
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-query": "^5.25.0",
     "@trpc/client": "10.45.1",
     "@trpc/react-query": "10.45.1",
     "@trpc/server": "^10.45.1",

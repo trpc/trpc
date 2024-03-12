@@ -34,6 +34,12 @@ void app.prepare().then(() => {
     });
   });
 
+  // Keep the next.js upgrade handler from being added to our custom server
+  // so sockets stay open even when not HMR.
+  const originalOn = server.on.bind(server);
+  server.on = function (event, listener) {
+    return event !== 'upgrade' ? originalOn(event, listener) : server;
+  };
   server.listen(port);
 
   console.log(
