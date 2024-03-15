@@ -8,6 +8,7 @@ import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type {
   ProcedureBuilder,
+  TRPCInputValidationError,
   TypedTRPCError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { trpcError } from '@trpc/server/unstable-core-do-not-import';
@@ -341,6 +342,7 @@ test('infer errors', async () => {
         code: 'FORBIDDEN';
         mw2: 'bar';
       }
+    | TRPCInputValidationError
   >();
 
   const router = t.router({
@@ -349,16 +351,14 @@ test('infer errors', async () => {
 
   {
     const caller = router.createCaller({});
-    const error = (await waitError(
-      caller.q(),
-      TRPCError,
-    )) as TypedTRPCError<Err>;
+    const error = (await waitError(caller.q(), TRPCError)) as TypedTRPCError<
+      Exclude<Err, TRPCInputValidationError>
+    >;
 
-    assert(error.code === 'UNAUTHORIZED');
-    expect(error.code).toBe('UNAUTHORIZED');
+    assert(error.data.code === 'UNAUTHORIZED');
+    expect(error.data.code).toBe('UNAUTHORIZED');
 
-    error;
-    expect(error.foo).toBe('bar');
+    expect(error.data.foo).toBe('bar');
   }
 
   {

@@ -1,4 +1,8 @@
 import type { inferObservableValue } from '../observable';
+import type {
+  TRPCInputValidationError,
+  TypedTRPCErrorOptions,
+} from './error/TRPCError';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -188,7 +192,7 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     TInferErrors,
-    TError
+    Exclude<TError | TRPCInputValidationError, UnsetMarker>
   >;
   /**
    * Add an output parser to the procedure.
@@ -228,7 +232,7 @@ export interface ProcedureBuilder<
    * Add a middleware to the procedure.
    * @link https://trpc.io/docs/v11/server/middlewares
    */
-  use<$ContextOverridesOut, $Error = never>(
+  use<$ContextOverridesOut, $Error extends TypedTRPCErrorOptions = never>(
     fn:
       | MiddlewareBuilder<
           Overwrite<TContext, TContextOverrides>,
@@ -312,6 +316,7 @@ export interface ProcedureBuilder<
   ): QueryProcedure<{
     input: DefaultValue<TInputIn, void>;
     output: DefaultValue<TOutputOut, $Output>;
+    error: TError;
   }>;
 
   /**
@@ -331,6 +336,7 @@ export interface ProcedureBuilder<
   ): MutationProcedure<{
     input: DefaultValue<TInputIn, void>;
     output: DefaultValue<TOutputOut, $Output>;
+    error: TError;
   }>;
 
   /**
@@ -350,6 +356,7 @@ export interface ProcedureBuilder<
   ): SubscriptionProcedure<{
     input: DefaultValue<TInputIn, void>;
     output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
+    error: TError;
   }>;
   /**
    * @internal
@@ -554,7 +561,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         if (result instanceof TRPCError) {
           throw result;
         }
-        return result as any;
+        return result;
       } catch (cause) {
         return {
           ok: false,

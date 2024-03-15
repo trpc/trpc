@@ -4,9 +4,12 @@ import {
   createTRPCUntypedClient,
 } from '@trpc/client';
 import type {
+  AnyMutationProcedure,
   AnyProcedure,
+  AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
+  DeepPartial,
   inferClientTypes,
   inferProcedureInput,
   MaybePromise,
@@ -20,6 +23,8 @@ import {
   getTRPCErrorFromUnknown,
   transformTRPCResponse,
   TRPCError,
+  TRPCInputValidationError,
+  TypedTRPCError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { revalidateTag } from 'next/cache';
 import { cache } from 'react';
@@ -172,4 +177,198 @@ export async function experimental_revalidateEndpoint(req: Request) {
   return new Response(JSON.stringify({ revalidated: true, now: Date.now() }), {
     status: 200,
   });
+}
+
+type TypedError<TProc extends AnyProcedure> = Exclude<
+  TProc['_def']['$error'],
+  TRPCInputValidationError
+> &
+  TProc['_def']['$error'] extends TRPCInputValidationError
+  ? {
+      code: 'BAD_REQUEST';
+      TODO: 'FIXME';
+    }
+  : never;
+
+type ServerActionState<TProc extends AnyProcedure> = {
+  input?: DeepPartial<TProc['_def']['_input_in']>;
+} & (
+  | {
+      ok: true;
+      output: TProc['_def']['_output_out'];
+      error?: never;
+    }
+  | {
+      ok: false;
+      error: TypedError<TProc>;
+      output?: never;
+    }
+  | {
+      ok?: never;
+      error?: never;
+      output?: never;
+    }
+);
+type ServerAction<TProc extends AnyProcedure> = (
+  state: ServerActionState<TProc>,
+  input: FormData | TProc['_def']['_input_in'],
+) => Promise<ServerActionState<TProc>>;
+
+type QueryState<TProc extends AnyProcedure> =
+  | {
+      ok: true;
+      output: TProc['_def']['_output_out'];
+      error?: never;
+    }
+  | {
+      ok: false;
+      error: TypedError<TProc>;
+      output?: never;
+    };
+
+type Query<TProc extends AnyProcedure> = (
+  input: TProc['_def']['_input_in'],
+) => Promise<QueryState<TProc>>;
+export function experimental_createDataLayer<
+  TInstance extends {
+    _config: RootConfig<AnyRootTypes>;
+  },
+>(
+  t: TInstance,
+  opts: (object extends TInstance['_config']['$types']['ctx']
+    ? {
+        createContext?: () => MaybePromise<
+          TInstance['_config']['$types']['ctx']
+        >;
+      }
+    : {
+        createContext: () => MaybePromise<
+          TInstance['_config']['$types']['ctx']
+        >;
+      }) & {
+    /**
+     * Transform form data to a `Record` before passing it to the procedure
+     * @default true
+     */
+    normalizeFormData?: boolean;
+    onError?: (opts: {
+      error: TRPCError;
+      ctx: TInstance['_config']['$types']['ctx'] | undefined;
+    }) => void;
+  },
+) {
+  const config = t._config;
+  const {
+    //
+    normalizeFormData = true,
+    createContext,
+  } = opts;
+
+  const transformer = config.transformer;
+
+  return {
+    action<TProc extends AnyMutationProcedure>(
+      proc: TProc,
+    ): ServerAction<TProc> {
+      return async function actionHandler(...args: unknown[]) {
+        /**
+         * When you wrap an action with useFormState, it gets an extra argument as its first argument.
+         * The submitted form data is therefore its second argument instead of its first as it would usually be.
+         * The new first argument that gets added is the current state of the form.
+         * @see https://react.dev/reference/react-dom/hooks/useFormState#my-action-can-no-longer-read-the-submitted-form-data
+         */
+        let rawInput = args.length === 1 ? args[0] : args[1];
+
+        let ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
+        try {
+          ctx = createContext ? await createContext() : {};
+          if (normalizeFormData && isFormData(rawInput)) {
+            // Normalizes formdata so we can use `z.object({})` etc on the server
+            try {
+              rawInput = formDataToObject(rawInput);
+            } catch {
+              throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'Failed to convert FormData to an object',
+              });
+            }
+          } else if (rawInput && !isFormData(rawInput)) {
+            rawInput = transformer.input.deserialize(rawInput);
+          }
+
+          const data = await proc({
+            input: undefined,
+            ctx,
+            path: 'serverAction',
+            getRawInput: async () => rawInput,
+            type: proc._def.type,
+          });
+
+          return {
+            ok: true,
+            data,
+            input: rawInput,
+          };
+        } catch (cause) {
+          const error = getTRPCErrorFromUnknown(cause);
+
+          opts.onError?.({ error, ctx });
+          if (error instanceof TypedTRPCError) {
+            return {
+              ok: false,
+              error: error.data,
+              input: rawInput,
+            };
+          }
+          if (error instanceof TRPCInputValidationError) {
+            throw new Error(
+              "TODO: handle TRPCInputValidationError case, it's not implemented yet",
+            );
+          }
+
+          throw error;
+        }
+      } as ServerAction<TProc>;
+    },
+
+    data<TProc extends AnyQueryProcedure>(proc: TProc): Query<TProc> {
+      return async function actionHandler(rawInput) {
+        let ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
+        try {
+          ctx = createContext ? await createContext() : {};
+
+          const output = await proc({
+            input: undefined,
+            ctx,
+            path: 'serverAction',
+            getRawInput: async () => rawInput,
+            type: proc._def.type,
+          });
+
+          return {
+            ok: true,
+            output,
+            input: rawInput,
+          };
+        } catch (cause) {
+          const error = getTRPCErrorFromUnknown(cause);
+
+          opts.onError?.({ error, ctx });
+          if (error instanceof TypedTRPCError) {
+            return {
+              ok: false,
+              error: error.data,
+            };
+          }
+          if (error instanceof TRPCInputValidationError) {
+            throw new Error(
+              "TODO: handle TRPCInputValidationError case, it's not implemented yet",
+            );
+          }
+
+          throw error;
+        }
+      };
+    },
+  };
 }

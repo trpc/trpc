@@ -1,4 +1,4 @@
-import type { TypedTRPCError } from './error/TRPCError';
+import type { TypedTRPCError, TypedTRPCErrorOptions } from './error/TRPCError';
 import { TRPCError, TRPCInputValidationError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
@@ -100,7 +100,7 @@ export type MiddlewareFunction<
   $ContextOverridesOut,
   TInputOut,
   TInferErrors extends boolean,
-  $ErrorOutput,
+  $ErrorOutput extends TypedTRPCErrorOptions,
 > = {
   (opts: {
     ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
@@ -163,7 +163,7 @@ export function createMiddlewareFactory<
   function createMiddleware<
     $ContextOverrides,
     TInferErrors extends boolean,
-    $Error,
+    $Error extends TypedTRPCErrorOptions,
   >(
     fn: MiddlewareFunction<
       TContext,

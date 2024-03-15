@@ -1,5 +1,4 @@
 import type { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
-import type { Overwrite, TypeError } from '../types';
 import { isObject } from '../utils';
 
 class UnknownCauseError extends Error {
@@ -95,46 +94,23 @@ export class TRPCInputValidationError extends TRPCError {
 
 export const trpcTypedErrorSymbol = Symbol('errorSymbol');
 
-export type TypedTRPCError<TData> = Overwrite<TRPCError, TData> & {
-  [trpcTypedErrorSymbol]: typeof trpcTypedErrorSymbol;
-};
+export type TypedTRPCErrorOptions = TRPCErrorOptions & Record<string, unknown>;
 
-export function trpcError<
-  TData extends Partial<TRPCErrorOptions> & Record<string, unknown>,
->(
-  data: TData extends {
-    stack?: any;
+export class TypedTRPCError<
+  TData extends TypedTRPCErrorOptions,
+> extends TRPCError {
+  public readonly [trpcTypedErrorSymbol] = trpcTypedErrorSymbol;
+  public readonly data: TData;
+
+  public constructor(opts: TData) {
+    super(opts);
+
+    const { stack: _, cause: __, ...rest } = opts;
+
+    this.data = rest as TData;
   }
-    ? TypeError<"key 'stack' should not be passed to trpcError">
-    : TData,
-) {
-  const {
-    code = 'BAD_REQUEST',
-    cause,
-    message,
-    stack: _,
-    ...rest
-  } = data as TData;
+}
 
-  const error = new TRPCError({
-    code,
-    cause,
-    message,
-  }) as TypedTRPCError<
-    Overwrite<
-      TData,
-      {
-        code: TData['code'] extends TRPC_ERROR_CODE_KEY
-          ? TData['code']
-          : 'BAD_REQUEST';
-      }
-    >
-  >;
-
-  error[trpcTypedErrorSymbol] = trpcTypedErrorSymbol;
-  for (const [key, value] of Object.entries(rest)) {
-    (error as any)[key] = value;
-  }
-
-  return error;
+export function trpcError<TData extends TypedTRPCErrorOptions>(data: TData) {
+  return new TypedTRPCError(data);
 }

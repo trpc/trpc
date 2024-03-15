@@ -22,6 +22,7 @@ export interface ProcedureOptions {
 interface BuiltProcedureDef {
   input: unknown;
   output: unknown;
+  error: unknown;
 }
 /**
  *
@@ -32,6 +33,7 @@ export interface Procedure<
   TDef extends BuiltProcedureDef,
 > {
   _def: {
+    $error: TDef['error'];
     _input_in: TDef['input'];
     _output_out: TDef['output'];
     procedure: true;
