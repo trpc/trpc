@@ -215,7 +215,7 @@ type ServerActionState<TProc extends AnyProcedure> = {
 );
 type ServerActionArgs<TProc extends AnyProcedure> =
   // invoked directly
-  // ❌ they can't be combined
+  // ❌ they can't be combined because then the types of `useFormState()` will complain
   // | [
   //
   //     input: FormData | TProc['_def']['_input_in'],
