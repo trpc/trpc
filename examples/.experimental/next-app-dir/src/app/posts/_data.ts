@@ -23,7 +23,17 @@ const db = {
 };
 
 const addPost = protectedProcedure
-  .input(addPostSchema)
+  .input(
+    addPostSchema.superRefine((it, ctx) => {
+      if (db.posts.some((post) => post.title === it.title)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Title already exists',
+          path: ['title'],
+        });
+      }
+    }),
+  )
   .mutation(async (opts) => {
     await new Promise((resolve) => setTimeout(resolve, 300));
     const post: Post = {

@@ -60,7 +60,7 @@ export function AddPostForm_RHF() {
   const form = useZodForm({
     schema: addPostSchema,
     defaultValues: serverState.input ?? {
-      title: 'hello world',
+      title: 'Hello world',
     },
   });
 
