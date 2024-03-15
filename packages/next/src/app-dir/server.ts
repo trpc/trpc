@@ -213,9 +213,20 @@ type ServerActionState<TProc extends AnyProcedure> = {
       output?: never;
     }
 );
+type ServerActionArgs<TProc extends AnyProcedure> =
+  // invoked directly
+  // ❌ they can't be combined
+  // | [
+  //
+  //     input: FormData | TProc['_def']['_input_in'],
+  //   ];
+  | [
+      // invoked through useFormState
+      state: ServerActionState<TProc>,
+      input: FormData | TProc['_def']['_input_in'],
+    ];
 type ServerAction<TProc extends AnyProcedure> = (
-  state: ServerActionState<TProc>,
-  input: FormData | TProc['_def']['_input_in'],
+  ...args: ServerActionArgs<TProc>
 ) => Promise<ServerActionState<TProc>>;
 
 type QueryState<TProc extends AnyProcedure> =
