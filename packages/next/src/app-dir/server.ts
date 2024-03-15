@@ -230,6 +230,9 @@ type ServerActionUseFormState<TProc extends AnyProcedure> = (
   ...args: UseFormStateArgs<TProc>
 ) => Promise<ServerActionState<TProc>>;
 
+/**
+ * @deprecated use `ServerActionUseFormState` instead
+ */
 type ServerActionInvoke<TProc extends AnyProcedure> = (
   input: TProc['_def']['_input_in'] | FormData,
 ) => Promise<ServerActionState<TProc>>;
@@ -381,6 +384,9 @@ export function experimental_createDataLayer<
     ): ServerActionUseFormState<TProc> {
       return actionHandler(proc) as unknown as ServerActionUseFormState<TProc>;
     },
+    /**
+     * @deprecated this only exists for playing around - should be deleted
+     */
     invokeAction<TProc extends AnyMutationProcedure>(
       proc: TProc,
     ): ServerActionInvoke<TProc> {

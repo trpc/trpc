@@ -1,5 +1,6 @@
 import { listPosts } from './_data';
 import { AddPostForm_invoked } from './AddPostForm_invoked';
+import { AddPostForm_RHF } from './AddPostForm_ReactHookForm';
 import { AddPostForm_useFormState } from './AddPostForm_useFormState';
 
 export default async function Home() {
@@ -18,6 +19,8 @@ export default async function Home() {
         ))}
       </ul>
 
+      <h2>Add post React hook form</h2>
+      <AddPostForm_RHF />
       <h2>Add post useFormState</h2>
       <AddPostForm_useFormState />
       <h2>Add post invoked</h2>
