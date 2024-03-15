@@ -43,12 +43,12 @@ export function AddPostForm_useFormState() {
         const fd = new FormData(e.target as HTMLFormElement);
 
         const res = await formDataAction({}, fd);
-        setState(res);
+        res && setState(res);
         console.log({ res });
       }}
     >
       <div>
-        <input name="title" defaultValue={serverState.input?.title} />
+        <input name="title" defaultValue={state.input?.title} />
         {state.error?.fieldErrors?.title && (
           <div>Invalid title: {state.error.fieldErrors.title.join(',')}</div>
         )}

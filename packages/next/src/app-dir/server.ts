@@ -194,25 +194,26 @@ type TypedError<TProc extends AnyProcedure> =
         }
       : never);
 
-type ServerActionState<TProc extends AnyProcedure> = {
-  input?: DeepPartial<TProc['_def']['_input_in']>;
-} & (
+type ServerActionState<TProc extends AnyProcedure> =
   | {
-      ok: true;
-      output: TProc['_def']['_output_out'];
-      error?: never;
-    }
-  | {
-      ok: false;
-      error: TypedError<TProc>;
-      output?: never;
-    }
-  | {
-      ok?: never;
-      error?: never;
-      output?: never;
-    }
-);
+      input?: DeepPartial<TProc['_def']['_input_in']>;
+    } & (
+      | {
+          ok: true;
+          output: TProc['_def']['_output_out'];
+          error?: never;
+        }
+      | {
+          ok: false;
+          error: TypedError<TProc>;
+          output?: never;
+        }
+      | {
+          ok?: never;
+          error?: never;
+          output?: never;
+        }
+    );
 type UseFormStateArgs<TProc extends AnyProcedure> =
   // invoked directly
   // ❌ they can't be combined because then the types of `useFormState()` will complain

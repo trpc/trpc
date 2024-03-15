@@ -7,15 +7,14 @@ import { ZodError } from 'zod';
 const t = initTRPC.create({});
 
 export const router = t.router;
-export const publicProcedure = t.procedure
-  .experimental_inferErrors()
-  .use(async (opts) => {
-    const res = await opts.next();
-    if (!res.ok) {
-      console.error('❌', res.error, res.error.cause);
-    }
-    return res;
-  });
+export const publicProcedure = t.procedure.experimental_inferErrors();
+// .use(async (opts) => {
+//   const res = await opts.next();
+//   if (!res.ok) {
+//     console.error('❌', res.error, res.error.cause);
+//   }
+//   return res;
+// });
 
 export const protectedProcedure = publicProcedure.use(async (opts) => {
   const session = await auth();
