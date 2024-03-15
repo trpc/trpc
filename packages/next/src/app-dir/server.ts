@@ -133,6 +133,7 @@ export function experimental_createServerActionHandler<
         return transformedJSON;
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
+
         const shape = getErrorShape({
           config,
           ctx,

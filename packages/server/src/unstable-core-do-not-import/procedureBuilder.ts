@@ -45,6 +45,11 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
+export type CallerOverride = (opts: {
+  args: unknown[];
+  invoke: (opts: ProcedureCallOptions) => Promise<unknown>;
+  _def: AnyProcedureBuilderDef;
+}) => Promise<unknown>;
 type ProcedureBuilderDef<TMeta> = {
   procedure: true;
   inputs: Parser[];
@@ -52,9 +57,20 @@ type ProcedureBuilderDef<TMeta> = {
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
   middlewares: AnyMiddlewareFunction[];
+  /**
+   * @deprecated use `type` instead
+   */
   mutation?: boolean;
+  /**
+   * @deprecated use `type` instead
+   */
   query?: boolean;
+  /**
+   * @deprecated use `type` instead
+   */
   subscription?: boolean;
+  type?: ProcedureType;
+  caller?: CallerOverride;
 };
 
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
@@ -101,6 +117,7 @@ export type AnyProcedureBuilder = ProcedureBuilder<
   any,
   any,
   any,
+  any,
   any
 >;
 
@@ -119,7 +136,8 @@ export type inferProcedureBuilderResolverOptions<
   infer _TOutputIn,
   infer _TOutputOut,
   infer _TInferErrors,
-  infer _TError
+  infer _TError,
+  infer _TCaller
 >
   ? ProcedureResolverOptions<
       TContext,
@@ -149,8 +167,9 @@ export interface ProcedureBuilder<
   TInputOut,
   TOutputIn,
   TOutputOut,
-  TInferErrors extends boolean = never,
-  TError = never,
+  TInferErrors extends boolean,
+  TError,
+  TCaller extends boolean,
 > {
   experimental_inferErrors: () => ProcedureBuilder<
     TContext,
@@ -161,7 +180,23 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     true,
-    TError
+    TError,
+    TCaller
+  >;
+
+  experimental_caller(
+    caller: CallerOverride,
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    TInputIn,
+    TInputOut,
+    TOutputIn,
+    TOutputOut,
+    TInferErrors,
+    TError,
+    true
   >;
   /**
    * Add an input parser to the procedure.
@@ -188,7 +223,8 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     TInferErrors,
-    TError
+    TError,
+    TCaller
   >;
   /**
    * Add an output parser to the procedure.
@@ -205,7 +241,8 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
     IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
     TInferErrors,
-    TError
+    TError,
+    TCaller
   >;
   /**
    * Add a meta data to the procedure.
@@ -222,7 +259,8 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     TInferErrors,
-    TError
+    TError,
+    TCaller
   >;
   /**
    * Add a middleware to the procedure.
@@ -254,7 +292,8 @@ export interface ProcedureBuilder<
     TOutputIn,
     TOutputOut,
     TInferErrors,
-    Exclude<$Error | TError, UnsetMarker>
+    Exclude<$Error | TError, UnsetMarker>,
+    TCaller
   >;
 
   /**
@@ -280,7 +319,8 @@ export interface ProcedureBuilder<
             $OutputIn,
             $OutputOut,
             TInferErrors,
-            TError
+            TError,
+            TCaller
           >
         : TypeError<'Meta mismatch'>
       : TypeError<'Context mismatch'>,
@@ -293,7 +333,8 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TOutputIn, $OutputIn>,
     IntersectIfDefined<TOutputOut, $OutputOut>,
     TInferErrors,
-    TError // FIXME
+    TError,
+    TCaller // FIXME
   >;
   /**
    * Query procedure
@@ -387,7 +428,8 @@ export function createBuilder<TContext, TMeta>(
   UnsetMarker,
   UnsetMarker,
   false,
-  UnsetMarker
+  UnsetMarker,
+  false
 > {
   const _def: AnyProcedureBuilderDef = {
     procedure: true,
@@ -400,6 +442,11 @@ export function createBuilder<TContext, TMeta>(
     _def,
     experimental_inferErrors() {
       return builder;
+    },
+    experimental_caller(caller) {
+      return createNewBuilder(_def, {
+        caller,
+      }) as any;
     },
     input(input) {
       const parser = getParseFn(input as Parser);
@@ -462,6 +509,7 @@ function createResolver(
   resolver: AnyResolver,
 ) {
   const finalBuilder = createNewBuilder(_def, {
+    type: _def.type,
     resolver,
     middlewares: [
       async function resolveMiddleware(opts) {
@@ -476,7 +524,21 @@ function createResolver(
     ],
   });
 
-  return createProcedureCaller(finalBuilder._def);
+  const invoke = createProcedureCaller(finalBuilder._def);
+  const callerOverride = finalBuilder._def.caller;
+  if (!callerOverride) {
+    return invoke;
+  }
+  const callerWrapper = (...args: unknown[]) => {
+    return callerOverride({
+      args,
+      invoke,
+      _def: finalBuilder._def,
+    });
+  };
+
+  callerWrapper._def = finalBuilder._def;
+  return callerWrapper;
 }
 
 /**
