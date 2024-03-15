@@ -213,7 +213,7 @@ type ServerActionState<TProc extends AnyProcedure> = {
       output?: never;
     }
 );
-type ServerActionArgs<TProc extends AnyProcedure> =
+type UseFormStateArgs<TProc extends AnyProcedure> =
   // invoked directly
   // ❌ they can't be combined because then the types of `useFormState()` will complain
   // | [
@@ -225,8 +225,12 @@ type ServerActionArgs<TProc extends AnyProcedure> =
       state: ServerActionState<TProc>,
       input: FormData | TProc['_def']['_input_in'],
     ];
-type ServerAction<TProc extends AnyProcedure> = (
-  ...args: ServerActionArgs<TProc>
+type ServerActionUseFormState<TProc extends AnyProcedure> = (
+  ...args: UseFormStateArgs<TProc>
+) => Promise<ServerActionState<TProc>>;
+
+type ServerActionInvoke<TProc extends AnyProcedure> = (
+  input: TProc['_def']['_input_in'] | FormData,
 ) => Promise<ServerActionState<TProc>>;
 
 type QueryState<TProc extends AnyProcedure> =
@@ -299,77 +303,87 @@ export function experimental_createDataLayer<
 
   const transformer = config.transformer;
 
+  function actionHandler<TProc extends AnyMutationProcedure>(
+    proc: TProc,
+  ): ServerActionUseFormState<TProc> {
+    return (async (...args: unknown[]) => {
+      /**
+       * When you wrap an action with useFormState, it gets an extra argument as its first argument.
+       * The submitted form data is therefore its second argument instead of its first as it would usually be.
+       * The new first argument that gets added is the current state of the form.
+       * @see https://react.dev/reference/react-dom/hooks/useFormState#my-action-can-no-longer-read-the-submitted-form-data
+       */
+      let rawInput = args.length === 1 ? args[0] : args[1];
+
+      let ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
+      try {
+        ctx = createContext ? await createContext() : {};
+        if (normalizeFormData && isFormData(rawInput)) {
+          // Normalizes formdata so we can use `z.object({})` etc on the server
+          try {
+            rawInput = formDataToObject(rawInput);
+          } catch {
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Failed to convert FormData to an object',
+            });
+          }
+        } else if (rawInput && !isFormData(rawInput)) {
+          rawInput = transformer.input.deserialize(rawInput);
+        }
+
+        const data = await proc({
+          input: undefined,
+          ctx,
+          path: 'serverAction',
+          getRawInput: async () => rawInput,
+          type: proc._def.type,
+        });
+
+        return {
+          ok: true,
+          data,
+          input: rawInput,
+        };
+      } catch (cause) {
+        const error = getTRPCErrorFromUnknown(cause);
+
+        rethrowNextErrors(error);
+
+        opts.onError?.({ error, ctx });
+        if (error instanceof TypedTRPCError) {
+          return {
+            ok: false,
+            error: error.data,
+            input: rawInput,
+          };
+        }
+
+        if (error instanceof TRPCInputValidationError) {
+          return {
+            ok: false,
+            error: {
+              ...opts.getValidationError({ error }),
+              code: 'INPUT_VALIDATION',
+            },
+            input: rawInput,
+          };
+        }
+
+        throw error;
+      }
+    }) as unknown as ServerActionUseFormState<TProc>;
+  }
   return {
     action<TProc extends AnyMutationProcedure>(
       proc: TProc,
-    ): ServerAction<TProc> {
-      return async function actionHandler(...args: unknown[]) {
-        /**
-         * When you wrap an action with useFormState, it gets an extra argument as its first argument.
-         * The submitted form data is therefore its second argument instead of its first as it would usually be.
-         * The new first argument that gets added is the current state of the form.
-         * @see https://react.dev/reference/react-dom/hooks/useFormState#my-action-can-no-longer-read-the-submitted-form-data
-         */
-        let rawInput = args.length === 1 ? args[0] : args[1];
-
-        let ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
-        try {
-          ctx = createContext ? await createContext() : {};
-          if (normalizeFormData && isFormData(rawInput)) {
-            // Normalizes formdata so we can use `z.object({})` etc on the server
-            try {
-              rawInput = formDataToObject(rawInput);
-            } catch {
-              throw new TRPCError({
-                code: 'INTERNAL_SERVER_ERROR',
-                message: 'Failed to convert FormData to an object',
-              });
-            }
-          } else if (rawInput && !isFormData(rawInput)) {
-            rawInput = transformer.input.deserialize(rawInput);
-          }
-
-          const data = await proc({
-            input: undefined,
-            ctx,
-            path: 'serverAction',
-            getRawInput: async () => rawInput,
-            type: proc._def.type,
-          });
-
-          return {
-            ok: true,
-            data,
-            input: rawInput,
-          };
-        } catch (cause) {
-          const error = getTRPCErrorFromUnknown(cause);
-
-          rethrowNextErrors(error);
-
-          opts.onError?.({ error, ctx });
-          if (error instanceof TypedTRPCError) {
-            return {
-              ok: false,
-              error: error.data,
-              input: rawInput,
-            };
-          }
-
-          if (error instanceof TRPCInputValidationError) {
-            return {
-              ok: false,
-              error: {
-                ...opts.getValidationError({ error }),
-                code: 'INPUT_VALIDATION',
-              },
-              input: rawInput,
-            };
-          }
-
-          throw error;
-        }
-      } as ServerAction<TProc>;
+    ): ServerActionUseFormState<TProc> {
+      return actionHandler(proc) as unknown as ServerActionUseFormState<TProc>;
+    },
+    invokeAction<TProc extends AnyMutationProcedure>(
+      proc: TProc,
+    ): ServerActionInvoke<TProc> {
+      return actionHandler(proc) as unknown as ServerActionInvoke<TProc>;
     },
 
     data<TProc extends AnyQueryProcedure>(proc: TProc): Query<TProc> {

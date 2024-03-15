@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import toast, { Toaster } from 'react-hot-toast';
-import { addPost } from './_data';
+import { formDataAction } from './_data';
 
-function SubmitButton(props: Omit<JSX.IntrinsicElements['button'], 'type'>) {
+export function SubmitButton(
+  props: Omit<JSX.IntrinsicElements['button'], 'type'>,
+) {
   const state = useFormStatus();
 
   return (
@@ -16,8 +18,15 @@ function SubmitButton(props: Omit<JSX.IntrinsicElements['button'], 'type'>) {
     />
   );
 }
-export function AddPostForm() {
-  const [state, action] = useFormState(addPost, {});
+export function AddPostForm_useFormState() {
+  const [serverState, action] = useFormState(formDataAction, {});
+
+  const [state, setState] = useState(serverState);
+
+  useEffect(() => {
+    console.log('Server state', serverState);
+    setState(serverState);
+  }, [serverState]);
 
   useEffect(() => {
     console.log('Form state', state);
@@ -27,9 +36,19 @@ export function AddPostForm() {
   }, [state]);
 
   return (
-    <form action={action}>
+    <form
+      action={action}
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target as HTMLFormElement);
+
+        const res = await formDataAction({}, fd);
+        setState(res);
+        console.log({ res });
+      }}
+    >
       <div>
-        <input name="title" defaultValue={state.input?.title} />
+        <input name="title" defaultValue={serverState.input?.title} />
         {state.error?.fieldErrors?.title && (
           <div>Invalid title: {state.error.fieldErrors.title.join(',')}</div>
         )}

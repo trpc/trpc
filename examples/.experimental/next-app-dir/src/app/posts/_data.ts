@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { redirect, RedirectType } from 'next/navigation';
 import { z } from 'zod';
 import { addPostSchema, type Post } from './_data.schema';
 import { dataLayer, protectedProcedure, publicProcedure } from './_trpc';
@@ -22,8 +22,9 @@ const db = {
   posts,
 };
 
-export const addPost = dataLayer.action(
-  protectedProcedure.input(addPostSchema).mutation(async (opts) => {
+const addPost = protectedProcedure
+  .input(addPostSchema)
+  .mutation(async (opts) => {
     await new Promise((resolve) => setTimeout(resolve, 300));
     const post: Post = {
       ...opts.input,
@@ -32,9 +33,11 @@ export const addPost = dataLayer.action(
 
     db.posts.push(post);
     revalidatePath('/');
-    redirect(`/posts/${post.id}`);
-  }),
-);
+    redirect(`/posts/${post.id}`, RedirectType.push);
+  });
+export const formDataAction = dataLayer.action(addPost);
+
+export const simpleAddPost = dataLayer.invokeAction(addPost);
 
 export const listPosts = dataLayer.data(
   publicProcedure.query(() => {

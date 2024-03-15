@@ -1,5 +1,6 @@
 import { listPosts } from './_data';
-import { AddPostForm } from './AddPostForm';
+import { AddPostForm_invoked } from './AddPostForm_invoked';
+import { AddPostForm_useFormState } from './AddPostForm_useFormState';
 
 export default async function Home() {
   const posts = await listPosts();
@@ -17,8 +18,10 @@ export default async function Home() {
         ))}
       </ul>
 
-      <h2>Add post</h2>
-      <AddPostForm />
+      <h2>Add post useFormState</h2>
+      <AddPostForm_useFormState />
+      <h2>Add post invoked</h2>
+      <AddPostForm_invoked />
     </div>
   );
 }
