@@ -36,6 +36,11 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./app-dir/caller": {
+      "import": "./dist/app-dir/caller.mjs",
+      "require": "./dist/app-dir/caller.js",
+      "default": "./dist/app-dir/caller.js"
+    },
     "./app-dir/client": {
       "import": "./dist/app-dir/client.mjs",
       "require": "./dist/app-dir/client.js",
