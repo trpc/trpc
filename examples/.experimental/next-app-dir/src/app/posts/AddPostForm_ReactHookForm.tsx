@@ -88,11 +88,39 @@ export function AddPostForm_RHF() {
               {},
               new FormData(event.target as HTMLFormElement),
             );
-            if (!res) {
+            if (!res || res?.ok === undefined) {
               // if you throw redirect or revalidatePath - you don't need to handle response
               return;
             }
             setState(res);
+            if (res.ok) {
+              // happy
+              return;
+            }
+            if (res.error) {
+              switch (res.error.code) {
+                case 'INPUT_VALIDATION': {
+                  // add validation errors
+                  for (const [key, value] of Object.entries(
+                    res.error.fieldErrors ?? {},
+                  )) {
+                    form.setError(key as any, {
+                      type: 'server',
+                      message: value.join(', '),
+                    });
+                  }
+                  break;
+                }
+                default: {
+                  form.setError('root', {
+                    message:
+                      'message' in res.error
+                        ? (res.error.message as string)
+                        : res.error.code,
+                  });
+                }
+              }
+            }
           })(event);
         }}
       >
