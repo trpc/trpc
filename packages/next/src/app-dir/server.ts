@@ -27,6 +27,8 @@ import {
   TypedTRPCError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { revalidateTag } from 'next/cache';
+import { isNotFoundError } from 'next/dist/client/components/not-found';
+import { isRedirectError } from 'next/dist/client/components/redirect';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';
 import type {
@@ -179,16 +181,18 @@ export async function experimental_revalidateEndpoint(req: Request) {
   });
 }
 
-type TypedError<TProc extends AnyProcedure> = Exclude<
-  TProc['_def']['$error'],
-  TRPCInputValidationError
-> &
-  TProc['_def']['$error'] extends TRPCInputValidationError
-  ? {
-      code: 'BAD_REQUEST';
-      TODO: 'FIXME';
-    }
-  : never;
+type TypedError<TProc extends AnyProcedure> =
+  | (Exclude<TProc['_def']['$error'], TRPCInputValidationError> & {
+      fieldErrors?: never;
+    })
+  | (TRPCInputValidationError extends TProc['_def']['$error']
+      ? {
+          code: 'INPUT_VALIDATION';
+          fieldErrors: Partial<
+            Record<keyof TProc['_def']['_input_in'], string[]>
+          >;
+        }
+      : never);
 
 type ServerActionState<TProc extends AnyProcedure> = {
   input?: DeepPartial<TProc['_def']['_input_in']>;
@@ -229,6 +233,17 @@ type QueryState<TProc extends AnyProcedure> =
 type Query<TProc extends AnyProcedure> = (
   input: TProc['_def']['_input_in'],
 ) => Promise<QueryState<TProc>>;
+
+const rethrowNextErrors = (error: TRPCError) => {
+  if (isRedirectError(error.cause) || isNotFoundError(error.cause)) {
+    throw error.cause;
+  }
+};
+
+type FieldErrors = {
+  [key: string | number | symbol]: string[] | undefined;
+};
+
 export function experimental_createDataLayer<
   TInstance extends {
     _config: RootConfig<AnyRootTypes>;
@@ -255,6 +270,13 @@ export function experimental_createDataLayer<
       error: TRPCError;
       ctx: TInstance['_config']['$types']['ctx'] | undefined;
     }) => void;
+
+    /**
+     * When input validation fails, the error needs to be mapped to a shape that can be sent to the client
+     */
+    getValidationError: (opts: { error: TRPCInputValidationError }) => {
+      fieldErrors: FieldErrors;
+    };
   },
 ) {
   const config = t._config;
@@ -312,6 +334,8 @@ export function experimental_createDataLayer<
         } catch (cause) {
           const error = getTRPCErrorFromUnknown(cause);
 
+          rethrowNextErrors(error);
+
           opts.onError?.({ error, ctx });
           if (error instanceof TypedTRPCError) {
             return {
@@ -320,10 +344,16 @@ export function experimental_createDataLayer<
               input: rawInput,
             };
           }
+
           if (error instanceof TRPCInputValidationError) {
-            throw new Error(
-              "TODO: handle TRPCInputValidationError case, it's not implemented yet",
-            );
+            return {
+              ok: false,
+              error: {
+                ...opts.getValidationError({ error }),
+                code: 'INPUT_VALIDATION',
+              },
+              input: rawInput,
+            };
           }
 
           throw error;
@@ -353,6 +383,8 @@ export function experimental_createDataLayer<
         } catch (cause) {
           const error = getTRPCErrorFromUnknown(cause);
 
+          rethrowNextErrors(error);
+
           opts.onError?.({ error, ctx });
           if (error instanceof TypedTRPCError) {
             return {
@@ -361,9 +393,13 @@ export function experimental_createDataLayer<
             };
           }
           if (error instanceof TRPCInputValidationError) {
-            throw new Error(
-              "TODO: handle TRPCInputValidationError case, it's not implemented yet",
-            );
+            return {
+              ok: false,
+              error: {
+                ...opts.getValidationError({ error }),
+                code: 'INPUT_VALIDATION',
+              },
+            };
           }
 
           throw error;

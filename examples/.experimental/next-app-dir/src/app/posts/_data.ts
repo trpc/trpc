@@ -1,5 +1,7 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { addPostSchema, type Post } from './_data.schema';
 import { dataLayer, protectedProcedure, publicProcedure } from './_trpc';
@@ -22,12 +24,15 @@ const db = {
 
 export const addPost = dataLayer.action(
   protectedProcedure.input(addPostSchema).mutation(async (opts) => {
-    const post = opts.input;
-    db.posts.push({
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const post: Post = {
       ...opts.input,
       id: `${Math.random()}`,
-    });
-    return post;
+    };
+
+    db.posts.push(post);
+    revalidatePath('/');
+    redirect(`/posts/${post.id}`);
   }),
 );
 

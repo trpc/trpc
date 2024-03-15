@@ -25,6 +25,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.43.3",
+    "react-hot-toast": "^2.4.1",
     "superjson": "^1.12.4",
     "trpc-api": "link:./src/trpc",
     "typescript": "^5.4.0",

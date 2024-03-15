@@ -32,6 +32,16 @@ export default async function Index() {
       >
         <li>
           <Link
+            href="/posts"
+            style={{
+              color: 'hsla(210, 16%, 80%, 1)',
+            }}
+          >
+            Some new experimental stuff as of Feb 2024
+          </Link>
+        </li>
+        <li>
+          <Link
             href="/rsc"
             style={{
               color: 'hsla(210, 16%, 80%, 1)',
