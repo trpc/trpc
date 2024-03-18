@@ -11,7 +11,7 @@
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
     "@fastify/busboy": "^2.0.0",
-    "@fastify/websocket": "^7.1.2",
+    "@fastify/websocket": "^10.0.0",
     "@miniflare/core": "^2.9.0",
     "@tanstack/react-query": "^5.25.0",
     "@testing-library/dom": "^9.0.0",
