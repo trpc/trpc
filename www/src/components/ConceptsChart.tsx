@@ -40,7 +40,7 @@ export function ConceptsChart() {
             <strong className="text-green-600 dark:text-green-400">
               procedure
             </strong>{' '}
-             that fetches data from the server.
+            that fetches data from the server.
           </td>
         </tr>
         <tr>
@@ -54,7 +54,8 @@ export function ConceptsChart() {
             <strong className="text-green-600 dark:text-green-400">
               procedure
             </strong>{' '}
-            that modifies data on the server, like creating, updating, or deleting.
+            that modifies data on the server, like creating, updating, or
+            deleting.
           </td>
         </tr>
         <tr>
@@ -102,7 +103,8 @@ export function ConceptsChart() {
             <strong className="text-green-600 dark:text-green-400">
               procedure
             </strong>{' '}
-            . Commonly used for things like session state and database connections.
+            . Commonly used for things like session state and database
+            connections.
           </td>
         </tr>
         <tr>
@@ -133,7 +135,9 @@ export function ConceptsChart() {
               </strong>
             </a>
           </td>
-          <td>&quot; Checks whether input data meets the required criteria?&quot;</td>
+          <td>
+            &quot; Checks whether input data meets the required criteria?&quot;
+          </td>
         </tr>
       </tbody>
     </table>
