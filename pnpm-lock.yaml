@@ -7,10 +7,10 @@ settings:
 overrides:
   examples-trpc-next-prisma-starter>@prisma/client: https://registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examples-trpc-next-prisma-starter
   examples-trpc-next-prisma-starter>prisma: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=examples-trpc-next-prisma-starter
-  examples-next-websockets-starter>@prisma/client: https://registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examples-next-websockets-starter
-  examples-next-websockets-starter>prisma: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=examples-next-websockets-starter
   examples-trpc-next-prisma-todomvc>@prisma/client: https://registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examples-trpc-next-prisma-todomvc
   examples-trpc-next-prisma-todomvc>prisma: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=examples-trpc-next-prisma-todomvc
+  examples-next-websockets-starter>@prisma/client: https://registry.npmjs.com/@prisma/client/-/client-5.8.1.tgz?id=examples-next-websockets-starter
+  examples-next-websockets-starter>prisma: https://registry.npmjs.com/prisma/-/prisma-5.8.1.tgz?id=examples-next-websockets-starter
 
 importers:
 
