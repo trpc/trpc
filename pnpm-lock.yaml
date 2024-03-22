@@ -744,7 +744,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.4.0
         version: 5.4.2
       wait-port:
         specifier: ^1.0.1
