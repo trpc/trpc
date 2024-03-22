@@ -1,5 +1,5 @@
 {
-  "name": "@examples/trpc-next-prisma-todomvc",
+  "name": "examples-trpc-next-prisma-todomvc",
   "private": true,
   "engines": {
     "node": ">=18.15.0"
