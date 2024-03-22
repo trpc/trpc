@@ -1,5 +1,5 @@
 {
-  "name": "@examples/next-big-router",
+  "name": "examples-next-big-router",
   "private": true,
   "scripts": {
     "dev": "next dev",

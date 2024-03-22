@@ -1,10 +1,6 @@
 {
-  "name": "@examples/trpc-next-prisma-starter",
+  "name": "examples-trpc-next-prisma-starter",
   "private": true,
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "packageManager": "pnpm@8.5.1",
   "scripts": {
     "generate": "prisma generate",
     "prisma-studio": "prisma studio",

@@ -1,5 +1,5 @@
 {
-  "name": "@examples/next-app-dir",
+  "name": "examples-next-app-dir",
   "private": true,
   "scripts": {
     "dev": "next dev",
