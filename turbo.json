@@ -25,7 +25,7 @@
         "docs/typedoc/**"
       ]
     },
-    "@examples/minimal-react#build": {
+    "examples-minimal-react#build": {
       "outputs": ["client/dist/**", "server/dist/**"]
     },
     "dev": {

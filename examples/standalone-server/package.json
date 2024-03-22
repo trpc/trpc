@@ -1,5 +1,5 @@
 {
-  "name": "@examples/standalone-server",
+  "name": "examples-standalone-server",
   "private": true,
   "type": "module",
   "scripts": {
