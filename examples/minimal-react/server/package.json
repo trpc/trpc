@@ -1,5 +1,5 @@
 {
-  "name": "@examples/minimal-react-server",
+  "name": "examples-minimal-react-server",
   "private": true,
   "scripts": {
     "build": "tsc",

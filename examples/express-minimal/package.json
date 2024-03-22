@@ -1,5 +1,5 @@
 {
-  "name": "@examples/express-minimal",
+  "name": "examples-express-minimal",
   "private": true,
   "type": "module",
   "scripts": {

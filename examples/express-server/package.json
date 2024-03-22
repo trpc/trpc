@@ -1,5 +1,5 @@
 {
-  "name": "@examples/express-server",
+  "name": "examples-express-server",
   "private": true,
   "type": "module",
   "scripts": {
