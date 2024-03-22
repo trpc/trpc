@@ -1,5 +1,5 @@
 {
-  "name": "@examples/next-minimal",
+  "name": "examples-next-minimal",
   "private": true,
   "scripts": {
     "dev": "next dev",

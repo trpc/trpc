@@ -1,5 +1,5 @@
 {
-  "name": "@examples/test-ssg-infinite-serialization",
+  "name": "examples-test-ssg-infinite-serialization",
   "version": "10.35.0",
   "private": true,
   "scripts": {

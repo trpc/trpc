@@ -1,5 +1,5 @@
 {
-  "name": "@examples/diagnostics-big-router-declaration",
+  "name": "examples-diagnostics-big-router-declaration",
   "private": true,
   "scripts": {
     "dev": "next dev",
