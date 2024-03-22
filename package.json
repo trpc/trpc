@@ -3,9 +3,9 @@
   "private": true,
   "engines": {
     "node": "^20.10.0",
-    "pnpm": ">=8.9.0"
+    "pnpm": ">=8.15.5"
   },
-  "packageManager": "pnpm@8.14.1",
+  "packageManager": "pnpm@8.15.5",
   "scripts": {
     "clean-dev": "pnpm clean && pnpm install && pnpm build && pnpm dev",
     "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
