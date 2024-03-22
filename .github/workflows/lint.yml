@@ -3,6 +3,8 @@ permissions:
   contents: read
 on:
   pull_request:
+    branches:
+      - '!app-router-example'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
