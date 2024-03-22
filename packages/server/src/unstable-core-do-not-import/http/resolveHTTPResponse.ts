@@ -253,7 +253,10 @@ export async function resolveHTTPResponse<
       throw opts.error;
     }
     if (isBatchCall && !allowBatching) {
-      throw new Error(`Batching is not enabled on the server`);
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Batching is not enabled on the server`,
+      });
     }
     /* istanbul ignore if -- @preserve */
     if (type === 'subscription') {

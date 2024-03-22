@@ -66,7 +66,6 @@ export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
 export type WSSHandlerOptions<TRouter extends AnyRouter> =
   WSConnectionHandlerOptions<TRouter> & {
     wss: ws.WebSocketServer;
-    process?: NodeJS.Process;
     prefix?: string;
   };
 

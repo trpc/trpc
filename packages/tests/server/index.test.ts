@@ -530,11 +530,7 @@ describe('ObservableAbortError', () => {
     });
 
     const { close, client } = routerToServerAndClientNew(router, {
-      server: {
-        batching: {
-          enabled: true,
-        },
-      },
+      server: {},
       client({ httpUrl }) {
         return {
           links: [httpBatchLink({ url: httpUrl })],
@@ -578,11 +574,7 @@ test('regression: JSON.stringify([undefined]) gives [null] causes wrong type to 
         links: [httpBatchLink({ url: httpUrl })],
       };
     },
-    server: {
-      batching: {
-        enabled: true,
-      },
-    },
+    server: {},
   });
 
   expect(await client.q.query('foo')).toMatchInlineSnapshot(`
