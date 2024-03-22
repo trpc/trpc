@@ -1,5 +1,5 @@
 {
-  "name": "@examples/lazy-load",
+  "name": "examples-lazy-load",
   "private": true,
   "type": "module",
   "scripts": {
