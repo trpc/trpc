@@ -1,5 +1,5 @@
 {
-  "name": "@examples/vercel-edge-runtime",
+  "name": "examples-vercel-edge-runtime",
   "private": true,
   "type": "module",
   "scripts": {

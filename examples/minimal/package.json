@@ -1,5 +1,5 @@
 {
-  "name": "@examples/minimal",
+  "name": "examples-minimal",
   "private": true,
   "type": "module",
   "scripts": {
