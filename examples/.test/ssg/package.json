@@ -1,5 +1,5 @@
 {
-  "name": "@examples/test-ssg",
+  "name": "examples-test-ssg",
   "private": true,
   "scripts": {
     "dev": "next dev",

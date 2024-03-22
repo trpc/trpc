@@ -1,5 +1,5 @@
 {
-  "name": "@examples/next-formdata",
+  "name": "examples-next-formdata",
   "private": true,
   "scripts": {
     "dev": "next dev",
