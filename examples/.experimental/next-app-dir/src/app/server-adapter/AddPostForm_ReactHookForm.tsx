@@ -24,19 +24,6 @@ function useZodForm<TSchema extends z.ZodType>(
   return form;
 }
 
-export function SubmitButton(
-  props: Omit<JSX.IntrinsicElements['button'], 'type'>,
-) {
-  const ctx = useFormContext();
-
-  return (
-    <button
-      type="submit"
-      {...props}
-      disabled={ctx.formState.isSubmitting || props.disabled}
-    />
-  );
-}
 export function AddPostForm_RHF() {
   const form = useZodForm({
     schema: addPostSchema,
@@ -48,10 +35,15 @@ export function AddPostForm_RHF() {
       <form
         onSubmit={(event) => {
           return form.handleSubmit(async (values) => {
-            return addPost(values).catch((error) => {
-              console.error('Failed to add post', error);
-              toast.error(error.message);
-            });
+            return addPost(values)
+              .then((res) => {
+                console.log('Added post', res);
+                toast.success('Added post');
+              })
+              .catch((error) => {
+                console.error('Failed to add post', error);
+                toast.error(error.message);
+              });
           })(event);
         }}
       >
@@ -88,7 +80,10 @@ export function AddPostForm_RHF() {
             )}
           </div>
         )} */}
-        <SubmitButton>Add post</SubmitButton>
+
+        <button type="submit" disabled={form.formState.isSubmitting}>
+          Add post
+        </button>
       </form>
     </FormProvider>
   );
