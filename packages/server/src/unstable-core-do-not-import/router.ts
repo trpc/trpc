@@ -260,12 +260,8 @@ export function callProcedure(
 export function createCallerFactory<TRoot extends AnyRootTypes>() {
   return function createCallerInner<TRecord extends RouterRecord>(
     router: Router<TRoot, TRecord>,
-    options?: {
-      onError?: RouterCallerErrorHandler<TRoot['ctx']>;
-    },
   ): RouterCaller<TRoot, TRecord> {
     const _def = router._def;
-    const factoryOptions = options;
     type Context = TRoot['ctx'];
 
     return function createCaller(
@@ -292,20 +288,13 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
             type: procedure._def.type,
           });
         } catch (cause) {
-          const errorOptions: ErrorHandlerOptions<TRoot['ctx']> = {
+          options?.onError?.({
             ctx,
             error: getTRPCErrorFromUnknown(cause),
             input: args[0],
             path: fullPath,
             type: procedure._def.type,
-          };
-          if (factoryOptions?.onError) {
-            factoryOptions?.onError(errorOptions);
-          }
-
-          if (options?.onError) {
-            options?.onError(errorOptions);
-          }
+          });
           throw cause;
         }
       });

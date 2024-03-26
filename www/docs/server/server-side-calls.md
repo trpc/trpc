@@ -322,7 +322,7 @@ const router = t.router({
   }),
 });
 
-const callerFactory = router.createCallerFactory({
+const callerFactory = router.createCaller({
   onError: ({ error }) => {
     console.error('An error occurred:', error);
   },
