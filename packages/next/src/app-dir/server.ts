@@ -107,7 +107,6 @@ export function experimental_createServerActionHandler<
     normalizeFormData?: boolean;
     /**
      * Called when an error occurs in the handler
-     * Will not be called for errors that should be handled by Next.js if `rethrowNextErrorsEnabled` is `true`
      */
     onError?: (
       opts: ErrorHandlerOptions<TInstance['_config']['$types']['ctx']>,
@@ -173,7 +172,6 @@ export function experimental_createServerActionHandler<
         return transformedJSON;
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
-        rethrowNextErrorsEnabled && rethrowNextErrors(error);
 
         opts.onError?.({
           ctx,
@@ -183,16 +181,16 @@ export function experimental_createServerActionHandler<
           type: proc._def.type,
         });
 
+        rethrowNextErrorsEnabled && rethrowNextErrors(error);
+
         const shape = getErrorShape({
           config,
           ctx,
           error,
           input: rawInput,
-          path: 'serverAction',
+          path: '',
           type: proc._def.type,
         });
-
-        // TODO: send the right HTTP header?!
 
         return transformTRPCResponse(t._config, {
           error: shape,
