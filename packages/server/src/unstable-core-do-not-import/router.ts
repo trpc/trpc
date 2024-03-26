@@ -4,8 +4,8 @@ import { defaultFormatter } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyProcedure,
+  ErrorHandlerOptions,
   inferProcedureInput,
-  ProcedureType,
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
@@ -41,7 +41,7 @@ export type DecorateRouterRecord<TRecord extends RouterRecord> = {
  */
 
 export type RouterCallerErrorHandler<TContext> = (
-  arg: OnErrorFunctionOptions<TContext>,
+  opts: ErrorHandlerOptions<TContext>,
 ) => void;
 
 /**
@@ -292,27 +292,21 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
             type: procedure._def.type,
           });
         } catch (cause) {
-          const error = getTRPCErrorFromUnknown(cause);
+          const errorOptions: ErrorHandlerOptions<TRoot['ctx']> = {
+            ctx,
+            error: getTRPCErrorFromUnknown(cause),
+            input: args[0],
+            path: fullPath,
+            type: procedure._def.type,
+          };
           if (factoryOptions?.onError) {
-            factoryOptions?.onError({
-              ctx,
-              error,
-              input: args[0],
-              path: fullPath,
-              type: procedure._def.type,
-            });
+            factoryOptions?.onError(errorOptions);
           }
 
           if (options?.onError) {
-            options?.onError({
-              ctx,
-              error,
-              input: args[0],
-              path: fullPath,
-              type: procedure._def.type,
-            });
+            options?.onError(errorOptions);
           }
-          throw error;
+          throw cause;
         }
       });
 
@@ -388,15 +382,4 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
   })(record);
 
   return router as MergeRouters<TRouters>;
-}
-
-/**
- * @internal
- */
-export interface OnErrorFunctionOptions<TContext> {
-  error: TRPCError;
-  type: ProcedureType | 'unknown';
-  path: string | undefined;
-  input: unknown;
-  ctx: TContext | undefined;
 }
