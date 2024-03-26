@@ -54,7 +54,7 @@ export interface Procedure<
   (
     opts: TDef['experimental_caller'] extends true
       ? TDef['input']
-      : ProcedureCallOptions,
+      : ProcedureCallOptions<unknown>,
   ): Promise<
     TDef['experimental_caller'] extends true ? TDef['output'] : unknown
   >;
