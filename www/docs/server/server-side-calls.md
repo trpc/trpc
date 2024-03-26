@@ -312,7 +312,11 @@ The handler is called with the same arguments as an error formatter would be, ex
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const t = initTRPC.create();
+const t = initTRPC
+  .context<{
+    foo?: 'bar';
+  }>()
+  .create();
 
 const router = t.router({
   greeting: t.procedure.input(z.object({ name: z.string() })).query((opts) => {
