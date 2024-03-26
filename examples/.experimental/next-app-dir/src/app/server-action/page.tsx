@@ -6,8 +6,6 @@ import { ReactHookFormExample } from './ReactHookFormExample';
 import { ReactHookFormFactoryExample } from './ReactHookFormFactoryExample';
 import { UseActionExample } from './UseActionExample';
 
-export const revalidate = 30;
-
 export default async function Home() {
   const components: {
     Component: React.ComponentType;
