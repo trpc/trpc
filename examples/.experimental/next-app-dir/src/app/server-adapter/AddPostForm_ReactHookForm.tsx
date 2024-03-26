@@ -35,14 +35,27 @@ export function AddPostForm_RHF() {
       <form
         onSubmit={(event) => {
           return form.handleSubmit(async (values) => {
-            return addPost(values)
-              .then((res) => {
-                console.log('Added post', res);
-                toast.success('Added post');
+            const promise = addPost(values);
+            return toast
+              .promise(promise, {
+                loading: 'Adding post...',
+                success: (_values) => (
+                  <>
+                    Added post!{' '}
+                    <button
+                      onClick={(e) => {
+                        form.reset();
+                        toast.dismiss();
+                      }}
+                    >
+                      Clear form
+                    </button>
+                  </>
+                ),
+                error: (error) => 'Failed to add post: ' + error.message,
               })
               .catch((error) => {
                 console.error('Failed to add post', error);
-                toast.error(error.message);
               });
           })(event);
         }}
