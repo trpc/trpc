@@ -1,5 +1,5 @@
 import { listPosts } from './_data';
-import { AddPostForm_RHF } from './AddPostForm_ReactHookForm';
+import { AddPostForm } from './AddPostForm';
 
 export default async function Home() {
   const posts = await listPosts();
@@ -17,7 +17,7 @@ export default async function Home() {
       </ul>
 
       <h2>Add post React hook form</h2>
-      <AddPostForm_RHF />
+      <AddPostForm />
       <h2>Add post useFormState</h2>
     </div>
   );
