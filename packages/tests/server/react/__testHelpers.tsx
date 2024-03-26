@@ -273,9 +273,6 @@ export function createAppRouter() {
     {
       server: {
         createContext,
-        batching: {
-          enabled: true,
-        },
       },
       client({ httpUrl, wssUrl }) {
         wsClient = createWSClient({

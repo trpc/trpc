@@ -101,9 +101,7 @@ import { createHTTPServer } from '@trpc/server/adapters/standalone';
 createHTTPServer({
   // [...]
   // 👇 disable batching
-  batching: {
-    enabled: false,
-  },
+  allowBatching: false,
 });
 ```
 
@@ -113,9 +111,7 @@ or, if you're using Next.js:
 export default trpcNext.createNextApiHandler({
   // [...]
   // 👇 disable batching
-  batching: {
-    enabled: false,
-  },
+  allowBatching: false,
 });
 ```
 
