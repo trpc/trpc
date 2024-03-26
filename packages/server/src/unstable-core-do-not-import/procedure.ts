@@ -44,6 +44,9 @@ export interface Procedure<
      * Meta is not inferrable on individual procedures, only on the router
      */
     meta: unknown;
+    experimental_caller: TDef['experimental_caller'] extends true
+      ? true
+      : false;
   };
   /**
    * @internal
