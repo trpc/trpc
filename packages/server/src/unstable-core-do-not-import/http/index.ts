@@ -9,7 +9,11 @@ export type {
   HTTPHeaders,
   HTTPRequest,
   HTTPResponse,
-  OnErrorFunction,
+  /**
+   * @deprecated Use `HTTPErrorHandler` instead
+   */
+  HTTPErrorHandler as OnErrorFunction,
+  HTTPErrorHandler,
   ProcedureCall,
   ResolveHTTPRequestOptionsContextFn,
   ResponseChunk,

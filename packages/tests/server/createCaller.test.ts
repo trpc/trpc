@@ -146,11 +146,10 @@ test('docs', async () => {
   expect(postList).toHaveLength(2);
 });
 
-const t = initTRPC
-  .context<{
-    foo?: 'bar';
-  }>()
-  .create();
+type Context = {
+  foo?: 'bar';
+};
+const t = initTRPC.context<Context>().create();
 
 const { procedure } = t;
 
@@ -233,4 +232,61 @@ test('context with middleware', async () => {
   const authorizedCaller = router.createCaller({ foo: 'bar' });
   const result = await authorizedCaller.secret();
   expect(result).toBe('bar');
+});
+
+describe('onError handler', () => {
+  const router = t.router({
+    thrower: t.procedure.query(() => {
+      throw new Error('error');
+    }),
+  });
+
+  const ctx: Context = {
+    foo: 'bar',
+  };
+
+  test('should call the onError handler when an error is thrown, rethrowing the error afterwards', async () => {
+    const callerHandler = vi.fn();
+    const caller = t.createCallerFactory(router)(ctx, {
+      onError: callerHandler,
+    });
+    await expect(caller.thrower()).rejects.toThrow('error');
+
+    expect(callerHandler).toHaveBeenCalledOnce();
+    expect(callerHandler.mock.calls[0][0]).toMatchInlineSnapshot(`
+      Object {
+        "ctx": Object {
+          "foo": "bar",
+        },
+        "error": [TRPCError: error],
+        "input": undefined,
+        "path": "thrower",
+        "type": "query",
+      }
+    `);
+  });
+
+  test('rethrow errors', async () => {
+    const caller = t.createCallerFactory(router)(ctx, {
+      onError: () => {
+        throw new Error('custom error');
+      },
+    });
+
+    const err = await waitError(caller.thrower());
+
+    expect(err.message).toBe('custom error');
+  });
+
+  test('rethrow errors with createCaller()', async () => {
+    const caller = router.createCaller(ctx, {
+      onError: () => {
+        throw new Error('custom error');
+      },
+    });
+
+    const err = await waitError(caller.thrower());
+
+    expect(err.message).toBe('custom error');
+  });
 });
