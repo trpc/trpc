@@ -4,7 +4,7 @@ import { experimental_nextAppDirCaller } from '@trpc/server/adapters/next-app-di
 const t = initTRPC.create();
 
 export const nextProc = t.procedure
-  .use(async function artificalDelay(opts) {
+  .use(async function artificialDelay(opts) {
     if (t._config.isDev) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
