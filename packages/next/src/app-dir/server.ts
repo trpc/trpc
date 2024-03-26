@@ -155,13 +155,15 @@ export function experimental_createServerActionHandler<
           rawInput = transformer.input.deserialize(rawInput);
         }
 
-        const data = await proc({
-          input: undefined,
-          ctx,
-          path: 'serverAction',
-          getRawInput: async () => rawInput,
-          type: proc._def.type,
-        });
+        const data = proc._def.experimental_caller
+          ? await proc(rawInput)
+          : await proc({
+              input: undefined,
+              ctx,
+              path: '',
+              getRawInput: async () => rawInput,
+              type: proc._def.type,
+            });
 
         const transformedJSON = transformTRPCResponse(config, {
           result: {
