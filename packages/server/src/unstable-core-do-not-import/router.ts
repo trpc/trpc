@@ -224,7 +224,7 @@ function isProcedure(
  * @internal
  */
 export function callProcedure(
-  opts: ProcedureCallOptions & {
+  opts: ProcedureCallOptions<unknown> & {
     procedures: RouterRecord;
     allowMethodOverride?: boolean;
   },
