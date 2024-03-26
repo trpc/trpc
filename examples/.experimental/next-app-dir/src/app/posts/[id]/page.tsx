@@ -5,7 +5,6 @@ export default async function Page(props: {
     id: string;
   };
 }) {
-  console.log('page', props.params);
   const post = await postById(props.params);
 
   return (
