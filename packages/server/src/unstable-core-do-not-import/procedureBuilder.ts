@@ -45,9 +45,9 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
-export type CallerOverride = (opts: {
+export type CallerOverride<TContext> = (opts: {
   args: unknown[];
-  invoke: (opts: ProcedureCallOptions) => Promise<unknown>;
+  invoke: (opts: ProcedureCallOptions<TContext>) => Promise<unknown>;
   _def: AnyProcedure['_def'];
 }) => Promise<unknown>;
 type ProcedureBuilderDef<TMeta> = {
@@ -70,7 +70,7 @@ type ProcedureBuilderDef<TMeta> = {
    */
   subscription?: boolean;
   type?: ProcedureType;
-  caller?: CallerOverride;
+  caller?: CallerOverride<unknown>;
 };
 
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
@@ -371,7 +371,7 @@ export interface ProcedureBuilder<
    * Do not use this unless you know what you're doing - this is an experimental API
    */
   experimental_caller(
-    caller: CallerOverride,
+    caller: CallerOverride<TContext>,
   ): ProcedureBuilder<
     TContext,
     TMeta,
@@ -536,8 +536,8 @@ function createResolver(
 /**
  * @internal
  */
-export interface ProcedureCallOptions {
-  ctx: unknown;
+export interface ProcedureCallOptions<TContext> {
+  ctx: TContext;
   getRawInput: GetRawInputFn;
   input?: unknown;
   path: string;
@@ -550,7 +550,7 @@ If you want to call this function on the server, see https://trpc.io/docs/v11/se
 `.trim();
 
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
-  async function procedure(opts: ProcedureCallOptions) {
+  async function procedure(opts: ProcedureCallOptions<unknown>) {
     // is direct server-side call
     if (!opts || !('getRawInput' in opts)) {
       throw new Error(codeblock);

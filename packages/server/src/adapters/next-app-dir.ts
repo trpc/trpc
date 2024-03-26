@@ -1,15 +1,47 @@
-import { z } from 'zod';
+import { TRPCError } from '../@trpc/server';
+// FIXME: fix lint rule, this is ok
+// eslint-disable-next-line no-restricted-imports
 import type { CallerOverride } from '../unstable-core-do-not-import/procedureBuilder';
+// FIXME: fix lint rule, this is ok
+// eslint-disable-next-line no-restricted-imports
+import type {
+  MaybePromise,
+  Simplify,
+} from '../unstable-core-do-not-import/types';
+import { formDataToObject } from './next-app-dir/formDataToObject';
 
-export function createNextAppDirCaller(config: {
-  // createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
-  /**
-   * Transform form data to a `Record` before passing it to the procedure
-   * @default true
-   */
-  // normalizeFormData?: boolean;
-}): CallerOverride {
+type ContextCallback<TContext> = object extends TContext
+  ? {
+      createContext?: () => MaybePromise<TContext>;
+    }
+  : {
+      createContext: () => MaybePromise<TContext>;
+    };
+
+export function experimental_nextAppDirCaller<TContext>(
+  config: Simplify<
+    {
+      /**
+       * Transform form data to a `Record` before passing it to the procedure
+       * @default true
+       */
+      normalizeFormData?: boolean;
+    } & ContextCallback<TContext>
+  >,
+): CallerOverride<TContext> {
+  const { normalizeFormData = true } = config;
   return async (opts) => {
+    const ctx: TContext = await Promise.resolve(
+      config.createContext?.() ?? ({} as TContext),
+    ).catch((cause) => {
+      const error = new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to create context',
+        cause,
+      });
+
+      throw error;
+    });
     switch (opts._def.type) {
       case 'mutation': {
         /**
@@ -18,11 +50,14 @@ export function createNextAppDirCaller(config: {
          * The new first argument that gets added is the current state of the form.
          * @see https://react.dev/reference/react-dom/hooks/useFormState#my-action-can-no-longer-read-the-submitted-form-data
          */
-        const input = opts.args.length === 1 ? opts.args[0] : opts.args[1];
+        let input = opts.args.length === 1 ? opts.args[0] : opts.args[1];
+        if (normalizeFormData && input instanceof FormData) {
+          input = formDataToObject(input);
+        }
 
         return opts.invoke({
-          type: 'query',
-          ctx: {},
+          type: 'mutation',
+          ctx,
           getRawInput: async () => input,
           path: '',
           input,
@@ -32,7 +67,7 @@ export function createNextAppDirCaller(config: {
         const input = opts.args[0];
         return opts.invoke({
           type: 'query',
-          ctx: {},
+          ctx,
           getRawInput: async () => input,
           path: '',
           input,

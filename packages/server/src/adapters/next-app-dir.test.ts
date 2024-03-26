@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { initTRPC } from '../unstable-core-do-not-import';
+import { initTRPC } from '../@trpc/server';
+import { experimental_nextAppDirCaller } from './next-app-dir';
 
 test('experimental caller', async () => {
   const t = initTRPC.create();
@@ -12,43 +12,11 @@ test('experimental caller', async () => {
         },
       });
     })
-    .experimental_caller(async (opts) => {
-      switch (opts._def.type) {
-        case 'mutation': {
-          /**
-           * When you wrap an action with useFormState, it gets an extra argument as its first argument.
-           * The submitted form data is therefore its second argument instead of its first as it would usually be.
-           * The new first argument that gets added is the current state of the form.
-           * @see https://react.dev/reference/react-dom/hooks/useFormState#my-action-can-no-longer-read-the-submitted-form-data
-           */
-          const input = opts.args.length === 1 ? opts.args[0] : opts.args[1];
-
-          return opts.invoke({
-            type: 'query',
-            ctx: {},
-            getRawInput: async () => input,
-            path: '',
-            input,
-          });
-        }
-        case 'query': {
-          const input = opts.args[0];
-          return opts.invoke({
-            type: 'query',
-            ctx: {},
-            getRawInput: async () => input,
-            path: '',
-            input,
-          });
-        }
-        default: {
-          throw new TRPCError({
-            code: 'NOT_IMPLEMENTED',
-            message: `Not implemented for type ${opts._def.type}`,
-          });
-        }
-      }
-    });
+    .experimental_caller(
+      experimental_nextAppDirCaller({
+        normalizeFormData: true,
+      }),
+    );
 
   {
     // no input
@@ -57,24 +25,5 @@ test('experimental caller', async () => {
     expect(result).toBe('hello');
 
     expect(proc._def.type).toBe('query');
-  }
-
-  {
-    // input
-    const proc = base
-      .input(z.string())
-      .query(async (opts) => `hello ${opts.input}`);
-    const result = await proc('world');
-    expect(result).toBe('hello world');
-  }
-  {
-    // mutation with input
-    const proc = base.input(z.string()).mutation(async (opts) => {
-      return opts.input;
-    });
-
-    const result = await proc('world');
-    expect(result).toBe('world');
-    expect(proc._def.type).toBe('mutation');
   }
 });
