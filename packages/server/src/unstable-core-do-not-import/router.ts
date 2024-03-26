@@ -206,21 +206,9 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
     return {
       ...record,
       _def,
-      createCaller(ctx: TRoot['ctx']) {
-        const proxy = createRecursiveProxy(({ path, args }) => {
-          const fullPath = path.join('.');
-          const procedure = _def.procedures[fullPath] as AnyProcedure;
-
-          return procedure({
-            path: fullPath,
-            getRawInput: async () => args[0],
-            ctx,
-            type: procedure._def.type,
-          });
-        });
-
-        return proxy as ReturnType<RouterCaller<any, any>>;
-      },
+      createCaller: createCallerFactory<TRoot>()({
+        _def,
+      }),
     };
   }
 
@@ -259,7 +247,7 @@ export function callProcedure(
 
 export function createCallerFactory<TRoot extends AnyRootTypes>() {
   return function createCallerInner<TRecord extends RouterRecord>(
-    router: Router<TRoot, TRecord>,
+    router: Pick<Router<TRoot, TRecord>, '_def'>,
   ): RouterCaller<TRoot, TRecord> {
     const _def = router._def;
     type Context = TRoot['ctx'];

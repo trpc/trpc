@@ -252,27 +252,41 @@ describe('onError handler', () => {
     });
     await expect(caller.thrower()).rejects.toThrow('error');
 
-    expect(callerHandler).toHaveBeenCalledWith(
-      expect.objectContaining({
-        error: expect.objectContaining({
-          cause: expect.objectContaining({
-            message: 'error',
-          }),
-        }),
-        ctx,
-        path: 'thrower',
-        type: 'query',
-      }),
-    );
+    expect(callerHandler).toHaveBeenCalledOnce();
+    expect(callerHandler.mock.calls[0][0]).toMatchInlineSnapshot(`
+      Object {
+        "ctx": Object {
+          "foo": "bar",
+        },
+        "error": [TRPCError: error],
+        "input": undefined,
+        "path": "thrower",
+        "type": "query",
+      }
+    `);
   });
 
   test('rethrow errors', async () => {
+    const caller = t.createCallerFactory(router)(ctx, {
+      onError: () => {
+        throw new Error('custom error');
+      },
+    });
+
+    const err = await waitError(caller.thrower());
+
+    expect(err.message).toBe('custom error');
+  });
+
+  test('rethrow errors with createCaller()', async () => {
     const caller = router.createCaller(ctx, {
       onError: () => {
         throw new Error('custom error');
       },
     });
 
-    await expect(caller.thrower()).rejects.toThrow('custom error');
+    const err = await waitError(caller.thrower());
+
+    expect(err.message).toBe('custom error');
   });
 });
