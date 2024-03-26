@@ -521,8 +521,8 @@ function createResolver(
   if (!callerOverride) {
     return invoke;
   }
-  const callerWrapper = (...args: unknown[]) => {
-    return callerOverride({
+  const callerWrapper = async (...args: unknown[]) => {
+    return await callerOverride({
       args,
       invoke,
       _def: _def,
