@@ -7,6 +7,7 @@ import type {
   AnyProcedure,
   AnyRootTypes,
   AnyRouter,
+  ErrorHandlerOptions,
   inferClientTypes,
   inferProcedureInput,
   MaybePromise,
@@ -22,6 +23,8 @@ import {
   TRPCError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { revalidateTag } from 'next/cache';
+import { isNotFoundError } from 'next/dist/client/components/not-found';
+import { isRedirectError } from 'next/dist/client/components/redirect';
 import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';
 import type {
@@ -65,6 +68,15 @@ export function experimental_createTRPCNextAppDirServer<
 }
 
 /**
+ * Rethrow errors that should be handled by Next.js
+ */
+const rethrowNextErrors = (error: TRPCError) => {
+  const { cause } = error;
+  if (isRedirectError(cause) || isNotFoundError(cause)) {
+    throw error.cause;
+  }
+};
+/**
  * @internal
  */
 export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
@@ -77,17 +89,43 @@ export function experimental_createServerActionHandler<
   },
 >(
   t: TInstance,
-  opts: {
-    createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
+  opts: (object extends TInstance['_config']['$types']['ctx']
+    ? {
+        createContext?: () => MaybePromise<
+          TInstance['_config']['$types']['ctx']
+        >;
+      }
+    : {
+        createContext: () => MaybePromise<
+          TInstance['_config']['$types']['ctx']
+        >;
+      }) & {
     /**
      * Transform form data to a `Record` before passing it to the procedure
      * @default true
      */
     normalizeFormData?: boolean;
+    /**
+     * Called when an error occurs in the handler
+     * Will not be called for errors that should be handled by Next.js if `rethrowNextErrorsEnabled` is `true`
+     */
+    onError?: (
+      opts: ErrorHandlerOptions<TInstance['_config']['$types']['ctx']>,
+    ) => void;
+
+    /**
+     * Rethrow errors that should be handled by Next.js
+     * @default true
+     */
+    rethrowNextErrorsEnabled?: boolean;
   },
 ) {
   const config = t._config;
-  const { normalizeFormData = true, createContext } = opts;
+  const {
+    normalizeFormData = true,
+    createContext,
+    rethrowNextErrorsEnabled = true,
+  } = opts;
 
   const transformer = config.transformer;
 
@@ -100,11 +138,11 @@ export function experimental_createServerActionHandler<
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
-      const ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
+      let ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
       try {
-        const ctx = await createContext();
+        ctx = (await createContext?.()) ?? {};
         if (normalizeFormData && isFormData(rawInput)) {
-          // Normalizes formdata so we can use `z.object({})` etc on the server
+          // Normalizes FormData so we can use `z.object({})` etc on the server
           try {
             rawInput = formDataToObject(rawInput);
           } catch {
@@ -133,6 +171,16 @@ export function experimental_createServerActionHandler<
         return transformedJSON;
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
+        rethrowNextErrorsEnabled && rethrowNextErrors(error);
+
+        opts.onError?.({
+          ctx,
+          error,
+          input: rawInput,
+          path: '',
+          type: proc._def.type,
+        });
+
         const shape = getErrorShape({
           config,
           ctx,
