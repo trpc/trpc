@@ -490,11 +490,10 @@ export function createBuilder<TContext, TMeta>(
 }
 
 function createResolver(
-  _def: AnyProcedureBuilderDef & { type: ProcedureType },
+  _defIn: AnyProcedureBuilderDef & { type: ProcedureType },
   resolver: AnyResolver,
 ) {
-  const finalBuilder = createNewBuilder(_def, {
-    type: _def.type,
+  const finalBuilder = createNewBuilder(_defIn, {
     resolver,
     middlewares: [
       async function resolveMiddleware(opts) {
@@ -508,6 +507,15 @@ function createResolver(
       },
     ],
   });
+  const _def: AnyProcedure['_def'] = {
+    ...finalBuilder._def,
+    type: _defIn.type,
+    experimental_caller: finalBuilder._def.caller ? true : false,
+    _input_in: null,
+    _output_out: null,
+    meta: finalBuilder._def.meta,
+  };
+
   const invoke = createProcedureCaller(finalBuilder._def);
   const callerOverride = finalBuilder._def.caller;
   if (!callerOverride) {
@@ -517,11 +525,11 @@ function createResolver(
     return callerOverride({
       args,
       invoke,
-      _def: finalBuilder._def as unknown as AnyProcedure['_def'],
+      _def: _def,
     });
   };
 
-  callerWrapper._def = finalBuilder._def;
+  callerWrapper._def = _def;
   return callerWrapper;
 }
 
