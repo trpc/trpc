@@ -1,7 +1,7 @@
 import type { Observable } from '../observable';
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
-import { TRPCError } from './error/TRPCError';
+import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyProcedure,
   inferProcedureInput,
@@ -11,7 +11,7 @@ import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
 import type { MaybePromise, ValueOf } from './types';
-import { mergeWithoutOverrides, omitPrototype } from './utils';
+import { isFunction, mergeWithoutOverrides, omitPrototype } from './utils';
 
 export interface RouterRecord {
   [key: string]: AnyProcedure | RouterRecord;
@@ -40,13 +40,9 @@ export type DecorateRouterRecord<TRecord extends RouterRecord> = {
  * @internal
  */
 
-export type RouterCallerErrorHandler<TContext> = (arg: {
-  error: TRPCError;
-  type: ProcedureType | 'unknown';
-  path: string | undefined;
-  input: unknown;
-  ctx: TContext | undefined;
-}) => void | Promise<void>;
+export type RouterCallerErrorHandler<TContext> = (
+  arg: OnErrorFunctionOptions<TContext>,
+) => void;
 
 /**
  * @internal
@@ -273,57 +269,51 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
     type Context = TRoot['ctx'];
 
     return function createCaller(
-      maybeContext,
+      ctxOrCallback,
       options?: {
         onError?: RouterCallerErrorHandler<Context>;
       },
     ) {
-      const proxy = createRecursiveProxy(({ path, args }) => {
+      const proxy = createRecursiveProxy(async ({ path, args }) => {
         const fullPath = path.join('.');
 
         const procedure = _def.procedures[fullPath] as AnyProcedure;
 
-        const callProc = (ctx: Context) =>
-          procedure({
+        let ctx: Context | undefined = undefined;
+        try {
+          ctx = isFunction(ctxOrCallback)
+            ? await Promise.resolve(ctxOrCallback())
+            : ctxOrCallback;
+
+          return await procedure({
             path: fullPath,
             getRawInput: async () => args[0],
             ctx,
             type: procedure._def.type,
-          }).catch(async (error) => {
-            if (error instanceof TRPCError) {
-              if (factoryOptions?.onError) {
-                await factoryOptions?.onError({
-                  ctx,
-                  error,
-                  input: args[0],
-                  path: fullPath,
-                  type: procedure._def.type,
-                });
-              }
-
-              if (options?.onError) {
-                await options?.onError({
-                  ctx,
-                  error,
-                  input: args[0],
-                  path: fullPath,
-                  type: procedure._def.type,
-                });
-              }
-            }
-
-            throw error;
           });
-
-        if (typeof maybeContext === 'function') {
-          const context = (maybeContext as () => MaybePromise<Context>)();
-          if (context instanceof Promise) {
-            return context.then(callProc);
+        } catch (cause) {
+          const error = getTRPCErrorFromUnknown(cause);
+          if (factoryOptions?.onError) {
+            factoryOptions?.onError({
+              ctx,
+              error,
+              input: args[0],
+              path: fullPath,
+              type: procedure._def.type,
+            });
           }
-          return callProc(context);
-        }
 
-        return callProc(maybeContext);
+          if (options?.onError) {
+            options?.onError({
+              ctx,
+              error,
+              input: args[0],
+              path: fullPath,
+              type: procedure._def.type,
+            });
+          }
+          throw error;
+        }
       });
 
       return proxy as ReturnType<RouterCaller<any, any>>;
@@ -398,4 +388,15 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
   })(record);
 
   return router as MergeRouters<TRouters>;
+}
+
+/**
+ * @internal
+ */
+export interface OnErrorFunctionOptions<TContext> {
+  error: TRPCError;
+  type: ProcedureType | 'unknown';
+  path: string | undefined;
+  input: unknown;
+  ctx: TContext | undefined;
 }
