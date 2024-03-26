@@ -24,3 +24,18 @@ export const testAction = createAction(
       };
     }),
 );
+
+export const action = publicProcedure
+  .experimental_caller({} as any)
+  .input(z.string())
+  .mutation(async () => {
+    return 'foo';
+  });
+
+export const syncFn = () => {
+  // doo
+};
+
+export const asyncFn = async () => {
+  // doo
+};
