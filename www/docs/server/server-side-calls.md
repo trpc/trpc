@@ -308,7 +308,9 @@ The handler is called with the same arguments as an error formatter would be, ex
 ```
 
 ```ts twoslash
+// @target: esnext
 import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
 const t = initTRPC.create();
 
@@ -322,22 +324,18 @@ const router = t.router({
   }),
 });
 
-const callerFactory = router.createCaller({
-  onError: ({ error }) => {
-    console.error('An error occurred:', error);
-  },
-});
-
-const caller = callerFactory(
-  {},
+const caller = router.createCaller(
   {
-    onError: ({}) => {
-      throw new Error('This is a custom error');
+    /* context */
+  },
+  {
+    onError: (opts) => {
+      console.error('An error occurred:', opts.error);
     },
   },
 );
 
 // The following will log "An error occurred: Error: Invalid name", and then throw a plain error
 //  with the message "This is a custom error"
-caller.greeting({ name: 'invalid' });
+await caller.greeting({ name: 'invalid' });
 ```
