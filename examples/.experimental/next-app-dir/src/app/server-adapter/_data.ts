@@ -43,7 +43,9 @@ export const addPost = nextProc
 
     db.posts.push(post);
     revalidatePath('/');
-    redirect(`/posts/${post.id}`, RedirectType.push);
+
+    // ❌ can't redirect from server actions
+    // redirect(`/posts/${post.id}`, RedirectType.push);
   });
 
 export const listPosts = nextProc.query(() => {
