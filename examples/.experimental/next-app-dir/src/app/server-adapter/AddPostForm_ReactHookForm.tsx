@@ -49,6 +49,7 @@ export function AddPostForm_RHF() {
         onSubmit={(event) => {
           return form.handleSubmit(async (values) => {
             return addPost(values).catch((error) => {
+              console.error('Failed to add post', error);
               toast.error(error.message);
             });
           })(event);
