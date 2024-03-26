@@ -23,7 +23,6 @@ export interface ProcedureOptions {
 interface BuiltProcedureDef {
   input: unknown;
   output: unknown;
-  experimental_caller?: true;
 }
 
 /**
@@ -44,20 +43,12 @@ export interface Procedure<
      * Meta is not inferrable on individual procedures, only on the router
      */
     meta: unknown;
-    experimental_caller: TDef['experimental_caller'] extends true
-      ? true
-      : false;
+    experimental_caller: boolean;
   };
   /**
    * @internal
    */
-  (
-    ...args: TDef['experimental_caller'] extends true
-      ? [input: TDef['input']]
-      : [opts: ProcedureCallOptions<unknown>]
-  ): Promise<
-    TDef['experimental_caller'] extends true ? TDef['output'] : unknown
-  >;
+  (opts: ProcedureCallOptions<unknown>): Promise<TDef['output']>;
 }
 
 export interface QueryProcedure<TDef extends BuiltProcedureDef>

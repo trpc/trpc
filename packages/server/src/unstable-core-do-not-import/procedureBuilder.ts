@@ -1,4 +1,3 @@
-import type { inferObservableValue } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -301,18 +300,14 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): QueryProcedure<
-    TCaller extends true
-      ? {
-          experimental_caller: true;
-          input: DefaultValue<TInputIn, void>;
-          output: DefaultValue<TOutputOut, $Output>;
-        }
-      : {
-          input: DefaultValue<TInputIn, void>;
-          output: DefaultValue<TOutputOut, $Output>;
-        }
-  >;
+  ): TCaller extends true
+    ? (
+        input: DefaultValue<TInputIn, void>,
+      ) => Promise<DefaultValue<TOutputOut, $Output>>
+    : QueryProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, $Output>;
+      }>;
 
   /**
    * Mutation procedure
@@ -327,18 +322,14 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): MutationProcedure<
-    TCaller extends true
-      ? {
-          experimental_caller: true;
-          input: DefaultValue<TInputIn, void>;
-          output: DefaultValue<TOutputOut, $Output>;
-        }
-      : {
-          input: DefaultValue<TInputIn, void>;
-          output: DefaultValue<TOutputOut, $Output>;
-        }
-  >;
+  ): TCaller extends true
+    ? (
+        input: DefaultValue<TInputIn, void>,
+      ) => Promise<DefaultValue<TOutputOut, $Output>>
+    : MutationProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, $Output>;
+      }>;
 
   /**
    * Subscription procedure
@@ -353,18 +344,12 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): SubscriptionProcedure<
-    TCaller extends true
-      ? {
-          experimental_caller: true;
-          input: DefaultValue<TInputIn, void>;
-          output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
-        }
-      : {
-          input: DefaultValue<TInputIn, void>;
-          output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
-        }
-  >;
+  ): TCaller extends true
+    ? TypeError<'Not implemented'>
+    : SubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, $Output>;
+      }>;
 
   /**
    * Overrides the way a procedure is invoked
