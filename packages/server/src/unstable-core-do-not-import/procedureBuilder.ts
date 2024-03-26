@@ -327,10 +327,18 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): MutationProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, $Output>;
-  }>;
+  ): MutationProcedure<
+    TCaller extends true
+      ? {
+          experimental_caller: true;
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, $Output>;
+        }
+      : {
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, $Output>;
+        }
+  >;
 
   /**
    * Subscription procedure
@@ -345,11 +353,22 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): SubscriptionProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
-  }>;
+  ): SubscriptionProcedure<
+    TCaller extends true
+      ? {
+          experimental_caller: true;
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
+        }
+      : {
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
+        }
+  >;
 
+  /**
+   * Experimental caller override
+   */
   experimental_caller(
     caller: CallerOverride,
   ): ProcedureBuilder<
