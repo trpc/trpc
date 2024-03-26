@@ -4,7 +4,6 @@ import { AddPostForm_RHF } from './AddPostForm_ReactHookForm';
 export default async function Home() {
   const posts = await listPosts();
 
-  console.log({ posts });
   return (
     <div>
       <h1>All posts</h1>

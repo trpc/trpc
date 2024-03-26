@@ -49,7 +49,7 @@ export function experimental_nextAppDirCaller<TContext>(
     } & ContextCallback<TContext>
   >,
 ): CallerOverride<TContext> {
-  const { normalizeFormData = true } = config;
+  const { normalizeFormData = true, rethrowNextErrors = true } = config;
   const createContext = async (): Promise<TContext> => {
     return config?.createContext?.() ?? ({} as TContext);
   };
@@ -75,7 +75,7 @@ export function experimental_nextAppDirCaller<TContext>(
         type: opts._def.type,
       });
 
-      if (config.rethrowNextErrors) {
+      if (rethrowNextErrors) {
         throwNextErrors(error);
       }
 

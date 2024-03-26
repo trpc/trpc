@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect, RedirectType } from 'next/navigation';
+import { notFound, redirect, RedirectType } from 'next/navigation';
 import { z } from 'zod';
 import { addPostSchema, type Post } from './_data.schema';
 import { nextProc } from './_trpc';
@@ -44,8 +44,7 @@ export const addPost = nextProc
     db.posts.push(post);
     revalidatePath('/');
 
-    // ❌ can't redirect from server actions
-    // redirect(`/posts/${post.id}`, RedirectType.push);
+    redirect(`/posts/${post.id}`, RedirectType.push);
   });
 
 export const listPosts = nextProc.query(() => {
@@ -59,5 +58,5 @@ export const postById = nextProc
     }),
   )
   .query((opts) => {
-    return db.posts.find((post) => post.id === opts.input.id);
+    return db.posts.find((post) => post.id === opts.input.id) ?? notFound();
   });

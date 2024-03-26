@@ -32,7 +32,7 @@ export default async function Index() {
       >
         <li>
           <Link
-            href="/server-adapter"
+            href="/posts"
             style={{
               color: 'hsla(210, 16%, 80%, 1)',
             }}
