@@ -27,3 +27,24 @@ test('experimental caller', async () => {
     expect(proc._def.type).toBe('query');
   }
 });
+
+test('with context', async () => {
+  const t = initTRPC
+    .context<{
+      foo: string;
+    }>()
+    .create();
+
+  t.procedure.experimental_caller(
+    experimental_nextAppDirCaller({
+      createContext: () => ({ foo: 'bar' }),
+    }),
+  );
+
+  t.procedure.experimental_caller(
+    experimental_nextAppDirCaller(
+      // @ts-expect-error no error
+      {},
+    ),
+  );
+});
