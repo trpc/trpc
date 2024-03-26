@@ -48,6 +48,11 @@
       "require": "./dist/adapters/fetch/index.js",
       "default": "./dist/adapters/fetch/index.js"
     },
+    "./adapters/next-app-dir": {
+      "import": "./dist/adapters/next-app-dir.mjs",
+      "require": "./dist/adapters/next-app-dir.js",
+      "default": "./dist/adapters/next-app-dir.js"
+    },
     "./adapters/next": {
       "import": "./dist/adapters/next.mjs",
       "require": "./dist/adapters/next.js",
