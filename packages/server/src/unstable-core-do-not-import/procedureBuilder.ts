@@ -495,7 +495,7 @@ function createResolver(
   const _def: AnyProcedure['_def'] = {
     ...finalBuilder._def,
     type: _defIn.type,
-    experimental_caller: finalBuilder._def.caller ? true : false,
+    experimental_caller: !!finalBuilder._def.caller,
     _input_in: null,
     _output_out: null,
     meta: finalBuilder._def.meta,
