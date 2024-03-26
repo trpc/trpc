@@ -367,7 +367,8 @@ export interface ProcedureBuilder<
   >;
 
   /**
-   * Experimental caller override
+   * Overrides the way a procedure is invoked
+   * Do not use this unless you know what you're doing - this is an experimental API
    */
   experimental_caller(
     caller: CallerOverride,
