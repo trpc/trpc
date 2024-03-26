@@ -48,7 +48,7 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
 export type CallerOverride = (opts: {
   args: unknown[];
   invoke: (opts: ProcedureCallOptions) => Promise<unknown>;
-  _def: AnyProcedureBuilderDef;
+  _def: AnyProcedure['_def'];
 }) => Promise<unknown>;
 type ProcedureBuilderDef<TMeta> = {
   procedure: true;
@@ -301,10 +301,18 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): QueryProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, $Output>;
-  }>;
+  ): QueryProcedure<
+    TCaller extends true
+      ? {
+          experimental_caller: true;
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, $Output>;
+        }
+      : {
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, $Output>;
+        }
+  >;
 
   /**
    * Mutation procedure
@@ -489,7 +497,7 @@ function createResolver(
     return callerOverride({
       args,
       invoke,
-      _def: finalBuilder._def,
+      _def: finalBuilder._def as unknown as AnyProcedure['_def'],
     });
   };
 

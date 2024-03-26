@@ -1,9 +1,10 @@
 import { initTRPC, TRPCError } from '@trpc/server';
+import { z } from 'zod';
 
 test('experimental caller', async () => {
   const t = initTRPC.create();
 
-  t.procedure.experimental_caller(async (opts) => {
+  const base = t.procedure.experimental_caller(async (opts) => {
     switch (opts._def.type) {
       case 'mutation': {
         /**
@@ -32,12 +33,28 @@ test('experimental caller', async () => {
           input,
         });
       }
-      case 'subscription': {
+      default: {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Not implemented',
+          code: 'NOT_IMPLEMENTED',
+          message: `Not implemented for type ${opts._def.type}`,
         });
       }
     }
   });
+
+  {
+    // no input
+    const proc = base.query(async () => 'hello');
+    const result = await proc();
+    expect(result).toBe('hello');
+  }
+
+  {
+    // input
+    const proc = base
+      .input(z.string())
+      .query(async (opts) => `hello ${opts.input}`);
+    const result = await proc('world');
+    expect(result).toBe('hello world');
+  }
 });
