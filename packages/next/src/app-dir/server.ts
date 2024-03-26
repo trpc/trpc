@@ -70,7 +70,7 @@ export function experimental_createTRPCNextAppDirServer<
 /**
  * Rethrow errors that should be handled by Next.js
  */
-const rethrowNextErrors = (error: TRPCError) => {
+const throwNextErrors = (error: TRPCError) => {
   const { cause } = error;
   if (isRedirectError(cause) || isNotFoundError(cause)) {
     throw error.cause;
@@ -116,14 +116,14 @@ export function experimental_createServerActionHandler<
      * Rethrow errors that should be handled by Next.js
      * @default true
      */
-    rethrowNextErrorsEnabled?: boolean;
+    rethrowNextErrors?: boolean;
   },
 ) {
   const config = t._config;
   const {
     normalizeFormData = true,
     createContext,
-    rethrowNextErrorsEnabled = true,
+    rethrowNextErrors = true,
   } = opts;
 
   const transformer = config.transformer;
@@ -181,7 +181,7 @@ export function experimental_createServerActionHandler<
           type: proc._def.type,
         });
 
-        rethrowNextErrorsEnabled && rethrowNextErrors(error);
+        rethrowNextErrors && throwNextErrors(error);
 
         const shape = getErrorShape({
           config,
