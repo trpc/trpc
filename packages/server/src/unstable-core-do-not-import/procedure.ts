@@ -23,7 +23,9 @@ export interface ProcedureOptions {
 interface BuiltProcedureDef {
   input: unknown;
   output: unknown;
+  experimental_caller?: true;
 }
+
 /**
  *
  * @internal
@@ -46,7 +48,13 @@ export interface Procedure<
   /**
    * @internal
    */
-  (opts: ProcedureCallOptions): Promise<unknown>;
+  (
+    opts: TDef['experimental_caller'] extends true
+      ? TDef['input']
+      : ProcedureCallOptions,
+  ): Promise<
+    TDef['experimental_caller'] extends true ? TDef['output'] : unknown
+  >;
 }
 
 export interface QueryProcedure<TDef extends BuiltProcedureDef>

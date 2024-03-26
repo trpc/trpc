@@ -110,7 +110,8 @@ describe('context inference w/ middlewares', () => {
           TInputIn,
           TInputOut,
           TOutputIn,
-          TOutputOut
+          TOutputOut,
+          false
         >,
       ) {
         return builder.use(async (opts) => {
