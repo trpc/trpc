@@ -11,7 +11,7 @@
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
     "@fastify/busboy": "^2.0.0",
-    "@fastify/websocket": "^7.1.2",
+    "@fastify/websocket": "^10.0.1",
     "@miniflare/core": "^2.9.0",
     "@tanstack/react-query": "^5.25.0",
     "@testing-library/dom": "^9.0.0",
@@ -29,7 +29,7 @@
     "dataloader": "^2.2.2",
     "devalue": "^4.0.0",
     "eslint": "^8.56.0",
-    "fastify": "^4.13.0",
+    "fastify": "^4.16.0",
     "fastify-plugin": "^4.5.0",
     "jsdom": "^24.0.0",
     "konn": "^0.7.0",
