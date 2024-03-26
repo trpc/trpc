@@ -52,9 +52,9 @@ export interface Procedure<
    * @internal
    */
   (
-    opts: TDef['experimental_caller'] extends true
-      ? TDef['input']
-      : ProcedureCallOptions<unknown>,
+    ...args: TDef['experimental_caller'] extends true
+      ? [input: TDef['input']]
+      : [opts: ProcedureCallOptions<unknown>]
   ): Promise<
     TDef['experimental_caller'] extends true ? TDef['output'] : unknown
   >;

@@ -27,7 +27,7 @@ export function useZodForm<TInput extends FieldValues>(
 export const Form = <TInput extends FieldValues = never>(props: {
   children: React.ReactNode;
   form: UseFormReturn<TInput>;
-  handleSubmit: (values: NoInfer<TInput>) => Promise<void>;
+  handleSubmit: (values: NoInfer<TInput>) => Promise<unknown>;
 }) => {
   return (
     <FormProvider {...props.form}>
