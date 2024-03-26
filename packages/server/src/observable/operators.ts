@@ -1,3 +1,4 @@
+import { observable } from './observable';
 import type {
   MonoTypeOperatorFunction,
   Observer,
@@ -8,24 +9,22 @@ import type {
 export function map<TValueBefore, TError, TValueAfter>(
   project: (value: TValueBefore, index: number) => TValueAfter,
 ): OperatorFunction<TValueBefore, TError, TValueAfter, TError> {
-  return (originalObserver) => {
-    return {
-      subscribe(observer) {
-        let index = 0;
-        const subscription = originalObserver.subscribe({
-          next(value) {
-            observer.next?.(project(value, index++));
-          },
-          error(error) {
-            observer.error?.(error);
-          },
-          complete() {
-            observer.complete?.();
-          },
-        });
-        return subscription;
-      },
-    };
+  return (source) => {
+    return observable((destination) => {
+      let index = 0;
+      const subscription = source.subscribe({
+        next(value) {
+          destination.next(project(value, index++));
+        },
+        error(error) {
+          destination.error(error);
+        },
+        complete() {
+          destination.complete();
+        },
+      });
+      return subscription;
+    });
   };
 }
 
@@ -33,7 +32,7 @@ interface ShareConfig {}
 export function share<TValue, TError>(
   _opts?: ShareConfig,
 ): MonoTypeOperatorFunction<TValue, TError> {
-  return (originalObserver) => {
+  return (source) => {
     let refCount = 0;
 
     let subscription: Unsubscribable | null = null;
@@ -43,7 +42,7 @@ export function share<TValue, TError>(
       if (subscription) {
         return;
       }
-      subscription = originalObserver.subscribe({
+      subscription = source.subscribe({
         next(value) {
           for (const observer of observers) {
             observer.next?.(value);
@@ -70,50 +69,46 @@ export function share<TValue, TError>(
       }
     }
 
-    return {
-      subscribe(observer) {
-        refCount++;
+    return observable((subscriber) => {
+      refCount++;
 
-        observers.push(observer);
-        startIfNeeded();
-        return {
-          unsubscribe() {
-            refCount--;
-            resetIfNeeded();
+      observers.push(subscriber);
+      startIfNeeded();
+      return {
+        unsubscribe() {
+          refCount--;
+          resetIfNeeded();
 
-            const index = observers.findIndex((v) => v === observer);
+          const index = observers.findIndex((v) => v === subscriber);
 
-            if (index > -1) {
-              observers.splice(index, 1);
-            }
-          },
-        };
-      },
-    };
+          if (index > -1) {
+            observers.splice(index, 1);
+          }
+        },
+      };
+    });
   };
 }
 
 export function tap<TValue, TError>(
   observer: Partial<Observer<TValue, TError>>,
 ): MonoTypeOperatorFunction<TValue, TError> {
-  return (originalObserver) => {
-    return {
-      subscribe(observer2) {
-        return originalObserver.subscribe({
-          next(v) {
-            observer.next?.(v);
-            observer2.next?.(v);
-          },
-          error(v) {
-            observer.error?.(v);
-            observer2.error?.(v);
-          },
-          complete() {
-            observer.complete?.();
-            observer2.complete?.();
-          },
-        });
-      },
-    };
+  return (source) => {
+    return observable((destination) => {
+      return source.subscribe({
+        next(value) {
+          observer.next?.(value);
+          destination.next(value);
+        },
+        error(error) {
+          observer.error?.(error);
+          destination.error(error);
+        },
+        complete() {
+          observer.complete?.();
+          destination.complete();
+        },
+      });
+    });
   };
 }

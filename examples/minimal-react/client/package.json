@@ -1,5 +1,5 @@
 {
-  "name": "@examples/minimal-react-client",
+  "name": "examples-minimal-react-client",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "start": "vite preview"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-query": "^5.25.0",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
@@ -21,7 +21,7 @@
     "@types/react-dom": "^18.2.14",
     "@vitejs/plugin-react": "^3.1.0",
     "eslint": "^8.56.0",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.12"
+    "typescript": "^5.4.0",
+    "vite": "^5.1.0"
   }
 }

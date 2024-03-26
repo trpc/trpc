@@ -1,5 +1,5 @@
 {
-  "name": "@examples/next-edge-runtime",
+  "name": "examples-next-edge-runtime",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,7 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.0.0",
+    "@tanstack/react-query": "^5.25.0",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
@@ -23,6 +23,6 @@
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
     "eslint": "^8.56.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.0"
   }
 }
