@@ -96,7 +96,7 @@ export function experimental_nextAppDirCaller<TContext>(
 
         return await opts
           .invoke({
-            type: 'mutation',
+            type: opts._def.type,
             ctx,
             getRawInput: async () => input,
             path: '',
@@ -108,7 +108,7 @@ export function experimental_nextAppDirCaller<TContext>(
         const input = opts.args[0];
         return await opts
           .invoke({
-            type: 'query',
+            type: opts._def.type,
             ctx,
             getRawInput: async () => input,
             path: '',
