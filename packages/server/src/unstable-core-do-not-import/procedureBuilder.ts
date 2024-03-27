@@ -1,3 +1,4 @@
+import type { inferObservableValue } from '../observable';
 import { $typesProxy } from './$typesProxy';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
@@ -349,7 +350,7 @@ export interface ProcedureBuilder<
     ? TypeError<'Not implemented'>
     : SubscriptionProcedure<{
         input: DefaultValue<TInputIn, void>;
-        output: DefaultValue<TOutputOut, $Output>;
+        output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
       }>;
 
   /**
