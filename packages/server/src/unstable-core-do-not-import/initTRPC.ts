@@ -1,4 +1,3 @@
-import { createFlatProxy } from './createProxy';
 import {
   defaultFormatter,
   type DefaultErrorShape,
@@ -16,6 +15,7 @@ import {
 import type { DataTransformerOptions } from './transformer';
 import { defaultTransformer, getDataTransformer } from './transformer';
 import type { Unwrap, ValidateShape } from './types';
+import { $typesProxy } from './utils';
 
 type inferErrorFormatterShape<TType> = TType extends ErrorFormatter<
   any,
@@ -95,11 +95,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * These are just types, they can't be used at runtime
        * @internal
        */
-      $types: createFlatProxy((key) => {
-        throw new Error(
-          `Tried to access "$types.${key}" which is not available at runtime`,
-        );
-      }),
+      $types: $typesProxy,
     };
 
     {

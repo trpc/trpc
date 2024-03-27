@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { createTRPCClient, TRPCClientError } from '@trpc/client';
-import type { inferProcedureInput } from '@trpc/server';
+import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import type { inferProcedureParams } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
@@ -301,8 +301,8 @@ test('no input', async () => {
 
   type ProcType = inferProcedureParams<typeof proc>;
 
-  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<void>();
-  expectTypeOf<ProcType['_output_out']>().toBeUndefined();
+  expectTypeOf<inferProcedureInput<typeof proc>>().toEqualTypeOf<void>();
+  expectTypeOf<inferProcedureOutput<typeof proc>>().toBeUndefined();
 
   const router = t.router({
     proc,
@@ -327,7 +327,9 @@ test('zod default() string', async () => {
 
   type ProcType = inferProcedureParams<typeof proc>;
 
-  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<inferProcedureInput<typeof proc>>().toEqualTypeOf<
+    string | undefined | void
+  >();
 
   const router = t.router({
     proc,
@@ -357,7 +359,9 @@ test('zod default() required object', async () => {
 
   type ProcType = inferProcedureParams<typeof proc>;
 
-  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<{ foo?: string }>();
+  expectTypeOf<inferProcedureInput<typeof proc>>().toEqualTypeOf<{
+    foo?: string;
+  }>();
 
   const router = t.router({
     proc,
@@ -393,8 +397,8 @@ test('zod default() mixed default object', async () => {
 
   type ProcType = inferProcedureParams<typeof proc>;
 
-  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<
-    { foo: string; bar?: string } | undefined
+  expectTypeOf<inferProcedureInput<typeof proc>>().toEqualTypeOf<
+    { foo: string; bar?: string } | undefined | void
   >();
 
   const router = t.router({
@@ -442,8 +446,8 @@ test('zod default() defaults within object', async () => {
 
   type ProcType = inferProcedureParams<typeof proc>;
 
-  expectTypeOf<ProcType['_input_in']>().toEqualTypeOf<
-    { foo?: string; bar?: string } | undefined
+  expectTypeOf<inferProcedureInput<typeof proc>>().toEqualTypeOf<
+    { foo?: string; bar?: string } | undefined | void
   >();
 
   const router = t.router({
@@ -482,7 +486,7 @@ test('double validators with undefined', async () => {
         return input;
       });
 
-    type Input = inferProcedureParams<typeof proc>['_input_in'];
+    type Input = inferProcedureInput<typeof proc>;
     expectTypeOf<Input>().toEqualTypeOf<{
       roomId: string;
       optionalKey?: string;
@@ -518,7 +522,7 @@ test('double validators with undefined', async () => {
         return input;
       });
 
-    type Input = inferProcedureParams<typeof proc>['_input_in'];
+    type Input = inferProcedureInput<typeof proc>;
     expectTypeOf<Input>().toEqualTypeOf<{
       roomId?: string;
       key: string;

@@ -56,7 +56,7 @@ test('experimental caller', async () => {
     const result = await proc();
     expect(result).toBe('hello');
 
-    expect(proc._def.type).toBe('query');
+    expect((proc as any)._def.type).toMatchInlineSnapshot(`"query"`);
   }
 
   {
@@ -75,6 +75,6 @@ test('experimental caller', async () => {
 
     const result = await proc('world');
     expect(result).toBe('world');
-    expect(proc._def.type).toBe('mutation');
+    expect((proc as any)._def.type).toBe('mutation');
   }
 });

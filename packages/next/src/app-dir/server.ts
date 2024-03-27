@@ -155,7 +155,7 @@ export function experimental_createServerActionHandler<
         }
 
         const data = proc._def.experimental_caller
-          ? await proc(rawInput)
+          ? await proc(rawInput as any)
           : await proc({
               input: undefined,
               ctx,
