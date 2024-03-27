@@ -1,4 +1,3 @@
-import { kv } from '@vercel/kv';
 import { type Post } from '../_data.schema';
 
 interface PostDb {
