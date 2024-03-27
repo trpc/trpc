@@ -32,6 +32,20 @@ export default async function Index() {
       >
         <li>
           <Link
+            href="/posts"
+            style={{
+              color: 'hsla(210, 16%, 80%, 1)',
+            }}
+          >
+            Server Adapter{' '}
+            <em>
+              (only using <code>@trpc/server</code> &amp; no other{' '}
+              <code>@trpc/*</code>-packages)
+            </em>
+          </Link>
+        </li>
+        <li>
+          <Link
             href="/rsc"
             style={{
               color: 'hsla(210, 16%, 80%, 1)',
