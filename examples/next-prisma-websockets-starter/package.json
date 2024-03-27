@@ -46,7 +46,7 @@
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
     "clsx": "^2.0.0",
-    "next": "^14.0.1",
+    "next": "^14.1.4",
     "next-auth": "^4.22.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
