@@ -1,5 +1,4 @@
 import type { inferObservableValue } from '../observable';
-import { $typesProxy } from './$typesProxy';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -31,7 +30,7 @@ import type {
   Simplify,
   TypeError,
 } from './types';
-import { mergeWithoutOverrides } from './utils';
+import { $typesProxy, mergeWithoutOverrides } from './utils';
 
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith

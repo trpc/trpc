@@ -1,4 +1,3 @@
-import { $typesProxy } from './$typesProxy';
 import {
   defaultFormatter,
   type DefaultErrorShape,
@@ -16,6 +15,7 @@ import {
 import type { DataTransformerOptions } from './transformer';
 import { defaultTransformer, getDataTransformer } from './transformer';
 import type { Unwrap, ValidateShape } from './types';
+import { $typesProxy } from './utils';
 
 type inferErrorFormatterShape<TType> = TType extends ErrorFormatter<
   any,
