@@ -40,6 +40,7 @@ export function experimental_nextAppDirCaller<TContext>(
 
       /**
        * Rethrow errors that should be handled by Next.js
+       * @default true
        */
       rethrowNextErrors?: boolean;
       /**
