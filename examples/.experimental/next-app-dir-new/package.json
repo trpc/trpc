@@ -1,0 +1,37 @@
+{
+  "name": "examples-next-app-dir-new",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:push": "drizzle-kit push:sqlite --config src/db/config.ts",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "npm:@hookform/resolvers@3.3.4",
+    "@trpc/server": "npm:@trpc/server@next",
+    "better-sqlite3": "^9.4.3",
+    "drizzle-orm": "^0.30.5",
+    "drizzle-zod": "^0.5.1",
+    "next": "npm:next@14.2.0-canary.42",
+    "next-auth": "npm:next-auth@5.0.0-beta.16",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.43.3",
+    "server-only": "0.0.1",
+    "sonner": "^1.4.41",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.33",
+    "@types/react-dom": "^18.2.14",
+    "drizzle-kit": "^0.20.14",
+    "eslint": "^8.56.0",
+    "postcss": "^8.4.14",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5.4.0"
+  }
+}
