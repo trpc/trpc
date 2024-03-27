@@ -1,5 +1,3 @@
-import { isNotFoundError } from 'next/dist/client/components/not-found';
-import { isRedirectError } from 'next/dist/client/components/redirect';
 import { getTRPCErrorFromUnknown, TRPCError } from '../@trpc/server';
 // FIXME: fix lint rule, this is ok
 // eslint-disable-next-line no-restricted-imports
@@ -13,8 +11,10 @@ import type {
   MaybePromise,
   Simplify,
 } from '../unstable-core-do-not-import/types';
+import { rethrowNextErrors } from './next-app-dir/errors';
 import { formDataToObject } from './next-app-dir/formDataToObject';
 
+export { notFound, redirect } from './next-app-dir/errors';
 type ContextCallback<TContext> = object extends TContext
   ? {
       createContext?: () => MaybePromise<TContext>;
@@ -23,12 +23,6 @@ type ContextCallback<TContext> = object extends TContext
       createContext: () => MaybePromise<TContext>;
     };
 
-const throwNextErrors = (error: TRPCError) => {
-  const { cause } = error;
-  if (isRedirectError(cause) || isNotFoundError(cause)) {
-    throw error.cause;
-  }
-};
 export function experimental_nextAppDirCaller<TContext>(
   config: Simplify<
     {
@@ -74,7 +68,7 @@ export function experimental_nextAppDirCaller<TContext>(
         type: opts._def.type,
       });
 
-      throwNextErrors(error);
+      rethrowNextErrors(error);
 
       throw error;
     };

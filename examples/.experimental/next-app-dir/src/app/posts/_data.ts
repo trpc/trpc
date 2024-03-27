@@ -1,7 +1,8 @@
 'use server';
 
+import { notFound, redirect } from '@trpc/server/adapters/next-app-dir';
 import { revalidatePath } from 'next/cache';
-import { notFound, redirect, RedirectType } from 'next/navigation';
+import { RedirectType } from 'next/navigation';
 import { z } from 'zod';
 import { addPostSchema, type Post } from './_data.schema';
 import { nextProc } from './_lib/trpc';
@@ -43,7 +44,6 @@ export const addPost = nextProc
 
     db.posts.push(post);
     revalidatePath('/');
-
     redirect(`/posts/${post.id}`, RedirectType.push);
   });
 
