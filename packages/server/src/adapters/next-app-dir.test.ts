@@ -24,7 +24,7 @@ test('experimental caller', async () => {
     const result = await proc();
     expect(result).toBe('hello');
 
-    expect(proc._def.type).toBe('query');
+    expect((proc as any)._def.type).toBe('query');
   }
 });
 
