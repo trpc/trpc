@@ -19,8 +19,11 @@ export class TRPCRedirectError extends TRPCError {
 
 /**
  * Like `next/navigation`'s `redirect()` but throws a `TRPCError` that later will be handled by Next.js
+ * This provides better typesafety than the `next/navigation`'s `redirect()` since the action continues
+ * to execute on the frontend even if Next's `redirect()` has a return type of `never`.
  * @public
  */
 export const redirect = (url: URL | string, redirectType?: RedirectType) => {
-  return new TRPCRedirectError(url, redirectType);
+  // We rethrow this internally so the returntype on the client is undefined.
+  return new TRPCRedirectError(url, redirectType) as unknown as undefined;
 };
