@@ -1,3 +1,4 @@
+import { $typesProxy } from './$typesProxy';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -495,10 +496,9 @@ function createResolver(
   const _def: AnyProcedure['_def'] = {
     ...finalBuilder._def,
     type: _defIn.type,
-    experimental_caller: !!finalBuilder._def.caller,
-    _input_in: null,
-    _output_out: null,
+    experimental_caller: Boolean(finalBuilder._def.caller),
     meta: finalBuilder._def.meta,
+    $types: $typesProxy,
   };
 
   const invoke = createProcedureCaller(finalBuilder._def);

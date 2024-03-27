@@ -34,8 +34,10 @@ export interface Procedure<
   TDef extends BuiltProcedureDef,
 > {
   _def: {
-    _input_in: TDef['input'];
-    _output_out: TDef['output'];
+    $types: {
+      input: TDef['input'];
+      output: TDef['output'];
+    };
     procedure: true;
     type: TType;
     /**
@@ -66,15 +68,15 @@ export type AnySubscriptionProcedure = SubscriptionProcedure<any>;
 export type AnyProcedure = Procedure<ProcedureType, any>;
 
 export type inferProcedureInput<TProcedure extends AnyProcedure> =
-  undefined extends inferProcedureParams<TProcedure>['_input_in']
-    ? void | inferProcedureParams<TProcedure>['_input_in']
-    : inferProcedureParams<TProcedure>['_input_in'];
+  undefined extends inferProcedureParams<TProcedure>['$types']['input']
+    ? void | inferProcedureParams<TProcedure>['$types']['input']
+    : inferProcedureParams<TProcedure>['$types']['input'];
 
 export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   ? TProcedure['_def']
   : never;
 export type inferProcedureOutput<TProcedure> =
-  inferProcedureParams<TProcedure>['_output_out'];
+  inferProcedureParams<TProcedure>['$types']['output'];
 
 /**
  * @internal
