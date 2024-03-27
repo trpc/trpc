@@ -30,7 +30,7 @@ export const addPost = nextProc
 
     await db.addPost(post);
     revalidatePath('/');
-    redirect(`/posts/${post.id}`, RedirectType.push);
+    return redirect(`/posts/${post.id}`, RedirectType.push);
   });
 
 export const listPosts = nextProc.query(async () => {
