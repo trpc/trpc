@@ -39,6 +39,7 @@ const throwFatalError = () => {
  */
 export function dataLoader<TKey, TValue>(
   batchLoader: BatchLoader<TKey, TValue>,
+  batchInterval = 0,
 ) {
   let pendingItems: BatchItem<TKey, TValue>[] | null = null;
   let dispatchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -159,7 +160,7 @@ export function dataLoader<TKey, TValue>(
     });
 
     if (!dispatchTimer) {
-      dispatchTimer = setTimeout(dispatch);
+      dispatchTimer = setTimeout(dispatch, batchInterval);
     }
     const cancel = () => {
       item.aborted = true;

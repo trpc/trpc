@@ -78,7 +78,10 @@ export function createHTTPBatchLink(
         return { validate, fetch };
       };
 
-      const query = dataLoader<Operation, HTTPResult>(batchLoader('query'));
+      const query = dataLoader<Operation, HTTPResult>(
+        batchLoader('query'),
+        opts.batchInterval,
+      );
       const mutation = dataLoader<Operation, HTTPResult>(
         batchLoader('mutation'),
       );

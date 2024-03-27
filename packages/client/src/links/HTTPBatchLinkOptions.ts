@@ -6,6 +6,7 @@ import type { HTTPHeaders, Operation } from './types';
 export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
     maxURLLength?: number;
+    batchInterval?: number;
     /**
      * Headers to be set on outgoing requests or a callback that of said headers
      * @link http://trpc.io/docs/client/headers
