@@ -1,11 +1,10 @@
 'use server';
 
-import { notFound, redirect } from '@trpc/server/adapters/next-app-dir';
 import { revalidatePath } from 'next/cache';
 import { RedirectType } from 'next/navigation';
 import { z } from 'zod';
 import { addPostSchema, type Post } from './_data.schema';
-import { nextProc } from './_lib/trpc';
+import { nextProc, notFound, redirect } from './_lib/trpc';
 
 const posts: Post[] = [
   {

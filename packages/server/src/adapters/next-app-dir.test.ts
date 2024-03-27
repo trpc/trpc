@@ -1,5 +1,5 @@
 import { initTRPC } from '../@trpc/server';
-import { experimental_nextAppDirCaller } from './next-app-dir';
+import { nextAppDirCaller } from './next-app-dir/nextAppDirCaller';
 
 test('experimental caller', async () => {
   const t = initTRPC.create();
@@ -13,7 +13,7 @@ test('experimental caller', async () => {
       });
     })
     .experimental_caller(
-      experimental_nextAppDirCaller({
+      nextAppDirCaller({
         normalizeFormData: true,
       }),
     );
@@ -36,13 +36,13 @@ test('with context', async () => {
     .create();
 
   t.procedure.experimental_caller(
-    experimental_nextAppDirCaller({
+    nextAppDirCaller({
       createContext: () => ({ foo: 'bar' }),
     }),
   );
 
   t.procedure.experimental_caller(
-    experimental_nextAppDirCaller(
+    nextAppDirCaller(
       // @ts-expect-error no error
       {},
     ),
