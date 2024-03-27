@@ -6,7 +6,9 @@ const t = initTRPC.create();
 export const nextProc = t.procedure
   .use(async function artificialDelay(opts) {
     if (t._config.isDev) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // random number between 100 and 500ms
+      const waitMs = Math.floor(Math.random() * 400) + 100;
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
     }
     return opts.next();
   })

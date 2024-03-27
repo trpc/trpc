@@ -20,19 +20,7 @@ export function AddPostForm() {
         return toast
           .promise(promise, {
             loading: 'Adding post...',
-            success: (_values) => (
-              <>
-                Added post!{' '}
-                <button
-                  onClick={(e) => {
-                    form.reset();
-                    toast.dismiss();
-                  }}
-                >
-                  Clear form
-                </button>
-              </>
-            ),
+            success: 'Post added!',
             error: (error) => 'Failed to add post: ' + error.message,
           })
           .catch((error) => {

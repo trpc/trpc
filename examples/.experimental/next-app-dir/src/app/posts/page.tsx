@@ -16,9 +16,8 @@ export default async function Home() {
         ))}
       </ul>
 
-      <h2>Add post React hook form</h2>
+      <h2>Add post</h2>
       <AddPostForm />
-      <h2>Add post useFormState</h2>
     </div>
   );
 }

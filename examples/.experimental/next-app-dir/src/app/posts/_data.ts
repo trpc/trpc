@@ -58,5 +58,12 @@ export const postById = nextProc
     }),
   )
   .query((opts) => {
-    return db.posts.find((post) => post.id === opts.input.id) ?? notFound();
+    const post = db.posts.find((post) => post.id === opts.input.id);
+    if (!post) {
+      console.warn(`Post with id ${opts.input.id} not found. Posts:`, {
+        posts: db.posts,
+      });
+      notFound();
+    }
+    return post;
   });
