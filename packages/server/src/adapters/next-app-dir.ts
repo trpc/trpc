@@ -37,12 +37,6 @@ export function experimental_nextAppDirCaller<TContext>(
        * @default true
        */
       normalizeFormData?: boolean;
-
-      /**
-       * Rethrow errors that should be handled by Next.js
-       * @default true
-       */
-      rethrowNextErrors?: boolean;
       /**
        * Called when an error occurs in the handler
        */
@@ -50,7 +44,11 @@ export function experimental_nextAppDirCaller<TContext>(
     } & ContextCallback<TContext>
   >,
 ): CallerOverride<TContext> {
-  const { normalizeFormData = true, rethrowNextErrors = true } = config;
+  const {
+    normalizeFormData = true,
+
+    // rethrowNextErrors = true
+  } = config;
   const createContext = async (): Promise<TContext> => {
     return config?.createContext?.() ?? ({} as TContext);
   };
@@ -76,9 +74,7 @@ export function experimental_nextAppDirCaller<TContext>(
         type: opts._def.type,
       });
 
-      if (rethrowNextErrors) {
-        throwNextErrors(error);
-      }
+      throwNextErrors(error);
 
       throw error;
     };
