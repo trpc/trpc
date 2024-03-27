@@ -60,7 +60,7 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
       ...(opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>),
     });
 
-    fastify.get(prefix ?? '/', { websocket: true }, ({ socket }, req) =>
+    fastify.get(prefix ?? '/', { websocket: true }, (socket, req) =>
       onConnection(socket, req.raw),
     );
   }
