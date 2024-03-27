@@ -8,7 +8,10 @@ import { Form, useZodForm } from './_lib/Form';
 export function AddPostForm() {
   const form = useZodForm({
     schema: addPostSchema,
-    defaultValues: {},
+    defaultValues: {
+      title: 'hello world',
+      content: 'this is a test post',
+    },
   });
 
   return (

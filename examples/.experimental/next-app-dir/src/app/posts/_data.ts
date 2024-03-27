@@ -4,28 +4,15 @@ import { revalidatePath } from 'next/cache';
 import { RedirectType } from 'next/navigation';
 import { z } from 'zod';
 import { addPostSchema, type Post } from './_data.schema';
+import { db } from './_lib/db';
 import { nextProc, notFound, redirect } from './_lib/trpc';
-
-const posts: Post[] = [
-  {
-    id: '1',
-    title: 'Hello world',
-    content: 'This is a test post',
-  },
-  {
-    id: '2',
-    title: 'Second post',
-    content: 'This is another test post',
-  },
-];
-const db = {
-  posts,
-};
 
 export const addPost = nextProc
   .input(
-    addPostSchema.superRefine((it, ctx) => {
-      if (db.posts.some((post) => post.title === it.title)) {
+    addPostSchema.superRefine(async (it, ctx) => {
+      const posts = await db.listPosts();
+      console.log('posts in db', posts);
+      if (posts.some((post) => post.title === it.title)) {
         ctx.addIssue({
           code: 'custom',
           message: 'Title already exists',
@@ -41,13 +28,13 @@ export const addPost = nextProc
       id: `${Math.random()}`,
     };
 
-    db.posts.push(post);
+    await db.addPost(post);
     revalidatePath('/');
     redirect(`/posts/${post.id}`, RedirectType.push);
   });
 
-export const listPosts = nextProc.query(() => {
-  return db.posts;
+export const listPosts = nextProc.query(async () => {
+  return await db.listPosts();
 });
 
 export const postById = nextProc
@@ -56,12 +43,10 @@ export const postById = nextProc
       id: z.string(),
     }),
   )
-  .query((opts) => {
-    const post = db.posts.find((post) => post.id === opts.input.id);
+  .query(async (opts) => {
+    const post = await db.getPost(opts.input.id);
     if (!post) {
-      console.warn(`Post with id ${opts.input.id} not found. Posts:`, {
-        posts: db.posts,
-      });
+      console.warn(`Post with id ${opts.input.id} not found`);
       notFound();
     }
     return post;
