@@ -30,12 +30,8 @@
     "@types/react-dom": "^18.2.14",
     "drizzle-kit": "^0.20.14",
     "eslint": "^8.56.0",
-    "eslint-config-next": "npm:next@14.2.0-canary.42",
     "postcss": "^8.4.14",
     "tailwindcss": "^3.3.0",
     "typescript": "^5.4.0"
-  },
-  "eslintConfig": {
-    "extends": "next/core-web-vitals"
   }
 }
