@@ -12,6 +12,7 @@ import type {
   Simplify,
 } from '../../unstable-core-do-not-import/types';
 import { formDataToObject } from './formDataToObject';
+import { TRPCRedirectError } from './redirect';
 import { rethrowNextErrors } from './rethrowNextErrors';
 
 type ContextCallback<TContext> = object extends TContext
@@ -95,6 +96,10 @@ export function nextAppDirCaller<TContext>(
             path: '',
             input,
           })
+          .then((data) => {
+            if (data instanceof TRPCRedirectError) throw data;
+            return data;
+          })
           .catch(handleError);
       }
       case 'query': {
@@ -106,6 +111,10 @@ export function nextAppDirCaller<TContext>(
             getRawInput: async () => input,
             path: '',
             input,
+          })
+          .then((data) => {
+            if (data instanceof TRPCRedirectError) throw data;
+            return data;
           })
           .catch(handleError);
       }
