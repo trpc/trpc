@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { notFound, redirect, RedirectType } from 'next/navigation';
 import { z } from 'zod';
 import { addPostSchema, type Post } from './_data.schema';
-import { nextProc } from './_utils/trpc';
+import { nextProc } from './_lib/trpc';
 
 const posts: Post[] = [
   {

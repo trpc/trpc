@@ -3,7 +3,7 @@
 import toast from 'react-hot-toast';
 import { addPost } from './_data';
 import { addPostSchema } from './_data.schema';
-import { Form, useZodForm } from './_utils/Form';
+import { Form, useZodForm } from './_lib/Form';
 
 export function AddPostForm() {
   const form = useZodForm({
