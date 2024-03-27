@@ -13,6 +13,7 @@ const postById = cache(
       where: eq(Post.id, opts.input),
     });
 
+    if (!post) notFound();
     return post;
   }),
 );
@@ -23,7 +24,6 @@ export default async function Page(props: {
   };
 }) {
   const post = await postById(props.params.postId);
-  if (!post) notFound();
 
   return (
     <div className="p-16">
