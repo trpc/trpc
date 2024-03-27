@@ -30,6 +30,12 @@ See [SSR docs](../client/nextjs/ssr.md)
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Moved `Procedure._def._output_in` / `Procedure._def._input_in` to `Procedure._def.$types` (non-breaking)
+
+This is a breaking change for tRPC internals, but should not affect you as a user.
+
+You don't have to do anything, unless you're using `Procedure._def._output_in` or `Procedure._def._input_in` directly in your code.
+
 ### Explicit Content-Type checks (non-breaking)
 
 We now have explicit checks for the `Content-Type`-header when doing POST-requests. This means that if you send a request with a `Content-Type` that doesn't match the expected one, you will get a `415 Unsupported Media Type`-error.
