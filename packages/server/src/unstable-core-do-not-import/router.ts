@@ -6,6 +6,7 @@ import type {
   AnyProcedure,
   ErrorHandlerOptions,
   inferProcedureInput,
+  inferProcedureOutput,
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
@@ -21,8 +22,8 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
   input: inferProcedureInput<TProcedure>,
 ) => Promise<
   TProcedure['_def']['type'] extends 'subscription'
-    ? Observable<TProcedure['_def']['_output_out'], TRPCError>
-    : TProcedure['_def']['_output_out']
+    ? Observable<inferProcedureOutput<TProcedure>, TRPCError>
+    : inferProcedureOutput<TProcedure>
 >;
 
 /**
@@ -223,7 +224,7 @@ function isProcedure(
  * @internal
  */
 export function callProcedure(
-  opts: ProcedureCallOptions & {
+  opts: ProcedureCallOptions<unknown> & {
     procedures: RouterRecord;
     allowMethodOverride?: boolean;
   },

@@ -55,6 +55,7 @@ const config = {
           'unstable-*',
           'script',
           'URL',
+          'next-app-dir',
         ],
       },
     ],
