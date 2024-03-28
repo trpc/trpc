@@ -117,7 +117,7 @@ const ctx = konn()
       posts: t.router({
         getAll: t.procedure.query(() => {
           resolvers.posts.getAll();
-          return `posts.getAll` as const;
+          return `posts.getAll`;
         }),
 
         getAllInfinite: t.procedure
