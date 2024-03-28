@@ -1,5 +1,9 @@
 import type { inferObservableValue } from '../observable';
-import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
+import {
+  getTRPCErrorFromUnknown,
+  isTRPCError,
+  TRPCError,
+} from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
   MiddlewareBuilder,
@@ -98,6 +102,7 @@ type ProcedureResolver<
   TContextOverrides,
   TInputOut,
   TOutputParserIn,
+  _TError,
   $Output,
 > = (
   opts: ProcedureResolverOptions<TContext, TMeta, TContextOverrides, TInputOut>,
@@ -106,8 +111,9 @@ type ProcedureResolver<
   DefaultValue<TOutputParserIn, $Output>
 >;
 
-type AnyResolver = ProcedureResolver<any, any, any, any, any, any>;
+type AnyResolver = ProcedureResolver<any, any, any, any, any, any, any>;
 export type AnyProcedureBuilder = ProcedureBuilder<
+  any,
   any,
   any,
   any,
@@ -132,7 +138,9 @@ export type inferProcedureBuilderResolverOptions<
   infer TInputOut,
   infer _TOutputIn,
   infer _TOutputOut,
-  infer _TCaller
+  infer _TCaller,
+  infer _TInferErrors,
+  infer _TError
 >
   ? ProcedureResolverOptions<
       TContext,
@@ -163,7 +171,21 @@ export interface ProcedureBuilder<
   TOutputIn,
   TOutputOut,
   TCaller extends boolean,
+  TInferErrors extends boolean = never,
+  TError = never,
 > {
+  experimental_inferErrors: () => ProcedureBuilder<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    TInputIn,
+    TInputOut,
+    TOutputIn,
+    TOutputOut,
+    TCaller,
+    true,
+    TError
+  >;
   /**
    * Add an input parser to the procedure.
    * @link https://trpc.io/docs/v11/server/validators
@@ -188,7 +210,9 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputOut, inferParser<$Parser>['out']>,
     TOutputIn,
     TOutputOut,
-    TCaller
+    TCaller,
+    TInferErrors,
+    TError
   >;
   /**
    * Add an output parser to the procedure.
@@ -204,7 +228,9 @@ export interface ProcedureBuilder<
     TInputOut,
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
     IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
-    TCaller
+    TCaller,
+    TInferErrors,
+    TError
   >;
   /**
    * Add a meta data to the procedure.
@@ -220,13 +246,15 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
-    TCaller
+    TCaller,
+    TInferErrors,
+    TError
   >;
   /**
    * Add a middleware to the procedure.
    * @link https://trpc.io/docs/v11/server/middlewares
    */
-  use<$ContextOverridesOut>(
+  use<$ContextOverridesOut, $Error = never>(
     fn:
       | MiddlewareBuilder<
           Overwrite<TContext, TContextOverrides>,
@@ -239,7 +267,9 @@ export interface ProcedureBuilder<
           TMeta,
           TContextOverrides,
           $ContextOverridesOut,
-          TInputOut
+          TInputOut,
+          TInferErrors,
+          $Error
         >,
   ): ProcedureBuilder<
     TContext,
@@ -249,7 +279,9 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
-    TCaller
+    TCaller,
+    TInferErrors,
+    Exclude<$Error | TError, UnsetMarker>
   >;
 
   /**
@@ -274,7 +306,9 @@ export interface ProcedureBuilder<
             $InputOut,
             $OutputIn,
             $OutputOut,
-            TCaller
+            TCaller,
+            TInferErrors,
+            TError
           >
         : TypeError<'Meta mismatch'>
       : TypeError<'Context mismatch'>,
@@ -286,7 +320,9 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputIn, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
     IntersectIfDefined<TOutputOut, $OutputOut>,
-    TCaller
+    TCaller,
+    TInferErrors,
+    TError
   >;
   /**
    * Query procedure
@@ -299,6 +335,7 @@ export interface ProcedureBuilder<
       TContextOverrides,
       TInputOut,
       TOutputIn,
+      TError,
       $Output
     >,
   ): TCaller extends true
@@ -321,6 +358,7 @@ export interface ProcedureBuilder<
       TContextOverrides,
       TInputOut,
       TOutputIn,
+      TError,
       $Output
     >,
   ): TCaller extends true
@@ -343,6 +381,7 @@ export interface ProcedureBuilder<
       TContextOverrides,
       TInputOut,
       TOutputIn,
+      TError,
       $Output
     >,
   ): TCaller extends true
@@ -403,7 +442,9 @@ export function createBuilder<TContext, TMeta>(
   UnsetMarker,
   UnsetMarker,
   UnsetMarker,
-  false
+  false,
+  false,
+  UnsetMarker
 > {
   const _def: AnyProcedureBuilderDef = {
     procedure: true,
@@ -414,6 +455,9 @@ export function createBuilder<TContext, TMeta>(
 
   const builder: AnyProcedureBuilder = {
     _def,
+    experimental_inferErrors() {
+      return builder;
+    },
     input(input) {
       const parser = getParseFn(input as Parser);
       return createNewBuilder(_def, {
@@ -589,6 +633,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
             });
           },
         });
+
+        if (isTRPCError(result)) {
+          throw result;
+        }
         return result;
       } catch (cause) {
         return {

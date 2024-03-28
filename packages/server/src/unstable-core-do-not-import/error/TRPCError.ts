@@ -1,4 +1,5 @@
 import type { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
+import type { Overwrite, TypeError } from '../types';
 import { isObject } from '../utils';
 
 class UnknownCauseError extends Error {
@@ -31,7 +32,9 @@ export function getCauseFromUnknown(cause: unknown): Error | undefined {
   return undefined;
 }
 
-export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
+export function getTRPCErrorFromUnknown(
+  cause: unknown,
+): TRPCError | TypedTRPCError<unknown> {
   if (cause instanceof TRPCError) {
     return cause;
   }
@@ -53,17 +56,19 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   return trpcError;
 }
 
+type TRPCErrorOptions = {
+  message?: string;
+  code: TRPC_ERROR_CODE_KEY;
+  cause?: unknown;
+};
+
 export class TRPCError extends Error {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
   public override readonly cause?: Error;
   public readonly code;
 
-  constructor(opts: {
-    message?: string;
-    code: TRPC_ERROR_CODE_KEY;
-    cause?: unknown;
-  }) {
+  constructor(opts: TRPCErrorOptions) {
     const cause = getCauseFromUnknown(opts.cause);
     const message = opts.message ?? cause?.message ?? opts.code;
 
@@ -79,4 +84,65 @@ export class TRPCError extends Error {
       this.cause = cause;
     }
   }
+}
+
+export class TRPCInputValidationError extends TRPCError {
+  constructor(cause: unknown) {
+    super({
+      code: 'BAD_REQUEST',
+      cause,
+    });
+  }
+}
+
+export const trpcTypedErrorSymbol = Symbol('errorSymbol');
+
+export type TypedTRPCError<TData> = Overwrite<TRPCError, TData> & {
+  [trpcTypedErrorSymbol]: typeof trpcTypedErrorSymbol;
+};
+
+export function trpcError<
+  TData extends Partial<TRPCErrorOptions> & Record<string, unknown>,
+>(
+  data: TData extends {
+    stack?: any;
+  }
+    ? TypeError<"key 'stack' should not be passed to trpcError">
+    : TData,
+) {
+  const {
+    code = 'BAD_REQUEST',
+    cause,
+    message,
+    stack: _,
+    ...rest
+  } = data as TData;
+
+  const error = new TRPCError({
+    code,
+    cause,
+    message,
+  }) as TypedTRPCError<
+    Overwrite<
+      TData,
+      {
+        code: TData['code'] extends TRPC_ERROR_CODE_KEY
+          ? TData['code']
+          : 'BAD_REQUEST';
+      }
+    >
+  >;
+
+  error[trpcTypedErrorSymbol] = trpcTypedErrorSymbol;
+  for (const [key, value] of Object.entries(rest)) {
+    (error as any)[key] = value;
+  }
+
+  return error;
+}
+
+export function isTRPCError(
+  err: unknown,
+): err is TRPCError | TypedTRPCError<any> {
+  return err instanceof TRPCError;
 }
