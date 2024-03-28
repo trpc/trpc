@@ -1,5 +1,5 @@
 {
-  "name": "@examples/internal-types-export",
+  "name": "examples-internal-types-export",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,6 +17,6 @@
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
-    "next": "^14.0.1"
+    "next": "^14.1.4"
   }
 }

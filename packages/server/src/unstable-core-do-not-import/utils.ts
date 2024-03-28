@@ -1,3 +1,5 @@
+import { createFlatProxy } from './createProxy';
+
 /**
  * Ensures there are no duplicate keys when building a procedure.
  * @internal
@@ -27,6 +29,11 @@ export function isObject(value: unknown): value is Record<string, unknown> {
   return !!value && !Array.isArray(value) && typeof value === 'object';
 }
 
+type AnyFn = (...args: any[]) => unknown;
+export function isFunction(fn: unknown): fn is AnyFn {
+  return typeof fn === 'function';
+}
+
 /**
  * Create an object without inheriting anything from `Object.prototype`
  * @internal
@@ -36,3 +43,13 @@ export function omitPrototype<TObj extends Record<string, unknown>>(
 ): TObj {
   return Object.assign(Object.create(null), obj);
 }
+
+/**
+ * Prevents access to `$types` at runtime
+ * @internal
+ */
+export const $typesProxy = createFlatProxy<any>((key) => {
+  throw new Error(
+    `Tried to access "$types.${key}" which is not available at runtime`,
+  );
+});

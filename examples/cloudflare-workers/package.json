@@ -1,5 +1,5 @@
 {
-  "name": "@examples/cloudflare-workers",
+  "name": "examples-cloudflare-workers",
   "private": true,
   "type": "module",
   "scripts": {

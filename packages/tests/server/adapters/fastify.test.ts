@@ -165,9 +165,9 @@ function createServer(opts: ServerOptions) {
   });
 
   instance.register(async function (fastify) {
-    fastify.get('/ws', { websocket: true }, (connection) => {
-      connection.socket.on('message', (message) => {
-        connection.socket.send(message);
+    fastify.get('/ws', { websocket: true }, (socket) => {
+      socket.on('message', (message) => {
+        socket.send(message);
       });
     });
   });

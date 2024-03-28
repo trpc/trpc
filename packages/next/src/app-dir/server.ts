@@ -8,6 +8,7 @@ import type {
   AnyProcedure,
   AnyRootTypes,
   AnyRouter,
+  ErrorHandlerOptions,
   inferClientTypes,
   inferProcedureInput,
   MaybePromise,
@@ -23,6 +24,8 @@ import {
   TRPCError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { revalidateTag } from 'next/cache';
+import { isNotFoundError } from 'next/dist/client/components/not-found';
+import { isRedirectError } from 'next/dist/client/components/redirect';
 import { formDataToObject } from './formDataToObject';
 import type {
   ActionHandlerDef,
@@ -73,6 +76,15 @@ export function experimental_createTRPCNextAppDirServer<
 }
 
 /**
+ * Rethrow errors that should be handled by Next.js
+ */
+const throwNextErrors = (error: TRPCError) => {
+  const { cause } = error;
+  if (isRedirectError(cause) || isNotFoundError(cause)) {
+    throw error.cause;
+  }
+};
+/**
  * @internal
  */
 export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
@@ -85,17 +97,42 @@ export function experimental_createServerActionHandler<
   },
 >(
   t: TInstance,
-  opts: {
-    createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
+  opts: (object extends TInstance['_config']['$types']['ctx']
+    ? {
+        createContext?: () => MaybePromise<
+          TInstance['_config']['$types']['ctx']
+        >;
+      }
+    : {
+        createContext: () => MaybePromise<
+          TInstance['_config']['$types']['ctx']
+        >;
+      }) & {
     /**
      * Transform form data to a `Record` before passing it to the procedure
      * @default true
      */
     normalizeFormData?: boolean;
+    /**
+     * Called when an error occurs in the handler
+     */
+    onError?: (
+      opts: ErrorHandlerOptions<TInstance['_config']['$types']['ctx']>,
+    ) => void;
+
+    /**
+     * Rethrow errors that should be handled by Next.js
+     * @default true
+     */
+    rethrowNextErrors?: boolean;
   },
 ) {
   const config = t._config;
-  const { normalizeFormData = true, createContext } = opts;
+  const {
+    normalizeFormData = true,
+    createContext,
+    rethrowNextErrors = true,
+  } = opts;
 
   const transformer = config.transformer;
 
@@ -108,11 +145,11 @@ export function experimental_createServerActionHandler<
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
-      const ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
+      let ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
       try {
-        const ctx = await createContext();
+        ctx = (await createContext?.()) ?? {};
         if (normalizeFormData && isFormData(rawInput)) {
-          // Normalizes formdata so we can use `z.object({})` etc on the server
+          // Normalizes FormData so we can use `z.object({})` etc on the server
           try {
             rawInput = formDataToObject(rawInput);
           } catch {
@@ -125,13 +162,15 @@ export function experimental_createServerActionHandler<
           rawInput = transformer.input.deserialize(rawInput);
         }
 
-        const data = await proc({
-          input: undefined,
-          ctx,
-          path: 'serverAction',
-          getRawInput: async () => rawInput,
-          type: proc._def.type,
-        });
+        const data = proc._def.experimental_caller
+          ? await proc(rawInput as any)
+          : await proc({
+              input: undefined,
+              ctx,
+              path: '',
+              getRawInput: async () => rawInput,
+              type: proc._def.type,
+            });
 
         const transformedJSON = transformTRPCResponse(config, {
           result: {
@@ -141,16 +180,25 @@ export function experimental_createServerActionHandler<
         return transformedJSON;
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
+
+        opts.onError?.({
+          ctx,
+          error,
+          input: rawInput,
+          path: '',
+          type: proc._def.type,
+        });
+
+        rethrowNextErrors && throwNextErrors(error);
+
         const shape = getErrorShape({
           config,
           ctx,
           error,
           input: rawInput,
-          path: 'serverAction',
+          path: '',
           type: proc._def.type,
         });
-
-        // TODO: send the right HTTP header?!
 
         return transformTRPCResponse(t._config, {
           error: shape,

@@ -3,6 +3,7 @@ import type {
   Resolver,
   TRPCUntypedClient,
 } from '@trpc/client';
+import type { inferProcedureOutput } from '@trpc/server';
 import type {
   AnyClientTypes,
   AnyProcedure,
@@ -168,6 +169,6 @@ export type inferActionDef<
   TProc extends AnyProcedure,
 > = {
   input: inferProcedureInput<TProc>;
-  output: TProc['_def']['_output_out'];
+  output: inferProcedureOutput<TProc>;
   errorShape: TRoot['errorShape'];
 };

@@ -30,7 +30,7 @@ import type {
   Simplify,
   TypeError,
 } from './types';
-import { mergeWithoutOverrides } from './utils';
+import { $typesProxy, mergeWithoutOverrides } from './utils';
 
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
@@ -45,6 +45,11 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
+export type CallerOverride<TContext> = (opts: {
+  args: unknown[];
+  invoke: (opts: ProcedureCallOptions<TContext>) => Promise<unknown>;
+  _def: AnyProcedure['_def'];
+}) => Promise<unknown>;
 type ProcedureBuilderDef<TMeta> = {
   procedure: true;
   inputs: Parser[];
@@ -52,9 +57,20 @@ type ProcedureBuilderDef<TMeta> = {
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
   middlewares: AnyMiddlewareFunction[];
+  /**
+   * @deprecated use `type` instead
+   */
   mutation?: boolean;
+  /**
+   * @deprecated use `type` instead
+   */
   query?: boolean;
+  /**
+   * @deprecated use `type` instead
+   */
   subscription?: boolean;
+  type?: ProcedureType;
+  caller?: CallerOverride<unknown>;
 };
 
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
@@ -98,6 +114,7 @@ export type AnyProcedureBuilder = ProcedureBuilder<
   any,
   any,
   any,
+  any,
   any
 >;
 
@@ -114,7 +131,8 @@ export type inferProcedureBuilderResolverOptions<
   infer _TInputIn,
   infer TInputOut,
   infer _TOutputIn,
-  infer _TOutputOut
+  infer _TOutputOut,
+  infer _TCaller
 >
   ? ProcedureResolverOptions<
       TContext,
@@ -144,6 +162,7 @@ export interface ProcedureBuilder<
   TInputOut,
   TOutputIn,
   TOutputOut,
+  TCaller extends boolean,
 > {
   /**
    * Add an input parser to the procedure.
@@ -168,7 +187,8 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputIn, inferParser<$Parser>['in']>,
     IntersectIfDefined<TInputOut, inferParser<$Parser>['out']>,
     TOutputIn,
-    TOutputOut
+    TOutputOut,
+    TCaller
   >;
   /**
    * Add an output parser to the procedure.
@@ -183,7 +203,8 @@ export interface ProcedureBuilder<
     TInputIn,
     TInputOut,
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
-    IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>
+    IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
+    TCaller
   >;
   /**
    * Add a meta data to the procedure.
@@ -198,7 +219,8 @@ export interface ProcedureBuilder<
     TInputIn,
     TInputOut,
     TOutputIn,
-    TOutputOut
+    TOutputOut,
+    TCaller
   >;
   /**
    * Add a middleware to the procedure.
@@ -226,7 +248,8 @@ export interface ProcedureBuilder<
     TInputIn,
     TInputOut,
     TOutputIn,
-    TOutputOut
+    TOutputOut,
+    TCaller
   >;
 
   /**
@@ -250,7 +273,8 @@ export interface ProcedureBuilder<
             $InputIn,
             $InputOut,
             $OutputIn,
-            $OutputOut
+            $OutputOut,
+            TCaller
           >
         : TypeError<'Meta mismatch'>
       : TypeError<'Context mismatch'>,
@@ -261,7 +285,8 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputIn, $InputIn>,
     IntersectIfDefined<TInputIn, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
-    IntersectIfDefined<TOutputOut, $OutputOut>
+    IntersectIfDefined<TOutputOut, $OutputOut>,
+    TCaller
   >;
   /**
    * Query procedure
@@ -276,10 +301,14 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): QueryProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, $Output>;
-  }>;
+  ): TCaller extends true
+    ? (
+        input: DefaultValue<TInputIn, void>,
+      ) => Promise<DefaultValue<TOutputOut, $Output>>
+    : QueryProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, $Output>;
+      }>;
 
   /**
    * Mutation procedure
@@ -294,10 +323,14 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): MutationProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, $Output>;
-  }>;
+  ): TCaller extends true
+    ? (
+        input: DefaultValue<TInputIn, void>,
+      ) => Promise<DefaultValue<TOutputOut, $Output>>
+    : MutationProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, $Output>;
+      }>;
 
   /**
    * Subscription procedure
@@ -312,10 +345,29 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): SubscriptionProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
-  }>;
+  ): TCaller extends true
+    ? TypeError<'Not implemented'>
+    : SubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
+      }>;
+
+  /**
+   * Overrides the way a procedure is invoked
+   * Do not use this unless you know what you're doing - this is an experimental API
+   */
+  experimental_caller(
+    caller: CallerOverride<TContext>,
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    TInputIn,
+    TInputOut,
+    TOutputIn,
+    TOutputOut,
+    true
+  >;
   /**
    * @internal
    */
@@ -350,7 +402,8 @@ export function createBuilder<TContext, TMeta>(
   UnsetMarker,
   UnsetMarker,
   UnsetMarker,
-  UnsetMarker
+  UnsetMarker,
+  false
 > {
   const _def: AnyProcedureBuilderDef = {
     procedure: true,
@@ -412,16 +465,21 @@ export function createBuilder<TContext, TMeta>(
         resolver,
       ) as AnySubscriptionProcedure;
     },
+    experimental_caller(caller) {
+      return createNewBuilder(_def, {
+        caller,
+      }) as any;
+    },
   };
 
   return builder;
 }
 
 function createResolver(
-  _def: AnyProcedureBuilderDef & { type: ProcedureType },
+  _defIn: AnyProcedureBuilderDef & { type: ProcedureType },
   resolver: AnyResolver,
 ) {
-  const finalBuilder = createNewBuilder(_def, {
+  const finalBuilder = createNewBuilder(_defIn, {
     resolver,
     middlewares: [
       async function resolveMiddleware(opts) {
@@ -435,15 +493,36 @@ function createResolver(
       },
     ],
   });
+  const _def: AnyProcedure['_def'] = {
+    ...finalBuilder._def,
+    type: _defIn.type,
+    experimental_caller: Boolean(finalBuilder._def.caller),
+    meta: finalBuilder._def.meta,
+    $types: $typesProxy,
+  };
 
-  return createProcedureCaller(finalBuilder._def);
+  const invoke = createProcedureCaller(finalBuilder._def);
+  const callerOverride = finalBuilder._def.caller;
+  if (!callerOverride) {
+    return invoke;
+  }
+  const callerWrapper = async (...args: unknown[]) => {
+    return await callerOverride({
+      args,
+      invoke,
+      _def: _def,
+    });
+  };
+
+  callerWrapper._def = _def;
+  return callerWrapper;
 }
 
 /**
  * @internal
  */
-export interface ProcedureCallOptions {
-  ctx: unknown;
+export interface ProcedureCallOptions<TContext> {
+  ctx: TContext;
   getRawInput: GetRawInputFn;
   input?: unknown;
   path: string;
@@ -456,7 +535,7 @@ If you want to call this function on the server, see https://trpc.io/docs/v11/se
 `.trim();
 
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
-  async function procedure(opts: ProcedureCallOptions) {
+  async function procedure(opts: ProcedureCallOptions<unknown>) {
     // is direct server-side call
     if (!opts || !('getRawInput' in opts)) {
       throw new Error(codeblock);
