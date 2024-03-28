@@ -284,6 +284,7 @@ test('infer errors', async () => {
     any,
     any,
     any,
+    any,
     infer U
   >
     ? U

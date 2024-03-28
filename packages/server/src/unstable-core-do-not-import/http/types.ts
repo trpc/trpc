@@ -1,5 +1,5 @@
 import type { TRPCError } from '../error/TRPCError';
-import type { ProcedureType } from '../procedure';
+import type { ErrorHandlerOptions, ProcedureType } from '../procedure';
 import type {
   AnyRouter,
   inferRouterContext,
@@ -86,24 +86,23 @@ export type TRPCRequestInfo = {
 export type ResolveHTTPRequestOptionsContextFn<TRouter extends AnyRouter> =
   (opts: { info: TRPCRequestInfo }) => Promise<inferRouterContext<TRouter>>;
 
+interface HTTPErrorHandlerOptions<TRouter extends AnyRouter, TRequest>
+  extends ErrorHandlerOptions<inferRouterContext<TRouter>> {
+  req: TRequest;
+}
 /**
  * @internal
  */
-export type OnErrorFunction<TRouter extends AnyRouter, TRequest> = (opts: {
-  error: TRPCError;
-  type: ProcedureType | 'unknown';
-  path: string | undefined;
-  req: TRequest;
-  input: unknown;
-  ctx: inferRouterContext<TRouter> | undefined;
-}) => void;
+export type HTTPErrorHandler<TRouter extends AnyRouter, TRequest> = (
+  opts: HTTPErrorHandlerOptions<TRouter, TRequest>,
+) => void;
 
 /**
  * Base interface for any response handler
  * @internal
  */
 export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
-  onError?: OnErrorFunction<TRouter, TRequest>;
+  onError?: HTTPErrorHandler<TRouter, TRequest>;
   /**
    * @deprecated use `allowBatching` instead, this will be removed in v12
    */

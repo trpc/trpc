@@ -32,7 +32,9 @@ export function getCauseFromUnknown(cause: unknown): Error | undefined {
   return undefined;
 }
 
-export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
+export function getTRPCErrorFromUnknown(
+  cause: unknown,
+): TRPCError | TypedTRPCError<unknown> {
   if (cause instanceof TRPCError) {
     return cause;
   }
@@ -137,4 +139,10 @@ export function trpcError<
   }
 
   return error;
+}
+
+export function isTRPCError(
+  err: unknown,
+): err is TRPCError | TypedTRPCError<any> {
+  return err instanceof TRPCError;
 }

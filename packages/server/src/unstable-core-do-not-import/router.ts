@@ -1,13 +1,17 @@
 import type { Observable } from '../observable';
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
-import { TRPCError } from './error/TRPCError';
-import type { AnyProcedure, inferProcedureInput } from './procedure';
+import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
+import type {
+  AnyProcedure,
+  ErrorHandlerOptions,
+  inferProcedureInput,
+} from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
 import type { MaybePromise, ValueOf } from './types';
-import { mergeWithoutOverrides, omitPrototype } from './utils';
+import { isFunction, mergeWithoutOverrides, omitPrototype } from './utils';
 
 export interface RouterRecord {
   [key: string]: AnyProcedure | RouterRecord;
@@ -35,6 +39,14 @@ export type DecorateRouterRecord<TRecord extends RouterRecord> = {
 /**
  * @internal
  */
+
+export type RouterCallerErrorHandler<TContext> = (
+  opts: ErrorHandlerOptions<TContext>,
+) => void;
+
+/**
+ * @internal
+ */
 export type RouterCaller<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
@@ -45,6 +57,9 @@ export type RouterCaller<
    * e.g. wrapped in `React.cache` to avoid unnecessary computations
    */
   ctx: TRoot['ctx'] | (() => MaybePromise<TRoot['ctx']>),
+  options?: {
+    onError?: RouterCallerErrorHandler<TRoot['ctx']>;
+  },
 ) => DecorateRouterRecord<TRecord>;
 
 export interface Router<
@@ -190,21 +205,9 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
     return {
       ...record,
       _def,
-      createCaller(ctx: TRoot['ctx']) {
-        const proxy = createRecursiveProxy(({ path, args }) => {
-          const fullPath = path.join('.');
-          const procedure = _def.procedures[fullPath] as AnyProcedure;
-
-          return procedure({
-            path: fullPath,
-            getRawInput: async () => args[0],
-            ctx,
-            type: procedure._def.type,
-          });
-        });
-
-        return proxy as ReturnType<RouterCaller<any, any>>;
-      },
+      createCaller: createCallerFactory<TRoot>()({
+        _def,
+      }),
     };
   }
 
@@ -243,34 +246,44 @@ export function callProcedure(
 
 export function createCallerFactory<TRoot extends AnyRootTypes>() {
   return function createCallerInner<TRecord extends RouterRecord>(
-    router: Router<TRoot, TRecord>,
+    router: Pick<Router<TRoot, TRecord>, '_def'>,
   ): RouterCaller<TRoot, TRecord> {
     const _def = router._def;
     type Context = TRoot['ctx'];
 
-    return function createCaller(maybeContext) {
-      const proxy = createRecursiveProxy(({ path, args }) => {
+    return function createCaller(
+      ctxOrCallback,
+      options?: {
+        onError?: RouterCallerErrorHandler<Context>;
+      },
+    ) {
+      const proxy = createRecursiveProxy(async ({ path, args }) => {
         const fullPath = path.join('.');
 
         const procedure = _def.procedures[fullPath] as AnyProcedure;
 
-        const callProc = (ctx: Context) =>
-          procedure({
+        let ctx: Context | undefined = undefined;
+        try {
+          ctx = isFunction(ctxOrCallback)
+            ? await Promise.resolve(ctxOrCallback())
+            : ctxOrCallback;
+
+          return await procedure({
             path: fullPath,
             getRawInput: async () => args[0],
             ctx,
             type: procedure._def.type,
           });
-
-        if (typeof maybeContext === 'function') {
-          const context = (maybeContext as () => MaybePromise<Context>)();
-          if (context instanceof Promise) {
-            return context.then(callProc);
-          }
-          return callProc(context);
+        } catch (cause) {
+          options?.onError?.({
+            ctx,
+            error: getTRPCErrorFromUnknown(cause),
+            input: args[0],
+            path: fullPath,
+            type: procedure._def.type,
+          });
+          throw cause;
         }
-
-        return callProc(maybeContext);
       });
 
       return proxy as ReturnType<RouterCaller<any, any>>;

@@ -1,5 +1,9 @@
 import type { inferObservableValue } from '../observable';
-import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
+import {
+  getTRPCErrorFromUnknown,
+  isTRPCError,
+  TRPCError,
+} from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
   MiddlewareBuilder,
@@ -45,6 +49,11 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
+export type CallerOverride = (opts: {
+  args: unknown[];
+  invoke: (opts: ProcedureCallOptions) => Promise<unknown>;
+  _def: AnyProcedure['_def'];
+}) => Promise<unknown>;
 type ProcedureBuilderDef<TMeta> = {
   procedure: true;
   inputs: Parser[];
@@ -52,9 +61,20 @@ type ProcedureBuilderDef<TMeta> = {
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
   middlewares: AnyMiddlewareFunction[];
+  /**
+   * @deprecated use `type` instead
+   */
   mutation?: boolean;
+  /**
+   * @deprecated use `type` instead
+   */
   query?: boolean;
+  /**
+   * @deprecated use `type` instead
+   */
   subscription?: boolean;
+  type?: ProcedureType;
+  caller?: CallerOverride;
 };
 
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
@@ -118,6 +138,7 @@ export type inferProcedureBuilderResolverOptions<
   infer TInputOut,
   infer _TOutputIn,
   infer _TOutputOut,
+  infer _TCaller,
   infer _TInferErrors,
   infer _TError
 >
@@ -149,6 +170,7 @@ export interface ProcedureBuilder<
   TInputOut,
   TOutputIn,
   TOutputOut,
+  TCaller extends boolean,
   TInferErrors extends boolean = never,
   TError = never,
 > {
@@ -160,6 +182,7 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
+    TCaller,
     true,
     TError
   >;
@@ -187,6 +210,7 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputOut, inferParser<$Parser>['out']>,
     TOutputIn,
     TOutputOut,
+    TCaller,
     TInferErrors,
     TError
   >;
@@ -204,6 +228,7 @@ export interface ProcedureBuilder<
     TInputOut,
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
     IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
+    TCaller,
     TInferErrors,
     TError
   >;
@@ -221,6 +246,7 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
+    TCaller,
     TInferErrors,
     TError
   >;
@@ -253,6 +279,7 @@ export interface ProcedureBuilder<
     TInputOut,
     TOutputIn,
     TOutputOut,
+    TCaller,
     TInferErrors,
     Exclude<$Error | TError, UnsetMarker>
   >;
@@ -279,6 +306,7 @@ export interface ProcedureBuilder<
             $InputOut,
             $OutputIn,
             $OutputOut,
+            TCaller,
             TInferErrors,
             TError
           >
@@ -292,8 +320,9 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputIn, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
     IntersectIfDefined<TOutputOut, $OutputOut>,
+    TCaller,
     TInferErrors,
-    TError // FIXME
+    TError
   >;
   /**
    * Query procedure
@@ -309,10 +338,18 @@ export interface ProcedureBuilder<
       TError,
       $Output
     >,
-  ): QueryProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, $Output>;
-  }>;
+  ): QueryProcedure<
+    TCaller extends true
+      ? {
+          experimental_caller: true;
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, $Output>;
+        }
+      : {
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, $Output>;
+        }
+  >;
 
   /**
    * Mutation procedure
@@ -328,10 +365,18 @@ export interface ProcedureBuilder<
       TError,
       $Output
     >,
-  ): MutationProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, $Output>;
-  }>;
+  ): MutationProcedure<
+    TCaller extends true
+      ? {
+          experimental_caller: true;
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, $Output>;
+        }
+      : {
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, $Output>;
+        }
+  >;
 
   /**
    * Subscription procedure
@@ -347,10 +392,35 @@ export interface ProcedureBuilder<
       TError,
       $Output
     >,
-  ): SubscriptionProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
-  }>;
+  ): SubscriptionProcedure<
+    TCaller extends true
+      ? {
+          experimental_caller: true;
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
+        }
+      : {
+          input: DefaultValue<TInputIn, void>;
+          output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
+        }
+  >;
+
+  /**
+   * Overrides the way a procedure is invoked
+   * Do not use this unless you know what you're doing - this is an experimental API
+   */
+  experimental_caller(
+    caller: CallerOverride,
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    TInputIn,
+    TInputOut,
+    TOutputIn,
+    TOutputOut,
+    true
+  >;
   /**
    * @internal
    */
@@ -386,6 +456,7 @@ export function createBuilder<TContext, TMeta>(
   UnsetMarker,
   UnsetMarker,
   UnsetMarker,
+  false,
   false,
   UnsetMarker
 > {
@@ -452,16 +523,21 @@ export function createBuilder<TContext, TMeta>(
         resolver,
       ) as AnySubscriptionProcedure;
     },
+    experimental_caller(caller) {
+      return createNewBuilder(_def, {
+        caller,
+      }) as any;
+    },
   };
 
   return builder;
 }
 
 function createResolver(
-  _def: AnyProcedureBuilderDef & { type: ProcedureType },
+  _defIn: AnyProcedureBuilderDef & { type: ProcedureType },
   resolver: AnyResolver,
 ) {
-  const finalBuilder = createNewBuilder(_def, {
+  const finalBuilder = createNewBuilder(_defIn, {
     resolver,
     middlewares: [
       async function resolveMiddleware(opts) {
@@ -475,8 +551,30 @@ function createResolver(
       },
     ],
   });
+  const _def: AnyProcedure['_def'] = {
+    ...finalBuilder._def,
+    type: _defIn.type,
+    experimental_caller: finalBuilder._def.caller ? true : false,
+    _input_in: null,
+    _output_out: null,
+    meta: finalBuilder._def.meta,
+  };
 
-  return createProcedureCaller(finalBuilder._def);
+  const invoke = createProcedureCaller(finalBuilder._def);
+  const callerOverride = finalBuilder._def.caller;
+  if (!callerOverride) {
+    return invoke;
+  }
+  const callerWrapper = (...args: unknown[]) => {
+    return callerOverride({
+      args,
+      invoke,
+      _def: _def,
+    });
+  };
+
+  callerWrapper._def = _def;
+  return callerWrapper;
 }
 
 /**
@@ -551,10 +649,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           },
         });
 
-        if (result instanceof TRPCError) {
+        if (isTRPCError(result)) {
           throw result;
         }
-        return result as any;
+        return result;
       } catch (cause) {
         return {
           ok: false,

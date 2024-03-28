@@ -1,3 +1,4 @@
+import type { TRPCError } from './error/TRPCError';
 import type { ProcedureCallOptions } from './procedureBuilder';
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
@@ -22,7 +23,9 @@ export interface ProcedureOptions {
 interface BuiltProcedureDef {
   input: unknown;
   output: unknown;
+  experimental_caller?: true;
 }
+
 /**
  *
  * @internal
@@ -41,11 +44,20 @@ export interface Procedure<
      * Meta is not inferrable on individual procedures, only on the router
      */
     meta: unknown;
+    experimental_caller: TDef['experimental_caller'] extends true
+      ? true
+      : false;
   };
   /**
    * @internal
    */
-  (opts: ProcedureCallOptions): Promise<unknown>;
+  (
+    opts: TDef['experimental_caller'] extends true
+      ? TDef['input']
+      : ProcedureCallOptions,
+  ): Promise<
+    TDef['experimental_caller'] extends true ? TDef['output'] : unknown
+  >;
 }
 
 export interface QueryProcedure<TDef extends BuiltProcedureDef>
@@ -72,3 +84,14 @@ export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   : never;
 export type inferProcedureOutput<TProcedure> =
   inferProcedureParams<TProcedure>['_output_out'];
+
+/**
+ * @internal
+ */
+export interface ErrorHandlerOptions<TContext> {
+  error: TRPCError;
+  type: ProcedureType | 'unknown';
+  path: string | undefined;
+  input: unknown;
+  ctx: TContext | undefined;
+}

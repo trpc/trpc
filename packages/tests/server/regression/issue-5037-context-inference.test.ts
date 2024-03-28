@@ -111,6 +111,7 @@ describe('context inference w/ middlewares', () => {
           TInputOut,
           TOutputIn,
           TOutputOut,
+          false,
           never,
           never
         >,
