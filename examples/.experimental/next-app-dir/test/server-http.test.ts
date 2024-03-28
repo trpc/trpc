@@ -50,3 +50,26 @@ test('server-httpLink: requests are properly separated in the cache', async ({
   await page.waitForSelector('text=hello from server1');
   await page.waitForSelector('text=hello from server2');
 });
+
+test('server-httpLink: different contexts should not have a common cache', async ({
+  page,
+}) => {
+  // mocking session data
+  await page.setExtraHTTPHeaders({ 'x-trpc-user-id': 'foo' });
+  await page.goto('/rsc');
+  await page.reload();
+
+  await page.waitForSelector('text=hello from server1 private');
+  const nonce1 = await page.textContent('text=hello from server1 private');
+
+  await page.reload();
+  const nonce2 = await page.textContent('text=hello from server1 private');
+  expect(nonce1).toBe(nonce2);
+
+  // Mock new user
+  await page.setExtraHTTPHeaders({ 'x-trpc-user-id': 'bar' });
+  await page.reload();
+
+  const nonce3 = await page.textContent('text=hello from server1 private');
+  expect(nonce1).not.toBe(nonce3);
+});

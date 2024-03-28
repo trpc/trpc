@@ -11,8 +11,11 @@ import type {
   AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
+  inferRouterContext,
   inferTransformedProcedureOutput,
+  MaybePromise,
   ProtectedIntersection,
+  ProxyCallbackOptions,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
@@ -86,17 +89,58 @@ export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
 /**
  * @internal
  */
-export interface CreateTRPCNextAppRouterOptions<TRouter extends AnyRouter> {
+export interface CreateTRPCNextAppRouterClientOptions<
+  TRouter extends AnyRouter,
+> {
   config: () => CreateTRPCClientOptions<TRouter>;
+}
+/**
+ * @internal
+ */
+export interface CreateTRPCNextAppRouterServerOptions<
+  TRouter extends AnyRouter,
+> {
+  config: () => CreateTRPCClientOptions<TRouter> & {
+    createContext: () => MaybePromise<inferRouterContext<TRouter>>;
+    /**
+     * Select properties from context that should be part of the generated cache tag
+     * This is important to make sure that the cache is not shared between different users
+     * @example `ctx => [ctx.user?.id]`
+     */
+    contextSelector:
+      | ((
+          ctx: inferRouterContext<TRouter>,
+          callOptions: ProxyCallbackOptions,
+        ) => any[])
+      | undefined;
+  };
+}
+
+/**
+ * @internal
+ * @link https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest#converting_a_digest_to_a_hex_string
+ */
+async function digestMessage(message: string) {
+  const msgUint8 = new TextEncoder().encode(message); // encode as (utf-8) Uint8Array
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8); // hash the message
+  const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+  const hashHex = hashArray
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join(''); // convert bytes to hex string
+  return hashHex;
 }
 
 /**
  * @internal
  */
-export function generateCacheTag(procedurePath: string, input: any) {
-  return input
-    ? `${procedurePath}?input=${JSON.stringify(input)}`
-    : procedurePath;
+export async function generateCacheTag(
+  procedurePath: string,
+  input: any,
+  context: any,
+) {
+  return `${procedurePath}?hash=${await digestMessage(
+    JSON.stringify({ input, context }),
+  )}`;
 }
 
 export function isFormData(value: unknown): value is FormData {

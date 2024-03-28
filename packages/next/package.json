@@ -71,7 +71,6 @@
     "ssrPrepass",
     "!**/*.test.*"
   ],
-  "dependencies": {},
   "peerDependencies": {
     "@tanstack/react-query": "^5.25.0",
     "@trpc/client": "10.45.1",

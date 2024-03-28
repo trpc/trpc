@@ -5,7 +5,7 @@ import {
 } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
-import type { CreateTRPCNextAppRouterOptions } from './shared';
+import type { CreateTRPCNextAppRouterClientOptions } from './shared';
 
 export {
   // ts-prune-ignore-next
@@ -25,7 +25,7 @@ type QueryResult = {
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirClient<
   TRouter extends AnyRouter,
->(opts: CreateTRPCNextAppRouterOptions<TRouter>) {
+>(opts: CreateTRPCNextAppRouterClientOptions<TRouter>) {
   const client = createTRPCUntypedClient<TRouter>(opts.config());
   // const useProxy = createUseProxy<TRouter>(client);
 

@@ -10,15 +10,14 @@ import { observable } from '@trpc/server/observable';
 import type {
   AnyRouter,
   inferClientTypes,
-  inferRouterContext,
 } from '@trpc/server/unstable-core-do-not-import';
 import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag } from '../shared';
+import type { NextAppDirRuntime } from '../types';
 
 type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
-  createContext: () => Promise<inferRouterContext<TRouter>>;
   /** how many seconds the cache should hold before revalidating */
   revalidate?: number | false;
 } & TransformerOptions<inferClientTypes<TRouter>>;
@@ -28,12 +27,12 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
   const transformer = getTransformer(opts.transformer);
-  return () =>
-    ({ op }) =>
+  return (_runtime) => {
+    const runtime = _runtime as NextAppDirRuntime<TRouter>;
+    return ({ op }) =>
       observable((observer) => {
         const { path, input, type, context } = op;
 
-        const cacheTag = generateCacheTag(path, input);
         // Let per-request revalidate override global revalidate
         const requestRevalidate =
           typeof context['revalidate'] === 'number' ||
@@ -42,9 +41,12 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
             : undefined;
         const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-        const promise = opts
-          .createContext()
-          .then(async (ctx) => {
+        const promise = generateCacheTag(
+          path,
+          input,
+          runtime.cacheTagSeparators,
+        )
+          .then(async (cacheTag) => {
             const callProc = async (_cachebuster: string) => {
               //   // _cachebuster is not used by us but to make sure
               //   // that calls with different tags are properly separated
@@ -53,7 +55,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
                 procedures: opts.router._def.procedures,
                 path,
                 getRawInput: async () => input,
-                ctx: ctx,
+                ctx: runtime.ctx,
                 type,
               });
 
@@ -84,4 +86,5 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
             observer.error(TRPCClientError.from(cause));
           });
       });
+  };
 }

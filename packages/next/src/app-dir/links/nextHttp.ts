@@ -9,6 +9,7 @@ import type {
   AnyRouter,
 } from '@trpc/server/unstable-core-do-not-import';
 import { generateCacheTag } from '../shared';
+import type { NextAppDirRuntime } from '../types';
 
 interface NextLinkBaseOptions {
   revalidate?: number | false;
@@ -31,10 +32,10 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
     | NextLinkSingleOptions<TRouter['_def']['_config']['$types']>
     | NextLinkBatchOptions<TRouter['_def']['_config']['$types']>,
 ): TRPCLink<TRouter> {
-  return (runtime) => {
+  return (_runtime) => {
+    const runtime = _runtime as NextAppDirRuntime<TRouter>;
     return (ctx) => {
       const { path, input, context } = ctx.op;
-      const cacheTag = generateCacheTag(path, input);
 
       // Let per-request revalidate override global revalidate
       const requestRevalidate =
@@ -45,10 +46,14 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
 
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-      const _fetch: NonNullable<HTTPLinkOptions<AnyRootTypes>['fetch']> = (
-        url,
-        fetchOpts,
-      ) => {
+      const _fetch: NonNullable<
+        HTTPLinkOptions<AnyRootTypes>['fetch']
+      > = async (url, fetchOpts) => {
+        const cacheTag = await generateCacheTag(
+          path,
+          input,
+          runtime.cacheTagSeparators,
+        );
         return fetch(url, {
           ...fetchOpts,
           // cache: 'no-cache',
