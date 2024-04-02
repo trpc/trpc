@@ -1,4 +1,3 @@
-import { createFlatProxy } from './createProxy';
 import {
   defaultFormatter,
   type DefaultErrorShape,
@@ -95,11 +94,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * These are just types, they can't be used at runtime
        * @internal
        */
-      $types: createFlatProxy<any>((key) => {
-        throw new Error(
-          `Tried to access "$types.${key}" which is not available at runtime`,
-        );
-      }),
+      $types: null as any,
     };
 
     {
