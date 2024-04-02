@@ -1,5 +1,3 @@
-import { createFlatProxy } from './createProxy';
-
 /**
  * Ensures there are no duplicate keys when building a procedure.
  * @internal
@@ -43,13 +41,3 @@ export function omitPrototype<TObj extends Record<string, unknown>>(
 ): TObj {
   return Object.assign(Object.create(null), obj);
 }
-
-/**
- * Prevents access to `$types` at runtime
- * @internal
- */
-export const $typesProxy = createFlatProxy<any>((key) => {
-  throw new Error(
-    `Tried to access "$types.${key}" which is not available at runtime`,
-  );
-});
