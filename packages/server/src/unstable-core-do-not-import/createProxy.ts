@@ -53,6 +53,11 @@ export const createFlatProxy = <TFaux>(
         // like a PromiseLike (like in `Promise.resolve(proxy)`)
         return undefined;
       }
+
+      if (name === 'prototype') {
+        // https://github.com/t3-oss/create-t3-app/issues/1814
+        return undefined;
+      }
       return callback(name as any);
     },
   }) as TFaux;
