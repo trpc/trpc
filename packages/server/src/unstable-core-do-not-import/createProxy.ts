@@ -54,10 +54,6 @@ export const createFlatProxy = <TFaux>(
         return undefined;
       }
 
-      if (name === 'prototype') {
-        // https://github.com/t3-oss/create-t3-app/issues/1814
-        return undefined;
-      }
       return callback(name as any);
     },
   }) as TFaux;

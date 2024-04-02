@@ -50,6 +50,7 @@ export function omitPrototype<TObj extends Record<string, unknown>>(
  */
 export const $typesProxy = createFlatProxy<any>((key) => {
   if (key === 'prototype') {
+    // https://github.com/t3-oss/create-t3-app/issues/1814
     return undefined;
   }
   throw new Error(
