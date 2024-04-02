@@ -5,7 +5,7 @@ on:
     branches:
       # Replace this with the branch you want to release from
       # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
-      - 'issues/5557-types-node-wut'
+      - '04-02-no-typesProxy'
       # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
     paths:
       - '.github/workflows/release-tmp.yml'
