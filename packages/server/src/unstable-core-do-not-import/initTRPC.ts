@@ -95,7 +95,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * These are just types, they can't be used at runtime
        * @internal
        */
-      $types: $typesProxy,
+      $types: $typesProxy(),
     };
 
     {

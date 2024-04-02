@@ -498,7 +498,7 @@ function createResolver(
     type: _defIn.type,
     experimental_caller: Boolean(finalBuilder._def.caller),
     meta: finalBuilder._def.meta,
-    $types: $typesProxy,
+    $types: $typesProxy(),
   };
 
   const invoke = createProcedureCaller(finalBuilder._def);
