@@ -1,5 +1,4 @@
 import type { inferObservableValue } from '../observable';
-import { createFlatProxy } from './createProxy';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -499,11 +498,13 @@ function createResolver(
     type: _defIn.type,
     experimental_caller: Boolean(finalBuilder._def.caller),
     meta: finalBuilder._def.meta,
-    $types: createFlatProxy<any>((key) => {
-      throw new Error(
-        `Tried to access "$types.${key}" which is not available at runtime`,
-      );
-    }),
+    $types: null as any,
+    // FIXME:
+    // $types: createFlatProxy<any>((key) => {
+    //   throw new Error(
+    //     `Tried to access "$types.${key}" which is not available at runtime`,
+    //   );
+    // }),
   };
 
   const invoke = createProcedureCaller(finalBuilder._def);
