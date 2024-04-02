@@ -53,7 +53,6 @@ export const createFlatProxy = <TFaux>(
         // like a PromiseLike (like in `Promise.resolve(proxy)`)
         return undefined;
       }
-
       return callback(name as any);
     },
   }) as TFaux;
