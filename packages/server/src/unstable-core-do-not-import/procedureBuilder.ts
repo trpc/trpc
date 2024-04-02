@@ -30,7 +30,7 @@ import type {
   Simplify,
   TypeError,
 } from './types';
-import { $typesProxy, mergeWithoutOverrides } from './utils';
+import { mergeWithoutOverrides } from './utils';
 
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
@@ -498,7 +498,8 @@ function createResolver(
     type: _defIn.type,
     experimental_caller: Boolean(finalBuilder._def.caller),
     meta: finalBuilder._def.meta,
-    $types: $typesProxy,
+    // TODO: this should use `$typesProxy`: https://github.com/trpc/trpc/pull/5604
+    $types: null as any,
   };
 
   const invoke = createProcedureCaller(finalBuilder._def);
