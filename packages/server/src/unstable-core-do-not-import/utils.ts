@@ -48,12 +48,9 @@ export function omitPrototype<TObj extends Record<string, unknown>>(
  * Prevents access to `$types` at runtime
  * @internal
  */
-export const $typesProxy = createFlatProxy<any>((key) => {
-  if (key === 'prototype') {
-    // https://github.com/t3-oss/create-t3-app/issues/1814
-    return undefined;
-  }
-  throw new Error(
-    `Tried to access "$types.${key}" which is not available at runtime`,
-  );
-});
+export const $typesProxy = () =>
+  createFlatProxy<any>((key) => {
+    throw new Error(
+      `Tried to access "$types.${key}" which is not available at runtime`,
+    );
+  });
