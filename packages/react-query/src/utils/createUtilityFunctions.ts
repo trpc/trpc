@@ -122,6 +122,17 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       return queryClient.setQueryData(queryKey, updater as any, options);
     },
 
+    setQueriesData: (queryKey, filters, updater, options) => {
+      return queryClient.setQueriesData(
+        {
+          ...filters,
+          queryKey,
+        },
+        updater,
+        options,
+      );
+    },
+
     getQueryData: (queryKey) => {
       return queryClient.getQueryData(queryKey);
     },
