@@ -300,7 +300,7 @@ export function createRootHooks<
           },
           onData: (data) => {
             if (!isStopped) {
-              opts.onData(data);
+              optsRef.current.onData(data);
             }
           },
           onError: (err) => {
