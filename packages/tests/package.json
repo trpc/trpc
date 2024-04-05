@@ -28,7 +28,7 @@
     "arktype": "1.0.14-alpha",
     "dataloader": "^2.2.2",
     "devalue": "^4.0.0",
-    "eslint": "^8.56.0",
+    "eslint": "^9.0.0",
     "fastify": "^4.16.0",
     "fastify-plugin": "^4.5.0",
     "jsdom": "^24.0.0",
