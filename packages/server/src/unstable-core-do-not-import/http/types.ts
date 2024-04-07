@@ -47,7 +47,10 @@ export interface HTTPRequest {
   method: string;
   query: URLSearchParams;
   headers: HTTPHeaders;
-  body: unknown;
+  /**
+   * @deprecated - because why leak http details downward?
+   */
+  body?: unknown;
 }
 
 /**

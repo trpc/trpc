@@ -118,18 +118,9 @@ export const nodeHTTPFormDataContentTypeHandler =
     isMatch(opts) {
       return isMultipartFormDataRequest(opts.req);
     },
-    async getBody(opts) {
-      const fields = Object.fromEntries(opts.query);
-
-      return {
-        ok: true,
-        data: fields,
-        preprocessed: false,
-      };
-    },
-    getInputs(opts) {
+    async getInputs(opts, info) {
       const req = opts.req;
-      const unparsedInput = req.query.get('input');
+      const unparsedInput = req.query?.['input'] as string | undefined;
       if (!unparsedInput) {
         return {
           0: undefined,

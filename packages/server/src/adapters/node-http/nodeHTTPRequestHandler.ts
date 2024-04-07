@@ -20,7 +20,11 @@ import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
 } from '../../@trpc/server/http';
-import { nodeHTTPFormDataContentTypeHandler } from './content-type/form-data';
+import {
+  experimental_parseMultipartFormData,
+  nodeHTTPFormDataContentTypeHandler,
+} from './content-type/form-data';
+import { createMemoryUploadHandler } from './content-type/form-data/uploadHandler';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
 import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 import type {
@@ -30,7 +34,29 @@ import type {
 } from './types';
 
 const defaultJSONContentTypeHandler = nodeHTTPJSONContentTypeHandler();
-const defaultFormDataContentTypeHandler = nodeHTTPFormDataContentTypeHandler();
+const defaultFormDataContentTypeHandler: NodeHTTPContentTypeHandler<
+  NodeHTTPRequest,
+  NodeHTTPResponse
+> = {
+  isMatch(opts) {
+    return (
+      opts.req.headers['content-type']?.startsWith('multipart/form-data') ??
+      false
+    );
+  },
+  async getInputs(opts) {
+    console.log('defaultFormDataContentTypeHandler getInputs');
+
+    const form = await experimental_parseMultipartFormData(
+      opts.req,
+      createMemoryUploadHandler(),
+    );
+
+    return {
+      0: form,
+    };
+  },
+};
 
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
@@ -80,17 +106,10 @@ export async function nodeHTTPRequestHandler<
       // fallback to json
       jsonContentTypeHandler;
 
-    const bodyResult = await contentTypeHandler.getBody({
-      // FIXME: no typecasting should be needed here
-      ...(opts as any),
-      query,
-    });
-
     const req: HTTPRequest = {
       method: opts.req.method!,
       headers: opts.req.headers,
       query,
-      body: bodyResult.ok ? bodyResult.data : undefined,
     };
 
     let isStream = false;
@@ -136,19 +155,28 @@ export async function nodeHTTPRequestHandler<
       }
     };
 
+    console.debug(
+      'resolving http response for',
+      opts.req.headers['content-type'],
+      opts.req.url,
+      opts.req.body,
+    );
     await resolveHTTPResponse<TRouter, HTTPRequest>({
       ...opts,
       req,
       createContext,
-      error: bodyResult.ok ? null : bodyResult.error,
-      preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
       onError(o) {
         opts?.onError?.({
           ...o,
           req: opts.req,
         });
       },
-      contentTypeHandler,
+      async getInputs() {
+        return contentTypeHandler.getInputs(opts, {
+          // TODO: set this properly!
+          isBatchCall: false,
+        });
+      },
       unstable_onHead,
       unstable_onChunk,
     });

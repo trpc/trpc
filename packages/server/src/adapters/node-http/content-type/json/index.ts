@@ -1,4 +1,5 @@
-import { getJsonContentTypeInputs } from '../../../../@trpc/server/http';
+import { TRPCError } from '@trpc/server/unstable-core-do-not-import';
+import type { CombinedDataTransformer } from '@trpc/server/unstable-core-do-not-import/transformer';
 import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
 import { getPostBody } from './getPostBody';
 
@@ -6,6 +7,78 @@ export const nodeHTTPJSONContentTypeHandler = createNodeHTTPContentTypeHandler({
   isMatch(opts) {
     return !!opts.req.headers['content-type']?.startsWith('application/json');
   },
-  getBody: getPostBody,
-  getInputs: getJsonContentTypeInputs,
+  getInputs: async (opts, info) => {
+    const bodyResult = await getPostBody(opts);
+    if (!bodyResult.ok) {
+      throw bodyResult.error;
+    }
+    const preprocessed = bodyResult.data;
+    const body = bodyResult.data;
+
+    function getRawProcedureInputOrThrow() {
+      const { req } = opts;
+      try {
+        if (req.method === 'GET') {
+          const query = req.query;
+          if (!query?.['input']) {
+            return undefined;
+          }
+
+          const raw = query['input'] as string;
+          return JSON.parse(raw);
+        }
+        if (!preprocessed && typeof body === 'string') {
+          // A mutation with no inputs will have req.body === ''
+          return body.length === 0 ? undefined : JSON.parse(body);
+        }
+        return req.body;
+      } catch (cause) {
+        throw new TRPCError({
+          code: 'PARSE_ERROR',
+          cause,
+        });
+      }
+    }
+
+    const deserializeInputValue = (
+      rawValue: unknown,
+      transformer: CombinedDataTransformer,
+    ) => {
+      return typeof rawValue !== 'undefined'
+        ? transformer.input.deserialize(rawValue)
+        : rawValue;
+    };
+
+    const rawInput = getRawProcedureInputOrThrow();
+    const transformer = opts.router._def._config.transformer;
+
+    if (!info.isBatchCall) {
+      return {
+        0: deserializeInputValue(rawInput, transformer),
+      };
+    }
+
+    /* istanbul ignore if  */
+    if (
+      rawInput == null ||
+      typeof rawInput !== 'object' ||
+      Array.isArray(rawInput)
+    ) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: '"input" needs to be an object when doing a batch call',
+      });
+    }
+    const input: Record<number, unknown> = {};
+    for (const key in rawInput) {
+      const k = key as any as number;
+      const rawValue = rawInput[k];
+
+      const value = deserializeInputValue(rawValue, transformer);
+
+      input[k] = value;
+    }
+
+    return input;
+  },
 });

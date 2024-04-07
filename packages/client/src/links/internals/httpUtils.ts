@@ -10,7 +10,6 @@ import type {
   AbortControllerEsque,
   AbortControllerInstanceEsque,
   FetchEsque,
-  RequestInitEsque,
   ResponseEsque,
 } from '../../internals/types';
 import { TRPCClientError } from '../../TRPCClientError';
@@ -104,7 +103,7 @@ export type HTTPBaseRequestOptions = GetInputOptions &
   };
 
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
-type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
+type GetBody = (opts: HTTPBaseRequestOptions) => any;
 export type ContentOptions = {
   batchModeHeader?: 'stream';
   contentTypeHeader?: string;
@@ -162,9 +161,10 @@ export const universalRequester: Requester = (opts) => {
       console.debug('Detected FormData', input);
       return httpRequest({
         ...opts,
-        contentTypeHeader: 'multipart/form-data',
+        // The browser will set this automatically and include the boundary= in it
+        contentTypeHeader: undefined,
         getUrl,
-        getBody,
+        getBody: () => input,
       });
     }
 
@@ -182,7 +182,7 @@ export const universalRequester: Requester = (opts) => {
         ...opts,
         contentTypeHeader: 'application/octet-stream',
         getUrl,
-        getBody,
+        getBody: () => input,
       });
     }
   }

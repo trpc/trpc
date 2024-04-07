@@ -12,13 +12,18 @@ const t = initTRPC.create();
 const publicProcedure = t.procedure;
 const router = t.router;
 
-function asType<TOut>(input: unknown): T {
+function asType<TOut>(input: unknown): TOut {
+  console.log('asType', input);
   return input as TOut;
 }
 
 const appRouter = router({
   formData: publicProcedure.input(asType<FormData>).mutation(({ input }) => {
-    console.log('FormData: ', input);
+    const object = {} as any;
+    input.forEach((value, key) => (object[key] = value));
+    const json = JSON.stringify(object);
+
+    console.log('FormData: ', json, input);
 
     return {
       text: 'ACK',

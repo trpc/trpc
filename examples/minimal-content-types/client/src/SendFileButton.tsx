@@ -10,7 +10,8 @@ export function SendFileButton() {
         type="file"
         onChange={(e) => {
           if (e.target.files && e.target.files.length > 0) {
-            const file = e.target.files.item(0);
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            const file = e.target.files.item(0)!;
             console.log('uploading file', file);
 
             mutation.mutate(file);

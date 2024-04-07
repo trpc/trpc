@@ -9,19 +9,21 @@ import type {
 import { callProcedure } from '../router';
 import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
-import type { Maybe } from '../types';
-import type { BaseContentTypeHandler } from './contentType';
-import { getJsonContentTypeInputs } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
+  HTTPRequest as FullHTTPRequest,
   HTTPBaseHandlerOptions,
   HTTPHeaders,
-  HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
   ResponseChunk,
   TRPCRequestInfo,
 } from './types';
+
+/**
+ * @deprecated just until we can remove `body` from `HTTPRequest` directly
+ */
+type HTTPRequestInfo = Omit<FullHTTPRequest, 'body'>;
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -29,10 +31,6 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
 > = {
   GET: 'query',
   POST: 'mutation',
-};
-
-const fallbackContentTypeHandler = {
-  getInputs: getJsonContentTypeInputs,
 };
 
 type PartialBy<TBaseType, TKey extends keyof TBaseType> = Omit<
@@ -43,14 +41,12 @@ type PartialBy<TBaseType, TKey extends keyof TBaseType> = Omit<
 
 interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
+  TRequest extends HTTPRequestInfo,
 > extends HTTPBaseHandlerOptions<TRouter, TRequest> {
   createContext: ResolveHTTPRequestOptionsContextFn<TRouter>;
   req: TRequest;
   path: string;
-  error?: Maybe<TRPCError>;
-  contentTypeHandler?: BaseContentTypeHandler<any>;
-  preprocessedBody?: boolean;
+  getInputs: () => Promise<Record<number, unknown>>;
   /**
    * Called as soon as the response head is known.
    * When streaming, headers will have been generated
@@ -76,7 +72,7 @@ interface ResolveHTTPRequestOptions<
 
 function initResponse<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
+  TRequest extends HTTPRequestInfo,
 >(initOpts: {
   ctx: inferRouterContext<TRouter> | undefined;
   paths: string[] | undefined;
@@ -134,7 +130,7 @@ function initResponse<
 
 function caughtErrorToData<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
+  TRequest extends HTTPRequestInfo,
 >(
   cause: unknown,
   errorOpts: {
@@ -193,7 +189,7 @@ function caughtErrorToData<
  */
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
+  TRequest extends HTTPRequestInfo,
 >(
   opts: Omit<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
@@ -208,12 +204,12 @@ export async function resolveHTTPResponse<
  */
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
+  TRequest extends HTTPRequestInfo,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<void>;
 // implementation
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
+  TRequest extends HTTPRequestInfo,
 >(
   opts: PartialBy<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
@@ -231,8 +227,6 @@ export async function resolveHTTPResponse<
     unstable_onChunk?.([-1, '']);
     return headResponse;
   }
-  const contentTypeHandler =
-    opts.contentTypeHandler ?? fallbackContentTypeHandler;
   const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
   const allowMethodOverride = opts.allowMethodOverride ?? false;
 
@@ -249,9 +243,6 @@ export async function resolveHTTPResponse<
     req.headers['trpc-batch-mode'] === 'stream';
 
   try {
-    if (opts.error) {
-      throw opts.error;
-    }
     if (isBatchCall && !allowBatching) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -275,13 +266,10 @@ export async function resolveHTTPResponse<
     let _inputsCache: Record<number, unknown>;
     async function getInputs() {
       if (!_inputsCache) {
-        _inputsCache = await contentTypeHandler.getInputs({
-          isBatchCall,
-          req,
-          router,
-          preprocessedBody: opts.preprocessedBody ?? false,
-        });
+        _inputsCache = await opts.getInputs();
       }
+
+      console.log('getInputs - return', _inputsCache);
 
       return _inputsCache;
     }
