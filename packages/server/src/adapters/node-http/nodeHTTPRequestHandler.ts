@@ -20,6 +20,7 @@ import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
 } from '../../@trpc/server/http';
+import { nodeHTTPFormDataContentTypeHandler } from './content-type/form-data';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
 import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 import type {
@@ -29,6 +30,7 @@ import type {
 } from './types';
 
 const defaultJSONContentTypeHandler = nodeHTTPJSONContentTypeHandler();
+const defaultFormDataContentTypeHandler = nodeHTTPFormDataContentTypeHandler();
 
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
@@ -63,6 +65,7 @@ export async function nodeHTTPRequestHandler<
       >;
 
     const contentTypeHandlers = opts.experimental_contentTypeHandlers ?? [
+      defaultFormDataContentTypeHandler,
       jsonContentTypeHandler,
     ];
 

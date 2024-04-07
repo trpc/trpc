@@ -66,7 +66,6 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
 /** @internal */
 export type ProcedureCall = {
   type: ProcedureType;
-  input?: unknown;
   path: string;
 };
 

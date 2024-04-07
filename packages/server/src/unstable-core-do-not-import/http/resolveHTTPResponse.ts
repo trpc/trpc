@@ -272,22 +272,28 @@ export async function resolveHTTPResponse<
       });
     }
 
-    const inputs = await contentTypeHandler.getInputs({
-      isBatchCall,
-      req,
-      router,
-      preprocessedBody: opts.preprocessedBody ?? false,
-    });
+    let _inputsCache: Record<number, unknown>;
+    async function getInputs() {
+      if (!_inputsCache) {
+        _inputsCache = await contentTypeHandler.getInputs({
+          isBatchCall,
+          req,
+          router,
+          preprocessedBody: opts.preprocessedBody ?? false,
+        });
+      }
+
+      return _inputsCache;
+    }
 
     paths = isBatchCall
       ? decodeURIComponent(opts.path).split(',')
       : [opts.path];
     const info: TRPCRequestInfo = {
       isBatchCall,
-      calls: paths.map((path, idx) => ({
+      calls: paths.map((path) => ({
         path,
         type,
-        input: inputs[idx] ?? undefined,
       })),
     };
     ctx = await opts.createContext({ info });
@@ -297,12 +303,15 @@ export async function resolveHTTPResponse<
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
     >[] = paths.map(async (path, index) => {
-      const input = inputs[index];
+      async function getInput() {
+        return await getInputs().then((inputs) => inputs[index]);
+      }
+
       try {
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
           path,
-          getRawInput: async () => input,
+          getRawInput: getInput,
           ctx,
           type,
           allowMethodOverride,
@@ -319,7 +328,7 @@ export async function resolveHTTPResponse<
         opts.onError?.({
           error,
           path,
-          input,
+          input: getInput(),
           ctx,
           type: type,
           req: opts.req,
@@ -331,7 +340,7 @@ export async function resolveHTTPResponse<
             error,
             type,
             path,
-            input,
+            input: getInput(),
             ctx,
           }),
         };
@@ -410,7 +419,7 @@ export async function resolveHTTPResponse<
         unstable_onChunk([index, body]);
       } catch (cause) {
         const path = paths[index];
-        const input = inputs[index];
+        const input = (await getInputs())[index];
         const { body } = caughtErrorToData(cause, {
           opts,
           ctx,
