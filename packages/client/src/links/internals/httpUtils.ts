@@ -153,6 +153,45 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
+export const universalRequester: Requester = (opts) => {
+  const input = getInput(opts);
+  console.debug('universalRequester called', { opts, input });
+
+  if (opts.type === 'mutation') {
+    if (input instanceof FormData) {
+      console.debug('Detected FormData', input);
+      return httpRequest({
+        ...opts,
+        contentTypeHeader: 'multipart/form-data',
+        getUrl,
+        getBody,
+      });
+    }
+
+    if (
+      input instanceof Uint8Array ||
+      input instanceof ReadableStream ||
+      input instanceof Blob ||
+      input instanceof File
+    ) {
+      console.debug(
+        'Detected TypedArray, ReadableStream, Blob, or File',
+        input,
+      );
+      return httpRequest({
+        ...opts,
+        contentTypeHeader: 'application/octet-stream',
+        getUrl,
+        getBody,
+      });
+    }
+  }
+
+  console.debug('Falling back on JSON', input);
+
+  return jsonHttpRequester(opts);
+};
+
 export type HTTPRequestOptions = ContentOptions &
   HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;

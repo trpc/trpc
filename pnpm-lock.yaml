@@ -753,6 +753,21 @@ importers:
         specifier: ^1.0.1
         version: 1.0.4
 
+  examples/minimal-content-types:
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.26.1
+        version: 1.28.1
+      npm-run-all:
+        specifier: ^4.1.5
+        version: 4.1.5
+      start-server-and-test:
+        specifier: ^1.12.0
+        version: 1.14.0
+      wait-port:
+        specifier: ^1.0.1
+        version: 1.0.4
+
   examples/minimal-react:
     devDependencies:
       '@playwright/test':
