@@ -8,8 +8,8 @@ export function SendMultipartFormDataButton() {
       onClick={() => {
         const data = new FormData();
 
-        data.append('name', 'John Doe');
-        data.append('occupation', 'tRPC Extraordinaire');
+        data.set('name', 'John Doe');
+        data.set('occupation', 'tRPC Extraordinaire');
 
         mutation.mutate(data);
       }}
