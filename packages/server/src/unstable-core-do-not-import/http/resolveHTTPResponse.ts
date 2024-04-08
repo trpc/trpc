@@ -46,7 +46,7 @@ interface ResolveHTTPRequestOptions<
   createContext: ResolveHTTPRequestOptionsContextFn<TRouter>;
   req: TRequest;
   path: string;
-  getInputs: () => Promise<Record<number, unknown>>;
+  getInput: (opts: { isBatchCall: boolean; batch: number }) => Promise<unknown>;
   /**
    * Called as soon as the response head is known.
    * When streaming, headers will have been generated
@@ -263,15 +263,20 @@ export async function resolveHTTPResponse<
       });
     }
 
-    let _inputsCache: Record<number, unknown>;
-    async function getInputs() {
-      if (!_inputsCache) {
-        _inputsCache = await opts.getInputs();
+    const loadedBatches = new Set<number>();
+    const batchesCache: Record<number, unknown> = {};
+    async function getRawInputForBatch(batch: number) {
+      if (!loadedBatches.has(batch)) {
+        batchesCache[batch] = await opts.getInput({
+          isBatchCall,
+          batch,
+        });
+        loadedBatches.add(batch);
       }
 
-      console.log('getInputs - return', _inputsCache);
+      console.log('getRawInputForBatch - return', batchesCache[batch]);
 
-      return _inputsCache;
+      return batchesCache[batch];
     }
 
     paths = isBatchCall
@@ -291,15 +296,15 @@ export async function resolveHTTPResponse<
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
     >[] = paths.map(async (path, index) => {
-      async function getInput() {
-        return await getInputs().then((inputs) => inputs[index]);
+      async function getRawInput() {
+        return await getRawInputForBatch(index);
       }
 
       try {
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
           path,
-          getRawInput: getInput,
+          getRawInput: getRawInput,
           ctx,
           type,
           allowMethodOverride,
@@ -316,7 +321,7 @@ export async function resolveHTTPResponse<
         opts.onError?.({
           error,
           path,
-          input: getInput(),
+          input: getRawInput(),
           ctx,
           type: type,
           req: opts.req,
@@ -328,7 +333,7 @@ export async function resolveHTTPResponse<
             error,
             type,
             path,
-            input: getInput(),
+            input: getRawInput(),
             ctx,
           }),
         };
@@ -407,7 +412,7 @@ export async function resolveHTTPResponse<
         unstable_onChunk([index, body]);
       } catch (cause) {
         const path = paths[index];
-        const input = (await getInputs())[index];
+        const input = await getRawInputForBatch(index);
         const { body } = caughtErrorToData(cause, {
           opts,
           ctx,

@@ -122,7 +122,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     req,
     createContext,
     path,
-    getInputs() {
+    getInput() {
       // TODO: not implemented yet
       return Promise.resolve({});
     },

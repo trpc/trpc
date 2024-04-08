@@ -17,6 +17,7 @@ export type BaseContentTypeHandler<TOptions> = {
     opts: TOptions,
     info: {
       isBatchCall: boolean;
+      batch: number;
     },
-  ) => Promise<Record<string, unknown>>;
+  ) => Promise<unknown>;
 };

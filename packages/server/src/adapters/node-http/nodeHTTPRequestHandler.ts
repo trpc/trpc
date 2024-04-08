@@ -42,17 +42,19 @@ const defaultFormDataContentTypeHandler: NodeHTTPContentTypeHandler<
       false
     );
   },
-  async getInputs(opts) {
+  async getInputs(opts, inputOpts) {
     console.log('defaultFormDataContentTypeHandler getInputs');
+
+    if (inputOpts.isBatchCall) {
+      throw new Error('Batch calls not supported for form-data');
+    }
 
     const form = await experimental_parseMultipartFormData(
       opts.req,
       createMemoryUploadHandler(),
     );
 
-    return {
-      0: form,
-    };
+    return form;
   },
 };
 const defaultOctetContentTypeHandler: NodeHTTPContentTypeHandler<
@@ -66,14 +68,16 @@ const defaultOctetContentTypeHandler: NodeHTTPContentTypeHandler<
       ) ?? false
     );
   },
-  async getInputs(opts) {
+  async getInputs(opts, inputOpts) {
     console.log('defaultOctetContentTypeHandler getInputs');
+
+    if (inputOpts.isBatchCall) {
+      throw new Error('Batch calls not supported for octet-stream');
+    }
 
     const stream = Stream.Readable.from(opts.req);
 
-    return {
-      0: stream,
-    };
+    return stream;
   },
 };
 
@@ -172,7 +176,6 @@ export async function nodeHTTPRequestHandler<
       'resolving http response for',
       opts.req.headers['content-type'],
       opts.req.url,
-      opts.req.body,
     );
     await resolveHTTPResponse<TRouter, HTTPRequest>({
       ...opts,
@@ -184,14 +187,10 @@ export async function nodeHTTPRequestHandler<
           req: opts.req,
         });
       },
-      async getInputs() {
-        const isBatchCall = !!req.query.get('batch');
-
+      async getInput(inputsOpts) {
         // TODO: "opts as any" shouldn't be needed but this seems to be a common problem elsewhere in the repo
         // Basically some types could be subtypes and so it appears incompatible but it actually is, probably?
-        return await contentTypeHandler.getInputs(opts as any, {
-          isBatchCall,
-        });
+        return await contentTypeHandler.getInputs(opts as any, inputsOpts);
       },
       unstable_onHead,
       unstable_onChunk,

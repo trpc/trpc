@@ -120,7 +120,7 @@ export function awsLambdaRequestHandler<
       createContext,
       req,
       path,
-      getInputs() {
+      getInput() {
         // TODO: not implemented yet
         return Promise.resolve({});
       },

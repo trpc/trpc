@@ -111,7 +111,7 @@ export async function fastifyRequestHandler<
   resolveHTTPResponse({
     ...opts,
     req,
-    getInputs() {
+    getInput() {
       // TODO: not implemented yet
       return Promise.resolve({});
     },

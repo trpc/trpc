@@ -48,28 +48,21 @@ const appRouter = router({
 
   // No input parser set! (should expect the input never gets loaded into memory)
   // formData: publicProcedure.mutation(({ input }) => {
-  //   const object = {} as Record<string, unknown>;
-  //   (input as any).forEach((value, key) => (object[key] = value));
-
-  //   console.log('FormData: ', object, input);
+  //   if (input) {
+  //     throw new Error('Input should not be loaded into memory!');
+  //   }
 
   //   return {
   //     text: 'ACK',
-  //     data: object,
   //   };
   // }),
   // file: publicProcedure.mutation(async ({ input }) => {
-  //   const chunks = [];
-  //   for await (const chunk of input as any) {
-  //     chunks.push(Buffer.from(chunk));
+  //   if (input) {
+  //     throw new Error('Input should not be loaded into memory!');
   //   }
-  //   const content = Buffer.concat(chunks).toString('utf-8');
-
-  //   console.log('File: ', content);
 
   //   return {
   //     text: 'ACK',
-  //     data: content,
   //   };
   // }),
 });

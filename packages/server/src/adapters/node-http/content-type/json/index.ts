@@ -53,9 +53,7 @@ export const nodeHTTPJSONContentTypeHandler = createNodeHTTPContentTypeHandler({
     const transformer = opts.router._def._config.transformer;
 
     if (!info.isBatchCall) {
-      return {
-        0: deserializeInputValue(rawInput, transformer),
-      };
+      return deserializeInputValue(rawInput, transformer);
     }
 
     /* istanbul ignore if  */
@@ -69,16 +67,9 @@ export const nodeHTTPJSONContentTypeHandler = createNodeHTTPContentTypeHandler({
         message: '"input" needs to be an object when doing a batch call',
       });
     }
-    const input: Record<number, unknown> = {};
-    for (const key in rawInput) {
-      const k = key as any as number;
-      const rawValue = rawInput[k];
 
-      const value = deserializeInputValue(rawValue, transformer);
+    const rawValue = rawInput[info.batch];
 
-      input[k] = value;
-    }
-
-    return input;
+    return deserializeInputValue(rawValue, transformer);
   },
 });
