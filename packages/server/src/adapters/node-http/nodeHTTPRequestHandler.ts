@@ -21,10 +21,7 @@ import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
 } from '../../@trpc/server/http';
-import {
-  experimental_parseMultipartFormData,
-  nodeHTTPFormDataContentTypeHandler,
-} from './content-type/form-data';
+import { experimental_parseMultipartFormData } from './content-type/form-data';
 import { createMemoryUploadHandler } from './content-type/form-data/uploadHandler';
 import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
 import type { NodeHTTPContentTypeHandler } from './internals/contentType';
@@ -195,7 +192,7 @@ export async function nodeHTTPRequestHandler<
         });
       },
       async getInputs() {
-        return contentTypeHandler.getInputs(opts, {
+        return await contentTypeHandler.getInputs(opts, {
           // TODO: set this properly!
           isBatchCall: false,
         });
