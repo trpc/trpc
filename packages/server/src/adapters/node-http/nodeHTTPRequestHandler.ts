@@ -9,6 +9,7 @@
  */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 // @trpc/server
+import { Stream } from 'stream';
 import type { AnyRouter } from '../../@trpc/server';
 import type {
   HTTPRequest,
@@ -57,6 +58,27 @@ const defaultFormDataContentTypeHandler: NodeHTTPContentTypeHandler<
     };
   },
 };
+const defaultOctetContentTypeHandler: NodeHTTPContentTypeHandler<
+  NodeHTTPRequest,
+  NodeHTTPResponse
+> = {
+  isMatch(opts) {
+    return (
+      opts.req.headers['content-type']?.startsWith(
+        'application/octet-stream',
+      ) ?? false
+    );
+  },
+  async getInputs(opts) {
+    console.log('defaultOctetContentTypeHandler getInputs');
+
+    const stream = Stream.Readable.from(opts.req);
+
+    return {
+      0: stream,
+    };
+  },
+};
 
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
@@ -92,6 +114,7 @@ export async function nodeHTTPRequestHandler<
 
     const contentTypeHandlers = opts.experimental_contentTypeHandlers ?? [
       defaultFormDataContentTypeHandler,
+      defaultOctetContentTypeHandler,
       jsonContentTypeHandler,
     ];
 

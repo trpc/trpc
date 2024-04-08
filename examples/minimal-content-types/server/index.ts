@@ -2,6 +2,7 @@
  * This is the API-handler of your app that contains all your API routes.
  * On a bigger app, you will probably want to split this file up into multiple files.
  */
+import type { Readable } from 'stream';
 import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
@@ -19,21 +20,28 @@ function asType<TOut>(input: unknown): TOut {
 
 const appRouter = router({
   formData: publicProcedure.input(asType<FormData>).mutation(({ input }) => {
-    const object = {} as any;
+    const object = {} as Record<string, unknown>;
     input.forEach((value, key) => (object[key] = value));
-    const json = JSON.stringify(object);
 
-    console.log('FormData: ', json, input);
+    console.log('FormData: ', object, input);
 
     return {
       text: 'ACK',
+      data: object,
     };
   }),
-  file: publicProcedure.input(asType<File>).mutation(({ input }) => {
-    console.log('File: ', input);
+  file: publicProcedure.input(asType<Readable>).mutation(async ({ input }) => {
+    const chunks = [];
+    for await (const chunk of input) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const content = Buffer.concat(chunks).toString('utf-8');
+
+    console.log('File: ', content);
 
     return {
       text: 'ACK',
+      data: content,
     };
   }),
 });
