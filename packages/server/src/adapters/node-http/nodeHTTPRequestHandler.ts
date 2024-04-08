@@ -103,16 +103,9 @@ export async function nodeHTTPRequestHandler<
       ? new URLSearchParams(opts.req.query as any)
       : new URLSearchParams(opts.req.url!.split('?')[1]);
 
-    const jsonContentTypeHandler =
-      defaultJSONContentTypeHandler as unknown as NodeHTTPContentTypeHandler<
-        TRequest,
-        TResponse
-      >;
-
-    const contentTypeHandlers = opts.experimental_contentTypeHandlers ?? [
+    const contentTypeHandlers = [
       defaultFormDataContentTypeHandler,
       defaultOctetContentTypeHandler,
-      jsonContentTypeHandler,
     ];
 
     const contentTypeHandler =
@@ -124,7 +117,7 @@ export async function nodeHTTPRequestHandler<
         }),
       ) ??
       // fallback to json
-      jsonContentTypeHandler;
+      defaultJSONContentTypeHandler;
 
     const req: HTTPRequest = {
       method: opts.req.method!,
@@ -192,9 +185,12 @@ export async function nodeHTTPRequestHandler<
         });
       },
       async getInputs() {
-        return await contentTypeHandler.getInputs(opts, {
-          // TODO: set this properly!
-          isBatchCall: false,
+        const isBatchCall = !!req.query.get('batch');
+
+        // TODO: "opts as any" shouldn't be needed but this seems to be a common problem elsewhere in the repo
+        // Basically some types could be subtypes and so it appears incompatible but it actually is, probably?
+        return await contentTypeHandler.getInputs(opts as any, {
+          isBatchCall,
         });
       },
       unstable_onHead,

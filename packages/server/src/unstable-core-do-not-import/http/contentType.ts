@@ -1,5 +1,4 @@
 import type { TRPCError } from '../error/TRPCError';
-import type { AnyRouter } from '../router';
 
 export type BodyResult =
   | {
@@ -18,10 +17,6 @@ export type BaseContentTypeHandler<TOptions> = {
     opts: TOptions,
     info: {
       isBatchCall: boolean;
-      /**
-       * @deprecated not sure if this is used or needed?
-       */
-      router: AnyRouter;
     },
-  ) => Promise<unknown>;
+  ) => Promise<Record<string, unknown>>;
 };
