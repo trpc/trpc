@@ -14,7 +14,7 @@
     "@fastify/websocket": "^10.0.1",
     "@miniflare/core": "^2.9.0",
     "@tanstack/react-query": "^5.25.0",
-    "@testing-library/dom": "^9.0.0",
+    "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
