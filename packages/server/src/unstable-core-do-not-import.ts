@@ -23,7 +23,6 @@ export * from './unstable-core-do-not-import/procedure';
 export * from './unstable-core-do-not-import/procedureBuilder';
 export * from './unstable-core-do-not-import/rootConfig';
 export * from './unstable-core-do-not-import/router';
-export * from './unstable-core-do-not-import/router';
 export * from './unstable-core-do-not-import/rpc';
 export * from './unstable-core-do-not-import/transformer';
 export * from './unstable-core-do-not-import/types';
