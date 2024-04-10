@@ -611,3 +611,57 @@ describe('apply()', () => {
     await close();
   });
 });
+
+describe('call()', () => {
+  test('query without input', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      hello: t.procedure.query(() => 'world'),
+    });
+    const { close, client } = routerToServerAndClientNew(router);
+    expect(await client.hello.query.call(this)).toBe('world');
+    await close();
+  });
+
+  test('query with input', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      helloinput: t.procedure
+        .input(z.string())
+        .query(({ input }) => `hello ${input}`),
+    });
+    const { close, client } = routerToServerAndClientNew(router);
+    expect(await client.helloinput.query.call(this, 'world')).toBe(
+      'hello world',
+    );
+    await close();
+  });
+
+  test('query with object input', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      helloinput: t.procedure
+        .input(z.object({ text: z.string() }))
+        .query(({ input }) => `hello ${input.text}`),
+    });
+    const { close, client } = routerToServerAndClientNew(router);
+    expect(await client.helloinput.query.call(this, { text: 'world' })).toBe(
+      'hello world',
+    );
+    await close();
+  });
+
+  test('query with array input', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      helloinput: t.procedure
+        .input(z.string().array())
+        .query(({ input }) => `hello ${input.join(' ')}`),
+    });
+    const { close, client } = routerToServerAndClientNew(router);
+    expect(await client.helloinput.query.call(this, ['world'])).toBe(
+      'hello world',
+    );
+    await close();
+  });
+});

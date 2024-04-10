@@ -20,13 +20,20 @@ function createInnerProxy(callback: ProxyCallback, path: string[]) {
     },
     apply(_1, _2, args) {
       const lastOfPath = path[path.length - 1];
-      const isCallBindApply =
-        lastOfPath === 'apply' ||
-        lastOfPath === 'bind' ||
-        lastOfPath === 'call';
+
+      const isCall = lastOfPath === 'call';
+      if (isCall) {
+        return callback({
+          args: args.length >= 2 ? [args[1]] : [],
+          path: path.slice(0, -1),
+        });
+      }
+
+      const isApply = lastOfPath === 'apply';
+
       return callback({
-        args: isCallBindApply ? (args.length >= 2 ? args[1] : []) : args,
-        path: isCallBindApply ? path.slice(0, -1) : path,
+        args: isApply ? (args.length >= 2 ? args[1] : []) : args,
+        path: isApply ? path.slice(0, -1) : path,
       });
     },
   });
