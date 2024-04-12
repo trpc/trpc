@@ -64,9 +64,9 @@
   "devDependencies": {
     "@babel/core": "^7.23.2",
     "@babel/preset-env": "^7.23.2",
+    "@docusaurus/tsconfig": "^3.2.1",
     "@octokit/graphql": "^8.0.0",
     "@octokit/graphql-schema": "^15.0.0",
-    "@tsconfig/docusaurus": "^2.0.0",
     "@types/node": "^20.10.0",
     "@types/oauth": "^0.9.1",
     "@types/react": "^18.2.33",
