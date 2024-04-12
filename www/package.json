@@ -31,7 +31,7 @@
     "@docusaurus/types": "^3.2.1",
     "@headlessui/react": "^1.7.18",
     "@heroicons/react": "^2.1.1",
-    "@mdx-js/react": "^1.6.22",
+    "@mdx-js/react": "^3.0.1",
     "@trpc/client": "^10.45.1",
     "@trpc/next": "^10.45.1",
     "@trpc/react-query": "^10.45.1",

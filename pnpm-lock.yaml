@@ -1753,8 +1753,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1(react@18.2.0)
       '@mdx-js/react':
-        specifier: ^1.6.22
-        version: 1.6.22(react@18.2.0)
+        specifier: ^3.0.1
+        version: 3.0.1(@types/react@18.2.33)(react@18.2.0)
       '@trpc/client':
         specifier: ^10.45.1
         version: link:../packages/client
@@ -7628,14 +7628,6 @@ packages:
       vfile: 6.0.1
     transitivePeerDependencies:
       - supports-color
-    dev: false
-
-  /@mdx-js/react@1.6.22(react@18.2.0):
-    resolution: {integrity: sha512-TDoPum4SHdfPiGSAaRBw7ECyI8VaHpK8GJugbJIJuqyh6kzw9ZLJZW3HGL3NNrJGxcAixUvqROm+YuQOo5eXtg==}
-    peerDependencies:
-      react: ^16.13.1 || ^17.0.0
-    dependencies:
-      react: 18.2.0
     dev: false
 
   /@mdx-js/react@3.0.1(@types/react@18.2.33)(react@18.2.0):
