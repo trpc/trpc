@@ -1,8 +1,11 @@
 // @ts-check
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-const { parseEnv } = require('./src/utils/env');
-const { generateTypedocDocusaurusPlugins } = require('./docusaurus.typedoc.js');
+import {generateTypedocDocusaurusPlugins} from "./docusaurus.typedoc.js";
+
+import {parseEnv} from "./src/utils/env";
+import type {Config} from '@docusaurus/types';
+import {themes as prismThemes} from 'prism-react-renderer';
 
 const env = parseEnv(process.env);
 
@@ -23,7 +26,7 @@ const poweredByVercel = `
 `.trim();
 
 /** @type {import('@docusaurus/types').Config} */
-module.exports = {
+const config:Config = {
   title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
@@ -39,7 +42,8 @@ module.exports = {
     respectPrefersColorScheme: true,
     image: `${env.OG_URL}/api/landing?cache-buster=${new Date().getDate()}`,
     prism: {
-      theme: require('prism-react-renderer/themes/vsDark'),
+      theme: prismThemes.github,
+      darkTheme: prismThemes.dracula,
     },
     algolia: {
       appId: 'BTGPSR4MOE',
@@ -276,3 +280,6 @@ module.exports = {
     env,
   },
 };
+
+
+export default config;
