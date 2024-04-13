@@ -41,6 +41,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - run: echo "The ${{ github.event_name }} event triggered this step"
       - uses: ./.github/setup
 
       - name: Build tRPC, then test
