@@ -21,16 +21,20 @@ function createInnerProxy(callback: ProxyCallback, path: string[]) {
     apply(_1, _2, args) {
       const lastOfPath = path[path.length - 1];
 
-      if (lastOfPath === 'call' || lastOfPath === 'apply') {
-        return callback({
+      let opts = { args, path };
+      // special handling for e.g. `trpc.hello.call(this, 'there')` and `trpc.hello.apply(this, ['there'])
+      if (lastOfPath === 'call') {
+        opts = {
           args: args.length >= 2 ? [args[1]] : [],
           path: path.slice(0, -1),
-        });
+        };
+      } else if (lastOfPath === 'apply') {
+        opts = {
+          args: args.length >= 2 ? args[1] : [],
+          path: path.slice(0, -1),
+        };
       }
-      return callback({
-        args,
-        path,
-      });
+      return callback(opts);
     },
   });
 
