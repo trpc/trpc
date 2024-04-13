@@ -52,7 +52,6 @@ export async function fastifyRequestHandler<
     query,
     method: opts.req.method,
     headers: opts.req.headers,
-    body: opts.req.body ?? 'null',
   };
 
   let resolve: (value: FastifyReply) => void;
