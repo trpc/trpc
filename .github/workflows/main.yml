@@ -48,10 +48,11 @@ jobs:
         run: pnpm turbo --filter "@trpc/*" build
       - run: pnpm test-ci
 
-      - uses: codecov/codecov-action@v4
-        # with:
-        #   # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-        #   directory: .
+      # lock codecov to v4.2.0 until https://github.com/codecov/codecov-action/issues/1368 is fixed
+      - uses: codecov/codecov-action@v4.2.0
+        with:
+          fail_ci_if_error: true
+          # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
 
   e2e:
     # only run on PRs
