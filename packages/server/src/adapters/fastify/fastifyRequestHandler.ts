@@ -12,7 +12,6 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 // @trpc/server
 import type { AnyRouter } from '../../@trpc/server';
 import type {
-  HTTPBaseHandlerOptions,
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
@@ -22,24 +21,8 @@ import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
 } from '../../@trpc/server/http';
-import type { NodeHTTPCreateContextOption } from '../node-http';
-
-export type FastifyHandlerOptions<
-  TRouter extends AnyRouter,
-  TRequest extends FastifyRequest,
-  TResponse extends FastifyReply,
-> = HTTPBaseHandlerOptions<TRouter, TRequest> &
-  NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
-
-type FastifyRequestHandlerOptions<
-  TRouter extends AnyRouter,
-  TRequest extends FastifyRequest,
-  TResponse extends FastifyReply,
-> = FastifyHandlerOptions<TRouter, TRequest, TResponse> & {
-  req: TRequest;
-  res: TResponse;
-  path: string;
-};
+import { getFastifyHTTPJSONContentTypeHandler } from './content-type/json';
+import type { FastifyRequestHandlerOptions } from './types';
 
 export async function fastifyRequestHandler<
   TRouter extends AnyRouter,
@@ -54,6 +37,12 @@ export async function fastifyRequestHandler<
       ...innerOpts,
     });
   };
+
+  const jsonContentTypeHandler = getFastifyHTTPJSONContentTypeHandler<
+    TRouter,
+    TRequest,
+    TResponse
+  >();
 
   const query = opts.req.query
     ? new URLSearchParams(opts.req.query as any)
@@ -111,9 +100,8 @@ export async function fastifyRequestHandler<
   resolveHTTPResponse({
     ...opts,
     req,
-    getInput() {
-      // TODO: not implemented yet
-      return Promise.resolve({});
+    getInput(info) {
+      return jsonContentTypeHandler.getInputs(opts, info);
     },
     createContext,
     onError(o) {
