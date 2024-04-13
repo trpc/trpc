@@ -21,13 +21,8 @@ import {
   resolveHTTPResponse,
   toURL,
 } from '../../@trpc/server/http';
-import type { FetchHandlerOptions } from './types';
-
-export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
-  FetchHandlerOptions<TRouter> & {
-    req: Request;
-    endpoint: string;
-  };
+import { getFetchHTTPJSONContentTypeHandler } from './content-type/json';
+import type { FetchHandlerRequestOptions } from './types';
 
 const trimSlashes = (path: string): string => {
   path = path.startsWith('/') ? path.slice(1) : path;
@@ -35,6 +30,8 @@ const trimSlashes = (path: string): string => {
 
   return path;
 };
+
+const fetchHTTPJSONContentTypeHandler = getFetchHTTPJSONContentTypeHandler();
 
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
   opts: FetchHandlerRequestOptions<TRouter>,
@@ -57,9 +54,6 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     query: url.searchParams,
     method: opts.req.method,
     headers: Object.fromEntries(opts.req.headers),
-    body: opts.req.headers.get('content-type')?.startsWith('application/json')
-      ? await opts.req.text()
-      : '',
   };
 
   let resolve: (value: Response) => void;
@@ -122,9 +116,14 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     req,
     createContext,
     path,
-    getInput() {
-      // TODO: not implemented yet
-      return Promise.resolve({});
+    getInput(info) {
+      return fetchHTTPJSONContentTypeHandler.getInputs(
+        {
+          ...(opts as any), // router mismatch
+          url,
+        },
+        info,
+      );
     },
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
