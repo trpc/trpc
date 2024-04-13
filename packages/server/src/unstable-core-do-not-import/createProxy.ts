@@ -21,19 +21,15 @@ function createInnerProxy(callback: ProxyCallback, path: string[]) {
     apply(_1, _2, args) {
       const lastOfPath = path[path.length - 1];
 
-      const isCall = lastOfPath === 'call';
-      if (isCall) {
+      if (lastOfPath === 'call' || lastOfPath === 'apply') {
         return callback({
           args: args.length >= 2 ? [args[1]] : [],
           path: path.slice(0, -1),
         });
       }
-
-      const isApply = lastOfPath === 'apply';
-
       return callback({
-        args: isApply ? (args.length >= 2 ? args[1] : []) : args,
-        path: isApply ? path.slice(0, -1) : path,
+        args,
+        path,
       });
     },
   });
