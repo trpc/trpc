@@ -1,7 +1,7 @@
 name: main
 on:
   pull_request:
-    types: [synchronize, opened]
+    types: [synchronize, opened, reopened]
   push:
 
 concurrency:
