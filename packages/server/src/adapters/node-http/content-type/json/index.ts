@@ -17,6 +17,7 @@ export const nodeHTTPJSONContentTypeHandler = createNodeHTTPContentTypeHandler({
 
     function getRawProcedureInputOrThrow() {
       const { req } = opts;
+
       try {
         if (req.method === 'GET') {
           const query = req.query;

@@ -21,6 +21,7 @@ import { TRPCError } from '../../@trpc/server';
 import type {
   HTTPBaseHandlerOptions,
   HTTPHeaders,
+  HTTPRequest,
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 
@@ -162,3 +163,14 @@ export type APIGatewayPayloadFormatVersion =
 export const UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE =
   'Custom payload format version not handled by this adapter. Please use either 1.0 or 2.0. More information here' +
   'https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html';
+
+export function lambdaEventToHTTPBody(event: APIGatewayEvent) {
+  let body: string | null | undefined;
+  if (event.body && event.isBase64Encoded) {
+    body = Buffer.from(event.body, 'base64').toString('utf8');
+  } else {
+    body = event.body;
+  }
+
+  return body;
+}

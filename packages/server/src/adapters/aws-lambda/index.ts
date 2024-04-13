@@ -24,6 +24,7 @@ import type {
   ResolveHTTPRequestOptionsContextFn,
 } from '../../@trpc/server/http';
 import { resolveHTTPResponse } from '../../@trpc/server/http';
+import { getLambdaHTTPJSONContentTypeHandler } from './content-type/json';
 import type {
   APIGatewayEvent,
   APIGatewayResult,
@@ -50,20 +51,14 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
     }
   }
 
-  let body: string | null | undefined;
-  if (event.body && event.isBase64Encoded) {
-    body = Buffer.from(event.body, 'base64').toString('utf8');
-  } else {
-    body = event.body;
-  }
-
   return {
     method: getHTTPMethod(event),
     query: query,
     headers: event.headers,
-    body: body,
   };
 }
+
+const lambdaJsonContentTypeHandler = getLambdaHTTPJSONContentTypeHandler();
 
 function tRPCOutputToAPIGatewayOutput<
   TEvent extends APIGatewayEvent,
@@ -114,15 +109,20 @@ export function awsLambdaRequestHandler<
     ) => {
       return await opts.createContext?.({ event, context, ...innerOpts });
     };
-
     const response = await resolveHTTPResponse({
       ...opts,
       createContext,
       req,
       path,
-      getInput() {
-        // TODO: not implemented yet
-        return Promise.resolve({});
+      getInput(info) {
+        return lambdaJsonContentTypeHandler.getInputs(
+          {
+            ...(opts as any), // router mismatch
+            event,
+            req,
+          },
+          info,
+        );
       },
       onError(o) {
         opts?.onError?.({
