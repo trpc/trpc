@@ -1,8 +1,11 @@
-import type { BaseContentTypeHandler, HTTPRequest } from '@trpc/server/http';
-import { TRPCError } from '@trpc/server/unstable-core-do-not-import';
-import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import/router';
-import type { CombinedDataTransformer } from '@trpc/server/unstable-core-do-not-import/transformer';
+// @trpc/server
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { TRPCError } from '../../../../@trpc/server';
+import type {
+  AnyRouter,
+  CombinedDataTransformer,
+} from '../../../../@trpc/server';
+import type { BaseContentTypeHandler } from '../../../../@trpc/server/http';
 import type { FastifyRequestHandlerOptions } from '../../types';
 
 export interface FastifyHTTPContentTypeHandler<
