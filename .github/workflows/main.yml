@@ -3,6 +3,7 @@ on:
   pull_request:
     types: [synchronize, opened, reopened]
   push:
+    branches: [main, next, canary]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
