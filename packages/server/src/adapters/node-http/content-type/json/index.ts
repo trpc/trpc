@@ -1,9 +1,14 @@
-import { TRPCError } from '@trpc/server/unstable-core-do-not-import';
-import type { CombinedDataTransformer } from '@trpc/server/unstable-core-do-not-import/transformer';
-import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
+// @trpc/server
+import { TRPCError } from '../../../../@trpc/server';
+import type { CombinedDataTransformer } from '../../../../@trpc/server';
+import type { NodeHTTPContentTypeHandler } from '../../internals/contentType';
+import type { NodeHTTPRequest, NodeHTTPResponse } from '../../types';
 import { getPostBody } from './getPostBody';
 
-export const nodeHTTPJSONContentTypeHandler = createNodeHTTPContentTypeHandler({
+export const getNodeHTTPJSONContentTypeHandler: () => NodeHTTPContentTypeHandler<
+  NodeHTTPRequest,
+  NodeHTTPResponse
+> = () => ({
   isMatch(opts) {
     return !!opts.req.headers['content-type']?.startsWith('application/json');
   },

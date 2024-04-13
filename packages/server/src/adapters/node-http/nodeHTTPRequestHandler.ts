@@ -8,8 +8,8 @@
  * ```
  */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 // @trpc/server
-import { Stream } from 'stream';
 import type { AnyRouter } from '../../@trpc/server';
 import type {
   HTTPRequest,
@@ -21,65 +21,18 @@ import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
 } from '../../@trpc/server/http';
-import { experimental_parseMultipartFormData } from './content-type/form-data';
-import { createMemoryUploadHandler } from './content-type/form-data/uploadHandler';
-import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
-import type { NodeHTTPContentTypeHandler } from './internals/contentType';
+import { getFormDataContentTypeHandler } from './content-type/form-data';
+import { getNodeHTTPJSONContentTypeHandler } from './content-type/json';
+import { getOctetContentTypeHandler } from './content-type/octet';
 import type {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
 } from './types';
 
-const defaultJSONContentTypeHandler = nodeHTTPJSONContentTypeHandler();
-const defaultFormDataContentTypeHandler: NodeHTTPContentTypeHandler<
-  NodeHTTPRequest,
-  NodeHTTPResponse
-> = {
-  isMatch(opts) {
-    return (
-      opts.req.headers['content-type']?.startsWith('multipart/form-data') ??
-      false
-    );
-  },
-  async getInputs(opts, inputOpts) {
-    console.log('defaultFormDataContentTypeHandler getInputs');
-
-    if (inputOpts.isBatchCall) {
-      throw new Error('Batch calls not supported for form-data');
-    }
-
-    const form = await experimental_parseMultipartFormData(
-      opts.req,
-      createMemoryUploadHandler(),
-    );
-
-    return form;
-  },
-};
-const defaultOctetContentTypeHandler: NodeHTTPContentTypeHandler<
-  NodeHTTPRequest,
-  NodeHTTPResponse
-> = {
-  isMatch(opts) {
-    return (
-      opts.req.headers['content-type']?.startsWith(
-        'application/octet-stream',
-      ) ?? false
-    );
-  },
-  async getInputs(opts, inputOpts) {
-    console.log('defaultOctetContentTypeHandler getInputs');
-
-    if (inputOpts.isBatchCall) {
-      throw new Error('Batch calls not supported for octet-stream');
-    }
-
-    const stream = Stream.Readable.from(opts.req);
-
-    return stream;
-  },
-};
+const defaultJSONContentTypeHandler = getNodeHTTPJSONContentTypeHandler();
+const defaultFormDataContentTypeHandler = getFormDataContentTypeHandler();
+const defaultOctetContentTypeHandler = getOctetContentTypeHandler();
 
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
@@ -172,11 +125,6 @@ export async function nodeHTTPRequestHandler<
       }
     };
 
-    console.debug(
-      'resolving http response for',
-      opts.req.headers['content-type'],
-      opts.req.url,
-    );
     await resolveHTTPResponse<TRouter, HTTPRequest>({
       ...opts,
       req,
@@ -188,9 +136,10 @@ export async function nodeHTTPRequestHandler<
         });
       },
       async getInput(inputsOpts) {
-        // TODO: "opts as any" shouldn't be needed but this seems to be a common problem elsewhere in the repo
-        // Basically some types could be subtypes and so it appears incompatible but it actually is, probably?
-        return await contentTypeHandler.getInputs(opts as any, inputsOpts);
+        return await contentTypeHandler.getInputs(
+          opts as any, // AnyRouter mismatch
+          inputsOpts,
+        );
       },
       unstable_onHead,
       unstable_onChunk,

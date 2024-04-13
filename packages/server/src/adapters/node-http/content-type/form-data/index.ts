@@ -14,9 +14,10 @@ import { Readable } from 'node:stream';
 // @ts-ignore the type definitions for this package are borked
 import { streamMultipart } from '@web3-storage/multipart-parser';
 // @trpc/server
-import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
-import type { NodeHTTPRequest } from '../../types';
+import type { NodeHTTPContentTypeHandler } from '../../internals/contentType';
+import type { NodeHTTPRequest, NodeHTTPResponse } from '../../types';
 import { NodeOnDiskFile } from './fileUploadHandler';
+import { createMemoryUploadHandler } from './memoryUploadHandler';
 import type { UploadHandler, UploadHandlerPart } from './uploadHandler';
 import { MaxBodySizeExceededError } from './uploadHandler';
 
@@ -113,30 +114,6 @@ function isMultipartFormDataRequest(req: NodeHTTPRequest) {
   );
 }
 
-export const nodeHTTPFormDataContentTypeHandler =
-  createNodeHTTPContentTypeHandler({
-    isMatch(opts) {
-      return isMultipartFormDataRequest(opts.req);
-    },
-    async getInputs(opts) {
-      const req = opts.req;
-      const unparsedInput = req.query?.['input'] as string | undefined;
-      if (!unparsedInput) {
-        return {
-          0: undefined,
-        };
-      }
-      const transformer = opts.router._def._config.transformer;
-
-      const deserializedInput = transformer.input.deserialize(
-        JSON.parse(unparsedInput),
-      );
-      return {
-        0: deserializedInput,
-      };
-    },
-  });
-
 export {
   NodeOnDiskFile as experimental_NodeOnDiskFile,
   createFileUploadHandler as experimental_createFileUploadHandler,
@@ -152,3 +129,27 @@ export {
   isMultipartFormDataRequest as experimental_isMultipartFormDataRequest,
   parseMultipartFormData as experimental_parseMultipartFormData,
 };
+
+export const getFormDataContentTypeHandler: () => NodeHTTPContentTypeHandler<
+  NodeHTTPRequest,
+  NodeHTTPResponse
+> = () => ({
+  isMatch(opts) {
+    return (
+      opts.req.headers['content-type']?.startsWith('multipart/form-data') ??
+      false
+    );
+  },
+  async getInputs(opts, inputOpts) {
+    if (inputOpts.isBatchCall) {
+      throw new Error('Batch calls not supported for form-data');
+    }
+
+    const form = await parseMultipartFormData(
+      opts.req,
+      createMemoryUploadHandler(),
+    );
+
+    return form;
+  },
+});

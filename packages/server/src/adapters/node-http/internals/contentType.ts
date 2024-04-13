@@ -16,16 +16,3 @@ export interface NodeHTTPContentTypeHandler<
       query: URLSearchParams;
     }
   > {}
-
-export function createNodeHTTPContentTypeHandler(
-  contentTypeHandler: NodeHTTPContentTypeHandler<
-    NodeHTTPRequest,
-    NodeHTTPResponse
-  >,
-) {
-  return <
-    TRequest extends NodeHTTPRequest,
-    TResponse extends NodeHTTPResponse,
-  >(): NodeHTTPContentTypeHandler<TRequest, TResponse> =>
-    contentTypeHandler as any;
-}
