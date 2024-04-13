@@ -1,6 +1,9 @@
 name: main
 on:
   pull_request:
+    types: [synchronize, opened, reopened]
+  push:
+    branches: [main, next, canary]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -8,6 +11,8 @@ concurrency:
 
 jobs:
   build:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -49,6 +54,8 @@ jobs:
         #   directory: .
 
   e2e:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     name: 'E2E-tests'
     needs: [build]
     services:
@@ -115,6 +122,8 @@ jobs:
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     name: 'E2E-tests (Deno)'
     needs: [build]
     env:
@@ -152,6 +161,8 @@ jobs:
           pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
 
   e2e-bun:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     name: 'E2E-tests (Bun)'
     needs: [build]
     env:
@@ -190,6 +201,8 @@ jobs:
         run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     needs: [build]
     services:
       postgres:
