@@ -2,8 +2,7 @@
  * This is the API-handler of your app that contains all your API routes.
  * On a bigger app, you will probably want to split this file up into multiple files.
  */
-import type { Readable } from 'stream';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, parseOctetInput } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
 import type { z } from 'zod';
@@ -37,7 +36,7 @@ const appRouter = router({
     };
   }),
   file: publicProcedure
-    .input(asType<Readable, File>())
+    .input(parseOctetInput<File>())
     .mutation(async ({ input }) => {
       const chunks = [];
       for await (const chunk of input) {
