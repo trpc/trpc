@@ -78,4 +78,7 @@ createHTTPServer({
   createContext() {
     return {};
   },
+  onError(opts) {
+    console.error('Error', opts.error);
+  },
 }).listen(2022);
