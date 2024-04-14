@@ -94,11 +94,6 @@ export type CreateContextCallback<
     /**
      * @link https://trpc.io/docs/context
      **/
-    createContext: object extends TContext
-      ? /**
-         * Doing `key: Value | void` is similar to doing `key?: Value`
-         */
-        TFunction | void
-      : TFunction;
+    createContext: TFunction;
   }
 >;
