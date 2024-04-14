@@ -154,40 +154,37 @@ export const jsonHttpRequester: Requester = (opts) => {
 
 export const universalRequester: Requester = (opts) => {
   const input = getInput(opts);
-  console.debug('universalRequester called', { opts, input });
-
-  if (opts.type === 'mutation') {
-    if (input instanceof FormData) {
-      console.debug('Detected FormData', input);
-      return httpRequest({
-        ...opts,
-        // The browser will set this automatically and include the boundary= in it
-        contentTypeHeader: undefined,
-        getUrl,
-        getBody: () => input,
-      });
+  if (input instanceof FormData) {
+    if (opts.type !== 'mutation') {
+      throw new Error('FormData is only supported for mutations');
     }
 
-    if (
-      input instanceof Uint8Array ||
-      input instanceof ReadableStream ||
-      input instanceof Blob ||
-      input instanceof File
-    ) {
-      console.debug(
-        'Detected TypedArray, ReadableStream, Blob, or File',
-        input,
-      );
-      return httpRequest({
-        ...opts,
-        contentTypeHeader: 'application/octet-stream',
-        getUrl,
-        getBody: () => input,
-      });
-    }
+    return httpRequest({
+      ...opts,
+      // The browser will set this automatically and include the boundary= in it
+      contentTypeHeader: undefined,
+      getUrl,
+      getBody: () => input,
+    });
   }
 
-  console.debug('Falling back on JSON', input);
+  if (
+    input instanceof Uint8Array ||
+    input instanceof ReadableStream ||
+    input instanceof Blob ||
+    input instanceof File
+  ) {
+    if (opts.type !== 'mutation') {
+      throw new Error('Octet type input is only supported for mutations');
+    }
+
+    return httpRequest({
+      ...opts,
+      contentTypeHeader: 'application/octet-stream',
+      getUrl,
+      getBody: () => input,
+    });
+  }
 
   return jsonHttpRequester(opts);
 };
