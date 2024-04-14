@@ -9,7 +9,11 @@
  */
 import type * as http from 'http';
 // @trpc/server
-import type { AnyRouter, inferRouterContext } from '../../@trpc/server';
+import type {
+  AnyRouter,
+  CreateContextCallback,
+  inferRouterContext,
+} from '../../@trpc/server';
 // @trpc/server/http
 import type {
   HTTPBaseHandlerOptions,
@@ -42,14 +46,10 @@ export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
   TResponse,
-> = {
-  /**
-   * @link https://trpc.io/docs/v11/context
-   **/
-  createContext: object extends inferRouterContext<TRouter>
-    ? void | NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>
-    : NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
-};
+> = CreateContextCallback<
+  inferRouterContext<TRouter>,
+  NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>
+>;
 
 /**
  * @internal

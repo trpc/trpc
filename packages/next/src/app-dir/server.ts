@@ -3,6 +3,7 @@ import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
+import type { CreateContextCallback } from '@trpc/server';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -89,17 +90,10 @@ export function experimental_createServerActionHandler<
   },
 >(
   t: TInstance,
-  opts: (object extends TInstance['_config']['$types']['ctx']
-    ? {
-        createContext?: () => MaybePromise<
-          TInstance['_config']['$types']['ctx']
-        >;
-      }
-    : {
-        createContext: () => MaybePromise<
-          TInstance['_config']['$types']['ctx']
-        >;
-      }) & {
+  opts: CreateContextCallback<
+    TInstance['_config']['$types']['ctx'],
+    () => MaybePromise<TInstance['_config']['$types']['ctx']>
+  > & {
     /**
      * Transform form data to a `Record` before passing it to the procedure
      * @default true

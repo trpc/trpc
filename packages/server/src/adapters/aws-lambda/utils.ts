@@ -14,7 +14,11 @@ import type {
   APIGatewayProxyStructuredResultV2,
   Context as APIGWContext,
 } from 'aws-lambda';
-import type { AnyRouter, inferRouterContext } from '../../@trpc/server'; // import @trpc/server
+import type {
+  AnyRouter,
+  CreateContextCallback,
+  inferRouterContext,
+} from '../../@trpc/server'; // import @trpc/server
 
 // @trpc/server
 import { TRPCError } from '../../@trpc/server';
@@ -49,14 +53,11 @@ export type AWSLambdaOptions<
   TRouter extends AnyRouter,
   TEvent extends APIGatewayEvent,
 > =
-  | HTTPBaseHandlerOptions<TRouter, TEvent> & {
-      /**
-       * @link https://trpc.io/docs/v11/context
-       **/
-      createContext: object extends inferRouterContext<TRouter>
-        ? void | AWSLambdaCreateContextFn<TRouter, TEvent>
-        : AWSLambdaCreateContextFn<TRouter, TEvent>;
-    };
+  | HTTPBaseHandlerOptions<TRouter, TEvent> &
+      CreateContextCallback<
+        inferRouterContext<AnyRouter>,
+        AWSLambdaCreateContextFn<TRouter, TEvent>
+      >;
 
 export function isPayloadV1(
   event: APIGatewayEvent,

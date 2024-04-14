@@ -8,7 +8,11 @@
  * ```
  */
 // @trpc/server
-import type { AnyRouter, inferRouterContext } from '../../@trpc/server';
+import type {
+  AnyRouter,
+  CreateContextCallback,
+  inferRouterContext,
+} from '../../@trpc/server';
 // @trpc/server/http
 import type {
   HTTPBaseHandlerOptions,
@@ -25,14 +29,11 @@ export type FetchCreateContextFn<TRouter extends AnyRouter> = (
   opts: FetchCreateContextFnOptions,
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
-export type FetchCreateContextOption<TRouter extends AnyRouter> = {
-  /**
-   * @link https://trpc.io/docs/v11/context
-   **/
-  createContext: object extends inferRouterContext<TRouter>
-    ? void | FetchCreateContextFn<TRouter>
-    : FetchCreateContextFn<TRouter>;
-};
+export type FetchCreateContextOption<TRouter extends AnyRouter> =
+  CreateContextCallback<
+    inferRouterContext<TRouter>,
+    FetchCreateContextFn<TRouter>
+  >;
 
 export type FetchHandlerOptions<TRouter extends AnyRouter> =
   FetchCreateContextOption<TRouter> & HTTPBaseHandlerOptions<TRouter, Request>;
