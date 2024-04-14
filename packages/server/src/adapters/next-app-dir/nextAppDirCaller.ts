@@ -1,3 +1,4 @@
+import type { CreateContextOption } from '../../@trpc/server';
 import { getTRPCErrorFromUnknown, TRPCError } from '../../@trpc/server';
 // FIXME: fix lint rule, this is ok
 // eslint-disable-next-line no-restricted-imports
@@ -15,20 +16,12 @@ import { formDataToObject } from './formDataToObject';
 import { TRPCRedirectError } from './redirect';
 import { rethrowNextErrors } from './rethrowNextErrors';
 
-type ContextCallback<TContext> = object extends TContext
-  ? {
-      createContext?: () => MaybePromise<TContext>;
-    }
-  : {
-      createContext: () => MaybePromise<TContext>;
-    };
-
 /**
  * Create a caller that works with Next.js React Server Components & Server Actions
  */
 export function nextAppDirCaller<TContext>(
   config: Simplify<
-    {
+    CreateContextOption<TContext, () => MaybePromise<TContext>> & {
       /**
        * Transform form data to a `Record` before passing it to the procedure
        * @default true
@@ -38,7 +31,7 @@ export function nextAppDirCaller<TContext>(
        * Called when an error occurs in the handler
        */
       onError?: (opts: ErrorHandlerOptions<TContext>) => void;
-    } & ContextCallback<TContext>
+    }
   >,
 ): CallerOverride<TContext> {
   const {

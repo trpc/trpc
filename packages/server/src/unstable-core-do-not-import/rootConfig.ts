@@ -76,3 +76,29 @@ export type AnyRootTypes = CreateRootTypes<{
   errorShape: any;
   transformer: any;
 }>;
+
+type PartialIf<TCondition extends boolean, TType> = TCondition extends true
+  ? Partial<TType>
+  : TType;
+
+/**
+ * Adds a `createContext` option with a given callback function
+ * If context is the default value, then the `createContext` option is optional
+ */
+export type CreateContextOption<
+  TContext,
+  TFunction extends (...args: any[]) => any,
+> = PartialIf<
+  object extends TContext ? true : false,
+  {
+    /**
+     * @link https://trpc.io/docs/context
+     **/
+    createContext: object extends TContext
+      ? /**
+         * Doing `key: Value | void` is similar to doing `key?: Value`
+         */
+        TFunction | void
+      : TFunction;
+  }
+>;

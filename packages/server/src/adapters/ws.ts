@@ -1,6 +1,10 @@
 import type { IncomingMessage } from 'http';
 import type ws from 'ws';
-import type { AnyRouter, inferRouterContext } from '../@trpc/server';
+import type {
+  AnyRouter,
+  CreateContextOption,
+  inferRouterContext,
+} from '../@trpc/server';
 import {
   callProcedure,
   getErrorShape,
@@ -17,8 +21,8 @@ import type {
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '../@trpc/server/rpc';
-import { isObservable } from '../observable';
 import type { Unsubscribable } from '../observable';
+import { isObservable } from '../observable';
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../unstable-core-do-not-import';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
@@ -46,19 +50,10 @@ export type CreateWSSContextFn<TRouter extends AnyRouter> = (
 
 export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
   BaseHandlerOptions<TRouter, IncomingMessage> &
-    (object extends inferRouterContext<TRouter>
-      ? {
-          /**
-           * @link https://trpc.io/docs/v11/context
-           **/
-          createContext?: CreateWSSContextFn<TRouter>;
-        }
-      : {
-          /**
-           * @link https://trpc.io/docs/v11/context
-           **/
-          createContext: CreateWSSContextFn<TRouter>;
-        });
+    CreateContextOption<
+      inferRouterContext<TRouter>,
+      CreateWSSContextFn<TRouter>
+    >;
 
 /**
  * Web socket server handler
