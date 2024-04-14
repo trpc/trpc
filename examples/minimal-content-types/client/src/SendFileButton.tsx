@@ -14,6 +14,7 @@ export function SendFileButton() {
             const file = e.target.files.item(0)!;
             console.log('uploading file', file);
 
+            // TODO: type inference needs sorting out ion one way or another
             mutation.mutate(file);
           }
         }}
