@@ -46,7 +46,9 @@ export type NodeHTTPCreateContextOption<
   /**
    * @link https://trpc.io/docs/v11/context
    **/
-  createContext?: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
+  createContext: object extends inferRouterContext<TRouter>
+    ? void | NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>
+    : NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
 };
 
 /**

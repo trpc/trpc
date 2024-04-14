@@ -53,7 +53,9 @@ export type AWSLambdaOptions<
       /**
        * @link https://trpc.io/docs/v11/context
        **/
-      createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
+      createContext: object extends inferRouterContext<TRouter>
+        ? void | AWSLambdaCreateContextFn<TRouter, TEvent>
+        : AWSLambdaCreateContextFn<TRouter, TEvent>;
     };
 
 export function isPayloadV1(
