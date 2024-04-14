@@ -1,5 +1,5 @@
 {
-  "name": "examples-minimal-react-server",
+  "name": "examples-minimal-content-types-react-server",
   "private": true,
   "scripts": {
     "build": "tsc",

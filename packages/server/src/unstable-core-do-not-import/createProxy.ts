@@ -19,11 +19,22 @@ function createInnerProxy(callback: ProxyCallback, path: string[]) {
       return createInnerProxy(callback, [...path, key]);
     },
     apply(_1, _2, args) {
-      const isApply = path[path.length - 1] === 'apply';
-      return callback({
-        args: isApply ? (args.length >= 2 ? args[1] : []) : args,
-        path: isApply ? path.slice(0, -1) : path,
-      });
+      const lastOfPath = path[path.length - 1];
+
+      let opts = { args, path };
+      // special handling for e.g. `trpc.hello.call(this, 'there')` and `trpc.hello.apply(this, ['there'])
+      if (lastOfPath === 'call') {
+        opts = {
+          args: args.length >= 2 ? [args[1]] : [],
+          path: path.slice(0, -1),
+        };
+      } else if (lastOfPath === 'apply') {
+        opts = {
+          args: args.length >= 2 ? args[1] : [],
+          path: path.slice(0, -1),
+        };
+      }
+      return callback(opts);
     },
   });
 

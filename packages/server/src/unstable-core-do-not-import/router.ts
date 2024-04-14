@@ -124,6 +124,11 @@ const reservedWords = [
    * since JS will think that `.then` is something that exists
    */
   'then',
+  /**
+   * `fn.call()` and `fn.apply()` are reserved words because otherwise we can't call a function using `.call` or `.apply`
+   */
+  'call',
+  'apply',
 ];
 
 export type CreateRouterOptions = {
