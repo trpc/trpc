@@ -18,6 +18,7 @@ import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
 import type { TextDecoderEsque } from '../internals/streamingUtils';
 import type { HTTPHeaders, PromiseAndCancel } from '../types';
+import { isFormData, isOctetType } from './contentTypes';
 
 /**
  * @internal
@@ -156,7 +157,7 @@ export const jsonHttpRequester: Requester = (opts) => {
 
 export const universalRequester: Requester = (opts) => {
   const input = getInput(opts);
-  if (input instanceof FormData) {
+  if (isFormData(input)) {
     if (opts.type !== 'mutation') {
       throw new Error('FormData is only supported for mutations');
     }
@@ -170,12 +171,7 @@ export const universalRequester: Requester = (opts) => {
     });
   }
 
-  if (
-    input instanceof Uint8Array ||
-    input instanceof ReadableStream ||
-    input instanceof Blob ||
-    input instanceof File
-  ) {
+  if (isOctetType(input)) {
     if (opts.type !== 'mutation') {
       throw new Error('Octet type input is only supported for mutations');
     }

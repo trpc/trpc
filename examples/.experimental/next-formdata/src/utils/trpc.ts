@@ -49,15 +49,8 @@ export const trpc = createTRPCNext<AppRouter>({
             process.env.NODE_ENV === 'development' ||
             (op.direction === 'down' && op.result instanceof Error),
         }),
-        // TODO: let's support this natively in the httpBatchLink
-        splitLink({
-          condition: (op) => op.input instanceof FormData,
-          true: httpLink({
-            url,
-          }),
-          false: httpBatchLink({
-            url,
-          }),
+        httpBatchLink({
+          url,
         }),
       ],
     };

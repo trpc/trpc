@@ -126,14 +126,8 @@ const ctx = konn()
             enabled: () => true,
             console: loggerLinkConsole,
           }),
-          splitLink({
-            condition: (op) => op.input instanceof FormData,
-            true: httpLink({
-              url: httpUrl,
-            }),
-            false: httpBatchLink({
-              url: httpUrl,
-            }),
+          httpBatchLink({
+            url: httpUrl,
           }),
         ],
       }),
