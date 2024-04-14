@@ -12,6 +12,7 @@ export type BodyResult =
   | { ok: false; error: TRPCError };
 
 export type BaseContentTypeHandler<TOptions> = {
+  name: string;
   isMatch(opts: TOptions): boolean;
   getInputs: (
     opts: TOptions,

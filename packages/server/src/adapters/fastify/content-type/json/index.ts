@@ -21,6 +21,7 @@ export const getFastifyHTTPJSONContentTypeHandler: <
   TRequest extends FastifyRequest,
   TResponse extends FastifyReply,
 >() => FastifyHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
+  name: 'fastify-json',
   isMatch(opts) {
     return !!opts.req.headers['content-type']?.startsWith('application/json');
   },

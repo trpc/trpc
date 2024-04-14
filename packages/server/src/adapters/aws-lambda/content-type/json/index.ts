@@ -28,6 +28,7 @@ export const getLambdaHTTPJSONContentTypeHandler: <
   TRouter extends AnyRouter,
   TEvent extends APIGatewayEvent,
 >() => LambdaHTTPContentTypeHandler<TRouter, TEvent> = () => ({
+  name: 'lambda-json',
   isMatch(opts) {
     return !!opts.event.headers['content-type']?.startsWith('application/json');
   },

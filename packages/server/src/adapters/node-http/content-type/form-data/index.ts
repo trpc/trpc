@@ -137,6 +137,7 @@ export const getFormDataContentTypeHandler: <
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 >() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
+  name: 'node-http-formdata',
   isMatch(opts) {
     return (
       opts.req.headers['content-type']?.startsWith('multipart/form-data') ??

@@ -17,6 +17,7 @@ export interface FetchHTTPContentTypeHandler<TRouter extends AnyRouter>
 export const getFetchHTTPJSONContentTypeHandler: <
   TRouter extends AnyRouter,
 >() => FetchHTTPContentTypeHandler<TRouter> = () => ({
+  name: 'fetch-json',
   isMatch(opts) {
     return !!opts.req.headers
       .get('content-type')

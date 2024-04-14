@@ -13,6 +13,7 @@ export const getNodeHTTPJSONContentTypeHandler: <
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 >() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
+  name: 'node-http-json',
   isMatch(opts) {
     return !!opts.req.headers['content-type']?.startsWith('application/json');
   },

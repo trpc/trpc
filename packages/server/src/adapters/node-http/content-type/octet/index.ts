@@ -9,6 +9,7 @@ export const getOctetContentTypeHandler: <
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 >() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
+  name: 'node-http-octet',
   isMatch(opts) {
     return (
       opts.req.headers['content-type']?.startsWith(
