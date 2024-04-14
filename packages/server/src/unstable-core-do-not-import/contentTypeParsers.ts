@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { TRPCError } from '../@trpc/server';
+import { TRPCError } from './error/TRPCError';
 import type { ParserZodEsque } from './parser';
 
 export type UtilityParser<TInput, TOutput> = ParserZodEsque<TInput, TOutput> & {
