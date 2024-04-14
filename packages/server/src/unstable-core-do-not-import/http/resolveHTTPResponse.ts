@@ -11,19 +11,14 @@ import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
-  HTTPRequest as FullHTTPRequest,
   HTTPBaseHandlerOptions,
   HTTPHeaders,
+  HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
   ResponseChunk,
   TRPCRequestInfo,
 } from './types';
-
-/**
- * @deprecated just until we can remove `body` from `HTTPRequest` directly
- */
-type HTTPRequestInfo = Omit<FullHTTPRequest, 'body'>;
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
@@ -41,7 +36,7 @@ type PartialBy<TBaseType, TKey extends keyof TBaseType> = Omit<
 
 interface ResolveHTTPRequestOptions<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequestInfo,
+  TRequest extends HTTPRequest,
 > extends HTTPBaseHandlerOptions<TRouter, TRequest> {
   createContext: ResolveHTTPRequestOptionsContextFn<TRouter>;
   req: TRequest;
@@ -72,7 +67,7 @@ interface ResolveHTTPRequestOptions<
 
 function initResponse<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequestInfo,
+  TRequest extends HTTPRequest,
 >(initOpts: {
   ctx: inferRouterContext<TRouter> | undefined;
   paths: string[] | undefined;
@@ -130,7 +125,7 @@ function initResponse<
 
 function caughtErrorToData<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequestInfo,
+  TRequest extends HTTPRequest,
 >(
   cause: unknown,
   errorOpts: {
@@ -189,7 +184,7 @@ function caughtErrorToData<
  */
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequestInfo,
+  TRequest extends HTTPRequest,
 >(
   opts: Omit<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
@@ -204,12 +199,12 @@ export async function resolveHTTPResponse<
  */
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequestInfo,
+  TRequest extends HTTPRequest,
 >(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<void>;
 // implementation
 export async function resolveHTTPResponse<
   TRouter extends AnyRouter,
-  TRequest extends HTTPRequestInfo,
+  TRequest extends HTTPRequest,
 >(
   opts: PartialBy<
     ResolveHTTPRequestOptions<TRouter, TRequest>,
@@ -263,18 +258,14 @@ export async function resolveHTTPResponse<
       });
     }
 
-    const loadedBatches = new Set<number>();
     const batchesCache: Record<number, unknown> = {};
     async function getRawInputForBatch(batch: number) {
-      if (!loadedBatches.has(batch)) {
+      if (!batchesCache.hasOwnProperty(batch)) {
         batchesCache[batch] = await opts.getInput({
           isBatchCall,
           batch,
         });
-        loadedBatches.add(batch);
       }
-
-      console.log('getRawInputForBatch - return', batchesCache[batch]);
 
       return batchesCache[batch];
     }

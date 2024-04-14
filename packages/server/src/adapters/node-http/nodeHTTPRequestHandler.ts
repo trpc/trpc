@@ -133,7 +133,6 @@ export async function nodeHTTPRequestHandler<
         });
       },
       async getInput(inputsOpts) {
-        console.log('Handler', contentTypeHandler.name);
         return await contentTypeHandler.getInputs(
           { ...opts, query },
           inputsOpts,

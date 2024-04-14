@@ -29,7 +29,9 @@ export type FetchCreateContextOption<TRouter extends AnyRouter> = {
   /**
    * @link https://trpc.io/docs/v11/context
    **/
-  createContext?: FetchCreateContextFn<TRouter>;
+  createContext: object extends inferRouterContext<TRouter>
+    ? void | FetchCreateContextFn<TRouter>
+    : FetchCreateContextFn<TRouter>;
 };
 
 export type FetchHandlerOptions<TRouter extends AnyRouter> =
