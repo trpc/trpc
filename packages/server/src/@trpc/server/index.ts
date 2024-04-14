@@ -33,6 +33,7 @@ export {
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
   type ProcedureOptions as TRPCProcedureOptions,
   type CreateContextCallback,
+  type WrapCreateContext,
 } from '../../unstable-core-do-not-import';
 
 export type {

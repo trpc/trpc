@@ -13,6 +13,7 @@ import type {
   AnyRouter,
   CreateContextCallback,
   inferRouterContext,
+  WrapCreateContext,
 } from '../../@trpc/server';
 // @trpc/server/http
 import type {
@@ -42,7 +43,7 @@ export type NodeHTTPResponse = http.ServerResponse & {
   flush?: () => void;
 };
 
-export type NodeHTTPCreateContextOption<
+export type NodeHTTPConditionCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
   TResponse,
@@ -59,41 +60,50 @@ type ConnectMiddleware<
   TResponse extends NodeHTTPResponse = NodeHTTPResponse,
 > = (req: TRequest, res: TResponse, next: (err?: any) => any) => void;
 
+interface CoreNodeHTTPHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse,
+> extends HTTPBaseHandlerOptions<TRouter, TRequest> {
+  /**
+   * By default, http `OPTIONS` requests are not handled, and CORS headers are not returned.
+   *
+   * This can be used to handle them manually or via the `cors` npm package: https://www.npmjs.com/package/cors
+   *
+   * ```ts
+   * import cors from 'cors'
+   *
+   * nodeHTTPRequestHandler({
+   *   cors: cors()
+   * })
+   * ```
+   *
+   * You can also use it for other needs which a connect/node.js compatible middleware can solve,
+   *  though you might wish to consider an alternative solution like the Express adapter if your needs are complex.
+   */
+  middleware?: ConnectMiddleware<TRequest, TResponse>;
+  maxBodySize?: number;
+}
+
+// Public API
 export type NodeHTTPHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
-> = HTTPBaseHandlerOptions<TRouter, TRequest> &
-  NodeHTTPCreateContextOption<TRouter, TRequest, TResponse> & {
-    /**
-     * By default, http `OPTIONS` requests are not handled, and CORS headers are not returned.
-     *
-     * This can be used to handle them manually or via the `cors` npm package: https://www.npmjs.com/package/cors
-     *
-     * ```ts
-     * import cors from 'cors'
-     *
-     * nodeHTTPRequestHandler({
-     *   cors: cors()
-     * })
-     * ```
-     *
-     * You can also use it for other needs which a connect/node.js compatible middleware can solve,
-     *  though you might wish to consider an alternative solution like the Express adapter if your needs are complex.
-     */
-    middleware?: ConnectMiddleware<TRequest, TResponse>;
-    maxBodySize?: number;
-  };
+> = CoreNodeHTTPHandlerOptions<TRouter, TRequest, TResponse> &
+  NodeHTTPConditionCreateContextOption<TRouter, TRequest, TResponse>;
 
+// Internal user
 export type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
-> = {
-  req: TRequest;
-  res: TResponse;
-  path: string;
-} & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>;
+> = CoreNodeHTTPHandlerOptions<TRouter, TRequest, TResponse> &
+  WrapCreateContext<NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>> & {
+    req: TRequest;
+    res: TResponse;
+    path: string;
+  };
 
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;

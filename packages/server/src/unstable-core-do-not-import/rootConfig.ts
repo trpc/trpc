@@ -90,10 +90,12 @@ export type CreateContextCallback<
   TFunction extends (...args: any[]) => any,
 > = PartialIf<
   object extends TContext ? true : false,
-  {
-    /**
-     * @link https://trpc.io/docs/context
-     **/
-    createContext: TFunction;
-  }
+  WrapCreateContext<TFunction>
 >;
+
+/**
+ * @internal
+ */
+export type WrapCreateContext<TFunction extends (...args: any[]) => any> = {
+  createContext?: TFunction;
+};
