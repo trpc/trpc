@@ -1,4 +1,10 @@
-import { httpBatchLink, httpLink, loggerLink, splitLink } from '@trpc/client';
+import {
+  httpBatchLink,
+  httpLink,
+  isNonJsonSerialisable,
+  loggerLink,
+  splitLink,
+} from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
@@ -49,8 +55,14 @@ export const trpc = createTRPCNext<AppRouter>({
             process.env.NODE_ENV === 'development' ||
             (op.direction === 'down' && op.result instanceof Error),
         }),
-        httpBatchLink({
-          url,
+        splitLink({
+          condition: (op) => isNonJsonSerialisable(op.input),
+          true: httpLink({
+            url,
+          }),
+          false: httpBatchLink({
+            url,
+          }),
         }),
       ],
     };
