@@ -10,6 +10,7 @@ import type {
   AbortControllerEsque,
   AbortControllerInstanceEsque,
   FetchEsque,
+  RequestInitEsque,
   ResponseEsque,
 } from '../../internals/types';
 import { TRPCClientError } from '../../TRPCClientError';
@@ -103,7 +104,8 @@ export type HTTPBaseRequestOptions = GetInputOptions &
   };
 
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
-type GetBody = (opts: HTTPBaseRequestOptions) => any;
+type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
+
 export type ContentOptions = {
   batchModeHeader?: 'stream';
   contentTypeHeader?: string;
