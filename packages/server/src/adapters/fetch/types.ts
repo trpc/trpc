@@ -25,20 +25,12 @@ export type FetchCreateContextFn<TRouter extends AnyRouter> = (
   opts: FetchCreateContextFnOptions,
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
-export type FetchCreateContextOption<TRouter extends AnyRouter> =
-  unknown extends inferRouterContext<TRouter>
-    ? {
-        /**
-         * @link https://trpc.io/docs/v11/context
-         **/
-        createContext?: FetchCreateContextFn<TRouter>;
-      }
-    : {
-        /**
-         * @link https://trpc.io/docs/v11/context
-         **/
-        createContext: FetchCreateContextFn<TRouter>;
-      };
+export type FetchCreateContextOption<TRouter extends AnyRouter> = {
+  /**
+   * @link https://trpc.io/docs/v11/context
+   **/
+  createContext?: FetchCreateContextFn<TRouter>;
+};
 
 export type FetchHandlerOptions<TRouter extends AnyRouter> =
   FetchCreateContextOption<TRouter> & HTTPBaseHandlerOptions<TRouter, Request>;

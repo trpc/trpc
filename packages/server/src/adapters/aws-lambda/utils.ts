@@ -21,7 +21,6 @@ import { TRPCError } from '../../@trpc/server';
 import type {
   HTTPBaseHandlerOptions,
   HTTPHeaders,
-  HTTPRequest,
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 
@@ -50,21 +49,12 @@ export type AWSLambdaOptions<
   TRouter extends AnyRouter,
   TEvent extends APIGatewayEvent,
 > =
-  | HTTPBaseHandlerOptions<TRouter, TEvent> &
-      (
-        | {
-            /**
-             * @link https://trpc.io/docs/v11/context
-             **/
-            createContext: AWSLambdaCreateContextFn<TRouter, TEvent>;
-          }
-        | {
-            /**
-             * @link https://trpc.io/docs/v11/context
-             **/
-            createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
-          }
-      );
+  | HTTPBaseHandlerOptions<TRouter, TEvent> & {
+      /**
+       * @link https://trpc.io/docs/v11/context
+       **/
+      createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
+    };
 
 export function isPayloadV1(
   event: APIGatewayEvent,

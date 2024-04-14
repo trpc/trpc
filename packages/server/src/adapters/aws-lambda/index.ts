@@ -58,8 +58,6 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
   };
 }
 
-const lambdaJsonContentTypeHandler = getLambdaHTTPJSONContentTypeHandler();
-
 function tRPCOutputToAPIGatewayOutput<
   TEvent extends APIGatewayEvent,
   TResult extends APIGatewayResult,
@@ -115,9 +113,9 @@ export function awsLambdaRequestHandler<
       req,
       path,
       getInput(info) {
-        return lambdaJsonContentTypeHandler.getInputs(
+        return getLambdaHTTPJSONContentTypeHandler<TRouter, TEvent>().getInputs(
           {
-            ...(opts as any), // router mismatch
+            ...opts,
             event,
             req,
           },

@@ -31,8 +31,6 @@ const trimSlashes = (path: string): string => {
   return path;
 };
 
-const fetchHTTPJSONContentTypeHandler = getFetchHTTPJSONContentTypeHandler();
-
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
   opts: FetchHandlerRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -117,9 +115,9 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     createContext,
     path,
     getInput(info) {
-      return fetchHTTPJSONContentTypeHandler.getInputs(
+      return getFetchHTTPJSONContentTypeHandler<TRouter>().getInputs(
         {
-          ...(opts as any), // router mismatch
+          ...opts,
           url,
         },
         info,
