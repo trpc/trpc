@@ -1,11 +1,14 @@
 import { Stream } from 'stream';
-import type { NodeHTTPContentTypeHandler } from '../../internals/contentType';
+// @trpc/server
+import type { AnyRouter } from '../../../../@trpc/server';
 import type { NodeHTTPRequest, NodeHTTPResponse } from '../../types';
+import type { NodeHTTPContentTypeHandler } from '../types';
 
-export const getOctetContentTypeHandler: () => NodeHTTPContentTypeHandler<
-  NodeHTTPRequest,
-  NodeHTTPResponse
-> = () => ({
+export const getOctetContentTypeHandler: <
+  TRouter extends AnyRouter,
+  TRequest extends NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse,
+>() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
   isMatch(opts) {
     return (
       opts.req.headers['content-type']?.startsWith(

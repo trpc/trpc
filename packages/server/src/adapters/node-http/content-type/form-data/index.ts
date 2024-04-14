@@ -14,8 +14,10 @@ import { Readable } from 'node:stream';
 // @ts-ignore the type definitions for this package are borked
 import { streamMultipart } from '@web3-storage/multipart-parser';
 // @trpc/server
-import type { NodeHTTPContentTypeHandler } from '../../internals/contentType';
+import type { AnyRouter } from '../../../../@trpc/server';
 import type { NodeHTTPRequest, NodeHTTPResponse } from '../../types';
+// @trpc/server
+import type { NodeHTTPContentTypeHandler } from '../types';
 import { NodeOnDiskFile } from './fileUploadHandler';
 import { createMemoryUploadHandler } from './memoryUploadHandler';
 import type { UploadHandler, UploadHandlerPart } from './uploadHandler';
@@ -130,10 +132,11 @@ export {
   parseMultipartFormData as experimental_parseMultipartFormData,
 };
 
-export const getFormDataContentTypeHandler: () => NodeHTTPContentTypeHandler<
-  NodeHTTPRequest,
-  NodeHTTPResponse
-> = () => ({
+export const getFormDataContentTypeHandler: <
+  TRouter extends AnyRouter,
+  TRequest extends NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse,
+>() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
   isMatch(opts) {
     return (
       opts.req.headers['content-type']?.startsWith('multipart/form-data') ??

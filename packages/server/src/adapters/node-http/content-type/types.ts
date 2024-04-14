@@ -9,10 +9,11 @@ import type {
 } from '../types';
 
 export interface NodeHTTPContentTypeHandler<
+  TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 > extends BaseContentTypeHandler<
-    NodeHTTPRequestHandlerOptions<AnyRouter, TRequest, TResponse> & {
+    NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse> & {
       query: URLSearchParams;
     }
   > {}

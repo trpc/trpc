@@ -30,10 +30,6 @@ import type {
   NodeHTTPResponse,
 } from './types';
 
-const defaultJSONContentTypeHandler = getNodeHTTPJSONContentTypeHandler();
-const defaultFormDataContentTypeHandler = getFormDataContentTypeHandler();
-const defaultOctetContentTypeHandler = getOctetContentTypeHandler();
-
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
@@ -60,21 +56,22 @@ export async function nodeHTTPRequestHandler<
       ? new URLSearchParams(opts.req.query as any)
       : new URLSearchParams(opts.req.url!.split('?')[1]);
 
-    const contentTypeHandlers = [
-      defaultFormDataContentTypeHandler,
-      defaultOctetContentTypeHandler,
+    // We put Json first as it's the most common
+    const defaultJsonHandler = getNodeHTTPJSONContentTypeHandler<
+      TRouter,
+      TRequest,
+      TResponse
+    >();
+    const contentHandlerFactories = [
+      defaultJsonHandler,
+      getFormDataContentTypeHandler<TRouter, TRequest, TResponse>(),
+      getOctetContentTypeHandler<TRouter, TRequest, TResponse>(),
     ];
 
     const contentTypeHandler =
-      contentTypeHandlers.find((handler) =>
-        handler.isMatch({
-          // FIXME: no typecasting should be needed here
-          ...(opts as any),
-          query,
-        }),
-      ) ??
-      // fallback to json
-      defaultJSONContentTypeHandler;
+      contentHandlerFactories.find((handler) => {
+        return handler.isMatch({ ...opts, query });
+      }) ?? defaultJsonHandler;
 
     const req: HTTPRequest = {
       method: opts.req.method!,
@@ -137,7 +134,7 @@ export async function nodeHTTPRequestHandler<
       },
       async getInput(inputsOpts) {
         return await contentTypeHandler.getInputs(
-          opts as any, // AnyRouter mismatch
+          { ...opts, query },
           inputsOpts,
         );
       },

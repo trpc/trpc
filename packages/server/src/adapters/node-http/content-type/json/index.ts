@@ -1,14 +1,18 @@
 // @trpc/server
 import { TRPCError } from '../../../../@trpc/server';
-import type { CombinedDataTransformer } from '../../../../@trpc/server';
-import type { NodeHTTPContentTypeHandler } from '../../internals/contentType';
+import type {
+  AnyRouter,
+  CombinedDataTransformer,
+} from '../../../../@trpc/server';
 import type { NodeHTTPRequest, NodeHTTPResponse } from '../../types';
+import type { NodeHTTPContentTypeHandler } from '../types';
 import { getPostBody } from './getPostBody';
 
-export const getNodeHTTPJSONContentTypeHandler: () => NodeHTTPContentTypeHandler<
-  NodeHTTPRequest,
-  NodeHTTPResponse
-> = () => ({
+export const getNodeHTTPJSONContentTypeHandler: <
+  TRouter extends AnyRouter,
+  TRequest extends NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse,
+>() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
   isMatch(opts) {
     return !!opts.req.headers['content-type']?.startsWith('application/json');
   },
