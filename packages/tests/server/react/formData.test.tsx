@@ -4,23 +4,15 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
-  experimental_formDataLink,
   getUntypedClient,
   httpBatchLink,
+  httpLink,
   loggerLink,
   splitLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
-import {
-  experimental_createFileUploadHandler,
-  experimental_createMemoryUploadHandler,
-  experimental_isMultipartFormDataRequest,
-  experimental_NodeOnDiskFile,
-  experimental_parseMultipartFormData,
-  nodeHTTPFormDataContentTypeHandler,
-} from '@trpc/server/adapters/node-http/content-type/form-data';
-import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
+import { NodeOnDiskFile } from '@trpc/server/adapters/node-http/content-type/form-data/fileUploadHandler';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
@@ -38,19 +30,19 @@ const ctx = konn()
 
     const appRouter = t.router({
       polymorphic: t.procedure
-        .use(async (opts) => {
-          if (!experimental_isMultipartFormDataRequest(opts.ctx.req)) {
-            return opts.next();
-          }
-          const formData = await experimental_parseMultipartFormData(
-            opts.ctx.req,
-            experimental_createMemoryUploadHandler(),
-          );
+        //   .use(async (opts) => {
+        //     if (!experimental_isMultipartFormDataRequest(opts.ctx.req)) {
+        //       return opts.next();
+        //     }
+        //     const formData = await experimental_parseMultipartFormData(
+        //       opts.ctx.req,
+        //       experimental_createMemoryUploadHandler(),
+        //     );
 
-          return opts.next({
-            getRawInput: async () => formData,
-          });
-        })
+        //     return opts.next({
+        //       getRawInput: async () => formData,
+        //     });
+        //   })
         .input(
           formDataOrObject({
             text: z.string(),
@@ -60,16 +52,16 @@ const ctx = konn()
           return opts.input;
         }),
       uploadFile: t.procedure
-        .use(async (opts) => {
-          const formData = await experimental_parseMultipartFormData(
-            opts.ctx.req,
-            experimental_createMemoryUploadHandler(),
-          );
+        // .use(async (opts) => {
+        //   const formData = await experimental_parseMultipartFormData(
+        //     opts.ctx.req,
+        //     experimental_createMemoryUploadHandler(),
+        //   );
 
-          return opts.next({
-            getRawInput: async () => formData,
-          });
-        })
+        //   return opts.next({
+        //     getRawInput: async () => formData,
+        //   });
+        // })
         .input(
           zfd.formData({
             file: zfd.file(),
@@ -85,23 +77,21 @@ const ctx = konn()
           };
         }),
       uploadFilesOnDiskAndIncludeTextPropertiesToo: t.procedure
-        .use(async (opts) => {
-          const maxBodySize = 100; // 100 bytes
-          const formData = await experimental_parseMultipartFormData(
-            opts.ctx.req,
-            experimental_createFileUploadHandler(),
-            maxBodySize,
-          );
+        // .use(async (opts) => {
+        //   const maxBodySize = 100; // 100 bytes
+        //   const formData = await experimental_parseMultipartFormData(
+        //     opts.ctx.req,
+        //     experimental_createFileUploadHandler(),
+        //     maxBodySize,
+        //   );
 
-          return opts.next({
-            getRawInput: async () => formData,
-          });
-        })
+        //   return opts.next({
+        //     getRawInput: async () => formData,
+        //   });
+        // })
         .input(
           zfd.formData({
-            files: zfd.repeatableOfType(
-              z.instanceof(experimental_NodeOnDiskFile),
-            ),
+            files: zfd.repeatableOfType(z.instanceof(NodeOnDiskFile)),
             text: z.string(),
             json: zfd.json(z.object({ foo: z.string() })),
           }),
@@ -130,12 +120,6 @@ const ctx = konn()
       error: vi.fn(),
     };
     const opts = routerToServerAndClientNew(appRouter, {
-      server: {
-        experimental_contentTypeHandlers: [
-          nodeHTTPFormDataContentTypeHandler(),
-          nodeHTTPJSONContentTypeHandler(),
-        ],
-      },
       client: ({ httpUrl }) => ({
         links: [
           loggerLink({
@@ -144,7 +128,7 @@ const ctx = konn()
           }),
           splitLink({
             condition: (op) => op.input instanceof FormData,
-            true: experimental_formDataLink({
+            true: httpLink({
               url: httpUrl,
             }),
             false: httpBatchLink({

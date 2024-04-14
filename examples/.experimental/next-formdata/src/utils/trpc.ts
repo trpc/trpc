@@ -1,9 +1,4 @@
-import {
-  experimental_formDataLink,
-  httpBatchLink,
-  loggerLink,
-  splitLink,
-} from '@trpc/client';
+import { httpBatchLink, httpLink, loggerLink, splitLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
@@ -54,9 +49,10 @@ export const trpc = createTRPCNext<AppRouter>({
             process.env.NODE_ENV === 'development' ||
             (op.direction === 'down' && op.result instanceof Error),
         }),
+        // TODO: let's support this natively in the httpBatchLink
         splitLink({
           condition: (op) => op.input instanceof FormData,
-          true: experimental_formDataLink({
+          true: httpLink({
             url,
           }),
           false: httpBatchLink({

@@ -108,30 +108,6 @@ async function parseMultipartFormData(
   }
 }
 
-function isMultipartFormDataRequest(req: NodeHTTPRequest) {
-  const contentTypeHeader = req.headers['content-type'];
-  return (
-    contentTypeHeader?.startsWith('multipart/form-data') ??
-    contentTypeHeader === 'application/x-www-form-urlencoded'
-  );
-}
-
-export {
-  NodeOnDiskFile as experimental_NodeOnDiskFile,
-  createFileUploadHandler as experimental_createFileUploadHandler,
-} from './fileUploadHandler';
-export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } from './memoryUploadHandler';
-export {
-  MaxBodySizeExceededError,
-  MaxPartSizeExceededError,
-  composeUploadHandlers as experimental_composeUploadHandlers,
-  type UploadHandler,
-} from './uploadHandler';
-export {
-  isMultipartFormDataRequest as experimental_isMultipartFormDataRequest,
-  parseMultipartFormData as experimental_parseMultipartFormData,
-};
-
 export const getFormDataContentTypeHandler: <
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
@@ -157,3 +133,9 @@ export const getFormDataContentTypeHandler: <
     return form;
   },
 });
+
+export {
+  MaxBodySizeExceededError,
+  MaxPartSizeExceededError,
+  type UploadHandler,
+} from './uploadHandler';
