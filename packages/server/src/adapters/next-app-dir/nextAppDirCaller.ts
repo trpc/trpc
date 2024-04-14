@@ -1,4 +1,4 @@
-import type { CreateContextOption } from '../../@trpc/server';
+import type { CreateContextCallback } from '../../@trpc/server';
 import { getTRPCErrorFromUnknown, TRPCError } from '../../@trpc/server';
 // FIXME: fix lint rule, this is ok
 // eslint-disable-next-line no-restricted-imports
@@ -21,7 +21,7 @@ import { rethrowNextErrors } from './rethrowNextErrors';
  */
 export function nextAppDirCaller<TContext>(
   config: Simplify<
-    CreateContextOption<TContext, () => MaybePromise<TContext>> & {
+    CreateContextCallback<TContext, () => MaybePromise<TContext>> & {
       /**
        * Transform form data to a `Record` before passing it to the procedure
        * @default true

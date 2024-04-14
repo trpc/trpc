@@ -85,7 +85,7 @@ type PartialIf<TCondition extends boolean, TType> = TCondition extends true
  * Adds a `createContext` option with a given callback function
  * If context is the default value, then the `createContext` option is optional
  */
-export type CreateContextOption<
+export type CreateContextCallback<
   TContext,
   TFunction extends (...args: any[]) => any,
 > = PartialIf<

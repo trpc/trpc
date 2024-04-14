@@ -17,7 +17,7 @@ import type {
 } from 'aws-lambda';
 import type {
   AnyRouter,
-  CreateContextOption,
+  CreateContextCallback,
   inferRouterContext,
 } from '../../@trpc/server';
 // import @trpc/server
@@ -56,7 +56,7 @@ export type AWSLambdaOptions<
   TEvent extends APIGatewayEvent,
 > =
   | HTTPBaseHandlerOptions<TRouter, TEvent> &
-      CreateContextOption<
+      CreateContextCallback<
         inferRouterContext<AnyRouter>,
         AWSLambdaCreateContextFn<TRouter, TEvent>
       >;

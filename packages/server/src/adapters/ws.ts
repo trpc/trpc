@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'http';
 import type ws from 'ws';
 import type {
   AnyRouter,
-  CreateContextOption,
+  CreateContextCallback,
   inferRouterContext,
 } from '../@trpc/server';
 import {
@@ -50,7 +50,7 @@ export type CreateWSSContextFn<TRouter extends AnyRouter> = (
 
 export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
   BaseHandlerOptions<TRouter, IncomingMessage> &
-    CreateContextOption<
+    CreateContextCallback<
       inferRouterContext<TRouter>,
       CreateWSSContextFn<TRouter>
     >;

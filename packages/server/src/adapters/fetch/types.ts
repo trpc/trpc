@@ -10,7 +10,7 @@
 // @trpc/server
 import type {
   AnyRouter,
-  CreateContextOption,
+  CreateContextCallback,
   inferRouterContext,
 } from '../../@trpc/server';
 // @trpc/server/http
@@ -30,7 +30,7 @@ export type FetchCreateContextFn<TRouter extends AnyRouter> = (
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
 export type FetchCreateContextOption<TRouter extends AnyRouter> =
-  CreateContextOption<
+  CreateContextCallback<
     inferRouterContext<TRouter>,
     FetchCreateContextFn<TRouter>
   >;

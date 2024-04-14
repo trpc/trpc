@@ -3,7 +3,7 @@ import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import type { CreateContextOption } from '@trpc/server';
+import type { CreateContextCallback } from '@trpc/server';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -90,7 +90,7 @@ export function experimental_createServerActionHandler<
   },
 >(
   t: TInstance,
-  opts: CreateContextOption<
+  opts: CreateContextCallback<
     TInstance['_config']['$types']['ctx'],
     () => MaybePromise<TInstance['_config']['$types']['ctx']>
   > & {

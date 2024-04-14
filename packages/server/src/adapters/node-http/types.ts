@@ -11,7 +11,7 @@ import type * as http from 'http';
 // @trpc/server
 import type {
   AnyRouter,
-  CreateContextOption,
+  CreateContextCallback,
   inferRouterContext,
 } from '../../@trpc/server';
 // @trpc/server/http
@@ -47,7 +47,7 @@ export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
   TResponse,
-> = CreateContextOption<
+> = CreateContextCallback<
   inferRouterContext<TRouter>,
   NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>
 >;
