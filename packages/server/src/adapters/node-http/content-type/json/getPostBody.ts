@@ -23,16 +23,20 @@ export async function getPostBody(opts: {
     let body = '';
     let hasBody = false;
 
-    req.on('data', function (data) {
+    function onData(data: any) {
       body += data;
       hasBody = true;
       if (body.length > maxBodySize) {
+        req.off('data', onData);
+
         resolve({
           ok: false,
           error: new TRPCError({ code: 'PAYLOAD_TOO_LARGE' }),
         });
       }
-    });
+    }
+
+    req.on('data', onData);
 
     req.on('end', () => {
       resolve({
