@@ -467,7 +467,13 @@ test('superjson - no input', async () => {
       };
     },
   });
-  const json = await (await fetch(`${httpUrl}/hello`)).json();
+  const json = await (
+    await fetch(`${httpUrl}/hello`, {
+      headers: {
+        'content-type': 'application/json',
+      },
+    })
+  ).json();
 
   expect(json).not.toHaveProperty('error');
   expect(json).toMatchInlineSnapshot(`

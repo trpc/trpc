@@ -118,7 +118,11 @@ test('middleware intercepts request', async () => {
     router,
   });
 
-  const result = await fetch(`http://${address}:${port}`);
+  const result = await fetch(`http://${address}:${port}`, {
+    headers: {
+      'content-type': 'application/json',
+    },
+  });
   expect(result.status).toBe(419);
 });
 
