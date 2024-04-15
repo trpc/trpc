@@ -61,6 +61,10 @@ export const getNodeHTTPJSONContentTypeHandler: <
     };
 
     const rawInput = getRawProcedureInputOrThrow();
+    if (rawInput === undefined) {
+      return undefined;
+    }
+
     const transformer = opts.router._def._config.transformer;
 
     if (!info.isBatchCall) {

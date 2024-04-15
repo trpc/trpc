@@ -68,6 +68,10 @@ export const getFastifyHTTPJSONContentTypeHandler: <
     };
 
     const rawInput = await getRawProcedureInputOrThrow();
+    if (rawInput === undefined) {
+      return undefined;
+    }
+
     const transformer = opts.router._def._config.transformer;
 
     if (!info.isBatchCall) {
