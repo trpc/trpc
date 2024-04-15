@@ -26,17 +26,16 @@ export const getNodeHTTPJSONContentTypeHandler: <
     const body = bodyResult.data;
 
     function getRawProcedureInputOrThrow() {
-      const { req } = opts;
+      const { req, query } = opts;
 
       try {
         if (req.method === 'GET') {
-          const query = req.query;
-          if (!query?.['input']) {
+          const input = query.get('input');
+          if (!input) {
             return undefined;
           }
 
-          const raw = query['input'] as string;
-          return JSON.parse(raw);
+          return JSON.parse(input);
         }
         if (!preprocessed && typeof body === 'string') {
           // A mutation with no inputs will have req.body === ''
