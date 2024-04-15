@@ -22,26 +22,28 @@ export const getNodeHTTPJSONContentTypeHandler: <
     if (!bodyResult.ok) {
       throw bodyResult.error;
     }
-    const preprocessed = bodyResult.data;
+
+    const preprocessedBody = bodyResult.preprocessed;
     const body = bodyResult.data;
 
     function getRawProcedureInputOrThrow() {
-      const { req, query } = opts;
-
       try {
-        if (req.method === 'GET') {
-          const input = query.get('input');
+        if (opts.req.method === 'GET') {
+          const input = opts.query.get('input');
           if (!input) {
             return undefined;
           }
 
           return JSON.parse(input);
         }
-        if (!preprocessed && typeof body === 'string') {
-          // A mutation with no inputs will have req.body === ''
-          return body.length === 0 ? undefined : JSON.parse(body);
+
+        if (preprocessedBody || typeof body !== 'string') {
+          // Some tools like nextjs may parse json
+          // requests before they reach us. So we just use them as is
+          return body;
+        } else {
+          return JSON.parse(body);
         }
-        return req.body;
       } catch (cause) {
         throw new TRPCError({
           code: 'PARSE_ERROR',
