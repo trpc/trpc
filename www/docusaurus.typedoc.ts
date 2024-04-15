@@ -1,25 +1,17 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-// @ts-check
-
 import fs from "fs";
-
 import path from "path";
 
-/**
- * @param {string[]} directories
- */
-function generateTypedocDocusaurusPlugins(directories) {
+function generateTypedocDocusaurusPlugins(directories: string[]) {
   const withEntryPoints = directories.map((directory) => {
     const pkgJson = JSON.parse(
       fs.readFileSync(
         path.join(__dirname, `../packages/${directory}/package.json`),
         'utf-8',
       ),
-    );
+    )  as {
+      exports: Record<string, string | { import: string }>;
+    };
 
-    /**
-     * @type {Record<string, string | { import: string }>}
-     */
     const exports = pkgJson.exports;
 
     const entrypoints = Object.entries(exports)
@@ -84,14 +76,6 @@ function generateTypedocDocusaurusPlugins(directories) {
         sidebar: {
           categoryLabel: `@trpc/${directory}`,
           position: idx,
-        },
-
-        // Markdown options
-        // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter
-        frontmatterGlobals: {
-          pagination_prev: null,
-          pagination_next: null,
-          custom_edit_url: null,
         },
       },
     ];
