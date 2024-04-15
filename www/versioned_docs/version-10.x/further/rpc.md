@@ -5,7 +5,7 @@ sidebar_label: HTTP RPC Specification
 slug: /rpc
 ---
 
-## Methods <-> Type mapping
+## Methods \<-> Type mapping
 
 | HTTP Method  | Mapping           | Notes                                                                                                          |
 | ------------ | ----------------- | -------------------------------------------------------------------------------------------------------------- |

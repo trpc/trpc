@@ -89,7 +89,7 @@ const postList = await caller.post.list();
 
 ### Example usage in an integration test
 
-> Taken from <https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts>
+> Taken from [https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts](https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts)
 
 ```ts
 import { inferProcedureInput } from '@trpc/server';
