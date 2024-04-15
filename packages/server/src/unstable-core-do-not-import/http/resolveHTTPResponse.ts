@@ -42,6 +42,7 @@ interface ResolveHTTPRequestOptions<
   req: TRequest;
   path: string;
   getInput: (opts: { isBatchCall: boolean; batch: number }) => Promise<unknown>;
+  error?: TRPCError;
   /**
    * Called as soon as the response head is known.
    * When streaming, headers will have been generated
@@ -292,6 +293,13 @@ export async function resolveHTTPResponse<
       }
 
       try {
+        if (opts.error) {
+          // sometimes an error may be generated above this function in the stack
+          // for instance a 405 error if the method is not supported
+          // But we need to handle it here to ensure the error is formatted correctly
+          throw opts.error;
+        }
+
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
           path,

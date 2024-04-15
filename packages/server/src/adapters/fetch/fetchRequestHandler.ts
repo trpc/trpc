@@ -21,6 +21,7 @@ import {
   resolveHTTPResponse,
   toURL,
 } from '../../@trpc/server/http';
+import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
 import { getFetchHTTPJSONContentTypeHandler } from './content-type/json';
 import type { FetchHandlerRequestOptions } from './types';
 
@@ -109,13 +110,23 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     }
   };
 
+  const [contentTypeHandler, unsupportedMediaTypeError] =
+    selectContentHandlerOrUnsupportedMediaType(
+      [getFetchHTTPJSONContentTypeHandler<TRouter>()],
+      {
+        ...opts,
+        url,
+      },
+    );
+
   resolveHTTPResponse({
     ...opts,
     req,
     createContext,
     path,
-    getInput(info) {
-      return getFetchHTTPJSONContentTypeHandler<TRouter>().getInputs(
+    error: unsupportedMediaTypeError,
+    async getInput(info) {
+      return await contentTypeHandler?.getInputs(
         {
           ...opts,
           url,

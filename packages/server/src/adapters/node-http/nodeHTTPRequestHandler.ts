@@ -21,6 +21,7 @@ import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
 } from '../../@trpc/server/http';
+import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
 import { getFormDataContentTypeHandler } from './content-type/form-data';
 import { getNodeHTTPJSONContentTypeHandler } from './content-type/json';
 import { getOctetContentTypeHandler } from './content-type/octet';
@@ -55,23 +56,6 @@ export async function nodeHTTPRequestHandler<
     const query = opts.req.query
       ? new URLSearchParams(opts.req.query as any)
       : new URLSearchParams(opts.req.url!.split('?')[1]);
-
-    // We put Json first as it's the most common
-    const defaultJsonHandler = getNodeHTTPJSONContentTypeHandler<
-      TRouter,
-      TRequest,
-      TResponse
-    >();
-    const contentHandlerFactories = [
-      defaultJsonHandler,
-      getFormDataContentTypeHandler<TRouter, TRequest, TResponse>(),
-      getOctetContentTypeHandler<TRouter, TRequest, TResponse>(),
-    ];
-
-    const contentTypeHandler =
-      contentHandlerFactories.find((handler) => {
-        return handler.isMatch({ ...opts, query });
-      }) ?? defaultJsonHandler;
 
     const req: HTTPRequest = {
       method: opts.req.method!,
@@ -122,10 +106,21 @@ export async function nodeHTTPRequestHandler<
       }
     };
 
+    const [contentTypeHandler, unsupportedMediaTypeError] =
+      selectContentHandlerOrUnsupportedMediaType(
+        [
+          getNodeHTTPJSONContentTypeHandler<TRouter, TRequest, TResponse>(),
+          getFormDataContentTypeHandler<TRouter, TRequest, TResponse>(),
+          getOctetContentTypeHandler<TRouter, TRequest, TResponse>(),
+        ],
+        { ...opts, query },
+      );
+
     await resolveHTTPResponse<TRouter, HTTPRequest>({
       ...opts,
       req,
       createContext,
+      error: unsupportedMediaTypeError,
       onError(o) {
         opts?.onError?.({
           ...o,
@@ -133,7 +128,7 @@ export async function nodeHTTPRequestHandler<
         });
       },
       async getInput(inputsOpts) {
-        return await contentTypeHandler.getInputs(
+        return await contentTypeHandler?.getInputs(
           { ...opts, query },
           inputsOpts,
         );

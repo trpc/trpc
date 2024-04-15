@@ -200,6 +200,7 @@ test('force content-type on mutations', async () => {
           "data": Object {
             "code": "UNSUPPORTED_MEDIA_TYPE",
             "httpStatus": 415,
+            "path": "mut",
             "stack": "[redacted]",
           },
           "message": "Invalid Content-Type header (expected application/json)",

@@ -21,6 +21,7 @@ import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
 } from '../../@trpc/server/http';
+import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
 import { getFastifyHTTPJSONContentTypeHandler } from './content-type/json';
 import type { FastifyRequestHandlerOptions } from './types';
 
@@ -37,12 +38,6 @@ export async function fastifyRequestHandler<
       ...innerOpts,
     });
   };
-
-  const jsonContentTypeHandler = getFastifyHTTPJSONContentTypeHandler<
-    TRouter,
-    TRequest,
-    TResponse
-  >();
 
   const query = opts.req.query
     ? new URLSearchParams(opts.req.query as any)
@@ -96,13 +91,21 @@ export async function fastifyRequestHandler<
     }
   };
 
+  const [contentTypeHandler, unsupportedMediaTypeError] =
+    selectContentHandlerOrUnsupportedMediaType(
+      [getFastifyHTTPJSONContentTypeHandler<TRouter, TRequest, TResponse>()],
+      opts,
+    );
+
   resolveHTTPResponse({
     ...opts,
     req,
-    getInput(info) {
-      return jsonContentTypeHandler.getInputs(opts, info);
+    error: unsupportedMediaTypeError,
+    async getInput(info) {
+      return await contentTypeHandler?.getInputs(opts, info);
     },
     createContext,
+
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
