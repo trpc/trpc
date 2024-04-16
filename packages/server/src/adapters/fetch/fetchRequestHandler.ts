@@ -23,7 +23,7 @@ import {
 } from '../../@trpc/server/http';
 import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
 import { getFetchHTTPJSONContentTypeHandler } from './content-type/json';
-import type { FetchHandlerRequestOptions } from './types';
+import type { FetchHandlerOptions } from './types';
 
 const trimSlashes = (path: string): string => {
   path = path.startsWith('/') ? path.slice(1) : path;
@@ -33,7 +33,7 @@ const trimSlashes = (path: string): string => {
 };
 
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
-  opts: FetchHandlerRequestOptions<TRouter>,
+  opts: FetchHandlerOptions<TRouter>,
 ): Promise<Response> {
   const resHeaders = new Headers();
 

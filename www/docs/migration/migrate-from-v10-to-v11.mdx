@@ -132,6 +132,16 @@ While we're not doing anything differently internally (just yet) this is help su
 
 Inputs are now materialised lazily when required by the procedure, which means the input is no longer available when tRPC calls `createContext`
 
+### all the experimental form-data support has been removed (breaking)
+
+- experimental_formDataLink - use httpLink
+- experimental_parseMultipartFormData - not needed anymore
+- experimental_isMultipartFormDataRequest - not needed anymore
+- experimental_composeUploadHandlers - not needed anymore
+- experimental_createMemoryUploadHandler - not needed anymore
+- experimental_NodeOnDiskFile and experimental_createFileUploadHandler - not supported in this first release, open an issue if you need to hold data on disk
+- experimental_contentTypeHandlers - not needed anymore, but could come back if needed by the community for novel data types
+
 ### Simplified types and `.d.ts` outputs
 
 Procedures in your router now only emit their input & output - where before they would also contain the full context object for every procedure, leading to unnecessary complexity in e.g. `.d.ts`.
