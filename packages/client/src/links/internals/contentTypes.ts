@@ -10,6 +10,6 @@ export function isFormData(input: unknown) {
   return input instanceof FormData;
 }
 
-export function isNonJsonSerialisable(input: unknown) {
+export function isNonJsonSerializable(input: unknown) {
   return isOctetType(input) || isFormData(input);
 }

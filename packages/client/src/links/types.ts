@@ -8,7 +8,7 @@ import type { ResponseEsque } from '../internals/types';
 import type { TRPCClientError } from '../TRPCClientError';
 
 export {
-  isNonJsonSerialisable,
+  isNonJsonSerializable,
   isFormData,
   isOctetType,
 } from './internals/contentTypes';

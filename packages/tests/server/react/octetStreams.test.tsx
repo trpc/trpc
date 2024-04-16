@@ -7,7 +7,7 @@ import {
   getUntypedClient,
   httpBatchLink,
   httpLink,
-  isNonJsonSerialisable,
+  isNonJsonSerializable,
   loggerLink,
   splitLink,
 } from '@trpc/client';
@@ -52,7 +52,7 @@ const ctx = konn()
             console: loggerLinkConsole,
           }),
           splitLink({
-            condition: (op) => isNonJsonSerialisable(op.input),
+            condition: (op) => isNonJsonSerializable(op.input),
             true: httpLink({
               url: httpUrl,
             }),

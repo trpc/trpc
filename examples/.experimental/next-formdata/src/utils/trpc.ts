@@ -1,7 +1,7 @@
 import {
   httpBatchLink,
   httpLink,
-  isNonJsonSerialisable,
+  isNonJsonSerializable,
   loggerLink,
   splitLink,
 } from '@trpc/client';
@@ -56,7 +56,7 @@ export const trpc = createTRPCNext<AppRouter>({
             (op.direction === 'down' && op.result instanceof Error),
         }),
         splitLink({
-          condition: (op) => isNonJsonSerialisable(op.input),
+          condition: (op) => isNonJsonSerializable(op.input),
           true: httpLink({
             url,
           }),
