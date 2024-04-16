@@ -119,6 +119,10 @@ We have refactored our internal generics and made them more readable (TODO: link
 
 Check their migration guide: https://react.dev/blog/2022/03/08/react-18-upgrade-guide
 
+### NodeJS 18+ and Modern Browsers are now required (breaking)
+
+We have added usage of FormData, File, Blob, and ReadableStream. NodeJS 18 is now required, though these have been supported by browsers for many years now.
+
 ### `wsLink` improvements (minor)
 
 - Ability to pass a `Promise` in the `url`-callback if servers switch location during deploys
