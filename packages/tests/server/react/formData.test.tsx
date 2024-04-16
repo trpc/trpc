@@ -13,7 +13,6 @@ import {
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
-import { NodeOnDiskFile } from '@trpc/server/adapters/node-http/content-type/form-data/fileUploadHandler';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';

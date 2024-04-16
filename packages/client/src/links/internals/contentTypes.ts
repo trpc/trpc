@@ -1,7 +1,6 @@
 export function isOctetType(input: unknown) {
   return (
     input instanceof Uint8Array ||
-    input instanceof ReadableStream ||
     input instanceof Blob ||
     input instanceof File
   );

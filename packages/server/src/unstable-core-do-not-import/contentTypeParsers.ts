@@ -12,7 +12,7 @@ export type UtilityParser<TInput, TOutput> = ParserZodEsque<TInput, TOutput> & {
  * When expecting a supported octet type to be passed from the frontend, this parser may be used to validate the type for your procedure
  */
 export function parseOctetInput<
-  TInput extends File | Blob | ReadableStream | Uint8Array,
+  TInput extends File | Blob | Uint8Array,
 >(): UtilityParser<TInput, Readable> {
   return {
     _input: null as any as TInput,
