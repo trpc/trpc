@@ -128,6 +128,10 @@ Check their migration guide: https://react.dev/blog/2022/03/08/react-18-upgrade-
 
 While we're not doing anything differently internally (just yet) this is help support a much requested feature in tRPC: content types other than JSON.
 
+### `TRPCRequestInfo` has had `input?: unknown` removed (breaking)
+
+Inputs are now materialised lazily when required by the procedure, which means the input is no longer available when tRPC calls `createContext`
+
 ### Simplified types and `.d.ts` outputs
 
 Procedures in your router now only emit their input & output - where before they would also contain the full context object for every procedure, leading to unnecessary complexity in e.g. `.d.ts`.
