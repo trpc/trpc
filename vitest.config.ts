@@ -45,7 +45,15 @@ export default defineConfig({
     coverage: {
       provider: 'istanbul',
       include: ['**/src/**'],
-      exclude: ['**/www/**', '**/examples/**'],
+      exclude: [
+        '**/www/**',
+        '**/examples/**',
+        // skip codecov for experimental features
+        // FIXME: delete me once they're stable
+        '**/next/src/app-dir/**',
+        '**/server/src/adapters/next-app-dir/**',
+        '**/adapters/node-http/content-type/form-data/**',
+      ],
     },
     poolOptions: {
       threads: {
