@@ -12,6 +12,16 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
   config() {
     return {
       createContext: () => createContext('invoke'),
+      /**
+       * Using the `contextSelector` property we can select the specific values to be included
+       * in the `cacheTag` generation.
+       *
+       * In the following example, if the requests' path doesn't have `privateGreeting` in it
+       * (which is a private route that uses some values from the context), we return an empty array
+       * meaning that we don't use any values from the context in other routes.
+       * On the other side if it has `privateGreeting`, we specify the values from the context that we use
+       * in the `privateGreeting` procedure.
+       */
       contextSelector: (ctx, callOpts) => {
         if (!['privateGreeting'].includes(callOpts.path[0])) return [];
         return [ctx.session?.user.id, ctx._userIdMock];
