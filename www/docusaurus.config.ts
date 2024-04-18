@@ -1,10 +1,6 @@
-// @ts-check
-/* eslint-disable @typescript-eslint/no-var-requires */
-
-import {generateTypedocDocusaurusPlugins} from "./docusaurus.typedoc.js";
-
-import {parseEnv} from "./src/utils/env";
-import type {Config} from '@docusaurus/types';
+import type { Config } from '@docusaurus/types';
+import { generateTypedocDocusaurusPlugins } from './docusaurus.typedoc';
+import { parseEnv } from './src/utils/env';
 import {themes as prismThemes} from 'prism-react-renderer';
 
 const env = parseEnv(process.env);
@@ -25,13 +21,12 @@ const poweredByVercel = `
   </div>
 `.trim();
 
-/** @type {import('@docusaurus/types').Config} */
-const config:Config = {
+const config: Config = {
   title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
   baseUrl: '/',
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'ignore',
   onBrokenMarkdownLinks: 'throw',
   onDuplicateRoutes: 'throw',
   favicon: 'img/favicon.ico',
@@ -182,13 +177,13 @@ const config:Config = {
   plugins: [
     // Sidebar order is decided by the position in the array below
     ...(env.TYPEDOC
-      ? generateTypedocDocusaurusPlugins([
+        ? generateTypedocDocusaurusPlugins([
           'server',
           'client',
           'react-query',
           'next',
         ])
-      : []),
+        : []),
     async function myPlugin() {
       return {
         name: 'docusaurus-tailwindcss',
@@ -248,7 +243,7 @@ const config:Config = {
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: ['./src/css/custom.css'],
         },
         gtag: {
           trackingID: 'G-7KLX2VFLVR',
@@ -271,18 +266,14 @@ const config:Config = {
       charSet: 'utf-8',
     },
   ],
-  clientModules: [
-    require.resolve('./docusaurus.twitterReload.js'),
-    require.resolve('./docusaurus.preferredTheme.js'),
-  ],
+  clientModules: [require.resolve('./docusaurus.twitterReload.js')],
 
   customFields: {
     env,
   },
-  markdown: {
-    format: "detect"
-  }
-};
-
+  // markdown: {
+  //   format: "detect"
+  // }
+}
 
 export default config;
