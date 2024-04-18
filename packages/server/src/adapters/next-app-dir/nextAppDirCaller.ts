@@ -1,16 +1,11 @@
-import { getTRPCErrorFromUnknown, TRPCError } from '../../@trpc/server';
-// FIXME: fix lint rule, this is ok
-// eslint-disable-next-line no-restricted-imports
-import type { ErrorHandlerOptions } from '../../unstable-core-do-not-import/procedure';
-// FIXME: fix lint rule, this is ok
-// eslint-disable-next-line no-restricted-imports
-import type { CallerOverride } from '../../unstable-core-do-not-import/procedureBuilder';
-// FIXME: fix lint rule, this is ok
-// eslint-disable-next-line no-restricted-imports
-import type {
-  MaybePromise,
-  Simplify,
-} from '../../unstable-core-do-not-import/types';
+import {
+  getTRPCErrorFromUnknown,
+  TRPCError,
+  type MaybePromise,
+  type Simplify,
+  type TRPCCallerOverride,
+  type TRPCErrorHandlerOptions,
+} from '../../@trpc/server';
 import { formDataToObject } from './formDataToObject';
 import { TRPCRedirectError } from './redirect';
 import { rethrowNextErrors } from './rethrowNextErrors';
@@ -37,10 +32,10 @@ export function nextAppDirCaller<TContext>(
       /**
        * Called when an error occurs in the handler
        */
-      onError?: (opts: ErrorHandlerOptions<TContext>) => void;
+      onError?: (opts: TRPCErrorHandlerOptions<TContext>) => void;
     } & ContextCallback<TContext>
   >,
-): CallerOverride<TContext> {
+): TRPCCallerOverride<TContext> {
   const {
     normalizeFormData = true,
 

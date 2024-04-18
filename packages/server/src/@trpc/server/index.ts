@@ -32,6 +32,10 @@ export {
   type RouterRecord as TRPCRouterRecord,
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
   type ProcedureOptions as TRPCProcedureOptions,
+  type ErrorHandlerOptions as TRPCErrorHandlerOptions,
+  type CallerOverride as TRPCCallerOverride,
+  type MaybePromise,
+  type Simplify,
 } from '../../unstable-core-do-not-import';
 
 export type {
