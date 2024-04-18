@@ -35,7 +35,7 @@ export {
   type MutationProcedure as TRPCMutationProcedure,
   type QueryProcedure as TRPCQueryProcedure,
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
-} from "../../unstable-core-do-not-import";
+} from '../../unstable-core-do-not-import';
 
 export type {
   /**
@@ -81,7 +81,7 @@ export type {
    * @deprecated use `AnyTRPCSubscriptionProcedure` instead
    */
   AnySubscriptionProcedure,
-} from "../../unstable-core-do-not-import";
+} from '../../unstable-core-do-not-import';
 
 export {
   /**
@@ -93,7 +93,7 @@ export {
    * @deprecated use `callTRPCProcedure` instead
    */
   callProcedure,
-} from "../../unstable-core-do-not-import";
+} from '../../unstable-core-do-not-import';
 
 /**
  * @deprecated
