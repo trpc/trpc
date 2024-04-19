@@ -40,6 +40,7 @@ function types({ input, packageDir }: Options): RollupOptions {
         }),
       externals({
         packagePath: path.resolve(packageDir, 'package.json'),
+        builtinsPrefix: 'strip',
         deps: true,
         devDeps: true,
         peerDeps: true,
@@ -77,6 +78,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
     plugins: [
       externals({
         packagePath: path.resolve(packageDir, 'package.json'),
+        builtinsPrefix: 'strip',
       }),
       nodeResolve({
         extensions,
