@@ -9,10 +9,10 @@ export type UtilityParser<TInput, TOutput> = ParserZodEsque<TInput, TOutput> & {
 // Should be the same possible types as packages/client/src/links/internals/contentTypes.ts isOctetType
 
 /**
- * When expecting a supported octet type to be passed from the frontend, this parser may be used to validate the type for your procedure
+ * When expecting a supported octet type to be passed from the frontend, this parser may be used to validate the type for your procedure. Note: the output is always a `Readable` stream.
  */
 export function parseOctetInput<
-  TInput extends File | Blob | Uint8Array,
+  TInput extends Blob | Uint8Array,
 >(): UtilityParser<TInput, Readable> {
   return {
     _input: null as any as TInput,
