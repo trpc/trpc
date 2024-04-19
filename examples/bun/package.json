@@ -17,7 +17,7 @@
     "@trpc/server": "npm:@trpc/server@next"
   },
   "devDependencies": {
-    "bun-types": "^1.1.4",
+    "bun-types": "^0.7.3",
     "eslint": "^8.56.0",
     "start-server-and-test": "^1.12.0",
     "typescript": "^5.4.0",
