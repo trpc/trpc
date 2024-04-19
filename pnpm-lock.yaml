@@ -483,8 +483,8 @@ importers:
         version: link:../../packages/server
     devDependencies:
       bun-types:
-        specifier: ^0.7.3
-        version: 0.7.3
+        specifier: ^1.1.4
+        version: 1.1.4
       eslint:
         specifier: ^8.56.0
         version: 8.56.0
@@ -8883,6 +8883,12 @@ packages:
     dependencies:
       undici-types: 5.26.5
 
+  /@types/node@20.11.30:
+    resolution: {integrity: sha512-dHM6ZxwlmuZaRmUPfv1p+KrdD1Dci04FbdEm/9wEMouFqxYoFl5aMkt0VMAUtYRQDyYvD41WJLukhq/ha3YuTw==}
+    dependencies:
+      undici-types: 5.26.5
+    dev: true
+
   /@types/normalize-package-data@2.4.1:
     resolution: {integrity: sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==}
 
@@ -10448,8 +10454,11 @@ packages:
       semver: 7.5.4
     dev: false
 
-  /bun-types@0.7.3:
-    resolution: {integrity: sha512-kssLD5mDLoawmLZFgQRRq0Wy+dca/os6TZ0MHWyFVoVAEwSrpAxmNCZ1K1GUelfhlDaL2FikRxeF9GkATdzXZg==}
+  /bun-types@1.1.4:
+    resolution: {integrity: sha512-E1kk0FNpxpkSSlCVXEa4HfyhSUEpKtCFrybPVyz1A4TEnBGy5bqqtSYkyjKTfKScdyZTBeFrTxJLiKGOIRWgwg==}
+    dependencies:
+      '@types/node': 20.11.30
+      '@types/ws': 8.5.10
     dev: true
 
   /busboy@1.6.0:
