@@ -27,9 +27,16 @@ const ctx = konn()
         .input(parseOctetInput())
         .mutation(async ({ input }) => {
           const chunks = [];
-          for await (const chunk of input) {
-            chunks.push(Buffer.from(chunk));
+
+          const reader = input.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              break;
+            }
+            chunks.push(value);
           }
+
           const content = Buffer.concat(chunks).toString('utf-8');
 
           return {

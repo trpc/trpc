@@ -39,9 +39,16 @@ const appRouter = router({
     .input(parseOctetInput<File>())
     .mutation(async ({ input }) => {
       const chunks = [];
-      for await (const chunk of input) {
-        chunks.push(Buffer.from(chunk));
+
+      const reader = input.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        chunks.push(value);
       }
+
       const content = Buffer.concat(chunks).toString('utf-8');
 
       console.log('File: ', content);
@@ -51,26 +58,6 @@ const appRouter = router({
         data: content,
       };
     }),
-
-  // No input parser set! (should expect the input never gets loaded into memory)
-  // formData: publicProcedure.mutation(({ input }) => {
-  //   if (input) {
-  //     throw new Error('Input should not be loaded into memory!');
-  //   }
-
-  //   return {
-  //     text: 'ACK',
-  //   };
-  // }),
-  // file: publicProcedure.mutation(async ({ input }) => {
-  //   if (input) {
-  //     throw new Error('Input should not be loaded into memory!');
-  //   }
-
-  //   return {
-  //     text: 'ACK',
-  //   };
-  // }),
 });
 
 // export only the type definition of the API

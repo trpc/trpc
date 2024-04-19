@@ -40,7 +40,6 @@ function types({ input, packageDir }: Options): RollupOptions {
         }),
       externals({
         packagePath: path.resolve(packageDir, 'package.json'),
-
         deps: true,
         devDeps: true,
         peerDeps: true,

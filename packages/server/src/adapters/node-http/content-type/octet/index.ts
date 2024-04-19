@@ -22,7 +22,7 @@ export const getOctetContentTypeHandler: <
       throw new Error('Batch calls not supported for octet-stream');
     }
 
-    const stream = Stream.Readable.from(opts.req);
+    const stream = Stream.Readable.toWeb(opts.req);
 
     return stream;
   },

@@ -1,4 +1,3 @@
-import { Readable } from 'stream';
 import { TRPCError } from './error/TRPCError';
 import type { ParserZodEsque } from './parser';
 
@@ -20,18 +19,18 @@ interface FileLike extends Blob {
  */
 export function parseOctetInput<
   TInput extends Blob | Uint8Array | FileLike,
->(): UtilityParser<TInput, Readable> {
+>(): UtilityParser<TInput, ReadableStream> {
   return {
     _input: null as any as TInput,
-    _output: null as any as Readable,
+    _output: null as any as ReadableStream,
     parse(input: unknown) {
-      if (input instanceof Readable) {
+      if (input instanceof ReadableStream) {
         return input;
       }
 
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        cause: `Parsed input was expected to be a Readable but was: ${typeof input}`,
+        cause: `Parsed input was expected to be a ReadableStream but was: ${typeof input}`,
       });
     },
   };
