@@ -157,8 +157,9 @@ export const jsonHttpRequester: Requester = (opts) => {
 
 export const universalRequester: Requester = (opts) => {
   const input = getInput(opts);
+
   if (isFormData(input)) {
-    if (opts.type !== 'mutation') {
+    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
       throw new Error('FormData is only supported for mutations');
     }
 
@@ -172,7 +173,7 @@ export const universalRequester: Requester = (opts) => {
   }
 
   if (isOctetType(input)) {
-    if (opts.type !== 'mutation') {
+    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
       throw new Error('Octet type input is only supported for mutations');
     }
 
