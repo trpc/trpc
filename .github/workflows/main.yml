@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build --force
+      - run: pnpm turbo --filter "@trpc/*" build
   test:
     timeout-minutes: 10
     env:
@@ -108,9 +108,9 @@ jobs:
             then pnpm playwright install chromium;
           fi
 
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev --force
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start --force
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
     # only run on PRs
@@ -178,9 +178,9 @@ jobs:
 
       - run: bun --version
 
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev --force
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start --force
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
     # only run on PRs
@@ -231,6 +231,6 @@ jobs:
           if grep --silent '"@playwright/test"';
             then pnpm playwright install chromium;
           fi
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev --force
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start --force
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
