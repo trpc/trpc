@@ -27,7 +27,7 @@
     "abort-controller": "^3.0.0",
     "arktype": "1.0.14-alpha",
     "dataloader": "^2.2.2",
-    "devalue": "^4.0.0",
+    "devalue": "^5.0.0",
     "eslint": "^8.56.0",
     "fastify": "^4.16.0",
     "fastify-plugin": "^4.5.0",
