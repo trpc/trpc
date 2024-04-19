@@ -1,8 +1,8 @@
 export function isOctetType(input: unknown) {
   return (
     input instanceof Uint8Array ||
-    input instanceof Blob ||
-    input instanceof File
+    // File extends from Blob but is only available in nodejs from v20
+    input instanceof Blob
   );
 }
 
