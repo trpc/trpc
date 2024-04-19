@@ -122,6 +122,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       return queryClient.setQueryData(queryKey, updater as any, options);
     },
 
+    // eslint-disable-next-line max-params
     setQueriesData: (queryKey, filters, updater, options) => {
       return queryClient.setQueriesData(
         {
