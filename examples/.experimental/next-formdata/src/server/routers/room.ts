@@ -2,10 +2,8 @@ import { uploadFileSchema } from '~/utils/schemas';
 import { writeFileToDisk } from '../../utils/writeFileToDisk';
 import { publicProcedure, router } from '../trpc';
 
-const formDataProcedure = publicProcedure;
-
 export const roomRouter = router({
-  sendMessage: formDataProcedure
+  sendMessage: publicProcedure
     .input(uploadFileSchema)
     .mutation(async (opts) => {
       return {
