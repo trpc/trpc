@@ -11,7 +11,8 @@ export function selectContentHandlerOrUnsupportedMediaType<
       undefined,
       new TRPCError({
         code: 'UNSUPPORTED_MEDIA_TYPE',
-        message: 'Invalid Content-Type header (expected application/json)',
+        message:
+          'Invalid Content-Type header. This request may not be supported by your tRPC Adapter, or possibly by tRPC at all',
       }),
     ] as const;
   }
