@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm turbo --filter "@trpc/*" build --force
   test:
     timeout-minutes: 10
     env:
