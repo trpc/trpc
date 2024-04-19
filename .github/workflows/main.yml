@@ -44,8 +44,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build tRPC, then test
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm turbo --filter "@trpc/*" build
       - run: pnpm test-ci
 
       - uses: codecov/codecov-action@v4
@@ -103,8 +102,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build --force
+      - run: pnpm turbo --filter "@trpc/*" build
 
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
@@ -145,8 +143,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm turbo --filter "@trpc/*" build
 
       - uses: denoland/setup-deno@v1
         with:
@@ -184,8 +181,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm turbo --filter "@trpc/*" build
 
       - uses: oven-sh/setup-bun@v1
         with:
@@ -236,8 +232,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm turbo --filter "@trpc/*" build
 
       - uses: actions/setup-node@v4
         with:
