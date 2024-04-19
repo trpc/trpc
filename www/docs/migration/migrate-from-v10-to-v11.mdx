@@ -132,7 +132,7 @@ We have added usage of FormData, File, Blob, and ReadableStream. NodeJS 18 is no
 
 While we're not doing anything differently internally (just yet) this is help support a much requested feature in tRPC: content types other than JSON.
 
-### `TRPCRequestInfo` has had `input?: unknown` removed (breaking)
+### `TRPCRequestInfo.input` has been removed (breaking)
 
 Inputs are now materialised lazily when required by the procedure, which means the input is no longer available when tRPC calls `createContext`
 
