@@ -146,6 +146,8 @@ Inputs are now materialised lazily when required by the procedure, which means t
 - experimental_NodeOnDiskFile and experimental_createFileUploadHandler - not supported in this first release, open an issue if you need to hold data on disk
 - experimental_contentTypeHandlers - not needed anymore, but could come back if needed by the community for novel data types
 
+You can see the new approach in `examples/minimal-content-types`
+
 ### Simplified types and `.d.ts` outputs
 
 Procedures in your router now only emit their input & output - where before they would also contain the full context object for every procedure, leading to unnecessary complexity in e.g. `.d.ts`.
