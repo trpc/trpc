@@ -108,9 +108,9 @@ jobs:
             then pnpm playwright install chromium;
           fi
 
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev --force
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start --force
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
     # only run on PRs
