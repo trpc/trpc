@@ -24,7 +24,7 @@ export const getFormDataContentTypeHandler: <
     const form = await new Request('https://unused.com', {
       method: 'POST',
       headers: opts.req.headers as HeadersInit,
-      body: Readable.toWeb(opts.req) as any,
+      body: Readable.toWeb(opts.req) as ReadableStream,
       // @ts-expect-error - outdated types?
       duplex: 'half',
     }).formData();
