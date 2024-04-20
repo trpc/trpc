@@ -8,6 +8,7 @@
  * ```
  */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 // @trpc/server
 import type { AnyRouter } from '../../@trpc/server';
 import type {
@@ -20,15 +21,15 @@ import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
 } from '../../@trpc/server/http';
-import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
-import type { NodeHTTPContentTypeHandler } from './internals/contentType';
+import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
+import { getFormDataContentTypeHandler } from './content-type/form-data';
+import { getNodeHTTPJSONContentTypeHandler } from './content-type/json';
+import { getOctetContentTypeHandler } from './content-type/octet';
 import type {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
 } from './types';
-
-const defaultJSONContentTypeHandler = nodeHTTPJSONContentTypeHandler();
 
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
@@ -56,38 +57,10 @@ export async function nodeHTTPRequestHandler<
       ? new URLSearchParams(opts.req.query as any)
       : new URLSearchParams(opts.req.url!.split('?')[1]);
 
-    const jsonContentTypeHandler =
-      defaultJSONContentTypeHandler as unknown as NodeHTTPContentTypeHandler<
-        TRequest,
-        TResponse
-      >;
-
-    const contentTypeHandlers = opts.experimental_contentTypeHandlers ?? [
-      jsonContentTypeHandler,
-    ];
-
-    const contentTypeHandler =
-      contentTypeHandlers.find((handler) =>
-        handler.isMatch({
-          // FIXME: no typecasting should be needed here
-          ...(opts as any),
-          query,
-        }),
-      ) ??
-      // fallback to json
-      jsonContentTypeHandler;
-
-    const bodyResult = await contentTypeHandler.getBody({
-      // FIXME: no typecasting should be needed here
-      ...(opts as any),
-      query,
-    });
-
     const req: HTTPRequest = {
       method: opts.req.method!,
       headers: opts.req.headers,
       query,
-      body: bodyResult.ok ? bodyResult.data : undefined,
     };
 
     let isStream = false;
@@ -133,19 +106,33 @@ export async function nodeHTTPRequestHandler<
       }
     };
 
+    const [contentTypeHandler, unsupportedMediaTypeError] =
+      selectContentHandlerOrUnsupportedMediaType(
+        [
+          getNodeHTTPJSONContentTypeHandler<TRouter, TRequest, TResponse>(),
+          getFormDataContentTypeHandler<TRouter, TRequest, TResponse>(),
+          getOctetContentTypeHandler<TRouter, TRequest, TResponse>(),
+        ],
+        { ...opts, query },
+      );
+
     await resolveHTTPResponse<TRouter, HTTPRequest>({
       ...opts,
       req,
       createContext,
-      error: bodyResult.ok ? null : bodyResult.error,
-      preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
+      error: unsupportedMediaTypeError,
       onError(o) {
         opts?.onError?.({
           ...o,
           req: opts.req,
         });
       },
-      contentTypeHandler,
+      async getInput(inputsOpts) {
+        return await contentTypeHandler?.getInputs(
+          { ...opts, query },
+          inputsOpts,
+        );
+      },
       unstable_onHead,
       unstable_onChunk,
     });
