@@ -21,7 +21,7 @@ import type {
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 
-export type FetchCreateContextFnOptions<TRequest extends Request> = {
+export type FetchCreateContextFnOptions<TRequest extends Request = Request> = {
   req: TRequest;
   resHeaders: Headers;
   info: TRPCRequestInfo;
@@ -29,14 +29,14 @@ export type FetchCreateContextFnOptions<TRequest extends Request> = {
 
 export type FetchCreateContextFn<
   TRouter extends AnyRouter,
-  TRequest extends Request,
+  TRequest extends Request = Request,
 > = (
   opts: FetchCreateContextFnOptions<TRequest>,
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
 export type FetchCreateContextOption<
   TRouter extends AnyRouter,
-  TRequest extends Request,
+  TRequest extends Request = Request,
 > = CreateContextCallback<
   inferRouterContext<TRouter>,
   FetchCreateContextFn<TRouter, TRequest>
@@ -44,7 +44,7 @@ export type FetchCreateContextOption<
 
 export type FetchHandlerOptions<
   TRouter extends AnyRouter,
-  TRequest extends Request,
+  TRequest extends Request = Request,
 > = FetchCreateContextOption<TRouter, TRequest> &
   HTTPBaseHandlerOptions<TRouter, TRequest> & {
     req: TRequest;
@@ -53,7 +53,7 @@ export type FetchHandlerOptions<
 
 export type FetchHandlerRequestOptions<
   TRouter extends AnyRouter,
-  TRequest extends Request,
+  TRequest extends Request = Request,
 > = HTTPBaseHandlerOptions<TRouter, TRequest> &
   WrapCreateContext<FetchCreateContextFn<TRouter, TRequest>> & {
     req: TRequest;
