@@ -825,6 +825,9 @@ importers:
       zod:
         specifier: ^3.0.0
         version: 3.22.4
+      zod-form-data:
+        specifier: ^2.0.1
+        version: 2.0.1(zod@3.22.4)
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -850,6 +853,9 @@ importers:
       zod:
         specifier: ^3.0.0
         version: 3.22.4
+      zod-form-data:
+        specifier: ^2.0.1
+        version: 2.0.1(zod@3.22.4)
     devDependencies:
       '@types/cors':
         specifier: ^2.8.13

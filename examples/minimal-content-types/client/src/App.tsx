@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpLink } from '@trpc/client';
 import { useState } from 'react';
 import { SendFileButton } from './SendFileButton';
+import { FormWithFile } from './SendFormDataWithFile';
 import { SendMultipartFormDataButton } from './SendMultipartFormDataButton';
 import { trpc } from './utils/trpc';
 
@@ -30,6 +31,8 @@ export function App() {
           <SendMultipartFormDataButton />
 
           <SendFileButton />
+
+          <FormWithFile />
         </div>
       </QueryClientProvider>
     </trpc.Provider>

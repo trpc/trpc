@@ -5,26 +5,17 @@
 import { initTRPC, parseOctetInput } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
-import type { z } from 'zod';
+import { z } from 'zod';
+import { zfd } from 'zod-form-data';
 
 const t = initTRPC.create();
 
 const publicProcedure = t.procedure;
 const router = t.router;
 
-// A fake type parser which just expects the appropriate type to be passed through
-function asType<TOut, TIn = unknown>(): z.ZodType<TOut, any, TIn> {
-  return {
-    parse: (input: unknown) => {
-      console.log('parser received', input);
-      return input as TOut;
-    },
-  } as z.ZodType<TOut, any, TIn>;
-}
-
 const appRouter = router({
   // Input parsers set! (should expect the input to be loaded into memory)
-  formData: publicProcedure.input(asType<FormData>()).mutation(({ input }) => {
+  formData: publicProcedure.input(z.instanceof(FormData)).mutation(({ input }) => {
     const object = {} as Record<string, unknown>;
     input.forEach((value, key) => (object[key] = value));
 
@@ -57,6 +48,16 @@ const appRouter = router({
         text: 'ACK',
         data: content,
       };
+    }),
+  formWithFile: publicProcedure
+    .input(
+      zfd.formData({
+        file: zfd.file(),
+      }),
+    )
+    .mutation(({ input }) => {
+      console.log('FormData: ', input);
+      console.log('File: ', input.file);
     }),
 });
 

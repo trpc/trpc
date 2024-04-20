@@ -6,6 +6,7 @@ import { initTRPC, parseOctetInput } from '@trpc/server';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
+import { zfd } from 'zod-form-data';
 
 const t = initTRPC.create();
 
@@ -49,6 +50,16 @@ const appRouter = router({
         text: 'ACK',
         data: content,
       };
+    }),
+  formWithFile: publicProcedure
+    .input(
+      zfd.formData({
+        file: zfd.file(),
+      }),
+    )
+    .mutation(({ input }) => {
+      console.log('FormData: ', input);
+      console.log('File: ', input.file);
     }),
 });
 
