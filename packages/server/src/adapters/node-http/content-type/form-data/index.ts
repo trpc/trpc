@@ -21,9 +21,15 @@ export const getFormDataContentTypeHandler: <
       throw new Error('Batch calls not supported for form-data');
     }
 
+    const contentType = opts.req.headers['content-type'];
+    if (!contentType) {
+      // Should be unreachable given the isMatch check
+      throw new Error('No content-type header found');
+    }
+
     const form = await new Request('https://unused.com', {
       method: 'POST',
-      headers: opts.req.headers as HeadersInit,
+      headers: { 'content-type': contentType },
       body: Readable.toWeb(opts.req) as ReadableStream,
       // @ts-expect-error - outdated types?
       duplex: 'half',
