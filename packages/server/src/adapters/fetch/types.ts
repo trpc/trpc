@@ -60,7 +60,7 @@ export type FetchHandlerRequestOptions<
     endpoint: string;
   };
 
-export interface FetchHTTPContentTypeHandler<
+export interface FetchContentTypeHandler<
   TRouter extends AnyRouter,
   TRequest extends Request,
 > extends BaseContentTypeHandler<

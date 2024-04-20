@@ -1,11 +1,11 @@
 // @trpc/server
 import type { AnyRouter } from '../../../../@trpc/server';
-import type { FetchHTTPContentTypeHandler } from '../../types';
+import type { FetchContentTypeHandler } from '../../types';
 
 export const getOctetContentTypeHandler: <
   TRouter extends AnyRouter,
   TRequest extends Request,
->() => FetchHTTPContentTypeHandler<TRouter, TRequest> = () => ({
+>() => FetchContentTypeHandler<TRouter, TRequest> = () => ({
   name: 'node-http-octet',
   isMatch(opts) {
     return (
