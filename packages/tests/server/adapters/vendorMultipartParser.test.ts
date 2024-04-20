@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-restricted-imports */
+// @ts-expect-error the type definitions for this package are borked
 import { iterateMultipart } from '@trpc/server/src/adapters/content-handlers/vendor-multipart-parser';
 
 const boundary = 'some random boundary';
 
-test('can parse multipart from readable stream', async (t) => {
+test('can parse multipart from readable stream', async () => {
   const testPayload = multipartPayload(expectedParts, boundary);
 
   const files = [];
@@ -14,8 +15,7 @@ test('can parse multipart from readable stream', async (t) => {
     files.push(filePart);
   }
 
-  t.ok(files.length);
-  t.end();
+  expect(files.length).toBeGreaterThanOrEqual(1);
 });
 
 function multipartPayload(

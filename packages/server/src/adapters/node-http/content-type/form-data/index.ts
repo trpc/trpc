@@ -10,11 +10,11 @@
  */
 import * as fs from 'fs/promises';
 import { Readable } from 'stream';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore the type definitions for this package are borked
-import { streamMultipart } from '@web3-storage/multipart-parser';
 // @trpc/server
 import type { AnyRouter } from '../../../../@trpc/server';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore the type definitions for this package are borked
+import { streamMultipart } from '../../../content-handlers/vendor-multipart-parser';
 import type { NodeHTTPRequest, NodeHTTPResponse } from '../../types';
 // @trpc/server
 import type { NodeHTTPContentTypeHandler } from '../types';
