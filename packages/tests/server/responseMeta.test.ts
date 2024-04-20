@@ -46,7 +46,11 @@ test('set custom headers in beforeEnd', async () => {
     },
   });
   {
-    const res = await fetch(`${httpUrl}/public.q`);
+    const res = await fetch(`${httpUrl}/public.q`, {
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
 
     expect(await res.json()).toMatchInlineSnapshot(`
 Object {
@@ -61,7 +65,11 @@ Object {
     );
   }
   {
-    const res = await fetch(`${httpUrl}/nonCachedEndpoint`);
+    const res = await fetch(`${httpUrl}/nonCachedEndpoint`, {
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
 
     expect(await res.json()).toMatchInlineSnapshot(`
 Object {
@@ -106,7 +114,11 @@ test('cookie headers', async () => {
   });
 
   {
-    const res = await fetch(`${httpUrl}/cookieEndpoint`);
+    const res = await fetch(`${httpUrl}/cookieEndpoint`, {
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
 
     expect(res.headers.get('set-cookie')).toMatchInlineSnapshot(`
 "a=b, b=c"
