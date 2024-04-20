@@ -1617,8 +1617,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       devalue:
-        specifier: ^4.0.0
-        version: 4.3.0
+        specifier: ^5.0.0
+        version: 5.0.0
       eslint:
         specifier: ^8.56.0
         version: 8.56.0
@@ -1734,8 +1734,8 @@ importers:
         specifier: ^2.2.2
         version: 2.2.2
       devalue:
-        specifier: ^4.0.0
-        version: 4.3.0
+        specifier: ^5.0.0
+        version: 5.0.0
       eslint:
         specifier: ^8.56.0
         version: 8.56.0
@@ -11800,8 +11800,8 @@ packages:
       - supports-color
     dev: false
 
-  /devalue@4.3.0:
-    resolution: {integrity: sha512-n94yQo4LI3w7erwf84mhRUkUJfhLoCZiLyoOZ/QFsDbcWNZePrLwbQpvZBUG2TNxwV3VjCKPxkiiQA6pe3TrTA==}
+  /devalue@5.0.0:
+    resolution: {integrity: sha512-gO+/OMXF7488D+u3ue+G7Y4AA3ZmUnB3eHJXmBTgNHvr4ZNzl36A0ZtG+XCRNYCkYx/bFmw4qtkoFLa+wSrwAA==}
 
   /dezalgo@1.0.3:
     resolution: {integrity: sha512-K7i4zNfT2kgQz3GylDw40ot9GAE47sFZ9EXHFSPP6zONLgH6kWXE0KWJchkbQJLBkRazq4APwZ4OwiFFlT95OQ==}
