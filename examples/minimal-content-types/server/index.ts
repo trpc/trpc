@@ -15,17 +15,19 @@ const router = t.router;
 
 const appRouter = router({
   // Input parsers set! (should expect the input to be loaded into memory)
-  formData: publicProcedure.input(z.instanceof(FormData)).mutation(({ input }) => {
-    const object = {} as Record<string, unknown>;
-    input.forEach((value, key) => (object[key] = value));
+  formData: publicProcedure
+    .input(z.instanceof(FormData))
+    .mutation(({ input }) => {
+      const object = {} as Record<string, unknown>;
+      input.forEach((value, key) => (object[key] = value));
 
-    console.log('FormData: ', object, input);
+      console.log('FormData: ', object, input);
 
-    return {
-      text: 'ACK',
-      data: object,
-    };
-  }),
+      return {
+        text: 'ACK',
+        data: object,
+      };
+    }),
   file: publicProcedure
     .input(parseOctetInput<File>())
     .mutation(async ({ input }) => {
