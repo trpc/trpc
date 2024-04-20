@@ -7,6 +7,7 @@ import type { TRPCLink } from '@trpc/client';
 import {
   createTRPCProxyClient,
   httpBatchLink,
+  httpLink,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
@@ -71,6 +72,17 @@ function createAppRouter() {
           setTimeout(resolve, opts.input.wait * 10),
         );
         return opts.input.wait;
+      }),
+    formData: publicProcedure
+      .input(z.instanceof(FormData))
+      .mutation(({ input }) => {
+        const object = {} as Record<string, unknown>;
+        input.forEach((value, key) => (object[key] = value));
+
+        return {
+          text: 'ACK',
+          data: object,
+        };
       }),
   });
 
@@ -243,6 +255,26 @@ describe('with default server', () => {
     });
 
     await client.foo.query();
+  });
+
+  // Miniflare seems broken. Working test in examples/bun
+  test.skip('formData', async () => {
+    const client = createTRPCProxyClient<AppRouter>({
+      links: [httpLink({ url: t.url, fetch: fetch as any })],
+    });
+
+    const form = new FormData();
+    form.append('foo', 'bar');
+    const result = await client.formData.mutate(form);
+
+    expect(result).toMatchInlineSnapshot(`
+    Object {
+      "data": Object {
+        "foo": "bar",
+      },
+      "text": "ACK",
+    }
+  `);
   });
 });
 
