@@ -22,6 +22,7 @@ import {
   toURL,
 } from '../../@trpc/server/http';
 import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
+import { getFormDataContentTypeHandler } from './content-type/form-data';
 import { getFetchHTTPJSONContentTypeHandler } from './content-type/json';
 import type { FetchHandlerOptions } from './types';
 
@@ -32,9 +33,10 @@ const trimSlashes = (path: string): string => {
   return path;
 };
 
-export async function fetchRequestHandler<TRouter extends AnyRouter>(
-  opts: FetchHandlerOptions<TRouter>,
-): Promise<Response> {
+export async function fetchRequestHandler<
+  TRouter extends AnyRouter,
+  TRequest extends Request = Request,
+>(opts: FetchHandlerOptions<TRouter, TRequest>): Promise<Response> {
   const resHeaders = new Headers();
 
   const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
@@ -112,7 +114,10 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
 
   const [contentTypeHandler, unsupportedMediaTypeError] =
     selectContentHandlerOrUnsupportedMediaType(
-      [getFetchHTTPJSONContentTypeHandler<TRouter>()],
+      [
+        getFetchHTTPJSONContentTypeHandler<TRouter, TRequest>(),
+        getFormDataContentTypeHandler<TRouter, TRequest>(),
+      ],
       {
         ...opts,
         url,

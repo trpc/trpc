@@ -4,19 +4,13 @@ import type {
   AnyRouter,
   CombinedDataTransformer,
 } from '../../../../@trpc/server';
-import type { BaseContentTypeHandler } from '../../../../@trpc/server/http';
-import type { FetchHandlerRequestOptions } from '../../types';
+import type { FetchHTTPContentTypeHandler } from '../../types';
 
-export interface FetchHTTPContentTypeHandler<TRouter extends AnyRouter>
-  extends BaseContentTypeHandler<
-    FetchHandlerRequestOptions<TRouter> & {
-      url: URL;
-    }
-  > {}
 
 export const getFetchHTTPJSONContentTypeHandler: <
   TRouter extends AnyRouter,
->() => FetchHTTPContentTypeHandler<TRouter> = () => ({
+  TRequest extends Request,
+>() => FetchHTTPContentTypeHandler<TRouter, TRequest> = () => ({
   name: 'fetch-json',
   isMatch(opts) {
     return !!opts.req.headers

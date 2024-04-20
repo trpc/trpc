@@ -16,36 +16,55 @@ import type {
 } from '../../@trpc/server';
 // @trpc/server/http
 import type {
+  BaseContentTypeHandler,
   HTTPBaseHandlerOptions,
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 
-export type FetchCreateContextFnOptions = {
-  req: Request;
+export type FetchCreateContextFnOptions<TRequest extends Request> = {
+  req: TRequest;
   resHeaders: Headers;
   info: TRPCRequestInfo;
 };
 
-export type FetchCreateContextFn<TRouter extends AnyRouter> = (
-  opts: FetchCreateContextFnOptions,
+export type FetchCreateContextFn<
+  TRouter extends AnyRouter,
+  TRequest extends Request,
+> = (
+  opts: FetchCreateContextFnOptions<TRequest>,
 ) => inferRouterContext<TRouter> | Promise<inferRouterContext<TRouter>>;
 
-export type FetchCreateContextOption<TRouter extends AnyRouter> =
-  CreateContextCallback<
-    inferRouterContext<TRouter>,
-    FetchCreateContextFn<TRouter>
-  >;
+export type FetchCreateContextOption<
+  TRouter extends AnyRouter,
+  TRequest extends Request,
+> = CreateContextCallback<
+  inferRouterContext<TRouter>,
+  FetchCreateContextFn<TRouter, TRequest>
+>;
 
-export type FetchHandlerOptions<TRouter extends AnyRouter> =
-  FetchCreateContextOption<TRouter> &
-    HTTPBaseHandlerOptions<TRouter, Request> & {
-      req: Request;
-      endpoint: string;
-    };
+export type FetchHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends Request,
+> = FetchCreateContextOption<TRouter, TRequest> &
+  HTTPBaseHandlerOptions<TRouter, TRequest> & {
+    req: TRequest;
+    endpoint: string;
+  };
 
-export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
-  HTTPBaseHandlerOptions<TRouter, Request> &
-    WrapCreateContext<FetchCreateContextFn<TRouter>> & {
-      req: Request;
-      endpoint: string;
-    };
+export type FetchHandlerRequestOptions<
+  TRouter extends AnyRouter,
+  TRequest extends Request,
+> = HTTPBaseHandlerOptions<TRouter, TRequest> &
+  WrapCreateContext<FetchCreateContextFn<TRouter, TRequest>> & {
+    req: TRequest;
+    endpoint: string;
+  };
+
+export interface FetchHTTPContentTypeHandler<
+  TRouter extends AnyRouter,
+  TRequest extends Request,
+> extends BaseContentTypeHandler<
+    FetchHandlerRequestOptions<TRouter, TRequest> & {
+      url: URL;
+    }
+  > {}
