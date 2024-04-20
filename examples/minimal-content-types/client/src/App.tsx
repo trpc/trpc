@@ -11,7 +11,7 @@ export function App() {
     trpc.createClient({
       links: [
         httpLink({
-          url: 'http://localhost:2022',
+          url: 'http://localhost:2022/api/trpc',
         }),
       ],
     }),

@@ -8,6 +8,7 @@
   "scripts": {
     "build:client": "npm run build -w client",
     "build:server": "npm run build -w server",
+    "build:server-fetch": "npm run build -w server",
     "build": "run-s build:server build:client",
     "dev:client": "npm run dev -w client",
     "dev:server": "npm run dev -w server",
