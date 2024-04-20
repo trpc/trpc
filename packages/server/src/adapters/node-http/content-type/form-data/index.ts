@@ -12,9 +12,6 @@ import * as fs from 'fs/promises';
 import { Readable } from 'stream';
 // @trpc/server
 import type { AnyRouter } from '../../../../@trpc/server';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore the type definitions for this package are borked
-import { streamMultipart } from '../../../content-handlers/vendor-multipart-parser';
 import type { NodeHTTPRequest, NodeHTTPResponse } from '../../types';
 // @trpc/server
 import type { NodeHTTPContentTypeHandler } from '../types';
@@ -48,8 +45,14 @@ async function parseMultipartFormData(
   }
 
   const formData = new FormData();
+
+  const multipartParser = await import(
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore the type definitions for this vendored package are borked
+    '../../../content-handlers/vendor-multipart-parser/index.js',
+  );
   const parts: AsyncIterable<UploadHandlerPart & { done?: true }> =
-    streamMultipart(Readable.toWeb(request), boundary);
+    multipartParser.streamMultipart(Readable.toWeb(request), boundary);
 
   let currentBodySize = 0;
 

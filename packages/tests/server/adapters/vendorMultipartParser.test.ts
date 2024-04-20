@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-restricted-imports */
 // @ts-expect-error the type definitions for this package are borked
-import { iterateMultipart } from '@trpc/server/src/adapters/content-handlers/vendor-multipart-parser';
+import { iterateMultipart } from '../../../server/adapters/content-handlers/vendor-multipart-parser/index.js';
+
+// import { iterateMultipart } from '@trpc/server/src/adapters/content-handlers/vendor-multipart-parser/index.js';
 
 const boundary = 'some random boundary';
 
