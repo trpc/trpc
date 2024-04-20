@@ -24,6 +24,7 @@ import {
 import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
 import { getFormDataContentTypeHandler } from './content-type/form-data';
 import { getFetchHTTPJSONContentTypeHandler } from './content-type/json';
+import { getOctetContentTypeHandler } from './content-type/octet';
 import type { FetchHandlerOptions } from './types';
 
 const trimSlashes = (path: string): string => {
@@ -117,6 +118,7 @@ export async function fetchRequestHandler<
       [
         getFetchHTTPJSONContentTypeHandler<TRouter, TRequest>(),
         getFormDataContentTypeHandler<TRouter, TRequest>(),
+        getOctetContentTypeHandler<TRouter, TRequest>(),
       ],
       {
         ...opts,
