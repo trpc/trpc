@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev --port 2022",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "next start"
   },
   "dependencies": {
     "@trpc/server": "npm:@trpc/server@next",
