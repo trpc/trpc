@@ -31,7 +31,7 @@ export const getFormDataContentTypeHandler: <
       method: 'POST',
       headers: { 'content-type': contentType },
       body: Readable.toWeb(opts.req) as ReadableStream,
-      // @ts-expect-error - outdated types?
+      // @ts-expect-error - outdated types? this exists
       duplex: 'half',
     }).formData();
 
