@@ -36,17 +36,6 @@ export const appRouter = router({
   hello: publicProcedure.input(z.string().nullish()).query(({ input }) => {
     return `hello ${input ?? 'world'}`;
   }),
-  formData: publicProcedure
-    .input(z.instanceof(FormData))
-    .mutation(({ input }) => {
-      const object = {} as Record<string, unknown>;
-      input.forEach((value, key) => (object[key] = value));
-
-      return {
-        text: 'ACK',
-        data: object,
-      };
-    }),
 });
 
 export type AppRouter = typeof appRouter;
