@@ -7,6 +7,12 @@ import type {
 import type { ResponseEsque } from '../internals/types';
 import type { TRPCClientError } from '../TRPCClientError';
 
+export {
+  isNonJsonSerializable,
+  isFormData,
+  isOctetType,
+} from './internals/contentTypes';
+
 /**
  * @internal
  */

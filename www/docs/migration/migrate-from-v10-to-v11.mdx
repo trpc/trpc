@@ -119,6 +119,10 @@ We have refactored our internal generics and made them more readable (TODO: link
 
 Check their migration guide: https://react.dev/blog/2022/03/08/react-18-upgrade-guide
 
+### NodeJS 18+ and Modern Browsers are now required (breaking)
+
+We have added usage of FormData, File, Blob, and ReadableStream. NodeJS 18 is now required, though these have been supported by browsers for many years now.
+
 ### `wsLink` improvements (minor)
 
 - Ability to pass a `Promise` in the `url`-callback if servers switch location during deploys
@@ -127,6 +131,22 @@ Check their migration guide: https://react.dev/blog/2022/03/08/react-18-upgrade-
 ### `rawInput` in middleware is now a `getRawInput` (breaking)
 
 While we're not doing anything differently internally (just yet) this is help support a much requested feature in tRPC: content types other than JSON.
+
+### `TRPCRequestInfo.input` has been removed (breaking)
+
+Inputs are now materialised lazily when required by the procedure, which means the input is no longer available when tRPC calls `createContext`
+
+### all the experimental form-data support has been removed (breaking)
+
+- experimental_formDataLink - use httpLink
+- experimental_parseMultipartFormData - not needed anymore
+- experimental_isMultipartFormDataRequest - not needed anymore
+- experimental_composeUploadHandlers - not needed anymore
+- experimental_createMemoryUploadHandler - not needed anymore
+- experimental_NodeOnDiskFile and experimental_createFileUploadHandler - not supported in this first release, open an issue if you need to hold data on disk
+- experimental_contentTypeHandlers - not needed anymore, but could come back if needed by the community for novel data types
+
+You can see the new approach in `examples/minimal-content-types`
 
 ### Simplified types and `.d.ts` outputs
 

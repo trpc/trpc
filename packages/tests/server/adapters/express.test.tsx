@@ -113,9 +113,6 @@ test('request info from context should include both calls', async () => {
       Object {
         "calls": Array [
           Object {
-            "input": Object {
-              "who": "test",
-            },
             "path": "hello",
             "type": "query",
           },
