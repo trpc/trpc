@@ -163,7 +163,7 @@ test('payload too large', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    hello: t.procedure.input((a) => a).mutation(() => 'world'),
+    hello: t.procedure.query(() => 'world'),
   });
 
   const handler = trpcNext.createNextApiHandler({

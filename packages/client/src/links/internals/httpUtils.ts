@@ -18,7 +18,6 @@ import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
 import type { TextDecoderEsque } from '../internals/streamingUtils';
 import type { HTTPHeaders, PromiseAndCancel } from '../types';
-import { isFormData, isOctetType } from './contentTypes';
 
 /**
  * @internal
@@ -106,7 +105,6 @@ export type HTTPBaseRequestOptions = GetInputOptions &
 
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
 type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
-
 export type ContentOptions = {
   batchModeHeader?: 'stream';
   contentTypeHeader?: string;
@@ -153,39 +151,6 @@ export const jsonHttpRequester: Requester = (opts) => {
     getUrl,
     getBody,
   });
-};
-
-export const universalRequester: Requester = (opts) => {
-  const input = getInput(opts);
-
-  if (isFormData(input)) {
-    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
-      throw new Error('FormData is only supported for mutations');
-    }
-
-    return httpRequest({
-      ...opts,
-      // The browser will set this automatically and include the boundary= in it
-      contentTypeHeader: undefined,
-      getUrl,
-      getBody: () => input,
-    });
-  }
-
-  if (isOctetType(input)) {
-    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
-      throw new Error('Octet type input is only supported for mutations');
-    }
-
-    return httpRequest({
-      ...opts,
-      contentTypeHeader: 'application/octet-stream',
-      getUrl,
-      getBody: () => input,
-    });
-  }
-
-  return jsonHttpRequester(opts);
 };
 
 export type HTTPRequestOptions = ContentOptions &

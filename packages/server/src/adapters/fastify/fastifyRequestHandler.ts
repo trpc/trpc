@@ -7,11 +7,12 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
-import { Readable } from 'stream';
+import { Readable } from 'node:stream';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 // @trpc/server
 import type { AnyRouter } from '../../@trpc/server';
 import type {
+  HTTPBaseHandlerOptions,
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
@@ -21,9 +22,24 @@ import {
   getBatchStreamFormatter,
   resolveHTTPResponse,
 } from '../../@trpc/server/http';
-import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
-import { getFastifyHTTPJSONContentTypeHandler } from './content-type/json';
-import type { FastifyRequestHandlerOptions } from './types';
+import type { NodeHTTPCreateContextOption } from '../node-http';
+
+export type FastifyHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends FastifyRequest,
+  TResponse extends FastifyReply,
+> = HTTPBaseHandlerOptions<TRouter, TRequest> &
+  NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
+
+type FastifyRequestHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends FastifyRequest,
+  TResponse extends FastifyReply,
+> = FastifyHandlerOptions<TRouter, TRequest, TResponse> & {
+  req: TRequest;
+  res: TResponse;
+  path: string;
+};
 
 export async function fastifyRequestHandler<
   TRouter extends AnyRouter,
@@ -47,6 +63,7 @@ export async function fastifyRequestHandler<
     query,
     method: opts.req.method,
     headers: opts.req.headers,
+    body: opts.req.body ?? 'null',
   };
 
   let resolve: (value: FastifyReply) => void;
@@ -91,21 +108,10 @@ export async function fastifyRequestHandler<
     }
   };
 
-  const [contentTypeHandler, unsupportedMediaTypeError] =
-    selectContentHandlerOrUnsupportedMediaType(
-      [getFastifyHTTPJSONContentTypeHandler<TRouter, TRequest, TResponse>()],
-      opts,
-    );
-
   resolveHTTPResponse({
     ...opts,
     req,
-    error: unsupportedMediaTypeError,
-    async getInput(info) {
-      return await contentTypeHandler?.getInputs(opts, info);
-    },
     createContext,
-
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },

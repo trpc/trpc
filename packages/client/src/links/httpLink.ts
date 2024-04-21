@@ -11,8 +11,8 @@ import type {
   Requester,
 } from './internals/httpUtils';
 import {
+  jsonHttpRequester,
   resolveHTTPLinkOptions,
-  universalRequester,
 } from './internals/httpUtils';
 import type { HTTPHeaders, Operation, TRPCLink } from './types';
 
@@ -91,4 +91,4 @@ export function httpLinkFactory(factoryOpts: { requester: Requester }) {
 /**
  * @link https://trpc.io/docs/v11/client/links/httpLink
  */
-export const httpLink = httpLinkFactory({ requester: universalRequester });
+export const httpLink = httpLinkFactory({ requester: jsonHttpRequester });

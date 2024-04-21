@@ -1,7 +1,6 @@
 import {
+  experimental_formDataLink,
   httpBatchLink,
-  httpLink,
-  isNonJsonSerializable,
   loggerLink,
   splitLink,
 } from '@trpc/client';
@@ -56,8 +55,8 @@ export const trpc = createTRPCNext<AppRouter>({
             (op.direction === 'down' && op.result instanceof Error),
         }),
         splitLink({
-          condition: (op) => isNonJsonSerializable(op.input),
-          true: httpLink({
+          condition: (op) => op.input instanceof FormData,
+          true: experimental_formDataLink({
             url,
           }),
           false: httpBatchLink({
