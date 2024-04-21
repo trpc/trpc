@@ -72,6 +72,9 @@ function createAppRouter() {
         );
         return opts.input.wait;
       }),
+    helloMutation: publicProcedure.input(z.string()).mutation((opts) => {
+      return `hello ${opts.input}`;
+    }),
   });
 
   return appRouter;
@@ -265,4 +268,14 @@ test.each([
   });
 
   await custom.close();
+});
+
+test('mutation', async () => {
+  const t = await startServer();
+  const res = await Promise.all([
+    t.client.helloMutation.mutate('world'),
+    t.client.helloMutation.mutate('KATT'),
+  ]);
+  expect(res).toEqual(['hello world', 'hello KATT']);
+  await t.close();
 });
