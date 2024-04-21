@@ -11,10 +11,8 @@ export const getFetchHTTPJSONContentTypeHandler: <
   TRequest extends Request,
 >() => FetchContentTypeHandler<TRouter, TRequest> = () => ({
   name: 'fetch-json',
-  isMatch(opts) {
-    return !!opts.req.headers
-      .get('content-type')
-      ?.startsWith('application/json');
+  isMatch: (headers) => {
+    return !!headers.get('content-type')?.startsWith('application/json');
   },
   getInputs: async (opts, info) => {
     async function getRawProcedureInputOrThrow() {
