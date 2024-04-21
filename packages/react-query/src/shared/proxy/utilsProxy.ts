@@ -4,6 +4,8 @@ import type {
   InvalidateOptions,
   InvalidateQueryFilters,
   Query,
+  QueryFilters,
+  QueryKey,
   RefetchOptions,
   RefetchQueryFilters,
   ResetOptions,
@@ -170,6 +172,22 @@ type DecorateProcedure<
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
    */
+  setQueriesData(
+    /**
+     * The input of the procedure
+     */
+    input: inferProcedureInput<TProcedure>,
+    filters: QueryFilters,
+    updater: Updater<
+      inferTransformedProcedureOutput<TRoot, TProcedure> | undefined,
+      inferTransformedProcedureOutput<TRoot, TProcedure> | undefined
+    >,
+    options?: SetDataOptions,
+  ): [QueryKey, inferTransformedProcedureOutput<TRoot, TProcedure>];
+
+  /**
+   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
+   */
   setInfiniteData(
     input: inferProcedureInput<TProcedure>,
     updater: Updater<
@@ -269,6 +287,7 @@ export const getQueryType = (
     case 'prefetch':
     case 'getData':
     case 'setData':
+    case 'setQueriesData':
       return 'query';
 
     case 'fetchInfinite':
@@ -315,6 +334,8 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
       setData: () => {
         context.setQueryData(queryKey, args[0], args[1]);
       },
+      setQueriesData: () =>
+        context.setQueriesData(queryKey, args[0], args[1], args[2]),
       setInfiniteData: () => {
         context.setInfiniteQueryData(queryKey, args[0], args[1]);
       },
