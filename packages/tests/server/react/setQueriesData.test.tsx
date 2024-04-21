@@ -29,7 +29,7 @@ describe('setQueriesData()', () => {
           <button
             data-testid="setQueriesData"
             onClick={async () => {
-              const updatedKeys = await utils.allPosts.setQueriesData(
+              const updatedKeys = utils.allPosts.setQueriesData(
                 undefined,
                 {},
                 [
