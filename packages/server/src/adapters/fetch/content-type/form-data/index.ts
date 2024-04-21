@@ -6,11 +6,8 @@ export const getFormDataContentTypeHandler: <
   TRequest extends Request,
 >() => FetchContentTypeHandler<TRouter, TRequest> = () => ({
   name: 'fetch-formdata',
-  isMatch(opts) {
-    return (
-      opts.req.headers.get('content-type')?.startsWith('multipart/form-data') ??
-      false
-    );
+  isMatch(headers) {
+    return !!headers.get('content-type')?.startsWith('multipart/form-data');
   },
   async getInputs(opts, inputOpts) {
     if (inputOpts.isBatchCall) {
