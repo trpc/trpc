@@ -22,9 +22,7 @@ export const getFastifyHTTPJSONContentTypeHandler: <
   TResponse extends FastifyReply,
 >() => FastifyHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
   name: 'fastify-json',
-  isMatch(opts) {
-    return !!opts.req.headers['content-type']?.startsWith('application/json');
-  },
+  isMatch: (contentType) => contentType.startsWith('application/json'),
   getInputs: async (opts, info) => {
     async function getRawProcedureInputOrThrow() {
       const { req } = opts;

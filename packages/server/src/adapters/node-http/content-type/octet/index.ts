@@ -10,13 +10,7 @@ export const getOctetContentTypeHandler: <
   TResponse extends NodeHTTPResponse,
 >() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
   name: 'node-http-octet',
-  isMatch(opts) {
-    return (
-      opts.req.headers['content-type']?.startsWith(
-        'application/octet-stream',
-      ) ?? false
-    );
-  },
+  isMatch: (contentType) => contentType.startsWith('application/octet-stream'),
   async getInputs(opts, inputOpts) {
     if (inputOpts.isBatchCall) {
       throw new Error('Batch calls not supported for octet-stream');

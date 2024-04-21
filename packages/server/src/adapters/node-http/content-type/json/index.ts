@@ -14,9 +14,7 @@ export const getNodeHTTPJSONContentTypeHandler: <
   TResponse extends NodeHTTPResponse,
 >() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
   name: 'node-http-json',
-  isMatch(opts) {
-    return !!opts.req.headers['content-type']?.startsWith('application/json');
-  },
+  isMatch: (contentType) => contentType.startsWith('application/json'),
   getInputs: async (opts, info) => {
     const bodyResult = await getPostBody(opts);
     if (!bodyResult.ok) {

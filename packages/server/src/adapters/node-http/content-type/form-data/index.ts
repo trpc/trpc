@@ -10,12 +10,7 @@ export const getFormDataContentTypeHandler: <
   TResponse extends NodeHTTPResponse,
 >() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
   name: 'node-http-formdata',
-  isMatch(opts) {
-    return (
-      opts.req.headers['content-type']?.startsWith('multipart/form-data') ??
-      false
-    );
-  },
+  isMatch: (contentType) => contentType.startsWith('multipart/form-data'),
   async getInputs(opts, inputOpts) {
     if (inputOpts.isBatchCall) {
       throw new Error('Batch calls not supported for form-data');
