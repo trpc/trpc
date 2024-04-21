@@ -76,7 +76,7 @@ createTRPCNext<AppRouter>({
 });
 ```
 
-## `@trpc/next` ssr mode now requires a prepass helper with `ssr: true`
+### `@trpc/next` ssr mode now requires a prepass helper with `ssr: true`
 
 This is to fix https://github.com/trpc/trpc/issues/5378 where `react-dom` was imported regardless if you were using this functionality or not.
 
