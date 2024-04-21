@@ -269,3 +269,22 @@ test.each([
 
   await custom.close();
 });
+
+// https://github.com/trpc/trpc/issues/5659
+test('mutation', async () => {
+  const t = await startServer();
+  try {
+    const res = await Promise.all([
+      t.client.helloMutation.mutate('world'),
+      t.client.helloMutation.mutate('KATT'),
+    ]);
+    expect(res).toEqual(['hello world', 'hello KATT']);
+  } catch (err) {
+    console.log('err', err);
+    console.log('err', (err as any).cause);
+
+    throw err;
+  } finally {
+    await t.close();
+  }
+});
