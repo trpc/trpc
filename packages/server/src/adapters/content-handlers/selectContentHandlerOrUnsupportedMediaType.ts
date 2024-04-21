@@ -12,11 +12,10 @@ export function selectContentHandlerOrUnsupportedMediaType<
 
   for (const h of handlers) {
     const match = h.isMatch(opts);
+    received = match.received;
     if (match.match) {
       handler = h;
       break;
-    } else {
-      received = match.received;
     }
   }
 
