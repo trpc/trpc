@@ -29,8 +29,8 @@ export const getLambdaHTTPJSONContentTypeHandler: <
   TEvent extends APIGatewayEvent,
 >() => LambdaHTTPContentTypeHandler<TRouter, TEvent> = () => ({
   name: 'lambda-json',
-  isMatch: (headers) => {
-    return !!headers.get('content-type')?.startsWith('application/json');
+  isMatch(opts) {
+    return !!opts.event.headers['Content-Type']?.startsWith('application/json');
   },
   getInputs: async (opts, info) => {
     function getRawProcedureInputOrThrow() {

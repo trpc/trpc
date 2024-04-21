@@ -10,8 +10,11 @@ export const getFormDataContentTypeHandler: <
   TResponse extends NodeHTTPResponse,
 >() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
   name: 'node-http-formdata',
-  isMatch: (headers) => {
-    return !!headers.get('content-type')?.startsWith('multipart/form-data');
+  isMatch(opts) {
+    return (
+      opts.req.headers['content-type']?.startsWith('multipart/form-data') ??
+      false
+    );
   },
   async getInputs(opts, inputOpts) {
     if (inputOpts.isBatchCall) {
