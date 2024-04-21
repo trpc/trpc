@@ -65,7 +65,7 @@
     "tsx": "^4.0.0",
     "typescript": "^5.4.0",
     "vite": "^5.1.0",
-    "vitest": "^1.2.2"
+    "vitest": "^1.5.0"
   },
   "publishConfig": {
     "access": "restricted"
