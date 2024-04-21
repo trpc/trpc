@@ -8,11 +8,10 @@ export function getAbortController(
     return customAbortControllerImpl;
   }
 
-   
   if (typeof window !== 'undefined' && window.AbortController) {
     return window.AbortController;
   }
-   
+
   if (typeof globalThis !== 'undefined' && globalThis.AbortController) {
     return globalThis.AbortController;
   }
