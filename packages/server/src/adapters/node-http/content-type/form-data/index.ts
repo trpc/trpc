@@ -9,17 +9,14 @@
  * @link https://github.com/remix-run/remix/blob/0bcb4a304dd2f08f6032c3bf0c3aa7eb5b976901/packages/remix-server-runtime/formData.ts
  */
 import * as fs from 'fs/promises';
-import { Readable } from 'stream';
+import { Readable } from 'node:stream';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore the type definitions for this package are borked
 import { streamMultipart } from '@web3-storage/multipart-parser';
 // @trpc/server
-import type { AnyRouter } from '../../../../@trpc/server';
-import type { NodeHTTPRequest, NodeHTTPResponse } from '../../types';
-// @trpc/server
-import type { NodeHTTPContentTypeHandler } from '../types';
+import { createNodeHTTPContentTypeHandler } from '../../internals/contentType';
+import type { NodeHTTPRequest } from '../../types';
 import { NodeOnDiskFile } from './fileUploadHandler';
-import { createMemoryUploadHandler } from './memoryUploadHandler';
 import type { UploadHandler, UploadHandlerPart } from './uploadHandler';
 import { MaxBodySizeExceededError } from './uploadHandler';
 
@@ -108,34 +105,59 @@ async function parseMultipartFormData(
   }
 }
 
-export const getFormDataContentTypeHandler: <
-  TRouter extends AnyRouter,
-  TRequest extends NodeHTTPRequest,
-  TResponse extends NodeHTTPResponse,
->() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
-  name: 'node-http-formdata',
-  isMatch(opts) {
-    return (
-      opts.req.headers['content-type']?.startsWith('multipart/form-data') ??
-      false
-    );
-  },
-  async getInputs(opts, inputOpts) {
-    if (inputOpts.isBatchCall) {
-      throw new Error('Batch calls not supported for form-data');
-    }
+function isMultipartFormDataRequest(req: NodeHTTPRequest) {
+  const contentTypeHeader = req.headers['content-type'];
+  return (
+    contentTypeHeader?.startsWith('multipart/form-data') ??
+    contentTypeHeader === 'application/x-www-form-urlencoded'
+  );
+}
 
-    const form = await parseMultipartFormData(
-      opts.req,
-      createMemoryUploadHandler(),
-    );
+export const nodeHTTPFormDataContentTypeHandler =
+  createNodeHTTPContentTypeHandler({
+    isMatch(opts) {
+      return isMultipartFormDataRequest(opts.req);
+    },
+    async getBody(opts) {
+      const fields = Object.fromEntries(opts.query);
 
-    return form;
-  },
-});
+      return {
+        ok: true,
+        data: fields,
+        preprocessed: false,
+      };
+    },
+    getInputs(opts) {
+      const req = opts.req;
+      const unparsedInput = req.query.get('input');
+      if (!unparsedInput) {
+        return {
+          0: undefined,
+        };
+      }
+      const transformer = opts.router._def._config.transformer;
 
+      const deserializedInput = transformer.input.deserialize(
+        JSON.parse(unparsedInput),
+      );
+      return {
+        0: deserializedInput,
+      };
+    },
+  });
+
+export {
+  NodeOnDiskFile as experimental_NodeOnDiskFile,
+  createFileUploadHandler as experimental_createFileUploadHandler,
+} from './fileUploadHandler';
+export { createMemoryUploadHandler as experimental_createMemoryUploadHandler } from './memoryUploadHandler';
 export {
   MaxBodySizeExceededError,
   MaxPartSizeExceededError,
+  composeUploadHandlers as experimental_composeUploadHandlers,
   type UploadHandler,
 } from './uploadHandler';
+export {
+  isMultipartFormDataRequest as experimental_isMultipartFormDataRequest,
+  parseMultipartFormData as experimental_parseMultipartFormData,
+};

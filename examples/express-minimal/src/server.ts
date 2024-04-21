@@ -13,6 +13,7 @@ async function main() {
     '/trpc',
     createExpressMiddleware({
       router: appRouter,
+      createContext: () => ({}),
     }),
   );
   app.listen(3000);

@@ -118,11 +118,7 @@ test('middleware intercepts request', async () => {
     router,
   });
 
-  const result = await fetch(`http://${address}:${port}`, {
-    headers: {
-      'content-type': 'application/json',
-    },
-  });
+  const result = await fetch(`http://${address}:${port}`);
   expect(result.status).toBe(419);
 });
 
@@ -204,10 +200,9 @@ test('force content-type on mutations', async () => {
           "data": Object {
             "code": "UNSUPPORTED_MEDIA_TYPE",
             "httpStatus": 415,
-            "path": "mut",
             "stack": "[redacted]",
           },
-          "message": "Invalid Content-Type header. This request may not be supported by your tRPC Adapter, or possibly by tRPC at all",
+          "message": "Invalid Content-Type header (expected application/json)",
         },
       }
     `);

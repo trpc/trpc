@@ -1,10 +1,6 @@
 import type { IncomingMessage } from 'http';
 import type ws from 'ws';
-import type {
-  AnyRouter,
-  CreateContextCallback,
-  inferRouterContext,
-} from '../@trpc/server';
+import type { AnyRouter, inferRouterContext } from '../@trpc/server';
 import {
   callProcedure,
   getErrorShape,
@@ -50,10 +46,19 @@ export type CreateWSSContextFn<TRouter extends AnyRouter> = (
 
 export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
   BaseHandlerOptions<TRouter, IncomingMessage> &
-    CreateContextCallback<
-      inferRouterContext<TRouter>,
-      CreateWSSContextFn<TRouter>
-    >;
+    (object extends inferRouterContext<TRouter>
+      ? {
+          /**
+           * @link https://trpc.io/docs/v11/context
+           **/
+          createContext?: CreateWSSContextFn<TRouter>;
+        }
+      : {
+          /**
+           * @link https://trpc.io/docs/v11/context
+           **/
+          createContext: CreateWSSContextFn<TRouter>;
+        });
 
 /**
  * Web socket server handler
