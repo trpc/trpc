@@ -24,6 +24,24 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### `TRPCRequestInfo.input` has been removed (breaking)
+
+Inputs are now materialised lazily when required by the procedure, which means the input is no longer available when tRPC calls `createContext`
+
+### All the experimental form-data support has been replaced (breaking)
+
+> This only affects you if you used the experimental formdata features
+
+- experimental_formDataLink - use httpLink
+- experimental_parseMultipartFormData - not needed anymore
+- experimental_isMultipartFormDataRequest - not needed anymore
+- experimental_composeUploadHandlers - not needed anymore
+- experimental_createMemoryUploadHandler - not needed anymore
+- experimental_NodeOnDiskFile and experimental_createFileUploadHandler - not supported in this first release, open an issue if you need to hold data on disk
+- experimental_contentTypeHandlers - not needed anymore, but could come back if needed by the community for novel data types
+
+You can see the new approach in `examples/minimal-content-types`
+
 ### Moved `Procedure._def._output_in` / `Procedure._def._input_in` to `Procedure._def.$types` (non-breaking)
 
 This is a breaking change for tRPC internals, but should not affect you as a user.
@@ -131,22 +149,6 @@ We have added usage of FormData, File, Blob, and ReadableStream. NodeJS 18 is no
 ### `rawInput` in middleware is now a `getRawInput` (breaking)
 
 While we're not doing anything differently internally (just yet) this is help support a much requested feature in tRPC: content types other than JSON.
-
-### `TRPCRequestInfo.input` has been removed (breaking)
-
-Inputs are now materialised lazily when required by the procedure, which means the input is no longer available when tRPC calls `createContext`
-
-### all the experimental form-data support has been removed (breaking)
-
-- experimental_formDataLink - use httpLink
-- experimental_parseMultipartFormData - not needed anymore
-- experimental_isMultipartFormDataRequest - not needed anymore
-- experimental_composeUploadHandlers - not needed anymore
-- experimental_createMemoryUploadHandler - not needed anymore
-- experimental_NodeOnDiskFile and experimental_createFileUploadHandler - not supported in this first release, open an issue if you need to hold data on disk
-- experimental_contentTypeHandlers - not needed anymore, but could come back if needed by the community for novel data types
-
-You can see the new approach in `examples/minimal-content-types`
 
 ### Simplified types and `.d.ts` outputs
 
