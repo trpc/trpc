@@ -65,7 +65,12 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
     }
 
     await nodeHTTPRequestHandler({
-      ...opts,
+      // FIXME: no typecasting should be needed here
+      ...(opts as NodeHTTPHandlerOptions<
+        AnyRouter,
+        NextApiRequest,
+        NextApiResponse
+      >),
       req,
       res,
       path,

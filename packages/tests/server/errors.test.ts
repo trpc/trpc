@@ -254,11 +254,7 @@ Object {
         onError,
       },
     });
-    const res = await fetch(`${httpUrl}/q`, {
-      headers: {
-        'content-type': 'application/json',
-      },
-    });
+    const res = await fetch(`${httpUrl}/q`);
 
     expect(res.ok).toBeFalsy();
     expect(res.status).toBe(TEAPOT_ERROR_CODE);
@@ -284,11 +280,7 @@ Object {
         onError,
       },
     });
-    const res = await fetch(`${httpUrl}/q`, {
-      headers: {
-        'content-type': 'application/json',
-      },
-    });
+    const res = await fetch(`${httpUrl}/q`);
 
     expect(res.ok).toBeFalsy();
     expect(res.status).toBe(TEAPOT_ERROR_CODE);
