@@ -30,7 +30,9 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 Inputs are now materialised lazily when required by the procedure, which means the input is no longer available when tRPC calls `createContext`
 
-### all the experimental form-data support has been removed (breaking)
+### All the experimental form-data support has been replaced (breaking)
+
+> This only affects you if you used the experimental formdata features 
 
 - experimental_formDataLink - use httpLink
 - experimental_parseMultipartFormData - not needed anymore
