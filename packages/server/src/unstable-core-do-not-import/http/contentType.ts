@@ -1,4 +1,5 @@
 import type { TRPCError } from '../error/TRPCError';
+import type { Maybe } from '../types';
 
 export type BodyResult =
   | {
@@ -13,7 +14,7 @@ export type BodyResult =
 
 export type BaseContentTypeHandler<TOptions> = {
   name: string;
-  isMatch(opts: TOptions): boolean;
+  isMatch(opts: TOptions): { match: boolean; received: Maybe<string> };
   getInputs: (
     opts: TOptions,
     info: {

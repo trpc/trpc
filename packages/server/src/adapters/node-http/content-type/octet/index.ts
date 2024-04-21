@@ -11,11 +11,9 @@ export const getOctetContentTypeHandler: <
 >() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => ({
   name: 'node-http-octet',
   isMatch(opts) {
-    return (
-      opts.req.headers['content-type']?.startsWith(
-        'application/octet-stream',
-      ) ?? false
-    );
+    const received = opts.req.headers['content-type'];
+    const match = !!received?.startsWith('application/octet-stream');
+    return { match, received };
   },
   async getInputs(opts, inputOpts) {
     if (inputOpts.isBatchCall) {

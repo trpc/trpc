@@ -19,9 +19,9 @@ export const getFetchHTTPJSONContentTypeHandler: <
 >() => FetchHTTPContentTypeHandler<TRouter> = () => ({
   name: 'fetch-json',
   isMatch(opts) {
-    return !!opts.req.headers
-      .get('content-type')
-      ?.startsWith('application/json');
+    const received = opts.req.headers.get('content-type');
+    const match = !!received?.startsWith('application/json');
+    return { match, received };
   },
   getInputs: async (opts, info) => {
     async function getRawProcedureInputOrThrow() {

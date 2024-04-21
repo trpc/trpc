@@ -207,7 +207,7 @@ test('force content-type on mutations', async () => {
             "path": "mut",
             "stack": "[redacted]",
           },
-          "message": "Invalid Content-Type header. This request may not be supported by your tRPC Adapter, or possibly by tRPC at all",
+          "message": "Invalid Content-Type header 'undefined'. This request may not be supported by your tRPC Adapter, or possibly by tRPC at all",
         },
       }
     `);

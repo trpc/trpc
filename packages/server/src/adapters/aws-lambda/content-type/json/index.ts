@@ -30,7 +30,9 @@ export const getLambdaHTTPJSONContentTypeHandler: <
 >() => LambdaHTTPContentTypeHandler<TRouter, TEvent> = () => ({
   name: 'lambda-json',
   isMatch(opts) {
-    return !!opts.event.headers['Content-Type']?.startsWith('application/json');
+    const received = opts.event.headers['Content-Type'];
+    const match = !!received?.startsWith('application/json');
+    return { match, received };
   },
   getInputs: async (opts, info) => {
     function getRawProcedureInputOrThrow() {
