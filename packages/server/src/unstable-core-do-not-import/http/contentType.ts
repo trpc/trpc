@@ -13,7 +13,7 @@ export type BodyResult =
 
 export type BaseContentTypeHandler<TOptions> = {
   name: string;
-  isMatch(opts: TOptions): boolean;
+  isMatch(headers: Headers): boolean;
   getInputs: (
     opts: TOptions,
     info: {
