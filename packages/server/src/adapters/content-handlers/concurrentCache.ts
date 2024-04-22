@@ -1,3 +1,6 @@
+/**
+ * A simple concurrent cache that ensures that only one promise is created for a given key.
+ */
 export function createConcurrentCache() {
   const cache = new Map<string, Promise<any>>();
 
