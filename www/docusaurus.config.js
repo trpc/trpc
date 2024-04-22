@@ -1,7 +1,36 @@
-import type { Config } from '@docusaurus/types';
-import { generateTypedocDocusaurusPlugins } from './docusaurus.typedoc';
+// import type { Config } from '@docusaurus/types';
+import { generateTypedocDocusaurusPlugins } from './docusaurus.typedoc.js';
 import { parseEnv } from './src/utils/env';
 import {themes as prismThemes} from 'prism-react-renderer';
+
+
+function remarkPlugin() {
+  async function transform(...args) {
+    console.log('Plugin works')
+    // Async import since these packages are all in ESM
+    const { visit, SKIP } = await import("unist-util-visit");
+    const { mdxFromMarkdown } = await import("mdast-util-mdx");
+    const { fromMarkdown } = await import("mdast-util-from-markdown");
+    const { mdxjs } = await import("micromark-extension-mdxjs");
+
+    // This is a horror show, but it's the only way I could get the raw HTML into MDX.
+    const [ast] = args;
+    visit(ast, "html", (node) => {
+      const escapedHtml = JSON.stringify(node.value);
+      const jsx = `<div dangerouslySetInnerHTML={{__html: ${escapedHtml} }}/>`;
+      const rawHtmlNode = fromMarkdown(jsx, {
+        extensions: [mdxjs()],
+        mdastExtensions: [mdxFromMarkdown()],
+      }).children[0];
+
+      Object.assign(node, rawHtmlNode);
+
+      return SKIP;
+    });
+  }
+
+  return transform;
+}
 
 const env = parseEnv(process.env);
 
@@ -21,7 +50,7 @@ const poweredByVercel = `
   </div>
 `.trim();
 
-const config: Config = {
+const config = {
   title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
@@ -236,6 +265,10 @@ const config: Config = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          remarkPlugins: [
+            require("remark-shiki-twoslash").default,
+            remarkPlugin,
+          ]
         },
         blog: {
           showReadingTime: true,
@@ -251,7 +284,7 @@ const config: Config = {
       },
     ],
     [
-      'remark-shiki-twoslash',
+      "remark-shiki-twoslash",
       {
         // Not sure how reliable this path is (it's relative from the preset package)?
         // None of the light themes had good support for `diff` mode, so had to patch my own theme

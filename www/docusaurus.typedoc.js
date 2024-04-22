@@ -1,16 +1,14 @@
 import fs from "fs";
 import path from "path";
 
-function generateTypedocDocusaurusPlugins(directories: string[]) {
+function generateTypedocDocusaurusPlugins(directories) {
   const withEntryPoints = directories.map((directory) => {
     const pkgJson = JSON.parse(
       fs.readFileSync(
         path.join(__dirname, `../packages/${directory}/package.json`),
         'utf-8',
       ),
-    )  as {
-      exports: Record<string, string | { import: string }>;
-    };
+    );
 
     const exports = pkgJson.exports;
 
