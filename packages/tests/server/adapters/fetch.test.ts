@@ -271,7 +271,7 @@ test.each([
 });
 
 // https://github.com/trpc/trpc/issues/5659
-test.only('mutation', async () => {
+test('mutation', async () => {
   const t = await startServer();
   try {
     const res = await Promise.all([

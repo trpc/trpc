@@ -37,6 +37,14 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
 ): Promise<Response> {
   const resHeaders = new Headers();
 
+  // const oldreq = opts.req;
+  // const newreq = {
+  //   headers: oldreq.headers,
+  //   url: oldreq.url,
+  //   method: oldreq.method,
+  // } as Partial<typeof oldreq>;
+  // opts.req = newreq as any;
+
   const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
     innerOpts,
   ) => {
