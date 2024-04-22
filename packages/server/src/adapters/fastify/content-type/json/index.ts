@@ -22,8 +22,7 @@ export const getFastifyHTTPJSONContentTypeHandler: <
   TRequest extends FastifyRequest,
   TResponse extends FastifyReply,
 >() => FastifyHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => {
-  const rawInputCache = createConcurrentCache();
-  const inputCache = createConcurrentCache();
+  const cache = createConcurrentCache();
 
   return {
     name: 'fastify-json',
@@ -72,7 +71,7 @@ export const getFastifyHTTPJSONContentTypeHandler: <
           : rawValue;
       };
 
-      const rawInput = await rawInputCache.concurrentSafeGet('input', () =>
+      const rawInput = await cache.concurrentSafeGet('rawInput', () =>
         getRawProcedureInputOrThrow(),
       );
       if (rawInput === undefined) {
@@ -82,7 +81,7 @@ export const getFastifyHTTPJSONContentTypeHandler: <
       const transformer = opts.router._def._config.transformer;
 
       if (!info.isBatchCall) {
-        return await inputCache.concurrentSafeGet('input', () =>
+        return cache.concurrentSafeGet('input', () =>
           deserializeInputValue(rawInput, transformer),
         );
       }
@@ -99,7 +98,7 @@ export const getFastifyHTTPJSONContentTypeHandler: <
         });
       }
 
-      return await inputCache.concurrentSafeGet(String(info.batch), () =>
+      return cache.concurrentSafeGet(String(info.batch), () =>
         deserializeInputValue(rawInput[info.batch], transformer),
       );
     },

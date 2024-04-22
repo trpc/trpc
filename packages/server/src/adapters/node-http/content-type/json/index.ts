@@ -14,8 +14,7 @@ export const getNodeHTTPJSONContentTypeHandler: <
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 >() => NodeHTTPContentTypeHandler<TRouter, TRequest, TResponse> = () => {
-  const rawInputCache = createConcurrentCache();
-  const inputCache = createConcurrentCache();
+  const cache = createConcurrentCache();
 
   return {
     name: 'node-http-json',
@@ -66,7 +65,7 @@ export const getNodeHTTPJSONContentTypeHandler: <
           : rawValue;
       };
 
-      const rawInput = await rawInputCache.concurrentSafeGet('input', () =>
+      const rawInput = await cache.concurrentSafeGet('rawInput', () =>
         getRawProcedureInputOrThrow(),
       );
       if (rawInput === undefined) {
@@ -76,7 +75,7 @@ export const getNodeHTTPJSONContentTypeHandler: <
       const transformer = opts.router._def._config.transformer;
 
       if (!info.isBatchCall) {
-        return await inputCache.concurrentSafeGet('input', () =>
+        return cache.concurrentSafeGet('input', () =>
           deserializeInputValue(rawInput, transformer),
         );
       }
@@ -93,7 +92,7 @@ export const getNodeHTTPJSONContentTypeHandler: <
         });
       }
 
-      return await inputCache.concurrentSafeGet(String(info.batch), () =>
+      return cache.concurrentSafeGet(String(info.batch), () =>
         deserializeInputValue(rawInput[info.batch], transformer),
       );
     },

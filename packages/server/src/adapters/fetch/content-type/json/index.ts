@@ -18,8 +18,7 @@ export interface FetchHTTPContentTypeHandler<TRouter extends AnyRouter>
 export const getFetchHTTPJSONContentTypeHandler: <
   TRouter extends AnyRouter,
 >() => FetchHTTPContentTypeHandler<TRouter> = () => {
-  const rawInputCache = createConcurrentCache();
-  const inputCache = createConcurrentCache();
+  const cache = createConcurrentCache();
 
   return {
     name: 'fetch-json',
@@ -56,7 +55,7 @@ export const getFetchHTTPJSONContentTypeHandler: <
           : rawValue;
       };
 
-      const rawInput = await rawInputCache.concurrentSafeGet('input', () =>
+      const rawInput = await cache.concurrentSafeGet('rawInput', () =>
         getRawProcedureInputOrThrow(),
       );
       if (rawInput === undefined) {
@@ -66,7 +65,7 @@ export const getFetchHTTPJSONContentTypeHandler: <
       const transformer = opts.router._def._config.transformer;
 
       if (!info.isBatchCall) {
-        return await inputCache.concurrentSafeGet('input', () =>
+        return cache.concurrentSafeGet('input', () =>
           deserializeInputValue(rawInput, transformer),
         );
       }
@@ -83,7 +82,7 @@ export const getFetchHTTPJSONContentTypeHandler: <
         });
       }
 
-      return await inputCache.concurrentSafeGet(String(info.batch), () =>
+      return cache.concurrentSafeGet(String(info.batch), () =>
         deserializeInputValue(rawInput[info.batch], transformer),
       );
     },
