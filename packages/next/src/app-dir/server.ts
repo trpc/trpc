@@ -26,6 +26,7 @@ import {
 import { revalidateTag } from 'next/cache';
 import { isNotFoundError } from 'next/dist/client/components/not-found';
 import { isRedirectError } from 'next/dist/client/components/redirect';
+import { cache } from 'react';
 import { formDataToObject } from './formDataToObject';
 import type {
   ActionHandlerDef,
@@ -42,9 +43,14 @@ import type {
 export function experimental_createTRPCNextAppDirServer<
   TRouter extends AnyRouter,
 >(opts: CreateTRPCNextAppRouterServerOptions<TRouter>) {
+  const getClient = cache(() => {
+    const config = opts.config();
+    return createTRPCUntypedClient(config);
+  });
   return createRecursiveProxy(async (callOpts) => {
     const config = opts.config();
-    const client = createTRPCUntypedClient(config);
+    // lazily initialize client
+    const client = getClient();
     const ctx = await config.createContext();
 
     const runtime = client.runtime as NextAppDirRuntime<TRouter>;
