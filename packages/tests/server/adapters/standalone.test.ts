@@ -18,6 +18,9 @@ const router = t.router({
     .query(({ input }) => ({
       text: `hello ${input?.who}`,
     })),
+  helloMutation: t.procedure
+    .input(z.string())
+    .mutation(({ input }) => `hello ${input}`),
   mut: t.procedure.mutation(() => 'mutation'),
 
   exampleError: t.procedure.query(() => {
@@ -93,6 +96,19 @@ test('simple query', async () => {
       "text": "hello test",
     }
   `);
+});
+
+test('batched requests in body work correctly', async () => {
+  const { port, address } = await startServer({
+    router,
+  });
+  const client = createClient(port, address);
+
+  const res = await Promise.all([
+    client.helloMutation.mutate('world'),
+    client.helloMutation.mutate('KATT'),
+  ]);
+  expect(res).toEqual(['hello world', 'hello KATT']);
 });
 
 test('error query', async () => {

@@ -259,18 +259,6 @@ export async function resolveHTTPResponse<
       });
     }
 
-    const batchesCache: Record<number, unknown> = {};
-    async function getRawInputForBatch(batch: number) {
-      if (!batchesCache.hasOwnProperty(batch)) {
-        batchesCache[batch] = await opts.getInput({
-          isBatchCall,
-          batch,
-        });
-      }
-
-      return batchesCache[batch];
-    }
-
     paths = isBatchCall
       ? decodeURIComponent(opts.path).split(',')
       : [opts.path];
@@ -289,7 +277,10 @@ export async function resolveHTTPResponse<
       TRPCResponse<unknown, inferRouterError<TRouter>>
     >[] = paths.map(async (path, index) => {
       async function getRawInput() {
-        return await getRawInputForBatch(index);
+        return await opts.getInput({
+          isBatchCall,
+          batch: index,
+        });
       }
 
       try {
@@ -411,7 +402,10 @@ export async function resolveHTTPResponse<
         unstable_onChunk([index, body]);
       } catch (cause) {
         const path = paths[index];
-        const input = await getRawInputForBatch(index);
+        const input = await opts.getInput({
+          isBatchCall,
+          batch: index,
+        });
         const { body } = caughtErrorToData(cause, {
           opts,
           ctx,
