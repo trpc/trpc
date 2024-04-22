@@ -1,6 +1,9 @@
 name: main
 on:
   pull_request:
+    types: [synchronize, opened, reopened]
+  push:
+    branches: [main, next, canary]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -8,6 +11,8 @@ concurrency:
 
 jobs:
   build:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -16,14 +21,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm turbo --filter "@trpc/*" build
   test:
     timeout-minutes: 10
     env:
@@ -33,14 +36,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build tRPC, then test
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm turbo --filter "@trpc/*" build
       - run: pnpm test-ci
 
       - uses: codecov/codecov-action@v4
@@ -49,6 +50,8 @@ jobs:
         #   directory: .
 
   e2e:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     name: 'E2E-tests'
     needs: [build]
     services:
@@ -90,14 +93,12 @@ jobs:
             vercel-edge-runtime,
           ]
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build --force
+      - run: pnpm turbo --filter "@trpc/*" build
 
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
@@ -107,14 +108,13 @@ jobs:
             then pnpm playwright install chromium;
           fi
 
-      - name: Run test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - name: Run build
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
-      - name: Run test-start
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     name: 'E2E-tests (Deno)'
     needs: [build]
     env:
@@ -130,14 +130,12 @@ jobs:
       matrix:
         dir: [deno-deploy]
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm turbo --filter "@trpc/*" build
 
       - uses: denoland/setup-deno@v1
         with:
@@ -145,13 +143,13 @@ jobs:
 
       - run: deno --version
 
-      - name: run test
-        if: ${{ matrix.dir == 'deno-deploy' }}
-        run: |
+      - run: |
           cd ./examples/${{ matrix.dir }}
           pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
 
   e2e-bun:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     name: 'E2E-tests (Bun)'
     needs: [build]
     env:
@@ -167,14 +165,12 @@ jobs:
         dir: [bun]
         os: [ubuntu-latest]
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm turbo --filter "@trpc/*" build
 
       - uses: oven-sh/setup-bun@v1
         with:
@@ -182,14 +178,13 @@ jobs:
 
       - run: bun --version
 
-      - name: Run test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - name: Run build
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
-      - name: Run test-start
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     needs: [build]
     services:
       postgres:
@@ -217,14 +212,12 @@ jobs:
           ]
         node-start: ['18.x']
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm turbo --filter "@trpc/*" build
 
       - uses: actions/setup-node@v4
         with:
@@ -238,9 +231,6 @@ jobs:
           if grep --silent '"@playwright/test"';
             then pnpm playwright install chromium;
           fi
-      - name: Run test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - name: Run build
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
-      - name: Run test-start
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start

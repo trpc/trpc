@@ -34,6 +34,10 @@ export interface Procedure<
   TDef extends BuiltProcedureDef,
 > {
   _def: {
+    /**
+     * These are just types, they can't be used at runtime
+     * @internal
+     */
     $types: {
       input: TDef['input'];
       output: TDef['output'];
