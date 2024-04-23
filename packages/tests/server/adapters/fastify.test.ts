@@ -476,7 +476,11 @@ describe('anonymous user with fastify-plugin', () => {
   });
 
   test('fetch GET', async () => {
-    const req = await fetch(`http://localhost:${app.url.port}/hello`);
+    const req = await fetch(`http://localhost:${app.url.port}/hello`, {
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
     expect(await req.json()).toEqual({ hello: 'GET' });
   });
 

@@ -7,7 +7,6 @@ export * from './links/httpLink';
 export * from './links/loggerLink';
 export * from './links/splitLink';
 export * from './links/wsLink';
-export * from './links/httpFormDataLink';
 
 // These are not public (yet) as we get this functionality from tanstack query
 // export * from './links/internals/retryLink';
