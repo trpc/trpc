@@ -9,6 +9,7 @@ import type {
 import { callProcedure } from '../router';
 import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
+import { memoize } from '../utils';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
@@ -276,12 +277,12 @@ export async function resolveHTTPResponse<
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
     >[] = paths.map(async (path, index) => {
-      async function getRawInput() {
-        return await opts.getInput({
+      const getRawInput = memoize(() => {
+        return opts.getInput({
           isBatchCall,
           batch: index,
         });
-      }
+      });
 
       try {
         if (opts.error) {
@@ -294,7 +295,7 @@ export async function resolveHTTPResponse<
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
           path,
-          getRawInput: getRawInput,
+          getRawInput,
           ctx,
           type,
           allowMethodOverride,

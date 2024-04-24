@@ -25,7 +25,7 @@ import type {
 } from '../../@trpc/server/http';
 import { resolveHTTPResponse } from '../../@trpc/server/http';
 import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
-import { getLambdaHTTPJSONContentTypeHandler } from './content-type/json';
+import { lambdaJsonContentTypeHandler } from './content-type/json';
 import type {
   APIGatewayEvent,
   APIGatewayResult,
@@ -112,7 +112,7 @@ export function awsLambdaRequestHandler<
 
     const [contentTypeHandler, unsupportedMediaTypeError] =
       selectContentHandlerOrUnsupportedMediaType(
-        [getLambdaHTTPJSONContentTypeHandler<TRouter, TEvent>()],
+        [lambdaJsonContentTypeHandler],
         {
           ...opts,
           event,
@@ -127,14 +127,7 @@ export function awsLambdaRequestHandler<
       path,
       error: unsupportedMediaTypeError,
       async getInput(info) {
-        return await contentTypeHandler?.getInputs(
-          {
-            ...opts,
-            event,
-            req,
-          },
-          info,
-        );
+        return contentTypeHandler!.getInputs(opts);
       },
       onError(o) {
         opts?.onError?.({
