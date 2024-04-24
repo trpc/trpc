@@ -241,7 +241,8 @@ export function createRootHooks<
     const queryClient = useQueryClient();
 
     const mutationKey = [path];
-    const defaultOpts = queryClient.getMutationDefaults(mutationKey);
+
+    const defaultOpts = queryClient.defaultMutationOptions({mutationKey})
 
     const hook = __useMutation(
       {
