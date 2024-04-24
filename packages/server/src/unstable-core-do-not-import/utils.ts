@@ -1,3 +1,7 @@
+/** @internal */
+export const unsetMarker = Symbol('unsetMarker');
+export type UnsetMarker = typeof unsetMarker;
+
 /**
  * Ensures there are no duplicate keys when building a procedure.
  * @internal
@@ -40,4 +44,18 @@ export function omitPrototype<TObj extends Record<string, unknown>>(
   obj: TObj,
 ): TObj {
   return Object.assign(Object.create(null), obj);
+}
+
+/**
+ * Memoize a function that takes no arguments
+ * @internal
+ */
+export function memoize<TReturn>(fn: () => TReturn): () => TReturn {
+  let value: TReturn | typeof unsetMarker = unsetMarker;
+  return () => {
+    if (value === unsetMarker) {
+      value = fn();
+    }
+    return value;
+  };
 }

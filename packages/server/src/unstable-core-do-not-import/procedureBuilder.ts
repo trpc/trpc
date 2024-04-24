@@ -30,6 +30,7 @@ import type {
   Simplify,
   TypeError,
 } from './types';
+import type { UnsetMarker } from './utils';
 import { mergeWithoutOverrides } from './utils';
 
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
@@ -37,10 +38,7 @@ type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   : TWith extends UnsetMarker
   ? TType
   : Simplify<TType & TWith>;
-
-/** @internal */
-export const unsetMarker = Symbol('unsetMarker');
-type UnsetMarker = typeof unsetMarker;
+``;
 type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
