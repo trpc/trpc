@@ -16,9 +16,5 @@ export type BaseContentTypeHandler<TOptions> = {
   isMatch(headers: Headers): boolean;
   getInputs: (
     opts: TOptions,
-    info: {
-      isBatchCall: boolean;
-      batch: number;
-    },
-  ) => Promise<unknown>;
+  ) => (info: { isBatchCall: boolean; batch: number }) => Promise<unknown>;
 };

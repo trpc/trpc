@@ -8,6 +8,7 @@ import type {
   BaseContentTypeHandler,
   HTTPRequest,
 } from '../../../../@trpc/server/http';
+import { isObject, memoize } from '../../../../unstable-core-do-not-import';
 import { createConcurrentCache } from '../../../content-handlers/concurrentCache';
 import {
   lambdaEventToHTTPBody,
@@ -15,94 +16,64 @@ import {
   type AWSLambdaOptions,
 } from '../../utils';
 
-export interface LambdaHTTPContentTypeHandler<
-  TRouter extends AnyRouter,
-  TEvent extends APIGatewayEvent,
-> extends BaseContentTypeHandler<
-    AWSLambdaOptions<TRouter, TEvent> & {
-      event: TEvent;
-      req: HTTPRequest;
-    }
-  > {}
+export type LambdaHTTPContentTypeHandler = BaseContentTypeHandler<
+  AWSLambdaOptions<AnyRouter, APIGatewayEvent> & {
+    event: APIGatewayEvent;
+    req: HTTPRequest;
+  }
+>;
 
-export const getLambdaHTTPJSONContentTypeHandler: <
-  TRouter extends AnyRouter,
-  TEvent extends APIGatewayEvent,
->() => LambdaHTTPContentTypeHandler<TRouter, TEvent> = () => {
-  const cache = createConcurrentCache();
+export const lambdaJsonContentTypeHandler: LambdaHTTPContentTypeHandler = {
+  name: 'json',
+  isMatch(headers) {
+    return !!headers.get('content-type')?.startsWith('application/json');
+  },
+  getInputs(opts) {
+    const getRawProcedureInputOrThrow = memoize(async () => {
+      const { event, req } = opts;
 
-  return {
-    name: 'lambda-json',
-    isMatch: (headers) => {
-      return !!headers.get('content-type')?.startsWith('application/json');
-    },
-    getInputs: async (opts, info) => {
-      function getRawProcedureInputOrThrow() {
-        const { event, req } = opts;
-
-        try {
-          if (req.query.has('input')) {
-            const input = req.query.get('input');
-            if (!input) {
-              return undefined;
-            }
-
-            return JSON.parse(input);
+      try {
+        if (req.query.has('input')) {
+          const input = req.query.get('input');
+          if (!input) {
+            return undefined;
           }
 
-          const body = lambdaEventToHTTPBody(opts.event);
-          if (typeof body === 'string') {
-            // A mutation with no inputs will have req.body === ''
-            return body.length === 0 ? undefined : JSON.parse(body);
-          }
-          return event.body;
-        } catch (cause) {
-          throw new TRPCError({
-            code: 'PARSE_ERROR',
-            cause,
-          });
+          return JSON.parse(input);
         }
+
+        const body = lambdaEventToHTTPBody(opts.event);
+        if (typeof body === 'string') {
+          // A mutation with no inputs will have req.body === ''
+          return body.length === 0 ? undefined : JSON.parse(body);
+        }
+        return event.body;
+      } catch (cause) {
+        throw new TRPCError({
+          code: 'PARSE_ERROR',
+          cause,
+        });
+      }
+    });
+
+    const deserialize = (v: unknown) =>
+      v !== undefined
+        ? opts.router._def._config.transformer.input.deserialize(v)
+        : v;
+
+    return async (info) => {
+      const rawInput = await getRawProcedureInputOrThrow();
+      if (!info.isBatchCall || rawInput === undefined) {
+        return deserialize(rawInput);
       }
 
-      const deserializeInputValue = (
-        rawValue: unknown,
-        transformer: CombinedDataTransformer,
-      ) => {
-        return typeof rawValue !== 'undefined'
-          ? transformer.input.deserialize(rawValue)
-          : rawValue;
-      };
-
-      const rawInput = await cache.concurrentSafeGet('rawInput', () =>
-        getRawProcedureInputOrThrow(),
-      );
-      if (rawInput === undefined) {
-        return undefined;
-      }
-
-      const transformer = opts.router._def._config.transformer;
-
-      if (!info.isBatchCall) {
-        return cache.concurrentSafeGet('input', () =>
-          deserializeInputValue(rawInput, transformer),
-        );
-      }
-
-      /* istanbul ignore if  */
-      if (
-        rawInput == null ||
-        typeof rawInput !== 'object' ||
-        Array.isArray(rawInput)
-      ) {
+      if (!isObject(rawInput)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: '"input" needs to be an object when doing a batch call',
         });
       }
-
-      return cache.concurrentSafeGet(String(info.batch), () =>
-        deserializeInputValue(rawInput[info.batch], transformer),
-      );
-    },
-  };
+      return deserialize(rawInput[info.batch]);
+    };
+  },
 };
