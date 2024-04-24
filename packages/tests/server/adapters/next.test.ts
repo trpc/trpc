@@ -19,7 +19,7 @@ function mockReq({
     | 'TRACE';
   body?: unknown;
 }) {
-  const req = new EventEmitter() as any;
+  const req = new EventEmitter() as trpcNext.NextApiRequest & { socket: any };
 
   req.method = method;
   req.query = query;
