@@ -153,7 +153,7 @@
     "superstruct": "^1.0.0",
     "tslib": "^2.5.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.4.0",
+    "typescript": "^5.5.0-beta",
     "valibot": "^0.30.0",
     "ws": "^8.0.0",
     "yup": "^1.0.0",
