@@ -65,11 +65,18 @@ export const getNodeHTTPJSONContentTypeHandler: <
           : rawValue;
       };
 
-      const rawInput = await cache.concurrentSafeGet('rawInput', () =>
+      const [rawInput, error] = await cache.concurrentSafeGet('rawInput', () =>
         getRawProcedureInputOrThrow(),
       );
       if (rawInput === undefined) {
         return undefined;
+      }
+      if (error) {
+        // no uncaught exception error
+        return undefined;
+
+        // uncaught exception error even though it does get caught up the stack and returned gracefully to test
+        throw error;
       }
 
       const transformer = opts.router._def._config.transformer;

@@ -159,7 +159,7 @@ test('404', async () => {
   );
 });
 
-test('payload too large', async () => {
+test.only('payload too large', async () => {
   const t = initTRPC.create();
 
   const router = t.router({

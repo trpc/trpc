@@ -5,12 +5,25 @@ export function createConcurrentCache() {
   const cache = new Map<string, any>();
 
   return {
-    concurrentSafeGet<TValue>(key: string, setter: () => TValue): TValue {
+    concurrentSafeGet<TValue>(
+      key: string,
+      setter: () => TValue,
+    ): TValue extends Promise<infer TInner>
+      ? Promise<[TInner, null] | [null, Error]>
+      : TValue {
       if (!cache.has(key)) {
-        cache.set(key, setter());
+        let value = setter();
+
+        if (value instanceof Promise) {
+          value = value
+            .then((inner) => [inner, null])
+            .catch((err) => [null, err]) as any;
+        }
+
+        cache.set(key, value);
       }
 
-      return cache.get(key) as TValue;
+      return cache.get(key);
     },
   };
 }
