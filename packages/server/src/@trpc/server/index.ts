@@ -35,6 +35,7 @@ export {
   type MutationProcedure as TRPCMutationProcedure,
   type QueryProcedure as TRPCQueryProcedure,
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
+  type TRPCBuilder,
 } from '../../unstable-core-do-not-import';
 
 export type {
