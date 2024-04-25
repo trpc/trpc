@@ -149,3 +149,4 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
  * @link https://trpc.io/docs/v11/quickstart
  */
 export const initTRPC = new TRPCBuilder();
+export type { TRPCBuilder };
