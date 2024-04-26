@@ -39,7 +39,7 @@
     "@visx/hierarchy": "^3.0.0",
     "@visx/responsive": "^3.0.0",
     "clsx": "^2.0.0",
-    "cssnano": "^6.0.0",
+    "cssnano": "^7.0.0",
     "docusaurus-preset-shiki-twoslash": "^1.1.41",
     "framer-motion": "^11.0.0",
     "react": "^18.2.0",
