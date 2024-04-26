@@ -82,7 +82,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     router,
     ...((opts?.wssServer as any) ?? {}),
     createContext(it) {
-      (createContextSpy as any)(it);
+      // (createContextSpy as any)(it);
       return opts?.wssServer?.createContext?.(it) ?? it;
     },
   };
