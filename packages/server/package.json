@@ -58,16 +58,6 @@
       "require": "./dist/adapters/next.js",
       "default": "./dist/adapters/next.js"
     },
-    "./adapters/node-http/content-type/form-data": {
-      "import": "./dist/adapters/node-http/content-type/form-data/index.mjs",
-      "require": "./dist/adapters/node-http/content-type/form-data/index.js",
-      "default": "./dist/adapters/node-http/content-type/form-data/index.js"
-    },
-    "./adapters/node-http/content-type/json": {
-      "import": "./dist/adapters/node-http/content-type/json/index.mjs",
-      "require": "./dist/adapters/node-http/content-type/json/index.js",
-      "default": "./dist/adapters/node-http/content-type/json/index.js"
-    },
     "./adapters/node-http": {
       "import": "./dist/adapters/node-http/index.mjs",
       "require": "./dist/adapters/node-http/index.js",

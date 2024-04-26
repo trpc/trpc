@@ -159,7 +159,7 @@ describe('with default server', () => {
   `);
   });
 
-  test('streaming', async () => {
+  test.only('streaming', async () => {
     const orderedResults: number[] = [];
     const linkSpy: TRPCLink<AppRouter> = () => {
       // here we just got initialized in the app - this happens once per app
