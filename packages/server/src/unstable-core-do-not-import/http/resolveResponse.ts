@@ -11,6 +11,7 @@ import {
 import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
 import { isObject, memoize, unsetMarker } from '../utils';
+import { getBatchStreamFormatter } from './batchStreamFormatter';
 import { contentTypeHandlers } from './content-type/contentTypeHandlers';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -381,7 +382,71 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       });
     }
 
-    throw new Error(`Unsupported stream mode `);
+    /**
+     * Streaming response:
+     * - block on none, call `onChunk` as soon as each response is ready
+     * - create headers with minimal data (cannot know the response body in advance)
+     * - return void
+     */
+    const headResponse = initResponse({
+      ctx,
+      paths,
+      type,
+      responseMeta: opts.responseMeta,
+    });
+    let controller: ReadableStreamDefaultController<string> = undefined as any;
+    const stream = new ReadableStream({
+      start(c) {
+        controller = c;
+      },
+    });
+    async function exec() {
+      const indexedPromises = new Map(
+        promises.map((promise, index) => [
+          index,
+          promise.then((r) => [index, r] as const),
+        ]),
+      );
+      const formatter = getBatchStreamFormatter();
+
+      while (indexedPromises.size > 0) {
+        const [index, untransformedJSON] = await Promise.race(
+          indexedPromises.values(),
+        );
+        indexedPromises.delete(index);
+
+        try {
+          const transformedJSON = transformTRPCResponse(
+            router._def._config,
+            untransformedJSON,
+          );
+          const body = JSON.stringify(transformedJSON);
+
+          controller.enqueue(formatter(index, body));
+        } catch (cause) {
+          const path = paths![index];
+          const input = inputsByIndex[index]!.getParsedInput();
+          const { body } = caughtErrorToData(cause, {
+            opts,
+            ctx,
+            type,
+            path,
+            input,
+          });
+
+          controller.enqueue(formatter(index, body));
+        }
+      }
+      controller.close();
+    }
+    exec().catch((err) => {
+      controller.error(err);
+    });
+
+    return new Response(stream, {
+      headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+      status: headResponse.status,
+    });
   } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled
