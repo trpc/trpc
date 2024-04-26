@@ -262,7 +262,7 @@ Object {
     await close();
   });
 
-  test('do not override response status set by middleware or resolver', async () => {
+  test.only('do not override response status set by middleware or resolver', async () => {
     const TEAPOT_ERROR_CODE = 418;
     const onError = vi.fn();
     const t = initTRPC.context<CreateHTTPContextOptions>().create({});

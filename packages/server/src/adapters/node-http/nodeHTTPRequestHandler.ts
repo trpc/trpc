@@ -82,7 +82,10 @@ export async function nodeHTTPRequestHandler<
       },
     });
 
-    opts.res.statusCode = response.status;
+    if (opts.res.statusCode === 200) {
+      // if the status code is set, we assume that it's been manually overridden
+      opts.res.statusCode = response.status;
+    }
     for (const [key, value] of response.headers) {
       opts.res.setHeader(key, value);
     }
