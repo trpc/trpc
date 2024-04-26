@@ -23,10 +23,11 @@ export type BodyResult =
     }
   | { ok: false; error: TRPCError };
 
-export type BaseContentTypeHandler<TOptions> = {
-  isMatch(opts: TOptions): boolean;
-  getBody: (opts: TOptions) => MaybePromise<BodyResult>;
-  getInputs: GetInputs;
+export type ContentTypeHandler = {
+  isMatch: (opts: Request) => boolean;
+  getInputs: (req: Request, searchParams: URLSearchParams) => unknown;
+  batching: boolean;
+  transform: boolean;
 };
 
 function getRawProcedureInputOrThrow(opts: {

@@ -10,7 +10,7 @@ import { callProcedure } from '../router';
 import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
 import type { Maybe } from '../types';
-import type { BaseContentTypeHandler } from './contentType';
+import type { ContentTypeHandler } from './contentType';
 import { getJsonContentTypeInputs } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -49,7 +49,7 @@ interface ResolveHTTPRequestOptions<
   req: TRequest;
   path: string;
   error?: Maybe<TRPCError>;
-  contentTypeHandler?: BaseContentTypeHandler<any>;
+  contentTypeHandler?: ContentTypeHandler<any>;
   preprocessedBody?: boolean;
   /**
    * Called as soon as the response head is known.

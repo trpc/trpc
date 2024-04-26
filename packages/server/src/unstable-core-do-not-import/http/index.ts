@@ -23,7 +23,9 @@ export type {
 } from './types';
 
 export { getBatchStreamFormatter } from './batchStreamFormatter';
-export type { BaseContentTypeHandler, BodyResult } from './contentType';
-export { getJsonContentTypeInputs } from './contentType';
+
+export * from './contentType';
 
 export { toURL } from './toURL';
+
+export * from './resolveResponse';

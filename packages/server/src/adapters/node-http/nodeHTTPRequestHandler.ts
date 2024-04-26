@@ -7,29 +7,33 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 // @trpc/server
-import type { AnyRouter } from '../../@trpc/server';
-import type {
-  HTTPRequest,
-  HTTPResponse,
-  ResolveHTTPRequestOptionsContextFn,
-  ResponseChunk,
-} from '../../@trpc/server/http';
-import {
-  getBatchStreamFormatter,
-  resolveHTTPResponse,
-} from '../../@trpc/server/http';
-import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
-import type { NodeHTTPContentTypeHandler } from './internals/contentType';
+
+import type * as http from 'http';
+import { getTRPCErrorFromUnknown, type AnyRouter } from '../../@trpc/server';
+import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
+import { resolveResponse } from '../../@trpc/server/http';
 import type {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
 } from './types';
 
-const defaultJSONContentTypeHandler = nodeHTTPJSONContentTypeHandler();
+export function incomingMessageToRequest(req: http.IncomingMessage): Request {
+  const ac = new AbortController();
+  const headers = new Headers(req.headers as any);
+  const url = `http://${headers.get('host')}${req.url}`;
+  req.once('aborted', () => ac.abort());
 
+  return new Request(url, {
+    headers,
+    method: req.method,
+    // does this even work?
+    body: 'body' in req ? (req.body as any) : req,
+    signal: ac.signal,
+  });
+}
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
@@ -38,11 +42,9 @@ export async function nodeHTTPRequestHandler<
   const handleViaMiddleware = opts.middleware ?? ((_req, _res, next) => next());
 
   return handleViaMiddleware(opts.req, opts.res, async (err) => {
-    if (err) throw err;
+    const req = incomingMessageToRequest(opts.req);
 
-    //
     // Build tRPC dependencies
-
     const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
       innerOpts,
     ) => {
@@ -52,109 +54,20 @@ export async function nodeHTTPRequestHandler<
       });
     };
 
-    const query = opts.req.query
-      ? new URLSearchParams(opts.req.query as any)
-      : new URLSearchParams(opts.req.url!.split('?')[1]);
-
-    const jsonContentTypeHandler =
-      defaultJSONContentTypeHandler as unknown as NodeHTTPContentTypeHandler<
-        TRequest,
-        TResponse
-      >;
-
-    const contentTypeHandlers = opts.experimental_contentTypeHandlers ?? [
-      jsonContentTypeHandler,
-    ];
-
-    const contentTypeHandler =
-      contentTypeHandlers.find((handler) =>
-        handler.isMatch({
-          // FIXME: no typecasting should be needed here
-          ...(opts as any),
-          query,
-        }),
-      ) ??
-      // fallback to json
-      jsonContentTypeHandler;
-
-    const bodyResult = await contentTypeHandler.getBody({
-      // FIXME: no typecasting should be needed here
-      ...(opts as any),
-      query,
-    });
-
-    const req: HTTPRequest = {
-      method: opts.req.method!,
-      headers: opts.req.headers,
-      query,
-      body: bodyResult.ok ? bodyResult.data : undefined,
-    };
-
-    let isStream = false;
-    let formatter: ReturnType<typeof getBatchStreamFormatter>;
-    const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
-      if (
-        'status' in head &&
-        (!opts.res.statusCode || opts.res.statusCode === 200)
-      ) {
-        opts.res.statusCode = head.status;
-      }
-      for (const [key, value] of Object.entries(head.headers ?? {})) {
-        /* istanbul ignore if -- @preserve */
-        if (typeof value === 'undefined') {
-          continue;
-        }
-        opts.res.setHeader(key, value);
-      }
-      if (isStreaming) {
-        opts.res.setHeader('Transfer-Encoding', 'chunked');
-        const vary = opts.res.getHeader('Vary');
-        opts.res.setHeader(
-          'Vary',
-          vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
-        );
-        isStream = true;
-        formatter = getBatchStreamFormatter();
-        opts.res.flushHeaders();
-      }
-    };
-
-    const unstable_onChunk = ([index, string]: ResponseChunk) => {
-      if (index === -1) {
-        /**
-         * Full response, no streaming. This can happen
-         * - if the response is an error
-         * - if response is empty (HEAD request)
-         */
-        opts.res.end(string);
-      } else {
-        opts.res.write(formatter!(index, string));
-        opts.res.flush?.();
-      }
-    };
-
-    await resolveHTTPResponse<TRouter, HTTPRequest>({
+    const res = await resolveResponse({
       ...opts,
       req,
+      error: err ? getTRPCErrorFromUnknown(err) : null,
       createContext,
-      error: bodyResult.ok ? null : bodyResult.error,
-      preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
       onError(o) {
         opts?.onError?.({
           ...o,
           req: opts.req,
         });
       },
-      contentTypeHandler,
-      unstable_onHead,
-      unstable_onChunk,
     });
 
-    if (isStream) {
-      opts.res.write(formatter!.end());
-      opts.res.end();
-    }
-
-    return opts.res;
+    opts.res.writeHead(res.status, Object.fromEntries(res.headers));
+    opts.res.end(res.body);
   });
 }

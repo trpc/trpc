@@ -2,7 +2,10 @@ export {
   getHTTPStatusCode,
   getHTTPStatusCodeFromError,
 } from '../../unstable-core-do-not-import';
-export { resolveHTTPResponse } from '../../unstable-core-do-not-import';
+export {
+  resolveHTTPResponse,
+  resolveResponse,
+} from '../../unstable-core-do-not-import';
 export type {
   BaseHandlerOptions,
   HTTPBaseHandlerOptions,
@@ -20,7 +23,7 @@ export type {
 
 export { getBatchStreamFormatter } from '../../unstable-core-do-not-import';
 export type {
-  BaseContentTypeHandler,
+  ContentTypeHandler,
   BodyResult,
 } from '../../unstable-core-do-not-import';
 export { getJsonContentTypeInputs } from '../../unstable-core-do-not-import';

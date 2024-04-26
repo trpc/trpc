@@ -17,7 +17,6 @@ import type {
 } from '../../@trpc/server/http';
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../../unstable-core-do-not-import';
-import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 
 interface ParsedQs {
   [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;
@@ -89,10 +88,6 @@ export type NodeHTTPHandlerOptions<
      */
     middleware?: ConnectMiddleware;
     maxBodySize?: number;
-    experimental_contentTypeHandlers?: NodeHTTPContentTypeHandler<
-      TRequest,
-      TResponse
-    >[];
   };
 
 export type NodeHTTPRequestHandlerOptions<
