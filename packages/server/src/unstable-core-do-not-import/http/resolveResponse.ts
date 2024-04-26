@@ -441,6 +441,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           controller.enqueue(formatter(index, body));
         }
       }
+
+      controller.enqueue(formatter.end());
       controller.close();
     }
     exec().catch((err) => {
