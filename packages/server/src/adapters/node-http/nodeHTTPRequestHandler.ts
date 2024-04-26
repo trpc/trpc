@@ -69,7 +69,7 @@ export async function nodeHTTPRequestHandler<
       });
     };
 
-    const res = await resolveResponse({
+    const response = await resolveResponse({
       ...opts,
       req,
       error: err ? getTRPCErrorFromUnknown(err) : null,
@@ -82,10 +82,13 @@ export async function nodeHTTPRequestHandler<
       },
     });
 
-    opts.res.writeHead(res.status, Object.fromEntries(res.headers));
-    if (res.body) {
-      assertAsyncIterable(res.body);
-      for await (const chunk of res.body) {
+    opts.res.statusCode = response.status;
+    for (const [key, value] of response.headers) {
+      opts.res.setHeader(key, value);
+    }
+    if (response.body) {
+      assertAsyncIterable(response.body);
+      for await (const chunk of response.body) {
         opts.res.write(chunk);
       }
     }

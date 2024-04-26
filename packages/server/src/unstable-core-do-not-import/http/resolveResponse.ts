@@ -222,9 +222,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     const getInputForIndex = (() => {
       // resolve content type handler
-      const contentTypeHandler = contentTypeHandlers.list.find((handler) =>
+      let contentTypeHandler = contentTypeHandlers.list.find((handler) =>
         handler.isMatch(req),
       );
+
+      if (!contentTypeHandler && req.method === 'GET') {
+        contentTypeHandler = contentTypeHandlers.fallback;
+      }
 
       if (!contentTypeHandler) {
         const contentType = req.headers.get('content-type');

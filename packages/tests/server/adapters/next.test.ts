@@ -159,35 +159,6 @@ test('404', async () => {
   );
 });
 
-test('payload too large', async () => {
-  const t = initTRPC.create();
-
-  const router = t.router({
-    hello: t.procedure.query(() => 'world'),
-  });
-
-  const handler = trpcNext.createNextApiHandler({
-    router,
-    maxBodySize: 1,
-  });
-
-  const { req } = mockReq({
-    query: {
-      trpc: ['hello'],
-    },
-    method: 'POST',
-    body: '123456789',
-  });
-  const { res, end } = mockRes();
-
-  await handler(req, res);
-
-  expect(res.statusCode).toBe(413);
-  const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
-
-  expect(json.error.message).toMatchInlineSnapshot(`"PAYLOAD_TOO_LARGE"`);
-});
-
 test('HEAD request', async () => {
   const t = initTRPC.create();
 

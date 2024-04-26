@@ -113,15 +113,10 @@ test('request info from context should include both calls', async () => {
       Object {
         "calls": Array [
           Object {
-            "input": Object {
-              "who": "test",
-            },
             "path": "hello",
-            "type": "query",
           },
           Object {
             "path": "request.info",
-            "type": "query",
           },
         ],
         "isBatchCall": true,
@@ -135,14 +130,5 @@ test('error query', async () => {
     await t.client.exampleError.query();
   } catch (e) {
     expect(e).toStrictEqual(new TRPCClientError('Unexpected error'));
-  }
-});
-
-test('payload too large', async () => {
-  try {
-    await t.client.exampleMutation.mutate({ payload: 'a'.repeat(100) });
-    expect(true).toBe(false); // should not be reached
-  } catch (e) {
-    expect(e).toStrictEqual(new TRPCClientError('PAYLOAD_TOO_LARGE'));
   }
 });

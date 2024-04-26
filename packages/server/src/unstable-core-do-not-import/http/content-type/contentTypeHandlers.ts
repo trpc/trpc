@@ -3,6 +3,8 @@ import { jsonContentTypeHandler } from './handlers/json';
 
 export const contentTypeHandlers = {
   list: [formDataContentTypeHandler, jsonContentTypeHandler],
-  // TODO: maybe support for GET requests **without** overrides
-  // fallback: jsonContentTypeHandler,
+  /**
+   * Fallback handler if there is no match
+   */
+  fallback: jsonContentTypeHandler,
 };
