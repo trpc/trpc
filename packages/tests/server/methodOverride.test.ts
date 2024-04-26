@@ -143,3 +143,18 @@ test('server: rejects method override from client when not enabled on the server
     `[TRPCClientError: No "mutation"-procedure on path "q"]`,
   );
 });
+
+test.only('cannot use method overriding with mutations', async () => {
+  const t = await setup({
+    allowMethodOverride: true,
+    linkOptions: {},
+  });
+
+  const err = await waitError(() => {
+    // @ts-expect-error - testing invalid usage
+    return t.client.m.query({
+      who: 'test1',
+    });
+  });
+  expect(err).toMatchInlineSnapshot(`[TRPCClientError: No "query"-procedure on path "m"]`);
+});

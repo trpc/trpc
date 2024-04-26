@@ -170,7 +170,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     });
   }
   const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
-  const allowMethodOverride = opts.allowMethodOverride ?? false;
+  const allowMethodOverride =
+    (opts.allowMethodOverride ?? false) && req.method === 'POST';
 
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
