@@ -42,7 +42,13 @@ export function incomingMessageToRequest(req: http.IncomingMessage): Request {
     duplex: 'half',
   };
   if (req.method === 'POST') {
-    init.body = 'body' in req ? req.body : (req as any);
+    if (!('body' in req)) {
+      init.body = req as any;
+    } else if (typeof req.body === 'string') {
+      init.body = req.body;
+    } else if (req.body !== undefined) {
+      init.body = JSON.stringify(req.body);
+    }
   }
   const request = new Request(url, init);
 
