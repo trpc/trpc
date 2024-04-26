@@ -53,5 +53,19 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
+    responseMeta(data) {
+      const meta = opts.responseMeta?.(data);
+
+      if (meta?.headers) {
+        for (const [key, value] of Object.entries(meta)) {
+          resHeaders.append(key, value);
+        }
+      }
+
+      return {
+        headers: Object.fromEntries(resHeaders),
+        status: meta?.status,
+      };
+    },
   });
 }

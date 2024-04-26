@@ -12,6 +12,7 @@ export type HTTPHeaders = Dict<string[] | string>;
 
 export interface HTTPResponse {
   status: number;
+  // FIXME: this should be `Headers`
   headers?: HTTPHeaders;
   body?: string;
 }
