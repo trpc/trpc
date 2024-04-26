@@ -398,6 +398,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       type,
       responseMeta: opts.responseMeta,
     });
+
     let controller: ReadableStreamDefaultController<string> = undefined as any;
     const stream = new ReadableStream({
       start(c) {
