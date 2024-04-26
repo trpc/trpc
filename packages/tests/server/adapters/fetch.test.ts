@@ -195,10 +195,7 @@ describe('with default server', () => {
 
     const results = await Promise.all([
       client.deferred.query({ wait: 3 }),
-      client.deferred.query({ wait: 1 }).then((it) => {
-        console.log('got it', it);
-        return it;
-      }),
+      client.deferred.query({ wait: 1 }),
       client.deferred.query({ wait: 2 }),
     ]);
     expect(results).toEqual([3, 1, 2]);
@@ -273,7 +270,7 @@ test.each([
   await custom.close();
 });
 
-test.only('mutation', async () => {
+test('mutation', async () => {
   const t = await startServer();
   const res = await Promise.all([
     t.client.helloMutation.mutate('world'),
