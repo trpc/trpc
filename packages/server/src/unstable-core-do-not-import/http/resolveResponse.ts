@@ -12,7 +12,6 @@ import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
 import { isObject, memoize, unsetMarker } from '../utils';
 import { contentTypeHandlers } from './content-type/contentTypeHandlers';
-import { getJsonContentTypeInputs } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
@@ -41,10 +40,6 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
 > = {
   GET: 'query',
   POST: 'mutation',
-};
-
-const fallbackContentTypeHandler = {
-  getInputs: getJsonContentTypeInputs,
 };
 
 interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
@@ -226,16 +221,18 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     const getInputForIndex = (() => {
       // resolve content type handler
-      const contentTypeHandler = !req.headers.has('content-type')
-        ? contentTypeHandlers.fallback
-        : contentTypeHandlers.list.find((handler) => handler.isMatch(req));
+      const contentTypeHandler = contentTypeHandlers.list.find((handler) =>
+        handler.isMatch(req),
+      );
 
       if (!contentTypeHandler) {
+        const contentType = req.headers.get('content-type');
+
         throw new TRPCError({
           code: 'UNSUPPORTED_MEDIA_TYPE',
-          message: `Unsupported content-type "${req.headers.get(
-            'content-type',
-          )}"`,
+          message: contentType
+            ? `Unsupported content-type "${contentType}"`
+            : 'Missing content-type header',
         });
       }
       if (isBatchCall && !contentTypeHandler.batching) {

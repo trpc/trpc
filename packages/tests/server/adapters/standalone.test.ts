@@ -202,7 +202,7 @@ test('force content-type on mutations', async () => {
             "httpStatus": 415,
             "stack": "[redacted]",
           },
-          "message": "Invalid Content-Type header (expected application/json)",
+          "message": "Missing content-type header",
         },
       }
     `);

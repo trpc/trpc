@@ -20,13 +20,19 @@ import type {
   NodeHTTPResponse,
 } from './types';
 
+function assertAsyncIterable<TValue>(
+  value: any,
+): asserts value is AsyncIterable<TValue> {
+  if (!(Symbol.asyncIterator in value)) {
+    throw new Error('Expected AsyncIterable - are you using Node >= 18.0.0?');
+  }
+}
+
 export function incomingMessageToRequest(req: http.IncomingMessage): Request {
   const ac = new AbortController();
   const headers = new Headers(req.headers as any);
   const url = `http://${headers.get('host')}${req.url}`;
   req.once('aborted', () => ac.abort());
-
-  console.log('---------creating req');
 
   const init: RequestInit = {
     headers,
@@ -40,7 +46,6 @@ export function incomingMessageToRequest(req: http.IncomingMessage): Request {
   }
   const request = new Request(url, init);
 
-  console.log('---------created req');
   return request;
 }
 export async function nodeHTTPRequestHandler<
@@ -51,9 +56,8 @@ export async function nodeHTTPRequestHandler<
   const handleViaMiddleware = opts.middleware ?? ((_req, _res, next) => next());
 
   return handleViaMiddleware(opts.req, opts.res, async (err) => {
-    console.log('got here');
     const req = incomingMessageToRequest(opts.req);
-    console.log('got here2');
+
     // Build tRPC dependencies
     const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
       innerOpts,
@@ -63,7 +67,7 @@ export async function nodeHTTPRequestHandler<
         ...innerOpts,
       });
     };
-    console.log('got here3');
+
     const res = await resolveResponse({
       ...opts,
       req,
@@ -76,11 +80,13 @@ export async function nodeHTTPRequestHandler<
         });
       },
     });
-    console.log('got here4');
 
     opts.res.writeHead(res.status, Object.fromEntries(res.headers));
-    for await (const chunk of res.body) {
-      opts.res.write(chunk);
+    if (res.body) {
+      assertAsyncIterable(res.body);
+      for await (const chunk of res.body) {
+        opts.res.write(chunk);
+      }
     }
     opts.res.end();
   });
