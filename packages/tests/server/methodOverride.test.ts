@@ -144,7 +144,7 @@ test('server: rejects method override from client when not enabled on the server
   );
 });
 
-test.only('cannot use method overriding with mutations', async () => {
+test('cannot use method overriding with mutations', async () => {
   const t = await setup({
     allowMethodOverride: true,
     linkOptions: {},
