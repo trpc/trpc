@@ -92,7 +92,7 @@ test('basic test', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -124,7 +124,7 @@ test('v1 request info', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -136,7 +136,6 @@ test('v1 request info', async () => {
           "calls": Array [
             Object {
               "path": "request.info",
-              "type": "query",
             },
           ],
           "isBatchCall": false,
@@ -163,7 +162,7 @@ test('test v1 with leading prefix', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -196,7 +195,7 @@ test('test v1 can find procedure even if resource is not proxied', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -228,7 +227,7 @@ test('bad type', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 400,
     }
@@ -287,7 +286,7 @@ test('test v2 format', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -332,7 +331,7 @@ test('test v2 format with multiple / in query key', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -378,7 +377,7 @@ test('test v2 format with non default routeKey', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -423,7 +422,7 @@ test('test v2 format with non default routeKey and nested router', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -456,14 +455,6 @@ test('router with no context', async () => {
     }),
     mockAPIGatewayContext(),
   );
-  expect(result).toMatchInlineSnapshot(`
-    Object {
-      "headers": Object {
-        "Content-Type": "application/json",
-      },
-      "statusCode": 200,
-    }
-  `);
   const parsedBody = JSON.parse(body ?? '');
   expect(parsedBody).toMatchInlineSnapshot(`
     Object {
@@ -472,6 +463,14 @@ test('router with no context', async () => {
           "text": "hello kATT",
         },
       },
+    }
+  `);
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "headers": Object {
+        "content-type": "application/json",
+      },
+      "statusCode": 200,
     }
   `);
 });
@@ -494,7 +493,7 @@ test('test base64 encoded apigateway proxy integration', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }

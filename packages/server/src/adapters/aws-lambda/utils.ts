@@ -20,7 +20,6 @@ import type { AnyRouter, inferRouterContext } from '../../@trpc/server'; // impo
 import { TRPCError } from '../../@trpc/server';
 import type {
   HTTPBaseHandlerOptions,
-  HTTPHeaders,
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 
@@ -140,12 +139,47 @@ export function getPath(event: APIGatewayEvent) {
   });
 }
 
+export function getURLFromEvent(event: APIGatewayEvent): URL {
+  const path = getPath(event);
+
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(
+    event.queryStringParameters ?? {},
+  )) {
+    if (typeof value !== 'undefined') {
+      searchParams.append(key, value);
+    }
+  }
+
+  if (isPayloadV1(event)) {
+    const hostname: string = event.requestContext.domainName ?? 'localhost';
+    const protocol = 'http';
+
+    return new URL(
+      `${protocol}://${hostname}${path}?${searchParams.toString()}`,
+    );
+  }
+  if (isPayloadV2(event)) {
+    const hostname: string = event.requestContext.domainName;
+    const protocol: string = event.requestContext.http.protocol;
+
+    return new URL(
+      `${protocol}://${hostname}${path}?${searchParams.toString()}`,
+    );
+  }
+
+  throw new TRPCError({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
+  });
+}
+
 export function transformHeaders(
-  headers: HTTPHeaders,
+  headers: Request['headers'],
 ): APIGatewayResult['headers'] {
   const obj: APIGatewayResult['headers'] = {};
 
-  for (const [key, value] of Object.entries(headers)) {
+  for (const [key, value] of headers) {
     if (typeof value === 'undefined') {
       continue;
     }

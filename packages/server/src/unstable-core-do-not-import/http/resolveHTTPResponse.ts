@@ -49,7 +49,6 @@ interface ResolveHTTPRequestOptions<
   req: TRequest;
   path: string;
   error?: Maybe<TRPCError>;
-  contentTypeHandler?: ContentTypeHandler<any>;
   preprocessedBody?: boolean;
   /**
    * Called as soon as the response head is known.
@@ -231,8 +230,7 @@ export async function resolveHTTPResponse<
     unstable_onChunk?.([-1, '']);
     return headResponse;
   }
-  const contentTypeHandler =
-    opts.contentTypeHandler ?? fallbackContentTypeHandler;
+  const contentTypeHandler = fallbackContentTypeHandler;
   const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
   const allowMethodOverride = opts.allowMethodOverride ?? false;
 

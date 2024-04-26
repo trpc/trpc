@@ -442,12 +442,11 @@ describe('authorized user', () => {
         "calls": Array [
           Object {
             "path": "request.info",
-            "type": "query",
           },
         ],
         "isBatchCall": true,
       }
-  `);
+    `);
   });
 
   test('mutation', async () => {

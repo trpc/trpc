@@ -18,12 +18,8 @@ import type {
 import type { AnyRouter } from '../../@trpc/server';
 // @trpc/server
 import { TRPCError } from '../../@trpc/server';
-import type {
-  HTTPRequest,
-  HTTPResponse,
-  ResolveHTTPRequestOptionsContextFn,
-} from '../../@trpc/server/http';
-import { resolveHTTPResponse } from '../../@trpc/server/http';
+import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
+import { resolveResponse } from '../../@trpc/server/http';
 import type {
   APIGatewayEvent,
   APIGatewayResult,
@@ -32,6 +28,7 @@ import type {
 import {
   getHTTPMethod,
   getPath,
+  getURLFromEvent,
   isPayloadV1,
   isPayloadV2,
   transformHeaders,
@@ -40,16 +37,7 @@ import {
 
 export * from './utils';
 
-function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(
-    event.queryStringParameters ?? {},
-  )) {
-    if (typeof value !== 'undefined') {
-      query.append(key, value);
-    }
-  }
-
+function lambdaEventToRequest(event: APIGatewayEvent): Request {
   let body: string | null | undefined;
   if (event.body && event.isBase64Encoded) {
     body = Buffer.from(event.body, 'base64').toString('utf8');
@@ -57,31 +45,44 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
     body = event.body;
   }
 
-  return {
-    method: getHTTPMethod(event),
-    query: query,
-    headers: event.headers,
-    body: body,
+  const url = getURLFromEvent(event);
+
+  const method = getHTTPMethod(event);
+
+  const init: RequestInit = {
+    headers: event.headers as any,
+    method,
+    // @ts-expect-error this is fine
+    duplex: 'half',
   };
+  if (method === 'POST') {
+    init.body = body;
+  }
+
+  const request = new Request(url, init);
+
+  return request;
 }
 
-function tRPCOutputToAPIGatewayOutput<
+async function tRPCOutputToAPIGatewayOutput<
   TEvent extends APIGatewayEvent,
   TResult extends APIGatewayResult,
->(event: TEvent, response: HTTPResponse): TResult {
+>(event: TEvent, response: Response): Promise<TResult> {
   if (isPayloadV1(event)) {
-    const resp: APIGatewayProxyResult = {
+    const result: APIGatewayProxyResult = {
       statusCode: response.status,
-      body: response.body ?? '',
-      headers: transformHeaders(response.headers ?? {}),
+      body: await response.text(),
+      headers: transformHeaders(response.headers),
     };
-    return resp as TResult;
+
+    return result as TResult;
   } else if (isPayloadV2(event)) {
     const resp: APIGatewayProxyStructuredResultV2 = {
       statusCode: response.status,
-      body: response.body ?? undefined,
-      headers: transformHeaders(response.headers ?? {}),
+      body: await response.text(),
+      headers: transformHeaders(response.headers),
     };
+
     return resp as TResult;
   } else {
     throw new TRPCError({
@@ -107,15 +108,17 @@ export function awsLambdaRequestHandler<
   opts: AWSLambdaOptions<TRouter, TEvent>,
 ): (event: TEvent, context: APIGWContext) => Promise<TResult> {
   return async (event, context) => {
-    const req = lambdaEventToHTTPRequest(event);
+    const req = lambdaEventToRequest(event);
+
     const path = getPath(event);
+
     const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
       innerOpts,
     ) => {
       return await opts.createContext?.({ event, context, ...innerOpts });
     };
 
-    const response = await resolveHTTPResponse({
+    const response = await resolveResponse({
       ...opts,
       createContext,
       req,
@@ -129,6 +132,6 @@ export function awsLambdaRequestHandler<
       },
     });
 
-    return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
+    return await tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
   };
 }
