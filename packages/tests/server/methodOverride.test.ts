@@ -156,5 +156,7 @@ test.only('cannot use method overriding with mutations', async () => {
       who: 'test1',
     });
   });
-  expect(err).toMatchInlineSnapshot(`[TRPCClientError: No "query"-procedure on path "m"]`);
+  expect(err).toMatchInlineSnapshot(
+    `[TRPCClientError: No "query"-procedure on path "m"]`,
+  );
 });
