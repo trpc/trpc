@@ -308,10 +308,18 @@ export async function resolveHTTPResponse<
         const error = getTRPCErrorFromUnknown(cause);
         errors.push(error);
 
+        let input: unknown;
+        try {
+          input = await getRawInput();
+        } catch (e) {
+          // if `getRawInput` fails, we can't include the input in the error
+          input = undefined;
+        }
+
         opts.onError?.({
           error,
           path,
-          input: getRawInput(),
+          input,
           ctx,
           type: type,
           req: opts.req,
@@ -323,7 +331,7 @@ export async function resolveHTTPResponse<
             error,
             type,
             path,
-            input: getRawInput(),
+            input,
             ctx,
           }),
         };
