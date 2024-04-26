@@ -400,16 +400,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       responseMeta: opts.responseMeta,
     });
 
-    let controller: ReadableStreamDefaultController<Uint8Array> =
-      undefined as any;
-    const stream = new ReadableStream({
-      start(c) {
-        controller = c;
-      },
-    });
+    const encoder = new TextEncoderStream();
+    const stream = encoder.readable;
+    const controller = encoder.writable.getWriter();
     async function exec() {
-      const encoder = new TextEncoder();
-
       const indexedPromises = new Map(
         promises.map((promise, index) => [
           index,
@@ -431,7 +425,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           );
           const body = JSON.stringify(transformedJSON);
 
-          controller.enqueue(encoder.encode(formatter(index, body)));
+          await controller.write(formatter(index, body));
         } catch (cause) {
           const path = paths![index];
           const input = inputsByIndex[index]!.getParsedInput();
@@ -443,16 +437,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             input,
           });
 
-          controller.enqueue(encoder.encode(formatter(index, body)));
+          await controller.write(formatter(index, body));
         }
       }
 
-      controller.enqueue(encoder.encode(formatter.end()));
-      controller.close();
+      await controller.write(formatter.end());
+      await controller.close();
     }
-    exec().catch((err) => {
-      controller.error(err);
-    });
+    exec().catch((err) => controller.abort(err));
 
     return new Response(stream, {
       headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
