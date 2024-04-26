@@ -25,7 +25,7 @@ export type BodyResult =
 
 export type ContentTypeHandler = {
   isMatch: (opts: Request) => boolean;
-  getInputs: (req: Request, searchParams: URLSearchParams) => unknown;
+  getInputs: (req: Request, searchParams: URLSearchParams) => Promise<unknown>;
   batching: boolean;
   transform: boolean;
 };

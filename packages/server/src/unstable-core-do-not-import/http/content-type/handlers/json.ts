@@ -12,8 +12,9 @@ export const jsonContentTypeHandler: ContentTypeHandler = {
     return await req.json();
   },
   isMatch(req) {
-    return !!req.headers.get('content-type')?.startsWith('multipart/form-data');
+    console.log('hello json', req.headers.get('content-type'));
+    return req.headers.get('content-type') == 'application/json';
   },
-  batching: false,
-  transform: false,
+  batching: true,
+  transform: true,
 };

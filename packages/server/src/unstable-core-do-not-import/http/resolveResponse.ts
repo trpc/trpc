@@ -1,13 +1,16 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { getErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
-import type {
-  AnyRouter,
-  inferRouterContext,
-  inferRouterError,
+import {
+  callProcedure,
+  type AnyRouter,
+  type inferRouterContext,
+  type inferRouterError,
 } from '../router';
 import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
+import { isObject, memoize, unsetMarker } from '../utils';
 import { contentTypeHandlers } from './content-type/contentTypeHandlers';
 import { getJsonContentTypeInputs } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
@@ -17,9 +20,21 @@ import type {
   HTTPRequest,
   HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
-  TRPCRequestInfo,
 } from './types';
 
+function httpHeadersToFetchHeaders(headers: HTTPHeaders): Headers {
+  const newHeaders = new Headers();
+  for (const [key, value] of Object.entries(headers)) {
+    if (Array.isArray(value)) {
+      for (const v of value) {
+        newHeaders.append(key, v);
+      }
+    } else if (typeof value === 'string') {
+      newHeaders.set(key, value);
+    }
+  }
+  return newHeaders;
+}
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
   ProcedureType | undefined
@@ -190,15 +205,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     paths = isBatchCall
       ? decodeURIComponent(opts.path).split(',')
       : [opts.path];
-    const contentTypeHandler = !req.headers.has('content-type')
-      ? contentTypeHandlers.fallback
-      : contentTypeHandlers.list.find((handler) => handler.isMatch(req));
-    if (!contentTypeHandler) {
-      throw new TRPCError({
-        code: 'UNSUPPORTED_MEDIA_TYPE',
-        message: `Unsupported media type "${req.headers.get('content-type')}"`,
-      });
-    }
 
     // we create context first so that (unless `createContext()` throws)
     // error handler may access context information
@@ -218,6 +224,75 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       },
     });
 
+    const getInputForIndex = (() => {
+      // resolve content type handler
+      const contentTypeHandler = !req.headers.has('content-type')
+        ? contentTypeHandlers.fallback
+        : contentTypeHandlers.list.find((handler) => handler.isMatch(req));
+
+      if (!contentTypeHandler) {
+        throw new TRPCError({
+          code: 'UNSUPPORTED_MEDIA_TYPE',
+          message: `Unsupported content-type "${req.headers.get(
+            'content-type',
+          )}"`,
+        });
+      }
+      if (isBatchCall && !contentTypeHandler.batching) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Batching is possible with content-type "${req.headers.get(
+            'content-type',
+          )}"`,
+        });
+      }
+      // memoize get inputs so body is only read once
+      const getInputs = memoize(() =>
+        contentTypeHandler.getInputs(req, url.searchParams),
+      );
+
+      const deserializeInput = (input: unknown) => {
+        if (input === undefined || !contentTypeHandler.transform) {
+          return input;
+        }
+        return router._def._config.transformer.input.deserialize(input);
+      };
+
+      return (index: number) => {
+        let rawInput: unknown = unsetMarker;
+
+        return {
+          getRawInput: async () => {
+            if (rawInput !== unsetMarker) {
+              return rawInput;
+            }
+            const inputs = await getInputs();
+
+            if (!isBatchCall) {
+              rawInput = deserializeInput(inputs);
+              return rawInput;
+            }
+
+            if (!isObject(inputs)) {
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                message:
+                  '"input" needs to be an object when doing a batch call',
+              });
+            }
+
+            rawInput = deserializeInput(inputs[index]);
+            return rawInput;
+          },
+          getParsedInput: () => {
+            return rawInput === unsetMarker ? undefined : rawInput;
+          },
+        };
+      };
+    })();
+
+    const inputsByIndex = paths.map((_, index) => getInputForIndex(index));
+
     if (isBatchCall && !allowBatching) {
       throw new Error(`Batching is not enabled on the server`);
     }
@@ -228,10 +303,51 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       });
     }
 
-    const promises = paths.map((path, index) =>
-      inputToProcedureCall({ opts, ctx, type, input: inputs[index], path }),
-    );
+    const errors: TRPCError[] = [];
 
+    const promises: Promise<
+      TRPCResponse<unknown, inferRouterError<TRouter>>
+    >[] = paths.map(async (path, index) => {
+      const input = inputsByIndex[index]!;
+      try {
+        const data = await callProcedure({
+          procedures: opts.router._def.procedures,
+          path,
+          getRawInput: input.getRawInput,
+          ctx,
+          type,
+          allowMethodOverride,
+        });
+        return {
+          result: {
+            data,
+          },
+        };
+      } catch (cause) {
+        const error = getTRPCErrorFromUnknown(cause);
+        errors.push(error);
+
+        opts.onError?.({
+          error,
+          path,
+          input,
+          ctx,
+          type: type,
+          req: opts.req,
+        });
+
+        return {
+          error: getErrorShape({
+            config: opts.router._def._config,
+            error,
+            type,
+            path,
+            input,
+            ctx,
+          }),
+        };
+      }
+    });
     if (!isStreamCall) {
       /**
        * Non-streaming response:
@@ -268,97 +384,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       });
     }
 
-    /**
-     * Streaming response:
-     * - Use tupleson to stream the response
-     * - create headers with minimal data (cannot know the response body in advance)
-     * - return void
-     */
-    const headResponse = initResponse({
-      ctx,
-      paths,
-      type,
-      responseMeta: opts.responseMeta,
-    });
-
-    switch (streamMode) {
-      case 'tupleson-json': {
-        const toResponse = createTsonSerializeJsonStreamResponse(
-          router._def._config.experimental_tuplesonOptions,
-        );
-        return toResponse(
-          promises.map((p) =>
-            p.then((result) => {
-              // transform
-              return transformTRPCResponse(router._def._config, result);
-            }),
-          ),
-        );
-      }
-
-      /**
-       * @deprecated
-       */
-      case 'stream': {
-        let controller: ReadableStreamDefaultController<string> =
-          undefined as any;
-        const stream = new ReadableStream({
-          start(c) {
-            controller = c;
-          },
-        });
-        async function exec() {
-          const indexedPromises = new Map(
-            promises.map((promise, index) => [
-              index,
-              promise.then((r) => [index, r] as const),
-            ]),
-          );
-          const formatter = getBatchStreamFormatter();
-
-          while (indexedPromises.size > 0) {
-            const [index, untransformedJSON] = await Promise.race(
-              indexedPromises.values(),
-            );
-            indexedPromises.delete(index);
-
-            try {
-              const transformedJSON = transformTRPCResponse(
-                router._def._config,
-                untransformedJSON,
-              );
-              const body = JSON.stringify(transformedJSON);
-
-              controller.enqueue(formatter(index, body));
-            } catch (cause) {
-              const path = paths![index];
-              const input = inputs[index];
-              const { body } = caughtErrorToData(cause, {
-                opts,
-                ctx,
-                type,
-                path,
-                input,
-              });
-
-              controller.enqueue(formatter(index, body));
-            }
-          }
-          controller.close();
-        }
-        exec().catch((err) => {
-          controller.error(err);
-        });
-
-        return new Response(stream, {
-          headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
-          status: headResponse.status,
-        });
-      }
-      default: {
-        throw new Error(`Unhandled stream mode ${streamMode}`);
-      }
-    }
+    throw new Error(`Unsupported stream mode `);
   } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled

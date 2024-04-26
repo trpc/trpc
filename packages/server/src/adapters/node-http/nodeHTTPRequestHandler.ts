@@ -26,13 +26,22 @@ export function incomingMessageToRequest(req: http.IncomingMessage): Request {
   const url = `http://${headers.get('host')}${req.url}`;
   req.once('aborted', () => ac.abort());
 
-  return new Request(url, {
+  console.log('---------creating req');
+
+  const init: RequestInit = {
     headers,
     method: req.method,
-    // does this even work?
-    body: 'body' in req ? (req.body as any) : req,
     signal: ac.signal,
-  });
+    // @ts-expect-error this is fine
+    duplex: 'half',
+  };
+  if (req.method === 'POST') {
+    init.body = 'body' in req ? req.body : (req as any);
+  }
+  const request = new Request(url, init);
+
+  console.log('---------created req');
+  return request;
 }
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
@@ -42,8 +51,9 @@ export async function nodeHTTPRequestHandler<
   const handleViaMiddleware = opts.middleware ?? ((_req, _res, next) => next());
 
   return handleViaMiddleware(opts.req, opts.res, async (err) => {
+    console.log('got here');
     const req = incomingMessageToRequest(opts.req);
-
+    console.log('got here2');
     // Build tRPC dependencies
     const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
       innerOpts,
@@ -53,7 +63,7 @@ export async function nodeHTTPRequestHandler<
         ...innerOpts,
       });
     };
-
+    console.log('got here3');
     const res = await resolveResponse({
       ...opts,
       req,
@@ -66,8 +76,12 @@ export async function nodeHTTPRequestHandler<
         });
       },
     });
+    console.log('got here4');
 
     opts.res.writeHead(res.status, Object.fromEntries(res.headers));
-    opts.res.end(res.body);
+    for await (const chunk of res.body) {
+      opts.res.write(chunk);
+    }
+    opts.res.end();
   });
 }
