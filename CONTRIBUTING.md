@@ -82,11 +82,11 @@ The most complex types are also in this area because we must keep track of the c
 
 #### Handling a Request and Forming a Response
 
-The core implementation for HTTP handling is contained in [`resolveHTTPResponse`](packages/server/src/http/resolveHTTPResponse.ts) where requests are handled and an object representing a response is created. This function deals with handling different methods (`query` and `mutation` have different specs), batching, streaming, etc. so it is an excellent place to get an overview of the complete process of handling a request and forming a response. If you want to learn more about the specification that we implement, read [this docs page](https://trpc.io/docs/rpc).
+The core implementation for HTTP handling is contained in [`resolveResponse`](packages/server/src/http/resolveResponse.ts) where requests are handled and an object representing a response is created. This function deals with handling different methods (`query` and `mutation` have different specs), batching, streaming, etc. so it is an excellent place to get an overview of the complete process of handling a request and forming a response. If you want to learn more about the specification that we implement, read [this docs page](https://trpc.io/docs/rpc).
 
 #### Adapting Requests and Responses
 
-Adapters are what connect our framework-agnostic HTTP handling into a server response. We offer official adapters for some popular frameworks, although adapters can also be third-party. Adapters "adapt" their framework's request object into a common format and the object response from `resolveHTTPResponse` into their framework-specific responses. This keeps tRPC framework-agnostic, an important principle that allows it to be used in any environment.
+Adapters are what connect our framework-agnostic HTTP handling into a server response. We offer official adapters for some popular frameworks, although adapters can also be third-party. Adapters "adapt" their framework's request object into a common format and the object response from `resolveResponse` into their framework-specific responses. This keeps tRPC framework-agnostic, an important principle that allows it to be used in any environment.
 
 ### `@trpc/client`
 

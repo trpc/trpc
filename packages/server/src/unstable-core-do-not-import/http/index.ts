@@ -2,7 +2,7 @@ export {
   getHTTPStatusCode,
   getHTTPStatusCodeFromError,
 } from './getHTTPStatusCode';
-export { resolveHTTPResponse } from './resolveHTTPResponse';
+
 export type {
   BaseHandlerOptions,
   HTTPBaseHandlerOptions,

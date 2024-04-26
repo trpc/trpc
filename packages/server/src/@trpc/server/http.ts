@@ -2,10 +2,7 @@ export {
   getHTTPStatusCode,
   getHTTPStatusCodeFromError,
 } from '../../unstable-core-do-not-import';
-export {
-  resolveHTTPResponse,
-  resolveResponse,
-} from '../../unstable-core-do-not-import';
+export { resolveResponse } from '../../unstable-core-do-not-import';
 export type {
   BaseHandlerOptions,
   HTTPBaseHandlerOptions,

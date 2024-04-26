@@ -78,7 +78,7 @@ export type TRPCRequestInfo = {
 };
 
 /**
- * Inner createContext function for `resolveHTTPResponse` used to forward `TRPCRequestInfo` to `createContext`
+ * Inner createContext function for `resolveResponse` used to forward `TRPCRequestInfo` to `createContext`
  * @internal
  */
 export type ResolveHTTPRequestOptionsContextFn<TRouter extends AnyRouter> =
