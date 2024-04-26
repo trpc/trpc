@@ -400,13 +400,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       responseMeta: opts.responseMeta,
     });
 
-    let controller: ReadableStreamDefaultController<string> = undefined as any;
+    let controller: ReadableStreamDefaultController<Uint8Array> =
+      undefined as any;
     const stream = new ReadableStream({
       start(c) {
         controller = c;
       },
     });
     async function exec() {
+      const encoder = new TextEncoder();
+
       const indexedPromises = new Map(
         promises.map((promise, index) => [
           index,
@@ -428,7 +431,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           );
           const body = JSON.stringify(transformedJSON);
 
-          controller.enqueue(formatter(index, body));
+          controller.enqueue(encoder.encode(formatter(index, body)));
         } catch (cause) {
           const path = paths![index];
           const input = inputsByIndex[index]!.getParsedInput();
@@ -440,11 +443,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             input,
           });
 
-          controller.enqueue(formatter(index, body));
+          controller.enqueue(encoder.encode(formatter(index, body)));
         }
       }
 
-      controller.enqueue(formatter.end());
+      controller.enqueue(encoder.encode(formatter.end()));
       controller.close();
     }
     exec().catch((err) => {
