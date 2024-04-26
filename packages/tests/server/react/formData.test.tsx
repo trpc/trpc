@@ -12,15 +12,6 @@ import {
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
-import {
-  experimental_createFileUploadHandler,
-  experimental_createMemoryUploadHandler,
-  experimental_isMultipartFormDataRequest,
-  experimental_NodeOnDiskFile,
-  experimental_parseMultipartFormData,
-  nodeHTTPFormDataContentTypeHandler,
-} from '@trpc/server/adapters/node-http/content-type/form-data';
-import { nodeHTTPJSONContentTypeHandler } from '@trpc/server/adapters/node-http/content-type/json';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
@@ -38,19 +29,6 @@ const ctx = konn()
 
     const appRouter = t.router({
       polymorphic: t.procedure
-        .use(async (opts) => {
-          if (!experimental_isMultipartFormDataRequest(opts.ctx.req)) {
-            return opts.next();
-          }
-          const formData = await experimental_parseMultipartFormData(
-            opts.ctx.req,
-            experimental_createMemoryUploadHandler(),
-          );
-
-          return opts.next({
-            getRawInput: async () => formData,
-          });
-        })
         .input(
           formDataOrObject({
             text: z.string(),
@@ -60,16 +38,6 @@ const ctx = konn()
           return opts.input;
         }),
       uploadFile: t.procedure
-        .use(async (opts) => {
-          const formData = await experimental_parseMultipartFormData(
-            opts.ctx.req,
-            experimental_createMemoryUploadHandler(),
-          );
-
-          return opts.next({
-            getRawInput: async () => formData,
-          });
-        })
         .input(
           zfd.formData({
             file: zfd.file(),
@@ -85,23 +53,9 @@ const ctx = konn()
           };
         }),
       uploadFilesOnDiskAndIncludeTextPropertiesToo: t.procedure
-        .use(async (opts) => {
-          const maxBodySize = 100; // 100 bytes
-          const formData = await experimental_parseMultipartFormData(
-            opts.ctx.req,
-            experimental_createFileUploadHandler(),
-            maxBodySize,
-          );
-
-          return opts.next({
-            getRawInput: async () => formData,
-          });
-        })
         .input(
           zfd.formData({
-            files: zfd.repeatableOfType(
-              z.instanceof(experimental_NodeOnDiskFile),
-            ),
+            files: zfd.repeatableOfType(z.instanceof(File)),
             text: z.string(),
             json: zfd.json(z.object({ foo: z.string() })),
           }),
@@ -130,12 +84,7 @@ const ctx = konn()
       error: vi.fn(),
     };
     const opts = routerToServerAndClientNew(appRouter, {
-      server: {
-        experimental_contentTypeHandlers: [
-          nodeHTTPFormDataContentTypeHandler(),
-          nodeHTTPJSONContentTypeHandler(),
-        ],
-      },
+      server: {},
       client: ({ httpUrl }) => ({
         links: [
           loggerLink({
@@ -253,47 +202,4 @@ test('upload a combination of files and non-file text fields', async () => {
       foo: 'bar',
     },
   });
-});
-
-test('Throws when aggregate size of uploaded files and non-file text fields exceeds maxBodySize - files too large', async () => {
-  const form = new FormData();
-  form.append(
-    'files',
-    new File(['a'.repeat(50)], 'bob.txt', {
-      type: 'text/plain',
-    }),
-  );
-  form.append(
-    'files',
-    new File(['a'.repeat(51)], 'alice.txt', {
-      type: 'text/plain',
-    }),
-  );
-  form.set('text', 'foo');
-  form.set('json', JSON.stringify({ foo: 'bar' }));
-
-  await expect(
-    ctx.client.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
-  ).rejects.toThrowErrorMatchingInlineSnapshot(
-    `[TRPCClientError: Body exceeded upload size of 100 bytes.]`,
-  );
-});
-
-test('Throws when aggregate size of uploaded files and non-file text fields exceeds maxBodySize - text fields too large', async () => {
-  const form = new FormData();
-  form.append(
-    'files',
-    new File(['hi bob'], 'bob.txt', {
-      type: 'text/plain',
-    }),
-  );
-
-  form.set('text', 'a'.repeat(101));
-  form.set('json', JSON.stringify({ foo: 'bar' }));
-
-  await expect(
-    ctx.client.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form),
-  ).rejects.toThrowErrorMatchingInlineSnapshot(
-    `[TRPCClientError: Body exceeded upload size of 100 bytes.]`,
-  );
 });
