@@ -65,7 +65,7 @@ function createAppRouter() {
       .query(({ input, ctx }) => ({
         text: `hello ${input?.username ?? ctx.user?.name ?? 'world'}`,
       })),
-    ['post.edit']: publicProcedure
+    editPost: publicProcedure
       .input(
         z.object({
           id: z.string(),
@@ -308,7 +308,7 @@ describe('anonymous user', () => {
 
   test('mutation', async () => {
     expect(
-      await app.client['post.edit'].mutate({
+      await app.client.editPost.mutate({
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),
@@ -451,7 +451,7 @@ describe('authorized user', () => {
 
   test('mutation', async () => {
     expect(
-      await app.client['post.edit'].mutate({
+      await app.client.editPost.mutate({
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),
