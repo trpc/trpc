@@ -97,6 +97,14 @@ test('simple query', async () => {
   `);
 });
 
+test('batched requests in body work correctly', async () => {
+  const res = await Promise.all([
+    t.client.helloMutation.mutate('world'),
+    t.client.helloMutation.mutate('KATT'),
+  ]);
+  expect(res).toEqual(['hello world', 'hello KATT']);
+});
+
 test('request info from context should include both calls', async () => {
   const res = await Promise.all([
     t.client.hello.query({
