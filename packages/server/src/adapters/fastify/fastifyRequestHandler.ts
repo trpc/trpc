@@ -55,7 +55,9 @@ export async function fastifyRequestHandler<
   if ('body' in opts.req) {
     (incomingMessage as any).body = opts.req.body;
   }
-  const req = incomingMessageToRequest(incomingMessage);
+  const req = incomingMessageToRequest(incomingMessage, {
+    maxBodySize: null,
+  });
 
   const res = await resolveResponse({
     ...opts,

@@ -1,4 +1,5 @@
 import type http from 'http';
+import { waitError } from '../___testHelpers';
 import type { Context } from './__router';
 import { router } from './__router';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
@@ -32,7 +33,7 @@ async function startServer() {
     '/trpc',
     trpcExpress.createExpressMiddleware({
       router,
-      maxBodySize: 10, // 10 bytes,
+      maxBodySize: 100, // 100 bytes,
       createContext,
     }),
   );
@@ -139,4 +140,16 @@ test('error query', async () => {
   } catch (e) {
     expect(e).toStrictEqual(new TRPCClientError('Unexpected error'));
   }
+});
+
+test('payload too large', async () => {
+  const err = await waitError(
+    () => t.client.exampleMutation.mutate({ payload: 'a'.repeat(101) }),
+    TRPCClientError<typeof router>,
+  );
+
+  expect(err.data?.code).toBe('PAYLOAD_TOO_LARGE');
+
+  // the trpc envelope takes some space so we can't have exactly 100 bytes of payload
+  await t.client.exampleMutation.mutate({ payload: 'a'.repeat(75) });
 });
