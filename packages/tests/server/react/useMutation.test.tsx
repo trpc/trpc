@@ -27,7 +27,7 @@ const ctx = konn()
               text: z.string(),
             }),
           )
-          .mutation(() => `__mutationResult`),
+          .mutation(() => '__mutationResult' as const),
         createWithSerializable: t.procedure
           .input(
             z.object({
