@@ -39,18 +39,18 @@ function incomingMessageToBodyStream(
   req: http.IncomingMessage,
   opts: { maxBodySize: number | null },
 ) {
-  type Value = Uint8Array;
+  type Value = Buffer | Uint8Array | string | null;
   let size = 0;
   const maxBodySize = opts.maxBodySize;
 
   let controller: ReadableStreamDefaultController<Value> =
     null as unknown as ReadableStreamDefaultController<Value>;
-  const stream = new ReadableStream<Uint8Array>({
+  const stream = new ReadableStream<Value>({
     start(c) {
       controller = c;
     },
     async pull(c) {
-      const chunk = req.read();
+      const chunk: Value = req.read();
 
       if (chunk) {
         size += chunk.length;
