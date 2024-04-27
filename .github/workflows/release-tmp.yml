@@ -5,7 +5,7 @@ on:
     branches:
       # Replace this with the branch you want to release from
       # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
-      - '04-02-no-typesProxy'
+      - '04-26-resolveResponse'
       # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
     paths:
       - '.github/workflows/release-tmp.yml'
