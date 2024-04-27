@@ -27,7 +27,7 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
     const endpoint = req.path.slice(1);
 
     await nodeHTTPRequestHandler({
-      ...opts,
+      ...(opts as any),
       req,
       res,
       path: endpoint,
