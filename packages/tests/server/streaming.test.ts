@@ -107,7 +107,7 @@ describe('no transformer', () => {
 
   test('out-of-order streaming with manual release', async () => {
     const { client } = ctx;
-    let resolved: Record<number, boolean> = {
+    const resolved: Record<number, boolean> = {
       0: false,
       1: false,
       2: false,
