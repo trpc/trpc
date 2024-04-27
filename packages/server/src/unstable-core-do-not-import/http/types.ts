@@ -48,7 +48,6 @@ export interface HTTPRequest {
   method: string;
   query: URLSearchParams;
   headers: HTTPHeaders;
-  body: unknown;
 }
 
 /**

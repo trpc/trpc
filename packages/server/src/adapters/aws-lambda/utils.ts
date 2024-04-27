@@ -14,7 +14,12 @@ import type {
   APIGatewayProxyStructuredResultV2,
   Context as APIGWContext,
 } from 'aws-lambda';
-import type { AnyRouter, inferRouterContext } from '../../@trpc/server'; // import @trpc/server
+import type {
+  AnyRouter,
+  CreateContextCallback,
+  inferRouterContext,
+} from '../../@trpc/server';
+// import @trpc/server
 
 // @trpc/server
 import { TRPCError } from '../../@trpc/server';
@@ -49,20 +54,10 @@ export type AWSLambdaOptions<
   TEvent extends APIGatewayEvent,
 > =
   | HTTPBaseHandlerOptions<TRouter, TEvent> &
-      (
-        | {
-            /**
-             * @link https://trpc.io/docs/v11/context
-             **/
-            createContext: AWSLambdaCreateContextFn<TRouter, TEvent>;
-          }
-        | {
-            /**
-             * @link https://trpc.io/docs/v11/context
-             **/
-            createContext?: AWSLambdaCreateContextFn<TRouter, TEvent>;
-          }
-      );
+      CreateContextCallback<
+        inferRouterContext<AnyRouter>,
+        AWSLambdaCreateContextFn<TRouter, TEvent>
+      >;
 
 export function isPayloadV1(
   event: APIGatewayEvent,
@@ -196,3 +191,14 @@ export type APIGatewayPayloadFormatVersion =
 export const UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE =
   'Custom payload format version not handled by this adapter. Please use either 1.0 or 2.0. More information here' +
   'https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html';
+
+export function lambdaEventToHTTPBody(event: APIGatewayEvent) {
+  let body: string | null | undefined;
+  if (event.body && event.isBase64Encoded) {
+    body = Buffer.from(event.body, 'base64').toString('utf8');
+  } else {
+    body = event.body;
+  }
+
+  return body;
+}

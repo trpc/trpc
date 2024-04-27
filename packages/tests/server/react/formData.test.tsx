@@ -4,9 +4,10 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
-  experimental_formDataLink,
   getUntypedClient,
   httpBatchLink,
+  httpLink,
+  isNonJsonSerializable,
   loggerLink,
   splitLink,
 } from '@trpc/client';
@@ -52,10 +53,10 @@ const ctx = konn()
             },
           };
         }),
-      uploadFilesOnDiskAndIncludeTextPropertiesToo: t.procedure
+      uploadFilesAndIncludeTextPropertiesToo: t.procedure
         .input(
           zfd.formData({
-            files: zfd.repeatableOfType(z.instanceof(File)),
+            files: zfd.repeatableOfType(zfd.file()),
             text: z.string(),
             json: zfd.json(z.object({ foo: z.string() })),
           }),
@@ -84,7 +85,6 @@ const ctx = konn()
       error: vi.fn(),
     };
     const opts = routerToServerAndClientNew(appRouter, {
-      server: {},
       client: ({ httpUrl }) => ({
         links: [
           loggerLink({
@@ -92,8 +92,8 @@ const ctx = konn()
             console: loggerLinkConsole,
           }),
           splitLink({
-            condition: (op) => op.input instanceof FormData,
-            true: experimental_formDataLink({
+            condition: (op) => isNonJsonSerializable(op.input),
+            true: httpLink({
               url: httpUrl,
             }),
             false: httpBatchLink({
@@ -182,7 +182,7 @@ test('upload a combination of files and non-file text fields', async () => {
   form.set('json', JSON.stringify({ foo: 'bar' }));
 
   const fileContents =
-    await ctx.client.uploadFilesOnDiskAndIncludeTextPropertiesToo.mutate(form);
+    await ctx.client.uploadFilesAndIncludeTextPropertiesToo.mutate(form);
 
   expect(fileContents).toEqual({
     files: [

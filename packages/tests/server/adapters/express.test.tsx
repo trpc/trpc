@@ -7,7 +7,7 @@ import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
 import fetch from 'node-fetch';
 
-async function startServer() {
+async function startServer(maxBodySize?: number) {
   const createContext = (
     _opts: trpcExpress.CreateExpressContextOptions,
   ): Context => {
@@ -33,7 +33,7 @@ async function startServer() {
     '/trpc',
     trpcExpress.createExpressMiddleware({
       router,
-      maxBodySize: 100, // 100 bytes,
+      maxBodySize: maxBodySize ?? Infinity,
       createContext,
     }),
   );

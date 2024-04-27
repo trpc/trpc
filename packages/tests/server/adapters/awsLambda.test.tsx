@@ -248,9 +248,11 @@ test('bad type', async () => {
       {
         "code": "invalid_type",
         "expected": "object",
-        "received": "undefined",
-        "path": [],
-        "message": "Required"
+        "received": "array",
+        "path": [
+          "who"
+        ],
+        "message": "Expected object, received array"
       }
     ]",
       },

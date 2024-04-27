@@ -23,10 +23,18 @@ test('handle URL encoded commas in URL.pathname', async () => {
   const url = ctx.httpUrl;
 
   const normalResult = await (
-    await fetch(`${url}/a,b?batch=1&input={}`)
+    await fetch(`${url}/a,b?batch=1&input={}`, {
+      headers: {
+        'content-type': 'application/json',
+      },
+    })
   ).json();
   const uriEncodedResult = await (
-    await fetch(`${url}/a%2Cb?batch=1&input={}`)
+    await fetch(`${url}/a%2Cb?batch=1&input={}`, {
+      headers: {
+        'content-type': 'application/json',
+      },
+    })
   ).json();
 
   expect(normalResult).toMatchInlineSnapshot(`
@@ -52,6 +60,11 @@ test('handle URL encoded input in search params', async () => {
   const normalResult = await (
     await fetch(
       `${url}/withInput?batch=1&input=${JSON.stringify({ 0: 'hello' })}`,
+      {
+        headers: {
+          'content-type': 'application/json',
+        },
+      },
     )
   ).json();
   const uriEncodedResult = await (
@@ -59,6 +72,11 @@ test('handle URL encoded input in search params', async () => {
       `${url}/withInput?batch=1&input=${encodeURIComponent(
         JSON.stringify({ 0: 'hello' }),
       )}`,
+      {
+        headers: {
+          'content-type': 'application/json',
+        },
+      },
     )
   ).json();
 

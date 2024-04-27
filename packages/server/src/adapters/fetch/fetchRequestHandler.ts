@@ -12,13 +12,7 @@
 import type { AnyRouter } from '../../@trpc/server';
 import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
 import { resolveResponse, toURL } from '../../@trpc/server/http';
-import type { FetchHandlerOptions } from './types';
-
-export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
-  FetchHandlerOptions<TRouter> & {
-    req: Request;
-    endpoint: string;
-  };
+import type { FetchHandlerRequestOptions } from './types';
 
 const trimSlashes = (path: string): string => {
   path = path.startsWith('/') ? path.slice(1) : path;
