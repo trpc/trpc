@@ -5,7 +5,7 @@ on:
     branches:
       # Replace this with the branch you want to release from
       # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
-      - 'issues/5659-multi-body-read'
+      - '04-26-resolveResponse'
       # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
     paths:
       - '.github/workflows/release-tmp.yml'
