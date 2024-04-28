@@ -1,19 +1,8 @@
-import http from 'http';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import {
-  createTRPCClient,
-  createTRPCProxyClient,
-  httpBatchLink,
-  httpLink,
-} from '@trpc/client';
+import { httpBatchLink, httpLink } from '@trpc/client';
 import type { HTTPLinkBaseOptions } from '@trpc/client/links/internals/httpUtils';
 import { initTRPC } from '@trpc/server';
-import { incomingMessageToRequest } from '@trpc/server/adapters/node-http';
-import { createHTTPHandler } from '@trpc/server/adapters/standalone';
-import type {
-  BaseHandlerOptions,
-  inferRouterRootTypes,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { inferRouterRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import fetch from 'node-fetch';
 import { afterEach, test } from 'vitest';
 import { z } from 'zod';
