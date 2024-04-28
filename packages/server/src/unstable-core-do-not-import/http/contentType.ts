@@ -40,6 +40,7 @@ function memo<TReturn>(fn: () => Promise<TReturn>) {
         return value;
       }
       if (promise === null) {
+        // dedupes promises
         promise = fn();
       }
 
@@ -162,7 +163,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       });
     }
     const getInputs = memo(async () => {
-      return req.body;
+      return { 0: req.body };
     });
     return {
       paths: [opts.path],
