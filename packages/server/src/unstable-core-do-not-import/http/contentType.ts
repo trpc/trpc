@@ -47,6 +47,13 @@ const formDataContentTypeHandler: ContentTypeHandler = {
 
 const octetStreamContentTypeHandler: ContentTypeHandler = {
   async getInputs(req) {
+    if (req.method !== 'POST') {
+      throw new TRPCError({
+        code: 'METHOD_NOT_SUPPORTED',
+        message:
+          'Only POST requests are supported for application/octet-stream requests',
+      });
+    }
     return req.body;
   },
   isMatch(req) {
