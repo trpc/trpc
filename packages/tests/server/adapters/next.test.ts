@@ -48,17 +48,17 @@ function mockRes() {
   const setHeader = vi.fn(() => res);
   const end = vi.fn(() => res);
   const write = vi.fn(() => res);
-  res.json = json;
   res.setHeader = setHeader;
   res.end = end;
   res.write = write;
+  res.json = json;
+  res.statusCode = 200;
 
   return {
     res,
     json,
     setHeader,
     end,
-    write,
     text: () => {
       return res.write.mock.calls
         .map((args: any) => {

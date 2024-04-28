@@ -214,11 +214,13 @@ test('test v1 can find procedure even if resource is not proxied', async () => {
 test('bad type', async () => {
   const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({
-      body: JSON.stringify({ who: [[]] }),
+      body: '',
       headers: { 'Content-Type': 'application/json' },
       method: 'GET',
       path: 'echo',
-      queryStringParameters: {},
+      queryStringParameters: {
+        input: JSON.stringify({ who: [[]] }),
+      },
       resource: '/echo',
     }),
     mockAPIGatewayContext(),

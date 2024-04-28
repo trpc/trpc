@@ -56,6 +56,7 @@ function lambdaEventToRequest(event: APIGatewayEvent): Request {
     duplex: 'half',
   };
   if (method === 'POST') {
+    console.log({ body });
     init.body = body;
   }
 
