@@ -17,21 +17,20 @@ const appRouter = router({
   // Input parsers set! (should expect the input to be loaded into memory)
   formData: publicProcedure
     .input(z.instanceof(FormData))
-    .mutation(({ input }) => {
+    .mutation(async ({ input }) => {
       const object = {} as Record<string, unknown>;
-      input.forEach((value, key) => {
-        console.log({ key, value });
-
+      for (const [key, value] of input.entries()) {
         if (value instanceof File) {
           object[key] = {
             name: value.name,
             type: value.type,
             size: value.size,
+            text: await value.text(),
           };
         } else {
           object[key] = value;
         }
-      });
+      }
       console.log('FormData: ', object);
 
       return {
