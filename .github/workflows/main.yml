@@ -45,9 +45,10 @@ jobs:
       - run: pnpm test-ci
 
       - uses: codecov/codecov-action@v4
-        # with:
-        #   # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-        #   directory: .
+        with:
+          fail_ci_if_error: true
+          # only use token if not a fork PR
+          token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || '' }}
 
   e2e:
     # only run on PRs
