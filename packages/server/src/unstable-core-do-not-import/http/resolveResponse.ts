@@ -11,7 +11,7 @@ import {
 import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
 import { getBatchStreamFormatter } from './batchStreamFormatter';
-import { getContentTypeProcessorOrThrow as getContentTypeHandler } from './contentType';
+import { getContentTypeHandler } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,

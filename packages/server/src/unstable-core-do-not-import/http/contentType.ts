@@ -183,9 +183,7 @@ const handlers = [
   octetStreamContentTypeHandler,
 ];
 
-export function getContentTypeProcessorOrThrow(
-  req: Request,
-): ContentTypeHandler {
+export function getContentTypeHandler(req: Request): ContentTypeHandler {
   const handler = handlers.find((handler) => handler.isMatch(req));
   if (handler) {
     return handler;
