@@ -1,6 +1,6 @@
 # Next.js + tRPC + `FormData`
 
-This example showcases how to use tRPC with `FormData` and octet streams.
+This example showcases how to use tRPC with `FormData`.
 
 ## Setup
 
