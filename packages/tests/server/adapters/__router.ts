@@ -31,9 +31,6 @@ export const router = t.router({
       return ctx.info;
     }),
   }),
-  helloMutation: t.procedure
-    .input(z.string())
-    .mutation(({ input }) => `hello ${input}`),
   exampleError: t.procedure.query(() => {
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
