@@ -9,12 +9,47 @@
  */
 import type { Context as APIGWContext } from 'aws-lambda';
 // @trpc/server
-import type { AnyRouter } from '../../@trpc/server';
+import type {
+  AnyRouter,
+  CreateContextCallback,
+  inferRouterContext,
+} from '../../@trpc/server';
 // @trpc/server
-import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
+import type {
+  HTTPBaseHandlerOptions,
+  ResolveHTTPRequestOptionsContextFn,
+  TRPCRequestInfo,
+} from '../../@trpc/server/http';
 import { resolveResponse } from '../../@trpc/server/http';
-import type { AWSLambdaOptions, inferAPIGWReturn, LambdaEvent } from './utils';
+import type { inferAPIGWReturn, LambdaEvent } from './utils';
 import { getPlanner } from './utils';
+
+export type CreateAWSLambdaContextOptions<TEvent extends LambdaEvent> = {
+  event: TEvent;
+  context: APIGWContext;
+  info: TRPCRequestInfo;
+};
+
+export type AWSLambdaOptions<
+  TRouter extends AnyRouter,
+  TEvent extends LambdaEvent,
+> =
+  | HTTPBaseHandlerOptions<TRouter, TEvent> &
+      CreateContextCallback<
+        inferRouterContext<AnyRouter>,
+        AWSLambdaCreateContextFn<TRouter, TEvent>
+      >;
+
+export type AWSLambdaCreateContextFn<
+  TRouter extends AnyRouter,
+  TEvent extends LambdaEvent,
+> = ({
+  event,
+  context,
+  info,
+}: CreateAWSLambdaContextOptions<TEvent>) =>
+  | inferRouterContext<TRouter>
+  | Promise<inferRouterContext<TRouter>>;
 
 export function awsLambdaRequestHandler<
   TRouter extends AnyRouter,

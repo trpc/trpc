@@ -12,52 +12,17 @@ import type {
   APIGatewayProxyEventV2,
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
-  Context as APIGWContext,
 } from 'aws-lambda';
-import type {
-  AnyRouter,
-  CreateContextCallback,
-  inferRouterContext,
-} from '../../@trpc/server';
+
 // import @trpc/server
 
 // @trpc/server
-import type {
-  HTTPBaseHandlerOptions,
-  TRPCRequestInfo,
-} from '../../@trpc/server/http';
 
 export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 
 export type APIGatewayResult =
   | APIGatewayProxyResult
   | APIGatewayProxyStructuredResultV2;
-
-export type CreateAWSLambdaContextOptions<TEvent extends LambdaEvent> = {
-  event: TEvent;
-  context: APIGWContext;
-  info: TRPCRequestInfo;
-};
-export type AWSLambdaCreateContextFn<
-  TRouter extends AnyRouter,
-  TEvent extends LambdaEvent,
-> = ({
-  event,
-  context,
-  info,
-}: CreateAWSLambdaContextOptions<TEvent>) =>
-  | inferRouterContext<TRouter>
-  | Promise<inferRouterContext<TRouter>>;
-
-export type AWSLambdaOptions<
-  TRouter extends AnyRouter,
-  TEvent extends LambdaEvent,
-> =
-  | HTTPBaseHandlerOptions<TRouter, TEvent> &
-      CreateContextCallback<
-        inferRouterContext<AnyRouter>,
-        AWSLambdaCreateContextFn<TRouter, TEvent>
-      >;
 
 function determinePayloadFormat(event: LambdaEvent): string {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
