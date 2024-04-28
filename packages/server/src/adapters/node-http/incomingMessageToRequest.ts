@@ -1,11 +1,17 @@
 import type * as http from 'http';
 import { TRPCError } from '../../@trpc/server';
 
+export interface IncomingMessageWithBody extends http.IncomingMessage {
+  /**
+   * Many adapters will add a `body` property to the incoming message and pre-parse the body
+   */
+  body?: unknown;
+}
 /**
  * Convert an incoming message to a body stream with a max size
  */
 function incomingMessageToBodyStream(
-  req: http.IncomingMessage,
+  req: IncomingMessageWithBody,
   opts: { maxBodySize: number | null },
 ) {
   type Value = Buffer | Uint8Array | string | null;

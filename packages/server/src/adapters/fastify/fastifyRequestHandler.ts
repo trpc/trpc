@@ -15,7 +15,10 @@ import type {
   ResolveHTTPRequestOptionsContextFn,
 } from '../../@trpc/server/http';
 import { resolveResponse } from '../../@trpc/server/http';
-import type { NodeHTTPCreateContextOption } from '../node-http';
+import type {
+  IncomingMessageWithBody,
+  NodeHTTPCreateContextOption,
+} from '../node-http';
 import { incomingMessageToRequest } from '../node-http';
 
 export type FastifyHandlerOptions<
@@ -49,11 +52,11 @@ export async function fastifyRequestHandler<
     });
   };
 
-  const incomingMessage = opts.req.raw;
+  const incomingMessage = opts.req.raw as IncomingMessageWithBody;
 
   // monkey-path body to the IncomingMessage
   if ('body' in opts.req) {
-    (incomingMessage as any).body = opts.req.body;
+    incomingMessage.body = opts.req.body;
   }
   const req = incomingMessageToRequest(incomingMessage, {
     maxBodySize: null,
