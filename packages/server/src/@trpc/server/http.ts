@@ -20,3 +20,5 @@ export type {
 export { getBatchStreamFormatter } from '../../unstable-core-do-not-import';
 
 export { toURL } from '../../unstable-core-do-not-import';
+
+export { parseOctetInput } from '../../unstable-core-do-not-import/http/contentTypeParsers';

@@ -1,5 +1,5 @@
-import { TRPCError } from './error/TRPCError';
-import type { ParserZodEsque } from './parser';
+import { TRPCError } from '../error/TRPCError';
+import type { ParserZodEsque } from '../parser';
 
 export type UtilityParser<TInput, TOutput> = ParserZodEsque<TInput, TOutput> & {
   parse: (input: unknown) => TOutput;
