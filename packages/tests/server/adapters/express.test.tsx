@@ -143,6 +143,8 @@ test('error query', async () => {
 });
 
 test('payload too large', async () => {
+  const t = await startServer(100);
+
   const err = await waitError(
     () => t.client.exampleMutation.mutate({ payload: 'a'.repeat(101) }),
     TRPCClientError<typeof router>,
@@ -152,4 +154,6 @@ test('payload too large', async () => {
 
   // the trpc envelope takes some space so we can't have exactly 100 bytes of payload
   await t.client.exampleMutation.mutate({ payload: 'a'.repeat(75) });
+
+  t.close();
 });
