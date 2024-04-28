@@ -313,7 +313,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         opts.onError?.({
           error,
           path,
-          input,
+          input: input.getParsedInput(),
           ctx,
           type: type,
           req: opts.req,
@@ -325,7 +325,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             error,
             type,
             path,
-            input,
+            input: input.getParsedInput(),
             ctx,
           }),
         };
