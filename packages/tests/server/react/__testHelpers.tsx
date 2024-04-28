@@ -133,7 +133,7 @@ export function createAppRouter() {
         const last = items[items.length - 1];
         const nextIndex = db.posts.findIndex((item) => item === last) + 1;
         if (db.posts[nextIndex]) {
-          nextCursor = db.posts[nextIndex]!.createdAt;
+          nextCursor = db.posts[nextIndex].createdAt;
         }
         return {
           items,
@@ -174,10 +174,10 @@ export function createAppRouter() {
         const nextIndex = db.posts.findIndex((item) => item === last) + 1;
         const prevIndex = db.posts.findIndex((item) => item === first) - 1;
         if (db.posts[nextIndex]) {
-          nextCursor = db.posts[nextIndex]!.createdAt;
+          nextCursor = db.posts[nextIndex].createdAt;
         }
         if (db.posts[prevIndex]) {
-          prevCursor = db.posts[prevIndex]!.createdAt;
+          prevCursor = db.posts[prevIndex].createdAt;
         }
         return {
           items,
