@@ -130,9 +130,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
     }
     const getInputs = memo(async () => {
       const fd = await req.formData();
-      return {
-        0: fd,
-      };
+      return fd;
     });
     return {
       paths: [opts.path],
@@ -163,7 +161,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       });
     }
     const getInputs = memo(async () => {
-      return { 0: req.body };
+      return req.body;
     });
     return {
       paths: [opts.path],
