@@ -267,6 +267,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             rawInput = deserializeInput(inputs[index]);
             return rawInput;
           },
+          /**
+           * Get already parsed input
+           * Used in error handling to avoid parsing input just to pass it to error handler
+           */
           getParsedInput: () => {
             return rawInput === unsetMarker ? undefined : rawInput;
           },
@@ -291,12 +295,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
     >[] = paths.map(async (path, index) => {
-      const input = inputsByIndex[index]!;
+      const inputGetter = inputsByIndex[index]!;
       try {
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
           path,
-          getRawInput: input.getRawInput,
+          getRawInput: inputGetter.getRawInput,
           ctx,
           type,
           allowMethodOverride,
@@ -309,6 +313,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         errors.push(error);
+        const input = inputGetter.getParsedInput();
 
         opts.onError?.({
           error,
