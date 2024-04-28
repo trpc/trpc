@@ -179,23 +179,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const isStreamCall = req.headers.get('trpc-batch-mode') === 'stream';
 
   try {
-    if (opts.error) {
-      throw opts.error;
-    }
-    if (isBatchCall && !allowBatching) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: `Batching is not enabled on the server`,
-      });
-    }
-    /* istanbul ignore if -- @preserve */
-    if (type === 'subscription') {
-      throw new TRPCError({
-        message: 'Subscriptions should use wsLink',
-        code: 'METHOD_NOT_SUPPORTED',
-      });
-    }
-
     paths = isBatchCall
       ? decodeURIComponent(opts.path).split(',')
       : [opts.path];
@@ -217,6 +200,23 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         isBatchCall,
       },
     });
+
+    if (opts.error) {
+      throw opts.error;
+    }
+    if (isBatchCall && !allowBatching) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Batching is not enabled on the server`,
+      });
+    }
+    /* istanbul ignore if -- @preserve */
+    if (type === 'subscription') {
+      throw new TRPCError({
+        message: 'Subscriptions should use wsLink',
+        code: 'METHOD_NOT_SUPPORTED',
+      });
+    }
 
     const getInputForIndex = (() => {
       const contentTypeHandler = getContentTypeHandlerOrThrow(req);
