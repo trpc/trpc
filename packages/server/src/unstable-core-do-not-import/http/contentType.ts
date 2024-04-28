@@ -82,5 +82,10 @@ export function getContentTypeHandlerOrThrow(req: Request): ContentTypeHandler {
     return contentTypeHandlers.fallback;
   }
 
-  return contentTypeHandlers.fallback;
+  throw new TRPCError({
+    code: 'UNSUPPORTED_MEDIA_TYPE',
+    message: req.headers.has('content-type')
+      ? `Unsupported content-type "${req.headers.get('content-type')}`
+      : 'Missing content-type header',
+  });
 }
