@@ -267,6 +267,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             rawInput = deserializeInput(inputs[index]);
             return rawInput;
           },
+          /**
+           * Get already parsed input
+           * Used in error handling to avoid parsing input just to pass it to error handler
+           */
           getParsedInput: () => {
             return rawInput === unsetMarker ? undefined : rawInput;
           },
