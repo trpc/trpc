@@ -37,22 +37,8 @@ interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
    */
   error: TRPCError | null;
 }
-interface HTTPRequest {
-  method: string;
-  query: URLSearchParams;
-  headers: Headers;
-}
 
-interface HTTPResponse {
-  status: number;
-  headers?: Headers;
-  body?: string;
-}
-
-function initResponse<
-  TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
->(initOpts: {
+function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   ctx: inferRouterContext<TRouter> | undefined;
   paths: string[] | undefined;
   type: ProcedureType | 'unknown';
@@ -62,7 +48,7 @@ function initResponse<
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
     | undefined;
   errors?: TRPCError[];
-}): HTTPResponse {
+}) {
   const {
     ctx,
     paths,
