@@ -130,7 +130,7 @@ describe('ok request', () => {
         trpc: 'hello',
       },
     });
-    const { res, end, write, text } = mockRes();
+    const { res, end, text } = mockRes();
 
     await handler(req, res);
 
