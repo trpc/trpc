@@ -1,32 +1,125 @@
 import { TRPCError } from '../error/TRPCError';
+import type { RootConfig } from '../rootConfig';
+import { isObject, unsetMarker } from '../utils';
 
+type ContentTypeHandlerProcessor = {
+  isBatchCall: boolean;
+  paths: string[];
+  /**
+   * Get already parsed inputs - won't trigger reading the body or parsing the inputs
+   */
+  resultByIndex: (index: number) => unknown;
+  /**
+   * Get inputs by index - will trigger reading the body and parsing the inputs
+   */
+  getByIndex: (index: number) => Promise<unknown>;
+};
 type ContentTypeHandler = {
   isMatch: (opts: Request) => boolean;
-  getInputs: (req: Request, searchParams: URLSearchParams) => Promise<unknown>;
-  batching: boolean;
-  transform: boolean;
+  processor: (opts: {
+    path: string;
+    req: Request;
+    searchParams: URLSearchParams;
+    config: RootConfig<any>;
+  }) => ContentTypeHandlerProcessor;
 };
 
-const jsonContentTypeHandler: ContentTypeHandler = {
-  async getInputs(req, searchParams) {
-    if (req.method === 'GET') {
-      const input = searchParams.get('input');
-      if (input === null) {
-        return undefined;
+/**
+ * Memoize a function that takes no arguments
+ * @internal
+ */
+function memo<TReturn>(fn: () => Promise<TReturn>) {
+  let promise: Promise<TReturn> | null = null;
+  let value: TReturn | typeof unsetMarker = unsetMarker;
+  return {
+    /**
+     * Lazily read the value
+     */
+    async read() {
+      if (value !== unsetMarker) {
+        return value;
       }
-      return JSON.parse(input);
-    }
-    return await req.json();
-  },
+      if (promise === null) {
+        promise = fn();
+      }
+
+      value = await promise;
+      promise = null;
+
+      return value;
+    },
+    /**
+     * Lazily get an already stored result
+     */
+    result() {
+      return value !== unsetMarker ? value : undefined;
+    },
+  };
+}
+
+type InputRecord = Record<number, unknown>;
+
+const jsonContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
     return !!req.headers.get('content-type')?.startsWith('application/json');
   },
-  batching: true,
-  transform: true,
+  processor(opts) {
+    const { req } = opts;
+    const isBatchCall = opts.searchParams.get('batch') === '1';
+    const paths = isBatchCall ? opts.path.split(',') : [opts.path];
+
+    const getInputs = memo(async (): Promise<InputRecord> => {
+      let inputs: unknown;
+      if (req.method === 'GET') {
+        const queryInput = opts.searchParams.get('input');
+        inputs = queryInput ? JSON.parse(queryInput) : {};
+      } else {
+        inputs = await req.json();
+      }
+
+      if (!isBatchCall) {
+        return {
+          0: opts.config.transformer.input.deserialize(inputs),
+        };
+      }
+
+      if (!isObject(inputs)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: '"input" needs to be an object when doing a batch call',
+        });
+      }
+
+      return paths.reduce((acc, _path, index) => {
+        const input = inputs[index];
+        if (input !== undefined) {
+          acc[index] = opts.config.transformer.input.deserialize(input);
+        }
+        return acc;
+      }, {} as InputRecord);
+    });
+
+    return {
+      isBatchCall,
+      async getByIndex(index: number) {
+        const inputs = await getInputs.read();
+        return inputs[index];
+      },
+      resultByIndex(index: number) {
+        const inputs = getInputs.result();
+        return inputs?.[index];
+      },
+      paths,
+    };
+  },
 };
 
 const formDataContentTypeHandler: ContentTypeHandler = {
-  async getInputs(req) {
+  isMatch(req) {
+    return !!req.headers.get('content-type')?.startsWith('multipart/form-data');
+  },
+  processor(opts) {
+    const { req } = opts;
     if (req.method !== 'POST') {
       throw new TRPCError({
         code: 'METHOD_NOT_SUPPORTED',
@@ -34,19 +127,33 @@ const formDataContentTypeHandler: ContentTypeHandler = {
           'Only POST requests are supported for multipart/form-data requests',
       });
     }
-    const fd = await req.formData();
-
-    return fd;
+    const getInputs = memo(async () => {
+      const fd = await req.formData();
+      return {
+        0: fd,
+      };
+    });
+    return {
+      paths: [opts.path],
+      isBatchCall: false,
+      async getByIndex() {
+        return await getInputs.read();
+      },
+      resultByIndex() {
+        return getInputs.result();
+      },
+    };
   },
-  isMatch(req) {
-    return !!req.headers.get('content-type')?.startsWith('multipart/form-data');
-  },
-  batching: false,
-  transform: false,
 };
 
 const octetStreamContentTypeHandler: ContentTypeHandler = {
-  async getInputs(req) {
+  isMatch(req) {
+    return !!req.headers
+      .get('content-type')
+      ?.startsWith('application/octet-stream');
+  },
+  processor(opts) {
+    const { req } = opts;
     if (req.method !== 'POST') {
       throw new TRPCError({
         code: 'METHOD_NOT_SUPPORTED',
@@ -54,15 +161,20 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
           'Only POST requests are supported for application/octet-stream requests',
       });
     }
-    return req.body;
+    const getInputs = memo(async () => {
+      return req.body;
+    });
+    return {
+      paths: [opts.path],
+      isBatchCall: false,
+      async getByIndex() {
+        return await getInputs.read();
+      },
+      resultByIndex() {
+        return getInputs.result();
+      },
+    };
   },
-  isMatch(req) {
-    return !!req.headers
-      .get('content-type')
-      ?.startsWith('application/octet-stream');
-  },
-  batching: false,
-  transform: false,
 };
 
 const contentTypeHandlers = {
@@ -77,7 +189,9 @@ const contentTypeHandlers = {
   fallback: jsonContentTypeHandler,
 };
 
-export function getContentTypeHandlerOrThrow(req: Request): ContentTypeHandler {
+export function getContentTypeProcessorOrThrow(
+  req: Request,
+): ContentTypeHandler {
   const handler = contentTypeHandlers.list.find((handler) =>
     handler.isMatch(req),
   );
