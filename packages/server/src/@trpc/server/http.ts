@@ -10,7 +10,6 @@ export type {
    * @deprecated Use `HTTPErrorHandler` instead
    */
   HTTPErrorHandler as OnErrorFunction,
-  ProcedureCall,
   ResolveHTTPRequestOptionsContextFn,
   ResponseMeta,
   ResponseMetaFn,
