@@ -51,8 +51,23 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
       const meta = opts.responseMeta?.(data);
 
       if (meta?.headers) {
-        for (const [key, value] of Object.entries(meta.headers)) {
-          resHeaders.append(key, value);
+        if (meta.headers instanceof Headers) {
+          for (const [key, value] of meta.headers.entries()) {
+            resHeaders.append(key, value);
+          }
+        } else {
+          /**
+           * @deprecated, delete in v12
+           */
+          for (const [key, value] of Object.entries(meta.headers)) {
+            if (Array.isArray(value)) {
+              for (const v of value) {
+                resHeaders.append(key, v);
+              }
+            } else if (typeof value === 'string') {
+              resHeaders.set(key, value);
+            }
+          }
         }
       }
 
