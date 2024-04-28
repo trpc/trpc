@@ -138,11 +138,11 @@ export function getURLFromEvent(event: APIGatewayEvent): URL {
   const path = getPath(event);
 
   const searchParams = new URLSearchParams();
-  for (const [key, value] of Object.entries(
-    event.queryStringParameters ?? {},
-  )) {
-    if (typeof value !== 'undefined') {
-      searchParams.append(key, value);
+  if (event.queryStringParameters) {
+    for (const [key, value] of Object.entries(event.queryStringParameters)) {
+      if (typeof value !== 'undefined') {
+        searchParams.append(key, value);
+      }
     }
   }
 
