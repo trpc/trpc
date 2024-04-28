@@ -137,7 +137,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       turbo:
-        specifier: ^1.10.2
+        specifier: ^1.13.2
         version: 1.13.3
       typescript:
         specifier: ^5.4.0
