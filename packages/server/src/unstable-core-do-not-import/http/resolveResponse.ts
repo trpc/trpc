@@ -206,9 +206,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         message: `Batching is not enabled on the server`,
       });
     }
-    if (isBatchCall && !allowBatching) {
-      throw new Error(`Batching is not enabled on the server`);
-    }
     if (type !== 'query' && type !== 'mutation') {
       throw new TRPCError({
         message: `Unexpected request method ${req.method}`,
