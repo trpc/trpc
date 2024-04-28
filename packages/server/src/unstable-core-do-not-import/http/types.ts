@@ -31,9 +31,7 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   type: ProcedureType | 'unknown';
   errors: TRPCError[];
   /**
-   * `true` if the `ResponseMeta` are being
-   * generated without knowing the response data
-   * (e.g. for streaming requests).
+   * `true` if the `ResponseMeta` is being generated without knowing the response data (e.g. for streaming requests).
    */
   eagerGeneration?: boolean;
 }) => ResponseMeta;
