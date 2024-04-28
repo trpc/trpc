@@ -70,40 +70,48 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
 
     const getInputs = memo(async (): Promise<InputRecord> => {
-      let inputs: unknown = undefined;
-      if (req.method === 'GET') {
-        const queryInput = opts.searchParams.get('input');
-        if (queryInput) {
-          inputs = JSON.parse(queryInput);
+      try {
+        let inputs: unknown = undefined;
+        if (req.method === 'GET') {
+          const queryInput = opts.searchParams.get('input');
+          if (queryInput) {
+            inputs = JSON.parse(queryInput);
+          }
+        } else {
+          inputs = await req.json();
         }
-      } else {
-        inputs = await req.json();
-      }
-      if (inputs === undefined) {
-        return {};
-      }
+        if (inputs === undefined) {
+          return {};
+        }
 
-      if (!isBatchCall) {
-        return {
-          0: opts.config.transformer.input.deserialize(inputs),
-        };
-      }
+        if (!isBatchCall) {
+          return {
+            0: opts.config.transformer.input.deserialize(inputs),
+          };
+        }
 
-      if (!isObject(inputs)) {
+        if (!isObject(inputs)) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: '"input" needs to be an object when doing a batch call',
+          });
+        }
+        const acc: InputRecord = {};
+        for (const index of paths.keys()) {
+          const input = inputs[index];
+          if (input !== undefined) {
+            acc[index] = opts.config.transformer.input.deserialize(input);
+          }
+        }
+
+        return acc;
+      } catch (cause) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: '"input" needs to be an object when doing a batch call',
+          message: cause instanceof Error ? cause.message : 'Invalid input',
+          cause,
         });
       }
-      const acc: InputRecord = {};
-      for (const index of paths.keys()) {
-        const input = inputs[index];
-        if (input !== undefined) {
-          acc[index] = opts.config.transformer.input.deserialize(input);
-        }
-      }
-
-      return acc;
     });
 
     return {
