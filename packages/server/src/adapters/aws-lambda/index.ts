@@ -21,8 +21,8 @@ import type {
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 import { resolveResponse } from '../../@trpc/server/http';
-import type { inferAPIGWReturn, LambdaEvent } from './utils';
-import { getPlanner } from './utils';
+import type { inferAPIGWReturn, LambdaEvent } from './getPlanner';
+import { getPlanner } from './getPlanner';
 
 export type CreateAWSLambdaContextOptions<TEvent extends LambdaEvent> = {
   event: TEvent;
