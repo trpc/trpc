@@ -58,7 +58,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
   transform: false,
 };
 
-export const contentTypeHandlers = {
+const contentTypeHandlers = {
   list: [
     formDataContentTypeHandler,
     jsonContentTypeHandler,
@@ -69,3 +69,18 @@ export const contentTypeHandlers = {
    */
   fallback: jsonContentTypeHandler,
 };
+
+export function getContentTypeHandlerOrThrow(req: Request): ContentTypeHandler {
+  const handler = contentTypeHandlers.list.find((handler) =>
+    handler.isMatch(req),
+  );
+  if (handler) {
+    return handler;
+  }
+
+  if (!handler && req.method === 'GET') {
+    return contentTypeHandlers.fallback;
+  }
+
+  return contentTypeHandlers.fallback;
+}

@@ -12,7 +12,7 @@ import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
 import { isObject, memoize, unsetMarker } from '../utils';
 import { getBatchStreamFormatter } from './batchStreamFormatter';
-import { contentTypeHandlers } from './contentType';
+import { getContentTypeHandlerOrThrow } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
@@ -222,25 +222,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     });
 
     const getInputForIndex = (() => {
-      // resolve content type handler
-      let contentTypeHandler = contentTypeHandlers.list.find((handler) =>
-        handler.isMatch(req),
-      );
+      const contentTypeHandler = getContentTypeHandlerOrThrow(req);
 
-      if (!contentTypeHandler && req.method === 'GET') {
-        contentTypeHandler = contentTypeHandlers.fallback;
-      }
-
-      if (!contentTypeHandler) {
-        const contentType = req.headers.get('content-type');
-
-        throw new TRPCError({
-          code: 'UNSUPPORTED_MEDIA_TYPE',
-          message: contentType
-            ? `Unsupported content-type "${contentType}"`
-            : 'Missing content-type header',
-        });
-      }
       if (isBatchCall && !contentTypeHandler.batching) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
