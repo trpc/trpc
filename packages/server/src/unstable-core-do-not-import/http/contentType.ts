@@ -19,7 +19,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     return await req.json();
   },
   isMatch(req) {
-    return req.headers.get('content-type') == 'application/json';
+    return !!req.headers.get('content-type')?.startsWith('application/json');
   },
   batching: true,
   transform: true,
