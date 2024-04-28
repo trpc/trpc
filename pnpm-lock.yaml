@@ -225,64 +225,6 @@ importers:
         specifier: ^1.0.1
         version: 1.0.4
 
-  examples/.experimental/next-formdata:
-    dependencies:
-      '@hookform/error-message':
-        specifier: ^2.0.1
-        version: 2.0.1(react-dom@18.3.1)(react-hook-form@7.43.3)(react@18.3.1)
-      '@hookform/resolvers':
-        specifier: ^2.9.11
-        version: 2.9.11(react-hook-form@7.43.3)
-      '@tanstack/react-query':
-        specifier: ^5.25.0
-        version: 5.25.0(react@18.3.1)
-      '@trpc/client':
-        specifier: npm:@trpc/client@next
-        version: link:../../../packages/client
-      '@trpc/next':
-        specifier: npm:@trpc/next@next
-        version: link:../../../packages/next
-      '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
-        version: link:../../../packages/react-query
-      '@trpc/server':
-        specifier: npm:@trpc/server@next
-        version: link:../../../packages/server
-      next:
-        specifier: ^14.1.4
-        version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
-      react:
-        specifier: ^18.3.0
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.0
-        version: 18.3.1(react@18.3.1)
-      react-hook-form:
-        specifier: ^7.43.3
-        version: 7.43.3(react@18.3.1)
-      zod:
-        specifier: ^3.0.0
-        version: 3.22.4
-      zod-form-data:
-        specifier: ^2.0.1
-        version: 2.0.1(zod@3.22.4)
-    devDependencies:
-      '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
-      '@types/react':
-        specifier: ^18.3.0
-        version: 18.3.1
-      '@types/react-dom':
-        specifier: ^18.3.0
-        version: 18.3.0
-      eslint:
-        specifier: ^8.56.0
-        version: 8.56.0
-      typescript:
-        specifier: ^5.4.0
-        version: 5.4.2
-
   examples/.test/diagnostics-big-router:
     dependencies:
       '@tanstack/react-query':
@@ -997,6 +939,64 @@ importers:
       zod:
         specifier: ^3.0.0
         version: 3.22.4
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.10.4
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.1
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.0
+      eslint:
+        specifier: ^8.56.0
+        version: 8.56.0
+      typescript:
+        specifier: ^5.4.0
+        version: 5.4.2
+
+  examples/next-formdata:
+    dependencies:
+      '@hookform/error-message':
+        specifier: ^2.0.1
+        version: 2.0.1(react-dom@18.3.1)(react-hook-form@7.43.3)(react@18.3.1)
+      '@hookform/resolvers':
+        specifier: ^2.9.11
+        version: 2.9.11(react-hook-form@7.43.3)
+      '@tanstack/react-query':
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.3.1)
+      '@trpc/client':
+        specifier: npm:@trpc/client@next
+        version: link:../../packages/client
+      '@trpc/next':
+        specifier: npm:@trpc/next@next
+        version: link:../../packages/next
+      '@trpc/react-query':
+        specifier: npm:@trpc/react-query@next
+        version: link:../../packages/react-query
+      '@trpc/server':
+        specifier: npm:@trpc/server@next
+        version: link:../../packages/server
+      next:
+        specifier: ^14.1.4
+        version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
+      react:
+        specifier: ^18.3.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.0
+        version: 18.3.1(react@18.3.1)
+      react-hook-form:
+        specifier: ^7.43.3
+        version: 7.43.3(react@18.3.1)
+      zod:
+        specifier: ^3.0.0
+        version: 3.22.4
+      zod-form-data:
+        specifier: ^2.0.1
+        version: 2.0.1(zod@3.22.4)
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -7059,7 +7059,7 @@ packages:
       '@nrwl/devkit': 17.1.3(nx@17.1.3)
       ejs: 3.1.9
       enquirer: 2.3.6
-      ignore: 5.2.4
+      ignore: 5.3.1
       nx: 17.1.3(@swc/core@1.3.3)
       semver: 7.5.3
       tmp: 0.2.1
@@ -8392,7 +8392,7 @@ packages:
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dependencies:
       '@tufjs/canonical-json': 1.0.0
-      minimatch: 9.0.3
+      minimatch: 9.0.4
     dev: false
 
   /@tufjs/models@2.0.0:
@@ -8400,7 +8400,7 @@ packages:
     engines: {node: ^16.14.0 || >=18.0.0}
     dependencies:
       '@tufjs/canonical-json': 2.0.0
-      minimatch: 9.0.3
+      minimatch: 9.0.4
     dev: false
 
   /@types/aria-query@5.0.1:
@@ -13737,7 +13737,7 @@ packages:
       deferred: 0.7.11
       es5-ext: 0.10.62
       event-emitter: 0.3.5
-      ignore: 5.2.4
+      ignore: 5.3.1
       memoizee: 0.4.15
       type: 2.7.2
     dev: true
@@ -13945,7 +13945,7 @@ packages:
     dependencies:
       foreground-child: 3.1.1
       jackspeak: 2.2.1
-      minimatch: 9.0.3
+      minimatch: 9.0.4
       minipass: 5.0.0
       path-scurry: 1.9.2
     dev: false
@@ -13957,7 +13957,7 @@ packages:
     dependencies:
       foreground-child: 3.1.1
       jackspeak: 2.3.6
-      minimatch: 9.0.3
+      minimatch: 9.0.4
       minipass: 5.0.0
       path-scurry: 1.10.1
     dev: false
@@ -14078,7 +14078,7 @@ packages:
       dir-glob: 3.0.1
       fast-glob: 3.3.2
       glob: 7.2.3
-      ignore: 5.2.4
+      ignore: 5.3.1
       merge2: 1.4.1
       slash: 3.0.0
     dev: false
@@ -14100,7 +14100,7 @@ packages:
     dependencies:
       dir-glob: 3.0.1
       fast-glob: 3.3.2
-      ignore: 5.2.4
+      ignore: 5.3.1
       merge2: 1.4.1
       slash: 4.0.0
 
@@ -14704,7 +14704,7 @@ packages:
     resolution: {integrity: sha512-t7sv42WkwFkyKbivUCglsQW5YWMskWtbEf4MNKX5u/CCWHKSPzN4FtBQGsQZgCLbxOzpVlcbWVK5KB3auIOjSw==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dependencies:
-      minimatch: 9.0.3
+      minimatch: 9.0.4
     dev: false
 
   /ignore@5.2.4:
@@ -17276,7 +17276,7 @@ packages:
       flat: 5.0.2
       fs-extra: 11.1.1
       glob: 7.1.4
-      ignore: 5.2.4
+      ignore: 5.3.1
       jest-diff: 29.7.0
       js-yaml: 4.1.0
       jsonc-parser: 3.2.0

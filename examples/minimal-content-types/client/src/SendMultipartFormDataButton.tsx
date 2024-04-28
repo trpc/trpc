@@ -6,12 +6,19 @@ export function SendMultipartFormDataButton() {
   return (
     <button
       onClick={() => {
-        const data = new FormData();
+        const fd = new FormData();
 
-        data.set('name', 'John Doe');
-        data.set('occupation', 'tRPC Extraordinaire');
+        fd.set('name', 'John Doe');
+        fd.set('occupation', 'tRPC Extraordinaire');
 
-        mutation.mutate(data);
+        fd.set(
+          'about',
+          new File(['hi bob'], 'bob.txt', {
+            type: 'text/plain',
+          }),
+        );
+
+        mutation.mutate(fd);
       }}
     >
       Send FormData

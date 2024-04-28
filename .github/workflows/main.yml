@@ -75,7 +75,6 @@ jobs:
         dir:
           [
             .experimental/next-app-dir,
-            .experimental/next-formdata,
             .test/diagnostics-big-router,
             .test/internal-types-export,
             .test/ssg,
@@ -84,6 +83,7 @@ jobs:
             express-server,
             fastify-server,
             minimal-react,
+            next-formdata,
             next-minimal-starter,
             next-prisma-starter,
             next-prisma-todomvc,
