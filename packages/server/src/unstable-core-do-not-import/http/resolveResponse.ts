@@ -47,7 +47,7 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     | TRPCResponse<unknown, inferRouterError<TRouter>>
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
     | undefined;
-  errors?: TRPCError[];
+  errors: TRPCError[];
 }) {
   const {
     ctx,
@@ -378,6 +378,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       paths,
       type,
       responseMeta: opts.responseMeta,
+      errors: [],
     });
 
     const encoder = new TextEncoderStream();
