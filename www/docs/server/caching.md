@@ -67,8 +67,11 @@ export const trpc = createTRPCNext<AppRouter>({
     const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
     return {
       headers: new Headers([
-        ['cache-control', `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`],
-      ])
+        [
+          'cache-control',
+          `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+        ],
+      ]),
     };
   },
 });
@@ -138,8 +141,11 @@ export default trpcNext.createNextApiHandler({
       const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
       return {
         headers: new Headers([
-          ['cache-control', `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`]
-        ])
+          [
+            'cache-control',
+            `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+          ],
+        ]),
       };
     }
     return {};
