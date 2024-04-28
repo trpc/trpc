@@ -73,17 +73,20 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       let inputs: unknown;
       if (req.method === 'GET') {
         const queryInput = opts.searchParams.get('input');
-        inputs = queryInput ? JSON.parse(queryInput) : {};
+        if (queryInput) {
+          inputs = JSON.parse(queryInput);
+        }
       } else {
         inputs = await req.json();
       }
+      if (inputs === undefined) {
+        return {};
+      }
 
       if (!isBatchCall) {
-        return inputs === undefined
-          ? {}
-          : {
-              0: opts.config.transformer.input.deserialize(inputs),
-            };
+        return {
+          0: opts.config.transformer.input.deserialize(inputs),
+        };
       }
 
       if (!isObject(inputs)) {
