@@ -291,12 +291,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
     >[] = paths.map(async (path, index) => {
-      const input = inputsByIndex[index]!;
+      const inputGetter = inputsByIndex[index]!;
       try {
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
           path,
-          getRawInput: input.getRawInput,
+          getRawInput: inputGetter.getRawInput,
           ctx,
           type,
           allowMethodOverride,
@@ -309,11 +309,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         errors.push(error);
+        const input = inputGetter.getParsedInput();
 
         opts.onError?.({
           error,
           path,
-          input: input.getParsedInput(),
+          input,
           ctx,
           type: type,
           req: opts.req,
@@ -325,7 +326,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             error,
             type,
             path,
-            input: input.getParsedInput(),
+            input,
             ctx,
           }),
         };
