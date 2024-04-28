@@ -139,7 +139,7 @@ describe('query client defaults', () => {
     });
 
     await waitFor(() => {
-      expect(onSuccessLocalSpy).toHaveBeenCalled(1);
+      expect(onSuccessLocalSpy).toHaveBeenCalledTimes(1);
     });
 
     await waitFor(() => {
