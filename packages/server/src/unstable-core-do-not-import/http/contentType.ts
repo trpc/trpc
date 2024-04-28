@@ -35,7 +35,7 @@ function memo<TReturn>(fn: () => Promise<TReturn>) {
     /**
      * Lazily read the value
      */
-    async read() {
+    async read(): Promise<TReturn> {
       if (value !== unsetMarker) {
         return value;
       }
@@ -50,9 +50,9 @@ function memo<TReturn>(fn: () => Promise<TReturn>) {
       return value;
     },
     /**
-     * Lazily get an already stored result
+     * Get an already stored result
      */
-    result() {
+    result(): TReturn | undefined {
       return value !== unsetMarker ? value : undefined;
     },
   };
