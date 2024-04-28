@@ -2,7 +2,7 @@ import { TRPCError } from '../error/TRPCError';
 import type { RootConfig } from '../rootConfig';
 import { isObject, unsetMarker } from '../utils';
 
-type ContentTypeHandlerProcessor = {
+type ContentTypeParser = {
   isBatchCall: boolean;
   paths: string[];
   /**
@@ -12,16 +12,16 @@ type ContentTypeHandlerProcessor = {
   /**
    * Get inputs by index - will trigger reading the body and parsing the inputs
    */
-  getByIndex: (index: number) => Promise<unknown>;
+  parseByIndex: (index: number) => Promise<unknown>;
 };
 type ContentTypeHandler = {
   isMatch: (opts: Request) => boolean;
-  processor: (opts: {
+  parser: (opts: {
     path: string;
     req: Request;
     searchParams: URLSearchParams;
     config: RootConfig<any>;
-  }) => ContentTypeHandlerProcessor;
+  }) => ContentTypeParser;
 };
 
 /**
@@ -64,7 +64,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
     return !!req.headers.get('content-type')?.startsWith('application/json');
   },
-  processor(opts) {
+  parser(opts) {
     const { req } = opts;
     const isBatchCall = opts.searchParams.get('batch') === '1';
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
@@ -105,7 +105,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
 
     return {
       isBatchCall,
-      async getByIndex(index: number) {
+      async parseByIndex(index: number) {
         const inputs = await getInputs.read();
         return inputs[index];
       },
@@ -122,7 +122,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
     return !!req.headers.get('content-type')?.startsWith('multipart/form-data');
   },
-  processor(opts) {
+  parser(opts) {
     const { req } = opts;
     if (req.method !== 'POST') {
       throw new TRPCError({
@@ -138,7 +138,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
     return {
       paths: [opts.path],
       isBatchCall: false,
-      async getByIndex() {
+      async parseByIndex() {
         return await getInputs.read();
       },
       resultByIndex() {
@@ -154,7 +154,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       .get('content-type')
       ?.startsWith('application/octet-stream');
   },
-  processor(opts) {
+  parser(opts) {
     const { req } = opts;
     if (req.method !== 'POST') {
       throw new TRPCError({
@@ -169,7 +169,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
     return {
       paths: [opts.path],
       isBatchCall: false,
-      async getByIndex() {
+      async parseByIndex() {
         return await getInputs.read();
       },
       resultByIndex() {

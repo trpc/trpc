@@ -178,14 +178,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const isStreamCall = req.headers.get('trpc-batch-mode') === 'stream';
 
   try {
-    const processor = getContentTypeHandler(req).processor({
+    const contentTypeParser = getContentTypeHandler(req).parser({
       req,
       path: opts.path,
       config: router._def._config,
       searchParams: url.searchParams,
     });
-    isBatchCall = processor.isBatchCall;
-    paths = processor.paths;
+    isBatchCall = contentTypeParser.isBatchCall;
+    paths = contentTypeParser.paths;
 
     // we create context early so that error handlers may access context information
     ctx = await opts.createContext({
@@ -222,7 +222,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
           path,
-          getRawInput: () => processor.getByIndex(index),
+          getRawInput: () => contentTypeParser.parseByIndex(index),
           ctx,
           type,
           allowMethodOverride,
@@ -235,7 +235,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         errors.push(error);
-        const input = processor.resultByIndex(index);
+        const input = contentTypeParser.resultByIndex(index);
 
         opts.onError?.({
           error,
@@ -336,7 +336,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           await controller.write(formatter(index, body));
         } catch (cause) {
           const path = paths![index];
-          const input = processor.resultByIndex(index);
+          const input = contentTypeParser.resultByIndex(index);
           const { body } = caughtErrorToData(cause, {
             opts,
             ctx,
