@@ -70,7 +70,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
 
     const getInputs = memo(async (): Promise<InputRecord> => {
-      let inputs: unknown;
+      let inputs: unknown = undefined;
       if (req.method === 'GET') {
         const queryInput = opts.searchParams.get('input');
         if (queryInput) {
