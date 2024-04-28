@@ -19,9 +19,20 @@ const appRouter = router({
     .input(z.instanceof(FormData))
     .mutation(({ input }) => {
       const object = {} as Record<string, unknown>;
-      input.forEach((value, key) => (object[key] = value));
+      input.forEach((value, key) => {
+        console.log({ key, value });
 
-      console.log('FormData: ', object, input);
+        if (value instanceof File) {
+          object[key] = {
+            name: value.name,
+            type: value.type,
+            size: value.size,
+          };
+        } else {
+          object[key] = value;
+        }
+      });
+      console.log('FormData: ', object);
 
       return {
         text: 'ACK',
