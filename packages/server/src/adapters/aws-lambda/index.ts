@@ -16,8 +16,6 @@ import { resolveResponse } from '../../@trpc/server/http';
 import type { AWSLambdaOptions, inferAPIGWReturn, LambdaEvent } from './utils';
 import { getPlanner } from './utils';
 
-export * from './utils';
-
 export function awsLambdaRequestHandler<
   TRouter extends AnyRouter,
   TEvent extends LambdaEvent,
