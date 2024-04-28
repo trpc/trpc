@@ -6,16 +6,15 @@ export { resolveResponse } from '../../unstable-core-do-not-import';
 export type {
   BaseHandlerOptions,
   HTTPBaseHandlerOptions,
-  HTTPHeaders,
-  HTTPRequest,
-  HTTPResponse,
-  OnErrorFunction,
-  ProcedureCall,
+  /**
+   * @deprecated Use `HTTPErrorHandler` instead
+   */
+  HTTPErrorHandler as OnErrorFunction,
   ResolveHTTPRequestOptionsContextFn,
-  ResponseChunk,
   ResponseMeta,
   ResponseMetaFn,
   TRPCRequestInfo,
+  HTTPErrorHandler,
 } from '../../unstable-core-do-not-import';
 
 export { getBatchStreamFormatter } from '../../unstable-core-do-not-import';

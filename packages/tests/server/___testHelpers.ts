@@ -12,10 +12,8 @@ import {
 } from '@trpc/server/adapters/standalone';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import type {
-  DataTransformerOptions,
-  OnErrorFunction,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { HTTPErrorHandler } from '@trpc/server/http';
+import type { DataTransformerOptions } from '@trpc/server/unstable-core-do-not-import';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
 
@@ -41,7 +39,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   },
 ) {
   // http
-  type OnError = OnErrorFunction<TRouter, IncomingMessage>;
+  type OnError = HTTPErrorHandler<TRouter, IncomingMessage>;
   type CreateContext = NonNullable<
     CreateHTTPHandlerOptions<TRouter>['createContext']
   >;

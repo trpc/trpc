@@ -16,25 +16,9 @@ import { getContentTypeHandlerOrThrow } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
-  HTTPHeaders,
-  HTTPRequest,
-  HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
 } from './types';
 
-function httpHeadersToFetchHeaders(headers: HTTPHeaders): Headers {
-  const newHeaders = new Headers();
-  for (const [key, value] of Object.entries(headers)) {
-    if (Array.isArray(value)) {
-      for (const v of value) {
-        newHeaders.append(key, v);
-      }
-    } else if (typeof value === 'string') {
-      newHeaders.set(key, value);
-    }
-  }
-  return newHeaders;
-}
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
   ProcedureType | undefined
@@ -54,10 +38,7 @@ interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
   error: TRPCError | null;
 }
 
-function initResponse<
-  TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
->(initOpts: {
+function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   ctx: inferRouterContext<TRouter> | undefined;
   paths: string[] | undefined;
   type: ProcedureType | 'unknown';
@@ -66,8 +47,8 @@ function initResponse<
     | TRPCResponse<unknown, inferRouterError<TRouter>>
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
     | undefined;
-  errors?: TRPCError[];
-}): HTTPResponse {
+  errors: TRPCError[];
+}) {
   const {
     ctx,
     paths,
@@ -78,9 +59,8 @@ function initResponse<
   } = initOpts;
 
   let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
-  const headers: HTTPHeaders = {
-    'Content-Type': 'application/json',
-  };
+
+  const headers = new Headers([['Content-Type', 'application/json']]);
 
   const eagerGeneration = !untransformedJSON;
   const data = eagerGeneration
@@ -99,8 +79,25 @@ function initResponse<
       eagerGeneration,
     }) ?? {};
 
-  for (const [key, value] of Object.entries(meta.headers ?? {})) {
-    headers[key] = value;
+  if (meta.headers) {
+    if (meta.headers instanceof Headers) {
+      for (const [key, value] of meta.headers.entries()) {
+        headers.append(key, value);
+      }
+    } else {
+      /**
+       * @deprecated, delete in v12
+       */
+      for (const [key, value] of Object.entries(meta.headers)) {
+        if (Array.isArray(value)) {
+          for (const v of value) {
+            headers.append(key, v);
+          }
+        } else if (typeof value === 'string') {
+          headers.set(key, value);
+        }
+      }
+    }
   }
   if (meta.status) {
     status = meta.status;
@@ -182,23 +179,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const isStreamCall = req.headers.get('trpc-batch-mode') === 'stream';
 
   try {
-    if (opts.error) {
-      throw opts.error;
-    }
-    if (isBatchCall && !allowBatching) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: `Batching is not enabled on the server`,
-      });
-    }
-    /* istanbul ignore if -- @preserve */
-    if (type === 'subscription') {
-      throw new TRPCError({
-        message: 'Subscriptions should use wsLink',
-        code: 'METHOD_NOT_SUPPORTED',
-      });
-    }
-
     paths = isBatchCall
       ? decodeURIComponent(opts.path).split(',')
       : [opts.path];
@@ -220,6 +200,23 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         isBatchCall,
       },
     });
+
+    if (opts.error) {
+      throw opts.error;
+    }
+    if (isBatchCall && !allowBatching) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Batching is not enabled on the server`,
+      });
+    }
+    /* istanbul ignore if -- @preserve */
+    if (type === 'subscription') {
+      throw new TRPCError({
+        message: 'Subscriptions should use wsLink',
+        code: 'METHOD_NOT_SUPPORTED',
+      });
+    }
 
     const getInputForIndex = (() => {
       const contentTypeHandler = getContentTypeHandlerOrThrow(req);
@@ -366,7 +363,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
       return new Response(body, {
         status: headResponse.status,
-        headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+        headers: headResponse.headers,
       });
     }
 
@@ -381,6 +378,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       paths,
       type,
       responseMeta: opts.responseMeta,
+      errors: [],
     });
 
     const encoder = new TextEncoderStream();
@@ -430,7 +428,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     exec().catch((err) => controller.abort(err));
 
     return new Response(stream, {
-      headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+      headers: headResponse.headers,
       status: headResponse.status,
     });
   } catch (cause) {
@@ -458,7 +456,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     return new Response(body, {
       status: headResponse.status,
-      headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+      headers: headResponse.headers,
     });
   }
 }

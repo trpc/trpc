@@ -1,5 +1,5 @@
 /**
- * **DO NOT IMPORT FROM HERE FILE**
+ * **DO NOT IMPORT FROM THIS FILE**
  *
  * This file is here to:
  * - make TypeScript happy and prevent _"The inferred type of 'createContext' cannot be named without a reference to [...]"_.
@@ -15,7 +15,12 @@ export * from './unstable-core-do-not-import/createProxy';
 export * from './unstable-core-do-not-import/error/formatter';
 export * from './unstable-core-do-not-import/error/getErrorShape';
 export * from './unstable-core-do-not-import/error/TRPCError';
-export * from './unstable-core-do-not-import/http';
+export * from './unstable-core-do-not-import/http/getHTTPStatusCode';
+export * from './unstable-core-do-not-import/http/types';
+export * from './unstable-core-do-not-import/http/batchStreamFormatter';
+export * from './unstable-core-do-not-import/http/contentType';
+export * from './unstable-core-do-not-import/http/toURL';
+export * from './unstable-core-do-not-import/http/resolveResponse';
 export * from './unstable-core-do-not-import/initTRPC';
 export * from './unstable-core-do-not-import/middleware';
 export * from './unstable-core-do-not-import/parser';
