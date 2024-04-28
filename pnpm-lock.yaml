@@ -1593,7 +1593,7 @@ importers:
         specifier: ^5.25.0
         version: 5.25.0(react@18.3.1)
       '@types/aws-lambda':
-        specifier: latest
+        specifier: ^8.10.137
         version: 8.10.137
       '@types/express':
         specifier: ^4.17.17
