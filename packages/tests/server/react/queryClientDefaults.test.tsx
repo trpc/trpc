@@ -37,9 +37,9 @@ describe('query client defaults', () => {
             onSuccess: async (opts) => {
               await queryClient.invalidateQueries();
               onSuccessSpy(opts);
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       function App(props: { children: ReactNode }) {
@@ -104,10 +104,12 @@ describe('query client defaults', () => {
     const { trpc } = ctx;
     const nonce = `nonce-${Math.random()}`;
     const onSuccessLocalSpy = vi.fn().mockReturnValue('something');
-    
+
     function MyComp() {
       const listQuery = trpc.list.useQuery();
-      const mutation = trpc.add.useMutation({onSuccess: () => onSuccessLocalSpy()});
+      const mutation = trpc.add.useMutation({
+        onSuccess: () => onSuccessLocalSpy(),
+      });
 
       return (
         <>
@@ -138,7 +140,7 @@ describe('query client defaults', () => {
 
     await waitFor(() => {
       expect(onSuccessLocalSpy).toHaveBeenCalled(1);
-    })
+    });
 
     await waitFor(() => {
       expect($.container).not.toHaveTextContent(nonce);
