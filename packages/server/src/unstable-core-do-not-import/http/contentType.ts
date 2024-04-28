@@ -179,8 +179,8 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
 };
 
 const handlers = [
-  formDataContentTypeHandler,
   jsonContentTypeHandler,
+  formDataContentTypeHandler,
   octetStreamContentTypeHandler,
 ];
 
