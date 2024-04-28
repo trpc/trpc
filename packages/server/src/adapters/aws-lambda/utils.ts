@@ -59,23 +59,7 @@ export type AWSLambdaOptions<
         AWSLambdaCreateContextFn<TRouter, TEvent>
       >;
 
-export function isPayloadV1(event: LambdaEvent): event is APIGatewayProxyEvent {
-  return determinePayloadFormat(event) == '1.0';
-}
-export function isPayloadV2(
-  event: LambdaEvent,
-): event is APIGatewayProxyEventV2 {
-  return determinePayloadFormat(event) == '2.0';
-}
-
-export type DefinedAPIGatewayPayloadFormats = '1.0' | '2.0';
-export type APIGatewayPayloadFormatVersion =
-  | DefinedAPIGatewayPayloadFormats
-  | 'custom';
-
-function determinePayloadFormat(
-  event: LambdaEvent,
-): APIGatewayPayloadFormatVersion {
+function determinePayloadFormat(event: LambdaEvent): string {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
   // According to AWS support, version is is extracted from the version property in the event.
   // If there is no version property, then the version is implied as 1.0
@@ -83,11 +67,7 @@ function determinePayloadFormat(
   if (typeof unknownEvent.version === 'undefined') {
     return '1.0';
   } else {
-    if (['1.0', '2.0'].includes(unknownEvent.version)) {
-      return unknownEvent.version as APIGatewayPayloadFormatVersion;
-    } else {
-      return 'custom';
-    }
+    return unknownEvent.version;
   }
 }
 
