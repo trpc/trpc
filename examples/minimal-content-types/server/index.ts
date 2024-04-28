@@ -6,7 +6,7 @@ import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { parseOctetInput } from '@trpc/server/http';
 import cors from 'cors';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 const t = initTRPC.create();
 
@@ -16,12 +16,7 @@ const router = t.router;
 const appRouter = router({
   // Input parsers set! (should expect the input to be loaded into memory)
   formData: publicProcedure
-    .input((value) => {
-      if (value instanceof FormData) {
-        return value;
-      }
-      throw new Error('Expected a FormData object');
-    })
+    .input(z.instanceof(FormData))
     .mutation(({ input }) => {
       const object = {} as Record<string, unknown>;
       input.forEach((value, key) => (object[key] = value));
