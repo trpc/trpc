@@ -1593,8 +1593,8 @@ importers:
         specifier: ^5.25.0
         version: 5.25.0(react@18.3.1)
       '@types/aws-lambda':
-        specifier: ^8.10.97
-        version: 8.10.115
+        specifier: latest
+        version: 8.10.137
       '@types/express':
         specifier: ^4.17.17
         version: 4.17.17
@@ -8407,8 +8407,8 @@ packages:
     resolution: {integrity: sha512-XTIieEY+gvJ39ChLcB4If5zHtPxt3Syj5rgZR+e1ctpmK8NjPf0zFqsz4JpLJT0xla9GFDKjy8Cpu331nrmE1Q==}
     dev: false
 
-  /@types/aws-lambda@8.10.115:
-    resolution: {integrity: sha512-kCZuFXKLV3y8NjSoaD5+qKTpRWvPz3uh3W/u1uwlw3Mg+MtaStg1NWgjAwUXo/VJDb6n6KF1ljykFNlNwEJ53Q==}
+  /@types/aws-lambda@8.10.137:
+    resolution: {integrity: sha512-YNFwzVarXAOXkjuFxONyDw1vgRNzyH8AuyN19s0bM+ChSu/bzxb5XPxYFLXoqoM+tvgzwR3k7fXcEOW125yJxg==}
     dev: true
 
   /@types/better-sqlite3@7.6.2:

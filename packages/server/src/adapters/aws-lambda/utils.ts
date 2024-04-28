@@ -22,25 +22,25 @@ import type {
 // import @trpc/server
 
 // @trpc/server
-import { TRPCError } from '../../@trpc/server';
 import type {
   HTTPBaseHandlerOptions,
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 
-export type APIGatewayEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
+export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
+
 export type APIGatewayResult =
   | APIGatewayProxyResult
   | APIGatewayProxyStructuredResultV2;
 
-export type CreateAWSLambdaContextOptions<TEvent extends APIGatewayEvent> = {
+export type CreateAWSLambdaContextOptions<TEvent extends LambdaEvent> = {
   event: TEvent;
   context: APIGWContext;
   info: TRPCRequestInfo;
 };
 export type AWSLambdaCreateContextFn<
   TRouter extends AnyRouter,
-  TEvent extends APIGatewayEvent,
+  TEvent extends LambdaEvent,
 > = ({
   event,
   context,
@@ -51,7 +51,7 @@ export type AWSLambdaCreateContextFn<
 
 export type AWSLambdaOptions<
   TRouter extends AnyRouter,
-  TEvent extends APIGatewayEvent,
+  TEvent extends LambdaEvent,
 > =
   | HTTPBaseHandlerOptions<TRouter, TEvent> &
       CreateContextCallback<
@@ -59,19 +59,22 @@ export type AWSLambdaOptions<
         AWSLambdaCreateContextFn<TRouter, TEvent>
       >;
 
-export function isPayloadV1(
-  event: APIGatewayEvent,
-): event is APIGatewayProxyEvent {
+export function isPayloadV1(event: LambdaEvent): event is APIGatewayProxyEvent {
   return determinePayloadFormat(event) == '1.0';
 }
 export function isPayloadV2(
-  event: APIGatewayEvent,
+  event: LambdaEvent,
 ): event is APIGatewayProxyEventV2 {
   return determinePayloadFormat(event) == '2.0';
 }
 
+export type DefinedAPIGatewayPayloadFormats = '1.0' | '2.0';
+export type APIGatewayPayloadFormatVersion =
+  | DefinedAPIGatewayPayloadFormats
+  | 'custom';
+
 function determinePayloadFormat(
-  event: APIGatewayEvent,
+  event: LambdaEvent,
 ): APIGatewayPayloadFormatVersion {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
   // According to AWS support, version is is extracted from the version property in the event.
@@ -88,21 +91,40 @@ function determinePayloadFormat(
   }
 }
 
-export function getHTTPMethod(event: APIGatewayEvent) {
-  if (isPayloadV1(event)) {
-    return event.httpMethod;
-  }
-  if (isPayloadV2(event)) {
-    return event.requestContext.http.method;
-  }
-  throw new TRPCError({
-    code: 'INTERNAL_SERVER_ERROR',
-    message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
-  });
+/** 1:1 mapping of v1 or v2 input events, deduces which is which.
+ * @internal
+ **/
+export type inferAPIGWReturn<TEvent> = TEvent extends APIGatewayProxyEvent
+  ? APIGatewayProxyResult
+  : TEvent extends APIGatewayProxyEventV2
+  ? APIGatewayProxyStructuredResultV2
+  : never;
+
+interface Processor<TEvent extends LambdaEvent> {
+  getTRPCPath: (event: TEvent) => string;
+  getURL: (event: TEvent) => URL;
+  getHeaders: (event: TEvent) => Headers;
+  getMethod: (event: TEvent) => string;
+  toResult: (response: Response) => Promise<inferAPIGWReturn<TEvent>>;
 }
 
-export function getPath(event: APIGatewayEvent) {
-  if (isPayloadV1(event)) {
+export function transformHeaders(
+  headers: Request['headers'],
+): APIGatewayResult['headers'] {
+  const obj: APIGatewayResult['headers'] = {};
+
+  for (const [key, value] of headers) {
+    if (typeof value === 'undefined') {
+      continue;
+    }
+    obj[key] = value;
+  }
+  return obj;
+}
+
+const v1Processor: Processor<APIGatewayProxyEvent> = {
+  // same as getPath above
+  getTRPCPath: (event) => {
     if (!event.pathParameters) {
       // Then this event was not triggered by a resource denoted with {proxy+}
       return event.path.split('/').pop() ?? '';
@@ -116,8 +138,50 @@ export function getPath(event: APIGatewayEvent) {
       }
     }
     return event.path.slice(1);
-  }
-  if (isPayloadV2(event)) {
+  },
+
+  getURL: (event) => {
+    const searchParams = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(
+      event.queryStringParameters ?? {},
+    )) {
+      if (value !== undefined) {
+        searchParams.append(key, value);
+      }
+    }
+    const hostname: string = event.requestContext.domainName ?? 'localhost';
+    const protocol = 'http';
+    const path = event.path;
+
+    return new URL(
+      `${protocol}://${hostname}${path}?${searchParams.toString()}`,
+    );
+  },
+  getHeaders: (event) => {
+    const headers = new Headers();
+    for (const [key, value] of Object.entries(event.headers ?? {})) {
+      if (value !== undefined) {
+        headers.append(key, value);
+      }
+    }
+
+    return headers;
+  },
+  getMethod: (event) => event.httpMethod,
+  toResult: async (response) => {
+    const result: APIGatewayProxyResult = {
+      statusCode: response.status,
+      body: await response.text(),
+      headers: transformHeaders(response.headers),
+    };
+
+    return result;
+  },
+};
+
+const v2Processor: Processor<APIGatewayProxyEventV2> = {
+  getTRPCPath: (event) => {
     const matches = event.routeKey.matchAll(/\{(.*?)\}/g);
     for (const match of matches) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -127,79 +191,71 @@ export function getPath(event: APIGatewayEvent) {
       }
     }
     return event.rawPath.slice(1);
-  }
-  throw new TRPCError({
-    code: 'INTERNAL_SERVER_ERROR',
-    message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
-  });
-}
-
-export function getURLFromEvent(event: APIGatewayEvent): URL {
-  const searchParams = new URLSearchParams();
-
-  for (const [key, value] of Object.entries(
-    event.queryStringParameters ?? {},
-  )) {
-    if (value !== undefined) {
-      searchParams.append(key, value);
-    }
-  }
-
-  if (isPayloadV1(event)) {
-    const hostname: string = event.requestContext.domainName ?? 'localhost';
-    const protocol = 'http';
-    const path = event.path;
-
-    return new URL(
-      `${protocol}://${hostname}${path}?${searchParams.toString()}`,
-    );
-  }
-  if (isPayloadV2(event)) {
+  },
+  getURL: (event) => {
     const hostname: string = event.requestContext.domainName;
     const protocol: string = event.requestContext.http.protocol;
     const path = event.rawPath;
 
-    return new URL(
-      `${protocol}://${hostname}${path}?${searchParams.toString()}`,
-    );
-  }
-
-  throw new TRPCError({
-    code: 'INTERNAL_SERVER_ERROR',
-    message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
-  });
-}
-
-export function transformHeaders(
-  headers: Request['headers'],
-): APIGatewayResult['headers'] {
-  const obj: APIGatewayResult['headers'] = {};
-
-  for (const [key, value] of headers) {
-    if (typeof value === 'undefined') {
-      continue;
+    return new URL(`${protocol}://${hostname}${path}?${event.rawQueryString}`);
+  },
+  getHeaders: (event) => {
+    const headers = new Headers();
+    for (const [key, value] of Object.entries(event.headers ?? {})) {
+      if (value !== undefined) {
+        headers.append(key, value);
+      }
     }
-    obj[key] = Array.isArray(value) ? value.join(',') : value;
+    if (event.cookies) {
+      headers.append('cookie', event.cookies.join('; '));
+    }
+    return headers;
+  },
+  getMethod: (event) => event.requestContext.http.method,
+  toResult: async (response) => {
+    const result: APIGatewayProxyStructuredResultV2 = {
+      statusCode: response.status,
+      body: await response.text(),
+      headers: transformHeaders(response.headers),
+    };
+
+    return result;
+  },
+};
+
+export function getPlanner<TEvent extends LambdaEvent>(event: TEvent) {
+  const version = determinePayloadFormat(event);
+  let processor: Processor<TEvent>;
+  switch (version) {
+    case '1.0':
+      processor = v1Processor as Processor<TEvent>;
+      break;
+    case '2.0':
+      processor = v2Processor as Processor<TEvent>;
+      break;
+    default:
+      throw new Error(`Unsupported version: ${version}`);
   }
-  return obj;
-}
 
-export type DefinedAPIGatewayPayloadFormats = '1.0' | '2.0';
-export type APIGatewayPayloadFormatVersion =
-  | DefinedAPIGatewayPayloadFormats
-  | 'custom';
+  const url = processor.getURL(event);
 
-export const UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE =
-  'Custom payload format version not handled by this adapter. Please use either 1.0 or 2.0. More information here' +
-  'https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html';
-
-export function lambdaEventToHTTPBody(event: APIGatewayEvent) {
-  let body: string | null | undefined;
-  if (event.body && event.isBase64Encoded) {
-    body = Buffer.from(event.body, 'base64').toString('utf8');
-  } else {
-    body = event.body;
+  const init: RequestInit = {
+    headers: processor.getHeaders(event),
+    method: processor.getMethod(event),
+    // @ts-expect-error this is fine
+    duplex: 'half',
+  };
+  if (event.body) {
+    init.body = event.isBase64Encoded
+      ? Buffer.from(event.body, 'base64')
+      : event.body;
   }
 
-  return body;
+  const request = new Request(url, init);
+
+  return {
+    path: processor.getTRPCPath(event),
+    request,
+    toResult: processor.toResult,
+  };
 }
