@@ -40,8 +40,14 @@ function memo<TReturn>(fn: () => Promise<TReturn>) {
         return value;
       }
       if (promise === null) {
-        // dedupes promises
-        promise = fn();
+        // dedupes promises and catches errors
+        promise = fn().catch((cause) => {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: cause instanceof Error ? cause.message : 'Invalid input',
+            cause,
+          });
+        });
       }
 
       value = await promise;
