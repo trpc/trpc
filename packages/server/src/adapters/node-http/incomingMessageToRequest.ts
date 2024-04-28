@@ -54,11 +54,14 @@ function incomingMessageToBodyStream(
 
 const bodyMethods = ['POST', 'PUT', 'PATCH'];
 /**
- * Convert an incoming message to a request
+ * Convert an [`IncomingMessage`](https://nodejs.org/api/http.html#class-httpincomingmessage) to a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)
  */
 export function incomingMessageToRequest(
   req: http.IncomingMessage,
   opts: {
+    /**
+     * Max body size in bytes. If the body is larger than this, the request will be aborted
+     */
     maxBodySize: number | null;
   },
 ): Request {
