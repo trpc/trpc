@@ -79,9 +79,11 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       }
 
       if (!isBatchCall) {
-        return {
-          0: opts.config.transformer.input.deserialize(inputs),
-        };
+        return inputs === undefined
+          ? {}
+          : {
+              0: opts.config.transformer.input.deserialize(inputs),
+            };
       }
 
       if (!isObject(inputs)) {
