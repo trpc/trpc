@@ -185,11 +185,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       searchParams: url.searchParams,
     });
     isBatchCall = processor.isBatchCall;
+    paths = processor.paths;
 
     // we create context early so that error handlers may access context information
     ctx = await opts.createContext({
       info: {
-        calls: processor.paths.map((path) => ({
+        calls: paths.map((path) => ({
           path,
         })),
         isBatchCall,
@@ -219,7 +220,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
-    >[] = processor.paths.map(async (path, index) => {
+    >[] = paths.map(async (path, index) => {
       try {
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
