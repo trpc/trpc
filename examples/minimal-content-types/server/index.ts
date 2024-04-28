@@ -4,7 +4,7 @@
  */
 import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { parseOctetInput } from '@trpc/server/http';
+import { octetInputParser } from '@trpc/server/http';
 import cors from 'cors';
 import { z } from 'zod';
 
@@ -28,29 +28,27 @@ const appRouter = router({
         data: object,
       };
     }),
-  file: publicProcedure
-    .input(parseOctetInput<File>())
-    .mutation(async ({ input }) => {
-      const chunks = [];
+  file: publicProcedure.input(octetInputParser).mutation(async ({ input }) => {
+    const chunks = [];
 
-      const reader = input.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          break;
-        }
-        chunks.push(value);
+    const reader = input.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
       }
+      chunks.push(value);
+    }
 
-      const content = Buffer.concat(chunks).toString('utf-8');
+    const content = Buffer.concat(chunks).toString('utf-8');
 
-      console.log('File: ', content);
+    console.log('File: ', content);
 
-      return {
-        text: 'ACK',
-        data: content,
-      };
-    }),
+    return {
+      text: 'ACK',
+      data: content,
+    };
+  }),
 });
 
 // export only the type definition of the API

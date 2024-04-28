@@ -18,4 +18,4 @@ export type {
 } from '../../unstable-core-do-not-import';
 
 export { getBatchStreamFormatter } from '../../unstable-core-do-not-import';
-export { parseOctetInput, toURL } from '../../unstable-core-do-not-import';
+export { octetInputParser, toURL } from '../../unstable-core-do-not-import';
