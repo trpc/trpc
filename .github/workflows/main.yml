@@ -51,7 +51,8 @@ jobs:
       - uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          # only use token if not a fork
+          token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || null }}
 
   e2e:
     # only run on PRs
