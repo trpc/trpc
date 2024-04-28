@@ -75,7 +75,7 @@ jobs:
         dir:
           [
             .experimental/next-app-dir,
-            .experimental/next-formdata,
+            next-formdata,
             .test/diagnostics-big-router,
             .test/internal-types-export,
             .test/ssg,
