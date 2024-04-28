@@ -12,7 +12,6 @@ import type {
   AnyRouter,
   CreateContextCallback,
   inferRouterContext,
-  WrapCreateContext,
 } from '../../@trpc/server';
 // @trpc/server/http
 import type {
@@ -45,7 +44,10 @@ export type FetchHandlerOptions<TRouter extends AnyRouter> =
 
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
   HTTPBaseHandlerOptions<TRouter, Request> &
-    WrapCreateContext<FetchCreateContextFn<TRouter>> & {
+    CreateContextCallback<
+      inferRouterContext<TRouter>,
+      FetchCreateContextFn<TRouter>
+    > & {
       req: Request;
       endpoint: string;
     };
