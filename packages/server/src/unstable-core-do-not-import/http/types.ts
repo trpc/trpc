@@ -8,8 +8,6 @@ import type {
 import type { TRPCResponse } from '../rpc';
 import type { Dict } from '../types';
 
-export type ResponseChunk = [procedureIndex: number, responseBody: string];
-
 /**
  * @deprecated use `Headers` instead, this will be removed in v12
  */
