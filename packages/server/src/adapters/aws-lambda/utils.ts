@@ -130,8 +130,12 @@ const v1Processor: Processor<APIGatewayProxyEvent> = {
         searchParams.append(key, value);
       }
     }
-    const hostname: string = event.requestContext.domainName ?? 'localhost';
-    const protocol = 'http';
+    const hostname: string =
+      event.requestContext.domainName ??
+      event.headers?.['host'] ??
+      event.multiValueHeaders?.['host']?.[0] ??
+      'localhost';
+    const protocol = 'https';
     const path = event.path;
 
     return new URL(
@@ -143,6 +147,12 @@ const v1Processor: Processor<APIGatewayProxyEvent> = {
     for (const [key, value] of Object.entries(event.headers ?? {})) {
       if (value !== undefined) {
         headers.append(key, value);
+      }
+    }
+
+    for (const [k, values] of Object.entries(event.multiValueHeaders ?? {})) {
+      if (values) {
+        values.forEach((v) => headers.append(k, v));
       }
     }
 
@@ -186,6 +196,7 @@ const v2Processor: Processor<APIGatewayProxyEventV2> = {
         headers.append(key, value);
       }
     }
+
     if (event.cookies) {
       headers.append('cookie', event.cookies.join('; '));
     }
