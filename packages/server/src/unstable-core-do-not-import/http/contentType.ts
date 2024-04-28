@@ -92,14 +92,15 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           message: '"input" needs to be an object when doing a batch call',
         });
       }
-
-      return paths.reduce((acc, _path, index) => {
+      const acc: InputRecord = {};
+      for (const index of paths.keys()) {
         const input = inputs[index];
         if (input !== undefined) {
           acc[index] = opts.config.transformer.input.deserialize(input);
         }
-        return acc;
-      }, {} as InputRecord);
+      }
+
+      return acc;
     });
 
     return {
