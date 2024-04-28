@@ -19,5 +19,5 @@ export type {
 } from '../../unstable-core-do-not-import';
 
 export { getBatchStreamFormatter } from '../../unstable-core-do-not-import';
-export type { ContentTypeHandler } from '../../unstable-core-do-not-import';
+
 export { toURL } from '../../unstable-core-do-not-import';

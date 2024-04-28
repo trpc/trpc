@@ -12,7 +12,7 @@ import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
 import { isObject, memoize, unsetMarker } from '../utils';
 import { getBatchStreamFormatter } from './batchStreamFormatter';
-import { contentTypeHandlers } from './content-type/contentTypeHandlers';
+import { contentTypeHandlers } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
