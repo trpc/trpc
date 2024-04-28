@@ -79,7 +79,6 @@ const handler = trpcLambda.awsLambdaRequestHandler({
 test('basic test', async () => {
   const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: 'hello',
@@ -111,7 +110,6 @@ test('basic test', async () => {
 test('v1 request info', async () => {
   const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: 'request.info',
@@ -148,7 +146,6 @@ test('v1 request info', async () => {
 test('test v1 with leading prefix', async () => {
   const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: '/leading/prefix/hello',
@@ -181,7 +178,6 @@ test('test v1 with leading prefix', async () => {
 test('test v1 can find procedure even if resource is not proxied', async () => {
   const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Robin' },
       method: 'GET',
       path: '/leading/prefix/hello',
@@ -214,7 +210,6 @@ test('test v1 can find procedure even if resource is not proxied', async () => {
 test('bad type', async () => {
   const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({
-      body: '',
       headers: { 'Content-Type': 'application/json' },
       method: 'GET',
       path: 'echo',
@@ -278,7 +273,6 @@ test('test v2 format', async () => {
   });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: 'hello',
@@ -323,7 +317,6 @@ test('test v2 format with multiple / in query key', async () => {
   });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: 'hello/darkness/my/old/friend',
@@ -368,7 +361,6 @@ test('test v2 format with non default routeKey', async () => {
   });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       routeKey: 'ANY /trpc/{a}/{path+}',
@@ -413,7 +405,6 @@ test('test v2 format with non default routeKey and nested router', async () => {
   });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       routeKey: 'ANY /trpc/{a}/{path+}',
@@ -448,7 +439,6 @@ test('router with no context', async () => {
   });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV1({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: 'hello',
