@@ -222,7 +222,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
           path,
-          getRawInput: async () => processor.getByIndex(index),
+          getRawInput: () => processor.getByIndex(index),
           ctx,
           type,
           allowMethodOverride,
