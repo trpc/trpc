@@ -177,30 +177,22 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
   },
 };
 
-const contentTypeHandlers = {
-  list: [
-    formDataContentTypeHandler,
-    jsonContentTypeHandler,
-    octetStreamContentTypeHandler,
-  ],
-  /**
-   * Fallback handler if there is no match
-   */
-  fallback: jsonContentTypeHandler,
-};
+const handlers = [
+  formDataContentTypeHandler,
+  jsonContentTypeHandler,
+  octetStreamContentTypeHandler,
+];
 
 export function getContentTypeProcessorOrThrow(
   req: Request,
 ): ContentTypeHandler {
-  const handler = contentTypeHandlers.list.find((handler) =>
-    handler.isMatch(req),
-  );
+  const handler = handlers.find((handler) => handler.isMatch(req));
   if (handler) {
     return handler;
   }
 
   if (!handler && req.method === 'GET') {
-    return contentTypeHandlers.fallback;
+    return jsonContentTypeHandler;
   }
 
   throw new TRPCError({
