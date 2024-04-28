@@ -63,7 +63,7 @@ export async function nodeHTTPRequestHandler<
       },
     });
 
-    if (opts.res.statusCode === 200) {
+    if (!opts.res.statusCode || opts.res.statusCode === 200) {
       // if the status code is set, we assume that it's been manually overridden
       opts.res.statusCode = response.status;
     }
