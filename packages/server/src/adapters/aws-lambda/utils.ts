@@ -88,7 +88,7 @@ interface Processor<TEvent extends LambdaEvent> {
   toResult: (response: Response) => Promise<inferAPIGWReturn<TEvent>>;
 }
 
-export function transformHeaders(
+function transformHeaders(
   headers: Request['headers'],
 ): APIGatewayResult['headers'] {
   const obj: APIGatewayResult['headers'] = {};
