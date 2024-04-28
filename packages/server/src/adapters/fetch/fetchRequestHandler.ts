@@ -51,13 +51,13 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
       const meta = opts.responseMeta?.(data);
 
       if (meta?.headers) {
-        for (const [key, value] of Object.entries(meta)) {
+        for (const [key, value] of Object.entries(meta.headers)) {
           resHeaders.append(key, value);
         }
       }
 
       return {
-        headers: Object.fromEntries(resHeaders),
+        headers: resHeaders,
         status: meta?.status,
       };
     },

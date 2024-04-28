@@ -6,13 +6,9 @@ export { resolveResponse } from '../../unstable-core-do-not-import';
 export type {
   BaseHandlerOptions,
   HTTPBaseHandlerOptions,
-  HTTPHeaders,
-  HTTPRequest,
-  HTTPResponse,
   OnErrorFunction,
   ProcedureCall,
   ResolveHTTPRequestOptionsContextFn,
-  ResponseChunk,
   ResponseMeta,
   ResponseMetaFn,
   TRPCRequestInfo,

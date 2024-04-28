@@ -8,20 +8,16 @@ import type {
 import type { TRPCResponse } from '../rpc';
 import type { Dict } from '../types';
 
-export type HTTPHeaders = Dict<string[] | string>;
-
-export interface HTTPResponse {
-  status: number;
-  // FIXME: this should be `Headers`
-  headers?: HTTPHeaders;
-  body?: string;
-}
-
 export type ResponseChunk = [procedureIndex: number, responseBody: string];
+
+/**
+ * @deprecated use `Headers` instead, this will be removed in v12
+ */
+type HTTPHeaders = Dict<string[] | string>;
 
 export interface ResponseMeta {
   status?: number;
-  headers?: HTTPHeaders;
+  headers?: Headers | HTTPHeaders;
 }
 
 /**
@@ -43,12 +39,6 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
    */
   eagerGeneration?: boolean;
 }) => ResponseMeta;
-
-export interface HTTPRequest {
-  method: string;
-  query: URLSearchParams;
-  headers: HTTPHeaders;
-}
 
 /**
  * Base interface for anything using HTTP

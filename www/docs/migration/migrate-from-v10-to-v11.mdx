@@ -24,6 +24,14 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### `resolveHTTPRequest` has been replaced by `resolveRequest` that uses Fetch APIs (breaking for HTTP-adapters)
+
+The function `resolveHTTPRequest` has been replaced by `resolveRequest` which uses the Fetch API - [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)/[`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response).
+
+This is a breaking change for HTTP-adapters, but should not affect you as a user.
+
+If you're building an adapter, check out how our adapters work [in the code](https://github.com/trpc/trpc/tree/next/packages/server/src/adapters) and don't be a stranger to ask for help in our [Discord](https://trpc.io/discord).
+
 ### `TRPCRequestInfo.input` has been removed (breaking)
 
 Inputs are now materialised lazily when required by the procedure, which means the input is no longer available when tRPC calls `createContext`

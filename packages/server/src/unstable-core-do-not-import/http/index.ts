@@ -6,9 +6,6 @@ export {
 export type {
   BaseHandlerOptions,
   HTTPBaseHandlerOptions,
-  HTTPHeaders,
-  HTTPRequest,
-  HTTPResponse,
   /**
    * @deprecated Use `HTTPErrorHandler` instead
    */
@@ -16,7 +13,6 @@ export type {
   HTTPErrorHandler,
   ProcedureCall,
   ResolveHTTPRequestOptionsContextFn,
-  ResponseChunk,
   ResponseMeta,
   ResponseMetaFn,
   TRPCRequestInfo,

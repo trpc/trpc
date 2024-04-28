@@ -16,25 +16,9 @@ import { getContentTypeHandlerOrThrow } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
-  HTTPHeaders,
-  HTTPRequest,
-  HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
 } from './types';
 
-function httpHeadersToFetchHeaders(headers: HTTPHeaders): Headers {
-  const newHeaders = new Headers();
-  for (const [key, value] of Object.entries(headers)) {
-    if (Array.isArray(value)) {
-      for (const v of value) {
-        newHeaders.append(key, v);
-      }
-    } else if (typeof value === 'string') {
-      newHeaders.set(key, value);
-    }
-  }
-  return newHeaders;
-}
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   string,
   ProcedureType | undefined
@@ -52,6 +36,17 @@ interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
    * If the request had an issue before reaching the handler
    */
   error: TRPCError | null;
+}
+interface HTTPRequest {
+  method: string;
+  query: URLSearchParams;
+  headers: Headers;
+}
+
+interface HTTPResponse {
+  status: number;
+  headers?: Headers;
+  body?: string;
 }
 
 function initResponse<
@@ -78,9 +73,8 @@ function initResponse<
   } = initOpts;
 
   let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
-  const headers: HTTPHeaders = {
-    'Content-Type': 'application/json',
-  };
+
+  const headers = new Headers([['Content-Type', 'application/json']]);
 
   const eagerGeneration = !untransformedJSON;
   const data = eagerGeneration
@@ -99,8 +93,25 @@ function initResponse<
       eagerGeneration,
     }) ?? {};
 
-  for (const [key, value] of Object.entries(meta.headers ?? {})) {
-    headers[key] = value;
+  if (meta.headers) {
+    if (meta.headers instanceof Headers) {
+      for (const [key, value] of meta.headers.entries()) {
+        headers.append(key, value);
+      }
+    } else {
+      /**
+       * @deprecated, delete in v12
+       */
+      for (const [key, value] of Object.entries(meta.headers)) {
+        if (Array.isArray(value)) {
+          for (const v of value) {
+            headers.append(key, v);
+          }
+        } else if (typeof value === 'string') {
+          headers.set(key, value);
+        }
+      }
+    }
   }
   if (meta.status) {
     status = meta.status;
@@ -366,7 +377,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
       return new Response(body, {
         status: headResponse.status,
-        headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+        headers: headResponse.headers,
       });
     }
 
@@ -430,7 +441,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     exec().catch((err) => controller.abort(err));
 
     return new Response(stream, {
-      headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+      headers: headResponse.headers,
       status: headResponse.status,
     });
   } catch (cause) {
@@ -458,7 +469,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     return new Response(body, {
       status: headResponse.status,
-      headers: httpHeadersToFetchHeaders(headResponse.headers ?? {}),
+      headers: headResponse.headers,
     });
   }
 }

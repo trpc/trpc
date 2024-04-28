@@ -98,11 +98,6 @@ async function startServer(endpoint = '') {
       req: event.request,
       router,
       createContext,
-      responseMeta() {
-        return {
-          headers: {},
-        };
-      },
     });
     event.respondWith(response);
   });
