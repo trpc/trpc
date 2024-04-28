@@ -1,11 +1,12 @@
 export {
   getHTTPStatusCode,
   getHTTPStatusCodeFromError,
+  resolveResponse,
 } from '../../unstable-core-do-not-import';
-export { resolveResponse } from '../../unstable-core-do-not-import';
 export type {
   BaseHandlerOptions,
   HTTPBaseHandlerOptions,
+  HTTPErrorHandler,
   /**
    * @deprecated Use `HTTPErrorHandler` instead
    */
@@ -14,11 +15,7 @@ export type {
   ResponseMeta,
   ResponseMetaFn,
   TRPCRequestInfo,
-  HTTPErrorHandler,
 } from '../../unstable-core-do-not-import';
 
 export { getBatchStreamFormatter } from '../../unstable-core-do-not-import';
-
-export { toURL } from '../../unstable-core-do-not-import';
-
-export { parseOctetInput } from '../../unstable-core-do-not-import/http/contentTypeParsers';
+export { parseOctetInput, toURL } from '../../unstable-core-do-not-import';
