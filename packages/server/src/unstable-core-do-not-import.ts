@@ -1,5 +1,5 @@
 /**
- * **DO NOT IMPORT FROM HERE FILE**
+ * **DO NOT IMPORT FROM THIS FILE**
  *
  * This file is here to:
  * - make TypeScript happy and prevent _"The inferred type of 'createContext' cannot be named without a reference to [...]"_.
