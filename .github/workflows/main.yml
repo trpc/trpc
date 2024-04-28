@@ -5,9 +5,9 @@ on:
   push:
     branches: [main, next, canary]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: true
 
 jobs:
   build:
@@ -48,7 +48,7 @@ jobs:
         with:
           fail_ci_if_error: true
           # only use token if not a fork PR
-          token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || null }}
+          token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || '' }}
 
   e2e:
     # only run on PRs
