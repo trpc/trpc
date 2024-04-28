@@ -33,7 +33,6 @@ export {
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
   type ProcedureOptions as TRPCProcedureOptions,
   type CreateContextCallback,
-  type WrapCreateContext,
   type MutationProcedure as TRPCMutationProcedure,
   type QueryProcedure as TRPCQueryProcedure,
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
