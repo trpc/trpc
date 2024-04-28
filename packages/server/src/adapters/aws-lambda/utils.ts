@@ -135,8 +135,6 @@ export function getPath(event: APIGatewayEvent) {
 }
 
 export function getURLFromEvent(event: APIGatewayEvent): URL {
-  const path = getPath(event);
-
   const searchParams = new URLSearchParams();
 
   for (const [key, value] of Object.entries(
@@ -150,6 +148,7 @@ export function getURLFromEvent(event: APIGatewayEvent): URL {
   if (isPayloadV1(event)) {
     const hostname: string = event.requestContext.domainName ?? 'localhost';
     const protocol = 'http';
+    const path = event.path;
 
     return new URL(
       `${protocol}://${hostname}${path}?${searchParams.toString()}`,
@@ -158,6 +157,7 @@ export function getURLFromEvent(event: APIGatewayEvent): URL {
   if (isPayloadV2(event)) {
     const hostname: string = event.requestContext.domainName;
     const protocol: string = event.requestContext.http.protocol;
+    const path = event.rawPath;
 
     return new URL(
       `${protocol}://${hostname}${path}?${searchParams.toString()}`,
