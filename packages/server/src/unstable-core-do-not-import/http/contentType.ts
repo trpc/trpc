@@ -1,21 +1,7 @@
 import { TRPCError } from '../error/TRPCError';
 import type { RootConfig } from '../rootConfig';
 import { isObject, unsetMarker } from '../utils';
-
-export type RequestPlan = {
-  isBatchCall: boolean;
-  calls: {
-    path: string;
-    /**
-     * Read the raw input (deduped and memoized)
-     */
-    getRawInput: () => Promise<unknown>;
-    /**
-     * Get already parsed inputs - won't trigger reading the body or parsing the inputs
-     */
-    result: () => unknown;
-  }[];
-};
+import type { TRPCRequestInfo } from './types';
 
 type ContentTypeHandler = {
   isMatch: (opts: Request) => boolean;
@@ -24,7 +10,7 @@ type ContentTypeHandler = {
     req: Request;
     searchParams: URLSearchParams;
     config: RootConfig<any>;
-  }) => RequestPlan;
+  }) => TRPCRequestInfo;
 };
 
 /**
@@ -215,12 +201,12 @@ function getContentTypeHandler(req: Request): ContentTypeHandler {
   });
 }
 
-export function getRequestPlan(opts: {
+export function getRequestInfo(opts: {
   path: string;
   req: Request;
   searchParams: URLSearchParams;
   config: RootConfig<any>;
-}): RequestPlan {
+}): TRPCRequestInfo {
   const handler = getContentTypeHandler(opts.req);
   return handler.parse(opts);
 }

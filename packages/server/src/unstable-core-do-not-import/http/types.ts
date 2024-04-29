@@ -60,7 +60,17 @@ export type ProcedureCall = {
  */
 export type TRPCRequestInfo = {
   isBatchCall: boolean;
-  calls: ProcedureCall[];
+  calls: {
+    path: string;
+    /**
+     * Read the raw input (deduped and memoized)
+     */
+    getRawInput: () => Promise<unknown>;
+    /**
+     * Get already parsed inputs - won't trigger reading the body or parsing the inputs
+     */
+    result: () => unknown;
+  }[];
 };
 
 /**

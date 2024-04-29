@@ -11,12 +11,12 @@ import {
 import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
 import { getBatchStreamFormatter } from './batchStreamFormatter';
-import type { RequestPlan } from './contentType';
-import { getRequestPlan } from './contentType';
+import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
+  TRPCRequestInfo,
 } from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
@@ -173,12 +173,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  let plan: RequestPlan | undefined = undefined;
+  let info: TRPCRequestInfo | undefined = undefined;
 
   const isStreamCall = req.headers.get('trpc-batch-mode') === 'stream';
 
   try {
-    plan = getRequestPlan({
+    info = getRequestInfo({
       req,
       path: opts.path,
       config: router._def._config,
@@ -187,18 +187,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     // we create context early so that error handlers may access context information
     ctx = await opts.createContext({
-      info: {
-        calls: plan.calls.map((call) => ({
-          path: call.path,
-        })),
-        isBatchCall: plan.isBatchCall,
-      },
+      info,
     });
 
     if (opts.error) {
       throw opts.error;
     }
-    if (plan.isBatchCall && !allowBatching) {
+    if (info.isBatchCall && !allowBatching) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: `Batching is not enabled on the server`,
@@ -215,7 +210,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
-    >[] = plan.calls.map(async (call) => {
+    >[] = info.calls.map(async (call) => {
       try {
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
@@ -271,7 +266,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
       const headResponse = initResponse({
         ctx,
-        paths: plan.calls.map((call) => call.path),
+        paths: info.calls.map((call) => call.path),
         type,
         responseMeta: opts.responseMeta,
         untransformedJSON,
@@ -279,7 +274,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       });
 
       // return body stuff
-      const result = plan.isBatchCall
+      const result = info.isBatchCall
         ? untransformedJSON
         : untransformedJSON[0]!;
       const transformedJSON = transformTRPCResponse(
@@ -302,7 +297,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
      */
     const headResponse = initResponse({
       ctx,
-      paths: plan.calls.map((call) => call.path),
+      paths: info.calls.map((call) => call.path),
       type,
       responseMeta: opts.responseMeta,
       errors: [],
@@ -335,7 +330,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           await controller.write(formatter(index, body));
         } catch (cause) {
-          const call = plan!.calls[index]!;
+          const call = info!.calls[index]!;
           const input = call.result();
           const { body } = caughtErrorToData(cause, {
             opts,
@@ -374,7 +369,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     const headResponse = initResponse({
       ctx,
-      paths: plan?.calls.map((call) => call.path),
+      paths: info?.calls.map((call) => call.path),
       type,
       responseMeta: opts.responseMeta,
       untransformedJSON,
