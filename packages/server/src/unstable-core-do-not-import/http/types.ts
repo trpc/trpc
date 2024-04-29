@@ -69,7 +69,7 @@ export type TRPCRequestInfo = {
      */
     getRawInput: () => Promise<unknown>;
     /**
-     * Get already parsed inputs - won't trigger reading the body or parsing the inputs
+     * Get already parsed input for the procedure - won't trigger reading the body or parsing the inputs
      */
     result: () => unknown;
   }[];
