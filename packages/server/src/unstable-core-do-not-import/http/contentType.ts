@@ -198,7 +198,7 @@ const handlers = [
   octetStreamContentTypeHandler,
 ];
 
-export function getContentTypeHandler(req: Request): ContentTypeHandler {
+function getContentTypeHandler(req: Request): ContentTypeHandler {
   const handler = handlers.find((handler) => handler.isMatch(req));
   if (handler) {
     return handler;
@@ -214,4 +214,14 @@ export function getContentTypeHandler(req: Request): ContentTypeHandler {
       ? `Unsupported content-type "${req.headers.get('content-type')}`
       : 'Missing content-type header',
   });
+}
+
+export function getRequestPlan(opts: {
+  path: string;
+  req: Request;
+  searchParams: URLSearchParams;
+  config: RootConfig<any>;
+}): RequestPlan {
+  const handler = getContentTypeHandler(opts.req);
+  return handler.parse(opts);
 }

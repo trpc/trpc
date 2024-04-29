@@ -12,7 +12,7 @@ import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
 import { getBatchStreamFormatter } from './batchStreamFormatter';
 import type { RequestPlan } from './contentType';
-import { getContentTypeHandler } from './contentType';
+import { getRequestPlan } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
@@ -178,7 +178,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const isStreamCall = req.headers.get('trpc-batch-mode') === 'stream';
 
   try {
-    plan = getContentTypeHandler(req).parse({
+    plan = getRequestPlan({
       req,
       path: opts.path,
       config: router._def._config,
