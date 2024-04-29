@@ -40,7 +40,7 @@ interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
 
 function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   ctx: inferRouterContext<TRouter> | undefined;
-  paths: string[] | undefined;
+  info: TRPCRequestInfo | undefined;
   type: ProcedureType | 'unknown';
   responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest>['responseMeta'];
   untransformedJSON?:
@@ -51,7 +51,7 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
 }) {
   const {
     ctx,
-    paths,
+    info,
     type,
     responseMeta,
     untransformedJSON,
@@ -72,7 +72,8 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   const meta =
     responseMeta?.({
       ctx,
-      paths,
+      info,
+      paths: info?.calls.map((call) => call.path),
       type,
       data,
       errors,
@@ -266,7 +267,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
       const headResponse = initResponse({
         ctx,
-        paths: info.calls.map((call) => call.path),
+        info,
         type,
         responseMeta: opts.responseMeta,
         untransformedJSON,
@@ -297,7 +298,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
      */
     const headResponse = initResponse({
       ctx,
-      paths: info.calls.map((call) => call.path),
+      info,
       type,
       responseMeta: opts.responseMeta,
       errors: [],
@@ -369,7 +370,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     const headResponse = initResponse({
       ctx,
-      paths: info?.calls.map((call) => call.path),
+      info,
       type,
       responseMeta: opts.responseMeta,
       untransformedJSON,

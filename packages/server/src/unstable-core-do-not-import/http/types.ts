@@ -26,8 +26,10 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   ctx?: inferRouterContext<TRouter>;
   /**
    * The different tRPC paths requested
+   * @deprecated use `info` instead, this will be removed in v12
    **/
-  paths?: string[];
+  paths: string[] | undefined;
+  info: TRPCRequestInfo | undefined;
   type: ProcedureType | 'unknown';
   errors: TRPCError[];
   /**
