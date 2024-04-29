@@ -190,6 +190,7 @@ function getContentTypeHandler(req: Request): ContentTypeHandler {
   }
 
   if (!handler && req.method === 'GET') {
+    // fallback to JSON for get requests so GET-requests can be opened in browser easily
     return jsonContentTypeHandler;
   }
 
