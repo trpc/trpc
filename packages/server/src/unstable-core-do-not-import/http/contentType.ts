@@ -2,17 +2,19 @@ import { TRPCError } from '../error/TRPCError';
 import type { RootConfig } from '../rootConfig';
 import { isObject, unsetMarker } from '../utils';
 
-type ContentTypeParser = {
+export type ContentTypeParser = {
   isBatchCall: boolean;
-  paths: string[];
-  /**
-   * Get already parsed inputs - won't trigger reading the body or parsing the inputs
-   */
-  resultByIndex: (index: number) => unknown;
-  /**
-   * Get inputs by index - will trigger reading the body and parsing the inputs
-   */
-  parseByIndex: (index: number) => Promise<unknown>;
+  calls: {
+    path: string;
+    /**
+     * Read the raw input - will trigger reading the body and parsing the inputs
+     */
+    getRawInput: () => Promise<unknown>;
+    /**
+     * Get already parsed inputs - won't trigger reading the body or parsing the inputs
+     */
+    result: () => unknown;
+  }[];
 };
 type ContentTypeHandler = {
   isMatch: (opts: Request) => boolean;
@@ -122,15 +124,16 @@ const jsonContentTypeHandler: ContentTypeHandler = {
 
     return {
       isBatchCall,
-      async parseByIndex(index: number) {
-        const inputs = await getInputs.read();
-        return inputs[index];
-      },
-      resultByIndex(index: number) {
-        const inputs = getInputs.result();
-        return inputs?.[index];
-      },
-      paths,
+      calls: paths.map((path, index) => ({
+        path,
+        getRawInput: async () => {
+          const inputs = await getInputs.read();
+          return inputs[index];
+        },
+        result: () => {
+          return getInputs.result()?.[index];
+        },
+      })),
     };
   },
 };
@@ -153,14 +156,14 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       return fd;
     });
     return {
-      paths: [opts.path],
+      calls: [
+        {
+          path: opts.path,
+          getRawInput: () => getInputs.read(),
+          result: () => getInputs.result(),
+        },
+      ],
       isBatchCall: false,
-      async parseByIndex() {
-        return await getInputs.read();
-      },
-      resultByIndex() {
-        return getInputs.result();
-      },
     };
   },
 };
@@ -184,14 +187,14 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       return req.body;
     });
     return {
-      paths: [opts.path],
+      calls: [
+        {
+          path: opts.path,
+          getRawInput: () => getInputs.read(),
+          result: () => getInputs.result(),
+        },
+      ],
       isBatchCall: false,
-      async parseByIndex() {
-        return await getInputs.read();
-      },
-      resultByIndex() {
-        return getInputs.result();
-      },
     };
   },
 };

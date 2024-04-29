@@ -11,6 +11,7 @@ import {
 import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
 import { getBatchStreamFormatter } from './batchStreamFormatter';
+import type { ContentTypeParser } from './contentType';
 import { getContentTypeHandler } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -172,7 +173,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  let paths: string[] | undefined;
+  let calls: ContentTypeParser['calls'] | undefined = undefined;
 
   let isBatchCall = false;
   const isStreamCall = req.headers.get('trpc-batch-mode') === 'stream';
@@ -185,13 +186,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       searchParams: url.searchParams,
     });
     isBatchCall = contentTypeParser.isBatchCall;
-    paths = contentTypeParser.paths;
+    calls = contentTypeParser.calls;
 
     // we create context early so that error handlers may access context information
     ctx = await opts.createContext({
       info: {
-        calls: paths.map((path) => ({
-          path,
+        calls: calls.map((call) => ({
+          path: call.path,
         })),
         isBatchCall,
       },
@@ -217,12 +218,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
-    >[] = paths.map(async (path, index) => {
+    >[] = calls.map(async (call) => {
       try {
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
-          path,
-          getRawInput: () => contentTypeParser.parseByIndex(index),
+          path: call.path,
+          getRawInput: call.getRawInput,
           ctx,
           type,
           allowMethodOverride,
@@ -235,11 +236,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         errors.push(error);
-        const input = contentTypeParser.resultByIndex(index);
+        const input = call.result();
 
         opts.onError?.({
           error,
-          path,
+          path: call.path,
           input,
           ctx,
           type: type,
@@ -251,7 +252,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             config: opts.router._def._config,
             error,
             type,
-            path,
+            path: call.path,
             input,
             ctx,
           }),
@@ -273,7 +274,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
       const headResponse = initResponse({
         ctx,
-        paths,
+        paths: calls.map((call) => call.path),
         type,
         responseMeta: opts.responseMeta,
         untransformedJSON,
@@ -302,7 +303,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
      */
     const headResponse = initResponse({
       ctx,
-      paths,
+      paths: calls.map((call) => call.path),
       type,
       responseMeta: opts.responseMeta,
       errors: [],
@@ -335,13 +336,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           await controller.write(formatter(index, body));
         } catch (cause) {
-          const path = paths![index];
-          const input = contentTypeParser.resultByIndex(index);
+          const call = calls![index]!;
+          const input = call.result();
           const { body } = caughtErrorToData(cause, {
             opts,
             ctx,
             type,
-            path,
+            path: call.path,
             input,
           });
 
@@ -374,7 +375,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     const headResponse = initResponse({
       ctx,
-      paths,
+      paths: calls?.map((call) => call.path),
       type,
       responseMeta: opts.responseMeta,
       untransformedJSON,
