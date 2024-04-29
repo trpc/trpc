@@ -51,9 +51,6 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
   responseMeta?: ResponseMetaFn<TRouter>;
 }
 
-/**
- * @internal
- */
 interface TRPCRequestInfoProcedureCall {
   path: string;
   /**
@@ -68,7 +65,7 @@ interface TRPCRequestInfoProcedureCall {
 
 /**
  * Information about the incoming request
- * @internal
+ * @public
  */
 export interface TRPCRequestInfo {
   isBatchCall: boolean;
