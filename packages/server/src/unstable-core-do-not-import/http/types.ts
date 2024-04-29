@@ -51,29 +51,26 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
   responseMeta?: ResponseMetaFn<TRouter>;
 }
 
-/** @internal */
-export type ProcedureCall = {
+interface TRPCRequestInfoProcedureCall {
   path: string;
-};
+  /**
+   * Read the raw input (deduped and memoized)
+   */
+  getRawInput: () => Promise<unknown>;
+  /**
+   * Get already parsed inputs - won't trigger reading the body or parsing the inputs
+   */
+  result: () => unknown;
+}
 
 /**
  * Information about the incoming request
  * @internal
  */
-export type TRPCRequestInfo = {
+export interface TRPCRequestInfo {
   isBatchCall: boolean;
-  calls: {
-    path: string;
-    /**
-     * Read the raw input (deduped and memoized)
-     */
-    getRawInput: () => Promise<unknown>;
-    /**
-     * Get already parsed inputs - won't trigger reading the body or parsing the inputs
-     */
-    result: () => unknown;
-  }[];
-};
+  calls: TRPCRequestInfoProcedureCall[];
+}
 
 /**
  * Inner createContext function for `resolveResponse` used to forward `TRPCRequestInfo` to `createContext`
