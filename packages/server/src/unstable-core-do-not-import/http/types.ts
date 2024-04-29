@@ -51,6 +51,9 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
   responseMeta?: ResponseMetaFn<TRouter>;
 }
 
+/**
+ * @internal
+ */
 interface TRPCRequestInfoProcedureCall {
   path: string;
   /**
