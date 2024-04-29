@@ -1,22 +1,9 @@
-/**
- * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
- *
- * @example
- * ```ts
- * import type { AnyTRPCRouter } from '@trpc/server'
- * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
- * ```
- */
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda';
-
-// import @trpc/server
-
-// @trpc/server
 
 export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 
@@ -51,20 +38,6 @@ interface Processor<TEvent extends LambdaEvent> {
   getHeaders: (event: TEvent) => Headers;
   getMethod: (event: TEvent) => string;
   toResult: (response: Response) => Promise<inferAPIGWReturn<TEvent>>;
-}
-
-function transformHeaders(
-  headers: Request['headers'],
-): APIGatewayResult['headers'] {
-  const obj: APIGatewayResult['headers'] = {};
-
-  for (const [key, value] of headers) {
-    if (typeof value === 'undefined') {
-      continue;
-    }
-    obj[key] = value;
-  }
-  return obj;
 }
 
 const v1Processor: Processor<APIGatewayProxyEvent> = {
@@ -128,7 +101,7 @@ const v1Processor: Processor<APIGatewayProxyEvent> = {
     const result: APIGatewayProxyResult = {
       statusCode: response.status,
       body: await response.text(),
-      headers: transformHeaders(response.headers),
+      headers: Object.fromEntries(response.headers.entries()),
     };
 
     return result;
@@ -172,7 +145,7 @@ const v2Processor: Processor<APIGatewayProxyEventV2> = {
     const result: APIGatewayProxyStructuredResultV2 = {
       statusCode: response.status,
       body: await response.text(),
-      headers: transformHeaders(response.headers),
+      headers: Object.fromEntries(response.headers.entries()),
     };
 
     return result;
