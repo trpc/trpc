@@ -32,9 +32,11 @@ This is a breaking change for HTTP-adapters, but should not affect you as a user
 
 If you're building an adapter, check out how our adapters work [in the code](https://github.com/trpc/trpc/tree/next/packages/server/src/adapters) and don't be a stranger to ask for help in our [Discord](https://trpc.io/discord).
 
-### `TRPCRequestInfo.input` / `TRPCRequestInfo.type` has been removed (rarely breaking)
+### `TRPCRequestInfo` has been updated (rarely breaking)
 
-Inputs are now materialised lazily when required by the procedure, which means the input and procedure type is no longer available when tRPC calls `createContext`
+Inputs are now materialised lazily when required by the procedure, which means the input and procedure type is no longer available when tRPC calls `createContext`.
+
+You can still access the input by calling `info.calls[index].getRawInput()`.
 
 ### All the experimental form-data support has been replaced (rarely breaking)
 
