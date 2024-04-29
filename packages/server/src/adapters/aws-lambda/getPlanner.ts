@@ -149,7 +149,7 @@ const v2Processor: Processor<APIGatewayProxyEventV2> = {
   },
   url(event) {
     return {
-      hostname: event.headers['host'] ?? event.requestContext.domainName,
+      hostname: event.requestContext.domainName,
       pathname: event.rawPath,
       search: event.rawQueryString && `?${event.rawQueryString}`,
     };
