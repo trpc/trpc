@@ -38,7 +38,7 @@ function memo<TReturn>(fn: () => Promise<TReturn>) {
     /**
      * Lazily read the value
      */
-    async read(): Promise<TReturn> {
+    read: async (): Promise<TReturn> => {
       if (value !== unsetMarker) {
         return value;
       }
@@ -61,13 +61,11 @@ function memo<TReturn>(fn: () => Promise<TReturn>) {
     /**
      * Get an already stored result
      */
-    result(): TReturn | undefined {
+    result: (): TReturn | undefined => {
       return value !== unsetMarker ? value : undefined;
     },
   };
 }
-
-type InputRecord = Record<number, unknown>;
 
 const jsonContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
@@ -78,6 +76,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const isBatchCall = opts.searchParams.get('batch') === '1';
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
 
+    type InputRecord = Record<number, unknown>;
     const getInputs = memo(async (): Promise<InputRecord> => {
       let inputs: unknown = undefined;
       if (req.method === 'GET') {
@@ -152,8 +151,8 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       calls: [
         {
           path: opts.path,
-          getRawInput: () => getInputs.read(),
-          result: () => getInputs.result(),
+          getRawInput: getInputs.read,
+          result: getInputs.result,
         },
       ],
       isBatchCall: false,
@@ -183,8 +182,8 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       calls: [
         {
           path: opts.path,
-          getRawInput: () => getInputs.read(),
-          result: () => getInputs.result(),
+          getRawInput: getInputs.read,
+          result: getInputs.result,
         },
       ],
       isBatchCall: false,
