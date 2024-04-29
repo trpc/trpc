@@ -2,12 +2,12 @@ import { TRPCError } from '../error/TRPCError';
 import type { RootConfig } from '../rootConfig';
 import { isObject, unsetMarker } from '../utils';
 
-export type ContentTypeParser = {
+export type RequestPlan = {
   isBatchCall: boolean;
   calls: {
     path: string;
     /**
-     * Read the raw input - will trigger reading the body and parsing the inputs
+     * Read the raw input (deduped and memoized)
      */
     getRawInput: () => Promise<unknown>;
     /**
@@ -16,14 +16,15 @@ export type ContentTypeParser = {
     result: () => unknown;
   }[];
 };
+
 type ContentTypeHandler = {
   isMatch: (opts: Request) => boolean;
-  parser: (opts: {
+  parse: (opts: {
     path: string;
     req: Request;
     searchParams: URLSearchParams;
     config: RootConfig<any>;
-  }) => ContentTypeParser;
+  }) => RequestPlan;
 };
 
 /**
@@ -72,7 +73,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
     return !!req.headers.get('content-type')?.startsWith('application/json');
   },
-  parser(opts) {
+  parse(opts) {
     const { req } = opts;
     const isBatchCall = opts.searchParams.get('batch') === '1';
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
@@ -134,7 +135,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
     return !!req.headers.get('content-type')?.startsWith('multipart/form-data');
   },
-  parser(opts) {
+  parse(opts) {
     const { req } = opts;
     if (req.method !== 'POST') {
       throw new TRPCError({
@@ -166,7 +167,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       .get('content-type')
       ?.startsWith('application/octet-stream');
   },
-  parser(opts) {
+  parse(opts) {
     const { req } = opts;
     if (req.method !== 'POST') {
       throw new TRPCError({
