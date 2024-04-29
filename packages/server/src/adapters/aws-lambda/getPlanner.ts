@@ -47,7 +47,7 @@ export type inferAPIGWReturn<TEvent> = TEvent extends APIGatewayProxyEvent
 
 interface Processor<TEvent extends LambdaEvent> {
   getTRPCPath: (event: TEvent) => string;
-  getURL: (event: TEvent) => URL;
+  url(event: TEvent): Pick<URL, 'hostname' | 'pathname' | 'search'>;
   getHeaders: (event: TEvent) => Headers;
   getMethod: (event: TEvent) => string;
   toResult: (response: Response) => Promise<inferAPIGWReturn<TEvent>>;
@@ -84,8 +84,13 @@ const v1Processor: Processor<APIGatewayProxyEvent> = {
     }
     return event.path.slice(1);
   },
+  url(event) {
+    const hostname: string =
+      event.requestContext.domainName ??
+      event.headers['host'] ??
+      event.multiValueHeaders?.['host']?.[0] ??
+      'localhost';
 
-  getURL: (event) => {
     const searchParams = new URLSearchParams();
 
     for (const [key, value] of Object.entries(
@@ -95,17 +100,12 @@ const v1Processor: Processor<APIGatewayProxyEvent> = {
         searchParams.append(key, value);
       }
     }
-    const hostname: string =
-      event.requestContext.domainName ??
-      event.headers?.['host'] ??
-      event.multiValueHeaders?.['host']?.[0] ??
-      'localhost';
-    const protocol = 'https';
-    const path = event.path;
-
-    return new URL(
-      `${protocol}://${hostname}${path}?${searchParams.toString()}`,
-    );
+    const qs = searchParams.toString();
+    return {
+      hostname,
+      pathname: event.path,
+      search: qs && `?${qs}`,
+    };
   },
   getHeaders: (event) => {
     const headers = new Headers();
@@ -147,12 +147,12 @@ const v2Processor: Processor<APIGatewayProxyEventV2> = {
     }
     return event.rawPath.slice(1);
   },
-  getURL: (event) => {
-    const hostname: string = event.requestContext.domainName;
-    const protocol: string = event.requestContext.http.protocol;
-    const path = event.rawPath;
-
-    return new URL(`${protocol}://${hostname}${path}?${event.rawQueryString}`);
+  url(event) {
+    return {
+      hostname: event.headers['host'] ?? event.requestContext.domainName,
+      pathname: event.rawPath,
+      search: event.rawQueryString && `?${event.rawQueryString}`,
+    };
   },
   getHeaders: (event) => {
     const headers = new Headers();
@@ -193,7 +193,8 @@ export function getPlanner<TEvent extends LambdaEvent>(event: TEvent) {
       throw new Error(`Unsupported version: ${version}`);
   }
 
-  const url = processor.getURL(event);
+  const urlParts = processor.url(event);
+  const url = `https://${urlParts.hostname}${urlParts.pathname}${urlParts.search}`;
 
   const init: RequestInit = {
     headers: processor.getHeaders(event),
