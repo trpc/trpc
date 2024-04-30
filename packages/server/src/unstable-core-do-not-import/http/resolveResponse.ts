@@ -190,7 +190,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // we create context early so that error handlers may access context information
     ctx = await opts.createContext({
       info,
-      req,
     });
 
     if (opts.error) {

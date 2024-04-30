@@ -29,7 +29,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
   const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
     innerOpts,
   ) => {
-    return opts.createContext?.({ ...innerOpts, resHeaders });
+    return opts.createContext?.({ req: opts.req, resHeaders, ...innerOpts });
   };
 
   const url = toURL(opts.req.url);
