@@ -18,6 +18,9 @@ const router = t.router({
     .query(({ input }) => ({
       text: `hello ${input?.who}`,
     })),
+  helloMutation: t.procedure
+    .input(z.string())
+    .mutation(({ input }) => `hello ${input}`),
   mut: t.procedure.mutation(() => 'mutation'),
 
   exampleError: t.procedure.query(() => {
@@ -95,6 +98,19 @@ test('simple query', async () => {
   `);
 });
 
+test('batched requests in body work correctly', async () => {
+  const { port, address } = await startServer({
+    router,
+  });
+  const client = createClient(port, address);
+
+  const res = await Promise.all([
+    client.helloMutation.mutate('world'),
+    client.helloMutation.mutate('KATT'),
+  ]);
+  expect(res).toEqual(['hello world', 'hello KATT']);
+});
+
 test('error query', async () => {
   const { port, address } = await startServer({
     router,
@@ -118,7 +134,11 @@ test('middleware intercepts request', async () => {
     router,
   });
 
-  const result = await fetch(`http://${address}:${port}`);
+  const result = await fetch(`http://${address}:${port}`, {
+    headers: {
+      'content-type': 'application/json',
+    },
+  });
   expect(result.status).toBe(419);
 });
 
@@ -200,9 +220,10 @@ test('force content-type on mutations', async () => {
           "data": Object {
             "code": "UNSUPPORTED_MEDIA_TYPE",
             "httpStatus": 415,
+            "path": "mut",
             "stack": "[redacted]",
           },
-          "message": "Invalid Content-Type header (expected application/json)",
+          "message": "No Content-Type header detected on the incoming request. This request may not be supported by your tRPC Adapter, or possibly by tRPC at all",
         },
       }
     `);

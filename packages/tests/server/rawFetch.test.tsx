@@ -38,6 +38,11 @@ test('batching with raw batch', async () => {
       `${httpUrl}/myQuery?batch=1&input=${JSON.stringify({
         '0': { name: 'alexdotjs' },
       })}`,
+      {
+        headers: {
+          'content-type': 'application/json',
+        },
+      },
     );
     const json: any = await res.json();
 
