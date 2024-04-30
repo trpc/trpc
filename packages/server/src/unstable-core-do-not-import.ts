@@ -19,7 +19,7 @@ export * from './unstable-core-do-not-import/http/batchStreamFormatter';
 export * from './unstable-core-do-not-import/http/contentType';
 export * from './unstable-core-do-not-import/http/contentTypeParsers';
 export * from './unstable-core-do-not-import/http/getHTTPStatusCode';
-export * from './unstable-core-do-not-import/http/resolveHTTPResponse';
+export * from './unstable-core-do-not-import/http/resolveResponse';
 export * from './unstable-core-do-not-import/http/toURL';
 export * from './unstable-core-do-not-import/http/types';
 export * from './unstable-core-do-not-import/initTRPC';

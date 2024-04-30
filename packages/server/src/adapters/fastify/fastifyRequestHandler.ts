@@ -10,16 +10,18 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 // @trpc/server
 import type { AnyRouter } from '../../@trpc/server';
-import type {
-  HTTPBaseHandlerOptions,
-  ResolveHTTPRequestOptionsContextFn,
+// @trpc/server/http
+import {
+  resolveResponse,
+  type HTTPBaseHandlerOptions,
+  type ResolveHTTPRequestOptionsContextFn,
 } from '../../@trpc/server/http';
-import { resolveResponse } from '../../@trpc/server/http';
-import type {
-  IncomingMessageWithBody,
-  NodeHTTPCreateContextOption,
+// @trpc/server/node-http
+import {
+  incomingMessageToRequest,
+  type IncomingMessageWithBody,
+  type NodeHTTPCreateContextOption,
 } from '../node-http';
-import { incomingMessageToRequest } from '../node-http';
 
 export type FastifyHandlerOptions<
   TRouter extends AnyRouter,
