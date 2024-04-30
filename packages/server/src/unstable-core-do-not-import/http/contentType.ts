@@ -31,6 +31,9 @@ function memo<TReturn>(fn: () => Promise<TReturn>) {
       if (promise === null) {
         // dedupes promises and catches errors
         promise = fn().catch((cause) => {
+          if (cause instanceof TRPCError) {
+            throw cause;
+          }
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: cause instanceof Error ? cause.message : 'Invalid input',
