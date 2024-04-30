@@ -12,8 +12,9 @@ import {
   splitLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import { initTRPC, parseOctetInput } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import { octetInputParser } from '@trpc/server/http';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
 import React from 'react';
@@ -24,7 +25,7 @@ const ctx = konn()
 
     const appRouter = t.router({
       uploadFile: t.procedure
-        .input(parseOctetInput())
+        .input(octetInputParser)
         .mutation(async ({ input }) => {
           const chunks = [];
 

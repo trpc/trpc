@@ -98,11 +98,6 @@ async function startServer(endpoint = '') {
       req: event.request,
       router,
       createContext,
-      responseMeta() {
-        return {
-          headers: {},
-        };
-      },
     });
     event.respondWith(response);
   });
@@ -281,4 +276,18 @@ test('mutation', async () => {
   expect(res).toEqual(['hello world', 'hello KATT']);
 
   await t.close();
+});
+
+test('batching', async () => {
+  const t = await startServer();
+
+  const normalResult = await (
+    await fetch(`${t.url}/hello,foo?batch=1&input={}`)
+  ).json();
+  const comma = '%2C';
+  const urlEncodedResult = await (
+    await fetch(`${t.url}/hello${comma}foo?batch=1&input={}`)
+  ).json();
+
+  expect(normalResult).toEqual(urlEncodedResult);
 });

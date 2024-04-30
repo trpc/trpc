@@ -1,4 +1,5 @@
 import type http from 'http';
+import { waitError } from '../___testHelpers';
 import type { Context } from './__router';
 import { router } from './__router';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
@@ -122,11 +123,9 @@ test('request info from context should include both calls', async () => {
         "calls": Array [
           Object {
             "path": "hello",
-            "type": "query",
           },
           Object {
             "path": "request.info",
-            "type": "query",
           },
         ],
         "isBatchCall": true,
@@ -146,10 +145,15 @@ test('error query', async () => {
 test('payload too large', async () => {
   const t = await startServer(100);
 
-  await expect(
-    async () =>
-      await t.client.exampleMutation.mutate({ payload: 'a'.repeat(1000) }),
-  ).rejects.toThrowError('PAYLOAD_TOO_LARGE');
+  const err = await waitError(
+    () => t.client.exampleMutation.mutate({ payload: 'a'.repeat(101) }),
+    TRPCClientError<typeof router>,
+  );
+
+  expect(err.data?.code).toBe('PAYLOAD_TOO_LARGE');
+
+  // the trpc envelope takes some space so we can't have exactly 100 bytes of payload
+  await t.client.exampleMutation.mutate({ payload: 'a'.repeat(75) });
 
   t.close();
 });

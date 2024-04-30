@@ -225,64 +225,6 @@ importers:
         specifier: ^1.0.1
         version: 1.0.4
 
-  examples/.experimental/next-formdata:
-    dependencies:
-      '@hookform/error-message':
-        specifier: ^2.0.1
-        version: 2.0.1(react-dom@18.3.1)(react-hook-form@7.43.3)(react@18.3.1)
-      '@hookform/resolvers':
-        specifier: ^2.9.11
-        version: 2.9.11(react-hook-form@7.43.3)
-      '@tanstack/react-query':
-        specifier: ^5.25.0
-        version: 5.25.0(react@18.3.1)
-      '@trpc/client':
-        specifier: npm:@trpc/client@next
-        version: link:../../../packages/client
-      '@trpc/next':
-        specifier: npm:@trpc/next@next
-        version: link:../../../packages/next
-      '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
-        version: link:../../../packages/react-query
-      '@trpc/server':
-        specifier: npm:@trpc/server@next
-        version: link:../../../packages/server
-      next:
-        specifier: ^14.1.4
-        version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
-      react:
-        specifier: ^18.3.0
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.0
-        version: 18.3.1(react@18.3.1)
-      react-hook-form:
-        specifier: ^7.43.3
-        version: 7.43.3(react@18.3.1)
-      zod:
-        specifier: ^3.0.0
-        version: 3.23.8
-      zod-form-data:
-        specifier: ^2.0.1
-        version: 2.0.1(zod@3.23.8)
-    devDependencies:
-      '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
-      '@types/react':
-        specifier: ^18.3.0
-        version: 18.3.1
-      '@types/react-dom':
-        specifier: ^18.3.0
-        version: 18.3.0
-      eslint:
-        specifier: ^8.56.0
-        version: 8.56.0
-      typescript:
-        specifier: ^5.4.0
-        version: 5.4.2
-
   examples/.test/diagnostics-big-router:
     dependencies:
       '@tanstack/react-query':
@@ -1106,6 +1048,64 @@ importers:
       zod:
         specifier: ^3.0.0
         version: 3.22.4
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.10.4
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.1
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.0
+      eslint:
+        specifier: ^8.56.0
+        version: 8.56.0
+      typescript:
+        specifier: ^5.4.0
+        version: 5.4.2
+
+  examples/next-formdata:
+    dependencies:
+      '@hookform/error-message':
+        specifier: ^2.0.1
+        version: 2.0.1(react-dom@18.3.1)(react-hook-form@7.43.3)(react@18.3.1)
+      '@hookform/resolvers':
+        specifier: ^2.9.11
+        version: 2.9.11(react-hook-form@7.43.3)
+      '@tanstack/react-query':
+        specifier: ^5.25.0
+        version: 5.25.0(react@18.3.1)
+      '@trpc/client':
+        specifier: npm:@trpc/client@next
+        version: link:../../packages/client
+      '@trpc/next':
+        specifier: npm:@trpc/next@next
+        version: link:../../packages/next
+      '@trpc/react-query':
+        specifier: npm:@trpc/react-query@next
+        version: link:../../packages/react-query
+      '@trpc/server':
+        specifier: npm:@trpc/server@next
+        version: link:../../packages/server
+      next:
+        specifier: ^14.1.4
+        version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
+      react:
+        specifier: ^18.3.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.0
+        version: 18.3.1(react@18.3.1)
+      react-hook-form:
+        specifier: ^7.43.3
+        version: 7.43.3(react@18.3.1)
+      zod:
+        specifier: ^3.0.0
+        version: 3.22.4
+      zod-form-data:
+        specifier: ^2.0.1
+        version: 2.0.1(zod@3.22.4)
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -23965,6 +23965,14 @@ packages:
       compress-commons: 4.1.1
       readable-stream: 3.6.2
     dev: true
+
+  /zod-form-data@2.0.1(zod@3.22.4):
+    resolution: {integrity: sha512-4jcsj3vFyFGINLLHEmehfOPKdcw+HqV65RwsV2IdyLHp9wpvGJRVXWg1yY8sq0ASEbQfTVBRtI7LcDGv3Qpj8g==}
+    peerDependencies:
+      zod: ^3.11.x
+    dependencies:
+      zod: 3.22.4
+    dev: false
 
   /zod-form-data@2.0.1(zod@3.23.8):
     resolution: {integrity: sha512-4jcsj3vFyFGINLLHEmehfOPKdcw+HqV65RwsV2IdyLHp9wpvGJRVXWg1yY8sq0ASEbQfTVBRtI7LcDGv3Qpj8g==}

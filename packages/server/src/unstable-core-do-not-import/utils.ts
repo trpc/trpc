@@ -1,3 +1,7 @@
+/** @internal */
+export const unsetMarker = Symbol('unsetMarker');
+export type UnsetMarker = typeof unsetMarker;
+
 /**
  * Ensures there are no duplicate keys when building a procedure.
  * @internal

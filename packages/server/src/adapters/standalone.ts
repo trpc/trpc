@@ -37,7 +37,7 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
     const path = url.pathname.slice(1);
 
     await nodeHTTPRequestHandler({
-      ...opts,
+      ...(opts as any),
       req,
       res,
       path,

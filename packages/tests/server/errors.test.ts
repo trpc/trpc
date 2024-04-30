@@ -10,9 +10,9 @@ import {
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import type { HTTPErrorHandler } from '@trpc/server/http';
 import { observable } from '@trpc/server/observable';
 import { isObject } from '@trpc/server/unstable-core-do-not-import';
-import type { OnErrorFunction } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import fetch from 'node-fetch';
 import { z, ZodError } from 'zod';
@@ -254,11 +254,7 @@ Object {
         onError,
       },
     });
-    const res = await fetch(`${httpUrl}/q`, {
-      headers: {
-        'content-type': 'application/json',
-      },
-    });
+    const res = await fetch(`${httpUrl}/q`);
 
     expect(res.ok).toBeFalsy();
     expect(res.status).toBe(TEAPOT_ERROR_CODE);
@@ -284,11 +280,7 @@ Object {
         onError,
       },
     });
-    const res = await fetch(`${httpUrl}/q`, {
-      headers: {
-        'content-type': 'application/json',
-      },
-    });
+    const res = await fetch(`${httpUrl}/q`);
 
     expect(res.ok).toBeFalsy();
     expect(res.status).toBe(TEAPOT_ERROR_CODE);
@@ -349,7 +341,7 @@ test('retain stack trace', async () => {
     }
   }
 
-  const onErrorFn: OnErrorFunction<any, any> = () => {};
+  const onErrorFn: HTTPErrorHandler<any, any> = () => {};
 
   const onError = vi.fn(onErrorFn);
 

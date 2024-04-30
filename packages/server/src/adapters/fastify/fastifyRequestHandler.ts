@@ -7,23 +7,36 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
-import { Readable } from 'stream';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 // @trpc/server
 import type { AnyRouter } from '../../@trpc/server';
 import type {
-  HTTPRequest,
-  HTTPResponse,
+  HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
-  ResponseChunk,
 } from '../../@trpc/server/http';
-import {
-  getBatchStreamFormatter,
-  resolveHTTPResponse,
-} from '../../@trpc/server/http';
-import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
-import { getFastifyHTTPJSONContentTypeHandler } from './content-type/json';
-import type { FastifyRequestHandlerOptions } from './types';
+import { resolveResponse } from '../../@trpc/server/http';
+import type {
+  IncomingMessageWithBody,
+  NodeHTTPCreateContextOption,
+} from '../node-http';
+import { incomingMessageToRequest } from '../node-http';
+
+export type FastifyHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends FastifyRequest,
+  TResponse extends FastifyReply,
+> = HTTPBaseHandlerOptions<TRouter, TRequest> &
+  NodeHTTPCreateContextOption<TRouter, TRequest, TResponse>;
+
+type FastifyRequestHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends FastifyRequest,
+  TResponse extends FastifyReply,
+> = FastifyHandlerOptions<TRouter, TRequest, TResponse> & {
+  req: TRequest;
+  res: TResponse;
+  path: string;
+};
 
 export async function fastifyRequestHandler<
   TRouter extends AnyRouter,
@@ -39,90 +52,28 @@ export async function fastifyRequestHandler<
     });
   };
 
-  const query = opts.req.query
-    ? new URLSearchParams(opts.req.query as any)
-    : new URLSearchParams(opts.req.url.split('?')[1]);
+  const incomingMessage = opts.req.raw as IncomingMessageWithBody;
 
-  const req: HTTPRequest = {
-    query,
-    method: opts.req.method,
-    headers: opts.req.headers,
-  };
+  // monkey-path body to the IncomingMessage
+  if ('body' in opts.req) {
+    incomingMessage.body = opts.req.body;
+  }
+  const req = incomingMessageToRequest(incomingMessage, {
+    maxBodySize: null,
+  });
 
-  let resolve: (value: FastifyReply) => void;
-  const promise = new Promise<FastifyReply>((r) => (resolve = r));
-
-  let isStream = false;
-  let stream: Readable;
-  let formatter: ReturnType<typeof getBatchStreamFormatter>;
-  const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
-    if (!opts.res.statusCode || opts.res.statusCode === 200) {
-      opts.res.statusCode = head.status;
-    }
-    for (const [key, value] of Object.entries(head.headers ?? {})) {
-      /* istanbul ignore if -- @preserve */
-      if (typeof value === 'undefined') {
-        continue;
-      }
-      void opts.res.header(key, value);
-    }
-    if (isStreaming) {
-      void opts.res.header('Transfer-Encoding', 'chunked');
-      void opts.res.header(
-        'Vary',
-        opts.res.hasHeader('Vary')
-          ? 'trpc-batch-mode, ' + opts.res.getHeader('Vary')
-          : 'trpc-batch-mode',
-      );
-      stream = new Readable();
-      stream._read = () => {}; // eslint-disable-line @typescript-eslint/no-empty-function -- https://github.com/fastify/fastify/issues/805#issuecomment-369172154
-      resolve(opts.res.send(stream));
-      isStream = true;
-      formatter = getBatchStreamFormatter();
-    }
-  };
-
-  const unstable_onChunk = ([index, string]: ResponseChunk) => {
-    if (index === -1) {
-      // full response, no streaming
-      resolve(opts.res.send(string));
-    } else {
-      stream.push(formatter(index, string));
-    }
-  };
-
-  const [contentTypeHandler, unsupportedMediaTypeError] =
-    selectContentHandlerOrUnsupportedMediaType(
-      [getFastifyHTTPJSONContentTypeHandler<TRouter, TRequest, TResponse>()],
-      opts,
-    );
-
-  resolveHTTPResponse({
+  const res = await resolveResponse({
     ...opts,
     req,
-    error: unsupportedMediaTypeError,
-    async getInput(info) {
-      return await contentTypeHandler?.getInputs(opts, info);
-    },
+    error: null,
     createContext,
-
     onError(o) {
-      opts?.onError?.({ ...o, req: opts.req });
+      opts?.onError?.({
+        ...o,
+        req: opts.req,
+      });
     },
-    unstable_onHead,
-    unstable_onChunk,
-  })
-    .then(() => {
-      if (isStream) {
-        stream.push(formatter.end());
-        stream.push(null); // https://github.com/fastify/fastify/issues/805#issuecomment-369172154
-      }
-    })
-    .catch(() => {
-      if (isStream) {
-        stream.push(null);
-      }
-    });
+  });
 
-  return promise;
+  await opts.res.send(res);
 }
