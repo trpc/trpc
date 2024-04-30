@@ -11,9 +11,10 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 // @trpc/server
 import type { AnyRouter } from '../../@trpc/server';
+// @trpc/server/http
 import type { NodeHTTPCreateContextFnOptions } from '../node-http';
-import type { WSSHandlerOptions } from '../ws';
-import { getWSConnectionHandler } from '../ws';
+// @trpc/server/ws
+import { getWSConnectionHandler, type WSSHandlerOptions } from '../ws';
 import type { FastifyHandlerOptions } from './fastifyRequestHandler';
 import { fastifyRequestHandler } from './fastifyRequestHandler';
 
