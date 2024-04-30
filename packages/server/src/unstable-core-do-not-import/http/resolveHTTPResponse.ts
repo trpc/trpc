@@ -163,6 +163,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const url = new URL(req.url);
 
   if (req.method === 'HEAD') {
+    // can be used for lambda warmup
     return new Response(null, {
       status: 204,
     });
