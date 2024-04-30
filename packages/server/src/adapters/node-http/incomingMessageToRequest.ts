@@ -52,7 +52,7 @@ function incomingMessageToBodyStream(
   return stream;
 }
 
-const bodyMethods = new Set(['POST', 'PUT', 'PATCH']);
+const bodyMethods = ['POST', 'PUT', 'PATCH'];
 /**
  * Convert an [`IncomingMessage`](https://nodejs.org/api/http.html#class-httpincomingmessage) to a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)
  */
@@ -79,15 +79,10 @@ export function incomingMessageToRequest(
     duplex: 'half',
   };
 
-  if (req.method && bodyMethods.has(req.method)) {
+  if (req.method && bodyMethods.includes(req.method)) {
     if (!('body' in req)) {
       init.body = incomingMessageToBodyStream(req, opts);
-    } else if (
-      typeof req.body === 'string' ||
-      req.body instanceof Uint8Array ||
-      req.body instanceof Buffer ||
-      req.body instanceof ReadableStream
-    ) {
+    } else if (typeof req.body === 'string') {
       init.body = req.body;
     } else if (req.body !== undefined) {
       init.body = JSON.stringify(req.body);
