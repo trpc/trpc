@@ -182,7 +182,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   try {
     info = getRequestInfo({
       req,
-      path: opts.path,
+      path: decodeURIComponent(opts.path),
       config: router._def._config,
       searchParams: url.searchParams,
     });
