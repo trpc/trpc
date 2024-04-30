@@ -23,10 +23,18 @@ test('handle URL encoded commas in URL.pathname', async () => {
   const url = ctx.httpUrl;
 
   const normalResult = await (
-    await fetch(`${url}/a,b?batch=1&input={}`)
+    await fetch(`${url}/a,b?batch=1&input={}`, {
+      headers: {
+        'content-type': 'application/json',
+      },
+    })
   ).json();
   const uriEncodedResult = await (
-    await fetch(`${url}/a%2Cb?batch=1&input={}`)
+    await fetch(`${url}/a%2Cb?batch=1&input={}`, {
+      headers: {
+        'content-type': 'application/json',
+      },
+    })
   ).json();
 
   expect(normalResult).toMatchInlineSnapshot(`
