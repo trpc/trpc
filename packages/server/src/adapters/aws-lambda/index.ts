@@ -63,7 +63,11 @@ export function awsLambdaRequestHandler<
     const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
       innerOpts,
     ) => {
-      return await opts.createContext?.({ event, context, ...innerOpts });
+      return await opts.createContext?.({
+        ...innerOpts,
+        event,
+        context,
+      });
     };
 
     const response = await resolveResponse({

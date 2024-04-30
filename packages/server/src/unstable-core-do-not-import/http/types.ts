@@ -77,7 +77,10 @@ export interface TRPCRequestInfo {
  * @internal
  */
 export type ResolveHTTPRequestOptionsContextFn<TRouter extends AnyRouter> =
-  (opts: { info: TRPCRequestInfo }) => Promise<inferRouterContext<TRouter>>;
+  (opts: {
+    req: Request;
+    info: TRPCRequestInfo;
+  }) => Promise<inferRouterContext<TRouter>>;
 
 interface HTTPErrorHandlerOptions<TRouter extends AnyRouter, TRequest>
   extends ErrorHandlerOptions<inferRouterContext<TRouter>> {

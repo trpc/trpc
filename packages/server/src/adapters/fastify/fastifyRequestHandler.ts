@@ -49,8 +49,8 @@ export async function fastifyRequestHandler<
     innerOpts,
   ) => {
     return await opts.createContext?.({
-      ...opts,
       ...innerOpts,
+      ...opts,
     });
   };
 

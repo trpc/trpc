@@ -45,8 +45,8 @@ export async function nodeHTTPRequestHandler<
       innerOpts,
     ) => {
       return await opts.createContext?.({
-        ...opts,
         ...innerOpts,
+        ...opts,
       });
     };
 
