@@ -10,13 +10,13 @@ import {
 } from '../router';
 import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
-import { isObject, memoize, unsetMarker } from '../utils';
 import { getBatchStreamFormatter } from './batchStreamFormatter';
-import { getContentTypeHandlerOrThrow } from './contentType';
+import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
+  TRPCRequestInfo,
 } from './types';
 
 const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
@@ -40,7 +40,7 @@ interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
 
 function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   ctx: inferRouterContext<TRouter> | undefined;
-  paths: string[] | undefined;
+  info: TRPCRequestInfo | undefined;
   type: ProcedureType | 'unknown';
   responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest>['responseMeta'];
   untransformedJSON?:
@@ -51,7 +51,7 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
 }) {
   const {
     ctx,
-    paths,
+    info,
     type,
     responseMeta,
     untransformedJSON,
@@ -72,7 +72,8 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   const meta =
     responseMeta?.({
       ctx,
-      paths,
+      info,
+      paths: info?.calls.map((call) => call.path),
       type,
       data,
       errors,
@@ -173,115 +174,31 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  let paths: string[] | undefined;
+  let info: TRPCRequestInfo | undefined = undefined;
 
-  const isBatchCall = url.searchParams.get('batch') === '1';
   const isStreamCall = req.headers.get('trpc-batch-mode') === 'stream';
 
   try {
-    paths = isBatchCall
-      ? decodeURIComponent(opts.path).split(',')
-      : [opts.path];
+    info = getRequestInfo({
+      req,
+      path: opts.path,
+      config: router._def._config,
+      searchParams: url.searchParams,
+    });
 
-    // we create context first so that (unless `createContext()` throws)
-    // error handler may access context information
-    //
-    // this way even if the client sends malformed input that might cause an exception:
-    //  - `opts.error` has value,
-    //  - batching is not enabled,
-    //  - `type` is unknown,
-    //  - `getInputs` throws because of malformed JSON,
-    // context value is still available to the error handler
+    // we create context early so that error handlers may access context information
     ctx = await opts.createContext({
-      info: {
-        calls: paths.map((path) => ({
-          path,
-        })),
-        isBatchCall,
-      },
+      info,
     });
 
     if (opts.error) {
       throw opts.error;
     }
-    if (isBatchCall && !allowBatching) {
+    if (info.isBatchCall && !allowBatching) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: `Batching is not enabled on the server`,
       });
-    }
-    /* istanbul ignore if -- @preserve */
-    if (type === 'subscription') {
-      throw new TRPCError({
-        message: 'Subscriptions should use wsLink',
-        code: 'METHOD_NOT_SUPPORTED',
-      });
-    }
-
-    const getInputForIndex = (() => {
-      const contentTypeHandler = getContentTypeHandlerOrThrow(req);
-
-      if (isBatchCall && !contentTypeHandler.batching) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Batching is possible with content-type "${req.headers.get(
-            'content-type',
-          )}"`,
-        });
-      }
-      // memoize get inputs so body is only read once
-      const getInputs = memoize(() =>
-        contentTypeHandler.getInputs(req, url.searchParams),
-      );
-
-      const deserializeInput = (input: unknown) => {
-        if (input === undefined || !contentTypeHandler.transform) {
-          return input;
-        }
-        return router._def._config.transformer.input.deserialize(input);
-      };
-
-      return (index: number) => {
-        let rawInput: unknown = unsetMarker;
-
-        return {
-          getRawInput: async () => {
-            if (rawInput !== unsetMarker) {
-              return rawInput;
-            }
-            const inputs = await getInputs();
-
-            if (!isBatchCall) {
-              rawInput = deserializeInput(inputs);
-              return rawInput;
-            }
-
-            if (!isObject(inputs)) {
-              throw new TRPCError({
-                code: 'BAD_REQUEST',
-                message:
-                  '"input" needs to be an object when doing a batch call',
-              });
-            }
-
-            rawInput = deserializeInput(inputs[index]);
-            return rawInput;
-          },
-          /**
-           * Get already parsed input
-           * Used in error handling to avoid parsing input just to pass it to error handler
-           */
-          getParsedInput: () => {
-            return rawInput === unsetMarker ? undefined : rawInput;
-          },
-        };
-      };
-    })();
-
-    const inputsByIndex = paths.map((_, index) => getInputForIndex(index));
-
-    if (isBatchCall && !allowBatching) {
-      throw new Error(`Batching is not enabled on the server`);
     }
     if (type === 'unknown') {
       throw new TRPCError({
@@ -294,13 +211,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
-    >[] = paths.map(async (path, index) => {
-      const inputGetter = inputsByIndex[index]!;
+    >[] = info.calls.map(async (call) => {
       try {
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
-          path,
-          getRawInput: inputGetter.getRawInput,
+          path: call.path,
+          getRawInput: call.getRawInput,
           ctx,
           type,
           allowMethodOverride,
@@ -313,11 +229,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         errors.push(error);
-        const input = inputGetter.getParsedInput();
+        const input = call.result();
 
         opts.onError?.({
           error,
-          path,
+          path: call.path,
           input,
           ctx,
           type: type,
@@ -329,7 +245,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             config: opts.router._def._config,
             error,
             type,
-            path,
+            path: call.path,
             input,
             ctx,
           }),
@@ -351,7 +267,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
       const headResponse = initResponse({
         ctx,
-        paths,
+        info,
         type,
         responseMeta: opts.responseMeta,
         untransformedJSON,
@@ -359,7 +275,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       });
 
       // return body stuff
-      const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!;
+      const result = info.isBatchCall
+        ? untransformedJSON
+        : untransformedJSON[0]!;
       const transformedJSON = transformTRPCResponse(
         router._def._config,
         result,
@@ -380,7 +298,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
      */
     const headResponse = initResponse({
       ctx,
-      paths,
+      info,
       type,
       responseMeta: opts.responseMeta,
       errors: [],
@@ -413,13 +331,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           await controller.write(formatter(index, body));
         } catch (cause) {
-          const path = paths![index];
-          const input = inputsByIndex[index]!.getParsedInput();
+          const call = info!.calls[index]!;
+          const input = call.result();
           const { body } = caughtErrorToData(cause, {
             opts,
             ctx,
             type,
-            path,
+            path: call.path,
             input,
           });
 
@@ -452,7 +370,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     const headResponse = initResponse({
       ctx,
-      paths,
+      info,
       type,
       responseMeta: opts.responseMeta,
       untransformedJSON,

@@ -26,8 +26,10 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   ctx?: inferRouterContext<TRouter>;
   /**
    * The different tRPC paths requested
+   * @deprecated use `info` instead, this will be removed in v12
    **/
-  paths?: string[];
+  paths: string[] | undefined;
+  info: TRPCRequestInfo | undefined;
   type: ProcedureType | 'unknown';
   errors: TRPCError[];
   /**
@@ -49,19 +51,26 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
   responseMeta?: ResponseMetaFn<TRouter>;
 }
 
-/** @internal */
-export type ProcedureCall = {
+interface TRPCRequestInfoProcedureCall {
   path: string;
-};
+  /**
+   * Read the raw input (deduped and memoized)
+   */
+  getRawInput: () => Promise<unknown>;
+  /**
+   * Get already parsed inputs - won't trigger reading the body or parsing the inputs
+   */
+  result: () => unknown;
+}
 
 /**
  * Information about the incoming request
- * @internal
+ * @public
  */
-export type TRPCRequestInfo = {
+export interface TRPCRequestInfo {
   isBatchCall: boolean;
-  calls: ProcedureCall[];
-};
+  calls: TRPCRequestInfoProcedureCall[];
+}
 
 /**
  * Inner createContext function for `resolveResponse` used to forward `TRPCRequestInfo` to `createContext`

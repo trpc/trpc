@@ -45,17 +45,3 @@ export function omitPrototype<TObj extends Record<string, unknown>>(
 ): TObj {
   return Object.assign(Object.create(null), obj);
 }
-
-/**
- * Memoize a function that takes no arguments
- * @internal
- */
-export function memoize<TReturn>(fn: () => TReturn): () => TReturn {
-  let value: TReturn | typeof unsetMarker = unsetMarker;
-  return () => {
-    if (value === unsetMarker) {
-      value = fn();
-    }
-    return value;
-  };
-}
