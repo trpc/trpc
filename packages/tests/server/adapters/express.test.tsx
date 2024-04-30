@@ -6,7 +6,7 @@ import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
 import fetch from 'node-fetch';
 
-async function startServer() {
+async function startServer(maxBodySize?: number) {
   const createContext = (
     _opts: trpcExpress.CreateExpressContextOptions,
   ): Context => {
@@ -32,7 +32,7 @@ async function startServer() {
     '/trpc',
     trpcExpress.createExpressMiddleware({
       router,
-      maxBodySize: 10, // 10 bytes,
+      maxBodySize: maxBodySize ?? Infinity,
       createContext,
     }),
   );
@@ -97,6 +97,14 @@ test('simple query', async () => {
   `);
 });
 
+test('batched requests in body work correctly', async () => {
+  const res = await Promise.all([
+    t.client.helloMutation.mutate('world'),
+    t.client.helloMutation.mutate('KATT'),
+  ]);
+  expect(res).toEqual(['hello world', 'hello KATT']);
+});
+
 test('request info from context should include both calls', async () => {
   const res = await Promise.all([
     t.client.hello.query({
@@ -113,9 +121,6 @@ test('request info from context should include both calls', async () => {
       Object {
         "calls": Array [
           Object {
-            "input": Object {
-              "who": "test",
-            },
             "path": "hello",
             "type": "query",
           },
@@ -139,10 +144,12 @@ test('error query', async () => {
 });
 
 test('payload too large', async () => {
-  try {
-    await t.client.exampleMutation.mutate({ payload: 'a'.repeat(100) });
-    expect(true).toBe(false); // should not be reached
-  } catch (e) {
-    expect(e).toStrictEqual(new TRPCClientError('PAYLOAD_TOO_LARGE'));
-  }
+  const t = await startServer(100);
+
+  await expect(
+    async () =>
+      await t.client.exampleMutation.mutate({ payload: 'a'.repeat(1000) }),
+  ).rejects.toThrowError('PAYLOAD_TOO_LARGE');
+
+  t.close();
 });

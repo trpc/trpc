@@ -9,9 +9,6 @@ import type {
 import { callProcedure } from '../router';
 import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
-import type { Maybe } from '../types';
-import type { BaseContentTypeHandler } from './contentType';
-import { getJsonContentTypeInputs } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
@@ -31,10 +28,6 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   POST: 'mutation',
 };
 
-const fallbackContentTypeHandler = {
-  getInputs: getJsonContentTypeInputs,
-};
-
 type PartialBy<TBaseType, TKey extends keyof TBaseType> = Omit<
   TBaseType,
   TKey
@@ -48,9 +41,8 @@ interface ResolveHTTPRequestOptions<
   createContext: ResolveHTTPRequestOptionsContextFn<TRouter>;
   req: TRequest;
   path: string;
-  error?: Maybe<TRPCError>;
-  contentTypeHandler?: BaseContentTypeHandler<any>;
-  preprocessedBody?: boolean;
+  getInput: (opts: { isBatchCall: boolean; batch: number }) => Promise<unknown>;
+  error?: TRPCError;
   /**
    * Called as soon as the response head is known.
    * When streaming, headers will have been generated
@@ -231,8 +223,6 @@ export async function resolveHTTPResponse<
     unstable_onChunk?.([-1, '']);
     return headResponse;
   }
-  const contentTypeHandler =
-    opts.contentTypeHandler ?? fallbackContentTypeHandler;
   const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
   const allowMethodOverride = opts.allowMethodOverride ?? false;
 
@@ -249,9 +239,6 @@ export async function resolveHTTPResponse<
     req.headers['trpc-batch-mode'] === 'stream';
 
   try {
-    if (opts.error) {
-      throw opts.error;
-    }
     if (isBatchCall && !allowBatching) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
@@ -272,22 +259,14 @@ export async function resolveHTTPResponse<
       });
     }
 
-    const inputs = await contentTypeHandler.getInputs({
-      isBatchCall,
-      req,
-      router,
-      preprocessedBody: opts.preprocessedBody ?? false,
-    });
-
     paths = isBatchCall
       ? decodeURIComponent(opts.path).split(',')
       : [opts.path];
     const info: TRPCRequestInfo = {
       isBatchCall,
-      calls: paths.map((path, idx) => ({
+      calls: paths.map((path) => ({
         path,
         type,
-        input: inputs[idx] ?? undefined,
       })),
     };
     ctx = await opts.createContext({ info });
@@ -297,12 +276,25 @@ export async function resolveHTTPResponse<
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
     >[] = paths.map(async (path, index) => {
-      const input = inputs[index];
+      async function getRawInput() {
+        return await opts.getInput({
+          isBatchCall,
+          batch: index,
+        });
+      }
+
       try {
+        if (opts.error) {
+          // sometimes an error may be generated above this function in the stack
+          // for instance a 405 error if the method is not supported
+          // But we need to handle it here to ensure the error is formatted correctly
+          throw opts.error;
+        }
+
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
           path,
-          getRawInput: async () => input,
+          getRawInput: getRawInput,
           ctx,
           type,
           allowMethodOverride,
@@ -315,6 +307,14 @@ export async function resolveHTTPResponse<
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         errors.push(error);
+
+        let input: unknown;
+        try {
+          input = await getRawInput();
+        } catch (e) {
+          // if `getRawInput` fails, we can't include the input in the error
+          input = undefined;
+        }
 
         opts.onError?.({
           error,
@@ -410,7 +410,10 @@ export async function resolveHTTPResponse<
         unstable_onChunk([index, body]);
       } catch (cause) {
         const path = paths[index];
-        const input = inputs[index];
+        const input = await opts.getInput({
+          isBatchCall,
+          batch: index,
+        });
         const { body } = caughtErrorToData(cause, {
           opts,
           ctx,

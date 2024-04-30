@@ -48,8 +48,8 @@
     "@playwright/test": "^1.26.1",
     "@types/node": "^20.10.0",
     "@types/react": "^18.3.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.1",
-    "@typescript-eslint/parser": "^7.0.1",
+    "@typescript-eslint/eslint-plugin": "^7.7.0",
+    "@typescript-eslint/parser": "^7.7.0",
     "autoprefixer": "^10.4.7",
     "dotenv": "^16.0.1",
     "eslint": "^8.56.0",
@@ -65,7 +65,7 @@
     "tsx": "^4.0.0",
     "typescript": "^5.4.0",
     "vite": "^5.1.0",
-    "vitest": "^1.2.2"
+    "vitest": "^1.5.2"
   },
   "publishConfig": {
     "access": "restricted"

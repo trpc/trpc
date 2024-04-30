@@ -32,6 +32,8 @@ export {
   type RouterRecord as TRPCRouterRecord,
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
   type ProcedureOptions as TRPCProcedureOptions,
+  type CreateContextCallback,
+  type WrapCreateContext,
   type MutationProcedure as TRPCMutationProcedure,
   type QueryProcedure as TRPCQueryProcedure,
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
@@ -102,3 +104,5 @@ export {
  */
 export type inferAsyncReturnType<TFunction extends (...args: any[]) => any> =
   Awaited<ReturnType<TFunction>>;
+
+export { parseOctetInput } from '../../unstable-core-do-not-import/contentTypeParsers';

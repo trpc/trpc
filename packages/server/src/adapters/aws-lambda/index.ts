@@ -24,6 +24,8 @@ import type {
   ResolveHTTPRequestOptionsContextFn,
 } from '../../@trpc/server/http';
 import { resolveHTTPResponse } from '../../@trpc/server/http';
+import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
+import { getLambdaHTTPJSONContentTypeHandler } from './content-type/json';
 import type {
   APIGatewayEvent,
   APIGatewayResult,
@@ -50,18 +52,10 @@ function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
     }
   }
 
-  let body: string | null | undefined;
-  if (event.body && event.isBase64Encoded) {
-    body = Buffer.from(event.body, 'base64').toString('utf8');
-  } else {
-    body = event.body;
-  }
-
   return {
     method: getHTTPMethod(event),
     query: query,
     headers: event.headers,
-    body: body,
   };
 }
 
@@ -109,18 +103,39 @@ export function awsLambdaRequestHandler<
   return async (event, context) => {
     const req = lambdaEventToHTTPRequest(event);
     const path = getPath(event);
+
     const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
       innerOpts,
     ) => {
       return await opts.createContext?.({ event, context, ...innerOpts });
     };
 
+    const [contentTypeHandler, unsupportedMediaTypeError] =
+      selectContentHandlerOrUnsupportedMediaType(
+        [getLambdaHTTPJSONContentTypeHandler<TRouter, TEvent>()],
+        {
+          ...opts,
+          event,
+          req,
+        },
+      );
+
     const response = await resolveHTTPResponse({
       ...opts,
       createContext,
       req,
       path,
-      error: null,
+      error: unsupportedMediaTypeError,
+      async getInput(info) {
+        return await contentTypeHandler?.getInputs(
+          {
+            ...opts,
+            event,
+            req,
+          },
+          info,
+        );
+      },
       onError(o) {
         opts?.onError?.({
           ...o,

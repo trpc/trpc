@@ -21,13 +21,9 @@ import {
   resolveHTTPResponse,
   toURL,
 } from '../../@trpc/server/http';
+import { selectContentHandlerOrUnsupportedMediaType } from '../content-handlers/selectContentHandlerOrUnsupportedMediaType';
+import { getFetchHTTPJSONContentTypeHandler } from './content-type/json';
 import type { FetchHandlerOptions } from './types';
-
-export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =
-  FetchHandlerOptions<TRouter> & {
-    req: Request;
-    endpoint: string;
-  };
 
 const trimSlashes = (path: string): string => {
   path = path.startsWith('/') ? path.slice(1) : path;
@@ -37,7 +33,7 @@ const trimSlashes = (path: string): string => {
 };
 
 export async function fetchRequestHandler<TRouter extends AnyRouter>(
-  opts: FetchHandlerRequestOptions<TRouter>,
+  opts: FetchHandlerOptions<TRouter>,
 ): Promise<Response> {
   const resHeaders = new Headers();
 
@@ -57,9 +53,6 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     query: url.searchParams,
     method: opts.req.method,
     headers: Object.fromEntries(opts.req.headers),
-    body: opts.req.headers.get('content-type')?.startsWith('application/json')
-      ? await opts.req.text()
-      : '',
   };
 
   let resolve: (value: Response) => void;
@@ -117,11 +110,30 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     }
   };
 
+  const [contentTypeHandler, unsupportedMediaTypeError] =
+    selectContentHandlerOrUnsupportedMediaType(
+      [getFetchHTTPJSONContentTypeHandler<TRouter>()],
+      {
+        ...opts,
+        url,
+      },
+    );
+
   resolveHTTPResponse({
     ...opts,
     req,
     createContext,
     path,
+    error: unsupportedMediaTypeError,
+    async getInput(info) {
+      return await contentTypeHandler?.getInputs(
+        {
+          ...opts,
+          url,
+        },
+        info,
+      );
+    },
     onError(o) {
       opts?.onError?.({ ...o, req: opts.req });
     },
