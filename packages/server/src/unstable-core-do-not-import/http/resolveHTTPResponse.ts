@@ -1,22 +1,21 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { getErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
-import type {
-  AnyRouter,
-  inferRouterContext,
-  inferRouterError,
+import {
+  callProcedure,
+  type AnyRouter,
+  type inferRouterContext,
+  type inferRouterError,
 } from '../router';
-import { callProcedure } from '../router';
 import type { TRPCResponse } from '../rpc';
 import { transformTRPCResponse } from '../transformer';
+import { getBatchStreamFormatter } from './batchStreamFormatter';
+import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
-  HTTPHeaders,
-  HTTPRequest,
-  HTTPResponse,
   ResolveHTTPRequestOptionsContextFn,
-  ResponseChunk,
   TRPCRequestInfo,
 } from './types';
 
@@ -28,61 +27,31 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
   POST: 'mutation',
 };
 
-type PartialBy<TBaseType, TKey extends keyof TBaseType> = Omit<
-  TBaseType,
-  TKey
-> &
-  Partial<Pick<TBaseType, TKey>>;
-
-interface ResolveHTTPRequestOptions<
-  TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
-> extends HTTPBaseHandlerOptions<TRouter, TRequest> {
+interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
+  extends HTTPBaseHandlerOptions<TRouter, Request> {
   createContext: ResolveHTTPRequestOptionsContextFn<TRouter>;
-  req: TRequest;
+  req: Request;
   path: string;
-  getInput: (opts: { isBatchCall: boolean; batch: number }) => Promise<unknown>;
-  error?: TRPCError;
   /**
-   * Called as soon as the response head is known.
-   * When streaming, headers will have been generated
-   * **without** knowing the response body.
-   *
-   * Without this callback, streaming is disabled.
+   * If the request had an issue before reaching the handler
    */
-  unstable_onHead: (
-    headResponse: Omit<HTTPResponse, 'body'>,
-    isStreaming: boolean,
-  ) => void;
-  /**
-   * Called for every procedure with `[index, result]`.
-   *
-   * Will be called a single time with `index = -1` if
-   * - response is an error
-   * - response is empty (HEAD request)
-   *
-   * Without this callback, streaming is disabled.
-   */
-  unstable_onChunk: (chunk: ResponseChunk) => void;
+  error: TRPCError | null;
 }
 
-function initResponse<
-  TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
->(initOpts: {
+function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   ctx: inferRouterContext<TRouter> | undefined;
-  paths: string[] | undefined;
+  info: TRPCRequestInfo | undefined;
   type: ProcedureType | 'unknown';
   responseMeta?: HTTPBaseHandlerOptions<TRouter, TRequest>['responseMeta'];
   untransformedJSON?:
     | TRPCResponse<unknown, inferRouterError<TRouter>>
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
     | undefined;
-  errors?: TRPCError[];
-}): HTTPResponse {
+  errors: TRPCError[];
+}) {
   const {
     ctx,
-    paths,
+    info,
     type,
     responseMeta,
     untransformedJSON,
@@ -90,9 +59,8 @@ function initResponse<
   } = initOpts;
 
   let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
-  const headers: HTTPHeaders = {
-    'Content-Type': 'application/json',
-  };
+
+  const headers = new Headers([['Content-Type', 'application/json']]);
 
   const eagerGeneration = !untransformedJSON;
   const data = eagerGeneration
@@ -104,15 +72,33 @@ function initResponse<
   const meta =
     responseMeta?.({
       ctx,
-      paths,
+      info,
+      paths: info?.calls.map((call) => call.path),
       type,
       data,
       errors,
       eagerGeneration,
     }) ?? {};
 
-  for (const [key, value] of Object.entries(meta.headers ?? {})) {
-    headers[key] = value;
+  if (meta.headers) {
+    if (meta.headers instanceof Headers) {
+      for (const [key, value] of meta.headers.entries()) {
+        headers.append(key, value);
+      }
+    } else {
+      /**
+       * @deprecated, delete in v12
+       */
+      for (const [key, value] of Object.entries(meta.headers)) {
+        if (Array.isArray(value)) {
+          for (const v of value) {
+            headers.append(key, v);
+          }
+        } else if (typeof value === 'string') {
+          headers.set(key, value);
+        }
+      }
+    }
   }
   if (meta.status) {
     status = meta.status;
@@ -124,14 +110,11 @@ function initResponse<
   };
 }
 
-function caughtErrorToData<
-  TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
->(
+function caughtErrorToData<TRouter extends AnyRouter>(
   cause: unknown,
   errorOpts: {
     opts: Pick<
-      ResolveHTTPRequestOptions<TRouter, TRequest>,
+      ResolveHTTPRequestOptions<TRouter>,
       'onError' | 'req' | 'router'
     >;
     ctx: inferRouterContext<TRouter> | undefined;
@@ -172,84 +155,50 @@ function caughtErrorToData<
   };
 }
 
-/**
- * Since `resolveHTTPResponse` is a public API (community adapters),
- * let's give it a strong type signature to increase discoverability.
- */
+export async function resolveResponse<TRouter extends AnyRouter>(
+  opts: ResolveHTTPRequestOptions<TRouter>,
+): Promise<Response> {
+  const { router, req } = opts;
 
-/**
- * Non-streaming signature for `resolveHTTPResponse`:
- * @param opts.unstable_onHead `undefined`
- * @param opts.unstable_onChunk `undefined`
- * @returns `Promise<HTTPResponse>`
- */
-export async function resolveHTTPResponse<
-  TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
->(
-  opts: Omit<
-    ResolveHTTPRequestOptions<TRouter, TRequest>,
-    'unstable_onChunk' | 'unstable_onHead'
-  >,
-): Promise<HTTPResponse>;
-/**
- * Streaming signature for `resolveHTTPResponse`:
- * @param opts.unstable_onHead called as soon as the response head is known
- * @param opts.unstable_onChunk called for every procedure with `[index, result]`
- * @returns `Promise<void>` since the response is streamed
- */
-export async function resolveHTTPResponse<
-  TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
->(opts: ResolveHTTPRequestOptions<TRouter, TRequest>): Promise<void>;
-// implementation
-export async function resolveHTTPResponse<
-  TRouter extends AnyRouter,
-  TRequest extends HTTPRequest,
->(
-  opts: PartialBy<
-    ResolveHTTPRequestOptions<TRouter, TRequest>,
-    'unstable_onChunk' | 'unstable_onHead'
-  >,
-): Promise<HTTPResponse | void> {
-  const { router, req, unstable_onHead, unstable_onChunk } = opts;
+  const url = new URL(req.url);
 
   if (req.method === 'HEAD') {
     // can be used for lambda warmup
-    const headResponse: HTTPResponse = {
+    return new Response(null, {
       status: 204,
-    };
-    unstable_onHead?.(headResponse, false);
-    unstable_onChunk?.([-1, '']);
-    return headResponse;
+    });
   }
   const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
-  const allowMethodOverride = opts.allowMethodOverride ?? false;
+  const allowMethodOverride =
+    (opts.allowMethodOverride ?? false) && req.method === 'POST';
 
   const type =
     HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  let paths: string[] | undefined;
+  let info: TRPCRequestInfo | undefined = undefined;
 
-  const isBatchCall = !!req.query.get('batch');
-  const isStreamCall =
-    isBatchCall &&
-    unstable_onHead &&
-    unstable_onChunk &&
-    req.headers['trpc-batch-mode'] === 'stream';
+  const isStreamCall = req.headers.get('trpc-batch-mode') === 'stream';
 
   try {
-    if (isBatchCall && !allowBatching) {
+    info = getRequestInfo({
+      req,
+      path: decodeURIComponent(opts.path),
+      config: router._def._config,
+      searchParams: url.searchParams,
+    });
+
+    // we create context early so that error handlers may access context information
+    ctx = await opts.createContext({
+      info,
+    });
+
+    if (opts.error) {
+      throw opts.error;
+    }
+    if (info.isBatchCall && !allowBatching) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: `Batching is not enabled on the server`,
-      });
-    }
-    /* istanbul ignore if -- @preserve */
-    if (type === 'subscription') {
-      throw new TRPCError({
-        message: 'Subscriptions should use wsLink',
-        code: 'METHOD_NOT_SUPPORTED',
       });
     }
     if (type === 'unknown') {
@@ -259,42 +208,16 @@ export async function resolveHTTPResponse<
       });
     }
 
-    paths = isBatchCall
-      ? decodeURIComponent(opts.path).split(',')
-      : [opts.path];
-    const info: TRPCRequestInfo = {
-      isBatchCall,
-      calls: paths.map((path) => ({
-        path,
-        type,
-      })),
-    };
-    ctx = await opts.createContext({ info });
-
     const errors: TRPCError[] = [];
 
     const promises: Promise<
       TRPCResponse<unknown, inferRouterError<TRouter>>
-    >[] = paths.map(async (path, index) => {
-      async function getRawInput() {
-        return await opts.getInput({
-          isBatchCall,
-          batch: index,
-        });
-      }
-
+    >[] = info.calls.map(async (call) => {
       try {
-        if (opts.error) {
-          // sometimes an error may be generated above this function in the stack
-          // for instance a 405 error if the method is not supported
-          // But we need to handle it here to ensure the error is formatted correctly
-          throw opts.error;
-        }
-
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
-          path,
-          getRawInput: getRawInput,
+          path: call.path,
+          getRawInput: call.getRawInput,
           ctx,
           type,
           allowMethodOverride,
@@ -307,18 +230,11 @@ export async function resolveHTTPResponse<
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         errors.push(error);
-
-        let input: unknown;
-        try {
-          input = await getRawInput();
-        } catch (e) {
-          // if `getRawInput` fails, we can't include the input in the error
-          input = undefined;
-        }
+        const input = call.result();
 
         opts.onError?.({
           error,
-          path,
+          path: call.path,
           input,
           ctx,
           type: type,
@@ -330,14 +246,13 @@ export async function resolveHTTPResponse<
             config: opts.router._def._config,
             error,
             type,
-            path,
+            path: call.path,
             input,
             ctx,
           }),
         };
       }
     });
-
     if (!isStreamCall) {
       /**
        * Non-streaming response:
@@ -347,31 +262,33 @@ export async function resolveHTTPResponse<
        */
 
       const untransformedJSON = await Promise.all(promises);
+      const errors = untransformedJSON.flatMap((response) =>
+        'error' in response ? [response.error] : [],
+      );
 
       const headResponse = initResponse({
         ctx,
-        paths,
+        info,
         type,
         responseMeta: opts.responseMeta,
         untransformedJSON,
         errors,
       });
-      unstable_onHead?.(headResponse, false);
 
       // return body stuff
-      const result = isBatchCall ? untransformedJSON : untransformedJSON[0]!; // eslint-disable-line @typescript-eslint/no-non-null-assertion -- `untransformedJSON` should be the length of `paths` which should be at least 1 otherwise there wouldn't be a request at all
+      const result = info.isBatchCall
+        ? untransformedJSON
+        : untransformedJSON[0]!;
       const transformedJSON = transformTRPCResponse(
         router._def._config,
         result,
       );
       const body = JSON.stringify(transformedJSON);
-      unstable_onChunk?.([-1, body]);
 
-      return {
+      return new Response(body, {
         status: headResponse.status,
         headers: headResponse.headers,
-        body,
-      };
+      });
     }
 
     /**
@@ -382,50 +299,62 @@ export async function resolveHTTPResponse<
      */
     const headResponse = initResponse({
       ctx,
-      paths,
+      info,
       type,
       responseMeta: opts.responseMeta,
+      errors: [],
     });
-    unstable_onHead(headResponse, true);
 
-    const indexedPromises = new Map(
-      promises.map((promise, index) => [
-        index,
-        promise.then((r) => [index, r] as const),
-      ]),
-    );
-    for (const _ of paths) {
-      const [index, untransformedJSON] = await Promise.race(
-        indexedPromises.values(),
+    const encoder = new TextEncoderStream();
+    const stream = encoder.readable;
+    const controller = encoder.writable.getWriter();
+    async function exec() {
+      const indexedPromises = new Map(
+        promises.map((promise, index) => [
+          index,
+          promise.then((r) => [index, r] as const),
+        ]),
       );
-      indexedPromises.delete(index);
+      const formatter = getBatchStreamFormatter();
 
-      try {
-        const transformedJSON = transformTRPCResponse(
-          router._def._config,
-          untransformedJSON,
+      while (indexedPromises.size > 0) {
+        const [index, untransformedJSON] = await Promise.race(
+          indexedPromises.values(),
         );
-        const body = JSON.stringify(transformedJSON);
+        indexedPromises.delete(index);
 
-        unstable_onChunk([index, body]);
-      } catch (cause) {
-        const path = paths[index];
-        const input = await opts.getInput({
-          isBatchCall,
-          batch: index,
-        });
-        const { body } = caughtErrorToData(cause, {
-          opts,
-          ctx,
-          type,
-          path,
-          input,
-        });
+        try {
+          const transformedJSON = transformTRPCResponse(
+            router._def._config,
+            untransformedJSON,
+          );
+          const body = JSON.stringify(transformedJSON);
 
-        unstable_onChunk([index, body]);
+          await controller.write(formatter(index, body));
+        } catch (cause) {
+          const call = info!.calls[index]!;
+          const input = call.result();
+          const { body } = caughtErrorToData(cause, {
+            opts,
+            ctx,
+            type,
+            path: call.path,
+            input,
+          });
+
+          await controller.write(formatter(index, body));
+        }
       }
+
+      await controller.write(formatter.end());
+      await controller.close();
     }
-    return;
+    exec().catch((err) => controller.abort(err));
+
+    return new Response(stream, {
+      headers: headResponse.headers,
+      status: headResponse.status,
+    });
   } catch (cause) {
     // we get here if
     // - batching is called when it's not enabled
@@ -442,20 +371,16 @@ export async function resolveHTTPResponse<
 
     const headResponse = initResponse({
       ctx,
-      paths,
+      info,
       type,
       responseMeta: opts.responseMeta,
       untransformedJSON,
       errors: [error],
     });
-    unstable_onHead?.(headResponse, false);
 
-    unstable_onChunk?.([-1, body]);
-
-    return {
+    return new Response(body, {
       status: headResponse.status,
       headers: headResponse.headers,
-      body,
-    };
+    });
   }
 }

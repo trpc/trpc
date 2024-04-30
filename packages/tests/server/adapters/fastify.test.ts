@@ -69,7 +69,7 @@ function createAppRouter() {
     helloMutation: publicProcedure
       .input(z.string())
       .mutation(({ input }) => `hello ${input}`),
-    ['post.edit']: publicProcedure
+    editPost: publicProcedure
       .input(
         z.object({
           id: z.string(),
@@ -328,7 +328,7 @@ describe('anonymous user', () => {
 
   test('mutation', async () => {
     expect(
-      await app.client['post.edit'].mutate({
+      await app.client.editPost.mutate({
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),
@@ -475,17 +475,16 @@ describe('authorized user', () => {
         "calls": Array [
           Object {
             "path": "request.info",
-            "type": "query",
           },
         ],
         "isBatchCall": true,
       }
-  `);
+    `);
   });
 
   test('mutation', async () => {
     expect(
-      await app.client['post.edit'].mutate({
+      await app.client.editPost.mutate({
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),
@@ -509,11 +508,7 @@ describe('anonymous user with fastify-plugin', () => {
   });
 
   test('fetch GET', async () => {
-    const req = await fetch(`http://localhost:${app.url.port}/hello`, {
-      headers: {
-        'content-type': 'application/json',
-      },
-    });
+    const req = await fetch(`http://localhost:${app.url.port}/hello`);
     expect(await req.json()).toEqual({ hello: 'GET' });
   });
 

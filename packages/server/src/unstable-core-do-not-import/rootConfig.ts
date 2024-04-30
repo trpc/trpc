@@ -97,13 +97,3 @@ export type CreateContextCallback<
     createContext: TFunction;
   }
 >;
-
-/**
- * @internal
- */
-export type WrapCreateContext<TFunction extends (...args: any[]) => any> = {
-  /**
-   * @link https://trpc.io/docs/v11/context
-   **/
-  createContext?: TFunction;
-};

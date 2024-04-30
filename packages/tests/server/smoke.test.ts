@@ -53,7 +53,7 @@ test('untyped client - happy path with input', async () => {
   await close();
 });
 
-test('very happy path', async () => {
+test('very happy path - query', async () => {
   const greeting = t.procedure
     .input(z.string())
     .use(({ next }) => {
@@ -70,6 +70,26 @@ test('very happy path', async () => {
   }
   const { client, close } = routerToServerAndClientNew(router);
   expect(await client.greeting.query('KATT')).toBe('hello KATT');
+  await close();
+});
+
+test('very happy path - mutation', async () => {
+  const greeting = t.procedure
+    .input(z.string())
+    .use(({ next }) => {
+      return next();
+    })
+    .mutation(({ input }) => `hello ${input}`);
+  const router = t.router({
+    greeting,
+  });
+
+  {
+    type TContext = inferProcedureOutput<typeof greeting>;
+    expectTypeOf<TContext>().toMatchTypeOf<string>();
+  }
+  const { client, close } = routerToServerAndClientNew(router);
+  expect(await client.greeting.mutate('KATT')).toBe('hello KATT');
   await close();
 });
 

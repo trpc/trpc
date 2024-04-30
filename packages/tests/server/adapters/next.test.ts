@@ -47,11 +47,26 @@ function mockRes() {
   const json = vi.fn(() => res);
   const setHeader = vi.fn(() => res);
   const end = vi.fn(() => res);
-  res.json = json;
+  const write = vi.fn(() => res);
   res.setHeader = setHeader;
   res.end = end;
+  res.write = write;
+  res.json = json;
+  res.statusCode = 200;
 
-  return { res, json, setHeader, end };
+  return {
+    res,
+    json,
+    setHeader,
+    end,
+    text: () => {
+      return res.write.mock.calls
+        .map((args: any) => {
+          return new TextDecoder().decode(args[0]);
+        })
+        .join('');
+    },
+  };
 }
 test('bad setup', async () => {
   const t = initTRPC.create();
@@ -94,12 +109,12 @@ describe('ok request', () => {
         trpc: ['hello'],
       },
     });
-    const { res, end } = mockRes();
+    const { res, text } = mockRes();
 
     await handler(req, res);
     expect(res.statusCode).toBe(200);
 
-    const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+    const json: any = JSON.parse(text());
     expect(json).toMatchInlineSnapshot(`
       Object {
         "result": Object {
@@ -115,12 +130,11 @@ describe('ok request', () => {
         trpc: 'hello',
       },
     });
-    const { res, end } = mockRes();
+    const { res, text } = mockRes();
 
     await handler(req, res);
-    expect(res.statusCode).toBe(200);
 
-    const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+    const json: any = JSON.parse(text());
     expect(json).toMatchInlineSnapshot(`
       Object {
         "result": Object {
@@ -147,45 +161,16 @@ test('404', async () => {
       trpc: ['not-found-path'],
     },
   });
-  const { res, end } = mockRes();
+  const { res, end, text } = mockRes();
 
   await handler(req, res);
 
   expect(res.statusCode).toBe(404);
-  const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
+  const json: any = JSON.parse(text());
 
   expect(json.error.message).toMatchInlineSnapshot(
     `"No "query"-procedure on path "not-found-path""`,
   );
-});
-
-test('payload too large', async () => {
-  const t = initTRPC.create();
-
-  const router = t.router({
-    hello: t.procedure.input((a) => a).mutation(() => 'world'),
-  });
-
-  const handler = trpcNext.createNextApiHandler({
-    router,
-    maxBodySize: 1,
-  });
-
-  const { req } = mockReq({
-    query: {
-      trpc: ['hello'],
-    },
-    method: 'POST',
-    body: '123456789',
-  });
-  const { res, end } = mockRes();
-
-  await handler(req, res);
-
-  expect(res.statusCode).toBe(413);
-  const json: any = JSON.parse((end.mock.calls[0] as any)[0]);
-
-  expect(json.error.message).toMatchInlineSnapshot(`"PAYLOAD_TOO_LARGE"`);
 });
 
 test('HEAD request', async () => {

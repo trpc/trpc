@@ -52,7 +52,6 @@ export default defineConfig({
         // FIXME: delete me once they're stable
         '**/next/src/app-dir/**',
         '**/server/src/adapters/next-app-dir/**',
-        '**/adapters/node-http/content-type/form-data/**',
       ],
     },
     poolOptions: {

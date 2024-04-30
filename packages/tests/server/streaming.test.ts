@@ -1,4 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
+import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import { unstable_httpBatchStreamLink } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
@@ -9,10 +10,14 @@ import { z } from 'zod';
 
 describe('no transformer', () => {
   const orderedResults: number[] = [];
+
   const ctx = konn()
     .beforeEach(() => {
       const t = initTRPC.create({});
       orderedResults.length = 0;
+
+      const manualRelease = new Map<number, () => void>();
+
       const router = t.router({
         deferred: t.procedure
           .input(
@@ -29,6 +34,19 @@ describe('no transformer', () => {
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
+
+        manualRelease: t.procedure
+          .input(
+            z.object({
+              id: z.number(),
+            }),
+          )
+          .query(async (opts) => {
+            await new Promise<void>((resolve) => {
+              manualRelease.set(opts.input.id, resolve);
+            });
+            return opts.input.id;
+          }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -62,7 +80,10 @@ describe('no transformer', () => {
           };
         },
       });
-      return opts;
+      return {
+        ...opts,
+        manualRelease,
+      };
     })
     .afterEach(async (opts) => {
       await opts?.close?.();
@@ -83,6 +104,51 @@ describe('no transformer', () => {
     // streaming preserves response order
     expect(orderedResults).toEqual([1, 2, 3]);
   });
+
+  test('out-of-order streaming with manual release', async () => {
+    const { client } = ctx;
+    const resolved: Record<number, boolean> = {
+      0: false,
+      1: false,
+      2: false,
+    };
+
+    const promises = [
+      client.manualRelease.query({ id: 0 }).then((v) => {
+        resolved[0] = true;
+        return v;
+      }),
+      client.manualRelease.query({ id: 1 }).then((v) => {
+        resolved[1] = true;
+        return v;
+      }),
+      client.manualRelease.query({ id: 2 }).then((v) => {
+        resolved[2] = true;
+        return v;
+      }),
+    ] as const;
+
+    await waitFor(() => {
+      expect(ctx.manualRelease.size).toBe(3);
+    });
+
+    // release 1
+    ctx.manualRelease.get(1)!();
+    await waitFor(() => {
+      expect(resolved[1]).toBe(true);
+      expect(resolved[0]).toBe(false);
+      expect(resolved[2]).toBe(false);
+    });
+
+    // release 0 + 2
+    ctx.manualRelease.get(0)!();
+    ctx.manualRelease.get(2)!();
+
+    expect(ctx.createContextSpy).toHaveBeenCalledTimes(1);
+
+    await Promise.all(promises);
+  });
+
   test('out-of-order streaming with error', async () => {
     const { client } = ctx;
 
