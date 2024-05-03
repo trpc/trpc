@@ -245,7 +245,7 @@ class AsyncError extends Error {
     super('Received error from server');
   }
 }
-export async function createJsonBatchStreamConsumer<T>(opts: {
+export async function createJsonBatchStreamConsumer<THead>(opts: {
   from: ReadableStream<AllowSharedBufferSource | string>;
   deserialize?: Deserialize;
 }) {
@@ -410,7 +410,7 @@ export async function createJsonBatchStreamConsumer<T>(opts: {
       void walkValues();
 
       return {
-        head: newHead as T,
+        head: newHead as THead,
         controllers,
         reader,
       };
