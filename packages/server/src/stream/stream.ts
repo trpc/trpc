@@ -265,16 +265,26 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
   const acc = lineAccumulator();
 
   type ControllerChunk = ChunkData | StreamInterruptedError;
-  const controllers = new Map<
+  const chunkStreams = new Map<
     ChunkIndex,
-    ReadableStreamDefaultController<ControllerChunk>
+    ReturnType<typeof createReadableStream<ControllerChunk>>
   >();
+
+  const upsertChunkStream = (chunkId: ChunkIndex) => {
+    const controller = chunkStreams.get(chunkId);
+    if (controller) {
+      return controller;
+    }
+    const chunk = createReadableStream<ControllerChunk>();
+    chunkStreams.set(chunkId, chunk);
+    return chunk;
+  };
 
   function morphValue(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const [stream, controller] = createReadableStream<ControllerChunk>();
-    controllers.set(chunkId, controller);
+    const [stream] = upsertChunkStream(chunkId);
+
     switch (type) {
       case ChunkValueType.PROMISE: {
         return new Promise((resolve, reject) => {
@@ -305,7 +315,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
             .catch(reject)
             .finally(() => {
               // reader.releaseLock();
-              controllers.delete(chunkId);
+              chunkStreams.delete(chunkId);
             });
         });
       }
@@ -329,10 +339,10 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
                   yield parseValue(data);
                   break;
                 case IterableStatus.DONE:
-                  controllers.delete(chunkId);
+                  chunkStreams.delete(chunkId);
                   return;
                 case IterableStatus.ERROR:
-                  controllers.delete(chunkId);
+                  chunkStreams.delete(chunkId);
                   throw new AsyncError(data);
               }
             }
@@ -360,11 +370,11 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
 
   async function kill() {
     try {
-      for (const controller of controllers.values()) {
+      for (const [_, controller] of chunkStreams.values()) {
         controller.enqueue(new StreamInterruptedError());
       }
 
-      controllers.clear();
+      chunkStreams.clear();
       await reader.cancel();
     } catch (error) {
       // TODO: log error
@@ -381,9 +391,9 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
             line.substring(1),
           ),
         );
-        // console.log('chunk', chunk);
+
         const [idx] = chunk;
-        const controller = controllers.get(idx)!;
+        const [_stream, controller] = upsertChunkStream(idx);
         controller.enqueue(chunk);
       }
       const { done, value } = await reader.read();
@@ -417,12 +427,16 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
         newHead[Number(key)] = parsed;
       }
 
-      walkValues().catch(kill);
+      walkValues().catch(() => {
+        // FIXME
+        // console.error('Error walking values', error);
+        return kill();
+      });
 
       return [
         newHead as THead,
         {
-          controllers,
+          controllers: chunkStreams,
           reader,
         },
       ] satisfies [THead, unknown];
