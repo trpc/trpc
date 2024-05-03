@@ -1,6 +1,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { isObject } from '../unstable-core-do-not-import/utils';
-import { isAsyncIterable } from './utils/isAsyncIterable';
+
+function isAsyncIterable<TValue>(
+  value: unknown,
+): value is AsyncIterable<TValue> {
+  return (
+    value != null && typeof value == 'object' && Symbol.asyncIterator in value
+  );
+}
 
 type ChunkIndex = number & { __chunkIndex: true };
 enum ChunkValueType {

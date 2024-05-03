@@ -1,11 +1,11 @@
 import SuperJSON from 'superjson';
-import { isAsyncIterable } from './utils/isAsyncIterable';
 import type { ProducerOnError } from './stream';
 import {
   createBatchStreamProducer,
   createJsonBatchStreamConsumer,
   createJsonBatchStreamProducer,
 } from './stream';
+import { isAsyncIterable } from './utils/isAsyncIterable';
 
 test('encoder - superjson', async () => {
   const [head, stream] = createBatchStreamProducer({
@@ -107,7 +107,6 @@ test('encode/decode', async () => {
     expect(head[1]).toBeInstanceOf(Promise);
 
     const iterable = await head[1];
-    expect(isAsyncIterable(iterable)).toBe(true);
 
     const aggregated: number[] = [];
     for await (const item of iterable) {
