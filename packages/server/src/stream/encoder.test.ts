@@ -27,14 +27,16 @@ enum IterableStatus {
   ERROR = 2,
 }
 
+type AsyncPropsPath =
+  // root should be replaced
+  | null
+  // at array path
+  | number
+  // at key path
+  | string;
 type AsyncProps = [
   // key
-  path:  // root
-    | null
-    // at array path
-    | number
-    // at key path
-    | string,
+  path: AsyncPropsPath,
   type: ChunkValueType,
   chunkId: ChunkIndex,
 ];
@@ -56,44 +58,7 @@ type IterableChunk =
   | [chunkIndex: ChunkIndex, status: IterableStatus.ERROR, error: unknown];
 
 type ChunkData = PromiseChunk | IterableChunk;
-type Envelope = [Head, ...ChunkData[]];
 type PlaceholderValue = 0 & { __placeholder: true };
-
-// const exampleEnvelope: Envelope = [
-//   // first comes the head that describes the data
-//   {
-//     0: [
-//       {
-//         foo: 'bar',
-//         deferred: null,
-//       },
-//       [
-//         [
-//           // path
-//           'deferred',
-//           ChunkValueType.PROMISE,
-//           0,
-//         ],
-//       ],
-//     ],
-//     1: [
-//       // shape is null because it's an iterable
-//       null,
-//       [
-//         [
-//           // path is null because it's at the root
-//           null,
-//           ChunkValueType.ITERABLE,
-//           1,
-//         ],
-//       ],
-//     ],
-//   },
-//   // then comes the data
-//   [0, PromiseStatus.FULFILLED, 42],
-//   [1, IterableStatus.VALUE, 1],
-//   [1, IterableStatus.DONE],
-// ];
 
 function isAsyncIterable<TValue>(
   value: unknown,
@@ -264,8 +229,9 @@ function lineAccumulator() {
 
   return {
     lines,
-    push(chunk: string) {
-      accumulator += chunk;
+    push(chunk: AllowSharedBufferSource | string) {
+      accumulator +=
+        typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk);
 
       const parts = accumulator.split('\n');
       accumulator = parts.pop() ?? '';
@@ -274,8 +240,13 @@ function lineAccumulator() {
   };
 }
 
+class StreamInterruptedError extends Error {
+  constructor() {
+    super('Stream interrupted');
+  }
+}
 async function createJsonBatchStreamConsumer<T>(opts: {
-  from: ReadableStream<string>;
+  from: ReadableStream<AllowSharedBufferSource | string>;
   deserialize?: Deserialize;
 }) {
   const { deserialize = (v) => v } = opts;
@@ -283,15 +254,17 @@ async function createJsonBatchStreamConsumer<T>(opts: {
 
   const reader = opts.from.getReader();
   const acc = lineAccumulator();
+
+  type ControllerChunk = ChunkData | StreamInterruptedError;
   const controllers = new Map<
     ChunkIndex,
-    ReadableStreamDefaultController<ChunkData>
+    ReadableStreamDefaultController<ControllerChunk>
   >();
 
   function morphValue(value: AsyncProps) {
     const [_path, type, chunkId] = value;
 
-    const [stream, controller] = createReadableStream<ChunkData>();
+    const [stream, controller] = createReadableStream<ControllerChunk>();
     controllers.set(chunkId, controller);
     switch (type) {
       case ChunkValueType.PROMISE: {
@@ -305,7 +278,11 @@ async function createJsonBatchStreamConsumer<T>(opts: {
                 reject(new Error('Promise chunk ended without value'));
                 return;
               }
-              const value = it.value as PromiseChunk;
+              if (it.value instanceof StreamInterruptedError) {
+                reject(it.value);
+                return;
+              }
+              const value = it.value;
               const [_chunkId, status, data] = value;
               switch (status) {
                 case PromiseStatus.FULFILLED:
@@ -331,6 +308,10 @@ async function createJsonBatchStreamConsumer<T>(opts: {
               if (done) {
                 break;
               }
+              if (value instanceof StreamInterruptedError) {
+                throw value;
+              }
+
               const [_chunkId, status, data] = value as IterableChunk;
 
               switch (status) {
@@ -367,13 +348,17 @@ async function createJsonBatchStreamConsumer<T>(opts: {
   }
 
   async function kill() {
+    for (const controller of controllers.values()) {
+      controller.enqueue(new StreamInterruptedError());
+    }
+
+    controllers.clear();
     await reader.cancel();
   }
   async function walkValues() {
     while (true) {
       while (acc.lines.length >= 2) {
         const line = acc.lines.shift()!;
-        // console.log('line', line);
 
         if (line === ']') {
           await kill();
@@ -466,36 +451,33 @@ test('encoder - superjson', async () => {
 
   expect(head).toMatchInlineSnapshot(`
     Object {
-      "0": Array [
-        Array [
-          Object {
-            "deferred": 0,
-            "foo": Object {
-              "json": "bar",
-            },
-          },
+      "json": Object {
+        "0": Array [
+          Array [
+            0,
+          ],
+          Array [
+            null,
+            0,
+            0,
+          ],
         ],
-        Array [
-          "deferred",
-          0,
-          0,
+        "1": Array [
+          Array [
+            0,
+          ],
+          Array [
+            null,
+            0,
+            1,
+          ],
         ],
-      ],
-      "1": Array [
-        Array [
-          0,
-        ],
-        Array [
-          null,
-          0,
-          1,
-        ],
-      ],
+      },
     }
   `);
 });
 
-test.only('encode/decode', async () => {
+test('encode/decode', async () => {
   const data = {
     0: Promise.resolve({
       foo: {
