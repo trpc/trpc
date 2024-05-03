@@ -38,11 +38,21 @@ type Value = [
 type Head = Record<number, Value>;
 type PromiseChunk =
   | [chunkIndex: ChunkIndex, status: PromiseStatus.FULFILLED, value: Value]
-  | [chunkIndex: ChunkIndex, status: PromiseStatus.REJECTED, error?: unknown];
+  | [
+      chunkIndex: ChunkIndex,
+      status: PromiseStatus.REJECTED,
+      // do we want to serialize errors?
+      // , error?: unknown
+    ];
 type IterableChunk =
   | [chunkIndex: ChunkIndex, status: IterableStatus.DONE]
   | [chunkIndex: ChunkIndex, status: IterableStatus.VALUE, value: Value]
-  | [chunkIndex: ChunkIndex, status: IterableStatus.ERROR, error?: unknown];
+  | [
+      chunkIndex: ChunkIndex,
+      status: IterableStatus.ERROR,
+      // do we want to serialize errors?
+      // , error?: unknown
+    ];
 
 type ChunkData = PromiseChunk | IterableChunk;
 type PlaceholderValue = 0 & { __placeholder: true };
@@ -567,7 +577,6 @@ test('encode/decode - error', async () => {
 
   const errors: unknown[] = [];
 
-  type Args = Parameters<ProducerOnError>;
   const onErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
 
   const stream = createJsonBatchStreamProducer({
@@ -610,6 +619,9 @@ test('encode/decode - error', async () => {
     expect(aggregated).toEqual([1, 2, 3]);
 
     expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchInlineSnapshot(
+      `[Error: Received error from server]`,
+    );
   }
 
   expect(onErrorSpy).toHaveBeenCalledTimes(2);
