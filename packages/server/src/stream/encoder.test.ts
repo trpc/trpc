@@ -1,14 +1,3 @@
-/*
-given {
-    0: {
-        foo: "bar",
-        deferred: Promise<number>,
-    }
-    1: AsyncIterable<number>,
-}
-*/
-
-import { inspect } from 'util';
 import SuperJSON from 'superjson';
 import { isObject } from '../unstable-core-do-not-import/utils';
 
@@ -137,7 +126,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     void (async () => {
       try {
         for await (const item of iterable) {
-          controller.enqueue([idx, IterableStatus.VALUE, getValue(item)]);
+          controller.enqueue([idx, IterableStatus.VALUE, getValue(item, path)]);
         }
         controller.enqueue([idx, IterableStatus.DONE]);
       } catch (error) {
