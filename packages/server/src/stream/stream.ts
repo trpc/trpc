@@ -1,5 +1,6 @@
-import SuperJSON from 'superjson';
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { isObject } from '../unstable-core-do-not-import/utils';
+import { isAsyncIterable } from './isAsyncIterable';
 
 type ChunkIndex = number & { __chunkIndex: true };
 enum ChunkValueType {
@@ -15,7 +16,6 @@ enum IterableStatus {
   DONE = 1,
   ERROR = 2,
 }
-
 type AsyncPropsPath =
   // root should be replaced
   | null
@@ -53,17 +53,8 @@ type IterableChunk =
       // do we want to serialize errors?
       // , error?: unknown
     ];
-
 type ChunkData = PromiseChunk | IterableChunk;
 type PlaceholderValue = 0 & { __placeholder: true };
-
-function isAsyncIterable<TValue>(
-  value: unknown,
-): value is AsyncIterable<TValue> {
-  return (
-    value != null && typeof value == 'object' && Symbol.asyncIterator in value
-  );
-}
 function isPromise(value: unknown): value is Promise<unknown> {
   return value instanceof Promise;
 }
@@ -79,20 +70,19 @@ export function createReadableStream<TValue = unknown>() {
 
   return [stream, controller] as const;
 }
-
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
 
-type ProducerOnError = (opts: {
+export type ProducerOnError = (opts: {
   error: unknown;
   path: (string | number)[];
 }) => void;
-interface ProducerOptions {
+export interface ProducerOptions {
   serialize?: Serialize;
   data: Record<number, unknown>;
   onError?: ProducerOnError;
 }
-function createBatchStreamProducer(opts: ProducerOptions) {
+export function createBatchStreamProducer(opts: ProducerOptions) {
   const { data } = opts;
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
@@ -198,48 +188,37 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   const serialize = opts.serialize;
   if (serialize) {
     const head = serialize(newHead) as Head;
-    // transform the stream to deserialize each enqueued chunk
-    const [newStream, newController] = createReadableStream<ChunkData>();
-    stream.pipeTo(
-      new WritableStream({
-        write(chunk) {
-          newController.enqueue(serialize(chunk));
-        },
-        close() {
-          newController.close();
-        },
-      }),
-    );
-    return [head, newStream] as const;
+
+    const transformStream = new TransformStream<ChunkData, ChunkData>({
+      transform(chunk, controller) {
+        controller.enqueue(serialize(chunk));
+      },
+    });
+    return [head, stream.pipeThrough(transformStream)] as const;
   }
 
   return [newHead, stream] as const;
 }
-function createJsonBatchStreamProducer(opts: ProducerOptions) {
+export function createJsonBatchStreamProducer(opts: ProducerOptions) {
   const [sourceHead, sourceStream] = createBatchStreamProducer(opts);
 
-  const [stream, controller] = createReadableStream<string>();
-
-  controller.enqueue('[\n');
-  controller.enqueue(JSON.stringify(sourceHead) + '\n');
-
-  sourceStream.pipeTo(
-    new WritableStream({
-      write(chunk) {
+  return sourceStream.pipeThrough(
+    new TransformStream({
+      start(controller) {
+        controller.enqueue('[\n');
+        controller.enqueue(JSON.stringify(sourceHead) + '\n');
+      },
+      transform(chunk, controller) {
         controller.enqueue(',');
         controller.enqueue(JSON.stringify(chunk));
         controller.enqueue('\n');
       },
-      close() {
+      flush(controller) {
         controller.enqueue(']\n');
-        controller.close();
       },
     }),
   );
-
-  return stream;
 }
-
 function lineAccumulator() {
   let accumulator = '';
   const lines: string[] = [];
@@ -256,7 +235,6 @@ function lineAccumulator() {
     },
   };
 }
-
 class StreamInterruptedError extends Error {
   constructor() {
     super('Stream interrupted');
@@ -267,7 +245,7 @@ class AsyncError extends Error {
     super('Received error from server');
   }
 }
-async function createJsonBatchStreamConsumer<T>(opts: {
+export async function createJsonBatchStreamConsumer<T>(opts: {
   from: ReadableStream<AllowSharedBufferSource | string>;
   deserialize?: Deserialize;
 }) {
@@ -394,7 +372,6 @@ async function createJsonBatchStreamConsumer<T>(opts: {
           ),
         );
         // console.log('chunk', chunk);
-
         const [idx] = chunk;
         const controller = controllers.get(idx)!;
         controller.enqueue(chunk);
@@ -442,208 +419,3 @@ async function createJsonBatchStreamConsumer<T>(opts: {
 
   throw new Error("Can't parse head");
 }
-
-test('encoder - superjson', async () => {
-  const [head, stream] = createBatchStreamProducer({
-    data: {
-      0: Promise.resolve({
-        foo: 'bar',
-        deferred: Promise.resolve(42),
-      }),
-      1: Promise.resolve({
-        [Symbol.asyncIterator]: async function* () {
-          yield 1;
-          yield 2;
-          yield 3;
-        },
-      }),
-    },
-    serialize: SuperJSON.serialize,
-  });
-
-  const reader = stream.getReader();
-  const chunks: ChunkData[] = [];
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-    chunks.push(value);
-  }
-
-  expect(head).toMatchInlineSnapshot(`
-    Object {
-      "json": Object {
-        "0": Array [
-          Array [
-            0,
-          ],
-          Array [
-            null,
-            0,
-            0,
-          ],
-        ],
-        "1": Array [
-          Array [
-            0,
-          ],
-          Array [
-            null,
-            0,
-            1,
-          ],
-        ],
-      },
-    }
-  `);
-});
-
-test('encode/decode', async () => {
-  const data = {
-    0: Promise.resolve({
-      foo: {
-        bar: {
-          baz: 'qux',
-        },
-      },
-      deferred: Promise.resolve(42),
-    }),
-    1: Promise.resolve({
-      [Symbol.asyncIterator]: async function* () {
-        yield 1;
-        yield 2;
-        yield 3;
-      },
-    }),
-  } as const;
-  const stream = createJsonBatchStreamProducer({
-    data,
-    serialize: (v) => SuperJSON.serialize(v),
-  });
-
-  const res = await createJsonBatchStreamConsumer<typeof data>({
-    from: stream,
-    deserialize: (v) => SuperJSON.deserialize(v),
-  });
-  const head = res.head;
-
-  // console.log(inspect(head, undefined, 10));
-  {
-    expect(head[0]).toBeInstanceOf(Promise);
-
-    const value = await head[0];
-    expect(value.deferred).toBeInstanceOf(Promise);
-
-    await expect(value.deferred).resolves.toBe(42);
-
-    expect(value.foo.bar.baz).toBe('qux');
-  }
-  {
-    expect(head[1]).toBeInstanceOf(Promise);
-
-    const iterable = await head[1];
-    expect(isAsyncIterable(iterable)).toBe(true);
-
-    const aggregated: number[] = [];
-    for await (const item of iterable) {
-      aggregated.push(item);
-    }
-    expect(aggregated).toEqual([1, 2, 3]);
-  }
-  await res.reader.closed;
-  expect(res.controllers.size).toBe(0);
-});
-
-test('encode/decode - error', async () => {
-  const data = {
-    0: Promise.resolve({
-      foo: {
-        bar: {
-          baz: 'qux',
-        },
-      },
-      deferred: Promise.reject(new Error('promise')),
-    }),
-    1: Promise.resolve({
-      [Symbol.asyncIterator]: async function* () {
-        yield 1;
-        yield 2;
-        yield 3;
-        throw new Error('iterable');
-      },
-    }),
-  } as const;
-
-  const errors: unknown[] = [];
-
-  const onErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
-
-  const stream = createJsonBatchStreamProducer({
-    data,
-    serialize: (v) => SuperJSON.serialize(v),
-    onError: onErrorSpy,
-  });
-
-  const res = await createJsonBatchStreamConsumer<typeof data>({
-    from: stream,
-    deserialize: (v) => SuperJSON.deserialize(v),
-  });
-
-  const head = res.head;
-
-  {
-    expect(head[0]).toBeInstanceOf(Promise);
-
-    const value = await head[0];
-    expect(value.deferred).toBeInstanceOf(Promise);
-
-    await expect(value.deferred).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[Error: Received error from server]`,
-    );
-  }
-  {
-    expect(head[1]).toBeInstanceOf(Promise);
-
-    const iterable = await head[1];
-    expect(isAsyncIterable(iterable)).toBe(true);
-
-    const aggregated: number[] = [];
-    try {
-      for await (const item of iterable) {
-        aggregated.push(item);
-      }
-    } catch (err) {
-      errors.push(err);
-    }
-    expect(aggregated).toEqual([1, 2, 3]);
-
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toMatchInlineSnapshot(
-      `[Error: Received error from server]`,
-    );
-  }
-
-  expect(onErrorSpy).toHaveBeenCalledTimes(2);
-  expect(onErrorSpy.mock.calls).toMatchInlineSnapshot(`
-    Array [
-      Array [
-        Object {
-          "error": [Error: promise],
-          "path": Array [
-            "0",
-            "deferred",
-          ],
-        },
-      ],
-      Array [
-        Object {
-          "error": [Error: iterable],
-          "path": Array [
-            "1",
-          ],
-        },
-      ],
-    ]
-  `);
-});
