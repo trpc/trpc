@@ -85,11 +85,10 @@ test('encode/decode', async () => {
     serialize: (v) => SuperJSON.serialize(v),
   });
 
-  const res = await createJsonBatchStreamConsumer<typeof data>({
+  const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
   });
-  const head = res.head;
 
   // console.log(inspect(head, undefined, 10));
   {
@@ -113,8 +112,8 @@ test('encode/decode', async () => {
     }
     expect(aggregated).toEqual([1, 2, 3]);
   }
-  await res.reader.closed;
-  expect(res.controllers.size).toBe(0);
+  await meta.reader.closed;
+  expect(meta.controllers.size).toBe(0);
 });
 
 test('encode/decode - error', async () => {
@@ -147,12 +146,10 @@ test('encode/decode - error', async () => {
     onError: onErrorSpy,
   });
 
-  const res = await createJsonBatchStreamConsumer<typeof data>({
+  const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
   });
-
-  const head = res.head;
 
   {
     expect(head[0]).toBeInstanceOf(Promise);

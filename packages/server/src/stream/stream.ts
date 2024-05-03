@@ -422,11 +422,13 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
 
       walkValues().catch(kill);
 
-      return {
-        head: newHead as THead,
-        controllers,
-        reader,
-      };
+      return [
+        newHead as THead,
+        {
+          controllers,
+          reader,
+        },
+      ] satisfies [THead, unknown];
     }
   }
 
