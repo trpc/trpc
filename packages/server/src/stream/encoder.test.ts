@@ -274,19 +274,12 @@ function lineAccumulator() {
   };
 }
 
-function assertAsyncIterable<TValue>(
-  value: any,
-): asserts value is AsyncIterable<TValue> {
-  if (!(Symbol.asyncIterator in value)) {
-    throw new Error('Expected AsyncIterable - are you using Node >= 18.0.0?');
-  }
-}
-
 async function createJsonBatchStreamConsumer<T>(opts: {
   from: ReadableStream<string>;
   deserialize?: Deserialize;
 }) {
   const { deserialize = (v) => v } = opts;
+  const textDecoder = new TextDecoder();
 
   const reader = opts.from.getReader();
   const acc = lineAccumulator();
@@ -404,7 +397,7 @@ async function createJsonBatchStreamConsumer<T>(opts: {
         await kill();
         return;
       }
-      acc.push(value);
+      acc.push(typeof value === 'string' ? value : textDecoder.decode(value));
     }
   }
 
