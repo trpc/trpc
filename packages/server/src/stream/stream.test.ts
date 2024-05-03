@@ -211,8 +211,14 @@ test('encode/decode - error', async () => {
   expect(meta.controllers.size).toBe(0);
 });
 
-function createServer(stream: ReadableStream<string>) {
-  const server = http.createServer(async (_req, res) => {
+function createServer(
+  stream: ReadableStream<string>,
+  abortSignal: AbortController,
+) {
+  const server = http.createServer(async (req, res) => {
+    req.once('aborted', () => {
+      abortSignal.abort();
+    });
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Transfer-Encoding', 'chunked');
 
@@ -267,7 +273,7 @@ test('e2e, create server', async () => {
     serialize: (v) => SuperJSON.serialize(v),
   });
 
-  const server = createServer(stream);
+  const server = createServer(stream, new AbortController());
 
   const res = await fetch(server.url);
 
@@ -310,15 +316,23 @@ test('e2e, create server', async () => {
 });
 
 test('e2e, client aborts request halfway through', async () => {
+  const serverAbort = new AbortController();
+  const clientAbort = new AbortController();
   const yieldCalls = vi.fn();
+  let stopped = false;
   const data = {
     0: Promise.resolve({
       [Symbol.asyncIterator]: async function* () {
         for (let i = 0; i < 10; i++) {
-          yield i;
-          await new Promise((resolve) => setTimeout(resolve, 10));
           yieldCalls();
+          yield i;
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          if (serverAbort.signal.aborted) {
+            stopped = true;
+            return;
+          }
         }
+        stopped = true;
       },
     }),
   } as const;
@@ -326,10 +340,10 @@ test('e2e, client aborts request halfway through', async () => {
   const stream = createJsonBatchStreamProducer({
     data,
   });
-  const server = createServer(stream);
-  const abortController = new AbortController();
+  const server = createServer(stream, serverAbort);
+
   const res = await fetch(server.url, {
-    signal: abortController.signal,
+    signal: clientAbort.signal,
   });
   const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
     from: res.body!,
@@ -343,10 +357,18 @@ test('e2e, client aborts request halfway through', async () => {
         break;
       }
     }
-    abortController.abort();
+    clientAbort.abort();
   }
 
   await waitFor(() => {
     expect(meta.controllers.size).toBe(0);
   });
+  // wait for stopped
+  await waitFor(() => {
+    expect(stopped).toBe(true);
+  });
+
+  expect(yieldCalls.mock.calls.length).toBeGreaterThanOrEqual(3);
+  expect(yieldCalls.mock.calls.length).toBeLessThan(10);
+  server.close();
 });
