@@ -5,7 +5,6 @@ import {
   createJsonBatchStreamConsumer,
   createJsonBatchStreamProducer,
 } from './stream';
-import { isAsyncIterable } from './utils/isAsyncIterable';
 
 test('encoder - superjson', async () => {
   const [head, stream] = createBatchStreamProducer({
@@ -169,7 +168,6 @@ test('encode/decode - error', async () => {
     expect(head[1]).toBeInstanceOf(Promise);
 
     const iterable = await head[1];
-    expect(isAsyncIterable(iterable)).toBe(true);
 
     const aggregated: number[] = [];
     try {

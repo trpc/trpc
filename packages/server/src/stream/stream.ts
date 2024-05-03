@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { isObject } from '../unstable-core-do-not-import/utils';
 
+// ---------- utils
 function isAsyncIterable<TValue>(
   value: unknown,
 ): value is AsyncIterable<TValue> {
@@ -8,6 +9,19 @@ function isAsyncIterable<TValue>(
     value != null && typeof value == 'object' && Symbol.asyncIterator in value
   );
 }
+
+export function createReadableStream<TValue = unknown>() {
+  let controller: ReadableStreamDefaultController<TValue> =
+    null as unknown as ReadableStreamDefaultController<TValue>;
+  const stream = new ReadableStream<TValue>({
+    start(c) {
+      controller = c;
+    },
+  });
+
+  return [stream, controller] as const;
+}
+// ---------- types
 
 type ChunkIndex = number & { __chunkIndex: true };
 enum ChunkValueType {
@@ -65,17 +79,6 @@ function isPromise(value: unknown): value is Promise<unknown> {
   return value instanceof Promise;
 }
 
-export function createReadableStream<TValue = unknown>() {
-  let controller: ReadableStreamDefaultController<TValue> =
-    null as unknown as ReadableStreamDefaultController<TValue>;
-  const stream = new ReadableStream<TValue>({
-    start(c) {
-      controller = c;
-    },
-  });
-
-  return [stream, controller] as const;
-}
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
 
