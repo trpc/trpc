@@ -1,4 +1,5 @@
 import http from 'http';
+import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
 import type { ProducerOnError } from './stream';
 import {
@@ -210,6 +211,34 @@ test('encode/decode - error', async () => {
   expect(meta.controllers.size).toBe(0);
 });
 
+function createServer(stream: ReadableStream<string>) {
+  const server = http.createServer(async (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    const reader = stream.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+      // console.log('write', value);
+      res.write(value);
+    }
+    res.end();
+  });
+  server.listen(0);
+  const port = (server.address() as any).port;
+
+  const url = `http://localhost:${port}`;
+
+  return {
+    url,
+    close: () => {
+      server.close();
+    },
+  };
+}
 test('e2e, create server', async () => {
   const data = {
     0: Promise.resolve({
@@ -238,27 +267,9 @@ test('e2e, create server', async () => {
     serialize: (v) => SuperJSON.serialize(v),
   });
 
-  const server = http.createServer(async (_req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Transfer-Encoding', 'chunked');
+  const server = createServer(stream);
 
-    const reader = stream.getReader();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-      // console.log('write', value);
-      res.write(value);
-    }
-    res.end();
-  });
-
-  server.listen(0);
-  const port = (server.address() as any).port;
-  const url = `http://localhost:${port}`;
-
-  const res = await fetch(url);
+  const res = await fetch(server.url);
 
   const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
     from: res.body!,
@@ -290,8 +301,52 @@ test('e2e, create server', async () => {
   {
     const value = await head[0];
     expect(value.slow).toBeInstanceOf(Promise);
-    await expect(value.slow).resolves.toMatchInlineSnapshot(`"___________RESOLVE________"`);
+    await expect(value.slow).resolves.toMatchInlineSnapshot(
+      `"___________RESOLVE________"`,
+    );
   }
   await meta.reader.closed;
   expect(meta.controllers.size).toBe(0);
+});
+
+test('e2e, client aborts request halfway through', async () => {
+  const yieldCalls = vi.fn();
+  const data = {
+    0: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        for (let i = 0; i < 10; i++) {
+          yield i;
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          yieldCalls();
+        }
+      },
+    }),
+  } as const;
+
+  const stream = createJsonBatchStreamProducer({
+    data,
+  });
+  const server = createServer(stream);
+  const abortController = new AbortController();
+  const res = await fetch(server.url, {
+    signal: abortController.signal,
+  });
+  const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
+    from: res.body!,
+  });
+
+  {
+    const iterable = await head[0];
+
+    for await (const item of iterable) {
+      if (item === 2) {
+        break;
+      }
+    }
+    abortController.abort();
+  }
+
+  await waitFor(() => {
+    expect(meta.controllers.size).toBe(0);
+  });
 });
