@@ -292,7 +292,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
                 return;
               }
               const value = it.value;
-              const [_chunkId, status, data] = value;
+              const [_chunkId, status, data] = value as PromiseChunk;
               switch (status) {
                 case PromiseStatus.FULFILLED:
                   resolve(parseValue(data));
@@ -304,6 +304,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
             })
             .catch(reject)
             .finally(() => {
+              reader.releaseLock();
               controllers.delete(chunkId);
             });
         });
@@ -329,11 +330,13 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
                   break;
                 case IterableStatus.DONE:
                   controllers.delete(chunkId);
-                  return;
+                  break;
                 case IterableStatus.ERROR:
                   throw new AsyncError(data);
               }
             }
+
+            reader.releaseLock();
           },
         };
       }
