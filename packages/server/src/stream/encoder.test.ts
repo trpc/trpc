@@ -8,6 +8,7 @@ given {
 }
 */
 
+import { inspect } from 'util';
 import SuperJSON from 'superjson';
 import { isObject } from '../unstable-core-do-not-import/utils';
 
@@ -125,7 +126,7 @@ interface ProducerOptions {
   data: Record<number, unknown>;
 }
 function createBatchStreamProducer(opts: ProducerOptions) {
-  const { serialize = (it) => it, data } = opts;
+  const { data } = opts;
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
@@ -141,14 +142,10 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     pending.add(idx);
     promise
       .then((it) => {
-        controller.enqueue([
-          idx,
-          PromiseStatus.FULFILLED,
-          serialize(getValue(it)),
-        ]);
+        controller.enqueue([idx, PromiseStatus.FULFILLED, getValue(it)]);
       })
       .catch((err) => {
-        controller.enqueue([idx, PromiseStatus.REJECTED, serialize(err)]);
+        controller.enqueue([idx, PromiseStatus.REJECTED, err]);
       })
       .finally(() => {
         pending.delete(idx);
@@ -162,15 +159,11 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     void (async () => {
       try {
         for await (const item of iterable) {
-          controller.enqueue([
-            idx,
-            IterableStatus.VALUE,
-            serialize(getValue(item)),
-          ]);
+          controller.enqueue([idx, IterableStatus.VALUE, getValue(item)]);
         }
         controller.enqueue([idx, IterableStatus.DONE]);
       } catch (err) {
-        controller.enqueue([idx, IterableStatus.ERROR, serialize(err)]);
+        controller.enqueue([idx, IterableStatus.ERROR, err]);
       } finally {
         pending.delete(idx);
         maybeClose();
@@ -210,7 +203,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
         ]);
         continue;
       }
-      newObj[key] = serialize(item);
+      newObj[key] = item;
     }
     return [[newObj], ...asyncValues];
   }
@@ -218,6 +211,24 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   const newHead: Head = {};
   for (const [key, item] of Object.entries(data)) {
     newHead[Number(key)] = getValue(item);
+  }
+
+  const serialize = opts.serialize;
+  if (serialize) {
+    const head = serialize(newHead) as Head;
+    // transform the stream to deserialize each enqueued chunk
+    const [newStream, newController] = createReadableStream<ChunkData>();
+    stream.pipeTo(
+      new WritableStream({
+        write(chunk) {
+          newController.enqueue(serialize(chunk));
+        },
+        close() {
+          newController.close();
+        },
+      }),
+    );
+    return [head, newStream] as const;
   }
 
   return [newHead, stream] as const;
@@ -229,7 +240,6 @@ function createJsonBatchStreamProducer(opts: ProducerOptions) {
 
   controller.enqueue('[\n');
   controller.enqueue(JSON.stringify(sourceHead) + '\n');
-  console.log('head', JSON.stringify(sourceHead ?? null, null, 2));
 
   sourceStream.pipeTo(
     new WritableStream({
@@ -275,22 +285,20 @@ function assertAsyncIterable<TValue>(
 async function createJsonBatchStreamConsumer<T>(opts: {
   from: ReadableStream<string>;
   deserialize?: Deserialize;
-}): Promise<T> {
-  const { deserialize = (it) => it } = opts;
+}) {
+  const { deserialize = (v) => v } = opts;
+
   const reader = opts.from.getReader();
-
-  // state of stream
-
   const acc = lineAccumulator();
+  const controllers = new Map<
+    ChunkIndex,
+    ReadableStreamDefaultController<ChunkData>
+  >();
 
-  function deserializeValue(value: AsyncProps) {
+  function morphValue(value: AsyncProps) {
     const [_path, type, chunkId] = value;
 
-    const controllers = new Map<
-      ChunkIndex,
-      ReadableStreamDefaultController<unknown>
-    >();
-    const [stream, controller] = createReadableStream<unknown>();
+    const [stream, controller] = createReadableStream<ChunkData>();
     controllers.set(chunkId, controller);
     switch (type) {
       case ChunkValueType.PROMISE: {
@@ -299,10 +307,20 @@ async function createJsonBatchStreamConsumer<T>(opts: {
           const reader = stream.getReader();
           reader
             .read()
-            .then(({ value, done }) => {
-              if (done) {
+            .then((it) => {
+              if (it.done) {
                 reject(new Error('Promise chunk ended without value'));
                 return;
+              }
+              const value = it.value as PromiseChunk;
+              const [_chunkId, status, data] = value;
+              switch (status) {
+                case PromiseStatus.FULFILLED:
+                  resolve(parseValue(data));
+                  break;
+                case PromiseStatus.REJECTED:
+                  reject(data);
+                  break;
               }
             })
             .catch(reject)
@@ -311,35 +329,82 @@ async function createJsonBatchStreamConsumer<T>(opts: {
             });
         });
       }
-    }
+      case ChunkValueType.ITERABLE: {
+        return {
+          [Symbol.asyncIterator]: async function* () {
+            const reader = stream.getReader();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) {
+                break;
+              }
+              const [_chunkId, status, data] = value as IterableChunk;
 
-    throw new Error('unimplemented');
+              switch (status) {
+                case IterableStatus.VALUE:
+                  yield parseValue(data);
+                  break;
+                case IterableStatus.DONE:
+                  controllers.delete(chunkId);
+                  return;
+                case IterableStatus.ERROR:
+                  throw data;
+              }
+            }
+          },
+        };
+      }
+    }
   }
 
   function parseValue(value: Value): unknown {
     const [[data], ...asyncProps] = value;
-    console.log('parsing', { data }, { asyncProps });
 
     for (const value of asyncProps) {
-      const deserialized = deserializeValue(value);
+      const deserialized = morphValue(value);
 
       const [path] = value;
       if (path === null) {
         return deserialized;
       }
 
-      (data as any)[path] = deserialized;
+      console.log('setting', { path }, deserialized);
+      data[path] = deserialized;
     }
     return data;
   }
 
+  function consumeValue(value: Value) {}
+  async function kill() {
+    await reader.cancel();
+  }
   async function walkValues() {
     while (true) {
-      if (acc.lines.length >= 2) {
+      while (acc.lines.length >= 2) {
+        const line = acc.lines.shift()!;
+        // console.log('line', line);
+
+        if (line === ']') {
+          await kill();
+          return;
+        }
+
+        const chunk: ChunkData = deserialize(
+          JSON.parse(
+            // each line starts with a comma
+            line.substring(1),
+          ),
+        );
+        console.log('chunk', chunk);
+
+        const [idx] = chunk;
+        const controller = controllers.get(idx)!;
+        controller.enqueue(chunk);
       }
       const { done, value } = await reader.read();
       if (done) {
-        break;
+        await kill();
+        return;
       }
       acc.push(value);
     }
@@ -358,24 +423,29 @@ async function createJsonBatchStreamConsumer<T>(opts: {
        */
       acc.lines.shift();
 
-      const head: Head = JSON.parse(acc.lines.shift() ?? '');
+      const { deserialize = (v) => v } = opts;
+      const head: Head = deserialize(JSON.parse(acc.lines.shift() ?? ''));
 
-      const newHead: Record<number, unknown> = {};
+      const newHead = head as Record<number, unknown>;
       for (const [key, value] of Object.entries(head)) {
-        // head[key as any] = parseValue(value)
-        newHead[Number(key)] = parseValue(deserialize(value));
+        const parsed = parseValue(value);
+        newHead[Number(key)] = parsed;
       }
 
       void walkValues();
 
-      return head as T;
+      return {
+        head: newHead as T,
+        controllers,
+        reader,
+      };
     }
   }
 
   throw new Error("Can't parse head");
 }
 
-test.only('encoder - superjson', async () => {
+test('encoder - superjson', async () => {
   const [head, stream] = createBatchStreamProducer({
     data: {
       0: {
@@ -460,8 +530,6 @@ test('encoder - json', async () => {
     }
     chunks.push(value);
   }
-  console.log({ chunks });
-  console.log(chunks.join(''));
 
   JSON.parse(chunks.join(''));
   expect(JSON.parse(chunks.join(''))).toMatchInlineSnapshot(`
@@ -551,19 +619,50 @@ test('encoder - json', async () => {
 
 test.only('encode/decode', async () => {
   const data = {
-    0: {
+    0: Promise.resolve({
       foo: 'bar',
       deferred: Promise.resolve(42),
-    },
+    }),
+    1: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        yield 1;
+        yield 2;
+        yield 3;
+      },
+    }),
   } as const;
   const stream = createJsonBatchStreamProducer({
     data,
+    serialize: (v) => SuperJSON.serialize(v),
   });
 
-  const value = await createJsonBatchStreamConsumer<typeof data>({
+  const res = await createJsonBatchStreamConsumer<typeof data>({
     from: stream,
+    deserialize: (v) => SuperJSON.deserialize(v),
   });
+  const head = res.head;
 
-  console.log(value);
-  console.log(value[0].deferred);
+  console.log(inspect(head, undefined, 10));
+  {
+    expect(head[0]).toBeInstanceOf(Promise);
+
+    const value = await head[0];
+    expect(value.deferred).toBeInstanceOf(Promise);
+
+    await expect(value.deferred).resolves.toBe(42);
+  }
+  {
+    expect(head[1]).toBeInstanceOf(Promise);
+
+    const iterable = await head[1];
+    expect(isAsyncIterable(iterable)).toBe(true);
+
+    const aggregated: number[] = [];
+    for await (const item of iterable) {
+      aggregated.push(item);
+    }
+    expect(aggregated).toEqual([1, 2, 3]);
+  }
+  await res.reader.closed;
+  expect(res.controllers.size).toBe(0);
 });
