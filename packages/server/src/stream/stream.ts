@@ -370,13 +370,8 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
   }
   async function walkValues() {
     while (true) {
-      while (acc.lines.length >= 2) {
+      while (acc.lines.length > 1) {
         const line = acc.lines.shift()!;
-
-        if (line === ']') {
-          await kill();
-          return;
-        }
 
         const chunk: ChunkData = deserialize(
           JSON.parse(
