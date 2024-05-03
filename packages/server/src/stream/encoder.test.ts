@@ -368,13 +368,11 @@ async function createJsonBatchStreamConsumer<T>(opts: {
         return deserialized;
       }
 
-      console.log('setting', { path }, deserialized);
-      data[path] = deserialized;
+      (data as any)[path] = deserialized;
     }
     return data;
   }
 
-  function consumeValue(value: Value) {}
   async function kill() {
     await reader.cancel();
   }
@@ -395,7 +393,7 @@ async function createJsonBatchStreamConsumer<T>(opts: {
             line.substring(1),
           ),
         );
-        console.log('chunk', chunk);
+        // console.log('chunk', chunk);
 
         const [idx] = chunk;
         const controller = controllers.get(idx)!;
@@ -448,10 +446,10 @@ async function createJsonBatchStreamConsumer<T>(opts: {
 test('encoder - superjson', async () => {
   const [head, stream] = createBatchStreamProducer({
     data: {
-      0: {
+      0: Promise.resolve({
         foo: 'bar',
         deferred: Promise.resolve(42),
-      },
+      }),
       1: Promise.resolve({
         [Symbol.asyncIterator]: async function* () {
           yield 1;
@@ -504,123 +502,14 @@ test('encoder - superjson', async () => {
   `);
 });
 
-test('encoder - json', async () => {
-  const stream = createJsonBatchStreamProducer({
-    data: {
-      0: {
-        foo: 'bar',
-        deferred: Promise.resolve(42),
-      },
-      1: Promise.resolve({
-        [Symbol.asyncIterator]: async function* () {
-          yield 1;
-          yield 2;
-          yield 3;
-        },
-      }),
-    },
-  });
-
-  const reader = stream.getReader();
-  const chunks: string[] = [];
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-    chunks.push(value);
-  }
-
-  JSON.parse(chunks.join(''));
-  expect(JSON.parse(chunks.join(''))).toMatchInlineSnapshot(`
-    Array [
-      Object {
-        "0": Array [
-          Array [
-            Object {
-              "deferred": 0,
-              "foo": "bar",
-            },
-          ],
-          Array [
-            "deferred",
-            0,
-            0,
-          ],
-        ],
-        "1": Array [
-          Array [
-            0,
-          ],
-          Array [
-            null,
-            0,
-            1,
-          ],
-        ],
-      },
-      Array [
-        0,
-        0,
-        Array [
-          Array [
-            42,
-          ],
-        ],
-      ],
-      Array [
-        1,
-        0,
-        Array [
-          Array [
-            0,
-          ],
-          Array [
-            null,
-            1,
-            2,
-          ],
-        ],
-      ],
-      Array [
-        2,
-        0,
-        Array [
-          Array [
-            1,
-          ],
-        ],
-      ],
-      Array [
-        2,
-        0,
-        Array [
-          Array [
-            2,
-          ],
-        ],
-      ],
-      Array [
-        2,
-        0,
-        Array [
-          Array [
-            3,
-          ],
-        ],
-      ],
-      Array [
-        2,
-        1,
-      ],
-    ]
-  `);
-});
-
 test.only('encode/decode', async () => {
   const data = {
     0: Promise.resolve({
-      foo: 'bar',
+      foo: {
+        bar: {
+          baz: 'qux',
+        },
+      },
       deferred: Promise.resolve(42),
     }),
     1: Promise.resolve({
@@ -642,7 +531,7 @@ test.only('encode/decode', async () => {
   });
   const head = res.head;
 
-  console.log(inspect(head, undefined, 10));
+  // console.log(inspect(head, undefined, 10));
   {
     expect(head[0]).toBeInstanceOf(Promise);
 
@@ -650,6 +539,8 @@ test.only('encode/decode', async () => {
     expect(value.deferred).toBeInstanceOf(Promise);
 
     await expect(value.deferred).resolves.toBe(42);
+
+    expect(value.foo.bar.baz).toBe('qux');
   }
   {
     expect(head[1]).toBeInstanceOf(Promise);
