@@ -1,5 +1,5 @@
 import SuperJSON from 'superjson';
-import { isAsyncIterable } from './isAsyncIterable';
+import { isAsyncIterable } from './utils/isAsyncIterable';
 import type { ProducerOnError } from './stream';
 import {
   createBatchStreamProducer,
