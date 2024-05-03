@@ -10,7 +10,7 @@ function isAsyncIterable<TValue>(
   );
 }
 
-function createReadableStream<TValue = unknown>() {
+export function createReadableStream<TValue = unknown>() {
   let controller: ReadableStreamDefaultController<TValue> =
     null as unknown as ReadableStreamDefaultController<TValue>;
   const stream = new ReadableStream<TValue>({
@@ -304,7 +304,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
             })
             .catch(reject)
             .finally(() => {
-              reader.releaseLock();
+              // reader.releaseLock();
               controllers.delete(chunkId);
             });
         });
@@ -330,13 +330,12 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
                   break;
                 case IterableStatus.DONE:
                   controllers.delete(chunkId);
-                  break;
+                  return;
                 case IterableStatus.ERROR:
+                  controllers.delete(chunkId);
                   throw new AsyncError(data);
               }
             }
-
-            reader.releaseLock();
           },
         };
       }

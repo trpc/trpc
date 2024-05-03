@@ -204,4 +204,7 @@ test('encode/decode - error', async () => {
       ],
     ]
   `);
+
+  await meta.reader.closed;
+  expect(meta.controllers.size).toBe(0);
 });
