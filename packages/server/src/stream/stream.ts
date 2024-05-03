@@ -10,7 +10,7 @@ function isAsyncIterable<TValue>(
   );
 }
 
-export function createReadableStream<TValue = unknown>() {
+function createReadableStream<TValue = unknown>() {
   let controller: ReadableStreamDefaultController<TValue> =
     null as unknown as ReadableStreamDefaultController<TValue>;
   const stream = new ReadableStream<TValue>({
