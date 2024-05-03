@@ -16,16 +16,15 @@ enum IterableStatus {
   DONE = 1,
   ERROR = 2,
 }
-type AsyncPropsPath =
+type ChunkDefinitionKey =
   // root should be replaced
   | null
   // at array path
   | number
   // at key path
   | string;
-type AsyncProps = [
-  // key
-  path: AsyncPropsPath,
+type ChunkDefinition = [
+  key: ChunkDefinitionKey,
   type: ChunkValueType,
   chunkId: ChunkIndex,
 ];
@@ -33,7 +32,7 @@ type Value = [
   // data
   [unknown],
   // chunk descriptions
-  ...AsyncProps[],
+  ...ChunkDefinition[],
 ];
 type Head = Record<number, Value>;
 type PromiseChunk =
@@ -155,7 +154,7 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
       return [[value]];
     }
     const newObj = {} as Record<string, unknown>;
-    const asyncValues: AsyncProps[] = [];
+    const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
       if (isPromise(item)) {
         newObj[key] = placeholder;
@@ -261,7 +260,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
     ReadableStreamDefaultController<ControllerChunk>
   >();
 
-  function morphValue(value: AsyncProps) {
+  function morphValue(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
     const [stream, controller] = createReadableStream<ControllerChunk>();
