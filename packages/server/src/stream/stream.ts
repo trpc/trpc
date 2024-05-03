@@ -348,12 +348,16 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
   }
 
   async function kill() {
-    for (const controller of controllers.values()) {
-      controller.enqueue(new StreamInterruptedError());
-    }
+    try {
+      for (const controller of controllers.values()) {
+        controller.enqueue(new StreamInterruptedError());
+      }
 
-    controllers.clear();
-    await reader.cancel();
+      controllers.clear();
+      await reader.cancel();
+    } catch (error) {
+      // TODO: log error
+    }
   }
   async function walkValues() {
     while (true) {
@@ -407,7 +411,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
         newHead[Number(key)] = parsed;
       }
 
-      void walkValues();
+      walkValues().catch(kill);
 
       return {
         head: newHead as THead,
