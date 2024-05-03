@@ -222,7 +222,7 @@ test('e2e, create server', async () => {
       slow: new Promise<string>((resolve) => {
         setTimeout(() => {
           resolve('___________RESOLVE________');
-        }, 1000);
+        }, 10);
       }),
     }),
     1: Promise.resolve({
@@ -285,6 +285,12 @@ test('e2e, create server', async () => {
       aggregated.push(item);
     }
     expect(aggregated).toEqual([1, 2, 3]);
+  }
+
+  {
+    const value = await head[0];
+    expect(value.slow).toBeInstanceOf(Promise);
+    await expect(value.slow).resolves.toMatchInlineSnapshot(`"___________RESOLVE________"`);
   }
   await meta.reader.closed;
   expect(meta.controllers.size).toBe(0);

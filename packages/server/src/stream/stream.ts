@@ -269,7 +269,6 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
     ChunkIndex,
     ReturnType<typeof createReadableStream<ControllerChunk>>
   >();
-
   const upsertChunkStream = (chunkId: ChunkIndex) => {
     const controller = chunkStreams.get(chunkId);
     if (controller) {
