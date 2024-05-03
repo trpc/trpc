@@ -290,7 +290,9 @@ test('e2e, create server', async () => {
   {
     const value = await head[0];
     expect(value.slow).toBeInstanceOf(Promise);
-    await expect(value.slow).resolves.toMatchInlineSnapshot(`"___________RESOLVE________"`);
+    await expect(value.slow).resolves.toMatchInlineSnapshot(
+      `"___________RESOLVE________"`,
+    );
   }
   await meta.reader.closed;
   expect(meta.controllers.size).toBe(0);
