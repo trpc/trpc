@@ -9,15 +9,40 @@ function isAsyncIterable<TValue>(
 }
 
 export function createReadableStream<TValue = unknown>() {
-  let controller: ReadableStreamDefaultController<TValue> =
-    null as unknown as ReadableStreamDefaultController<TValue>;
-  const stream = new ReadableStream<TValue>({
+  const obj = {} as {
+    stream: ReadableStream<TValue>;
+    enqueue: (chunk: TValue) => Promise<void>;
+    close: () => void;
+  };
+  let pullPromise: Promise<void> | null = null;
+  let pullResolve: (() => void) | null = null;
+  obj.stream = new ReadableStream<TValue>({
     start(c) {
-      controller = c;
+      obj.close = () => {
+        c.close();
+      }
+      obj.enqueue = async (chunk: TValue) => {
+        if (c.desiredSize! > 0) {
+          c.enqueue(chunk);
+          return
+        }
+        while (c.desiredSize! <= 0) {
+          if (!pullPromise) {
+            pullPromise = new Promise((resolve) => {
+              pullResolve = resolve;
+            });
+          }
+          await pullPromise;
+        }
+        c.enqueue(chunk);
+      }
+    },
+    pull() {
+      pullResolve?.();
+      pullPromise = null;
     },
   });
-
-  return [stream, controller] as const;
+  return obj as Readonly<typeof obj>;
 }
 
 /**
@@ -133,11 +158,11 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const [stream, controller] = createReadableStream<ChunkData>();
+  const s = createReadableStream<ChunkData>();
   const pending = new Set<ChunkIndex>();
   function maybeClose() {
     if (pending.size === 0) {
-      controller.close();
+      s.close();
     }
   }
   function hydratePromise(
@@ -153,16 +178,13 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
-    const enqueue = (value: PromiseChunk) => {
-      controller.enqueue(value);
-    };
     promise
       .then((it) => {
-        enqueue([idx, PROMISE_STATUS_FULFILLED, hydrate(it, path)]);
+        return s.enqueue([idx, PROMISE_STATUS_FULFILLED, hydrate(it, path)]);
       })
       .catch((err) => {
         opts.onError?.({ error: err, path });
-        enqueue([idx, PROMISE_STATUS_REJECTED]);
+        return s.enqueue([idx, PROMISE_STATUS_REJECTED]);
       })
       .finally(() => {
         pending.delete(idx);
@@ -185,16 +207,16 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     void (async () => {
       try {
         for await (const item of iterable) {
-          controller.enqueue([
+          await s.enqueue([
             idx,
             ASYNC_ITERABLE_STATUS_VALUE,
             hydrate(item, path),
           ]);
         }
-        controller.enqueue([idx, ASYNC_ITERABLE_STATUS_DONE]);
+        await s.enqueue([idx, ASYNC_ITERABLE_STATUS_DONE]);
       } catch (error) {
         opts.onError?.({ error, path });
-        controller.enqueue([idx, ASYNC_ITERABLE_STATUS_ERROR]);
+        await s.enqueue([idx, ASYNC_ITERABLE_STATUS_ERROR]);
       } finally {
         pending.delete(idx);
         maybeClose();
@@ -262,10 +284,10 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
         controller.enqueue(serialize(chunk));
       },
     });
-    return [head, stream.pipeThrough(transformStream)] as const;
+    return [head, s.stream.pipeThrough(transformStream)] as const;
   }
 
-  return [newHead, stream] as const;
+  return [newHead, s.stream] as const;
 }
 export function createJsonBatchStreamProducer(opts: ProducerOptions) {
   const [sourceHead, sourceStream] = createBatchStreamProducer(opts);
@@ -323,14 +345,14 @@ export type ConsumerOnError = (opts: { error: unknown }) => void;
 const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
   return {
     getReader() {
-      const [stream, controller] = createReadableStream<Uint8Array>();
+      const s = createReadableStream<Uint8Array>();
       source.on('data', (chunk) => {
-        controller.enqueue(chunk);
+        return s.enqueue(chunk);
       });
       source.on('end', () => {
-        controller.close();
+        s.close();
       });
-      return stream.getReader();
+      return s.stream.getReader();
     },
   };
 };
@@ -367,13 +389,13 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
   function dehydrateChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const [stream] = upsertChunkStream(chunkId);
+    const s = upsertChunkStream(chunkId);
 
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
         return new Promise((resolve, reject) => {
           // listen for next value in the stream
-          const reader = stream.getReader();
+          const reader = s.stream.getReader();
           reader
             .read()
             .then((it) => {
@@ -406,7 +428,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
         return {
           [Symbol.asyncIterator]: async function* () {
-            const reader = stream.getReader();
+            const reader = s.stream.getReader();
             while (true) {
               const { done, value } = await reader.read();
               if (done) {
@@ -454,10 +476,11 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
 
   async function end() {
     try {
-      for (const [_, controller] of chunkStreams.values()) {
-        controller.enqueue(new StreamInterruptedError());
+      const p: Promise<void>[] = []
+      for (const s of chunkStreams.values()) {
+        p.push(s.enqueue(new StreamInterruptedError()));
       }
-
+      await Promise.allSettled(p);
       chunkStreams.clear();
     } catch (error) {
       opts.onError?.({ error });
@@ -476,8 +499,8 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
         );
 
         const [idx] = chunk;
-        const [_stream, controller] = upsertChunkStream(idx);
-        controller.enqueue(chunk);
+        const s = upsertChunkStream(idx);
+        await s.enqueue(chunk);
       }
       const { done, value } = await reader.read();
       if (done) {

@@ -393,6 +393,52 @@ test('e2e, client aborts request halfway through', async () => {
   server.close();
 });
 
+test.only('e2e, pause stream', async () => {
+  let yielded = 0
+  const data = {
+    0: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        for (let i = 0; i < 100; i++) {
+          await new Promise((resolve) => setTimeout(resolve));
+          yielded = i
+          yield i;
+        }
+      },
+    }),
+  } as const;
+  const stream = createJsonBatchStreamProducer({
+    data,
+  });
+
+  const server = createServer(stream, new AbortController());
+
+  const res = await fetch(server.url);
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  expect(yielded).toBe(0)
+
+  const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
+    from: res.body!,
+  });
+
+  {
+    const iterable = await head[0];
+
+    const aggregated: number[] = [];
+    for await (const item of iterable) {
+      aggregated.push(item);
+      if (item === 50) {
+        break
+      }
+    }
+    expect(aggregated).toEqual(Array.from({ length: 51 }, (_, i) => i));
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(yielded).toBe(50)
+  }
+
+  await meta.reader.closed;
+  expect(meta.controllers.size).toBe(0);
+});
+
 test('e2e, encode/decode - maxDepth', async () => {
   const onError = vi.fn<Parameters<ProducerOnError>, null>();
   const data = {
