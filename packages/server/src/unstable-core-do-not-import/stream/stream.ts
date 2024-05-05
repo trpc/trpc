@@ -20,11 +20,11 @@ export function createReadableStream<TValue = unknown>() {
     start(c) {
       obj.close = () => {
         c.close();
-      }
+      };
       obj.enqueue = async (chunk: TValue) => {
         if (c.desiredSize! > 0) {
           c.enqueue(chunk);
-          return
+          return;
         }
         while (c.desiredSize! <= 0) {
           if (!pullPromise) {
@@ -35,7 +35,7 @@ export function createReadableStream<TValue = unknown>() {
           await pullPromise;
         }
         c.enqueue(chunk);
-      }
+      };
     },
     pull() {
       pullResolve?.();
@@ -476,7 +476,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
 
   async function end() {
     try {
-      const p: Promise<void>[] = []
+      const p: Promise<void>[] = [];
       for (const s of chunkStreams.values()) {
         p.push(s.enqueue(new StreamInterruptedError()));
       }

@@ -394,13 +394,13 @@ test('e2e, client aborts request halfway through', async () => {
 });
 
 test.only('e2e, pause stream', async () => {
-  let yielded = 0
+  let yielded = 0;
   const data = {
     0: Promise.resolve({
       [Symbol.asyncIterator]: async function* () {
         for (let i = 0; i < 100; i++) {
           await new Promise((resolve) => setTimeout(resolve));
-          yielded = i
+          yielded = i;
           yield i;
         }
       },
@@ -413,8 +413,8 @@ test.only('e2e, pause stream', async () => {
   const server = createServer(stream, new AbortController());
 
   const res = await fetch(server.url);
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  expect(yielded).toBe(0)
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  expect(yielded).toBe(0);
 
   const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
     from: res.body!,
@@ -427,12 +427,12 @@ test.only('e2e, pause stream', async () => {
     for await (const item of iterable) {
       aggregated.push(item);
       if (item === 50) {
-        break
+        break;
       }
     }
     expect(aggregated).toEqual(Array.from({ length: 51 }, (_, i) => i));
-    await new Promise((resolve) => setTimeout(resolve, 100))
-    expect(yielded).toBe(50)
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(yielded).toBe(50);
   }
 
   await meta.reader.closed;
