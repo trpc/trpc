@@ -9,23 +9,18 @@ function isAsyncIterable<TValue>(
 }
 
 export function createReadableStream<TValue = unknown>() {
-  const obj = {} as {
-    stream: ReadableStream<TValue>;
+  const controller = {} as {
     enqueue: (chunk: TValue) => Promise<void>;
     close: () => void;
   };
   let pullPromise: Promise<void> | null = null;
   let pullResolve: (() => void) | null = null;
-  obj.stream = new ReadableStream<TValue>({
+  const stream = new ReadableStream<TValue>({
     start(c) {
-      obj.close = () => {
+      controller.close = () => {
         c.close();
-      };
-      obj.enqueue = async (chunk: TValue) => {
-        if (c.desiredSize! > 0) {
-          c.enqueue(chunk);
-          return;
-        }
+      }
+      controller.enqueue = async (chunk: TValue) => {
         while (c.desiredSize! <= 0) {
           if (!pullPromise) {
             pullPromise = new Promise((resolve) => {
@@ -42,7 +37,7 @@ export function createReadableStream<TValue = unknown>() {
       pullPromise = null;
     },
   });
-  return obj as Readonly<typeof obj>;
+  return [stream, controller] as const;
 }
 
 /**
@@ -158,11 +153,11 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const s = createReadableStream<ChunkData>();
+  const [stream, controller] = createReadableStream<ChunkData>();
   const pending = new Set<ChunkIndex>();
   function maybeClose() {
     if (pending.size === 0) {
-      s.close();
+      controller.close();
     }
   }
   function hydratePromise(
@@ -180,11 +175,11 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     pending.add(idx);
     promise
       .then((it) => {
-        return s.enqueue([idx, PROMISE_STATUS_FULFILLED, hydrate(it, path)]);
+        return controller.enqueue([idx, PROMISE_STATUS_FULFILLED, hydrate(it, path)]);
       })
       .catch((err) => {
         opts.onError?.({ error: err, path });
-        return s.enqueue([idx, PROMISE_STATUS_REJECTED]);
+        return controller.enqueue([idx, PROMISE_STATUS_REJECTED]);
       })
       .finally(() => {
         pending.delete(idx);
@@ -207,16 +202,16 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     void (async () => {
       try {
         for await (const item of iterable) {
-          await s.enqueue([
+          await controller.enqueue([
             idx,
             ASYNC_ITERABLE_STATUS_VALUE,
             hydrate(item, path),
           ]);
         }
-        await s.enqueue([idx, ASYNC_ITERABLE_STATUS_DONE]);
+        await controller.enqueue([idx, ASYNC_ITERABLE_STATUS_DONE]);
       } catch (error) {
         opts.onError?.({ error, path });
-        await s.enqueue([idx, ASYNC_ITERABLE_STATUS_ERROR]);
+        await controller.enqueue([idx, ASYNC_ITERABLE_STATUS_ERROR]);
       } finally {
         pending.delete(idx);
         maybeClose();
@@ -284,10 +279,10 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
         controller.enqueue(serialize(chunk));
       },
     });
-    return [head, s.stream.pipeThrough(transformStream)] as const;
+    return [head, stream.pipeThrough(transformStream)] as const;
   }
 
-  return [newHead, s.stream] as const;
+  return [newHead, stream] as const;
 }
 export function createJsonBatchStreamProducer(opts: ProducerOptions) {
   const [sourceHead, sourceStream] = createBatchStreamProducer(opts);
@@ -345,14 +340,14 @@ export type ConsumerOnError = (opts: { error: unknown }) => void;
 const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
   return {
     getReader() {
-      const s = createReadableStream<Uint8Array>();
+      const [stream, controller] = createReadableStream<Uint8Array>();
       source.on('data', (chunk) => {
-        return s.enqueue(chunk);
+        return controller.enqueue(chunk);
       });
       source.on('end', () => {
-        s.close();
+        controller.close();
       });
-      return s.stream.getReader();
+      return stream.getReader();
     },
   };
 };
@@ -389,13 +384,13 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
   function dehydrateChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const s = upsertChunkStream(chunkId);
+    const [stream] = upsertChunkStream(chunkId);
 
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
         return new Promise((resolve, reject) => {
           // listen for next value in the stream
-          const reader = s.stream.getReader();
+          const reader = stream.getReader();
           reader
             .read()
             .then((it) => {
@@ -428,7 +423,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
         return {
           [Symbol.asyncIterator]: async function* () {
-            const reader = s.stream.getReader();
+            const reader = stream.getReader();
             while (true) {
               const { done, value } = await reader.read();
               if (done) {
@@ -476,9 +471,9 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
 
   async function end() {
     try {
-      const p: Promise<void>[] = [];
-      for (const s of chunkStreams.values()) {
-        p.push(s.enqueue(new StreamInterruptedError()));
+      const p: Promise<void>[] = []
+      for (const [_stream, controller] of chunkStreams.values()) {
+        p.push(controller.enqueue(new StreamInterruptedError()));
       }
       await Promise.allSettled(p);
       chunkStreams.clear();
@@ -499,8 +494,8 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
         );
 
         const [idx] = chunk;
-        const s = upsertChunkStream(idx);
-        await s.enqueue(chunk);
+        const [_stream, controller] = upsertChunkStream(idx);
+        await controller.enqueue(chunk);
       }
       const { done, value } = await reader.read();
       if (done) {
