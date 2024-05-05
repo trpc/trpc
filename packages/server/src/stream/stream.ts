@@ -231,15 +231,15 @@ export function createJsonBatchStreamProducer(opts: ProducerOptions) {
 function lineAccumulator() {
   let accumulator = '';
   const lines: string[] = [];
-  let decoder: TextDecoder
+  let decoder: TextDecoder;
 
   return {
     lines,
     push(chunk: AllowSharedBufferSource | string) {
       if (typeof chunk === 'string') {
-        accumulator += chunk
+        accumulator += chunk;
       } else {
-        decoder ??= new TextDecoder()
+        decoder ??= new TextDecoder();
         accumulator += decoder.decode(chunk);
       }
 
