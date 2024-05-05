@@ -19,7 +19,7 @@ export function createReadableStream<TValue = unknown>() {
     start(c) {
       controller.close = () => {
         c.close();
-      }
+      };
       controller.enqueue = async (chunk: TValue) => {
         while (c.desiredSize! <= 0) {
           if (!pullPromise) {
@@ -175,7 +175,11 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     pending.add(idx);
     promise
       .then((it) => {
-        return controller.enqueue([idx, PROMISE_STATUS_FULFILLED, hydrate(it, path)]);
+        return controller.enqueue([
+          idx,
+          PROMISE_STATUS_FULFILLED,
+          hydrate(it, path),
+        ]);
       })
       .catch((err) => {
         opts.onError?.({ error: err, path });
@@ -471,7 +475,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
 
   async function end() {
     try {
-      const p: Promise<void>[] = []
+      const p: Promise<void>[] = [];
       for (const [_stream, controller] of chunkStreams.values()) {
         p.push(controller.enqueue(new StreamInterruptedError()));
       }
