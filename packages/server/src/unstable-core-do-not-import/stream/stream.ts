@@ -19,6 +19,22 @@ export function createReadableStream<TValue = unknown>() {
 
   return [stream, controller] as const;
 }
+
+/**
+ * A subset of the standard ReadableStream properties needed by tRPC internally.
+ * @see ReadableStream from lib.dom.d.ts
+ */
+export type WebReadableStreamEsque = {
+  getReader: () => ReadableStreamDefaultReader<Uint8Array>;
+};
+
+export type NodeJSReadableStreamEsque = {
+  on(
+    eventName: string | symbol,
+    listener: (...args: any[]) => void,
+  ): NodeJSReadableStreamEsque;
+};
+
 // ---------- types
 const CHUNK_VALUE_TYPE_PROMISE = 0;
 type CHUNK_VALUE_TYPE_PROMISE = typeof CHUNK_VALUE_TYPE_PROMISE;
@@ -303,14 +319,34 @@ class AsyncError extends Error {
   }
 }
 export type ConsumerOnError = (opts: { error: unknown }) => void;
+
+const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
+  return {
+    getReader() {
+      const [stream, controller] = createReadableStream<Uint8Array>();
+      source.on('data', (chunk) => {
+        controller.enqueue(chunk);
+      });
+      source.on('end', () => {
+        controller.close();
+      });
+      return stream.getReader();
+    },
+  };
+};
+
 export async function createJsonBatchStreamConsumer<THead>(opts: {
-  from: ReadableStream<AllowSharedBufferSource | string>;
+  from: NodeJSReadableStreamEsque | WebReadableStreamEsque;
   deserialize?: Deserialize;
   onError?: ConsumerOnError;
 }) {
-  const { deserialize = (v) => v } = opts;
+  const { deserialize = (v) => v, from } = opts;
 
-  const reader = opts.from.getReader();
+  const reader =
+    'getReader' in from
+      ? from.getReader()
+      : nodeJsStreamToReaderEsque(from).getReader();
+
   const acc = lineAccumulator();
 
   type ControllerChunk = ChunkData | StreamInterruptedError;

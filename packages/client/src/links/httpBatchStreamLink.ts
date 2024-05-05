@@ -1,10 +1,12 @@
 import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
+import { createJsonBatchStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
 import type { NonEmptyArray } from '../internals/types';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import type { RequesterFn } from './internals/createHTTPBatchLink';
 import { createHTTPBatchLink } from './internals/createHTTPBatchLink';
 import { getTextDecoder } from './internals/getTextDecoder';
-import { streamingJsonHttpRequester } from './internals/parseJSONStream';
+import type { HTTPResult } from './internals/httpUtils';
+import { fetchHTTPResponse, getBody, getUrl } from './internals/httpUtils';
 import type { TextDecoderEsque } from './internals/streamingUtils';
 import type { Operation } from './types';
 
@@ -26,12 +28,19 @@ const streamRequester: RequesterFn<HTTPBatchStreamLinkOptions<AnyRootTypes>> = (
     const path = batchOps.map((op) => op.path).join(',');
     const inputs = batchOps.map((op) => op.input);
 
-    const { cancel, promise } = streamingJsonHttpRequester(
+    const ac = requesterOpts.AbortController
+      ? new requesterOpts.AbortController()
+      : null;
+    const responsePromise = fetchHTTPResponse(
       {
         ...requesterOpts,
-        textDecoder,
-        path,
+        TextDecoder: textDecoder,
+        contentTypeHeader: 'application/json',
+        batchModeHeader: 'stream',
+        getUrl,
+        getBody,
         inputs,
+        path,
         headers() {
           if (!requesterOpts.opts.headers) {
             return {};
@@ -44,10 +53,37 @@ const streamRequester: RequesterFn<HTTPBatchStreamLinkOptions<AnyRootTypes>> = (
           return requesterOpts.opts.headers;
         },
       },
-      (index, res) => {
-        unitResolver(index, res);
-      },
+      ac,
     );
+
+    const result = responsePromise.then(async (res) => {
+      if (!res.body) {
+        throw new Error('Received response without body');
+      }
+      const [head, streamMeta] = await createJsonBatchStreamConsumer<
+        Record<string, Promise<any>>
+      >({
+        from: res.body,
+        deserialize: requesterOpts.transformer.output.deserialize,
+        // onError: console.error,
+      });
+
+      await Promise.all(
+        Object.keys(batchOps).map(async (key) => {
+          const json = await head[key];
+          const result: HTTPResult = {
+            json,
+            meta: {
+              response: res,
+            },
+          };
+          unitResolver(Number(key), result);
+
+          return result;
+        }),
+      );
+      return streamMeta.reader.closed;
+    });
 
     return {
       /**
@@ -55,8 +91,10 @@ const streamRequester: RequesterFn<HTTPBatchStreamLinkOptions<AnyRootTypes>> = (
        * but we've already called the `unitResolver` for each of them, there's
        * nothing left to do here.
        */
-      promise: promise.then(() => []),
-      cancel,
+      promise: result.then(() => []),
+      cancel: () => {
+        ac?.abort();
+      },
     };
   };
 };

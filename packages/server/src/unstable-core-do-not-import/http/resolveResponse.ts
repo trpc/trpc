@@ -9,8 +9,8 @@ import {
   type inferRouterError,
 } from '../router';
 import type { TRPCResponse } from '../rpc';
+import { createJsonBatchStreamProducer } from '../stream/stream';
 import { transformTRPCResponse } from '../transformer';
-import { getBatchStreamFormatter } from './batchStreamFormatter';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -305,51 +305,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       errors: [],
     });
 
-    const encoder = new TextEncoderStream();
-    const stream = encoder.readable;
-    const controller = encoder.writable.getWriter();
-    async function exec() {
-      const indexedPromises = new Map(
-        promises.map((promise, index) => [
-          index,
-          promise.then((r) => [index, r] as const),
-        ]),
-      );
-      const formatter = getBatchStreamFormatter();
-
-      while (indexedPromises.size > 0) {
-        const [index, untransformedJSON] = await Promise.race(
-          indexedPromises.values(),
-        );
-        indexedPromises.delete(index);
-
-        try {
-          const transformedJSON = transformTRPCResponse(
-            router._def._config,
-            untransformedJSON,
-          );
-          const body = JSON.stringify(transformedJSON);
-
-          await controller.write(formatter(index, body));
-        } catch (cause) {
-          const call = info!.calls[index]!;
-          const input = call.result();
-          const { body } = caughtErrorToData(cause, {
-            opts,
-            ctx,
-            type,
-            path: call.path,
-            input,
-          });
-
-          await controller.write(formatter(index, body));
-        }
-      }
-
-      await controller.write(formatter.end());
-      await controller.close();
-    }
-    exec().catch((err) => controller.abort(err));
+    const stream = createJsonBatchStreamProducer({
+      maxDepth: 1,
+      data: promises,
+    });
 
     return new Response(stream, {
       headers: headResponse.headers,
