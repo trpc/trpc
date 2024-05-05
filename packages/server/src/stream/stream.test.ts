@@ -372,3 +372,51 @@ test('e2e, client aborts request halfway through', async () => {
   expect(yieldCalls.mock.calls.length).toBeLessThan(10);
   server.close();
 });
+
+test('e2e, encode/decode - maxDepth', async () => {
+  const onError = vi.fn<Parameters<ProducerOnError>, null>();
+  const data = {
+    0: Promise.resolve({
+      foo: 'bar',
+      deferred: Promise.resolve(42),
+    }),
+  } as const;
+  const stream = createJsonBatchStreamProducer({
+    data,
+    serialize: SuperJSON.serialize,
+    onError,
+    maxDepth: 1,
+  });
+
+  const server = createServer(stream, new AbortController());
+
+  const res = await fetch(server.url);
+  const [head] = await createJsonBatchStreamConsumer<typeof data>({
+    from: res.body!,
+    deserialize: SuperJSON.deserialize,
+  });
+
+  {
+    expect(head[0]).toBeInstanceOf(Promise);
+
+    const value = await head[0];
+    await expect(value.deferred).rejects.toMatchInlineSnapshot(
+      `[Error: Received error from server]`,
+    );
+  }
+
+  expect(onError).toHaveBeenCalledTimes(1);
+  expect(onError.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "error": [Error: Max depth reached at path: 0.deferred],
+          "path": Array [
+            "0",
+            "deferred",
+          ],
+        },
+      ],
+    ]
+  `);
+});

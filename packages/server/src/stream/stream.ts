@@ -96,6 +96,13 @@ export interface ProducerOptions {
   serialize?: Serialize;
   data: Record<number, unknown>;
   onError?: ProducerOnError;
+  maxDepth?: number;
+}
+
+class MaxDepthError extends Error {
+  constructor(public path: (string | number)[]) {
+    super('Max depth reached at path: ' + path.join('.'));
+  }
 }
 export function createBatchStreamProducer(opts: ProducerOptions) {
   const { data } = opts;
@@ -113,6 +120,13 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     promise: Promise<unknown>,
     path: (string | number)[],
   ) {
+    const error = checkMaxDepth(path);
+    if (error) {
+      promise.catch(() => {
+        // ignore
+      });
+      promise = Promise.reject(error);
+    }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
     const enqueue = (value: PromiseChunk) => {
@@ -136,6 +150,12 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     iterable: AsyncIterable<unknown>,
     path: (string | number)[],
   ) {
+    const error = checkMaxDepth(path);
+    if (error) {
+      iterable = (async function* () {
+        throw error;
+      })();
+    }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
     void (async () => {
@@ -158,6 +178,12 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     })();
     return idx;
   }
+  function checkMaxDepth(path: (string | number)[]) {
+    if (opts.maxDepth && path.length > opts.maxDepth) {
+      return new MaxDepthError(path);
+    }
+    return null;
+  }
   function transformChunk(
     value: unknown,
     path: (string | number)[],
@@ -166,6 +192,9 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
       return [CHUNK_VALUE_TYPE_PROMISE, registerPromise(value, path)];
     }
     if (isAsyncIterable(value)) {
+      if (opts.maxDepth && path.length >= opts.maxDepth) {
+        throw new Error('Max depth reached');
+      }
       return [CHUNK_VALUE_TYPE_ITERABLE, registerIterable(value, path)];
     }
     return null;
@@ -435,7 +464,6 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
 
       walkValues().catch(() => {
         // FIXME
-        // console.error('Error walking values', error);
         return kill();
       });
 
