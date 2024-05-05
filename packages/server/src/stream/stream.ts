@@ -22,21 +22,27 @@ export function createReadableStream<TValue = unknown>() {
   return [stream, controller] as const;
 }
 // ---------- types
-
 type ChunkIndex = number & { __chunkIndex: true };
-enum ChunkValueType {
-  PROMISE = 0,
-  ITERABLE = 1,
-}
-enum PromiseStatus {
-  FULFILLED = 0,
-  REJECTED = 1,
-}
-enum IterableStatus {
-  VALUE = 0,
-  DONE = 1,
-  ERROR = 2,
-}
+
+const CHUNK_VALUE_TYPE_PROMISE = 0;
+type CHUNK_VALUE_TYPE_PROMISE = typeof CHUNK_VALUE_TYPE_PROMISE;
+const CHUNK_VALUE_TYPE_ITERABLE = 1;
+type CHUNK_VALUE_TYPE_ITERABLE = typeof CHUNK_VALUE_TYPE_ITERABLE;
+
+type ChunkValueType = CHUNK_VALUE_TYPE_PROMISE | CHUNK_VALUE_TYPE_ITERABLE;
+
+const PROMISE_STATUS_FULFILLED = 0;
+type PROMISE_STATUS_FULFILLED = typeof PROMISE_STATUS_FULFILLED;
+const PROMISE_STATUS_REJECTED = 1;
+type PROMISE_STATUS_REJECTED = typeof PROMISE_STATUS_REJECTED;
+
+const ITERABLE_STATUS_DONE = 0;
+type ITERABLE_STATUS_DONE = typeof ITERABLE_STATUS_DONE;
+const ITERABLE_STATUS_VALUE = 1;
+type ITERABLE_STATUS_VALUE = typeof ITERABLE_STATUS_VALUE;
+const ITERABLE_STATUS_ERROR = 2;
+type ITERABLE_STATUS_ERROR = typeof ITERABLE_STATUS_ERROR;
+
 type ChunkDefinitionKey =
   // root should be replaced
   | null
@@ -55,21 +61,22 @@ type Value = [
   // chunk descriptions
   ...ChunkDefinition[],
 ];
+
 type Head = Record<number, Value>;
 type PromiseChunk =
-  | [chunkIndex: ChunkIndex, status: PromiseStatus.FULFILLED, value: Value]
+  | [chunkIndex: ChunkIndex, status: PROMISE_STATUS_FULFILLED, value: Value]
   | [
       chunkIndex: ChunkIndex,
-      status: PromiseStatus.REJECTED,
+      status: PROMISE_STATUS_REJECTED,
       // do we want to serialize errors?
       // , error?: unknown
     ];
 type IterableChunk =
-  | [chunkIndex: ChunkIndex, status: IterableStatus.DONE]
-  | [chunkIndex: ChunkIndex, status: IterableStatus.VALUE, value: Value]
+  | [chunkIndex: ChunkIndex, status: ITERABLE_STATUS_DONE]
+  | [chunkIndex: ChunkIndex, status: ITERABLE_STATUS_VALUE, value: Value]
   | [
       chunkIndex: ChunkIndex,
-      status: IterableStatus.ERROR,
+      status: ITERABLE_STATUS_ERROR,
       // do we want to serialize errors?
       // , error?: unknown
     ];
@@ -114,11 +121,11 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     };
     promise
       .then((it) => {
-        enqueue([idx, PromiseStatus.FULFILLED, getValue(it, path)]);
+        enqueue([idx, PROMISE_STATUS_FULFILLED, getValue(it, path)]);
       })
       .catch((err) => {
         opts.onError?.({ error: err, path });
-        enqueue([idx, PromiseStatus.REJECTED]);
+        enqueue([idx, PROMISE_STATUS_REJECTED]);
       })
       .finally(() => {
         pending.delete(idx);
@@ -135,12 +142,16 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     void (async () => {
       try {
         for await (const item of iterable) {
-          controller.enqueue([idx, IterableStatus.VALUE, getValue(item, path)]);
+          controller.enqueue([
+            idx,
+            ITERABLE_STATUS_VALUE,
+            getValue(item, path),
+          ]);
         }
-        controller.enqueue([idx, IterableStatus.DONE]);
+        controller.enqueue([idx, ITERABLE_STATUS_DONE]);
       } catch (error) {
         opts.onError?.({ error, path });
-        controller.enqueue([idx, IterableStatus.ERROR]);
+        controller.enqueue([idx, ITERABLE_STATUS_ERROR]);
       } finally {
         pending.delete(idx);
         maybeClose();
@@ -153,10 +164,10 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     path: (string | number)[],
   ): null | [type: ChunkValueType, chunkId: ChunkIndex] {
     if (isPromise(value)) {
-      return [ChunkValueType.PROMISE, registerPromise(value, path)];
+      return [CHUNK_VALUE_TYPE_PROMISE, registerPromise(value, path)];
     }
     if (isAsyncIterable(value)) {
-      return [ChunkValueType.ITERABLE, registerIterable(value, path)];
+      return [CHUNK_VALUE_TYPE_ITERABLE, registerIterable(value, path)];
     }
     return null;
   }
@@ -282,7 +293,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
     const [stream] = upsertChunkStream(chunkId);
 
     switch (type) {
-      case ChunkValueType.PROMISE: {
+      case CHUNK_VALUE_TYPE_PROMISE: {
         return new Promise((resolve, reject) => {
           // listen for next value in the stream
           const reader = stream.getReader();
@@ -300,10 +311,10 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
               const value = it.value;
               const [_chunkId, status, data] = value as PromiseChunk;
               switch (status) {
-                case PromiseStatus.FULFILLED:
+                case PROMISE_STATUS_FULFILLED:
                   resolve(parseValue(data));
                   break;
-                case PromiseStatus.REJECTED:
+                case PROMISE_STATUS_REJECTED:
                   reject(new AsyncError(data));
                   break;
               }
@@ -315,7 +326,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
             });
         });
       }
-      case ChunkValueType.ITERABLE: {
+      case CHUNK_VALUE_TYPE_ITERABLE: {
         return {
           [Symbol.asyncIterator]: async function* () {
             const reader = stream.getReader();
@@ -331,13 +342,13 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
               const [_chunkId, status, data] = value as IterableChunk;
 
               switch (status) {
-                case IterableStatus.VALUE:
+                case ITERABLE_STATUS_VALUE:
                   yield parseValue(data);
                   break;
-                case IterableStatus.DONE:
+                case ITERABLE_STATUS_DONE:
                   chunkStreams.delete(chunkId);
                   return;
-                case IterableStatus.ERROR:
+                case ITERABLE_STATUS_ERROR:
                   chunkStreams.delete(chunkId);
                   throw new AsyncError(data);
               }
