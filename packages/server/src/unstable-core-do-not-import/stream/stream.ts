@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { isObject } from '../unstable-core-do-not-import/utils';
+import { isObject } from '../utils';
 
 // ---------- utils
 function isAsyncIterable<TValue>(
