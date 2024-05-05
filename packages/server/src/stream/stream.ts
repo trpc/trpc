@@ -148,17 +148,22 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     })();
     return idx;
   }
-  function getValue(value: unknown, path: (string | number)[]): Value {
+  function transformChunk(
+    value: unknown,
+    path: (string | number)[],
+  ): null | [type: ChunkValueType, chunkId: ChunkIndex] {
     if (isPromise(value)) {
-      return [
-        [placeholder],
-        [null, ChunkValueType.PROMISE, registerPromise(value, path)],
-      ];
-    } else if (isAsyncIterable(value)) {
-      return [
-        [placeholder],
-        [null, ChunkValueType.ITERABLE, registerIterable(value, path)],
-      ];
+      return [ChunkValueType.PROMISE, registerPromise(value, path)];
+    }
+    if (isAsyncIterable(value)) {
+      return [ChunkValueType.ITERABLE, registerIterable(value, path)];
+    }
+    return null;
+  }
+  function getValue(value: unknown, path: (string | number)[]): Value {
+    const reg = transformChunk(value, path);
+    if (reg) {
+      return [[placeholder], [null, ...reg]];
     }
     if (!isObject(value)) {
       return [[value]];
@@ -166,25 +171,13 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     const newObj = {} as Record<string, unknown>;
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
-      if (isPromise(item)) {
-        newObj[key] = placeholder;
-        asyncValues.push([
-          key,
-          ChunkValueType.PROMISE,
-          registerPromise(item, [...path, key]),
-        ]);
+      const transformed = transformChunk(item, [...path, key]);
+      if (!transformed) {
+        newObj[key] = item;
         continue;
       }
-      if (isAsyncIterable(item)) {
-        newObj[key] = placeholder;
-        asyncValues.push([
-          key,
-          ChunkValueType.ITERABLE,
-          registerIterable(item, [...path, key]),
-        ]);
-        continue;
-      }
-      newObj[key] = item;
+      newObj[key] = placeholder;
+      asyncValues.push([key, ...transformed]);
     }
     return [[newObj], ...asyncValues];
   }
