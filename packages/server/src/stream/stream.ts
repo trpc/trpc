@@ -231,12 +231,17 @@ export function createJsonBatchStreamProducer(opts: ProducerOptions) {
 function lineAccumulator() {
   let accumulator = '';
   const lines: string[] = [];
+  let decoder: TextDecoder
 
   return {
     lines,
     push(chunk: AllowSharedBufferSource | string) {
-      accumulator +=
-        typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk);
+      if (typeof chunk === 'string') {
+        accumulator += chunk
+      } else {
+        decoder ??= new TextDecoder()
+        accumulator += decoder.decode(chunk);
+      }
 
       const parts = accumulator.split('\n');
       accumulator = parts.pop() ?? '';
@@ -259,7 +264,6 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
   deserialize?: Deserialize;
 }) {
   const { deserialize = (v) => v } = opts;
-  const textDecoder = new TextDecoder();
 
   const reader = opts.from.getReader();
   const acc = lineAccumulator();
@@ -400,7 +404,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
         await kill();
         return;
       }
-      acc.push(typeof value === 'string' ? value : textDecoder.decode(value));
+      acc.push(value);
     }
   }
 
