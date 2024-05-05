@@ -1,7 +1,7 @@
 import http from 'http';
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
-import type { ProducerOnError } from './stream';
+import type { ConsumerOnError, ProducerOnError } from './stream';
 import {
   createBatchStreamProducer,
   createJsonBatchStreamConsumer,
@@ -140,17 +140,19 @@ test('encode/decode - error', async () => {
 
   const errors: unknown[] = [];
 
-  const onErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
+  const onProducerErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
+  const onConsumerErrorSpy = vi.fn<Parameters<ConsumerOnError>, null>();
 
   const stream = createJsonBatchStreamProducer({
     data,
     serialize: (v) => SuperJSON.serialize(v),
-    onError: onErrorSpy,
+    onError: onProducerErrorSpy,
   });
 
   const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
+    onError: onConsumerErrorSpy,
   });
 
   {
@@ -184,8 +186,8 @@ test('encode/decode - error', async () => {
     );
   }
 
-  expect(onErrorSpy).toHaveBeenCalledTimes(2);
-  expect(onErrorSpy.mock.calls).toMatchInlineSnapshot(`
+  expect(onProducerErrorSpy).toHaveBeenCalledTimes(2);
+  expect(onProducerErrorSpy.mock.calls).toMatchInlineSnapshot(`
     Array [
       Array [
         Object {
@@ -209,6 +211,7 @@ test('encode/decode - error', async () => {
 
   await meta.reader.closed;
   expect(meta.controllers.size).toBe(0);
+  expect(onConsumerErrorSpy).toHaveBeenCalledTimes(0);
 });
 
 function createServer(
@@ -320,6 +323,10 @@ test('e2e, client aborts request halfway through', async () => {
   const clientAbort = new AbortController();
   const yieldCalls = vi.fn();
   let stopped = false;
+
+  const onConsumerErrorSpy = vi.fn<Parameters<ConsumerOnError>, null>();
+  const onProducerErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
+
   const data = {
     0: Promise.resolve({
       [Symbol.asyncIterator]: async function* () {
@@ -339,6 +346,7 @@ test('e2e, client aborts request halfway through', async () => {
 
   const stream = createJsonBatchStreamProducer({
     data,
+    onError: onProducerErrorSpy,
   });
   const server = createServer(stream, serverAbort);
 
@@ -347,6 +355,7 @@ test('e2e, client aborts request halfway through', async () => {
   });
   const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
     from: res.body!,
+    onError: onConsumerErrorSpy,
   });
 
   {
@@ -370,6 +379,17 @@ test('e2e, client aborts request halfway through', async () => {
 
   expect(yieldCalls.mock.calls.length).toBeGreaterThanOrEqual(3);
   expect(yieldCalls.mock.calls.length).toBeLessThan(10);
+
+  const errors = onConsumerErrorSpy.mock.calls.map(
+    (it) => (it[0].error as Error).message,
+  );
+  expect(errors).toMatchInlineSnapshot(`
+    Array [
+      "The operation was aborted.",
+    ]
+  `);
+  expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
+  expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
   server.close();
 });
 

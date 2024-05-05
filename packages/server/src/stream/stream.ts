@@ -304,9 +304,11 @@ class AsyncError extends Error {
     super('Received error from server');
   }
 }
+export type ConsumerOnError = (opts: { error: unknown }) => void;
 export async function createJsonBatchStreamConsumer<THead>(opts: {
   from: ReadableStream<AllowSharedBufferSource | string>;
   deserialize?: Deserialize;
+  onError?: ConsumerOnError;
 }) {
   const { deserialize = (v) => v } = opts;
 
@@ -416,16 +418,15 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
     return data;
   }
 
-  async function kill() {
+  async function end() {
     try {
       for (const [_, controller] of chunkStreams.values()) {
         controller.enqueue(new StreamInterruptedError());
       }
 
       chunkStreams.clear();
-      await reader.cancel();
     } catch (error) {
-      // TODO: log error
+      opts.onError?.({ error });
     }
   }
   async function walkValues() {
@@ -446,7 +447,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
       }
       const { done, value } = await reader.read();
       if (done) {
-        await kill();
+        await end();
         return;
       }
       acc.push(value);
@@ -475,9 +476,9 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
         newHead[Number(key)] = parsed;
       }
 
-      walkValues().catch(() => {
-        // FIXME
-        return kill();
+      walkValues().catch((error) => {
+        opts?.onError?.({ error });
+        return end();
       });
 
       return [
@@ -490,5 +491,5 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
     }
   }
 
-  throw new Error("Can't parse head");
+  throw new Error("Couldn't parse head");
 }
