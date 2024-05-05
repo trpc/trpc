@@ -24,20 +24,20 @@ export function createReadableStream<TValue = unknown>() {
 // ---------- types
 const CHUNK_VALUE_TYPE_PROMISE = 0;
 type CHUNK_VALUE_TYPE_PROMISE = typeof CHUNK_VALUE_TYPE_PROMISE;
-const CHUNK_VALUE_TYPE_ITERABLE = 1;
-type CHUNK_VALUE_TYPE_ITERABLE = typeof CHUNK_VALUE_TYPE_ITERABLE;
+const CHUNK_VALUE_TYPE_ASYNC_ITERABLE = 1;
+type CHUNK_VALUE_TYPE_ASYNC_ITERABLE = typeof CHUNK_VALUE_TYPE_ASYNC_ITERABLE;
 
 const PROMISE_STATUS_FULFILLED = 0;
 type PROMISE_STATUS_FULFILLED = typeof PROMISE_STATUS_FULFILLED;
 const PROMISE_STATUS_REJECTED = 1;
 type PROMISE_STATUS_REJECTED = typeof PROMISE_STATUS_REJECTED;
 
-const ITERABLE_STATUS_DONE = 0;
-type ITERABLE_STATUS_DONE = typeof ITERABLE_STATUS_DONE;
-const ITERABLE_STATUS_VALUE = 1;
-type ITERABLE_STATUS_VALUE = typeof ITERABLE_STATUS_VALUE;
-const ITERABLE_STATUS_ERROR = 2;
-type ITERABLE_STATUS_ERROR = typeof ITERABLE_STATUS_ERROR;
+const ASYNC_ITERABLE_STATUS_DONE = 0;
+type ASYNC_ITERABLE_STATUS_DONE = typeof ASYNC_ITERABLE_STATUS_DONE;
+const ASYNC_ITERABLE_STATUS_VALUE = 1;
+type ASYNC_ITERABLE_STATUS_VALUE = typeof ASYNC_ITERABLE_STATUS_VALUE;
+const ASYNC_ITERABLE_STATUS_ERROR = 2;
+type ASYNC_ITERABLE_STATUS_ERROR = typeof ASYNC_ITERABLE_STATUS_ERROR;
 
 type ChunkDefinitionKey =
   // root should be replaced
@@ -48,22 +48,28 @@ type ChunkDefinitionKey =
   | string;
 
 type ChunkIndex = number & { __chunkIndex: true };
-type ChunkValueType = CHUNK_VALUE_TYPE_PROMISE | CHUNK_VALUE_TYPE_ITERABLE;
+type ChunkValueType =
+  | CHUNK_VALUE_TYPE_PROMISE
+  | CHUNK_VALUE_TYPE_ASYNC_ITERABLE;
 type ChunkDefinition = [
   key: ChunkDefinitionKey,
   type: ChunkValueType,
   chunkId: ChunkIndex,
 ];
-type Value = [
+type HydratedValue = [
   // data
   [unknown],
   // chunk descriptions
   ...ChunkDefinition[],
 ];
 
-type Head = Record<number, Value>;
+type Head = Record<number, HydratedValue>;
 type PromiseChunk =
-  | [chunkIndex: ChunkIndex, status: PROMISE_STATUS_FULFILLED, value: Value]
+  | [
+      chunkIndex: ChunkIndex,
+      status: PROMISE_STATUS_FULFILLED,
+      value: HydratedValue,
+    ]
   | [
       chunkIndex: ChunkIndex,
       status: PROMISE_STATUS_REJECTED,
@@ -71,11 +77,15 @@ type PromiseChunk =
       // , error?: unknown
     ];
 type IterableChunk =
-  | [chunkIndex: ChunkIndex, status: ITERABLE_STATUS_DONE]
-  | [chunkIndex: ChunkIndex, status: ITERABLE_STATUS_VALUE, value: Value]
+  | [chunkIndex: ChunkIndex, status: ASYNC_ITERABLE_STATUS_DONE]
   | [
       chunkIndex: ChunkIndex,
-      status: ITERABLE_STATUS_ERROR,
+      status: ASYNC_ITERABLE_STATUS_VALUE,
+      value: HydratedValue,
+    ]
+  | [
+      chunkIndex: ChunkIndex,
+      status: ASYNC_ITERABLE_STATUS_ERROR,
       // do we want to serialize errors?
       // , error?: unknown
     ];
@@ -116,7 +126,7 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
       controller.close();
     }
   }
-  function registerPromise(
+  function hydratePromise(
     promise: Promise<unknown>,
     path: (string | number)[],
   ) {
@@ -134,7 +144,7 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     };
     promise
       .then((it) => {
-        enqueue([idx, PROMISE_STATUS_FULFILLED, getValue(it, path)]);
+        enqueue([idx, PROMISE_STATUS_FULFILLED, hydrate(it, path)]);
       })
       .catch((err) => {
         opts.onError?.({ error: err, path });
@@ -146,7 +156,7 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
       });
     return idx;
   }
-  function registerIterable(
+  function hydrateAsyncIterable(
     iterable: AsyncIterable<unknown>,
     path: (string | number)[],
   ) {
@@ -163,14 +173,14 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
         for await (const item of iterable) {
           controller.enqueue([
             idx,
-            ITERABLE_STATUS_VALUE,
-            getValue(item, path),
+            ASYNC_ITERABLE_STATUS_VALUE,
+            hydrate(item, path),
           ]);
         }
-        controller.enqueue([idx, ITERABLE_STATUS_DONE]);
+        controller.enqueue([idx, ASYNC_ITERABLE_STATUS_DONE]);
       } catch (error) {
         opts.onError?.({ error, path });
-        controller.enqueue([idx, ITERABLE_STATUS_ERROR]);
+        controller.enqueue([idx, ASYNC_ITERABLE_STATUS_ERROR]);
       } finally {
         pending.delete(idx);
         maybeClose();
@@ -184,23 +194,26 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     }
     return null;
   }
-  function transformChunk(
+  function hydrateChunk(
     value: unknown,
     path: (string | number)[],
   ): null | [type: ChunkValueType, chunkId: ChunkIndex] {
     if (isPromise(value)) {
-      return [CHUNK_VALUE_TYPE_PROMISE, registerPromise(value, path)];
+      return [CHUNK_VALUE_TYPE_PROMISE, hydratePromise(value, path)];
     }
     if (isAsyncIterable(value)) {
       if (opts.maxDepth && path.length >= opts.maxDepth) {
         throw new Error('Max depth reached');
       }
-      return [CHUNK_VALUE_TYPE_ITERABLE, registerIterable(value, path)];
+      return [
+        CHUNK_VALUE_TYPE_ASYNC_ITERABLE,
+        hydrateAsyncIterable(value, path),
+      ];
     }
     return null;
   }
-  function getValue(value: unknown, path: (string | number)[]): Value {
-    const reg = transformChunk(value, path);
+  function hydrate(value: unknown, path: (string | number)[]): HydratedValue {
+    const reg = hydrateChunk(value, path);
     if (reg) {
       return [[placeholder], [null, ...reg]];
     }
@@ -210,7 +223,7 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     const newObj = {} as Record<string, unknown>;
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
-      const transformed = transformChunk(item, [...path, key]);
+      const transformed = hydrateChunk(item, [...path, key]);
       if (!transformed) {
         newObj[key] = item;
         continue;
@@ -223,7 +236,7 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
 
   const newHead: Head = {};
   for (const [key, item] of Object.entries(data)) {
-    newHead[Number(key)] = getValue(item, [key]);
+    newHead[Number(key)] = hydrate(item, [key]);
   }
 
   const serialize = opts.serialize;
@@ -315,7 +328,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
     return chunk;
   };
 
-  function morphValue(value: ChunkDefinition) {
+  function dehydrateChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
     const [stream] = upsertChunkStream(chunkId);
@@ -340,7 +353,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
               const [_chunkId, status, data] = value as PromiseChunk;
               switch (status) {
                 case PROMISE_STATUS_FULFILLED:
-                  resolve(parseValue(data));
+                  resolve(dehydrate(data));
                   break;
                 case PROMISE_STATUS_REJECTED:
                   reject(new AsyncError(data));
@@ -354,7 +367,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
             });
         });
       }
-      case CHUNK_VALUE_TYPE_ITERABLE: {
+      case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
         return {
           [Symbol.asyncIterator]: async function* () {
             const reader = stream.getReader();
@@ -370,13 +383,13 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
               const [_chunkId, status, data] = value as IterableChunk;
 
               switch (status) {
-                case ITERABLE_STATUS_VALUE:
-                  yield parseValue(data);
+                case ASYNC_ITERABLE_STATUS_VALUE:
+                  yield dehydrate(data);
                   break;
-                case ITERABLE_STATUS_DONE:
+                case ASYNC_ITERABLE_STATUS_DONE:
                   chunkStreams.delete(chunkId);
                   return;
-                case ITERABLE_STATUS_ERROR:
+                case ASYNC_ITERABLE_STATUS_ERROR:
                   chunkStreams.delete(chunkId);
                   throw new AsyncError(data);
               }
@@ -387,18 +400,18 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
     }
   }
 
-  function parseValue(value: Value): unknown {
+  function dehydrate(value: HydratedValue): unknown {
     const [[data], ...asyncProps] = value;
 
     for (const value of asyncProps) {
-      const deserialized = morphValue(value);
+      const dehydrated = dehydrateChunkDefinition(value);
 
       const [path] = value;
       if (path === null) {
-        return deserialized;
+        return dehydrated;
       }
 
-      (data as any)[path] = deserialized;
+      (data as any)[path] = dehydrated;
     }
     return data;
   }
@@ -458,7 +471,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
 
       const newHead = head as Record<number, unknown>;
       for (const [key, value] of Object.entries(head)) {
-        const parsed = parseValue(value);
+        const parsed = dehydrate(value);
         newHead[Number(key)] = parsed;
       }
 
