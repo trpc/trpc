@@ -21,12 +21,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - name: Setup node and pnpm
+        uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
+      - name: Build @trpc/*
+        run: pnpm turbo --filter "@trpc/*" build
   test:
     timeout-minutes: 10
     env:
@@ -36,10 +39,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - name: Setup node and pnpm
+        uses: ./.github/setup
 
       - run: pnpm turbo --filter "@trpc/*" build
       - run: pnpm test-ci
@@ -53,7 +58,7 @@ jobs:
   e2e:
     # only run on PRs
     if: github.event_name == 'pull_request'
-    name: 'E2E-tests'
+    name: 'E2E-tests - ${{matrix.os}}'
     needs: [build]
     services:
       postgres:
@@ -68,7 +73,7 @@ jobs:
       NEXTAUTH_SECRET: supersecret
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-    runs-on: ubuntu-latest
+    runs-on: ${{matrix.os}}
     timeout-minutes: 10
     continue-on-error: true
     strategy:
@@ -93,13 +98,17 @@ jobs:
             standalone-server,
             vercel-edge-runtime,
           ]
+        os: [ubuntu-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - name: Setup node and pnpm
+        uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
+      - name: name: Build @trpc/*
+        run: pnpm turbo --filter "@trpc/*" build
 
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
@@ -109,9 +118,12 @@ jobs:
             then pnpm playwright install chromium;
           fi
 
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+      - name: Run test-dev for ${{matrix.dir}}
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: Run build and type-check for ${{matrix.dir}}
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
+      - name: Run test-start for ${{matrix.dir}}
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
     # only run on PRs
@@ -131,20 +143,26 @@ jobs:
       matrix:
         dir: [deno-deploy]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - name: Setup node and pnpm
+        uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
+      - name: Build @trpc/*
+        run: pnpm turbo --filter "@trpc/*" build
 
-      - uses: denoland/setup-deno@v1
+      - name: Setup deno
+        uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
 
-      - run: deno --version
+      - name: Check deno version
+        run: deno --version
 
-      - run: |
+      - name: Run deno tests
+        run: |
           cd ./examples/${{ matrix.dir }}
           pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
 
@@ -166,22 +184,30 @@ jobs:
         dir: [bun]
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - name: Setup node and pnpm
+        uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
+      - name: Build @trpc/*
+        run: pnpm turbo --filter "@trpc/*" build
 
-      - uses: oven-sh/setup-bun@v1
+      - name: Setup bun
+        uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
 
-      - run: bun --version
+      - name: Check bun version
+        run: bun --version
 
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+      - name: Run test-dev for ${{matrix.dir}}
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: Run build and type-check for ${{matrix.dir}}
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - name: Run test-start for ${{matrix.dir}}
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
     # only run on PRs
@@ -213,12 +239,15 @@ jobs:
           ]
         node-start: ['18.x']
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - name: Setup node and pnpm
+        uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
+      - name: Build @trpc/*
+        run: pnpm turbo --filter "@trpc/*" build
 
       - uses: actions/setup-node@v4
         with:
@@ -232,6 +261,9 @@ jobs:
           if grep --silent '"@playwright/test"';
             then pnpm playwright install chromium;
           fi
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+      - name: Run test-dev for ${{matrix.dir}}
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - name: Run build and type-check for ${{matrix.dir}}
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - name: Run test-start for ${{matrix.dir}}
+        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
