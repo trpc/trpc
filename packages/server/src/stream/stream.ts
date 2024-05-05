@@ -22,14 +22,10 @@ export function createReadableStream<TValue = unknown>() {
   return [stream, controller] as const;
 }
 // ---------- types
-type ChunkIndex = number & { __chunkIndex: true };
-
 const CHUNK_VALUE_TYPE_PROMISE = 0;
 type CHUNK_VALUE_TYPE_PROMISE = typeof CHUNK_VALUE_TYPE_PROMISE;
 const CHUNK_VALUE_TYPE_ITERABLE = 1;
 type CHUNK_VALUE_TYPE_ITERABLE = typeof CHUNK_VALUE_TYPE_ITERABLE;
-
-type ChunkValueType = CHUNK_VALUE_TYPE_PROMISE | CHUNK_VALUE_TYPE_ITERABLE;
 
 const PROMISE_STATUS_FULFILLED = 0;
 type PROMISE_STATUS_FULFILLED = typeof PROMISE_STATUS_FULFILLED;
@@ -50,6 +46,9 @@ type ChunkDefinitionKey =
   | number
   // at key path
   | string;
+
+type ChunkIndex = number & { __chunkIndex: true };
+type ChunkValueType = CHUNK_VALUE_TYPE_PROMISE | CHUNK_VALUE_TYPE_ITERABLE;
 type ChunkDefinition = [
   key: ChunkDefinitionKey,
   type: ChunkValueType,
@@ -83,7 +82,7 @@ type IterableChunk =
 type ChunkData = PromiseChunk | IterableChunk;
 type PlaceholderValue = 0 & { __placeholder: true };
 function isPromise(value: unknown): value is Promise<unknown> {
-  return value instanceof Promise;
+  return isObject(value) && typeof (value as any).then === 'function';
 }
 
 type Serialize = (value: any) => any;
