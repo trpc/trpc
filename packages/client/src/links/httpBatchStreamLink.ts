@@ -1,5 +1,6 @@
 import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import type { TRPCResponse } from '@trpc/server/rpc';
 import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import { createJsonBatchStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
@@ -97,7 +98,16 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
 
               const promises = Object.keys(batchOps).map(
                 async (key): Promise<HTTPResult> => {
-                  const json = await head[key];
+                  let json: TRPCResponse = await head[key];
+
+                  if ('result' in json) {
+                    const result = await Promise.resolve(json.result);
+                    json = {
+                      result: {
+                        data: await Promise.resolve(result.data),
+                      },
+                    };
+                  }
 
                   return {
                     json,

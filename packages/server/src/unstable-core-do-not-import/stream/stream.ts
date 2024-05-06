@@ -100,7 +100,7 @@ type IterableChunk =
     ];
 type ChunkData = PromiseChunk | IterableChunk;
 type PlaceholderValue = 0 & { __placeholder: true };
-function isPromise(value: unknown): value is Promise<unknown> {
+export function isPromise(value: unknown): value is Promise<unknown> {
   return isObject(value) && typeof (value as any).then === 'function';
 }
 

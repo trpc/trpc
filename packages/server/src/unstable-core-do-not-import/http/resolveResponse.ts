@@ -180,6 +180,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
   const isStreamCall = req.headers.get('trpc-batch-mode') === 'stream';
 
+  const experimentalIterablesAndDeferreds =
+    router._def._config.experimental?.iterablesAndDeferreds ?? false;
+
   try {
     info = getRequestInfo({
       req,
@@ -231,20 +234,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               message: 'Cannot return async iterable in non-streaming response',
             });
           }
-          if (!opts.router._def._config.experimental?.iterablesAndDeferreds) {
+          if (!experimentalIterablesAndDeferreds) {
             throw new TRPCError({
               code: 'BAD_REQUEST',
               message: 'Missing experimental flag "iterablesAndDeferreds"',
             });
           }
-
-          return async function* () {
-            yield {
-              result: async function* () {
-                yield* data;
-              },
-            };
-          };
         }
 
         return {
@@ -342,11 +337,29 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     });
 
     const stream = createJsonBatchStreamProducer({
-      maxDepth: opts.router._def._config.experimental?.iterablesAndDeferreds
-        ? 2
-        : 1,
-      data: promises,
+      maxDepth: experimentalIterablesAndDeferreds ? 4 : 1,
+      data: promises.map(async (it) => {
+        const response = await it;
+        if ('result' in response) {
+          return {
+            result: Promise.resolve({
+              data: Promise.resolve(response.result.data),
+            }),
+          };
+        }
+        return response;
+      }),
       serialize: opts.router._def._config.transformer.output.serialize,
+      onError: (cause) => {
+        opts.onError?.({
+          error: getTRPCErrorFromUnknown(cause),
+          path: undefined,
+          input: undefined,
+          ctx,
+          type,
+          req: opts.req,
+        });
+      },
     });
 
     return new Response(stream, {

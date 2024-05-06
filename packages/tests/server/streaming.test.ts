@@ -190,7 +190,13 @@ describe('no transformer', () => {
     for await (const value of iterable) {
       aggregated.push(value);
     }
-    expect(aggregated).toMatchInlineSnapshot();
+    expect(aggregated).toMatchInlineSnapshot(`
+      Array [
+        1,
+        2,
+        3,
+      ]
+    `);
   });
 });
 
@@ -200,6 +206,9 @@ describe('with transformer', () => {
     .beforeEach(() => {
       const t = initTRPC.create({
         transformer: superjson,
+        experimental: {
+          iterablesAndDeferreds: true,
+        },
       });
       orderedResults.length = 0;
 
@@ -218,6 +227,11 @@ describe('with transformer', () => {
           }),
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        }),
+        iterable: t.procedure.query(async function* () {
+          yield 1;
+          yield 2;
+          yield 3;
         }),
       });
 
@@ -292,6 +306,26 @@ describe('with transformer', () => {
           "reason": [TRPCClientError: INTERNAL_SERVER_ERROR],
           "status": "rejected",
         },
+      ]
+    `);
+  });
+
+  test('iterable', async () => {
+    const { client } = ctx;
+
+    const iterable = await client.iterable.query();
+
+    // TODO:
+    // expectTypeOf(iterable).toEqualTypeOf<AsyncIterable<number>>();
+    const aggregated: unknown[] = [];
+    for await (const value of iterable) {
+      aggregated.push(value);
+    }
+    expect(aggregated).toMatchInlineSnapshot(`
+      Array [
+        1,
+        2,
+        3,
       ]
     `);
   });
