@@ -1,12 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { isObject } from '../utils';
+import { isAsyncIterable, isObject } from '../utils';
 
 // ---------- utils
-function isAsyncIterable<TValue>(
-  value: unknown,
-): value is AsyncIterable<TValue> {
-  return isObject(value) && Symbol.asyncIterator in value;
-}
 
 export function createReadableStream<TValue = unknown>() {
   let controller: ReadableStreamDefaultController<TValue> =

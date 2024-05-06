@@ -11,6 +11,7 @@ import {
 import type { TRPCResponse } from '../rpc';
 import { createJsonBatchStreamProducer } from '../stream/stream';
 import { transformTRPCResponse } from '../transformer';
+import { isAsyncIterable } from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -262,6 +263,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
        */
 
       const untransformedJSON = await Promise.all(promises);
+
+      if (
+        untransformedJSON.some((it) => {
+          return 'result' in it && isAsyncIterable(it.result.data);
+        })
+      ) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot return async iterable in non-streaming response',
+        });
+      }
       const errors = untransformedJSON.flatMap((response) =>
         'error' in response ? [response.error] : [],
       );
@@ -306,7 +318,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     });
 
     const stream = createJsonBatchStreamProducer({
-      maxDepth: 1,
+      maxDepth: opts.router._def._config.experimental?.iterablesAndDeferreds
+        ? 2
+        : 1,
       data: promises,
       serialize: opts.router._def._config.transformer.output.serialize,
     });

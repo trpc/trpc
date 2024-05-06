@@ -45,3 +45,9 @@ export function omitPrototype<TObj extends Record<string, unknown>>(
 ): TObj {
   return Object.assign(Object.create(null), obj);
 }
+
+export function isAsyncIterable<TValue>(
+  value: unknown,
+): value is AsyncIterable<TValue> {
+  return isObject(value) && Symbol.asyncIterator in value;
+}
