@@ -20,7 +20,7 @@ export type HTTPBatchStreamLinkOptions<TRoot extends AnyRootTypes> =
   HTTPBatchLinkOptions<TRoot>;
 
 /**
- * @see https://trpc.io/docs/client/links/httpBatchLink
+ * @see https://trpc.io/docs/client/links/httpBatchStreamLink
  */
 export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
   opts: HTTPBatchStreamLinkOptions<TRouter['_def']['_config']['$types']>,
