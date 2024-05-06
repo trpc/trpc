@@ -1,6 +1,6 @@
 import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { transformResult } from '@trpc/server/unstable-core-do-not-import/transformer';
+import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
 import type { NonEmptyArray } from '../internals/types';
