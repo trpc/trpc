@@ -16,7 +16,6 @@ import type {
 import { TRPCClientError } from '../../TRPCClientError';
 import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
-import type { TextDecoderEsque } from '../internals/streamingUtils';
 import type { HTTPHeaders, PromiseAndCancel } from '../types';
 import { isFormData, isOctetType } from './contentTypes';
 
@@ -191,7 +190,6 @@ export const universalRequester: Requester = (opts) => {
 export type HTTPRequestOptions = ContentOptions &
   HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
-    TextDecoder?: TextDecoderEsque;
   };
 
 export async function fetchHTTPResponse(

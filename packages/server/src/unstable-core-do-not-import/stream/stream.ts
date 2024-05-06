@@ -144,6 +144,7 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     promise: Promise<unknown>,
     path: (string | number)[],
   ) {
+    //
     const error = checkMaxDepth(path);
     if (error) {
       promise.catch(() => {
@@ -465,7 +466,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
   }
   async function walkValues() {
     while (true) {
-      while (acc.lines.length > 1) {
+      while (acc.lines.length > 0) {
         const line = acc.lines.shift()!;
 
         const chunk: ChunkData = deserialize(

@@ -308,6 +308,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     const stream = createJsonBatchStreamProducer({
       maxDepth: 1,
       data: promises,
+      serialize: opts.router._def._config.transformer.output.serialize,
     });
 
     return new Response(stream, {
