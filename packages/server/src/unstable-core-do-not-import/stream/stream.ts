@@ -77,7 +77,7 @@ type HydratedValue = [
   ...ChunkDefinition[],
 ];
 
-type Head = Record<number, HydratedValue>;
+type Head = Record<string, HydratedValue>;
 type PromiseChunk =
   | [
       chunkIndex: ChunkIndex,
