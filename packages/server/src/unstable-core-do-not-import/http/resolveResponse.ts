@@ -223,6 +223,30 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           type,
           allowMethodOverride,
         });
+
+        if (isAsyncIterable(data)) {
+          if (!isStreamCall) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Cannot return async iterable in non-streaming response',
+            });
+          }
+          if (!opts.router._def._config.experimental?.iterablesAndDeferreds) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Missing experimental flag "iterablesAndDeferreds"',
+            });
+          }
+
+          return async function* () {
+            yield {
+              result: async function* () {
+                yield* data;
+              },
+            };
+          };
+        }
+
         return {
           result: {
             data,
