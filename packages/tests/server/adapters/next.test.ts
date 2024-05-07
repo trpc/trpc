@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
-// @ts-ignore - no types
+// @ts-expect-error - no types
 import _request from 'supertest';
 
 const request = _request as (handler: trpcNext.NextApiHandler) => {
