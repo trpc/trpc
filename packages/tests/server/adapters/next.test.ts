@@ -1,6 +1,12 @@
 import { EventEmitter } from 'events';
 import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
+// @ts-ignore - no types
+import _request from 'supertest';
+
+const request = _request as (handler: trpcNext.NextApiHandler) => {
+  get: (path: string) => Promise<any>;
+};
 
 function mockReq({
   query,
@@ -104,17 +110,14 @@ describe('ok request', () => {
   });
 
   test('[...trpc].ts', async () => {
-    const { req } = mockReq({
-      query: {
-        trpc: ['hello'],
-      },
-    });
-    const { res, text } = mockRes();
+    const res = await request((req, res) => {
+      req.query = { trpc: ['hello'] };
+      return handler(req, res);
+    }).get('/');
 
-    await handler(req, res);
     expect(res.statusCode).toBe(200);
 
-    const json: any = JSON.parse(text());
+    const json: any = JSON.parse(res.text);
     expect(json).toMatchInlineSnapshot(`
       Object {
         "result": Object {
@@ -125,16 +128,12 @@ describe('ok request', () => {
   });
 
   test('[trpc].ts', async () => {
-    const { req } = mockReq({
-      query: {
-        trpc: 'hello',
-      },
-    });
-    const { res, text } = mockRes();
+    const res = await request((req, res) => {
+      req.query = { trpc: 'hello' };
+      return handler(req, res);
+    }).get('/');
 
-    await handler(req, res);
-
-    const json: any = JSON.parse(text());
+    const json: any = JSON.parse(res.text);
     expect(json).toMatchInlineSnapshot(`
       Object {
         "result": Object {
@@ -156,17 +155,13 @@ test('404', async () => {
     router,
   });
 
-  const { req } = mockReq({
-    query: {
-      trpc: ['not-found-path'],
-    },
-  });
-  const { res, end, text } = mockRes();
-
-  await handler(req, res);
+  const res = await request((req, res) => {
+    req.query = { trpc: ['not-found-path'] };
+    return handler(req, res);
+  }).get('/');
 
   expect(res.statusCode).toBe(404);
-  const json: any = JSON.parse(text());
+  const json: any = JSON.parse(res.text);
 
   expect(json.error.message).toMatchInlineSnapshot(
     `"No "query"-procedure on path "not-found-path""`,
