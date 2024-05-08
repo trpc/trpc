@@ -312,7 +312,7 @@ const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
   };
 };
 
-export function createLineAccumulator(
+function createLineAccumulator(
   from: NodeJSReadableStreamEsque | WebReadableStreamEsque,
 ) {
   const reader =
@@ -350,7 +350,7 @@ export function createLineAccumulator(
       }),
     );
 }
-export function createConsumerStream<THead>(
+function createConsumerStream<THead>(
   from: NodeJSReadableStreamEsque | WebReadableStreamEsque,
 ) {
   const stream = createLineAccumulator(from);
@@ -515,14 +515,16 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
     return data;
   }
 
-  const closeOrAbort = () => {
-    headDeferred?.reject(new StreamInterruptedError());
+  const closeOrAbort = (reason?: unknown) => {
+    const error = new StreamInterruptedError(reason);
+
+    headDeferred?.reject(error);
     for (const deferred of chunkDeferred.values()) {
-      deferred.reject(new StreamInterruptedError());
+      deferred.reject(error);
     }
     chunkDeferred.clear();
     for (const controller of controllers.values()) {
-      controller.enqueue(new StreamInterruptedError());
+      controller.enqueue(error);
       controller.close();
     }
     controllers.clear();
