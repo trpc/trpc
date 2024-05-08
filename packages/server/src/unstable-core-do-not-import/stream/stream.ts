@@ -266,47 +266,28 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
 export function createJsonBatchStreamProducer(opts: ProducerOptions) {
   const [sourceHead, sourceStream] = createBatchStreamProducer(opts);
 
-  return sourceStream.pipeThrough(
-    new TransformStream({
-      start(controller) {
-        controller.enqueue('[\n');
-        controller.enqueue(JSON.stringify(sourceHead) + '\n');
-      },
-      transform(chunk, controller) {
-        controller.enqueue(',');
-        controller.enqueue(JSON.stringify(chunk));
-        controller.enqueue('\n');
-      },
-      flush(controller) {
-        controller.enqueue(']\n');
-      },
-    }),
-  );
-}
-function lineAccumulator() {
-  let accumulator = '';
-  const lines: string[] = [];
-  let decoder: TextDecoder;
-
-  return {
-    lines,
-    push(chunk: AllowSharedBufferSource | string) {
-      if (typeof chunk === 'string') {
-        accumulator += chunk;
-      } else {
-        decoder ??= new TextDecoder();
-        accumulator += decoder.decode(chunk);
-      }
-
-      const parts = accumulator.split('\n');
-      accumulator = parts.pop() ?? '';
-      lines.push(...parts);
-    },
-  };
+  return sourceStream
+    .pipeThrough(
+      new TransformStream({
+        start(controller) {
+          controller.enqueue('[\n');
+          controller.enqueue(JSON.stringify(sourceHead) + '\n');
+        },
+        transform(chunk, controller) {
+          controller.enqueue(',');
+          controller.enqueue(JSON.stringify(chunk));
+          controller.enqueue('\n');
+        },
+        flush(controller) {
+          controller.enqueue(']\n');
+        },
+      }),
+    )
+    .pipeThrough(new TextEncoderStream());
 }
 class StreamInterruptedError extends Error {
-  constructor() {
-    super('Stream interrupted');
+  constructor(cause?: unknown) {
+    super('Stream interrupted', { cause });
   }
 }
 class AsyncError extends Error {
@@ -331,39 +312,126 @@ const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
   };
 };
 
-export async function createJsonBatchStreamConsumer<THead>(opts: {
-  from: NodeJSReadableStreamEsque | WebReadableStreamEsque;
-  deserialize?: Deserialize;
-  onError?: ConsumerOnError;
-}) {
-  const { deserialize = (v) => v, from } = opts;
-
+export function createLineAccumulator(
+  from: NodeJSReadableStreamEsque | WebReadableStreamEsque,
+) {
   const reader =
     'getReader' in from
       ? from.getReader()
       : nodeJsStreamToReaderEsque(from).getReader();
 
-  const acc = lineAccumulator();
+  let lineAggregate = '';
 
-  type ControllerChunk = ChunkData | StreamInterruptedError;
-  const chunkStreams = new Map<
+  return new ReadableStream({
+    async pull(controller) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        controller.close();
+      } else {
+        controller.enqueue(value);
+      }
+    },
+    cancel() {
+      return reader.cancel();
+    },
+  })
+    .pipeThrough(new TextDecoderStream())
+    .pipeThrough(
+      new TransformStream<string, string>({
+        transform(chunk, controller) {
+          lineAggregate += chunk;
+          const parts = lineAggregate.split('\n');
+          lineAggregate = parts.pop() ?? '';
+          for (const part of parts) {
+            controller.enqueue(part);
+          }
+        },
+      }),
+    );
+}
+export function createConsumerStream<THead>(
+  from: NodeJSReadableStreamEsque | WebReadableStreamEsque,
+) {
+  const stream = createLineAccumulator(from);
+
+  let sentHead = false;
+  return stream.pipeThrough(
+    new TransformStream<string, ChunkData | THead>({
+      transform(line, controller) {
+        if (line === ']') {
+          controller.terminate();
+          return;
+        }
+        if (line === '[') {
+          return;
+        }
+        if (!sentHead) {
+          const head = JSON.parse(line);
+          controller.enqueue(head as THead);
+          sentHead = true;
+        } else {
+          const chunk: ChunkData = JSON.parse(
+            // each line starts with a comma
+            line.substring(1),
+          );
+          controller.enqueue(chunk);
+        }
+      },
+    }),
+  );
+}
+
+function createDeferred<TResolve>() {
+  let resolve: (value: TResolve) => void;
+  let reject: (error: unknown) => void;
+  const promise = new Promise<TResolve>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  return { promise, resolve: resolve!, reject: reject! };
+}
+
+export async function createJsonBatchStreamConsumer<THead>(opts: {
+  from: NodeJSReadableStreamEsque | WebReadableStreamEsque;
+  deserialize?: Deserialize;
+  onError?: ConsumerOnError;
+}) {
+  const { deserialize = (v) => v } = opts;
+
+  let source = createConsumerStream<Head>(opts.from);
+  if (deserialize) {
+    source = source.pipeThrough(
+      new TransformStream({
+        transform(chunk, controller) {
+          controller.enqueue(deserialize(chunk));
+        },
+      }),
+    );
+  }
+  let headDeferred: null | ReturnType<typeof createDeferred<THead>> =
+    createDeferred();
+
+  type ChunkController = ReturnType<typeof createReadableStream<ChunkData>>[1];
+  const chunkDeferred = new Map<
     ChunkIndex,
-    ReturnType<typeof createReadableStream<ControllerChunk>>
+    ReturnType<typeof createDeferred<ChunkController>>
   >();
-  const upsertChunkStream = (chunkId: ChunkIndex) => {
-    const controller = chunkStreams.get(chunkId);
-    if (controller) {
-      return controller;
-    }
-    const chunk = createReadableStream<ControllerChunk>();
-    chunkStreams.set(chunkId, chunk);
-    return chunk;
-  };
+  const controllers = new Map<
+    ChunkIndex,
+    ReturnType<typeof createReadableStream<ChunkData>>[1]
+  >();
 
   function dehydrateChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const [stream] = upsertChunkStream(chunkId);
+    const [stream, controller] = createReadableStream<ChunkData>();
+    controllers.set(chunkId, controller);
+
+    // resolve chunk deferred if it exists
+    chunkDeferred.get(chunkId)?.resolve(controller);
+    chunkDeferred.delete(chunkId);
 
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
@@ -395,7 +463,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
             .catch(reject)
             .finally(() => {
               // reader.releaseLock();
-              chunkStreams.delete(chunkId);
+              controllers.delete(chunkId);
             });
         });
       }
@@ -419,10 +487,10 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
                   yield dehydrate(data);
                   break;
                 case ASYNC_ITERABLE_STATUS_DONE:
-                  chunkStreams.delete(chunkId);
+                  controllers.delete(chunkId);
                   return;
                 case ASYNC_ITERABLE_STATUS_ERROR:
-                  chunkStreams.delete(chunkId);
+                  controllers.delete(chunkId);
                   throw new AsyncError(data);
               }
             }
@@ -448,78 +516,52 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
     return data;
   }
 
-  async function end() {
-    try {
-      for (const [_, controller] of chunkStreams.values()) {
-        controller.enqueue(new StreamInterruptedError());
-      }
-
-      chunkStreams.clear();
-    } catch (error) {
-      opts.onError?.({ error });
+  const closeOrAbort = () => {
+    headDeferred?.reject(new StreamInterruptedError());
+    for (const controller of Object.values(controllers)) {
+      controller.close();
     }
-  }
-  async function walkValues() {
-    while (true) {
-      while (acc.lines.length > 0) {
-        const line = acc.lines.shift()!;
+    controllers.clear();
+  };
+  source
+    .pipeTo(
+      new WritableStream({
+        async write(chunkOrHead) {
+          if (headDeferred) {
+            const head = {} as Record<number | string, unknown>;
 
-        const chunk: ChunkData = deserialize(
-          JSON.parse(
-            // each line starts with a comma
-            line.substring(1),
-          ),
-        );
+            for (const [key, value] of Object.entries(chunkOrHead)) {
+              const parsed = dehydrate(value);
+              head[key] = parsed;
+            }
+            headDeferred.resolve(head as THead);
+            headDeferred = null;
+            return;
+          }
+          const chunk = chunkOrHead as ChunkData;
+          const [idx] = chunk;
+          let controller = controllers.get(idx);
+          if (!controller) {
+            const deferred = createDeferred<ChunkController>();
+            chunkDeferred.set(idx, deferred);
 
-        const [idx] = chunk;
-        const [_stream, controller] = upsertChunkStream(idx);
-        controller.enqueue(chunk);
-      }
-      const { done, value } = await reader.read();
-      if (done) {
-        await end();
-        return;
-      }
-      acc.push(value);
-    }
-  }
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-    acc.push(value);
-
-    if (acc.lines.length >= 2) {
-      /**
-       * First line is just a `[`
-       */
-      acc.lines.shift();
-
-      const { deserialize = (v) => v } = opts;
-      const head: Head = deserialize(JSON.parse(acc.lines.shift() ?? ''));
-
-      const newHead = head as Record<number, unknown>;
-      for (const [key, value] of Object.entries(head)) {
-        const parsed = dehydrate(value);
-        newHead[Number(key)] = parsed;
-      }
-
-      walkValues().catch((error) => {
-        opts?.onError?.({ error });
-        return end();
-      });
-
-      return [
-        newHead as THead,
-        {
-          controllers: chunkStreams,
-          reader,
+            controller = await deferred.promise;
+          }
+          controller.enqueue(chunk);
         },
-      ] satisfies [THead, unknown];
-    }
-  }
+        close: closeOrAbort,
+        abort: closeOrAbort,
+      }),
+    )
+    .catch((error) => {
+      opts.onError?.({ error });
+      headDeferred?.reject(error);
+    });
 
-  throw new Error("Couldn't parse head");
+  return [
+    await headDeferred.promise,
+    {
+      controllers,
+    },
+  ] as const;
 }

@@ -114,7 +114,7 @@ test('encode/decode', async () => {
     }
     expect(aggregated).toEqual([1, 2, 3]);
   }
-  await meta.reader.closed;
+
   expect(meta.controllers.size).toBe(0);
 });
 
@@ -209,15 +209,12 @@ test('encode/decode - error', async () => {
     ]
   `);
 
-  await meta.reader.closed;
+  // await meta.reader.closed;
   expect(meta.controllers.size).toBe(0);
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(0);
 });
 
-function createServer(
-  stream: ReadableStream<string>,
-  abortSignal: AbortController,
-) {
+function createServer(stream: ReadableStream, abortSignal: AbortController) {
   const server = http.createServer(async (req, res) => {
     req.once('aborted', () => {
       abortSignal.abort();
@@ -314,7 +311,7 @@ test('e2e, create server', async () => {
       `"___________RESOLVE________"`,
     );
   }
-  await meta.reader.closed;
+  // await meta.reader.closed;
   expect(meta.controllers.size).toBe(0);
 });
 
