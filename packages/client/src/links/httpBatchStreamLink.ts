@@ -101,6 +101,10 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
                   let json: TRPCResponse = await head[key];
 
                   if ('result' in json) {
+                    /**
+                     * Not very pretty, but we need to unwrap nested data as promises
+                     * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
+                     */
                     const result = await Promise.resolve(json.result);
                     json = {
                       result: {

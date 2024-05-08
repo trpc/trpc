@@ -341,8 +341,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       data: promises.map(async (it) => {
         const response = await it;
         if ('result' in response) {
+          /**
+           * Not very pretty, but we need to wrap nested data in promises
+           * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
+           */
           return {
+            ...response,
             result: Promise.resolve({
+              ...response.result,
               data: Promise.resolve(response.result.data),
             }),
           };
