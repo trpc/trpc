@@ -382,16 +382,18 @@ export function createConsumerStream<THead>(
   );
 }
 
-function createDeferred<TResolve>() {
-  let resolve: (value: TResolve) => void;
+function createDeferred<TValue>() {
+  let resolve: (value: TValue) => void;
   let reject: (error: unknown) => void;
-  const promise = new Promise<TResolve>((res, rej) => {
+  const promise = new Promise<TValue>((res, rej) => {
     resolve = res;
     reject = rej;
   });
 
   return { promise, resolve: resolve!, reject: reject! };
 }
+
+type Deferred<TValue> = ReturnType<typeof createDeferred<TValue>>;
 
 export async function createJsonBatchStreamConsumer<THead>(opts: {
   from: NodeJSReadableStreamEsque | WebReadableStreamEsque;
@@ -410,18 +412,12 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
       }),
     );
   }
-  let headDeferred: null | ReturnType<typeof createDeferred<THead>> =
-    createDeferred();
+  let headDeferred: null | Deferred<THead> = createDeferred();
 
-  type ChunkController = ReturnType<typeof createReadableStream<ChunkData>>[1];
-  const chunkDeferred = new Map<
-    ChunkIndex,
-    ReturnType<typeof createDeferred<ChunkController>>
-  >();
-  const controllers = new Map<
-    ChunkIndex,
-    ReturnType<typeof createReadableStream<ChunkData>>[1]
-  >();
+  type ControllerChunk = ChunkData | StreamInterruptedError;
+  type ChunkController = ReadableStreamDefaultController<ControllerChunk>;
+  const chunkDeferred = new Map<ChunkIndex, Deferred<ChunkController>>();
+  const controllers = new Map<ChunkIndex, ChunkController>();
 
   function dehydrateChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
@@ -430,8 +426,11 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
     controllers.set(chunkId, controller);
 
     // resolve chunk deferred if it exists
-    chunkDeferred.get(chunkId)?.resolve(controller);
-    chunkDeferred.delete(chunkId);
+    const deferred = chunkDeferred.get(chunkId);
+    if (deferred) {
+      deferred.resolve(controller);
+      chunkDeferred.delete(chunkId);
+    }
 
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
@@ -518,7 +517,12 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
 
   const closeOrAbort = () => {
     headDeferred?.reject(new StreamInterruptedError());
-    for (const controller of Object.values(controllers)) {
+    for (const deferred of chunkDeferred.values()) {
+      deferred.reject(new StreamInterruptedError());
+    }
+    chunkDeferred.clear();
+    for (const controller of controllers.values()) {
+      controller.enqueue(new StreamInterruptedError());
       controller.close();
     }
     controllers.clear();
