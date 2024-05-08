@@ -3,7 +3,7 @@ import { isAsyncIterable, isObject } from '../utils';
 
 // ---------- utils
 
-export function createReadableStream<TValue = unknown>() {
+function createReadableStream<TValue = unknown>() {
   let controller: ReadableStreamDefaultController<TValue> =
     null as unknown as ReadableStreamDefaultController<TValue>;
   const stream = new ReadableStream<TValue>({
@@ -123,6 +123,7 @@ class MaxDepthError extends Error {
     super('Max depth reached at path: ' + path.join('.'));
   }
 }
+
 export function createBatchStreamProducer(opts: ProducerOptions) {
   const { data } = opts;
   let counter = 0 as ChunkIndex;
