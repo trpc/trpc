@@ -128,10 +128,8 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
     };
 
     const query = dataLoader(batchLoader('query'));
-    const mutation = dataLoader<Operation, HTTPResult>(batchLoader('mutation'));
-    const subscription = dataLoader<Operation, HTTPResult>(
-      batchLoader('subscription'),
-    );
+    const mutation = dataLoader(batchLoader('mutation'));
+    const subscription = dataLoader(batchLoader('subscription'));
 
     const loaders = { query, subscription, mutation };
     return ({ op }) => {
