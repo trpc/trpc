@@ -10,6 +10,7 @@
 
 // @trpc/server
 
+import { Readable } from 'node:stream';
 import { getTRPCErrorFromUnknown, type AnyRouter } from '../../@trpc/server';
 import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
 import { resolveResponse } from '../../@trpc/server/http';
@@ -19,14 +20,6 @@ import type {
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
 } from './types';
-
-function assertAsyncIterable<TValue>(
-  value: any,
-): asserts value is AsyncIterable<TValue> {
-  if (!(Symbol.asyncIterator in value)) {
-    throw new Error('Expected AsyncIterable - are you using Node >= 18.0.0?');
-  }
-}
 
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
@@ -71,11 +64,9 @@ export async function nodeHTTPRequestHandler<
       opts.res.setHeader(key, value);
     }
     if (response.body) {
-      assertAsyncIterable(response.body);
-      for await (const chunk of response.body) {
-        opts.res.write(chunk);
-      }
+      Readable.fromWeb(response.body as any).pipe(opts.res);
+    } else {
+      opts.res.end();
     }
-    opts.res.end();
   });
 }
