@@ -49,7 +49,7 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
     | undefined;
   errors: TRPCError[];
-  contentType: 'application/json' | 'application/jsonl';
+  headers: Headers;
 }) {
   const {
     ctx,
@@ -58,11 +58,10 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     responseMeta,
     untransformedJSON,
     errors = [],
+    headers,
   } = initOpts;
 
   let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
-
-  const headers = new Headers([['Content-Type', initOpts.contentType]]);
 
   const eagerGeneration = !untransformedJSON;
   const data = eagerGeneration
@@ -108,7 +107,6 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
 
   return {
     status,
-    headers,
   };
 }
 
@@ -161,6 +159,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
   const { router, req } = opts;
+  const headers = new Headers([['vary', 'trpc-accept']]);
 
   const url = new URL(req.url);
 
@@ -179,7 +178,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let info: TRPCRequestInfo | undefined = undefined;
 
-  const isStreamCall = req.headers.get('trpc-batch-mode') === 'stream';
+  const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
 
   const experimentalIterablesAndDeferreds =
     router._def._config.experimental?.iterablesAndDeferreds ?? false;
@@ -280,6 +279,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       }
     });
     if (!isStreamCall) {
+      headers.set('content-type', 'application/json');
       /**
        * Non-streaming response:
        * - await all responses in parallel, blocking on the slowest one
@@ -300,7 +300,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         responseMeta: opts.responseMeta,
         untransformedJSON,
         errors,
-        contentType: 'application/json',
+        headers,
       });
 
       // return body stuff
@@ -315,10 +315,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
       return new Response(body, {
         status: headResponse.status,
-        headers: headResponse.headers,
+        headers,
       });
     }
 
+    headers.set('content-type', 'application/json');
+    headers.set('transfer-encoding', 'chunked');
     /**
      * Streaming response:
      * - block on none, call `onChunk` as soon as each response is ready
@@ -331,7 +333,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       type,
       responseMeta: opts.responseMeta,
       errors: [],
-      contentType: 'application/jsonl',
+      headers,
     });
 
     const stream = jsonlStreamProducer({
@@ -379,7 +381,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     });
 
     return new Response(stream, {
-      headers: headResponse.headers,
+      headers,
       status: headResponse.status,
     });
   } catch (cause) {
@@ -403,12 +405,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       responseMeta: opts.responseMeta,
       untransformedJSON,
       errors: [error],
-      contentType: 'application/json',
+      headers,
     });
 
     return new Response(body, {
       status: headResponse.status,
-      headers: headResponse.headers,
+      headers,
     });
   }
 }

@@ -69,7 +69,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
               ...resolvedOpts,
               type,
               contentTypeHeader: 'application/json',
-              batchModeHeader: 'stream',
+              trpcAcceptHeader: 'application/jsonl',
               getUrl,
               getBody,
               inputs,

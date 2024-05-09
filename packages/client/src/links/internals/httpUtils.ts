@@ -106,7 +106,7 @@ type GetUrl = (opts: HTTPBaseRequestOptions) => string;
 type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 
 export type ContentOptions = {
-  batchModeHeader?: 'stream';
+  trpcAcceptHeader?: 'application/jsonl';
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;
@@ -180,9 +180,7 @@ export async function fetchHTTPResponse(
     ...(opts.contentTypeHeader
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
-    ...(opts.batchModeHeader
-      ? { 'trpc-batch-mode': opts.batchModeHeader }
-      : {}),
+    ...(opts.trpcAcceptHeader ? { 'trpc-accept': opts.trpcAcceptHeader } : {}),
     ...resolvedHeaders,
   };
 
