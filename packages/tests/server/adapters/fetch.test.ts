@@ -3,6 +3,8 @@
 
 import {
   ReadableStream as MiniflareReadableStream,
+  TextDecoderStream as MiniflareTextDecoderStream,
+  TextEncoderStream as MiniflareTextEncoderStream,
   TransformStream as MiniflareTransformStream,
   WritableStream as MiniflareWritableStream,
 } from 'stream/web';
@@ -26,6 +28,8 @@ globalThis.Response = MiniflareResponse as any;
 globalThis.ReadableStream = MiniflareReadableStream as any;
 globalThis.WritableStream = MiniflareWritableStream as any;
 globalThis.TransformStream = MiniflareTransformStream as any;
+globalThis.TextEncoderStream = MiniflareTextEncoderStream as any;
+globalThis.TextDecoderStream = MiniflareTextDecoderStream as any;
 
 const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
   const getUser = () => {
@@ -104,9 +108,6 @@ async function startServer(endpoint = '') {
       req: event.request,
       router,
       createContext,
-      onError: (err) => {
-        console.error(err.error.cause);
-      },
     });
     event.respondWith(response);
   });
@@ -166,7 +167,7 @@ describe('with default server', () => {
   `);
   });
 
-  test.only('streaming', async () => {
+  test('streaming', async () => {
     const orderedResults: number[] = [];
     const linkSpy: TRPCLink<AppRouter> = () => {
       // here we just got initialized in the app - this happens once per app
@@ -202,7 +203,7 @@ describe('with default server', () => {
       client.deferred.query({ wait: 1 }),
       client.deferred.query({ wait: 2 }),
     ]);
-    console.log({ results });
+
     expect(results).toEqual([3, 1, 2]);
     expect(orderedResults).toEqual([1, 2, 3]);
   });

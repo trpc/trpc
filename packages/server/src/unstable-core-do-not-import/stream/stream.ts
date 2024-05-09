@@ -285,13 +285,7 @@ export function createJsonBatchStreamProducer(opts: ProducerOptions) {
         },
       }),
     )
-    .pipeThrough(
-      new TransformStream({
-        transform(chunk, controller) {
-          controller.enqueue(textEncoder.encode(chunk));
-        },
-      }),
-    );
+    .pipeThrough(new TextEncoderStream());
 }
 class StreamInterruptedError extends Error {
   constructor(cause?: unknown) {
