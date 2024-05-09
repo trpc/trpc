@@ -349,7 +349,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
        *     }
        * }
        */
-      maxDepth: experimentalIterablesAndDeferreds ? 4 : 4,
+      maxDepth: experimentalIterablesAndDeferreds ? 4 : 3,
       data: promises.map(async (it) => {
         const response = await it;
         if ('result' in response) {
