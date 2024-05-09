@@ -230,7 +230,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         if (isAsyncIterable(data)) {
           if (!isStreamCall) {
             throw new TRPCError({
-              code: 'BAD_REQUEST',
+              code: 'UNSUPPORTED_MEDIA_TYPE',
               message: 'Cannot return async iterable in non-streaming response',
             });
           }
