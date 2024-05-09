@@ -141,11 +141,16 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
 
     const query = dataLoader(batchLoader('query'));
     const mutation = dataLoader(batchLoader('mutation'));
-    const subscription = dataLoader(batchLoader('subscription'));
 
-    const loaders = { query, subscription, mutation };
+    const loaders = { query, mutation };
     return ({ op }) => {
       return observable((observer) => {
+        /* istanbul ignore if -- @preserve */
+        if (op.type === 'subscription') {
+          throw new Error(
+            'Subscriptions are unsupported by `httpLink` - use `httpSubscriptionLink` or `wsLink`',
+          );
+        }
         const loader = loaders[op.type];
         const { promise, cancel } = loader.load(op);
 

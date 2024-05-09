@@ -23,6 +23,7 @@ export function unstable_httpSubscriptionLink<TRouter extends AnyRouter>(
     return ({ op }) => {
       return observable((observer) => {
         const { type, path, input } = op;
+        /* istanbul ignore if -- @preserve */
         if (type !== 'subscription') {
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
