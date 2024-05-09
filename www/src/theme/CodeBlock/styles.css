@@ -152,6 +152,10 @@ pre code {
   -webkit-overflow-scrolling: touch;
 }
 
+a > code {
+  white-space: pre;
+}
+
 pre code a {
   text-decoration: none;
 }

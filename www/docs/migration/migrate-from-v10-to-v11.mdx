@@ -24,7 +24,7 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
-### Support for streaming responses
+### Support for streaming responses over HTTP
 
 We now support streaming mutations and queries using the [`httpBatchStreamLink`](../client/links/httpBatchStreamLink.md).
 
@@ -32,7 +32,7 @@ This means that query and mutation resolvers can either be [`AsyncGenerator`](ht
 
 We want your feedback on this feature, so please try it out and let us know what you think in the [`🎏-rfc-streaming`-channel on our Discord](https://trpc.io/discord)!
 
-👉 [See more in the `httpBatchStreamLink` docs](../client/links/httpBatchStreamLink.md)
+👉 [See more in the `httpBatchStreamLink` docs](../client/links/httpBatchStreamLink.md#generators)
 
 ### `resolveHTTPRequest` has been replaced by `resolveRequest` that uses Fetch APIs (rarely breaking)
 

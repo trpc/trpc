@@ -67,13 +67,13 @@ Compared to a regular `httpBatchLink`, a `unstable_httpBatchStreamLink` will:
 - Cause the response to be sent with a `Transfer-Encoding: chunked` and `Vary: trpc-batch-mode` headers
 - Remove the `data` key from the argument object passed to `responseMeta` (because with a streamed response, the headers are sent before the data is available)
 
-## Iterators and async generators
+## Async generators and deferred promises {#generators}
 
 You can make your queries and mutations to return async generators and promises using the `iterablesAndDeferreds` feature flag.
 
 You can try this out on the homepage of tRPC.io: [https://trpc.io/?try=minimal#try-it-out](/?try=minimal#try-it-out)
 
-```tsx
+```ts twoslash
 // @target: esnext
 // ---cut---
 // @filename: trpc.ts
@@ -88,7 +88,7 @@ const t = initTRPC.create({
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-// @filename server.ts
+// @filename: server.ts
 import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
@@ -105,7 +105,7 @@ const appRouter = router({
 export type AppRouter = typeof appRouter;
 
 
-// @filename client.ts
+// @filename: client.ts
 import { createTRPCClient, unstable_httpBatchStreamLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -117,9 +117,11 @@ const trpc = createTRPCClient<AppRouter>({
   ],
 });
 const iterable = await trpc.examples.iterable.query();
+//      ^?
 
-for await (const i of iterable) {
-  console.log('Iterable:', i);
+for await (const value of iterable) {
+  console.log('Iterable:', value);
+  //                         ^?
 }
 ```
 
