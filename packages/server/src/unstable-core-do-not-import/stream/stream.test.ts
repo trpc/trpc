@@ -157,6 +157,33 @@ test('encode/decode - error', async () => {
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(0);
 });
 
+test('decode - bad data', async () => {
+  const textEncoder = new TextEncoderStream();
+  const writer = textEncoder.writable.getWriter();
+
+  try {
+    (async () => {
+      await writer.write(
+        JSON.stringify({
+          error: 'bad data',
+        }),
+      );
+      await writer.close();
+    })().catch(() => {
+      // noop
+    });
+    await createJsonBatchStreamConsumer({
+      from: textEncoder.readable,
+      deserialize: (v) => SuperJSON.deserialize(v),
+    });
+    expect(true).toBe(false);
+  } catch (err) {
+    expect(err).toMatchInlineSnapshot(
+      `[Error: Invalid response or stream interrupted]`,
+    );
+  }
+});
+
 function createServer(stream: ReadableStream, abortSignal: AbortController) {
   const server = http.createServer(async (req, res) => {
     req.once('aborted', () => {
