@@ -267,7 +267,6 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
 export function createJsonBatchStreamProducer(opts: ProducerOptions) {
   const [sourceHead, sourceStream] = createBatchStreamProducer(opts);
 
-  const textEncoder = new TextEncoder();
   return sourceStream
     .pipeThrough(
       new TransformStream({
