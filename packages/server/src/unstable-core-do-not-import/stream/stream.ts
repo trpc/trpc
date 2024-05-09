@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { isAsyncIterable, isObject } from '../utils';
+import { isAsyncIterable, isFunction, isObject } from '../utils';
 
 // ---------- utils
 
@@ -101,7 +101,11 @@ type IterableChunk =
 type ChunkData = PromiseChunk | IterableChunk;
 type PlaceholderValue = 0 & { __placeholder: true };
 export function isPromise(value: unknown): value is Promise<unknown> {
-  return isObject(value) && typeof (value as any).then === 'function';
+  return (
+    (isObject(value) || isFunction(value)) &&
+    typeof value?.['then'] === 'function' &&
+    typeof value?.['catch'] === 'function'
+  );
 }
 
 type Serialize = (value: any) => any;
