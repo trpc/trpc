@@ -351,7 +351,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
        */
       maxDepth: experimentalIterablesAndDeferreds ? 4 : 4,
       data: promises.map(async (it) => {
-        console.log('awaiting');
         const response = await it;
         if ('result' in response) {
           /**
