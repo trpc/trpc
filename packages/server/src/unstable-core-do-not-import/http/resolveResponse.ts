@@ -228,6 +228,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         });
 
         if (
+          (!isStreamCall || !experimentalIterablesAndDeferreds) &&
           isObject(data) &&
           (Symbol.asyncIterator in data || Object.values(data).some(isPromise))
         ) {
