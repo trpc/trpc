@@ -236,7 +236,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           }
           if (!experimentalIterablesAndDeferreds) {
             throw new TRPCError({
-              code: 'BAD_REQUEST',
+              code: 'INTERNAL_SERVER_ERROR',
               message: 'Missing experimental flag "iterablesAndDeferreds"',
             });
           }
