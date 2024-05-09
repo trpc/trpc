@@ -9,9 +9,9 @@ import {
   type inferRouterError,
 } from '../router';
 import type { TRPCResponse } from '../rpc';
-import { createJsonBatchStreamProducer } from '../stream/stream';
+import { createJsonBatchStreamProducer, isPromise } from '../stream/stream';
 import { transformTRPCResponse } from '../transformer';
-import { isAsyncIterable } from '../utils';
+import { isObject } from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -227,11 +227,15 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           allowMethodOverride,
         });
 
-        if (isAsyncIterable(data)) {
+        if (
+          isObject(data) &&
+          (Symbol.asyncIterator in data || Object.values(data).some(isPromise))
+        ) {
           if (!isStreamCall) {
             throw new TRPCError({
               code: 'UNSUPPORTED_MEDIA_TYPE',
-              message: 'Cannot return async iterable in non-streaming response',
+              message:
+                'Cannot return async iterable or nested promises in non-streaming response',
             });
           }
           if (!experimentalIterablesAndDeferreds) {
@@ -283,16 +287,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
       const untransformedJSON = await Promise.all(promises);
 
-      if (
-        untransformedJSON.some((it) => {
-          return 'result' in it && isAsyncIterable(it.result.data);
-        })
-      ) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Cannot return async iterable in non-streaming response',
-        });
-      }
       const errors = untransformedJSON.flatMap((response) =>
         'error' in response ? [response.error] : [],
       );
