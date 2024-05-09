@@ -100,6 +100,11 @@ export function unstable_httpSubscriptionLink<TRouter extends AnyRouter>(
                 },
               });
             }
+            observer.next({
+              result: {
+                type: 'stopped',
+              },
+            });
             observer.complete();
           })
           .catch((cause) => {
