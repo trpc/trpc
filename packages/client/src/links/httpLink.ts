@@ -5,12 +5,25 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
-import type { HTTPLinkBaseOptions, HTTPResult } from './internals/httpUtils';
-import {
-  resolveHTTPLinkOptions,
-  universalRequester,
+import type {
+  HTTPLinkBaseOptions,
+  HTTPResult,
+  Requester,
 } from './internals/httpUtils';
-import type { HTTPHeaders, Operation, TRPCLink } from './types';
+import {
+  getInput,
+  getUrl,
+  httpRequest,
+  jsonHttpRequester,
+  resolveHTTPLinkOptions,
+} from './internals/httpUtils';
+import {
+  isFormData,
+  isOctetType,
+  type HTTPHeaders,
+  type Operation,
+  type TRPCLink,
+} from './types';
 
 export type HTTPLinkOptions<TRoot extends AnyRootTypes> =
   HTTPLinkBaseOptions<TRoot> & {
@@ -23,6 +36,39 @@ export type HTTPLinkOptions<TRoot extends AnyRootTypes> =
       | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
   };
 
+const universalRequester: Requester = (opts) => {
+  const input = getInput(opts);
+
+  if (isFormData(input)) {
+    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
+      throw new Error('FormData is only supported for mutations');
+    }
+
+    return httpRequest({
+      ...opts,
+      // The browser will set this automatically and include the boundary= in it
+      contentTypeHeader: undefined,
+      getUrl,
+      getBody: () => input,
+    });
+  }
+
+  if (isOctetType(input)) {
+    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
+      throw new Error('Octet type input is only supported for mutations');
+    }
+
+    return httpRequest({
+      ...opts,
+      contentTypeHeader: 'application/octet-stream',
+      getUrl,
+      getBody: () => input,
+    });
+  }
+
+  return jsonHttpRequester(opts);
+};
+
 /**
  * @link https://trpc.io/docs/client/links/httpLink
  */
@@ -34,7 +80,8 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
     return ({ op }) => {
       return observable((observer) => {
         const { path, input, type } = op;
-        const { promise, cancel } = universalRequester({
+
+        const request = universalRequester({
           ...resolvedOpts,
           type,
           path,
@@ -52,7 +99,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           },
         });
         let meta: HTTPResult['meta'] | undefined = undefined;
-        promise
+        request.promise
           .then((res) => {
             meta = res.meta;
             const transformed = transformResult(
@@ -79,7 +126,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           });
 
         return () => {
-          cancel();
+          request.cancel();
         };
       });
     };

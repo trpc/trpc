@@ -18,7 +18,13 @@ import {
 import type { Operation, TRPCLink } from './types';
 
 export type HTTPBatchStreamLinkOptions<TRoot extends AnyRootTypes> =
-  HTTPBatchLinkOptions<TRoot>;
+  HTTPBatchLinkOptions<TRoot> & {
+    /**
+     * Maximum number of calls in a single batch request
+     * @default Infinity
+     */
+    maxItems?: number;
+  };
 
 /**
  * @see https://trpc.io/docs/client/links/httpBatchStreamLink
