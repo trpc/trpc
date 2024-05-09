@@ -336,7 +336,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       errors: [],
     });
 
-    const stream = createJsonBatchStreamProducer({
+    const encoder = new TextEncoderStream();
+    const stream = encoder.readable;
+    createJsonBatchStreamProducer({
       /**
        * Example structure for `maxDepth: 4`:
        * {
@@ -378,7 +380,18 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           req: opts.req,
         });
       },
-    });
+    })
+      .pipeTo(encoder.writable)
+      .catch((cause) => {
+        console.error({
+          error: getTRPCErrorFromUnknown(cause),
+          path: undefined,
+          input: undefined,
+          ctx,
+          type,
+          req: opts.req,
+        });
+      });
 
     return new Response(stream, {
       headers: headResponse.headers,

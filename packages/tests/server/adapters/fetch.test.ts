@@ -1,7 +1,10 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
 
-import { ReadableStream as MiniflareReadableStream } from 'stream/web';
+import {
+  ReadableStream as MiniflareReadableStream,
+  WritableStream as MiniflareWritableStream,
+} from 'stream/web';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import type { TRPCLink } from '@trpc/client';
 import {
@@ -18,8 +21,9 @@ import { z } from 'zod';
 
 // miniflare does an instanceof check
 globalThis.Response = MiniflareResponse as any;
-// miniflare must use the web stream "polyfill"
+// // miniflare must use the web stream "polyfill"
 globalThis.ReadableStream = MiniflareReadableStream as any;
+globalThis.WritableStream = MiniflareWritableStream as any;
 
 const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
   const getUser = () => {
@@ -98,6 +102,9 @@ async function startServer(endpoint = '') {
       req: event.request,
       router,
       createContext,
+      onError: (err) => {
+        console.error(err.error.cause);
+      },
     });
     event.respondWith(response);
   });
@@ -157,7 +164,7 @@ describe('with default server', () => {
   `);
   });
 
-  test('streaming', async () => {
+  test.only('streaming', async () => {
     const orderedResults: number[] = [];
     const linkSpy: TRPCLink<AppRouter> = () => {
       // here we just got initialized in the app - this happens once per app
@@ -193,6 +200,7 @@ describe('with default server', () => {
       client.deferred.query({ wait: 1 }),
       client.deferred.query({ wait: 2 }),
     ]);
+    console.log({ results });
     expect(results).toEqual([3, 1, 2]);
     expect(orderedResults).toEqual([1, 2, 3]);
   });

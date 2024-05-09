@@ -267,24 +267,22 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
 export function createJsonBatchStreamProducer(opts: ProducerOptions) {
   const [sourceHead, sourceStream] = createBatchStreamProducer(opts);
 
-  return sourceStream
-    .pipeThrough(
-      new TransformStream({
-        start(controller) {
-          controller.enqueue('[\n');
-          controller.enqueue(JSON.stringify(sourceHead) + '\n');
-        },
-        transform(chunk, controller) {
-          controller.enqueue(',');
-          controller.enqueue(JSON.stringify(chunk));
-          controller.enqueue('\n');
-        },
-        flush(controller) {
-          controller.enqueue(']\n');
-        },
-      }),
-    )
-    .pipeThrough(new TextEncoderStream());
+  return sourceStream.pipeThrough(
+    new TransformStream({
+      start(controller) {
+        controller.enqueue('[\n');
+        controller.enqueue(JSON.stringify(sourceHead) + '\n');
+      },
+      transform(chunk, controller) {
+        controller.enqueue(',');
+        controller.enqueue(JSON.stringify(chunk));
+        controller.enqueue('\n');
+      },
+      flush(controller) {
+        controller.enqueue(']\n');
+      },
+    }),
+  );
 }
 class StreamInterruptedError extends Error {
   constructor(cause?: unknown) {

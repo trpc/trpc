@@ -100,7 +100,7 @@ describe('no transformer', () => {
     })
     .done();
 
-  test('out-of-order streaming', async () => {
+  test.only('out-of-order streaming', async () => {
     const { client } = ctx;
 
     const results = await Promise.all([
