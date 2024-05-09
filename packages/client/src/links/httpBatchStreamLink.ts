@@ -34,6 +34,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
 ): TRPCLink<TRouter> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
+  const maxItems = opts.maxItems ?? Infinity;
 
   return () => {
     const batchLoader = (
@@ -41,9 +42,12 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
     ): BatchLoader<Operation, HTTPResult> => {
       return {
         validate(batchOps) {
-          if (maxURLLength === Infinity) {
+          if (maxURLLength === Infinity || maxItems === Infinity) {
             // escape hatch for quick calcs
             return true;
+          }
+          if (batchOps.length > maxItems) {
+            return false;
           }
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
