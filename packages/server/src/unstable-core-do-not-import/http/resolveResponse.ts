@@ -337,8 +337,21 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     });
 
     const stream = createJsonBatchStreamProducer({
-      maxDepth: experimentalIterablesAndDeferreds ? 4 : 1,
+      /**
+       * Example structure for `maxDepth: 4`:
+       * {
+       *   // 1
+       *   0: {
+       *     // 2
+       *     result: {
+       *       // 3
+       *       data: // 4
+       *     }
+       * }
+       */
+      maxDepth: experimentalIterablesAndDeferreds ? 4 : 4,
       data: promises.map(async (it) => {
+        console.log('awaiting');
         const response = await it;
         if ('result' in response) {
           /**
