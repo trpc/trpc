@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { isObservable } from '@trpc/server/observable';
+import { observableToAsyncIterable } from '@trpc/server/observable/observable';
 import { getErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
@@ -11,7 +13,7 @@ import {
 import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/stream';
 import { transformTRPCResponse } from '../transformer';
-import { isObject } from '../utils';
+import { isAsyncIterable, isObject } from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -212,6 +214,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         code: 'METHOD_NOT_SUPPORTED',
       });
     }
+    /* istanbul ignore if -- @preserve */
+    if (isStreamCall && !info.isBatchCall) {
+      throw new TRPCError({
+        message: `Streaming requests must be batched (you can do a batch of 1)`,
+        code: 'BAD_REQUEST',
+      });
+    }
+    /* istanbul ignore if -- @preserve */
+    if (type === 'subscription' && !isStreamCall) {
+      throw new TRPCError({
+        message: `Subscription requests must be batched`,
+        code: 'BAD_REQUEST',
+      });
+    }
 
     const errors: TRPCError[] = [];
 
@@ -219,6 +235,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       TRPCResponse<unknown, inferRouterError<TRouter>>
     >[] = info.calls.map(async (call) => {
       try {
+        opts.router._def.procedures[call.path];
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
           path: call.path,
@@ -246,6 +263,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               message: 'Missing experimental flag "iterablesAndDeferreds"',
             });
           }
+        }
+        /* istanbul ignore if -- @preserve */
+        if (
+          type === 'subscription' &&
+          !isAsyncIterable(data) &&
+          !isObservable(data)
+        ) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Subscription must return an async iterable or observable',
+          });
         }
 
         return {
@@ -358,11 +386,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
            * Not very pretty, but we need to wrap nested data in promises
            * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
            */
+          const data = isObservable(response.result.data)
+            ? observableToAsyncIterable(response.result.data)
+            : Promise.resolve(response.result.data);
           return {
             ...response,
             result: Promise.resolve({
               ...response.result,
-              data: Promise.resolve(response.result.data),
+              data,
             }),
           };
         }

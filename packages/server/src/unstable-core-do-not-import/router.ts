@@ -248,6 +248,18 @@ export function callProcedure(
     });
   }
 
+  /* istanbul ignore if -- @preserve */
+  if (
+    proc._def.type !== type &&
+    opts.allowMethodOverride &&
+    proc._def.type === 'subscription'
+  ) {
+    throw new TRPCError({
+      code: 'METHOD_NOT_SUPPORTED',
+      message: `Method override is not supported for subscriptions`,
+    });
+  }
+
   return proc(opts);
 }
 

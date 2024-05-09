@@ -95,20 +95,18 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
 
           return {
             promise: responsePromise.then(async (res) => {
-              if (!res.body) {
-                throw new Error('Received response without body');
-              }
               const [head] = await jsonlStreamConsumer<
                 Record<string, Promise<any>>
               >({
-                from: res.body,
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                from: res.body!,
                 deserialize: resolvedOpts.transformer.output.deserialize,
                 // onError: console.error,
               });
 
               const promises = Object.keys(batchOps).map(
                 async (key): Promise<HTTPResult> => {
-                  let json: TRPCResponse = await head[key];
+                  let json: TRPCResponse = await Promise.resolve(head[key]);
 
                   if ('result' in json) {
                     /**

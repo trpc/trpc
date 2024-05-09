@@ -1,4 +1,4 @@
-import { observable } from './observable';
+import { observable, observableToAsyncIterable } from './observable';
 import { share, tap } from './operators';
 
 test('vanilla observable - complete()', () => {
@@ -139,4 +139,23 @@ test('pipe twice', () => {
     expect(pipe2.complete.mock.calls).toHaveLength(1);
     expect(end.complete.mock.calls).toHaveLength(1);
   }
+});
+
+test('vanilla observable - complete()', async () => {
+  const obs = observable<number, Error>((observer) => {
+    observer.next(1);
+    observer.next(2);
+    observer.complete();
+  });
+
+  const aggregate: unknown[] = [];
+  for await (const value of observableToAsyncIterable(obs)) {
+    aggregate.push(value);
+  }
+  expect(aggregate).toMatchInlineSnapshot(`
+    Array [
+      1,
+      2,
+    ]
+  `);
 });

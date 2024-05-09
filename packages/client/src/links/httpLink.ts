@@ -83,7 +83,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
         /* istanbul ignore if -- @preserve */
         if (type === 'subscription') {
           throw new Error(
-            'Subscriptions are unsupported by `httpLink` - use `httpBatchStreamLink` or `wsLink`',
+            'Subscriptions are unsupported by `httpLink` - use `httpSubscriptionLink` or `wsLink`',
           );
         }
 

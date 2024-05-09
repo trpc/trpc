@@ -2,7 +2,11 @@ import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
-import { unstable_httpBatchStreamLink } from '@trpc/client';
+import {
+  splitLink,
+  unstable_httpBatchStreamLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
@@ -284,9 +288,16 @@ describe('with transformer', () => {
           return {
             links: [
               linkSpy,
-              unstable_httpBatchStreamLink({
-                url: opts.httpUrl,
-                transformer: superjson,
+              splitLink({
+                condition: (op) => op.type === 'subscription',
+                true: unstable_httpSubscriptionLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+                false: unstable_httpBatchStreamLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
               }),
             ],
           };
@@ -353,5 +364,83 @@ describe('with transformer', () => {
         3,
       ]
     `);
+  });
+
+  describe('subscriptions', async () => {
+    test('observable', async () => {
+      const { client } = ctx;
+
+      const onStarted = vi.fn<[]>();
+      const onData = vi.fn<number[]>();
+      const subscription = client.sub.iterable.subscribe(undefined, {
+        onStarted: onStarted,
+        onData: onData,
+      });
+
+      await waitFor(() => {
+        expect(onStarted).toHaveBeenCalledTimes(1);
+      });
+
+      eeEmit(1);
+      eeEmit(2);
+
+      await waitFor(() => {
+        expect(onData).toHaveBeenCalledTimes(2);
+      });
+      expect(onData.mock.calls).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            Array [
+              1,
+            ],
+          ],
+          Array [
+            Array [
+              2,
+            ],
+          ],
+        ]
+      `);
+
+      subscription.unsubscribe();
+    });
+
+    test('iterable', async () => {
+      const { client } = ctx;
+
+      const onStarted = vi.fn<[]>();
+      const onData = vi.fn<number[]>();
+      const subscription = client.sub.iterable.subscribe(undefined, {
+        onStarted: onStarted,
+        onData: onData,
+      });
+
+      await waitFor(() => {
+        expect(onStarted).toHaveBeenCalledTimes(1);
+      });
+
+      eeEmit(1);
+      eeEmit(2);
+
+      await waitFor(() => {
+        expect(onData).toHaveBeenCalledTimes(2);
+      });
+      expect(onData.mock.calls).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            Array [
+              1,
+            ],
+          ],
+          Array [
+            Array [
+              2,
+            ],
+          ],
+        ]
+      `);
+
+      subscription.unsubscribe();
+    });
   });
 });
