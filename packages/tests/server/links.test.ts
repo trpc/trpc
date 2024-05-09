@@ -279,7 +279,6 @@ describe('batching', () => {
           },
           "result": Object {
             "data": 2,
-            "type": "data",
           },
         },
         Object {
@@ -288,7 +287,6 @@ describe('batching', () => {
           },
           "result": Object {
             "data": 1,
-            "type": "data",
           },
         },
       ]
