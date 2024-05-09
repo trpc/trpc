@@ -565,7 +565,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
     )
     .catch((error) => {
       opts.onError?.({ error });
-      headDeferred?.reject(error);
+      closeOrAbort(error);
     });
 
   return [
