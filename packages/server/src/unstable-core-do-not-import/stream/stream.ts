@@ -250,29 +250,29 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
     newHead[Number(key)] = hydrate(item, [key]);
   }
 
-  const serialize = opts.serialize;
-  if (serialize) {
-    const head = serialize(newHead) as Head;
-
-    const transformStream = new TransformStream<ChunkData, ChunkData>({
-      transform(chunk, controller) {
-        controller.enqueue(serialize(chunk));
-      },
-    });
-    return [head, stream.pipeThrough(transformStream)] as const;
-  }
-
   return [newHead, stream] as const;
 }
 export function createJsonBatchStreamProducer(opts: ProducerOptions) {
-  const [sourceHead, sourceStream] = createBatchStreamProducer(opts);
+  let [head, stream] = createBatchStreamProducer(opts);
 
-  return sourceStream
+  const { serialize } = opts;
+  if (serialize) {
+    head = serialize(head);
+    stream = stream.pipeThrough(
+      new TransformStream({
+        transform(chunk, controller) {
+          controller.enqueue(serialize(chunk));
+        },
+      }),
+    );
+  }
+
+  return stream
     .pipeThrough(
       new TransformStream({
         start(controller) {
           controller.enqueue('[\n');
-          controller.enqueue(JSON.stringify(sourceHead) + '\n');
+          controller.enqueue(JSON.stringify(head) + '\n');
         },
         transform(chunk, controller) {
           controller.enqueue(',');

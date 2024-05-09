@@ -3,68 +3,11 @@ import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
 import type { ConsumerOnError, ProducerOnError } from './stream';
 import {
-  createBatchStreamProducer,
   createJsonBatchStreamConsumer,
   createJsonBatchStreamProducer,
 } from './stream';
 
-test('encoder - superjson', async () => {
-  const [head, stream] = createBatchStreamProducer({
-    data: {
-      0: Promise.resolve({
-        foo: 'bar',
-        deferred: Promise.resolve(42),
-      }),
-      1: Promise.resolve({
-        [Symbol.asyncIterator]: async function* () {
-          yield 1;
-          yield 2;
-          yield 3;
-        },
-      }),
-    },
-    serialize: SuperJSON.serialize,
-  });
-
-  const reader = stream.getReader();
-  const chunks: unknown[] = [];
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-    chunks.push(value);
-  }
-
-  expect(head).toMatchInlineSnapshot(`
-    Object {
-      "json": Object {
-        "0": Array [
-          Array [
-            0,
-          ],
-          Array [
-            null,
-            0,
-            0,
-          ],
-        ],
-        "1": Array [
-          Array [
-            0,
-          ],
-          Array [
-            null,
-            0,
-            1,
-          ],
-        ],
-      },
-    }
-  `);
-});
-
-test('encode/decode', async () => {
+test('encode/decode with superjson', async () => {
   const data = {
     0: Promise.resolve({
       foo: {
