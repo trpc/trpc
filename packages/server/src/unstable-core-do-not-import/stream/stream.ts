@@ -286,6 +286,8 @@ export function createJsonBatchStreamProducer(opts: ProducerOptions) {
 }
 class StreamInterruptedError extends Error {
   constructor(cause?: unknown) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore https://github.com/tc39/proposal-error-cause
     super('Stream interrupted', { cause });
   }
 }
