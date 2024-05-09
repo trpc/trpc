@@ -86,14 +86,17 @@ export function httpBatchLink<TRouter extends AnyRouter>(
     };
 
     const query = dataLoader(batchLoader('query'));
-    const mutation = dataLoader<Operation, HTTPResult>(batchLoader('mutation'));
-    const subscription = dataLoader<Operation, HTTPResult>(
-      batchLoader('subscription'),
-    );
+    const mutation = dataLoader(batchLoader('mutation'));
 
-    const loaders = { query, subscription, mutation };
+    const loaders = { query, mutation };
     return ({ op }) => {
       return observable((observer) => {
+        /* istanbul ignore if -- @preserve */
+        if (op.type === 'subscription') {
+          throw new Error(
+            'Subscriptions are unsupported by `httpLink` - use `httpBatchStreamLink` or `wsLink`',
+          );
+        }
         const loader = loaders[op.type];
         const { promise, cancel } = loader.load(op);
 

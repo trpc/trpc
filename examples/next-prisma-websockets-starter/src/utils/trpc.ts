@@ -1,9 +1,8 @@
 import type { TRPCLink } from '@trpc/client';
 import {
-  createWSClient,
   httpBatchLink,
   loggerLink,
-  wsLink,
+  unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
@@ -18,7 +17,7 @@ import superjson from 'superjson';
 
 const { publicRuntimeConfig } = getConfig();
 
-const { APP_URL, WS_URL } = publicRuntimeConfig;
+const { APP_URL } = publicRuntimeConfig;
 
 function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
   if (typeof window === 'undefined') {
@@ -40,11 +39,8 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
       },
     });
   }
-  const client = createWSClient({
-    url: WS_URL,
-  });
-  return wsLink({
-    client,
+  return unstable_httpBatchStreamLink({
+    url: `${APP_URL}/api/trpc`,
     /**
      * @link https://trpc.io/docs/v11/data-transformers
      */

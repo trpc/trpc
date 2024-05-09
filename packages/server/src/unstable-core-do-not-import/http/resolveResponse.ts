@@ -26,6 +26,7 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
 > = {
   GET: 'query',
   POST: 'mutation',
+  PATCH: 'subscription',
 };
 
 interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>

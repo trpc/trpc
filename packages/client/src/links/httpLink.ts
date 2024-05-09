@@ -80,6 +80,12 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
     return ({ op }) => {
       return observable((observer) => {
         const { path, input, type } = op;
+        /* istanbul ignore if -- @preserve */
+        if (type === 'subscription') {
+          throw new Error(
+            'Subscriptions are unsupported by `httpLink` - use `httpBatchStreamLink` or `wsLink`',
+          );
+        }
 
         const request = universalRequester({
           ...resolvedOpts,

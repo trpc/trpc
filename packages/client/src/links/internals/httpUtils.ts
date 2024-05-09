@@ -74,6 +74,7 @@ function arrayToDict(array: unknown[]) {
 const METHOD = {
   query: 'GET',
   mutation: 'POST',
+  subscription: 'PATCH',
 } as const;
 
 export interface HTTPResult {
@@ -172,10 +173,6 @@ export async function fetchHTTPResponse(
     }
     return heads;
   })();
-  /* istanbul ignore if -- @preserve */
-  if (type === 'subscription') {
-    throw new Error('Subscriptions should use wsLink');
-  }
   const headers = {
     ...(opts.contentTypeHeader
       ? { 'content-type': opts.contentTypeHeader }

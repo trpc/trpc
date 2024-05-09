@@ -43,6 +43,12 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
+type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterable<
+  infer $Output
+>
+  ? $Output
+  : inferObservableValue<TOutput>;
+
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
   invoke: (opts: ProcedureCallOptions<TContext>) => Promise<unknown>;
@@ -347,7 +353,7 @@ export interface ProcedureBuilder<
     ? TypeError<'Not implemented'>
     : SubscriptionProcedure<{
         input: DefaultValue<TInputIn, void>;
-        output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
+        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
       }>;
 
   /**

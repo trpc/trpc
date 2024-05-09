@@ -1,9 +1,11 @@
+import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import { unstable_httpBatchStreamLink } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -201,6 +203,11 @@ describe('no transformer', () => {
 });
 
 describe('with transformer', () => {
+  const ee = new EventEmitter();
+  const eeEmit = (data: number) => {
+    ee.emit('data', data);
+  };
+
   const orderedResults: number[] = [];
   const ctx = konn()
     .beforeEach(() => {
@@ -233,6 +240,24 @@ describe('with transformer', () => {
           yield 2;
           yield 3;
         }),
+        sub: {
+          observable: t.procedure.subscription(() => {
+            return observable<number>((emit) => {
+              const onData = (data: number) => {
+                emit.next(data);
+              };
+              ee.on('data', onData);
+              return () => {
+                ee.off('data', onData);
+              };
+            });
+          }),
+          iterable: t.procedure.subscription(async function* () {
+            for await (const data of on(ee, 'data')) {
+              yield data as number;
+            }
+          }),
+        },
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
