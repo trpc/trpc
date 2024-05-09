@@ -42,7 +42,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
     ): BatchLoader<Operation, HTTPResult> => {
       return {
         validate(batchOps) {
-          if (maxURLLength === Infinity || maxItems === Infinity) {
+          if (maxURLLength === Infinity && maxItems === Infinity) {
             // escape hatch for quick calcs
             return true;
           }
