@@ -9,7 +9,7 @@ import {
   type inferRouterError,
 } from '../router';
 import type { TRPCResponse } from '../rpc';
-import { createJsonBatchStreamProducer, isPromise } from '../stream/stream';
+import { isPromise, jsonlStreamProducer } from '../stream/stream';
 import { transformTRPCResponse } from '../transformer';
 import { isObject } from '../utils';
 import { getRequestInfo } from './contentType';
@@ -49,6 +49,7 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
     | undefined;
   errors: TRPCError[];
+  contentType: 'application/json' | 'application/jsonl';
 }) {
   const {
     ctx,
@@ -61,7 +62,7 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
 
   let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
 
-  const headers = new Headers([['Content-Type', 'application/json']]);
+  const headers = new Headers([['Content-Type', initOpts.contentType]]);
 
   const eagerGeneration = !untransformedJSON;
   const data = eagerGeneration
@@ -299,6 +300,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         responseMeta: opts.responseMeta,
         untransformedJSON,
         errors,
+        contentType: 'application/json',
       });
 
       // return body stuff
@@ -329,9 +331,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       type,
       responseMeta: opts.responseMeta,
       errors: [],
+      contentType: 'application/jsonl',
     });
 
-    const stream = createJsonBatchStreamProducer({
+    const stream = jsonlStreamProducer({
       /**
        * Example structure for `maxDepth: 4`:
        * {
@@ -400,6 +403,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       responseMeta: opts.responseMeta,
       untransformedJSON,
       errors: [error],
+      contentType: 'application/json',
     });
 
     return new Response(body, {

@@ -124,7 +124,7 @@ class MaxDepthError extends Error {
   }
 }
 
-export function createBatchStreamProducer(opts: ProducerOptions) {
+function createBatchStreamProducer(opts: ProducerOptions) {
   const { data } = opts;
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
@@ -252,7 +252,11 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
 
   return [newHead, stream] as const;
 }
-export function createJsonBatchStreamProducer(opts: ProducerOptions) {
+/**
+ * JSON Lines stream producer
+ * @see https://jsonlines.org/
+ */
+export function jsonlStreamProducer(opts: ProducerOptions) {
   let [head, stream] = createBatchStreamProducer(opts);
 
   const { serialize } = opts;
@@ -271,14 +275,10 @@ export function createJsonBatchStreamProducer(opts: ProducerOptions) {
     .pipeThrough(
       new TransformStream({
         start(controller) {
-          controller.enqueue('[\n');
           controller.enqueue(JSON.stringify(head) + '\n');
         },
         transform(chunk, controller) {
-          controller.enqueue(',' + JSON.stringify(chunk) + '\n');
-        },
-        flush(controller) {
-          controller.enqueue(']\n');
+          controller.enqueue(JSON.stringify(chunk) + '\n');
         },
       }),
     )
@@ -360,22 +360,12 @@ function createConsumerStream<THead>(
   return stream.pipeThrough(
     new TransformStream<string, ChunkData | THead>({
       transform(line, controller) {
-        if (line === ']') {
-          controller.terminate();
-          return;
-        }
-        if (line === '[') {
-          return;
-        }
         if (!sentHead) {
           const head = JSON.parse(line);
           controller.enqueue(head as THead);
           sentHead = true;
         } else {
-          const chunk: ChunkData = JSON.parse(
-            // each line starts with a comma
-            line.substring(1),
-          );
+          const chunk: ChunkData = JSON.parse(line);
           controller.enqueue(chunk);
         }
       },
@@ -396,7 +386,11 @@ function createDeferred<TValue>() {
 
 type Deferred<TValue> = ReturnType<typeof createDeferred<TValue>>;
 
-export async function createJsonBatchStreamConsumer<THead>(opts: {
+/**
+ * JSON Lines stream consumer
+ * @see https://jsonlines.org/
+ */
+export async function jsonlStreamConsumer<THead>(opts: {
   from: NodeJSReadableStreamEsque | WebReadableStreamEsque;
   deserialize?: Deserialize;
   onError?: ConsumerOnError;

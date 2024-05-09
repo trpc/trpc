@@ -2,10 +2,7 @@ import http from 'http';
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
 import type { ConsumerOnError, ProducerOnError } from './stream';
-import {
-  createJsonBatchStreamConsumer,
-  createJsonBatchStreamProducer,
-} from './stream';
+import { jsonlStreamConsumer, jsonlStreamProducer } from './stream';
 
 test('encode/decode with superjson', async () => {
   const data = {
@@ -25,12 +22,12 @@ test('encode/decode with superjson', async () => {
       },
     }),
   } as const;
-  const stream = createJsonBatchStreamProducer({
+  const stream = jsonlStreamProducer({
     data,
     serialize: (v) => SuperJSON.serialize(v),
   });
 
-  const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
   });
@@ -86,13 +83,13 @@ test('encode/decode - error', async () => {
   const onProducerErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
   const onConsumerErrorSpy = vi.fn<Parameters<ConsumerOnError>, null>();
 
-  const stream = createJsonBatchStreamProducer({
+  const stream = jsonlStreamProducer({
     data,
     serialize: (v) => SuperJSON.serialize(v),
     onError: onProducerErrorSpy,
   });
 
-  const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
     onError: onConsumerErrorSpy,
@@ -172,7 +169,7 @@ test('decode - bad data', async () => {
     })().catch(() => {
       // noop
     });
-    await createJsonBatchStreamConsumer({
+    await jsonlStreamConsumer({
       from: textEncoder.readable,
       deserialize: (v) => SuperJSON.deserialize(v),
     });
@@ -238,7 +235,7 @@ test('e2e, create server', async () => {
       },
     }),
   } as const;
-  const stream = createJsonBatchStreamProducer({
+  const stream = jsonlStreamProducer({
     data,
     serialize: (v) => SuperJSON.serialize(v),
   });
@@ -247,7 +244,7 @@ test('e2e, create server', async () => {
 
   const res = await fetch(server.url);
 
-  const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     deserialize: (v) => SuperJSON.deserialize(v),
   });
@@ -311,7 +308,7 @@ test('e2e, client aborts request halfway through', async () => {
     }),
   } as const;
 
-  const stream = createJsonBatchStreamProducer({
+  const stream = jsonlStreamProducer({
     data,
     onError: onProducerErrorSpy,
   });
@@ -320,7 +317,7 @@ test('e2e, client aborts request halfway through', async () => {
   const res = await fetch(server.url, {
     signal: clientAbort.signal,
   });
-  const [head, meta] = await createJsonBatchStreamConsumer<typeof data>({
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     onError: onConsumerErrorSpy,
   });
@@ -368,7 +365,7 @@ test('e2e, encode/decode - maxDepth', async () => {
       deferred: Promise.resolve(42),
     }),
   } as const;
-  const stream = createJsonBatchStreamProducer({
+  const stream = jsonlStreamProducer({
     data,
     serialize: SuperJSON.serialize,
     onError,
@@ -378,7 +375,7 @@ test('e2e, encode/decode - maxDepth', async () => {
   const server = createServer(stream, new AbortController());
 
   const res = await fetch(server.url);
-  const [head] = await createJsonBatchStreamConsumer<typeof data>({
+  const [head] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     deserialize: SuperJSON.deserialize,
   });

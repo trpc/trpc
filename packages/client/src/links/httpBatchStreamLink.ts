@@ -2,7 +2,7 @@ import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type { TRPCResponse } from '@trpc/server/rpc';
 import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
-import { createJsonBatchStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
+import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
 import type { NonEmptyArray } from '../internals/types';
@@ -94,7 +94,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
               if (!res.body) {
                 throw new Error('Received response without body');
               }
-              const [head] = await createJsonBatchStreamConsumer<
+              const [head] = await jsonlStreamConsumer<
                 Record<string, Promise<any>>
               >({
                 from: res.body,
