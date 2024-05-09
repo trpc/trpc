@@ -247,7 +247,7 @@ export function createBatchStreamProducer(opts: ProducerOptions) {
 
   const newHead: Head = {};
   for (const [key, item] of Object.entries(data)) {
-    newHead[Number(key)] = hydrate(item, [key]);
+    newHead[key] = hydrate(item, [key]);
   }
 
   return [newHead, stream] as const;
