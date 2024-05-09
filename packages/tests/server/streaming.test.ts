@@ -207,14 +207,14 @@ describe('no transformer', () => {
 });
 
 describe('with transformer', () => {
-  const ee = new EventEmitter();
-  const eeEmit = (data: number) => {
-    ee.emit('data', data);
-  };
-
   const orderedResults: number[] = [];
   const ctx = konn()
     .beforeEach(() => {
+      const ee = new EventEmitter();
+      const eeEmit = (data: number) => {
+        ee.emit('data', data);
+      };
+
       const t = initTRPC.create({
         transformer: superjson,
         experimental: {
@@ -303,7 +303,11 @@ describe('with transformer', () => {
           };
         },
       });
-      return opts;
+      return {
+        ...opts,
+        ee,
+        eeEmit,
+      };
     })
     .afterEach(async (opts) => {
       await opts?.close?.();
@@ -381,8 +385,8 @@ describe('with transformer', () => {
         expect(onStarted).toHaveBeenCalledTimes(1);
       });
 
-      eeEmit(1);
-      eeEmit(2);
+      ctx.eeEmit(1);
+      ctx.eeEmit(2);
 
       await waitFor(() => {
         expect(onData).toHaveBeenCalledTimes(2);
@@ -403,6 +407,10 @@ describe('with transformer', () => {
       `);
 
       subscription.unsubscribe();
+
+      await waitFor(() => {
+        expect(ctx.ee.listenerCount('data')).toBe(0);
+      });
     });
 
     test('iterable', async () => {
@@ -419,8 +427,8 @@ describe('with transformer', () => {
         expect(onStarted).toHaveBeenCalledTimes(1);
       });
 
-      eeEmit(1);
-      eeEmit(2);
+      ctx.eeEmit(1);
+      ctx.eeEmit(2);
 
       await waitFor(() => {
         expect(onData).toHaveBeenCalledTimes(2);
@@ -441,6 +449,10 @@ describe('with transformer', () => {
       `);
 
       subscription.unsubscribe();
+
+      await waitFor(() => {
+        expect(ctx.ee.listenerCount('data')).toBe(0);
+      });
     });
   });
 });
