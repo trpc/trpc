@@ -186,7 +186,7 @@ export function observableToAsyncIterable<TValue>(
       };
     },
     async return() {
-      await stream.cancel();
+      await reader.cancel();
       return {
         value: undefined,
         done: true,

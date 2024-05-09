@@ -1,3 +1,4 @@
+import { EventEmitter } from 'stream';
 import { observable, observableToAsyncIterable } from './observable';
 import { share, tap } from './operators';
 
@@ -141,7 +142,7 @@ test('pipe twice', () => {
   }
 });
 
-test('vanilla observable - complete()', async () => {
+test('observableToAsyncIterable()', async () => {
   const obs = observable<number, Error>((observer) => {
     observer.next(1);
     observer.next(2);
@@ -158,4 +159,34 @@ test('vanilla observable - complete()', async () => {
       2,
     ]
   `);
+});
+
+test.only('observableToAsyncIterable() - doesnt hang', async () => {
+  const ee = new EventEmitter();
+  const obs = observable<number, Error>((observer) => {
+    const onData = (data: number) => {
+      observer.next(data);
+    };
+    ee.on('data', onData);
+    return () => {
+      console.log('unsub');
+      ee.off('data', onData);
+    };
+  });
+
+  setTimeout(() => {
+    ee.emit('data', 1);
+    ee.emit('data', 2);
+    ee.emit('data', 3);
+  }, 1);
+
+  const aggregate: unknown[] = [];
+  for await (const value of observableToAsyncIterable(obs)) {
+    aggregate.push(value);
+    if (aggregate.length === 3) {
+      break;
+    }
+  }
+
+  expect(ee.listenerCount('data')).toBe(0);
 });
