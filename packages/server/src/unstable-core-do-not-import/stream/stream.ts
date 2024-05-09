@@ -535,7 +535,7 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
       new WritableStream({
         async write(chunkOrHead) {
           if (headDeferred) {
-            const head = {} as Record<number | string, unknown>;
+            const head = chunkOrHead as Record<number | string, unknown>;
 
             for (const [key, value] of Object.entries(chunkOrHead)) {
               const parsed = dehydrate(value);
