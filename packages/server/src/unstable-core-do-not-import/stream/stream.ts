@@ -549,8 +549,11 @@ export async function createJsonBatchStreamConsumer<THead>(opts: {
           const [idx] = chunk;
           let controller = controllers.get(idx);
           if (!controller) {
-            const deferred = createDeferred<ChunkController>();
-            chunkDeferred.set(idx, deferred);
+            let deferred = chunkDeferred.get(idx);
+            if (!deferred) {
+              deferred = createDeferred<ChunkController>();
+              chunkDeferred.set(idx, deferred);
+            }
 
             controller = await deferred.promise;
           }
