@@ -275,9 +275,7 @@ export function createJsonBatchStreamProducer(opts: ProducerOptions) {
           controller.enqueue(JSON.stringify(head) + '\n');
         },
         transform(chunk, controller) {
-          controller.enqueue(',');
-          controller.enqueue(JSON.stringify(chunk));
-          controller.enqueue('\n');
+          controller.enqueue(',' + JSON.stringify(chunk) + '\n');
         },
         flush(controller) {
           controller.enqueue(']\n');
