@@ -8,7 +8,11 @@ import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
 
-describe.each(['http', 'ws'] as const)('useSubscription - %s', (protocol) => {
+describe.each([
+  //
+  'http',
+  'ws',
+] as const)('useSubscription - %s', (protocol) => {
   const ee = new EventEmitter();
 
   const ctx = konn()
