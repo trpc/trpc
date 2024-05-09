@@ -110,5 +110,9 @@ describe.each(['http', 'ws'] as const)('useSubscription - %s', (protocol) => {
     ignoreErrors(() => {
       setEnabled(false);
     });
+    await waitFor(() => {
+      // no event listeners
+      expect(ee.listenerCount('data')).toBe(0);
+    });
   });
 });
