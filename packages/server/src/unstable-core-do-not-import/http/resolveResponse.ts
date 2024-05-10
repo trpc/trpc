@@ -181,7 +181,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let info: TRPCRequestInfo | undefined = undefined;
 
+  const isSSE = req.headers.get('accept') === 'text/event-stream';
   const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
+
+  console.log('isSSE', isSSE);
 
   const experimentalIterablesAndDeferreds =
     router._def._config.experimental?.iterablesAndDeferreds ?? false;

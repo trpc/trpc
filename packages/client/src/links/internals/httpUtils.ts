@@ -1,5 +1,5 @@
 import type {
-  AnyRootTypes,
+  AnyClientTypes,
   CombinedDataTransformer,
   ProcedureType,
   TRPCResponse,
@@ -22,7 +22,7 @@ import type { HTTPHeaders, PromiseAndCancel } from '../types';
  * @internal
  */
 export type HTTPLinkBaseOptions<
-  TRoot extends Pick<AnyRootTypes, 'transformer'>,
+  TRoot extends Pick<AnyClientTypes, 'transformer'>,
 > = {
   url: string | URL;
   /**
@@ -50,7 +50,7 @@ export interface ResolvedHTTPLinkOptions {
 }
 
 export function resolveHTTPLinkOptions(
-  opts: HTTPLinkBaseOptions<AnyRootTypes>,
+  opts: HTTPLinkBaseOptions<AnyClientTypes>,
 ): ResolvedHTTPLinkOptions {
   return {
     url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes

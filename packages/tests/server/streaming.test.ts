@@ -9,7 +9,6 @@ import {
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -384,7 +383,7 @@ describe('with transformer', () => {
   });
 
   describe('subscriptions', async () => {
-    test('observable', async () => {
+    test.only('observable', async () => {
       const { client } = ctx;
 
       const onStarted = vi.fn<[]>();

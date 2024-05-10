@@ -133,9 +133,9 @@ export type ProducerOnError = (opts: {
   error: unknown;
   path: (string | number)[];
 }) => void;
-export interface ProducerOptions<TData = never> {
+export interface ProducerOptions {
   serialize?: Serialize;
-  data: TData;
+  data: Record<string, unknown>;
   onError?: ProducerOnError;
   maxDepth?: number;
 }
@@ -146,9 +146,7 @@ class MaxDepthError extends Error {
   }
 }
 
-function createBatchStreamProducer(
-  opts: ProducerOptions<Record<string, unknown>>,
-) {
+function createBatchStreamProducer(opts: ProducerOptions) {
   const { data } = opts;
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
@@ -313,9 +311,7 @@ function createBatchStreamProducer(
  * JSON Lines stream producer
  * @see https://jsonlines.org/
  */
-export function jsonlStreamProducer(
-  opts: ProducerOptions<Record<string, unknown>>,
-) {
+export function jsonlStreamProducer(opts: ProducerOptions) {
   let [head, stream] = createBatchStreamProducer(opts);
 
   const { serialize } = opts;

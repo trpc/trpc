@@ -1,24 +1,35 @@
-import type { AnyRouter } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import type { TRPCResponse } from '@trpc/server/rpc';
-import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
-import { TRPCClientError } from '../TRPCClientError';
-import type { HTTPLinkOptions } from './httpLink';
+import type {
+  AnyClientTypes,
+  inferClientTypes,
+  InferrableClientTypes,
+  SSEChunk,
+} from '@trpc/server/unstable-core-do-not-import';
 import {
-  fetchHTTPResponse,
-  getBody,
-  getUrl,
-  resolveHTTPLinkOptions,
-} from './internals/httpUtils';
+  run,
+  sseStreamConsumer,
+} from '@trpc/server/unstable-core-do-not-import';
+import { TRPCClientError } from '../TRPCClientError';
+import { getTransformer, type TransformerOptions } from '../unstable-internals';
+import { getUrl } from './internals/httpUtils';
 import type { TRPCLink } from './types';
+
+type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
+  url: string;
+} & TransformerOptions<TRoot>;
 
 /**
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink
  */
-export function unstable_httpSubscriptionLink<TRouter extends AnyRouter>(
-  opts: HTTPLinkOptions<TRouter['_def']['_config']['$types']>,
-): TRPCLink<TRouter> {
-  const resolvedOpts = resolveHTTPLinkOptions(opts);
+export function unstable_httpSubscriptionLink<
+  TInferrable extends InferrableClientTypes,
+>(
+  opts: HTTPSubscriptionLinkOptions<inferClientTypes<TInferrable>>,
+): TRPCLink<TInferrable> {
+  const resolvedOpts = {
+    url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes
+    transformer: getTransformer(opts.transformer),
+  };
   return () => {
     return ({ op }) => {
       return observable((observer) => {
@@ -28,92 +39,49 @@ export function unstable_httpSubscriptionLink<TRouter extends AnyRouter>(
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
 
-        const ac = resolvedOpts.AbortController
-          ? new resolvedOpts.AbortController()
-          : null;
-
-        fetchHTTPResponse(
-          {
-            ...resolvedOpts,
-            type,
-            contentTypeHeader: 'application/json',
-            trpcAcceptHeader: 'application/jsonl',
-            getUrl,
-            getBody,
-            inputs: [input],
-            path,
-            headers() {
-              if (!opts.headers) {
-                return {};
-              }
-              if (typeof opts.headers === 'function') {
-                return opts.headers({
-                  op,
-                });
-              }
-              return opts.headers;
+        let eventSource: EventSource | null = null;
+        run(async () => {
+          observer.next({
+            result: {
+              type: 'started',
             },
-          },
-          ac,
-        )
-          .then(async (res) => {
-            const [head] = await jsonlStreamConsumer<Record<'0', Promise<any>>>(
-              {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                from: res.body!,
-                deserialize: resolvedOpts.transformer.output.deserialize,
-              },
-            );
-            let json: TRPCResponse = await Promise.resolve(head[0]);
-
-            if ('error' in json) {
-              observer.error(
-                TRPCClientError.from(json, {
-                  meta: {
-                    response: res,
-                  },
-                }),
-              );
-              return;
-            }
-
-            /**
-             * Not very pretty, but we need to unwrap nested data as promises
-             * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
-             */
-            const result = await Promise.resolve(json.result);
-            json = {
-              result: {
-                data: await Promise.resolve(result.data),
-              },
-            };
-            observer.next({
-              result: {
-                type: 'started',
-              },
-            });
-            for await (const chunk of json.result
-              .data as AsyncIterable<unknown>) {
-              observer.next({
-                result: {
-                  type: 'data',
-                  data: chunk,
-                },
-              });
-            }
-            observer.next({
-              result: {
-                type: 'stopped',
-              },
-            });
-            observer.complete();
-          })
-          .catch((cause) => {
-            observer.error(TRPCClientError.from(cause));
+          });
+          const url = getUrl({
+            ...resolvedOpts,
+            input,
+            path,
+            type,
+            AbortController: null,
+          });
+          eventSource = new EventSource(url, {
+            withCredentials: true,
+          });
+          const iterable = sseStreamConsumer<SSEChunk>({
+            from: eventSource,
+            deserialize: resolvedOpts.transformer.input.deserialize,
           });
 
+          for await (const chunk of iterable) {
+            observer.next({
+              result: {
+                data: chunk,
+              },
+            });
+          }
+
+          observer.next({
+            result: {
+              type: 'stopped',
+            },
+          });
+          observer.complete();
+        }).catch((error) => {
+          observer.error(TRPCClientError.from(error));
+        });
+
         return () => {
-          ac?.abort();
+          eventSource?.close();
+          observer.complete();
         };
       });
     };

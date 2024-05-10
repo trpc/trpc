@@ -14,9 +14,11 @@ import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import type { HTTPErrorHandler } from '@trpc/server/http';
 import type { DataTransformerOptions } from '@trpc/server/unstable-core-do-not-import';
+import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
 
+(global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = WebSocket as any;
