@@ -261,7 +261,7 @@ describe('with transformer', () => {
           }),
           iterable: t.procedure.subscription(async function* () {
             for await (const data of on(ee, 'data')) {
-              yield data as number;
+              yield data[0] as number;
             }
           }),
 
@@ -445,14 +445,10 @@ describe('with transformer', () => {
       expect(onData.mock.calls).toMatchInlineSnapshot(`
         Array [
           Array [
-            Array [
-              1,
-            ],
+            1,
           ],
           Array [
-            Array [
-              2,
-            ],
+            2,
           ],
         ]
       `);

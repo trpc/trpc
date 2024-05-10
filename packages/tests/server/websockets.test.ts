@@ -86,9 +86,10 @@ function factory(config?: {
     onMessageIterable: t.procedure
       .input(z.string().nullish())
       .subscription(async function* () {
+        ee.emit('subscription:created');
         onNewMessageSubscription();
         for await (const data of on(ee, 'server:msg')) {
-          yield data as Message;
+          yield data[0] as Message;
         }
         subscriptionEnded();
       }),

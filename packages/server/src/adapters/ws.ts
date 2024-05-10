@@ -153,11 +153,30 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           });
         }
 
+        /* istanbul ignore next -- @preserve */
+        if (client.readyState !== WEBSOCKET_OPEN) {
+          // if the client got disconnected whilst initializing the subscription
+          // no need to send stopped message if the client is disconnected
+
+          return;
+        }
+
+        /* istanbul ignore next -- @preserve */
+        if (clientSubscriptions.has(id)) {
+          // duplicate request ids for client
+
+          throw new TRPCError({
+            message: `Duplicate id ${id}`,
+            code: 'BAD_REQUEST',
+          });
+        }
+
         const iterable = isObservable(result)
           ? observableToAsyncIterable(result)
           : result;
 
-        const iterator = iterable[Symbol.asyncIterator]();
+        const iterator: AsyncIterator<unknown> =
+          iterable[Symbol.asyncIterator]();
         const abortController = new AbortController();
 
         const abortPromise = new Promise<null>((resolve) => {
@@ -170,8 +189,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               iterator.next().catch(getTRPCErrorFromUnknown),
               abortPromise,
             ]);
+
             if (next === null) {
-              await iterator.return?.();
               break;
             }
             if (next instanceof Error) {
@@ -205,6 +224,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             });
           }
 
+          await iterator.return?.();
           respond({
             id,
             jsonrpc,
@@ -212,27 +232,24 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               type: 'stopped',
             },
           });
-        }).catch(() => {
-          // FIXME
-        });
-
-        /* istanbul ignore next -- @preserve */
-        if (client.readyState !== WEBSOCKET_OPEN) {
-          // if the client got disconnected whilst initializing the subscription
-          // no need to send stopped message if the client is disconnected
-          abortController.abort();
-          return;
-        }
-
-        /* istanbul ignore next -- @preserve */
-        if (clientSubscriptions.has(id)) {
-          // duplicate request ids for client
-          abortController.abort();
-          throw new TRPCError({
-            message: `Duplicate id ${id}`,
-            code: 'BAD_REQUEST',
+          clientSubscriptions.delete(id);
+        }).catch((cause) => {
+          const error = getTRPCErrorFromUnknown(cause);
+          opts.onError?.({ error, path, type, ctx, req, input });
+          respond({
+            id,
+            jsonrpc,
+            error: getErrorShape({
+              config: router._def._config,
+              error,
+              type,
+              path,
+              input,
+              ctx,
+            }),
           });
-        }
+          abortController.abort();
+        });
         clientSubscriptions.set(id, abortController);
 
         respond({
