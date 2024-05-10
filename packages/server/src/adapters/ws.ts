@@ -16,7 +16,6 @@ import type { BaseHandlerOptions } from '../@trpc/server/http';
 import { parseTRPCMessage } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
-  JSONRPC2,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
@@ -85,21 +84,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       );
     }
 
-    function stopSubscription(
-      subscription: AbortController,
-      { id, jsonrpc }: JSONRPC2.BaseEnvelope & { id: JSONRPC2.RequestId },
-    ) {
-      subscription.abort();
-
-      respond({
-        id,
-        jsonrpc,
-        result: {
-          type: 'stopped',
-        },
-      });
-    }
-
     const ctxPromise = createContext?.({ req, res: client });
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
@@ -113,11 +97,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
       }
       if (msg.method === 'subscription.stop') {
-        const sub = clientSubscriptions.get(id);
-        if (sub) {
-          stopSubscription(sub, { id, jsonrpc });
-        }
-        clientSubscriptions.delete(id);
+        clientSubscriptions.get(id)?.abort();
         return;
       }
       const { path, input } = msg.params;
@@ -148,7 +128,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
         if (!isObservable(result) && !isAsyncIterable(result)) {
           throw new TRPCError({
-            message: `Subscription ${path} did not return an observable or async iterable`,
+            message: `Subscription ${path} did not return an observable or a AsyncGenerator`,
             code: 'INTERNAL_SERVER_ERROR',
           });
         }

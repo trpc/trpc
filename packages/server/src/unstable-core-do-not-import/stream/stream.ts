@@ -207,7 +207,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
-    void run(async () => {
+    run(async () => {
       const iterator = iterable[Symbol.asyncIterator]();
 
       while (true) {
@@ -238,6 +238,19 @@ function createBatchStreamProducer(opts: ProducerOptions) {
 
       pending.delete(idx);
       maybeClose();
+    }).catch((cause) => {
+      // this shouldn't happen, but node crashes if we don't catch it
+      opts.onError?.({
+        error: new Error(
+          'You found a bug - please report it on https://github.com/trpc/trpc',
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore https://github.com/tc39/proposal-error-cause
+          {
+            cause,
+          },
+        ),
+        path,
+      });
     });
     return idx;
   }
