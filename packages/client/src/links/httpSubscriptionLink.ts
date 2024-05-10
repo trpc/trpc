@@ -13,7 +13,7 @@ import {
 import type { TRPCLink } from './types';
 
 /**
- * @see https://trpc.io/docs/client/links/httpBatchStreamLink
+ * @see https://trpc.io/docs/client/links/httpSubscriptionLink
  */
 export function unstable_httpSubscriptionLink<TRouter extends AnyRouter>(
   opts: HTTPLinkOptions<TRouter['_def']['_config']['$types']>,
