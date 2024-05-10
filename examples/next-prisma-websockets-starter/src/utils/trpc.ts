@@ -44,14 +44,14 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
   return splitLink({
     condition: (op) => op.type === 'subscription',
     true: unstable_httpSubscriptionLink({
-      url: `${APP_URL}/api/trpc`,
+      url: `/api/trpc`,
       /**
        * @link https://trpc.io/docs/v11/data-transformers
        */
       transformer: superjson,
     }),
     false: unstable_httpBatchStreamLink({
-      url: `${APP_URL}/api/trpc`,
+      url: `/api/trpc`,
       /**
        * @link https://trpc.io/docs/v11/data-transformers
        */
