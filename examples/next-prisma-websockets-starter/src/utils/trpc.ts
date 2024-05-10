@@ -2,7 +2,9 @@ import type { TRPCLink } from '@trpc/client';
 import {
   httpBatchLink,
   loggerLink,
+  splitLink,
   unstable_httpBatchStreamLink,
+  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
@@ -39,12 +41,22 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
       },
     });
   }
-  return unstable_httpBatchStreamLink({
-    url: `${APP_URL}/api/trpc`,
-    /**
-     * @link https://trpc.io/docs/v11/data-transformers
-     */
-    transformer: superjson,
+  return splitLink({
+    condition: (op) => op.type === 'subscription',
+    true: unstable_httpSubscriptionLink({
+      url: `${APP_URL}/api/trpc`,
+      /**
+       * @link https://trpc.io/docs/v11/data-transformers
+       */
+      transformer: superjson,
+    }),
+    false: unstable_httpBatchStreamLink({
+      url: `${APP_URL}/api/trpc`,
+      /**
+       * @link https://trpc.io/docs/v11/data-transformers
+       */
+      transformer: superjson,
+    }),
   });
 }
 
