@@ -4,33 +4,7 @@ import { parseEnv } from './src/utils/env';
 import {themes as prismThemes} from 'prism-react-renderer';
 
 
-function remarkPlugin() {
-  async function transform(...args) {
-    console.log('Plugin works')
-    // Async import since these packages are all in ESM
-    const { visit, SKIP } = await import("unist-util-visit");
-    const { mdxFromMarkdown } = await import("mdast-util-mdx");
-    const { fromMarkdown } = await import("mdast-util-from-markdown");
-    const { mdxjs } = await import("micromark-extension-mdxjs");
 
-    // This is a horror show, but it's the only way I could get the raw HTML into MDX.
-    const [ast] = args;
-    visit(ast, "html", (node) => {
-      const escapedHtml = JSON.stringify(node.value);
-      const jsx = `<div dangerouslySetInnerHTML={{__html: ${escapedHtml} }}/>`;
-      const rawHtmlNode = fromMarkdown(jsx, {
-        extensions: [mdxjs()],
-        mdastExtensions: [mdxFromMarkdown()],
-      }).children[0];
-
-      Object.assign(node, rawHtmlNode);
-
-      return SKIP;
-    });
-  }
-
-  return transform;
-}
 
 const env = parseEnv(process.env);
 
@@ -65,10 +39,10 @@ const config = {
     disableSwitch: false,
     respectPrefersColorScheme: true,
     image: `${env.OG_URL}/api/landing?cache-buster=${new Date().getDate()}`,
-    prism: {
-      theme: prismThemes.github,
-      darkTheme: prismThemes.dracula,
-    },
+    // prism: {
+    //   theme: prismThemes.github,
+    //   darkTheme: prismThemes.dracula,
+    // },
     algolia: {
       appId: 'BTGPSR4MOE',
       apiKey: 'ed8b3896f8e3e2b421e4c38834b915a8',
@@ -266,8 +240,9 @@ const config = {
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
           remarkPlugins: [
-            require("remark-shiki-twoslash").default,
-            remarkPlugin,
+            [require("remark-shiki-twoslash").default, require("./shiki-twoslash.config")],
+
+            require("./mdx-to-jsx"), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
           ]
         },
         blog: {
@@ -283,14 +258,14 @@ const config = {
         },
       },
     ],
-    [
-      "remark-shiki-twoslash",
-      {
-        // Not sure how reliable this path is (it's relative from the preset package)?
-        // None of the light themes had good support for `diff` mode, so had to patch my own theme
-        themes: ['../../../../../../www/min-light-with-diff', 'github-dark'],
-      },
-    ],
+    // [
+    //   "remark-shiki-twoslash",
+    //   {
+    //     // Not sure how reliable this path is (it's relative from the preset package)?
+    //     // None of the light themes had good support for `diff` mode, so had to patch my own theme
+    //     themes: ['../../../../../../www/min-light-with-diff', 'github-dark'],
+    //   },ww
+    // ],
   ],
   scripts: [
     {
@@ -299,7 +274,7 @@ const config = {
       charSet: 'utf-8',
     },
   ],
-  clientModules: [require.resolve('./docusaurus.twitterReload.js')],
+  clientModules: [require.resolve('./docusaurus.twitterReload.js'), require.resolve('./docusaurus.preferredTheme.js')],
 
   customFields: {
     env,
