@@ -1,9 +1,8 @@
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
-import type { SSEChunk } from './jsonl';
-import { sseStreamProducer } from './jsonl';
-import { sseStreamConsumer } from './sse';
+import type { SSEChunk } from './sse';
+import { sseStreamConsumer, sseStreamProducer } from './sse';
 import { createServer } from './utils/createServer';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
