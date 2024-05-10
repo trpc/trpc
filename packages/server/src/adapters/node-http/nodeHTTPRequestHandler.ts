@@ -66,6 +66,7 @@ export async function nodeHTTPRequestHandler<
     if (response.body) {
       const reader = response.body.getReader();
       const onAbort = () => {
+        // cancelling the reader will cause the whole stream to be cancelled
         reader.cancel().catch(() => {
           // console.error('reader.cancel() error', err);
         });
