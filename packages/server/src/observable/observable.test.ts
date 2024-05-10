@@ -161,7 +161,7 @@ test('observableToAsyncIterable()', async () => {
   `);
 });
 
-test.only('observableToAsyncIterable() - doesnt hang', async () => {
+test('observableToAsyncIterable() - doesnt hang', async () => {
   const ee = new EventEmitter();
   const obs = observable<number, Error>((observer) => {
     const onData = (data: number) => {
