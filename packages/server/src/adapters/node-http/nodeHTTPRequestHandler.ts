@@ -88,6 +88,7 @@ export async function nodeHTTPRequestHandler<
           });
         }
       }
+      req.signal.removeEventListener('abort', onAbort);
     }
     res.end();
   });
