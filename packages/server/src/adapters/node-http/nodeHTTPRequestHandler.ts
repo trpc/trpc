@@ -87,6 +87,8 @@ export async function nodeHTTPRequestHandler<
             res.once('drain', resolve);
           });
         }
+        // IMPORTANT - flush the response buffer, otherwise the client will not receive the data until `.end()`
+        res.flush?.();
       }
       req.signal.removeEventListener('abort', onAbort);
     }
