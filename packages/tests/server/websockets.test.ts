@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import { EventEmitter, on } from 'events';
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
@@ -64,22 +64,34 @@ function factory(config?: {
         };
       }),
 
-    onMessage: t.procedure.input(z.string().nullish()).subscription(({}) => {
-      const sub = observable<Message>((emit) => {
-        subRef.current = emit;
-        const onMessage = (data: Message) => {
-          emit.next(data);
-        };
-        ee.on('server:msg', onMessage);
-        return () => {
-          subscriptionEnded();
-          ee.off('server:msg', onMessage);
-        };
-      });
-      ee.emit('subscription:created');
-      onNewMessageSubscription();
-      return sub;
-    }),
+    onMessageObservable: t.procedure
+      .input(z.string().nullish())
+      .subscription(({}) => {
+        const sub = observable<Message>((emit) => {
+          subRef.current = emit;
+          const onMessage = (data: Message) => {
+            emit.next(data);
+          };
+          ee.on('server:msg', onMessage);
+          return () => {
+            subscriptionEnded();
+            ee.off('server:msg', onMessage);
+          };
+        });
+        ee.emit('subscription:created');
+        onNewMessageSubscription();
+        return sub;
+      }),
+
+    onMessageIterable: t.procedure
+      .input(z.string().nullish())
+      .subscription(async function* () {
+        onNewMessageSubscription();
+        for await (const data of on(ee, 'server:msg')) {
+          yield data as Message;
+        }
+        subscriptionEnded();
+      }),
   });
 
   const onOpenMock = vi.fn();
@@ -149,7 +161,7 @@ test('mutation', async () => {
   await close();
 });
 
-test('basic subscription test', async () => {
+test('basic subscription test (observable)', async () => {
   const { client, close, ee } = factory();
   ee.once('subscription:created', () => {
     setTimeout(() => {
@@ -163,7 +175,72 @@ test('basic subscription test', async () => {
   });
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
-  const subscription = client.onMessage.subscribe(undefined, {
+  const subscription = client.onMessageObservable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataMock(data);
+    },
+  });
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+    expect(onDataMock).toHaveBeenCalledTimes(2);
+  });
+
+  ee.emit('server:msg', {
+    id: '2',
+  });
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(3);
+  });
+
+  expect(onDataMock.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "id": "1",
+        },
+      ],
+      Array [
+        Object {
+          "id": "2",
+        },
+      ],
+      Array [
+        Object {
+          "id": "2",
+        },
+      ],
+    ]
+  `);
+
+  subscription.unsubscribe();
+  await waitFor(() => {
+    expect(ee.listenerCount('server:msg')).toBe(0);
+    expect(ee.listenerCount('server:error')).toBe(0);
+  });
+  await close();
+});
+
+test.only('basic subscription test (iterator)', async () => {
+  const { client, close, ee } = factory();
+  ee.once('subscription:created', () => {
+    setTimeout(() => {
+      ee.emit('server:msg', {
+        id: '1',
+      });
+      ee.emit('server:msg', {
+        id: '2',
+      });
+    });
+  });
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+  const subscription = client.onMessageIterable.subscribe(undefined, {
     onStarted() {
       onStartedMock();
     },
@@ -230,7 +307,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  client.onMessage.subscribe(undefined, {
+  client.onMessageObservable.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -303,7 +380,7 @@ test('server subscription ended', async () => {
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  client.onMessage.subscribe(undefined, {
+  client.onMessageObservable.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -339,7 +416,7 @@ test('can close wsClient when subscribed', async () => {
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  client.onMessage.subscribe(undefined, {
+  client.onMessageObservable.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -378,7 +455,7 @@ test('sub emits errors', async () => {
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
   const onCompleteMock = vi.fn();
-  client.onMessage.subscribe(undefined, {
+  client.onMessageObservable.subscribe(undefined, {
     onStarted: onStartedMock,
     onData: onDataMock,
     onError: onErrorMock,
@@ -466,7 +543,7 @@ test(
       const onErrorMock = vi.fn();
       const onStoppedMock = vi.fn();
       const onCompleteMock = vi.fn();
-      const unsub = client.onMessage.subscribe(undefined, {
+      const unsub = client.onMessageObservable.subscribe(undefined, {
         onStarted: onStartedMock(),
         onData: onDataMock,
         onError: onErrorMock,
@@ -552,7 +629,7 @@ test(
       const onErrorMock = vi.fn();
       const onStoppedMock = vi.fn();
       const onCompleteMock = vi.fn();
-      const unsub = client.onMessage.subscribe(undefined, {
+      const unsub = client.onMessageObservable.subscribe(undefined, {
         onStarted: onStartedMock(),
         onData: onDataMock,
         onError: onErrorMock,
@@ -951,7 +1028,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
       jsonrpc: '2.0',
       method: 'subscription',
       params: {
-        path: 'onMessage',
+        path: 'onMessageObservable',
         input: null,
       },
     };
@@ -1119,7 +1196,7 @@ describe('lazy mode', () => {
     const onDataMock = vi.fn();
 
     expect(wsClient.connection).toBe(null);
-    const sub = client.onMessage.subscribe(undefined, {
+    const sub = client.onMessageObservable.subscribe(undefined, {
       onData: onDataMock,
     });
     expect(wsClient.connection).not.toBe(null);

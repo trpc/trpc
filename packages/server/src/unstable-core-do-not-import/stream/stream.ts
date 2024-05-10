@@ -4,8 +4,6 @@ import { isAsyncIterable, isFunction, isObject } from '../utils';
 
 // ---------- utils
 
-const cancelledSymbol = Symbol('cancelled');
-
 /**
  * One-off readable stream
  */
@@ -13,14 +11,14 @@ function createReadableStream<TValue = unknown>() {
   let controller: ReadableStreamDefaultController<TValue> =
     null as unknown as ReadableStreamDefaultController<TValue>;
 
-  const deferred = createDeferred<typeof cancelledSymbol>();
+  const deferred = createDeferred<null>();
   let cancelled = false;
   const readable = new ReadableStream<TValue>({
     start(c) {
       controller = c;
     },
     cancel() {
-      deferred.resolve(cancelledSymbol);
+      deferred.resolve(null);
       cancelled = true;
     },
   });
@@ -177,7 +175,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     pending.add(idx);
     Promise.race([promise, stream.cancelledPromise])
       .then((it) => {
-        if (it === cancelledSymbol) {
+        if (it === null) {
           return;
         }
         stream.controller.enqueue([
@@ -222,7 +220,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
           stream.controller.enqueue([idx, ASYNC_ITERABLE_STATUS_ERROR]);
           return;
         }
-        if (next === cancelledSymbol) {
+        if (next === null) {
           await iterator.return?.();
           break;
         }

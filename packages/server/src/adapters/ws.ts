@@ -22,9 +22,13 @@ import type {
   TRPCResponseMessage,
 } from '../@trpc/server/rpc';
 import { isObservable } from '../observable';
-import type { Unsubscribable } from '../observable';
+import { observableToAsyncIterable } from '../observable/observable';
 // eslint-disable-next-line no-restricted-imports
-import type { MaybePromise } from '../unstable-core-do-not-import';
+import {
+  isAsyncIterable,
+  run,
+  type MaybePromise,
+} from '../unstable-core-do-not-import';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
@@ -71,7 +75,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   const { transformer } = router._def._config;
 
   return async (client: ws.WebSocket, req: IncomingMessage) => {
-    const clientSubscriptions = new Map<number | string, Unsubscribable>();
+    const clientSubscriptions = new Map<number | string, AbortController>();
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
@@ -82,10 +86,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     }
 
     function stopSubscription(
-      subscription: Unsubscribable,
+      subscription: AbortController,
       { id, jsonrpc }: JSONRPC2.BaseEnvelope & { id: JSONRPC2.RequestId },
     ) {
-      subscription.unsubscribe();
+      subscription.abort();
 
       respond({
         id,
@@ -129,14 +133,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           type,
         });
 
-        if (type === 'subscription') {
-          if (!isObservable(result)) {
-            throw new TRPCError({
-              message: `Subscription ${path} did not return an observable`,
-              code: 'INTERNAL_SERVER_ERROR',
-            });
-          }
-        } else {
+        if (type !== 'subscription') {
           // send the value as data if the method is not a subscription
           respond({
             id,
@@ -149,62 +146,94 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           return;
         }
 
-        const observable = result;
-        const sub = observable.subscribe({
-          next(data) {
+        if (!isObservable(result) && !isAsyncIterable(result)) {
+          throw new TRPCError({
+            message: `Subscription ${path} did not return an observable or async iterable`,
+            code: 'INTERNAL_SERVER_ERROR',
+          });
+        }
+
+        const iterable = isObservable(result)
+          ? observableToAsyncIterable(result)
+          : result;
+
+        const iterator = iterable[Symbol.asyncIterator]();
+        const abortController = new AbortController();
+
+        const abortPromise = new Promise<null>((resolve) => {
+          abortController.signal.onabort = () => resolve(null);
+        });
+
+        run(async () => {
+          while (true) {
+            const next = await Promise.race([
+              iterator.next().catch(getTRPCErrorFromUnknown),
+              abortPromise,
+            ]);
+            if (next === null) {
+              await iterator.return?.();
+              break;
+            }
+            if (next instanceof Error) {
+              const error = getTRPCErrorFromUnknown(next);
+              opts.onError?.({ error, path, type, ctx, req, input });
+              respond({
+                id,
+                jsonrpc,
+                error: getErrorShape({
+                  config: router._def._config,
+                  error,
+                  type,
+                  path,
+                  input,
+                  ctx,
+                }),
+              });
+              break;
+            }
+            if (next.done) {
+              break;
+            }
+
             respond({
               id,
               jsonrpc,
               result: {
                 type: 'data',
-                data,
+                data: next.value,
               },
             });
-          },
-          error(err) {
-            const error = getTRPCErrorFromUnknown(err);
-            opts.onError?.({ error, path, type, ctx, req, input });
-            respond({
-              id,
-              jsonrpc,
-              error: getErrorShape({
-                config: router._def._config,
-                error,
-                type,
-                path,
-                input,
-                ctx,
-              }),
-            });
-          },
-          complete() {
-            respond({
-              id,
-              jsonrpc,
-              result: {
-                type: 'stopped',
-              },
-            });
-          },
+          }
+
+          respond({
+            id,
+            jsonrpc,
+            result: {
+              type: 'stopped',
+            },
+          });
+        }).catch(() => {
+          // FIXME
         });
+
         /* istanbul ignore next -- @preserve */
         if (client.readyState !== WEBSOCKET_OPEN) {
           // if the client got disconnected whilst initializing the subscription
           // no need to send stopped message if the client is disconnected
-          sub.unsubscribe();
+          abortController.abort();
           return;
         }
 
         /* istanbul ignore next -- @preserve */
         if (clientSubscriptions.has(id)) {
           // duplicate request ids for client
-          stopSubscription(sub, { id, jsonrpc });
+          abortController.abort();
           throw new TRPCError({
             message: `Duplicate id ${id}`,
             code: 'BAD_REQUEST',
           });
         }
-        clientSubscriptions.set(id, sub);
+        clientSubscriptions.set(id, abortController);
 
         respond({
           id,
@@ -277,7 +306,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
     client.once('close', () => {
       for (const sub of clientSubscriptions.values()) {
-        sub.unsubscribe();
+        sub.abort();
       }
       clientSubscriptions.clear();
     });
