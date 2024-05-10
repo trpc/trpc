@@ -64,8 +64,7 @@ export async function nodeHTTPRequestHandler<
       res.setHeader(key, value);
     }
     if (response.body) {
-      const body = response.body;
-      const reader = body.getReader();
+      const reader = response.body.getReader();
       const onAbort = () => {
         reader.cancel().catch(() => {
           // console.error('reader.cancel() error', err);
