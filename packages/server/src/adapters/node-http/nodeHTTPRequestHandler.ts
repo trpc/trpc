@@ -55,12 +55,13 @@ export async function nodeHTTPRequestHandler<
       },
     });
 
-    if (opts.res.statusCode === 200) {
+    const { res } = opts;
+    if (res.statusCode === 200) {
       // if the status code is set, we assume that it's been manually overridden
-      opts.res.statusCode = response.status;
+      res.statusCode = response.status;
     }
     for (const [key, value] of response.headers) {
-      opts.res.setHeader(key, value);
+      res.setHeader(key, value);
     }
     if (response.body) {
       const body = response.body;
@@ -78,16 +79,16 @@ export async function nodeHTTPRequestHandler<
         if (done) {
           break;
         }
-        if (!opts.res.writable) {
+        if (!res.writable) {
           break;
         }
-        if (!opts.res.write(value)) {
+        if (!res.write(value)) {
           await new Promise<void>((resolve) => {
-            opts.res.once('drain', resolve);
+            res.once('drain', resolve);
           });
         }
       }
     }
-    opts.res.end();
+    res.end();
   });
 }
