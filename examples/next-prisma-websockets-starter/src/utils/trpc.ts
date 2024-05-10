@@ -3,6 +3,8 @@ import {
   httpBatchLink,
   loggerLink,
   splitLink,
+  createWSClient,
+  wsLink,
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
@@ -19,7 +21,7 @@ import superjson from 'superjson';
 
 const { publicRuntimeConfig } = getConfig();
 
-const { APP_URL } = publicRuntimeConfig;
+const { APP_URL, WS_URL } = publicRuntimeConfig;
 
 function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
   if (typeof window === 'undefined') {
@@ -41,22 +43,34 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
       },
     });
   }
-  return splitLink({
-    condition: (op) => op.type === 'subscription',
-    true: unstable_httpSubscriptionLink({
-      url: `/api/trpc`,
-      /**
-       * @link https://trpc.io/docs/v11/data-transformers
-       */
-      transformer: superjson,
-    }),
-    false: unstable_httpBatchStreamLink({
-      url: `/api/trpc`,
-      /**
-       * @link https://trpc.io/docs/v11/data-transformers
-       */
-      transformer: superjson,
-    }),
+  if (process.env.NEXT_PUBLIC_TRPC_HTTP_STREAMING === '1') {
+    return splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: unstable_httpSubscriptionLink({
+        url: `/api/trpc`,
+        /**
+         * @link https://trpc.io/docs/v11/data-transformers
+         */
+        transformer: superjson,
+      }),
+      false: unstable_httpBatchStreamLink({
+        url: `/api/trpc`,
+        /**
+         * @link https://trpc.io/docs/v11/data-transformers
+         */
+        transformer: superjson,
+      }),
+    });
+  }
+  const client = createWSClient({
+    url: WS_URL,
+  });
+  return wsLink({
+    client,
+    /**
+     * @link https://trpc.io/docs/v11/data-transformers
+     */
+    transformer: superjson,
   });
 }
 
