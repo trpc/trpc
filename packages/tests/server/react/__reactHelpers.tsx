@@ -81,7 +81,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
     client: proxy,
     App,
     appRouter,
-    opts,
+    opts: ctx,
     spyLink,
   };
 }
