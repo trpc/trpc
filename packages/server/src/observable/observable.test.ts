@@ -169,7 +169,6 @@ test('observableToAsyncIterable() - doesnt hang', async () => {
     };
     ee.on('data', onData);
     return () => {
-      console.log('unsub');
       ee.off('data', onData);
     };
   });
