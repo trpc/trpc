@@ -29,6 +29,7 @@ export function sseStreamProducer(opts: {
 }) {
   const responseStream = new TransformStream<SerializedSSEChunk, string>({
     transform(chunk, controller) {
+      // console.log('adding', { chunk });
       if ('event' in chunk) {
         controller.enqueue(`event: ${chunk.event}\n`);
       }
@@ -74,7 +75,7 @@ export function sseStreamProducer(opts: {
         closedPromise,
       ]);
       ping.clear();
-
+      console.log({ next });
       if (next === 'closed') {
         await iterator.return?.();
         break;
@@ -159,6 +160,7 @@ export function sseStreamConsumer<TData>(opts: {
   const writer = response.writable.getWriter();
 
   opts.from.addEventListener('message', (msg) => {
+    console.log('got msg', msg.data);
     writer
       .write({
         data: msg.data,

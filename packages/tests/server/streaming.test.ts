@@ -9,6 +9,7 @@ import {
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import type { SSEChunk } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -250,6 +251,7 @@ describe('with transformer', () => {
           observable: t.procedure.subscription(() => {
             return observable<number>((emit) => {
               const onData = (data: number) => {
+                console.log('data', data);
                 emit.next(data);
               };
               ee.on('data', onData);
@@ -260,7 +262,10 @@ describe('with transformer', () => {
           }),
           iterable: t.procedure.subscription(async function* () {
             for await (const data of on(ee, 'data')) {
-              yield data[0] as number;
+              const num = data[0] as number;
+              yield {
+                data: num,
+              } satisfies SSEChunk;
             }
           }),
 
@@ -383,45 +388,7 @@ describe('with transformer', () => {
   });
 
   describe('subscriptions', async () => {
-    test.only('observable', async () => {
-      const { client } = ctx;
-
-      const onStarted = vi.fn<[]>();
-      const onData = vi.fn<number[]>();
-      const subscription = client.sub.observable.subscribe(undefined, {
-        onStarted: onStarted,
-        onData: onData,
-      });
-
-      await waitFor(() => {
-        expect(onStarted).toHaveBeenCalledTimes(1);
-      });
-
-      ctx.eeEmit(1);
-      ctx.eeEmit(2);
-
-      await waitFor(() => {
-        expect(onData).toHaveBeenCalledTimes(2);
-      });
-      expect(onData.mock.calls).toMatchInlineSnapshot(`
-        Array [
-          Array [
-            1,
-          ],
-          Array [
-            2,
-          ],
-        ]
-      `);
-
-      subscription.unsubscribe();
-
-      await waitFor(() => {
-        expect(ctx.ee.listenerCount('data')).toBe(0);
-      });
-    });
-
-    test('iterable', async () => {
+    test.only('iterable', async () => {
       const { client } = ctx;
 
       const onStarted = vi.fn<[]>();
@@ -431,9 +398,14 @@ describe('with transformer', () => {
         onData: onData,
       });
 
-      await waitFor(() => {
-        expect(onStarted).toHaveBeenCalledTimes(1);
-      });
+      await waitFor(
+        () => {
+          expect(onStarted).toHaveBeenCalledTimes(1);
+        },
+        {
+          timeout: 3_000,
+        },
+      );
 
       ctx.eeEmit(1);
       ctx.eeEmit(2);

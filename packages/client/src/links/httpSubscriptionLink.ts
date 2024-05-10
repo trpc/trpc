@@ -40,12 +40,8 @@ export function unstable_httpSubscriptionLink<
         }
 
         let eventSource: EventSource | null = null;
+
         run(async () => {
-          observer.next({
-            result: {
-              type: 'started',
-            },
-          });
           const url = getUrl({
             ...resolvedOpts,
             input,
@@ -56,6 +52,18 @@ export function unstable_httpSubscriptionLink<
           eventSource = new EventSource(url, {
             withCredentials: true,
           });
+
+          const onStarted = () => {
+            observer.next({
+              result: {
+                type: 'started',
+              },
+            });
+            console.log('started', new Date());
+            eventSource?.removeEventListener('open', onStarted);
+          };
+          console.log('starting', new Date());
+          eventSource.addEventListener('open', onStarted);
           const iterable = sseStreamConsumer<SSEChunk>({
             from: eventSource,
             deserialize: resolvedOpts.transformer.input.deserialize,

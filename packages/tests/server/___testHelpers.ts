@@ -1,15 +1,12 @@
-import http from 'http';
 import type { IncomingMessage } from 'http';
+import http from 'http';
 import type { AddressInfo } from 'net';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, httpBatchLink } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
 import type { AnyRouter } from '@trpc/server';
 import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
-import {
-  createHTTPHandler,
-  createHTTPServer,
-} from '@trpc/server/adapters/standalone';
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import type { HTTPErrorHandler } from '@trpc/server/http';

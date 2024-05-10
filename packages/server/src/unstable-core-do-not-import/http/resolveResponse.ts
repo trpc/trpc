@@ -323,18 +323,15 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
       const data = result.result.data;
 
-      if (!isObservable(data) && !isAsyncIterable(data)) {
+      if (!isAsyncIterable(data)) {
         throw new TRPCError({
-          message: `Subscription did not return an observable or a AsyncGenerator`,
-          code: 'INTERNAL_SERVER_ERROR',
+          message: `Subscription did not return an AsyncGenerator`,
+          code: 'METHOD_NOT_SUPPORTED',
         });
       }
-      const iterable = isObservable(data)
-        ? observableToAsyncIterable(data)
-        : data;
 
       const stream = sseStreamProducer({
-        data: iterable,
+        data,
         serialize: (v) =>
           opts.router._def._config.transformer.output.serialize(v),
       });
@@ -351,7 +348,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         errors,
         headers,
       });
-      console.log('stream', stream);
       return new Response(stream, {
         headers,
         status: headResponse.status,
