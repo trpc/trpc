@@ -11,7 +11,7 @@ import {
   type inferRouterError,
 } from '../router';
 import type { TRPCResponse } from '../rpc';
-import { isPromise, jsonlStreamProducer } from '../stream/stream';
+import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { transformTRPCResponse } from '../transformer';
 import { isAsyncIterable, isObject } from '../utils';
 import { getRequestInfo } from './contentType';

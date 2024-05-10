@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
-import type { TypeError } from '../types';
-import { Overwrite } from '../types';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 
 // ---------- utils
@@ -129,7 +127,7 @@ export function isPromise(value: unknown): value is Promise<unknown> {
 }
 
 type Serialize = (value: any) => any;
-type Deserialize = (value: any) => any;
+export type Deserialize = (value: any) => any;
 
 export type ProducerOnError = (opts: {
   error: unknown;
@@ -352,7 +350,7 @@ export type SSEChunk = {
   event?: string;
 };
 
-type SerializedSSEChunk = Omit<SSEChunk, 'data'> & {
+export type SerializedSSEChunk = Omit<SSEChunk, 'data'> & {
   data?: string;
 };
 
@@ -743,79 +741,4 @@ export async function jsonlStreamConsumer<THead>(opts: {
       controllers,
     },
   ] as const;
-}
-
-type inferSSEOutput<TData> = TData extends SSEChunk
-  ? TData
-  : TypeError<'Expected a SSEChunk - use `satisfies SSEChunk'>;
-
-/**
- * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
- */
-export function sseStreamConsumer<TData>(opts: {
-  from: EventSource;
-  onError?: ConsumerOnError;
-  deserialize?: Deserialize;
-}): AsyncIterable<inferSSEOutput<TData>> {
-  const { deserialize = (v) => v } = opts;
-
-  const response = new TransformStream<
-    SerializedSSEChunk,
-    inferSSEOutput<TData>
-  >({
-    async transform(chunk, controller) {
-      if (chunk.data) {
-        const def: SSEChunk = {};
-        def.data = deserialize(JSON.parse(chunk.data));
-        if ('id' in chunk) {
-          def.id = chunk.id;
-        }
-        if ('event' in chunk) {
-          def.event = chunk.event;
-        }
-
-        controller.enqueue(def as inferSSEOutput<TData>);
-      }
-    },
-  });
-  const writer = response.writable.getWriter();
-
-  opts.from.addEventListener('message', (msg) => {
-    writer
-      .write({
-        data: msg.data,
-      })
-      .catch((error) => {
-        opts.onError?.({ error });
-      });
-  });
-  return {
-    [Symbol.asyncIterator]() {
-      const reader = response.readable.getReader();
-
-      const iterator: AsyncIterator<inferSSEOutput<TData>> = {
-        async next() {
-          const value = await reader.read();
-          if (value.done) {
-            return {
-              value: undefined,
-              done: true,
-            };
-          }
-          return {
-            value: value.value,
-            done: false,
-          };
-        },
-        async return() {
-          reader.releaseLock();
-          return {
-            value: undefined,
-            done: true,
-          };
-        },
-      };
-      return iterator;
-    },
-  };
 }

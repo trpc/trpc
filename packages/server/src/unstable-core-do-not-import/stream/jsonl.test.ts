@@ -1,31 +1,9 @@
-import http from 'http';
-import type { Socket } from 'net';
 import { waitFor } from '@testing-library/react';
-import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
-import type { Maybe } from '../types';
-import { inferrableChunk } from './isInferrableChunk';
-import type { ConsumerOnError, ProducerOnError, SSEChunk } from './stream';
-import {
-  jsonlStreamConsumer,
-  jsonlStreamProducer,
-  sseStreamConsumer,
-  sseStreamProducer,
-} from './stream';
+import type { ConsumerOnError, ProducerOnError } from './jsonl';
+import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
+import { createServer } from './utils/createServer';
 
-(global as any).EventSource = NativeEventSource || EventSourcePolyfill;
-/* eslint-disable no-console */
-export const suppressLogs = () => {
-  const error = console.error;
-  const noop = () => {
-    // ignore
-  };
-
-  console.error = noop;
-  return () => {
-    console.error = error;
-  };
-};
 test('encode/decode with superjson', async () => {
   const data = {
     0: Promise.resolve({
@@ -202,49 +180,6 @@ test('decode - bad data', async () => {
   }
 });
 
-function createServer(
-  handler: (req: http.IncomingMessage, res: http.ServerResponse) => void,
-) {
-  const server = http.createServer(async (req, res) => {
-    handler(req, res);
-  });
-  server.listen(0);
-
-  const connections = new Set<Socket>();
-  server.on('connection', (conn) => {
-    connections.add(conn);
-    conn.once('close', () => {
-      connections.delete(conn);
-    });
-  });
-
-  const port = (server.address() as any).port;
-
-  const url = `http://localhost:${port}`;
-
-  async function forceClose() {
-    for (const conn of connections) {
-      conn.destroy();
-    }
-    await new Promise((resolve) => {
-      server.close(resolve);
-    });
-  }
-
-  return {
-    url,
-    close: async () => {
-      await new Promise((resolve) => {
-        server.close(resolve);
-      });
-    },
-    restart: async () => {
-      await forceClose();
-
-      server.listen(port);
-    },
-  };
-}
 function createServerForStream(
   stream: ReadableStream,
   abortSignal: AbortController,
@@ -465,127 +400,4 @@ test('e2e, encode/decode - maxDepth', async () => {
   `);
 
   await server.close();
-});
-
-test('e2e, server-sent events (SSE)', async () => {
-  async function* data(lastEventId?: Maybe<number>) {
-    let i = lastEventId ?? 0;
-    while (true) {
-      i++;
-      yield {
-        id: i,
-        data: i,
-      } satisfies SSEChunk;
-
-      await new Promise((resolve) => setTimeout(resolve, 5));
-    }
-  }
-  type inferAsyncIterable<T> = T extends AsyncIterable<infer U> ? U : never;
-  type Data = inferAsyncIterable<ReturnType<typeof data>>;
-
-  const written: string[] = [];
-  const server = createServer(async (req, res) => {
-    const url = new URL(`http://${req.headers.host}${req.url}`);
-
-    const stringOrNull = (v: unknown) => {
-      if (typeof v === 'string') {
-        return v;
-      }
-      return null;
-    };
-    const stringToNumber = (v: string | null) => {
-      if (v === null) {
-        return null;
-      }
-      const num = Number(v);
-      if (Number.isNaN(num)) {
-        return null;
-      }
-      return num;
-    };
-    const lastEventId: string | null =
-      stringOrNull(req.headers['last-event-id']) ??
-      url.searchParams.get('lastEventId') ??
-      url.searchParams.get('Last-Event-Id');
-
-    const asNumber = stringToNumber(lastEventId);
-
-    const stream = sseStreamProducer({
-      data: data(asNumber),
-      serialize: (v) => SuperJSON.serialize(v),
-    });
-    const reader = stream.getReader();
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Transfer-Encoding', 'chunked');
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-      res.write(value);
-      written.push(value);
-    }
-    res.end();
-  });
-
-  const es = new EventSource(server.url, {
-    withCredentials: true,
-  });
-
-  const iterable = sseStreamConsumer<Data>({
-    from: es,
-    deserialize: SuperJSON.deserialize,
-  });
-
-  function range(start: number, end: number) {
-    return Array.from({ length: end - start }, (_, i) => i + start);
-  }
-
-  const ITERATIONS = 10;
-  const values: number[] = [];
-  for await (const value of iterable) {
-    values.push(value.data);
-    if (values.length === ITERATIONS) {
-      break;
-    }
-  }
-  expect(values).toEqual(range(1, ITERATIONS + 1));
-
-  const release = suppressLogs();
-  await Promise.all([
-    await server.restart(),
-    // wait for an error, the EventSource will reconnect
-    new Promise<void>((resolve) => {
-      const onError = () => {
-        es.removeEventListener('error', onError);
-        resolve();
-      };
-      es.addEventListener('error', onError);
-    }),
-    ,
-  ]);
-  release();
-
-  await new Promise<void>((resolve) => {
-    const onOpen = () => {
-      es.removeEventListener('open', onOpen);
-      resolve();
-    };
-    es.addEventListener('open', onOpen);
-  });
-
-  for await (const value of iterable) {
-    values.push(value.data);
-    if (values.length === ITERATIONS * 2) {
-      break;
-    }
-  }
-
-  es.close();
-  await server.close();
-  expect(values).toEqual(range(1, ITERATIONS * 2 + 1));
 });
