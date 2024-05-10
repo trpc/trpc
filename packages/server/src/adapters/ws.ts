@@ -191,6 +191,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             ]);
 
             if (next === null) {
+              await iterator.return?.();
               break;
             }
             if (next instanceof Error) {

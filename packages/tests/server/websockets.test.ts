@@ -1,4 +1,4 @@
-import { EventEmitter, on } from 'events';
+import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
@@ -88,10 +88,10 @@ function factory(config?: {
       .subscription(async function* () {
         ee.emit('subscription:created');
         onNewMessageSubscription();
+
         for await (const data of on(ee, 'server:msg')) {
           yield data[0] as Message;
         }
-        subscriptionEnded();
       }),
   });
 
@@ -220,6 +220,7 @@ test('basic subscription test (observable)', async () => {
   `);
 
   subscription.unsubscribe();
+
   await waitFor(() => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);
@@ -227,7 +228,7 @@ test('basic subscription test (observable)', async () => {
   await close();
 });
 
-test.only('basic subscription test (iterator)', async () => {
+test('basic subscription test (iterator)', async () => {
   const { client, close, ee } = factory();
   ee.once('subscription:created', () => {
     setTimeout(() => {
@@ -285,6 +286,12 @@ test.only('basic subscription test (iterator)', async () => {
   `);
 
   subscription.unsubscribe();
+
+  // iterator won't return until the *next* message is emitted
+  await waitMs(20);
+  ee.emit('server:msg', {
+    id: '4',
+  });
   await waitFor(() => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);
