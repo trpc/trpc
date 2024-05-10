@@ -10,7 +10,6 @@
 
 // @trpc/server
 
-import { Readable } from 'node:stream';
 import { getTRPCErrorFromUnknown, type AnyRouter } from '../../@trpc/server';
 import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
 import { resolveResponse } from '../../@trpc/server/http';
@@ -64,9 +63,31 @@ export async function nodeHTTPRequestHandler<
       opts.res.setHeader(key, value);
     }
     if (response.body) {
-      Readable.fromWeb(response.body as any).pipe(opts.res);
-    } else {
-      opts.res.end();
+      const body = response.body;
+      const reader = body.getReader();
+      const onAbort = () => {
+        reader.cancel().catch(() => {
+          // console.error('reader.cancel() error', err);
+        });
+      };
+      req.signal.addEventListener('abort', onAbort);
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+        if (!opts.res.writable) {
+          break;
+        }
+        if (!opts.res.write(value)) {
+          await new Promise<void>((resolve) => {
+            opts.res.once('drain', resolve);
+          });
+        }
+      }
     }
+    opts.res.end();
   });
 }

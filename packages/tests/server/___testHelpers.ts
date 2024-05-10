@@ -49,6 +49,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   const serverOverrides: Partial<CreateHTTPHandlerOptions<TRouter>> =
     opts?.server ?? {};
 
+  const onReqAborted = vitest.fn();
   const handler = createHTTPHandler({
     router,
     ...serverOverrides,
@@ -58,6 +59,8 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     },
     createContext(it) {
       (createContextSpy as any)(it);
+
+      it.req.on('aborted', onReqAborted);
 
       return opts?.server?.createContext?.(it) ?? it;
     },
@@ -134,6 +137,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     onErrorSpy,
     createContextSpy,
     onRequestSpy,
+    onReqAborted,
   };
 }
 

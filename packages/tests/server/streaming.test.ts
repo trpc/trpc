@@ -14,6 +14,8 @@ import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 
+const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
+
 describe('no transformer', () => {
   const orderedResults: number[] = [];
 
@@ -222,6 +224,7 @@ describe('with transformer', () => {
         },
       });
       orderedResults.length = 0;
+      const infiniteYields = vi.fn();
 
       const router = t.router({
         deferred: t.procedure
@@ -259,6 +262,15 @@ describe('with transformer', () => {
           iterable: t.procedure.subscription(async function* () {
             for await (const data of on(ee, 'data')) {
               yield data as number;
+            }
+          }),
+
+          iterableInfinite: t.procedure.subscription(async function* () {
+            let idx = 0;
+            while (true) {
+              yield idx++;
+              await sleep();
+              infiniteYields();
             }
           }),
         },
@@ -307,6 +319,7 @@ describe('with transformer', () => {
         ...opts,
         ee,
         eeEmit,
+        infiniteYields,
       };
     })
     .afterEach(async (opts) => {
@@ -376,7 +389,7 @@ describe('with transformer', () => {
 
       const onStarted = vi.fn<[]>();
       const onData = vi.fn<number[]>();
-      const subscription = client.sub.iterable.subscribe(undefined, {
+      const subscription = client.sub.observable.subscribe(undefined, {
         onStarted: onStarted,
         onData: onData,
       });
@@ -394,14 +407,10 @@ describe('with transformer', () => {
       expect(onData.mock.calls).toMatchInlineSnapshot(`
         Array [
           Array [
-            Array [
-              1,
-            ],
+            1,
           ],
           Array [
-            Array [
-              2,
-            ],
+            2,
           ],
         ]
       `);
@@ -451,8 +460,37 @@ describe('with transformer', () => {
       subscription.unsubscribe();
 
       await waitFor(() => {
+        expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
+      });
+
+      ctx.eeEmit(4);
+      ctx.eeEmit(5);
+
+      await waitFor(() => {
         expect(ctx.ee.listenerCount('data')).toBe(0);
       });
+    });
+    test('iterable infinite', async () => {
+      const { client } = ctx;
+
+      const onStarted = vi.fn<[]>();
+      const onData = vi.fn<number[]>();
+      const subscription = client.sub.iterableInfinite.subscribe(undefined, {
+        onStarted: onStarted,
+        onData: onData,
+      });
+
+      await waitFor(() => {
+        expect(onData.mock.calls.length).toBeGreaterThan(5);
+      });
+      subscription.unsubscribe();
+      await waitFor(() => {
+        expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
+      });
+
+      ctx.infiniteYields.mockClear();
+      await sleep(5);
+      expect(ctx.infiniteYields).toHaveBeenCalledTimes(0);
     });
   });
 });

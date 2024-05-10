@@ -1,18 +1,38 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAsyncIterable, isFunction, isObject } from '../utils';
 
 // ---------- utils
 
+const cancelledSymbol = Symbol('cancelled');
+
+/**
+ * One-off readable stream
+ */
 function createReadableStream<TValue = unknown>() {
   let controller: ReadableStreamDefaultController<TValue> =
     null as unknown as ReadableStreamDefaultController<TValue>;
-  const stream = new ReadableStream<TValue>({
+
+  const deferred = createDeferred<typeof cancelledSymbol>();
+  let cancelled = false;
+  const readable = new ReadableStream<TValue>({
     start(c) {
       controller = c;
     },
+    cancel() {
+      deferred.resolve(cancelledSymbol);
+      cancelled = true;
+    },
   });
 
-  return [stream, controller] as const;
+  return {
+    readable,
+    controller,
+    cancelledPromise: deferred.promise,
+    cancelled() {
+      return cancelled;
+    },
+  } as const;
 }
 
 /**
@@ -133,11 +153,12 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const [stream, controller] = createReadableStream<ChunkData>();
+  const stream = createReadableStream<ChunkData>();
   const pending = new Set<ChunkIndex>();
+
   function maybeClose() {
-    if (pending.size === 0) {
-      controller.close();
+    if (pending.size === 0 && !stream.cancelled()) {
+      stream.controller.close();
     }
   }
   function hydratePromise(
@@ -154,16 +175,20 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
-    const enqueue = (value: PromiseChunk) => {
-      controller.enqueue(value);
-    };
-    promise
+    Promise.race([promise, stream.cancelledPromise])
       .then((it) => {
-        enqueue([idx, PROMISE_STATUS_FULFILLED, hydrate(it, path)]);
+        if (it === cancelledSymbol) {
+          return;
+        }
+        stream.controller.enqueue([
+          idx,
+          PROMISE_STATUS_FULFILLED,
+          hydrate(it, path),
+        ]);
       })
       .catch((err) => {
         opts.onError?.({ error: err, path });
-        enqueue([idx, PROMISE_STATUS_REJECTED]);
+        stream.controller.enqueue([idx, PROMISE_STATUS_REJECTED]);
       })
       .finally(() => {
         pending.delete(idx);
@@ -184,22 +209,36 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
     void (async () => {
-      try {
-        for await (const item of iterable) {
-          controller.enqueue([
-            idx,
-            ASYNC_ITERABLE_STATUS_VALUE,
-            hydrate(item, path),
-          ]);
+      const iterator = iterable[Symbol.asyncIterator]();
+
+      while (true) {
+        const next = await Promise.race([
+          iterator.next().catch(getTRPCErrorFromUnknown),
+          stream.cancelledPromise,
+        ]);
+
+        if (next instanceof Error) {
+          opts.onError?.({ error: next, path });
+          stream.controller.enqueue([idx, ASYNC_ITERABLE_STATUS_ERROR]);
+          return;
         }
-        controller.enqueue([idx, ASYNC_ITERABLE_STATUS_DONE]);
-      } catch (error) {
-        opts.onError?.({ error, path });
-        controller.enqueue([idx, ASYNC_ITERABLE_STATUS_ERROR]);
-      } finally {
-        pending.delete(idx);
-        maybeClose();
+        if (next === cancelledSymbol) {
+          await iterator.return?.();
+          break;
+        }
+        if (next.done) {
+          stream.controller.enqueue([idx, ASYNC_ITERABLE_STATUS_DONE]);
+          break;
+        }
+        stream.controller.enqueue([
+          idx,
+          ASYNC_ITERABLE_STATUS_VALUE,
+          hydrate(next.value, path),
+        ]);
       }
+
+      pending.delete(idx);
+      maybeClose();
     })();
     return idx;
   }
@@ -254,7 +293,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     newHead[key] = hydrate(item, [key]);
   }
 
-  return [newHead, stream] as const;
+  return [newHead, stream.readable] as const;
 }
 /**
  * JSON Lines stream producer
@@ -305,14 +344,14 @@ export type ConsumerOnError = (opts: { error: unknown }) => void;
 const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
   return {
     getReader() {
-      const [stream, controller] = createReadableStream<Uint8Array>();
+      const { readable, controller } = createReadableStream<Uint8Array>();
       source.on('data', (chunk) => {
         controller.enqueue(chunk);
       });
       source.on('end', () => {
         controller.close();
       });
-      return stream.getReader();
+      return readable.getReader();
     },
   };
 };
@@ -421,7 +460,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   function dehydrateChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const [stream, controller] = createReadableStream<ChunkData>();
+    const { readable, controller } = createReadableStream<ChunkData>();
     controllers.set(chunkId, controller);
 
     // resolve chunk deferred if it exists
@@ -435,7 +474,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
       case CHUNK_VALUE_TYPE_PROMISE: {
         return new Promise((resolve, reject) => {
           // listen for next value in the stream
-          const reader = stream.getReader();
+          const reader = readable.getReader();
           reader
             .read()
             .then((it) => {
@@ -468,7 +507,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
         return {
           [Symbol.asyncIterator]: async function* () {
-            const reader = stream.getReader();
+            const reader = readable.getReader();
             while (true) {
               const { done, value } = await reader.read();
               if (done) {
