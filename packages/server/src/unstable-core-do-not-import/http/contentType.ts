@@ -9,7 +9,9 @@ type ContentTypeHandler = {
     path: string;
     req: Request;
     searchParams: URLSearchParams;
+    headers: Headers;
     config: RootConfig<any>;
+    isSSE: boolean;
   }) => TRPCRequestInfo;
 };
 
@@ -109,7 +111,27 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         path,
         getRawInput: async () => {
           const inputs = await getInputs.read();
-          return inputs[index];
+          let input = inputs[index];
+
+          if (opts.isSSE) {
+            const lastEventId =
+              opts.headers.get('last-event-id') ??
+              opts.searchParams.get('lastEventId') ??
+              opts.searchParams.get('Last-Event-Id');
+            if (lastEventId) {
+              if (isObject(input)) {
+                input = {
+                  ...input,
+                  lastEventId: lastEventId,
+                };
+              } else {
+                input ??= {
+                  lastEventId: lastEventId,
+                };
+              }
+            }
+          }
+          return input;
         },
         result: () => {
           return getInputs.result()?.[index];
@@ -210,6 +232,8 @@ export function getRequestInfo(opts: {
   req: Request;
   searchParams: URLSearchParams;
   config: RootConfig<any>;
+  isSSE: boolean;
+  headers: Headers;
 }): TRPCRequestInfo {
   const handler = getContentTypeHandler(opts.req);
   return handler.parse(opts);

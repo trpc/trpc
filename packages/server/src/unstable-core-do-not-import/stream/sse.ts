@@ -167,6 +167,13 @@ export function sseStreamConsumer<TData>(opts: {
         opts.onError?.({ error });
       });
   });
+  opts.from.addEventListener('error', (cause) => {
+    if ('status' in cause && cause.status !== 200) {
+      writer.abort(new Error('EventSource error', { cause })).catch(() => {
+        // noop
+      });
+    }
+  });
   return {
     [Symbol.asyncIterator]() {
       const reader = response.readable.getReader();
@@ -197,3 +204,11 @@ export function sseStreamConsumer<TData>(opts: {
     },
   };
 }
+
+export const sseHeaders = {
+  'Content-Type': 'text/event-stream',
+  'Cache-Control': 'no-cache',
+  'X-Accel-Buffering': 'no',
+  Connection: 'keep-alive',
+  'Transfer-Encoding': 'chunked',
+} as const;

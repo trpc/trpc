@@ -136,7 +136,7 @@ export type ProducerOnError = (opts: {
 }) => void;
 export interface ProducerOptions {
   serialize?: Serialize;
-  data: Record<string, unknown>;
+  data: Record<string, unknown> | unknown[];
   onError?: ProducerOnError;
   maxDepth?: number;
 }

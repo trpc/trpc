@@ -12,6 +12,7 @@ import {
 } from '../router';
 import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
+import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
 import { isAsyncIterable, isObject } from '../utils';
 import { getRequestInfo } from './contentType';
@@ -28,7 +29,6 @@ const HTTP_METHOD_PROCEDURE_TYPE_MAP: Record<
 > = {
   GET: 'query',
   POST: 'mutation',
-  PATCH: 'subscription',
 };
 
 interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
@@ -172,19 +172,19 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       status: 204,
     });
   }
-  const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
-  const allowMethodOverride =
-    (opts.allowMethodOverride ?? false) && req.method === 'POST';
 
-  const type =
-    HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
+  let type = HTTP_METHOD_PROCEDURE_TYPE_MAP[req.method] ?? ('unknown' as const);
+  const isSSE = req.headers.get('accept') === 'text/event-stream';
+  if (isSSE) {
+    type = 'subscription';
+  }
+
+  const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
+  const allowMethodOverride = (opts.allowMethodOverride ?? false) && !isSSE;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let info: TRPCRequestInfo | undefined = undefined;
 
-  const isSSE = req.headers.get('accept') === 'text/event-stream';
   const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
-
-  console.log('isSSE', isSSE);
 
   const experimentalIterablesAndDeferreds =
     router._def._config.experimental?.iterablesAndDeferreds ?? false;
@@ -195,6 +195,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       path: decodeURIComponent(opts.path),
       config: router._def._config,
       searchParams: url.searchParams,
+      isSSE,
+      headers: opts.req.headers,
     });
 
     // we create context early so that error handlers may access context information
@@ -225,9 +227,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       });
     }
     /* istanbul ignore if -- @preserve */
-    if (type === 'subscription' && !isStreamCall) {
+    if (isSSE && info.calls.length !== 1) {
       throw new TRPCError({
-        message: `Subscription requests must be batched`,
+        message: `SSE requests must have exactly one procedure`,
         code: 'BAD_REQUEST',
       });
     }
@@ -249,6 +251,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         });
 
         if (
+          !isSSE &&
           (!isStreamCall || !experimentalIterablesAndDeferreds) &&
           isObject(data) &&
           (Symbol.asyncIterator in data || Object.values(data).some(isPromise))
@@ -310,6 +313,50 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         };
       }
     });
+    if (isSSE) {
+      const result = await promises[0]!;
+
+      if ('error' in result) {
+        // fixme
+        throw result.error;
+      }
+
+      const data = result.result.data;
+
+      if (!isObservable(data) && !isAsyncIterable(data)) {
+        throw new TRPCError({
+          message: `Subscription did not return an observable or a AsyncGenerator`,
+          code: 'INTERNAL_SERVER_ERROR',
+        });
+      }
+      const iterable = isObservable(data)
+        ? observableToAsyncIterable(data)
+        : data;
+
+      const stream = sseStreamProducer({
+        data: iterable,
+        serialize: (v) =>
+          opts.router._def._config.transformer.output.serialize(v),
+      });
+
+      for (const [key, value] of Object.entries(sseHeaders)) {
+        headers.set(key, value);
+      }
+
+      const headResponse = initResponse({
+        ctx,
+        info,
+        type,
+        responseMeta: opts.responseMeta,
+        errors,
+        headers,
+      });
+      console.log('stream', stream);
+      return new Response(stream, {
+        headers,
+        status: headResponse.status,
+      });
+    }
     if (!isStreamCall) {
       headers.set('content-type', 'application/json');
       /**

@@ -2,7 +2,7 @@ import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
 import type { SSEChunk } from './sse';
-import { sseStreamConsumer, sseStreamProducer } from './sse';
+import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { createServer } from './utils/createServer';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
@@ -67,11 +67,9 @@ test('e2e, server-sent events (SSE)', async () => {
       serialize: (v) => SuperJSON.serialize(v),
     });
     const reader = stream.getReader();
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Transfer-Encoding', 'chunked');
+    for (const [key, value] of Object.entries(sseHeaders)) {
+      res.setHeader(key, value);
+    }
 
     while (true) {
       const { done, value } = await reader.read();

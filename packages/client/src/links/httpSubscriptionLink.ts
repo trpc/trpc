@@ -76,6 +76,7 @@ export function unstable_httpSubscriptionLink<
           });
           observer.complete();
         }).catch((error) => {
+          console.log({ error });
           observer.error(TRPCClientError.from(error));
         });
 
