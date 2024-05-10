@@ -778,7 +778,7 @@ describe('cancel', () => {
 describe('query keys are stored separately', () => {
   test('getInfiniteData() does not data from useQuery()', async () => {
     const { client, App } = ctx;
-    const unset = '__unset' as const;
+    const unset = '__unset';
     const data = {
       infinite: unset as unknown,
       query: unset as unknown,

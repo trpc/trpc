@@ -9,7 +9,11 @@
  */
 import type * as http from 'http';
 // @trpc/server
-import type { AnyRouter, inferRouterContext } from '../../@trpc/server';
+import type {
+  AnyRouter,
+  CreateContextCallback,
+  inferRouterContext,
+} from '../../@trpc/server';
 // @trpc/server/http
 import type {
   HTTPBaseHandlerOptions,
@@ -17,7 +21,6 @@ import type {
 } from '../../@trpc/server/http';
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../../unstable-core-do-not-import';
-import type { NodeHTTPContentTypeHandler } from './internals/contentType';
 
 interface ParsedQs {
   [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;
@@ -43,19 +46,10 @@ export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
   TResponse,
-> = object extends inferRouterContext<TRouter>
-  ? {
-      /**
-       * @link https://trpc.io/docs/v11/context
-       **/
-      createContext?: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
-    }
-  : {
-      /**
-       * @link https://trpc.io/docs/v11/context
-       **/
-      createContext: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
-    };
+> = CreateContextCallback<
+  inferRouterContext<TRouter>,
+  NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>
+>;
 
 /**
  * @internal
@@ -89,10 +83,6 @@ export type NodeHTTPHandlerOptions<
      */
     middleware?: ConnectMiddleware;
     maxBodySize?: number;
-    experimental_contentTypeHandlers?: NodeHTTPContentTypeHandler<
-      TRequest,
-      TResponse
-    >[];
   };
 
 export type NodeHTTPRequestHandlerOptions<

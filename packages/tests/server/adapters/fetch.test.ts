@@ -72,6 +72,9 @@ function createAppRouter() {
         );
         return opts.input.wait;
       }),
+    helloMutation: publicProcedure.input(z.string()).mutation((opts) => {
+      return `hello ${opts.input}`;
+    }),
   });
 
   return appRouter;
@@ -95,11 +98,6 @@ async function startServer(endpoint = '') {
       req: event.request,
       router,
       createContext,
-      responseMeta() {
-        return {
-          headers: {},
-        };
-      },
     });
     event.respondWith(response);
   });
@@ -265,4 +263,31 @@ test.each([
   });
 
   await custom.close();
+});
+
+// https://github.com/trpc/trpc/issues/5659
+test('mutation', async () => {
+  const t = await startServer();
+
+  const res = await Promise.all([
+    t.client.helloMutation.mutate('world'),
+    t.client.helloMutation.mutate('KATT'),
+  ]);
+  expect(res).toEqual(['hello world', 'hello KATT']);
+
+  await t.close();
+});
+
+test('batching', async () => {
+  const t = await startServer();
+
+  const normalResult = await (
+    await fetch(`${t.url}/hello,foo?batch=1&input={}`)
+  ).json();
+  const comma = '%2C';
+  const urlEncodedResult = await (
+    await fetch(`${t.url}/hello${comma}foo?batch=1&input={}`)
+  ).json();
+
+  expect(normalResult).toEqual(urlEncodedResult);
 });

@@ -1,5 +1,6 @@
 name: subtree-matrix
 on:
+  workflow_dispatch:
   push:
     branches:
       - next
@@ -22,7 +23,7 @@ jobs:
             next-big-router,
             minimal,
             minimal-react,
-            .experimental/next-formdata,
+            next-formdata,
             .experimental/next-app-dir,
           ]
 

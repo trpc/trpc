@@ -7,6 +7,7 @@ import type {
   InvalidateQueryFilters,
   QueryClient,
   QueryFilters,
+  QueryKey,
   RefetchOptions,
   RefetchQueryFilters,
   ResetOptions,
@@ -207,9 +208,20 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => void;
 
   /**
+   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetqueriesdata
+   */
+  setQueriesData: (
+    queryKey: TRPCQueryKey,
+    filters: QueryFilters,
+    updater: Updater<unknown, unknown>,
+    options?: SetDataOptions,
+  ) => [QueryKey, unknown][];
+
+  /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata
    */
   getQueryData: (queryKey: TRPCQueryKey) => unknown;
+
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
    */

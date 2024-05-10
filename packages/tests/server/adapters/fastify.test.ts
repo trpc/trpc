@@ -5,6 +5,7 @@ import type { HTTPHeaders, TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   createWSClient,
+  httpBatchLink,
   splitLink,
   unstable_httpBatchStreamLink,
   wsLink,
@@ -65,7 +66,10 @@ function createAppRouter() {
       .query(({ input, ctx }) => ({
         text: `hello ${input?.username ?? ctx.user?.name ?? 'world'}`,
       })),
-    ['post.edit']: publicProcedure
+    helloMutation: publicProcedure
+      .input(z.string())
+      .mutation(({ input }) => `hello ${input}`),
+    editPost: publicProcedure
       .input(
         z.object({
           id: z.string(),
@@ -235,6 +239,22 @@ function createClient(opts: ClientOptions) {
   return { client, wsClient };
 }
 
+function createBatchClient(opts: ClientOptions) {
+  const host = `localhost:${opts.port}${config.prefix}`;
+  const client = createTRPCClient<AppRouter>({
+    links: [
+      httpBatchLink({
+        url: `http://${host}`,
+        headers: opts.headers,
+        AbortController,
+        fetch: fetch as any,
+      }),
+    ],
+  });
+
+  return { client };
+}
+
 interface AppOptions {
   clientOptions?: Partial<ClientOptions>;
   serverOptions?: Partial<ServerOptions>;
@@ -251,7 +271,7 @@ async function createApp(opts: AppOptions = {}) {
 
   const { client } = createClient({ ...opts.clientOptions, port: url.port });
 
-  return { server: instance, stop, client, ee, url };
+  return { server: instance, stop, client, ee, url, opts };
 }
 
 let app: Awaited<ReturnType<typeof createApp>>;
@@ -308,7 +328,7 @@ describe('anonymous user', () => {
 
   test('mutation', async () => {
     expect(
-      await app.client['post.edit'].mutate({
+      await app.client.editPost.mutate({
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),
@@ -317,6 +337,19 @@ describe('anonymous user', () => {
         "error": "Unauthorized user",
       }
     `);
+  });
+
+  test('batched requests in body work correctly', async () => {
+    const { client } = createBatchClient({
+      ...app.opts.clientOptions,
+      port: app.url.port,
+    });
+
+    const res = await Promise.all([
+      client.helloMutation.mutate('world'),
+      client.helloMutation.mutate('KATT'),
+    ]);
+    expect(res).toEqual(['hello world', 'hello KATT']);
   });
 
   test('does not bind other websocket connection', async () => {
@@ -442,17 +475,16 @@ describe('authorized user', () => {
         "calls": Array [
           Object {
             "path": "request.info",
-            "type": "query",
           },
         ],
         "isBatchCall": true,
       }
-  `);
+    `);
   });
 
   test('mutation', async () => {
     expect(
-      await app.client['post.edit'].mutate({
+      await app.client.editPost.mutate({
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),

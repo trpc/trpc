@@ -9,8 +9,6 @@ export const input = [
   'src/adapters/fetch/index.ts',
   'src/adapters/next-app-dir.ts',
   'src/adapters/next.ts',
-  'src/adapters/node-http/content-type/form-data/index.ts',
-  'src/adapters/node-http/content-type/json/index.ts',
   'src/adapters/node-http/index.ts',
   'src/adapters/standalone.ts',
   'src/adapters/ws.ts',
