@@ -140,7 +140,7 @@ test('encode/decode - error', async () => {
       ],
       Array [
         Object {
-          "error": [Error: iterable],
+          "error": [TRPCError: iterable],
           "path": Array [
             "1",
           ],

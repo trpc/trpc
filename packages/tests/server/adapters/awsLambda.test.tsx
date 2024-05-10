@@ -92,6 +92,7 @@ test('basic test', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
+        "vary": "trpc-accept",
       },
       "statusCode": 200,
     }
@@ -123,6 +124,7 @@ test('v1 request info', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
+        "vary": "trpc-accept",
       },
       "statusCode": 200,
     }
@@ -160,6 +162,7 @@ test('test v1 with leading prefix', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
+        "vary": "trpc-accept",
       },
       "statusCode": 200,
     }
@@ -192,6 +195,7 @@ test('test v1 can find procedure even if resource is not proxied', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
+        "vary": "trpc-accept",
       },
       "statusCode": 200,
     }
@@ -225,6 +229,7 @@ test('bad type', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
+        "vary": "trpc-accept",
       },
       "statusCode": 400,
     }
@@ -285,6 +290,7 @@ test('test v2 format', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
+        "vary": "trpc-accept",
       },
       "statusCode": 200,
     }
@@ -329,6 +335,7 @@ test('test v2 format with multiple / in query key', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
+        "vary": "trpc-accept",
       },
       "statusCode": 200,
     }
@@ -374,6 +381,7 @@ test('test v2 format with non default routeKey', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
+        "vary": "trpc-accept",
       },
       "statusCode": 200,
     }
@@ -418,6 +426,7 @@ test('test v2 format with non default routeKey and nested router', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
+        "vary": "trpc-accept",
       },
       "statusCode": 200,
     }
@@ -463,6 +472,7 @@ test('router with no context', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
+        "vary": "trpc-accept",
       },
       "statusCode": 200,
     }
@@ -488,6 +498,7 @@ test('test base64 encoded apigateway proxy integration', async () => {
     Object {
       "headers": Object {
         "content-type": "application/json",
+        "vary": "trpc-accept",
       },
       "statusCode": 200,
     }
