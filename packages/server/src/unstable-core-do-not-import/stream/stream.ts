@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
-import { isAsyncIterable, isFunction, isObject } from '../utils';
+import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 
 // ---------- utils
 
@@ -173,6 +173,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
+
     Promise.race([promise, stream.cancelledPromise])
       .then((it) => {
         if (it === null) {
@@ -206,7 +207,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
-    void (async () => {
+    void run(async () => {
       const iterator = iterable[Symbol.asyncIterator]();
 
       while (true) {
@@ -237,7 +238,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
 
       pending.delete(idx);
       maybeClose();
-    })();
+    });
     return idx;
   }
   function checkMaxDepth(path: (string | number)[]) {
