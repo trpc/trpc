@@ -120,6 +120,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
 
   async function forceClose() {
     for (const conn of connections) {
+      conn.emit('close');
       conn.destroy();
     }
     await new Promise((resolve) => {
@@ -153,6 +154,11 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     createContextSpy,
     onRequestSpy,
     onReqAborted,
+    restart: async () => {
+      await forceClose();
+
+      httpServer.listen(httpPort);
+    },
   };
 }
 
@@ -192,22 +198,21 @@ export async function waitError<TError extends Error = Error>(
   console.warn('Expected function to throw, but it did not. Result:', res);
   throw new Error('Function did not throw');
 }
-
-export const ignoreErrors = async (fn: () => unknown) => {
-  /* eslint-disable no-console */
-  const suppressLogs = () => {
-    const log = console.log;
-    const error = console.error;
-    const noop = () => {
-      // ignore
-    };
-    console.log = noop;
-    console.error = noop;
-    return () => {
-      console.log = log;
-      console.error = error;
-    };
+/* eslint-disable no-console */
+export const suppressLogs = () => {
+  const log = console.log;
+  const error = console.error;
+  const noop = () => {
+    // ignore
   };
+  console.log = noop;
+  console.error = noop;
+  return () => {
+    console.log = log;
+    console.error = error;
+  };
+};
+export const ignoreErrors = async (fn: () => unknown) => {
   /* eslint-enable no-console */
   const release = suppressLogs();
   try {

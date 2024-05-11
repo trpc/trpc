@@ -119,7 +119,7 @@ export const getUrl: GetUrl = (opts) => {
   if ('inputs' in opts) {
     queryParts.push('batch=1');
   }
-  if (opts.type === 'query') {
+  if (opts.type === 'query' || opts.type === 'subscription') {
     const input = getInput(opts);
     if (input !== undefined && opts.methodOverride !== 'POST') {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);

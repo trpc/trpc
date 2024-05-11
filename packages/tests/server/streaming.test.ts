@@ -1,5 +1,6 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew } from './___testHelpers';
+import { inspect } from 'node:util';
+import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
@@ -212,6 +213,15 @@ describe('with transformer', () => {
   const orderedResults: number[] = [];
   const ctx = konn()
     .beforeEach(() => {
+      const onIterableInfiniteSpy = vi.fn<
+        [
+          {
+            input: {
+              lastEventId?: number;
+            };
+          },
+        ]
+      >();
       const ee = new EventEmitter();
       const eeEmit = (data: number) => {
         ee.emit('data', data);
@@ -259,7 +269,7 @@ describe('with transformer', () => {
               };
             });
           }),
-          iterable: t.procedure.subscription(async function* () {
+          iterableEvent: t.procedure.subscription(async function* () {
             for await (const data of on(ee, 'data')) {
               const num = data[0] as number;
               yield {
@@ -268,16 +278,27 @@ describe('with transformer', () => {
             }
           }),
 
-          iterableInfinite: t.procedure.subscription(async function* () {
-            let idx = 0;
-            while (true) {
-              yield {
-                data: idx++,
-              } satisfies SSEChunk;
-              await sleep();
-              infiniteYields();
-            }
-          }),
+          iterableInfinite: t.procedure
+            .input(
+              z.object({
+                lastEventId: z.coerce.number().min(0).optional(),
+              }),
+            )
+            .subscription(async function* (opts) {
+              onIterableInfiniteSpy({
+                input: opts.input,
+              });
+              let idx = opts.input.lastEventId ?? 0;
+              while (true) {
+                yield {
+                  id: idx,
+                  data: idx,
+                } satisfies SSEChunk;
+                idx++;
+                await sleep();
+                infiniteYields();
+              }
+            }),
         },
       });
 
@@ -325,6 +346,7 @@ describe('with transformer', () => {
         ee,
         eeEmit,
         infiniteYields,
+        onIterableInfiniteSpy,
       };
     })
     .afterEach(async (opts) => {
@@ -394,7 +416,7 @@ describe('with transformer', () => {
 
       const onStarted = vi.fn<[]>();
       const onData = vi.fn<{ data: number }[]>();
-      const subscription = client.sub.iterable.subscribe(undefined, {
+      const subscription = client.sub.iterableEvent.subscribe(undefined, {
         onStarted: onStarted,
         onData: onData,
       });
@@ -444,26 +466,73 @@ describe('with transformer', () => {
         expect(ctx.ee.listenerCount('data')).toBe(0);
       });
     });
-    test('iterable infinite', async () => {
+    test('disconnect and reconnect with an event id', async () => {
       const { client } = ctx;
 
-      const onStarted = vi.fn<[]>();
+      const onStarted = vi.fn<
+        [
+          {
+            context: Record<string, unknown> | undefined;
+          },
+        ]
+      >();
       const onData = vi.fn<{ data: number }[]>();
-      const subscription = client.sub.iterableInfinite.subscribe(undefined, {
-        onStarted: onStarted,
-        onData: onData,
+      const subscription = client.sub.iterableInfinite.subscribe(
+        {},
+        {
+          onStarted: onStarted,
+          onData: onData,
+        },
+      );
+
+      await waitFor(() => {
+        expect(onStarted).toHaveBeenCalledTimes(1);
       });
+
+      const es = onStarted.mock.calls[0]![0].context?.['eventSource'];
+      assert(es instanceof EventSource);
 
       await waitFor(() => {
         expect(onData.mock.calls.length).toBeGreaterThan(5);
       });
+
+      expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(1);
+
+      expect(es.readyState).toBe(EventSource.OPEN);
+      const release = suppressLogs();
+      await Promise.all([
+        ctx.close(),
+        waitFor(() => {
+          expect(es.readyState).toBe(EventSource.CONNECTING);
+        }),
+      ]);
+
+      await ctx.restart();
+      release();
+
+      await waitFor(
+        () => {
+          expect(es.readyState).toBe(EventSource.OPEN);
+        },
+        {
+          timeout: 3_000,
+        },
+      );
+      expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(2);
+      const lastCall = ctx.onIterableInfiniteSpy.mock.calls.at(-1)![0];
+
+      expect(lastCall.input.lastEventId).toBeGreaterThan(5);
+
       subscription.unsubscribe();
+      expect(es.readyState).toBe(EventSource.CLOSED);
+
+      // const lastEventId = onData.mock.calls.at(-1)[0]![0]!
       await waitFor(() => {
         expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
       });
-
+      await sleep(50);
       ctx.infiniteYields.mockClear();
-      await sleep(5);
+      await sleep(50);
       expect(ctx.infiniteYields).toHaveBeenCalledTimes(0);
     });
   });

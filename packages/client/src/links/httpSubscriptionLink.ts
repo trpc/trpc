@@ -56,6 +56,9 @@ export function unstable_httpSubscriptionLink<
               result: {
                 type: 'started',
               },
+              context: {
+                eventSource,
+              },
             });
             // console.log('started', new Date());
             eventSource?.removeEventListener('open', onStarted);
@@ -86,8 +89,8 @@ export function unstable_httpSubscriptionLink<
         });
 
         return () => {
-          eventSource.close();
           observer.complete();
+          eventSource.close();
         };
       });
     };
