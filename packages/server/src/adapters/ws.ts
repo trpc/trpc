@@ -352,6 +352,9 @@ function handleKeepAlive(
   client.on('pong', () => {
     heartbeatTimeout && clearTimeout(heartbeatTimeout);
   });
+  client.on('close', () => {
+    clearInterval(heartbeatInterval);
+  });
 }
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
