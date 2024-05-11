@@ -2,37 +2,7 @@ import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-
-// ---------- utils
-
-/**
- * One-off readable stream
- */
-function createReadableStream<TValue = unknown>() {
-  let controller: ReadableStreamDefaultController<TValue> =
-    null as unknown as ReadableStreamDefaultController<TValue>;
-
-  const deferred = createDeferred<null>();
-  let cancelled = false;
-  const readable = new ReadableStream<TValue>({
-    start(c) {
-      controller = c;
-    },
-    cancel() {
-      deferred.resolve(null);
-      cancelled = true;
-    },
-  });
-
-  return {
-    readable,
-    controller,
-    cancelledPromise: deferred.promise,
-    cancelled() {
-      return cancelled;
-    },
-  } as const;
-}
+import { createReadableStream } from './utils/createReadableStream';
 
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.

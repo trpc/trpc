@@ -39,30 +39,28 @@ export function unstable_httpSubscriptionLink<
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
 
-        let eventSource: EventSource | null = null;
+        const url = getUrl({
+          ...resolvedOpts,
+          input,
+          path,
+          type,
+          AbortController: null,
+        });
+        const eventSource = new EventSource(url, {
+          withCredentials: true,
+        });
 
         run(async () => {
-          const url = getUrl({
-            ...resolvedOpts,
-            input,
-            path,
-            type,
-            AbortController: null,
-          });
-          eventSource = new EventSource(url, {
-            withCredentials: true,
-          });
-
           const onStarted = () => {
             observer.next({
               result: {
                 type: 'started',
               },
             });
-            console.log('started', new Date());
+            // console.log('started', new Date());
             eventSource?.removeEventListener('open', onStarted);
           };
-          console.log('starting', new Date());
+          // console.log('starting', new Date());
           eventSource.addEventListener('open', onStarted);
           const iterable = sseStreamConsumer<SSEChunk>({
             from: eventSource,
@@ -84,12 +82,11 @@ export function unstable_httpSubscriptionLink<
           });
           observer.complete();
         }).catch((error) => {
-          console.log({ error });
           observer.error(TRPCClientError.from(error));
         });
 
         return () => {
-          eventSource?.close();
+          eventSource.close();
           observer.complete();
         };
       });

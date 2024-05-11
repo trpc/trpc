@@ -251,7 +251,6 @@ describe('with transformer', () => {
           observable: t.procedure.subscription(() => {
             return observable<number>((emit) => {
               const onData = (data: number) => {
-                console.log('data', data);
                 emit.next(data);
               };
               ee.on('data', onData);
@@ -272,7 +271,9 @@ describe('with transformer', () => {
           iterableInfinite: t.procedure.subscription(async function* () {
             let idx = 0;
             while (true) {
-              yield idx++;
+              yield {
+                data: idx++,
+              } satisfies SSEChunk;
               await sleep();
               infiniteYields();
             }
@@ -388,11 +389,11 @@ describe('with transformer', () => {
   });
 
   describe('subscriptions', async () => {
-    test.only('iterable', async () => {
+    test('iterable', async () => {
       const { client } = ctx;
 
       const onStarted = vi.fn<[]>();
-      const onData = vi.fn<number[]>();
+      const onData = vi.fn<{ data: number }[]>();
       const subscription = client.sub.iterable.subscribe(undefined, {
         onStarted: onStarted,
         onData: onData,
@@ -416,13 +417,19 @@ describe('with transformer', () => {
       expect(onData.mock.calls).toMatchInlineSnapshot(`
         Array [
           Array [
-            1,
+            Object {
+              "data": 1,
+            },
           ],
           Array [
-            2,
+            Object {
+              "data": 2,
+            },
           ],
         ]
       `);
+
+      expect(ctx.ee.listenerCount('data')).toBe(1);
 
       subscription.unsubscribe();
 
@@ -441,7 +448,7 @@ describe('with transformer', () => {
       const { client } = ctx;
 
       const onStarted = vi.fn<[]>();
-      const onData = vi.fn<number[]>();
+      const onData = vi.fn<{ data: number }[]>();
       const subscription = client.sub.iterableInfinite.subscribe(undefined, {
         onStarted: onStarted,
         onData: onData,

@@ -3,6 +3,7 @@ import type { TypeError } from '../types';
 import { isObject, run } from '../utils';
 import type { ConsumerOnError } from './jsonl';
 import { createDeferred } from './utils/createDeferred';
+import { createReadableStream } from './utils/createReadableStream';
 
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
@@ -27,22 +28,7 @@ export function sseStreamProducer(opts: {
 
   maxDepth?: number;
 }) {
-  const responseStream = new TransformStream<SerializedSSEChunk, string>({
-    transform(chunk, controller) {
-      // console.log('adding', { chunk });
-      if ('event' in chunk) {
-        controller.enqueue(`event: ${chunk.event}\n`);
-      }
-      if ('data' in chunk) {
-        controller.enqueue(`data: ${chunk.data}\n`);
-      }
-      if ('id' in chunk) {
-        controller.enqueue(`id: ${chunk.id}\n`);
-      }
-      controller.enqueue('\n\n');
-    },
-  });
-  const writer = responseStream.writable.getWriter();
+  const stream = createReadableStream<SerializedSSEChunk>();
 
   const { serialize = (v) => v } = opts;
 
@@ -64,7 +50,7 @@ export function sseStreamProducer(opts: {
         },
       };
     };
-    const closedPromise = writer.closed.then(() => 'closed' as const);
+    const closedPromise = stream.cancelledPromise.then(() => 'closed' as const);
 
     let nextPromise = iterator.next();
     while (true) {
@@ -75,14 +61,13 @@ export function sseStreamProducer(opts: {
         closedPromise,
       ]);
       ping.clear();
-      console.log({ next });
       if (next === 'closed') {
         await iterator.return?.();
         break;
       }
 
       if (next === 'ping') {
-        await writer.write({
+        stream.controller.enqueue({
           data: '',
           event: 'ping',
         });
@@ -90,7 +75,7 @@ export function sseStreamProducer(opts: {
       }
 
       if (next instanceof Error) {
-        await writer.abort(next);
+        stream.controller.error(next);
         break;
       }
       if (next.done) {
@@ -114,15 +99,31 @@ export function sseStreamProducer(opts: {
         chunk.data = JSON.stringify(serialize(value['data']));
       }
 
-      //
-      await writer.write(chunk);
+      stream.controller.enqueue(chunk);
       nextPromise = iterator.next();
     }
+    await iterator.return?.();
   }).catch((error) => {
-    return writer.abort(error);
+    return stream.controller.error(error);
   });
 
-  return responseStream.readable;
+  return stream.readable.pipeThrough(
+    new TransformStream<SerializedSSEChunk, string>({
+      transform(chunk, controller) {
+        // console.log('adding', { chunk });
+        if ('event' in chunk) {
+          controller.enqueue(`event: ${chunk.event}\n`);
+        }
+        if ('data' in chunk) {
+          controller.enqueue(`data: ${chunk.data}\n`);
+        }
+        if ('id' in chunk) {
+          controller.enqueue(`id: ${chunk.id}\n`);
+        }
+        controller.enqueue('\n\n');
+      },
+    }),
+  );
 }
 type inferSSEOutput<TData> = TData extends SSEChunk
   ? TData
@@ -160,7 +161,6 @@ export function sseStreamConsumer<TData>(opts: {
   const writer = response.writable.getWriter();
 
   opts.from.addEventListener('message', (msg) => {
-    console.log('got msg', msg.data);
     writer
       .write({
         data: msg.data,

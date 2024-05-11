@@ -1,6 +1,6 @@
 import type { IncomingMessage } from 'http';
 import http from 'http';
-import type { AddressInfo } from 'net';
+import type { AddressInfo, Socket } from 'net';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, httpBatchLink } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
@@ -70,6 +70,14 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     onRequestSpy(...args);
     handler(...args);
   });
+
+  const connections = new Set<Socket>();
+  httpServer.on('connection', (conn) => {
+    connections.add(conn);
+    conn.once('close', () => {
+      connections.delete(conn);
+    });
+  });
   const server = httpServer.listen(0);
   const httpPort = (server.address() as AddressInfo).port;
   const httpUrl = `http://localhost:${httpPort}`;
@@ -110,12 +118,20 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
 
+  async function forceClose() {
+    for (const conn of connections) {
+      conn.destroy();
+    }
+    await new Promise((resolve) => {
+      server.close(resolve);
+    });
+  }
   return {
     wsClient,
     client,
     close: async () => {
       await Promise.all([
-        new Promise((resolve) => server.close(resolve)),
+        forceClose(),
         new Promise((resolve) => {
           wss.clients.forEach((ws) => {
             ws.close();
