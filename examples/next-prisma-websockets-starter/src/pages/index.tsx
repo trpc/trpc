@@ -170,6 +170,7 @@ export default function IndexPage() {
       lastEventId.current = lastMessage.id;
     }
   }
+
   // subscribe to new posts and add
   trpc.post.onAdd.useSubscription(
     {
@@ -179,6 +180,16 @@ export default function IndexPage() {
       enabled: !!lastEventId.current,
       onData(event) {
         addMessages([event.data]);
+        // scroll to bottom of list if we're at the bottom
+        if (
+          scrollTargetRef.current &&
+          scrollTargetRef.current.getBoundingClientRect().top <
+            window.innerHeight
+        ) {
+          setTimeout(() => {
+            scrollToBottomOfList();
+          }, 1);
+        }
       },
       onError(err) {
         console.error('Subscription error:', err);
