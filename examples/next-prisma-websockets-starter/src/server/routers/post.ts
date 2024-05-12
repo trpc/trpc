@@ -137,7 +137,7 @@ export const postRouter = router({
     .subscription(async function* (opts) {
       // push all items from the lastEventId
       yield* run(async function* () {
-        if (opts.input.lastEventId) {
+        if (!opts.input.lastEventId) {
           return;
         }
         const itemById = await prisma.post.findUnique({
