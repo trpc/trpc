@@ -15,6 +15,9 @@ type Deserialize = (value: any) => any;
 export type SSEChunk = {
   data?: unknown;
   id?: string | number;
+  /**
+   * Event name for the message
+   */
   event?: string;
   comment?: string;
 };
@@ -76,8 +79,7 @@ export function sseStreamProducer(opts: {
 
       if (next === 'ping') {
         stream.controller.enqueue({
-          data: '',
-          event: 'ping',
+          comment: 'ping',
         });
         continue;
       }

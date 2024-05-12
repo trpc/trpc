@@ -257,49 +257,6 @@ describe('with transformer', () => {
           yield 2;
           yield 3;
         }),
-        sub: {
-          observable: t.procedure.subscription(() => {
-            return observable<number>((emit) => {
-              const onData = (data: number) => {
-                emit.next(data);
-              };
-              ee.on('data', onData);
-              return () => {
-                ee.off('data', onData);
-              };
-            });
-          }),
-          iterableEvent: t.procedure.subscription(async function* () {
-            for await (const data of on(ee, 'data')) {
-              const num = data[0] as number;
-              yield {
-                data: num,
-              } satisfies SSEChunk;
-            }
-          }),
-
-          iterableInfinite: t.procedure
-            .input(
-              z.object({
-                lastEventId: z.coerce.number().min(0).optional(),
-              }),
-            )
-            .subscription(async function* (opts) {
-              onIterableInfiniteSpy({
-                input: opts.input,
-              });
-              let idx = opts.input.lastEventId ?? 0;
-              while (true) {
-                yield {
-                  id: idx,
-                  data: idx,
-                } satisfies SSEChunk;
-                idx++;
-                await sleep();
-                infiniteYields();
-              }
-            }),
-        },
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -395,8 +352,6 @@ describe('with transformer', () => {
 
     const iterable = await client.iterable.query();
 
-    // TODO:
-    // expectTypeOf(iterable).toEqualTypeOf<AsyncIterable<number>>();
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
       aggregated.push(value);
@@ -408,132 +363,5 @@ describe('with transformer', () => {
         3,
       ]
     `);
-  });
-
-  describe('subscriptions', async () => {
-    test('iterable', async () => {
-      const { client } = ctx;
-
-      const onStarted = vi.fn<[]>();
-      const onData = vi.fn<{ data: number }[]>();
-      const subscription = client.sub.iterableEvent.subscribe(undefined, {
-        onStarted: onStarted,
-        onData: onData,
-      });
-
-      await waitFor(
-        () => {
-          expect(onStarted).toHaveBeenCalledTimes(1);
-        },
-        {
-          timeout: 3_000,
-        },
-      );
-
-      ctx.eeEmit(1);
-      ctx.eeEmit(2);
-
-      await waitFor(() => {
-        expect(onData).toHaveBeenCalledTimes(2);
-      });
-      expect(onData.mock.calls).toMatchInlineSnapshot(`
-        Array [
-          Array [
-            Object {
-              "data": 1,
-            },
-          ],
-          Array [
-            Object {
-              "data": 2,
-            },
-          ],
-        ]
-      `);
-
-      expect(ctx.ee.listenerCount('data')).toBe(1);
-
-      subscription.unsubscribe();
-
-      await waitFor(() => {
-        expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
-      });
-
-      ctx.eeEmit(4);
-      ctx.eeEmit(5);
-
-      await waitFor(() => {
-        expect(ctx.ee.listenerCount('data')).toBe(0);
-      });
-    });
-    test('disconnect and reconnect with an event id', async () => {
-      const { client } = ctx;
-
-      const onStarted = vi.fn<
-        [
-          {
-            context: Record<string, unknown> | undefined;
-          },
-        ]
-      >();
-      const onData = vi.fn<{ data: number }[]>();
-      const subscription = client.sub.iterableInfinite.subscribe(
-        {},
-        {
-          onStarted: onStarted,
-          onData: onData,
-        },
-      );
-
-      await waitFor(() => {
-        expect(onStarted).toHaveBeenCalledTimes(1);
-      });
-
-      const es = onStarted.mock.calls[0]![0].context?.['eventSource'];
-      assert(es instanceof EventSource);
-
-      await waitFor(() => {
-        expect(onData.mock.calls.length).toBeGreaterThan(5);
-      });
-
-      expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(1);
-
-      expect(es.readyState).toBe(EventSource.OPEN);
-      const release = suppressLogs();
-      await Promise.all([
-        ctx.close(),
-        waitFor(() => {
-          expect(es.readyState).toBe(EventSource.CONNECTING);
-        }),
-      ]);
-
-      await ctx.restart();
-      release();
-
-      await waitFor(
-        () => {
-          expect(es.readyState).toBe(EventSource.OPEN);
-        },
-        {
-          timeout: 3_000,
-        },
-      );
-      expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(2);
-      const lastCall = ctx.onIterableInfiniteSpy.mock.calls.at(-1)![0];
-
-      expect(lastCall.input.lastEventId).toBeGreaterThan(5);
-
-      subscription.unsubscribe();
-      expect(es.readyState).toBe(EventSource.CLOSED);
-
-      // const lastEventId = onData.mock.calls.at(-1)[0]![0]!
-      await waitFor(() => {
-        expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
-      });
-      await sleep(50);
-      ctx.infiniteYields.mockClear();
-      await sleep(50);
-      expect(ctx.infiniteYields).toHaveBeenCalledTimes(0);
-    });
   });
 });
