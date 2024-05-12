@@ -9,9 +9,13 @@ import { z } from 'zod';
 import { prisma } from '../prisma';
 import { authedProcedure, publicProcedure, router } from '../trpc';
 
+// who is currently typing, key is `name`
+const currentlyTyping: Record<string, { lastTyped: Date }> =
+  Object.create(null);
+
 interface MyEvents {
   add: (data: Post) => void;
-  isTypingUpdate: () => void;
+  currentlyTyping: (typing: typeof currentlyTyping) => void;
 }
 declare interface MyEventEmitter {
   on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
@@ -21,6 +25,9 @@ declare interface MyEventEmitter {
     event: TEv,
     ...args: Parameters<MyEvents[TEv]>
   ): boolean;
+  toIterable<TEv extends keyof MyEvents>(
+    event: TEv,
+  ): AsyncIterable<Parameters<MyEvents[TEv]>>;
 }
 
 class MyEventEmitter extends EventEmitter {
@@ -37,10 +44,6 @@ const run = <TReturn>(fn: () => TReturn) => fn();
 // In a real app, you'd probably use Redis or something
 const ee = new MyEventEmitter();
 
-// who is currently typing, key is `name`
-const currentlyTyping: Record<string, { lastTyped: Date }> =
-  Object.create(null);
-
 // every 1s, clear old "isTyping"
 const interval = setInterval(() => {
   let updated = false;
@@ -52,7 +55,7 @@ const interval = setInterval(() => {
     }
   }
   if (updated) {
-    ee.emit('isTypingUpdate');
+    ee.emit('currentlyTyping', currentlyTyping);
   }
 }, 3e3);
 process.on('SIGTERM', () => {
@@ -78,7 +81,7 @@ export const postRouter = router({
       });
       ee.emit('add', post);
       delete currentlyTyping[name];
-      ee.emit('isTypingUpdate');
+      ee.emit('currentlyTyping', currentlyTyping);
       return post;
     }),
 
@@ -93,7 +96,7 @@ export const postRouter = router({
           lastTyped: new Date(),
         };
       }
-      ee.emit('isTypingUpdate');
+      ee.emit('currentlyTyping', currentlyTyping);
     }),
 
   infinite: publicProcedure
@@ -193,7 +196,7 @@ export const postRouter = router({
 
   whoIsTyping: publicProcedure.subscription(async function* () {
     let prev: string[] | null = null;
-    for await (const _ of ee.toIterable('isTypingUpdate')) {
+    for await (const [currentlyTyping] of ee.toIterable('currentlyTyping')) {
       if (
         !prev ||
         prev.toSorted().toString() !==
