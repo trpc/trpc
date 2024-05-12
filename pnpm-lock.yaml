@@ -1292,9 +1292,6 @@ importers:
       tsx:
         specifier: ^4.0.0
         version: 4.6.2
-      ws:
-        specifier: ^8.0.0
-        version: 8.16.0
       zod:
         specifier: ^3.0.0
         version: 3.22.4
@@ -1311,9 +1308,6 @@ importers:
       '@types/react':
         specifier: ^18.3.0
         version: 18.3.1
-      '@types/ws':
-        specifier: ^8.2.0
-        version: 8.5.10
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.7.0
         version: 7.7.1(@typescript-eslint/parser@7.7.1)(eslint@8.56.0)(typescript@5.4.2)
