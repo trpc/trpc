@@ -36,9 +36,10 @@ describe.each([
         onEvent: t.procedure
           .input(z.number())
           .subscription(async function* ({ input }) {
-            for await (const data of on(ee, 'data')) {
+            for await (const event of on(ee, 'data')) {
+              const data = event[0] as number;
               yield {
-                data: (data[0] as number) + input,
+                data: data + input,
               } satisfies SSEChunk;
             }
           }),
