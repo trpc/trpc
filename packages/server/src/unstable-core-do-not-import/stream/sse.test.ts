@@ -1,7 +1,7 @@
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
-import type { SSEChunk } from './sse';
+import type { SSEvent } from './sse';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { createServer } from './utils/createServer';
 
@@ -27,7 +27,7 @@ test('e2e, server-sent events (SSE)', async () => {
       yield {
         id: i,
         data: i,
-      } satisfies SSEChunk;
+      } satisfies SSEvent;
 
       await new Promise((resolve) => setTimeout(resolve, 5));
     }

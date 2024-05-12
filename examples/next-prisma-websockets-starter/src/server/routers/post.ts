@@ -3,7 +3,7 @@
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 import type { Post } from '@prisma/client';
-import { TRPCError, type SSEChunk } from '@trpc/server';
+import { TRPCError, type SSEvent } from '@trpc/server';
 import { EventEmitter, on } from 'events';
 import { z } from 'zod';
 import { prisma } from '../prisma';
@@ -179,7 +179,7 @@ export const postRouter = router({
           yield {
             id: item.id,
             data: item,
-          } satisfies SSEChunk;
+          } satisfies SSEvent;
         }
       });
 
@@ -187,7 +187,7 @@ export const postRouter = router({
         yield {
           id: data.id,
           data,
-        } satisfies SSEChunk;
+        } satisfies SSEvent;
       }
     }),
 
@@ -196,7 +196,7 @@ export const postRouter = router({
 
     yield {
       data: Object.keys(currentlyTyping),
-    } satisfies SSEChunk;
+    } satisfies SSEvent;
     for await (const _ of ee.toIterable('isTypingUpdate')) {
       if (
         prev.toSorted().toString() !==
@@ -204,7 +204,7 @@ export const postRouter = router({
       ) {
         yield {
           data: Object.keys(currentlyTyping),
-        } satisfies SSEChunk;
+        } satisfies SSEvent;
       }
       prev = Object.keys(currentlyTyping);
     }

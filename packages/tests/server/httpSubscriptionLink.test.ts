@@ -9,7 +9,7 @@ import {
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
-import type { SSEChunk } from '@trpc/server';
+import type { SSEvent } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import superjson from 'superjson';
@@ -51,7 +51,7 @@ const ctx = konn()
             const num = data[0] as number;
             yield {
               data: num,
-            } satisfies SSEChunk;
+            } satisfies SSEvent;
           }
         }),
 
@@ -70,7 +70,7 @@ const ctx = konn()
               yield {
                 id: idx,
                 data: idx,
-              } satisfies SSEChunk;
+              } satisfies SSEvent;
               idx++;
               await sleep();
               infiniteYields();

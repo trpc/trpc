@@ -9,20 +9,31 @@ type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
 
 /**
- * Server-Sent Events chunk
+ * Server-sent Event
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
-export type SSEChunk = {
+export type SSEvent = {
+  /**
+   * The data field of the message - this can be anything
+   */
   data?: unknown;
+  /**
+   * The id for this message
+   * Passing this id will allow the client to resume the connection from this point if the connection is lost
+   * @see https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header
+   */
   id?: string | number;
   /**
    * Event name for the message
    */
   event?: string;
+  /**
+   * A comment for the event
+   */
   comment?: string;
 };
 
-export type SerializedSSEChunk = Omit<SSEChunk, 'data'> & {
+export type SerializedSSEvent = Omit<SSEvent, 'data'> & {
   data?: string;
 };
 
@@ -36,7 +47,7 @@ export function sseStreamProducer(opts: {
 
   maxDepth?: number;
 }) {
-  const stream = createReadableStream<SerializedSSEChunk>();
+  const stream = createReadableStream<SerializedSSEvent>();
   stream.controller.enqueue({
     comment: 'connected',
   });
@@ -96,10 +107,10 @@ export function sseStreamProducer(opts: {
 
       // console.log({ value });
       if (!isObject(value)) {
-        await iterator.throw?.(new TypeError(`Expected a SerializedSSEChunk`));
+        await iterator.throw?.(new TypeError(`Expected a SerializedSSEvent`));
         return;
       }
-      const chunk: SerializedSSEChunk = {};
+      const chunk: SerializedSSEvent = {};
       if (typeof value['id'] === 'string' || typeof value['id'] === 'number') {
         chunk.id = value['id'];
       }
@@ -119,7 +130,7 @@ export function sseStreamProducer(opts: {
   });
 
   return stream.readable.pipeThrough(
-    new TransformStream<SerializedSSEChunk, string>({
+    new TransformStream<SerializedSSEvent, string>({
       transform(chunk, controller) {
         // console.log('adding', { chunk });
         if ('event' in chunk) {
@@ -136,9 +147,9 @@ export function sseStreamProducer(opts: {
     }),
   );
 }
-type inferSSEOutput<TData> = TData extends SSEChunk
+type inferSSEOutput<TData> = TData extends SSEvent
   ? TData
-  : TypeError<'Expected a SSEChunk - use `satisfies SSEChunk'>;
+  : TypeError<'Expected a SSEvent - use `satisfies SSEvent'>;
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
@@ -151,15 +162,15 @@ export function sseStreamConsumer<TData>(opts: {
   const { deserialize = (v) => v } = opts;
   const eventSource = opts.from;
 
-  const stream = createReadableStream<SerializedSSEChunk>();
+  const stream = createReadableStream<SerializedSSEvent>();
 
   const transform = new TransformStream<
-    SerializedSSEChunk,
+    SerializedSSEvent,
     inferSSEOutput<TData>
   >({
     async transform(chunk, controller) {
       if (chunk.data) {
-        const def: SSEChunk = {};
+        const def: SSEvent = {};
         def.data = deserialize(JSON.parse(chunk.data));
         if ('id' in chunk) {
           def.id = chunk.id;

@@ -3,7 +3,7 @@ import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
-  SSEChunk,
+  SSEvent,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
@@ -65,7 +65,7 @@ export function unstable_httpSubscriptionLink<
           };
           // console.log('starting', new Date());
           eventSource.addEventListener('open', onStarted);
-          const iterable = sseStreamConsumer<SSEChunk>({
+          const iterable = sseStreamConsumer<SSEvent>({
             from: eventSource,
             deserialize: resolvedOpts.transformer.input.deserialize,
           });
