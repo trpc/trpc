@@ -60,8 +60,9 @@ export function unstable_httpSubscriptionLink<
                 eventSource,
               },
             });
+            console.log('readyState', eventSource.readyState);
             // console.log('started', new Date());
-            eventSource?.removeEventListener('open', onStarted);
+            eventSource.removeEventListener('open', onStarted);
           };
           // console.log('starting', new Date());
           eventSource.addEventListener('open', onStarted);

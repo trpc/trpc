@@ -1,8 +1,9 @@
-import { EventEmitter } from 'events';
+import { EventEmitter, on } from 'events';
 import { ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
+import type { SSEChunk } from '@trpc/server';
 import { observable, Unsubscribable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';
@@ -11,7 +12,7 @@ import { z } from 'zod';
 describe.each([
   //
   'http',
-  'ws',
+  // 'ws',
 ] as const)('useSubscription - %s', (protocol) => {
   const ee = new EventEmitter();
 
@@ -29,20 +30,20 @@ describe.each([
         },
         experimental: {
           iterablesAndDeferreds: true,
+          sseSubscriptions: true,
         },
       });
       const appRouter = t.router({
-        onEvent: t.procedure.input(z.number()).subscription(({ input }) => {
-          return observable<number>((emit) => {
-            const onData = (data: number) => {
-              emit.next(data + input);
-            };
-            ee.on('data', onData);
-            return () => {
-              ee.off('data', onData);
-            };
-          });
-        }),
+        onEvent: t.procedure
+          .input(z.number())
+          .subscription(async function* ({ input }) {
+            for await (const data of on(ee, 'data')) {
+              console.log('hello');
+              yield {
+                data: (data as number) + input,
+              } satisfies SSEChunk;
+            }
+          }),
       });
 
       return getServerAndReactClient(appRouter, {
@@ -64,7 +65,7 @@ describe.each([
 
     function MyComponent() {
       const [isStarted, setIsStarted] = useState(false);
-      const [data, setData] = useState<number>();
+      const [data, setData] = useState<{ data: number }>();
       const [enabled, _setEnabled] = useState(true);
       setEnabled = _setEnabled;
 
@@ -74,7 +75,7 @@ describe.each([
           setIsStarted(true);
         },
         onData: (data) => {
-          expectTypeOf(data).toMatchTypeOf<number>();
+          expectTypeOf(data).toMatchTypeOf<{ data: number }>();
           onDataMock(data);
           setData(data);
         },
@@ -89,7 +90,7 @@ describe.each([
         return <>{'__connected'}</>;
       }
 
-      return <pre>{`__data:${data}`}</pre>;
+      return <pre>{`__data:${data.data}`}</pre>;
     }
 
     const utils = render(

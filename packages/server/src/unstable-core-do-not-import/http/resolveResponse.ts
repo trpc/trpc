@@ -314,10 +314,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       }
     });
     if (isSSE) {
+      if (!opts.router._def._config.experimental?.sseSubscriptions) {
+        throw new TRPCError({
+          code: 'METHOD_NOT_SUPPORTED',
+          message: 'Missing experimental flag "sseSubscriptions"',
+        });
+      }
       const result = await promises[0]!;
 
       if ('error' in result) {
-        // fixme
+        // FIXME
         throw result.error;
       }
 

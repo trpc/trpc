@@ -69,6 +69,10 @@ export interface RootConfig<TTypes extends RootTypes> {
      * Enable support for returning async iterables and returning deferred promises when using `httpBatchStreamLink`
      */
     iterablesAndDeferreds?: boolean;
+    /**
+     * Enable support for server-sent events (SSE) subscriptions
+     */
+    sseSubscriptions?: boolean;
   };
 }
 
