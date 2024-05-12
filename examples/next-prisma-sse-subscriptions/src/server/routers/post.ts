@@ -199,8 +199,8 @@ export const postRouter = router({
     } satisfies SSEvent;
     for await (const _ of ee.toIterable('isTypingUpdate')) {
       if (
-        prev.toSorted().toString() !==
-        Object.keys(currentlyTyping).toSorted().toString()
+        prev.sort().toString() !==
+        Object.keys(currentlyTyping).sort().toString()
       ) {
         yield {
           data: Object.keys(currentlyTyping),
