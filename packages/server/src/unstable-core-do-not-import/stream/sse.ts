@@ -181,9 +181,15 @@ export function sseStreamConsumer<TData>(opts: {
   });
   opts.from.addEventListener('error', (cause) => {
     if ('status' in cause && cause.status !== 200) {
-      writer.abort(new Error('EventSource error', { cause })).catch(() => {
-        // noop
-      });
+      writer
+        .abort(
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore https://github.com/tc39/proposal-error-cause
+          new Error('EventSource error', { cause }),
+        )
+        .catch(() => {
+          // noop
+        });
     }
   });
   return {
