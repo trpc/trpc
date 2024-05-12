@@ -11,6 +11,7 @@ type Deserialize = (value: any) => any;
 /**
  * Server-sent Event
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
+ * @public
  */
 export type SSEvent = {
   /**
@@ -37,7 +38,10 @@ export type SerializedSSEvent = Omit<SSEvent, 'data'> & {
   data?: string;
 };
 
-type PingOpts = {
+/**
+ * @internal
+ */
+export interface PingOptions {
   /**
    * Enable ping comments sent from the server
    * @default false
@@ -48,7 +52,7 @@ type PingOpts = {
    * @default 1000
    */
   intervalMs?: number;
-};
+}
 /**
  *
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
@@ -57,7 +61,7 @@ export function sseStreamProducer(opts: {
   serialize?: Serialize;
   data: AsyncIterable<unknown>;
   maxDepth?: number;
-  ping?: PingOpts;
+  ping?: PingOptions;
 }) {
   const stream = createReadableStream<SerializedSSEvent>();
   stream.controller.enqueue({
@@ -66,7 +70,7 @@ export function sseStreamProducer(opts: {
 
   const { serialize = (v) => v } = opts;
 
-  const ping: Required<PingOpts> = {
+  const ping: Required<PingOptions> = {
     enabled: opts.ping?.enabled ?? false,
     intervalMs: opts.ping?.intervalMs ?? 1000,
   };
