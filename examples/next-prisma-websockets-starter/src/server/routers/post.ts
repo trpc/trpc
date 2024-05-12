@@ -192,12 +192,15 @@ export const postRouter = router({
     }),
 
   whoIsTyping: publicProcedure.subscription(async function* () {
-    let prev: string[] | null = null;
+    let prev = Object.keys(currentlyTyping);
+
+    yield {
+      data: Object.keys(currentlyTyping),
+    } satisfies SSEChunk;
     for await (const _ of ee.toIterable('isTypingUpdate')) {
       if (
-        !prev ||
         prev.toSorted().toString() !==
-          Object.keys(currentlyTyping).toSorted().toString()
+        Object.keys(currentlyTyping).toSorted().toString()
       ) {
         yield {
           data: Object.keys(currentlyTyping),
