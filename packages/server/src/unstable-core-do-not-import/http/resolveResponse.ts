@@ -180,7 +180,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   }
 
   const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
-  const allowMethodOverride = (opts.allowMethodOverride ?? false) && !isSSE;
+  const allowMethodOverride =
+    (opts.allowMethodOverride ?? false) && req.method === 'POST' && !isSSE;
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let info: TRPCRequestInfo | undefined = undefined;
 
