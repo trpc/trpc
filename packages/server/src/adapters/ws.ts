@@ -333,6 +333,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   };
 }
 
+/**
+ * Handle WebSocket keep-alive messages
+ */
 function handleKeepAlive(
   client: ws.WebSocket,
   pingMs = 30000,
@@ -343,15 +346,19 @@ function handleKeepAlive(
     if (client.readyState !== WEBSOCKET_OPEN) {
       return;
     }
+    // First we send a ping message and wait for a pong
     client.ping();
+    // We set a timeout to close the connection if the pong is not received
     heartbeatTimeout = setTimeout(() => {
       client.terminate();
       clearInterval(heartbeatInterval);
     }, pongWaitMs);
   }, pingMs);
+  // When we receive a pong message, we clear the timeout
   client.on('pong', () => {
     heartbeatTimeout && clearTimeout(heartbeatTimeout);
   });
+  // If the connection is closed, we clear the interval
   client.on('close', () => {
     clearInterval(heartbeatInterval);
   });
