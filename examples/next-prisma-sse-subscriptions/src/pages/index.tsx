@@ -110,6 +110,7 @@ export default function IndexPage() {
       getNextPageParam: (d) => d.nextCursor,
       refetchOnReconnect: false,
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
     },
   );
   const utils = trpc.useUtils();
