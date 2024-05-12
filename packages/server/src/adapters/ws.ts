@@ -353,7 +353,7 @@ function handleKeepAlive(
       client.terminate();
       clearInterval(heartbeatInterval);
     }, pongWaitMs);
-  }, pingMs);
+  }, pingMs).unref();
   // When we receive a pong message, we clear the timeout
   client.on('pong', () => {
     heartbeatTimeout && clearTimeout(heartbeatTimeout);
