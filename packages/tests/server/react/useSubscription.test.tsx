@@ -116,7 +116,12 @@ describe.each([
     });
 
     await waitFor(() => {
-      expect(ctx.opts.onReqAborted).toHaveBeenCalledTimes(1);
+      if (protocol === 'http') {
+        expect(ctx.opts.onReqAborted).toHaveBeenCalledTimes(1);
+      } else {
+        ctx.opts.wsClient.close();
+        expect(ctx.opts.wss.clients.size).toBe(0);
+      }
     });
 
     // we need to emit data to trigger unsubscribe
