@@ -3,8 +3,8 @@ import { ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
-import type { SSEChunk } from '@trpc/server';
 import { observable, Unsubscribable } from '@trpc/server/observable';
+import type { SSEChunk } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ import { z } from 'zod';
 describe.each([
   //
   'http',
-  // 'ws',
+  'ws',
 ] as const)('useSubscription - %s', (protocol) => {
   const ee = new EventEmitter();
 
@@ -38,9 +38,8 @@ describe.each([
           .input(z.number())
           .subscription(async function* ({ input }) {
             for await (const data of on(ee, 'data')) {
-              console.log('hello');
               yield {
-                data: (data as number) + input,
+                data: (data[0] as number) + input,
               } satisfies SSEChunk;
             }
           }),
@@ -115,6 +114,14 @@ describe.each([
     ignoreErrors(() => {
       setEnabled(false);
     });
+
+    await waitFor(() => {
+      expect(ctx.opts.onReqAborted).toHaveBeenCalledTimes(1);
+    });
+
+    // we need to emit data to trigger unsubscribe
+    ee.emit('data', 40);
+
     await waitFor(() => {
       // no event listeners
       expect(ee.listenerCount('data')).toBe(0);

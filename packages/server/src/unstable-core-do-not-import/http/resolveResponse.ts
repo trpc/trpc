@@ -240,7 +240,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       TRPCResponse<unknown, inferRouterError<TRouter>>
     >[] = info.calls.map(async (call) => {
       try {
-        opts.router._def.procedures[call.path];
         const data = await callProcedure({
           procedures: opts.router._def.procedures,
           path: call.path,

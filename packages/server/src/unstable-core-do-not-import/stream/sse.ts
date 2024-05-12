@@ -8,10 +8,15 @@ import { createReadableStream } from './utils/createReadableStream';
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
 
+/**
+ * Server-Sent Events chunk
+ * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
+ */
 export type SSEChunk = {
   data?: unknown;
   id?: string | number;
   event?: string;
+  comment?: string;
 };
 
 export type SerializedSSEChunk = Omit<SSEChunk, 'data'> & {
@@ -29,6 +34,9 @@ export function sseStreamProducer(opts: {
   maxDepth?: number;
 }) {
   const stream = createReadableStream<SerializedSSEChunk>();
+  stream.controller.enqueue({
+    comment: 'connected',
+  });
 
   const { serialize = (v) => v } = opts;
 

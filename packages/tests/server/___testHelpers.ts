@@ -149,6 +149,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     wssUrl,
     applyWSSHandlerOpts,
     wssHandler,
+    connections,
     wss,
     onErrorSpy,
     createContextSpy,
