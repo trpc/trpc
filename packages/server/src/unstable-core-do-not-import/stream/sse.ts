@@ -148,8 +148,11 @@ export function sseStreamConsumer<TData>(opts: {
   deserialize?: Deserialize;
 }): AsyncIterable<inferSSEOutput<TData>> {
   const { deserialize = (v) => v } = opts;
+  const eventSource = opts.from;
 
-  const response = new TransformStream<
+  const stream = createReadableStream<SerializedSSEChunk>();
+
+  const transform = new TransformStream<
     SerializedSSEChunk,
     inferSSEOutput<TData>
   >({
@@ -168,33 +171,20 @@ export function sseStreamConsumer<TData>(opts: {
       }
     },
   });
-  const writer = response.writable.getWriter();
 
-  opts.from.addEventListener('message', (msg) => {
-    writer
-      .write({
-        data: msg.data,
-      })
-      .catch((error) => {
-        opts.onError?.({ error });
-      });
+  eventSource.addEventListener('message', (msg) => {
+    stream.controller.enqueue(msg);
   });
-  opts.from.addEventListener('error', (cause) => {
-    if ('status' in cause && cause.status !== 200) {
-      writer
-        .abort(
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore https://github.com/tc39/proposal-error-cause
-          new Error('EventSource error', { cause }),
-        )
-        .catch(() => {
-          // noop
-        });
+  eventSource.addEventListener('error', (cause) => {
+    if (eventSource.readyState === EventSource.CLOSED) {
+      stream.controller.error(cause);
     }
   });
+
+  const readable = stream.readable.pipeThrough(transform);
   return {
     [Symbol.asyncIterator]() {
-      const reader = response.readable.getReader();
+      const reader = readable.getReader();
 
       const iterator: AsyncIterator<inferSSEOutput<TData>> = {
         async next() {
