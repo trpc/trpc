@@ -5,6 +5,7 @@ import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createWSClient, wsLink } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
+import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import type { Observer } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
@@ -22,6 +23,7 @@ type Message = {
 function factory(config?: {
   createContext?: () => Promise<any>;
   wsClient?: Partial<WebSocketClientOptions>;
+  wssServer?: Partial<WSSHandlerOptions<AnyRouter>>;
 }) {
   const ee = new EventEmitter();
 
@@ -105,7 +107,9 @@ function factory(config?: {
       ...(config ?? {}),
     },
     wssServer: {
-      ...(config ?? {}),
+      ...config?.wssServer,
+      createContext: config?.createContext ?? (() => ({})),
+      router: appRouter,
     },
   });
 
@@ -1197,6 +1201,59 @@ describe('lazy mode', () => {
       await waitFor(() => {
         expect(ctx.onCloseMock).toHaveBeenCalledTimes(2);
         expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
+      });
+    }
+    await ctx.close();
+  });
+});
+
+describe('keep alive', () => {
+  const keepAliveConfig = {
+    pingMs: 2000,
+    pongWaitMs: 5000,
+  };
+  test('pong is received', async () => {
+    const ctx = factory({
+      wssServer: {
+        keepAlive: {
+          enabled: true,
+          ...keepAliveConfig,
+        },
+      },
+    });
+    const pongMock = vi.fn();
+    const { wsClient, wss } = ctx;
+    wss.on('connection', (ws) => {
+      ws.on('pong', pongMock);
+    });
+    {
+      expect(wsClient.connection).not.toBe(null);
+      await waitMs(3500);
+      await waitFor(() => {
+        expect(pongMock).toHaveBeenCalled();
+      });
+    }
+    await ctx.close();
+  });
+  test('no pong is received', async () => {
+    const ctx = factory({
+      wssServer: {
+        keepAlive: {
+          enabled: false,
+          ...keepAliveConfig,
+        },
+      },
+    });
+    const pongMock = vi.fn();
+    const { wsClient, wss } = ctx;
+    wss.on('connection', (ws) => {
+      ws.on('pong', pongMock);
+    });
+    {
+      expect(wsClient.connection).not.toBe(null);
+      await waitMs(3500);
+      await waitFor(() => {
+        expect(pongMock).not.toHaveBeenCalled();
       });
     }
     await ctx.close();

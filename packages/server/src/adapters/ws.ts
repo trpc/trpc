@@ -72,12 +72,12 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
        * Heartbeat interval in milliseconds
        * @default 30000
        */
-      pingMs: number;
+      pingMs?: number;
       /**
        * Terminate the WebSocket if no pong is received after this many milliseconds
        * @default 5000
        */
-      pongWaitMs: number;
+      pongWaitMs?: number;
     };
   };
 
