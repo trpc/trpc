@@ -167,6 +167,9 @@ export default function IndexPage() {
   if (!lastEventId.current) {
     const lastMessage = messages?.at(-1);
     if (lastMessage) {
+      // we have a last message - set it as the last known event id
+      // if we reconnect, we'll get all messages after this
+      // since the SSE is sending `{id:x}` on each message, it will be updated by the EventStream as messages come in
       lastEventId.current = lastMessage.id;
     }
   }
