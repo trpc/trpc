@@ -160,21 +160,24 @@ export default function IndexPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // subscribe to new posts and add
-  trpc.post.onAdd.useSubscription(undefined, {
-    onData(post) {
-      addMessages([post]);
+  trpc.post.onAdd.useSubscription(
+    {},
+    {
+      onData(event) {
+        addMessages([event.data]);
+      },
+      onError(err) {
+        console.error('Subscription error:', err);
+        // we might have missed a message - invalidate cache
+        utils.post.infinite.invalidate();
+      },
     },
-    onError(err) {
-      console.error('Subscription error:', err);
-      // we might have missed a message - invalidate cache
-      utils.post.infinite.invalidate();
-    },
-  });
+  );
 
   const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
   trpc.post.whoIsTyping.useSubscription(undefined, {
-    onData(data) {
-      setCurrentlyTyping(data);
+    onData(event) {
+      setCurrentlyTyping(event.data);
     },
   });
 

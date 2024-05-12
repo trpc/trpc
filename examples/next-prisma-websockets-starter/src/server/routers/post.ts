@@ -3,10 +3,10 @@
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 import type { Post } from '@prisma/client';
-import { observable } from '@trpc/server/observable';
-import { EventEmitter } from 'events';
-import { prisma } from '../prisma';
+import { TRPCError, type SSEChunk } from '@trpc/server';
+import { EventEmitter, on } from 'events';
 import { z } from 'zod';
+import { prisma } from '../prisma';
 import { authedProcedure, publicProcedure, router } from '../trpc';
 
 interface MyEvents {
@@ -23,7 +23,16 @@ declare interface MyEventEmitter {
   ): boolean;
 }
 
-class MyEventEmitter extends EventEmitter {}
+class MyEventEmitter extends EventEmitter {
+  public toIterable<TEv extends keyof MyEvents>(
+    event: TEv,
+  ): AsyncIterable<Parameters<MyEvents[TEv]>> {
+    return on(this, event);
+  }
+}
+
+// iife
+const run = <TReturn>(fn: () => TReturn) => fn();
 
 // In a real app, you'd probably use Redis or something
 const ee = new MyEventEmitter();
@@ -119,33 +128,81 @@ export const postRouter = router({
       };
     }),
 
-  onAdd: publicProcedure.subscription(() => {
-    return observable<Post>((emit) => {
-      const onAdd = (data: Post) => {
-        emit.next(data);
-      };
-      ee.on('add', onAdd);
-      return () => {
-        ee.off('add', onAdd);
-      };
-    });
-  }),
-
-  whoIsTyping: publicProcedure.subscription(() => {
-    let prev: string[] | null = null;
-    return observable<string[]>((emit) => {
-      const onIsTypingUpdate = () => {
-        const newData = Object.keys(currentlyTyping);
-
-        if (!prev || prev.toString() !== newData.toString()) {
-          emit.next(newData);
+  onAdd: publicProcedure
+    .input(
+      z.object({
+        lastEventId: z.string().optional(),
+      }),
+    )
+    .subscription(async function* (opts) {
+      // push all items from the lastEventId
+      yield* run(async function* () {
+        if (opts.input.lastEventId) {
+          return;
         }
-        prev = newData;
-      };
-      ee.on('isTypingUpdate', onIsTypingUpdate);
-      return () => {
-        ee.off('isTypingUpdate', onIsTypingUpdate);
-      };
-    });
+        const itemById = await prisma.post.findUnique({
+          where: {
+            id: opts.input.lastEventId,
+          },
+        });
+
+        if (!itemById) {
+          return;
+        }
+        // if there's more than 100 items, we should throw
+        const numItems = await prisma.post.count({
+          where: {
+            createdAt: {
+              gt: itemById.createdAt,
+            },
+          },
+        });
+        if (numItems > 100) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message:
+              'Too many items since last connected, please refresh the page',
+          });
+        }
+        // get all items after the lastEventId
+        const items = await prisma.post.findMany({
+          where: {
+            createdAt: {
+              gt: itemById.createdAt,
+            },
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        });
+        for (const item of items) {
+          yield {
+            id: item.id,
+            data: item,
+          } satisfies SSEChunk;
+        }
+      });
+
+      for await (const [data] of ee.toIterable('add')) {
+        yield {
+          id: data.id,
+          data,
+        } satisfies SSEChunk;
+      }
+    }),
+
+  whoIsTyping: publicProcedure.subscription(async function* () {
+    let prev: string[] | null = null;
+    for await (const _ of ee.toIterable('isTypingUpdate')) {
+      if (
+        !prev ||
+        prev.toString() !== Object.keys(currentlyTyping).toString()
+      ) {
+        yield {
+          data: Object.keys(currentlyTyping),
+        } satisfies SSEChunk;
+      }
+      prev = Object.keys(currentlyTyping);
+    }
   }),
 });
