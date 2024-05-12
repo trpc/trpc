@@ -9,8 +9,8 @@ import {
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
+import type { SSEChunk } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import type { SSEChunk } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
