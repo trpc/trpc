@@ -108,6 +108,8 @@ export default function IndexPage() {
     {},
     {
       getNextPageParam: (d) => d.nextCursor,
+      refetchOnReconnect: false,
+      refetchOnWindowFocus: false,
     },
   );
   const utils = trpc.useUtils();
@@ -159,10 +161,22 @@ export default function IndexPage() {
     scrollToBottomOfList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // get the last known post as soon as we have it
+  const lastEventId = useRef<string | null>(null);
+  if (!lastEventId.current) {
+    const lastMessage = messages?.at(-1);
+    if (lastMessage) {
+      lastEventId.current = lastMessage.id;
+    }
+  }
   // subscribe to new posts and add
   trpc.post.onAdd.useSubscription(
-    {},
     {
+      // lastEventId: lastEventId.current,
+    },
+    {
+      enabled: !!lastEventId.current,
       onData(event) {
         addMessages([event.data]);
       },

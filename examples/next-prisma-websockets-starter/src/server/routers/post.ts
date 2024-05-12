@@ -131,7 +131,7 @@ export const postRouter = router({
   onAdd: publicProcedure
     .input(
       z.object({
-        lastEventId: z.string().optional(),
+        lastEventId: z.string().nullish(),
       }),
     )
     .subscription(async function* (opts) {
