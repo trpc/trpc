@@ -1,4 +1,4 @@
-# Prisma + tRPC + WebSockets
+# Prisma + tRPC + SSE
 
 Try demo http://websockets.trpc.io/
 
@@ -6,7 +6,7 @@ Try demo http://websockets.trpc.io/
 
 - 🧙‍♂️ E2E type safety with [tRPC](https://trpc.io)
 - ⚡ Full-stack React with Next.js
-- ⚡ WebSockets / Subscription support
+- ⚡ Server-sent-events / Subscription support
 - ⚡ Database with Prisma
 - 🔐 Authorization using [next-auth](https://next-auth.js.org/)
 - ⚙️ VSCode extensions
