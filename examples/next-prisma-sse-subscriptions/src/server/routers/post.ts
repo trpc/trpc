@@ -55,10 +55,10 @@ const interval = setInterval(() => {
     ee.emit('isTypingUpdate');
   }
 }, 3e3);
-process.on('SIGTERM', () => {
-  clearInterval(interval);
-});
-
+// if runtime has unref, unref the interval
+if (interval.unref) {
+  interval.unref();
+}
 export const postRouter = router({
   add: authedProcedure
     .input(
