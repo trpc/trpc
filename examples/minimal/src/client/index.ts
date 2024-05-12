@@ -51,12 +51,3 @@ const iterable = await trpc.examples.iterable.query();
 for await (const i of iterable) {
   console.log('Iterable:', i);
 }
-
-const subscription = trpc.examples.ping.subscribe(undefined, {
-  onData(data) {
-    console.log('Received ping:', data);
-  },
-});
-
-// Unsubscribe after 5 seconds
-setTimeout(() => subscription.unsubscribe(), 5000);

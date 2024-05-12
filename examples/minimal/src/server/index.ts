@@ -40,14 +40,6 @@ const appRouter = router({
         yield i;
       }
     }),
-    ping: publicProcedure.subscription(async function* () {
-      while (true) {
-        yield {
-          timestamp: Date.now(),
-        };
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    }),
   },
 });
 
