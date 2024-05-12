@@ -3,7 +3,6 @@ import {
   httpBatchLink,
   loggerLink,
   splitLink,
-  unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
@@ -50,7 +49,7 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
        */
       transformer: superjson,
     }),
-    false: unstable_httpBatchStreamLink({
+    false: httpBatchLink({
       url: `/api/trpc`,
       /**
        * @link https://trpc.io/docs/v11/data-transformers
