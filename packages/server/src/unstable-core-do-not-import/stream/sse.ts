@@ -37,6 +37,18 @@ export type SerializedSSEvent = Omit<SSEvent, 'data'> & {
   data?: string;
 };
 
+type PingOpts = {
+  /**
+   * Enable ping comments sent from the server
+   * @default false
+   */
+  enabled: boolean;
+  /**
+   * Interval in milliseconds
+   * @default 1000
+   */
+  intervalMs?: number;
+};
 /**
  *
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
@@ -44,8 +56,8 @@ export type SerializedSSEvent = Omit<SSEvent, 'data'> & {
 export function sseStreamProducer(opts: {
   serialize?: Serialize;
   data: AsyncIterable<unknown>;
-
   maxDepth?: number;
+  ping?: PingOpts;
 }) {
   const stream = createReadableStream<SerializedSSEvent>();
   stream.controller.enqueue({
@@ -54,6 +66,11 @@ export function sseStreamProducer(opts: {
 
   const { serialize = (v) => v } = opts;
 
+  const ping: Required<PingOpts> = {
+    enabled: opts.ping?.enabled ?? false,
+    intervalMs: opts.ping?.intervalMs ?? 1000,
+  };
+
   run(async () => {
     const iterator = opts.data[Symbol.asyncIterator]();
 
@@ -61,14 +78,18 @@ export function sseStreamProducer(opts: {
       let deferred = createDeferred<'ping'>();
       deferred = deferred as typeof deferred & { clear: () => void };
 
-      const timeout = setTimeout(() => {
-        deferred.resolve('ping');
-      }, 1000);
+      const timeout = ping.enabled
+        ? setTimeout(() => {
+            deferred.resolve('ping');
+          }, 1000).unref()
+        : null;
 
       return {
         promise: deferred.promise,
         clear: () => {
-          clearTimeout(timeout);
+          if (timeout) {
+            clearTimeout(timeout);
+          }
         },
       };
     };
