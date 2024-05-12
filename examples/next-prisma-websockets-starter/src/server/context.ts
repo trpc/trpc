@@ -17,10 +17,6 @@ export const createContext = async (
 
   console.log('createContext for', session?.user?.name ?? 'unknown user');
 
-  // setTimeout(() => {
-  //   opts.req.socket.destroy();
-  // }, 5e3);
-
   return {
     session,
   };

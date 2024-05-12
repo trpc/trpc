@@ -94,7 +94,7 @@ export function sseStreamProducer(opts: {
 
       const value = next.value;
 
-      console.log({ value });
+      // console.log({ value });
       if (!isObject(value)) {
         await iterator.throw?.(new TypeError(`Expected a SerializedSSEChunk`));
         return;
