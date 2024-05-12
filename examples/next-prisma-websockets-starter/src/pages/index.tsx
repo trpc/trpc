@@ -173,7 +173,7 @@ export default function IndexPage() {
   // subscribe to new posts and add
   trpc.post.onAdd.useSubscription(
     {
-      // lastEventId: lastEventId.current,
+      lastEventId: lastEventId.current,
     },
     {
       enabled: !!lastEventId.current,
