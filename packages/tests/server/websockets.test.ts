@@ -1208,53 +1208,51 @@ describe('lazy mode', () => {
 });
 
 describe('keep alive', () => {
-  const keepAliveConfig = {
-    pingMs: 2000,
-    pongWaitMs: 5000,
-  };
-  test('pong is received', async () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+  function attachPongMock(wss: WebSocket.Server, pongMock: () => void) {
+    return new Promise((resolve) => {
+      wss.on('connection', (ws) => {
+        ws.on('pong', pongMock);
+        resolve(null);
+      });
+    });
+  }
+  test('pong message should be received', async () => {
+    const pingMs = 2000;
+    const pongWaitMs = 5000;
     const ctx = factory({
       wssServer: {
         keepAlive: {
           enabled: true,
-          ...keepAliveConfig,
+          pingMs,
+          pongWaitMs,
         },
       },
     });
     const pongMock = vi.fn();
     const { wsClient, wss } = ctx;
-    wss.on('connection', (ws) => {
-      ws.on('pong', pongMock);
-    });
+    await attachPongMock(wss, pongMock);
     {
+      await vi.advanceTimersByTimeAsync(pingMs + pongWaitMs + 100);
       expect(wsClient.connection).not.toBe(null);
-      await waitMs(3500);
-      await waitFor(() => {
-        expect(pongMock).toHaveBeenCalled();
-      });
+      expect(pongMock).toHaveBeenCalled();
     }
     await ctx.close();
   });
-  test('no pong is received', async () => {
-    const ctx = factory({
-      wssServer: {
-        keepAlive: {
-          enabled: false,
-          ...keepAliveConfig,
-        },
-      },
-    });
+  test('no pong message should be received', async () => {
+    const ctx = factory({});
     const pongMock = vi.fn();
     const { wsClient, wss } = ctx;
-    wss.on('connection', (ws) => {
-      ws.on('pong', pongMock);
-    });
+    await attachPongMock(wss, pongMock);
     {
+      await vi.advanceTimersByTimeAsync(60000);
       expect(wsClient.connection).not.toBe(null);
-      await waitMs(3500);
-      await waitFor(() => {
-        expect(pongMock).not.toHaveBeenCalled();
-      });
+      expect(pongMock).not.toHaveBeenCalled();
     }
     await ctx.close();
   });
