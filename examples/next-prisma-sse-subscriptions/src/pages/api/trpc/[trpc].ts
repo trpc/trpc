@@ -6,10 +6,9 @@ import { appRouter } from '~/server/routers/_app';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import type { NextRequest } from 'next/server';
 
-// We're using the edge-runtime
-export const config = {
-  runtime: 'edge',
-};
+export const runtime = 'nodejs';
+// This is required to enable streaming
+export const dynamic = 'force-dynamic';
 
 // export API handler
 export default async function handler(req: NextRequest) {
