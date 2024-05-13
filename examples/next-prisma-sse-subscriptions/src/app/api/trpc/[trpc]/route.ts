@@ -11,8 +11,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 // export API handler
-export default async function handler(req: NextRequest) {
-  return fetchRequestHandler({
+const handler = async (req: NextRequest) => {
+  return await fetchRequestHandler({
     endpoint: '/api/trpc',
     router: appRouter,
     req,
@@ -30,4 +30,7 @@ export default async function handler(req: NextRequest) {
       }
     },
   });
-}
+};
+
+export const GET = handler;
+export const POST = handler;

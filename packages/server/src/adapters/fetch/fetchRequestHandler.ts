@@ -32,12 +32,18 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     return opts.createContext?.({ req: opts.req, resHeaders, ...innerOpts });
   };
 
+  console.log(
+    '😻😻😻😻😻😻😻😻😻😻😻😻😻😻😻😻😻😻😻😻😻😻😻opts.req.url',
+    opts.req.url,
+  );
   const url = toURL(opts.req.url);
 
+  console.log('got here😻😻😻😻😻😻😻😻😻😻😻😻');
   const pathname = trimSlashes(url.pathname);
   const endpoint = trimSlashes(opts.endpoint);
   const path = trimSlashes(pathname.slice(endpoint.length));
 
+  console.log({ path });
   return await resolveResponse({
     ...opts,
     req: opts.req,
