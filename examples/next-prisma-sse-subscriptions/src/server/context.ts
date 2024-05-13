@@ -16,6 +16,7 @@ export const createContext = async (opts: FetchCreateContextFnOptions) => {
 
   return {
     session,
+    req: opts.req,
   };
 };
 

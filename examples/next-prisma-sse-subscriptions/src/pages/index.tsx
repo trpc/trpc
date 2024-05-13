@@ -2,13 +2,43 @@ import { trpc } from '../utils/trpc';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Head from 'next/head';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+/**
+ * Set isTyping with a throttle of 1s
+ */
+function useSetIsTyping() {
+  const isTyping = trpc.post.isTyping.useMutation();
+
+  return useMemo(() => {
+    let state = false;
+    let timeout: ReturnType<typeof setTimeout> | null;
+    function trigger() {
+      timeout && clearTimeout(timeout);
+      timeout = null;
+
+      isTyping.mutate({ typing: state });
+    }
+
+    return (nextState: boolean) => {
+      const shouldTriggerImmediately = nextState !== state;
+
+      state = nextState;
+      if (shouldTriggerImmediately) {
+        trigger();
+      } else if (!timeout) {
+        timeout = setTimeout(trigger, 1000);
+      }
+    };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+}
 function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   const addPost = trpc.post.add.useMutation();
   const { data: session } = useSession();
   const [message, setMessage] = useState('');
-  const [enterToPostMessage, setEnterToPostMessage] = useState(true);
+  const [isFocused, setIsFocused] = useState(true);
   async function postMessage() {
     const input = {
       text: message,
@@ -20,7 +50,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
     } catch {}
   }
 
-  const isTyping = trpc.post.isTyping.useMutation();
+  const isTypingMutation = useSetIsTyping();
 
   const userName = session?.user?.name;
   if (!userName) {
@@ -71,21 +101,23 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
               autoFocus
               onKeyDown={async (e) => {
                 if (e.key === 'Shift') {
-                  setEnterToPostMessage(false);
+                  setIsFocused(false);
                 }
-                if (e.key === 'Enter' && enterToPostMessage) {
+                if (e.key === 'Enter' && isFocused) {
                   void postMessage();
+                  e.preventDefault();
+                } else {
+                  isTypingMutation(true);
                 }
-                isTyping.mutate({ typing: true });
               }}
               onKeyUp={(e) => {
                 if (e.key === 'Shift') {
-                  setEnterToPostMessage(true);
+                  setIsFocused(true);
                 }
               }}
               onBlur={() => {
-                setEnterToPostMessage(true);
-                isTyping.mutate({ typing: false });
+                setIsFocused(true);
+                isTypingMutation(false);
               }}
             />
             <div>

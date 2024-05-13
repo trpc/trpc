@@ -29,3 +29,15 @@ model Post {
   createdAt DateTime @unique @default(now())
   updatedAt DateTime @unique @default(now())
 }
+
+
+model IsTyping {
+  id        String   @id @default(uuid())
+  name      String @unique
+
+  // Is the user typing?
+  isTyping  Boolean
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+}
