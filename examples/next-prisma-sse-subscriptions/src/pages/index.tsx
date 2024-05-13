@@ -275,7 +275,7 @@ export default function IndexPage() {
                   <h2 className="text-lg text-gray-200">Introduction</h2>
                   <ul className="list-inside list-disc space-y-2">
                     <li>Open inspector and head to Network tab</li>
-                    <li>All client requests are handled through WebSockets</li>
+                    <li>All client requests are handled through HTTP</li>
                     <li>
                       We have a simple backend subscription on new messages that
                       adds the newly added message to the current state
