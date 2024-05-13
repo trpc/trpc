@@ -3,7 +3,7 @@
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
 import type { Prisma } from '@prisma/client';
-import { TRPCError, type SSEvent } from '@trpc/server';
+import { type SSEvent } from '@trpc/server';
 import { z } from 'zod';
 import { prisma } from '../prisma';
 import { authedProcedure, publicProcedure, router } from '../trpc';
@@ -31,6 +31,7 @@ async function updateIsTyping(name: string, isTyping: boolean) {
     },
   });
 }
+
 export const postRouter = router({
   add: authedProcedure
     .input(
@@ -97,9 +98,7 @@ export const postRouter = router({
       }),
     )
     .subscription(async function* (opts) {
-      let lastMessageCursor: Date | null = null;
-
-      async function* streamMessagesSince(date: Date | null) {
+      async function getPostsSince(date: Date | null) {
         const where: Prisma.PostWhereInput = date
           ? {
               createdAt: {
@@ -108,34 +107,16 @@ export const postRouter = router({
             }
           : {};
 
-        // if there's more than 100 items, we abort
-        const numItems = await prisma.post.count({
-          where,
-        });
-        if (numItems > 100) {
-          throw new TRPCError({
-            code: 'UNPROCESSABLE_CONTENT',
-            message: 'Too many items',
-          });
-        }
-        const items = await prisma.post.findMany({
+        return await prisma.post.findMany({
           where,
           orderBy: {
             createdAt: 'asc',
           },
         });
-        lastMessageCursor = items.at(-1)?.createdAt ?? lastMessageCursor;
-        for (const item of items) {
-          try {
-            yield {
-              id: item.id,
-              data: item,
-            } satisfies SSEvent;
-          } catch (err) {
-            console.error('yield error', err);
-          }
-        }
       }
+
+      let lastMessageCursor: Date | null = null;
+
       if (opts.input.lastEventId) {
         const itemById = await prisma.post.findUnique({
           where: {
@@ -144,12 +125,19 @@ export const postRouter = router({
         });
         lastMessageCursor = itemById?.createdAt ?? null;
       }
-      // poll for new messages every 500ms
+
       while (true) {
         if (opts.ctx.req.signal.aborted) {
           return;
         }
-        yield* streamMessagesSince(lastMessageCursor);
+        const items = await getPostsSince(lastMessageCursor);
+        for (const item of items) {
+          yield {
+            id: item.id,
+            data: item,
+          } satisfies SSEvent;
+          lastMessageCursor = item.createdAt;
+        }
         await waitMs(POLL_INTERVAL_MS);
       }
     }),
