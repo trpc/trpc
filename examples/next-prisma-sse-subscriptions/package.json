@@ -9,7 +9,7 @@
     "build:1-next": "cross-env NODE_ENV=production next build",
     "build:2-server": "tsc --project tsconfig.server.json",
     "build:3-prisma": "dotenv -c . prisma db push",
-    "build": "run-s build:*",
+    "build": "dotenv -c . run-s build:*",
     "dev": "next dev",
     "db-up": "docker-compose up -d",
     "db-seed": "prisma db seed",
