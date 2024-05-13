@@ -6,7 +6,6 @@ import { getSession } from 'next-auth/react';
  * @link https://trpc.io/docs/v11/context
  */
 export const createContext = async (opts: FetchCreateContextFnOptions) => {
-  console.log('---------------');
   const session = await getSession({
     req: {
       headers: Object.fromEntries(opts.req.headers),
