@@ -197,8 +197,8 @@ export default function IndexPage() {
 
   // get the last known post as soon as we have it
   const lastEventId = useRef<string | null>(null);
-  if (!lastEventId.current) {
-    const lastMessage = messages?.at(-1);
+  if (messages) {
+    const lastMessage = messages.at(-1);
     if (lastMessage) {
       // we have a last message - set it as the last known event id
       // if we reconnect, we'll get all messages after this
@@ -213,7 +213,8 @@ export default function IndexPage() {
       lastEventId: lastEventId.current,
     },
     {
-      enabled: !!lastEventId.current,
+      // Enable this subscription only if we have received some data
+      enabled: !!messages,
       onData(event) {
         addMessages([event.data]);
         // scroll to bottom of list if we're at the bottom

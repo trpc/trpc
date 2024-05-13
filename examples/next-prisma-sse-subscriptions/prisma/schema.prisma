@@ -32,7 +32,7 @@ model Post {
 
 
 model IsTyping {
-  id        String   @id @default(uuid())
+  id        String @id @default(uuid())
   name      String @unique
 
   createdAt DateTime @default(now()) 

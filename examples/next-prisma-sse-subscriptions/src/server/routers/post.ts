@@ -18,34 +18,34 @@ const waitMs = (ms: number) =>
   });
 
 async function updateIsTyping(name: string, isTyping: boolean) {
-  if (!isTyping) {
-    await prisma.isTyping.deleteMany({
+  if (isTyping) {
+    await prisma.isTyping.upsert({
       where: {
-        OR: [
-          {
-            name,
-          },
-          {
-            // cleanup old ones
-            updatedAt: {
-              lt: new Date(Date.now() - 3000),
-            },
-          },
-        ],
+        name,
+      },
+      create: {
+        name,
+      },
+      update: {
+        name,
       },
     });
     return;
   }
-  await prisma.isTyping.upsert({
+
+  await prisma.isTyping.deleteMany({
     where: {
-      name,
-    },
-    create: {
-      name,
-      isTyping,
-    },
-    update: {
-      isTyping,
+      OR: [
+        {
+          name,
+        },
+        {
+          // cleanup old ones
+          updatedAt: {
+            lt: new Date(Date.now() - 3000),
+          },
+        },
+      ],
     },
   });
 }
