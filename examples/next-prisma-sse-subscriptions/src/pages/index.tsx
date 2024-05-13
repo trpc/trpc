@@ -107,7 +107,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
                   void postMessage();
                   e.preventDefault();
                 } else {
-                  isTypingMutation(true);
+                  isTypingMutation(e.currentTarget.value.trim().length > 0);
                 }
               }}
               onKeyUp={(e) => {
