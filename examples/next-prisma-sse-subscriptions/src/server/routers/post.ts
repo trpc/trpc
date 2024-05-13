@@ -170,7 +170,7 @@ export const postRouter = router({
 
       const whoIsTyping = await prisma.isTyping.findMany({
         where: {
-          isTyping: true,
+          // .. updatedAt would be nice here but there's timing issues we're using local time instead
         },
       });
       const mapped = whoIsTyping
