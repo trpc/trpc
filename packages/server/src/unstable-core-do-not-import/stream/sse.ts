@@ -255,5 +255,4 @@ export const sseHeaders = {
   'Cache-Control': 'no-cache, no-transform',
   'X-Accel-Buffering': 'no',
   Connection: 'keep-alive',
-  'Transfer-Encoding': 'chunked',
 } as const;
