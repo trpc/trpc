@@ -255,14 +255,14 @@ export default function IndexPage() {
             <div className="flex h-full flex-col divide-y divide-gray-700">
               <header className="p-4">
                 <h1 className="text-3xl font-bold text-gray-50">
-                  tRPC WebSocket starter
+                  tRPC SSE starter
                 </h1>
                 <p className="text-sm text-gray-400">
-                  Showcases WebSocket + subscription support
+                  Showcases Server-sent Events + subscription support
                   <br />
                   <a
                     className="text-gray-100 underline"
-                    href="https://github.com/trpc/examples-next-prisma-starter-websockets"
+                    href="https://github.com/trpc/trpc/tree/05-10-subscriptions-sse/examples/next-prisma-sse-subscriptions"
                     target="_blank"
                     rel="noreferrer"
                   >
