@@ -1,10 +1,6 @@
 // import type { Config } from '@docusaurus/types';
 import { generateTypedocDocusaurusPlugins } from './docusaurus.typedoc.js';
 import { parseEnv } from './src/utils/env';
-import {themes as prismThemes} from 'prism-react-renderer';
-
-
-
 
 const env = parseEnv(process.env);
 
@@ -241,7 +237,6 @@ const config = {
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
           remarkPlugins: [
             [require("remark-shiki-twoslash").default, require("./shiki-twoslash.config")],
-
             require("./mdx-to-jsx"), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
           ]
         },
@@ -258,14 +253,6 @@ const config = {
         },
       },
     ],
-    // [
-    //   "remark-shiki-twoslash",
-    //   {
-    //     // Not sure how reliable this path is (it's relative from the preset package)?
-    //     // None of the light themes had good support for `diff` mode, so had to patch my own theme
-    //     themes: ['../../../../../../www/min-light-with-diff', 'github-dark'],
-    //   },ww
-    // ],
   ],
   scripts: [
     {

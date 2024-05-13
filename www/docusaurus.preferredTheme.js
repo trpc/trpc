@@ -2,6 +2,8 @@ import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 
 const darkTheme = 'dark';
 const lightTheme = 'light';
+const DARK_THEME_SELECTOR = '.shiki.github-dark';
+const LIGHT_THEME_SELECTOR = '.shiki.min-light';
 
 if (ExecutionEnvironment.canUseDOM) {
   const storedPreference = localStorage.getItem('theme');
@@ -23,14 +25,35 @@ if (ExecutionEnvironment.canUseDOM) {
     subtree: false,
   });
 
-  // const themeClassNames = new Map([
-  //   ["dark", dark],
-  //   ["light", light],
-  // ]);
+  function makeElementVisible(selector) {
+    const codeBlocks = document.querySelectorAll(selector);
+    if(codeBlocks) {
+      codeBlocks.forEach((el) => {
+        el.style.display = 'block';
+      })
+    }
+  }
 
+  function makeElementInvisible(selector) {
+    const codeBlocks = document.querySelectorAll(selector);
+    if(codeBlocks) {
+      codeBlocks.forEach((el) => {
+        el.style.display = 'none';
+      })
+    }
+  }
 
   function onThemeOrClassChanged() {
-    console.log('onThemeOrClassChanged');
+    const theme = htmlElement?.getAttribute('data-theme');
+    if(theme === darkTheme) {
+      makeElementVisible(DARK_THEME_SELECTOR);
+      makeElementInvisible(LIGHT_THEME_SELECTOR);
+    }
+
+    if(theme === lightTheme) {
+      makeElementVisible(LIGHT_THEME_SELECTOR);
+      makeElementInvisible(DARK_THEME_SELECTOR);
+    }
   }
 
   const setInitialTheme = () => {
@@ -40,7 +63,6 @@ if (ExecutionEnvironment.canUseDOM) {
 
   setInitialTheme();
 
-
   const colorSchemeChangeListener = (e) => {
     console.log('colorSchemeChangeListener')
     const newTheme = e.matches ? darkTheme : lightTheme;
@@ -48,20 +70,4 @@ if (ExecutionEnvironment.canUseDOM) {
     localStorage.setItem('theme', newTheme);
   };
   mediaMatch.addEventListener('change', colorSchemeChangeListener);
-
-
-// function createClassChanger(element: HTMLElement) {
-//   let currentClassName: string | undefined;
-//   return function changeClass(newClassName?: string) {
-//     if (newClassName && element.classList.contains(newClassName)) {
-//       return;
-//     }
-//     if (currentClassName) {
-//       element.classList.remove(currentClassName);
-//     }
-//     if (newClassName) {
-//       element.classList.add(newClassName);
-//     }
-//     currentClassName = newClassName;
-//   };
 }

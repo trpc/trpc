@@ -1,3 +1,3 @@
 module.exports = {
-  themes: ["min-light", "nord"],
+  themes: ["min-light", "github-dark"],
 };
