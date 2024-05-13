@@ -35,9 +35,6 @@ model IsTyping {
   id        String   @id @default(uuid())
   name      String @unique
 
-  // Is the user typing?
-  isTyping  Boolean
-
   createdAt DateTime @default(now()) 
   updatedAt DateTime @default(now()) @updatedAt
 }
