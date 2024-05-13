@@ -1146,12 +1146,6 @@ importers:
       eslint-config-next:
         specifier: ^14.0.1
         version: 14.0.1(eslint@8.56.0)(typescript@5.4.2)
-      eslint-plugin-react:
-        specifier: ^7.32.2
-        version: 7.33.2(eslint@8.56.0)
-      eslint-plugin-react-hooks:
-        specifier: ^4.6.0
-        version: 4.6.0(eslint@8.56.0)
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
