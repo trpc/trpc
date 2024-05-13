@@ -163,22 +163,24 @@ export const postRouter = router({
 
       const whoIsTyping = await prisma.isTyping.findMany({
         where: {
-          updatedAt: {
-            gte: new Date(Date.now() - 3_000),
-          },
           isTyping: true,
         },
       });
-      const mapped = whoIsTyping.map((it) => it.name).sort();
-      console.log({ mapped });
-
+      const mapped = whoIsTyping
+        .filter((it) => {
+          // only get the ones latest 3s
+          const diffMs = Date.now() - it.updatedAt.getTime();
+          return diffMs < 3000;
+        })
+        .map((it) => it.name)
+        .sort();
       if (prev?.toString() !== mapped.toString()) {
         yield {
           data: mapped,
         } satisfies SSEvent;
       }
 
-      prev ??= mapped;
+      prev = mapped;
       await waitMs(POLL_INTERVAL_MS);
     }
   }),
