@@ -8,7 +8,6 @@
     "build:1-prisma-generate": "prisma generate",
     "build:2-prisma-migrate": "dotenv -c . prisma db push",
     "build:3-next": "cross-env NODE_ENV=production next build",
-    "build:4-server": "tsc --project tsconfig.server.json",
     "build": "dotenv -c . run-s build:*",
     "dev": "next dev",
     "db-up": "docker-compose up -d",
