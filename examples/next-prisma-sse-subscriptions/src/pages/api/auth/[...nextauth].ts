@@ -12,7 +12,7 @@ if (
   console.log('⚠️ Using mocked GitHub auth correct credentials were not added');
   useMockProvider = true;
 }
-const providers: Provider = [];
+const providers: Provider[] = [];
 if (useMockProvider) {
   providers.push(
     CredentialsProvider({
