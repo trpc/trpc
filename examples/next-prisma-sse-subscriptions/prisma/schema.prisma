@@ -38,6 +38,6 @@ model IsTyping {
   // Is the user typing?
   isTyping  Boolean
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  createdAt DateTime @default(now()) 
+  updatedAt DateTime @default(now()) @updatedAt
 }

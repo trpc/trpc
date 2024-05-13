@@ -49,6 +49,7 @@ export const postRouter = router({
         },
       });
       await updateIsTyping(name, false);
+      return post;
     }),
 
   isTyping: authedProcedure
@@ -164,7 +165,6 @@ export const postRouter = router({
         where: {
           updatedAt: {
             gte: new Date(Date.now() - 3_000),
-            // gte: `NOW() - INTERVAL '3 seconds'`,
           },
           isTyping: true,
         },
