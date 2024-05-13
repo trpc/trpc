@@ -65,7 +65,7 @@ export interface LoggerLinkOptions<TRouter extends AnyRouter> {
   colorMode?: ColorMode;
 
   /**
-   * Include context in the log
+   * Include context in the log - defaults to false unless `colorMode` is 'css'
    */
   withContext?: boolean;
 }
