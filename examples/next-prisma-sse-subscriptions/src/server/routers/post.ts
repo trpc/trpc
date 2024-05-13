@@ -131,6 +131,7 @@ export const postRouter = router({
           return;
         }
         const items = await getPostsSince(lastMessageCursor);
+        lastMessageCursor = items.at(-1)?.createdAt ?? lastMessageCursor;
         for (const item of items) {
           yield {
             id: item.id,
