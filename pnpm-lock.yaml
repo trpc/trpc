@@ -179,7 +179,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -191,10 +191,10 @@ importers:
         specifier: ^4.22.1
         version: 4.22.1(next@14.1.4)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-hook-form:
         specifier: ^7.43.3
@@ -246,10 +246,10 @@ importers:
         specifier: ^14.1.4
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       zod:
         specifier: ^3.0.0
@@ -259,7 +259,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -329,10 +329,10 @@ importers:
         specifier: ^14.1.4
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       superjson:
         specifier: ^1.12.4
@@ -348,7 +348,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -384,10 +384,10 @@ importers:
         specifier: ^14.1.4
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       zod:
         specifier: ^3.0.0
@@ -400,7 +400,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -499,7 +499,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       esbuild:
         specifier: ^0.17.10
@@ -548,7 +548,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       esbuild:
         specifier: ^0.17.10
@@ -725,14 +725,14 @@ importers:
         specifier: npm:@trpc/server@next
         version: link:../../../packages/server
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -808,14 +808,14 @@ importers:
         specifier: npm:@trpc/server@next
         version: link:../../../packages/server
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
     devDependencies:
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -991,10 +991,10 @@ importers:
         specifier: ^14.1.4
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       zod:
         specifier: ^3.0.0
@@ -1004,7 +1004,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -1040,10 +1040,10 @@ importers:
         specifier: ^14.1.4
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       zod:
         specifier: ^3.0.0
@@ -1053,7 +1053,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -1092,10 +1092,10 @@ importers:
         specifier: ^14.1.4
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-hook-form:
         specifier: ^7.43.3
@@ -1111,7 +1111,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -1144,10 +1144,10 @@ importers:
         specifier: ^14.1.4
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       zod:
         specifier: ^3.0.0
@@ -1157,7 +1157,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -1196,10 +1196,10 @@ importers:
         specifier: ^14.1.4
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       superjson:
         specifier: ^1.12.4
@@ -1215,7 +1215,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@typescript-eslint/eslint-plugin':
         specifier: ^7.7.0
@@ -1305,10 +1305,10 @@ importers:
         specifier: ^13.2.2
         version: 13.2.2(i18next@22.4.13)(next@14.1.4)(react-i18next@12.2.0)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-i18next:
         specifier: ^12.2.0
@@ -1336,7 +1336,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       eslint:
         specifier: ^8.56.0
@@ -1384,10 +1384,10 @@ importers:
         specifier: ^4.22.1
         version: 4.22.1(next@14.1.4)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       superjson:
         specifier: ^1.12.4
@@ -1412,7 +1412,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/ws':
         specifier: ^8.2.0
@@ -1618,7 +1618,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -1633,10 +1633,10 @@ importers:
         specifier: ^14.1.4
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       rollup:
         specifier: ^4.9.5
@@ -1666,7 +1666,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       eslint:
         specifier: ^8.56.0
@@ -1678,10 +1678,10 @@ importers:
         specifier: ^14.1.4
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       rollup:
         specifier: ^4.9.5
@@ -1714,7 +1714,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -1747,10 +1747,10 @@ importers:
         specifier: ^14.1.4
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       rollup:
         specifier: ^4.9.5
@@ -1870,10 +1870,10 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       runtypes:
         specifier: ^6.6.0
@@ -1975,10 +1975,10 @@ importers:
         specifier: ^11.0.0
         version: 11.0.0(react-dom@18.3.1)(react@18.3.1)
       react:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-github-btn:
         specifier: ^1.3.0
@@ -2015,7 +2015,7 @@ importers:
         specifier: ^0.9.1
         version: 0.9.1
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
@@ -2112,7 +2112,7 @@ importers:
         specifier: ^20.10.0
         version: 20.10.4
       '@types/react':
-        specifier: ^18.3.0
+        specifier: ^18.3.1
         version: 18.3.1
       '@types/react-dom':
         specifier: ^18.3.0
