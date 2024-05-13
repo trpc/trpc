@@ -18679,7 +18679,7 @@ packages:
       postcss: ^8.2.14
     dependencies:
       postcss: 8.4.14
-      postcss-selector-parser: 6.0.11
+      postcss-selector-parser: 6.0.16
     dev: true
 
   /postcss-nested@6.0.0(postcss@8.4.35):
@@ -18689,7 +18689,7 @@ packages:
       postcss: ^8.2.14
     dependencies:
       postcss: 8.4.35
-      postcss-selector-parser: 6.0.11
+      postcss-selector-parser: 6.0.16
     dev: true
 
   /postcss-normalize-charset@5.1.0(postcss@8.4.35):
