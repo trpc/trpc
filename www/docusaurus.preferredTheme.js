@@ -64,7 +64,6 @@ if (ExecutionEnvironment.canUseDOM) {
   setInitialTheme();
 
   const colorSchemeChangeListener = (e) => {
-    console.log('colorSchemeChangeListener')
     const newTheme = e.matches ? darkTheme : lightTheme;
     htmlElement?.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);

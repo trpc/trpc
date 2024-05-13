@@ -266,9 +266,6 @@ const config = {
   customFields: {
     env,
   },
-  // markdown: {
-  //   format: "detect"
-  // }
 }
 
 export default config;
