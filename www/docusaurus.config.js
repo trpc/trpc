@@ -35,10 +35,6 @@ const config = {
     disableSwitch: false,
     respectPrefersColorScheme: true,
     image: `${env.OG_URL}/api/landing?cache-buster=${new Date().getDate()}`,
-    // prism: {
-    //   theme: prismThemes.github,
-    //   darkTheme: prismThemes.dracula,
-    // },
     algolia: {
       appId: 'BTGPSR4MOE',
       apiKey: 'ed8b3896f8e3e2b421e4c38834b915a8',
