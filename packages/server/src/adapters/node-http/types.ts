@@ -22,13 +22,9 @@ import type {
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../../unstable-core-do-not-import';
 
-interface ParsedQs {
-  [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;
-}
-
 export type NodeHTTPRequest = http.IncomingMessage & {
-  query?: ParsedQs;
   body?: unknown;
+  query?: unknown;
 };
 export type NodeHTTPResponse = http.ServerResponse & {
   /**
