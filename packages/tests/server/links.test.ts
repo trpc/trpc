@@ -593,6 +593,99 @@ describe('loggerLink', () => {
     );
   });
 
+  test('disabled color mode', () => {
+    const logger = {
+      error: vi.fn(),
+      log: vi.fn(),
+    };
+    createChain({
+      links: [
+        loggerLink({ console: logger, colorMode: 'none' })(mockRuntime),
+        okLink,
+      ],
+      op: {
+        id: 1,
+        type: 'query',
+        input: null,
+        path: 'n/a',
+        context: {},
+      },
+    })
+      .subscribe({})
+      .unsubscribe();
+
+    expect(logger.log.mock.calls[0]![0]).toMatchInlineSnapshot(
+      `">> query #1 n/a"`,
+    );
+    expect(logger.log.mock.calls[1]![0]).toMatchInlineSnapshot(
+      `"<< query #1 n/a"`,
+    );
+  });
+
+  test('disabled color mode with context', () => {
+    const logger = {
+      error: vi.fn(),
+      log: vi.fn(),
+    };
+    createChain({
+      links: [
+        loggerLink({ console: logger, colorMode: 'none', withContext: true })(
+          mockRuntime,
+        ),
+        okLink,
+      ],
+      op: {
+        id: 1,
+        type: 'query',
+        input: null,
+        path: 'n/a',
+        context: {
+          ok: true,
+        },
+      },
+    })
+      .subscribe({})
+      .unsubscribe();
+
+    const first = logger.log.mock.calls[0];
+    expect(first![0]).toMatchInlineSnapshot(`">> query #1 n/a"`);
+    expect(first![1].context).toEqual({ ok: true });
+    expect(logger.log.mock.calls[1]![0]).toMatchInlineSnapshot(
+      `"<< query #1 n/a"`,
+    );
+  });
+
+  test('css color mode without context', () => {
+    const logger = {
+      error: vi.fn(),
+      log: vi.fn(),
+    };
+    createChain({
+      links: [
+        loggerLink({ console: logger, withContext: false })(mockRuntime),
+        okLink,
+      ],
+      op: {
+        id: 1,
+        type: 'query',
+        input: null,
+        path: 'n/a',
+        context: {
+          ok: true,
+        },
+      },
+    })
+      .subscribe({})
+      .unsubscribe();
+
+    const first = logger.log.mock.calls[0];
+    expect(first![0]).toMatchInlineSnapshot(`"%c >> query #1 %cn/a%c %O"`);
+    expect(first![1].context).toBeUndefined();
+    expect(logger.log.mock.calls[1]![0]).toMatchInlineSnapshot(
+      `"%c << query #1 %cn/a%c %O"`,
+    );
+  });
+
   test('custom logger', () => {
     const logFn = vi.fn();
     createChain({
