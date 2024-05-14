@@ -76,7 +76,19 @@ import { createContext } from './trpc';
 const wss = new ws.Server({
   port: 3001,
 });
-const handler = applyWSSHandler({ wss, router: appRouter, createContext });
+const handler = applyWSSHandler({
+  wss,
+  router: appRouter,
+  createContext,
+  // Enable heartbeat messages to keep connection open (disabled by default)
+  keepAlive: {
+    enabled: true,
+    // server ping message interval in milliseconds
+    pingMs: 30000,
+    // connection is terminated if pong message is not received in this many milliseconds
+    pongWaitMs: 5000,
+  },
+});
 
 wss.on('connection', (ws) => {
   console.log(`➕➕ Connection (${wss.clients.size})`);
@@ -211,7 +223,7 @@ _... below, or an error._
 
 ## Errors
 
-See https://www.jsonrpc.org/specification#error_object or [Error Formatting](../server/error-formatting.md).
+See <https://www.jsonrpc.org/specification#error_object> or [Error Formatting](../server/error-formatting.md).
 
 ## Notifications from Server to Client
 
