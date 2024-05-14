@@ -1,25 +1,22 @@
-import { createServer, IncomingMessage, ServerResponse } from 'http';
-import {
-  createTRPCProxyClient,
-  httpBatchLink,
-  TRPCClientError,
-} from '@trpc/client/src';
-import { AnyRouter, initTRPC, TRPCError } from '@trpc/server';
-import {
+import type { IncomingMessage, ServerResponse } from 'http';
+import { createServer } from 'http';
+import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
+import type { AnyTRPCRouter } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
+import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
-  nodeHTTPRequestHandler,
 } from '@trpc/server/adapters/node-http';
+import { nodeHTTPRequestHandler } from '@trpc/server/adapters/node-http';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 
 // Start of custom server
 
 // The query type here is just to show it might not extend express's req.query type
-// invalidTrpcQuery is used to let trpc know that passing the query to URLSearchParams would cause it to throw
+// This would cause URLSearchParams to throw when passed to it at nodeHTTPRequestHandler.ts before trpc 11
 type AugmentedRequest = IncomingMessage & {
   query?: any[] | Record<string, any>;
-  invalidTrpcQuery?: boolean;
   pathname: string;
 };
 
@@ -29,7 +26,7 @@ const defaultQueryParser: QueryParser = (req) => {
   return new URL(req.url!, `https://${req.headers.host}`).searchParams;
 };
 
-// Just returning an array as an example of something a parser might return that could cause trpc to throw
+// Just returning an array as an example of something a parser might return that could have cause trpc to throw
 const invalidTrpcQueryParser: QueryParser = (req) => {
   return [req];
 };
@@ -38,13 +35,11 @@ const invalidTrpcQueryParser: QueryParser = (req) => {
 const augmentRequest = (
   req: IncomingMessage,
   queryParser: QueryParser = defaultQueryParser,
-  invalidTrpcQuery?: boolean,
 ): AugmentedRequest => {
   const url = new URL(req.url!, `https://${req.headers.host}`);
   const { pathname } = url;
   return Object.assign(req, {
     query: queryParser(req),
-    invalidTrpcQuery,
     pathname,
   });
 };
@@ -69,11 +64,10 @@ type AugmentedHandler = (
 const createCustomServer = (
   requestListner: AugmentedHandler,
   queryParser?: QueryParser,
-  invalidTrpcQuery?: boolean,
 ) =>
   createServer((req, res) => {
     return requestListner(
-      augmentRequest(req, queryParser, invalidTrpcQuery),
+      augmentRequest(req, queryParser),
       augmentResponse(res),
     );
   });
@@ -87,29 +81,38 @@ type CreateCustomContextOptions = NodeHTTPCreateContextFnOptions<
   AugmentedResponse
 >;
 
-const createCustomHandler = <TRouter extends AnyRouter>(
+const createCustomHandler = <TRouter extends AnyTRPCRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, AugmentedRequest, AugmentedResponse>,
 ) =>
   async function (req: AugmentedRequest, res: AugmentedResponse) {
     return await nodeHTTPRequestHandler({
-      ...opts,
       req,
       res,
       path: req.pathname.slice(1),
+      ...opts,
     });
   };
 
 // End of custom adapter
 
-const createContext = async ({ req, res }: CreateCustomContextOptions) => {
+const createContext = async ({
+  req,
+  res,
+  info,
+}: CreateCustomContextOptions) => {
   return {
     req,
     res,
+    info,
+    customProp: 42,
   };
 };
 
-const t = initTRPC.create();
+type Context = Awaited<ReturnType<typeof createContext>>;
+const t = initTRPC.context<Context>().create();
+
 const router = t.router({
+  context: t.procedure.query((opts) => ({ text: opts.ctx.customProp })),
   hello: t.procedure
     .input(
       z.object({
@@ -128,34 +131,39 @@ const router = t.router({
 });
 
 let server: ReturnType<typeof createCustomServer>;
-const startServer = async <TRouter extends AnyRouter>(
-  opts: NodeHTTPHandlerOptions<TRouter, AugmentedRequest, AugmentedResponse>,
+const startServer = async <TRouter extends AnyTRPCRouter>(
+  opts: Omit<
+    NodeHTTPHandlerOptions<TRouter, AugmentedRequest, AugmentedResponse>,
+    'createContext'
+  >,
   {
     queryParser,
-    invalidTrpcQuery,
   }: {
     queryParser?: QueryParser;
-    invalidTrpcQuery?: boolean;
   } = {},
 ) => {
   const ac = new AbortController();
-  const handler = createCustomHandler(Object.assign({ createContext }, opts));
-  server = createCustomServer(
-    async (req, res) => {
-      // This server now has custom methods
-      res.customMethod('Request listner');
-      // Do some more custom stuff with your server before calling the custom handler
-      // The handler could be middlewear that your server runs
-      // You could just pass handler to createCustomServer directly
-      try {
-        return await handler(req, res);
-      } catch (e) {
-        ac.abort();
-      }
+  const handler = createCustomHandler({
+    middleware: (_req, res, next) => {
+      // this is here to make sure typescript can see customMethod and wont throw a type error
+      res.customMethod('handler middleware');
+      next();
     },
-    queryParser,
-    invalidTrpcQuery,
-  ).listen(0);
+    createContext,
+    ...opts,
+  } as NodeHTTPHandlerOptions<TRouter, AugmentedRequest, AugmentedResponse>);
+  server = createCustomServer(async (req, res) => {
+    // This server now has custom methods
+    res.customMethod('Request listner');
+    // Do some more custom stuff with your server before calling the custom handler
+    // The handler could be middlewear that your server runs
+    // You could just pass handler to createCustomServer directly
+    try {
+      return await handler(req, res);
+    } catch (e) {
+      ac.abort();
+    }
+  }, queryParser).listen(0);
   const port = (server.address() as any).port as number;
 
   return {
@@ -163,7 +171,7 @@ const startServer = async <TRouter extends AnyRouter>(
       return ac;
     },
     port,
-    client: createTRPCProxyClient<typeof router>({
+    client: createTRPCClient<typeof router>({
       links: [
         httpBatchLink({
           url: `http://localhost:${port}`,
@@ -176,24 +184,6 @@ const startServer = async <TRouter extends AnyRouter>(
 afterEach(async () => {
   if (server) {
     server.close();
-  }
-});
-
-test('invalid query aborts', async () => {
-  expect.assertions(1);
-  const t = await startServer(
-    { router },
-    { queryParser: invalidTrpcQueryParser },
-  );
-  try {
-    await t.client.hello.query(
-      {
-        who: 'test',
-      },
-      { signal: t.getAc().signal },
-    );
-  } catch (e) {
-    expect(e).toStrictEqual(new TRPCClientError('This operation was aborted.'));
   }
 });
 
@@ -212,7 +202,7 @@ const runBasicExpect = async (t: Awaited<ReturnType<typeof startServer>>) => {
 test('invalid query compleats', async () => {
   const t = await startServer(
     { router },
-    { queryParser: invalidTrpcQueryParser, invalidTrpcQuery: true },
+    { queryParser: invalidTrpcQueryParser },
   );
   await runBasicExpect(t);
 });
@@ -227,6 +217,15 @@ test('middleware res has custom methods', async () => {
   });
   const result = await fetch(`http://localhost:${t.port}`);
   expect(await result.text()).toEqual(`customMethod called from: middleware`);
+});
+
+test('context has custom property', async () => {
+  const t = await startServer({ router });
+  expect(await t.client.context.query()).toMatchInlineSnapshot(`
+    Object {
+      "text": 42,
+    }
+  `);
 });
 
 // These tests are the same as the ones in standalone.test.ts but are testing the custom adpater in this file
