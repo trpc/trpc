@@ -1,6 +1,5 @@
 {
-  "name": "@examples/internal-types-export",
-  "version": "10.40.0",
+  "name": "examples-internal-types-export",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,11 +9,14 @@
     "@tsconfig/esm": "^1.0.3",
     "@tsconfig/node-lts": "^18.12.2",
     "@tsconfig/strictest": "^2.0.1",
-    "@types/node": "^18.16.16",
-    "typescript": "^5.1.3"
+    "@types/node": "^20.10.0",
+    "typescript": "^5.4.0"
   },
   "dependencies": {
-    "@trpc/client": "^10.40.0",
-    "@trpc/server": "^10.40.0"
+    "@trpc/client": "npm:@trpc/client@next",
+    "@trpc/next": "npm:@trpc/next@next",
+    "@trpc/react-query": "npm:@trpc/react-query@next",
+    "@trpc/server": "npm:@trpc/server@next",
+    "next": "^14.1.4"
   }
 }

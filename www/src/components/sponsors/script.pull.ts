@@ -1,7 +1,7 @@
 // This is an awful script, don't judge
 import fs from 'fs';
 import { graphql } from '@octokit/graphql';
-import { Node, SponsorEsque } from './script.types';
+import type { Node, SponsorEsque } from './script.types';
 
 const { TRPC_GITHUB_TOKEN } = process.env;
 if (!TRPC_GITHUB_TOKEN) {
@@ -162,7 +162,7 @@ async function getOrgGithubSponsors() {
 
 const yearlySponsors = [
   //
-  'flightcontrolhq',
+  // 'flightcontrolhq',
   'ahoylabs',
   'Wyatt-SG',
   'pingdotgg',

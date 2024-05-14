@@ -3,6 +3,8 @@ import { Suspense } from 'react';
 import { ServerHttpGreeting } from './ServerHttpGreeting';
 import { ServerInvokedGreeting } from './ServerInvokedGreeting';
 
+export const dynamic = 'force-dynamic';
+
 async function AuthThing() {
   const me = await api.me.query();
 

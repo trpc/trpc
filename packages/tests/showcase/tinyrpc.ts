@@ -1,14 +1,14 @@
 /**
- * @see https://trpc.io/blog/tinyrpc-client
+ * @link https://trpc.io/blog/tinyrpc-client
  */
 import type {
-  AnyMutationProcedure,
-  AnyProcedure,
-  AnyQueryProcedure,
-  AnyRouter,
+  AnyTRPCMutationProcedure,
+  AnyTRPCProcedure,
+  AnyTRPCQueryProcedure,
+  AnyTRPCRouter,
   inferProcedureInput,
   inferProcedureOutput,
-  ProcedureRouterRecord,
+  TRPCRouterRecord,
 } from '@trpc/server';
 import type { TRPCResponse } from '@trpc/server/rpc';
 
@@ -46,32 +46,31 @@ function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
   return proxy;
 }
 
-type Resolver<TProcedure extends AnyProcedure> = (
+type Resolver<TProcedure extends AnyTRPCProcedure> = (
   input: inferProcedureInput<TProcedure>,
 ) => Promise<inferProcedureOutput<TProcedure>>;
-type DecorateProcedure<TProcedure extends AnyProcedure> =
-  TProcedure extends AnyQueryProcedure
-    ? {
-        query: Resolver<TProcedure>;
-      }
-    : TProcedure extends AnyMutationProcedure
-    ? {
-        mutate: Resolver<TProcedure>;
-      }
-    : never;
 
-/**
- * @internal
- */
-type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord> = {
-  [TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
-    ? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record']>
-    : TProcedures[TKey] extends AnyProcedure
-    ? DecorateProcedure<TProcedures[TKey]>
+type DecorateProcedure<TProcedure> = TProcedure extends AnyTRPCQueryProcedure
+  ? {
+      query: Resolver<TProcedure>;
+    }
+  : TProcedure extends AnyTRPCMutationProcedure
+  ? {
+      mutate: Resolver<TProcedure>;
+    }
+  : never;
+
+type DecorateRouterRecord<TRecord extends TRPCRouterRecord> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends TRPCRouterRecord
+      ? DecorateRouterRecord<$Value>
+      : $Value extends AnyTRPCProcedure
+      ? DecorateProcedure<$Value>
+      : never
     : never;
 };
 
-export const createTinyRPCClient = <TRouter extends AnyRouter>(
+export const createTinyRPCClient = <TRouter extends AnyTRPCRouter>(
   baseUrl: string,
 ) =>
   createRecursiveProxy(async (opts) => {
@@ -104,4 +103,4 @@ export const createTinyRPCClient = <TRouter extends AnyRouter>(
     }
     // No error - all good. Return the data.
     return json.result.data;
-  }, []) as DecoratedProcedureRecord<TRouter['_def']['record']>;
+  }, []) as DecorateRouterRecord<TRouter['_def']['record']>;

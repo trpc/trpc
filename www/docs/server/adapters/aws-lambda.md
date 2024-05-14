@@ -23,7 +23,7 @@ The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2
       <td>API Gateway with NodeJS client.</td>
       <td>
         <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway">Source</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/next/examples/lambda-api-gateway">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -73,7 +73,7 @@ const createContext = ({
   event,
   context,
 }: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => ({}) // no context
-type Context = trpc.inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 export const handler = awsLambdaRequestHandler({
   router: appRouter,

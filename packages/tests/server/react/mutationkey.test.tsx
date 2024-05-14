@@ -25,10 +25,10 @@ const ctx = konn()
 
 describe('mutation keys', () => {
   test('can grab from cache using correct key', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
 
     function MyComponent() {
-      const postCreate = proxy.post.create.useMutation();
+      const postCreate = client.post.create.useMutation();
 
       const mutationKey = [['post', 'create']]; // TODO: Maybe add a getter later?
       const isMutating = useIsMutating({ mutationKey });

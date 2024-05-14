@@ -1,64 +1,163 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import type { Unsubscribable } from '@trpc/server/observable';
 import type {
+  AnyProcedure,
   AnyRouter,
+  inferClientTypes,
   inferProcedureInput,
-  inferProcedureOutput,
-  inferSubscriptionOutput,
-} from '@trpc/server';
-import { Unsubscribable } from '@trpc/server/observable';
-import { inferTransformedProcedureOutput } from '@trpc/server/shared';
+  inferTransformedProcedureOutput,
+  IntersectionError,
+  ProcedureOptions,
+  ProcedureType,
+  RouterRecord,
+} from '@trpc/server/unstable-core-do-not-import';
 import {
-  CreateTRPCClientOptions,
-  TRPCRequestOptions,
+  createFlatProxy,
+  createRecursiveProxy,
+} from '@trpc/server/unstable-core-do-not-import';
+import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
+import type {
   TRPCSubscriptionObserver,
-  TRPCUntypedClient,
+  UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
-import { TRPCClientRuntime } from './links';
-import { TRPCClientError } from './TRPCClientError';
+import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+import type { TRPCClientError } from './TRPCClientError';
 
 /**
- * @deprecated
+ * @public
+ **/
+export type inferRouterClient<TRouter extends AnyRouter> =
+  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
+
+type ResolverDef = {
+  input: any;
+  output: any;
+  transformer: boolean;
+  errorShape: any;
+};
+
+/** @internal */
+export type Resolver<TDef extends ResolverDef> = (
+  input: TDef['input'],
+  opts?: ProcedureOptions,
+) => Promise<TDef['output']>;
+
+type SubscriptionResolver<TDef extends ResolverDef> = (
+  input: TDef['input'],
+  opts?: Partial<
+    TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
+  > &
+    ProcedureOptions,
+) => Unsubscribable;
+
+type DecorateProcedure<
+  TType extends ProcedureType,
+  TDef extends ResolverDef,
+> = TType extends 'query'
+  ? {
+      query: Resolver<TDef>;
+    }
+  : TType extends 'mutation'
+  ? {
+      mutate: Resolver<TDef>;
+    }
+  : TType extends 'subscription'
+  ? {
+      subscribe: SubscriptionResolver<TDef>;
+    }
+  : never;
+
+/**
+ * @internal
  */
-export interface TRPCClient<TRouter extends AnyRouter> {
-  readonly runtime: TRPCClientRuntime;
-  query<
-    TQueries extends TRouter['_def']['queries'],
-    TPath extends string & keyof TQueries,
-    TInput extends inferProcedureInput<TQueries[TPath]>,
-  >(
-    path: TPath,
-    input?: TInput,
-    opts?: TRPCRequestOptions,
-  ): Promise<inferProcedureOutput<TQueries[TPath]>>;
+type DecoratedProcedureRecord<
+  TRouter extends AnyRouter,
+  TRecord extends RouterRecord,
+> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureRecord<TRouter, $Value>
+      : $Value extends AnyProcedure
+      ? DecorateProcedure<
+          $Value['_def']['type'],
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<
+              inferClientTypes<TRouter>,
+              $Value
+            >;
+            errorShape: inferClientTypes<TRouter>['errorShape'];
+            transformer: inferClientTypes<TRouter>['transformer'];
+          }
+        >
+      : never
+    : never;
+};
 
-  mutation<
-    TMutations extends TRouter['_def']['mutations'],
-    TPath extends string & keyof TMutations,
-    TInput extends inferProcedureInput<TMutations[TPath]>,
-  >(
-    path: TPath,
-    input?: TInput,
-    opts?: TRPCRequestOptions,
-  ): Promise<inferTransformedProcedureOutput<TMutations[TPath]>>;
+const clientCallTypeMap: Record<
+  keyof DecorateProcedure<any, any>,
+  ProcedureType
+> = {
+  query: 'query',
+  mutate: 'mutation',
+  subscribe: 'subscription',
+};
 
-  subscription<
-    TSubscriptions extends TRouter['_def']['subscriptions'],
-    TPath extends string & keyof TSubscriptions,
-    // TODO - this should probably be updated to use inferTransformedProcedureOutput but this is only hit for legacy clients
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
-    TInput extends inferProcedureInput<TSubscriptions[TPath]>,
-  >(
-    path: TPath,
-    input: TInput,
-    opts: Partial<TRPCSubscriptionObserver<TOutput, TRPCClientError<TRouter>>> &
-      TRPCRequestOptions,
-  ): Unsubscribable;
+/** @internal */
+export const clientCallTypeToProcedureType = (
+  clientCallType: string,
+): ProcedureType => {
+  return clientCallTypeMap[clientCallType as keyof typeof clientCallTypeMap];
+};
+
+/**
+ * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
+ */
+export type CreateTRPCClient<TRouter extends AnyRouter> =
+  inferRouterClient<TRouter> extends infer $Value
+    ? UntypedClientProperties & keyof $Value extends never
+      ? inferRouterClient<TRouter>
+      : IntersectionError<UntypedClientProperties & keyof $Value>
+    : never;
+
+/**
+ * @internal
+ */
+export function createTRPCClientProxy<TRouter extends AnyRouter>(
+  client: TRPCUntypedClient<TRouter>,
+): CreateTRPCClient<TRouter> {
+  return createFlatProxy<CreateTRPCClient<TRouter>>((key) => {
+    if (client.hasOwnProperty(key)) {
+      return (client as any)[key as any];
+    }
+    if (key === '__untypedClient') {
+      return client;
+    }
+    return createRecursiveProxy(({ path, args }) => {
+      const pathCopy = [key, ...path];
+      const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
+
+      const fullPath = pathCopy.join('.');
+
+      return (client as any)[procedureType](fullPath, ...args);
+    });
+  });
 }
-/**
- * @deprecated use `createTRPCProxyClient` instead
- */
+
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
-) {
+): CreateTRPCClient<TRouter> {
   const client = new TRPCUntypedClient(opts);
-  return client as TRPCClient<TRouter>;
+  const proxy = createTRPCClientProxy<TRouter>(client);
+  return proxy;
+}
+
+/**
+ * Get an untyped client from a proxy client
+ * @internal
+ */
+export function getUntypedClient<TRouter extends AnyRouter>(
+  client: inferRouterClient<TRouter>,
+): TRPCUntypedClient<TRouter> {
+  return (client as any).__untypedClient;
 }

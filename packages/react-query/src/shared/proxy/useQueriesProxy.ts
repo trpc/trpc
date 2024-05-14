@@ -1,89 +1,112 @@
-import { QueryOptions } from '@tanstack/react-query';
-import { TRPCClient, TRPCClientError } from '@trpc/client';
-import {
+import type { QueryOptions } from '@tanstack/react-query';
+import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
+import type {
   AnyProcedure,
   AnyQueryProcedure,
+  AnyRootTypes,
   AnyRouter,
-  Filter,
   inferProcedureInput,
-} from '@trpc/server';
-import {
-  createRecursiveProxy,
   inferTransformedProcedureOutput,
-} from '@trpc/server/shared';
+  RouterRecord,
+} from '@trpc/server/unstable-core-do-not-import';
+import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
-import { TrpcQueryOptionsForUseQueries } from '../../internals/useQueries';
-import { TRPCReactRequestOptions } from '../hooks/types';
+import type {
+  TrpcQueryOptionsForUseQueries,
+  TrpcQueryOptionsForUseSuspenseQueries,
+} from '../../internals/useQueries';
+import type { TRPCUseQueryBaseOptions } from '../hooks/types';
 
-type GetQueryOptions<TProcedure extends AnyProcedure, TPath extends string> = <
-  TData = inferTransformedProcedureOutput<TProcedure>,
->(
+type GetQueryOptions<
+  TRoot extends AnyRootTypes,
+  TProcedure extends AnyProcedure,
+> = <TData = inferTransformedProcedureOutput<TRoot, TProcedure>>(
   input: inferProcedureInput<TProcedure>,
   opts?: TrpcQueryOptionsForUseQueries<
-    TPath,
-    inferProcedureInput<TProcedure>,
-    inferTransformedProcedureOutput<TProcedure>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData,
-    TRPCClientError<TProcedure>
+    TRPCClientError<TRoot>
   >,
 ) => TrpcQueryOptionsForUseQueries<
-  TPath,
-  inferProcedureInput<TProcedure>,
-  inferTransformedProcedureOutput<TProcedure>,
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
   TData,
-  TRPCClientError<TProcedure>
+  TRPCClientError<TRoot>
 >;
 
 /**
  * @internal
  */
 export type UseQueriesProcedureRecord<
-  TRouter extends AnyRouter,
-  TPath extends string = '',
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
 > = {
-  [TKey in keyof Filter<
-    TRouter['_def']['record'],
-    AnyQueryProcedure | AnyRouter
-  >]: TRouter['_def']['record'][TKey] extends AnyRouter
-    ? UseQueriesProcedureRecord<
-        TRouter['_def']['record'][TKey],
-        `${TPath}${TKey & string}.`
-      >
-    : GetQueryOptions<
-        TRouter['_def']['record'][TKey],
-        `${TPath}${TKey & string}`
-      >;
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? UseQueriesProcedureRecord<TRoot, $Value>
+      : $Value extends AnyQueryProcedure
+      ? GetQueryOptions<TRoot, $Value>
+      : never
+    : never;
+};
+
+type GetSuspenseQueryOptions<
+  TRoot extends AnyRootTypes,
+  TProcedure extends AnyQueryProcedure,
+> = <TData = inferTransformedProcedureOutput<TRoot, TProcedure>>(
+  input: inferProcedureInput<TProcedure>,
+  opts?: TrpcQueryOptionsForUseSuspenseQueries<
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TData,
+    TRPCClientError<TRoot>
+  >,
+) => TrpcQueryOptionsForUseSuspenseQueries<
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
+  TData,
+  TRPCClientError<TRoot>
+>;
+
+/**
+ * @internal
+ */
+export type UseSuspenseQueriesProcedureRecord<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> = {
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends RouterRecord
+      ? UseSuspenseQueriesProcedureRecord<TRoot, $Value>
+      : $Value extends AnyQueryProcedure
+      ? GetSuspenseQueryOptions<TRoot, $Value>
+      : never
+    : never;
 };
 
 /**
  * Create proxy for `useQueries` options
  * @internal
  */
-export function createUseQueriesProxy<TRouter extends AnyRouter>(
-  client: TRPCClient<TRouter>,
+export function createUseQueries<TRouter extends AnyRouter>(
+  client: TRPCUntypedClient<TRouter>,
 ) {
   return createRecursiveProxy((opts) => {
-    const path = opts.path.join('.');
+    const arrayPath = opts.path;
+    const dotPath = arrayPath.join('.');
     const [input, _opts] = opts.args as [
       unknown,
-      (
-        | undefined
-        | {
-            trpc?: TRPCReactRequestOptions;
-          }
-      ),
+      Partial<QueryOptions> & TRPCUseQueryBaseOptions,
     ];
 
-    const queryKey = getQueryKeyInternal(path, input);
-
     const options: QueryOptions = {
-      queryKey,
+      queryKey: getQueryKeyInternal(arrayPath, input, 'query'),
       queryFn: () => {
-        return client.query(path, input, _opts?.trpc);
+        return client.query(dotPath, input, _opts?.trpc);
       },
-      ...(_opts as any),
+      ..._opts,
     };
 
     return options;
-  }) as UseQueriesProcedureRecord<TRouter>;
+  }) as UseQueriesProcedureRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >;
 }

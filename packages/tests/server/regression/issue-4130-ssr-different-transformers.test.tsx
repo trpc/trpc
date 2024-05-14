@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { DehydratedState } from '@tanstack/react-query';
+import type { DehydratedState } from '@tanstack/react-query';
 import { createTRPCNext } from '@trpc/next';
-import type { CombinedDataTransformer } from '@trpc/server';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import { initTRPC } from '@trpc/server';
+import type { CombinedDataTransformer } from '@trpc/server/unstable-core-do-not-import';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
-import { AppType } from 'next/dist/shared/lib/utils';
+import type { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 import superjson from 'superjson';
 
@@ -33,12 +34,7 @@ const ctx = konn()
       foo: t.procedure.query(() => 'bar' as const),
     });
     const opts = routerToServerAndClientNew(appRouter, {
-      client(opts) {
-        return {
-          ...opts,
-          transformer,
-        };
-      },
+      transformer,
     });
 
     return opts;
@@ -60,6 +56,8 @@ test('withTRPC - SSR', async () => {
       return ctx.trpcClientOptions;
     },
     ssr: true,
+    transformer,
+    ssrPrepass,
   });
 
   const App: AppType = () => {
@@ -72,10 +70,10 @@ test('withTRPC - SSR', async () => {
   const props = (await Wrapped.getInitialProps!({
     AppTree: Wrapped,
     Component: <div />,
-  } as any)) as any;
+  } as any)) as Record<string, any>;
 
-  const trpcState: DehydratedState = transformer.output.deserialize(
-    props.pageProps.trpcState,
+  const trpcState: DehydratedState = transformer.input.deserialize(
+    props['pageProps'].trpcState,
   );
 
   const relevantData = trpcState.queries.map((it) => ({

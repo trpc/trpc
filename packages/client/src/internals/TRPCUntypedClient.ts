@@ -1,59 +1,21 @@
-import {
-  AnyRouter,
-  ClientDataTransformerOptions,
-  CombinedDataTransformer,
-  DataTransformerOptions,
-  DefaultDataTransformer,
-} from '@trpc/server';
-import {
+import type {
   inferObservableValue,
-  observableToPromise,
-  share,
   Unsubscribable,
 } from '@trpc/server/observable';
+import { observableToPromise, share } from '@trpc/server/observable';
+import type {
+  AnyRouter,
+  InferrableClientTypes,
+  TypeError,
+} from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
-import {
+import type {
   OperationContext,
   OperationLink,
   TRPCClientRuntime,
   TRPCLink,
 } from '../links/types';
 import { TRPCClientError } from '../TRPCClientError';
-
-type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
-  TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
-    ? {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
-         **/
-        transformer?: 'You must set a transformer on the backend router';
-      }
-    : TRouter['_def']['_config']['transformer'] extends DataTransformerOptions
-    ? {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
-         **/
-        transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
-          ? DataTransformerOptions
-          : TRouter['_def']['_config']['transformer'];
-      }
-    : {
-        /**
-         * Data transformer
-         *
-         * You must use the same transformer on the backend and frontend
-         * @link https://trpc.io/docs/data-transformers
-         **/
-        transformer?:
-          | /** @deprecated **/ ClientDataTransformerOptions
-          | CombinedDataTransformer;
-      };
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
 export interface TRPCRequestOptions {
@@ -73,10 +35,10 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends AnyRouter> =
-  | CreateTRPCClientBaseOptions<TRouter> & {
-      links: TRPCLink<TRouter>[];
-    };
+export type CreateTRPCClientOptions<TRouter extends InferrableClientTypes> = {
+  links: TRPCLink<TRouter>[];
+  transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
+};
 
 /** @internal */
 export type UntypedClientProperties =
@@ -97,39 +59,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   constructor(opts: CreateTRPCClientOptions<TRouter>) {
     this.requestId = 0;
 
-    const combinedTransformer: CombinedDataTransformer = (() => {
-      const transformer = opts.transformer as
-        | DataTransformerOptions
-        | undefined;
-
-      if (!transformer) {
-        return {
-          input: {
-            serialize: (data) => data,
-            deserialize: (data) => data,
-          },
-          output: {
-            serialize: (data) => data,
-            deserialize: (data) => data,
-          },
-        };
-      }
-      if ('input' in transformer) {
-        return opts.transformer as CombinedDataTransformer;
-      }
-      return {
-        input: transformer,
-        output: transformer,
-      };
-    })();
-
-    this.runtime = {
-      transformer: {
-        serialize: (data) => combinedTransformer.input.serialize(data),
-        deserialize: (data) => combinedTransformer.output.deserialize(data),
-      },
-      combinedTransformer,
-    };
+    this.runtime = {};
 
     // Initialize the links
     this.links = opts.links.map((link) => link(this.runtime));
@@ -222,7 +152,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
         } else if (envelope.result.type === 'stopped') {
           opts.onStopped?.();
         } else {
-          opts.onData?.((envelope.result as any).data);
+          opts.onData?.(envelope.result.data);
         }
       },
       error(err) {

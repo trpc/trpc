@@ -1,5 +1,4 @@
 import { TRPCClientError } from '@trpc/client';
-import '../___packages';
 
 test('test passing non error like object to TRPCClientError.from', () => {
   const cause = null;

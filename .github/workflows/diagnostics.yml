@@ -1,0 +1,122 @@
+name: Diagnostics
+
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  diagnostics:
+    timeout-minutes: 10
+    if: github.event.pull_request.head.repo.fork == false
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+    strategy:
+      matrix:
+        branch: [
+            #
+            'current-pr',
+            'next',
+            # 'main',
+          ]
+
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: ${{ matrix.branch == 'current-pr' && github.head_ref || matrix.branch }}
+
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Get pnpm store directory
+        shell: bash
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+      - run: pnpm install
+        shell: bash
+
+      - run: pnpm build
+
+      - run: mkdir diagnostics-results
+
+      - name: Capture build times
+        run: |
+          cd ./examples/.test/diagnostics-big-router
+          iters=21
+          for i in {1..$iters}
+          do
+            rm -rf ./build
+            echo "Running iteration $i of $iters"
+
+            start_time=$(date +%s%N)
+            pnpm tsc
+            end_time=$(date +%s%N)
+            echo "$(($end_time - $start_time))" >> ./../../../diagnostics-results/tsc-times.txt
+            
+          done
+      - run: cd ./examples/.test/diagnostics-big-router && pnpm tsc --extendedDiagnostics && pnpm tsc --extendedDiagnostics > ./../../../diagnostics-results/diagnostics.txt
+      - run: cat ./diagnostics-results/diagnostics.txt
+      - name: Upload diagnostics results
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-results-${{ matrix.branch }}
+          path: ./diagnostics-results
+
+  comment:
+    needs: diagnostics
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-trpc-diagnostics-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-trpc-diagnostics-
+
+      - run: pnpm install
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: diagnostics-results-next
+          path: diagnostics-results-next
+      - uses: actions/download-artifact@v4
+        with:
+          name: diagnostics-results-current-pr
+          path: diagnostics-results-current-pr
+
+      - run: pnpm exec tsx .github/workflows/diagnosticsCompare.ts
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}

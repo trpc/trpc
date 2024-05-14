@@ -15,9 +15,9 @@ afterEach(async () => {
 
 describe('setQueryData()', () => {
   test('without & without callback', async () => {
-    const { trpc, client } = factory;
+    const { trpc, client, App } = factory;
     function MyComponent() {
-      const utils = trpc.useContext();
+      const utils = trpc.useUtils();
       const allPostsQuery = trpc.allPosts.useQuery(undefined, {
         enabled: false,
       });
@@ -67,18 +67,12 @@ describe('setQueryData()', () => {
         </>
       );
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
 
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
 
     await userEvent.click(utils.getByTestId('setQueryData'));
 

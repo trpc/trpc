@@ -16,6 +16,7 @@ const config: PlaywrightTestConfig = {
     headless: opts.headless,
     javaScriptEnabled: false,
   },
+  retries: process.env.CI ? 3 : 0,
 };
 
 export default config;

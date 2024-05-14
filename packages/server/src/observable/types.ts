@@ -2,7 +2,7 @@ export interface Unsubscribable {
   unsubscribe(): void;
 }
 export type UnsubscribeFn = () => void;
-export interface Subscribable<TValue, TError> {
+interface Subscribable<TValue, TError> {
   subscribe(observer: Partial<Observer<TValue, TError>>): Unsubscribable;
 }
 export interface Observable<TValue, TError>
@@ -44,10 +44,6 @@ export interface Observable<TValue, TError>
     op4: OperatorFunction<TValue3, TError3, TValue4, TError4>,
     op5: OperatorFunction<TValue4, TError4, TValue5, TError5>,
   ): Observable<TValue2, TError2>;
-}
-export interface SubscriptionLike extends Unsubscribable {
-  unsubscribe(): void;
-  readonly closed: boolean;
 }
 
 export interface Observer<TValue, TError> {

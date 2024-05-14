@@ -18,6 +18,7 @@ slug: /useInfiniteQuery
 ```tsx title='server/routers/_app.ts'
 import * as trpc from '@trpc/server';
 import { Context } from './[trpc]';
+import { z } from 'zod';
 
 export const appRouter = trpc.router<Context>()
   .query('infinitePosts', {

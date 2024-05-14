@@ -7,6 +7,39 @@ slug: /server/merging-routers
 
 Writing all API-code in your code in the same file is not a great idea. It's easy to merge routers with other routers.
 
+### Defining an inline sub-router
+
+When you define an inline sub-router, you can represent your router as a plain object.
+
+In the below example, `nested1` and `nested2` are equal:
+
+```ts twoslash title="server/_app.ts"
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+
+
+export const middleware = t.middleware;
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+// @filename: _app.ts
+// ---cut---
+import * as trpc from '@trpc/server';
+import { publicProcedure, router } from './trpc';
+
+const appRouter = router({
+  // Shorthand plain object for creating a sub-router
+  nested1: {
+    proc: publicProcedure.query(() => '...'),
+  },
+  // Equivalent of:
+  nested2: router({
+    proc : publicProcedure.query(() => '...'),
+  }),
+});
+```
+
 ## Merging with child routers
 
 ```ts twoslash title='server.ts'
@@ -15,7 +48,7 @@ import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
 
-export const middleware = t.middleware;
+
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
@@ -80,7 +113,6 @@ import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
 
-export const middleware = t.middleware;
 export const router = t.router;
 export const publicProcedure = t.procedure;
 export const mergeRouters = t.mergeRouters;

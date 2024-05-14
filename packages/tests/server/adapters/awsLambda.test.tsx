@@ -1,5 +1,5 @@
-import { inferAsyncReturnType, initTRPC } from '@trpc/server/src';
-import * as trpcLambda from '@trpc/server/src/adapters/aws-lambda';
+import { initTRPC } from '@trpc/server';
+import * as trpcLambda from '@trpc/server/adapters/aws-lambda';
 import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
 import {
@@ -11,13 +11,15 @@ import {
 
 const createContext = async ({
   event,
+  info,
 }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEvent>) => {
   return {
     user: event.headers['X-USER'],
+    info,
   };
 };
 
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 const t = initTRPC.context<Context>().create();
 
 const router = t.router({
@@ -53,6 +55,9 @@ const router = t.router({
         counter: input.counter + 1,
       };
     }),
+  request: t.router({
+    info: t.procedure.query(({ ctx }) => ctx.info),
+  }),
 });
 
 const tC = initTRPC.create();
@@ -74,7 +79,6 @@ const handler = trpcLambda.awsLambdaRequestHandler({
 test('basic test', async () => {
   const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: 'hello',
@@ -87,7 +91,7 @@ test('basic test', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -103,10 +107,45 @@ test('basic test', async () => {
   `);
 });
 
+test('v1 request info', async () => {
+  const { body, ...result } = await handler(
+    mockAPIGatewayProxyEventV1({
+      headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
+      method: 'GET',
+      path: 'request.info',
+      queryStringParameters: {},
+      resource: '/request/info',
+    }),
+    mockAPIGatewayContext(),
+  );
+  const parsedBody = JSON.parse(body || '');
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "headers": Object {
+        "content-type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
+  expect(parsedBody).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": Object {
+          "calls": Array [
+            Object {
+              "path": "request.info",
+            },
+          ],
+          "isBatchCall": false,
+        },
+      },
+    }
+  `);
+});
+
 test('test v1 with leading prefix', async () => {
   const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: '/leading/prefix/hello',
@@ -120,7 +159,7 @@ test('test v1 with leading prefix', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -139,7 +178,6 @@ test('test v1 with leading prefix', async () => {
 test('test v1 can find procedure even if resource is not proxied', async () => {
   const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Robin' },
       method: 'GET',
       path: '/leading/prefix/hello',
@@ -153,7 +191,7 @@ test('test v1 can find procedure even if resource is not proxied', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -172,11 +210,12 @@ test('test v1 can find procedure even if resource is not proxied', async () => {
 test('bad type', async () => {
   const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({
-      body: JSON.stringify({ who: [[]] }),
       headers: { 'Content-Type': 'application/json' },
       method: 'GET',
       path: 'echo',
-      queryStringParameters: {},
+      queryStringParameters: {
+        input: JSON.stringify({ who: [[]] }),
+      },
       resource: '/echo',
     }),
     mockAPIGatewayContext(),
@@ -185,7 +224,7 @@ test('bad type', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 400,
     }
@@ -204,11 +243,13 @@ test('bad type', async () => {
         },
         "message": "[
       {
-        \\"code\\": \\"invalid_type\\",
-        \\"expected\\": \\"object\\",
-        \\"received\\": \\"undefined\\",
-        \\"path\\": [],
-        \\"message\\": \\"Required\\"
+        "code": "invalid_type",
+        "expected": "object",
+        "received": "array",
+        "path": [
+          "who"
+        ],
+        "message": "Expected object, received array"
       }
     ]",
       },
@@ -219,9 +260,11 @@ test('bad type', async () => {
 test('test v2 format', async () => {
   const createContext = async ({
     event,
+    info,
   }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
     return {
       user: event.headers['X-USER'],
+      info,
     };
   };
   const handler2 = trpcLambda.awsLambdaRequestHandler({
@@ -230,7 +273,6 @@ test('test v2 format', async () => {
   });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: 'hello',
@@ -242,7 +284,7 @@ test('test v2 format', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -262,9 +304,11 @@ test('test v2 format', async () => {
 test('test v2 format with multiple / in query key', async () => {
   const createContext = async ({
     event,
+    info,
   }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
     return {
       user: event.headers['X-USER'],
+      info,
     };
   };
   const handler2 = trpcLambda.awsLambdaRequestHandler({
@@ -273,7 +317,6 @@ test('test v2 format with multiple / in query key', async () => {
   });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: 'hello/darkness/my/old/friend',
@@ -285,7 +328,7 @@ test('test v2 format with multiple / in query key', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -305,9 +348,11 @@ test('test v2 format with multiple / in query key', async () => {
 test('test v2 format with non default routeKey', async () => {
   const createContext = async ({
     event,
+    info,
   }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
     return {
       user: event.headers['X-USER'],
+      info,
     };
   };
   const handler2 = trpcLambda.awsLambdaRequestHandler({
@@ -316,7 +361,6 @@ test('test v2 format with non default routeKey', async () => {
   });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       routeKey: 'ANY /trpc/{a}/{path+}',
@@ -329,7 +373,7 @@ test('test v2 format with non default routeKey', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -348,9 +392,11 @@ test('test v2 format with non default routeKey', async () => {
 test('test v2 format with non default routeKey and nested router', async () => {
   const createContext = async ({
     event,
+    info,
   }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
     return {
       user: event.headers['X-USER'],
+      info,
     };
   };
   const handler2 = trpcLambda.awsLambdaRequestHandler({
@@ -359,7 +405,6 @@ test('test v2 format with non default routeKey and nested router', async () => {
   });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV2({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       routeKey: 'ANY /trpc/{a}/{path+}',
@@ -372,7 +417,7 @@ test('test v2 format with non default routeKey and nested router', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }
@@ -394,7 +439,6 @@ test('router with no context', async () => {
   });
   const { body, ...result } = await handler2(
     mockAPIGatewayProxyEventV1({
-      body: JSON.stringify({}),
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
       path: 'hello',
@@ -405,14 +449,6 @@ test('router with no context', async () => {
     }),
     mockAPIGatewayContext(),
   );
-  expect(result).toMatchInlineSnapshot(`
-    Object {
-      "headers": Object {
-        "Content-Type": "application/json",
-      },
-      "statusCode": 200,
-    }
-  `);
   const parsedBody = JSON.parse(body ?? '');
   expect(parsedBody).toMatchInlineSnapshot(`
     Object {
@@ -421,6 +457,14 @@ test('router with no context', async () => {
           "text": "hello kATT",
         },
       },
+    }
+  `);
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "headers": Object {
+        "content-type": "application/json",
+      },
+      "statusCode": 200,
     }
   `);
 });
@@ -443,7 +487,7 @@ test('test base64 encoded apigateway proxy integration', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "headers": Object {
-        "Content-Type": "application/json",
+        "content-type": "application/json",
       },
       "statusCode": 200,
     }

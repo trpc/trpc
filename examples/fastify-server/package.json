@@ -1,6 +1,5 @@
 {
-  "name": "@examples/fastify-server",
-  "version": "10.40.0",
+  "name": "examples-fastify-server",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +7,7 @@
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 2022 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" src",
     "type-check": "tsc",
     "start:server": "node dist/server/index.js",
     "start:client": "wait-port 2022 && node dist/client/index.js",
@@ -17,24 +16,24 @@
     "test-start": "start-server-and-test 'node dist/server' http-get://localhost:2022 'node dist/client'"
   },
   "dependencies": {
-    "@fastify/websocket": "^7.1.2",
-    "@trpc/client": "^10.40.0",
-    "@trpc/server": "^10.40.0",
-    "fastify": "^4.13.0",
+    "@fastify/websocket": "^10.0.1",
+    "@trpc/client": "npm:@trpc/client@next",
+    "@trpc/server": "npm:@trpc/server@next",
+    "fastify": "^4.16.0",
     "superjson": "^1.12.4",
     "tslib": "^2.5.0",
     "ws": "^8.0.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "^18.16.16",
+    "@types/node": "^20.10.0",
     "@types/ws": "^8.2.0",
     "esbuild": "^0.17.10",
-    "eslint": "^8.40.0",
+    "eslint": "^8.56.0",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
-    "tsx": "^3.12.7",
-    "typescript": "^5.1.3",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0",
     "wait-port": "^1.0.1"
   },
   "publishConfig": {

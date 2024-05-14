@@ -1,6 +1,6 @@
 {
   "name": "@trpc/react-query",
-  "version": "10.40.0",
+  "version": "10.45.1",
   "description": "The tRPC React library",
   "author": "KATT",
   "license": "MIT",
@@ -17,8 +17,8 @@
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src",
-    "ts-watch": "tsc --project tsconfig.watch.json --watch"
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore src",
+    "ts-watch": "tsc --watch"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -36,11 +36,6 @@
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
-    },
-    "./ssg": {
-      "import": "./dist/ssg/index.mjs",
-      "require": "./dist/ssg/index.js",
-      "default": "./dist/ssg/index.js"
     }
   },
   "files": [
@@ -50,7 +45,6 @@
     "package.json",
     "server",
     "shared",
-    "ssg",
     "!**/*.test.*"
   ],
   "eslintConfig": {
@@ -62,27 +56,28 @@
       ]
     }
   },
+  "dependencies": {},
   "peerDependencies": {
-    "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.40.0",
-    "@trpc/server": "10.40.0",
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
+    "@tanstack/react-query": "^5.25.0",
+    "@trpc/client": "10.45.1",
+    "@trpc/server": "^10.45.1",
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.40.0",
-    "@trpc/server": "10.40.0",
+    "@tanstack/react-query": "^5.25.0",
+    "@trpc/client": "10.45.1",
+    "@trpc/server": "^10.45.1",
     "@types/express": "^4.17.17",
-    "@types/node": "^18.16.16",
-    "@types/react": "^18.2.8",
-    "eslint": "^8.40.0",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.3.1",
+    "eslint": "^8.56.0",
     "express": "^4.17.1",
-    "next": "^13.4.8",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "rollup": "^2.79.1",
-    "tsx": "^3.12.7",
+    "next": "^14.1.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "rollup": "^4.9.5",
+    "tsx": "^4.0.0",
     "zod": "^3.0.0"
   },
   "publishConfig": {

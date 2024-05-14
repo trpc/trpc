@@ -18,10 +18,10 @@ afterEach(async () => {
 
 describe('prefetchQuery()', () => {
   test('with input', async () => {
-    const { trpc, client } = factory;
+    const { trpc, client, App } = factory;
     function MyComponent() {
       const [state, setState] = useState<string>('nope');
-      const utils = trpc.useContext();
+      const utils = trpc.useUtils();
       const queryClient = useQueryClient();
 
       useEffect(() => {
@@ -34,18 +34,12 @@ describe('prefetchQuery()', () => {
 
       return <>{JSON.stringify(state)}</>;
     }
-    function App() {
-      const [queryClient] = useState(() => createQueryClient());
-      return (
-        <trpc.Provider {...{ queryClient, client }}>
-          <QueryClientProvider client={queryClient}>
-            <MyComponent />
-          </QueryClientProvider>
-        </trpc.Provider>
-      );
-    }
 
-    const utils = render(<App />);
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });

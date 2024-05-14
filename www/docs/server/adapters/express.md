@@ -19,8 +19,8 @@ slug: /server/adapters/express
       <td>Express server &amp; procedure calls with Node.js.</td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/express-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/express-server">Source</a></li>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/next/examples/express-server">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/next/examples/express-server">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -73,15 +73,16 @@ If your router file starts getting too big, split your router into several subro
 tRPC includes an adapter for Express out of the box. This adapter lets you convert your tRPC router into an Express middleware.
 
 ```ts title='server.ts'
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import express from 'express';
 
 // created for each request
 const createContext = ({
   req,
   res,
 }: trpcExpress.CreateExpressContextOptions) => ({}); // no context
-type Context = inferAsyncReturnType<typeof createContext>;
+type Context = Awaited<ReturnType<typeof createContext>>;
 
 const t = initTRPC.context<Context>().create();
 const appRouter = t.router({

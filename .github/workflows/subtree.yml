@@ -1,8 +1,9 @@
 name: subtree-matrix
 on:
+  workflow_dispatch:
   push:
     branches:
-      - main
+      - next
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -22,7 +23,7 @@ jobs:
             next-big-router,
             minimal,
             minimal-react,
-            .experimental/next-formdata,
+            next-formdata,
             .experimental/next-app-dir,
           ]
 
@@ -34,7 +35,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run find-and-replace to remove '.experimental/' from above paths
-        uses: mad9000/actions-find-and-replace-string@4
+        uses: mad9000/actions-find-and-replace-string@5
         id: findandreplace
         with:
           source: ${{ matrix.path }}
@@ -44,17 +45,17 @@ jobs:
         run: echo "The replaced value is ${{ steps.findandreplace.outputs.value }}"
 
       - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 20.x
           cache: 'pnpm'
 
       - name: Install dependencies and create separate lockfile
         run: |
-          echo "shared-workspace-lockfile=false" >> .npmrc
-          echo "link-workspace-packages=false" >> .npmrc
-          cp ./pnpm-lock.yaml ./examples/${{ matrix.path }}/pnpm-lock.yaml
-          pnpm install --no-frozen-lockfile
+          cd ./examples/${{ matrix.path }}
+          # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "next" in the package.json
+          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "next"/g'
+          pnpm install --no-frozen-lockfile --ignore-scripts --ignore-workspace
 
       - name: Commit changes
         run: |

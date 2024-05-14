@@ -5,7 +5,7 @@ import { trpc } from '~/utils/trpc';
 
 /**
  * This page will be served statically
- * @link https://trpc.io/docs/ssg
+ * @link https://trpc.io/docs/v11/ssg
  */
 export const getStaticProps = async () => {
   const ssg = createServerSideHelpers({

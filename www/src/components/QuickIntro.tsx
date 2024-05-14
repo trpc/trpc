@@ -1,7 +1,8 @@
 import Link from '@docusaurus/Link';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import React, { FC, ReactNode } from 'react';
+import type { FC, ReactNode } from 'react';
+import React from 'react';
 import Step1 from '../../docs/landing-intro/Step1.md';
 import Step2 from '../../docs/landing-intro/Step2.md';
 import Step3 from '../../docs/landing-intro/Step3.md';

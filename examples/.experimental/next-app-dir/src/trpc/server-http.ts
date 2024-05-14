@@ -1,9 +1,7 @@
-'use server';
-
 import { loggerLink } from '@trpc/client';
 import { experimental_nextHttpLink } from '@trpc/next/app-dir/links/nextHttp';
 import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/server';
-import { AppRouter } from '~/server/routers/_app';
+import type { AppRouter } from '~/server/routers/_app';
 import { cookies } from 'next/headers';
 import superjson from 'superjson';
 import { getUrl } from './shared';
@@ -11,7 +9,6 @@ import { getUrl } from './shared';
 export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
   config() {
     return {
-      transformer: superjson,
       links: [
         loggerLink({
           enabled: (op) => true,
@@ -19,6 +16,7 @@ export const api = experimental_createTRPCNextAppDirServer<AppRouter>({
         experimental_nextHttpLink({
           batch: true,
           url: getUrl(),
+          transformer: superjson,
           headers() {
             return {
               cookie: cookies().toString(),

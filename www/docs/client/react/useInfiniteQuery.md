@@ -8,7 +8,7 @@ slug: /client/react/useInfiniteQuery
 :::info
 
 - Your procedure needs to accept a `cursor` input of any type (`string`, `number`, etc) to expose this hook.
-- For more details on infinite queries read the [react-query docs](https://tanstack.com/query/v4/docs/react/reference/useInfiniteQuery)
+- For more details on infinite queries read the [react-query docs](https://tanstack.com/query/v5/docs/framework/react/reference/useInfiniteQuery)
 - In this example we're using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
 
 :::
@@ -17,6 +17,7 @@ slug: /client/react/useInfiniteQuery
 
 ```tsx title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 import { Context } from './[trpc]';
 
 export const t = initTRPC.create();
@@ -27,6 +28,7 @@ export const appRouter = t.router({
       z.object({
         limit: z.number().min(1).max(100).nullish(),
         cursor: z.number().nullish(), // <-- "cursor" needs to exist, but can be any type
+        direction: z.enum(['forward', 'backward']), // optional, useful for bi-directional query
       }),
     )
     .query(async (opts) => {
@@ -88,7 +90,7 @@ This helper gets the currently cached data from an existing infinite query
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const myMutation = trpc.infinitePosts.add.useMutation({
     async onMutate(opts) {
@@ -108,7 +110,7 @@ This helper allows you to update a query's cached data
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  const utils = trpc.useContext();
+  const utils = trpc.useUtils();
 
   const myMutation = trpc.infinitePosts.delete.useMutation({
     async onMutate(opts) {

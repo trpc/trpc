@@ -30,33 +30,24 @@ export const t = initTRPC.create({
 });
 ```
 
-#### 3. Add to `createTRPCProxyClient()` or `createTRPCNext()`
+#### 3. Add to `httpLink()`, `wsLink()`, etc
 
-```ts
-import { createTRPCProxyClient } from '@trpc/client';
+> TypeScript will guide you to where you need to add `transformer` as soon as you've added it on the `initTRPC`-object
+
+`createTRPCClient()`:
+
+```ts title='src/app/_trpc/client.ts'
+import { createTRPCClient } from '@trpc/client';
 import type { AppRouter } from '~/server/routers/_app';
 import superjson from 'superjson';
 
-export const client = createTRPCProxyClient<AppRouter>({
-  transformer: superjson, // <--
-  // [...]
-});
-```
-
-```ts title='utils/trpc.ts'
-import { createTRPCNext } from '@trpc/next';
-import type { AppRouter } from '~/server/routers/_app';
-import superjson from 'superjson';
-
-// [...]
-
-export const trpc = createTRPCNext<AppRouter>({
-  config({ ctx }) {
-    return {
-      transformer: superjson, // <--
-    };
-  },
-  // [...]
+export const client = createTRPCClient<AppRouter>({
+  links: [
+    httpLink({
+      url: 'http://localhost:3000',
+      // transformer: superjson
+    }),
+  ],
 });
 ```
 
@@ -103,18 +94,6 @@ export const t = initTRPC.create({
 });
 
 export const appRouter = t.router({
-  // [...]
-});
-```
-
-#### 4. Add to `createTRPCProxyClient()`
-
-```ts title='client.ts'
-import { createTRPCProxyClient } from '@trpc/client';
-import { transformer } from '../utils/trpc';
-
-export const client = createTRPCProxyClient<AppRouter>({
-  transformer, // <--
   // [...]
 });
 ```

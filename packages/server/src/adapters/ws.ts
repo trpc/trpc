@@ -1,123 +1,76 @@
-import { IncomingMessage } from 'http';
-import ws from 'ws';
-import {
+import type { IncomingMessage } from 'http';
+import type ws from 'ws';
+import type {
   AnyRouter,
-  callProcedure,
+  CreateContextCallback,
   inferRouterContext,
-  ProcedureType,
-} from '../core';
-import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
-import { BaseHandlerOptions } from '../internals/types';
-import { isObservable, Unsubscribable } from '../observable';
+} from '../@trpc/server';
 import {
+  callProcedure,
+  getErrorShape,
+  getTRPCErrorFromUnknown,
+  transformTRPCResponse,
+  TRPCError,
+} from '../@trpc/server';
+import type { BaseHandlerOptions } from '../@trpc/server/http';
+import { parseTRPCMessage } from '../@trpc/server/rpc';
+// @trpc/server/rpc
+import type {
   JSONRPC2,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
-} from '../rpc';
-import { getErrorShape } from '../shared/getErrorShape';
-import { transformTRPCResponse } from '../shared/transformTRPCResponse';
-import { CombinedDataTransformer } from '../transformer';
-import {
-  NodeHTTPCreateContextFnOptions,
-  NodeHTTPCreateContextOption,
-} from './node-http';
+} from '../@trpc/server/rpc';
+import { isObservable } from '../observable';
+import type { Unsubscribable } from '../observable';
+// eslint-disable-next-line no-restricted-imports
+import type { MaybePromise } from '../unstable-core-do-not-import';
+import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
-/* istanbul ignore next -- @preserve */
-function assertIsObject(obj: unknown): asserts obj is Record<string, unknown> {
-  if (typeof obj !== 'object' || Array.isArray(obj) || !obj) {
-    throw new Error('Not an object');
-  }
-}
-/* istanbul ignore next -- @preserve */
-function assertIsProcedureType(obj: unknown): asserts obj is ProcedureType {
-  if (obj !== 'query' && obj !== 'subscription' && obj !== 'mutation') {
-    throw new Error('Invalid procedure type');
-  }
-}
-/* istanbul ignore next -- @preserve */
-function assertIsRequestId(
-  obj: unknown,
-): asserts obj is number | string | null {
-  if (
-    obj !== null &&
-    typeof obj === 'number' &&
-    isNaN(obj) &&
-    typeof obj !== 'string'
-  ) {
-    throw new Error('Invalid request id');
-  }
-}
-/* istanbul ignore next -- @preserve */
-function assertIsString(obj: unknown): asserts obj is string {
-  if (typeof obj !== 'string') {
-    throw new Error('Invalid string');
-  }
-}
-/* istanbul ignore next -- @preserve */
-function assertIsJSONRPC2OrUndefined(
-  obj: unknown,
-): asserts obj is '2.0' | undefined {
-  if (typeof obj !== 'undefined' && obj !== '2.0') {
-    throw new Error('Must be JSONRPC 2.0');
-  }
-}
-export function parseMessage(
-  obj: unknown,
-  transformer: CombinedDataTransformer,
-): TRPCClientOutgoingMessage {
-  assertIsObject(obj);
-  const { method, params, id, jsonrpc } = obj;
-  assertIsRequestId(id);
-  assertIsJSONRPC2OrUndefined(jsonrpc);
-  if (method === 'subscription.stop') {
-    return {
-      id,
-      jsonrpc,
-      method,
-    };
-  }
-  assertIsProcedureType(method);
-  assertIsObject(params);
+/**
+ * Importing ws causes a build error
+ * @link https://github.com/trpc/trpc/pull/5279
+ */
+const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
 
-  const { input: rawInput, path } = params;
-  assertIsString(path);
-  const input = transformer.input.deserialize(rawInput);
-  return {
-    id,
-    jsonrpc,
-    method,
-    params: {
-      input,
-      path,
-    },
-  };
-}
+/**
+ * @public
+ */
+export type CreateWSSContextFnOptions = Omit<
+  NodeHTTPCreateContextFnOptions<IncomingMessage, ws.WebSocket>,
+  'info'
+>;
+
+/**
+ * @public
+ */
+export type CreateWSSContextFn<TRouter extends AnyRouter> = (
+  opts: CreateWSSContextFnOptions,
+) => MaybePromise<inferRouterContext<TRouter>>;
+
+export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
+  BaseHandlerOptions<TRouter, IncomingMessage> &
+    CreateContextCallback<
+      inferRouterContext<TRouter>,
+      CreateWSSContextFn<TRouter>
+    >;
 
 /**
  * Web socket server handler
  */
-export type WSSHandlerOptions<TRouter extends AnyRouter> = BaseHandlerOptions<
-  TRouter,
-  IncomingMessage
-> &
-  NodeHTTPCreateContextOption<TRouter, IncomingMessage, ws> & {
-    wss: ws.Server;
-    process?: NodeJS.Process;
+export type WSSHandlerOptions<TRouter extends AnyRouter> =
+  WSConnectionHandlerOptions<TRouter> & {
+    wss: ws.WebSocketServer;
+    prefix?: string;
   };
 
-export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
-  IncomingMessage,
-  ws
->;
-
-export function applyWSSHandler<TRouter extends AnyRouter>(
-  opts: WSSHandlerOptions<TRouter>,
+export function getWSConnectionHandler<TRouter extends AnyRouter>(
+  opts: WSConnectionHandlerOptions<TRouter>,
 ) {
-  const { wss, createContext, router } = opts;
-
+  const { createContext, router } = opts;
   const { transformer } = router._def._config;
-  wss.on('connection', async (client, req) => {
+
+  return async (client: ws.WebSocket, req: IncomingMessage) => {
     const clientSubscriptions = new Map<number | string, Unsubscribable>();
 
     function respond(untransformedJSON: TRPCResponseMessage) {
@@ -171,7 +124,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const result = await callProcedure({
           procedures: router._def.procedures,
           path,
-          rawInput: input,
+          getRawInput: async () => input,
           ctx,
           type,
         });
@@ -235,7 +188,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
           },
         });
         /* istanbul ignore next -- @preserve */
-        if (client.readyState !== client.OPEN) {
+        if (client.readyState !== WEBSOCKET_OPEN) {
           // if the client got disconnected whilst initializing the subscription
           // no need to send stopped message if the client is disconnected
           sub.unsubscribe();
@@ -284,7 +237,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         const msgJSON: unknown = JSON.parse(message.toString());
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs
-          .map((raw) => parseMessage(raw, transformer))
+          .map((raw) => parseTRPCMessage(raw, transformer))
           .map(handleRequest);
         await Promise.all(promises);
       } catch (cause) {
@@ -360,6 +313,21 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       }
     }
     await createContextAsync();
+  };
+}
+
+export function applyWSSHandler<TRouter extends AnyRouter>(
+  opts: WSSHandlerOptions<TRouter>,
+) {
+  const { wss, prefix } = opts;
+
+  const onConnection = getWSConnectionHandler(opts);
+  wss.on('connection', async (client, req) => {
+    if (prefix && !req.url?.startsWith(prefix)) {
+      return;
+    }
+
+    await onConnection(client, req);
   });
 
   return {
@@ -370,7 +338,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
       };
       const data = JSON.stringify(response);
       for (const client of wss.clients) {
-        if (client.readyState === 1 /* ws.OPEN */) {
+        if (client.readyState === WEBSOCKET_OPEN) {
           client.send(data);
         }
       }

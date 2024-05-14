@@ -1,29 +1,24 @@
-import {
-  AnyProcedure,
-  AnyRouter,
-  DefaultErrorShape,
-  inferRouterError,
+import type {
+  inferClientTypes,
+  InferrableClientTypes,
   Maybe,
-} from '@trpc/server';
-import { TRPCErrorResponse, TRPCErrorShape } from '@trpc/server/rpc';
-import { isObject } from './internals/isObject';
+  TRPCErrorResponse,
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  getCauseFromUnknown,
+  isObject,
+  type DefaultErrorShape,
+} from '@trpc/server/unstable-core-do-not-import';
 
-type ErrorInferrable = AnyProcedure | AnyRouter | TRPCErrorShape<number>;
-
-type inferErrorShape<TInferrable extends ErrorInferrable> =
-  TInferrable extends AnyRouter
-    ? inferRouterError<TInferrable>
-    : TInferrable extends AnyProcedure
-    ? TInferrable['_def']['_config']['$types']['errorShape']
-    : TInferrable;
-
+type inferErrorShape<TInferrable extends InferrableClientTypes> =
+  inferClientTypes<TInferrable>['errorShape'];
 export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
   readonly message: string;
   readonly shape: Maybe<TShape>;
   readonly data: Maybe<TShape['data']>;
 }
-export type TRPCClientErrorLike<TRouterOrProcedure extends ErrorInferrable> =
-  TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>;
+export type TRPCClientErrorLike<TInferrable extends InferrableClientTypes> =
+  TRPCClientErrorBase<inferErrorShape<TInferrable>>;
 
 function isTRPCClientError(cause: unknown): cause is TRPCClientError<any> {
   return (
@@ -39,17 +34,19 @@ function isTRPCClientError(cause: unknown): cause is TRPCClientError<any> {
 function isTRPCErrorResponse(obj: unknown): obj is TRPCErrorResponse<any> {
   return (
     isObject(obj) &&
-    isObject(obj.error) &&
-    typeof obj.error.code === 'number' &&
-    typeof obj.error.message === 'string'
+    isObject(obj['error']) &&
+    typeof obj['error']['code'] === 'number' &&
+    typeof obj['error']['message'] === 'string'
   );
 }
 
-export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
+export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
   extends Error
   implements TRPCClientErrorBase<inferErrorShape<TRouterOrProcedure>>
 {
-  public readonly cause;
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
+  public override readonly cause;
   public readonly shape: Maybe<inferErrorShape<TRouterOrProcedure>>;
   public readonly data: Maybe<inferErrorShape<TRouterOrProcedure>['data']>;
 
@@ -62,7 +59,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
   constructor(
     message: string,
     opts?: {
-      result?: Maybe<inferErrorShape<TRouterOrProcedure>>;
+      result?: Maybe<TRPCErrorResponse<inferErrorShape<TRouterOrProcedure>>>;
       cause?: Error;
       meta?: Record<string, unknown>;
     },
@@ -83,7 +80,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
     Object.setPrototypeOf(this, TRPCClientError.prototype);
   }
 
-  public static from<TRouterOrProcedure extends ErrorInferrable>(
+  public static from<TRouterOrProcedure extends InferrableClientTypes>(
     _cause: Error | TRPCErrorResponse<any>,
     opts: { meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouterOrProcedure> {
@@ -114,7 +111,7 @@ export class TRPCClientError<TRouterOrProcedure extends ErrorInferrable>
 
     return new TRPCClientError(cause.message, {
       ...opts,
-      cause,
+      cause: getCauseFromUnknown(cause),
     });
   }
 }

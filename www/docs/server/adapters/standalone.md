@@ -5,7 +5,7 @@ sidebar_label: Standalone
 slug: /server/adapters/standalone
 ---
 
-tRPC's Standalone Adapter is the simplest way to stand up your application. It's ideal for local development, and for server-based production environments. In essence it's just a wrapper around the standard [Node.js HTTP Server](https://nodejs.org/api/http.html) with the normal options related to tRPC.
+tRPC's Standalone Adapter is the simplest way to get a new project working. It's ideal for local development, and for server-based production environments. In essence it's just a wrapper around the standard [Node.js HTTP Server](https://nodejs.org/api/http.html) with the normal options related to tRPC.
 
 If you have an existing API deployment like [Express](express), [Fastify](fastify), or [Next.js](nextjs), which you want to integrate tRPC into, you should have a look at their respective adapters. Likewise if you have a preference to host on serverless or edge compute, we have adapters like [AWS Lambda](aws-lambda) and [Fetch](fetch) which may fit your needs.
 
@@ -25,7 +25,7 @@ It's also not uncommon, where the deployed adapter is hard to run on local machi
       <td>Standalone tRPC Server</td>
       <td>
         <ul>
-          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal">StackBlitz</a></li>
+          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/next/examples/minimal">StackBlitz</a></li>
           <li><a href="https://github.com/trpc/trpc/blob/main/examples/minimal/server/index.ts">Source</a></li>
         </ul>
       </td>
@@ -34,7 +34,7 @@ It's also not uncommon, where the deployed adapter is hard to run on local machi
       <td>Standalone tRPC Server with CORS handling</td>
       <td>
         <ul>
-          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal-react">StackBlitz</a></li>
+          <li><a href="https://stackblitz.com/github/trpc/trpc/tree/next/examples/minimal-react">StackBlitz</a></li>
           <li><a href="https://github.com/trpc/trpc/blob/main/examples/minimal-react/server/index.ts">Source</a></li>
         </ul>
       </td>
@@ -79,7 +79,7 @@ For more information you can look at the [quickstart guide](/docs/quickstart)
 The Standalone adapter runs a simple Node.js HTTP server.
 
 ```ts title='server.ts'
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { appRouter } from './appRouter.ts';
 
@@ -114,7 +114,7 @@ For full information on how to configure this package, [check the docs](https://
 This example just throws open CORS to any request, which is useful for development, but you can and should configure it more strictly in a production environment.
 
 ```ts title='server.ts'
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import cors from 'cors';
 
@@ -136,11 +136,11 @@ The `middleware` option will accept any function which resembles a connect/node.
 
 ## Going further
 
-If `createHTTPServer` isn't enough you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP Server. For instance:
+`createHTTPServer` is returning an instance of Node's built-in `http.Server`(https://nodejs.org/api/http.html#class-httpserver), which means that you have an access to all it's properties and APIs. However, if `createHTTPServer` isn't enough for your usecase, you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP server. For instance:
 
 ```ts title='server.ts'
 import { createServer } from 'http';
-import { inferAsyncReturnType, initTRPC } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 
 const handler = createHTTPHandler({
@@ -157,7 +157,5 @@ createServer((req, res) => {
    */
 
   handler(req, res);
-});
-
-server.listen(3333);
+}).listen(3333);
 ```

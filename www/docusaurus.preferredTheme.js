@@ -24,7 +24,7 @@ if (ExecutionEnvironment.canUseDOM) {
   const colorSchemeChangeListener = (e) => {
     const newTheme = e.matches ? darkTheme : lightTheme;
     htmlElement?.setAttribute('data-theme', newTheme);
-    localStorage.setAttribute('theme', newTheme);
+    localStorage.setItem('theme', newTheme);
   };
   mediaMatch.addEventListener('change', colorSchemeChangeListener);
 }

@@ -14,7 +14,10 @@
     "noUncheckedIndexedAccess": true,
     "moduleResolution": "node",
     "jsx": "react",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitOverride": true
   },
   "exclude": ["test", "**/*.test.ts", "**/*.test.tsx"]
 }

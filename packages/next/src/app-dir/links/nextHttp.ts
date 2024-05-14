@@ -1,25 +1,36 @@
-import {
-  httpBatchLink,
+import type {
   HTTPBatchLinkOptions,
-  httpLink,
   HTTPLinkOptions,
   TRPCLink,
 } from '@trpc/client';
-import { AnyRouter } from '@trpc/server';
+import { httpBatchLink, httpLink } from '@trpc/client';
+import type {
+  AnyRootTypes,
+  AnyRouter,
+} from '@trpc/server/unstable-core-do-not-import';
 import { generateCacheTag } from '../shared';
 
-type NextFetchLinkOptions<TBatch extends boolean> = (TBatch extends true
-  ? HTTPBatchLinkOptions
-  : HTTPLinkOptions) & {
-  batch?: TBatch;
+interface NextLinkBaseOptions {
   revalidate?: number | false;
-};
+  batch?: boolean;
+}
+
+type NextLinkSingleOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
+  Omit<HTTPLinkOptions<TRoot>, 'fetch'> & {
+    batch?: false;
+  };
+
+type NextLinkBatchOptions<TRoot extends AnyRootTypes> = NextLinkBaseOptions &
+  Omit<HTTPBatchLinkOptions<TRoot>, 'fetch'> & {
+    batch: true;
+  };
 
 // ts-prune-ignore-next
-export function experimental_nextHttpLink<
-  TRouter extends AnyRouter,
-  TBatch extends boolean,
->(opts: NextFetchLinkOptions<TBatch>): TRPCLink<TRouter> {
+export function experimental_nextHttpLink<TRouter extends AnyRouter>(
+  opts:
+    | NextLinkSingleOptions<TRouter['_def']['_config']['$types']>
+    | NextLinkBatchOptions<TRouter['_def']['_config']['$types']>,
+): TRPCLink<TRouter> {
   return (runtime) => {
     return (ctx) => {
       const { path, input, context } = ctx.op;
@@ -27,28 +38,37 @@ export function experimental_nextHttpLink<
 
       // Let per-request revalidate override global revalidate
       const requestRevalidate =
-        typeof context.revalidate === 'number' || context.revalidate === false
-          ? context.revalidate
+        typeof context['revalidate'] === 'number' ||
+        context['revalidate'] === false
+          ? context['revalidate']
           : undefined;
+
       const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
-      const linkFactory = opts.batch ? httpBatchLink : httpLink;
-      const link = linkFactory({
-        headers: opts.headers as any,
-        url: opts.url,
-        fetch: (url, fetchOpts) => {
-          return fetch(url, {
-            ...fetchOpts,
-            // cache: 'no-cache',
-            next: {
-              revalidate,
-              tags: [cacheTag],
-            },
+      const _fetch: NonNullable<HTTPLinkOptions<AnyRootTypes>['fetch']> = (
+        url,
+        fetchOpts,
+      ) => {
+        return fetch(url, {
+          ...fetchOpts,
+          // cache: 'no-cache',
+          next: {
+            revalidate,
+            tags: [cacheTag],
+          },
+        });
+      };
+      const link = opts.batch
+        ? httpBatchLink({
+            ...(opts as any),
+            fetch: _fetch,
+          })
+        : httpLink({
+            ...(opts as any),
+            fetch: _fetch,
           });
-        },
-      })(runtime);
 
-      return link(ctx);
+      return link(runtime)(ctx);
     };
   };
 }

@@ -1,20 +1,36 @@
-import { IncomingMessage, ServerResponse } from 'http';
-import { AnyRouter, inferRouterContext } from '../../core';
-import { HTTPBaseHandlerOptions } from '../../http';
-import { MaybePromise } from '../../types';
-import { NodeHTTPContentTypeHandler } from './internals/contentType';
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
+import type * as http from 'http';
+// @trpc/server
+import type {
+  AnyRouter,
+  CreateContextCallback,
+  inferRouterContext,
+} from '../../@trpc/server';
+// @trpc/server/http
+import type {
+  HTTPBaseHandlerOptions,
+  TRPCRequestInfo,
+} from '../../@trpc/server/http';
+// eslint-disable-next-line no-restricted-imports
+import type { MaybePromise } from '../../unstable-core-do-not-import';
 
-export type NodeHTTPRequest = IncomingMessage & {
+interface ParsedQs {
+  [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;
+}
+
+export type NodeHTTPRequest = http.IncomingMessage & {
+  query?: ParsedQs;
   body?: unknown;
-  query?: unknown;
-  /**
-   * Specifies whether the `query` property is pre-parsed in a format that cannot be passed to URLSearchParams.
-   * trpc will utilize `req.url` instead to generate the search parameters in the required format.
-   */
-  invalidTrpcQuery?: boolean;
 };
-
-export type NodeHTTPResponse = ServerResponse & {
+export type NodeHTTPResponse = http.ServerResponse & {
   /**
    * Force the partially-compressed response to be flushed to the client.
    *
@@ -30,19 +46,10 @@ export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
   TResponse,
-> = object extends inferRouterContext<TRouter>
-  ? {
-      /**
-       * @link https://trpc.io/docs/context
-       **/
-      createContext?: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
-    }
-  : {
-      /**
-       * @link https://trpc.io/docs/context
-       **/
-      createContext: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
-    };
+> = CreateContextCallback<
+  inferRouterContext<TRouter>,
+  NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>
+>;
 
 /**
  * @internal
@@ -74,12 +81,8 @@ export type NodeHTTPHandlerOptions<
      * You can also use it for other needs which a connect/node.js compatible middleware can solve,
      *  though you might wish to consider an alternative solution like the Express adapter if your needs are complex.
      */
-    middleware?: ConnectMiddleware<TRequest, TResponse>;
+    middleware?: ConnectMiddleware;
     maxBodySize?: number;
-    experimental_contentTypeHandlers?: NodeHTTPContentTypeHandler<
-      TRequest,
-      TResponse
-    >[];
   };
 
 export type NodeHTTPRequestHandlerOptions<
@@ -95,6 +98,7 @@ export type NodeHTTPRequestHandlerOptions<
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
   res: TResponse;
+  info: TRPCRequestInfo;
 };
 export type NodeHTTPCreateContextFn<
   TRouter extends AnyRouter,

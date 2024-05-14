@@ -26,8 +26,8 @@ The best way to start with the Fastify adapter is to take a look at the example 
       </td>
       <td>
         <ul>
-          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/fastify-server">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/fastify-server">Source</a></li>
+          <li><a href="https://codesandbox.io/s/github/trpc/trpc/tree/next/examples/fastify-server">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/next/examples/fastify-server">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -104,7 +104,6 @@ A sample context is given below, save it in a file named `context.ts`:
   <summary>context.ts</summary>
 
 ```ts title='context.ts'
-import { inferAsyncReturnType } from '@trpc/server';
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 
 export function createContext({ req, res }: CreateFastifyContextOptions) {
@@ -113,7 +112,7 @@ export function createContext({ req, res }: CreateFastifyContextOptions) {
   return { req, res, user };
 }
 
-export type Context = inferAsyncReturnType<typeof createContext>;
+export type Context = Awaited<ReturnType<typeof createContext>>;
 ```
 
 </details>
@@ -122,11 +121,18 @@ export type Context = inferAsyncReturnType<typeof createContext>;
 
 tRPC includes an adapter for [Fastify](https://www.fastify.io/) out of the box. This adapter lets you convert your tRPC router into a [Fastify plugin](https://www.fastify.io/docs/latest/Reference/Plugins/). In order to prevent errors during large batch requests, make sure to set the `maxParamLength` Fastify option to a suitable value, as shown.
 
+:::tip
+Due to limitations in Fastify's plugin system and type inference, there might be some issues getting for example `onError` typed correctly. You can add a `satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions']` to help TypeScript out and get the correct types.
+:::
+
 ```ts title='server.ts'
-import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import {
+  fastifyTRPCPlugin,
+  FastifyTRPCPluginOptions,
+} from '@trpc/server/adapters/fastify';
 import fastify from 'fastify';
 import { createContext } from './context';
-import { appRouter } from './router';
+import { appRouter, type AppRouter } from './router';
 
 const server = fastify({
   maxParamLength: 5000,
@@ -134,7 +140,14 @@ const server = fastify({
 
 server.register(fastifyTRPCPlugin, {
   prefix: '/trpc',
-  trpcOptions: { router: appRouter, createContext },
+  trpcOptions: {
+    router: appRouter,
+    createContext,
+    onError({ path, error }) {
+      // report to error monitoring
+      console.error(`Error in tRPC handler on path '${path}':`, error);
+    },
+  } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
 });
 
 (async () => {

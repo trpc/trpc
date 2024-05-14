@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import type { parseEnv } from './env';
+
+type Env = ReturnType<typeof parseEnv>;
 
 export function useEnv() {
   const { siteConfig } = useDocusaurusContext();
@@ -7,5 +10,5 @@ export function useEnv() {
 
   const env = customFields.env;
 
-  return env as ReturnType<typeof import('./env')['parseEnv']>;
+  return env as Env;
 }

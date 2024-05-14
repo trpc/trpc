@@ -1,4 +1,5 @@
-import { RefObject, useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Hook for checking when the user clicks outside the passed ref

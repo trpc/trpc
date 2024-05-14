@@ -1,5 +1,5 @@
-import { Maybe } from '@trpc/server';
-import { AbortControllerEsque } from './types';
+import type { Maybe } from '@trpc/server/unstable-core-do-not-import';
+import type { AbortControllerEsque } from './types';
 
 export function getAbortController(
   customAbortControllerImpl: Maybe<AbortControllerEsque>,
@@ -8,11 +8,10 @@ export function getAbortController(
     return customAbortControllerImpl;
   }
 
-  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
   if (typeof window !== 'undefined' && window.AbortController) {
     return window.AbortController;
   }
-  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
+
   if (typeof globalThis !== 'undefined' && globalThis.AbortController) {
     return globalThis.AbortController;
   }

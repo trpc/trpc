@@ -1,6 +1,6 @@
-import { InfiniteData } from '@tanstack/react-query';
+import type { InfiniteData } from '@tanstack/react-query';
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
 const t = initTRPC.create();
@@ -35,7 +35,7 @@ test('fetchInfinite', async () => {
   const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
 
   const post = await ssg.post.list.fetchInfinite({});
-  expectTypeOf<InfiniteData<'__infResult'>>(post);
+  expectTypeOf<InfiniteData<'__infResult', string | null>>(post);
 
   expect(post.pages).toStrictEqual(['__infResult']);
 });

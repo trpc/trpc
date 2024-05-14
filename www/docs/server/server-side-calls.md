@@ -5,7 +5,7 @@ sidebar_label: Server Side Calls
 slug: /server/server-side-calls
 ---
 
-You may need to call your procedure(s) directly from the same server they're hosted in, `router.createCaller()` can be used to achieve this.
+You may need to call your procedure(s) directly from the same server they're hosted in, `createCallerFactory()` can be used to achieve this. This is useful for server-side calls and for integration testing of your tRPC procedures.
 
 :::info
 
@@ -19,6 +19,104 @@ You may need to call your procedure(s) directly from the same server they're hos
 :::
 
 ## Create caller
+
+With the `t.createCallerFactory`-function you can create a server-side caller of any router. You first call `createCallerFactory` with an argument of the router you want to call, then this returns a function where you can pass in a `Context` for the following procedure calls.
+
+### Basic example
+
+We create the router with a query to list posts and a mutation to add posts, and then we a call each method.
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+type Context = {
+  foo: string;
+};
+
+const t = initTRPC.context<Context>().create();
+
+const publicProcedure = t.procedure;
+const { createCallerFactory, router } = t;
+
+interface Post {
+  id: string;
+  title: string;
+}
+const posts: Post[] = [
+  {
+    id: '1',
+    title: 'Hello world',
+  },
+];
+const appRouter = router({
+  post: router({
+    add: publicProcedure
+      .input(
+        z.object({
+          title: z.string().min(2),
+        }),
+      )
+      .mutation((opts) => {
+        const post: Post = {
+          ...opts.input,
+          id: `${Math.random()}`,
+        };
+        posts.push(post);
+        return post;
+      }),
+    list: publicProcedure.query(() => posts),
+  }),
+});
+
+// 1. create a caller-function for your router
+const createCaller = createCallerFactory(appRouter);
+
+// 2. create a caller using your `Context`
+const caller = createCaller({
+  foo: 'bar',
+});
+
+// 3. use the caller to add and list posts
+const addedPost = await caller.post.add({
+  title: 'How to make server-side call in tRPC',
+});
+
+const postList = await caller.post.list();
+//     ^?
+```
+
+### Example usage in an integration test
+
+> Taken from <https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts>
+
+```ts
+import { inferProcedureInput } from '@trpc/server';
+import { createContextInner } from '../context';
+import { AppRouter, createCaller } from './_app';
+
+test('add and get post', async () => {
+  const ctx = await createContextInner({});
+  const caller = createCaller(ctx);
+
+  const input: inferProcedureInput<AppRouter['post']['add']> = {
+    text: 'hello test',
+    title: 'hello test',
+  };
+
+  const post = await caller.post.add(input);
+  const byId = await caller.post.byId({ id: post.id });
+
+  expect(byId).toMatchObject(input);
+});
+```
+
+## `router.createCaller()`
+
+:::caution
+`router.createCaller()` has been deprecated and will be removed in v11 or v12 of tRPC.
+:::
 
 With the `router.createCaller({})` function (first argument is `Context`) we retrieve an instance of `RouterCaller`.
 
@@ -96,7 +194,7 @@ type Context = {
 };
 const t = initTRPC.context<Context>().create();
 
-const isAuthed = t.middleware((opts) => {
+const protectedProcedure = t.procedure.use((opts) => {
   const { ctx } = opts;
   if (!ctx.user) {
     throw new TRPCError({
@@ -112,8 +210,6 @@ const isAuthed = t.middleware((opts) => {
     },
   });
 });
-
-const protectedProcedure = t.procedure.use(isAuthed);
 
 const router = t.router({
   secret: protectedProcedure.query((opts) => opts.ctx.user),
@@ -194,4 +290,56 @@ export default async (
     });
   }
 };
+```
+
+### Error handling
+
+The `createFactoryCaller` and the `createCaller` function can take an error handler through the `onError` option. This can be used to throw errors that are not wrapped in a TRPCError, or respond to errors in some other way. Any handler passed to createCallerFactory will be called before the handler passed to createCaller.
+The handler is called with the same arguments as an error formatter would be, expect for the shape field:
+
+```ts
+{
+  ctx: unknown; // The request context
+  error: TRPCError; // The TRPCError that was thrown
+  path: string | undefined; // The path of the procedure that threw the error
+  input: unknown; // The input that was passed to the procedure
+  type: 'query' | 'mutation' | 'subscription' | 'unknown'; // The type of the procedure that threw the error
+}
+```
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC
+  .context<{
+    foo?: 'bar';
+  }>()
+  .create();
+
+const router = t.router({
+  greeting: t.procedure.input(z.object({ name: z.string() })).query((opts) => {
+    if (opts.input.name === 'invalid') {
+      throw new Error('Invalid name');
+    }
+
+    return `Hello ${opts.input.name}`;
+  }),
+});
+
+const caller = router.createCaller(
+  {
+    /* context */
+  },
+  {
+    onError: (opts) => {
+      console.error('An error occurred:', opts.error);
+    },
+  },
+);
+
+// The following will log "An error occurred: Error: Invalid name", and then throw a plain error
+//  with the message "This is a custom error"
+await caller.greeting({ name: 'invalid' });
 ```

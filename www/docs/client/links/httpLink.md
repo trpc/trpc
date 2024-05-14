@@ -14,13 +14,14 @@ slug: /client/links/httpLink
 You can import and add the `httpLink` to the `links` array as such:
 
 ```ts title="client/index.ts"
-import { createTRPCProxyClient, httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink } from '@trpc/client';
 import type { AppRouter } from '../server';
 
-const client = createTRPCProxyClient<AppRouter>({
+const client = createTRPCClient<AppRouter>({
   links: [
     httpLink({
       url: 'http://localhost:3000',
+      // transformer,
     }),
   ],
 });
@@ -42,12 +43,23 @@ export interface HTTPLinkOptions {
    */
   AbortController?: typeof AbortController | null;
   /**
+   * Data transformer
+   * @link https://trpc.io/docs/v11/data-transformers
+   **/
+  transformer?: DataTransformerOptions;
+  /**
    * Headers to be set on outgoing requests or a callback that of said headers
    * @link http://trpc.io/docs/v10/header
    */
   headers?:
     | HTTPHeaders
     | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
+  /**
+   * Send all requests as POSTS requests regardless of the procedure type
+   * The server must separately allow overriding the method. See:
+   * @link https://trpc.io/docs/rpc
+   */
+  methodOverride?: 'POST';
 }
 ```
 

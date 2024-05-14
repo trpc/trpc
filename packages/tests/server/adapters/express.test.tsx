@@ -1,16 +1,13 @@
-import http from 'http';
-import { Context, router } from './__router';
-import {
-  createTRPCProxyClient,
-  httpBatchLink,
-  TRPCClientError,
-} from '@trpc/client/src';
-import * as trpc from '@trpc/server/src';
-import * as trpcExpress from '@trpc/server/src/adapters/express';
+import type http from 'http';
+import { waitError } from '../___testHelpers';
+import type { Context } from './__router';
+import { router } from './__router';
+import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
+import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
 import fetch from 'node-fetch';
 
-async function startServer() {
+async function startServer(maxBodySize?: number) {
   const createContext = (
     _opts: trpcExpress.CreateExpressContextOptions,
   ): Context => {
@@ -25,6 +22,7 @@ async function startServer() {
 
     return {
       user: getUser(),
+      info: _opts.info,
     };
   };
 
@@ -35,7 +33,7 @@ async function startServer() {
     '/trpc',
     trpcExpress.createExpressMiddleware({
       router,
-      maxBodySize: 10, // 10 bytes,
+      maxBodySize: maxBodySize ?? Infinity,
       createContext,
     }),
   );
@@ -51,7 +49,7 @@ async function startServer() {
     });
   });
 
-  const client = createTRPCProxyClient<typeof router>({
+  const client = createTRPCClient<typeof router>({
     links: [
       httpBatchLink({
         url: `http://localhost:${port}/trpc`,
@@ -74,7 +72,7 @@ async function startServer() {
   };
 }
 
-let t: trpc.inferAsyncReturnType<typeof startServer>;
+let t: Awaited<ReturnType<typeof startServer>>;
 beforeAll(async () => {
   t = await startServer();
 });
@@ -100,6 +98,42 @@ test('simple query', async () => {
   `);
 });
 
+test('batched requests in body work correctly', async () => {
+  const res = await Promise.all([
+    t.client.helloMutation.mutate('world'),
+    t.client.helloMutation.mutate('KATT'),
+  ]);
+  expect(res).toEqual(['hello world', 'hello KATT']);
+});
+
+test('request info from context should include both calls', async () => {
+  const res = await Promise.all([
+    t.client.hello.query({
+      who: 'test',
+    }),
+    t.client.request.info.query(),
+  ]);
+
+  expect(res).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "text": "hello test",
+      },
+      Object {
+        "calls": Array [
+          Object {
+            "path": "hello",
+          },
+          Object {
+            "path": "request.info",
+          },
+        ],
+        "isBatchCall": true,
+      },
+    ]
+  `);
+});
+
 test('error query', async () => {
   try {
     await t.client.exampleError.query();
@@ -109,10 +143,17 @@ test('error query', async () => {
 });
 
 test('payload too large', async () => {
-  try {
-    await t.client.exampleMutation.mutate({ payload: 'a'.repeat(100) });
-    expect(true).toBe(false); // should not be reached
-  } catch (e) {
-    expect(e).toStrictEqual(new TRPCClientError('PAYLOAD_TOO_LARGE'));
-  }
+  const t = await startServer(100);
+
+  const err = await waitError(
+    () => t.client.exampleMutation.mutate({ payload: 'a'.repeat(101) }),
+    TRPCClientError<typeof router>,
+  );
+
+  expect(err.data?.code).toBe('PAYLOAD_TOO_LARGE');
+
+  // the trpc envelope takes some space so we can't have exactly 100 bytes of payload
+  await t.client.exampleMutation.mutate({ payload: 'a'.repeat(75) });
+
+  t.close();
 });

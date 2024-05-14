@@ -9,6 +9,7 @@ import React, { useEffect } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { popIn } from '../animations/popIn';
 import { Button } from '../components/Button';
+import { CompaniesUsing } from '../components/CompaniesUsing';
 import { Features } from '../components/Features';
 import { GithubSponsorButton } from '../components/GithubSponsorButton';
 import { GithubStarsButton } from '../components/GithubStarsButton';
@@ -27,7 +28,7 @@ const sandboxes = [
     id: 'minimal',
     title: 'Node.js',
     description: 'This is a minimal Node.js application using tRPC.',
-    files: ['client/index.ts', 'server/index.ts'],
+    files: ['src/client/index.ts', 'src/server/index.ts'],
   },
   {
     id: 'next-minimal-starter',
@@ -123,9 +124,7 @@ function TryItOut() {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        className={clsx(
-          'z-10 my-0 h-[800px] w-full overflow-hidden rounded-xl md:my-4 lg:my-8',
-        )}
+        className={clsx('relative z-10 my-0 w-full md:my-4 lg:my-8')}
       >
         <div className="h-full">
           <div className="flex w-full justify-center">
@@ -154,7 +153,7 @@ function TryItOut() {
             <div
               key={sandbox.id}
               className={cn(
-                'relative h-full overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700',
+                'relative h-[800px] overflow-hidden rounded-md border border-zinc-200 dark:border-zinc-700',
                 selectedId !== sandbox.id && 'hidden',
               )}
             >
@@ -170,7 +169,7 @@ function TryItOut() {
               </div>
               {!deviceSupported && (
                 <ErrorOverlay
-                  url={`https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}`}
+                  url={`https://stackblitz.com/github/trpc/trpc/tree/next/examples/${sandbox.id}`}
                   dismiss={() => {
                     setIsSupported(true);
                   }}
@@ -178,7 +177,7 @@ function TryItOut() {
               )}
               <Iframe
                 src={
-                  `https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}?` +
+                  `https://stackblitz.com/github/trpc/trpc/tree/next/examples/${sandbox.id}?` +
                   searchParams({
                     embed: '1',
                     file: sandbox.files,
@@ -281,6 +280,10 @@ const HomeContent: React.FC = () => {
 
       <section className={'mx-auto hidden max-w-[1600px] md:block'}>
         <TryItOut />
+      </section>
+
+      <section>
+        <CompaniesUsing />
       </section>
 
       <section className="mx-auto max-w-[80ch] px-6 md:px-0">

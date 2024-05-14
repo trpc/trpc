@@ -1,9 +1,21 @@
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
 /// <reference types="@fastify/websocket" />
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { FastifyHandlerOptions } from '.';
-import { AnyRouter } from '../../core';
-import { NodeHTTPCreateContextFnOptions } from '../node-http';
-import { applyWSSHandler, WSSHandlerOptions } from '../ws';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+// @trpc/server
+import type { AnyRouter } from '../../@trpc/server';
+// @trpc/server/http
+import type { NodeHTTPCreateContextFnOptions } from '../node-http';
+// @trpc/server/ws
+import { getWSConnectionHandler, type WSSHandlerOptions } from '../ws';
+import type { FastifyHandlerOptions } from './fastifyRequestHandler';
 import { fastifyRequestHandler } from './fastifyRequestHandler';
 
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
@@ -45,12 +57,13 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   });
 
   if (opts.useWSS) {
-    applyWSSHandler<TRouter>({
+    const onConnection = getWSConnectionHandler<TRouter>({
       ...(opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>),
-      wss: fastify.websocketServer,
     });
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    fastify.get(prefix ?? '/', { websocket: true }, () => {});
+
+    fastify.get(prefix ?? '/', { websocket: true }, (socket, req) =>
+      onConnection(socket, req.raw),
+    );
   }
 
   done();
