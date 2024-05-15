@@ -267,11 +267,11 @@ test('test v2 format', async () => {
       info,
     };
   };
-  const handler2 = trpcLambda.awsLambdaRequestHandler({
+  const handler = trpcLambda.awsLambdaRequestHandler({
     router,
     createContext,
   });
-  const { body, ...result } = await handler2(
+  const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV2({
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
@@ -311,11 +311,11 @@ test('test v2 format with multiple / in query key', async () => {
       info,
     };
   };
-  const handler2 = trpcLambda.awsLambdaRequestHandler({
+  const handler = trpcLambda.awsLambdaRequestHandler({
     router,
     createContext,
   });
-  const { body, ...result } = await handler2(
+  const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV2({
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
@@ -355,11 +355,11 @@ test('test v2 format with non default routeKey', async () => {
       info,
     };
   };
-  const handler2 = trpcLambda.awsLambdaRequestHandler({
+  const handler = trpcLambda.awsLambdaRequestHandler({
     router,
     createContext,
   });
-  const { body, ...result } = await handler2(
+  const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV2({
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
@@ -399,11 +399,11 @@ test('test v2 format with non default routeKey and nested router', async () => {
       info,
     };
   };
-  const handler2 = trpcLambda.awsLambdaRequestHandler({
+  const handler = trpcLambda.awsLambdaRequestHandler({
     router,
     createContext,
   });
-  const { body, ...result } = await handler2(
+  const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV2({
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
@@ -434,10 +434,10 @@ test('test v2 format with non default routeKey and nested router', async () => {
   `);
 });
 test('router with no context', async () => {
-  const handler2 = trpcLambda.awsLambdaRequestHandler({
+  const handler = trpcLambda.awsLambdaRequestHandler({
     router: contextlessApp,
   });
-  const { body, ...result } = await handler2(
+  const { body, ...result } = await handler(
     mockAPIGatewayProxyEventV1({
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
