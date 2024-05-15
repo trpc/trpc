@@ -19,6 +19,10 @@ export const companies = [
     "name": "Fintory"
   },
   {
+    "src": "/logos/Google.svg",
+    "name": "Google"
+  },
+  {
     "src": "/logos/Interval.svg",
     "name": "Interval"
   },
