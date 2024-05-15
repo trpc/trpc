@@ -1,6 +1,12 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+// @ts-check
+
 import fs from "fs";
 import path from "path";
 
+/**
+ * @param {string[]} directories
+ */
 function generateTypedocDocusaurusPlugins(directories) {
   const withEntryPoints = directories.map((directory) => {
     const pkgJson = JSON.parse(
@@ -10,6 +16,9 @@ function generateTypedocDocusaurusPlugins(directories) {
       ),
     );
 
+    /**
+     * @type {Record<string, string | { import: string }>}
+     */
     const exports = pkgJson.exports;
 
     const entrypoints = Object.entries(exports)
