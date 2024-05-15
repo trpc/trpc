@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 // @ts-check
 
-import fs from "fs";
-import path from "path";
-
+const fs = require('fs');
+const path = require('path');
 /**
  * @param {string[]} directories
  */
@@ -89,4 +88,4 @@ function generateTypedocDocusaurusPlugins(directories) {
   });
 }
 
-export default { generateTypedocDocusaurusPlugins };
+module.exports = { generateTypedocDocusaurusPlugins };

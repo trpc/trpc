@@ -1,8 +1,8 @@
 // @ts-check
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-import { parseEnv } from './src/utils/env';
-import { generateTypedocDocusaurusPlugins } from './docusaurus.typedoc.js';
+const { parseEnv } = require('./src/utils/env');
+const { generateTypedocDocusaurusPlugins } = require('./docusaurus.typedoc.js');
 
 const env = parseEnv(process.env);
 
@@ -23,7 +23,7 @@ const poweredByVercel = `
 `.trim();
 
 /** @type {import('@docusaurus/types').Config} */
-const config = {
+module.exports = {
   title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
@@ -260,11 +260,12 @@ const config = {
       charSet: 'utf-8',
     },
   ],
-  clientModules: [require.resolve('./docusaurus.twitterReload.js'), require.resolve('./docusaurus.preferredTheme.js')],
+  clientModules: [
+    require.resolve('./docusaurus.twitterReload.js'),
+    require.resolve('./docusaurus.preferredTheme.js'),
+  ],
 
   customFields: {
     env,
   },
-}
-
-export default config;
+};
