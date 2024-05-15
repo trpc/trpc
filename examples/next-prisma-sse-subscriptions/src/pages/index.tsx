@@ -211,7 +211,7 @@ export default function IndexPage() {
     },
     {
       // Enable this subscription only if we have received some data
-      enabled: lastEventId.current !== null,
+      enabled: lastEventId.current !== undefined,
       onData(event) {
         addMessages([event.data]);
         // scroll to bottom of list if we're at the bottom
