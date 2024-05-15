@@ -196,15 +196,12 @@ export default function IndexPage() {
   }, []);
 
   // get the last known post as soon as we have it
-  const lastEventId = useRef<string | null>(null);
-  if (messages) {
-    const lastMessage = messages.at(-1);
-    if (lastMessage) {
-      // we have a last message - set it as the last known event id
-      // if we reconnect, we'll get all messages after this
-      // since the SSE is sending `{id:x}` on each message, it will be updated by the EventStream as messages come in
-      lastEventId.current = lastMessage.id;
-    }
+  const lastEventId = useRef<string | null | undefined>(undefined);
+  if (messages && lastEventId.current === undefined) {
+    // set it as the last known event id (or undefined)
+    // if we reconnect, we'll get all messages after this
+    // since the SSE is sending `{id:x}` on each message, it will be updated by the EventStream as messages come in
+    lastEventId.current = messages.at(-1)?.id;
   }
 
   // subscribe to new posts and add
@@ -214,7 +211,7 @@ export default function IndexPage() {
     },
     {
       // Enable this subscription only if we have received some data
-      enabled: !!messages,
+      enabled: lastEventId.current !== null,
       onData(event) {
         addMessages([event.data]);
         // scroll to bottom of list if we're at the bottom
