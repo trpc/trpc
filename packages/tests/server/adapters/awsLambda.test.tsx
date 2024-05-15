@@ -502,3 +502,57 @@ test('test base64 encoded apigateway proxy integration', async () => {
     }
   `);
 });
+
+test('v2 format: responseMeta', async () => {
+  const createContext = async ({
+    event,
+    info,
+  }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
+    return {
+      user: event.headers['X-USER'],
+      info,
+    };
+  };
+  const handler = trpcLambda.awsLambdaRequestHandler({
+    router,
+    createContext,
+    responseMeta() {
+      // set cors
+      return {
+        headers: {
+          'Access-Control-Allow-Origin': 'https://example.com',
+        },
+      };
+    },
+  });
+  const { body, ...result } = await handler(
+    mockAPIGatewayProxyEventV2({
+      headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
+      method: 'GET',
+      routeKey: 'ANY /trpc/{a}/{path+}',
+      path: 'trpc/abc/hello/darkness/my/old/friend',
+      queryStringParameters: {},
+      pathParameters: { a: 'abc', path: 'hello/darkness/my/old/friend' },
+    }),
+    mockAPIGatewayContext(),
+  );
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "headers": Object {
+        "access-control-allow-origin": "https://example.com",
+        "content-type": "application/json",
+      },
+      "statusCode": 200,
+    }
+  `);
+  const parsedBody = JSON.parse(body ?? '');
+  expect(parsedBody).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": Object {
+          "text": "I've come to talk with you again",
+        },
+      },
+    }
+  `);
+});
