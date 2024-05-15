@@ -192,7 +192,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
           stream.controller.enqueue([idx, ASYNC_ITERABLE_STATUS_ERROR]);
           return;
         }
-        if (next === null) {
+        if (next === 'cancelled') {
           await iterator.return?.();
           break;
         }

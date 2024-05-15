@@ -8,14 +8,14 @@ export function createReadableStream<TValue = unknown>() {
   let controller: ReadableStreamDefaultController<TValue> =
     null as unknown as ReadableStreamDefaultController<TValue>;
 
-  const deferred = createDeferred<null>();
+  const deferred = createDeferred<'cancelled'>();
   let cancelled = false;
   const readable = new ReadableStream<TValue>({
     start(c) {
       controller = c;
     },
     cancel() {
-      deferred.resolve(null);
+      deferred.resolve('cancelled');
       cancelled = true;
     },
   });
