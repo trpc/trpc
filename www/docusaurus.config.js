@@ -25,7 +25,7 @@ const config = {
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
   baseUrl: '/',
-  onBrokenLinks: 'ignore',
+  onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
   onDuplicateRoutes: 'throw',
   favicon: 'img/favicon.ico',
