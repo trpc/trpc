@@ -525,7 +525,7 @@ test('v2 format: responseMeta', async () => {
       };
     },
   });
-  const { body, ...result } = await handler(
+  const result = await handler(
     mockAPIGatewayProxyEventV2({
       headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
       method: 'GET',
@@ -536,23 +536,15 @@ test('v2 format: responseMeta', async () => {
     }),
     mockAPIGatewayContext(),
   );
+
   expect(result).toMatchInlineSnapshot(`
     Object {
+      "body": "{"result":{"data":{"text":"I've come to talk with you again"}}}",
       "headers": Object {
         "access-control-allow-origin": "https://example.com",
         "content-type": "application/json",
       },
       "statusCode": 200,
-    }
-  `);
-  const parsedBody = JSON.parse(body ?? '');
-  expect(parsedBody).toMatchInlineSnapshot(`
-    Object {
-      "result": Object {
-        "data": Object {
-          "text": "I've come to talk with you again",
-        },
-      },
     }
   `);
 });
