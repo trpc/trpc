@@ -53,6 +53,10 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   const isTypingMutation = useSetIsTyping();
 
   const userName = session?.user?.name;
+  useEffect(() => {
+    isTypingMutation(isFocused && message.trim().length > 0);
+  }, [isFocused, message, isTypingMutation]);
+
   if (!userName) {
     return (
       <div className="flex w-full justify-between rounded bg-gray-800 px-3 py-2 text-lg text-gray-200">
@@ -93,31 +97,25 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
           <div className="flex w-full items-end rounded bg-gray-500 px-3 py-2 text-lg text-gray-200">
             <textarea
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
               className="flex-1 bg-transparent outline-0"
               rows={message.split(/\r|\n/).length}
               id="text"
               name="text"
               autoFocus
-              onKeyDown={async (e) => {
-                if (e.key === 'Shift') {
-                  setIsFocused(false);
-                }
-                if (e.key === 'Enter' && isFocused) {
-                  void postMessage();
+              onChange={(e) => {
+                setMessage(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                } else {
-                  isTypingMutation(e.currentTarget.value.trim().length > 0);
+                  void postMessage();
                 }
               }}
-              onKeyUp={(e) => {
-                if (e.key === 'Shift') {
-                  setIsFocused(true);
-                }
+              onFocus={() => {
+                setIsFocused(true);
               }}
               onBlur={() => {
-                setIsFocused(true);
-                isTypingMutation(false);
+                setIsFocused(false);
               }}
             />
             <div>

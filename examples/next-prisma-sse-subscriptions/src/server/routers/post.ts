@@ -2,11 +2,75 @@
  *
  * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
  */
-import type { Prisma } from '@prisma/client';
+import type { Post, Prisma } from '@prisma/client';
 import { type SSEvent } from '@trpc/server';
 import { z } from 'zod';
 import { prisma } from '../prisma';
 import { authedProcedure, publicProcedure, router } from '../trpc';
+import EventEmitter, { on } from 'events';
+
+type WhoIsTyping = Record<string, { lastTyped: Date }>;
+interface MyEvents {
+  add: (data: Post) => void;
+  isTypingUpdate: (who: WhoIsTyping) => void;
+}
+declare interface MyEventEmitter {
+  on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  off<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  once<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  emit<TEv extends keyof MyEvents>(
+    event: TEv,
+    ...args: Parameters<MyEvents[TEv]>
+  ): boolean;
+}
+
+class MyEventEmitter extends EventEmitter {
+  public toIterable<TEv extends keyof MyEvents>(
+    event: TEv,
+  ): AsyncIterable<Parameters<MyEvents[TEv]>> {
+    return on(this, event);
+  }
+}
+function streamToAsyncIterable<TValue>(
+  stream: ReadableStream<TValue>,
+): AsyncIterable<TValue> {
+  const reader = stream.getReader();
+  const iterator: AsyncIterator<TValue> = {
+    async next() {
+      const value = await reader.read();
+      if (value.done) {
+        return {
+          value: undefined,
+          done: true,
+        };
+      }
+      return {
+        value: value.value,
+        done: false,
+      };
+    },
+    async return() {
+      await reader.cancel();
+      return {
+        value: undefined,
+        done: true,
+      };
+    },
+  };
+
+  return {
+    [Symbol.asyncIterator]: () => iterator,
+  };
+}
+
+// iife
+const run = <TReturn>(fn: () => TReturn) => fn();
+
+// In a real app, you'd probably use Redis or something
+const ee = new MyEventEmitter();
+
+// who is currently typing, key is `name`
+const currentlyTyping: WhoIsTyping = Object.create(null);
 
 const POLL_INTERVAL_MS = 500;
 const waitMs = (ms: number) =>
@@ -17,37 +81,31 @@ const waitMs = (ms: number) =>
     }
   });
 
-async function updateIsTyping(name: string, isTyping: boolean) {
-  if (isTyping) {
-    await prisma.isTyping.upsert({
-      where: {
-        name,
-      },
-      create: {
-        name,
-      },
-      update: {
-        name,
-      },
-    });
-    return;
+// every 1s, clear old "isTyping"
+const interval = setInterval(() => {
+  let updated = false;
+  const now = Date.now();
+  for (const [key, value] of Object.entries(currentlyTyping)) {
+    if (now - value.lastTyped.getTime() > 3e3) {
+      delete currentlyTyping[key];
+      updated = true;
+    }
   }
+  if (updated) {
+    ee.emit('isTypingUpdate', currentlyTyping);
+  }
+});
+if (interval.unref) {
+  interval.unref();
+}
 
-  await prisma.isTyping.deleteMany({
-    where: {
-      OR: [
-        {
-          name,
-        },
-        {
-          // cleanup old ones
-          updatedAt: {
-            lt: new Date(Date.now() - 3000),
-          },
-        },
-      ],
-    },
-  });
+function updateIsTyping(name: string, isTyping: boolean) {
+  if (isTyping) {
+    currentlyTyping[name] = { lastTyped: new Date() };
+  } else {
+    delete currentlyTyping[name];
+  }
+  ee.emit('isTypingUpdate', currentlyTyping);
 }
 
 export const postRouter = router({
@@ -67,14 +125,15 @@ export const postRouter = router({
           source: 'GITHUB',
         },
       });
-      await updateIsTyping(name, false);
+      updateIsTyping(name, false);
+      ee.emit('add', post);
       return post;
     }),
 
   isTyping: authedProcedure
     .input(z.object({ typing: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
-      await updateIsTyping(ctx.user.name, input.typing);
+      updateIsTyping(ctx.user.name, input.typing);
     }),
 
   infinite: publicProcedure
@@ -144,51 +203,67 @@ export const postRouter = router({
         lastMessageCursor = itemById?.createdAt ?? null;
       }
 
-      while (true) {
-        if (opts.ctx.req.signal.aborted) {
-          return;
-        }
-        const items = await getPostsSince(lastMessageCursor);
-        lastMessageCursor = items.at(-1)?.createdAt ?? lastMessageCursor;
-        for (const item of items) {
-          yield {
-            id: item.id,
-            data: item,
-          } satisfies SSEvent;
-          lastMessageCursor = item.createdAt;
-        }
-        await waitMs(POLL_INTERVAL_MS);
+      let unsubscribe = () => {
+        //
+      };
+      const stream = new ReadableStream<Post>({
+        async start(controller) {
+          const onAdd = (data: Post) => {
+            controller.enqueue(data);
+          };
+          ee.on('add', onAdd);
+
+          const items = await getPostsSince(lastMessageCursor);
+          for (const item of items) {
+            controller.enqueue(item);
+          }
+          unsubscribe = () => {
+            ee.off('add', onAdd);
+          };
+        },
+        cancel() {
+          unsubscribe();
+        },
+      });
+
+      for await (const post of streamToAsyncIterable(stream)) {
+        yield {
+          id: post.id,
+          data: post,
+        } satisfies SSEvent;
       }
     }),
 
-  whoIsTyping: publicProcedure.subscription(async function* (opts) {
-    let prev: string[] | null = null;
-    while (true) {
-      if (opts.ctx.req.signal.aborted) {
-        return;
-      }
-
-      const whoIsTyping = await prisma.isTyping.findMany({
-        where: {
-          // .. updatedAt would be nice here but there's timing issues we're using local time instead
-        },
-      });
-      const mapped = whoIsTyping
-        .filter((it) => {
-          // only get the ones latest 3s
-          const diffMs = Date.now() - it.updatedAt.getTime();
-          return diffMs < 3000;
+  whoIsTyping: publicProcedure
+    .input(
+      z
+        .object({
+          lastEventId: z.string().optional(),
         })
-        .map((it) => it.name)
-        .sort();
-      if (prev?.toString() !== mapped.toString()) {
-        yield {
-          data: mapped,
-        } satisfies SSEvent;
-      }
+        .optional(),
+    )
+    .subscription(async function* (opts) {
+      let lastEventId = opts?.input?.lastEventId ?? '';
 
-      prev = mapped;
-      await waitMs(POLL_INTERVAL_MS);
-    }
-  }),
+      const maybeYield = function* (who: WhoIsTyping) {
+        const id = Object.keys(who).sort().toString();
+        if (lastEventId === id) {
+          console.log('skipping', id);
+          return;
+        }
+        yield {
+          id,
+          data: Object.keys(who),
+        } satisfies SSEvent;
+
+        lastEventId = id;
+      };
+
+      // if someone is typing, emit event immediately
+      yield* maybeYield(currentlyTyping);
+
+      for await (const [who] of ee.toIterable('isTypingUpdate')) {
+        yield* maybeYield(who);
+      }
+    }),
 });
