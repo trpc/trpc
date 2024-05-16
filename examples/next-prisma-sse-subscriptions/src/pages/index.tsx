@@ -54,6 +54,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
 
   const userName = session?.user?.name;
   useEffect(() => {
+    // update isTyping state
     isTypingMutation(isFocused && message.trim().length > 0);
   }, [isFocused, message, isTypingMutation]);
 
