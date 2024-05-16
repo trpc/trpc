@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { prisma } from '../prisma';
 import { authedProcedure, publicProcedure, router } from '../trpc';
 import EventEmitter, { on } from 'events';
+import { streamToAsyncIterable } from '~/utils/streamToAsyncIterable';
 
 type WhoIsTyping = Record<string, { lastTyped: Date }>;
 interface MyEvents {
@@ -31,41 +32,6 @@ class MyEventEmitter extends EventEmitter {
     return on(this, event);
   }
 }
-function streamToAsyncIterable<TValue>(
-  stream: ReadableStream<TValue>,
-): AsyncIterable<TValue> {
-  const reader = stream.getReader();
-  const iterator: AsyncIterator<TValue> = {
-    async next() {
-      const value = await reader.read();
-      if (value.done) {
-        return {
-          value: undefined,
-          done: true,
-        };
-      }
-      return {
-        value: value.value,
-        done: false,
-      };
-    },
-    async return() {
-      await reader.cancel();
-      return {
-        value: undefined,
-        done: true,
-      };
-    },
-  };
-
-  return {
-    [Symbol.asyncIterator]: () => iterator,
-  };
-}
-
-// iife
-const run = <TReturn>(fn: () => TReturn) => fn();
-
 // In a real app, you'd probably use Redis or something
 const ee = new MyEventEmitter();
 
