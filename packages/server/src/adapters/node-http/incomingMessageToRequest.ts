@@ -36,7 +36,7 @@ function incomingMessageToBodyStream(
         }
         controller.enqueue(chunk);
       });
-      req.on('end', () => {
+      req.once('end', () => {
         if (hasClosed) {
           return;
         }
