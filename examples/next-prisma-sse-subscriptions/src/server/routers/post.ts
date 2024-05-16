@@ -72,15 +72,6 @@ const ee = new MyEventEmitter();
 // who is currently typing, key is `name`
 const currentlyTyping: WhoIsTyping = Object.create(null);
 
-const POLL_INTERVAL_MS = 500;
-const waitMs = (ms: number) =>
-  new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, ms);
-    if (timer.unref) {
-      timer.unref();
-    }
-  });
-
 // every 1s, clear old "isTyping"
 const interval = setInterval(() => {
   let updated = false;
