@@ -3,7 +3,6 @@
 
 datasource db {
   provider = "postgres"
-  url       = env("DATABASE_URL") // uses connection pooling
   // provider = "sqlite"
   // url      = "file:./dev.db"
 }
