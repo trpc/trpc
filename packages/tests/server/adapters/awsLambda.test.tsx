@@ -140,7 +140,7 @@ test('v1 request info', async () => {
             },
           ],
           "isBatchCall": false,
-          "type": "unknown",
+          "type": "query",
         },
       },
     }

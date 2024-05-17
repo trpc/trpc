@@ -479,7 +479,7 @@ describe('authorized user', () => {
           },
         ],
         "isBatchCall": true,
-        "type": "unknown",
+        "type": "query",
       }
     `);
   });
