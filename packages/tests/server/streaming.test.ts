@@ -396,7 +396,9 @@ describe('with transformer', () => {
         }),
       );
       delete err.data?.stack;
-      expect(err).toMatchInlineSnapshot(`[TRPCClientError: Cannot use async generator in non-streaming response]`);
+      expect(err).toMatchInlineSnapshot(
+        `[TRPCClientError: Cannot use async generator in non-streaming response]`,
+      );
       expect(err.data).toMatchInlineSnapshot(`
       Object {
         "code": "UNSUPPORTED_MEDIA_TYPE",
@@ -415,7 +417,9 @@ describe('with transformer', () => {
       );
       delete err.data?.stack;
 
-      expect(err).toMatchInlineSnapshot(`[TRPCClientError: Cannot use object with promises in non-streaming response]`);
+      expect(err).toMatchInlineSnapshot(
+        `[TRPCClientError: Cannot use object with promises in non-streaming response]`,
+      );
       expect(err.data).toMatchInlineSnapshot(`
         Object {
           "code": "UNSUPPORTED_MEDIA_TYPE",
