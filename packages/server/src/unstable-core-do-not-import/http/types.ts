@@ -74,15 +74,23 @@ interface TRPCRequestInfoProcedureCall {
   procedure: AnyProcedure | null;
 }
 
-interface TRPCRequestInfoBase {
+export interface TRPCRequestInfoBase {
   /**
-   * Accept JSONL header
+   * The `trpc-accept` header
    */
   accept: TRPCAcceptHeader | null;
   /**
    * The type of the request
    */
   type: ProcedureType | 'unknown';
+  /**
+   * If the content type handler has detected that this is a batch call
+   */
+  isBatchCall: boolean;
+  /**
+   * The calls being made
+   */
+  calls: TRPCRequestInfoProcedureCall[];
 }
 interface TRPCRequestInfoBatchCall extends TRPCRequestInfoBase {
   isBatchCall: true;

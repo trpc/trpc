@@ -461,10 +461,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         if (error) {
           return res;
         }
-        // validate that this isn't a streamed response
-        let isStreamLike = isAsyncIterable(data);
 
-        /* istanbul ignore if -- @preserve */
+        if (isAsyncIterable(data)) {
+          return [
+            null,
+            new TRPCError({
+              code: 'UNSUPPORTED_MEDIA_TYPE',
+              message: 'Cannot use async generator in non-streaming response',
+            }),
+          ];
+        }
         if (
           isObject(data) &&
           Object.values(data)
@@ -474,17 +480,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               it.catch(() => null);
             }).length > 0
         ) {
-          isStreamLike = true;
-        }
-
-        /* istanbul ignore if -- @preserve */
-        if (isStreamLike) {
           return [
             null,
             new TRPCError({
               code: 'UNSUPPORTED_MEDIA_TYPE',
               message:
-                'Cannot return async iterable or nested promises in non-streaming response',
+                'Cannot use object with promises in non-streaming response',
             }),
           ];
         }

@@ -2,7 +2,11 @@ import { TRPCError } from '../error/TRPCError';
 import type { AnyProcedure, ProcedureType } from '../procedure';
 import type { AnyRouter } from '../router';
 import { isObject, unsetMarker } from '../utils';
-import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
+import type {
+  TRPCAcceptHeader,
+  TRPCRequestInfo,
+  TRPCRequestInfoBase,
+} from './types';
 
 type GetRequestInfoOptions = {
   path: string;
@@ -160,12 +164,13 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       });
     }
 
-    return {
+    const info: TRPCRequestInfoBase = {
       isBatchCall,
       accept: req.headers.get('trpc-accept') as TRPCAcceptHeader | null,
       calls,
       type,
-    } as TRPCRequestInfo;
+    };
+    return info as TRPCRequestInfo;
   },
 };
 
