@@ -28,11 +28,3 @@ model Post {
   updatedAt DateTime @unique @default(now())
 }
 
-
-model IsTyping {
-  id        String @id @default(uuid())
-  name      String @unique
-
-  createdAt DateTime @default(now()) 
-  updatedAt DateTime @default(now()) @updatedAt
-}
