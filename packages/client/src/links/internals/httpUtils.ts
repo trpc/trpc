@@ -2,6 +2,7 @@ import type {
   AnyClientTypes,
   CombinedDataTransformer,
   ProcedureType,
+  TRPCAcceptHeader,
   TRPCResponse,
 } from '@trpc/server/unstable-core-do-not-import';
 import { getFetch } from '../../getFetch';
@@ -107,7 +108,7 @@ type GetUrl = (opts: HTTPBaseRequestOptions) => string;
 type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 
 export type ContentOptions = {
-  trpcAcceptHeader?: 'application/jsonl';
+  trpcAcceptHeader?: TRPCAcceptHeader;
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;

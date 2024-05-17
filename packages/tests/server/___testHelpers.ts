@@ -2,15 +2,23 @@ import type { IncomingMessage } from 'http';
 import http from 'http';
 import type { AddressInfo, Socket } from 'net';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
-import { createTRPCClient, createWSClient, httpBatchLink } from '@trpc/client';
+import {
+  createTRPCClient,
+  createWSClient,
+  httpBatchLink,
+  TRPCClientError,
+} from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
-import type { AnyRouter } from '@trpc/server';
+import { TRPCError, type AnyRouter } from '@trpc/server';
 import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import type { HTTPErrorHandler } from '@trpc/server/http';
-import type { DataTransformerOptions } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  DataTransformerOptions,
+  InferrableClientTypes,
+} from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -198,6 +206,12 @@ export async function waitError<TError extends Error = Error>(
   // eslint-disable-next-line no-console
   console.warn('Expected function to throw, but it did not. Result:', res);
   throw new Error('Function did not throw');
+}
+
+export async function waitTRPCClientError<TRoot extends InferrableClientTypes>(
+  fnOrPromise: Promise<unknown> | (() => unknown),
+) {
+  return waitError<TRPCClientError<TRoot>>(fnOrPromise, TRPCClientError);
 }
 /* eslint-disable no-console */
 export const suppressLogs = () => {
