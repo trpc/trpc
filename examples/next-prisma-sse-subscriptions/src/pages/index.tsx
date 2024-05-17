@@ -6,8 +6,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /**
  * Set isTyping with a throttle of 1s
+ * Triggers immediately if state changes
  */
-function useSetIsTyping() {
+function useThrottledIsTypingMutation() {
   const isTyping = trpc.post.isTyping.useMutation();
 
   return useMemo(() => {
@@ -50,7 +51,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
     } catch {}
   }
 
-  const isTypingMutation = useSetIsTyping();
+  const isTypingMutation = useThrottledIsTypingMutation();
 
   const userName = session?.user?.name;
   useEffect(() => {
