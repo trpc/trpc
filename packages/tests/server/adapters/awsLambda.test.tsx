@@ -133,12 +133,14 @@ test('v1 request info', async () => {
     Object {
       "result": Object {
         "data": Object {
+          "accept": null,
           "calls": Array [
             Object {
               "path": "request.info",
             },
           ],
           "isBatchCall": false,
+          "type": "unknown",
         },
       },
     }

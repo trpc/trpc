@@ -120,6 +120,7 @@ test('request info from context should include both calls', async () => {
         "text": "hello test",
       },
       Object {
+        "accept": null,
         "calls": Array [
           Object {
             "path": "hello",
@@ -129,6 +130,7 @@ test('request info from context should include both calls', async () => {
           },
         ],
         "isBatchCall": true,
+        "type": "unknown",
       },
     ]
   `);

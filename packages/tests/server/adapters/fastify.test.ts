@@ -472,12 +472,14 @@ describe('authorized user', () => {
 
     expect(info).toMatchInlineSnapshot(`
       Object {
+        "accept": "application/jsonl",
         "calls": Array [
           Object {
             "path": "request.info",
           },
         ],
         "isBatchCall": true,
+        "type": "unknown",
       }
     `);
   });
