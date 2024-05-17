@@ -292,10 +292,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // ----------- response handlers -----------
     if (!info.isBatchCall) {
       const [call] = info.calls;
-      const proc = call.procedure!;
       const [data, error] = await rpcCalls[0]!;
 
-      switch (proc._def.type) {
+      switch (info.type) {
+        case 'unknown':
         case 'mutation':
         case 'query': {
           // httpLink
@@ -309,7 +309,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   error,
                   input: call.result(),
                   path: call.path,
-                  type: proc._def.type,
+                  type: info.type,
                 }),
               }
             : { result: { data } };
@@ -373,7 +373,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     // batch response handlers
     if (info.accept === 'application/jsonl') {
-      // handle streamed responses
+      // httpBatchStreamLink
       headers.set('content-type', 'application/json');
       headers.set('transfer-encoding', 'chunked');
       const headResponse = initResponse({
@@ -447,6 +447,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       });
     }
 
+    // httpBatchLink
     /**
      * Non-streaming response:
      * - await all responses in parallel, blocking on the slowest one
