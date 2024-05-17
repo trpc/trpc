@@ -149,7 +149,6 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       };
     });
 
-    const type: ProcedureType | 'unknown' = 'unknown';
     const types = new Set(
       calls.map((call) => call.procedure?._def.type).filter(Boolean),
     );
@@ -163,6 +162,8 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         )}`,
       });
     }
+    const type: ProcedureType | 'unknown' =
+      types.values().next().value ?? 'unknown';
 
     const info: TRPCRequestInfoBase = {
       isBatchCall,

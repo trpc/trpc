@@ -331,7 +331,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           );
         }
         case 'subscription': {
-          // httpStreamLink
+          // httpSubscriptionLink
 
           if (!opts.router._def._config.experimental?.sseSubscriptions) {
             throw new TRPCError({
