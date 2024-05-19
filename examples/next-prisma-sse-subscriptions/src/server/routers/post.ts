@@ -205,6 +205,7 @@ export const postRouter = router({
       const maybeYield = function* (who: WhoIsTyping) {
         const id = Object.keys(who).sort().toString();
         if (lastEventId === id) {
+          console.log('skipping', id);
           return;
         }
         yield {
