@@ -32,6 +32,14 @@ const appRouter = router({
         return user;
       }),
   },
+  examples: {
+    iterable: publicProcedure.query(async function* () {
+      for (let i = 0; i < 3; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        yield i;
+      }
+    }),
+  },
 });
 
 // Export type router type signature, this is used by the client.

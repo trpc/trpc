@@ -1,7 +1,13 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
 
-import { ReadableStream as MiniflareReadableStream } from 'stream/web';
+import {
+  ReadableStream as MiniflareReadableStream,
+  TextDecoderStream as MiniflareTextDecoderStream,
+  TextEncoderStream as MiniflareTextEncoderStream,
+  TransformStream as MiniflareTransformStream,
+  WritableStream as MiniflareWritableStream,
+} from 'stream/web';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import type { TRPCLink } from '@trpc/client';
 import {
@@ -20,6 +26,10 @@ import { z } from 'zod';
 globalThis.Response = MiniflareResponse as any;
 // miniflare must use the web stream "polyfill"
 globalThis.ReadableStream = MiniflareReadableStream as any;
+globalThis.WritableStream = MiniflareWritableStream as any;
+globalThis.TransformStream = MiniflareTransformStream as any;
+globalThis.TextEncoderStream = MiniflareTextEncoderStream as any;
+globalThis.TextDecoderStream = MiniflareTextDecoderStream as any;
 
 const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
   const getUser = () => {
@@ -193,6 +203,7 @@ describe('with default server', () => {
       client.deferred.query({ wait: 1 }),
       client.deferred.query({ wait: 2 }),
     ]);
+
     expect(results).toEqual([3, 1, 2]);
     expect(orderedResults).toEqual([1, 2, 3]);
   });
