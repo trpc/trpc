@@ -347,6 +347,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
        *       // 3
        *       data: // 4
        *     }
+       *   }
        * }
        */
       maxDepth: experimentalIterablesAndDeferreds ? 4 : 3,
