@@ -104,7 +104,7 @@ If you're trying out the Next.js App Router and want to use [route handlers](htt
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { appRouter } from '~/server/api/router';
 
-const handler = (req: Request) => {
+function handler(req: Request) {
   return fetchRequestHandler({
     endpoint: '/api/trpc',
     req,
