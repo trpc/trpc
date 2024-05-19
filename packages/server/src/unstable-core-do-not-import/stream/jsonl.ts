@@ -172,9 +172,11 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   ) {
     const error = checkMaxDepth(path);
     if (error) {
-      iterable = (async function* () {
-        throw error;
-      })();
+      iterable = {
+        [Symbol.asyncIterator]() {
+          throw error;
+        },
+      };
     }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
@@ -334,6 +336,9 @@ const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
       });
       source.on('end', () => {
         controller.close();
+      });
+      source.on('error', (error) => {
+        controller.error(error);
       });
       return readable.getReader();
     },
