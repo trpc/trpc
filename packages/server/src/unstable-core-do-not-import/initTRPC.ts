@@ -95,6 +95,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * @internal
        */
       $types: null as any,
+      experimental: opts?.experimental ?? {},
     };
 
     {

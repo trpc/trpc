@@ -9,8 +9,9 @@ import {
   type inferRouterError,
 } from '../router';
 import type { TRPCResponse } from '../rpc';
+import { isPromise, jsonlStreamProducer } from '../stream/stream';
 import { transformTRPCResponse } from '../transformer';
-import { getBatchStreamFormatter } from './batchStreamFormatter';
+import { isObject } from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -48,6 +49,7 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     | TRPCResponse<unknown, inferRouterError<TRouter>>[]
     | undefined;
   errors: TRPCError[];
+  headers: Headers;
 }) {
   const {
     ctx,
@@ -56,11 +58,10 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
     responseMeta,
     untransformedJSON,
     errors = [],
+    headers,
   } = initOpts;
 
   let status = untransformedJSON ? getHTTPStatusCode(untransformedJSON) : 200;
-
-  const headers = new Headers([['Content-Type', 'application/json']]);
 
   const eagerGeneration = !untransformedJSON;
   const data = eagerGeneration
@@ -106,7 +107,6 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
 
   return {
     status,
-    headers,
   };
 }
 
@@ -159,6 +159,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
   const { router, req } = opts;
+  const headers = new Headers([['vary', 'trpc-accept']]);
 
   const url = new URL(req.url);
 
@@ -177,7 +178,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
   let info: TRPCRequestInfo | undefined = undefined;
 
-  const isStreamCall = req.headers.get('trpc-batch-mode') === 'stream';
+  const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
+
+  const experimentalIterablesAndDeferreds =
+    router._def._config.experimental?.iterablesAndDeferreds ?? false;
 
   try {
     info = getRequestInfo({
@@ -222,6 +226,27 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           type,
           allowMethodOverride,
         });
+
+        if (
+          (!isStreamCall || !experimentalIterablesAndDeferreds) &&
+          isObject(data) &&
+          (Symbol.asyncIterator in data || Object.values(data).some(isPromise))
+        ) {
+          if (!isStreamCall) {
+            throw new TRPCError({
+              code: 'UNSUPPORTED_MEDIA_TYPE',
+              message:
+                'Cannot return async iterable or nested promises in non-streaming response',
+            });
+          }
+          if (!experimentalIterablesAndDeferreds) {
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Missing experimental flag "iterablesAndDeferreds"',
+            });
+          }
+        }
+
         return {
           result: {
             data,
@@ -254,6 +279,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       }
     });
     if (!isStreamCall) {
+      headers.set('content-type', 'application/json');
       /**
        * Non-streaming response:
        * - await all responses in parallel, blocking on the slowest one
@@ -262,6 +288,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
        */
 
       const untransformedJSON = await Promise.all(promises);
+
       const errors = untransformedJSON.flatMap((response) =>
         'error' in response ? [response.error] : [],
       );
@@ -273,6 +300,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         responseMeta: opts.responseMeta,
         untransformedJSON,
         errors,
+        headers,
       });
 
       // return body stuff
@@ -287,10 +315,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
       return new Response(body, {
         status: headResponse.status,
-        headers: headResponse.headers,
+        headers,
       });
     }
 
+    headers.set('content-type', 'application/json');
+    headers.set('transfer-encoding', 'chunked');
     /**
      * Streaming response:
      * - block on none, call `onChunk` as soon as each response is ready
@@ -303,56 +333,56 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       type,
       responseMeta: opts.responseMeta,
       errors: [],
+      headers,
     });
 
-    const encoder = new TextEncoderStream();
-    const stream = encoder.readable;
-    const controller = encoder.writable.getWriter();
-    async function exec() {
-      const indexedPromises = new Map(
-        promises.map((promise, index) => [
-          index,
-          promise.then((r) => [index, r] as const),
-        ]),
-      );
-      const formatter = getBatchStreamFormatter();
-
-      while (indexedPromises.size > 0) {
-        const [index, untransformedJSON] = await Promise.race(
-          indexedPromises.values(),
-        );
-        indexedPromises.delete(index);
-
-        try {
-          const transformedJSON = transformTRPCResponse(
-            router._def._config,
-            untransformedJSON,
-          );
-          const body = JSON.stringify(transformedJSON);
-
-          await controller.write(formatter(index, body));
-        } catch (cause) {
-          const call = info!.calls[index]!;
-          const input = call.result();
-          const { body } = caughtErrorToData(cause, {
-            opts,
-            ctx,
-            type,
-            path: call.path,
-            input,
-          });
-
-          await controller.write(formatter(index, body));
+    const stream = jsonlStreamProducer({
+      /**
+       * Example structure for `maxDepth: 4`:
+       * {
+       *   // 1
+       *   0: {
+       *     // 2
+       *     result: {
+       *       // 3
+       *       data: // 4
+       *     }
+       *   }
+       * }
+       */
+      maxDepth: experimentalIterablesAndDeferreds ? 4 : 3,
+      data: promises.map(async (it) => {
+        const response = await it;
+        if ('result' in response) {
+          /**
+           * Not very pretty, but we need to wrap nested data in promises
+           * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
+           */
+          return {
+            ...response,
+            result: Promise.resolve({
+              ...response.result,
+              data: Promise.resolve(response.result.data),
+            }),
+          };
         }
-      }
-
-      await controller.write(formatter.end());
-      await controller.close();
-    }
-    exec().catch((err) => controller.abort(err));
+        return response;
+      }),
+      serialize: opts.router._def._config.transformer.output.serialize,
+      onError: (cause) => {
+        opts.onError?.({
+          error: getTRPCErrorFromUnknown(cause),
+          path: undefined,
+          input: undefined,
+          ctx,
+          type,
+          req: opts.req,
+        });
+      },
+    });
 
     return new Response(stream, {
-      headers: headResponse.headers,
+      headers,
       status: headResponse.status,
     });
   } catch (cause) {
@@ -376,11 +406,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       responseMeta: opts.responseMeta,
       untransformedJSON,
       errors: [error],
+      headers,
     });
 
     return new Response(body, {
       status: headResponse.status,
-      headers: headResponse.headers,
+      headers,
     });
   }
 }

@@ -24,6 +24,16 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Support for streaming responses over HTTP
+
+We now support streaming mutations and queries using the [`httpBatchStreamLink`](../client/links/httpBatchStreamLink.md).
+
+This means that query and mutation resolvers can either be [`AsyncGenerator`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator)s with `yield` or return promises that can be deferred for later and you can use stream responses over HTTP, without using WebSockets.
+
+We want your feedback on this feature, so please try it out and let us know what you think in the [`🎏-rfc-streaming`-channel on our Discord](https://trpc.io/discord)!
+
+👉 [See more in the `httpBatchStreamLink` docs](../client/links/httpBatchStreamLink.md#generators)
+
 ### `resolveHTTPRequest` has been replaced by `resolveRequest` that uses Fetch APIs (rarely breaking)
 
 The function `resolveHTTPRequest` has been replaced by `resolveRequest` which uses the Fetch API - [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)/[`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response).

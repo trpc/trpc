@@ -13,7 +13,11 @@ describe('no transformer', () => {
 
   const ctx = konn()
     .beforeEach(() => {
-      const t = initTRPC.create({});
+      const t = initTRPC.create({
+        experimental: {
+          iterablesAndDeferreds: true,
+        },
+      });
       orderedResults.length = 0;
 
       const manualRelease = new Map<number, () => void>();
@@ -47,6 +51,12 @@ describe('no transformer', () => {
             });
             return opts.input.id;
           }),
+
+        iterable: t.procedure.query(async function* () {
+          yield 1;
+          yield 2;
+          yield 3;
+        }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -170,6 +180,24 @@ describe('no transformer', () => {
       ]
     `);
   });
+
+  test('iterable', async () => {
+    const { client } = ctx;
+
+    const iterable = await client.iterable.query();
+
+    const aggregated: unknown[] = [];
+    for await (const value of iterable) {
+      aggregated.push(value);
+    }
+    expect(aggregated).toMatchInlineSnapshot(`
+      Array [
+        1,
+        2,
+        3,
+      ]
+    `);
+  });
 });
 
 describe('with transformer', () => {
@@ -178,6 +206,9 @@ describe('with transformer', () => {
     .beforeEach(() => {
       const t = initTRPC.create({
         transformer: superjson,
+        experimental: {
+          iterablesAndDeferreds: true,
+        },
       });
       orderedResults.length = 0;
 
@@ -196,6 +227,11 @@ describe('with transformer', () => {
           }),
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        }),
+        iterable: t.procedure.query(async function* () {
+          yield 1;
+          yield 2;
+          yield 3;
         }),
       });
 
@@ -270,6 +306,26 @@ describe('with transformer', () => {
           "reason": [TRPCClientError: INTERNAL_SERVER_ERROR],
           "status": "rejected",
         },
+      ]
+    `);
+  });
+
+  test('iterable', async () => {
+    const { client } = ctx;
+
+    const iterable = await client.iterable.query();
+
+    // TODO:
+    // expectTypeOf(iterable).toEqualTypeOf<AsyncIterable<number>>();
+    const aggregated: unknown[] = [];
+    for await (const value of iterable) {
+      aggregated.push(value);
+    }
+    expect(aggregated).toMatchInlineSnapshot(`
+      Array [
+        1,
+        2,
+        3,
       ]
     `);
   });

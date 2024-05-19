@@ -76,6 +76,15 @@ const ctx = konn()
             json: input.json,
           };
         }),
+      q: t.procedure
+        .input(
+          zfd.formData({
+            foo: zfd.text(),
+          }),
+        )
+        .query((opts) => {
+          return opts.input;
+        }),
     });
 
     type TRouter = typeof appRouter;
@@ -202,4 +211,13 @@ test('upload a combination of files and non-file text fields', async () => {
       foo: 'bar',
     },
   });
+});
+
+test('GET requests are not supported', async () => {
+  const form = new FormData();
+  form.set('foo', 'bar');
+
+  await expect(ctx.client.q.query(form)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: FormData is only supported for mutations]`,
+  );
 });
