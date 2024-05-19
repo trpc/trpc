@@ -314,6 +314,9 @@ const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
       source.on('end', () => {
         controller.close();
       });
+      source.on('error', (error) => {
+        controller.error(error);
+      });
       return stream.getReader();
     },
   };
