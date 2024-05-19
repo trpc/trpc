@@ -71,19 +71,40 @@ test('basic POST', async () => {
 test('POST with body', async () => {
   const server = createServer({ maxBodySize: null });
 
-  await server.fetch(
-    {
-      method: 'POST',
-      body: JSON.stringify({ hello: 'world' }),
-      headers: {
-        'content-type': 'application/json',
+  {
+    // handles small text
+
+    await server.fetch(
+      {
+        method: 'POST',
+        body: JSON.stringify({ hello: 'world' }),
+        headers: {
+          'content-type': 'application/json',
+        },
       },
-    },
-    async (request) => {
-      expect(request.method).toBe('POST');
-      expect(await request.json()).toEqual({ hello: 'world' });
-    },
-  );
+      async (request) => {
+        expect(request.method).toBe('POST');
+        expect(await request.json()).toEqual({ hello: 'world' });
+      },
+    );
+  }
+  {
+    // handles a body that is long enough to come in multiple chunks
+
+    const body = '0'.repeat(2 ** 17);
+    const bodyLength = body.length;
+
+    await server.fetch(
+      {
+        method: 'POST',
+        body,
+      },
+      async (request) => {
+        expect(request.method).toBe('POST');
+        expect((await request.text()).length).toBe(bodyLength);
+      },
+    );
+  }
 
   await server.close();
 });

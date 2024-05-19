@@ -62,6 +62,23 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
   WSConnectionHandlerOptions<TRouter> & {
     wss: ws.WebSocketServer;
     prefix?: string;
+    keepAlive?: {
+      /**
+       * Enable heartbeat messages
+       * @default false
+       */
+      enabled: boolean;
+      /**
+       * Heartbeat interval in milliseconds
+       * @default 30000
+       */
+      pingMs?: number;
+      /**
+       * Terminate the WebSocket if no pong is received after this many milliseconds
+       * @default 5000
+       */
+      pongWaitMs?: number;
+    };
   };
 
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
@@ -316,10 +333,41 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   };
 }
 
+/**
+ * Handle WebSocket keep-alive messages
+ */
+function handleKeepAlive(
+  client: ws.WebSocket,
+  pingMs = 30000,
+  pongWaitMs = 5000,
+) {
+  let heartbeatTimeout: NodeJS.Timeout | undefined;
+  const heartbeatInterval = setInterval(() => {
+    if (client.readyState !== WEBSOCKET_OPEN) {
+      return;
+    }
+    // First we send a ping message and wait for a pong
+    client.ping();
+    // We set a timeout to close the connection if the pong is not received
+    heartbeatTimeout = setTimeout(() => {
+      client.terminate();
+      clearInterval(heartbeatInterval);
+    }, pongWaitMs);
+  }, pingMs).unref();
+  // When we receive a pong message, we clear the timeout
+  client.on('pong', () => {
+    heartbeatTimeout && clearTimeout(heartbeatTimeout);
+  });
+  // If the connection is closed, we clear the interval
+  client.on('close', () => {
+    clearInterval(heartbeatInterval);
+  });
+}
+
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  const { wss, prefix } = opts;
+  const { wss, prefix, keepAlive } = opts;
 
   const onConnection = getWSConnectionHandler(opts);
   wss.on('connection', async (client, req) => {
@@ -328,6 +376,10 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
     }
 
     await onConnection(client, req);
+    if (keepAlive?.enabled) {
+      const { pingMs, pongWaitMs } = keepAlive;
+      handleKeepAlive(client, pingMs, pongWaitMs);
+    }
   });
 
   return {
