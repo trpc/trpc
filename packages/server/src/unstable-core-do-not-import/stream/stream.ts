@@ -180,7 +180,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
       iterable = {
         [Symbol.asyncIterator]() {
           throw error;
-        }
+        },
       };
     }
     const idx = counter++ as ChunkIndex;

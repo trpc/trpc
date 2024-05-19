@@ -180,7 +180,9 @@ export async function fetchHTTPResponse(
     ...(opts.contentTypeHeader
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
-    ...(opts.trpcAcceptHeader ? { 'trpc-accept': opts.trpcAcceptHeader } : undefined),
+    ...(opts.trpcAcceptHeader
+      ? { 'trpc-accept': opts.trpcAcceptHeader }
+      : undefined),
     ...resolvedHeaders,
   };
 
