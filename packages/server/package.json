@@ -116,6 +116,7 @@
     "access": "public"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240512.0",
     "@fastify/websocket": "^10.0.1",
     "@tanstack/react-query": "^5.25.0",
     "@types/aws-lambda": "^8.10.137",
