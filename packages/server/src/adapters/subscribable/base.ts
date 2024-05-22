@@ -29,7 +29,7 @@ export type CreateContextFnOptions<TRes> = Omit<
 >;
 
 export type CreateContextFn<TRouter extends AnyRouter> = (
-    opts: CreateContextFnOptions<any>
+    opts: CreateContextFnOptions<any> //TODO: how to type this?
 ) => MaybePromise<inferRouterContext<TRouter>>;
 
 export type TransportConnection = {
@@ -59,6 +59,10 @@ export type SubscriptionInfo = {
 
 export type TrpcSubscriptionMap = Map<string, Map<number | string, Subscription>>;
 
+
+//TODO:
+// - break out the utils into separate functions with all needed parameters
+// - re-add the wrapper getTrpcSubscriptionUtils that supplies the needed parameters
 export const getTrpcSubscriptionUtils = async <TRouter extends AnyRouter, TRequest extends IncomingMessage>(
     opts:
         BaseHandlerOptions<TRouter, IncomingMessage> &
@@ -99,7 +103,6 @@ export const getTrpcSubscriptionUtils = async <TRouter extends AnyRouter, TReque
                 req,
                 input: undefined
             });
-            //TODO: implement respond with client
             respond(currentTransport, {
                 id: null,
                 error: getErrorShape({
@@ -205,7 +208,7 @@ export const getTrpcSubscriptionUtils = async <TRouter extends AnyRouter, TReque
             });
         }
         if (msg.method === 'subscription.stop') {
-            // TODO
+            // TODO: reimplement stop subscription
             /*const sub = clientSubscriptions.get(id);
             if (sub) {
               stopSubscription(sub, { id, jsonrpc });
