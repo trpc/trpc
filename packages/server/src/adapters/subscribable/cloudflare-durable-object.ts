@@ -1,12 +1,12 @@
 import { DurableObject } from 'cloudflare:workers';
-import { AnyRouter } from '../../@trpc/server';
-import { Unsubscribable } from '../../observable';
-import {
-  getTrpcSubscriptionUtils,
+import type { AnyRouter } from '../../@trpc/server';
+import type { Unsubscribable } from '../../observable';
+import type {
   Subscription,
   SubscriptionInfo,
   TransportConnection,
 } from './base';
+import { getTrpcSubscriptionUtils } from './base';
 
 const WS_TAG_PREFIX = 'ws-trpc-transport-id-';
 
@@ -234,12 +234,12 @@ async function cloudflareTrpcUtils<TRouter extends AnyRouter>(
             if (websockets.length > 1) {
               throw new Error('More than one websocket found for subscription');
             }
-            const transport = transportFromWs(websockets[0]!);
+            const transport = transportFromWs(websockets[0]);
             const unsubscribable = await reloadSubscriptionOnTransport(
               { id, subInfo: sub },
               transport,
             );
-            addSubscription(websockets[0]!, id, unsubscribable);
+            addSubscription(websockets[0], id, unsubscribable);
           }
         }
       }

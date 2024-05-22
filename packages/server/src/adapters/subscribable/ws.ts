@@ -1,8 +1,6 @@
 import type { IncomingMessage } from 'http';
-import {
-  getTrpcSubscriptionUtils,
-  Subscription,
-} from '@trpc/server/adapters/subscribable/base';
+import type { Subscription } from '@trpc/server/adapters/subscribable/base';
+import { getTrpcSubscriptionUtils } from '@trpc/server/adapters/subscribable/base';
 import type ws from 'ws';
 import type {
   AnyRouter,
