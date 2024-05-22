@@ -1,12 +1,21 @@
-import { DurableObject } from 'cloudflare:workers';
-import type { AnyRouter } from '../../@trpc/server';
-import type { Unsubscribable } from '../../observable';
 import type {
+  DurableObject,
+  DurableObjectState,
+} from '@cloudflare/workers-types';
+import {
+  Request,
+  Response,
+  WebSocket,
+  WebSocketPair,
+} from '@cloudflare/workers-types';
+import { AnyRouter } from '../../index';
+import { Unsubscribable } from '../../observable';
+import {
+  getTrpcSubscriptionUtils,
   Subscription,
   SubscriptionInfo,
   TransportConnection,
 } from './base';
-import { getTrpcSubscriptionUtils } from './base';
 
 const WS_TAG_PREFIX = 'ws-trpc-transport-id-';
 
@@ -204,10 +213,12 @@ async function cloudflareTrpcUtils<TRouter extends AnyRouter>(
     };
   }
 
-  const utils = await getTrpcSubscriptionUtils<TRouter, null>({
+  //TODO: better req res typing
+  const utils = await getTrpcSubscriptionUtils<TRouter>({
     createContext: async () => ({ req: null, res: null, ctx }),
     router,
     req: null,
+    res: null,
     currentTransport: transportFromWs(ws),
     getAllConnectedTransports: () => ctx.getWebSockets().map(transportFromWs),
   });
@@ -234,12 +245,12 @@ async function cloudflareTrpcUtils<TRouter extends AnyRouter>(
             if (websockets.length > 1) {
               throw new Error('More than one websocket found for subscription');
             }
-            const transport = transportFromWs(websockets[0]);
+            const transport = transportFromWs(websockets[0]!);
             const unsubscribable = await reloadSubscriptionOnTransport(
               { id, subInfo: sub },
               transport,
             );
-            addSubscription(websockets[0], id, unsubscribable);
+            addSubscription(websockets[0]!, id, unsubscribable);
           }
         }
       }
@@ -250,23 +261,30 @@ async function cloudflareTrpcUtils<TRouter extends AnyRouter>(
 export abstract class TrpcDurableObject<
   TRouter extends AnyRouter,
   Env = unknown,
-> extends DurableObject {
+> implements DurableObject
+{
+  protected ctx: DurableObjectState;
+  protected env: Env;
   protected router: TRouter;
 
-  constructor(state: DurableObjectState, env: Env, router: TRouter) {
-    super(state, env);
+  constructor(ctx: DurableObjectState, env: Env, router: TRouter) {
+    this.ctx = ctx;
+    this.env = env;
     this.router = router;
   }
 
-  override async fetch(_request: Request): Promise<Response> {
+  async fetch(_request: Request): Promise<Response> {
     const utils = await cloudflareTrpcUtils(this.router, null, this.ctx);
     // Reload all existing subscriptions (ensures subscription behaviour to work as expected)
     await utils.reloadSubscriptions();
 
     // Creates two ends of a WebSocket connection.
-    const [client, server] = Object.values(new WebSocketPair());
+    const [client, server] = Object.values(new WebSocketPair()) as [
+      WebSocket,
+      WebSocket,
+    ];
     // Stores WS connection in hibernation api.
-    this.ctx.acceptWebSocket(server!, [newWSTrpcTag()]);
+    this.ctx.acceptWebSocket(server, [newWSTrpcTag()]);
     // Returns the client end of the WebSocket connection to the client.
     return new Response(null, {
       status: 101,
@@ -274,24 +292,21 @@ export abstract class TrpcDurableObject<
     });
   }
 
-  override async webSocketMessage(
-    ws: WebSocket,
-    message: ArrayBuffer | string,
-  ) {
+  async webSocketMessage(ws: WebSocket, message: ArrayBuffer | string) {
     const utils = await cloudflareTrpcUtils(this.router, ws, this.ctx);
     // Reload all existing subscriptions (ensures subscription behaviour to work as expected)
     await utils.reloadSubscriptions();
     await utils.handleMessage(message);
   }
 
-  override async webSocketError(ws: WebSocket, error: any) {
+  async webSocketError(ws: WebSocket, error: any) {
     const utils = await cloudflareTrpcUtils(this.router, ws, this.ctx);
     // Reload all existing subscriptions (ensures subscription behaviour to work as expected)
     await utils.reloadSubscriptions();
     utils.handleError(error);
   }
 
-  override async webSocketClose(
+  async webSocketClose(
     ws: WebSocket,
     _code: number,
     _reason: string,
@@ -303,7 +318,7 @@ export abstract class TrpcDurableObject<
     await utils.handleClose();
   }
 
-  override async alarm() {
+  async alarm() {
     const utils = await cloudflareTrpcUtils(this.router, null, this.ctx);
     // Reload all existing subscriptions (ensures subscription behaviour to work as expected)
     await utils.reloadSubscriptions();

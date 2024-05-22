@@ -1,18 +1,17 @@
 import type { IncomingMessage } from 'http';
-import type { Subscription } from '@trpc/server/adapters/subscribable/base';
-import { getTrpcSubscriptionUtils } from '@trpc/server/adapters/subscribable/base';
 import type ws from 'ws';
+import type { BaseHandlerOptions } from '../../http';
 import type {
   AnyRouter,
   CreateContextCallback,
   inferRouterContext,
-} from '../../@trpc/server';
-import type { BaseHandlerOptions } from '../../@trpc/server/http';
+} from '../../index';
 // @trpc/server/rpc
-import type { TRPCReconnectNotification } from '../../@trpc/server/rpc';
+import type { TRPCReconnectNotification } from '../../rpc';
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../../unstable-core-do-not-import';
 import type { NodeHTTPCreateContextFnOptions } from '../node-http';
+import { getTrpcSubscriptionUtils, Subscription } from './base';
 
 /**
  * Importing ws causes a build error
@@ -74,9 +73,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   return async (client: ws.WebSocket, req: IncomingMessage) => {
     const clientSubscriptions = new Map<number | string, Subscription>();
 
-    const utils = await getTrpcSubscriptionUtils({
+    const utils = await getTrpcSubscriptionUtils<
+      TRouter,
+      IncomingMessage,
+      ws.WebSocket
+    >({
       ...opts,
       req,
+      res: client,
       currentTransport: {
         send: (data) => {
           client.send(data);
