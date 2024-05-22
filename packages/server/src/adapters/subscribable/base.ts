@@ -1,26 +1,29 @@
-import {
+import type {
   AnyRouter,
-  callProcedure,
   CreateContextCallback,
+  inferRouterContext,
+} from '../../index';
+import {
+  callProcedure,
   getErrorShape,
   getTRPCErrorFromUnknown,
-  inferRouterContext,
   transformTRPCResponse,
   TRPCError,
   type ProcedureType,
 } from '../../index';
-import { isObservable, Observable, Unsubscribable } from '../../observable';
-import { BaseHandlerOptions } from '../../unstable-core-do-not-import/http/types';
-import {
+import type { Observable, Unsubscribable } from '../../observable';
+import { isObservable } from '../../observable';
+import type { BaseHandlerOptions } from '../../unstable-core-do-not-import/http/types';
+import type {
   JSONRPC2,
-  parseTRPCMessage,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCRequestMessage,
   TRPCResponseMessage,
 } from '../../unstable-core-do-not-import/rpc';
-import { MaybePromise } from '../../unstable-core-do-not-import/types';
-import { NodeHTTPCreateContextFnOptions } from '../node-http';
+import { parseTRPCMessage } from '../../unstable-core-do-not-import/rpc';
+import type { MaybePromise } from '../../unstable-core-do-not-import/types';
+import type { NodeHTTPCreateContextFnOptions } from '../node-http';
 
 export type CreateContextFnOptions<TReq, TRes> = Omit<
   NodeHTTPCreateContextFnOptions<TReq, TRes>,
@@ -336,7 +339,6 @@ export const getTrpcSubscriptionUtils = async <
   return {
     handleMessage: async (message: any) => {
       await withTransportCatch(async () => {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         const msgJSON: unknown = JSON.parse(message.toString());
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs

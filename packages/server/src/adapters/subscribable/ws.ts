@@ -11,7 +11,8 @@ import type { TRPCReconnectNotification } from '../../rpc';
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../../unstable-core-do-not-import';
 import type { NodeHTTPCreateContextFnOptions } from '../node-http';
-import { getTrpcSubscriptionUtils, Subscription } from './base';
+import type { Subscription } from './base';
+import { getTrpcSubscriptionUtils } from './base';
 
 /**
  * Importing ws causes a build error

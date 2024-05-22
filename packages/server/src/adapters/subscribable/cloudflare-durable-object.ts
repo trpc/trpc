@@ -1,21 +1,17 @@
 import type {
   DurableObject,
   DurableObjectState,
-} from '@cloudflare/workers-types';
-import {
   Request,
-  Response,
-  WebSocket,
-  WebSocketPair,
 } from '@cloudflare/workers-types';
-import { AnyRouter } from '../../index';
-import { Unsubscribable } from '../../observable';
-import {
-  getTrpcSubscriptionUtils,
+import { Response, WebSocket, WebSocketPair } from '@cloudflare/workers-types';
+import type { AnyRouter } from '../../index';
+import type { Unsubscribable } from '../../observable';
+import type {
   Subscription,
   SubscriptionInfo,
   TransportConnection,
 } from './base';
+import { getTrpcSubscriptionUtils } from './base';
 
 const WS_TAG_PREFIX = 'ws-trpc-transport-id-';
 
