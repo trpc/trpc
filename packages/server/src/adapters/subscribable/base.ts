@@ -40,10 +40,10 @@ export type TransportConnection = {
 }
 
 export type Subscriptions = {
-    get: () => Map<number | string, Subscription>,
-    has: (id: number | string) => boolean
-    add: (sub: Subscription) => void
-    clear: () => void
+    get: () => MaybePromise<Map<number | string, Subscription>>
+    has: (id: number | string) => MaybePromise<boolean>
+    add: (sub: Subscription) => MaybePromise<void>
+    clear: () => MaybePromise<void>
 }
 
 export type Subscription = {
@@ -332,8 +332,8 @@ export const getTrpcSubscriptionUtils = async <TRouter extends AnyRouter, TReque
                 req
             });
         },
-        handleClose: () => {
-            for (const sub of currentTransport.subs.get().values()) {
+        handleClose: async () => {
+            for (const sub of (await currentTransport.subs.get()).values()) {
                 sub.sub?.unsubscribe();
             }
             currentTransport.subs.clear();

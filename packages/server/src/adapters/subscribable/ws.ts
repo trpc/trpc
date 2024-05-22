@@ -106,8 +106,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             utils.handleError(cause)
         });
 
-        client.once('close', () => {
-            utils.handleClose()
+        client.once('close', async () => {
+            await utils.handleClose()
         });
     };
 }
