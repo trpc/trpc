@@ -1,4 +1,3 @@
-import type { IncomingMessage } from 'http';
 import {
   AnyRouter,
   callProcedure,
@@ -9,14 +8,9 @@ import {
   transformTRPCResponse,
   TRPCError,
   type ProcedureType,
-} from '@trpc/server';
-import { NodeHTTPCreateContextFnOptions } from '@trpc/server/adapters/node-http';
-import {
-  isObservable,
-  Observable,
-  Unsubscribable,
-} from '@trpc/server/observable';
-import { BaseHandlerOptions } from '@trpc/server/unstable-core-do-not-import/http/types';
+} from '../../index';
+import { isObservable, Observable, Unsubscribable } from '../../observable';
+import { BaseHandlerOptions } from '../../unstable-core-do-not-import/http/types';
 import {
   JSONRPC2,
   parseTRPCMessage,
@@ -24,16 +18,17 @@ import {
   TRPCReconnectNotification,
   TRPCRequestMessage,
   TRPCResponseMessage,
-} from '@trpc/server/unstable-core-do-not-import/rpc';
-import { MaybePromise } from '@trpc/server/unstable-core-do-not-import/types';
+} from '../../unstable-core-do-not-import/rpc';
+import { MaybePromise } from '../../unstable-core-do-not-import/types';
+import { NodeHTTPCreateContextFnOptions } from '../node-http';
 
-export type CreateContextFnOptions<TRes> = Omit<
-  NodeHTTPCreateContextFnOptions<IncomingMessage, TRes>,
+export type CreateContextFnOptions<TReq, TRes> = Omit<
+  NodeHTTPCreateContextFnOptions<TReq, TRes>,
   'info'
 >;
 
-export type CreateContextFn<TRouter extends AnyRouter> = (
-  opts: CreateContextFnOptions<any>, //TODO: how to type this?
+export type CreateContextFn<TRouter extends AnyRouter, TReq, TRes> = (
+  opts: CreateContextFnOptions<TReq, TRes>,
 ) => MaybePromise<inferRouterContext<TRouter>>;
 
 export type TransportConnection = {
@@ -61,38 +56,36 @@ export type SubscriptionInfo = {
   type: ProcedureType;
 };
 
-export type TrpcSubscriptionMap = Map<
-  string,
-  Map<number | string, Subscription>
->;
-
 //TODO:
 // - break out the utils into separate functions with all needed parameters
 // - re-add the wrapper getTrpcSubscriptionUtils that supplies the needed parameters
 export const getTrpcSubscriptionUtils = async <
   TRouter extends AnyRouter,
-  TRequest extends IncomingMessage,
+  TReq = null,
+  TRes = null,
 >(
-  opts: BaseHandlerOptions<TRouter, IncomingMessage> &
+  opts: BaseHandlerOptions<TRouter, TReq> &
     CreateContextCallback<
       inferRouterContext<TRouter>,
-      CreateContextFn<TRouter>
+      CreateContextFn<TRouter, TReq, TRes>
     > & {
-      req: TRequest;
+      req: TReq;
+      res: TRes;
       currentTransport: TransportConnection;
       getAllConnectedTransports: () => MaybePromise<TransportConnection[]>;
     },
 ) => {
   const {
     createContext,
-    router,
     req,
+    res,
+    router,
     currentTransport,
     getAllConnectedTransports,
   } = opts;
   const { transformer } = router._def._config;
 
-  const ctxPromise = createContext?.({ req, res: null });
+  const ctxPromise = createContext?.({ req, res });
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
   function respond(
@@ -234,10 +227,10 @@ export const getTrpcSubscriptionUtils = async <
     if (msg.method === 'subscription.stop') {
       // TODO: reimplement stop subscription
       /*const sub = clientSubscriptions.get(id);
-            if (sub) {
-              stopSubscription(sub, { id, jsonrpc });
-            }
-            clientSubscriptions.delete(id);*/
+                  if (sub) {
+                    stopSubscription(sub, { id, jsonrpc });
+                  }
+                  clientSubscriptions.delete(id);*/
       return;
     }
     const { path, input } = msg.params;
