@@ -16,7 +16,9 @@ describe('createTRPCQueryUtils()', () => {
     const { client } = factory;
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
-
+    const bag = clientUtils.allPosts.createQueryOptions(undefined, {
+      //
+    });
     async function prefetch() {
       const initialQuery = await clientUtils.postById.ensureData('1');
       expect(initialQuery.title).toBe('first post');

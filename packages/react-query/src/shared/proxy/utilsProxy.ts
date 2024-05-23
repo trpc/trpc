@@ -234,10 +234,13 @@ type DecorateProcedure<
 
   createQueryOptions(
     input: inferProcedureInput<TProcedure>,
-    opts?: UseTRPCQueryOptions<
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
-      inferProcedureInput<TProcedure>,
-      TRPCClientError<TRoot>
+    opts?: Omit<
+      UseTRPCQueryOptions<
+        inferTransformedProcedureOutput<TRoot, TProcedure>,
+        inferProcedureInput<TProcedure>,
+        TRPCClientError<TRoot>
+      >,
+      'queryFn' | 'queryHash' | 'queryKeyHashFn'
     >,
   ): UseBaseQueryOptions<
     // TODO: not sure if these are correct
@@ -419,7 +422,7 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
                   },
                 };
 
-                return utilsOptions.client.query(
+                return (utilsOptions.client as any).query(
                   ...getClientArgs(queryKey, actualOpts),
                 );
               },
