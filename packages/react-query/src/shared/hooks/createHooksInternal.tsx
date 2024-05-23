@@ -1,3 +1,4 @@
+import type { UseBaseQueryOptions } from '@tanstack/react-query';
 import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,

@@ -1,19 +1,22 @@
-import type {
-  CancelOptions,
-  InfiniteData,
-  InvalidateOptions,
-  InvalidateQueryFilters,
-  Query,
-  QueryFilters,
-  QueryKey,
-  RefetchOptions,
-  RefetchQueryFilters,
-  ResetOptions,
-  SetDataOptions,
-  Updater,
+import {
+  skipToken,
+  type CancelOptions,
+  type InfiniteData,
+  type InvalidateOptions,
+  type InvalidateQueryFilters,
+  type Query,
+  type QueryFilters,
+  type QueryKey,
+  type RefetchOptions,
+  type RefetchQueryFilters,
+  type ResetOptions,
+  type SetDataOptions,
+  type Updater,
+  type UseBaseQueryOptions,
 } from '@tanstack/react-query';
 import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
+import type { CreateQueryUtilsOptions } from '@trpc/react-query/utils/createUtilityFunctions';
 import type {
   AnyQueryProcedure,
   AnyRootTypes,
@@ -28,6 +31,7 @@ import {
   createFlatProxy,
   createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
+import { getClientArgs } from '..';
 import type {
   DecoratedTRPCContextProps,
   TRPCContextState,
@@ -36,9 +40,13 @@ import type {
   TRPCQueryUtils,
 } from '../../internals/context';
 import { contextProps } from '../../internals/context';
-import type { QueryKeyKnown, QueryType } from '../../internals/getQueryKey';
+import type {
+  QueryKeyKnown,
+  QueryType,
+  TRPCQueryKey,
+} from '../../internals/getQueryKey';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
-import type { ExtractCursorType } from '../hooks/types';
+import type { ExtractCursorType, UseTRPCQueryOptions } from '../hooks/types';
 
 type DecorateProcedure<
   TRoot extends AnyRootTypes,
@@ -223,6 +231,22 @@ type DecorateProcedure<
         NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
       >
     | undefined;
+
+  createQueryOptions(
+    input: inferProcedureInput<TProcedure>,
+    opts?: UseTRPCQueryOptions<
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      inferProcedureInput<TProcedure>,
+      TRPCClientError<TRoot>
+    >,
+  ): UseBaseQueryOptions<
+    // TODO: not sure if these are correct
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TRPCClientError<TRoot>,
+    inferProcedureInput<TProcedure>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TRPCQueryKey
+  >;
 };
 
 /**
@@ -300,6 +324,7 @@ export const getQueryType = (
     case 'invalidate':
     case 'refetch':
     case 'reset':
+    case 'createQueryOptions':
       return 'any';
   }
 };
@@ -308,6 +333,7 @@ export const getQueryType = (
  * @internal
  */
 function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
+  utilsOptions: CreateQueryUtilsOptions<AnyRouter>,
   context: TRPCQueryUtils<TRouter>,
   key: string,
 ) {
@@ -341,6 +367,64 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
       },
       getData: () => context.getQueryData(queryKey),
       getInfiniteData: () => context.getInfiniteQueryData(queryKey),
+      createQueryOptions(): UseBaseQueryOptions<
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      > {
+        const input = args[0];
+        const queryOpts = args[1];
+
+        const queryKey = getQueryKeyInternal(path, input, 'query');
+
+        // const defaultOpts = queryClient.getQueryDefaults(queryKey);
+
+        const isInputSkipToken = input === skipToken;
+
+        // if (
+        //   typeof window === 'undefined' &&
+        //   ssrState === 'prepass' &&
+        //   opts?.trpc?.ssr !== false &&
+        //   (opts?.enabled ?? defaultOpts?.enabled) !== false &&
+        //   !isInputSkipToken &&
+        //   !queryClient.getQueryCache().find({ queryKey })
+        // ) {
+        //   void prefetchQuery(queryKey, opts);
+        // }
+        // const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, {
+        //   ...defaultOpts,
+        //   ...opts,
+        // });
+
+        // const shouldAbortOnUnmount =
+        //   opts?.trpc?.abortOnUnmount ??
+        //   config?.abortOnUnmount ??
+        //   abortOnUnmount;
+
+        return {
+          ...queryOpts,
+          queryKey: getQueryKeyInternal(path, input, 'query'),
+          queryFn: isInputSkipToken
+            ? input
+            : (queryFunctionContext) => {
+                const actualOpts = {
+                  // ...ssrOpts,
+                  trpc: {
+                    signal: queryFunctionContext.signal,
+                    // ...ssrOpts?.trpc,
+                    // ...(shouldAbortOnUnmount
+                    //   ? { signal: queryFunctionContext.signal }
+                    //   : {}),
+                  },
+                };
+
+                return utilsOptions.client.query(
+                  ...getClientArgs(queryKey, actualOpts),
+                );
+              },
+        };
+      },
     };
 
     return contextMap[utilName]();
@@ -351,6 +435,7 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
  * @internal
  */
 export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
+  opts: CreateQueryUtilsOptions<TRouter>,
   context: TRPCContextState<AnyRouter, TSSRContext>,
 ) {
   type CreateReactUtilsReturnType = CreateReactUtils<TRouter, TSSRContext>;
@@ -364,7 +449,7 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
       return context[contextName];
     }
 
-    return createRecursiveUtilsProxy(context, key);
+    return createRecursiveUtilsProxy(opts, context, key);
   });
 }
 
@@ -372,9 +457,10 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
  * @internal
  */
 export function createQueryUtilsProxy<TRouter extends AnyRouter>(
+  opts: CreateQueryUtilsOptions<TRouter>,
   context: TRPCQueryUtils<TRouter>,
 ): CreateQueryUtils<TRouter> {
   return createFlatProxy((key) => {
-    return createRecursiveUtilsProxy(context, key);
+    return createRecursiveUtilsProxy(opts, context, key);
   });
 }

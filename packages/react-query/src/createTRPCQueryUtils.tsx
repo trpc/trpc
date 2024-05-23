@@ -7,5 +7,6 @@ export function createTRPCQueryUtils<TRouter extends AnyRouter>(
   opts: CreateQueryUtilsOptions<TRouter>,
 ) {
   const utils = createUtilityFunctions(opts);
-  return createQueryUtilsProxy<TRouter>(utils);
+
+  return createQueryUtilsProxy<TRouter>(opts, utils);
 }

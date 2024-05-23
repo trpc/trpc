@@ -250,6 +250,7 @@ describe('invalidateQueries()', () => {
         },
       );
       const utils = trpc.useUtils();
+
       return (
         <>
           <pre>mockPostQuery1:{mockPostQuery1.status}</pre>

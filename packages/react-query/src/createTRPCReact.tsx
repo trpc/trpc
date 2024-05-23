@@ -269,7 +269,7 @@ export function createHooksInternal<
         const context = trpc.useUtils();
         // create a stable reference of the utils context
         return React.useMemo(() => {
-          return (createReactQueryUtils as any)(context);
+          return (createReactQueryUtils as any)(context, context);
         }, [context]);
       };
     }

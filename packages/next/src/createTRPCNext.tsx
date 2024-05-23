@@ -74,7 +74,7 @@ export function createTRPCNext<
         const context = hooks.useUtils();
         // create a stable reference of the utils context
         return useMemo(() => {
-          return (createReactQueryUtils as any)(context);
+          return (createReactQueryUtils as any)(context, context);
         }, [context]);
       };
     }
