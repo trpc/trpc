@@ -157,22 +157,22 @@ Wow, it's that easy to define a server action that's protected from unauthentica
 import { createPost } from '~/_actions';
 
 export function PostForm() {
-    return (
-        <form
-            // Use `action` to make form progressively enhanced
-            action={createPost}
-            // `Using `onSubmit` allows building rich interactive
-            // forms once JavaScript has loaded
-            onSubmit={async (e) => {
-                e.preventDefault();
-                const title = new FormData(e.target).get('title');
-                // Maybe show loading toast, etc etc. Endless possibilities
-                await createPost({ title });
-            }}
-        >
-            <input type="text" name="title" />
-            <button type="submit">Create Post</button>
-        </form>
-    )
+  return (
+    <form
+      // Use `action` to make form progressively enhanced
+      action={createPost}
+      // `Using `onSubmit` allows building rich interactive
+      // forms once JavaScript has loaded
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const title = new FormData(e.target).get('title');
+        // Maybe show loading toast, etc etc. Endless possibilities
+        await createPost({ title });
+      }}
+    >
+      <input type="text" name="title" />
+      <button type="submit">Create Post</button>
+    </form>
+  );
 }
 ```
