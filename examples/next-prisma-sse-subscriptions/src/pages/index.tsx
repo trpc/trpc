@@ -198,10 +198,10 @@ export default function IndexPage() {
   // get the last known post as soon as we have it
   const lastEventId = useRef<string | null | undefined>(undefined);
   if (messages && lastEventId.current === undefined) {
-    // set it as the last known event id (or undefined)
+    // set it as the last known event id (or null)
     // if we reconnect, we'll get all messages after this
     // since the SSE is sending `{id:x}` on each message, it will be updated by the EventStream as messages come in
-    lastEventId.current = messages.at(-1)?.id;
+    lastEventId.current = messages.at(-1)?.id ?? null;
   }
 
   // subscribe to new posts and add

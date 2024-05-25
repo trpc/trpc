@@ -1,6 +1,6 @@
 # Prisma + tRPC + SSE
 
-Try demo http://websockets.trpc.io/
+Try demo http://sse.trpc.io/
 
 ## Features
 
@@ -18,23 +18,13 @@ Try demo http://websockets.trpc.io/
 ## Setup
 
 ```bash
-pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-websockets-starter trpc-prisma-websockets-starter
-cd trpc-prisma-websockets-starter
+pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-sse-subscriptions trpc-prisma-sse-subscriptions
+cd trpc-prisma-sse-subscriptions
 pnpm i
-pnpm dx
+pnpm reset-dev
 ```
 
 ## Deployment
-
-### Using [Render](https://render.com/)
-
-The project contains a [`render.yaml`](./render.yaml) [_"Blueprint"_](https://render.com/docs/blueprint-spec) which makes the project easily deployable on [Render](https://render.com/).
-
-The database is setup with a `starter` plan, but you can use a free plan for 90 days.
-
-Go to [dashboard.render.com/blueprints](https://dashboard.render.com/blueprints) and connect to this Blueprint and see how the app and database automatically gets deployed.
-
-You will either need to create an environment group called `trpc-websockets` with environment variables or remove that from `render.yaml` in favor of manual environment variables that overrides the ones in `/.env`.
 
 ## Files of note
 
@@ -65,9 +55,9 @@ You will either need to create an environment group called `trpc-websockets` wit
 
 ```bash
 pnpm build      # runs `prisma generate` + `prisma migrate` + `next build`
-pnpm db-nuke    # resets local db
-pnpm dev        # starts next.js + WebSocket server
-pnpm dx         # starts postgres db + runs migrations + seeds + starts next.js
+pnpm dev        # starts next.js
+pnpm db-reset   # resets local db
+pnpm reset-dev  # resets db + starts Next.js
 pnpm test-dev   # runs e2e tests on dev
 pnpm test-start # runs e2e tests on `next start` - build required before
 pnpm test:unit  # runs normal Vitest unit tests
