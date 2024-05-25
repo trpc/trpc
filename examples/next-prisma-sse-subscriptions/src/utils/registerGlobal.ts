@@ -7,19 +7,31 @@ export function registerAsyncGlobal(namespace: string, factory: Factory) {
     Awaited<ReturnType<Factory>>
   >;
 
+  const cleanup = (reason: string) => () => {
+    const current = globalAny[namespace];
+    console.log({ reason, namespace }, 'Cleaning up global');
+
+    if (current) {
+      delete globalAny[namespace];
+      current().catch((error) => {
+        console.error({ error, namespace }, 'Failed to cleanup global');
+      });
+    }
+  };
+
   // async iife
   (async () => {
-    if (globalAny[namespace]) {
-      // unsubsribe previous
-      const unsub = globalAny[namespace];
-      await unsub();
-    }
+    cleanup('Re-registering global')();
     globalAny[namespace] = await factory();
   })().catch((error) => {
     console.error({ error, namespace }, 'Failed to register global');
 
     throw error;
   });
+
+  process.on('exit', cleanup('exit'));
+  process.on('SIGINT', cleanup('SIGINT'));
+  process.on('SIGTERM', cleanup('SIGTERM'));
 }
 
 export function registerGlobalValue<TValue>(
