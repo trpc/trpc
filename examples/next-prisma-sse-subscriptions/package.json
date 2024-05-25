@@ -6,9 +6,9 @@
   },
   "scripts": {
     "build:1-prisma-generate": "prisma generate",
-    "build:2-prisma-migrate": "dotenv -c . prisma db push",
+    "build:2-prisma-migrate": "prisma db push",
     "build:3-next": "cross-env NODE_ENV=production next build",
-    "build": "dotenv -c . run-s build:*",
+    "build": "run-s build:*",
     "reset-dev": "run-s db-reset dev",
     "dev": "next dev",
     "db-reset": "prisma migrate reset --force && pnpm run migrate-dev",
