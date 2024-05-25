@@ -220,12 +220,7 @@ Using tRPC builders and it's composable way of defining reusable procedures, we 
 
 You can use a service such as Unkey to rate limit your server actions. Here's an example of a protected server action that uses Unkey to rate limit the number of requests per user:
 
-```ts twoslash title="server/trpc.ts"
-// @filename: server/auth.ts
-// @include: auth
-// @filename: server/trpc.ts
-// @include: trpc
-// ---cut---
+```twoslash include ratelimit
 import { Ratelimit } from '@unkey/ratelimit';
 
 export const rateLimitedAction = protectedAction.use(async (opts) => {
@@ -247,6 +242,40 @@ export const rateLimitedAction = protectedAction.use(async (opts) => {
 
   return opts.next();
 });
+```
+
+```ts twoslash title="server/trpc.ts"
+// @filename: server/auth.ts
+// @include: auth
+// @filename: server/trpc.ts
+// @include: trpc
+// ---cut---
+// @include: ratelimit
+```
+
+```ts twoslash title="app/_actions.ts"
+// @filename: server/auth.ts
+// @include: auth
+// @filename: server/trpc.ts
+// @include: trpc
+// @include: ratelimit
+// @filename: app/_actions.ts
+// ---cut---
+'use server';
+
+import { z } from 'zod';
+import { rateLimitedAction } from '../server/trpc';
+
+export const commentOnPost = rateLimitedAction
+  .input(
+    z.object({
+      postId: z.string(),
+      content: z.string(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    // Do something with the input
+  });
 ```
 
 Read more on rate limiting your tRPC procedures [in this post by the folks over at Unkey](https://www.unkey.com/blog/ratelimit-trpc-routes).
