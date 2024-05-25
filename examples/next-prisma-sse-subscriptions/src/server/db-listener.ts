@@ -8,7 +8,9 @@ import {
 } from '~/utils/registerGlobal';
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-const postgresClient = postgres(process.env.DATABASE_URL!);
+const postgresClient = registerGlobalValue('postgresClient', () =>
+  postgres(process.env.DATABASE_URL!),
+);
 
 export type WhoIsTyping = Record<string, 1>;
 
