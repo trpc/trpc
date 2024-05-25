@@ -9,60 +9,30 @@ import { prisma } from '../prisma';
 import { authedProcedure, publicProcedure, router } from '../trpc';
 import EventEmitter, { on } from 'events';
 import { streamToAsyncIterable } from '~/utils/streamToAsyncIterable';
+import type { WhoIsTyping } from '../db-listener';
+import { currentlyTyping, dbEvents } from '../db-listener';
 
-type WhoIsTyping = Record<string, { lastTyped: Date }>;
-interface MyEvents {
-  add: (data: Post) => void;
-  isTypingUpdate: (who: WhoIsTyping) => void;
-}
-declare interface MyEventEmitter {
-  on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  off<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  once<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  emit<TEv extends keyof MyEvents>(
-    event: TEv,
-    ...args: Parameters<MyEvents[TEv]>
-  ): boolean;
-}
-
-class MyEventEmitter extends EventEmitter {
-  public toIterable<TEv extends keyof MyEvents>(
-    event: TEv,
-  ): AsyncIterable<Parameters<MyEvents[TEv]>> {
-    return on(this, event);
-  }
-}
-// In a real app, you'd probably use Redis or something
-const ee = new MyEventEmitter();
-
-// who is currently typing, key is `name`
-const currentlyTyping: WhoIsTyping = Object.create(null);
-
-// every 1s, clear old "isTyping"
-const interval = setInterval(() => {
-  let updated = false;
-  const now = Date.now();
-  for (const [key, value] of Object.entries(currentlyTyping)) {
-    if (now - value.lastTyped.getTime() > 3e3) {
-      delete currentlyTyping[key];
-      updated = true;
-    }
-  }
-  if (updated) {
-    ee.emit('isTypingUpdate', currentlyTyping);
-  }
-});
-if (interval.unref) {
-  interval.unref();
-}
-
-function updateIsTyping(name: string, isTyping: boolean) {
+async function updateIsTyping(name: string, isTyping: boolean) {
   if (isTyping) {
-    currentlyTyping[name] = { lastTyped: new Date() };
+    await prisma.isTyping.upsert({
+      where: {
+        name,
+      },
+      update: {
+        updatedAt: new Date(),
+      },
+      create: {
+        name,
+        updatedAt: new Date(),
+      },
+    });
   } else {
-    delete currentlyTyping[name];
+    await prisma.isTyping.deleteMany({
+      where: {
+        name,
+      },
+    });
   }
-  ee.emit('isTypingUpdate', currentlyTyping);
 }
 
 export const postRouter = router({
@@ -82,15 +52,14 @@ export const postRouter = router({
           source: 'GITHUB',
         },
       });
-      updateIsTyping(name, false);
-      ee.emit('add', post);
+      await updateIsTyping(name, false);
       return post;
     }),
 
   isTyping: authedProcedure
     .input(z.object({ typing: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
-      updateIsTyping(ctx.user.name, input.typing);
+      await updateIsTyping(ctx.user.name, input.typing);
     }),
 
   infinite: publicProcedure
@@ -168,14 +137,14 @@ export const postRouter = router({
           const onAdd = (data: Post) => {
             controller.enqueue(data);
           };
-          ee.on('add', onAdd);
+          dbEvents.on('add', onAdd);
 
           const items = await getPostsSince(lastMessageCursor);
           for (const item of items) {
             controller.enqueue(item);
           }
           unsubscribe = () => {
-            ee.off('add', onAdd);
+            dbEvents.off('add', onAdd);
           };
         },
         cancel() {
@@ -218,7 +187,7 @@ export const postRouter = router({
       // if someone is typing, emit event immediately
       yield* maybeYield(currentlyTyping);
 
-      for await (const [who] of ee.toIterable('isTypingUpdate')) {
+      for await (const [who] of dbEvents.toIterable('isTypingUpdate')) {
         yield* maybeYield(who);
       }
     }),
