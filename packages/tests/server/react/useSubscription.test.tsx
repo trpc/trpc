@@ -29,7 +29,9 @@ describe.each([
         },
         experimental: {
           iterablesAndDeferreds: true,
-          sseSubscriptions: true,
+          sseSubscriptions: {
+            enabled: true,
+          },
         },
       });
       const appRouter = t.router({

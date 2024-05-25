@@ -2,7 +2,7 @@ import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import type { TypeError } from '../types';
 import { isObject, run } from '../utils';
 import type { ConsumerOnError } from './jsonl';
-import { createDeferred } from './utils/createDeferred';
+import { createTimeoutPromise } from './utils/createDeferred';
 import { createReadableStream } from './utils/createReadableStream';
 
 type Serialize = (value: any) => any;
@@ -53,16 +53,30 @@ export interface PingOptions {
    */
   intervalMs?: number;
 }
-/**
- *
- * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
- */
-export function sseStreamProducer(opts: {
+
+export interface SSEStreamProducerOptions {
   serialize?: Serialize;
   data: AsyncIterable<unknown>;
   maxDepth?: number;
   ping?: PingOptions;
-}) {
+  /**
+   * Maximum duration in milliseconds for the request before ending the stream
+   * Only useful for serverless runtimes
+   * @default undefined
+   */
+  maxDurationMs?: number;
+  /**
+   * End the request immediately after data is sent
+   * Only useful for serverless runtimes that do not support streaming responses
+   * @default false
+   */
+  emitAndEndImmediately?: boolean;
+}
+/**
+ *
+ * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
+ */
+export function sseStreamProducer(opts: SSEStreamProducerOptions) {
   const stream = createReadableStream<SerializedSSEvent>();
   stream.controller.enqueue({
     comment: 'connected',
@@ -78,38 +92,31 @@ export function sseStreamProducer(opts: {
   run(async () => {
     const iterator = opts.data[Symbol.asyncIterator]();
 
-    const pingPromise = () => {
-      let deferred = createDeferred<'ping'>();
-      deferred = deferred as typeof deferred & { clear: () => void };
-
-      const timeout = ping.enabled
-        ? setTimeout(() => {
-            deferred.resolve('ping');
-          }, 1000).unref()
-        : null;
-
-      return {
-        promise: deferred.promise,
-        clear: () => {
-          if (timeout) {
-            clearTimeout(timeout);
-          }
-        },
-      };
-    };
     const closedPromise = stream.cancelledPromise.then(() => 'closed' as const);
+    const maxDurationPromise = createTimeoutPromise(
+      opts.maxDurationMs ?? Infinity,
+      'maxDuration' as const,
+    );
 
     let nextPromise = iterator.next();
+
     while (true) {
-      const ping = pingPromise();
+      const pingPromise = createTimeoutPromise(
+        ping.enabled ? ping.intervalMs : Infinity,
+        'ping' as const,
+      );
       const next = await Promise.race([
         nextPromise.catch(getTRPCErrorFromUnknown),
-        ping.promise,
+        pingPromise.promise,
         closedPromise,
+        maxDurationPromise.promise,
       ]);
-      ping.clear();
+      // console.log({ next });
+      pingPromise.clear();
       if (next === 'closed') {
-        await iterator.return?.();
+        break;
+      }
+      if (next === 'maxDuration') {
         break;
       }
 
@@ -147,9 +154,19 @@ export function sseStreamProducer(opts: {
       }
 
       stream.controller.enqueue(chunk);
+
+      if (opts.emitAndEndImmediately) {
+        // end the stream in the next tick so that we can send a few more events from the queue
+        setTimeout(maxDurationPromise.resolve, 1);
+      }
+
       nextPromise = iterator.next();
     }
+    maxDurationPromise.clear();
     await iterator.return?.();
+    try {
+      stream.controller.close();
+    } catch (err) {}
   }).catch((error) => {
     return stream.controller.error(error);
   });

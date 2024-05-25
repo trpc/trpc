@@ -38,7 +38,9 @@ const ctx = konn()
       transformer: superjson,
       experimental: {
         iterablesAndDeferreds: true,
-        sseSubscriptions: true,
+        sseSubscriptions: {
+          enabled: true,
+        },
       },
     });
     orderedResults.length = 0;

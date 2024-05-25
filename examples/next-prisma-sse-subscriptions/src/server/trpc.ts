@@ -24,7 +24,9 @@ const t = initTRPC.context<Context>().create({
     return shape;
   },
   experimental: {
-    sseSubscriptions: true,
+    sseSubscriptions: {
+      enabled: true,
+    },
     iterablesAndDeferreds: true,
   },
 });

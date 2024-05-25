@@ -333,7 +333,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         case 'subscription': {
           // httpSubscriptionLink
 
-          if (!opts.router._def._config.experimental?.sseSubscriptions) {
+          if (
+            !opts.router._def._config.experimental?.sseSubscriptions?.enabled
+          ) {
             throw new TRPCError({
               code: 'METHOD_NOT_SUPPORTED',
               message: 'Missing experimental flag "sseSubscriptions"',

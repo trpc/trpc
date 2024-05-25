@@ -1,5 +1,6 @@
 import type { CombinedDataTransformer } from '../unstable-core-do-not-import';
 import type { DefaultErrorShape, ErrorFormatter } from './error/formatter';
+import type { SSEStreamProducerOptions } from './stream/sse';
 
 /**
  * The initial generics that are used in the init function
@@ -72,7 +73,13 @@ export interface RootConfig<TTypes extends RootTypes> {
     /**
      * Enable support for server-sent events (SSE) subscriptions
      */
-    sseSubscriptions?: boolean;
+    sseSubscriptions?: {
+      /**
+       * Enable server-sent events (SSE) subscriptions
+       * @default false
+       */
+      enabled: boolean;
+    } & Omit<SSEStreamProducerOptions, 'maxDepth' | 'data' | 'serialize'>;
   };
 }
 
