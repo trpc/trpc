@@ -26,6 +26,8 @@ const t = initTRPC.context<Context>().create({
   experimental: {
     sseSubscriptions: {
       enabled: true,
+      maxDurationMs: 3_000,
+      emitAndEndImmediately: true,
     },
     iterablesAndDeferreds: true,
   },
