@@ -216,6 +216,44 @@ export function PostForm() {
 
 Using tRPC builders and it's composable way of defining reusable procedures, we can easily build more complex server actions. Below are some examples:
 
+### Observability
+
+You can use `@baselime/node-opentelemtry`'s trpc plugin to add observability in just a few lines of code:
+
+```diff
+--- server/trpc.ts
++++ server/trpc.ts
++ import { tracing } from '@baselime/node-opentelemetry/trpc';
+
+  export const serverActionProcedure = t.procedure
+    .experimental_caller(
+      experimental_nextAppDirCaller({
+        pathExtractor: (meta: Meta) => meta.span,
+      }),
+    )
+    .use(async (opts) => {
+      // Inject user into context
+      const user = await currentUser();
+      return opts.next({ ctx: { user } });
+    })
++  .use(tracing());
+
+--- app/_actions.ts
++++ app/_actions.ts
+  export const createPost = protectedAction
++   .meta({ span: 'create-post' })
+    .input(
+      z.object({
+        title: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Do something with the input
+    });
+```
+
+Checkout [the Baselime tRPC Integration](https://github.com/baselime/node-opentelemetry/blob/main/TRPC.md) for more information. Similar patterns should work for whatever observability playform you're using.
+
 ### Rate Limiting
 
 You can use a service such as Unkey to rate limit your server actions. Here's an example of a protected server action that uses Unkey to rate limit the number of requests per user:
@@ -279,44 +317,6 @@ export const commentOnPost = rateLimitedAction
 ```
 
 Read more on rate limiting your tRPC procedures [in this post by the folks over at Unkey](https://www.unkey.com/blog/ratelimit-trpc-routes).
-
-### Observability
-
-You can use `@baselime/node-opentelemtry`'s trpc plugin to add observability in just a few lines of code:
-
-```diff
---- server/trpc.ts
-+++ server/trpc.ts
-+ import { tracing } from '@baselime/node-opentelemetry/trpc';
-
-  export const serverActionProcedure = t.procedure
-    .experimental_caller(
-      experimental_nextAppDirCaller({
-        pathExtractor: (meta: Meta) => meta.span,
-      }),
-    )
-    .use(async (opts) => {
-      // Inject user into context
-      const user = await currentUser();
-      return opts.next({ ctx: { user } });
-    })
-+  .use(tracing());
-
---- app/_actions.ts
-+++ app/_actions.ts
-  export const createPost = protectedAction
-+   .meta({ span: 'create-post' })
-    .input(
-      z.object({
-        title: z.string(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Do something with the input
-    });
-```
-
-Checkout [the Baselime tRPC Integration](https://github.com/baselime/node-opentelemetry/blob/main/TRPC.md) for more information. Similar patterns should work for whatever observability playform you're using.
 
 The possibilities are endless, and I bet you already got a ton of nice utility middlewares you're using in your tRPC applications today. If not, you might found some out there you can `npm install`!
 
