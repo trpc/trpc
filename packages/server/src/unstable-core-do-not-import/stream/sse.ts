@@ -166,7 +166,7 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
     await iterator.return?.();
     try {
       stream.controller.close();
-    } catch (err) {}
+    } catch {}
   }).catch((error) => {
     return stream.controller.error(error);
   });
