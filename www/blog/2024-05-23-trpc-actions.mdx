@@ -10,8 +10,8 @@ author_image_url: https://github.com/juliusmarminge.png
 import { InstallSnippet } from '@site/src/components/InstallSnippet';
 import { Tweet } from 'react-tweet';
 
-The new builder API introduced in tRPC v10 has been massively appreciated by the community, and many libraries have adopted similar patterns.
-There's even been coined a term `tRPC like XYZ` as evidence of the growing popularity of this pattern. In fact, just yesterday I saw [someone
+The builder-pattern for creating procedures which was introduced in tRPC v10 has been massively appreciated by the community, and many libraries have adopted similar patterns.
+There's even been coined a term `tRPC like XYZ` as evidence of the growing popularity of this pattern. In fact, the other day I saw [someone
 wondering if there was a way to write CLI applications with a similar API to tRPC](https://x.com/localhost_5173/status/1793259910723215835).
 Sidenote, you can even use [tRPC directly to do this](https://github.com/mmkal/trpc-cli). But that's not what we're here to talk about today,
 we're going to talk about how to use tRPC with server actions from Next.js.
@@ -25,16 +25,16 @@ You may think that this sounds similar to tRPC which is true. According to Dan A
   <Tweet id="1756120297529368801" />
 </div>
 
-And this is totally accurate, server actions are, similar to tRPC, at the end of the day an RPC technology. Both allows you to write functions on the backend and call them with full typesafety on the frontend with the network layer abstracted away.
+And this is totally accurate, server actions are similar to tRPC, at the end of the day they're both [RPCs](https://en.wikipedia.org/wiki/Remote_procedure_call). Both allow you to write functions on the backend and call them with full typesafety on the frontend with the network layer abstracted away.
 
-So where does tRPC come in? Why do I need both tRPC and server actions? Server actions is a primitive, and as for all primitives they're quite barebones and thus lacking some fundamental aspects when it comes to building APIs. For any API endpoint that is exposed over internet, you need to validate and authorize requests to ensure your API is not maliciously used. As previously mentioned, tRPC's API is appreciated by the community, so wouldn't it be nice if we could use tRPC to define server actions and utilizing all the awesome features that comes built-in with tRPC such as input validation, authentication and authorization through middlewares, output validation, data transformers, etc, etc. I think so, so let's dig in.
+So where does tRPC come in? Why would I need both tRPC and server actions? Server actions is a primitive, and as for all primitives they're quite barebones and thus lacking some fundamental aspects when it comes to building APIs. For any API endpoint that is exposed over the network, you need to validate and authorize requests to ensure your API is not maliciously used. As previously mentioned, tRPC's API is appreciated by the community, so wouldn't it be nice if we could use tRPC to define server actions and utilize all the awesome features that come built-in with tRPC such as input validation, authentication and authorization through middlewares, output validation, data transformers, etc, etc? I think so, so let's dig in.
 
 ## Defining server actions with tRPC
 
 :::note
 **Prerequisites:** In order to use server actions, you need to use the Next.js App Router. Additionally, all the tRPC stuff we'll use are only available on tRPC v11, so make sure you're using the beta release channel of tRPC:
 
-<InstallSnippet pkgs="@trpc/server@beta" />
+<InstallSnippet pkgs="@trpc/server@next" />
 :::
 
 Let's start off by initializing tRPC and defining our base server actions procedure.
@@ -262,4 +262,8 @@ You can use `@baselime/node-opentelemtry`'s trpc plugin to add observability in 
 
 The possibilities are endless, and I bet you already got a ton of nice utility middlewares you're using in your tRPC applications today. These new primitives should also be easy to incrementally adopt, so you can move individual procedures over from your existing tRPC API to server actions without having to rewrite your entire API. If you wanna see an app using this in action, check out [Trellix tRPC](https://trellix-trpc.vercel.app), an app I made recently utilizing these new primitives.
 
+## What do you think? We want your feedback
+
 So, what do you think? Let us know over at [Github](https://github.com/trpc/trpc/discussions/5737) and help us iterate to get these primitives to a stable state.
+
+[...]
