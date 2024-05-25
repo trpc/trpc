@@ -1,33 +1,37 @@
-import type { AnyRouter, CreateContextCallback, inferRouterContext } from '../../index';
+import type { NodeHTTPCreateContextFnOptions } from '../../adapters/node-http';
+import type { BaseHandlerOptions } from '../../http';
+import type {
+  AnyRouter,
+  CreateContextCallback,
+  inferRouterContext,
+} from '../../index';
 import {
   callProcedure,
   getErrorShape,
   getTRPCErrorFromUnknown,
-  type ProcedureType,
   transformTRPCResponse,
-  TRPCError
+  TRPCError,
+  type ProcedureType,
 } from '../../index';
 import type { Observable, Unsubscribable } from '../../observable';
 import { isObservable } from '../../observable';
-import type { BaseHandlerOptions } from '../../http';
 import type {
   JSONRPC2,
   TRPCClientOutgoingMessage,
   TRPCReconnectNotification,
   TRPCRequestMessage,
-  TRPCResponseMessage
+  TRPCResponseMessage,
 } from '../../rpc';
 import { parseTRPCMessage } from '../../rpc';
-import { MaybePromise } from '../../unstable-core-do-not-import';
-import { NodeHTTPCreateContextFnOptions } from '../../adapters/node-http';
+import type { MaybePromise } from '../../unstable-core-do-not-import';
 
 export type CreateContextFnOptions<TReq, TRes> = Omit<
-    NodeHTTPCreateContextFnOptions<TReq, TRes>,
-    'info'
+  NodeHTTPCreateContextFnOptions<TReq, TRes>,
+  'info'
 >;
 
 export type CreateContextFn<TRouter extends AnyRouter, TReq, TRes> = (
-    opts: CreateContextFnOptions<TReq, TRes>
+  opts: CreateContextFnOptions<TReq, TRes>,
 ) => MaybePromise<inferRouterContext<TRouter>>;
 
 export type TransportConnection = {
@@ -60,20 +64,20 @@ export type SubscriptionInfo = {
 // - break out the utils into separate functions with all needed parameters
 // - re-add the wrapper getTrpcSubscriptionUtils that supplies the needed parameters
 export const getTrpcSubscriptionUtils = async <
-    TRouter extends AnyRouter,
-    TReq = null,
-    TRes = null,
+  TRouter extends AnyRouter,
+  TReq = null,
+  TRes = null,
 >(
-    opts: BaseHandlerOptions<TRouter, TReq> &
-        CreateContextCallback<
-            inferRouterContext<TRouter>,
-            CreateContextFn<TRouter, TReq, TRes>
-        > & {
+  opts: BaseHandlerOptions<TRouter, TReq> &
+    CreateContextCallback<
+      inferRouterContext<TRouter>,
+      CreateContextFn<TRouter, TReq, TRes>
+    > & {
       req: TReq;
       res: TRes;
       currentTransport: TransportConnection;
       getAllConnectedTransports: () => MaybePromise<TransportConnection[]>;
-    }
+    },
 ) => {
   const {
     createContext,
@@ -81,7 +85,7 @@ export const getTrpcSubscriptionUtils = async <
     res,
     router,
     currentTransport,
-    getAllConnectedTransports
+    getAllConnectedTransports,
   } = opts;
   const { transformer } = router._def._config;
 
@@ -89,13 +93,13 @@ export const getTrpcSubscriptionUtils = async <
   let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
   function respond(
-      transport: TransportConnection,
-      untransformedJSON: TRPCResponseMessage
+    transport: TransportConnection,
+    untransformedJSON: TRPCResponseMessage,
   ) {
     transport.send(
-        JSON.stringify(
-            transformTRPCResponse(router._def._config, untransformedJSON)
-        )
+      JSON.stringify(
+        transformTRPCResponse(router._def._config, untransformedJSON),
+      ),
     );
   }
 
@@ -110,7 +114,7 @@ export const getTrpcSubscriptionUtils = async <
         type: 'unknown',
         ctx,
         req,
-        input: undefined
+        input: undefined,
       });
       respond(currentTransport, {
         id: null,
@@ -120,8 +124,8 @@ export const getTrpcSubscriptionUtils = async <
           type: 'unknown',
           path: undefined,
           input: undefined,
-          ctx
-        })
+          ctx,
+        }),
       });
 
       // close in next tick
@@ -132,8 +136,8 @@ export const getTrpcSubscriptionUtils = async <
   }
 
   function stopSubscription(
-      subscription: Unsubscribable,
-      { id, jsonrpc }: JSONRPC2.BaseEnvelope & { id: JSONRPC2.RequestId }
+    subscription: Unsubscribable,
+    { id, jsonrpc }: JSONRPC2.BaseEnvelope & { id: JSONRPC2.RequestId },
   ) {
     subscription.unsubscribe();
 
@@ -141,15 +145,15 @@ export const getTrpcSubscriptionUtils = async <
       id,
       jsonrpc,
       result: {
-        type: 'stopped'
-      }
+        type: 'stopped',
+      },
     });
   }
 
   function subscribeToObservable(
-      observable: Observable<any, any>,
-      msg: TRPCRequestMessage,
-      transport: TransportConnection
+    observable: Observable<any, any>,
+    msg: TRPCRequestMessage,
+    transport: TransportConnection,
   ) {
     const { id, jsonrpc } = msg;
     const { path, input } = msg.params;
@@ -162,8 +166,8 @@ export const getTrpcSubscriptionUtils = async <
           jsonrpc,
           result: {
             type: 'data',
-            data
-          }
+            data,
+          },
         });
       },
       error(err) {
@@ -178,8 +182,8 @@ export const getTrpcSubscriptionUtils = async <
             type,
             path,
             input,
-            ctx
-          })
+            ctx,
+          }),
         });
       },
       complete() {
@@ -187,17 +191,17 @@ export const getTrpcSubscriptionUtils = async <
           id,
           jsonrpc,
           result: {
-            type: 'stopped'
-          }
+            type: 'stopped',
+          },
         });
-      }
+      },
     });
   }
 
   async function addSubscriptionToTransportState(
-      sub: Unsubscribable,
-      msg: TRPCRequestMessage,
-      transport: TransportConnection
+    sub: Unsubscribable,
+    msg: TRPCRequestMessage,
+    transport: TransportConnection,
   ) {
     const { id, jsonrpc } = msg;
     const { path } = msg.params;
@@ -209,7 +213,7 @@ export const getTrpcSubscriptionUtils = async <
       stopSubscription(sub, { id, jsonrpc });
       throw new TRPCError({
         message: `Duplicate id ${id}`,
-        code: 'BAD_REQUEST'
+        code: 'BAD_REQUEST',
       });
     }
     transport.subs.add({ id: id!, sub, subInfo: { path, type } });
@@ -221,7 +225,7 @@ export const getTrpcSubscriptionUtils = async <
     if (id === null) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
-        message: '`id` is required'
+        message: '`id` is required',
       });
     }
     if (msg.method === 'subscription.stop') {
@@ -242,7 +246,7 @@ export const getTrpcSubscriptionUtils = async <
         path,
         getRawInput: async () => input,
         ctx,
-        type
+        type,
       });
 
       // check subscription to be observeable
@@ -250,7 +254,7 @@ export const getTrpcSubscriptionUtils = async <
         if (!isObservable(result)) {
           throw new TRPCError({
             message: `Subscription ${path} did not return an observable`,
-            code: 'INTERNAL_SERVER_ERROR'
+            code: 'INTERNAL_SERVER_ERROR',
           });
         }
       } else {
@@ -260,8 +264,8 @@ export const getTrpcSubscriptionUtils = async <
           jsonrpc,
           result: {
             type: 'data',
-            data: result
-          }
+            data: result,
+          },
         });
         return;
       }
@@ -282,8 +286,8 @@ export const getTrpcSubscriptionUtils = async <
         id,
         jsonrpc,
         result: {
-          type: 'started'
-        }
+          type: 'started',
+        },
       });
     } catch (cause) /* istanbul ignore next -- @preserve */ {
       // procedure threw an error
@@ -298,22 +302,22 @@ export const getTrpcSubscriptionUtils = async <
           type,
           path,
           input,
-          ctx
-        })
+          ctx,
+        }),
       });
     }
   }
 
   async function withTransportCatch<T>(
-      fn: () => Promise<T>,
-      transport: TransportConnection
+    fn: () => Promise<T>,
+    transport: TransportConnection,
   ): Promise<T> {
     try {
       return await fn();
     } catch (cause) {
       const error = new TRPCError({
         code: 'PARSE_ERROR',
-        cause
+        cause,
       });
 
       respond(transport, {
@@ -324,8 +328,8 @@ export const getTrpcSubscriptionUtils = async <
           type: 'unknown',
           path: undefined,
           input: undefined,
-          ctx: undefined
-        })
+          ctx: undefined,
+        }),
       });
       return Promise.reject(error);
     }
@@ -338,8 +342,8 @@ export const getTrpcSubscriptionUtils = async <
         const msgJSON: unknown = JSON.parse(message.toString());
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs
-            .map((raw) => parseTRPCMessage(raw, transformer))
-            .map(handleRequest);
+          .map((raw) => parseTRPCMessage(raw, transformer))
+          .map(handleRequest);
         await Promise.all(promises);
       }, currentTransport);
     },
@@ -350,7 +354,7 @@ export const getTrpcSubscriptionUtils = async <
         input: undefined,
         path: undefined,
         type: 'unknown',
-        req
+        req,
       });
     },
     handleClose: async () => {
@@ -360,8 +364,8 @@ export const getTrpcSubscriptionUtils = async <
       currentTransport.subs.clear();
     },
     reloadSubscriptionOnTransport: async (
-        info: Omit<Subscription, 'sub'>,
-        transport: TransportConnection
+      info: Omit<Subscription, 'sub'>,
+      transport: TransportConnection,
     ) => {
       return await withTransportCatch(async () => {
         // craft a fake message to call the procedure
@@ -370,20 +374,20 @@ export const getTrpcSubscriptionUtils = async <
           method: info.subInfo.type,
           params: {
             input: null,
-            path: info.subInfo.path
-          }
+            path: info.subInfo.path,
+          },
         };
         const result = await callProcedure({
           procedures: router._def.procedures,
           path: msg.params.path,
           getRawInput: async () => null,
           ctx,
-          type: msg.method
+          type: msg.method,
         });
         if (msg.method !== 'subscription' || !isObservable(result)) {
           throw new TRPCError({
             message: `Subscription ${msg.params.path} did not return an observable`,
-            code: 'INTERNAL_SERVER_ERROR'
+            code: 'INTERNAL_SERVER_ERROR',
           });
         }
         return subscribeToObservable(result, msg, transport);
@@ -392,7 +396,7 @@ export const getTrpcSubscriptionUtils = async <
     broadcastReconnectNotification: async () => {
       const response: TRPCReconnectNotification = {
         id: null,
-        method: 'reconnect'
+        method: 'reconnect',
       };
       const data = JSON.stringify(response);
       for (const connection of await getAllConnectedTransports()) {
@@ -400,6 +404,6 @@ export const getTrpcSubscriptionUtils = async <
           connection.send(data);
         }
       }
-    }
+    },
   };
 };
