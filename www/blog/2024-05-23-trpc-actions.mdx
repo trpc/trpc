@@ -312,7 +312,9 @@ export const commentOnPost = rateLimitedAction
     }),
   )
   .mutation(async ({ ctx, input }) => {
-    // Do something with the input
+    console.log(
+      `${ctx.user.name} commented on ${input.postId} saying ${input.content}`,
+    );
   });
 ```
 
