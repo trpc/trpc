@@ -6,7 +6,7 @@
   },
   "scripts": {
     "build:1-prisma-generate": "prisma generate",
-    "build:2-prisma-migrate": "prisma db push",
+    "build:2-prisma-migrate": "prisma migrate deploy",
     "build:3-next": "cross-env NODE_ENV=production next build",
     "build": "run-s build:*",
     "reset-dev": "run-s db-reset dev",
