@@ -25,7 +25,7 @@ export function nextAppDirCaller<TContext, TMeta>(
       /**
        * Extract the path from the procedure metadata
        */
-      pathExtractor?: (meta: TMeta) => string;
+      pathExtractor?: (opts: { meta: TMeta }) => string;
       /**
        * Transform form data to a `Record` before passing it to the procedure
        * @default true
@@ -47,7 +47,8 @@ export function nextAppDirCaller<TContext, TMeta>(
     return config?.createContext?.() ?? ({} as TContext);
   };
   return async (opts) => {
-    const path = config.pathExtractor?.(opts._def.meta as TMeta) ?? '';
+    const path =
+      config.pathExtractor?.({ meta: opts._def.meta as TMeta }) ?? '';
     const ctx: TContext = await createContext().catch((cause) => {
       const error = new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',

@@ -72,7 +72,7 @@ test('with path extractor', async () => {
   const base = t.procedure
     .experimental_caller(
       nextAppDirCaller({
-        pathExtractor: (meta: Meta) => meta.span,
+        pathExtractor: ({ meta }) => (meta as Meta).span,
       }),
     )
     .use(loggerMiddleware);
