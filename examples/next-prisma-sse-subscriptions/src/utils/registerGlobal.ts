@@ -9,9 +9,9 @@ export function registerAsyncGlobal(namespace: string, factory: Factory) {
 
   const cleanup = (reason: string) => () => {
     const current = globalAny[namespace];
-    console.log({ reason, namespace }, 'Cleaning up global');
 
     if (current) {
+      console.log({ reason, namespace }, 'Cleaning up global');
       delete globalAny[namespace];
       current().catch((error) => {
         console.error({ error, namespace }, 'Failed to cleanup global');
