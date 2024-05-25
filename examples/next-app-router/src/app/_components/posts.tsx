@@ -1,6 +1,6 @@
 'use client';
 
-import { CreatePostSchema } from '~/lib/validators';
+import { CreatePostSchema } from '~/db/schema';
 import { trpc } from '~/trpc/react';
 import { Button } from '~/ui/button';
 import {
@@ -37,12 +37,12 @@ export function Posts() {
       <CreatePost />
       {data.length === 0 && <p>No posts</p>}
 
-      {data.map(({ post, user }) => (
+      {data.map((post) => (
         <div key={post.id} className="bg-background-muted relative rounded p-4">
           <h2 className="text-lg font-semibold">{post.title}</h2>
           <p className="text-sm">{post.content}</p>
           <p className="text-xs text-gray-500">
-            By {user?.name ?? 'unknown'} at {post.createdAt.toISOString()}
+            By {post.user.name} at {post.createdAt.toISOString()}
           </p>
           <Button
             onClick={() => deletePost.mutate(post.id)}

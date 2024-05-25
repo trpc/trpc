@@ -1,14 +1,13 @@
-import { randomUUID } from 'crypto';
 import { TRPCError, TRPCRouterRecord } from '@trpc/server';
 import { db } from '~/db/client';
-import { posts, users } from '~/db/schema';
-import { and, eq } from 'drizzle-orm';
-import * as z from 'zod';
+import { Post } from '~/db/schema';
+import { eq } from 'drizzle-orm';
+import { z } from 'zod';
 import { protectedProcedure, publicProcedure } from '../init';
 
 export const postRouter = {
   list: publicProcedure.query(() =>
-    db.select().from(posts).leftJoin(users, eq(posts.authorId, users.id)),
+    db.query.Post.findMany({ with: { user: true } }),
   ),
   create: protectedProcedure
     .input(
@@ -17,26 +16,25 @@ export const postRouter = {
         content: z.string(),
       }),
     )
-    .mutation((opts) => {
+    .mutation(async (opts) => {
       const { input, ctx } = opts;
 
-      return db.insert(posts).values({
-        id: randomUUID(),
+      await db.insert(Post).values({
         authorId: ctx.userId,
         content: input.content,
         title: input.title,
         createdAt: new Date(),
       });
     }),
-  delete: protectedProcedure.input(z.string()).mutation(async (opts) => {
+  delete: protectedProcedure.input(z.number()).mutation(async (opts) => {
     const { input, ctx } = opts;
 
-    const post = await db
-      .select()
-      .from(posts)
-      .where(and(eq(posts.id, input), eq(posts.authorId, ctx.userId)));
-    if (!post.length) throw new TRPCError({ code: 'UNAUTHORIZED' });
+    const post = await db.query.Post.findFirst({
+      where: (fields, op) =>
+        op.and(op.eq(fields.id, input), op.eq(fields.authorId, ctx.userId)),
+    });
+    if (!post) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-    return db.delete(posts).where(eq(posts.id, input));
+    await db.delete(Post).where(eq(Post.id, input));
   }),
 } satisfies TRPCRouterRecord;

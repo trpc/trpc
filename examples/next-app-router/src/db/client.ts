@@ -1,6 +1,6 @@
-import Database from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { createClient } from '@libsql/client';
+import { drizzle } from 'drizzle-orm/libsql';
 import * as schema from './schema';
 
-const sqlite = new Database('./db.sqlite');
-export const db = drizzle(sqlite, { schema });
+const turso = createClient({ url: process.env.DATABASE_URL! });
+export const db = drizzle(turso, { schema });

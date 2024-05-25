@@ -1,33 +1,52 @@
+import { relations } from 'drizzle-orm';
 import {
+  int,
   integer,
   primaryKey,
   sqliteTable,
   text,
 } from 'drizzle-orm/sqlite-core';
+import { createInsertSchema } from 'drizzle-zod';
+import type { AdapterAccountType } from 'next-auth/adapters';
+import { z } from 'zod';
 
-export const posts = sqliteTable('post', {
-  id: text('id').notNull().primaryKey(),
+export const Post = sqliteTable('post', {
+  id: int('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
   title: text('title').notNull(),
   content: text('content').notNull(),
   createdAt: integer('createdAt', { mode: 'timestamp_ms' }).notNull(),
-  authorId: text('authorId').notNull(),
+  authorId: text('authorId')
+    .notNull()
+    .references(() => User.id, { onDelete: 'cascade' }),
 });
 
-export const users = sqliteTable('user', {
-  id: text('id').notNull().primaryKey(),
-  name: text('name'),
+export const CreatePostSchema = createInsertSchema(Post, {
+  title: z.string().min(1),
+  content: z.string().min(1),
+}).omit({
+  id: true,
+  createdAt: true,
+  authorId: true,
+});
+
+export const User = sqliteTable('user', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => `usr_` + crypto.randomUUID().replace(/-/g, '')),
+  name: text('name').notNull(),
   email: text('email').notNull(),
+  hashedPassword: text('hashedPassword'),
   emailVerified: integer('emailVerified', { mode: 'timestamp_ms' }),
   image: text('image'),
 });
 
-export const accounts = sqliteTable(
+export const Account = sqliteTable(
   'account',
   {
     userId: text('userId')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    type: text('type').notNull(),
+      .references(() => User.id, { onDelete: 'cascade' }),
+    type: text('type').$type<AdapterAccountType>().notNull(),
     provider: text('provider').notNull(),
     providerAccountId: text('providerAccountId').notNull(),
     refresh_token: text('refresh_token'),
@@ -45,10 +64,15 @@ export const accounts = sqliteTable(
   }),
 );
 
-export const sessions = sqliteTable('session', {
-  sessionToken: text('sessionToken').notNull().primaryKey(),
-  userId: text('userId')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  expires: integer('expires', { mode: 'timestamp_ms' }).notNull(),
-});
+export const PostRelations = relations(Post, ({ one }) => ({
+  user: one(User, { fields: [Post.authorId], references: [User.id] }),
+}));
+
+export const UserRelations = relations(User, ({ many }) => ({
+  accounts: many(Account),
+  posts: many(Post),
+}));
+
+export const AccountRelations = relations(Account, ({ one }) => ({
+  user: one(User, { fields: [Account.userId], references: [User.id] }),
+}));

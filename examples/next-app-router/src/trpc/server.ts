@@ -2,7 +2,7 @@ import 'server-only';
 import { QueryClient } from '@tanstack/react-query';
 import { createHydrationHelpers } from '@trpc/react-query/rsc';
 import { inferRouterOutputs } from '@trpc/server';
-import { auth } from '~/lib/auth';
+import { auth } from '~/auth';
 import { createCallerFactory, createTRPCContext } from '~/trpc/init';
 import { appRouter } from '~/trpc/routers/_app';
 import { headers } from 'next/headers';
