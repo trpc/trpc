@@ -7,10 +7,10 @@ import {
   registerGlobalValue,
 } from '~/utils/registerGlobal';
 
-// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-const postgresClient = registerGlobalValue('postgresClient', () =>
-  postgres(process.env.POSTGRES_URL_NON_POOLING!),
-);
+const postgresClient = registerGlobalValue('postgresClient', () => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return postgres(process.env.DATABASE_URL!);
+});
 
 export type WhoIsTyping = Record<string, 1>;
 
