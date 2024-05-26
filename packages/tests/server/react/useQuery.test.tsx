@@ -1,3 +1,4 @@
+import { waitMs } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { skipToken, type InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
@@ -11,7 +12,11 @@ const fixtureData = ['1', '2', '3', '4'];
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.create();
+    const t = initTRPC.create({
+      experimental: {
+        iterablesAndDeferreds: true,
+      },
+    });
     const appRouter = t.router({
       post: t.router({
         byId: t.procedure
@@ -46,6 +51,12 @@ const ctx = konn()
                   : input.cursor + 1,
             };
           }),
+        iterable: t.procedure.query(async function* () {
+          for (let i = 0; i < 3; i++) {
+            yield i + 1;
+            await waitMs(5);
+          }
+        }),
       }),
     });
 
@@ -193,6 +204,76 @@ describe('useQuery()', () => {
 
     expectation.toMatchTypeOf<{ data: '__result' | undefined }>();
     expectation.not.toMatchTypeOf<{ data: undefined }>();
+  });
+
+  test('iterable', async () => {
+    const { client, App } = ctx;
+    const states: {
+      status: string;
+      data: unknown;
+    }[] = [];
+    function MyComponent() {
+      const query1 = client.post.iterable.useQuery(undefined, {
+        trpc: {
+          context: {
+            stream: 1,
+          },
+        },
+      });
+      states.push({
+        status: query1.status,
+        data: query1.data,
+      });
+
+      expectTypeOf(query1.data!).toMatchTypeOf<number[]>();
+
+      return (
+        <pre>
+          {query1.status}:{query1.isFetching ? 'fetching' : 'notFetching'}
+        </pre>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`success:notFetching`);
+    });
+
+    expect(states).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "data": undefined,
+          "status": "pending",
+        },
+        Object {
+          "data": Array [
+            1,
+            2,
+          ],
+          "status": "success",
+        },
+        Object {
+          "data": Array [
+            1,
+            2,
+            3,
+          ],
+          "status": "success",
+        },
+        Object {
+          "data": Array [
+            1,
+            2,
+            3,
+          ],
+          "status": "success",
+        },
+      ]
+    `);
   });
 });
 
