@@ -97,7 +97,7 @@ export function MyComponent() {
 ## Streaming responses using async generators
 
 :::info
-Since v11 we now support streaming queries when using the [`httpBatchStreamLink`](../links/httpBatchStreamLink.md).
+Since v11 we now support streaming queries when using the [`httpBatchStreamLink`](../links/httpBatchStreamLink.md#generators).
 :::
 
 When returning an async generators in a query, you will:
