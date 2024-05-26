@@ -233,6 +233,7 @@ describe('useQuery()', () => {
     const states: {
       status: string;
       data: unknown;
+      fetchStatus: string;
     }[] = [];
     function MyComponent() {
       const query1 = client.post.iterable.useQuery(undefined, {
@@ -246,6 +247,7 @@ describe('useQuery()', () => {
       states.push({
         status: query1.status,
         data: query1.data,
+        fetchStatus: query1.fetchStatus,
       });
 
       expectTypeOf(query1.data!).toMatchTypeOf<number[]>();
@@ -270,16 +272,19 @@ describe('useQuery()', () => {
       Array [
         Object {
           "data": undefined,
+          "fetchStatus": "fetching",
           "status": "pending",
         },
         Object {
           "data": Array [],
+          "fetchStatus": "fetching",
           "status": "pending",
         },
         Object {
           "data": Array [
             1,
           ],
+          "fetchStatus": "fetching",
           "status": "pending",
         },
         Object {
@@ -287,6 +292,7 @@ describe('useQuery()', () => {
             1,
             2,
           ],
+          "fetchStatus": "fetching",
           "status": "pending",
         },
         Object {
@@ -295,6 +301,7 @@ describe('useQuery()', () => {
             2,
             3,
           ],
+          "fetchStatus": "idle",
           "status": "success",
         },
       ]
@@ -308,6 +315,16 @@ describe('useQuery()', () => {
       'pending',
       // done iterating
       'success',
+    ]);
+    expect(states.map((s) => s.fetchStatus)).toEqual([
+      // initial
+      'fetching',
+      // waiting 3 values
+      'fetching',
+      'fetching',
+      'fetching',
+      // done iterating
+      'idle',
     ]);
   });
 });
