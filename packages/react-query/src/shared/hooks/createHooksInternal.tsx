@@ -185,12 +185,31 @@ export function createRootHooks<
               const result = await client.query(
                 ...getClientArgs(queryKey, actualOpts),
               );
+
               if (isAsyncIterable(result)) {
                 const aggregate: unknown[] = [];
+                const queryHash = hashKey(queryKey);
+
+                const queryCache = queryClient.getQueryCache();
+
+                const query = queryCache.build(queryClient, {
+                  queryKey,
+                  queryHash,
+                });
+
+                query.setState({
+                  data: aggregate,
+                  status: 'pending',
+                });
 
                 for await (const value of result) {
                   aggregate.push(value);
                   queryClient.setQueryData(queryKey, [...aggregate]);
+
+                  query.setState({
+                    data: [...aggregate],
+                    status: 'pending',
+                  });
                 }
                 return aggregate;
               }

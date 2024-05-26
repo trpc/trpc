@@ -53,8 +53,8 @@ const ctx = konn()
           }),
         iterable: t.procedure.query(async function* () {
           for (let i = 0; i < 3; i++) {
-            yield i + 1;
             await waitMs(5);
+            yield i + 1;
           }
         }),
       }),
@@ -252,17 +252,15 @@ describe('useQuery()', () => {
         Object {
           "data": Array [
             1,
-            2,
           ],
-          "status": "success",
+          "status": "pending",
         },
         Object {
           "data": Array [
             1,
             2,
-            3,
           ],
-          "status": "success",
+          "status": "pending",
         },
         Object {
           "data": Array [
@@ -274,6 +272,12 @@ describe('useQuery()', () => {
         },
       ]
     `);
+    expect(states.map((s) => s.status)).toEqual([
+      'pending',
+      'pending',
+      'pending',
+      'success',
+    ]);
   });
 });
 
