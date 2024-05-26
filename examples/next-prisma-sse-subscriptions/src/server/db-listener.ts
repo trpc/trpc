@@ -79,7 +79,7 @@ const clearIsTypingInterval = (() => {
   };
 })();
 
-export let currentlyTyping: WhoIsTyping = Object.create(null);
+export let currentlyTyping: WhoIsTyping = {};
 async function pullIsTyping() {
   const isTyping = await prisma.isTyping.findMany({
     where: {
