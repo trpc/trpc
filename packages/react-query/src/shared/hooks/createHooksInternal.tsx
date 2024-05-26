@@ -189,7 +189,7 @@ export function createRootHooks<
               if (isAsyncIterable(result)) {
                 const queryCache = queryClient.getQueryCache();
 
-                const query = queryCache.build(queryClient, {
+                const query = queryCache.build(queryFunctionContext.queryKey, {
                   queryKey,
                 });
 
