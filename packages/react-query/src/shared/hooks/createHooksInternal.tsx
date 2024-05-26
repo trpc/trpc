@@ -187,13 +187,10 @@ export function createRootHooks<
               );
 
               if (isAsyncIterable(result)) {
-                const queryHash = hashKey(queryKey);
-
                 const queryCache = queryClient.getQueryCache();
 
                 const query = queryCache.build(queryClient, {
                   queryKey,
-                  queryHash,
                 });
 
                 query.setState({
