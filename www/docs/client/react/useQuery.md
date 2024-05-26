@@ -94,7 +94,7 @@ export function MyComponent() {
 }
 ```
 
-## Streaming responses using async generators {#stream}
+## Streaming responses using async generators {#streaming}
 
 :::info
 Since v11 we now support streaming queries when using the [`httpBatchStreamLink`](../links/httpBatchStreamLink.md#generators).
@@ -131,7 +131,7 @@ export function MyComponent() {
   return (
     <div>
       {query.data?.map((chunk, index) => (
-        <Fragment key={index}></Fragment>
+        <Fragment key={index}>{chunk}</Fragment>
       ))}
     </div>
   );
