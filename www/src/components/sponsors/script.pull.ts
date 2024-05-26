@@ -1,6 +1,5 @@
 // This is an awful script, don't judge
 import fs from 'fs';
-import { graphql } from '@octokit/graphql';
 import type { Node, SponsorEsque } from './script.types';
 
 const { TRPC_GITHUB_TOKEN } = process.env;
@@ -8,11 +7,13 @@ if (!TRPC_GITHUB_TOKEN) {
   throw new Error('TRPC_GITHUB_TOKEN is not set');
 }
 
-const graphqlWithAuth = graphql.defaults({
-  headers: {
-    authorization: `token ${TRPC_GITHUB_TOKEN}`,
-  },
-});
+const graphqlWithAuthPromise = import('@octokit/graphql').then(({ graphql }) =>
+  graphql.defaults({
+    headers: {
+      authorization: `token ${TRPC_GITHUB_TOKEN}`,
+    },
+  }),
+);
 
 function ensureHttpAndAddRef(urlStr: string) {
   const httpUrlStr = urlStr.startsWith('http') ? urlStr : `http://${urlStr}`;
@@ -76,6 +77,7 @@ const sponsorEsqueFragment = `
 `;
 async function getViewerGithubSponsors() {
   let sponsors: ReturnType<typeof flattenSponsor>[] = [];
+  const graphqlWithAuth = await graphqlWithAuthPromise;
 
   const fetchPage = async (cursor = '') => {
     const res: {
@@ -116,6 +118,7 @@ async function getViewerGithubSponsors() {
 
 async function getOrgGithubSponsors() {
   let sponsors: ReturnType<typeof flattenSponsor>[] = [];
+  const graphqlWithAuth = await graphqlWithAuthPromise;
 
   const fetchPage = async (cursor = '') => {
     const res: {
