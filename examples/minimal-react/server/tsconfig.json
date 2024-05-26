@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
-    "esModuleInterop": true,
+    "lib": ["es2023"],
+    "module": "node16",
+    "target": "es2022",
+
     "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node16",
     "outDir": "dist"
   }
 }
