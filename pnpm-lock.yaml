@@ -23822,6 +23822,8 @@ packages:
     resolution: {integrity: sha512-4jcsj3vFyFGINLLHEmehfOPKdcw+HqV65RwsV2IdyLHp9wpvGJRVXWg1yY8sq0ASEbQfTVBRtI7LcDGv3Qpj8g==}
     peerDependencies:
       zod: ^3.11.x
+    dependencies:
+      zod: 3.23.8
     dev: false
 
   /zod@3.23.8:
