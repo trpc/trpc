@@ -306,25 +306,15 @@ describe('useQuery()', () => {
         },
       ]
     `);
-    expect(states.map((s) => s.status)).toEqual([
+    expect(states.map((s) => [s.status, s.fetchStatus])).toEqual([
       // initial
-      'pending',
+      ['pending', 'fetching'],
       // waiting 3 values
-      'pending',
-      'pending',
-      'pending',
+      ['pending', 'fetching'],
+      ['pending', 'fetching'],
+      ['pending', 'fetching'],
       // done iterating
-      'success',
-    ]);
-    expect(states.map((s) => s.fetchStatus)).toEqual([
-      // initial
-      'fetching',
-      // waiting 3 values
-      'fetching',
-      'fetching',
-      'fetching',
-      // done iterating
-      'idle',
+      ['success', 'idle'],
     ]);
   });
 });
