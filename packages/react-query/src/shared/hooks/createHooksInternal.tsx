@@ -187,7 +187,6 @@ export function createRootHooks<
               );
 
               if (isAsyncIterable(result)) {
-                const aggregate: unknown[] = [];
                 const queryHash = hashKey(queryKey);
 
                 const queryCache = queryClient.getQueryCache();
@@ -198,17 +197,16 @@ export function createRootHooks<
                 });
 
                 query.setState({
-                  data: aggregate,
+                  data: [],
                   status: 'pending',
                 });
 
+                const aggregate: unknown[] = [];
                 for await (const value of result) {
                   aggregate.push(value);
-                  queryClient.setQueryData(queryKey, [...aggregate]);
 
                   query.setState({
                     data: [...aggregate],
-                    status: 'pending',
                   });
                 }
                 return aggregate;
