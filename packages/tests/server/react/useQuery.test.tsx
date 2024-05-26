@@ -21,8 +21,6 @@ function createDeferred<TValue>() {
   return { promise, resolve: resolve!, reject: reject! };
 }
 
-type Deferred<TValue> = ReturnType<typeof createDeferred<TValue>>;
-
 const ctx = konn()
   .beforeEach(() => {
     let iterableDeferred = createDeferred<void>();
