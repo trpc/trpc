@@ -213,7 +213,7 @@ importers:
         version: 5.4.2
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@playwright/test':
         specifier: ^1.26.1
@@ -253,7 +253,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -339,7 +339,7 @@ importers:
         version: 1.12.4
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@playwright/test':
         specifier: ^1.26.1
@@ -391,7 +391,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@playwright/test':
         specifier: ^1.26.1
@@ -450,7 +450,7 @@ importers:
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.0.0
@@ -490,7 +490,7 @@ importers:
         version: 4.18.2
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/express':
         specifier: ^4.17.17
@@ -539,7 +539,7 @@ importers:
         version: 4.18.2
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/express':
         specifier: ^4.17.17
@@ -597,7 +597,7 @@ importers:
         version: 8.16.0
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -640,7 +640,7 @@ importers:
         version: 4.6.2
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -674,7 +674,7 @@ importers:
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -760,7 +760,7 @@ importers:
         version: 2.8.5
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/cors':
         specifier: ^2.8.13
@@ -843,7 +843,7 @@ importers:
         version: 2.8.5
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/cors':
         specifier: ^2.8.13
@@ -889,7 +889,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -938,7 +938,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -993,10 +993,10 @@ importers:
         version: 7.43.3(react@18.3.1)
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
       zod-form-data:
         specifier: ^2.0.1
-        version: 2.0.1(zod@3.22.4)
+        version: 2.0.1(zod@3.23.8)
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -1042,7 +1042,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -1097,7 +1097,7 @@ importers:
         version: 1.12.4
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@playwright/test':
         specifier: ^1.26.1
@@ -1215,7 +1215,7 @@ importers:
         version: 1.0.5
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@playwright/test':
         specifier: ^1.26.1
@@ -1291,7 +1291,7 @@ importers:
         version: 8.16.0
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@playwright/test':
         specifier: ^1.26.1
@@ -1397,7 +1397,7 @@ importers:
         version: 8.16.0
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -1437,7 +1437,7 @@ importers:
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@edge-runtime/types':
         specifier: ^2.0.2
@@ -1537,7 +1537,7 @@ importers:
         version: 4.6.2
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
 
   packages/react-query:
     devDependencies:
@@ -1582,7 +1582,7 @@ importers:
         version: 4.6.2
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
 
   packages/server:
     devDependencies:
@@ -1672,7 +1672,7 @@ importers:
         version: 1.0.0
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
 
   packages/tests:
     dependencies:
@@ -1888,7 +1888,7 @@ importers:
         version: 2.0.0
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@babel/core':
         specifier: ^7.23.2
@@ -2003,7 +2003,7 @@ importers:
         version: 18.2.0(react@18.2.0)
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/node':
         specifier: ^20.10.0
@@ -23815,31 +23815,17 @@ packages:
   /zod-error@1.5.0:
     resolution: {integrity: sha512-zzopKZ/skI9iXpqCEPj+iLCKl9b88E43ehcU+sbRoHuwGd9F1IDVGQ70TyO6kmfiRL1g4IXkjsXK+g1gLYl4WQ==}
     dependencies:
-      zod: 3.22.4
-    dev: false
-
-  /zod-form-data@2.0.1(zod@3.22.4):
-    resolution: {integrity: sha512-4jcsj3vFyFGINLLHEmehfOPKdcw+HqV65RwsV2IdyLHp9wpvGJRVXWg1yY8sq0ASEbQfTVBRtI7LcDGv3Qpj8g==}
-    peerDependencies:
-      zod: ^3.11.x
-    dependencies:
-      zod: 3.22.4
+      zod: 3.23.8
     dev: false
 
   /zod-form-data@2.0.1(zod@3.23.8):
     resolution: {integrity: sha512-4jcsj3vFyFGINLLHEmehfOPKdcw+HqV65RwsV2IdyLHp9wpvGJRVXWg1yY8sq0ASEbQfTVBRtI7LcDGv3Qpj8g==}
     peerDependencies:
       zod: ^3.11.x
-    dependencies:
-      zod: 3.23.8
     dev: false
-
-  /zod@3.22.4:
-    resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
-    dev: false
 
   /zwitch@1.0.5:
     resolution: {integrity: sha512-V50KMwwzqJV0NpZIZFwfOD5/lyny3WlSzRiXgA0G7VUnRlqttta1L6UQIHzd6EuBY/cHGfwTIck7w1yH6Q5zUw==}
