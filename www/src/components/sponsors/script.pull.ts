@@ -199,17 +199,17 @@ async function main() {
     );
 
     // add manual sponsors
-    rawList.push({
-      __typename: 'Organization',
-      name: 'Tola',
-      imgSrc: 'https://avatars.githubusercontent.com/u/92736868?v=4',
-      monthlyPriceInDollars: 1110,
-      link: 'https://tolahq.com/?ref=trpc',
-      privacyLevel: 'PUBLIC',
-      login: 'tolahq',
-      // 8 months between 1st of sept and 1st of april
-      createdAt: Date.now() - 8 * 30 * 24 * 60 * 60 * 1000,
-    });
+    // rawList.push({
+    //   __typename: 'Organization',
+    //   name: 'Tola',
+    //   imgSrc: 'https://avatars.githubusercontent.com/u/92736868?v=4',
+    //   monthlyPriceInDollars: 1110,
+    //   link: 'https://tolahq.com/?ref=trpc',
+    //   privacyLevel: 'PUBLIC',
+    //   login: 'tolahq',
+    //   // 8 months between 1st of sept and 1st of april
+    //   createdAt: Date.now() - 8 * 30 * 24 * 60 * 60 * 1000,
+    // });
     const list = rawList.map((sponsor) => {
       // calculate total value
       const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
