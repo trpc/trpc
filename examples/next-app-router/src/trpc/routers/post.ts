@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { protectedProcedure, publicProcedure } from '../init';
 
 export const postRouter = {
-  list: publicProcedure.query(() =>
+  list: protectedProcedure.query(() =>
     db.query.Post.findMany({ with: { user: true } }),
   ),
   create: protectedProcedure
