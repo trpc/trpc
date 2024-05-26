@@ -241,12 +241,12 @@ describe('useQuery()', () => {
           },
         },
       });
-      ctx.nextIterable();
       states.push({
         status: query1.status,
         data: query1.data,
         fetchStatus: query1.fetchStatus,
       });
+      ctx.nextIterable();
 
       expectTypeOf(query1.data!).toMatchTypeOf<number[]>();
 
