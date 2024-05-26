@@ -10,13 +10,32 @@ import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
 
+function createDeferred<TValue>() {
+  let resolve: (value: TValue) => void;
+  let reject: (error: unknown) => void;
+  const promise = new Promise<TValue>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  return { promise, resolve: resolve!, reject: reject! };
+}
+
+type Deferred<TValue> = ReturnType<typeof createDeferred<TValue>>;
+
 const ctx = konn()
   .beforeEach(() => {
+    let iterableDeferred = createDeferred<void>();
+    const nextIterable = () => {
+      iterableDeferred.resolve();
+      iterableDeferred = createDeferred();
+    };
     const t = initTRPC.create({
       experimental: {
         iterablesAndDeferreds: true,
       },
     });
+
     const appRouter = t.router({
       post: t.router({
         byId: t.procedure
@@ -53,14 +72,17 @@ const ctx = konn()
           }),
         iterable: t.procedure.query(async function* () {
           for (let i = 0; i < 3; i++) {
-            await waitMs(20);
+            await iterableDeferred.promise;
             yield i + 1;
           }
         }),
       }),
     });
 
-    return getServerAndReactClient(appRouter);
+    return {
+      nextIterable,
+      ...getServerAndReactClient(appRouter),
+    };
   })
   .afterEach(async (ctx) => {
     await ctx?.close?.();
@@ -220,6 +242,7 @@ describe('useQuery()', () => {
           },
         },
       });
+      ctx.nextIterable();
       states.push({
         status: query1.status,
         data: query1.data,
