@@ -11,7 +11,8 @@ export async function signInWithCredentials(
   try {
     await signIn('credentials', formData);
   } catch (error) {
-    isRedirectError(error);
+    // TODO: Use `unstable_rethrow` from Next (it's available in Next 15 RC)
+    if (isRedirectError(error)) throw error;
 
     if (error instanceof AuthError) {
       switch (error.type) {
