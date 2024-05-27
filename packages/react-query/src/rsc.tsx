@@ -48,12 +48,14 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     ) as unknown as DecorateProcedure<AnyProcedure>;
 
     const [input] = args;
-    const result = await proc(input);
+    const promise = proc(input);
 
-    const queryKey = getQueryKeyInternal(path, input, 'query');
-    getQueryClient().setQueryData(queryKey, result);
+    void getQueryClient().prefetchQuery({
+      queryKey: getQueryKeyInternal(path, input, 'query'),
+      queryFn: () => promise,
+    });
 
-    return result;
+    return promise;
   }) as DecorateRouterRecord<TRouter['_def']['record']>;
 
   function HydrateClient(props: { children: React.ReactNode }) {
@@ -69,18 +71,22 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
   /**
    * HOC to prefetch a query
    */
-  async function PrefetchQuery(props: {
-    /**
-     * The query to prefetch
-     * @example trpc.post.byId({ id: 5 })
-     */
-    query: Promise<unknown>;
-    children: React.ReactNode;
-  }) {
-    await props.query;
+  // async function PrefetchQuery(props: {
+  //   /**
+  //    * The query to prefetch
+  //    * @example trpc.post.byId({ id: 5 })
+  //    */
+  //   queries: Promise<unknown>[];
+  //   children: React.ReactNode;
+  // }) {
+  //   const qc = getQueryClient();
+  //   for (const query of props.queries) {
+  //     qc.prefetchQuery({});
+  //   }
+  //   // await props.query;
 
-    return <HydrateClient>{props.children}</HydrateClient>;
-  }
+  //   return <HydrateClient>{props.children}</HydrateClient>;
+  // }
 
-  return { trpc: wrappedProxy, HydrateClient, PrefetchQuery };
+  return { trpc: wrappedProxy, HydrateClient };
 }
