@@ -33,10 +33,6 @@ export default async function Home() {
       </HydrateClient>
 
       <Suspense fallback="Loading 1">
-        {/* 
-          💡 Use the `PrefetchQuery` helper if you don't
-             need the data in the RSC and just wanna prefetch
-        */}
         <HydrateClient>
           <WaitCard ms={1000} />
         </HydrateClient>
