@@ -18,34 +18,31 @@ export default async function Home() {
   trpc.wait({ ms: 500 });
 
   return (
-    <main className="container max-w-xl py-8">
-      <Suspense>
-        <div className="absolute right-8 top-8">
-          <UserButton />
-        </div>
-      </Suspense>
-      <HydrateClient>
+    <HydrateClient>
+      <main className="container max-w-xl py-8">
+        <Suspense>
+          <div className="absolute right-8 top-8">
+            <UserButton />
+          </div>
+        </Suspense>
+
         {/* 
           🤯 Client Component will have the data
              without needing to do a clientside fetch
         */}
         <Posts />
-      </HydrateClient>
 
-      <Suspense fallback="Loading 1">
-        <HydrateClient>
+        <Suspense fallback="Loading 1">
           <WaitCard ms={1000} />
-        </HydrateClient>
-        {/* 
+          {/* 
           💡 You can do nested suspense boundaries
         */}
-        <Suspense fallback="Loading 2">
-          <HydrateClient>
+          <Suspense fallback="Loading 2">
             <WaitCard ms={2000} />
             <WaitCard ms={500} />
-          </HydrateClient>
+          </Suspense>
         </Suspense>
-      </Suspense>
-    </main>
+      </main>
+    </HydrateClient>
   );
 }
