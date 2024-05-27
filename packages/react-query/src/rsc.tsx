@@ -68,25 +68,5 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     );
   }
 
-  /**
-   * HOC to prefetch a query
-   */
-  // async function PrefetchQuery(props: {
-  //   /**
-  //    * The query to prefetch
-  //    * @example trpc.post.byId({ id: 5 })
-  //    */
-  //   queries: Promise<unknown>[];
-  //   children: React.ReactNode;
-  // }) {
-  //   const qc = getQueryClient();
-  //   for (const query of props.queries) {
-  //     qc.prefetchQuery({});
-  //   }
-  //   // await props.query;
-
-  //   return <HydrateClient>{props.children}</HydrateClient>;
-  // }
-
   return { trpc: wrappedProxy, HydrateClient };
 }
