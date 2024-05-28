@@ -195,7 +195,7 @@ export function createRootHooks<
 
                 query.setState({
                   data: [],
-                  status: 'pending',
+                  status: 'success',
                 });
 
                 const aggregate: unknown[] = [];

@@ -266,6 +266,16 @@ describe('useQuery()', () => {
       expect(utils.container).toHaveTextContent(`success:notFetching`);
     });
 
+    expect(states.map((s) => [s.status, s.fetchStatus])).toEqual([
+      // initial
+      ['pending', 'fetching'],
+      // waiting 3 values
+      ['success', 'fetching'],
+      ['success', 'fetching'],
+      ['success', 'fetching'],
+      // done iterating
+      ['success', 'idle'],
+    ]);
     expect(states).toMatchInlineSnapshot(`
       Array [
         Object {
@@ -276,14 +286,14 @@ describe('useQuery()', () => {
         Object {
           "data": Array [],
           "fetchStatus": "fetching",
-          "status": "pending",
+          "status": "success",
         },
         Object {
           "data": Array [
             1,
           ],
           "fetchStatus": "fetching",
-          "status": "pending",
+          "status": "success",
         },
         Object {
           "data": Array [
@@ -291,7 +301,7 @@ describe('useQuery()', () => {
             2,
           ],
           "fetchStatus": "fetching",
-          "status": "pending",
+          "status": "success",
         },
         Object {
           "data": Array [
@@ -304,16 +314,6 @@ describe('useQuery()', () => {
         },
       ]
     `);
-    expect(states.map((s) => [s.status, s.fetchStatus])).toEqual([
-      // initial
-      ['pending', 'fetching'],
-      // waiting 3 values
-      ['pending', 'fetching'],
-      ['pending', 'fetching'],
-      ['pending', 'fetching'],
-      // done iterating
-      ['success', 'idle'],
-    ]);
   });
 });
 
