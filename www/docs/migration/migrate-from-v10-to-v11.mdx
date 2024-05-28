@@ -26,7 +26,7 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 ### Support for streaming responses over HTTP
 
-We now support streaming mutations and queries using the [`httpBatchStreamLink`](../client/links/httpBatchStreamLink.md).
+We now support streaming mutations and queries using the [`httpBatchStreamLink`](../client/links/httpBatchStreamLink.md#generators).
 
 This means that query and mutation resolvers can either be [`AsyncGenerator`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/AsyncGenerator)s with `yield` or return promises that can be deferred for later and you can use stream responses over HTTP, without using WebSockets.
 

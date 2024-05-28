@@ -1473,6 +1473,9 @@ importers:
       rollup:
         specifier: ^4.9.5
         version: 4.9.5
+      tslib:
+        specifier: ^2.5.0
+        version: 2.6.2
       tsx:
         specifier: ^4.0.0
         version: 4.6.2
@@ -1569,6 +1572,9 @@ importers:
       rollup:
         specifier: ^4.9.5
         version: 4.9.5
+      tslib:
+        specifier: ^2.5.0
+        version: 2.6.2
       tsx:
         specifier: ^4.0.0
         version: 4.6.2

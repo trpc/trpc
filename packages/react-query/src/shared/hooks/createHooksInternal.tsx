@@ -13,6 +13,7 @@ import {
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { createTRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type { SSRState, TRPCContextState } from '../../internals/context';
 import { TRPCContext } from '../../internals/context';
@@ -170,7 +171,7 @@ export function createRootHooks<
         queryKey: queryKey as any,
         queryFn: isInputSkipToken
           ? input
-          : (queryFunctionContext) => {
+          : async (queryFunctionContext) => {
               const actualOpts = {
                 ...ssrOpts,
                 trpc: {
@@ -181,7 +182,33 @@ export function createRootHooks<
                 },
               };
 
-              return client.query(...getClientArgs(queryKey, actualOpts));
+              const result = await client.query(
+                ...getClientArgs(queryKey, actualOpts),
+              );
+
+              if (isAsyncIterable(result)) {
+                const queryCache = queryClient.getQueryCache();
+
+                const query = queryCache.build(queryFunctionContext.queryKey, {
+                  queryKey,
+                });
+
+                query.setState({
+                  data: [],
+                  status: 'success',
+                });
+
+                const aggregate: unknown[] = [];
+                for await (const value of result) {
+                  aggregate.push(value);
+
+                  query.setState({
+                    data: [...aggregate],
+                  });
+                }
+                return aggregate;
+              }
+              return result;
             },
       },
       queryClient,
