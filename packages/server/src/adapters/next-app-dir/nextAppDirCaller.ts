@@ -46,6 +46,7 @@ export function nextAppDirCaller<TContext, TMeta>(
   const createContext = async (): Promise<TContext> => {
     return config?.createContext?.() ?? ({} as TContext);
   };
+
   return async (opts) => {
     const path =
       config.pathExtractor?.({ meta: opts._def.meta as TMeta }) ?? '';
