@@ -1,4 +1,4 @@
-import * as nextNavigation from 'next/navigation';
+import * as nextNavigation from 'next/navigation.js';
 import type { TRPCError } from '../../@trpc/server';
 import { TRPCRedirectError } from './redirect';
 
