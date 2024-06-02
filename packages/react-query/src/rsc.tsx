@@ -3,26 +3,29 @@ import {
   HydrationBoundary,
   type QueryClient,
 } from '@tanstack/react-query';
-import { TRPCClientError } from '@trpc/client';
-import { inferTransformedProcedureOutput } from '@trpc/server';
+import type { TRPCClientError } from '@trpc/client';
+import type { inferTransformedProcedureOutput } from '@trpc/server';
 import {
-  AnyRootTypes,
   createRecursiveProxy,
-  inferRouterRootTypes,
-  Maybe,
   type AnyRouter,
   type inferProcedureInput,
   type RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
   AnyProcedure,
+  AnyRootTypes,
   inferProcedureOutput,
+  inferRouterRootTypes,
+  Maybe,
   RouterCaller,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { getQueryKeyInternal } from './internals/getQueryKey';
-import { TRPCFetchInfiniteQueryOptions, TRPCFetchQueryOptions } from './shared';
+import type {
+  TRPCFetchInfiniteQueryOptions,
+  TRPCFetchQueryOptions,
+} from './shared';
 
 const HELPERS = ['prefetch', 'prefetchInfinite'];
 
@@ -83,7 +86,7 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     const input = args[0];
     const promise = proc(input);
 
-    const helper = path.pop()!;
+    const helper = path.pop();
     if (helper === 'prefetch') {
       const args1 = args[1] as Maybe<
         TRPCFetchInfiniteQueryOptions<any, any, any>
