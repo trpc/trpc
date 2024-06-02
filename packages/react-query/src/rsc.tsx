@@ -6,7 +6,10 @@ import {
 import { TRPCClientError } from '@trpc/client';
 import { inferTransformedProcedureOutput } from '@trpc/server';
 import {
+  AnyRootTypes,
   createRecursiveProxy,
+  inferRouterRootTypes,
+  Maybe,
   type AnyRouter,
   type inferProcedureInput,
   type RouterRecord,
@@ -17,9 +20,6 @@ import type {
   RouterCaller,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
-import { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import/rootConfig';
-import { inferRouterRootTypes } from '@trpc/server/unstable-core-do-not-import/router';
-import { Maybe } from '@trpc/server/unstable-core-do-not-import/types';
 import * as React from 'react';
 import { getQueryKeyInternal } from './internals/getQueryKey';
 import { TRPCFetchInfiniteQueryOptions, TRPCFetchQueryOptions } from './shared';
