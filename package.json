@@ -22,7 +22,6 @@
     "format-fix": "pnpm format --write --list-different",
     "lint-prune": "! ts-prune | grep -v \"used in module\" | grep -v rpc | grep -v observable | grep -v http",
     "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -o -name __generated__ -type d -prune | xargs rm -rf",
-    "codegen:override-prisma": "tsx scripts/addPrismaOverrides.ts",
     "codegen:tests": "turbo codegen-tests",
     "codegen:entrypoints": "turbo codegen-entrypoints",
     "codegen": "run-p codegen:*",
@@ -87,17 +86,5 @@
     "vitest": "^1.5.2",
     "vitest-environment-miniflare": "^2.14.1",
     "zod": "^3.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "examples-trpc-next-prisma-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-5.12.1.tgz?id=examples-trpc-next-prisma-starter",
-      "examples-trpc-next-prisma-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-5.12.1.tgz?id=examples-trpc-next-prisma-starter",
-      "examples-trpc-next-prisma-todomvc>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-5.12.1.tgz?id=examples-trpc-next-prisma-todomvc",
-      "examples-trpc-next-prisma-todomvc>prisma": "https://registry.npmjs.com/prisma/-/prisma-5.12.1.tgz?id=examples-trpc-next-prisma-todomvc",
-      "examples-next-websockets-starter>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-5.12.1.tgz?id=examples-next-websockets-starter",
-      "examples-next-websockets-starter>prisma": "https://registry.npmjs.com/prisma/-/prisma-5.12.1.tgz?id=examples-next-websockets-starter",
-      "examples-next-sse>@prisma/client": "https://registry.npmjs.com/@prisma/client/-/client-5.12.1.tgz?id=examples-next-sse",
-      "examples-next-sse>prisma": "https://registry.npmjs.com/prisma/-/prisma-5.12.1.tgz?id=examples-next-sse"
-    }
   }
 }

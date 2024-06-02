@@ -7,6 +7,7 @@ import {
   httpBatchLink,
   splitLink,
   unstable_httpSubscriptionLink,
+  unstable_httpBatchStreamLink,
   wsLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
@@ -50,9 +51,16 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
                   client: clientOpts.wsClient,
                   transformer: clientOpts.transformer as any,
                 }),
-          false: httpBatchLink({
-            url: clientOpts.httpUrl,
-            transformer: clientOpts.transformer as any,
+          false: splitLink({
+            condition: (op) => !!op.context['stream'],
+            true: unstable_httpBatchStreamLink({
+              url: clientOpts.httpUrl,
+              transformer: clientOpts.transformer as any,
+            }),
+            false: httpBatchLink({
+              url: clientOpts.httpUrl,
+              transformer: clientOpts.transformer as any,
+            }),
           }),
         }),
       ],
