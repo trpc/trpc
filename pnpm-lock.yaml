@@ -181,7 +181,7 @@ importers:
         version: 14.1.4(@babel/core@7.24.6)(react-dom@18.3.1)(react@18.3.1)
       next-auth:
         specifier: ^4.22.1
-        version: 4.22.1(next@14.1.4)(react-dom@18.3.1)(react@18.3.1)
+        version: 4.24.5(next@14.1.4)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1265,7 +1265,7 @@ importers:
         version: 14.1.4(@babel/core@7.24.6)(react-dom@18.3.1)(react@18.3.1)
       next-auth:
         specifier: ^4.22.1
-        version: 4.22.1(next@14.1.4)(react-dom@18.3.1)(react@18.3.1)
+        version: 4.24.5(next@14.1.4)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1938,7 +1938,7 @@ importers:
         version: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
       next-auth:
         specifier: ^4.22.1
-        version: 4.22.1(next@14.1.4)(react-dom@18.3.1)(react@18.3.1)
+        version: 4.24.5(next@14.1.4)(react-dom@18.3.1)(react@18.3.1)
       npm-run-all2:
         specifier: ^6.0.0
         version: 6.1.1
@@ -4372,12 +4372,20 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.13.11
+    dev: false
 
   /@babel/runtime@7.23.2:
     resolution: {integrity: sha512-mM8eg4yl5D6i3lu2QKPuPH4FArvJ8KhTofbE7jwMUv9KX5mBvwPAqnV3MlyBNqdp9RyRKP6Yck8TrfYrPvX3bg==}
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.14.0
+    dev: false
+
+  /@babel/runtime@7.24.6:
+    resolution: {integrity: sha512-Ja18XcETdEl5mzzACGd+DKgaGJzPTCow7EglgwTmHdwokzDFYh/MHua6lU6DV/hjF2IaOJ4oX2nqnjG7RElKOw==}
+    engines: {node: '>=6.9.0'}
+    dependencies:
+      regenerator-runtime: 0.14.1
 
   /@babel/template@7.22.15:
     resolution: {integrity: sha512-QPErUVm4uyJa60rkI73qneDacvdvzxshT3kksGqlGWYdOTIUOwJ7RDUL8sGqslY1uXWSL6xMFKEXDS3ox2uF0w==}
@@ -7227,7 +7235,7 @@ packages:
       agent-base: 7.1.0
       http-proxy-agent: 7.0.0
       https-proxy-agent: 7.0.2
-      lru-cache: 10.2.0
+      lru-cache: 10.2.2
       socks-proxy-agent: 8.0.2
     transitivePeerDependencies:
       - supports-color
@@ -7245,7 +7253,7 @@ packages:
     engines: {node: ^16.14.0 || >=18.0.0}
     dependencies:
       '@npmcli/promise-spawn': 7.0.1
-      lru-cache: 10.2.0
+      lru-cache: 10.2.2
       npm-pick-manifest: 9.0.0
       proc-log: 3.0.0
       promise-inflight: 1.0.1
@@ -10643,7 +10651,7 @@ packages:
       '@npmcli/fs': 3.1.0
       fs-minipass: 3.0.2
       glob: 10.2.7
-      lru-cache: 10.2.0
+      lru-cache: 10.2.2
       minipass: 7.0.4
       minipass-collect: 2.0.1
       minipass-flush: 1.0.5
@@ -13200,7 +13208,7 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8
     dependencies:
-      '@babel/runtime': 7.23.2
+      '@babel/runtime': 7.24.6
       aria-query: 5.1.3
       array-includes: 3.1.7
       array.prototype.flatmap: 1.3.2
@@ -14910,7 +14918,7 @@ packages:
   /history@4.10.1:
     resolution: {integrity: sha512-36nwAD620w12kuzPAsyINPWJqlNbij+hpK1k9XRloDtym8mxzGYl2c17LnV6IAGB2Dmg4tEa7G7DlawS0+qjew==}
     dependencies:
-      '@babel/runtime': 7.23.2
+      '@babel/runtime': 7.21.5
       loose-envify: 1.4.0
       resolve-pathname: 3.0.0
       tiny-invariant: 1.3.1
@@ -15951,8 +15959,8 @@ packages:
     resolution: {integrity: sha512-wW1u3cK81b+SFcHjGC8zw87yuyUweEFe0UJirrXEw1NasW00eF7sZjeG3SLBGz001ozxQ46Y9sofDvhBmWFtXQ==}
     dev: true
 
-  /jose@4.14.4:
-    resolution: {integrity: sha512-j8GhLiKmUAh+dsFXlX1aJCbt5KMibuKb+d7j1JaOJG6s2UjX1PQlW+OKB/sD4a/5ZYF4RcmYmLSndOoU3Lt/3g==}
+  /jose@4.15.5:
+    resolution: {integrity: sha512-jc7BFxgKPKi94uOvEmzlSWFFe2+vASyXaKUpdQKatWAESU2MWjDfFf0fdfc83CDKcA5QecabZeNLyfhe3yKNkg==}
 
   /js-string-escape@1.0.1:
     resolution: {integrity: sha512-Smw4xcfIQ5LVjAOuJCvN/zIodzA/BBSsluuoSykP+lUvScIi4U6RJLfwHet5cxFnCswUjISV8oAXaqaJDY3chg==}
@@ -16578,6 +16586,11 @@ packages:
   /lru-cache@10.2.0:
     resolution: {integrity: sha512-2bIM8x+VAf6JT4bKAljS1qUWgMsqZRPGJS6FSahIMPVvctcNhyVp7AJu7quxOW9jwkryBReKZY5tY5JYv2n/7Q==}
     engines: {node: 14 || >=16.14}
+
+  /lru-cache@10.2.2:
+    resolution: {integrity: sha512-9hp3Vp2/hFQUiIwKo8XCeFVnrg8Pk3TYNPIR7tJADKi5YfcF7vEaK7avFHTlSy3kOKYaJQaalfEo6YuXdceBOQ==}
+    engines: {node: 14 || >=16.14}
+    dev: false
 
   /lru-cache@4.1.5:
     resolution: {integrity: sha512-sWZlbEP2OsHNkXrMl5GYk/jKk70MBng6UU4YI/qGDYbgf6YbP4EvmqISbXCoJiRKs+1bSpFHVgQxvJ17F2li5g==}
@@ -17281,10 +17294,10 @@ packages:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
     dev: false
 
-  /next-auth@4.22.1(next@14.1.4)(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-NTR3f6W7/AWXKw8GSsgSyQcDW6jkslZLH8AiZa5PQ09w1kR8uHtR9rez/E9gAq/o17+p0JYHE8QjF3RoniiObA==}
+  /next-auth@4.24.5(next@14.1.4)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-3RafV3XbfIKk6rF6GlLE4/KxjTcuMCifqrmD+98ejFq73SRoj2rmzoca8u764977lH/Q7jo6Xu6yM+Re1Mz/Og==}
     peerDependencies:
-      next: ^12.2.5 || ^13
+      next: ^12.2.5 || ^13 || ^14
       nodemailer: ^6.6.5
       react: ^17.0.2 || ^18
       react-dom: ^17.0.2 || ^18
@@ -17292,15 +17305,15 @@ packages:
       nodemailer:
         optional: true
     dependencies:
-      '@babel/runtime': 7.21.5
+      '@babel/runtime': 7.24.6
       '@panva/hkdf': 1.1.1
       cookie: 0.5.0
-      jose: 4.14.4
+      jose: 4.15.5
       next: 14.1.4(@babel/core@7.24.6)(react-dom@18.3.1)(react@18.3.1)
       oauth: 0.9.15
-      openid-client: 5.4.2
-      preact: 10.11.3
-      preact-render-to-string: 5.2.3(preact@10.11.3)
+      openid-client: 5.6.5
+      preact: 10.22.0
+      preact-render-to-string: 5.2.6(preact@10.22.0)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       uuid: 8.3.2
@@ -18032,10 +18045,10 @@ packages:
     hasBin: true
     dev: false
 
-  /openid-client@5.4.2:
-    resolution: {integrity: sha512-lIhsdPvJ2RneBm3nGBBhQchpe3Uka//xf7WPHTIglery8gnckvW7Bd9IaQzekzXJvWthCMyi/xVEyGW0RFPytw==}
+  /openid-client@5.6.5:
+    resolution: {integrity: sha512-5P4qO9nGJzB5PI0LFlhj4Dzg3m4odt0qsJTfyEtZyOlkgpILwEioOhVVJOrS1iVH494S4Ee5OCjjg6Bf5WOj3w==}
     dependencies:
-      jose: 4.14.4
+      jose: 4.15.5
       lru-cache: 6.0.0
       object-hash: 2.2.0
       oidc-token-hash: 5.0.3
@@ -18442,7 +18455,7 @@ packages:
     resolution: {integrity: sha512-MkhCqzzBEpPvxxQ71Md0b1Kk51W01lrYvlMzSUaIzNsODdd7mqhiimSZlr+VegAz5Z6Vzt9Xg2ttE//XBhH3EQ==}
     engines: {node: '>=16 || 14 >=14.17'}
     dependencies:
-      lru-cache: 10.2.0
+      lru-cache: 10.2.2
       minipass: 5.0.0
     dev: false
 
@@ -19379,16 +19392,16 @@ packages:
       picocolors: 1.0.1
       source-map-js: 1.2.0
 
-  /preact-render-to-string@5.2.3(preact@10.11.3):
-    resolution: {integrity: sha512-aPDxUn5o3GhWdtJtW0svRC2SS/l8D9MAgo2+AWml+BhDImb27ALf04Q2d+AHqUUOc6RdSXFIBVa2gxzgMKgtZA==}
+  /preact-render-to-string@5.2.6(preact@10.22.0):
+    resolution: {integrity: sha512-JyhErpYOvBV1hEPwIxc/fHWXPfnEGdRKxc8gFdAZ7XV4tlzyzG847XAyEZqoDnynP88akM4eaHcSOzNcLWFguw==}
     peerDependencies:
       preact: '>=10'
     dependencies:
-      preact: 10.11.3
+      preact: 10.22.0
       pretty-format: 3.8.0
 
-  /preact@10.11.3:
-    resolution: {integrity: sha512-eY93IVpod/zG3uMF22Unl8h9KkrcKIRs2EGar8hwLZZDU1lkjph303V9HZBwufh2s736U6VXuhD109LYqPoffg==}
+  /preact@10.22.0:
+    resolution: {integrity: sha512-RRurnSjJPj4rp5K6XoP45Ui33ncb7e4H7WiOHVpjbkvqvA3U+N8Z6Qbo0AE6leGYBV66n8EhEaFixvIu3SkxFw==}
 
   /prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
@@ -19859,7 +19872,7 @@ packages:
       react: ^16.6.0 || ^17.0.0 || ^18.0.0
       react-dom: ^16.6.0 || ^17.0.0 || ^18.0.0
     dependencies:
-      '@babel/runtime': 7.23.2
+      '@babel/runtime': 7.21.5
       invariant: 2.2.4
       prop-types: 15.8.1
       react: 18.3.1
@@ -19957,7 +19970,7 @@ packages:
       react-loadable: '*'
       webpack: '>=4.41.1 || 5.x'
     dependencies:
-      '@babel/runtime': 7.23.2
+      '@babel/runtime': 7.21.5
       react-loadable: /@docusaurus/react-loadable@5.5.2(react@18.3.1)
       webpack: 5.75.0(@swc/core@1.3.3)
     dev: false
@@ -19973,7 +19986,7 @@ packages:
       react: '>=15'
       react-router: '>=5'
     dependencies:
-      '@babel/runtime': 7.23.2
+      '@babel/runtime': 7.21.5
       react: 18.3.1
       react-router: 5.3.4(react@18.3.1)
     dev: false
@@ -19983,7 +19996,7 @@ packages:
     peerDependencies:
       react: '>=15'
     dependencies:
-      '@babel/runtime': 7.23.2
+      '@babel/runtime': 7.21.5
       history: 4.10.1
       loose-envify: 1.4.0
       prop-types: 15.8.1
@@ -19998,7 +20011,7 @@ packages:
     peerDependencies:
       react: '>=15'
     dependencies:
-      '@babel/runtime': 7.23.2
+      '@babel/runtime': 7.21.5
       history: 4.10.1
       hoist-non-react-statics: 3.3.2
       loose-envify: 1.4.0
@@ -20016,7 +20029,7 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
-      '@babel/runtime': 7.23.2
+      '@babel/runtime': 7.24.6
       react: 18.3.1
       use-composed-ref: 1.3.0(react@18.3.1)
       use-latest: 1.2.1(@types/react@18.3.1)(react@18.3.1)
@@ -20250,14 +20263,19 @@ packages:
 
   /regenerator-runtime@0.13.11:
     resolution: {integrity: sha512-kY1AZVr2Ra+t+piVaJ4gxaFaReZVH40AKNo7UCX6W+dEwBo/2oZJzqfuN1qLq1oL45o56cPaTXELwrTh8Fpggg==}
+    dev: false
 
   /regenerator-runtime@0.14.0:
     resolution: {integrity: sha512-srw17NI0TUWHuGa5CFGGmhfNIeja30WMBfbslPNhf6JrqQlLN5gcrvig1oqPxiVaXb0oW0XRKtH6Nngs5lKCIA==}
+    dev: false
+
+  /regenerator-runtime@0.14.1:
+    resolution: {integrity: sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw==}
 
   /regenerator-transform@0.15.2:
     resolution: {integrity: sha512-hfMp2BoF0qOk3uc5V20ALGDS2ddjQaLrdl7xrGXvAIow7qeWRM2VA2HuCHkUKk9slq3VwEwLNK3DFBqDfPGYtg==}
     dependencies:
-      '@babel/runtime': 7.23.2
+      '@babel/runtime': 7.24.6
 
   /regexp-tree@0.1.27:
     resolution: {integrity: sha512-iETxpjK6YoRWJG5o6hXLwvjYAoW+FEZn9os0PD/b6AP6xQwsa/Y7lCVgIixBbUPMfhu+i2LtdeAqVTgGlQarfA==}
@@ -22990,7 +23008,7 @@ packages:
     dependencies:
       browserslist: 4.23.0
       escalade: 3.1.1
-      picocolors: 1.0.1
+      picocolors: 1.0.0
 
   /update-notifier@5.1.0:
     resolution: {integrity: sha512-ItnICHbeMh9GqUy31hFPrD1kcuZ3rpxDZbf4KUDavXwS0bW5m7SLbDQpGX3UYr072cbrF5hFUs3r5tUsPwjfHw==}
