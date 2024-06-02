@@ -5,17 +5,18 @@ import { UserButton } from './_components/user-button';
 import { WaitCard } from './_components/wait-card';
 
 export default async function Home() {
-  // prefetch in RSC, you can await if you
-  // need to access the data in the RSC too
+  // Query Data server-side. Using the caller
+  // will not seed the query client
   const _posts = await trpc.post.list();
 
-  // Or just void the promise to start
-  // prefetching without blocking until
-  // the query is used by `useSuspenseQuery`
-  // in a child component
-  trpc.wait({ ms: 1000 });
-  trpc.wait({ ms: 2000 });
-  trpc.wait({ ms: 500 });
+  // You can also use the `prefetch` helper
+  // to start the procedure execution in the RSC
+  // and the promise will be put into the query client
+  // and be used on the client by a `useQuery` or `useSuspenseQuery`
+  // hook.
+  void trpc.wait.prefetch({ ms: 1000 });
+  void trpc.wait.prefetch({ ms: 2000 });
+  void trpc.wait.prefetch({ ms: 500 });
 
   return (
     <HydrateClient>

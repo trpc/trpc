@@ -3,6 +3,8 @@ import {
   HydrationBoundary,
   type QueryClient,
 } from '@tanstack/react-query';
+import { TRPCClientError } from '@trpc/client';
+import { inferTransformedProcedureOutput } from '@trpc/server';
 import {
   createRecursiveProxy,
   type AnyRouter,
@@ -15,23 +17,52 @@ import type {
   RouterCaller,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
+import { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import/rootConfig';
+import { inferRouterRootTypes } from '@trpc/server/unstable-core-do-not-import/router';
+import { Maybe } from '@trpc/server/unstable-core-do-not-import/types';
 import * as React from 'react';
 import { getQueryKeyInternal } from './internals/getQueryKey';
+import { TRPCFetchInfiniteQueryOptions, TRPCFetchQueryOptions } from './shared';
 
-type DecorateProcedure<TProcedure extends AnyProcedure> = (
-  input: inferProcedureInput<TProcedure>,
-) => Promise<inferProcedureOutput<TProcedure>>;
+const HELPERS = ['prefetch', 'prefetchInfinite'];
 
-type DecorateRouterRecord<TRecord extends RouterRecord> = {
+type DecorateProcedure<
+  TRoot extends AnyRootTypes,
+  TProcedure extends AnyProcedure,
+> = {
+  (input: inferProcedureInput<TProcedure>): Promise<
+    inferProcedureOutput<TProcedure>
+  >;
+  prefetch: (
+    input: inferProcedureInput<TProcedure>,
+    opts?: TRPCFetchQueryOptions<
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
+    >,
+  ) => Promise<void>;
+  prefetchInfinite: (
+    input: inferProcedureInput<TProcedure>,
+    opts?: TRPCFetchInfiniteQueryOptions<
+      inferProcedureInput<TProcedure>,
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
+    >,
+  ) => Promise<void>;
+};
+
+type DecorateRouterRecord<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> = {
   [TKey in keyof TRecord]: TRecord[TKey] extends AnyProcedure
-    ? DecorateProcedure<TRecord[TKey]>
+    ? DecorateProcedure<TRoot, TRecord[TKey]>
     : TRecord[TKey] extends RouterRecord
-    ? DecorateRouterRecord<TRecord[TKey]>
+    ? DecorateRouterRecord<TRoot, TRecord[TKey]>
     : never;
 };
 
 type Caller<TRouter extends AnyRouter> = ReturnType<
-  RouterCaller<TRouter['_def']['_config']['$types'], TRouter['_def']['record']>
+  RouterCaller<inferRouterRootTypes<TRouter>, TRouter['_def']['record']>
 >;
 
 export function createHydrationHelpers<TRouter extends AnyRouter>(
@@ -40,26 +71,48 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     : Caller<TRouter>,
   getQueryClient: () => QueryClient,
 ) {
+  type RootTypes = inferRouterRootTypes<TRouter>;
   const wrappedProxy = createRecursiveProxy(async ({ path, args }) => {
     const proc = path.reduce(
-      // @ts-expect-error - ??
-      (acc, key) => acc[key],
+      (acc, key) =>
+        // @ts-expect-error - ??
+        HELPERS.includes(key) ? acc : acc[key],
       caller,
-    ) as unknown as DecorateProcedure<AnyProcedure>;
+    ) as unknown as DecorateProcedure<RootTypes, AnyProcedure>;
 
-    const [input] = args;
+    const input = args[0];
     const promise = proc(input);
 
-    void getQueryClient().prefetchQuery({
-      queryKey: getQueryKeyInternal(path, input, 'query'),
-      queryFn: () => promise,
-    });
+    const helper = path.pop()!;
+    if (helper === 'prefetch') {
+      const args1 = args[1] as Maybe<
+        TRPCFetchInfiniteQueryOptions<any, any, any>
+      >;
+      return getQueryClient().prefetchQuery({
+        ...args1,
+        queryKey: getQueryKeyInternal(path, input, 'query'),
+        queryFn: () => promise,
+      });
+    }
+    if (helper === 'prefetchInfinite') {
+      const args1 = args[1] as Maybe<
+        TRPCFetchInfiniteQueryOptions<any, any, any>
+      >;
+      return getQueryClient().prefetchInfiniteQuery({
+        ...args1,
+        queryKey: getQueryKeyInternal(path, input, 'infinite'),
+        queryFn: () => promise,
+        initialPageParam: args1?.initialCursor ?? null,
+      });
+    }
 
     return promise;
-  }) as DecorateRouterRecord<TRouter['_def']['record']>;
+  }) as DecorateRouterRecord<RootTypes, TRouter['_def']['record']>;
 
   function HydrateClient(props: { children: React.ReactNode }) {
-    const dehydratedState = dehydrate(getQueryClient()); // TODO: transform??
+    const dehydratedState = dehydrate(getQueryClient());
+    // TODO: transform?? We can't transform promises i don't think...
+    // since that is handled by React internally
 
     return (
       <HydrationBoundary state={dehydratedState}>
@@ -68,5 +121,45 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     );
   }
 
-  return { trpc: wrappedProxy, HydrateClient };
+  return {
+    /***
+     * Wrapped caller with prefetch helpers
+     * Can be used as a regular [server-side caller](https://trpc.io/docs/server/server-side-calls)
+     * or using prefetch helpers to put the promise into the QueryClient cache
+     * @example
+     * ```ts
+     * const data = await trpc.post.get("postId");
+     *
+     * // or
+     * void trpc.post.get.prefetch("postId");
+     * ```
+     */
+    trpc: wrappedProxy,
+    /**
+     * HoC to hydrate the query client for a client component
+     * to pick up the prefetched promise and skip an initial
+     * client-side fetch.
+     * @example
+     * ```tsx
+     * // MyRSC.tsx
+     * const MyRSC = ({ params }) => {
+     *   void trpc.post.get.prefetch(params.postId);
+     *
+     *   return (
+     *     <HydrateClient>
+     *       <MyCC postId={params.postId} />
+     *     </HydrateClient>
+     *    );
+     * };
+     *
+     * // MyCC.tsx
+     * "use client"
+     * const MyCC = ({ postId }) => {
+     *   const { data: post } = trpc.post.get.useQuery(postId);
+     *   return <div>{post.title}</div>;
+     * };
+     * ```
+     */
+    HydrateClient,
+  };
 }
