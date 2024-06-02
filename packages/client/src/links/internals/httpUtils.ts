@@ -16,9 +16,7 @@ import type {
 import { TRPCClientError } from '../../TRPCClientError';
 import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
-import type { TextDecoderEsque } from '../internals/streamingUtils';
 import type { HTTPHeaders, PromiseAndCancel } from '../types';
-import { isFormData, isOctetType } from './contentTypes';
 
 /**
  * @internal
@@ -90,7 +88,7 @@ type GetInputOptions = {
   transformer: CombinedDataTransformer;
 } & ({ input: unknown } | { inputs: unknown[] });
 
-function getInput(opts: GetInputOptions) {
+export function getInput(opts: GetInputOptions) {
   return 'input' in opts
     ? opts.transformer.input.serialize(opts.input)
     : arrayToDict(
@@ -108,7 +106,7 @@ type GetUrl = (opts: HTTPBaseRequestOptions) => string;
 type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 
 export type ContentOptions = {
-  batchModeHeader?: 'stream';
+  trpcAcceptHeader?: 'application/jsonl';
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;
@@ -155,43 +153,9 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
-export const universalRequester: Requester = (opts) => {
-  const input = getInput(opts);
-
-  if (isFormData(input)) {
-    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
-      throw new Error('FormData is only supported for mutations');
-    }
-
-    return httpRequest({
-      ...opts,
-      // The browser will set this automatically and include the boundary= in it
-      contentTypeHeader: undefined,
-      getUrl,
-      getBody: () => input,
-    });
-  }
-
-  if (isOctetType(input)) {
-    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
-      throw new Error('Octet type input is only supported for mutations');
-    }
-
-    return httpRequest({
-      ...opts,
-      contentTypeHeader: 'application/octet-stream',
-      getUrl,
-      getBody: () => input,
-    });
-  }
-
-  return jsonHttpRequester(opts);
-};
-
 export type HTTPRequestOptions = ContentOptions &
   HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
-    TextDecoder?: TextDecoderEsque;
   };
 
 export async function fetchHTTPResponse(
@@ -216,9 +180,9 @@ export async function fetchHTTPResponse(
     ...(opts.contentTypeHeader
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
-    ...(opts.batchModeHeader
-      ? { 'trpc-batch-mode': opts.batchModeHeader }
-      : {}),
+    ...(opts.trpcAcceptHeader
+      ? { 'trpc-accept': opts.trpcAcceptHeader }
+      : undefined),
     ...resolvedHeaders,
   };
 

@@ -19,9 +19,13 @@ import { rethrowNextErrors } from './rethrowNextErrors';
 /**
  * Create a caller that works with Next.js React Server Components & Server Actions
  */
-export function nextAppDirCaller<TContext>(
+export function nextAppDirCaller<TContext, TMeta>(
   config: Simplify<
     {
+      /**
+       * Extract the path from the procedure metadata
+       */
+      pathExtractor?: (opts: { meta: TMeta }) => string;
       /**
        * Transform form data to a `Record` before passing it to the procedure
        * @default true
@@ -42,7 +46,10 @@ export function nextAppDirCaller<TContext>(
   const createContext = async (): Promise<TContext> => {
     return config?.createContext?.() ?? ({} as TContext);
   };
+
   return async (opts) => {
+    const path =
+      config.pathExtractor?.({ meta: opts._def.meta as TMeta }) ?? '';
     const ctx: TContext = await createContext().catch((cause) => {
       const error = new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
@@ -60,7 +67,7 @@ export function nextAppDirCaller<TContext>(
         ctx,
         error,
         input: opts.args[0],
-        path: '',
+        path,
         type: opts._def.type,
       });
 
@@ -86,7 +93,7 @@ export function nextAppDirCaller<TContext>(
             type: opts._def.type,
             ctx,
             getRawInput: async () => input,
-            path: '',
+            path,
             input,
           })
           .then((data) => {
@@ -102,7 +109,7 @@ export function nextAppDirCaller<TContext>(
             type: opts._def.type,
             ctx,
             getRawInput: async () => input,
-            path: '',
+            path,
             input,
           })
           .then((data) => {

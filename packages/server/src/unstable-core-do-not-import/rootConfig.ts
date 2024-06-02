@@ -63,6 +63,13 @@ export interface RootConfig<TTypes extends RootTypes> {
   isDev: boolean;
 
   defaultMeta?: TTypes['meta'] extends object ? TTypes['meta'] : never;
+
+  experimental?: {
+    /**
+     * Enable support for returning async iterables and returning deferred promises when using `httpBatchStreamLink`
+     */
+    iterablesAndDeferreds?: boolean;
+  };
 }
 
 /**

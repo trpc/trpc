@@ -1,7 +1,7 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
-import { unstable_httpBatchStreamLink } from '@trpc/client';
+import { TRPCClientError, unstable_httpBatchStreamLink } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
@@ -13,7 +13,11 @@ describe('no transformer', () => {
 
   const ctx = konn()
     .beforeEach(() => {
-      const t = initTRPC.create({});
+      const t = initTRPC.create({
+        experimental: {
+          iterablesAndDeferreds: true,
+        },
+      });
       orderedResults.length = 0;
 
       const manualRelease = new Map<number, () => void>();
@@ -47,6 +51,12 @@ describe('no transformer', () => {
             });
             return opts.input.id;
           }),
+
+        iterable: t.procedure.query(async function* () {
+          yield 1;
+          yield 2;
+          yield 3;
+        }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -170,6 +180,24 @@ describe('no transformer', () => {
       ]
     `);
   });
+
+  test('iterable', async () => {
+    const { client } = ctx;
+
+    const iterable = await client.iterable.query();
+
+    const aggregated: unknown[] = [];
+    for await (const value of iterable) {
+      aggregated.push(value);
+    }
+    expect(aggregated).toMatchInlineSnapshot(`
+      Array [
+        1,
+        2,
+        3,
+      ]
+    `);
+  });
 });
 
 describe('with transformer', () => {
@@ -178,6 +206,9 @@ describe('with transformer', () => {
     .beforeEach(() => {
       const t = initTRPC.create({
         transformer: superjson,
+        experimental: {
+          iterablesAndDeferreds: true,
+        },
       });
       orderedResults.length = 0;
 
@@ -196,6 +227,16 @@ describe('with transformer', () => {
           }),
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        }),
+        iterable: t.procedure.query(async function* () {
+          yield 1;
+          yield 2;
+          yield 3;
+        }),
+        iterableWithError: t.procedure.query(async function* () {
+          yield 1;
+          yield 2;
+          throw new Error('foo');
         }),
       });
 
@@ -271,6 +312,51 @@ describe('with transformer', () => {
           "status": "rejected",
         },
       ]
+    `);
+  });
+
+  test('iterable', async () => {
+    const { client } = ctx;
+
+    const iterable = await client.iterable.query();
+
+    // TODO:
+    // expectTypeOf(iterable).toEqualTypeOf<AsyncIterable<number>>();
+    const aggregated: unknown[] = [];
+    for await (const value of iterable) {
+      aggregated.push(value);
+    }
+    expect(aggregated).toMatchInlineSnapshot(`
+      Array [
+        1,
+        2,
+        3,
+      ]
+    `);
+  });
+
+  test('iterable with error', async () => {
+    const { client, router } = ctx;
+
+    const iterable = await client.iterableWithError.query();
+
+    const aggregated: unknown[] = [];
+    const error = await waitError(async () => {
+      for await (const value of iterable) {
+        aggregated.push(value);
+      }
+    }, TRPCClientError<typeof router>);
+    expect(aggregated).toEqual([1, 2]);
+    expect(error.message).toBe('foo');
+
+    error.data!.stack = '[redacted]';
+    expect(error.data).toMatchInlineSnapshot(`
+      Object {
+        "code": "INTERNAL_SERVER_ERROR",
+        "httpStatus": 500,
+        "path": "iterableWithError",
+        "stack": "[redacted]",
+      }
     `);
   });
 });
