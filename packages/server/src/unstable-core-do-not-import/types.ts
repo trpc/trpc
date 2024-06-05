@@ -185,7 +185,10 @@ type DistributedHasUndefined<T> = true extends _DistributedHasUndefined<T>
  * Infer the arguments of a resolver
  * @internal
  */
-export type inferResolverArgs<TInput, TRestArgs extends unknown[] = []> = OR<
+export type inferProcedureCallArgs<
+  TInput,
+  TRestArgs extends unknown[] = [],
+> = OR<
   [
     //
     IsAny<TInput>,

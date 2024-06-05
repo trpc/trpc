@@ -10,8 +10,8 @@ import type {
   AnyRouter,
   ErrorHandlerOptions,
   inferClientTypes,
+  inferProcedureCallArgs,
   inferProcedureInput,
-  inferResolverArgs,
   MaybePromise,
   RootConfig,
   Simplify,
@@ -82,7 +82,7 @@ const throwNextErrors = (error: TRPCError) => {
  * @internal
  */
 export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
-  ...args: inferResolverArgs<TDef['input'] | FormData>
+  ...args: inferProcedureCallArgs<TDef['input'] | FormData>
 ) => Promise<TRPCResponse<TDef['output'], TDef['errorShape']>>;
 
 export function experimental_createServerActionHandler<
@@ -130,7 +130,9 @@ export function experimental_createServerActionHandler<
     Simplify<inferActionDef<inferClientTypes<TInstance>, TProc>>
   > {
     return async function actionHandler(
-      ...[rawInput]: inferResolverArgs<inferProcedureInput<TProc> | FormData>
+      ...[rawInput]: inferProcedureCallArgs<
+        inferProcedureInput<TProc> | FormData
+      >
     ) {
       let ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
       try {

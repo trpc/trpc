@@ -4,8 +4,8 @@ import type {
   AnyProcedure,
   AnyRootTypes,
   AnyRouter,
+  inferProcedureCallArgs,
   inferProcedureInput,
-  inferResolverArgs,
   inferTransformedProcedureOutput,
   ProcedureType,
   ProtectedIntersection,
@@ -72,7 +72,7 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
 
   // Without `initialData`
   <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
-    ...args: inferResolverArgs<
+    ...args: inferProcedureCallArgs<
       TDef['input'] | SkipToken,
       [
         opts?: UseTRPCQueryOptions<
@@ -104,7 +104,7 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
          * @link https://trpc.io/docs/v11/client/react/suspense#useinfinitesuspensequery
          */
         useInfiniteQuery: (
-          ...args: inferResolverArgs<
+          ...args: inferProcedureCallArgs<
             Omit<TDef['input'], ReservedInfiniteQueryKeys> | SkipToken,
             [
               opts?: UseTRPCInfiniteQueryOptions<
@@ -123,7 +123,7 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
          * @link https://trpc.io/docs/v11/client/react/suspense
          */
         useSuspenseInfiniteQuery: (
-          ...args: inferResolverArgs<
+          ...args: inferProcedureCallArgs<
             Omit<TDef['input'], ReservedInfiniteQueryKeys> | SkipToken,
             [
               opts?: UseTRPCSuspenseInfiniteQueryOptions<
@@ -156,7 +156,7 @@ export type DecoratedQueryMethods<TDef extends ResolverDef> = {
     TQueryFnData extends TDef['output'] = TDef['output'],
     TData = TQueryFnData,
   >(
-    ...args: inferResolverArgs<
+    ...args: inferProcedureCallArgs<
       TDef['input'],
       [
         opts?: UseTRPCSuspenseQueryOptions<

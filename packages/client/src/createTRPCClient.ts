@@ -4,8 +4,8 @@ import type {
   AnyProcedure,
   AnyRouter,
   inferClientTypes,
+  inferProcedureCallArgs,
   inferProcedureInput,
-  inferResolverArgs,
   inferTransformedProcedureOutput,
   IntersectionError,
   ProcedureOptions,
@@ -39,11 +39,11 @@ type ResolverDef = {
 
 /** @internal */
 export type Resolver<TDef extends ResolverDef> = (
-  ...args: inferResolverArgs<TDef['input'], [opts?: ProcedureOptions]>
+  ...args: inferProcedureCallArgs<TDef['input'], [opts?: ProcedureOptions]>
 ) => Promise<TDef['output']>;
 
 type SubscriptionResolver<TDef extends ResolverDef> = (
-  ...args: inferResolverArgs<
+  ...args: inferProcedureCallArgs<
     TDef['input'],
     [
       opts?: ProcedureOptions &

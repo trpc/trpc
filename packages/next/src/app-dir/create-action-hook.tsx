@@ -12,8 +12,8 @@ import { getTransformer } from '@trpc/client/unstable-internals';
 import { observable } from '@trpc/server/observable';
 import type {
   inferClientTypes,
+  inferProcedureCallArgs,
   InferrableClientTypes,
-  inferResolverArgs,
   MaybePromise,
   ProcedureOptions,
   Simplify,
@@ -25,7 +25,7 @@ import type { TRPCActionHandler } from './server';
 import type { ActionHandlerDef } from './shared';
 import { isFormData } from './shared';
 
-type MutationArgs<TDef extends ActionHandlerDef> = inferResolverArgs<
+type MutationArgs<TDef extends ActionHandlerDef> = inferProcedureCallArgs<
   TDef['input'] | FormData,
   [opts?: ProcedureOptions]
 >;
