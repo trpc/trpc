@@ -174,6 +174,11 @@ type IsNever<T> = [T] extends [never] ? true : false;
 type IsAny<T> = [T] extends [InferenceSecret] ? Not<IsNever<T>> : false;
 type IsUnknown<T> = [unknown] extends [T] ? Not<IsAny<T>> : false;
 
+type _DistributedHasUndefined<T> = undefined extends T ? true : never;
+type DistributedHasUndefined<T> = true extends _DistributedHasUndefined<T>
+  ? true
+  : false;
+
 /**
  * Infer the arguments of a resolver
  * @internal
@@ -183,7 +188,7 @@ export type inferResolverArgs<TInput, TRestArgs extends unknown[] = []> = OR<
     //
     IsAny<TInput>,
     IsUnknown<TInput>,
-    undefined extends TInput ? true : never,
+    DistributedHasUndefined<TInput>,
   ]
 > extends true
   ? Voidable<TInput, TRestArgs>
