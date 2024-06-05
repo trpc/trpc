@@ -161,10 +161,12 @@ type Voidable<TArg1, TRest extends unknown[]> = [
   ...rest: TRest,
 ];
 
-type OR<T extends unknown[]> = T extends [infer $First, ...infer $Rest]
+type OR<T extends boolean[]> = T extends [infer $First, ...infer $Rest]
   ? $First extends true
     ? true
-    : OR<$Rest>
+    : $Rest extends boolean[]
+    ? OR<$Rest>
+    : false
   : false;
 type Not<T extends boolean> = T extends true ? false : true;
 const inferenceSecret = Symbol('secret');
