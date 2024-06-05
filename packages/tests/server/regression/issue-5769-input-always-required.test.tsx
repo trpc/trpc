@@ -10,10 +10,10 @@ const ctx = konn()
     const t = initTRPC.create();
 
     const appRouter = t.router({
-      q: t.procedure.input(z.any()).query(() => {
+      q: t.procedure.input(z.any().optional()).query(() => {
         return 'hello' as const;
       }),
-      m: t.procedure.input(z.any()).mutation(() => {
+      m: t.procedure.input(z.any().optional()).mutation(() => {
         return 'hello' as const;
       }),
     });
@@ -25,7 +25,7 @@ const ctx = konn()
   })
   .done();
 
-test('with input', async () => {
+test('optional any means "any" -> which can be called without arguments', async () => {
   const { client, App, appRouter } = ctx;
 
   const caller = appRouter.createCaller({});
