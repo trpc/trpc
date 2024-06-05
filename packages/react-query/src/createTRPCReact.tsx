@@ -70,13 +70,17 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
   >;
 
   <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
-    input: TDef['input'] | SkipToken,
-    opts?: UseTRPCQueryOptions<
-      TQueryFnData,
-      TData,
-      TRPCClientErrorLike<TDef>,
-      TDef['output']
-    >,
+    ...args: inferResolverArgs<
+      TDef['input'] | SkipToken,
+      [
+        opts?: UseTRPCQueryOptions<
+          TQueryFnData,
+          TData,
+          TRPCClientErrorLike<TDef>,
+          TDef['output']
+        >,
+      ]
+    >
   ): UseTRPCQueryResult<TData, TRPCClientErrorLike<TDef>>;
 }
 
