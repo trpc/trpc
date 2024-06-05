@@ -26,7 +26,11 @@ const ctx = konn()
   .done();
 
 test('with input', async () => {
-  const { client, App } = ctx;
+  const { client, App, appRouter } = ctx;
+
+  const caller = appRouter.createCaller({});
+  expect(await caller.m()).toBe('hello');
+  expect(await caller.q()).toBe('hello');
 
   const MyComponent = () => {
     const query = client.q.useQuery();
