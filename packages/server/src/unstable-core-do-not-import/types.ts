@@ -155,3 +155,36 @@ export type TypeError<TMessage extends string> = TMessage & {
   _: typeof ERROR_SYMBOL;
 };
 export type ValueOf<TObj> = TObj[keyof TObj];
+
+type Voidable<TArg1, TRest extends unknown[]> = [
+  input?: TArg1 | undefined,
+  ...rest: TRest,
+];
+
+type OR<T extends unknown[]> = T extends [infer $First, ...infer $Rest]
+  ? $First extends true
+    ? true
+    : OR<$Rest>
+  : false;
+type Not<T extends boolean> = T extends true ? false : true;
+const inferenceSecret = Symbol('secret');
+type InferenceSecret = typeof inferenceSecret;
+
+type IsNever<T> = [T] extends [never] ? true : false;
+type IsAny<T> = [T] extends [InferenceSecret] ? Not<IsNever<T>> : false;
+type IsUnknown<T> = [unknown] extends [T] ? Not<IsAny<T>> : false;
+
+/**
+ * Infer the arguments of a resolver
+ * @internal
+ */
+export type inferResolverArgs<TInput, TRestArgs extends unknown[] = []> = OR<
+  [
+    //
+    IsAny<TInput>,
+    IsUnknown<TInput>,
+    undefined extends TInput ? true : never,
+  ]
+> extends true
+  ? Voidable<TInput, TRestArgs>
+  : [input: TInput, ...rest: TRestArgs];

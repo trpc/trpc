@@ -193,12 +193,11 @@ describe('useQuery()', () => {
   });
 
   test('data type without initialData', () => {
-    const expectation = expectTypeOf(() =>
-      ctx.client.post.byId.useQuery({ id: '1' }),
+    const expectation = expectTypeOf(
+      () => ctx.client.post.byId.useQuery({ id: '1' }).data,
     ).returns;
 
-    expectation.toMatchTypeOf<{ data: '__result' | undefined }>();
-    expectation.not.toMatchTypeOf<{ data: '__result' }>();
+    expectation.toEqualTypeOf<'__result' | undefined>();
   });
 
   test('data type with initialData', () => {

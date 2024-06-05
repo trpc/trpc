@@ -23,6 +23,7 @@ import type { CreateReactQueryHooks } from './shared/hooks/createHooksInternal';
 import { createRootHooks } from './shared/hooks/createHooksInternal';
 import type {
   CreateClient,
+  DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
   TRPCProvider,
   UseTRPCInfiniteQueryOptions,
@@ -49,18 +50,18 @@ type ResolverDef = {
  * @internal
  */
 export interface ProcedureUseQuery<TDef extends ResolverDef> {
+  // With `initialData`
   <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
-    ...args: inferResolverArgs<
-      TDef['input'],
-      [
-        opts?: UseTRPCQueryOptions<
-          TQueryFnData,
-          TData,
-          TRPCClientErrorLike<TDef>,
-          TDef['output']
-        >,
-      ]
-    >
+    input: TDef['input'] | SkipToken,
+    opts: DefinedUseTRPCQueryOptions<
+      TQueryFnData,
+      TData,
+      TRPCClientErrorLike<{
+        errorShape: TDef['errorShape'];
+        transformer: TDef['transformer'];
+      }>,
+      TDef['output']
+    >,
   ): DefinedUseTRPCQueryResult<
     TData,
     TRPCClientErrorLike<{
@@ -69,6 +70,7 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
     }>
   >;
 
+  // Without `initialData`
   <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
     ...args: inferResolverArgs<
       TDef['input'] | SkipToken,

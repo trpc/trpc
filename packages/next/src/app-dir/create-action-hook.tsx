@@ -13,6 +13,7 @@ import { observable } from '@trpc/server/observable';
 import type {
   inferClientTypes,
   InferrableClientTypes,
+  inferResolverArgs,
   MaybePromise,
   ProcedureOptions,
   Simplify,
@@ -24,9 +25,10 @@ import type { TRPCActionHandler } from './server';
 import type { ActionHandlerDef } from './shared';
 import { isFormData } from './shared';
 
-type MutationArgs<TDef extends ActionHandlerDef> = TDef['input'] extends void
-  ? [input?: undefined | void, opts?: ProcedureOptions]
-  : [input: FormData | TDef['input'], opts?: ProcedureOptions];
+type MutationArgs<TDef extends ActionHandlerDef> = inferResolverArgs<
+  TDef['input'] | FormData,
+  [opts?: ProcedureOptions]
+>;
 
 interface UseTRPCActionBaseResult<TDef extends ActionHandlerDef> {
   mutate: (...args: MutationArgs<TDef>) => void;

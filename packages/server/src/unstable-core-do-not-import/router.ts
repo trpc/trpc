@@ -1,5 +1,4 @@
 import type { Observable } from '../observable';
-import type { inferResolverArgs } from './clientish/inference';
 import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
@@ -12,7 +11,7 @@ import type {
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
-import type { MaybePromise, ValueOf } from './types';
+import type { inferResolverArgs, MaybePromise, ValueOf } from './types';
 import { isFunction, mergeWithoutOverrides, omitPrototype } from './utils';
 
 export interface RouterRecord {
@@ -20,7 +19,7 @@ export interface RouterRecord {
 }
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = (
-  ...args: inferResolverArgs<inferProcedureInput<TProcedure>, []>
+  ...args: inferResolverArgs<inferProcedureInput<TProcedure>>
 ) => Promise<
   TProcedure['_def']['type'] extends 'subscription'
     ? Observable<inferProcedureOutput<TProcedure>, TRPCError>
