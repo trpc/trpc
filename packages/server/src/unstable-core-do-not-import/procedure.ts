@@ -72,9 +72,7 @@ export type AnySubscriptionProcedure = SubscriptionProcedure<any>;
 export type AnyProcedure = Procedure<ProcedureType, any>;
 
 export type inferProcedureInput<TProcedure extends AnyProcedure> =
-  undefined extends inferProcedureParams<TProcedure>['$types']['input']
-    ? void | inferProcedureParams<TProcedure>['$types']['input']
-    : inferProcedureParams<TProcedure>['$types']['input'];
+  inferProcedureParams<TProcedure>['$types']['input'];
 
 export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   ? TProcedure['_def']

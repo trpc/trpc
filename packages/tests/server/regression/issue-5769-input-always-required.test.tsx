@@ -25,7 +25,7 @@ const ctx = konn()
   })
   .done();
 
-test('optional any means "any" -> which can be called without arguments', async () => {
+test('"any" should be callable without arguments', async () => {
   const { client, App, appRouter } = ctx;
 
   const caller = appRouter.createCaller({});
@@ -38,6 +38,7 @@ test('optional any means "any" -> which can be called without arguments', async 
     const mut = client.m.useMutation();
     const trpcClient = client.useUtils().client;
     useEffect(() => {
+      // @ts-expect-error requires fixing in `@tanstack/react-query` unless we wanna overload MutationResult
       mut.mutate();
 
       trpcClient.m.mutate();

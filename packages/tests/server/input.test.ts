@@ -328,7 +328,7 @@ test('zod default() string', async () => {
   type ProcType = inferProcedureParams<typeof proc>;
 
   expectTypeOf<inferProcedureInput<typeof proc>>().toEqualTypeOf<
-    string | undefined | void
+    string | undefined
   >();
 
   const router = t.router({
@@ -398,7 +398,7 @@ test('zod default() mixed default object', async () => {
   type ProcType = inferProcedureParams<typeof proc>;
 
   expectTypeOf<inferProcedureInput<typeof proc>>().toEqualTypeOf<
-    { foo: string; bar?: string } | undefined | void
+    { foo: string; bar?: string } | undefined
   >();
 
   const router = t.router({
@@ -447,7 +447,7 @@ test('zod default() defaults within object', async () => {
   type ProcType = inferProcedureParams<typeof proc>;
 
   expectTypeOf<inferProcedureInput<typeof proc>>().toEqualTypeOf<
-    { foo?: string; bar?: string } | undefined | void
+    { foo?: string; bar?: string } | undefined
   >();
 
   const router = t.router({

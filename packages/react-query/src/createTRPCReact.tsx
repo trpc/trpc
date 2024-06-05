@@ -5,6 +5,7 @@ import type {
   AnyRootTypes,
   AnyRouter,
   inferProcedureInput,
+  inferResolverArgs,
   inferTransformedProcedureOutput,
   ProcedureType,
   ProtectedIntersection,
@@ -22,7 +23,6 @@ import type { CreateReactQueryHooks } from './shared/hooks/createHooksInternal';
 import { createRootHooks } from './shared/hooks/createHooksInternal';
 import type {
   CreateClient,
-  DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
   TRPCProvider,
   UseTRPCInfiniteQueryOptions,
@@ -50,16 +50,17 @@ type ResolverDef = {
  */
 export interface ProcedureUseQuery<TDef extends ResolverDef> {
   <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
-    input: TDef['input'] | SkipToken,
-    opts: DefinedUseTRPCQueryOptions<
-      TQueryFnData,
-      TData,
-      TRPCClientErrorLike<{
-        errorShape: TDef['errorShape'];
-        transformer: TDef['transformer'];
-      }>,
-      TDef['output']
-    >,
+    ...args: inferResolverArgs<
+      TDef['input'],
+      [
+        opts?: UseTRPCQueryOptions<
+          TQueryFnData,
+          TData,
+          TRPCClientErrorLike<TDef>,
+          TDef['output']
+        >,
+      ]
+    >
   ): DefinedUseTRPCQueryResult<
     TData,
     TRPCClientErrorLike<{
@@ -97,12 +98,16 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
          * @link https://trpc.io/docs/v11/client/react/suspense#useinfinitesuspensequery
          */
         useInfiniteQuery: (
-          input: Omit<TDef['input'], ReservedInfiniteQueryKeys> | SkipToken,
-          opts: UseTRPCInfiniteQueryOptions<
-            TDef['input'],
-            TDef['output'],
-            TRPCClientErrorLike<TDef>
-          >,
+          ...args: inferResolverArgs<
+            Omit<TDef['input'], ReservedInfiniteQueryKeys> | SkipToken,
+            [
+              opts?: UseTRPCInfiniteQueryOptions<
+                TDef['input'],
+                TDef['output'],
+                TRPCClientErrorLike<TDef>
+              >,
+            ]
+          >
         ) => UseTRPCInfiniteQueryResult<
           TDef['output'],
           TRPCClientErrorLike<TDef>,
@@ -112,12 +117,16 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
          * @link https://trpc.io/docs/v11/client/react/suspense
          */
         useSuspenseInfiniteQuery: (
-          input: Omit<TDef['input'], 'cursor' | 'direction'>,
-          opts: UseTRPCSuspenseInfiniteQueryOptions<
-            TDef['input'],
-            TDef['output'],
-            TRPCClientErrorLike<TDef>
-          >,
+          ...args: inferResolverArgs<
+            Omit<TDef['input'], ReservedInfiniteQueryKeys> | SkipToken,
+            [
+              opts?: UseTRPCSuspenseInfiniteQueryOptions<
+                TDef['input'],
+                TDef['output'],
+                TRPCClientErrorLike<TDef>
+              >,
+            ]
+          >
         ) => UseTRPCSuspenseInfiniteQueryResult<
           TDef['output'],
           TRPCClientErrorLike<TDef>,
@@ -141,12 +150,16 @@ export type DecoratedQueryMethods<TDef extends ResolverDef> = {
     TQueryFnData extends TDef['output'] = TDef['output'],
     TData = TQueryFnData,
   >(
-    input: TDef['input'],
-    opts?: UseTRPCSuspenseQueryOptions<
-      TQueryFnData,
-      TData,
-      TRPCClientErrorLike<TDef>
-    >,
+    ...args: inferResolverArgs<
+      TDef['input'],
+      [
+        opts?: UseTRPCSuspenseQueryOptions<
+          TQueryFnData,
+          TData,
+          TRPCClientErrorLike<TDef>
+        >,
+      ]
+    >
   ) => UseTRPCSuspenseQueryResult<TData, TRPCClientErrorLike<TDef>>;
 };
 

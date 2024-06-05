@@ -58,3 +58,17 @@ export type inferRouterOutputs<TRouter extends AnyRouter> = GetInferenceHelpers<
   TRouter['_def']['_config']['$types'],
   TRouter['_def']['record']
 >;
+
+type Voidable<TArg1, TRest extends unknown[]> = [input?: TArg1, ...rest: TRest];
+
+/**
+ * Infer the arguments of a resolver
+ */
+export type inferResolverArgs<
+  TInput,
+  TRestArgs extends unknown[],
+> = any extends TInput
+  ? Voidable<TInput, TRestArgs>
+  : undefined extends TInput
+  ? Voidable<TInput, TRestArgs>
+  : [input: TInput, ...rest: TRestArgs];

@@ -11,6 +11,7 @@ import type {
   ErrorHandlerOptions,
   inferClientTypes,
   inferProcedureInput,
+  inferResolverArgs,
   MaybePromise,
   RootConfig,
   Simplify,
@@ -129,7 +130,10 @@ export function experimental_createServerActionHandler<
     Simplify<inferActionDef<inferClientTypes<TInstance>, TProc>>
   > {
     return async function actionHandler(
-      rawInput: FormData | inferProcedureInput<TProc>,
+      ...[rawInput]: inferResolverArgs<
+        inferProcedureInput<TProc> | FormData,
+        []
+      >
     ) {
       let ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
       try {
