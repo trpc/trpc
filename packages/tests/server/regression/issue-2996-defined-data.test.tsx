@@ -102,7 +102,7 @@ test('using `placeholderData`', async () => {
     const { data: trpcData } = client.posts.useQuery(undefined, {
       placeholderData: [],
     });
-    expectTypeOf<typeof trpcData>().toEqualTypeOf<Post[] | undefined>();
+    expectTypeOf<typeof trpcData>().toEqualTypeOf<Post[]>();
 
     // verify tanstack returns the same
     const { data: rqData } = useQuery({
