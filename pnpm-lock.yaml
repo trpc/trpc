@@ -1660,8 +1660,8 @@ importers:
         specifier: ^5.4.0
         version: 5.4.2
       valibot:
-        specifier: ^0.30.0
-        version: 0.30.0
+        specifier: ^0.31.0
+        version: 0.31.0
       ws:
         specifier: ^8.0.0
         version: 8.16.0
@@ -1718,7 +1718,7 @@ importers:
         version: 20.10.4
       '@typeschema/valibot':
         specifier: ^0.13.0
-        version: 0.13.0(valibot@0.30.0)
+        version: 0.13.0(valibot@0.31.0)
       abort-controller:
         specifier: ^3.0.0
         version: 3.0.0
@@ -1786,8 +1786,8 @@ importers:
         specifier: ^5.4.0
         version: 5.4.2
       valibot:
-        specifier: ^0.30.0
-        version: 0.30.0
+        specifier: ^0.31.0
+        version: 0.31.0
       ws:
         specifier: ^8.0.0
         version: 8.16.0
@@ -1917,7 +1917,7 @@ importers:
         version: 18.3.0
       '@typeschema/valibot':
         specifier: ^0.13.0
-        version: 0.13.0(valibot@0.30.0)
+        version: 0.13.0(valibot@0.31.0)
       arktype:
         specifier: 1.0.14-alpha
         version: 1.0.14-alpha
@@ -1979,8 +1979,8 @@ importers:
         specifier: npm:typescript@~5.1.3
         version: 5.1.3
       valibot:
-        specifier: ^0.30.0
-        version: 0.30.0
+        specifier: ^0.31.0
+        version: 0.31.0
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -9206,7 +9206,7 @@ packages:
       '@types/json-schema':
         optional: true
 
-  /@typeschema/valibot@0.13.0(valibot@0.30.0):
+  /@typeschema/valibot@0.13.0(valibot@0.31.0):
     resolution: {integrity: sha512-nfGB2LQzJbn6YgvwGLmbhZkrsPFo/ZoDYcIncXmNNA1qJD9q4qefC8nv+uAaZR7J8icg5lNbGHxXYnqd3VN76g==}
     peerDependencies:
       '@gcornut/valibot-json-schema': ^0.0.23
@@ -9218,7 +9218,7 @@ packages:
         optional: true
     dependencies:
       '@typeschema/core': 0.13.0
-      valibot: 0.30.0
+      valibot: 0.31.0
     transitivePeerDependencies:
       - '@types/json-schema'
 
@@ -23169,8 +23169,8 @@ packages:
     resolution: {integrity: sha512-l8lCEmLcLYZh4nbunNZvQCJc5pv7+RCwa8q/LdUx8u7lsWvPDKmpodJAJNwkAhJC//dFY48KuIEmjtd4RViDrA==}
     dev: false
 
-  /valibot@0.30.0:
-    resolution: {integrity: sha512-5POBdbSkM+3nvJ6ZlyQHsggisfRtyT4tVTo1EIIShs6qCdXJnyWU5TJ68vr8iTg5zpOLjXLRiBqNx+9zwZz/rA==}
+  /valibot@0.31.0:
+    resolution: {integrity: sha512-bleS8aVFpRGTUgbMoXzsRJhpxJGiZ3MG1nuNSORuDvio+sI1EyT1+lQHg+77Pfnlxz+25Uj5HiwdaklcDcYdiQ==}
 
   /validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
