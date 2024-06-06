@@ -23,7 +23,6 @@
     "@trpc/react-query": "10.45.1",
     "@trpc/server": "^10.45.1",
     "@types/node": "^20.10.0",
-    "@typeschema/valibot": "^0.13.0",
     "abort-controller": "^3.0.0",
     "arktype": "1.0.14-alpha",
     "dataloader": "^2.2.2",
@@ -46,7 +45,7 @@
     "tsx": "^4.0.0",
     "tupleson": "0.23.1",
     "typescript": "^5.4.0",
-    "valibot": "^0.30.0",
+    "valibot": "^0.31.0",
     "ws": "^8.0.0",
     "yup": "^1.0.0",
     "zod-form-data": "^2.0.1"
