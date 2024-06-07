@@ -6,8 +6,8 @@ import {
   getUntypedClient,
   httpBatchLink,
   splitLink,
-  unstable_httpSubscriptionLink,
   unstable_httpBatchStreamLink,
+  unstable_httpSubscriptionLink,
   wsLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
