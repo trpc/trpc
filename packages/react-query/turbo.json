@@ -1,16 +1,9 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  "extends": [
-    "//"
-  ],
+  "extends": ["//"],
   "tasks": {
     "codegen-entrypoints": {
-      "outputs": [
-        "package.json",
-        "dist/**",
-        "server/**",
-        "shared/**"
-      ]
+      "outputs": ["package.json", "dist/**", "server/**", "shared/**"]
     }
   }
 }
