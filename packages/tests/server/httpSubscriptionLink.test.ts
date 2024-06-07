@@ -188,6 +188,7 @@ test('iterable', async () => {
     expect(ctx.ee.listenerCount('data')).toBe(0);
   });
 });
+
 test('disconnect and reconnect with an event id', async () => {
   const { client } = ctx;
 
@@ -211,7 +212,7 @@ test('disconnect and reconnect with an event id', async () => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
-  const es = onStarted.mock.calls[0]![0].context?.['eventSource'];
+  const es = onStarted.mock.calls[0]![0].context?.eventSource;
   assert(es instanceof EventSource);
 
   await waitFor(() => {
@@ -222,14 +223,10 @@ test('disconnect and reconnect with an event id', async () => {
 
   expect(es.readyState).toBe(EventSource.OPEN);
   const release = suppressLogs();
-  await Promise.all([
-    ctx.close(),
-    waitFor(() => {
-      expect(es.readyState).toBe(EventSource.CONNECTING);
-    }),
-  ]);
-
   ctx.destroyConnections();
+  await waitFor(() => {
+    expect(es.readyState).toBe(EventSource.CONNECTING);
+  });
   release();
 
   await waitFor(
