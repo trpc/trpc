@@ -246,7 +246,8 @@ test('$subscription() - server randomly stop and restart', async () => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
-  // kill all connections
+
+  // kill all connections to the server (simulates restart)
   ctx.killConnections();
 
   // start a new wss server on same port, and trigger a message

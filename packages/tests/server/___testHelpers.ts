@@ -152,12 +152,12 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     onRequestSpy,
     onReqAborted,
     killConnections: () => {
+      for (const client of ctx.wss.clients) {
+        client.close();
+      }
       for (const conn of connections) {
         conn.emit('close');
         conn.destroy();
-      }
-      for (const client of ctx.wss.clients) {
-        client.close();
       }
     },
   };
