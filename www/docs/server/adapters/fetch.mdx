@@ -344,19 +344,19 @@ See a full example [here](https://github.com/trpc/trpc/tree/next/examples/next-e
 
 ### Remix
 
-```ts title='app/routes/trpc/$trpc.ts'
-import type { ActionArgs, LoaderArgs } from '@remix-run/node';
+```ts title='app/routes/trpc.$trpc.ts'
+import type { ActionFunctionArgs, LoaderFunctionArgs } from '@remix-run/node';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from '~/server/context';
 import { appRouter } from '~/server/router';
 
-export const loader = async (args: LoaderArgs) => {
+export const loader = async (args: LoaderFunctionArgs) => {
   return handleRequest(args);
 };
-export const action = async (args: ActionArgs) => {
+export const action = async (args: ActionFunctionArgs) => {
   return handleRequest(args);
 };
-function handleRequest(args: LoaderArgs | ActionArgs) {
+function handleRequest(args: LoaderFunctionArgs | ActionFunctionArgs) {
   return fetchRequestHandler({
     endpoint: '/trpc',
     req: args.request,

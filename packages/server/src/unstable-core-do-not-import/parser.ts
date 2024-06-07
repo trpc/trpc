@@ -4,6 +4,15 @@ export type ParserZodEsque<TInput, TParsedInput> = {
   _output: TParsedInput;
 };
 
+export type ParserValibotEsque<TInput, TParsedInput> = {
+  schema: {
+    _types?: {
+      input: TInput;
+      output: TParsedInput;
+    };
+  };
+};
+
 export type ParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
 };
@@ -31,10 +40,9 @@ export type ParserWithoutInput<TInput> =
   | ParserSuperstructEsque<TInput>
   | ParserYupEsque<TInput>;
 
-export type ParserWithInputOutput<TInput, TParsedInput> = ParserZodEsque<
-  TInput,
-  TParsedInput
->;
+export type ParserWithInputOutput<TInput, TParsedInput> =
+  | ParserZodEsque<TInput, TParsedInput>
+  | ParserValibotEsque<TInput, TParsedInput>;
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
@@ -57,6 +65,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
 
   if (typeof parser === 'function') {
+    // ParserValibotEsque (>= v0.31.0)
     // ParserCustomValidatorEsque
     return parser;
   }
@@ -68,7 +77,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
 
   if (typeof parser.parse === 'function') {
     // ParserZodEsque
-    // ParserValibotEsque (<= v0.12.X)
+    // ParserValibotEsque (< v0.13.0)
     return parser.parse.bind(parser);
   }
 

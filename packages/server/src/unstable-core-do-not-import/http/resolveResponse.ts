@@ -160,6 +160,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 ): Promise<Response> {
   const { router, req } = opts;
   const headers = new Headers([['vary', 'trpc-accept']]);
+  const config = router._def._config;
 
   const url = new URL(req.url);
 
@@ -181,13 +182,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
 
   const experimentalIterablesAndDeferreds =
-    router._def._config.experimental?.iterablesAndDeferreds ?? false;
+    config.experimental?.iterablesAndDeferreds ?? false;
 
   try {
     info = getRequestInfo({
       req,
       path: decodeURIComponent(opts.path),
-      config: router._def._config,
+      config: config,
       searchParams: url.searchParams,
     });
 
@@ -268,7 +269,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
         return {
           error: getErrorShape({
-            config: opts.router._def._config,
+            config,
             error,
             type,
             path: call.path,
@@ -351,6 +352,18 @@ export async function resolveResponse<TRouter extends AnyRouter>(
        * }
        */
       maxDepth: experimentalIterablesAndDeferreds ? 4 : 3,
+      formatError(errorOpts) {
+        const call = info?.calls[errorOpts.path[0] as any];
+
+        return getErrorShape({
+          config,
+          ctx,
+          error: getTRPCErrorFromUnknown(errorOpts.error),
+          input: call?.result(),
+          path: call?.path,
+          type,
+        });
+      },
       data: promises.map(async (it) => {
         const response = await it;
         if ('result' in response) {
@@ -368,7 +381,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         }
         return response;
       }),
-      serialize: opts.router._def._config.transformer.output.serialize,
+      serialize: config.transformer.output.serialize,
       onError: (cause) => {
         opts.onError?.({
           error: getTRPCErrorFromUnknown(cause),

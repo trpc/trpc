@@ -1,6 +1,6 @@
 import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import type { TRPCResponse } from '@trpc/server/rpc';
+import type { TRPCErrorShape, TRPCResponse } from '@trpc/server/rpc';
 import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
@@ -104,6 +104,12 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
                 from: res.body,
                 deserialize: resolvedOpts.transformer.output.deserialize,
                 // onError: console.error,
+                formatError(opts) {
+                  const error = opts.error as TRPCErrorShape;
+                  return TRPCClientError.from({
+                    error,
+                  });
+                },
               });
 
               const promises = Object.keys(batchOps).map(
