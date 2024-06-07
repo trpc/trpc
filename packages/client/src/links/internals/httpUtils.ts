@@ -54,7 +54,7 @@ export function resolveHTTPLinkOptions(
   opts: HTTPLinkBaseOptions<AnyClientTypes>,
 ): ResolvedHTTPLinkOptions {
   return {
-    url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes
+    url: opts.url.toString(),
     fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
     transformer: getTransformer(opts.transformer),
@@ -115,7 +115,8 @@ export type ContentOptions = {
 };
 
 export const getUrl: GetUrl = (opts) => {
-  let url = opts.url + '/' + opts.path;
+  const base = opts.url.replace(/\/$/, ''); // Remove any trailing slashes
+  let url = base + '/' + opts.path;
   const queryParts: string[] = [];
   if ('inputs' in opts) {
     queryParts.push('batch=1');

@@ -1,9 +1,10 @@
+import type { SSEvent } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
-  SSEvent,
+  MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
@@ -15,8 +16,22 @@ import { getUrl } from './internals/httpUtils';
 import type { TRPCLink } from './types';
 
 type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
-  url: string;
+  /**
+   * The URL to connect to (can be a function that returns a URL)
+   */
+  url: string | (() => MaybePromise<string>);
+  /**
+   * EventSource options
+   */
+  eventSourceOptions?: EventSourceInit;
 } & TransformerOptions<TRoot>;
+
+/**
+ * Get the result of a value or function that returns a value
+ */
+const resultOf = <T>(value: T | (() => T)): T => {
+  return typeof value === 'function' ? (value as () => T)() : value;
+};
 
 /**
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink
@@ -26,10 +41,7 @@ export function unstable_httpSubscriptionLink<
 >(
   opts: HTTPSubscriptionLinkOptions<inferClientTypes<TInferrable>>,
 ): TRPCLink<TInferrable> {
-  const resolvedOpts = {
-    url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes
-    transformer: getTransformer(opts.transformer),
-  };
+  const transformer = getTransformer(opts.transformer);
   return () => {
     return ({ op }) => {
       return observable((observer) => {
@@ -39,18 +51,25 @@ export function unstable_httpSubscriptionLink<
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
 
-        const url = getUrl({
-          ...resolvedOpts,
-          input,
-          path,
-          type,
-          AbortController: null,
-        });
-        const eventSource = new EventSource(url, {
-          withCredentials: true,
-        });
+        let eventSource: EventSource | null = null;
+        let unsubscribed = false;
 
         run(async () => {
+          const url = getUrl({
+            transformer,
+            url: await resultOf(opts.url),
+            input,
+            path,
+            type,
+            AbortController: null,
+          });
+
+          /* istanbul ignore if -- @preserve */
+          if (unsubscribed) {
+            // already unsubscribed - rare race condition
+            return;
+          }
+          eventSource = new EventSource(url, opts.eventSourceOptions);
           const onStarted = () => {
             observer.next({
               result: {
@@ -60,14 +79,15 @@ export function unstable_httpSubscriptionLink<
                 eventSource,
               },
             });
-            // console.log('started', new Date());
-            eventSource.removeEventListener('open', onStarted);
+
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            eventSource!.removeEventListener('open', onStarted);
           };
           // console.log('starting', new Date());
           eventSource.addEventListener('open', onStarted);
           const iterable = sseStreamConsumer<SSEvent>({
             from: eventSource,
-            deserialize: resolvedOpts.transformer.input.deserialize,
+            deserialize: transformer.input.deserialize,
           });
 
           for await (const chunk of iterable) {
@@ -90,7 +110,8 @@ export function unstable_httpSubscriptionLink<
 
         return () => {
           observer.complete();
-          eventSource.close();
+          eventSource?.close();
+          unsubscribed = true;
         };
       });
     };
