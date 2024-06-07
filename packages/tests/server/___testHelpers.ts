@@ -1,6 +1,7 @@
 import type { IncomingMessage } from 'http';
 import http from 'http';
 import type { AddressInfo, Socket } from 'net';
+import { promisify } from 'util';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import {
   createTRPCClient,
@@ -129,7 +130,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     wsClient,
     client,
     close: async () => {
-      ctx.killConnections();
+      ctx.destroyConnections();
       await Promise.all([
         new Promise((resolve) => server.close(resolve)),
         new Promise((resolve) => {
@@ -151,7 +152,10 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     createContextSpy,
     onRequestSpy,
     onReqAborted,
-    killConnections: () => {
+    /**
+     * Destroy all open connections to the server
+     */
+    destroyConnections: () => {
       for (const client of ctx.wss.clients) {
         client.close();
       }

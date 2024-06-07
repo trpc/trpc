@@ -218,9 +218,9 @@ test('basic subscription test', async () => {
   await close();
 });
 
-test('$subscription() - server randomly stop and restart', async () => {
+test('$subscription() - client resumes subscriptions after reconnecting', async () => {
   const ctx = factory();
-  const { client, close, ee, wssPort, applyWSSHandlerOpts } = ctx;
+  const { client, close, ee } = ctx;
   ee.once('subscription:created', () => {
     setTimeout(() => {
       ee.emit('server:msg', {
@@ -248,7 +248,7 @@ test('$subscription() - server randomly stop and restart', async () => {
   });
 
   // kill all connections to the server (simulates restart)
-  ctx.killConnections();
+  ctx.destroyConnections();
 
   // start a new wss server on same port, and trigger a message
   onStartedMock.mockClear();
