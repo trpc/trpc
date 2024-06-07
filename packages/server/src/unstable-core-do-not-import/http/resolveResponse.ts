@@ -442,7 +442,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         },
 
         formatError(errorOpts) {
-          console.log({ errorOpts });
           const call = info?.calls[errorOpts.path[0] as any];
 
           const shape = getErrorShape({
