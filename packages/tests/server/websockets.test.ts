@@ -273,6 +273,8 @@ test('$subscription() - client resumes subscriptions after reconnecting', async 
       },
     ]
   `);
+
+  await ctx.close();
 });
 
 test('server subscription ended', async () => {
