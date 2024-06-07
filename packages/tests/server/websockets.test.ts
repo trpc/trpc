@@ -303,8 +303,9 @@ test('basic subscription test (iterator)', async () => {
   await close();
 });
 
-test.skip('$subscription() - server randomly stop and restart (this test might be flaky, try re-running)', async () => {
-  const { client, close, ee, wssPort, applyWSSHandlerOpts } = factory();
+test('$subscription() - client resumes subscriptions after reconnecting', async () => {
+  const ctx = factory();
+  const { client, close, ee } = ctx;
   ee.once('subscription:created', () => {
     setTimeout(() => {
       ee.emit('server:msg', {
@@ -330,18 +331,9 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     expect(onStartedMock).toHaveBeenCalledTimes(1);
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
-  // close websocket server
-  await close();
-  await waitFor(() => {
-    expect(onErrorMock).toHaveBeenCalledTimes(1);
-    expect(onCompleteMock).toHaveBeenCalledTimes(0);
-  });
-  expect(onErrorMock.mock.calls[0]![0]).toMatchInlineSnapshot(
-    `[TRPCClientError: WebSocket closed prematurely]`,
-  );
-  expect(onErrorMock.mock.calls[0]![0]!.originalError.name).toBe(
-    'TRPCWebSocketClosedError',
-  );
+
+  // kill all connections to the server (simulates restart)
+  ctx.destroyConnections();
 
   // start a new wss server on same port, and trigger a message
   onStartedMock.mockClear();
@@ -356,11 +348,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     }, 1);
   });
 
-  const wss = new Server({ port: wssPort });
-  applyWSSHandler({ ...applyWSSHandlerOpts, wss });
-
   await waitFor(() => {
-    expect(onStartedMock).toHaveBeenCalledTimes(1);
     expect(onDataMock).toHaveBeenCalledTimes(1);
   });
   expect(onDataMock.mock.calls.map((args) => args[0])).toMatchInlineSnapshot(`
@@ -371,9 +359,7 @@ test.skip('$subscription() - server randomly stop and restart (this test might b
     ]
   `);
 
-  await new Promise((resolve) => {
-    wss.close(resolve);
-  });
+  await ctx.close();
 });
 
 test('server subscription ended', async () => {

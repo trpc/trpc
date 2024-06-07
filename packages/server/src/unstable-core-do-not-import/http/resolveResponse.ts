@@ -180,6 +180,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 ): Promise<Response> {
   const { router, req } = opts;
   const headers = new Headers([['vary', 'trpc-accept']]);
+  const config = router._def._config;
 
   const url = new URL(req.url);
 
@@ -304,7 +305,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const res: TRPCResponse<unknown, inferRouterError<TRouter>> = error
             ? {
                 error: getErrorShape({
-                  config: router._def._config,
+                  config,
                   ctx,
                   error,
                   input: call.result(),
@@ -323,7 +324,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             untransformedJSON: [res],
           });
           return new Response(
-            JSON.stringify(transformTRPCResponse(router._def._config, res)),
+            JSON.stringify(transformTRPCResponse(config, res)),
             {
               status: headResponse.status,
               headers,
@@ -333,9 +334,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         case 'subscription': {
           // httpSubscriptionLink
 
-          if (
-            !opts.router._def._config.experimental?.sseSubscriptions?.enabled
-          ) {
+          if (!config.experimental?.sseSubscriptions?.enabled) {
             throw new TRPCError({
               code: 'METHOD_NOT_SUPPORTED',
               message: 'Missing experimental flag "sseSubscriptions"',
@@ -349,8 +348,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           }
           const stream = sseStreamProducer({
             data,
-            serialize: (v) =>
-              router._def._config.transformer.output.serialize(v),
+            serialize: (v) => config.transformer.output.serialize(v),
           });
           for (const [key, value] of Object.entries(sseHeaders)) {
             headers.set(key, value);
@@ -408,7 +406,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           if (error) {
             return {
               error: getErrorShape({
-                config: router._def._config,
+                config,
                 ctx,
                 error,
                 input: call.result(),
@@ -431,7 +429,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             }),
           };
         }),
-        serialize: opts.router._def._config.transformer.output.serialize,
+        serialize: config.transformer.output.serialize,
         onError: (cause) => {
           opts.onError?.({
             error: getTRPCErrorFromUnknown(cause),
@@ -441,6 +439,22 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             req: opts.req,
             type: info?.type ?? 'unknown',
           });
+        },
+
+        formatError(errorOpts) {
+          console.log({ errorOpts });
+          const call = info?.calls[errorOpts.path[0] as any];
+
+          const shape = getErrorShape({
+            config,
+            ctx,
+            error: getTRPCErrorFromUnknown(errorOpts.error),
+            input: call?.result(),
+            path: call?.path,
+            type: call?.procedure?._def.type ?? 'unknown',
+          });
+
+          return shape;
         },
       });
 
@@ -504,7 +518,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         if (error) {
           return {
             error: getErrorShape({
-              config: router._def._config,
+              config,
               ctx,
               error,
               input: call.result(),
@@ -533,9 +547,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     });
 
     return new Response(
-      JSON.stringify(
-        transformTRPCResponse(router._def._config, resultAsRPCResponse),
-      ),
+      JSON.stringify(transformTRPCResponse(config, resultAsRPCResponse)),
       {
         status: headResponse.status,
         headers,

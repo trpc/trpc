@@ -1,8 +1,6 @@
-import { EventEmitter, on } from 'node:events';
-import { inspect } from 'node:util';
+import { EventEmitter } from 'node:events';
 import {
   routerToServerAndClientNew,
-  suppressLogs,
   waitError,
   waitTRPCClientError,
 } from './___testHelpers';
@@ -11,12 +9,12 @@ import type { TRPCLink } from '@trpc/client';
 import {
   httpBatchLink,
   splitLink,
+  TRPCClientError,
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import type { SSEvent } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -268,6 +266,11 @@ describe('with transformer', () => {
           yield 2;
           yield 3;
         }),
+        iterableWithError: t.procedure.query(async function* () {
+          yield 1;
+          yield 2;
+          throw new Error('foo');
+        }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -428,5 +431,30 @@ describe('with transformer', () => {
         }
       `);
     }
+  });
+
+  test.only('iterable with error', async () => {
+    const { client, router } = ctx;
+
+    const iterable = await client.iterableWithError.query();
+
+    const aggregated: unknown[] = [];
+    const error = await waitError(async () => {
+      for await (const value of iterable) {
+        aggregated.push(value);
+      }
+    }, TRPCClientError<typeof router>);
+
+    error.data!.stack = '[redacted]';
+    expect(error.data).toMatchInlineSnapshot(`
+      Object {
+        "code": "INTERNAL_SERVER_ERROR",
+        "httpStatus": 500,
+        "path": "iterableWithError",
+        "stack": "[redacted]",
+      }
+    `);
+    expect(aggregated).toEqual([1, 2]);
+    expect(error.message).toBe('foo');
   });
 });

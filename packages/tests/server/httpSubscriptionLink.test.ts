@@ -229,7 +229,7 @@ test('disconnect and reconnect with an event id', async () => {
     }),
   ]);
 
-  await ctx.restart();
+  ctx.destroyConnections();
   release();
 
   await waitFor(

@@ -68,12 +68,7 @@ type PromiseChunk =
       status: PROMISE_STATUS_FULFILLED,
       value: HydratedValue,
     ]
-  | [
-      chunkIndex: ChunkIndex,
-      status: PROMISE_STATUS_REJECTED,
-      // do we want to serialize errors?
-      // , error?: unknown
-    ];
+  | [chunkIndex: ChunkIndex, status: PROMISE_STATUS_REJECTED, error: unknown];
 type IterableChunk =
   | [chunkIndex: ChunkIndex, status: ASYNC_ITERABLE_STATUS_DONE]
   | [
@@ -84,8 +79,7 @@ type IterableChunk =
   | [
       chunkIndex: ChunkIndex,
       status: ASYNC_ITERABLE_STATUS_ERROR,
-      // do we want to serialize errors?
-      // , error?: unknown
+      error: unknown,
     ];
 type ChunkData = PromiseChunk | IterableChunk;
 type PlaceholderValue = 0 & { __placeholder: true };
@@ -108,6 +102,10 @@ export interface ProducerOptions {
   serialize?: Serialize;
   data: Record<string, unknown> | unknown[];
   onError?: ProducerOnError;
+  formatError?: (opts: {
+    error: unknown;
+    path: (string | number)[];
+  }) => unknown;
   maxDepth?: number;
 }
 
@@ -156,9 +154,13 @@ function createBatchStreamProducer(opts: ProducerOptions) {
           hydrate(it, path),
         ]);
       })
-      .catch((err) => {
-        opts.onError?.({ error: err, path });
-        stream.controller.enqueue([idx, PROMISE_STATUS_REJECTED]);
+      .catch((cause) => {
+        opts.onError?.({ error: cause, path });
+        stream.controller.enqueue([
+          idx,
+          PROMISE_STATUS_REJECTED,
+          opts.formatError?.({ error: cause, path }),
+        ]);
       })
       .finally(() => {
         pending.delete(idx);
@@ -191,7 +193,12 @@ function createBatchStreamProducer(opts: ProducerOptions) {
 
         if (next instanceof Error) {
           opts.onError?.({ error: next, path });
-          stream.controller.enqueue([idx, ASYNC_ITERABLE_STATUS_ERROR]);
+
+          stream.controller.enqueue([
+            idx,
+            ASYNC_ITERABLE_STATUS_ERROR,
+            opts.formatError?.({ error: next, path }),
+          ]);
           return;
         }
         if (next === 'cancelled') {
@@ -413,6 +420,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   from: NodeJSReadableStreamEsque | WebReadableStreamEsque;
   deserialize?: Deserialize;
   onError?: ConsumerOnError;
+  formatError?: (opts: { error: unknown }) => Error;
 }) {
   const { deserialize = (v) => v } = opts;
 
@@ -469,7 +477,9 @@ export async function jsonlStreamConsumer<THead>(opts: {
                   resolve(dehydrate(data));
                   break;
                 case PROMISE_STATUS_REJECTED:
-                  reject(new AsyncError(data));
+                  reject(
+                    opts.formatError?.({ error: data }) ?? new AsyncError(data),
+                  );
                   break;
               }
             })
@@ -504,7 +514,9 @@ export async function jsonlStreamConsumer<THead>(opts: {
                   return;
                 case ASYNC_ITERABLE_STATUS_ERROR:
                   controllers.delete(chunkId);
-                  throw new AsyncError(data);
+                  throw (
+                    opts.formatError?.({ error: data }) ?? new AsyncError(data)
+                  );
               }
             }
           },
@@ -551,7 +563,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
             const head = chunkOrHead as Record<number | string, unknown>;
 
             for (const [key, value] of Object.entries(chunkOrHead)) {
-              const parsed = dehydrate(value);
+              const parsed = dehydrate(value as any);
               head[key] = parsed;
             }
             headDeferred.resolve(head as THead);

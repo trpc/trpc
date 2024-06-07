@@ -1,6 +1,7 @@
 import type { IncomingMessage } from 'http';
 import http from 'http';
 import type { AddressInfo, Socket } from 'net';
+import { promisify } from 'util';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import {
   createTRPCClient,
@@ -19,11 +20,9 @@ import type {
   DataTransformerOptions,
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
-import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
 
-(global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = WebSocket as any;
@@ -86,9 +85,6 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
       connections.delete(conn);
     });
   });
-  const server = httpServer.listen(0);
-  const httpPort = (server.address() as AddressInfo).port;
-  const httpUrl = `http://localhost:${httpPort}`;
 
   // wss
   const wss = new WebSocketServer({ port: 0 });
@@ -104,6 +100,10 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   };
   const wssHandler = applyWSSHandler(applyWSSHandlerOpts);
   const wssUrl = `ws://localhost:${wssPort}`;
+
+  const server = httpServer.listen(0);
+  const httpPort = (server.address() as AddressInfo).port;
+  const httpUrl = `http://localhost:${httpPort}`;
 
   // client
   const wsClient = createWSClient({
@@ -126,25 +126,14 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
 
-  async function forceClose() {
-    for (const conn of connections) {
-      conn.emit('close');
-      conn.destroy();
-    }
-    await new Promise((resolve) => {
-      server.close(resolve);
-    });
-  }
-  return {
+  const ctx = {
     wsClient,
     client,
     close: async () => {
+      ctx.destroyConnections();
       await Promise.all([
-        forceClose(),
+        new Promise((resolve) => server.close(resolve)),
         new Promise((resolve) => {
-          wss.clients.forEach((ws) => {
-            ws.close();
-          });
           wss.close(resolve);
         }),
       ]);
@@ -163,12 +152,20 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     createContextSpy,
     onRequestSpy,
     onReqAborted,
-    restart: async () => {
-      await forceClose();
-
-      httpServer.listen(httpPort);
+    /**
+     * Destroy all open connections to the server
+     */
+    destroyConnections: () => {
+      for (const client of ctx.wss.clients) {
+        client.close();
+      }
+      for (const conn of connections) {
+        conn.emit('close');
+        conn.destroy();
+      }
     },
   };
+  return ctx;
 }
 
 export async function waitMs(ms: number) {
