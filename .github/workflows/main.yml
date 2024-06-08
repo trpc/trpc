@@ -112,8 +112,9 @@ jobs:
             then pnpm playwright install chromium;
           fi
 
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} migrate
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
