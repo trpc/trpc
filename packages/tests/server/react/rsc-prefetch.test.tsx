@@ -60,6 +60,8 @@ const ctx = konn()
 test('rsc prefetch helpers', async () => {
   const { client, App, trpc, HydrateClient } = ctx;
 
+  const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
   function MyComponent() {
     const [data] = client.post.byId.useSuspenseQuery({
       id: '1',
@@ -71,7 +73,11 @@ test('rsc prefetch helpers', async () => {
   // Imaginary RSC prefetch parent component
   function Parent() {
     void trpc.post.byId.prefetch({ id: '1' });
-    return <MyComponent />;
+    return (
+      <HydrateClient>
+        <MyComponent />
+      </HydrateClient>
+    );
   }
 
   const utils = render(
@@ -82,4 +88,7 @@ test('rsc prefetch helpers', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result`);
   });
+
+  // Should not have fetched from CC
+  expect(fetchSpy).toHaveBeenCalledTimes(0);
 });
