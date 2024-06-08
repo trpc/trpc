@@ -219,52 +219,23 @@ function useLivePosts() {
   });
   type Post = NonNullable<typeof messages>[number];
 
-  const scrollTargetRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * Scroll to the bottom of the list
-   */
-  const scrollToBottomOfList = useCallback(() => {
-    setTimeout(() => {
-      scrollTargetRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'end',
-      });
-    }, 1);
-  }, []);
-
-  // On initial load, scroll to the bottom
-  useEffect(() => {
-    scrollToBottomOfList();
-  }, [scrollToBottomOfList]);
-
   /**
    * fn to add and dedupe new messages onto state
    */
-  const addMessages = useCallback(
-    (incoming?: Post[]) => {
-      setMessages((current) => {
-        const map: Record<Post['id'], Post> = {};
-        for (const msg of current ?? []) {
-          map[msg.id] = msg;
-        }
-        for (const msg of incoming ?? []) {
-          map[msg.id] = msg;
-        }
-        return Object.values(map).sort(
-          (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
-        );
-      });
-
-      if (
-        scrollTargetRef.current &&
-        scrollTargetRef.current.getBoundingClientRect().top < window.innerHeight
-      ) {
-        scrollToBottomOfList();
+  const addMessages = useCallback((incoming?: Post[]) => {
+    setMessages((current) => {
+      const map: Record<Post['id'], Post> = {};
+      for (const msg of current ?? []) {
+        map[msg.id] = msg;
       }
-    },
-    [scrollToBottomOfList],
-  );
+      for (const msg of incoming ?? []) {
+        map[msg.id] = msg;
+      }
+      return Object.values(map).sort(
+        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+      );
+    });
+  }, []);
 
   /**
    * when new data from `useInfiniteQuery`, merge with current state
@@ -302,14 +273,14 @@ function useLivePosts() {
   return {
     query,
     messages,
-    scrollTargetRef,
-    scrollToBottomOfList,
   };
 }
 
 export default function IndexPage() {
   const livePosts = useLivePosts();
   const userName = useSession().data?.user?.name;
+
+  const scrollTargetRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -410,12 +381,19 @@ export default function IndexPage() {
                       </p>
                     </article>
                   ))}
-                  <div ref={livePosts.scrollTargetRef}></div>
+                  <div ref={scrollTargetRef}></div>
                 </div>
               </div>
             </div>
             <div className="w-full">
-              <AddMessageForm onMessagePost={livePosts.scrollToBottomOfList} />
+              <AddMessageForm
+                onMessagePost={() => {
+                  scrollTargetRef.current?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'end',
+                  });
+                }}
+              />
               <WhoIsTyping />
             </div>
 
