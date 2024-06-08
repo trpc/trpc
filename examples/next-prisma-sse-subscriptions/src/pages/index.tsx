@@ -3,11 +3,10 @@ import type {
   UseInfiniteQueryResult,
 } from '@tanstack/react-query';
 import { skipToken } from '@tanstack/react-query';
-import { trpc } from '../utils/trpc';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Head from 'next/head';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { trpc } from '../utils/trpc';
 
 /**
  * Set isTyping with a throttle of 1s
@@ -50,8 +49,12 @@ function WhoIsTyping() {
   });
 
   return (
-    <p className="h-2 italic text-gray-400">
-      {currentlyTyping.length ? `${currentlyTyping.join(', ')} typing...` : ''}
+    <p className="italic text-gray-400">
+      {currentlyTyping.length ? (
+        `${currentlyTyping.join(', ')} typing...`
+      ) : (
+        <>&nbsp;</>
+      )}
     </p>
   );
 }
@@ -103,56 +106,51 @@ function AddMessageForm(props: { onMessagePost: () => void }) {
     );
   }
   return (
-    <>
-      <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          /**
-           * In a real app you probably don't want to use this manually
-           * Checkout React Hook Form - it works great with tRPC
-           * @link https://react-hook-form.com/
-           */
-          await postMessage();
-        }}
-      >
-        <fieldset disabled={addPost.isPending} className="min-w-0">
-          <div className="flex w-full items-end rounded bg-gray-500 px-3 py-2 text-lg text-gray-200">
-            <textarea
-              value={message}
-              className="flex-1 bg-transparent outline-0"
-              rows={message.split(/\r|\n/).length}
-              id="text"
-              name="text"
-              autoFocus
-              onChange={(e) => {
-                setMessage(e.target.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void postMessage();
-                  e.currentTarget.focus();
-                }
-              }}
-              onFocus={() => {
-                setIsFocused(true);
-              }}
-              onBlur={() => {
-                setIsFocused(false);
-              }}
-            />
-            <div>
-              <button type="submit" className="rounded bg-indigo-500 px-4 py-1">
-                Submit
-              </button>
-            </div>
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        /**
+         * In a real app you probably don't want to use this manually
+         * Checkout React Hook Form - it works great with tRPC
+         * @link https://react-hook-form.com/
+         */
+        await postMessage();
+      }}
+    >
+      <fieldset disabled={addPost.isPending} className="min-w-0">
+        <div className="flex w-full items-end rounded bg-gray-500 px-3 py-2 text-lg text-gray-200">
+          <textarea
+            value={message}
+            className="flex-1 bg-transparent outline-0"
+            rows={message.split(/\r|\n/).length}
+            id="text"
+            name="text"
+            autoFocus
+            onChange={(e) => {
+              setMessage(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                void postMessage();
+              }
+            }}
+            onFocus={() => {
+              setIsFocused(true);
+            }}
+            onBlur={() => {
+              setIsFocused(false);
+            }}
+          />
+          <div>
+            <button type="submit" className="rounded bg-indigo-500 px-4 py-1">
+              Submit
+            </button>
           </div>
-        </fieldset>
-        {addPost.error && (
-          <p style={{ color: 'red' }}>{addPost.error.message}</p>
-        )}
-      </form>
-    </>
+        </div>
+      </fieldset>
+      {addPost.error && <p style={{ color: 'red' }}>{addPost.error.message}</p>}
+    </form>
   );
 }
 function InfiniteScrollButton(props: {
@@ -276,10 +274,78 @@ function useLivePosts() {
   };
 }
 
-export default function IndexPage() {
-  const livePosts = useLivePosts();
+function Layout(props: { children: React.ReactNode }) {
   const userName = useSession().data?.user?.name;
 
+  return (
+    <div className="flex h-screen flex-col md:flex-row">
+      <section className="flex w-full flex-col bg-gray-800 md:w-72">
+        <div className="flex-1 overflow-y-hidden">
+          <div className="flex h-full flex-col divide-y divide-gray-700">
+            <header className="p-4">
+              <h1 className="text-3xl font-bold text-gray-50">
+                tRPC SSE starter
+              </h1>
+              <p className="text-sm text-gray-400">
+                Showcases Server-sent Events + subscription support
+                <br />
+                <a
+                  className="text-gray-100 underline"
+                  href="https://github.com/trpc/trpc/tree/05-10-subscriptions-sse/examples/next-prisma-sse-subscriptions"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View Source on GitHub
+                </a>
+              </p>
+            </header>
+            <div className="hidden flex-1 space-y-6 overflow-y-auto p-4 text-gray-400 md:block">
+              <article className="space-y-2">
+                <h2 className="text-lg text-gray-200">Introduction</h2>
+                <ul className="list-inside list-disc space-y-2">
+                  <li>Open inspector and head to Network tab</li>
+                  <li>All client requests are handled through HTTP</li>
+                  <li>
+                    We have a simple backend subscription on new messages that
+                    adds the newly added message to the current state
+                  </li>
+                </ul>
+              </article>
+              {userName && (
+                <article>
+                  <h2 className="text-lg text-gray-200">User information</h2>
+                  <ul className="space-y-2">
+                    <li className="text-lg">
+                      You&apos;re{' '}
+                      <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        disabled
+                        className="bg-transparent"
+                        value={userName}
+                      />
+                    </li>
+                    <li>
+                      <button onClick={() => signOut()}>Sign Out</button>
+                    </li>
+                  </ul>
+                </article>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="hidden h-16 shrink-0 md:block"></div>
+      </section>
+      <main className="flex-1 overflow-y-hidden md:h-screen flex flex-col bg-gray-700">
+        {props.children}
+      </main>
+    </div>
+  );
+}
+
+export default function IndexPage() {
+  const livePosts = useLivePosts();
   const scrollTargetRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -288,149 +354,57 @@ export default function IndexPage() {
         <title>Prisma Starter</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <div className="flex h-screen flex-col md:flex-row">
-        <section className="flex w-full flex-col bg-gray-800 md:w-72">
-          <div className="flex-1 overflow-y-hidden">
-            <div className="flex h-full flex-col divide-y divide-gray-700">
-              <header className="p-4">
-                <h1 className="text-3xl font-bold text-gray-50">
-                  tRPC SSE starter
-                </h1>
-                <p className="text-sm text-gray-400">
-                  Showcases Server-sent Events + subscription support
-                  <br />
-                  <a
-                    className="text-gray-100 underline"
-                    href="https://github.com/trpc/trpc/tree/05-10-subscriptions-sse/examples/next-prisma-sse-subscriptions"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View Source on GitHub
-                  </a>
-                </p>
-              </header>
-              <div className="hidden flex-1 space-y-6 overflow-y-auto p-4 text-gray-400 md:block">
-                <article className="space-y-2">
-                  <h2 className="text-lg text-gray-200">Introduction</h2>
-                  <ul className="list-inside list-disc space-y-2">
-                    <li>Open inspector and head to Network tab</li>
-                    <li>All client requests are handled through HTTP</li>
-                    <li>
-                      We have a simple backend subscription on new messages that
-                      adds the newly added message to the current state
-                    </li>
-                  </ul>
+      <Layout>
+        {/* flex-col-reverse helps anchoring the scroll to the bottom */}
+        <div className="flex-1 overflow-y-auto flex-col-reverse p-4">
+          {/* A single div here makes it not affect order of the children */}
+          <div className="space-y-4">
+            <InfiniteScrollButton query={livePosts.query} />
+            <div className="space-y-4">
+              {livePosts.messages?.map((item) => (
+                <article key={item.id} className=" text-gray-50">
+                  <header className="flex space-x-2 text-sm">
+                    <h3 className="text-base">
+                      {item.source === 'RAW' ? (
+                        item.name
+                      ) : (
+                        <a
+                          href={`https://github.com/${item.name}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {item.name}
+                        </a>
+                      )}
+                    </h3>
+                    <span className="text-gray-500">
+                      {new Intl.DateTimeFormat('en-GB', {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                      }).format(item.createdAt)}
+                    </span>
+                  </header>
+                  <p className="whitespace-pre-line text-xl leading-tight">
+                    {item.text}
+                  </p>
                 </article>
-                {userName && (
-                  <article>
-                    <h2 className="text-lg text-gray-200">User information</h2>
-                    <ul className="space-y-2">
-                      <li className="text-lg">
-                        You&apos;re{' '}
-                        <input
-                          id="name"
-                          name="name"
-                          type="text"
-                          disabled
-                          className="bg-transparent"
-                          value={userName}
-                        />
-                      </li>
-                      <li>
-                        <button onClick={() => signOut()}>Sign Out</button>
-                      </li>
-                    </ul>
-                  </article>
-                )}
-              </div>
+              ))}
+              <div ref={scrollTargetRef}></div>
             </div>
           </div>
-          <div className="hidden h-16 shrink-0 md:block"></div>
-        </section>
-        <div className="flex-1 overflow-y-hidden md:h-screen">
-          <section className="flex h-full flex-col justify-end space-y-4 bg-gray-700 p-4">
-            <div className="flex overflow-y-auto flex-col-reverse">
-              <div className="space-y-4">
-                <InfiniteScrollButton query={livePosts.query} />
-                <div className="space-y-4">
-                  {livePosts.messages?.map((item) => (
-                    <article key={item.id} className=" text-gray-50">
-                      <header className="flex space-x-2 text-sm">
-                        <h3 className="text-base">
-                          {item.source === 'RAW' ? (
-                            item.name
-                          ) : (
-                            <a
-                              href={`https://github.com/${item.name}`}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              {item.name}
-                            </a>
-                          )}
-                        </h3>
-                        <span className="text-gray-500">
-                          {new Intl.DateTimeFormat('en-GB', {
-                            dateStyle: 'short',
-                            timeStyle: 'short',
-                          }).format(item.createdAt)}
-                        </span>
-                      </header>
-                      <p className="whitespace-pre-line text-xl leading-tight">
-                        {item.text}
-                      </p>
-                    </article>
-                  ))}
-                  <div ref={scrollTargetRef}></div>
-                </div>
-              </div>
-            </div>
-            <div className="w-full">
-              <AddMessageForm
-                onMessagePost={() => {
-                  scrollTargetRef.current?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'end',
-                  });
-                }}
-              />
-              <WhoIsTyping />
-            </div>
-
-            {process.env.NODE_ENV !== 'production' && (
-              <div className="hidden md:block">
-                <ReactQueryDevtools initialIsOpen={false} />
-              </div>
-            )}
-          </section>
         </div>
-      </div>
+        <div className="w-full flex-col p-4">
+          <AddMessageForm
+            onMessagePost={() => {
+              scrollTargetRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'end',
+              });
+            }}
+          />
+          <WhoIsTyping />
+        </div>
+      </Layout>
     </>
   );
 }
-
-/**
- * If you want to statically render this page
- * - Export `appRouter` & `createContext` from [trpc].ts
- * - Make the `opts` object optional on `createContext()`
- *
- * @link https://trpc.io/docs/v11/ssg
- */
-// export const getStaticProps = async (
-//   context: GetStaticPropsContext<{ filter: string }>,
-// ) => {
-//   const ssg = createServerSideHelpers({
-//     router: appRouter,
-//     ctx: await createContext(),
-//   });
-//
-//   await ssg.fetchQuery('post.all');
-//
-//   return {
-//     props: {
-//       trpcState: ssg.dehydrate(),
-//       filter: context.params?.filter ?? 'all',
-//     },
-//     revalidate: 1,
-//   };
-// };
