@@ -20,6 +20,7 @@ Try demo http://sse.trpc.io/
 ```bash
 pnpm create next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-sse-subscriptions trpc-prisma-sse-subscriptions
 cd trpc-prisma-sse-subscriptions
+cp .env.local.example .env.local
 pnpm i
 pnpm reset-dev
 ```
