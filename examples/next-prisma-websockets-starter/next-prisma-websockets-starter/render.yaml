@@ -1,0 +1,29 @@
+# previewsEnabled: true
+# previewsExpireAfterDays: 7 # automatically delete the environment after the specified number of days of inactivity
+services:
+  - type: web
+    name: trpc-websockets
+    env: node
+    plan: free
+    # NODE_ENV is development here in order for pnpm to install dev deps
+    buildCommand: NODE_ENV=development pnpm install && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /api/trpc/healthcheck
+    # Preview Environment Initialization
+    # initialDeployHook: |
+    #   pnpm run db-seed
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trpc-websockets-db
+          property: connectionString
+
+      - fromGroup: trpc-websockets
+
+databases:
+  - name: trpc-websockets-db
+    plan: starter
+    # plan: free

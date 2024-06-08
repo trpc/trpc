@@ -1,0 +1,14 @@
+version: '3.6'
+services:
+  postgres:
+    image: postgres:13
+    ports:
+      - '5932:5432' # expose pg on port 5932 to not collide with pg from elsewhere
+    restart: always
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_HOST_AUTH_METHOD: trust
+volumes:
+  db_data:
