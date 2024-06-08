@@ -32,6 +32,7 @@ class MyEventEmitter extends EventEmitter {
 // In a real app, you'd probably use Redis or something
 const ee = new MyEventEmitter();
 
+const evt = new EventEmitter();
 // who is currently typing, key is `name`
 const currentlyTyping: WhoIsTyping = Object.create(null);
 
@@ -182,6 +183,7 @@ export const postRouter = router({
 
       for await (const post of streamToAsyncIterable(stream)) {
         yield {
+          // yielding the post id ensures the client can reconnect at any time and get the latest events this id
           id: post.id,
           data: post,
         } satisfies SSEvent;
