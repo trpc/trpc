@@ -152,6 +152,9 @@ export const postRouter = router({
             controller.enqueue(data);
           };
           ee.on('add', onAdd);
+          unsubscribe = () => {
+            ee.off('add', onAdd);
+          };
 
           const newItemsSinceCursor = await prisma.post.findMany({
             where: {
@@ -168,9 +171,6 @@ export const postRouter = router({
           for (const item of newItemsSinceCursor) {
             controller.enqueue(item);
           }
-          unsubscribe = () => {
-            ee.off('add', onAdd);
-          };
         },
         cancel() {
           unsubscribe();
