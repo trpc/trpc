@@ -2,6 +2,8 @@ import { HydrateClient, trpc } from '~/trpc/rq-server';
 import React from 'react';
 import { Post } from './post';
 
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   void trpc.getPokemon.prefetch({ id: 25 });
 
