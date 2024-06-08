@@ -68,6 +68,7 @@ type Caller<TRouter extends AnyRouter> = ReturnType<
   RouterCaller<inferRouterRootTypes<TRouter>, TRouter['_def']['record']>
 >;
 
+// ts-prune-ignore-next
 export function createHydrationHelpers<TRouter extends AnyRouter>(
   caller: AnyRouter extends TRouter
     ? TypeError<'Generic parameter missing in `createHydrationHelpers<HERE>`'>
