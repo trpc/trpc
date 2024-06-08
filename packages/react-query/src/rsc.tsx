@@ -87,19 +87,22 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     const input = args[0];
     const promise = proc(input);
 
+    const queryFn = async () => {
+      const def: AnyRouter['_def'] = await (caller as any)._def();
+      const transformer = def._config.transformer;
+      return promise.then((value) => transformer.output.serialize(value));
+    };
+
     const helper = path.pop();
     if (helper === 'prefetch') {
       const args1 = args[1] as Maybe<
         TRPCFetchInfiniteQueryOptions<any, any, any>
       >;
 
-      const def: AnyRouter['_def'] = await (caller as any)._def();
-      const transformer = def._config.transformer.output;
-
       return getQueryClient().prefetchQuery({
         ...args1,
         queryKey: getQueryKeyInternal(path, input, 'query'),
-        queryFn: () => promise.then((value) => transformer.serialize(value)),
+        queryFn,
       });
     }
     if (helper === 'prefetchInfinite') {
@@ -107,13 +110,10 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
         TRPCFetchInfiniteQueryOptions<any, any, any>
       >;
 
-      const def: AnyRouter['_def'] = await (caller as any)._def();
-      const transformer = def._config.transformer.output;
-
       return getQueryClient().prefetchInfiniteQuery({
         ...args1,
         queryKey: getQueryKeyInternal(path, input, 'infinite'),
-        queryFn: () => promise.then((value) => transformer.serialize(value)),
+        queryFn,
         initialPageParam: args1?.initialCursor ?? null,
       });
     }
