@@ -1,3 +1,4 @@
+import { Temporal } from '@js-temporal/polyfill';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 
@@ -5,7 +6,7 @@ let latestPost = {
   id: 0,
   title: 'latest post',
   content: 'hello world',
-  createdAt: new Date(),
+  createdAt: Temporal.Now.plainDateTimeISO(),
 };
 
 export const createPost = publicProcedure
@@ -18,7 +19,7 @@ export const createPost = publicProcedure
   .mutation(async (opts) => {
     latestPost = {
       id: latestPost.id + 1,
-      createdAt: new Date(),
+      createdAt: Temporal.Now.plainDateTimeISO(),
       ...opts.input,
     };
 

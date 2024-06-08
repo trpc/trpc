@@ -1,13 +1,13 @@
 import { experimental_createServerActionHandler } from '@trpc/next/app-dir/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { auth } from '~/auth';
+import { tson } from '~/trpc/shared';
 import { headers } from 'next/headers';
-import superjson from 'superjson';
 import { ZodError } from 'zod';
 import type { Context } from './context';
 
 const t = initTRPC.context<Context>().create({
-  transformer: superjson,
+  transformer: tson,
   errorFormatter(opts) {
     const { shape, error } = opts;
     return {

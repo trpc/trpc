@@ -4,7 +4,7 @@ import { experimental_createTRPCNextAppDirServer } from '@trpc/next/app-dir/serv
 import { auth } from '~/auth';
 import { appRouter } from '~/server/routers/_app';
 import { cookies } from 'next/headers';
-import superjson from 'superjson';
+import { tson } from './shared';
 
 /**
  * This client invokes procedures directly on the server without fetching over HTTP.
@@ -20,7 +20,7 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
           // requests are cached for 5 seconds
           revalidate: 5,
           router: appRouter,
-          transformer: superjson,
+          transformer: tson,
           createContext: async () => {
             return {
               session: await auth(),

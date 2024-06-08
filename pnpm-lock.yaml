@@ -152,9 +152,15 @@ importers:
       '@hookform/resolvers':
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
+      '@js-temporal/polyfill':
+        specifier: ^0.4.4
+        version: 0.4.4
       '@tanstack/react-query':
         specifier: ^5.40.0
         version: 5.40.0(react@18.3.1)
+      '@tanstack/react-query-devtools':
+        specifier: ^5.40.0
+        version: 5.40.0(@tanstack/react-query@5.40.0)(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -197,12 +203,12 @@ importers:
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
-      superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
       trpc-api:
         specifier: link:./src/trpc
         version: link:src/trpc
+      tupleson:
+        specifier: 0.23.1
+        version: 0.23.1
       typescript:
         specifier: ^5.4.0
         version: 5.4.2
@@ -1686,6 +1692,9 @@ importers:
       '@fastify/websocket':
         specifier: ^10.0.1
         version: 10.0.1
+      '@js-temporal/polyfill':
+        specifier: ^0.4.4
+        version: 0.4.4
       '@miniflare/core':
         specifier: ^2.9.0
         version: 2.11.0
@@ -6432,6 +6441,14 @@ packages:
       '@jridgewell/resolve-uri': 3.1.0
       '@jridgewell/sourcemap-codec': 1.4.15
 
+  /@js-temporal/polyfill@0.4.4:
+    resolution: {integrity: sha512-2X6bvghJ/JAoZO52lbgyAPFj8uCflhTo2g7nkFzEQdXd/D8rEeD4HtmTEpmtGCva260fcd66YNXBOYdnmHqSOg==}
+    engines: {node: '>=12'}
+    dependencies:
+      jsbi: 4.3.0
+      tslib: 2.6.2
+    dev: false
+
   /@jsdevtools/ono@7.1.3:
     resolution: {integrity: sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==}
     dev: false
@@ -8548,7 +8565,6 @@ packages:
 
   /@tanstack/query-devtools@5.37.1:
     resolution: {integrity: sha512-XcG4IIHIv0YQKrexTqo2zogQWR1Sz672tX2KsfE9kzB+9zhx44vRKH5si4WDILE1PIWQpStFs/NnrDQrBAUQpg==}
-    dev: true
 
   /@tanstack/react-query-devtools@5.40.0(@tanstack/react-query@5.40.0)(react@18.3.1):
     resolution: {integrity: sha512-JoQOQj/LKaHoHVMAh73R0pc4lIAHiZMV8L4DGHsTSvHcKi22LZmSC9aYBY9oMkqGpFtKmbspwrUIn55+czNSbA==}
@@ -8559,7 +8575,6 @@ packages:
       '@tanstack/query-devtools': 5.37.1
       '@tanstack/react-query': 5.40.0(react@18.3.1)
       react: 18.3.1
-    dev: true
 
   /@tanstack/react-query@5.40.0(react@18.3.1):
     resolution: {integrity: sha512-iv/W0Axc4aXhFzkrByToE1JQqayxTPNotCoSCnarR/A1vDIHaoKpg7FTIfP3Ev2mbKn1yrxq0ZKYUdLEJxs6Tg==}
@@ -15786,6 +15801,10 @@ packages:
     hasBin: true
     dependencies:
       argparse: 2.0.1
+
+  /jsbi@4.3.0:
+    resolution: {integrity: sha512-SnZNcinB4RIcnEyZqFPdGPVgrg2AcnykiBy0sHVJQKHYeaLUvi3Exj+iaPpLnFVkDPZIV4U0yvgC9/R4uEAZ9g==}
+    dev: false
 
   /jsdom@24.0.0:
     resolution: {integrity: sha512-UDS2NayCvmXSXVP6mpTj+73JnNQadZlr9N68189xib2tx5Mls7swlTNao26IoHv46BZJFvXygyRtyXd1feAk1A==}

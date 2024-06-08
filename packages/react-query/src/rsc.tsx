@@ -92,20 +92,28 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
       const args1 = args[1] as Maybe<
         TRPCFetchInfiniteQueryOptions<any, any, any>
       >;
+
+      const def: AnyRouter['_def'] = await (caller as any)._def();
+      const transformer = def._config.transformer.output;
+
       return getQueryClient().prefetchQuery({
         ...args1,
         queryKey: getQueryKeyInternal(path, input, 'query'),
-        queryFn: () => promise,
+        queryFn: () => promise.then((value) => transformer.serialize(value)),
       });
     }
     if (helper === 'prefetchInfinite') {
       const args1 = args[1] as Maybe<
         TRPCFetchInfiniteQueryOptions<any, any, any>
       >;
+
+      const def: AnyRouter['_def'] = await (caller as any)._def();
+      const transformer = def._config.transformer.output;
+
       return getQueryClient().prefetchInfiniteQuery({
         ...args1,
         queryKey: getQueryKeyInternal(path, input, 'infinite'),
-        queryFn: () => promise,
+        queryFn: () => promise.then((value) => transformer.serialize(value)),
         initialPageParam: args1?.initialCursor ?? null,
       });
     }
@@ -115,8 +123,6 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
 
   function HydrateClient(props: { children: React.ReactNode }) {
     const dehydratedState = dehydrate(getQueryClient());
-    // TODO: transform?? We can't transform promises i don't think...
-    // since that is handled by React internally
 
     return (
       <HydrationBoundary state={dehydratedState}>

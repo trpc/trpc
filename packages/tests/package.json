@@ -12,6 +12,7 @@
     "@cloudflare/workers-types": "^4.0.0",
     "@fastify/busboy": "^2.0.0",
     "@fastify/websocket": "^10.0.1",
+    "@js-temporal/polyfill": "^0.4.4",
     "@miniflare/core": "^2.9.0",
     "@tanstack/react-query": "^5.40.0",
     "@testing-library/dom": "^10.0.0",

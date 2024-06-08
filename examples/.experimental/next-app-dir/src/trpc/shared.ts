@@ -1,7 +1,10 @@
+import { Temporal } from '@js-temporal/polyfill';
 import {
   defaultShouldDehydrateQuery,
   QueryClient,
 } from '@tanstack/react-query';
+import type { TsonType } from 'tupleson';
+import { createTson, tsonDate } from 'tupleson';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return '';
@@ -29,3 +32,19 @@ export const createQueryClient = () =>
       },
     },
   });
+
+const plainDate = {
+  deserialize: (v) => Temporal.PlainDate.from(v),
+  key: 'PlainDate',
+  serialize: (v) => v.toJSON(),
+  test: (v) => v instanceof Temporal.PlainDate,
+} satisfies TsonType<Temporal.PlainDate, string>;
+
+const plainDateTime = {
+  deserialize: (v) => Temporal.PlainDateTime.from(v),
+  key: 'PlainDateTime',
+  serialize: (v) => v.toJSON(),
+  test: (v) => v instanceof Temporal.PlainDateTime,
+} satisfies TsonType<Temporal.PlainDateTime, string>;
+
+export const tson = createTson({ types: [plainDate, plainDateTime, tsonDate] });
