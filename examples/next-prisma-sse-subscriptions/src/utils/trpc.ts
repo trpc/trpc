@@ -20,44 +20,7 @@ const { publicRuntimeConfig } = getConfig();
 
 const { APP_URL } = publicRuntimeConfig;
 
-function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
-  if (typeof window === 'undefined') {
-    return httpBatchLink({
-      /**
-       * @link https://trpc.io/docs/v11/data-transformers
-       */
-      transformer: superjson,
-      url: `${APP_URL}/api/trpc`,
-      headers() {
-        if (!ctx?.req?.headers) {
-          return {};
-        }
-        // on ssr, forward client's headers to the server
-        return {
-          ...ctx.req.headers,
-          'x-ssr': '1',
-        };
-      },
-    });
-  }
-  return splitLink({
-    condition: (op) => op.type === 'subscription',
-    true: unstable_httpSubscriptionLink({
-      url: `/api/trpc`,
-      /**
-       * @link https://trpc.io/docs/v11/data-transformers
-       */
-      transformer: superjson,
-    }),
-    false: httpBatchLink({
-      url: `/api/trpc`,
-      /**
-       * @link https://trpc.io/docs/v11/data-transformers
-       */
-      transformer: superjson,
-    }),
-  });
-}
+const BASE_URL = typeof window === 'undefined' ? APP_URL : '';
 
 /**
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
@@ -81,10 +44,24 @@ export const trpc = createTRPCNext<AppRouter>({
        */
       links: [
         // adds pretty logs to your console in development and logs errors in production
-        loggerLink({
-          enabled: () => true,
+        loggerLink(),
+        splitLink({
+          condition: (op) => op.type === 'subscription',
+          true: unstable_httpSubscriptionLink({
+            url: `${BASE_URL}/api/trpc`,
+            /**
+             * @link https://trpc.io/docs/v11/data-transformers
+             */
+            transformer: superjson,
+          }),
+          false: httpBatchLink({
+            url: `${BASE_URL}/api/trpc`,
+            /**
+             * @link https://trpc.io/docs/v11/data-transformers
+             */
+            transformer: superjson,
+          }),
         }),
-        getEndingLink(ctx),
       ],
       /**
        * @link https://tanstack.com/query/v5/docs/reference/QueryClient

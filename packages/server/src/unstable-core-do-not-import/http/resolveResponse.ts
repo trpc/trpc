@@ -208,7 +208,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
   const experimentalIterablesAndDeferreds =
     router._def._config.experimental?.iterablesAndDeferreds ?? false;
-
+  const experimentalSSE =
+    router._def._config.experimental?.sseSubscriptions?.enabled ?? true;
   try {
     info = getRequestInfo({
       req,
@@ -334,7 +335,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         case 'subscription': {
           // httpSubscriptionLink
 
-          if (!config.experimental?.sseSubscriptions?.enabled) {
+          if (!experimentalSSE) {
             throw new TRPCError({
               code: 'METHOD_NOT_SUPPORTED',
               message: 'Missing experimental flag "sseSubscriptions"',

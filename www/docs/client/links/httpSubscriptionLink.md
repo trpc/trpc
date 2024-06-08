@@ -1,11 +1,11 @@
 ---
-id: wsLink
-title: WebSocket Link
-sidebar_label: WebSocket Link
-slug: /client/links/wsLink
+id: httpSubscriptionLink
+title: HTTP Subscription Link
+sidebar_label: httpSubscriptionLink
+slug: /client/links/httpSubscriptionLink
 ---
 
-`wsLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../../further/websockets.md).
+`httpSubscriptionLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's Server-sent events for subscription.
 
 ## Usage
 
