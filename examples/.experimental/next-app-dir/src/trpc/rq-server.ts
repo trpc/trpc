@@ -9,10 +9,6 @@ import { headers } from 'next/headers';
 import { cache } from 'react';
 import { createQueryClient } from './shared';
 
-/**
- * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
- * handling a tRPC call from a React Server Component.
- */
 const createContext = cache(async (): Promise<Context> => {
   const _headers = new Headers(headers());
   _headers.set('x-trpc-source', 'rsc');
@@ -23,6 +19,10 @@ const createContext = cache(async (): Promise<Context> => {
   };
 });
 
+/**
+ * Create a stable getter for the query client that
+ * will return the same client during the same request.
+ */
 const getQueryClient = cache(createQueryClient);
 const caller = createCallerFactory(appRouter)(createContext);
 
