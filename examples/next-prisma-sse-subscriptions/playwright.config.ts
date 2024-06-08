@@ -1,4 +1,5 @@
-import { PlaywrightTestConfig, devices } from '@playwright/test';
+import type { PlaywrightTestConfig } from '@playwright/test';
+import { devices } from '@playwright/test';
 
 const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000';
 console.log(`ℹ️ Using base URL "${baseUrl}"`);
@@ -16,6 +17,12 @@ const config: PlaywrightTestConfig = {
     headless: opts.headless,
   },
   retries: process.env.CI ? 3 : 0,
+  webServer: {
+    command: 'yarn dev',
+    port: 3000,
+    timeout: 120 * 1000,
+    reuseExistingServer: !process.env.CI,
+  },
 };
 
 export default config;

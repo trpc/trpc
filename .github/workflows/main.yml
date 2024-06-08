@@ -112,6 +112,7 @@ jobs:
             then pnpm playwright install chromium;
           fi
 
+      - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
