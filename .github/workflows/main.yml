@@ -65,9 +65,7 @@ jobs:
         ports:
           - 5432:5432
     env:
-      APP_URL: http://localhost:3000
       NEXTAUTH_SECRET: supersecret
-      NEXTAUTH_URL: 'http://localhost:3000/api/auth'
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     runs-on: ubuntu-latest
