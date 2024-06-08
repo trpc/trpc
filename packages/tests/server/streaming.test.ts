@@ -433,7 +433,7 @@ describe('with transformer', () => {
     }
   });
 
-  test.only('iterable with error', async () => {
+  test('iterable with error', async () => {
     const { client, router } = ctx;
 
     const iterable = await client.iterableWithError.query();

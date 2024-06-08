@@ -1,4 +1,3 @@
-import type { IncomingMessage } from 'http';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
