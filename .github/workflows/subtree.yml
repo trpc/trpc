@@ -16,15 +16,16 @@ jobs:
       matrix:
         path: [
             #
-            next-prisma-starter,
-            next-prisma-sse-subscriptions,
-            next-prisma-todomvc,
-            next-minimal-starter,
-            next-big-router,
-            minimal,
-            minimal-react,
-            next-formdata,
             .experimental/next-app-dir,
+            minimal-react,
+            minimal,
+            next-big-router,
+            next-formdata,
+            next-minimal-starter,
+            next-prisma-sse-subscriptions,
+            next-prisma-starter,
+            next-prisma-todomvc,
+            next-prisma-websockets-starter,
           ]
 
     name: Update downstream ${{ matrix.path }} package
