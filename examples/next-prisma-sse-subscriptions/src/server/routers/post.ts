@@ -130,23 +130,6 @@ export const postRouter = router({
       }),
     )
     .subscription(async function* (opts) {
-      async function getPostsSince(date: Date | null) {
-        const where: Prisma.PostWhereInput = date
-          ? {
-              createdAt: {
-                gt: date,
-              },
-            }
-          : {};
-
-        return await prisma.post.findMany({
-          where,
-          orderBy: {
-            createdAt: 'asc',
-          },
-        });
-      }
-
       let lastMessageCursor: Date | null = null;
 
       if (opts.input.lastEventId) {
@@ -161,6 +144,8 @@ export const postRouter = router({
       let unsubscribe = () => {
         //
       };
+
+      // We use a readable stream here to prevent the client from missing events
       const stream = new ReadableStream<Post>({
         async start(controller) {
           const onAdd = (data: Post) => {
@@ -168,8 +153,19 @@ export const postRouter = router({
           };
           ee.on('add', onAdd);
 
-          const items = await getPostsSince(lastMessageCursor);
-          for (const item of items) {
+          const newItemsSinceCursor = await prisma.post.findMany({
+            where: {
+              createdAt: lastMessageCursor
+                ? {
+                    gt: lastMessageCursor,
+                  }
+                : {},
+            },
+            orderBy: {
+              createdAt: 'asc',
+            },
+          });
+          for (const item of newItemsSinceCursor) {
             controller.enqueue(item);
           }
           unsubscribe = () => {
