@@ -78,7 +78,7 @@ const ctx = konn()
   .done();
 
 test('rsc prefetch helpers', async () => {
-  const { client, App, trpc, HydrateClient, spyLink } = ctx;
+  const { client, App, trpc, HydrateClient } = ctx;
 
   const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
