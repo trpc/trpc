@@ -212,7 +212,6 @@ test('disconnect and reconnect with an event id', async () => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
-  // eslint-disable-next-line @typescript-eslint/dot-notation
   const es = onStarted.mock.calls[0]![0].context?.['eventSource'];
   assert(es instanceof EventSource);
 
