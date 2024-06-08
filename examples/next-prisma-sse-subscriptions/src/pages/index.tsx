@@ -1,3 +1,4 @@
+import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import { trpc } from '../utils/trpc';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { signIn, signOut, useSession } from 'next-auth/react';
@@ -34,6 +35,16 @@ function useThrottledIsTypingMutation() {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+}
+
+function useWhoIsTyping(): string[] {
+  const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
+  trpc.post.whoIsTyping.useSubscription(undefined, {
+    onData(event) {
+      setCurrentlyTyping(event.data);
+    },
+  });
+  return currentlyTyping;
 }
 function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   const addPost = trpc.post.add.useMutation();
@@ -111,6 +122,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   void postMessage();
+                  e.currentTarget.focus();
                 }
               }}
               onFocus={() => {
@@ -134,19 +146,64 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
     </>
   );
 }
+function InfiniteScrollButton(props: {
+  query: UseInfiniteQueryResult<InfiniteData<unknown>, unknown>;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+
+  const { query } = props;
+  const { isFetchingNextPage, fetchNextPage, hasNextPage } = query;
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage && hasNextPage) {
+          void fetchNextPage();
+        }
+      },
+      {
+        threshold: 0.5,
+      },
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [isFetchingNextPage, fetchNextPage, hasNextPage]);
+
+  return (
+    <button
+      ref={ref}
+      data-testid="loadMore"
+      onClick={() => fetchNextPage()}
+      disabled={!hasNextPage || isFetchingNextPage}
+      className="rounded bg-indigo-500 px-4 py-2 text-white disabled:opacity-40"
+    >
+      {isFetchingNextPage
+        ? 'Loading more...'
+        : hasNextPage
+        ? 'Load More'
+        : 'Nothing more to load'}
+    </button>
+  );
+}
 
 export default function IndexPage() {
   const postsQuery = trpc.post.infinite.useInfiniteQuery(
     {},
     {
       getNextPageParam: (d) => d.nextCursor,
+      // No need to refetch as we have a subscription
       refetchOnReconnect: false,
       refetchOnWindowFocus: false,
       refetchOnMount: false,
     },
   );
   const utils = trpc.useUtils();
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = postsQuery;
 
   // list of messages that are rendered
   const [messages, setMessages] = useState(() => {
@@ -233,12 +290,7 @@ export default function IndexPage() {
     },
   );
 
-  const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
-  trpc.post.whoIsTyping.useSubscription(undefined, {
-    onData(event) {
-      setCurrentlyTyping(event.data);
-    },
-  });
+  const currentlyTyping = useWhoIsTyping();
 
   return (
     <>
@@ -308,18 +360,7 @@ export default function IndexPage() {
         <div className="flex-1 overflow-y-hidden md:h-screen">
           <section className="flex h-full flex-col justify-end space-y-4 bg-gray-700 p-4">
             <div className="space-y-4 overflow-y-auto">
-              <button
-                data-testid="loadMore"
-                onClick={() => fetchNextPage()}
-                disabled={!hasNextPage || isFetchingNextPage}
-                className="rounded bg-indigo-500 px-4 py-2 text-white disabled:opacity-40"
-              >
-                {isFetchingNextPage
-                  ? 'Loading more...'
-                  : hasNextPage
-                  ? 'Load More'
-                  : 'Nothing more to load'}
-              </button>
+              <InfiniteScrollButton query={postsQuery} />
               <div className="space-y-4">
                 {messages?.map((item) => (
                   <article key={item.id} className=" text-gray-50">
