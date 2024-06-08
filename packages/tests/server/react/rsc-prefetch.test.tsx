@@ -1,4 +1,8 @@
 import { getServerAndReactClient } from './__reactHelpers';
+import {
+  defaultShouldDehydrateQuery,
+  QueryClient,
+} from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { createHydrationHelpers } from '@trpc/react-query/rsc';
 import { initTRPC } from '@trpc/server';
@@ -37,8 +41,24 @@ const ctx = konn()
 
     const ctx = getServerAndReactClient(appRouter);
 
+    const serverQueryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          // Since queries are prefetched on the server, we set a stale time so that
+          // queries aren't immediately refetched on the client
+          staleTime: 1000 * 30,
+        },
+        dehydrate: {
+          // include pending queries in dehydration
+          shouldDehydrateQuery: (query) =>
+            defaultShouldDehydrateQuery(query) ||
+            query.state.status === 'pending',
+        },
+      },
+    });
+
     const createTRPCContext = cache(() => ({}));
-    const getQueryClient = cache(() => ctx.queryClient);
+    const getQueryClient = cache(() => serverQueryClient);
     const serverClient = t.createCallerFactory(appRouter)(createTRPCContext);
 
     const { trpc, HydrateClient } = createHydrationHelpers<typeof appRouter>(
@@ -58,12 +78,12 @@ const ctx = konn()
   .done();
 
 test('rsc prefetch helpers', async () => {
-  const { client, App, trpc, HydrateClient } = ctx;
+  const { client, App, trpc, HydrateClient, spyLink } = ctx;
 
   const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
   function MyComponent() {
-    const [data] = client.post.byId.useSuspenseQuery({
+    const { data } = client.post.byId.useQuery({
       id: '1',
     });
 
@@ -89,6 +109,6 @@ test('rsc prefetch helpers', async () => {
     expect(utils.container).toHaveTextContent(`__result`);
   });
 
-  // Should not have fetched from CC
+  // Should not have fetched from CC but taken promise from server client
   expect(fetchSpy).toHaveBeenCalledTimes(0);
 });
