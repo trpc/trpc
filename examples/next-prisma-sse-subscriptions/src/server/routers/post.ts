@@ -1,7 +1,3 @@
-/**
- *
- * This is an example router, you can delete this file and then update `../pages/api/trpc/[trpc].tsx`
- */
 import type { Post, Prisma } from '@prisma/client';
 import { type SSEvent } from '@trpc/server';
 import { z } from 'zod';
@@ -40,7 +36,7 @@ const ee = new MyEventEmitter();
 const currentlyTyping: WhoIsTyping = Object.create(null);
 
 // every 1s, clear old "isTyping"
-const interval = setInterval(() => {
+setInterval(() => {
   let updated = false;
   const now = Date.now();
   for (const [key, value] of Object.entries(currentlyTyping)) {
