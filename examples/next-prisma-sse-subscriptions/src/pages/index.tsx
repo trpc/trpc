@@ -356,7 +356,7 @@ export default function IndexPage() {
       </Head>
       <Layout>
         {/* flex-col-reverse helps anchoring the scroll to the bottom */}
-        <div className="flex-1 overflow-y-auto flex-col-reverse p-4">
+        <div className="flex flex-1 overflow-y-auto flex-col-reverse px-4 pt-4">
           {/* A single div here makes it not affect order of the children */}
           <div className="space-y-4">
             <InfiniteScrollButton query={livePosts.query} />
@@ -393,7 +393,7 @@ export default function IndexPage() {
             </div>
           </div>
         </div>
-        <div className="w-full flex-col p-4">
+        <div className="w-full flex-col px-4 pt-2 pb-2">
           <AddMessageForm
             onMessagePost={() => {
               scrollTargetRef.current?.scrollIntoView({
