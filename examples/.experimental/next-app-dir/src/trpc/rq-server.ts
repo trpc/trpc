@@ -1,6 +1,5 @@
 import 'server-only';
 import { createHydrationHelpers } from '@trpc/react-query/rsc';
-import type { inferRouterOutputs } from '@trpc/server';
 import { auth } from '~/auth';
 import type { Context } from '~/server/context';
 import { appRouter } from '~/server/routers/_app';
@@ -30,5 +29,3 @@ export const { trpc, HydrateClient } = createHydrationHelpers<typeof appRouter>(
   caller,
   getQueryClient,
 );
-
-export type RouterOutputs = inferRouterOutputs<typeof appRouter>;

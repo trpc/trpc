@@ -5,7 +5,7 @@ import { Post } from './post';
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
-  void trpc.getPokemon.prefetch({ id: 25 });
+  void trpc.getLatestPost.prefetch();
 
   return (
     <main>
