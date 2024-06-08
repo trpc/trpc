@@ -77,7 +77,7 @@ export const subRouter = router({
         // [...] get the posts since the last event id and yield them
       }
       // listen for new events
-      for await (const [data] of on(evt, 'add')) {
+      for await (const [data] of on(ee, 'add')) {
         const post = data as Post;
         yield {
           // yielding the post id ensures the client can reconnect at any time and get the latest events this id
