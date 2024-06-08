@@ -1,11 +1,11 @@
 ---
 id: httpSubscriptionLink
 title: HTTP Subscription Link
-sidebar_label: httpSubscriptionLink
+sidebar_label: HTTP Subscription Link
 slug: /client/links/httpSubscriptionLink
 ---
 
-`httpSubscriptionLink` is a [**terminating link**](./overview.md#the-terminating-link) that's uses [Server-sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) for subscriptions.
+`httpSubscriptionLink` is a [**terminating link**](./overview.md#the-terminating-link) that's uses [Server-sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) (SSE) for subscriptions.
 
 SSE is a good option for real-time as it's a bit easier to deal with than WebSockets and handles things like reconnecting and continuing where it left off automatically.
 
