@@ -122,6 +122,9 @@ export const postRouter = router({
   onAdd: publicProcedure
     .input(
       z.object({
+        // lastEventId is the last event id that the client has received
+        // On the first call, it will be whatever was passed in the initial setup
+        // If the client reconnects, it will be the last event id that the client received
         lastEventId: z.string().nullish(),
       }),
     )

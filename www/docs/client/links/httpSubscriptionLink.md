@@ -9,10 +9,6 @@ slug: /client/links/httpSubscriptionLink
 
 SSE is a good option for real-time as it's a bit easier to deal with than WebSockets and handles things like reconnecting and continuing where it left off automatically.
 
-## Usage
-
-For a full example, see [our full-stack SSE example](https://github.com/trpc/next-prisma-sse-subscriptions).
-
 ## Setup
 
 :::info
@@ -48,6 +44,33 @@ const trpcClient = createTRPCClient<AppRouter>({
       }),
     }),
   ],
+});
+```
+
+## Usage
+
+:::tip
+For a full example, see [our full-stack SSE example](https://github.com/trpc/next-prisma-sse-subscriptions).
+:::
+
+```ts
+import { SSEvent } from '@trpc/server/observable';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
+
+export const subRouter = router({
+  onPostAdd: publicProcedure
+    .input(
+      z.object({
+        // lastEventId is the last event id that the client has received
+        // On the first call, it will be whatever was passed in the initial setup
+        // If the client reconnects, it will be the last event id that the client received
+        lastEventId: z.string().nullish(),
+      }),
+    )
+    .subscription(async function* (opts) {
+      // [...]
+    }),
 });
 ```
 
