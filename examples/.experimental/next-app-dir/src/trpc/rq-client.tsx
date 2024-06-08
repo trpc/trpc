@@ -8,7 +8,7 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '~/server/routers/_app';
 import { useState } from 'react';
 import superjson from 'superjson';
-import { createQueryClient } from './shared';
+import { createQueryClient, getUrl } from './shared';
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -36,7 +36,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
         }),
         unstable_httpBatchStreamLink({
           transformer: superjson,
-          url: getBaseUrl() + '/api/trpc',
+          url: getUrl(),
           headers: { 'x-trpc-source': 'react-query' },
         }),
       ],
@@ -52,12 +52,6 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       </QueryClientProvider>
     </trpc.Provider>
   );
-}
-
-function getBaseUrl() {
-  if (typeof window !== 'undefined') return window.location.origin;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 
 export type RouterOutputs = inferRouterOutputs<AppRouter>;
