@@ -114,7 +114,9 @@ test('e2e, server-sent events (SSE)', async () => {
         es.removeEventListener('error', onError);
         resolve();
       };
-      es.addEventListener('error', onError);
+      es.addEventListener('error', onError, {
+        once: true,
+      });
     }),
     ,
   ]);

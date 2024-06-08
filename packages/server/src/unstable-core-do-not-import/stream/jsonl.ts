@@ -92,7 +92,7 @@ export function isPromise(value: unknown): value is Promise<unknown> {
 }
 
 type Serialize = (value: any) => any;
-export type Deserialize = (value: any) => any;
+type Deserialize = (value: any) => any;
 
 export type ProducerOnError = (opts: {
   error: unknown;
