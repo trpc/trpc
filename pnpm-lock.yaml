@@ -1087,9 +1087,6 @@ importers:
       next-auth:
         specifier: ^4.22.1
         version: 4.24.5(next@14.1.4)(react-dom@18.3.1)(react@18.3.1)
-      postgres:
-        specifier: ^3.4.4
-        version: 3.4.4
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -19450,11 +19447,6 @@ packages:
       nanoid: 3.3.7
       picocolors: 1.0.1
       source-map-js: 1.2.0
-
-  /postgres@3.4.4:
-    resolution: {integrity: sha512-IbyN+9KslkqcXa8AO9fxpk97PA4pzewvpi2B3Dwy9u4zpV32QicaEdgmF3eSQUzdRk7ttDHQejNgAEr4XoeH4A==}
-    engines: {node: '>=12'}
-    dev: false
 
   /preact-render-to-string@5.2.6(preact@10.22.0):
     resolution: {integrity: sha512-JyhErpYOvBV1hEPwIxc/fHWXPfnEGdRKxc8gFdAZ7XV4tlzyzG847XAyEZqoDnynP88akM4eaHcSOzNcLWFguw==}
