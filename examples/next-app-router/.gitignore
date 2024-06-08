@@ -1,5 +1,0 @@
-.env*
-!.env.example
-*.db
-node_modules
-.next

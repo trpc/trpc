@@ -53,6 +53,16 @@ export const appRouter = router({
   getLatestPost: publicProcedure.query(async () => {
     return latestPost;
   }),
+
+  getPokemon: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async (opts) => {
+      const response = await fetch(
+        `https://pokeapi.co/api/v2/pokemon/${opts.input.id}`,
+      );
+
+      return response.json();
+    }),
 });
 
 export type AppRouter = typeof appRouter;

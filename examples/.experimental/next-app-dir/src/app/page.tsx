@@ -56,6 +56,16 @@ export default async function Index() {
         </li>
         <li>
           <Link
+            href="/rsc-rq-prefetch"
+            style={{
+              color: 'hsla(210, 16%, 80%, 1)',
+            }}
+          >
+            RSC + React Query
+          </Link>
+        </li>
+        <li>
+          <Link
             href="/client"
             style={{
               color: 'hsla(210, 16%, 80%, 1)',
