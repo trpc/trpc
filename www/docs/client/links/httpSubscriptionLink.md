@@ -5,82 +5,68 @@ sidebar_label: httpSubscriptionLink
 slug: /client/links/httpSubscriptionLink
 ---
 
-`httpSubscriptionLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's Server-sent events for subscription.
+`httpSubscriptionLink` is a [**terminating link**](./overview.md#the-terminating-link) that's uses [Server-sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events) for subscriptions.
+
+SSE is a good option for real-time as it's a bit easier to deal with than WebSockets and handles things like reconnecting and continuing where it left off automatically.
 
 ## Usage
 
-To use `wsLink`, you need to pass it a `TRPCWebSocketClient`, which you can create with `createWSClient`:
+For a full example, see [our full-stack SSE example](https://github.com/trpc/next-prisma-sse-subscriptions).
+
+## Setup
+
+:::info
+If your client's environment doesn't support EventSource, you need an [EventSource polyfill](https://www.npmjs.com/package/event-source-polyfill).
+:::
+
+To use `httpSubscriptionLink`, you need to use a [splitLink](./splitLink.mdx) to make it explicit that we want to use SSE for subscriptions.
 
 ```ts title="client/index.ts"
-import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
-import type { AppRouter } from '../server';
-
-const wsClient = createWSClient({
-  url: 'ws://localhost:3000',
-});
+import type { TRPCLink } from '@trpc/client';
+import {
+  httpBatchLink,
+  loggerLink,
+  splitLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
 
 const trpcClient = createTRPCClient<AppRouter>({
-  links: [wsLink<AppRouter>({ client: wsClient })],
+  /**
+   * @link https://trpc.io/docs/v11/client/links
+   */
+  links: [
+    // adds pretty logs to your console in development and logs errors in production
+    loggerLink(),
+    splitLink({
+      // uses the httpSubscriptionLink for subscriptions
+      condition: (op) => op.type === 'subscription',
+      true: unstable_httpSubscriptionLink({
+        url: `/api/trpc`,
+      }),
+      false: httpBatchLink({
+        url: `/api/trpc`,
+      }),
+    }),
+  ],
 });
 ```
 
-## `wsLink` Options
-
-The `wsLink` function requires a `TRPCWebSocketClient` to be passed, which can be configured with the fields defined in `WebSocketClientOptions`:
+## `httpSubscriptionLink` Options
 
 ```ts
-export interface WebSocketLinkOptions {
-  client: TRPCWebSocketClient;
-  /**
-   * Data transformer
-   * @link https://trpc.io/docs/v11/data-transformers
-   **/
-  transformer?: DataTransformerOptions;
-}
-
-function createWSClient(opts: WebSocketClientOptions) => TRPCWebSocketClient
-
-
-export interface WebSocketClientOptions {
+type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * The URL to connect to (can be a function that returns a URL)
    */
   url: string | (() => MaybePromise<string>);
   /**
-   * Ponyfill which WebSocket implementation to use
+   * EventSource options
    */
-  WebSocket?: typeof WebSocket;
+  eventSourceOptions?: EventSourceInit;
   /**
-   * The number of milliseconds before a reconnect is attempted.
-   * @default {@link exponentialBackoff}
-   */
-  retryDelayMs?: typeof exponentialBackoff;
-  /**
-   * Triggered when a WebSocket connection is established
-   */
-  onOpen?: () => void;
-  /**
-   * Triggered when a WebSocket connection is closed
-   */
-  onClose?: (cause?: { code?: number }) => void;
-  /**
-   * Lazy mode will close the WebSocket automatically after a period of inactivity (no messages sent or received and no pending requests)
-   */
-  lazy?: {
-    /**
-     * Enable lazy mode
-     * @default false
-     */
-    enabled: boolean;
-    /**
-     * Close the WebSocket after this many milliseconds
-     * @default 0
-     */
-    closeMs: number;
-  };
-}
+   * Data transformer
+   * @link https://trpc.io/docs/v11/data-transformers
+   **/
+  transformer?: DataTransformerOptions;
+};
 ```
-
-## Reference
-
-You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/wsLink.ts)
