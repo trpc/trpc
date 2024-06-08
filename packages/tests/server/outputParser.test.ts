@@ -1,6 +1,5 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { initTRPC } from '@trpc/server';
-import { wrap } from '@typeschema/valibot';
 import myzod from 'myzod';
 import * as t from 'superstruct';
 import * as v from 'valibot';
@@ -109,8 +108,8 @@ test('valibot', async () => {
   const trpc = initTRPC.create();
   const router = trpc.router({
     q: trpc.procedure
-      .input(wrap(v.union([v.string(), v.number()])))
-      .output(wrap(v.object({ input: v.string() })))
+      .input(v.parser(v.union([v.string(), v.number()])))
+      .output(v.parser(v.object({ input: v.string() })))
       .query(({ input }) => {
         return { input: input as string };
       }),
@@ -136,12 +135,13 @@ test('valibot async', async () => {
   const trpc = initTRPC.create();
   const router = trpc.router({
     q: trpc.procedure
-      .input(wrap(v.unionAsync([v.stringAsync(), v.numberAsync()])))
+      .input(v.parserAsync(v.unionAsync([v.string(), v.number()])))
       .output(
-        wrap(
-          v.objectAsync({ input: v.stringAsync() }, [
-            v.customAsync(async (value) => !!value),
-          ]),
+        v.parserAsync(
+          v.pipeAsync(
+            v.objectAsync({ input: v.string() }),
+            v.checkAsync(async (value) => !!value),
+          ),
         ),
       )
       .query(({ input }) => {
@@ -170,11 +170,14 @@ test('valibot transform', async () => {
   const trpc = initTRPC.create();
   const router = trpc.router({
     q: trpc.procedure
-      .input(wrap(v.union([v.string(), v.number()])))
+      .input(v.parser(v.union([v.string(), v.number()])))
       .output(
-        wrap(
+        v.parser(
           v.object({
-            input: v.transform(v.string(), (s) => s.length),
+            input: v.pipe(
+              v.string(),
+              v.transform((s) => s.length),
+            ),
           }),
         ),
       )

@@ -5,7 +5,7 @@ export const topSponsors = [
   {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 101,
+    "weight": 102,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc",
     "createdAt": 1671157456000
@@ -37,7 +37,7 @@ export const topSponsors = [
   {
     "name": "Tom Ballinger",
     "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
-    "weight": 14,
+    "weight": 15,
     "login": "thomasballinger",
     "link": "http://ballingt.com/?ref=trpc",
     "createdAt": 1662563270000
@@ -49,7 +49,7 @@ export const allSponsors = [
   {
     "name": "Hampus Kraft",
     "imgSrc": "https://avatars.githubusercontent.com/u/24176136?u=bf7d17c35395fe7cb33a091af4990e3e67deb3a5&v=4",
-    "weight": 4,
+    "weight": 5,
     "login": "hampuskraft",
     "link": "https://hampuskraft.com/?ref=trpc",
     "createdAt": 1624189592000
@@ -65,7 +65,7 @@ export const allSponsors = [
   {
     "name": "Max Greenwald",
     "imgSrc": "https://avatars.githubusercontent.com/u/2615374?u=4c1402dd1e4e8ff7514f2e300adfe9b75ae76e85&v=4",
-    "weight": 11,
+    "weight": 12,
     "login": "mgreenw",
     "link": "https://maxgreenwald.me/?ref=trpc",
     "createdAt": 1632143542000
@@ -89,7 +89,7 @@ export const allSponsors = [
   {
     "name": "SchlagerKhan",
     "imgSrc": "https://avatars.githubusercontent.com/u/6490268?v=4",
-    "weight": 5,
+    "weight": 6,
     "login": "SchlagerKhan",
     "link": "https://iamkhan.io/?ref=trpc",
     "createdAt": 1644656389000
@@ -97,7 +97,7 @@ export const allSponsors = [
   {
     "name": "Jared Wyce",
     "imgSrc": "https://avatars.githubusercontent.com/u/16946573?u=a67088146d57205cf6201bee1add2e24cd811229&v=4",
-    "weight": 5,
+    "weight": 6,
     "login": "jwyce",
     "link": "http://jwyce.gg/?ref=trpc",
     "createdAt": 1646015010000
@@ -105,7 +105,7 @@ export const allSponsors = [
   {
     "name": "Faraz Patankar",
     "imgSrc": "https://avatars.githubusercontent.com/u/10681116?u=707f054b6651fcf93e5297b2142d15e772712e4a&v=4",
-    "weight": 9,
+    "weight": 10,
     "login": "FarazPatankar",
     "link": "https://farazpatankar.com/?ref=trpc",
     "createdAt": 1647861577000
@@ -119,17 +119,9 @@ export const allSponsors = [
     "createdAt": 1651211349000
   },
   {
-    "name": "Adam Slaker",
-    "imgSrc": "https://avatars.githubusercontent.com/u/51129804?u=72424dea624e663c5df731ad9852636f5c4471e5&v=4",
-    "weight": 8,
-    "login": "aslaker",
-    "link": "https://github.com/aslaker",
-    "createdAt": 1655473412000
-  },
-  {
     "name": "Dmitry Maykov",
     "imgSrc": "https://avatars.githubusercontent.com/u/6147048?u=8ae662ac99e91917062164de0d9404002b99cf2e&v=4",
-    "weight": 8,
+    "weight": 9,
     "login": "dmaykov",
     "link": "https://github.com/dmaykov",
     "createdAt": 1656515723000
@@ -137,7 +129,7 @@ export const allSponsors = [
   {
     "name": "Chris Bradley",
     "imgSrc": "https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&v=4",
-    "weight": 8,
+    "weight": 9,
     "login": "chrisbradleydev",
     "link": "https://chrisbradley.dev/?ref=trpc",
     "createdAt": 1657316052000
@@ -153,7 +145,7 @@ export const allSponsors = [
   {
     "name": "Tom Ballinger",
     "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
-    "weight": 14,
+    "weight": 15,
     "login": "thomasballinger",
     "link": "http://ballingt.com/?ref=trpc",
     "createdAt": 1662563270000
@@ -185,7 +177,7 @@ export const allSponsors = [
   {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 101,
+    "weight": 102,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc",
     "createdAt": 1671157456000
@@ -225,7 +217,7 @@ export const allSponsors = [
   {
     "name": "Proxidize",
     "imgSrc": "https://avatars.githubusercontent.com/u/70805857?v=4",
-    "weight": 7,
+    "weight": 8,
     "login": "proxidize",
     "link": "https://proxidize.com/?ref=trpc",
     "createdAt": 1707060132000
@@ -241,7 +233,7 @@ export const allSponsors = [
   {
     "name": "Stefan Wallin",
     "imgSrc": "https://avatars.githubusercontent.com/u/457653?u=548c6e3482bd0c0d935d99b9c564fdbbe0d8da5d&v=4",
-    "weight": 1,
+    "weight": 2,
     "login": "StefanWallin",
     "link": "https://www.stefan-wallin.se/?ref=trpc",
     "createdAt": 1710001498000
@@ -253,5 +245,13 @@ export const allSponsors = [
     "login": "maiconcarraro",
     "link": "https://www.linkedin.com/in/maiconcarraro/?ref=trpc",
     "createdAt": 1714092353000
+  },
+  {
+    "name": "Andrei Karushev",
+    "imgSrc": "https://avatars.githubusercontent.com/u/5677047?u=d503fccc70c9a66524639691b62853994335af0b&v=4",
+    "weight": 1,
+    "login": "infodusha",
+    "link": "https://github.com/infodusha",
+    "createdAt": 1717016104000
   }
 ] as const;

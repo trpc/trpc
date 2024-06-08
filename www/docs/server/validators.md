@@ -366,8 +366,7 @@ export type AppRouter = typeof appRouter;
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
-import { wrap } from '@typeschema/valibot';
-import { object, string } from 'valibot';
+import * as v from 'valibot';
 
 export const t = initTRPC.create();
 
@@ -375,8 +374,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(wrap(object({ name: string() })))
-    .output(wrap(object({ greeting: string() })))
+    .input(v.parser(v.object({ name: v.string() })))
+    .output(v.parser(v.object({ greeting: v.string() })))
     .query(({ input }) => {
       //      ^?
       return {
