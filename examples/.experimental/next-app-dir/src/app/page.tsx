@@ -46,12 +46,12 @@ export default async function Index() {
         </li>
         <li>
           <Link
-            href="/rsc"
+            href="/rsc-links"
             style={{
               color: 'hsla(210, 16%, 80%, 1)',
             }}
           >
-            React Server Components
+            React Server Components with new tRPC Next.js Links
           </Link>
         </li>
         <li>
