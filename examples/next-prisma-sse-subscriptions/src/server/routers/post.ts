@@ -96,7 +96,7 @@ export const postRouter = router({
       }),
     )
     .query(async (opts) => {
-      const take = opts.input.take ?? 10;
+      const take = opts.input.take ?? 20;
       const cursor = opts.input.cursor;
 
       const page = await prisma.post.findMany({

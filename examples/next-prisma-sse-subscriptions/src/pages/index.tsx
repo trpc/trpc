@@ -1,4 +1,8 @@
-import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
+import type {
+  InfiniteData,
+  UseInfiniteQueryResult,
+} from '@tanstack/react-query';
+import { skipToken } from '@tanstack/react-query';
 import { trpc } from '../utils/trpc';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { signIn, signOut, useSession } from 'next-auth/react';
@@ -37,16 +41,21 @@ function useThrottledIsTypingMutation() {
   }, []);
 }
 
-function useWhoIsTyping(): string[] {
+function WhoIsTyping() {
   const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
   trpc.post.whoIsTyping.useSubscription(undefined, {
     onData(event) {
       setCurrentlyTyping(event.data);
     },
   });
-  return currentlyTyping;
+
+  return (
+    <p className="h-2 italic text-gray-400">
+      {currentlyTyping.length ? `${currentlyTyping.join(', ')} typing...` : ''}
+    </p>
+  );
 }
-function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
+function AddMessageForm(props: { onMessagePost: () => void }) {
   const addPost = trpc.post.add.useMutation();
   const { data: session } = useSession();
   const [message, setMessage] = useState('');
@@ -58,7 +67,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
     try {
       await addPost.mutateAsync(input);
       setMessage('');
-      onMessagePost();
+      props.onMessagePost();
     } catch {}
   }
 
@@ -192,8 +201,8 @@ function InfiniteScrollButton(props: {
   );
 }
 
-export default function IndexPage() {
-  const postsQuery = trpc.post.infinite.useInfiniteQuery(
+function useLivePosts() {
+  const query = trpc.post.infinite.useInfiniteQuery(
     {},
     {
       getNextPageParam: (d) => d.nextCursor,
@@ -204,93 +213,103 @@ export default function IndexPage() {
     },
   );
   const utils = trpc.useUtils();
-
-  // list of messages that are rendered
   const [messages, setMessages] = useState(() => {
-    const msgs = postsQuery.data?.pages.map((page) => page.items).flat();
-    return msgs;
+    const msgs = query.data?.pages.map((page) => page.items).flat();
+    return msgs ?? null;
   });
   type Post = NonNullable<typeof messages>[number];
-  const { data: session } = useSession();
-  const userName = session?.user?.name;
+
   const scrollTargetRef = useRef<HTMLDivElement>(null);
 
-  // fn to add and dedupe new messages onto state
-  const addMessages = useCallback((incoming?: Post[]) => {
-    setMessages((current) => {
-      const map: Record<Post['id'], Post> = {};
-      for (const msg of current ?? []) {
-        map[msg.id] = msg;
-      }
-      for (const msg of incoming ?? []) {
-        map[msg.id] = msg;
-      }
-      return Object.values(map).sort(
-        (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
-      );
-    });
+  /**
+   * Scroll to the bottom of the list
+   */
+  const scrollToBottomOfList = useCallback(() => {
+    setTimeout(() => {
+      scrollTargetRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end',
+      });
+    }, 1);
   }, []);
 
-  // when new data from `useInfiniteQuery`, merge with current state
-  useEffect(() => {
-    const msgs = postsQuery.data?.pages.map((page) => page.items).flat();
-    addMessages(msgs);
-  }, [postsQuery.data?.pages, addMessages]);
-
-  const scrollToBottomOfList = useCallback(() => {
-    if (scrollTargetRef.current == null) {
-      return;
-    }
-
-    scrollTargetRef.current.scrollIntoView({
-      behavior: 'smooth',
-      block: 'end',
-    });
-  }, [scrollTargetRef]);
+  // On initial load, scroll to the bottom
   useEffect(() => {
     scrollToBottomOfList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [scrollToBottomOfList]);
 
-  // get the last known post as soon as we have it
-  const lastEventId = useRef<string | null | undefined>(undefined);
-  if (messages && lastEventId.current === undefined) {
-    // set it as the last known event id (or null)
-    // if we reconnect, we'll get all messages after this
-    // since the SSE is sending `{id:x}` on each message, it will be updated by the EventStream as messages come in
-    lastEventId.current = messages.at(-1)?.id ?? null;
-  }
+  /**
+   * fn to add and dedupe new messages onto state
+   */
+  const addMessages = useCallback(
+    (incoming?: Post[]) => {
+      setMessages((current) => {
+        const map: Record<Post['id'], Post> = {};
+        for (const msg of current ?? []) {
+          map[msg.id] = msg;
+        }
+        for (const msg of incoming ?? []) {
+          map[msg.id] = msg;
+        }
+        return Object.values(map).sort(
+          (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+        );
+      });
 
-  // subscribe to new posts and add
-  trpc.post.onAdd.useSubscription(
-    {
-      lastEventId: lastEventId.current,
+      if (
+        scrollTargetRef.current &&
+        scrollTargetRef.current.getBoundingClientRect().top < window.innerHeight
+      ) {
+        scrollToBottomOfList();
+      }
     },
+    [scrollToBottomOfList],
+  );
+
+  /**
+   * when new data from `useInfiniteQuery`, merge with current state
+   */
+  useEffect(() => {
+    const msgs = query.data?.pages.map((page) => page.items).flat();
+    addMessages(msgs);
+  }, [query.data?.pages, addMessages]);
+
+  const [lastEventId, setLastEventId] = useState<
+    // Query has not been run yet
+    | false
+    // Empty list
+    | null
+    // Event id
+    | string
+  >(false);
+  if (messages && lastEventId === false) {
+    // We should only set the lastEventId once, if the SSE-connection is lost, it will automatically reconnect and continue from the last event id
+    // Changing this value will trigger a new subscription
+    setLastEventId(messages.at(-1)?.id ?? null);
+  }
+  trpc.post.onAdd.useSubscription(
+    lastEventId === false ? skipToken : { lastEventId },
     {
-      // Enable this subscription only if we have received some data
-      enabled: lastEventId.current !== undefined,
       onData(event) {
         addMessages([event.data]);
-        // scroll to bottom of list if we're at the bottom
-        if (
-          scrollTargetRef.current &&
-          scrollTargetRef.current.getBoundingClientRect().top <
-            window.innerHeight
-        ) {
-          setTimeout(() => {
-            scrollToBottomOfList();
-          }, 1);
-        }
       },
       onError(err) {
         console.error('Subscription error:', err);
-        // we might have missed a message - invalidate cache
         utils.post.infinite.invalidate();
       },
     },
   );
+  return {
+    query,
+    messages,
+    scrollTargetRef,
+    scrollToBottomOfList,
+  };
+}
 
-  const currentlyTyping = useWhoIsTyping();
+export default function IndexPage() {
+  const livePosts = useLivePosts();
+  const userName = useSession().data?.user?.name;
 
   return (
     <>
@@ -359,47 +378,45 @@ export default function IndexPage() {
         </section>
         <div className="flex-1 overflow-y-hidden md:h-screen">
           <section className="flex h-full flex-col justify-end space-y-4 bg-gray-700 p-4">
-            <div className="space-y-4 overflow-y-auto">
-              <InfiniteScrollButton query={postsQuery} />
+            <div className="flex overflow-y-auto flex-col-reverse">
               <div className="space-y-4">
-                {messages?.map((item) => (
-                  <article key={item.id} className=" text-gray-50">
-                    <header className="flex space-x-2 text-sm">
-                      <h3 className="text-base">
-                        {item.source === 'RAW' ? (
-                          item.name
-                        ) : (
-                          <a
-                            href={`https://github.com/${item.name}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {item.name}
-                          </a>
-                        )}
-                      </h3>
-                      <span className="text-gray-500">
-                        {new Intl.DateTimeFormat('en-GB', {
-                          dateStyle: 'short',
-                          timeStyle: 'short',
-                        }).format(item.createdAt)}
-                      </span>
-                    </header>
-                    <p className="whitespace-pre-line text-xl leading-tight">
-                      {item.text}
-                    </p>
-                  </article>
-                ))}
-                <div ref={scrollTargetRef}></div>
+                <InfiniteScrollButton query={livePosts.query} />
+                <div className="space-y-4">
+                  {livePosts.messages?.map((item) => (
+                    <article key={item.id} className=" text-gray-50">
+                      <header className="flex space-x-2 text-sm">
+                        <h3 className="text-base">
+                          {item.source === 'RAW' ? (
+                            item.name
+                          ) : (
+                            <a
+                              href={`https://github.com/${item.name}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {item.name}
+                            </a>
+                          )}
+                        </h3>
+                        <span className="text-gray-500">
+                          {new Intl.DateTimeFormat('en-GB', {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          }).format(item.createdAt)}
+                        </span>
+                      </header>
+                      <p className="whitespace-pre-line text-xl leading-tight">
+                        {item.text}
+                      </p>
+                    </article>
+                  ))}
+                  <div ref={livePosts.scrollTargetRef}></div>
+                </div>
               </div>
             </div>
             <div className="w-full">
-              <AddMessageForm onMessagePost={() => scrollToBottomOfList()} />
-              <p className="h-2 italic text-gray-400">
-                {currentlyTyping.length
-                  ? `${currentlyTyping.join(', ')} typing...`
-                  : ''}
-              </p>
+              <AddMessageForm onMessagePost={livePosts.scrollToBottomOfList} />
+              <WhoIsTyping />
             </div>
 
             {process.env.NODE_ENV !== 'production' && (
