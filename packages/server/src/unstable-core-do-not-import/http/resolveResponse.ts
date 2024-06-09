@@ -175,6 +175,25 @@ function caughtErrorToData<TRouter extends AnyRouter>(
   };
 }
 
+/**
+ * Check if a value is a stream-like object
+ * - if it's an async iterable
+ * - if it's an object with async iterables or promises
+ */
+function isDataStream(v: unknown) {
+  if (!isObject(v)) {
+    return false;
+  }
+
+  if (isAsyncIterable(v)) {
+    return true;
+  }
+
+  return (
+    Object.values(v).some(isPromise) || Object.values(v).some(isAsyncIterable)
+  );
+}
+
 export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -303,6 +322,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           // httpLink
           headers.set('content-type', 'application/json');
 
+          if (isDataStream(data)) {
+            throw new TRPCError({
+              code: 'UNSUPPORTED_MEDIA_TYPE',
+              message:
+                'Cannot use stream-like response in non-streaming request - use httpBatchStreamLink',
+            });
+          }
           const res: TRPCResponse<unknown, inferRouterError<TRouter>> = error
             ? {
                 error: getErrorShape({
@@ -479,30 +505,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           return res;
         }
 
-        if (isAsyncIterable(data)) {
-          return [
-            null,
-            new TRPCError({
-              code: 'UNSUPPORTED_MEDIA_TYPE',
-              message: 'Cannot use async generator in non-streaming response',
-            }),
-          ];
-        }
-        if (
-          isObject(data) &&
-          Object.values(data)
-            .filter(isPromise)
-            .map((it) => {
-              // prevent crashes on promises
-              it.catch(() => null);
-            }).length > 0
-        ) {
+        if (isDataStream(data)) {
           return [
             null,
             new TRPCError({
               code: 'UNSUPPORTED_MEDIA_TYPE',
               message:
-                'Cannot use object with promises in non-streaming response',
+                'Cannot use stream-like response in non-streaming request - use httpBatchStreamLink',
             }),
           ];
         }
