@@ -208,12 +208,12 @@ importers:
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
+      superjson:
+        specifier: ^1.12.4
+        version: 1.12.4
       trpc-api:
         specifier: link:./src/trpc
         version: link:src/trpc
-      tupleson:
-        specifier: 0.23.1
-        version: 0.23.1
       typescript:
         specifier: ^5.4.0
         version: 5.4.2

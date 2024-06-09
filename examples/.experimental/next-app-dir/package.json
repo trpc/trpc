@@ -29,8 +29,8 @@
     "react-hook-form": "^7.43.3",
     "react-hot-toast": "^2.4.1",
     "server-only": "^0.0.1",
+    "superjson": "^1.12.4",
     "trpc-api": "link:./src/trpc",
-    "tupleson": "0.23.1",
     "typescript": "^5.4.0",
     "zod": "^3.0.0"
   },

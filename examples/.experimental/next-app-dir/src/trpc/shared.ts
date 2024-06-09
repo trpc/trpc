@@ -3,8 +3,7 @@ import {
   defaultShouldDehydrateQuery,
   QueryClient,
 } from '@tanstack/react-query';
-import type { TsonType } from 'tupleson';
-import { createTson, tsonDate } from 'tupleson';
+import superjson from 'superjson';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return '';
@@ -16,12 +15,34 @@ export function getUrl() {
   return getBaseUrl() + '/api/trpc';
 }
 
+superjson.registerCustom(
+  {
+    isApplicable: (v): v is Temporal.PlainDate =>
+      v instanceof Temporal.PlainDate,
+    serialize: (v) => v.toJSON(),
+    deserialize: (v) => Temporal.PlainDate.from(v),
+  },
+  'Temporal.PlainDate',
+);
+
+superjson.registerCustom(
+  {
+    isApplicable: (v): v is Temporal.PlainDateTime =>
+      v instanceof Temporal.PlainDateTime,
+    serialize: (v) => v.toJSON(),
+    deserialize: (v) => Temporal.PlainDateTime.from(v),
+  },
+  'Temporal.PlainDateTime',
+);
+
+export const transformer = superjson;
+
 export const createQueryClient = () =>
   new QueryClient({
     defaultOptions: {
       hydrate: {
         // @ts-expect-error - included in patch for this PR
-        deserialize: tson.deserialize,
+        deserialize: superjson.deserialize,
       },
       queries: {
         // Since queries are prefetched on the server, we set a stale time so that
@@ -36,19 +57,3 @@ export const createQueryClient = () =>
       },
     },
   });
-
-const plainDate = {
-  deserialize: (v) => Temporal.PlainDate.from(v),
-  key: 'PlainDate',
-  serialize: (v) => v.toJSON(),
-  test: (v) => v instanceof Temporal.PlainDate,
-} satisfies TsonType<Temporal.PlainDate, string>;
-
-const plainDateTime = {
-  deserialize: (v) => Temporal.PlainDateTime.from(v),
-  key: 'PlainDateTime',
-  serialize: (v) => v.toJSON(),
-  test: (v) => v instanceof Temporal.PlainDateTime,
-} satisfies TsonType<Temporal.PlainDateTime, string>;
-
-export const tson = createTson({ types: [plainDate, plainDateTime, tsonDate] });
