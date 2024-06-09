@@ -393,7 +393,7 @@ describe('with transformer', () => {
       );
       delete err.data?.stack;
       expect(err).toMatchInlineSnapshot(
-        `[TRPCClientError: Cannot use async generator in non-streaming response]`,
+        `[TRPCClientError: Cannot use stream-like response in non-streaming request - use httpBatchStreamLink]`,
       );
       expect(err.data).toMatchInlineSnapshot(`
       Object {
@@ -414,7 +414,7 @@ describe('with transformer', () => {
       delete err.data?.stack;
 
       expect(err).toMatchInlineSnapshot(
-        `[TRPCClientError: Cannot use object with promises in non-streaming response]`,
+        `[TRPCClientError: Cannot use stream-like response in non-streaming request - use httpBatchStreamLink]`,
       );
       expect(err.data).toMatchInlineSnapshot(`
         Object {
