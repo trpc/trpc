@@ -1,0 +1,48 @@
+{
+  "name": "nextjs-sse",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "push": "drizzle-kit push",
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.1.3",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@tanstack/react-query": "^5.25.0",
+    "@tanstack/react-query-devtools": "^5.25.0",
+    "@trpc/client": "workspace:*",
+    "@trpc/next": "workspace:*",
+    "@trpc/react-query": "workspace:*",
+    "@trpc/server": "workspace:*",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "drizzle-orm": "^0.31.2",
+    "lucide-react": "^0.390.0",
+    "next": "npm:next@^14.2.3",
+    "next-auth": "npm:next-auth@5.0.0-beta.19",
+    "postgres": "^3.4.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "superjson": "^2.2.1",
+    "tailwind-merge": "^2.3.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.0",
+    "drizzle-kit": "^0.22.6",
+    "postcss": "npm:postcss@^8.4.38",
+    "tailwindcss": "npm:tailwindcss@3.4.1",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.4.0"
+  }
+}
