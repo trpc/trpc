@@ -68,6 +68,7 @@ export interface RootConfig<TTypes extends RootTypes> {
   experimental?: {
     /**
      * Enable support for returning async iterables and returning deferred promises when using `httpBatchStreamLink`
+     * @default true
      */
     iterablesAndDeferreds?: boolean;
     /**

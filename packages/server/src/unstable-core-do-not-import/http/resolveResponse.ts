@@ -207,7 +207,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
 
   const experimentalIterablesAndDeferreds =
-    router._def._config.experimental?.iterablesAndDeferreds ?? false;
+    router._def._config.experimental?.iterablesAndDeferreds ?? true;
   const experimentalSSE =
     router._def._config.experimental?.sseSubscriptions?.enabled ?? true;
   try {

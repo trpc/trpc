@@ -23,12 +23,6 @@ const t = initTRPC.context<Context>().create({
   errorFormatter({ shape }) {
     return shape;
   },
-  experimental: {
-    sseSubscriptions: {
-      enabled: true,
-    },
-    iterablesAndDeferreds: true,
-  },
 });
 
 /**

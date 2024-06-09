@@ -36,12 +36,6 @@ const ctx = konn()
 
     const t = initTRPC.create({
       transformer: superjson,
-      experimental: {
-        iterablesAndDeferreds: true,
-        sseSubscriptions: {
-          enabled: true,
-        },
-      },
     });
     orderedResults.length = 0;
     const infiniteYields = vi.fn();

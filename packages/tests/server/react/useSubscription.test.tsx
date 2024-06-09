@@ -27,12 +27,6 @@ describe.each([
             },
           };
         },
-        experimental: {
-          iterablesAndDeferreds: true,
-          sseSubscriptions: {
-            enabled: true,
-          },
-        },
       });
       const appRouter = t.router({
         onEvent: t.procedure

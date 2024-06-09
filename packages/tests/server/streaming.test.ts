@@ -26,11 +26,7 @@ describe('no transformer', () => {
 
   const ctx = konn()
     .beforeEach(() => {
-      const t = initTRPC.create({
-        experimental: {
-          iterablesAndDeferreds: true,
-        },
-      });
+      const t = initTRPC.create({});
       orderedResults.length = 0;
 
       const manualRelease = new Map<number, () => void>();
@@ -233,9 +229,6 @@ describe('with transformer', () => {
 
       const t = initTRPC.create({
         transformer: superjson,
-        experimental: {
-          iterablesAndDeferreds: true,
-        },
       });
       orderedResults.length = 0;
       const infiniteYields = vi.fn();
