@@ -6,7 +6,7 @@
     "scripts/entrypoints.ts",
     "scripts/getRollupConfig.ts"
   ],
-  "globalEnv": ["CI", "NODE_ENV"],
+  "globalEnv": ["CI", "NODE_ENV", "DATABASE_URL", "NEXTAUTH_SECRET"],
   "tasks": {
     "codegen-entrypoints": {},
     "codegen-tests": {
