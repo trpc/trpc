@@ -1,6 +1,6 @@
 [build]
 builder = "dockerfile"
-dockerfilepath = "Dockerfile"
+dockerfilepath = "examples/next-sse-chat/Dockerfile"
 
 [deploy]
 healthcheckPath = "/"
