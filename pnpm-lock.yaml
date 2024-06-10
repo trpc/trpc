@@ -1467,16 +1467,13 @@ importers:
         specifier: ^5.25.0
         version: 5.40.1(@tanstack/react-query@5.25.0)(react@18.3.1)
       '@trpc/client':
-        specifier: workspace:*
+        specifier: npm:@trpc/client@next
         version: link:../../packages/client
-      '@trpc/next':
-        specifier: workspace:*
-        version: link:../../packages/next
       '@trpc/react-query':
-        specifier: workspace:*
+        specifier: npm:@trpc/react-query@next
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: workspace:*
+        specifier: npm:@trpc/server@next
         version: link:../../packages/server
       class-variance-authority:
         specifier: ^0.7.0
