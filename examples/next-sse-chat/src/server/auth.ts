@@ -6,6 +6,9 @@ import { cache } from 'react';
 import { z } from 'zod';
 
 const authOptions: NextAuthConfig = {
+  trustHost:
+    process.env.NODE_ENV === 'development' ||
+    !!process.env.RAILWAY_PUBLIC_DOMAIN,
   providers: [],
 };
 
