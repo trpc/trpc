@@ -1,11 +1,11 @@
 {
-  "id": "5a08b9eb-abec-4bfd-8f9d-8f94a278515d",
+  "id": "726a54a4-0cb9-44fa-bce5-aee86c5ae30f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.channel": {
-      "name": "channel",
+    "public.sse-chat_channel": {
+      "name": "sse-chat_channel",
       "schema": "",
       "columns": {
         "id": {
@@ -40,8 +40,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "public.post": {
-      "name": "post",
+    "public.sse-chat_post": {
+      "name": "sse-chat_post",
       "schema": "",
       "columns": {
         "id": {
@@ -85,12 +85,16 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "post_channel_id_channel_id_fk": {
-          "name": "post_channel_id_channel_id_fk",
-          "tableFrom": "post",
-          "tableTo": "channel",
-          "columnsFrom": ["channel_id"],
-          "columnsTo": ["id"],
+        "sse-chat_post_channel_id_sse-chat_channel_id_fk": {
+          "name": "sse-chat_post_channel_id_sse-chat_channel_id_fk",
+          "tableFrom": "sse-chat_post",
+          "tableTo": "sse-chat_channel",
+          "columnsFrom": [
+            "channel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

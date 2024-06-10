@@ -1,6 +1,8 @@
 import type { InferSelectModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { pgTableCreator, text, timestamp } from 'drizzle-orm/pg-core';
+
+const pgTable = pgTableCreator((name) => `sse-chat_${name}`);
 
 export const Post = pgTable('post', {
   id: text('id')
