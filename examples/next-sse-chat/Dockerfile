@@ -3,7 +3,6 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-ARG PORT=3000
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
 
@@ -42,5 +41,6 @@ COPY --from=installer /app/examples/next-sse-chat/package.json .
 COPY --from=installer --chown=nextjs:nodejs /app/examples/next-sse-chat/.next/standalone ./
 COPY --from=installer --chown=nextjs:nodejs /app/examples/next-sse-chat/.next/static ./examples/next-sse-chat/.next/static
 
-ENV PORT=$PORT HOSTNAME=0.0.0.0 NODE_ENV=production
+ENV PORT=3000 HOSTNAME=0.0.0.0 NODE_ENV=production
+EXPOSE 3000
 CMD node examples/next-sse-chat/server.js
