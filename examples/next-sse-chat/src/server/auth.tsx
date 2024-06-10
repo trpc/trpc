@@ -44,9 +44,6 @@ if (useMockProvider) {
     }),
   );
 } else {
-  if (!AUTH_GITHUB_ID || !AUTH_GITHUB_SECRET) {
-    throw new Error('AUTH_GITHUB_ID and AUTH_GITHUB_SECRET must be set');
-  }
   authOptions.providers.push(
     GithubProvider({
       profile: (login) => ({
