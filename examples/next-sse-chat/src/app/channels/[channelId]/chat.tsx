@@ -88,6 +88,7 @@ export function Chat(
         </div>
         <div className="border-t bg-white p-2 dark:border-gray-800 dark:bg-gray-900">
           <AddMessageForm
+            signedIn={!!props.session?.user}
             channelId={channelId}
             onMessagePost={() => {
               scrollTargetRef.current?.scrollIntoView({
@@ -95,7 +96,6 @@ export function Chat(
                 block: 'end',
               });
             }}
-            username={props.session?.user?.name ?? null}
           />
         </div>
       </div>
@@ -105,8 +105,8 @@ export function Chat(
 
 function AddMessageForm(props: {
   onMessagePost: () => void;
-  username: string | null;
   channelId: string;
+  signedIn: boolean;
 }) {
   const { channelId } = props;
   const addPost = trpc.post.add.useMutation();
@@ -133,16 +133,6 @@ function AddMessageForm(props: {
     isTypingMutation(isFocused && message.trim().length > 0);
   }, [isFocused, message, isTypingMutation]);
 
-  if (!props.username) {
-    return (
-      <div className="flex w-full justify-between rounded bg-gray-800 px-3 py-2 text-lg text-gray-200">
-        <p className="font-bold">You have to sign in to write.</p>
-        <Button onClick={() => signIn()} data-testid="signin">
-          Sign In
-        </Button>
-      </div>
-    );
-  }
   return (
     <div className="relative">
       <form
@@ -158,7 +148,10 @@ function AddMessageForm(props: {
       >
         <Textarea
           className="pr-12"
-          placeholder="Type your message..."
+          disabled={!props.signedIn}
+          placeholder={
+            props.signedIn ? 'Type your message...' : 'Sign in to post'
+          }
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={message.split(/\r|\n/).length}
@@ -174,6 +167,7 @@ function AddMessageForm(props: {
           size="icon"
           type="submit"
           variant="ghost"
+          disabled={!props.signedIn}
         >
           <PaperAirplaneIcon className="size-5" />
           <span className="sr-only">Send message</span>

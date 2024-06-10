@@ -1,4 +1,4 @@
-import type { NextAuthConfig } from 'next-auth';
+import type { NextAuthConfig, Session } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GithubProvider from 'next-auth/providers/github';
@@ -10,10 +10,10 @@ const authOptions: NextAuthConfig = {
 };
 
 let useMockProvider = process.env.NODE_ENV === 'test';
-const { GITHUB_CLIENT_ID, GITHUB_SECRET, NODE_ENV, APP_ENV } = process.env;
+const { AUTH_GITHUB_ID, AUTH_GITHUB_SECRET, NODE_ENV, APP_ENV } = process.env;
 if (
   (NODE_ENV !== 'production' || APP_ENV === 'test') &&
-  (!GITHUB_CLIENT_ID || !GITHUB_SECRET)
+  (!AUTH_GITHUB_ID || !AUTH_GITHUB_SECRET)
 ) {
   console.log('⚠️ Using mocked GitHub auth correct credentials were not added');
   useMockProvider = true;
@@ -44,23 +44,10 @@ if (useMockProvider) {
     }),
   );
 } else {
-  if (!GITHUB_CLIENT_ID || !GITHUB_SECRET) {
-    throw new Error('GITHUB_CLIENT_ID and GITHUB_SECRET must be set');
+  if (!AUTH_GITHUB_ID || !AUTH_GITHUB_SECRET) {
+    throw new Error('AUTH_GITHUB_ID and AUTH_GITHUB_SECRET must be set');
   }
-  authOptions.providers.push(
-    GithubProvider({
-      clientId: GITHUB_CLIENT_ID,
-      clientSecret: GITHUB_SECRET,
-      profile(profile) {
-        return {
-          id: profile.id,
-          name: profile.login,
-          email: profile.email,
-          image: profile.avatar_url,
-        } as any;
-      },
-    }),
-  );
+  authOptions.providers.push(GithubProvider);
 }
 
 export const {
@@ -71,3 +58,23 @@ export const {
 } = NextAuth(authOptions);
 
 export const auth = cache(uncachedAuth);
+
+export async function SignedIn(props: {
+  children:
+    | React.ReactNode
+    | ((props: { user: Session['user'] }) => React.ReactNode);
+}) {
+  const sesh = await auth();
+  return sesh?.user ? (
+    <>
+      {typeof props.children === 'function'
+        ? props.children({ user: sesh.user })
+        : props.children}
+    </>
+  ) : null;
+}
+
+export async function SignedOut(props: { children: React.ReactNode }) {
+  const sesh = await auth();
+  return sesh?.user ? null : <>{props.children}</>;
+}

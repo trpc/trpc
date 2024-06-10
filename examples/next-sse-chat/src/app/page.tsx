@@ -1,8 +1,9 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { buttonVariants } from '~/components/button';
+import { SignedIn } from '~/server/auth';
 import { caller } from '~/server/routers/_app';
-import { cx } from 'class-variance-authority';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { CreateChannelDialog } from './create-channel';
 
 export default async function Home() {
@@ -48,7 +49,11 @@ export default async function Home() {
             <h2 className="text-lg font-medium text-gray-950 dark:text-gray-50">
               Channels
             </h2>
-            <CreateChannelDialog />
+            <Suspense>
+              <SignedIn>
+                <CreateChannelDialog />
+              </SignedIn>
+            </Suspense>
           </div>
           {channels.map((channel) => (
             <Link
@@ -56,7 +61,7 @@ export default async function Home() {
               className={buttonVariants({ variant: 'link' })}
               href={`/channels/${channel.id}`}
             >
-              <HashtagIcon className="mr-2 size-4" />
+              <HashtagIcon className="size-4 mr-2" />
               {channel.name}
             </Link>
           ))}

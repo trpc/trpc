@@ -1,10 +1,11 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { CreateChannelDialog } from '~/app/create-channel';
 import { Button } from '~/components/button';
-import { auth, signOut } from '~/server/auth';
+import { auth, SignedIn, SignedOut, signIn, signOut } from '~/server/auth';
 import { caller } from '~/server/routers/_app';
 import { cx } from 'class-variance-authority';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { Chat } from './chat';
 
 export default async function Home(
@@ -22,7 +23,11 @@ export default async function Home(
             <HashtagIcon className="size-4 text-gray-500 dark:text-gray-400" />
             <span className="text-sm font-medium">Channels</span>
           </div>
-          <CreateChannelDialog />
+          <Suspense>
+            <SignedIn>
+              <CreateChannelDialog />
+            </SignedIn>
+          </Suspense>
         </div>
         <div className="flex flex-1 flex-col gap-2">
           {channels.map((channel) => (
@@ -40,23 +45,38 @@ export default async function Home(
             </Link>
           ))}
           <div className="mt-auto">
-            {session?.user && (
-              <div className="flex items-center justify-between">
-                <span className="text-base font-medium">
-                  Hello, {session?.user?.name} 👋
-                </span>
-                <form
-                  action={async () => {
-                    'use server';
-                    await signOut();
-                  }}
-                >
-                  <Button type="submit" size="sm">
-                    Sign Out
-                  </Button>
-                </form>
-              </div>
-            )}
+            <div className="flex items-center justify-between">
+              <Suspense>
+                <SignedIn>
+                  <span className="text-sm font-medium">
+                    Hello, {session?.user?.name} 👋
+                  </span>
+                  <form
+                    action={async () => {
+                      'use server';
+                      await signOut();
+                    }}
+                  >
+                    <Button type="submit" size="sm">
+                      Sign Out
+                    </Button>
+                  </form>
+                </SignedIn>
+                <SignedOut>
+                  <form
+                    className="w-full"
+                    action={async () => {
+                      'use server';
+                      await signIn();
+                    }}
+                  >
+                    <Button type="submit" size="sm" className="w-full">
+                      Sign In
+                    </Button>
+                  </form>
+                </SignedOut>
+              </Suspense>
+            </div>
           </div>
         </div>
       </nav>

@@ -11,8 +11,8 @@
     "NODE_ENV",
     "DATABASE_URL",
     "NEXTAUTH_SECRET",
-    "GITHUB_CLIENT_ID",
-    "GITHUB_SECRET"
+    "AUTH_GITHUB_ID",
+    "AUTH_GITHUB_SECRET"
   ],
   "tasks": {
     "codegen-entrypoints": {},
