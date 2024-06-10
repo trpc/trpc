@@ -1,7 +1,7 @@
 import { type SSEvent } from '@trpc/server';
-import { streamToAsyncIterable } from '~/lib/streamToAsyncIterable';
-import type { PostType } from '~/server/db';
-import { db, Post } from '~/server/db';
+import { streamToAsyncIterable } from '~/lib/stream-to-async-iterator';
+import { db } from '~/server/db/client';
+import { Post, type PostType } from '~/server/db/schema';
 import { z } from 'zod';
 import { authedProcedure, publicProcedure, router } from '../trpc';
 import { currentlyTyping, ee } from './channel';

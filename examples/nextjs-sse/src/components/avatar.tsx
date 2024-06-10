@@ -1,4 +1,4 @@
-import clsx from 'clsx';
+import { cx } from 'class-variance-authority';
 import React from 'react';
 
 type AvatarProps = {
@@ -7,7 +7,7 @@ type AvatarProps = {
   initials?: string;
   alt?: string;
   className?: string;
-};
+} & React.ComponentPropsWithoutRef<'span'>;
 
 export function Avatar({
   src = null,
@@ -16,12 +16,11 @@ export function Avatar({
   alt = '',
   className,
   ...props
-}: AvatarProps & React.ComponentPropsWithoutRef<'span'>) {
+}: AvatarProps) {
   return (
     <span
-      data-slot="avatar"
       {...props}
-      className={clsx(
+      className={cx(
         className,
         // Basic layout
         '*:col-start-1 *:row-start-1 inline-grid shrink-0 align-middle [--avatar-radius:20%] [--ring-opacity:20%]',

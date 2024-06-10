@@ -1,18 +1,21 @@
 'use client';
 
+import * as Headless from '@headlessui/react';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { Button } from '~/components/button';
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTrigger,
+  DialogActions,
+  DialogBody,
+  DialogTitle,
 } from '~/components/dialog';
-import { Input } from '~/components/input';
+import { Input, Label } from '~/components/input';
 import { trpc } from '~/lib/trpc';
 import { useRouter } from 'next/navigation';
+import * as React from 'react';
 
-export function CreateChannelForm() {
+export function CreateChannelDialog() {
+  const [open, setOpen] = React.useState(false);
   const router = useRouter();
   const { mutate: createChannel } = trpc.channel.create.useMutation({
     onSuccess: (id) => {
@@ -22,33 +25,44 @@ export function CreateChannelForm() {
   });
 
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        const name = new FormData(e.currentTarget).get('name') as string;
-        createChannel({ name });
-      }}
-      className="flex max-w-md gap-2"
-    >
-      <Input type="text" name="name" placeholder="Create New Channel" />
-      <Button>Create New Channel</Button>
-    </form>
-  );
-}
-
-export function CreateChannelDialog(
-  props: Readonly<{ children?: React.ReactNode }>,
-) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>{props.children}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>Create New Channel</DialogHeader>
-        <DialogDescription>
-          <p>Create a new channel</p>
-        </DialogDescription>
-        <CreateChannelForm />
-      </DialogContent>
-    </Dialog>
+    <>
+      <Button size="icon" className="size-8" onClick={() => setOpen(true)}>
+        <PlusIcon className="size-4" />
+      </Button>
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogTitle>Create New Channel</DialogTitle>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const name = new FormData(e.currentTarget).get('name') as string;
+            createChannel({ name });
+          }}
+        >
+          <DialogBody>
+            <Headless.Field>
+              <Label className="text-sm/6 font-medium">Name</Label>
+              <Input
+                type="text"
+                name="name"
+                placeholder="general"
+                className="w-full"
+              />
+            </Headless.Field>
+          </DialogBody>
+          <DialogActions>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" variant="default">
+              Create
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+    </>
   );
 }

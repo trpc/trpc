@@ -6,8 +6,8 @@ if (!process.env.POSTGRES_URL) {
 
 export default defineConfig({
   dialect: 'postgresql',
-  schema: './src/server/db.ts',
-  out: './drizzle',
+  schema: './src/server/db/schema.ts',
+  out: './src/server/db/migrations',
   dbCredentials: {
     url: process.env.POSTGRES_URL,
   },

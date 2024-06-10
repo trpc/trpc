@@ -1,7 +1,6 @@
-import { HashtagIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { Button } from '~/components/button';
-import { cn } from '~/lib/utils';
+import { HashtagIcon } from '@heroicons/react/24/outline';
 import { caller } from '~/server/routers/_app';
+import { cx } from 'class-variance-authority';
 import Link from 'next/link';
 import { CreateChannelDialog } from './create-channel';
 
@@ -42,16 +41,12 @@ export default async function Home() {
         <div className="mt-6 space-y-2 p-4">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-medium text-white">Channels</h2>
-            <CreateChannelDialog>
-              <Button size="icon" className="size-8">
-                <PlusIcon className="size-4" />
-              </Button>
-            </CreateChannelDialog>
+            <CreateChannelDialog />
           </div>
           {channels.map((channel) => (
             <Link
               key={channel.id}
-              className={cn(
+              className={cx(
                 'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50',
               )}
               href={`/channels/${channel.id}`}

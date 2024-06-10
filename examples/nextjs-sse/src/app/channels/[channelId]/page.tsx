@@ -1,9 +1,9 @@
-import { HashtagIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { HashtagIcon } from '@heroicons/react/24/outline';
 import { CreateChannelDialog } from '~/app/create-channel';
 import { Button } from '~/components/button';
-import { cn } from '~/lib/utils';
 import { auth, signOut } from '~/server/auth';
 import { caller } from '~/server/routers/_app';
+import { cx } from 'class-variance-authority';
 import Link from 'next/link';
 import { Chat } from './chat';
 
@@ -22,17 +22,13 @@ export default async function Home(
             <HashtagIcon className="size-4 text-gray-500 dark:text-gray-400" />
             <span className="text-sm font-medium">Channels</span>
           </div>
-          <CreateChannelDialog>
-            <Button size="icon" className="size-8">
-              <PlusIcon className="size-4" />
-            </Button>
-          </CreateChannelDialog>
+          <CreateChannelDialog />
         </div>
         <div className="flex flex-1 flex-col gap-2">
           {channels.map((channel) => (
             <Link
               key={channel.id}
-              className={cn(
+              className={cx(
                 'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50',
                 channel.id === channelId &&
                   'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-50',

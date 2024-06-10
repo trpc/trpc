@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS "channel" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text,
-	"created_at" timestamp (3) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (3) DEFAULT now() NOT NULL
+	"created_at" timestamp (3) with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp (3) with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "post" (
@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS "post" (
 	"channel_id" text,
 	"name" text,
 	"text" text,
-	"created_at" timestamp (3) DEFAULT now() NOT NULL,
-	"updated_at" timestamp (3) DEFAULT now() NOT NULL
+	"created_at" timestamp (3) with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp (3) with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 DO $$ BEGIN

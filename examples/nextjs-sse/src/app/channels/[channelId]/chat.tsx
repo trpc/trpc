@@ -5,7 +5,7 @@ import { Avatar } from '~/components/avatar';
 import { Button } from '~/components/button';
 import { Textarea } from '~/components/input';
 import { trpc } from '~/lib/trpc';
-import { cn } from '~/lib/utils';
+import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import type { Session } from 'next-auth';
 import { signIn } from 'next-auth/react';
@@ -43,7 +43,7 @@ export function Chat(
               return (
                 <div
                   key={item.id}
-                  className={cn(
+                  className={cx(
                     'flex items-start gap-3',
                     isMe ? 'justify-end' : 'justify-start',
                   )}
@@ -57,7 +57,7 @@ export function Chat(
 
                   <div className="flex flex-col gap-1">
                     <div
-                      className={cn(
+                      className={cx(
                         'rounded-lg bg-gray-100 p-3 text-sm ',
                         isMe
                           ? 'bg-gray-300 dark:bg-gray-800'
@@ -86,7 +86,7 @@ export function Chat(
             )}
           </p>
         </div>
-        <div className="border-t bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900 sm:px-6 lg:px-8">
+        <div className="border-t bg-white p-2 dark:border-gray-800 dark:bg-gray-900">
           <AddMessageForm
             channelId={channelId}
             onMessagePost={() => {
