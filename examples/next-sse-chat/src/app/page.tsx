@@ -55,16 +55,18 @@ export default async function Home() {
               </SignedIn>
             </Suspense>
           </div>
-          {channels.map((channel) => (
-            <Link
-              key={channel.id}
-              className={buttonVariants({ variant: 'link' })}
-              href={`/channels/${channel.id}`}
-            >
-              <HashtagIcon className="size-4 mr-2" />
-              {channel.name}
-            </Link>
-          ))}
+          <div className="flex flex-col items-start gap-2">
+            {channels.map((channel) => (
+              <Link
+                key={channel.id}
+                className={buttonVariants({ variant: 'link' })}
+                href={`/channels/${channel.id}`}
+              >
+                <HashtagIcon className="size-4 mr-2" />
+                {channel.name}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </div>
