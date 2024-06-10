@@ -42,6 +42,5 @@ COPY --from=installer /app/examples/next-sse-chat/package.json .
 COPY --from=installer --chown=nextjs:nodejs /app/examples/next-sse-chat/.next/standalone ./
 COPY --from=installer --chown=nextjs:nodejs /app/examples/next-sse-chat/.next/static ./examples/next-sse-chat/.next/static
 
-EXPOSE $PORT
 ENV PORT=$PORT HOSTNAME=0.0.0.0 NODE_ENV=production
 CMD node examples/next-sse-chat/server.js
