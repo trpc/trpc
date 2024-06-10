@@ -6,4 +6,4 @@ dockerfilePath = "examples/next-sse-chat/Dockerfile"
 healthcheckPath = "/"
 healthcheckTimeout = 100
 restartPolicyType = "never"
-runtime = "V1"
+runtime = "LEGACY"
