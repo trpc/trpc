@@ -4,7 +4,7 @@ import { SignedIn } from '~/server/auth';
 import { caller } from '~/server/routers/_app';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { CreateChannelDialog } from './create-channel';
+import { CreateChannelDialog } from './channels/create-channel';
 
 export default async function Home() {
   const channels = await caller.channel.list();

@@ -1,5 +1,5 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
-import { CreateChannelDialog } from '~/app/create-channel';
+import { CreateChannelDialog } from '~/app/channels/create-channel';
 import { Button } from '~/components/button';
 import { auth, SignedIn, SignedOut, signIn, signOut } from '~/server/auth';
 import { caller } from '~/server/routers/_app';
