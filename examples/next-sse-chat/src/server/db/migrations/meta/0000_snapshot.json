@@ -89,12 +89,8 @@
           "name": "sse-chat_post_channel_id_sse-chat_channel_id_fk",
           "tableFrom": "sse-chat_post",
           "tableTo": "sse-chat_channel",
-          "columnsFrom": [
-            "channel_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["channel_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
