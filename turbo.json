@@ -6,7 +6,14 @@
     "scripts/entrypoints.ts",
     "scripts/getRollupConfig.ts"
   ],
-  "globalEnv": ["CI", "NODE_ENV", "DATABASE_URL", "NEXTAUTH_SECRET"],
+  "globalEnv": [
+    "CI",
+    "NODE_ENV",
+    "DATABASE_URL",
+    "NEXTAUTH_SECRET",
+    "GITHUB_CLIENT_ID",
+    "GITHUB_CLIENT_SECRET"
+  ],
   "tasks": {
     "codegen-entrypoints": {},
     "codegen-tests": {
