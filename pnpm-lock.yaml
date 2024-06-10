@@ -1449,7 +1449,7 @@ importers:
         specifier: ^5.4.0
         version: 5.4.2
 
-  examples/nextjs-sse:
+  examples/next-sse-chat:
     dependencies:
       '@headlessui/react':
         specifier: ^2.0.4
@@ -8733,7 +8733,7 @@ packages:
       adm-zip: 0.5.9
       archiver: 5.3.1
       axios: 0.21.4(debug@4.3.2)
-      fast-glob: 3.2.12
+      fast-glob: 3.3.2
       https-proxy-agent: 5.0.1(supports-color@8.1.1)
       ignore: 5.3.1
       isomorphic-ws: 4.0.1(ws@7.5.9)
