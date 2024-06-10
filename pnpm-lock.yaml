@@ -1518,9 +1518,15 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.0
         version: 18.3.0
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
       drizzle-kit:
         specifier: ^0.22.6
         version: 0.22.6
+      npm-run-all:
+        specifier: ^4.1.5
+        version: 4.1.5
       postcss:
         specifier: npm:postcss@^8.4.38
         version: 8.4.38
@@ -16206,7 +16212,7 @@ packages:
     resolution: {integrity: sha512-gDYaKHJmnj4aWxyj6YHyXVpdQawtVLHU5cb+eztPGczf6cjuTdwve5ZIEfgXqH4e57An1D1AKf8CZ3kYrQRqYA==}
     engines: {node: '>= 0.4'}
     dependencies:
-      call-bind: 1.0.5
+      call-bind: 1.0.7
       has-tostringtag: 1.0.0
 
   /is-buffer@2.0.5:
@@ -16495,7 +16501,7 @@ packages:
   /is-weakset@2.0.2:
     resolution: {integrity: sha512-t2yVvttHkQktwnNNmBQ98AhENLdPUTDTE21uPqAQ0ARwQfGeQKRVS0NNurH7bTf7RrvcVn1OOge45CnBeHCSmg==}
     dependencies:
-      call-bind: 1.0.5
+      call-bind: 1.0.7
       get-intrinsic: 1.2.2
 
   /is-what@4.1.7:
