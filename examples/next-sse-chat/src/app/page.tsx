@@ -1,4 +1,5 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
+import { buttonVariants } from '~/components/button';
 import { caller } from '~/server/routers/_app';
 import { cx } from 'class-variance-authority';
 import Link from 'next/link';
@@ -9,15 +10,17 @@ export default async function Home() {
 
   return (
     <div className="flex-1 overflow-y-hidden">
-      <div className="flex h-full flex-col divide-gray-700">
+      <div className="flex h-full flex-col">
         <header className="p-4">
-          <h1 className="text-3xl font-bold text-gray-50">tRPC SSE starter</h1>
-          <p className="text-sm text-gray-400">
+          <h1 className="text-3xl font-bold text-gray-950 dark:text-gray-50">
+            tRPC SSE starter
+          </h1>
+          <p className="text-sm text-gray-700 dark:text-gray-400">
             Showcases Server-sent Events + subscription support
             <br />
             <a
-              className="text-gray-100 underline"
-              href="https://github.com/trpc/trpc/tree/05-10-subscriptions-sse/examples/next-prisma-sse-subscriptions"
+              className="text-gray-700 underline dark:text-gray-400"
+              href="https://github.com/trpc/trpc/tree/05-10-subscriptions-sse/examples/next-sse-chat"
               target="_blank"
               rel="noreferrer"
             >
@@ -26,8 +29,10 @@ export default async function Home() {
           </p>
         </header>
 
-        <article className="space-y-2 p-4 text-gray-400">
-          <h2 className="text-lg font-medium text-white">Introduction</h2>
+        <article className="space-y-2 p-4 text-sm text-gray-700 dark:text-gray-400">
+          <h2 className="text-lg font-medium text-gray-950 dark:text-gray-50">
+            Introduction
+          </h2>
           <ul className="list-inside list-disc space-y-2">
             <li>Open inspector and head to Network tab</li>
             <li>All client requests are handled through HTTP</li>
@@ -40,18 +45,18 @@ export default async function Home() {
 
         <div className="mt-6 space-y-2 p-4">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-white">Channels</h2>
+            <h2 className="text-lg font-medium text-gray-950 dark:text-gray-50">
+              Channels
+            </h2>
             <CreateChannelDialog />
           </div>
           {channels.map((channel) => (
             <Link
               key={channel.id}
-              className={cx(
-                'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50',
-              )}
+              className={buttonVariants({ variant: 'link' })}
               href={`/channels/${channel.id}`}
             >
-              <HashtagIcon className="h-4 w-4" />
+              <HashtagIcon className="size-4 mr-2" />
               {channel.name}
             </Link>
           ))}
