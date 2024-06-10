@@ -1,7 +1,8 @@
 import EventEmitter, { on } from 'node:events';
 import type { SSEvent, TRPCRouterRecord } from '@trpc/server';
 import { db } from '~/server/db/client';
-import { Channel, PostType } from '~/server/db/schema';
+import type { PostType } from '~/server/db/schema';
+import { Channel } from '~/server/db/schema';
 import { authedProcedure, publicProcedure } from '~/server/trpc';
 import { z } from 'zod';
 
