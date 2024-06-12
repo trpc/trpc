@@ -1,22 +1,17 @@
-import { api } from '~/trpc/server-http';
+'use client';
 
-export const dynamic = 'force-dynamic';
+import { trpc } from '~/trpc/rq-client';
+import React from 'react';
 
-async function action(fd: FormData) {
-  'use server';
+export function Post() {
+  const utils = trpc.useUtils();
+  const [latestPost] = trpc.getLatestPost.useSuspenseQuery();
 
-  // create the post
-  await api.createPost.mutate({
-    title: fd.get('title') as string,
-    content: fd.get('content') as string,
+  const { mutate: createPost } = trpc.createPost.useMutation({
+    onSuccess: async () => {
+      await utils.invalidate();
+    },
   });
-
-  // revalidate the latest post
-  await api.getLatestPost.revalidate();
-}
-
-export default async function PostPage() {
-  const latestPost = await api.getLatestPost.query();
 
   return (
     <div>
@@ -33,7 +28,14 @@ export default async function PostPage() {
           maxWidth: 300,
           marginTop: 16,
         }}
-        action={action}
+        onSubmit={(e) => {
+          e.preventDefault();
+          const data = new FormData(e.target as HTMLFormElement);
+          createPost({
+            title: data.get('title') as string,
+            content: data.get('content') as string,
+          });
+        }}
       >
         <input name="title" placeholder="title" />
         <input name="content" placeholder="content" />
