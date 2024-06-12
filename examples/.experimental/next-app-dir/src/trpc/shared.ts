@@ -41,7 +41,7 @@ export const createQueryClient = () =>
   new QueryClient({
     defaultOptions: {
       hydrate: {
-        transformPromise: (promise) => promise.then(superjson.deserialize),
+        transformPromise: (promise) => promise.then(transformer.deserialize),
       },
       queries: {
         // Since queries are prefetched on the server, we set a stale time so that
