@@ -69,6 +69,9 @@ type Caller<TRouter extends AnyRouter> = ReturnType<
 >;
 
 // ts-prune-ignore-next
+/**
+ * @note This requires `@tanstack/react-query@^5.45.0`
+ */
 export function createHydrationHelpers<TRouter extends AnyRouter>(
   caller: AnyRouter extends TRouter
     ? TypeError<'Generic parameter missing in `createHydrationHelpers<HERE>`'>
