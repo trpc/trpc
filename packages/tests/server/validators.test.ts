@@ -1,7 +1,6 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { initTRPC } from '@trpc/server';
-import { wrap } from '@typeschema/valibot';
 import * as arktype from 'arktype';
 import myzod from 'myzod';
 import * as T from 'runtypes';
@@ -140,7 +139,7 @@ test('valibot', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(wrap(v.number())).query(({ input }) => {
+    num: t.procedure.input(v.parser(v.number())).query(({ input }) => {
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -152,7 +151,7 @@ test('valibot', async () => {
   const res = await client.num.query(123);
 
   await expect(client.num.query('123' as any)).rejects.toMatchInlineSnapshot(
-    '[TRPCClientError: Assertion failed]',
+    '[TRPCClientError: Invalid type: Expected number but received "123"]',
   );
   expect(res.input).toBe(123);
   await close();
@@ -160,8 +159,11 @@ test('valibot', async () => {
 
 test('valibot async', async () => {
   const t = initTRPC.create();
-  const input = wrap(
-    v.stringAsync([v.customAsync(async (value) => value === 'foo')]),
+  const input = v.parserAsync(
+    v.pipeAsync(
+      v.string(),
+      v.checkAsync(async (value) => value === 'foo'),
+    ),
   );
 
   const router = t.router({
@@ -176,7 +178,7 @@ test('valibot async', async () => {
   const { close, client } = routerToServerAndClientNew(router);
 
   await expect(client.q.query('bar')).rejects.toMatchInlineSnapshot(
-    '[TRPCClientError: Assertion failed]',
+    '[TRPCClientError: Invalid input: Received "bar"]',
   );
   const res = await client.q.query('foo');
   expect(res).toMatchInlineSnapshot(`
@@ -189,9 +191,12 @@ test('valibot async', async () => {
 
 test('valibot transform mixed input/output', async () => {
   const t = initTRPC.create();
-  const input = wrap(
+  const input = v.parser(
     v.object({
-      length: v.transform(v.string(), (s) => s.length),
+      length: v.pipe(
+        v.string(),
+        v.transform((s) => s.length),
+      ),
     }),
   );
 
@@ -218,7 +223,9 @@ test('valibot transform mixed input/output', async () => {
   await expect(
     // @ts-expect-error this should only accept a string
     client.num.query({ length: 123 }),
-  ).rejects.toMatchInlineSnapshot('[TRPCClientError: Assertion failed]');
+  ).rejects.toMatchInlineSnapshot(
+    '[TRPCClientError: Invalid type: Expected string but received 123]',
+  );
 
   await close();
 });
