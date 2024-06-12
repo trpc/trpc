@@ -267,6 +267,10 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
       const proxy = createRecursiveProxy(async ({ path, args }) => {
         const fullPath = path.join('.');
 
+        if (path.length === 1 && path[0] === '_def') {
+          return _def;
+        }
+
         const procedure = _def.procedures[fullPath] as AnyProcedure;
 
         let ctx: Context | undefined = undefined;
