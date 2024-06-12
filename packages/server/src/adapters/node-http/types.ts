@@ -22,13 +22,9 @@ import type {
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../../unstable-core-do-not-import';
 
-interface ParsedQs {
-  [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;
-}
-
 export type NodeHTTPRequest = http.IncomingMessage & {
-  query?: ParsedQs;
   body?: unknown;
+  query?: unknown;
 };
 export type NodeHTTPResponse = http.ServerResponse & {
   /**
@@ -81,7 +77,7 @@ export type NodeHTTPHandlerOptions<
      * You can also use it for other needs which a connect/node.js compatible middleware can solve,
      *  though you might wish to consider an alternative solution like the Express adapter if your needs are complex.
      */
-    middleware?: ConnectMiddleware;
+    middleware?: ConnectMiddleware<TRequest, TResponse>;
     maxBodySize?: number;
   };
 
