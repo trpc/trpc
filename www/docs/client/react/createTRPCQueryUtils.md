@@ -57,7 +57,7 @@ import { useLoaderData } from 'react-router-dom';
 import type { AppRouter } from './server';
 
 const trpc = createTRPCReact<AppRouter>();
-const trpcClient = trpc.createClient({ links: [] );
+const trpcClient = trpc.createClient({ links: [] });
 
 const queryClient = new QueryClient();
 
