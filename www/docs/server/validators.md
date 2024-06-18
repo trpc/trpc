@@ -340,7 +340,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [@effect/schema](https://github.com/Effect-TS/effect/tree/main/packages/schema)
 
-```ts twoslash
+```ts
 import * as Schema from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server';
 
