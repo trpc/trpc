@@ -39,7 +39,7 @@ const client = createTRPCClient<AppRouter>({
     splitLink({
       condition(op) {
         // check for context property `skipBatch`
-        return op.context.skipBatch === true;
+        return Boolean(op.context.skipBatch);
       },
       // when condition is true, use normal request
       true: httpLink({
