@@ -288,6 +288,7 @@ test('test v2 format', async () => {
   );
   expect(result).toMatchInlineSnapshot(`
     Object {
+      "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
         "vary": "trpc-accept",
@@ -333,6 +334,7 @@ test('test v2 format with multiple / in query key', async () => {
   );
   expect(result).toMatchInlineSnapshot(`
     Object {
+      "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
         "vary": "trpc-accept",
@@ -379,6 +381,7 @@ test('test v2 format with non default routeKey', async () => {
   );
   expect(result).toMatchInlineSnapshot(`
     Object {
+      "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
         "vary": "trpc-accept",
@@ -424,6 +427,7 @@ test('test v2 format with non default routeKey and nested router', async () => {
   );
   expect(result).toMatchInlineSnapshot(`
     Object {
+      "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
         "vary": "trpc-accept",
