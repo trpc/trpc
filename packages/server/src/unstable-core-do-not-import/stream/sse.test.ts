@@ -1,7 +1,6 @@
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
-import type { SSEvent } from './sse';
 import {
   isServerSentEventEnvelope,
   sse,

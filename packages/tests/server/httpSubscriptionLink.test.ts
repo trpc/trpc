@@ -1,5 +1,4 @@
 import { EventEmitter, on } from 'node:events';
-import { inspect } from 'node:util';
 import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
@@ -8,8 +7,7 @@ import {
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
-import { initTRPC, sse, TRPCError } from '@trpc/server';
-import type { SSEvent } from '@trpc/server';
+import { initTRPC, sse } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import superjson from 'superjson';

@@ -2,7 +2,6 @@ import { EventEmitter, on } from 'events';
 import { ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import type { SSEvent } from '@trpc/server';
 import { initTRPC, sse } from '@trpc/server';
 import { konn } from 'konn';
 import React, { useState } from 'react';

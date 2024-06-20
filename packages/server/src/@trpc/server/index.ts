@@ -37,7 +37,6 @@ export {
   type QueryProcedure as TRPCQueryProcedure,
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
   type TRPCBuilder,
-  type SSEvent,
   sse,
 } from '../../unstable-core-do-not-import';
 

@@ -57,7 +57,6 @@ For a full example, see [our full-stack SSE example](https://github.com/trpc/nex
 import EventEmitter, { on } from 'events';
 import type { Post } from '@prisma/client';
 import { sse } from '@trpc/server';
-import { SSEvent } from '@trpc/server/observable';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 

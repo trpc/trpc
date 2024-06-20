@@ -1,10 +1,10 @@
-import type { SSEvent } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
   MaybePromise,
+  SSEvent,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
