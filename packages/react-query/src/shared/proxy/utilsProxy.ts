@@ -348,7 +348,7 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
     };
 
     return contextMap[utilName]();
-  });
+  }) as CreateQueryUtils<TRouter>;
 }
 
 /**
