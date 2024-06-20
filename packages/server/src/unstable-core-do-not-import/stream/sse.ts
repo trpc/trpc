@@ -1,5 +1,5 @@
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
-import type { TypeError } from '../types';
+import type { TypeError, ValidateShape } from '../types';
 import { isObject, run } from '../utils';
 import type { ConsumerOnError } from './jsonl';
 import { createTimeoutPromise } from './utils/createDeferred';
@@ -33,6 +33,18 @@ export type SSEvent = {
    */
   comment?: string;
 };
+
+const sseSymbol = Symbol('SSEventEnvelope');
+type SSEEventEnvelope<TData> = [typeof sseSymbol, TData];
+
+/**
+ * Produce a typed server-sent event
+ */
+export function sse<TData extends SSEvent>(
+  event: ValidateShape<TData, SSEvent>,
+): SSEEventEnvelope<TData> {
+  return [sseSymbol, event as TData];
+}
 
 export type SerializedSSEvent = Omit<SSEvent, 'data'> & {
   data?: string;
