@@ -347,6 +347,7 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
   });
 }
 
+const run = <TResult>(fn: () => TResult): TResult => fn();
 /**
  * @internal
  */
@@ -355,16 +356,27 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
 ) {
   type CreateReactUtilsReturnType = CreateReactUtils<TRouter, TSSRContext>;
 
+  const clientProxy = createTRPCClientProxy(context.client);
+
+  // Cache the recursive proxy for each key to handle memoization
+  const getOrCreateProxyForKey = run(() => {
+    const cache: Record<string, unknown> = {};
+    return (key: string) => {
+      cache[key] ??= createRecursiveUtilsProxy(context, key);
+      return cache[key];
+    };
+  });
+
   return createFlatProxy<CreateReactUtilsReturnType>((key) => {
     const contextName = key as (typeof contextProps)[number];
     if (contextName === 'client') {
-      return createTRPCClientProxy(context.client);
+      return clientProxy;
     }
     if (contextProps.includes(contextName)) {
       return context[contextName];
     }
 
-    return createRecursiveUtilsProxy(context, key);
+    return getOrCreateProxyForKey(key);
   });
 }
 
