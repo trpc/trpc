@@ -14,7 +14,7 @@
     "dev-www": "turbo --filter www dev",
     "test": "turbo codegen-tests && conc -c \"green,blue\" \"vitest run\" \"pnpm -F tests test-run:tsc\"",
     "test-ci": "turbo codegen-tests && conc \"CI=true vitest run --coverage\" \"pnpm -F tests test-run:tsc\"",
-    "test-watch": "vitest --typecheck",
+    "test-watch": "vitest",
     "ts-watch": "turbo run ts-watch",
     "lint": "turbo lint",
     "lint-fix": "turbo lint -- --fix && manypkg fix && pnpm format-fix",

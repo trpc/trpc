@@ -309,10 +309,9 @@ export const getQueryType = (
  */
 function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
-  key: string,
 ) {
-  return createRecursiveProxy((opts) => {
-    const path = [key, ...opts.path];
+  return createRecursiveProxy<CreateQueryUtils<TRouter>>((opts) => {
+    const path = [...opts.path];
     const utilName = path.pop() as keyof AnyDecoratedProcedure;
     const args = [...opts.args] as Parameters<
       AnyDecoratedProcedure[typeof utilName]
@@ -355,16 +354,22 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
 ) {
   type CreateReactUtilsReturnType = CreateReactUtils<TRouter, TSSRContext>;
 
+  const clientProxy = createTRPCClientProxy(context.client);
+
+  const proxy = createRecursiveUtilsProxy(
+    context,
+  ) as CreateReactUtilsReturnType;
+
   return createFlatProxy<CreateReactUtilsReturnType>((key) => {
     const contextName = key as (typeof contextProps)[number];
     if (contextName === 'client') {
-      return createTRPCClientProxy(context.client);
+      return clientProxy;
     }
     if (contextProps.includes(contextName)) {
       return context[contextName];
     }
 
-    return createRecursiveUtilsProxy(context, key);
+    return proxy[key];
   });
 }
 
@@ -374,7 +379,5 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
 export function createQueryUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
 ): CreateQueryUtils<TRouter> {
-  return createFlatProxy((key) => {
-    return createRecursiveUtilsProxy(context, key);
-  });
+  return createRecursiveUtilsProxy(context);
 }

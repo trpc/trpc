@@ -88,7 +88,12 @@ export type UseSuspenseQueriesProcedureRecord<
 export function createUseQueries<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
 ) {
-  return createRecursiveProxy((opts) => {
+  return createRecursiveProxy<
+    UseQueriesProcedureRecord<
+      TRouter['_def']['_config']['$types'],
+      TRouter['_def']['record']
+    >
+  >((opts) => {
     const arrayPath = opts.path;
     const dotPath = arrayPath.join('.');
     const [input, _opts] = opts.args as [
@@ -105,8 +110,5 @@ export function createUseQueries<TRouter extends AnyRouter>(
     };
 
     return options;
-  }) as UseQueriesProcedureRecord<
-    TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record']
-  >;
+  });
 }
