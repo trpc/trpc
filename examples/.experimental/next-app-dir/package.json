@@ -31,7 +31,7 @@
     "server-only": "^0.0.1",
     "superjson": "^1.12.4",
     "trpc-api": "link:./src/trpc",
-    "typescript": "^5.4.0",
+    "typescript": "^5.5.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
