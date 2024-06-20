@@ -314,7 +314,7 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
 ) {
   return createRecursiveProxy((opts) => {
     const path = [...opts.path];
-    if (key) {
+    if (key !== undefined) {
       path.unshift(key);
     }
     const utilName = path.pop() as keyof AnyDecoratedProcedure;
