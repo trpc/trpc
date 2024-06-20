@@ -1,5 +1,6 @@
 import EventEmitter, { on } from 'node:events';
-import type { SSEvent, TRPCRouterRecord } from '@trpc/server';
+import type { TRPCRouterRecord } from '@trpc/server';
+import { sse } from '@trpc/server';
 import { db } from '~/server/db/client';
 import type { PostType } from '~/server/db/schema';
 import { Channel } from '~/server/db/schema';
@@ -111,12 +112,12 @@ export const channelRouter = {
         if (lastEventId === id) {
           return;
         }
-        yield {
+        yield sse({
           id,
           data: Object.keys(who).filter(
             (user) => user !== opts.ctx.session?.user?.name,
           ),
-        } satisfies SSEvent;
+        });
 
         lastEventId = id;
       };

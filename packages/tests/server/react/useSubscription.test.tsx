@@ -3,7 +3,7 @@ import { ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import type { SSEvent } from '@trpc/server';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, sse } from '@trpc/server';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
@@ -34,9 +34,9 @@ describe.each([
           .subscription(async function* ({ input }) {
             for await (const event of on(ee, 'data')) {
               const data = event[0] as number;
-              yield {
+              yield sse({
                 data: data + input,
-              } satisfies SSEvent;
+              });
             }
           }),
       });

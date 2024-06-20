@@ -1,4 +1,4 @@
-import { type SSEvent } from '@trpc/server';
+import { sse } from '@trpc/server';
 import { streamToAsyncIterable } from '~/lib/stream-to-async-iterator';
 import { db } from '~/server/db/client';
 import { Post, type PostType } from '~/server/db/schema';
@@ -129,11 +129,11 @@ export const postRouter = router({
       });
 
       for await (const post of streamToAsyncIterable(stream)) {
-        yield {
+        yield sse({
           // yielding the post id ensures the client can reconnect at any time and get the latest events this id
           id: post.id,
           data: post,
-        } satisfies SSEvent;
+        });
       }
     }),
 });

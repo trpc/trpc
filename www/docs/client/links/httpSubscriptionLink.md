@@ -56,6 +56,7 @@ For a full example, see [our full-stack SSE example](https://github.com/trpc/nex
 ```ts
 import EventEmitter, { on } from 'events';
 import type { Post } from '@prisma/client';
+import { sse } from '@trpc/server';
 import { SSEvent } from '@trpc/server/observable';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
@@ -79,11 +80,11 @@ export const subRouter = router({
       // listen for new events
       for await (const [data] of on(ee, 'add')) {
         const post = data as Post;
-        yield {
+        yield sse({
           // yielding the post id ensures the client can reconnect at any time and get the latest events this id
           id: post.id,
           data: post,
-        } satisfies SSEvent;
+        });
       }
     }),
 });

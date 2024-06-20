@@ -1,6 +1,6 @@
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
-import type { TypeError, ValidateShape } from '../types';
-import { isObject, run } from '../utils';
+import type { ValidateShape } from '../types';
+import { run } from '../utils';
 import type { ConsumerOnError } from './jsonl';
 import { createTimeoutPromise } from './utils/createDeferred';
 import { createReadableStream } from './utils/createReadableStream';
@@ -46,7 +46,7 @@ export function sse<TData extends SSEvent>(
   return [sseSymbol, event as TData];
 }
 
-export function isServerSentEventEnvelope<TData>(
+export function isServerSentEventEnvelope<TData extends SSEvent>(
   value: unknown,
 ): value is ServerSentEventEnvelope<TData> {
   return Array.isArray(value) && value[0] === sseSymbol;
@@ -129,8 +129,7 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
         closedPromise,
         maxDurationPromise.promise,
       ]);
-      console.log({ next });
-      // console.log({ next });
+
       pingPromise.clear();
       if (next === 'closed') {
         break;
@@ -156,18 +155,13 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
 
       const value = next.value;
 
-      console.log({ value });
-
+      const data: SSEvent = isServerSentEventEnvelope(value)
+        ? value[1]
+        : {
+            data: value,
+          };
       const chunk: SerializedSSEvent = {};
-      if (isServerSentEventEnvelope(value)) {
-        const data = value[1];
-        Object.assign(chunk, data);
-        continue;
-      } else {
-        Object.assign(chunk, {
-          data: value,
-        });
-      }
+      Object.assign(chunk, data);
       if ('data' in chunk) {
         chunk.data = JSON.stringify(serialize(chunk.data));
       }
@@ -193,7 +187,6 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
   return stream.readable.pipeThrough(
     new TransformStream<SerializedSSEvent, string>({
       transform(chunk, controller) {
-        // console.log('adding', { chunk });
         if ('event' in chunk) {
           controller.enqueue(`event: ${chunk.event}\n`);
         }

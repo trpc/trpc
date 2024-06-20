@@ -25,7 +25,7 @@ export const suppressLogs = () => {
     console.error = error;
   };
 };
-test.only('e2e, server-sent events (SSE)', async () => {
+test('e2e, server-sent events (SSE)', async () => {
   async function* data(lastEventId?: Maybe<number>) {
     let i = lastEventId ?? 0;
     while (true) {
