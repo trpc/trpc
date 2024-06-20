@@ -52,9 +52,8 @@ function createInnerProxy(
  *
  * @internal
  */
-export const createRecursiveProxy = (callback: ProxyCallback) => {
-  return createInnerProxy(callback, [], Object.create(null));
-};
+export const createRecursiveProxy = (callback: ProxyCallback) =>
+  createInnerProxy(callback, [], Object.create(null));
 
 /**
  * Used in place of `new Proxy` where each handler will map 1 level deep to another value.
