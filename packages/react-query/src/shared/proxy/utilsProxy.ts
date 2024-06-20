@@ -27,7 +27,6 @@ import type {
 import {
   createFlatProxy,
   createRecursiveProxy,
-  run,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
   DecoratedTRPCContextProps,
@@ -312,7 +311,7 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
   key?: string,
 ) {
-  return createRecursiveProxy((opts) => {
+  const proxy = createRecursiveProxy((opts) => {
     const path = [...opts.path];
     if (key !== undefined) {
       path.unshift(key);
@@ -348,7 +347,8 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
     };
 
     return contextMap[utilName]();
-  }) as CreateQueryUtils<TRouter>;
+  });
+  return proxy as CreateQueryUtils<TRouter>;
 }
 
 /**
@@ -361,14 +361,9 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
 
   const clientProxy = createTRPCClientProxy(context.client);
 
-  // Cache the recursive proxy for each key to handle memoization
-  const getOrCreateProxyForKey = run(() => {
-    const cache: Record<string, unknown> = {};
-    return (key: string) => {
-      cache[key] ??= createRecursiveUtilsProxy(context, key);
-      return cache[key];
-    };
-  });
+  const proxy = createRecursiveUtilsProxy(
+    context,
+  ) as CreateReactUtilsReturnType;
 
   return createFlatProxy<CreateReactUtilsReturnType>((key) => {
     const contextName = key as (typeof contextProps)[number];
@@ -379,7 +374,7 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
       return context[contextName];
     }
 
-    return getOrCreateProxyForKey(key);
+    return proxy[key];
   });
 }
 
@@ -389,5 +384,5 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
 export function createQueryUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
 ): CreateQueryUtils<TRouter> {
-  return createRecursiveUtilsProxy(context);
+  return createRecursiveUtilsProxy<TRouter>(context);
 }
