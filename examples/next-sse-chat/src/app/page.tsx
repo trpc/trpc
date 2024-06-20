@@ -1,6 +1,6 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { buttonVariants } from '~/components/button';
-import { SignedIn } from '~/server/auth';
+import { SignedIn, SignedOut } from '~/server/auth';
 import { caller } from '~/server/routers/_app';
 import Link from 'next/link';
 import { Suspense } from 'react';
@@ -53,6 +53,9 @@ export default async function Home() {
               <SignedIn>
                 <CreateChannelDialog />
               </SignedIn>
+              <SignedOut>
+                <a href="/api/auth/signin">Login</a>
+              </SignedOut>
             </Suspense>
           </div>
           <div className="flex flex-col items-start gap-2">
@@ -62,7 +65,7 @@ export default async function Home() {
                 className={buttonVariants({ variant: 'link' })}
                 href={`/channels/${channel.id}`}
               >
-                <HashtagIcon className="mr-2 size-4" />
+                <HashtagIcon className="size-4 mr-2" />
                 {channel.name}
               </Link>
             ))}

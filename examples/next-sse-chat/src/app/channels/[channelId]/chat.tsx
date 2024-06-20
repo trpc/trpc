@@ -8,7 +8,6 @@ import { trpc } from '~/lib/trpc';
 import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import type { Session } from 'next-auth';
-import { signIn } from 'next-auth/react';
 import * as React from 'react';
 import {
   useLivePosts,
