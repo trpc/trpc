@@ -193,60 +193,59 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
       TRouter['_def']['record']
     >
   >;
+  const proxy = createRecursiveProxy<CreateSSGHelpers>((opts) => {
+    const args = opts.args;
+    const input = args[0];
+    const arrayPath = [...opts.path];
+    const utilName = arrayPath.pop() as keyof AnyDecoratedProcedure;
 
+    const queryFn = () =>
+      resolvedOpts.query({ path: arrayPath.join('.'), input });
+
+    const queryKey = getQueryKeyInternal(
+      arrayPath,
+      input,
+      getQueryType(utilName),
+    );
+
+    const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
+      fetch: () => {
+        const args1 = args[1] as Maybe<TRPCFetchQueryOptions<any, any>>;
+        return queryClient.fetchQuery({ ...args1, queryKey, queryFn });
+      },
+      fetchInfinite: () => {
+        const args1 = args[1] as Maybe<
+          TRPCFetchInfiniteQueryOptions<any, any, any>
+        >;
+        return queryClient.fetchInfiniteQuery({
+          ...args1,
+          queryKey,
+          queryFn,
+          initialPageParam: args1?.initialCursor ?? null,
+        });
+      },
+      prefetch: () => {
+        const args1 = args[1] as Maybe<TRPCFetchQueryOptions<any, any>>;
+        return queryClient.prefetchQuery({ ...args1, queryKey, queryFn });
+      },
+      prefetchInfinite: () => {
+        const args1 = args[1] as Maybe<
+          TRPCFetchInfiniteQueryOptions<any, any, any>
+        >;
+        return queryClient.prefetchInfiniteQuery({
+          ...args1,
+          queryKey,
+          queryFn,
+          initialPageParam: args1?.initialCursor ?? null,
+        });
+      },
+    };
+
+    return helperMap[utilName]();
+  });
   return createFlatProxy<CreateSSGHelpers>((key) => {
     if (key === 'queryClient') return queryClient;
     if (key === 'dehydrate') return _dehydrate;
-
-    return createRecursiveProxy((opts) => {
-      const args = opts.args;
-      const input = args[0];
-      const arrayPath = [key, ...opts.path];
-      const utilName = arrayPath.pop() as keyof AnyDecoratedProcedure;
-
-      const queryFn = () =>
-        resolvedOpts.query({ path: arrayPath.join('.'), input });
-
-      const queryKey = getQueryKeyInternal(
-        arrayPath,
-        input,
-        getQueryType(utilName),
-      );
-
-      const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
-        fetch: () => {
-          const args1 = args[1] as Maybe<TRPCFetchQueryOptions<any, any>>;
-          return queryClient.fetchQuery({ ...args1, queryKey, queryFn });
-        },
-        fetchInfinite: () => {
-          const args1 = args[1] as Maybe<
-            TRPCFetchInfiniteQueryOptions<any, any, any>
-          >;
-          return queryClient.fetchInfiniteQuery({
-            ...args1,
-            queryKey,
-            queryFn,
-            initialPageParam: args1?.initialCursor ?? null,
-          });
-        },
-        prefetch: () => {
-          const args1 = args[1] as Maybe<TRPCFetchQueryOptions<any, any>>;
-          return queryClient.prefetchQuery({ ...args1, queryKey, queryFn });
-        },
-        prefetchInfinite: () => {
-          const args1 = args[1] as Maybe<
-            TRPCFetchInfiniteQueryOptions<any, any, any>
-          >;
-          return queryClient.prefetchInfiniteQuery({
-            ...args1,
-            queryKey,
-            queryFn,
-            initialPageParam: args1?.initialCursor ?? null,
-          });
-        },
-      };
-
-      return helperMap[utilName]();
-    });
+    return proxy[key];
   });
 }
