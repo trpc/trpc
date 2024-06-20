@@ -5,6 +5,7 @@ import type {
   InfiniteData,
   InvalidateOptions,
   InvalidateQueryFilters,
+  MutationOptions,
   QueryClient,
   QueryFilters,
   QueryKey,
@@ -240,5 +241,18 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   getInfiniteQueryData: (
     queryKey: TRPCQueryKey,
   ) => InfiniteData<unknown> | undefined;
+
+  /**
+   * @link https://tanstack.com/query/latest/docs/reference/QueryClient/#queryclientsetmutationdefaults
+   */
+  setMutationDefaults: (
+    mutationKey: string[][],
+    options: MutationOptions,
+  ) => void;
+
+  /**
+   * @link https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientgetmutationdefaults
+   */
+  getMutationDefaults: (mutationKey: string[][]) => MutationOptions | undefined;
 }
 export const TRPCContext = React.createContext?.(null as any);

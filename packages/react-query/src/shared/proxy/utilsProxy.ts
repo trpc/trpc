@@ -3,6 +3,7 @@ import type {
   InfiniteData,
   InvalidateOptions,
   InvalidateQueryFilters,
+  MutationOptions,
   Query,
   QueryFilters,
   QueryKey,
@@ -15,6 +16,7 @@ import type {
 import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
 import type {
+  AnyMutationProcedure,
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
@@ -42,7 +44,7 @@ import type { ExtractCursorType } from '../hooks/types';
 
 type DecorateProcedure<
   TRoot extends AnyRootTypes,
-  TProcedure extends AnyQueryProcedure,
+  TProcedure extends AnyQueryProcedure | AnyMutationProcedure,
 > = {
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
@@ -223,6 +225,10 @@ type DecorateProcedure<
         NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
       >
     | undefined;
+
+  setMutationDefaults(options: MutationOptions): void;
+
+  getMutationDefaults(): MutationOptions | undefined;
 };
 
 /**
@@ -252,8 +258,7 @@ export type DecoratedProcedureUtilsRecord<
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
       ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateRouter
-      : // utils only apply to queries
-      $Value extends AnyQueryProcedure
+      : $Value extends AnyQueryProcedure | AnyMutationProcedure
       ? DecorateProcedure<TRoot, $Value>
       : never
     : never;
@@ -296,6 +301,8 @@ export const getQueryType = (
     case 'setInfiniteData':
       return 'infinite';
 
+    case 'setMutationDefaults': // This sounds wrong
+    case 'getMutationDefaults': // This sounds wrong
     case 'cancel':
     case 'invalidate':
     case 'refetch':
@@ -341,6 +348,9 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
       },
       getData: () => context.getQueryData(queryKey),
       getInfiniteData: () => context.getInfiniteQueryData(queryKey),
+      setMutationDefaults: () =>
+        context.setMutationDefaults([queryKey[0]], input),
+      getMutationDefaults: () => context.getMutationDefaults([queryKey[0]]),
     };
 
     return contextMap[utilName]();

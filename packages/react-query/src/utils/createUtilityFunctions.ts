@@ -145,5 +145,13 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     getInfiniteQueryData: (queryKey) => {
       return queryClient.getQueryData(queryKey);
     },
+
+    setMutationDefaults: (mutationKey, options) => {
+      return queryClient.setMutationDefaults(mutationKey, options);
+    },
+
+    getMutationDefaults: (mutationKey) => {
+      return queryClient.getMutationDefaults(mutationKey);
+    },
   };
 }

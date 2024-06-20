@@ -254,4 +254,20 @@ describe('createTRPCQueryUtils()', () => {
       pageParams: [],
     });
   });
+
+  test('setMutationDefaults() and getMutationDefaults()', async () => {
+    const { client } = factory;
+    const queryClient = createQueryClient();
+    const clientUtils = createTRPCQueryUtils({ queryClient, client });
+
+    clientUtils.addPost.setMutationDefaults({
+      meta: {
+        hello: 'trpc',
+      },
+    });
+
+    expect(clientUtils.addPost.getMutationDefaults()?.meta).toEqual({
+      hello: 'trpc',
+    });
+  });
 });
