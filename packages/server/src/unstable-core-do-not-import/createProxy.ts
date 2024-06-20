@@ -11,7 +11,7 @@ const noop = () => {
 function createInnerProxy(
   callback: ProxyCallback,
   path: string[],
-  cache: [string[], unknown][],
+  cache: Record<string, unknown>,
 ) {
   const cacheKey = path.join('.');
 
