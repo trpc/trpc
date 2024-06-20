@@ -27,6 +27,7 @@ import type {
 import {
   createFlatProxy,
   createRecursiveProxy,
+  run,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
   DecoratedTRPCContextProps,
@@ -309,10 +310,13 @@ export const getQueryType = (
  */
 function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
-  key: string,
+  key?: string,
 ) {
   return createRecursiveProxy((opts) => {
-    const path = [key, ...opts.path];
+    const path = [...opts.path];
+    if (key) {
+      path.unshift(key);
+    }
     const utilName = path.pop() as keyof AnyDecoratedProcedure;
     const args = [...opts.args] as Parameters<
       AnyDecoratedProcedure[typeof utilName]
@@ -347,7 +351,6 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
   });
 }
 
-const run = <TResult>(fn: () => TResult): TResult => fn();
 /**
  * @internal
  */
@@ -386,7 +389,5 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
 export function createQueryUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
 ): CreateQueryUtils<TRouter> {
-  return createFlatProxy((key) => {
-    return createRecursiveUtilsProxy(context, key);
-  });
+  return createRecursiveUtilsProxy(context);
 }
