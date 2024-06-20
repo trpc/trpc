@@ -15,11 +15,7 @@ function createInnerProxy(
 ) {
   const cacheKey = path.join('.');
 
-  if (cache[cacheKey]) {
-    // always return the same proxy for the same path
-    return cache[cacheKey];
-  }
-  const proxy: unknown = new Proxy(noop, {
+  cache[cacheKey] ??= new Proxy(noop, {
     get(_obj, key) {
       if (typeof key !== 'string' || key === 'then') {
         // special case for if the proxy is accidentally treated
@@ -48,8 +44,7 @@ function createInnerProxy(
     },
   });
 
-  cache[cacheKey] = proxy;
-  return proxy;
+  return cache[cacheKey];
 }
 
 /**
@@ -58,7 +53,7 @@ function createInnerProxy(
  * @internal
  */
 export const createRecursiveProxy = (callback: ProxyCallback) => {
-  return createInnerProxy(callback, [], {});
+  return createInnerProxy(callback, [], Object.create(null));
 };
 
 /**
