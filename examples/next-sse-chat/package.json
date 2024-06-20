@@ -3,13 +3,13 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build:1-migrate": "pnpm migrate",
+    "build:1-generate": "drizzle-kit generate",
+    "build:2-migrate": "pnpm migrate",
     "build:3-next": "cross-env NODE_ENV=production next build",
     "build": "run-s build:*",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "postinstall": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate"
   },
   "dependencies": {
