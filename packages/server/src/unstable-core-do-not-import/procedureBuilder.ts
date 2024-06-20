@@ -23,6 +23,7 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
+import type { ServerSentEventEnvelope } from './stream/sse';
 import type {
   GetRawInputFn,
   MaybePromise,
@@ -46,7 +47,11 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
 type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterable<
   infer $Output
 >
-  ? $Output
+  ? $Output extends ServerSentEventEnvelope<infer $Event>
+    ? $Event
+    : {
+        data: $Output;
+      }
   : inferObservableValue<TOutput>;
 
 export type CallerOverride<TContext> = (opts: {

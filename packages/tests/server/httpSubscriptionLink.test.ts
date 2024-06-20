@@ -8,7 +8,7 @@ import {
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
-import { initTRPC, TRPCError } from '@trpc/server';
+import { initTRPC, sse, TRPCError } from '@trpc/server';
 import type { SSEvent } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
@@ -45,9 +45,7 @@ const ctx = konn()
         iterableEvent: t.procedure.subscription(async function* () {
           for await (const data of on(ee, 'data')) {
             const num = data[0] as number;
-            yield {
-              data: num,
-            } satisfies SSEvent;
+            yield num;
           }
         }),
 
@@ -63,10 +61,10 @@ const ctx = konn()
             });
             let idx = opts.input.lastEventId ?? 0;
             while (true) {
-              yield {
+              yield sse({
                 id: idx,
                 data: idx,
-              } satisfies SSEvent;
+              });
               idx++;
               await sleep();
               infiniteYields();
@@ -134,7 +132,7 @@ test('iterable', async () => {
   const onData = vi.fn<{ data: number }[]>();
   const subscription = client.sub.iterableEvent.subscribe(undefined, {
     onStarted: onStarted,
-    onData: onData,
+    onData,
   });
 
   await waitFor(

@@ -35,15 +35,21 @@ export type SSEvent = {
 };
 
 const sseSymbol = Symbol('SSEventEnvelope');
-type SSEEventEnvelope<TData> = [typeof sseSymbol, TData];
+export type ServerSentEventEnvelope<TData> = [typeof sseSymbol, TData];
 
 /**
  * Produce a typed server-sent event
  */
 export function sse<TData extends SSEvent>(
   event: ValidateShape<TData, SSEvent>,
-): SSEEventEnvelope<TData> {
+): ServerSentEventEnvelope<TData> {
   return [sseSymbol, event as TData];
+}
+
+export function isServerSentEventEnvelope<TData>(
+  value: unknown,
+): value is ServerSentEventEnvelope<TData> {
+  return Array.isArray(value) && value[0] === sseSymbol;
 }
 
 export type SerializedSSEvent = Omit<SSEvent, 'data'> & {
@@ -123,6 +129,7 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
         closedPromise,
         maxDurationPromise.promise,
       ]);
+      console.log({ next });
       // console.log({ next });
       pingPromise.clear();
       if (next === 'closed') {
@@ -149,20 +156,20 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
 
       const value = next.value;
 
-      // console.log({ value });
-      if (!isObject(value)) {
-        await iterator.throw?.(new TypeError(`Expected a SerializedSSEvent`));
-        return;
-      }
+      console.log({ value });
+
       const chunk: SerializedSSEvent = {};
-      if (typeof value['id'] === 'string' || typeof value['id'] === 'number') {
-        chunk.id = value['id'];
+      if (isServerSentEventEnvelope(value)) {
+        const data = value[1];
+        Object.assign(chunk, data);
+        continue;
+      } else {
+        Object.assign(chunk, {
+          data: value,
+        });
       }
-      if (typeof value['event'] === 'string') {
-        chunk.event = value['event'];
-      }
-      if ('data' in value) {
-        chunk.data = JSON.stringify(serialize(value['data']));
+      if ('data' in chunk) {
+        chunk.data = JSON.stringify(serialize(chunk.data));
       }
 
       stream.controller.enqueue(chunk);
@@ -201,9 +208,11 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
     }),
   );
 }
-type inferSSEOutput<TData> = TData extends SSEvent
-  ? TData
-  : TypeError<'Expected a SSEvent - use `satisfies SSEvent'>;
+type inferSSEOutput<TData> = TData extends ServerSentEventEnvelope<infer $Data>
+  ? $Data
+  : {
+      data: TData;
+    };
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
