@@ -45,7 +45,12 @@ export function experimental_createTRPCNextAppDirServer<
     return createTRPCUntypedClient(config);
   });
 
-  return createRecursiveProxy((callOpts) => {
+  return createRecursiveProxy<
+    NextAppDirDecorateRouterRecord<
+      TRouter['_def']['_config']['$types'],
+      TRouter['_def']['record']
+    >
+  >((callOpts) => {
     // lazily initialize client
     const client = getClient();
 
@@ -62,10 +67,7 @@ export function experimental_createTRPCNextAppDirServer<
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
-  }) as NextAppDirDecorateRouterRecord<
-    TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record']
-  >;
+  });
 }
 
 /**

@@ -274,6 +274,12 @@ export function createHooksInternal<
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
   type CreateHooksInternal = CreateTRPCReact<TRouter, TSSRContext>;
 
+  const proxy = createReactDecoration<TRouter, TSSRContext>(
+    trpc,
+  ) as DecorateRouterRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >;
   return createFlatProxy<CreateHooksInternal>((key) => {
     if (key === 'useContext' || key === 'useUtils') {
       return () => {
@@ -289,7 +295,7 @@ export function createHooksInternal<
       return (trpc as any)[key];
     }
 
-    return createReactDecoration(key, trpc);
+    return proxy[key];
   });
 }
 

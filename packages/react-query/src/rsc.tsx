@@ -79,7 +79,9 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
   getQueryClient: () => QueryClient,
 ) {
   type RootTypes = inferRouterRootTypes<TRouter>;
-  const wrappedProxy = createRecursiveProxy(async ({ path, args }) => {
+  const wrappedProxy = createRecursiveProxy<
+    DecorateRouterRecord<RootTypes, TRouter['_def']['record']>
+  >(async ({ path, args }) => {
     const proc = path.reduce(
       (acc, key) =>
         // @ts-expect-error - ??
@@ -122,7 +124,7 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     }
 
     return promise;
-  }) as DecorateRouterRecord<RootTypes, TRouter['_def']['record']>;
+  });
 
   function HydrateClient(props: { children: React.ReactNode }) {
     const dehydratedState = dehydrate(getQueryClient());
