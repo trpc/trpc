@@ -310,7 +310,7 @@ export const getQueryType = (
 function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
 ) {
-  const proxy = createRecursiveProxy((opts) => {
+  return createRecursiveProxy<CreateQueryUtils<TRouter>>((opts) => {
     const path = [...opts.path];
     const utilName = path.pop() as keyof AnyDecoratedProcedure;
     const args = [...opts.args] as Parameters<
@@ -344,7 +344,6 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
 
     return contextMap[utilName]();
   });
-  return proxy as CreateQueryUtils<TRouter>;
 }
 
 /**
