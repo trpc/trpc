@@ -208,7 +208,9 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
     }),
   );
 }
-type inferSSEOutput<TData> = TData extends ServerSentEventEnvelope<infer $Data>
+export type inferSSEOutput<TData> = TData extends ServerSentEventEnvelope<
+  infer $Data
+>
   ? $Data
   : {
       data: TData;
