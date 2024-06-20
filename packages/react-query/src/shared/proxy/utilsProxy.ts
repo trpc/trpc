@@ -309,13 +309,9 @@ export const getQueryType = (
  */
 function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
-  key?: string,
 ) {
   const proxy = createRecursiveProxy((opts) => {
     const path = [...opts.path];
-    if (key !== undefined) {
-      path.unshift(key);
-    }
     const utilName = path.pop() as keyof AnyDecoratedProcedure;
     const args = [...opts.args] as Parameters<
       AnyDecoratedProcedure[typeof utilName]
@@ -384,5 +380,5 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
 export function createQueryUtilsProxy<TRouter extends AnyRouter>(
   context: TRPCQueryUtils<TRouter>,
 ): CreateQueryUtils<TRouter> {
-  return createRecursiveUtilsProxy<TRouter>(context);
+  return createRecursiveUtilsProxy(context);
 }
