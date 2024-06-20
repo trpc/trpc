@@ -126,6 +126,16 @@ export type CreateTRPCClient<TRouter extends AnyRouter> =
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
 ): CreateTRPCClient<TRouter> {
+  const proxy = createRecursiveProxy<CreateTRPCClient<TRouter>>(
+    ({ path, args }) => {
+      const pathCopy = [...path];
+      const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
+
+      const fullPath = pathCopy.join('.');
+
+      return (client as any)[procedureType](fullPath, ...args);
+    },
+  );
   return createFlatProxy<CreateTRPCClient<TRouter>>((key) => {
     if (client.hasOwnProperty(key)) {
       return (client as any)[key as any];
@@ -133,14 +143,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
     if (key === '__untypedClient') {
       return client;
     }
-    return createRecursiveProxy(({ path, args }) => {
-      const pathCopy = [key, ...path];
-      const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
-
-      const fullPath = pathCopy.join('.');
-
-      return (client as any)[procedureType](fullPath, ...args);
-    });
+    return proxy[key];
   });
 }
 
