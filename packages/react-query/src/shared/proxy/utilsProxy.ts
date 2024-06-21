@@ -229,6 +229,8 @@ type DecorateProcedure<
   setMutationDefaults(options: MutationOptions): void;
 
   getMutationDefaults(): MutationOptions | undefined;
+
+  isMutating(): number;
 };
 
 /**
@@ -303,6 +305,7 @@ export const getQueryType = (
 
     case 'setMutationDefaults':
     case 'getMutationDefaults':
+    case 'isMutating':
     case 'cancel':
     case 'invalidate':
     case 'refetch':
@@ -350,6 +353,7 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
       setMutationDefaults: () =>
         context.setMutationDefaults([queryKey[0]], input),
       getMutationDefaults: () => context.getMutationDefaults([queryKey[0]]),
+      isMutating: () => context.isMutating({ mutationKey: [queryKey[0]] }),
     };
 
     return contextMap[utilName]();

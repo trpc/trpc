@@ -153,5 +153,12 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     getMutationDefaults: (mutationKey) => {
       return queryClient.getMutationDefaults(mutationKey);
     },
+
+    isMutating: (filters) => {
+      return queryClient.isMutating({
+        ...filters,
+        exact: true,
+      });
+    },
   };
 }

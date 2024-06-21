@@ -819,3 +819,44 @@ describe('query keys are stored separately', () => {
     expect(data.infinite).toBeUndefined();
   });
 });
+
+test('isMutating', async () => {
+  const { client, App } = ctx;
+
+  function MyComponent() {
+    const createPostMutation = client.post.create.useMutation({
+      mutationFn: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        return defaultPost;
+      },
+    });
+    const utils = client.useUtils();
+
+    return (
+      <>
+        <button
+          data-testid="add-post"
+          onClick={() => {
+            createPostMutation.mutate({ text: 'isMutating' });
+          }}
+        />
+        <span data-testid="is-mutating">{utils.post.create.isMutating()}</span>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  const addPostButton = await utils.findByTestId('add-post');
+  const isMutatingSpan = await utils.findByTestId('is-mutating');
+
+  expect(isMutatingSpan).toHaveTextContent('0');
+  void userEvent.click(addPostButton);
+  await waitFor(() => {
+    expect(isMutatingSpan).toHaveTextContent('1');
+  });
+});
