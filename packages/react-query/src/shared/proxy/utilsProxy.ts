@@ -301,8 +301,8 @@ export const getQueryType = (
     case 'setInfiniteData':
       return 'infinite';
 
-    case 'setMutationDefaults': // This sounds wrong
-    case 'getMutationDefaults': // This sounds wrong
+    case 'setMutationDefaults':
+    case 'getMutationDefaults':
     case 'cancel':
     case 'invalidate':
     case 'refetch':
