@@ -261,11 +261,17 @@ describe('createTRPCQueryUtils()', () => {
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
 
     clientUtils.addPost.setMutationDefaults({
+      mutationFn: async () => {
+        return 'foo';
+      },
       meta: {
         hello: 'trpc',
       },
     });
 
+    expect(
+      clientUtils.addPost.getMutationDefaults()?.mutationFn?.(),
+    ).resolves.toBe('foo');
     expect(clientUtils.addPost.getMutationDefaults()?.meta).toEqual({
       hello: 'trpc',
     });

@@ -147,7 +147,18 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     },
 
     setMutationDefaults: (mutationKey, options) => {
-      return queryClient.setMutationDefaults(mutationKey, options);
+      const path = mutationKey[0];
+      const defaultMutationFunction = (input: unknown) => {
+        return untypedClient.mutation(
+          ...getClientArgs([path, { input }], opts),
+        );
+      };
+      return queryClient.setMutationDefaults(mutationKey, {
+        ...options,
+        // `?? defaultMutationFunction` is very useful for persisting offline mutations
+        // @see https://tanstack.com/query/latest/docs/framework/react/guides/mutations#persisting-offline-mutations
+        mutationFn: options?.mutationFn ?? defaultMutationFunction,
+      });
     },
 
     getMutationDefaults: (mutationKey) => {
