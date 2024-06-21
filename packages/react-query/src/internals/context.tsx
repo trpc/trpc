@@ -246,13 +246,13 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
    * @link https://tanstack.com/query/latest/docs/reference/QueryClient/#queryclientsetmutationdefaults
    */
   setMutationDefaults: (
-    mutationKey: string[][],
+    mutationKey: [string[]],
     options: MutationOptions,
   ) => void;
 
   /**
    * @link https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientgetmutationdefaults
    */
-  getMutationDefaults: (mutationKey: string[][]) => MutationOptions | undefined;
+  getMutationDefaults: (mutationKey: [string[]]) => MutationOptions | undefined;
 }
 export const TRPCContext = React.createContext?.(null as any);
