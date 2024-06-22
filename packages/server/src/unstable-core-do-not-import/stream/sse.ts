@@ -229,10 +229,9 @@ export function sseStreamConsumer<TData>(opts: {
 
   const transform = new TransformStream<MessageEvent, inferSSEOutput<TData>>({
     async transform(chunk, controller) {
-      const def: Partial<SSEMessage> = {};
-      if ('data' in chunk) {
-        def.data = deserialize(JSON.parse(chunk.data));
-      }
+      const def: Partial<SSEMessage> = {
+        data: deserialize(JSON.parse(chunk.data)),
+      };
 
       if (chunk.lastEventId) {
         def.id = chunk.lastEventId;
