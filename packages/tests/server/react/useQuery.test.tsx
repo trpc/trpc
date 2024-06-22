@@ -28,11 +28,7 @@ const ctx = konn()
       iterableDeferred.resolve();
       iterableDeferred = createDeferred();
     };
-    const t = initTRPC.create({
-      experimental: {
-        iterablesAndDeferreds: true,
-      },
-    });
+    const t = initTRPC.create({});
 
     const appRouter = t.router({
       post: t.router({

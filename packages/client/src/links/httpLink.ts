@@ -1,6 +1,6 @@
 import { observable } from '@trpc/server/observable';
 import type {
-  AnyRootTypes,
+  AnyClientTypes,
   AnyRouter,
 } from '@trpc/server/unstable-core-do-not-import';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
@@ -25,7 +25,7 @@ import {
   type TRPCLink,
 } from './types';
 
-export type HTTPLinkOptions<TRoot extends AnyRootTypes> =
+export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
     /**
      * Headers to be set on outgoing requests or a callback that of said headers
@@ -80,6 +80,12 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
     return ({ op }) => {
       return observable((observer) => {
         const { path, input, type } = op;
+        /* istanbul ignore if -- @preserve */
+        if (type === 'subscription') {
+          throw new Error(
+            'Subscriptions are unsupported by `httpLink` - use `httpSubscriptionLink` or `wsLink`',
+          );
+        }
 
         const request = universalRequester({
           ...resolvedOpts,

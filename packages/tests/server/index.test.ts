@@ -92,10 +92,10 @@ describe('integration tests', () => {
       TRPCClientError,
     );
     expect(err.message).toMatchInlineSnapshot(
-      `"No "query"-procedure on path "notfound""`,
+      `"No procedure found on path "notfound""`,
     );
     expect(err.shape?.message).toMatchInlineSnapshot(
-      `"No "query"-procedure on path "notfound""`,
+      `"No procedure found on path "notfound""`,
     );
     await close();
   });

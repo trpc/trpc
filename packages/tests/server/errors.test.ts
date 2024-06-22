@@ -307,7 +307,7 @@ test('make sure object is ignoring prototype', async () => {
     TRPCClientError,
   );
   expect(clientError.shape.message).toMatchInlineSnapshot(
-    `"No "query"-procedure on path "toString""`,
+    `"No procedure found on path "toString""`,
   );
   expect(clientError.shape.code).toMatchInlineSnapshot(`-32004`);
   expect(onError).toHaveBeenCalledTimes(1);

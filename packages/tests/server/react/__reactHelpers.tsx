@@ -7,6 +7,7 @@ import {
   httpBatchLink,
   splitLink,
   unstable_httpBatchStreamLink,
+  unstable_httpSubscriptionLink,
   wsLink,
 } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
@@ -17,13 +18,16 @@ import React from 'react';
 
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,
+  opts?: {
+    subscriptions: 'ws' | 'http';
+  },
 ) {
   const spyLink = vi.fn((_op: Operation<unknown>) => {
     // noop
   });
 
-  const opts = routerToServerAndClientNew(appRouter, {
-    client: (opts) => ({
+  const ctx = routerToServerAndClientNew(appRouter, {
+    client: (clientOpts) => ({
       links: [
         () => {
           // here we just got initialized in the app - this happens once per app
@@ -37,19 +41,25 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
         },
         splitLink({
           condition: (op) => op.type === 'subscription',
-          true: wsLink({
-            client: opts.wsClient,
-            transformer: opts.transformer as any,
-          }),
+          true:
+            opts?.subscriptions === 'http'
+              ? unstable_httpSubscriptionLink({
+                  url: clientOpts.httpUrl,
+                  transformer: clientOpts.transformer as any,
+                })
+              : wsLink({
+                  client: clientOpts.wsClient,
+                  transformer: clientOpts.transformer as any,
+                }),
           false: splitLink({
             condition: (op) => !!op.context['stream'],
             true: unstable_httpBatchStreamLink({
-              url: opts.httpUrl,
-              transformer: opts.transformer as any,
+              url: clientOpts.httpUrl,
+              transformer: clientOpts.transformer as any,
             }),
             false: httpBatchLink({
-              url: opts.httpUrl,
-              transformer: opts.transformer as any,
+              url: clientOpts.httpUrl,
+              transformer: clientOpts.transformer as any,
             }),
           }),
         }),
@@ -64,7 +74,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
   function App(props: { children: ReactNode }) {
     return (
       <baseProxy.Provider
-        {...{ queryClient, client: getUntypedClient(opts.client) }}
+        {...{ queryClient, client: getUntypedClient(ctx.client) }}
       >
         <QueryClientProvider client={queryClient}>
           {props.children}
@@ -74,12 +84,12 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
   }
 
   return {
-    close: opts.close,
+    close: ctx.close,
     queryClient,
     client: proxy,
     App,
     appRouter,
-    opts,
+    opts: ctx,
     spyLink,
   };
 }

@@ -1,0 +1,9 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "examples/next-sse-chat/Dockerfile"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "never"
+runtime = "LEGACY"

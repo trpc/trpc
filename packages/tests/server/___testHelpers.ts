@@ -1,7 +1,6 @@
 import type { IncomingMessage } from 'http';
 import http from 'http';
 import type { AddressInfo, Socket } from 'net';
-import { promisify } from 'util';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import {
   createTRPCClient,
@@ -10,7 +9,7 @@ import {
   TRPCClientError,
 } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
-import { TRPCError, type AnyRouter } from '@trpc/server';
+import { type AnyRouter } from '@trpc/server';
 import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
@@ -20,9 +19,11 @@ import type {
   DataTransformerOptions,
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
+import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
 
+(global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = WebSocket as any;
