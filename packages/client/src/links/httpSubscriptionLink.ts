@@ -91,6 +91,7 @@ export function unstable_httpSubscriptionLink<
           });
 
           for await (const chunk of iterable) {
+            // if the `sse({})`-helper is used, we always have an `id` field
             const data = 'id' in chunk ? chunk : chunk.data;
             observer.next({
               result: {
