@@ -101,21 +101,29 @@ export const channelRouter = {
     )
     .subscription(async function* (opts) {
       const { channelId } = opts.input;
-      let lastTyping = Object.keys(currentlyTyping[channelId] ?? {});
 
-      // emit who is currently typing
-      if (lastTyping.length > 0) {
-        yield lastTyping;
+      let lastIsTyping = '';
+
+      /**
+       * yield who is typing if it has changed
+       * won't yield if it's the same as last time
+       */
+      function* maybeYield(who: WhoIsTyping) {
+        const idx = Object.keys(who).toSorted().toString();
+        if (idx === lastIsTyping) {
+          return;
+        }
+        yield Object.keys(who);
+
+        lastIsTyping = idx;
       }
 
+      // emit who is currently typing
+      yield* maybeYield(currentlyTyping[channelId] ?? {});
+
       for await (const [channelId, who] of ee.toIterable('isTypingUpdate')) {
-        if (
-          channelId === opts.input.channelId &&
-          Object.keys(who).toSorted().toString() !==
-            Object.keys(lastTyping).toSorted().toString()
-        ) {
-          yield Object.keys(who);
-          lastTyping = Object.keys(who);
+        if (channelId === opts.input.channelId) {
+          yield* maybeYield(who);
         }
       }
     }),
