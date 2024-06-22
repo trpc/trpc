@@ -5,5 +5,5 @@ export default async function Home(
 ) {
   const channelId = props.params.channelId;
 
-  return <Chat channelId={channelId} key={channelId} />;
+  return <Chat channelId={channelId} />;
 }
