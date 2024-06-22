@@ -108,16 +108,23 @@ export const channelRouter = {
       }
 
       const maybeYield = function* (who: WhoIsTyping) {
-        const id = Object.keys(who).sort().toString();
+        // const data = Object.keys(who).filter(
+        //   (user) => user !== opts.ctx.session?.user?.name,
+        // );
+        const data = Object.keys(who);
+        const id = data.toSorted().toString();
+        console.log('id', { id, lastEventId });
         if (lastEventId === id) {
+          console.log('skipping', { id });
           return;
         }
         yield sse({
           id,
-          data: Object.keys(who).filter(
-            (user) => user !== opts.ctx.session?.user?.name,
-          ),
+          data,
+          event: 'isTypingUpdate',
+          comment: 'who is typing',
         });
+        // yield data;
 
         lastEventId = id;
       };
