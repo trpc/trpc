@@ -96,40 +96,16 @@ export const channelRouter = {
     .input(
       z.object({
         channelId: z.string().uuid(),
-        lastEventId: z.string().optional(),
       }),
     )
     .subscription(async function* (opts) {
       const { channelId } = opts.input;
-      let lastEventId = opts?.input?.lastEventId ?? '';
-
-      if (!currentlyTyping[channelId]) {
-        currentlyTyping[channelId] = {};
-      }
-
-      const maybeYield = function* (who: WhoIsTyping) {
-        const data = Object.keys(who);
-        const id = `[${data.toSorted().join(',')}]` as const;
-
-        if (lastEventId === id) {
-          console.log('skipping', { id });
-          return;
-        }
-        yield sse({
-          id,
-          data,
-        });
-        // yield data;
-
-        lastEventId = id;
-      };
-
       // if someone is typing, emit event immediately
-      yield* maybeYield(currentlyTyping[channelId]);
+      yield Object.keys(currentlyTyping[channelId]);
 
       for await (const [channelId, who] of ee.toIterable('isTypingUpdate')) {
         if (channelId === opts.input.channelId) {
-          yield* maybeYield(who);
+          yield Object.keys(who);
         }
       }
     }),

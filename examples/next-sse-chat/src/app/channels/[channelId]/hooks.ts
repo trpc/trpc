@@ -7,8 +7,9 @@ export function useWhoIsTyping(channelId: string) {
   trpc.channel.whoIsTyping.useSubscription(
     { channelId },
     {
-      onData(event) {
-        setCurrentlyTyping(event.data);
+      onData(list) {
+        console.log('Currently typing:', list);
+        setCurrentlyTyping(list);
       },
     },
   );
