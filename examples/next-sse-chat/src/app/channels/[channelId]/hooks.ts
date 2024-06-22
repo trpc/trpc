@@ -8,7 +8,6 @@ export function useWhoIsTyping(channelId: string) {
     { channelId },
     {
       onData(list) {
-        console.log('Currently typing:', list);
         setCurrentlyTyping(list);
       },
     },
