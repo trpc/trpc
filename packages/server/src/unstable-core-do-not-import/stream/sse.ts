@@ -36,6 +36,7 @@ export function sse<TData extends SSEMessage>(
   event: ValidateShape<TData, SSEMessage>,
 ): SSEMessageEnvelope<TData> {
   if (event.id === '') {
+    // This could be removed by using different event names for `yield sse(x)`-emitted events and `yield y`-emitted events
     throw new Error(
       '`id` must not be an empty string as empty string is the same as not setting the id at all',
     );
