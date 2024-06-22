@@ -33,9 +33,7 @@ describe.each([
           .subscription(async function* ({ input }) {
             for await (const event of on(ee, 'data')) {
               const data = event[0] as number;
-              yield sse({
-                data: data + input,
-              });
+              yield data + input;
             }
           }),
       });

@@ -176,8 +176,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           iterable[Symbol.asyncIterator]();
         const abortController = new AbortController();
 
-        const abortPromise = new Promise<null>((resolve) => {
-          abortController.signal.onabort = () => resolve(null);
+        const abortPromise = new Promise<'abort'>((resolve) => {
+          abortController.signal.onabort = () => resolve('abort');
         });
 
         run(async () => {
@@ -187,7 +187,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               abortPromise,
             ]);
 
-            if (next === null) {
+            if (next === 'abort') {
               await iterator.return?.();
               break;
             }
@@ -277,7 +277,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     }
     client.on('message', async (message) => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         const msgJSON: unknown = JSON.parse(message.toString());
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs
