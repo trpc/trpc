@@ -50,7 +50,7 @@ const trpcClient = createTRPCClient<AppRouter>({
 ## Usage
 
 :::tip
-For a full example, see [our full-stack SSE example](https://github.com/trpc/next-sse-chat).
+For a full example, see [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat).
 :::
 
 ### Basic example
