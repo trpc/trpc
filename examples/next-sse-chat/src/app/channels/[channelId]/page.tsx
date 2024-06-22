@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Chat } from './chat';
 
 export default async function Home(
@@ -5,5 +6,15 @@ export default async function Home(
 ) {
   const channelId = props.params.channelId;
 
-  return <Chat channelId={channelId} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full flex-1 flex-row items-center justify-center italic">
+          Loading....
+        </div>
+      }
+    >
+      <Chat channelId={channelId} />
+    </Suspense>
+  );
 }
