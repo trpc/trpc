@@ -1,8 +1,13 @@
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
-import type { SSEvent } from './sse';
-import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
+import {
+  isServerSentEventEnvelope,
+  sse,
+  sseHeaders,
+  sseStreamConsumer,
+  sseStreamProducer,
+} from './sse';
 import { createServer } from './utils/createServer';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
@@ -24,10 +29,10 @@ test('e2e, server-sent events (SSE)', async () => {
     let i = lastEventId ?? 0;
     while (true) {
       i++;
-      yield {
+      yield sse({
         id: i,
         data: i,
-      } satisfies SSEvent;
+      });
 
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
@@ -148,10 +153,10 @@ test('SSE on serverless - emit and disconnect early', async () => {
 
     function* yieldEvent() {
       i++;
-      yield {
+      yield sse({
         id: i,
         data: i,
-      } satisfies SSEvent;
+      });
     }
     while (true) {
       // yield 2 events at a time to test if the client will get both without reconnecting in between
@@ -299,4 +304,12 @@ test('SSE on serverless - emit and disconnect early', async () => {
 
   es.close();
   await server.close();
+});
+
+test('sse()', () => {
+  const event = sse({
+    id: 1,
+    data: { json: 1 },
+  });
+  expect(isServerSentEventEnvelope(event)).toBe(true);
 });

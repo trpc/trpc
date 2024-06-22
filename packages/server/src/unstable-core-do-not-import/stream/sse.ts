@@ -1,6 +1,6 @@
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
-import type { TypeError } from '../types';
-import { isObject, run } from '../utils';
+import type { ValidateShape } from '../types';
+import { run } from '../utils';
 import type { ConsumerOnError } from './jsonl';
 import { createTimeoutPromise } from './utils/createDeferred';
 import { createReadableStream } from './utils/createReadableStream';
@@ -8,22 +8,17 @@ import { createReadableStream } from './utils/createReadableStream';
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
 
-/**
- * Server-sent Event
- * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
- * @public
- */
-export type SSEvent = {
+interface SSEventWithId {
   /**
    * The data field of the message - this can be anything
    */
-  data?: unknown;
+  data: unknown;
   /**
    * The id for this message
    * Passing this id will allow the client to resume the connection from this point if the connection is lost
    * @see https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header
    */
-  id?: string | number;
+  id: string | number;
   /**
    * Event name for the message
    */
@@ -32,7 +27,32 @@ export type SSEvent = {
    * A comment for the event
    */
   comment?: string;
-};
+}
+
+/**
+ * Server-sent Event
+ * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
+ * @public
+ */
+export type SSEvent = Partial<SSEventWithId>;
+
+const sseSymbol = Symbol('SSEventEnvelope');
+export type ServerSentEventEnvelope<TData> = [typeof sseSymbol, TData];
+
+/**
+ * Produce a typed server-sent event
+ */
+export function sse<TData extends SSEvent>(
+  event: ValidateShape<TData, SSEvent>,
+): ServerSentEventEnvelope<TData> {
+  return [sseSymbol, event as TData];
+}
+
+export function isServerSentEventEnvelope<TData extends SSEvent>(
+  value: unknown,
+): value is ServerSentEventEnvelope<TData> {
+  return Array.isArray(value) && value[0] === sseSymbol;
+}
 
 export type SerializedSSEvent = Omit<SSEvent, 'data'> & {
   data?: string;
@@ -111,7 +131,7 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
         closedPromise,
         maxDurationPromise.promise,
       ]);
-      // console.log({ next });
+
       pingPromise.clear();
       if (next === 'closed') {
         break;
@@ -137,20 +157,15 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
 
       const value = next.value;
 
-      // console.log({ value });
-      if (!isObject(value)) {
-        await iterator.throw?.(new TypeError(`Expected a SerializedSSEvent`));
-        return;
-      }
+      const data: SSEvent = isServerSentEventEnvelope(value)
+        ? value[1]
+        : {
+            data: value,
+          };
       const chunk: SerializedSSEvent = {};
-      if (typeof value['id'] === 'string' || typeof value['id'] === 'number') {
-        chunk.id = value['id'];
-      }
-      if (typeof value['event'] === 'string') {
-        chunk.event = value['event'];
-      }
-      if ('data' in value) {
-        chunk.data = JSON.stringify(serialize(value['data']));
+      Object.assign(chunk, data);
+      if ('data' in chunk) {
+        chunk.data = JSON.stringify(serialize(chunk.data));
       }
 
       stream.controller.enqueue(chunk);
@@ -174,7 +189,6 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
   return stream.readable.pipeThrough(
     new TransformStream<SerializedSSEvent, string>({
       transform(chunk, controller) {
-        // console.log('adding', { chunk });
         if ('event' in chunk) {
           controller.enqueue(`event: ${chunk.event}\n`);
         }
@@ -189,9 +203,11 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
     }),
   );
 }
-type inferSSEOutput<TData> = TData extends SSEvent
-  ? TData
-  : TypeError<'Expected a SSEvent - use `satisfies SSEvent'>;
+export type inferSSEOutput<TData> = TData extends ServerSentEventEnvelope<
+  infer $Data
+>
+  ? $Data
+  : TData;
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */

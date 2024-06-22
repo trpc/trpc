@@ -53,10 +53,37 @@ const trpcClient = createTRPCClient<AppRouter>({
 For a full example, see [our full-stack SSE example](https://github.com/trpc/next-prisma-sse-subscriptions).
 :::
 
+### Basic example
+
 ```ts
 import EventEmitter, { on } from 'events';
 import type { Post } from '@prisma/client';
-import { SSEvent } from '@trpc/server/observable';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
+
+const ee = new EventEmitter();
+
+export const subRouter = router({
+  onPostAdd: publicProcedure.subscription(async function* (opts) {
+    // listen for new events
+    for await (const [data] of on(ee, 'add')) {
+      const post = data as Post;
+      yield post;
+    }
+  }),
+});
+```
+
+### Automatic tracking of id using `sse()` (recommended)
+
+If you `yield` an event using our `sse()`-helper and include an `id`, the browser will automatically reconnect when it gets disconnected and send the last known ID - this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
+
+You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
+
+```ts
+import EventEmitter, { on } from 'events';
+import type { Post } from '@prisma/client';
+import { sse } from '@trpc/server';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 
@@ -79,11 +106,11 @@ export const subRouter = router({
       // listen for new events
       for await (const [data] of on(ee, 'add')) {
         const post = data as Post;
-        yield {
+        yield sse({
           // yielding the post id ensures the client can reconnect at any time and get the latest events this id
           id: post.id,
           data: post,
-        } satisfies SSEvent;
+        });
       }
     }),
 });

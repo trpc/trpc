@@ -1,10 +1,10 @@
-import type { SSEvent } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
   MaybePromise,
+  SSEvent,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
@@ -91,9 +91,11 @@ export function unstable_httpSubscriptionLink<
           });
 
           for await (const chunk of iterable) {
+            // if the `sse({})`-helper is used, we always have an `id` field
+            const data = 'id' in chunk ? chunk : chunk.data;
             observer.next({
               result: {
-                data: chunk,
+                data,
               },
             });
           }
