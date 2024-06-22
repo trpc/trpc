@@ -56,3 +56,8 @@ export function isAsyncIterable<TValue>(
     asyncIteratorsSupported && isObject(value) && Symbol.asyncIterator in value
   );
 }
+
+/**
+ * Run an IIFE
+ */
+export const run = <TValue>(fn: () => TValue): TValue => fn();

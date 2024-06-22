@@ -1,5 +1,9 @@
 import type { TRPCError } from '../error/TRPCError';
-import type { ErrorHandlerOptions, ProcedureType } from '../procedure';
+import type {
+  AnyProcedure,
+  ErrorHandlerOptions,
+  ProcedureType,
+} from '../procedure';
 import type {
   AnyRouter,
   inferRouterContext,
@@ -51,6 +55,8 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
   responseMeta?: ResponseMetaFn<TRouter>;
 }
 
+export type TRPCAcceptHeader = 'application/jsonl';
+
 interface TRPCRequestInfoProcedureCall {
   path: string;
   /**
@@ -61,16 +67,47 @@ interface TRPCRequestInfoProcedureCall {
    * Get already parsed inputs - won't trigger reading the body or parsing the inputs
    */
   result: () => unknown;
+  /**
+   * The procedure being called, `null` if not found
+   * @internal
+   */
+  procedure: AnyProcedure | null;
+}
+
+export interface TRPCRequestInfoBase {
+  /**
+   * The `trpc-accept` header
+   */
+  accept: TRPCAcceptHeader | null;
+  /**
+   * The type of the request
+   */
+  type: ProcedureType | 'unknown';
+  /**
+   * If the content type handler has detected that this is a batch call
+   */
+  isBatchCall: boolean;
+  /**
+   * The calls being made
+   */
+  calls: TRPCRequestInfoProcedureCall[];
+}
+interface TRPCRequestInfoBatchCall extends TRPCRequestInfoBase {
+  isBatchCall: true;
+  calls: TRPCRequestInfoProcedureCall[];
+}
+interface TRPCRequestInfoSingleCall extends TRPCRequestInfoBase {
+  isBatchCall: false;
+  calls: [TRPCRequestInfoProcedureCall];
 }
 
 /**
  * Information about the incoming request
  * @public
  */
-export interface TRPCRequestInfo {
-  isBatchCall: boolean;
-  calls: TRPCRequestInfoProcedureCall[];
-}
+export type TRPCRequestInfo =
+  | TRPCRequestInfoBatchCall
+  | TRPCRequestInfoSingleCall;
 
 /**
  * Inner createContext function for `resolveResponse` used to forward `TRPCRequestInfo` to `createContext`

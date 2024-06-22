@@ -68,8 +68,9 @@ export function incomingMessageToRequest(
   const ac = new AbortController();
   const headers = new Headers(req.headers as any);
   const url = `http://${headers.get('host')}${req.url}`;
-
-  req.once('aborted', () => ac.abort());
+  req.once('aborted', () => {
+    ac.abort();
+  });
 
   const init: RequestInit = {
     headers,

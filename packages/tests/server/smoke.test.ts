@@ -172,7 +172,7 @@ test('sad path', async () => {
   // @ts-expect-error this procedure does not exist
   const result = await waitError(client.not.found.query(), TRPCClientError);
   expect(result).toMatchInlineSnapshot(
-    `[TRPCClientError: No "query"-procedure on path "not.found"]`,
+    `[TRPCClientError: No procedure found on path "not.found"]`,
   );
   await close();
 });
@@ -184,7 +184,7 @@ test('call a mutation as a query', async () => {
   const { client, close } = routerToServerAndClientNew(router);
 
   await expect((client.hello as any).mutate()).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: No "mutation"-procedure on path "hello"]`,
+    `[TRPCClientError: Unsupported POST-request to query procedure at path "hello"]`,
   );
 
   await close();
