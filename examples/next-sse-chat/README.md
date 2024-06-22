@@ -1,4 +1,4 @@
-# Drizzle + tRPC + SSE
+# tRPC + Server-sent Events (SSE)
 
 Try demo http://websockets.trpc.io/
 
