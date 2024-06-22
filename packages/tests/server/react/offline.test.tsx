@@ -49,7 +49,11 @@ describe('offline', () => {
 
     // This is very important
     // https://tanstack.com/query/latest/docs/framework/react/guides/mutations#persisting-offline-mutations
-    trpcQueryUtils.post.create.setMutationDefaults({});
+    trpcQueryUtils.post.create.setMutationDefaults(
+      ({ canonicalMutationFn }) => ({
+        mutationFn: canonicalMutationFn,
+      }),
+    );
 
     function MyComponent() {
       const createPostMutation = client.post.create.useMutation();

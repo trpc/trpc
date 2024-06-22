@@ -261,19 +261,24 @@ describe('createTRPCQueryUtils()', () => {
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
 
     clientUtils.addPost.setMutationDefaults({
-      mutationFn: async () => {
-        return 'foo';
-      },
       meta: {
         hello: 'trpc',
       },
     });
-
-    expect(
-      clientUtils.addPost.getMutationDefaults()?.mutationFn?.(),
-    ).resolves.toBe('foo');
     expect(clientUtils.addPost.getMutationDefaults()?.meta).toEqual({
       hello: 'trpc',
     });
+
+    // In a real offline-first app, `fn()` would probably call `clientUtils.something.cancel()`
+    // to prevent clashes with optimistic updates
+    const fn = vi.fn();
+    clientUtils.addPost.setMutationDefaults(({ canonicalMutationFn }) => ({
+      mutationFn: (variables) => {
+        fn();
+        return canonicalMutationFn(variables);
+      },
+    }));
+    clientUtils.addPost.getMutationDefaults()?.mutationFn?.({ title: '' });
+    expect(fn.mock.calls.length).toBe(1);
   });
 });

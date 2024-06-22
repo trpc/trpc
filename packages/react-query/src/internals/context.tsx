@@ -247,7 +247,11 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
    */
   setMutationDefaults: (
     mutationKey: [string[]],
-    options: MutationOptions,
+    options:
+      | MutationOptions
+      | ((args: {
+          canonicalMutationFn: (input: unknown) => Promise<unknown>;
+        }) => MutationOptions),
   ) => void;
 
   /**

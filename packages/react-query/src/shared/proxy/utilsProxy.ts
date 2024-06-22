@@ -3,7 +3,6 @@ import type {
   InfiniteData,
   InvalidateOptions,
   InvalidateQueryFilters,
-  MutationOptions,
   Query,
   QueryFilters,
   QueryKey,
@@ -15,6 +14,7 @@ import type {
 } from '@tanstack/react-query';
 import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
+import type { InferMutationOptions } from '@trpc/react-query/utils/inferReactQueryProcedure';
 import type {
   AnyMutationProcedure,
   AnyQueryProcedure,
@@ -226,9 +226,17 @@ type DecorateProcedure<
       >
     | undefined;
 
-  setMutationDefaults(options: MutationOptions): void;
+  setMutationDefaults(
+    options:
+      | InferMutationOptions<TRoot, TProcedure>
+      | ((args: {
+          canonicalMutationFn: NonNullable<
+            InferMutationOptions<TRoot, TProcedure>['mutationFn']
+          >;
+        }) => InferMutationOptions<TRoot, TProcedure>),
+  ): void;
 
-  getMutationDefaults(): MutationOptions | undefined;
+  getMutationDefaults(): InferMutationOptions<TRoot, TProcedure> | undefined;
 
   isMutating(): number;
 };
