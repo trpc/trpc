@@ -150,13 +150,16 @@ describe.each([
     const onErrorMock = vi.fn();
 
     const { App, client } = ctx;
+    let setEnabled = null as never as (enabled: boolean) => void;
 
     function MyComponent() {
       const [isStarted, setIsStarted] = useState(false);
       const [data, setData] = useState<number>();
+      const [enabled, _setEnabled] = useState(true);
+      setEnabled = _setEnabled;
 
       client.onEventObservable.useSubscription(10, {
-        enabled: true,
+        enabled: enabled,
         onStarted: () => {
           setIsStarted(true);
         },
@@ -198,5 +201,14 @@ describe.each([
     });
     expect(onDataMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(0);
+
+    ignoreErrors(() => {
+      setEnabled(false);
+    });
+
+    await waitFor(() => {
+      // no event listeners
+      expect(ee.listenerCount('data')).toBe(0);
+    });
   });
 });

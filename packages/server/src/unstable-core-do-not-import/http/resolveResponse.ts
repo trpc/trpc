@@ -367,14 +367,18 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               message: 'Missing experimental flag "sseSubscriptions"',
             });
           }
-          if (!isAsyncIterable(data)) {
+
+          if (!isObservable(data) && !isAsyncIterable(data)) {
             throw new TRPCError({
+              message: `Subscription ${call.path} did not return an observable or a AsyncGenerator`,
               code: 'INTERNAL_SERVER_ERROR',
-              message: 'Subscription must return an async iterable',
             });
           }
+          const dataAsIterable = isObservable(data)
+            ? observableToAsyncIterable(data)
+            : data;
           const stream = sseStreamProducer({
-            data,
+            data: dataAsIterable,
             serialize: (v) => config.transformer.output.serialize(v),
           });
           for (const [key, value] of Object.entries(sseHeaders)) {
