@@ -258,6 +258,8 @@ test('SSE on serverless - emit and disconnect early', async () => {
       Object {
         "lastEventId": null,
         "written": Array [
+          ": connected
+    ",
           "
 
     ",
@@ -280,6 +282,8 @@ test('SSE on serverless - emit and disconnect early', async () => {
       Object {
         "lastEventId": "2",
         "written": Array [
+          ": connected
+    ",
           "
 
     ",
