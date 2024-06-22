@@ -160,13 +160,11 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
 
       const value = next.value;
 
-      const data: SSEvent = isSSEMessageEnvelope(value)
-        ? value[1]
+      const chunk: SSEvent = isSSEMessageEnvelope(value)
+        ? { ...value[1] }
         : {
             data: value,
           };
-      const chunk: SSEvent = {};
-      Object.assign(chunk, data);
       if ('data' in chunk) {
         chunk.data = JSON.stringify(serialize(chunk.data));
       }
