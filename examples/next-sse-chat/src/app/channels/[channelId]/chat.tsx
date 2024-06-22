@@ -15,6 +15,9 @@ import {
   useWhoIsTyping,
 } from './hooks';
 
+const pluralize = (count: number, singular: string, plural: string) =>
+  count === 1 ? singular : plural;
+
 export function Chat(
   props: Readonly<{ session: Session | null; channelId: string }>,
 ) {
@@ -92,7 +95,11 @@ export function Chat(
             </div>
             <p className="text-sm italic text-gray-400">
               {currentlyTyping.length ? (
-                `${currentlyTyping.join(', ')} typing...`
+                `${currentlyTyping.join(', ')} ${pluralize(
+                  currentlyTyping.length,
+                  'is',
+                  'are',
+                )} typing...`
               ) : (
                 <>&nbsp;</>
               )}
