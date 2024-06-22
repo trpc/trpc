@@ -146,7 +146,7 @@ function AddMessageForm(props: {
   const addPost = trpc.post.add.useMutation();
 
   const [message, setMessage] = React.useState('');
-  const [isFocused, setIsFocused] = React.useState(true);
+  const [isFocused, setIsFocused] = React.useState(false);
 
   async function postMessage() {
     const input = {
@@ -195,6 +195,8 @@ function AddMessageForm(props: {
               void postMessage();
             }
           }}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
         />
         <Button
           className="absolute right-2 top-2"
