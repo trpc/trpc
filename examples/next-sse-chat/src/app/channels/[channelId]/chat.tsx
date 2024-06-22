@@ -7,7 +7,7 @@ import { Textarea } from '~/components/input';
 import { trpc } from '~/lib/trpc';
 import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
-import type { Session } from 'next-auth';
+import { useSession } from 'next-auth/react';
 import * as React from 'react';
 import {
   useLivePosts,
@@ -31,13 +31,12 @@ const listWithAnd = (list: string[]) => {
   return `${list.slice(0, -1).join(', ')}, and ${list.at(-1)}`;
 };
 
-export function Chat(
-  props: Readonly<{ session: Session | null; channelId: string }>,
-) {
+export function Chat(props: Readonly<{ channelId: string }>) {
   const { channelId } = props;
   const livePosts = useLivePosts(channelId);
   const currentlyTyping = useWhoIsTyping(channelId);
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  const session = useSession().data;
 
   return (
     <main className="flex-1 overflow-hidden">
@@ -66,8 +65,9 @@ export function Chat(
                     : 'Load more'}
                 </Button>
               </div>
+
               {livePosts.messages?.map((item) => {
-                const isMe = item.author === props.session?.user?.name;
+                const isMe = item.author === session?.user?.name;
 
                 return (
                   <div
@@ -121,7 +121,7 @@ export function Chat(
         </div>
         <div className="border-t bg-white p-2 dark:border-gray-800 dark:bg-gray-900">
           <AddMessageForm
-            signedIn={!!props.session?.user}
+            signedIn={!!session?.user}
             channelId={channelId}
             onMessagePost={() => {
               scrollRef.current?.scroll({

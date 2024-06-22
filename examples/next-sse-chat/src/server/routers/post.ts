@@ -28,9 +28,15 @@ export const postRouter = router({
         })
         .returning();
 
-      delete currentlyTyping[channelId][opts.ctx.user.name];
-      ee.emit('isTypingUpdate', channelId, currentlyTyping[channelId]);
-      ee.emit('add', channelId, post);
+      const channelTyping = currentlyTyping[channelId];
+      if (channelTyping) {
+        delete channelTyping[opts.ctx.user.name];
+        ee.emit('isTypingUpdate', channelId, channelTyping);
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const defPost = post!;
+      ee.emit('add', channelId, defPost);
 
       return post;
     }),

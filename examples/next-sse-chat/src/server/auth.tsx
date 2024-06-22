@@ -9,7 +9,10 @@ const authOptions: NextAuthConfig = {
   providers: [],
 };
 
-let useMockProvider = process.env.NODE_ENV === 'test';
+let useMockProvider =
+  process.env.NODE_ENV === 'test' ||
+  process.env.RAILWAY_ENVIRONMENT_NAME?.includes('-pr-'); // example: 'trpc-pr-5821'
+
 const { AUTH_GITHUB_ID, AUTH_GITHUB_SECRET, NODE_ENV, APP_ENV } = process.env;
 if (
   (NODE_ENV !== 'production' || APP_ENV === 'test') &&
