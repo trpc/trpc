@@ -69,7 +69,8 @@ export const channelRouter = {
         })
         .returning();
 
-      return channel.id;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return channel!.id;
     }),
 
   isTyping: authedProcedure
@@ -100,14 +101,21 @@ export const channelRouter = {
     )
     .subscription(async function* (opts) {
       const { channelId } = opts.input;
+      let lastTyping = Object.keys(currentlyTyping[channelId] ?? {});
+
       // emit who is currently typing
-      if (currentlyTyping[channelId]) {
-        yield Object.keys(currentlyTyping[channelId]);
+      if (lastTyping.length > 0) {
+        yield lastTyping;
       }
 
       for await (const [channelId, who] of ee.toIterable('isTypingUpdate')) {
-        if (channelId === opts.input.channelId) {
+        if (
+          channelId === opts.input.channelId &&
+          Object.keys(who).toSorted().toString() !==
+            Object.keys(lastTyping).toSorted().toString()
+        ) {
           yield Object.keys(who);
+          lastTyping = Object.keys(who);
         }
       }
     }),
