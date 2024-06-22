@@ -18,7 +18,7 @@ interface SSEventWithId {
    * Passing this id will allow the client to resume the connection from this point if the connection is lost
    * @see https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header
    */
-  id: string | number;
+  id: string;
   /**
    * Event name for the message
    */
