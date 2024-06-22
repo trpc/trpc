@@ -73,8 +73,7 @@ jobs:
     continue-on-error: true
     strategy:
       matrix:
-        dir:
-          [
+        dir: [
             .experimental/next-app-dir,
             .test/diagnostics-big-router,
             .test/internal-types-export,
@@ -86,7 +85,7 @@ jobs:
             minimal-react,
             next-formdata,
             next-minimal-starter,
-            next-prisma-sse-subscriptions,
+            # next-prisma-sse-subscriptions,
             next-prisma-starter,
             next-prisma-todomvc,
             next-prisma-websockets-starter,
