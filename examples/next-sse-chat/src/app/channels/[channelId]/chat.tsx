@@ -18,6 +18,19 @@ import {
 const pluralize = (count: number, singular: string, plural: string) =>
   count === 1 ? singular : plural;
 
+const listWithAnd = (list: string[]) => {
+  if (list.length === 0) {
+    return '';
+  }
+  if (list.length === 1) {
+    return list[0];
+  }
+  if (list.length === 2) {
+    return `${list[0]} and ${list[1]}`;
+  }
+  return `${list.slice(0, -1).join(', ')}, and ${list.at(-1)}`;
+};
+
 export function Chat(
   props: Readonly<{ session: Session | null; channelId: string }>,
 ) {
@@ -95,7 +108,7 @@ export function Chat(
             </div>
             <p className="text-sm italic text-gray-400">
               {currentlyTyping.length ? (
-                `${currentlyTyping.join(', ')} ${pluralize(
+                `${listWithAnd(currentlyTyping)} ${pluralize(
                   currentlyTyping.length,
                   'is',
                   'are',
