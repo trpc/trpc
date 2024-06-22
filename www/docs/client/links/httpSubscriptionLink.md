@@ -50,7 +50,7 @@ const trpcClient = createTRPCClient<AppRouter>({
 ## Usage
 
 :::tip
-For a full example, see [our full-stack SSE example](https://github.com/trpc/next-prisma-sse-subscriptions).
+For a full example, see [our full-stack SSE example](https://github.com/trpc/next-sse-chat).
 :::
 
 ### Basic example
