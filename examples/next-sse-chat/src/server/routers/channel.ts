@@ -108,12 +108,9 @@ export const channelRouter = {
       }
 
       const maybeYield = function* (who: WhoIsTyping) {
-        // const data = Object.keys(who).filter(
-        //   (user) => user !== opts.ctx.session?.user?.name,
-        // );
         const data = Object.keys(who);
-        const id = data.toSorted().toString();
-        console.log('id', { id, lastEventId });
+        const id = `[${data.toSorted().join(',')}]` as const;
+
         if (lastEventId === id) {
           console.log('skipping', { id });
           return;
@@ -121,8 +118,6 @@ export const channelRouter = {
         yield sse({
           id,
           data,
-          event: 'isTypingUpdate',
-          comment: 'who is typing',
         });
         // yield data;
 
