@@ -33,6 +33,23 @@ export function Chat(
           {/* Inside this div things will not be reversed. */}
           <div>
             <div className="grid gap-4">
+              <div>
+                <Button
+                  disabled={
+                    !livePosts.query.hasNextPage ||
+                    livePosts.query.isFetchingNextPage
+                  }
+                  onClick={() => {
+                    livePosts.query.fetchNextPage();
+                  }}
+                >
+                  {livePosts.query.isFetchingNextPage
+                    ? 'Loading...'
+                    : !livePosts.query.hasNextPage
+                    ? 'Fetched everything!'
+                    : 'Load more'}
+                </Button>
+              </div>
               {livePosts.messages?.map((item) => {
                 const isMe = item.author === props.session?.user?.name;
 

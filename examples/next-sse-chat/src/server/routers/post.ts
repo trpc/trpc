@@ -52,7 +52,7 @@ export const postRouter = router({
         where: (fields, ops) =>
           ops.and(
             ops.eq(fields.channelId, opts.input.channelId),
-            cursor ? ops.gt(fields.createdAt, cursor) : undefined,
+            cursor ? ops.lte(fields.createdAt, cursor) : undefined,
           ),
         limit: take + 1,
       });
