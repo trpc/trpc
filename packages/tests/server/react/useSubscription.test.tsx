@@ -3,6 +3,7 @@ import { ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC, sse } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
@@ -28,13 +29,26 @@ describe.each([
         },
       });
       const appRouter = t.router({
-        onEvent: t.procedure
+        onEventIterable: t.procedure
           .input(z.number())
           .subscription(async function* ({ input }) {
             for await (const event of on(ee, 'data')) {
               const data = event[0] as number;
               yield data + input;
             }
+          }),
+        onEventObservable: t.procedure
+          .input(z.number())
+          .subscription(({ input }) => {
+            return observable<number>((emit) => {
+              const onData = (data: number) => {
+                emit.next(data + input);
+              };
+              ee.on('data', onData);
+              return () => {
+                ee.off('data', onData);
+              };
+            });
           }),
       });
 
@@ -47,7 +61,7 @@ describe.each([
     })
     .done();
 
-  test('useSubscription', async () => {
+  test('useSubscription - iterable', async () => {
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
@@ -61,7 +75,7 @@ describe.each([
       const [enabled, _setEnabled] = useState(true);
       setEnabled = _setEnabled;
 
-      client.onEvent.useSubscription(10, {
+      client.onEventIterable.useSubscription(10, {
         enabled,
         onStarted: () => {
           setIsStarted(true);
@@ -129,5 +143,60 @@ describe.each([
       // no event listeners
       expect(ee.listenerCount('data')).toBe(0);
     });
+  });
+
+  test('useSubscription - observable()', async () => {
+    const onDataMock = vi.fn();
+    const onErrorMock = vi.fn();
+
+    const { App, client } = ctx;
+
+    function MyComponent() {
+      const [isStarted, setIsStarted] = useState(false);
+      const [data, setData] = useState<number>();
+
+      client.onEventObservable.useSubscription(10, {
+        enabled: true,
+        onStarted: () => {
+          setIsStarted(true);
+        },
+        onData: (data) => {
+          expectTypeOf(data).toMatchTypeOf<number>();
+          onDataMock(data);
+          setData(data);
+        },
+        onError: onErrorMock,
+      });
+
+      if (!isStarted) {
+        return <>{'__connecting'}</>;
+      }
+
+      if (!data) {
+        return <>{'__connected'}</>;
+      }
+
+      return <pre>{`__data:${data}`}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`__connecting`);
+    });
+    expect(onDataMock).toHaveBeenCalledTimes(0);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`__connected`);
+    });
+    ee.emit('data', 20);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`__data:30`);
+    });
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+    expect(onErrorMock).toHaveBeenCalledTimes(0);
   });
 });
