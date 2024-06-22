@@ -200,12 +200,10 @@ test('disconnect and reconnect with an event id', async () => {
     expect(onData.mock.calls.length).toBeGreaterThan(5);
   });
 
-  expect(onData.mock.calls[0]![0]).toEqual([
-    {
-      data: 0,
-      id: '0',
-    },
-  ]);
+  expect(onData.mock.calls[0]![0]).toEqual({
+    data: 0,
+    id: '0',
+  });
 
   expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(1);
 

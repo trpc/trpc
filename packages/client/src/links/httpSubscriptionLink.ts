@@ -4,7 +4,7 @@ import type {
   inferClientTypes,
   InferrableClientTypes,
   MaybePromise,
-  SSEvent,
+  SSEMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
@@ -85,7 +85,7 @@ export function unstable_httpSubscriptionLink<
           };
           // console.log('starting', new Date());
           eventSource.addEventListener('open', onStarted);
-          const iterable = sseStreamConsumer<SSEvent>({
+          const iterable = sseStreamConsumer<Partial<SSEMessage>>({
             from: eventSource,
             deserialize: transformer.input.deserialize,
           });

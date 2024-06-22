@@ -8,7 +8,12 @@ import { createReadableStream } from './utils/createReadableStream';
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
 
-interface SSEventWithId {
+/**
+ * Server-sent Event Message
+ * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
+ * @public
+ */
+export interface SSEMessage {
   /**
    * The data field of the message - this can be anything
    */
@@ -19,42 +24,32 @@ interface SSEventWithId {
    * @see https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header
    */
   id: string;
-  /**
-   * Event name for the message
-   */
-  event?: string;
-  /**
-   * A comment for the event
-   */
-  comment?: string;
 }
 
-/**
- * Server-sent Event
- * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
- * @public
- */
-export type SSEvent = Partial<SSEventWithId>;
-
-const sseSymbol = Symbol('SSEventEnvelope');
-export type ServerSentEventEnvelope<TData> = [typeof sseSymbol, TData];
+const sseSymbol = Symbol('SSEMessageEnvelope');
+export type SSEMessageEnvelope<TData> = [typeof sseSymbol, TData];
 
 /**
- * Produce a typed server-sent event
+ * Produce a typed server-sent event message
  */
-export function sse<TData extends SSEvent>(
-  event: ValidateShape<TData, SSEvent>,
-): ServerSentEventEnvelope<TData> {
+export function sse<TData extends SSEMessage>(
+  event: ValidateShape<TData, SSEMessage>,
+): SSEMessageEnvelope<TData> {
+  if (event.id === '') {
+    throw new Error(
+      '`id` must not be an empty string as empty string is the same as not setting the id at all',
+    );
+  }
   return [sseSymbol, event as TData];
 }
 
-export function isServerSentEventEnvelope<TData extends SSEvent>(
+export function isSSEMessageEnvelope<TData extends SSEMessage>(
   value: unknown,
-): value is ServerSentEventEnvelope<TData> {
+): value is SSEMessageEnvelope<TData> {
   return Array.isArray(value) && value[0] === sseSymbol;
 }
 
-export type SerializedSSEvent = Omit<SSEvent, 'data'> & {
+export type SerializedSSEvent = Omit<SSEMessage, 'data'> & {
   data?: string;
 };
 
@@ -92,12 +87,19 @@ export interface SSEStreamProducerOptions {
    */
   emitAndEndImmediately?: boolean;
 }
+
+type SSEvent = Partial<
+  SSEMessage & {
+    comment: string;
+    event: string;
+  }
+>;
 /**
  *
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
 export function sseStreamProducer(opts: SSEStreamProducerOptions) {
-  const stream = createReadableStream<SerializedSSEvent>();
+  const stream = createReadableStream<SSEvent>();
   stream.controller.enqueue({
     comment: 'connected',
   });
@@ -157,12 +159,12 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
 
       const value = next.value;
 
-      const data: SSEvent = isServerSentEventEnvelope(value)
+      const data: SSEvent = isSSEMessageEnvelope(value)
         ? value[1]
         : {
             data: value,
           };
-      const chunk: SerializedSSEvent = {};
+      const chunk: SSEvent = {};
       Object.assign(chunk, data);
       if ('data' in chunk) {
         chunk.data = JSON.stringify(serialize(chunk.data));
@@ -187,7 +189,7 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
   });
 
   return stream.readable.pipeThrough(
-    new TransformStream<SerializedSSEvent, string>({
+    new TransformStream<SSEvent, string>({
       transform(chunk, controller) {
         if ('event' in chunk) {
           controller.enqueue(`event: ${chunk.event}\n`);
@@ -198,12 +200,15 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
         if ('id' in chunk) {
           controller.enqueue(`id: ${chunk.id}\n`);
         }
+        if ('comment' in chunk) {
+          controller.enqueue(`: ${chunk.comment}\n`);
+        }
         controller.enqueue('\n\n');
       },
     }),
   );
 }
-export type inferSSEOutput<TData> = TData extends ServerSentEventEnvelope<
+export type inferSSEOutput<TData> = TData extends SSEMessageEnvelope<
   infer $Data
 >
   ? $Data
@@ -220,25 +225,19 @@ export function sseStreamConsumer<TData>(opts: {
   const { deserialize = (v) => v } = opts;
   const eventSource = opts.from;
 
-  const stream = createReadableStream<SerializedSSEvent>();
+  const stream = createReadableStream<MessageEvent>();
 
-  const transform = new TransformStream<
-    SerializedSSEvent,
-    inferSSEOutput<TData>
-  >({
+  const transform = new TransformStream<MessageEvent, inferSSEOutput<TData>>({
     async transform(chunk, controller) {
-      if (chunk.data) {
-        const def: SSEvent = {};
+      const def: Partial<SSEMessage> = {};
+      if ('data' in chunk) {
         def.data = deserialize(JSON.parse(chunk.data));
-        if ('id' in chunk) {
-          def.id = chunk.id;
-        }
-        if ('event' in chunk) {
-          def.event = chunk.event;
-        }
-
-        controller.enqueue(def as inferSSEOutput<TData>);
       }
+
+      if (chunk.lastEventId) {
+        def.id = chunk.lastEventId;
+      }
+      controller.enqueue(def as inferSSEOutput<TData>);
     },
   });
 
