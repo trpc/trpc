@@ -43,9 +43,8 @@ export function useThrottledIsTypingMutation(channelId: string) {
         timeout = setTimeout(trigger, 1000);
       }
     };
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [channelId]);
 }
 
 export function useLivePosts(channelId: string) {
