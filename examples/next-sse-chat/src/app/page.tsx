@@ -21,7 +21,7 @@ export default async function Home() {
             <br />
             <a
               className="text-gray-700 underline dark:text-gray-400"
-              href="https://github.com/trpc/trpc/tree/05-10-subscriptions-sse/examples/next-sse-chat"
+              href="https://github.com/trpc/examples-next-sse-chat"
               target="_blank"
               rel="noreferrer"
             >

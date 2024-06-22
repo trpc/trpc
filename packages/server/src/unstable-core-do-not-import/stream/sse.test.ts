@@ -2,7 +2,7 @@ import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
 import {
-  isServerSentEventEnvelope,
+  isSSEMessageEnvelope,
   sse,
   sseHeaders,
   sseStreamConsumer,
@@ -258,6 +258,8 @@ test('SSE on serverless - emit and disconnect early', async () => {
       Object {
         "lastEventId": null,
         "written": Array [
+          ": connected
+    ",
           "
 
     ",
@@ -280,6 +282,8 @@ test('SSE on serverless - emit and disconnect early', async () => {
       Object {
         "lastEventId": "2",
         "written": Array [
+          ": connected
+    ",
           "
 
     ",
@@ -311,5 +315,5 @@ test('sse()', () => {
     id: 1,
     data: { json: 1 },
   });
-  expect(isServerSentEventEnvelope(event)).toBe(true);
+  expect(isSSEMessageEnvelope(event)).toBe(true);
 });

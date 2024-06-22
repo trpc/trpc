@@ -60,7 +60,7 @@ const ctx = konn()
             let idx = opts.input.lastEventId ?? 0;
             while (true) {
               yield sse({
-                id: idx,
+                id: String(idx),
                 data: idx,
               });
               idx++;
@@ -179,12 +179,12 @@ test('disconnect and reconnect with an event id', async () => {
       },
     ]
   >();
-  const onData = vi.fn<{ data: number }[]>();
+  const onData = vi.fn<{ data: number; id: string }[]>();
   const subscription = client.sub.iterableInfinite.subscribe(
     {},
     {
       onStarted: onStarted,
-      onData: onData,
+      onData,
     },
   );
 
@@ -198,6 +198,11 @@ test('disconnect and reconnect with an event id', async () => {
 
   await waitFor(() => {
     expect(onData.mock.calls.length).toBeGreaterThan(5);
+  });
+
+  expect(onData.mock.calls[0]![0]).toEqual({
+    data: 0,
+    id: '0',
   });
 
   expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(1);
