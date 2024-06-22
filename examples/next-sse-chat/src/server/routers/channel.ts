@@ -101,7 +101,9 @@ export const channelRouter = {
     .subscription(async function* (opts) {
       const { channelId } = opts.input;
       // emit who is currently typing
-      yield Object.keys(currentlyTyping[channelId]);
+      if (currentlyTyping[channelId]) {
+        yield Object.keys(currentlyTyping[channelId]);
+      }
 
       for await (const [channelId, who] of ee.toIterable('isTypingUpdate')) {
         if (channelId === opts.input.channelId) {
