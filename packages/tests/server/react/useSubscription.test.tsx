@@ -57,7 +57,7 @@ describe.each([
 
     function MyComponent() {
       const [isStarted, setIsStarted] = useState(false);
-      const [data, setData] = useState<{ data: number }>();
+      const [data, setData] = useState<number>();
       const [enabled, _setEnabled] = useState(true);
       setEnabled = _setEnabled;
 
@@ -67,7 +67,7 @@ describe.each([
           setIsStarted(true);
         },
         onData: (data) => {
-          expectTypeOf(data).toMatchTypeOf<{ data: number }>();
+          expectTypeOf(data).toMatchTypeOf<number>();
           onDataMock(data);
           setData(data);
         },
@@ -82,7 +82,7 @@ describe.each([
         return <>{'__connected'}</>;
       }
 
-      return <pre>{`__data:${data.data}`}</pre>;
+      return <pre>{`__data:${data}`}</pre>;
     }
 
     const utils = render(
@@ -99,6 +99,11 @@ describe.each([
       expect(utils.container).toHaveTextContent(`__connected`);
     });
     ee.emit('data', 20);
+
+    await waitFor(() => {
+      expect(onDataMock).toHaveBeenCalledTimes(1);
+    });
+    expect(onDataMock.mock.calls[0][0]).toEqual(30);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__data:30`);
     });

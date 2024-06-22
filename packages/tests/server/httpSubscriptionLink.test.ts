@@ -127,10 +127,12 @@ test('iterable', async () => {
   const { client } = ctx;
 
   const onStarted = vi.fn<[]>();
-  const onData = vi.fn<{ data: number }[]>();
+  const onData = vi.fn<[number]>();
   const subscription = client.sub.iterableEvent.subscribe(undefined, {
     onStarted: onStarted,
-    onData,
+    onData(it) {
+      onData(it);
+    },
   });
 
   await waitFor(
@@ -148,20 +150,8 @@ test('iterable', async () => {
   await waitFor(() => {
     expect(onData).toHaveBeenCalledTimes(2);
   });
-  expect(onData.mock.calls).toMatchInlineSnapshot(`
-        Array [
-          Array [
-            Object {
-              "data": 1,
-            },
-          ],
-          Array [
-            Object {
-              "data": 2,
-            },
-          ],
-        ]
-      `);
+  const onDataCalls = onData.mock.calls.map((call) => call[0]);
+  expect(onDataCalls).toEqual([1, 2]);
 
   expect(ctx.ee.listenerCount('data')).toBe(1);
 

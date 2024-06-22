@@ -91,9 +91,10 @@ export function unstable_httpSubscriptionLink<
           });
 
           for await (const chunk of iterable) {
+            const data = 'id' in chunk ? chunk : chunk.data;
             observer.next({
               result: {
-                data: chunk,
+                data,
               },
             });
           }

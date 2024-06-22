@@ -8,22 +8,17 @@ import { createReadableStream } from './utils/createReadableStream';
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
 
-/**
- * Server-sent Event
- * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
- * @public
- */
-export type SSEvent = {
+interface SSEventWithId {
   /**
    * The data field of the message - this can be anything
    */
-  data?: unknown;
+  data: unknown;
   /**
    * The id for this message
    * Passing this id will allow the client to resume the connection from this point if the connection is lost
    * @see https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header
    */
-  id?: string | number;
+  id: string | number;
   /**
    * Event name for the message
    */
@@ -32,7 +27,14 @@ export type SSEvent = {
    * A comment for the event
    */
   comment?: string;
-};
+}
+
+/**
+ * Server-sent Event
+ * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
+ * @public
+ */
+export type SSEvent = Partial<SSEventWithId>;
 
 const sseSymbol = Symbol('SSEventEnvelope');
 export type ServerSentEventEnvelope<TData> = [typeof sseSymbol, TData];
@@ -205,9 +207,7 @@ export type inferSSEOutput<TData> = TData extends ServerSentEventEnvelope<
   infer $Data
 >
   ? $Data
-  : {
-      data: TData;
-    };
+  : TData;
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
