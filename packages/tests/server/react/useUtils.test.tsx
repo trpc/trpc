@@ -827,23 +827,28 @@ test('isMutating', async () => {
   const { client, App } = ctx;
 
   function MyComponent() {
-    const createPostMutation = client.post.create.useMutation({
-      mutationFn: async () => {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        return defaultPost;
-      },
+    const createPostMutation = client.post.create.useMutation();
+    const isMutating = client.useUtils().post.create.isMutating();
+    const [isMutatingHistory, setIsMutatingHistory] = useState<number[]>([]);
+
+    useEffect(() => {
+      setIsMutatingHistory((prev) => {
+        const last = prev[prev.length - 1];
+        return last !== isMutating ? [...prev, isMutating] : prev;
+      });
     });
-    const utils = client.useUtils();
 
     return (
       <>
         <button
           data-testid="add-post"
           onClick={() => {
-            createPostMutation.mutate({ text: 'isMutating' });
+            createPostMutation.mutate({ text: '' });
           }}
         />
-        <span data-testid="is-mutating">{utils.post.create.isMutating()}</span>
+        <span data-testid="is-mutating-history">
+          {isMutatingHistory.join(',')}
+        </span>
       </>
     );
   }
@@ -855,11 +860,10 @@ test('isMutating', async () => {
   );
 
   const addPostButton = await utils.findByTestId('add-post');
-  const isMutatingSpan = await utils.findByTestId('is-mutating');
+  const isMutatingHistorySpan = await utils.findByTestId('is-mutating-history');
 
-  expect(isMutatingSpan).toHaveTextContent('0');
-  void userEvent.click(addPostButton);
+  await userEvent.click(addPostButton);
   await waitFor(() => {
-    expect(isMutatingSpan).toHaveTextContent('1');
+    expect(isMutatingHistorySpan).toHaveTextContent('0,1,0');
   });
 });
