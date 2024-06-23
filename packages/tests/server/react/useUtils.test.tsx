@@ -266,6 +266,9 @@ test('invalidate', async () => {
 
                   // @ts-expect-error Should not exist
                   utils.post.create.invalidate;
+
+                  // @ts-expect-error Should not exist
+                  utils.post.all.setMutationDefaults;
                 },
               },
             );

@@ -241,6 +241,11 @@ type DecorateProcedure<
   isMutating(): number;
 };
 
+type DecorateMutationProcedureKeys = keyof Pick<
+  AnyDecoratedProcedure,
+  'isMutating' | 'getMutationDefaults' | 'setMutationDefaults'
+>;
+
 /**
  * this is the type that is used to add in procedures that can be used on
  * an entire router
@@ -268,8 +273,10 @@ export type DecoratedProcedureUtilsRecord<
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
       ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateRouter
-      : $Value extends AnyQueryProcedure | AnyMutationProcedure
-      ? DecorateProcedure<TRoot, $Value>
+      : $Value extends AnyQueryProcedure
+      ? Omit<DecorateProcedure<TRoot, $Value>, DecorateMutationProcedureKeys>
+      : $Value extends AnyMutationProcedure
+      ? Pick<DecorateProcedure<TRoot, $Value>, DecorateMutationProcedureKeys>
       : never
     : never;
 }; // Add functions that should be available at utils root
