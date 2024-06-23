@@ -164,7 +164,7 @@ test('404', async () => {
   const json: any = JSON.parse(res.text);
 
   expect(json.error.message).toMatchInlineSnapshot(
-    `"No "query"-procedure on path "not-found-path""`,
+    `"No procedure found on path "not-found-path""`,
   );
 });
 
@@ -205,7 +205,7 @@ test('PUT request (fails)', async () => {
 
   const { req } = mockReq({
     query: {
-      trpc: [],
+      trpc: 'hello',
     },
     method: 'PUT',
   });
@@ -269,5 +269,5 @@ test('middleware passes the request', async () => {
 
   await handler(req, res);
 
-  expect(res.statusCode).toBe(405);
+  expect(res.statusCode).toBe(404);
 });

@@ -1,23 +1,32 @@
-import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import { EventEmitter } from 'node:events';
+import {
+  routerToServerAndClientNew,
+  waitError,
+  waitTRPCClientError,
+} from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
-import { TRPCClientError, unstable_httpBatchStreamLink } from '@trpc/client';
+import {
+  httpBatchLink,
+  splitLink,
+  TRPCClientError,
+  unstable_httpBatchStreamLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 
+const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
+
 describe('no transformer', () => {
   const orderedResults: number[] = [];
 
   const ctx = konn()
     .beforeEach(() => {
-      const t = initTRPC.create({
-        experimental: {
-          iterablesAndDeferreds: true,
-        },
-      });
+      const t = initTRPC.create({});
       orderedResults.length = 0;
 
       const manualRelease = new Map<number, () => void>();
@@ -204,27 +213,44 @@ describe('with transformer', () => {
   const orderedResults: number[] = [];
   const ctx = konn()
     .beforeEach(() => {
+      const onIterableInfiniteSpy = vi.fn<
+        [
+          {
+            input: {
+              lastEventId?: number;
+            };
+          },
+        ]
+      >();
+      const ee = new EventEmitter();
+      const eeEmit = (data: number) => {
+        ee.emit('data', data);
+      };
+
       const t = initTRPC.create({
         transformer: superjson,
-        experimental: {
-          iterablesAndDeferreds: true,
-        },
       });
       orderedResults.length = 0;
+      const infiniteYields = vi.fn();
 
       const router = t.router({
-        deferred: t.procedure
+        wait: t.procedure
           .input(
             z.object({
               wait: z.number(),
             }),
           )
           .query(async (opts) => {
-            await new Promise<void>((resolve) =>
+            await new Promise<typeof opts.input.wait>((resolve) =>
               setTimeout(resolve, opts.input.wait * 10),
             );
             return opts.input.wait;
           }),
+        deferred: t.procedure.query(() => {
+          return {
+            foo: Promise.resolve('bar'),
+          };
+        }),
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
@@ -264,15 +290,35 @@ describe('with transformer', () => {
           return {
             links: [
               linkSpy,
-              unstable_httpBatchStreamLink({
-                url: opts.httpUrl,
-                transformer: superjson,
+              splitLink({
+                condition: (op) => !!op.context['httpBatchLink'],
+                true: httpBatchLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+                false: splitLink({
+                  condition: (op) => op.type === 'subscription',
+                  true: unstable_httpSubscriptionLink({
+                    url: opts.httpUrl,
+                    transformer: superjson,
+                  }),
+                  false: unstable_httpBatchStreamLink({
+                    url: opts.httpUrl,
+                    transformer: superjson,
+                  }),
+                }),
               }),
             ],
           };
         },
       });
-      return opts;
+      return {
+        ...opts,
+        ee,
+        eeEmit,
+        infiniteYields,
+        onIterableInfiniteSpy,
+      };
     })
     .afterEach(async (opts) => {
       await opts?.close?.();
@@ -283,9 +329,9 @@ describe('with transformer', () => {
     const { client } = ctx;
 
     const results = await Promise.all([
-      client.deferred.query({ wait: 3 }),
-      client.deferred.query({ wait: 1 }),
-      client.deferred.query({ wait: 2 }),
+      client.wait.query({ wait: 3 }),
+      client.wait.query({ wait: 1 }),
+      client.wait.query({ wait: 2 }),
     ]);
 
     // batch preserves request order
@@ -297,7 +343,7 @@ describe('with transformer', () => {
     const { client } = ctx;
 
     const results = await Promise.allSettled([
-      client.deferred.query({ wait: 1 }),
+      client.wait.query({ wait: 1 }),
       client.error.query(),
     ]);
 
@@ -320,8 +366,6 @@ describe('with transformer', () => {
 
     const iterable = await client.iterable.query();
 
-    // TODO:
-    // expectTypeOf(iterable).toEqualTypeOf<AsyncIterable<number>>();
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
       aggregated.push(value);
@@ -335,6 +379,53 @@ describe('with transformer', () => {
     `);
   });
 
+  test('call deferred procedures with httpBatchLink', async () => {
+    const { client } = ctx;
+
+    type AppRouter = (typeof ctx)['router'];
+    {
+      const err = await waitTRPCClientError<AppRouter>(
+        client.iterable.query(undefined, {
+          context: {
+            httpBatchLink: true,
+          },
+        }),
+      );
+      delete err.data?.stack;
+      expect(err).toMatchInlineSnapshot(
+        `[TRPCClientError: Cannot use stream-like response in non-streaming request - use httpBatchStreamLink]`,
+      );
+      expect(err.data).toMatchInlineSnapshot(`
+      Object {
+        "code": "UNSUPPORTED_MEDIA_TYPE",
+        "httpStatus": 415,
+        "path": "iterable",
+      }
+    `);
+    }
+    {
+      const err = await waitTRPCClientError<AppRouter>(
+        client.deferred.query(undefined, {
+          context: {
+            httpBatchLink: true,
+          },
+        }),
+      );
+      delete err.data?.stack;
+
+      expect(err).toMatchInlineSnapshot(
+        `[TRPCClientError: Cannot use stream-like response in non-streaming request - use httpBatchStreamLink]`,
+      );
+      expect(err.data).toMatchInlineSnapshot(`
+        Object {
+          "code": "UNSUPPORTED_MEDIA_TYPE",
+          "httpStatus": 415,
+          "path": "deferred",
+        }
+      `);
+    }
+  });
+
   test('iterable with error', async () => {
     const { client, router } = ctx;
 
@@ -346,8 +437,6 @@ describe('with transformer', () => {
         aggregated.push(value);
       }
     }, TRPCClientError<typeof router>);
-    expect(aggregated).toEqual([1, 2]);
-    expect(error.message).toBe('foo');
 
     error.data!.stack = '[redacted]';
     expect(error.data).toMatchInlineSnapshot(`
@@ -358,5 +447,7 @@ describe('with transformer', () => {
         "stack": "[redacted]",
       }
     `);
+    expect(aggregated).toEqual([1, 2]);
+    expect(error.message).toBe('foo');
   });
 });

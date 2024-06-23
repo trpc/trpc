@@ -23,6 +23,7 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
+import type { inferSSEOutput } from './stream/sse';
 import type {
   GetRawInputFn,
   MaybePromise,
@@ -42,6 +43,12 @@ type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
 type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
+
+type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterable<
+  infer $Output
+>
+  ? inferSSEOutput<$Output>
+  : inferObservableValue<TOutput>;
 
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
@@ -347,7 +354,7 @@ export interface ProcedureBuilder<
     ? TypeError<'Not implemented'>
     : SubscriptionProcedure<{
         input: DefaultValue<TInputIn, void>;
-        output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
+        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
       }>;
 
   /**

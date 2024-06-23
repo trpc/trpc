@@ -32,7 +32,7 @@ const ctx = konn()
       storage: window.localStorage,
     });
 
-    return getServerAndReactClient(appRouter, { persister });
+    return getServerAndReactClient(appRouter, { persister, subscriptions: 'ws' });
   })
   .afterEach(async (ctx) => {
     await ctx?.close?.();

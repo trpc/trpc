@@ -69,25 +69,19 @@ Compared to a regular `httpBatchLink`, a `unstable_httpBatchStreamLink` will:
 
 ## Async generators and deferred promises {#generators}
 
-You can make your queries and mutations to return async generators and promises using the `iterablesAndDeferreds` feature flag.
-
 You can try this out on the homepage of tRPC.io: [https://trpc.io/?try=minimal#try-it-out](/?try=minimal#try-it-out)
 
 ```ts twoslash
 // @target: esnext
-// ---cut---
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
 
-const t = initTRPC.create({
-  experimental: {
-    iterablesAndDeferreds: true,
-  },
-});
+const t = initTRPC.create({});
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
+// ---cut---
 // @filename: server.ts
 import { publicProcedure, router } from './trpc';
 

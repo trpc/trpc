@@ -103,7 +103,7 @@ import React from 'react';
 import { trpc } from '../utils/trpc';
 
 function PostView() {
-  const [pages, allPostsQuery] = trpc.post.all.useSuspenseInfiniteQuery(
+  const [{ pages }, allPostsQuery] = trpc.post.all.useSuspenseInfiniteQuery(
     {},
     {
       getNextPageParam(lastPage) {

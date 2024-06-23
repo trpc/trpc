@@ -307,7 +307,7 @@ export function createRootHooks<
     input: unknown,
     opts: UseTRPCSubscriptionOptions<unknown, TError>,
   ) {
-    const enabled = opts?.enabled ?? true;
+    const enabled = opts?.enabled ?? input !== skipToken;
     const queryKey = hashKey(getQueryKeyInternal(path, input, 'any'));
     const { client } = useContext();
 

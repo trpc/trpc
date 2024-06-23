@@ -1,5 +1,6 @@
 import type { CombinedDataTransformer } from '../unstable-core-do-not-import';
 import type { DefaultErrorShape, ErrorFormatter } from './error/formatter';
+import type { SSEStreamProducerOptions } from './stream/sse';
 
 /**
  * The initial generics that are used in the init function
@@ -67,8 +68,19 @@ export interface RootConfig<TTypes extends RootTypes> {
   experimental?: {
     /**
      * Enable support for returning async iterables and returning deferred promises when using `httpBatchStreamLink`
+     * @default true
      */
     iterablesAndDeferreds?: boolean;
+    /**
+     * Enable support for server-sent events (SSE) subscriptions
+     */
+    sseSubscriptions?: {
+      /**
+       * Enable server-sent events (SSE) subscriptions
+       * @default true
+       */
+      enabled: boolean;
+    } & Omit<SSEStreamProducerOptions, 'maxDepth' | 'data' | 'serialize'>;
   };
 }
 
