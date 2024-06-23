@@ -21,7 +21,7 @@ import React from 'react';
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,
   opts?: {
-    subscriptions: 'ws' | 'http';
+    subscriptions?: 'ws' | 'http';
     persister?: Persister;
   },
 ) {
