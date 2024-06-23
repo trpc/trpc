@@ -7,9 +7,11 @@ import { createTRPCQueryUtils } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React from 'react';
+import { z } from 'zod';
 
 type Post = {
   id: number;
+  title: string;
 };
 
 const ctx = konn()
@@ -20,11 +22,13 @@ const ctx = konn()
 
     const appRouter = t.router({
       post: t.router({
-        create: t.procedure.mutation(() => {
-          const newPost: Post = { id: posts.length };
-          posts.push(newPost);
-          return newPost;
-        }),
+        create: t.procedure
+          .input(z.object({ title: z.string() }))
+          .mutation(({ input }) => {
+            const newPost: Post = { id: posts.length, title: input.title };
+            posts.push(newPost);
+            return newPost;
+          }),
       }),
     });
 
@@ -40,67 +44,93 @@ const ctx = konn()
   .done();
 
 describe('offline', () => {
-  test('mutation paused due to no network connection should resume when the connection is restored', async () => {
+  test('mutation paused due to no network connection should be persisted and resume automatically', async () => {
     const { client, App, queryClient, opts } = ctx;
     const trpcQueryUtils = createTRPCQueryUtils({
       client: opts.client,
       queryClient,
     });
 
+    const onMutationSuccess = vi.fn();
+
     // This is very important
     // https://tanstack.com/query/latest/docs/framework/react/guides/mutations#persisting-offline-mutations
     trpcQueryUtils.post.create.setMutationDefaults(
       ({ canonicalMutationFn }) => ({
         mutationFn: canonicalMutationFn,
+        onSuccess: (data, variables) => {
+          onMutationSuccess(data, variables);
+        },
       }),
     );
 
-    function MyComponent() {
-      const createPostMutation = client.post.create.useMutation();
+    async function simulateMutationWithoutConnection() {
+      function MyComponent() {
+        const createPostMutation = client.post.create.useMutation();
+        return (
+          <>
+            <button
+              data-testid="mutate"
+              onClick={() => {
+                onlineManager.setOnline(false);
+                createPostMutation.mutate({ title: 'foo' });
+              }}
+            />
+            <span data-testid="status">{createPostMutation.status}</span>
+            <span data-testid="is-paused">
+              {createPostMutation.isPaused ? '1' : '0'}
+            </span>
+          </>
+        );
+      }
 
-      return (
-        <>
-          <button
-            data-testid="add-post"
-            onClick={() => {
-              createPostMutation.mutate();
-            }}
-          />
-          <button
-            data-testid="online-toggle"
-            onClick={() => {
-              onlineManager.setOnline(!onlineManager.isOnline());
-            }}
-          />
-          <span data-testid="status">{createPostMutation.status}</span>
-          <span data-testid="is-paused">
-            {createPostMutation.isPaused ? 1 : 0}
-          </span>
-        </>
+      const utils = render(
+        <App>
+          <MyComponent />
+        </App>,
       );
+
+      const mutateBtn = await utils.findByTestId('mutate');
+      const statusSpan = await utils.findByTestId('status');
+      const isPausedSpan = await utils.findByTestId('is-paused');
+      await userEvent.click(mutateBtn);
+      await waitFor(() => {
+        expect(statusSpan).toHaveTextContent('pending');
+        expect(isPausedSpan).toHaveTextContent('1');
+      });
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    async function restoreConnectionAndVerifyMutation() {
+      // Note: this is a different render without the useMutation hook
+      // This simulates closing and reopening the app.
+      const utils = render(
+        <App>
+          <button
+            data-testid="restore-connection"
+            onClick={() => onlineManager.setOnline(true)}
+          >
+            restore connection
+          </button>
+        </App>,
+      );
+      const restoreConnectionButton = await utils.findByTestId(
+        'restore-connection',
+      );
+      expect(onMutationSuccess.mock.calls).toHaveLength(0);
+      await userEvent.click(restoreConnectionButton);
+      await waitFor(() => {
+        expect(onMutationSuccess.mock.calls).toHaveLength(1);
+        expect(onMutationSuccess.mock.calls[0]).toEqual([
+          {
+            id: 0,
+            title: 'foo',
+          },
+          { title: 'foo' },
+        ]);
+      });
+    }
 
-    const addPostButton = await utils.findByTestId('add-post');
-    const onlineToggleButton = await utils.findByTestId('online-toggle');
-    const statusSpan = await utils.findByTestId('status');
-    const isPausedSpan = await utils.findByTestId('is-paused');
-
-    await userEvent.click(onlineToggleButton);
-    await userEvent.click(addPostButton);
-    await waitFor(() => {
-      expect(statusSpan).toHaveTextContent('pending');
-      expect(isPausedSpan).toHaveTextContent('1');
-    });
-    await userEvent.click(onlineToggleButton);
-    await waitFor(() => {
-      expect(statusSpan).toHaveTextContent('success');
-      expect(isPausedSpan).toHaveTextContent('0');
-    });
+    await simulateMutationWithoutConnection();
+    await restoreConnectionAndVerifyMutation();
   });
 });
