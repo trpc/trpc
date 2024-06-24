@@ -1,3 +1,5 @@
+/// <reference types="react/canary" />
+
 import {
   dehydrate,
   HydrationBoundary,
@@ -79,9 +81,12 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
   getQueryClient: () => QueryClient,
 ) {
   type RootTypes = inferRouterRootTypes<TRouter>;
+  const def: AnyRouter['_def'] = (caller as any)._def;
+  const transformer = def._config.transformer;
+
   const wrappedProxy = createRecursiveProxy<
     DecorateRouterRecord<RootTypes, TRouter['_def']['record']>
-  >(async ({ path, args }) => {
+  >(({ path, args }) => {
     const proc = path.reduce(
       (acc, key) =>
         // @ts-expect-error - ??
@@ -92,12 +97,6 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     const input = args[0];
     const promise = proc(input);
 
-    const queryFn = async () => {
-      const def: AnyRouter['_def'] = await (caller as any)._def();
-      const transformer = def._config.transformer;
-      return promise.then((value) => transformer.output.serialize(value));
-    };
-
     const helper = path.pop();
     if (helper === 'prefetch') {
       const args1 = args[1] as Maybe<
@@ -107,7 +106,8 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
       return getQueryClient().prefetchQuery({
         ...args1,
         queryKey: getQueryKeyInternal(path, input, 'query'),
-        queryFn,
+        queryFn: () =>
+          promise.then((value) => transformer.output.serialize(value)),
       });
     }
     if (helper === 'prefetchInfinite') {
@@ -118,7 +118,8 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
       return getQueryClient().prefetchInfiniteQuery({
         ...args1,
         queryKey: getQueryKeyInternal(path, input, 'infinite'),
-        queryFn,
+        queryFn: () =>
+          promise.then((value) => transformer.output.serialize(value)),
         initialPageParam: args1?.initialCursor ?? null,
       });
     }
