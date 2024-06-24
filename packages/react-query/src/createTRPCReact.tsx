@@ -1,4 +1,4 @@
-import type { SkipToken } from '@tanstack/react-query';
+import type { SkipToken, UseSuspenseQueryResult } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type {
   AnyProcedure,
@@ -29,6 +29,7 @@ import type {
   CreateClient,
   DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
+  TRPCHookResult,
   TRPCProvider,
   UseTRPCMutationOptions,
   UseTRPCMutationResult,
@@ -36,7 +37,6 @@ import type {
   UseTRPCQueryResult,
   UseTRPCSubscriptionOptions,
   UseTRPCSuspenseQueryOptions,
-  UseTRPCSuspenseQueryResult,
 } from './shared/hooks/types';
 import type { CreateTRPCReactOptions } from './shared/types';
 
@@ -118,7 +118,10 @@ export type DecoratedQueryMethods<TDef extends ResolverDef> = {
       TData,
       TRPCClientErrorLike<TDef>
     >,
-  ) => UseTRPCSuspenseQueryResult<TData, TRPCClientErrorLike<TDef>>;
+  ) => [
+    TData,
+    UseSuspenseQueryResult<TData, TRPCClientErrorLike<TDef>> & TRPCHookResult,
+  ];
 };
 
 /**
