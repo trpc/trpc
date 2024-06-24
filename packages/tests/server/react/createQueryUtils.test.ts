@@ -269,13 +269,13 @@ describe('createTRPCQueryUtils()', () => {
       hello: 'trpc',
     });
 
-    // In a real offline-first app, `fn()` would probably call `clientUtils.something.cancel()`
-    // to prevent clashes with optimistic updates
+    // In a real offline-first app, `mutationFn` would probably call, in order:
+    // - `clientUtils.something.cancel()` (to prevent clashes with optimistic updates)
+    // - `canonicalMutationFn(variables)` (to perform the actual mutation)
     const fn = vi.fn();
-    clientUtils.addPost.setMutationDefaults(({ canonicalMutationFn }) => ({
+    clientUtils.addPost.setMutationDefaults((/*{canonicalMutationFn}*/) => ({
       mutationFn: (variables) => {
-        fn();
-        return canonicalMutationFn(variables);
+        return fn(variables);
       },
     }));
     clientUtils.addPost.getMutationDefaults()?.mutationFn?.({ title: '' });
