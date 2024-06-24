@@ -654,7 +654,8 @@ test('regression 5809: select()', async () => {
       },
     );
 
-    expectTypeOf(q.data?.pages[0]!.foo).toEqualTypeOf<'bar'>();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+    expectTypeOf(q.data?.pages[0]?.foo!).toEqualTypeOf<'bar'>();
 
     return <div>foo:{q.data?.pages[0]?.foo}</div>;
   }
