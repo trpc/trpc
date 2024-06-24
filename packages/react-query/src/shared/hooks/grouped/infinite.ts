@@ -42,6 +42,10 @@ type makeOptions<TDef extends ResolverDef, TOptions> = DistributiveOmit<
     initialCursor?: ExtractCursorType<TDef>;
   };
 
+type trpcInfiniteData<TDef extends ResolverDef> = InfiniteData<
+  TDef['output'],
+  ExtractCursorType<TDef>
+>;
 // references from react-query
 // 1st
 // declare function useInfiniteQuery<
@@ -98,7 +102,7 @@ type makeOptions<TDef extends ResolverDef, TOptions> = DistributiveOmit<
 
 export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
   // 1st
-  <TData = InfiniteData<TDef['output']>>(
+  <TData = trpcInfiniteData<TDef>>(
     input: InputForDef<TDef>,
     opts: makeOptions<
       TDef,
@@ -125,7 +129,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
     TRPCHookResult;
 
   // 2nd
-  <TData = InfiniteData<TDef['output']>>(
+  <TData = trpcInfiniteData<TDef>>(
     input: InputForDef<TDef>,
     opts?: makeOptions<
       TDef,
@@ -145,7 +149,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
   ): UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>> & TRPCHookResult;
 
   // 3rd:
-  <TData = InfiniteData<TDef['output']>>(
+  <TData = trpcInfiniteData<TDef>>(
     input: InputForDef<TDef>,
     opts?: makeOptions<
       TDef,
