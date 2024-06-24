@@ -21,12 +21,14 @@ import { createReactDecoration, createReactQueryUtils } from './shared';
 import type { CreateReactQueryHooks } from './shared/hooks/createHooksInternal';
 import { createRootHooks } from './shared/hooks/createHooksInternal';
 import type {
+  CursorInput,
+  useInfiniteQuery,
+} from './shared/hooks/grouped/infinite';
+import type {
   CreateClient,
   DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
   TRPCProvider,
-  UseTRPCInfiniteQueryOptions,
-  UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
   UseTRPCMutationResult,
   UseTRPCQueryOptions,
@@ -80,34 +82,15 @@ export interface ProcedureUseQuery<TDef extends ResolverDef> {
 }
 
 /**
- * @remark `void` is here due to https://github.com/trpc/trpc/pull/4374
- */
-type CursorInput = {
-  cursor?: any;
-} | void;
-
-type ReservedInfiniteQueryKeys = 'cursor' | 'direction';
-/**
  * @internal
  */
 export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
   TDef['input'] extends CursorInput
     ? {
         /**
-         * @link https://trpc.io/docs/v11/client/react/suspense#useinfinitesuspensequery
+         * @link https://trpc.io/docs/v11/client/react/useInfiniteQuery
          */
-        useInfiniteQuery: (
-          input: Omit<TDef['input'], ReservedInfiniteQueryKeys> | SkipToken,
-          opts: UseTRPCInfiniteQueryOptions<
-            TDef['input'],
-            TDef['output'],
-            TRPCClientErrorLike<TDef>
-          >,
-        ) => UseTRPCInfiniteQueryResult<
-          TDef['output'],
-          TRPCClientErrorLike<TDef>,
-          TDef['input']
-        >;
+        useInfiniteQuery: useInfiniteQuery<TDef>;
         /**
          * @link https://trpc.io/docs/v11/client/react/suspense
          */
