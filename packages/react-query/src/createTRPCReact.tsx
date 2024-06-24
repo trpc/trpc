@@ -22,7 +22,7 @@ import type { CreateReactQueryHooks } from './shared/hooks/createHooksInternal';
 import { createRootHooks } from './shared/hooks/createHooksInternal';
 import type {
   CursorInput,
-  useInfiniteQuery,
+  useTRPCInfiniteQuery,
 } from './shared/hooks/grouped/infinite';
 import type {
   CreateClient,
@@ -90,7 +90,7 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
         /**
          * @link https://trpc.io/docs/v11/client/react/useInfiniteQuery
          */
-        useInfiniteQuery: useInfiniteQuery<TDef>;
+        useInfiniteQuery: useTRPCInfiniteQuery<TDef>;
         /**
          * @link https://trpc.io/docs/v11/client/react/suspense
          */

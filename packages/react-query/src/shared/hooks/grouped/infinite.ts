@@ -4,7 +4,6 @@ import type {
   InfiniteData,
   SkipToken,
   UndefinedInitialDataInfiniteOptions,
-  useInfiniteQuery,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
 } from '@tanstack/react-query';
@@ -36,9 +35,9 @@ export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
   ? TInput['cursor']
   : unknown;
 
-type makeOptions<TDef extends ResolverDef, TOptions> = Omit<
+type makeOptions<TDef extends ResolverDef, TOptions> = DistributiveOmit<
   TOptions,
-  'queryKey' | 'initialPageParam' | 'queryFn' | 'queryHash' | 'queryKeyHashFn'
+  'queryKey' | 'initialPageParam'
 > &
   TRPCUseQueryBaseOptions & {
     initialCursor?: ExtractCursorType<TDef['input']>;
@@ -100,17 +99,17 @@ type makeOptions<TDef extends ResolverDef, TOptions> = Omit<
 
 export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
   // 1st
-  <TQueryFnData = TDef['output'], TData = InfiniteData<TQueryFnData>>(
+  <TData = InfiniteData<TDef['output']>>(
     input: InputForDef<TDef>,
     opts: makeOptions<
       TDef,
       DefinedInitialDataInfiniteOptions<
         //     TQueryFnData,
-        TQueryFnData,
+        TDef['output'],
         //     TError,
         TRPCClientErrorLike<TDef>,
         //     TData,
-        TQueryFnData,
+        TData,
         //     TQueryKey,
         any,
         //     TPageParam
@@ -127,17 +126,17 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
     TRPCHookResult;
 
   // 2nd
-  <TQueryFnData = TDef['output'], TData = InfiniteData<TQueryFnData>>(
+  <TData = InfiniteData<TDef['output']>>(
     input: InputForDef<TDef>,
     opts?: makeOptions<
       TDef,
       UndefinedInitialDataInfiniteOptions<
         //     TQueryFnData,
-        TQueryFnData,
+        TDef['output'],
         //     TError,
         TRPCClientErrorLike<TDef>,
         //     TData,
-        TQueryFnData,
+        TData,
         //     TQueryKey,
         any,
         //     TPageParam
@@ -147,19 +146,19 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
   ): UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>> & TRPCHookResult;
 
   // 3rd:
-  <TQueryFnData = TDef['output'], TData = InfiniteData<TQueryFnData>>(
+  <TData = InfiniteData<TDef['output']>>(
     input: InputForDef<TDef>,
     opts?: makeOptions<
       TDef,
       UseInfiniteQueryOptions<
         //     TQueryFnData,
-        TQueryFnData,
+        TDef['output'],
         //     TError,
         TRPCClientErrorLike<TDef>,
         //     TData,
-        TQueryFnData,
+        TData,
         //     TQueryFnData,
-        TQueryFnData,
+        TDef['output'],
         //     TQueryKey,
         any,
         //     TPageParam

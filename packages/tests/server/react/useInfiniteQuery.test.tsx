@@ -2,6 +2,7 @@ import { ignoreErrors } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import type { Post } from './__testHelpers';
 import { createAppRouter } from './__testHelpers';
+import type { InfiniteData } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -629,7 +630,7 @@ test('regression 5412: invalidating a query', async () => {
   expect(posts).toHaveTextContent('second post');
 });
 
-test.only('regression 5809: select()', async () => {
+test('regression 5809: select()', async () => {
   const { trpc, App } = factory;
 
   function MyComponent() {
@@ -639,45 +640,23 @@ test.only('regression 5809: select()', async () => {
       },
       {
         getNextPageParam: (lastPage) => lastPage.nextCursor,
-        select: (data) => data.items,
+        select: (data) => {
+          return {
+            ...data,
+            pages: data.pages.map((page) => {
+              return {
+                ...page,
+                foo: 'bar' as const,
+              };
+            }),
+          };
+        },
       },
     );
 
-    expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
+    expectTypeOf(q.data?.pages[0]!.foo).toEqualTypeOf<'bar'>();
 
-    return q.status === 'pending' ? (
-      <p>Loading...</p>
-    ) : q.status === 'error' ? (
-      <p>Error: {q.error.message}</p>
-    ) : (
-      <>
-        {q.data?.pages.map((group, i) => (
-          <Fragment key={i}>
-            {group.items.map((msg) => (
-              <Fragment key={msg.id}>
-                <div>{msg.title}</div>
-              </Fragment>
-            ))}
-          </Fragment>
-        ))}
-        <div>
-          <button
-            onClick={() => q.fetchNextPage()}
-            disabled={!q.hasNextPage || q.isFetchingNextPage}
-            data-testid="loadMore"
-          >
-            {q.isFetchingNextPage
-              ? 'Loading more...'
-              : q.hasNextPage
-              ? 'Load More'
-              : 'Nothing more to load'}
-          </button>
-        </div>
-        <div>
-          {q.isFetching && !q.isFetchingNextPage ? 'Fetching...' : null}
-        </div>
-      </>
-    );
+    return <div>foo:{q.data?.pages[0]?.foo}</div>;
   }
 
   const utils = render(
@@ -686,40 +665,6 @@ test.only('regression 5809: select()', async () => {
     </App>,
   );
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).toHaveTextContent('foo:bar');
   });
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent('first post');
-    expect(utils.container).not.toHaveTextContent('second post');
-    expect(utils.container).toHaveTextContent('Load More');
-  });
-  await userEvent.click(utils.getByTestId('loadMore'));
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent('Loading more...');
-  });
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent('first post');
-    expect(utils.container).toHaveTextContent('second post');
-    expect(utils.container).toHaveTextContent('Nothing more to load');
-  });
-
-  expect(utils.container).toMatchInlineSnapshot(`
-    <div>
-      <div>
-        first post
-      </div>
-      <div>
-        second post
-      </div>
-      <div>
-        <button
-          data-testid="loadMore"
-          disabled=""
-        >
-          Nothing more to load
-        </button>
-      </div>
-      <div />
-    </div>
-  `);
 });
