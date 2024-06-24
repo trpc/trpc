@@ -6,6 +6,8 @@ import type {
   UndefinedInitialDataInfiniteOptions,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
+  UseSuspenseInfiniteQueryOptions,
+  UseSuspenseInfiniteQueryResult,
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { Simplify } from '@trpc/server/unstable-core-do-not-import';
@@ -160,3 +162,50 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
     >,
   ): TRPCHookResult & UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>>;
 }
+
+// references from react-query
+// declare function useSuspenseInfiniteQuery<
+//   TQueryFnData,
+//   TError = DefaultError,
+//   TData = InfiniteData<TQueryFnData>,
+//   TQueryKey extends QueryKey = QueryKey,
+//   TPageParam = unknown,
+// >(
+//   options: UseSuspenseInfiniteQueryOptions<
+//     TQueryFnData,
+//     TError,
+//     TData,
+//     TQueryFnData,
+//     TQueryKey,
+//     TPageParam
+//   >,
+//   queryClient?: QueryClient,
+// ): UseSuspenseInfiniteQueryResult<TData, TError>;
+
+export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = (
+  input: InfiniteInput<TDef['input']>,
+  opts: makeInfiniteQueryOptions<
+    inferCursorType<TDef['input']>,
+    UseSuspenseInfiniteQueryOptions<
+      //     TQueryFnData,
+      TDef['output'],
+      //     TError,
+      TRPCClientErrorLike<TDef>,
+      //     TData,
+      trpcInfiniteData<TDef>,
+      //     TQueryFnData,
+      TDef['output'],
+      //     TQueryKey,
+      any,
+      //     TPageParam
+      inferCursorType<TDef['input']>
+    >
+  >,
+) => [
+  trpcInfiniteData<TDef>,
+  TRPCHookResult &
+    UseSuspenseInfiniteQueryResult<
+      trpcInfiniteData<TDef>,
+      TRPCClientErrorLike<TDef>
+    >,
+];

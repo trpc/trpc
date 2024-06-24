@@ -23,6 +23,7 @@ import { createRootHooks } from './shared/hooks/createHooksInternal';
 import type {
   CursorInput,
   useTRPCInfiniteQuery,
+  useTRPCSuspenseInfiniteQuery,
 } from './shared/hooks/grouped/infinite';
 import type {
   CreateClient,
@@ -34,8 +35,6 @@ import type {
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
   UseTRPCSubscriptionOptions,
-  UseTRPCSuspenseInfiniteQueryOptions,
-  UseTRPCSuspenseInfiniteQueryResult,
   UseTRPCSuspenseQueryOptions,
   UseTRPCSuspenseQueryResult,
 } from './shared/hooks/types';
@@ -92,20 +91,9 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
          */
         useInfiniteQuery: useTRPCInfiniteQuery<TDef>;
         /**
-         * @link https://trpc.io/docs/v11/client/react/suspense
+         * @link https://trpc.io/docs/client/react/suspense#usesuspenseinfinitequery
          */
-        useSuspenseInfiniteQuery: (
-          input: Omit<TDef['input'], 'cursor' | 'direction'>,
-          opts: UseTRPCSuspenseInfiniteQueryOptions<
-            TDef['input'],
-            TDef['output'],
-            TRPCClientErrorLike<TDef>
-          >,
-        ) => UseTRPCSuspenseInfiniteQueryResult<
-          TDef['output'],
-          TRPCClientErrorLike<TDef>,
-          TDef['input']
-        >;
+        useSuspenseInfiniteQuery: useTRPCSuspenseInfiniteQuery<TDef>;
       }
     : object;
 
