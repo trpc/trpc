@@ -628,3 +628,98 @@ test('regression 5412: invalidating a query', async () => {
   expect(posts).toHaveTextContent('first post');
   expect(posts).toHaveTextContent('second post');
 });
+
+test.only('regression 5809: select()', async () => {
+  const { trpc, App } = factory;
+
+  function MyComponent() {
+    const q = trpc.paginatedPosts.useInfiniteQuery(
+      {
+        limit: 1,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+        select: (data) => data.items,
+      },
+    );
+
+    expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
+
+    return q.status === 'pending' ? (
+      <p>Loading...</p>
+    ) : q.status === 'error' ? (
+      <p>Error: {q.error.message}</p>
+    ) : (
+      <>
+        {q.data?.pages.map((group, i) => (
+          <Fragment key={i}>
+            {group.items.map((msg) => (
+              <Fragment key={msg.id}>
+                <div>{msg.title}</div>
+              </Fragment>
+            ))}
+          </Fragment>
+        ))}
+        <div>
+          <button
+            onClick={() => q.fetchNextPage()}
+            disabled={!q.hasNextPage || q.isFetchingNextPage}
+            data-testid="loadMore"
+          >
+            {q.isFetchingNextPage
+              ? 'Loading more...'
+              : q.hasNextPage
+              ? 'Load More'
+              : 'Nothing more to load'}
+          </button>
+        </div>
+        <div>
+          {q.isFetching && !q.isFetchingNextPage ? 'Fetching...' : null}
+        </div>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+  });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).not.toHaveTextContent('second post');
+    expect(utils.container).toHaveTextContent('Load More');
+  });
+  await userEvent.click(utils.getByTestId('loadMore'));
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('Loading more...');
+  });
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('first post');
+    expect(utils.container).toHaveTextContent('second post');
+    expect(utils.container).toHaveTextContent('Nothing more to load');
+  });
+
+  expect(utils.container).toMatchInlineSnapshot(`
+    <div>
+      <div>
+        first post
+      </div>
+      <div>
+        second post
+      </div>
+      <div>
+        <button
+          data-testid="loadMore"
+          disabled=""
+        >
+          Nothing more to load
+        </button>
+      </div>
+      <div />
+    </div>
+  `);
+});
