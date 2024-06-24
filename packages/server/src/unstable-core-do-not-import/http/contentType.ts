@@ -1,16 +1,24 @@
 import { TRPCError } from '../error/TRPCError';
-import type { RootConfig } from '../rootConfig';
+import type { AnyProcedure, ProcedureType } from '../procedure';
+import type { AnyRouter } from '../router';
 import { isObject, unsetMarker } from '../utils';
-import type { TRPCRequestInfo } from './types';
+import type {
+  TRPCAcceptHeader,
+  TRPCRequestInfo,
+  TRPCRequestInfoBase,
+} from './types';
+
+type GetRequestInfoOptions = {
+  path: string;
+  req: Request;
+  searchParams: URLSearchParams;
+  headers: Headers;
+  router: AnyRouter;
+};
 
 type ContentTypeHandler = {
   isMatch: (opts: Request) => boolean;
-  parse: (opts: {
-    path: string;
-    req: Request;
-    searchParams: URLSearchParams;
-    config: RootConfig<any>;
-  }) => TRPCRequestInfo;
+  parse: (opts: GetRequestInfoOptions) => TRPCRequestInfo;
 };
 
 /**
@@ -82,7 +90,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
 
       if (!isBatchCall) {
         return {
-          0: opts.config.transformer.input.deserialize(inputs),
+          0: opts.router._def._config.transformer.input.deserialize(inputs),
         };
       }
 
@@ -96,26 +104,74 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       for (const index of paths.keys()) {
         const input = inputs[index];
         if (input !== undefined) {
-          acc[index] = opts.config.transformer.input.deserialize(input);
+          acc[index] =
+            opts.router._def._config.transformer.input.deserialize(input);
         }
       }
 
       return acc;
     });
 
-    return {
-      isBatchCall,
-      calls: paths.map((path, index) => ({
+    const calls = paths.map((path, index): TRPCRequestInfo['calls'][number] => {
+      const procedure: AnyProcedure | null =
+        opts.router._def.procedures[path] ?? null;
+      return {
         path,
+        procedure,
         getRawInput: async () => {
           const inputs = await getInputs.read();
-          return inputs[index];
+          let input = inputs[index];
+
+          if (procedure?._def.type === 'subscription') {
+            const lastEventId =
+              opts.headers.get('last-event-id') ??
+              opts.searchParams.get('lastEventId') ??
+              opts.searchParams.get('Last-Event-Id');
+
+            if (lastEventId) {
+              if (isObject(input)) {
+                input = {
+                  ...input,
+                  lastEventId: lastEventId,
+                };
+              } else {
+                input ??= {
+                  lastEventId: lastEventId,
+                };
+              }
+            }
+          }
+          return input;
         },
         result: () => {
           return getInputs.result()?.[index];
         },
-      })),
+      };
+    });
+
+    const types = new Set(
+      calls.map((call) => call.procedure?._def.type).filter(Boolean),
+    );
+
+    /* istanbul ignore if -- @preserve */
+    if (types.size > 1) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Cannot mix procedure types in call: ${Array.from(types).join(
+          ', ',
+        )}`,
+      });
+    }
+    const type: ProcedureType | 'unknown' =
+      types.values().next().value ?? 'unknown';
+
+    const info: TRPCRequestInfoBase = {
+      isBatchCall,
+      accept: req.headers.get('trpc-accept') as TRPCAcceptHeader | null,
+      calls,
+      type,
     };
+    return info as TRPCRequestInfo;
   },
 };
 
@@ -137,14 +193,17 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       return fd;
     });
     return {
+      accept: null,
       calls: [
         {
           path: opts.path,
           getRawInput: getInputs.read,
           result: getInputs.result,
+          procedure: opts.router._def.procedures[opts.path] ?? null,
         },
       ],
       isBatchCall: false,
+      type: 'mutation',
     };
   },
 };
@@ -173,9 +232,12 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
           path: opts.path,
           getRawInput: getInputs.read,
           result: getInputs.result,
+          procedure: opts.router._def.procedures[opts.path] ?? null,
         },
       ],
       isBatchCall: false,
+      accept: null,
+      type: 'mutation',
     };
   },
 };
@@ -205,12 +267,7 @@ function getContentTypeHandler(req: Request): ContentTypeHandler {
   });
 }
 
-export function getRequestInfo(opts: {
-  path: string;
-  req: Request;
-  searchParams: URLSearchParams;
-  config: RootConfig<any>;
-}): TRPCRequestInfo {
+export function getRequestInfo(opts: GetRequestInfoOptions): TRPCRequestInfo {
   const handler = getContentTypeHandler(opts.req);
   return handler.parse(opts);
 }

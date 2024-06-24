@@ -1,3 +1,4 @@
+import { waitMs } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { skipToken, type InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
@@ -9,9 +10,26 @@ import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
 
+function createDeferred<TValue>() {
+  let resolve: (value: TValue) => void;
+  let reject: (error: unknown) => void;
+  const promise = new Promise<TValue>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+
+  return { promise, resolve: resolve!, reject: reject! };
+}
+
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.create();
+    let iterableDeferred = createDeferred<void>();
+    const nextIterable = () => {
+      iterableDeferred.resolve();
+      iterableDeferred = createDeferred();
+    };
+    const t = initTRPC.create({});
+
     const appRouter = t.router({
       post: t.router({
         byId: t.procedure
@@ -46,10 +64,19 @@ const ctx = konn()
                   : input.cursor + 1,
             };
           }),
+        iterable: t.procedure.query(async function* () {
+          for (let i = 0; i < 3; i++) {
+            await iterableDeferred.promise;
+            yield i + 1;
+          }
+        }),
       }),
     });
 
-    return getServerAndReactClient(appRouter);
+    return {
+      nextIterable,
+      ...getServerAndReactClient(appRouter),
+    };
   })
   .afterEach(async (ctx) => {
     await ctx?.close?.();
@@ -193,6 +220,96 @@ describe('useQuery()', () => {
 
     expectation.toMatchTypeOf<{ data: '__result' | undefined }>();
     expectation.not.toMatchTypeOf<{ data: undefined }>();
+  });
+
+  test('iterable', async () => {
+    const { client, App } = ctx;
+    const states: {
+      status: string;
+      data: unknown;
+      fetchStatus: string;
+    }[] = [];
+    function MyComponent() {
+      const query1 = client.post.iterable.useQuery(undefined, {
+        trpc: {
+          context: {
+            stream: 1,
+          },
+        },
+      });
+      states.push({
+        status: query1.status,
+        data: query1.data,
+        fetchStatus: query1.fetchStatus,
+      });
+      ctx.nextIterable();
+
+      expectTypeOf(query1.data!).toMatchTypeOf<number[]>();
+
+      return (
+        <pre>
+          {query1.status}:{query1.isFetching ? 'fetching' : 'notFetching'}
+        </pre>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`success:notFetching`);
+    });
+
+    expect(states.map((s) => [s.status, s.fetchStatus])).toEqual([
+      // initial
+      ['pending', 'fetching'],
+      // waiting 3 values
+      ['success', 'fetching'],
+      ['success', 'fetching'],
+      ['success', 'fetching'],
+      // done iterating
+      ['success', 'idle'],
+    ]);
+    expect(states).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "data": undefined,
+          "fetchStatus": "fetching",
+          "status": "pending",
+        },
+        Object {
+          "data": Array [],
+          "fetchStatus": "fetching",
+          "status": "success",
+        },
+        Object {
+          "data": Array [
+            1,
+          ],
+          "fetchStatus": "fetching",
+          "status": "success",
+        },
+        Object {
+          "data": Array [
+            1,
+            2,
+          ],
+          "fetchStatus": "fetching",
+          "status": "success",
+        },
+        Object {
+          "data": Array [
+            1,
+            2,
+            3,
+          ],
+          "fetchStatus": "idle",
+          "status": "success",
+        },
+      ]
+    `);
   });
 });
 

@@ -56,10 +56,10 @@ test('regression: SSR with error sets `status`=`error`', async () => {
   // @ts-ignore
   global.window = window;
   expect(queryState.query1.error).toMatchInlineSnapshot(
-    `[TRPCClientError: No "query"-procedure on path "bad_useQuery"]`,
+    `[TRPCClientError: No procedure found on path "bad_useQuery"]`,
   );
   expect(queryState.query2.error).toMatchInlineSnapshot(
-    `[TRPCClientError: No "query"-procedure on path "bad_useInfiniteQuery"]`,
+    `[TRPCClientError: No procedure found on path "bad_useInfiniteQuery"]`,
   );
   expect(queryState.query1.status).toBe('error');
   expect(queryState.query2.status).toBe('error');

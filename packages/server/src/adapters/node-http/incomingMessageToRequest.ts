@@ -17,32 +17,32 @@ function incomingMessageToBodyStream(
   type Value = Buffer | Uint8Array | string | null;
   let size = 0;
   const maxBodySize = opts.maxBodySize;
+  let hasClosed = false;
 
-  let controller: ReadableStreamDefaultController<Value> =
-    null as unknown as ReadableStreamDefaultController<Value>;
   const stream = new ReadableStream<Value>({
-    start(c) {
-      controller = c;
-    },
-    async pull(c) {
-      const chunk: Value = req.read();
-
-      if (chunk) {
+    start(controller) {
+      req.on('data', (chunk) => {
         size += chunk.length;
-      }
-      if (maxBodySize !== null && size > maxBodySize) {
-        controller.error(
-          new TRPCError({
-            code: 'PAYLOAD_TOO_LARGE',
-          }),
-        );
-        return;
-      }
-      if (chunk === null) {
-        c.close();
-        return;
-      }
-      controller.enqueue(chunk);
+        if (maxBodySize != null && size > maxBodySize) {
+          controller.error(
+            new TRPCError({
+              code: 'PAYLOAD_TOO_LARGE',
+            }),
+          );
+          // an error is thrown if we try to close the controller after
+          // erroring, so track the closure
+          hasClosed = true;
+          return;
+        }
+        controller.enqueue(chunk);
+      });
+      req.once('end', () => {
+        if (hasClosed) {
+          return;
+        }
+        hasClosed = true;
+        controller.close();
+      });
     },
     cancel() {
       req.destroy();
@@ -68,8 +68,9 @@ export function incomingMessageToRequest(
   const ac = new AbortController();
   const headers = new Headers(req.headers as any);
   const url = `http://${headers.get('host')}${req.url}`;
-
-  req.once('aborted', () => ac.abort());
+  req.once('aborted', () => {
+    ac.abort();
+  });
 
   const init: RequestInit = {
     headers,

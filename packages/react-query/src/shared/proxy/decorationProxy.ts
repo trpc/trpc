@@ -9,9 +9,9 @@ import type { CreateReactQueryHooks } from '../hooks/createHooksInternal';
 export function createReactDecoration<
   TRouter extends AnyRouter,
   TSSRContext = unknown,
->(name: string, hooks: CreateReactQueryHooks<TRouter, TSSRContext>) {
+>(hooks: CreateReactQueryHooks<TRouter, TSSRContext>) {
   return createRecursiveProxy(({ path, args }) => {
-    const pathCopy = [name, ...path];
+    const pathCopy = [...path];
 
     // The last arg is for instance `.useMutation` or `.useQuery()`
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

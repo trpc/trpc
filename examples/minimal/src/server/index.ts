@@ -2,6 +2,7 @@
  * This a minimal tRPC server
  */
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 import { db } from './db.js';
 import { publicProcedure, router } from './trpc.js';
@@ -31,6 +32,14 @@ const appRouter = router({
         //    ^?
         return user;
       }),
+  },
+  examples: {
+    iterable: publicProcedure.query(async function* () {
+      for (let i = 0; i < 3; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        yield i;
+      }
+    }),
   },
 });
 

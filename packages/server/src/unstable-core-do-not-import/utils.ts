@@ -31,7 +31,7 @@ export function isObject(value: unknown): value is Record<string, unknown> {
   return !!value && !Array.isArray(value) && typeof value === 'object';
 }
 
-type AnyFn = (...args: any[]) => unknown;
+type AnyFn = ((...args: any[]) => unknown) & Record<keyof any, unknown>;
 export function isFunction(fn: unknown): fn is AnyFn {
   return typeof fn === 'function';
 }
@@ -45,3 +45,19 @@ export function omitPrototype<TObj extends Record<string, unknown>>(
 ): TObj {
   return Object.assign(Object.create(null), obj);
 }
+
+const asyncIteratorsSupported =
+  typeof Symbol === 'function' && !!Symbol.asyncIterator;
+
+export function isAsyncIterable<TValue>(
+  value: unknown,
+): value is AsyncIterable<TValue> {
+  return (
+    asyncIteratorsSupported && isObject(value) && Symbol.asyncIterator in value
+  );
+}
+
+/**
+ * Run an IIFE
+ */
+export const run = <TValue>(fn: () => TValue): TValue => fn();

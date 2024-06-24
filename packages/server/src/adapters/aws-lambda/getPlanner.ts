@@ -40,6 +40,19 @@ interface Processor<TEvent extends LambdaEvent> {
   toResult: (response: Response) => Promise<inferAPIGWReturn<TEvent>>;
 }
 
+function getHeadersAndCookiesFromResponse(response: Response) {
+  const headers = Object.fromEntries(response.headers.entries());
+
+  const cookies: string[] = response.headers
+    .getSetCookie()
+    .flatMap((value) => value.split(','))
+    .map((cookie) => cookie.trim());
+
+  delete headers['set-cookie'];
+
+  return { headers, cookies };
+}
+
 const v1Processor: Processor<APIGatewayProxyEvent> = {
   // same as getPath above
   getTRPCPath: (event) => {
@@ -98,10 +111,13 @@ const v1Processor: Processor<APIGatewayProxyEvent> = {
   },
   getMethod: (event) => event.httpMethod,
   toResult: async (response) => {
+    const { headers, cookies } = getHeadersAndCookiesFromResponse(response);
+
     const result: APIGatewayProxyResult = {
+      ...(cookies.length && { multiValueHeaders: { 'set-cookie': cookies } }),
       statusCode: response.status,
       body: await response.text(),
-      headers: Object.fromEntries(response.headers.entries()),
+      headers,
     };
 
     return result;
@@ -142,10 +158,13 @@ const v2Processor: Processor<APIGatewayProxyEventV2> = {
   },
   getMethod: (event) => event.requestContext.http.method,
   toResult: async (response) => {
+    const { headers, cookies } = getHeadersAndCookiesFromResponse(response);
+
     const result: APIGatewayProxyStructuredResultV2 = {
+      cookies,
       statusCode: response.status,
       body: await response.text(),
-      headers: Object.fromEntries(response.headers.entries()),
+      headers,
     };
 
     return result;

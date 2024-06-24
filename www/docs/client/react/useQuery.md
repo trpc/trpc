@@ -94,3 +94,47 @@ export function MyComponent() {
   );
 }
 ```
+
+## Streaming responses using async generators {#streaming}
+
+:::info
+Since v11 we now support streaming queries when using the [`httpBatchStreamLink`](../links/httpBatchStreamLink.md#generators).
+:::
+
+When returning an async generators in a query, you will:
+
+- Get the results of the iterator in the `data`-property **as an array** which updates as the response comes in
+- The `status` will remain as `pending` until the full response has been received.
+
+### Example
+
+```tsx title='server/routers/_app.ts'
+import { publicProcedure, router } from './trpc';
+
+const appRouter = router({
+  iterable: publicProcedure.query(async function* () {
+    for (let i = 0; i < 3; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      yield i;
+    }
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+```tsx title='components/MyComponent.tsx'
+import { trpc } from '~/utils';
+
+export function MyComponent() {
+  const query = trpc.iterable.useQuery();
+
+  return (
+    <div>
+      {query.data?.map((chunk, index) => (
+        <Fragment key={index}>{chunk}</Fragment>
+      ))}
+    </div>
+  );
+}
+```

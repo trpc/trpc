@@ -45,14 +45,14 @@ module.exports = {
       // contextualSearch: true,
       // searchParameters: {},
     },
-    // announcementBar: {
-    //   id: 'drift',
-    //   content:
-    //     "🚀 We've just released a beta version of <strong>tRPC Drift</strong> which helps you keep track of changes in your tRPC API. Check it out at <a href='https://drift.trpc.io'><strong>drift.trpc.io</strong></a>.",
-    //   backgroundColor: 'var(--ifm-color-primary-dark)',
-    //   textColor: '#ffffff',
-    //   isCloseable: true,
-    // },
+    announcementBar: {
+      id: 'actions',
+      content:
+        "🚀 New blog post live! Check out how to use Server Actions with tRPC <a href='/blog/trpc-actions'><strong>here</strong></a>.",
+      backgroundColor: 'var(--ifm-color-primary-dark)',
+      textColor: '#ffffff',
+      isCloseable: true,
+    },
     navbar: {
       title: 'tRPC',
       logo: {
@@ -64,10 +64,6 @@ module.exports = {
           to: 'docs',
           label: 'Docs',
           activeBaseRegex: 'docs(/?)$',
-        },
-        {
-          to: '/pricing',
-          label: 'Pricing',
         },
         {
           to: 'docs/quickstart',
@@ -111,10 +107,6 @@ module.exports = {
         {
           title: 'Docs',
           items: [
-            {
-              label: 'Pricing',
-              to: '/pricing',
-            },
             {
               label: 'Docs',
               to: 'docs',

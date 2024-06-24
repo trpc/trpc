@@ -27,7 +27,7 @@ export interface TRPCRequestOptions {
 }
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
-  onStarted: () => void;
+  onStarted: (opts: { context: OperationContext | undefined }) => void;
   onData: (value: TValue) => void;
   onError: (err: TError) => void;
   onStopped: () => void;
@@ -148,7 +148,9 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     return observable$.subscribe({
       next(envelope) {
         if (envelope.result.type === 'started') {
-          opts.onStarted?.();
+          opts.onStarted?.({
+            context: envelope.context,
+          });
         } else if (envelope.result.type === 'stopped') {
           opts.onStopped?.();
         } else {

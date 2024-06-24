@@ -25,6 +25,8 @@
   --docsearch-key-shadow: none !important;
   --docsearch-footer-shadow: none !important;
   --docsearch-key-gradient: #f4f4f5 !important;
+
+  --tweet-border: 1px solid var(--ifm-color-emphasis-300);
 }
 
 :root[data-theme='dark'] {

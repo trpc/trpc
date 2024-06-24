@@ -66,15 +66,14 @@ jobs:
           - 5432:5432
     env:
       NEXTAUTH_SECRET: supersecret
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     continue-on-error: true
     strategy:
       matrix:
-        dir:
-          [
+        dir: [
             .experimental/next-app-dir,
             .test/diagnostics-big-router,
             .test/internal-types-export,
@@ -89,6 +88,7 @@ jobs:
             next-prisma-starter,
             next-prisma-todomvc,
             next-prisma-websockets-starter,
+            # next-sse-chat,
             soa,
             standalone-server,
             vercel-edge-runtime,
@@ -109,8 +109,9 @@ jobs:
             then pnpm playwright install chromium;
           fi
 
+      - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
@@ -173,7 +174,7 @@ jobs:
 
       - run: pnpm turbo --filter "@trpc/*" build
 
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
