@@ -31,16 +31,15 @@ type InputForDef<TDef extends ResolverDef> =
   | Omit<TDef['input'], ReservedInfiniteQueryKeys>
   | SkipToken;
 
-export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
-  ? TInput['cursor']
-  : unknown;
+export type ExtractCursorType<TDef extends ResolverDef> =
+  TDef['input'] extends { cursor?: any } ? TDef['input']['cursor'] : unknown;
 
 type makeOptions<TDef extends ResolverDef, TOptions> = DistributiveOmit<
   TOptions,
-  'queryKey' | 'initialPageParam'
+  'queryKey' | 'initialPageParam' | 'queryFn' | 'queryHash' | 'queryHashFn'
 > &
   TRPCUseQueryBaseOptions & {
-    initialCursor?: ExtractCursorType<TDef['input']>;
+    initialCursor?: ExtractCursorType<TDef>;
   };
 
 // references from react-query
@@ -113,7 +112,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         //     TQueryKey,
         any,
         //     TPageParam
-        ExtractCursorType<TDef['input']>
+        ExtractCursorType<TDef>
       >
     >,
   ): DefinedUseInfiniteQueryResult<
@@ -140,7 +139,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         //     TQueryKey,
         any,
         //     TPageParam
-        ExtractCursorType<TDef['input']>
+        ExtractCursorType<TDef>
       >
     >,
   ): UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>> & TRPCHookResult;
@@ -162,7 +161,7 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         //     TQueryKey,
         any,
         //     TPageParam
-        ExtractCursorType<TDef['input']>
+        ExtractCursorType<TDef>
       >
     >,
   ): UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>> & TRPCHookResult;
