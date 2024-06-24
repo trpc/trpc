@@ -8,7 +8,7 @@ import type {
   UseInfiniteQueryResult,
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
-import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import';
+import type { Simplify } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCHookResult, TRPCUseQueryBaseOptions } from '../types';
 
 /**
@@ -25,26 +25,22 @@ type ResolverDef = {
   errorShape: any;
 };
 
-type ReservedInfiniteQueryKeys = 'cursor' | 'direction';
+type InfiniteInput<TInput> = Omit<TInput, 'cursor' | 'direction'> | SkipToken;
 
-type InputForDef<TDef extends ResolverDef> =
-  | Omit<TDef['input'], ReservedInfiniteQueryKeys>
-  | SkipToken;
+export type inferCursorType<TInput> = TInput extends { cursor?: any }
+  ? TInput['cursor']
+  : unknown;
 
-export type ExtractCursorType<TDef extends ResolverDef> =
-  TDef['input'] extends { cursor?: any } ? TDef['input']['cursor'] : unknown;
-
-type makeOptions<TDef extends ResolverDef, TOptions> = DistributiveOmit<
+type makeInfiniteQueryOptions<TCursor, TOptions> = Omit<
   TOptions,
   'queryKey' | 'initialPageParam' | 'queryFn' | 'queryHash' | 'queryHashFn'
 > &
   TRPCUseQueryBaseOptions & {
-    initialCursor?: ExtractCursorType<TDef>;
+    initialCursor?: TCursor;
   };
 
-type trpcInfiniteData<TDef extends ResolverDef> = InfiniteData<
-  TDef['output'],
-  ExtractCursorType<TDef>
+type trpcInfiniteData<TDef extends ResolverDef> = Simplify<
+  InfiniteData<TDef['output'], inferCursorType<TDef['input']>>
 >;
 // references from react-query
 // 1st
@@ -103,9 +99,9 @@ type trpcInfiniteData<TDef extends ResolverDef> = InfiniteData<
 export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
   // 1st
   <TData = trpcInfiniteData<TDef>>(
-    input: InputForDef<TDef>,
-    opts: makeOptions<
-      TDef,
+    input: InfiniteInput<TDef['input']>,
+    opts: makeInfiniteQueryOptions<
+      inferCursorType<TDef['input']>,
       DefinedInitialDataInfiniteOptions<
         //     TQueryFnData,
         TDef['output'],
@@ -116,23 +112,17 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         //     TQueryKey,
         any,
         //     TPageParam
-        ExtractCursorType<TDef>
+        inferCursorType<TDef['input']>
       >
     >,
-  ): DefinedUseInfiniteQueryResult<
-    TData,
-    TRPCClientErrorLike<{
-      errorShape: TDef['errorShape'];
-      transformer: TDef['transformer'];
-    }>
-  > &
-    TRPCHookResult;
+  ): TRPCHookResult &
+    DefinedUseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>>;
 
   // 2nd
   <TData = trpcInfiniteData<TDef>>(
-    input: InputForDef<TDef>,
-    opts?: makeOptions<
-      TDef,
+    input: InfiniteInput<TDef['input']>,
+    opts?: makeInfiniteQueryOptions<
+      inferCursorType<TDef['input']>,
       UndefinedInitialDataInfiniteOptions<
         //     TQueryFnData,
         TDef['output'],
@@ -143,16 +133,16 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         //     TQueryKey,
         any,
         //     TPageParam
-        ExtractCursorType<TDef>
+        inferCursorType<TDef['input']>
       >
     >,
-  ): UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>> & TRPCHookResult;
+  ): TRPCHookResult & UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>>;
 
   // 3rd:
   <TData = trpcInfiniteData<TDef>>(
-    input: InputForDef<TDef>,
-    opts?: makeOptions<
-      TDef,
+    input: InfiniteInput<TDef['input']>,
+    opts?: makeInfiniteQueryOptions<
+      inferCursorType<TDef['input']>,
       UseInfiniteQueryOptions<
         //     TQueryFnData,
         TDef['output'],
@@ -165,8 +155,8 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         //     TQueryKey,
         any,
         //     TPageParam
-        ExtractCursorType<TDef>
+        inferCursorType<TDef['input']>
       >
     >,
-  ): UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>> & TRPCHookResult;
+  ): TRPCHookResult & UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>>;
 }
