@@ -14,7 +14,6 @@ import type {
 } from '@tanstack/react-query';
 import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
-import type { InferMutationOptions } from '@trpc/react-query/utils/inferReactQueryProcedure';
 import type {
   AnyMutationProcedure,
   AnyQueryProcedure,
@@ -40,6 +39,7 @@ import type {
 import { contextProps } from '../../internals/context';
 import type { QueryKeyKnown, QueryType } from '../../internals/getQueryKey';
 import { getQueryKeyInternal } from '../../internals/getQueryKey';
+import type { InferMutationOptions } from '../../utils/inferReactQueryProcedure';
 import type { ExtractCursorType } from '../hooks/types';
 
 type DecorateProcedure<
