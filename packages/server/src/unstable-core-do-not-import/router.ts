@@ -280,23 +280,22 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
         if (path === '_def') return _def;
 
         return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
-          (opts) => {
+          async (opts) => {
             const fullPath = [path, ...opts.path].join('.');
 
             const procedure = _def.procedures[fullPath] as AnyProcedure;
 
             let ctx: Context | undefined = undefined;
             try {
-              return Promise.resolve(
-                isFunction(ctxOrCallback) ? ctxOrCallback() : ctxOrCallback,
-              ).then((resolvedContext) => {
-                ctx = resolvedContext;
-                return procedure({
-                  path: fullPath,
-                  getRawInput: async () => opts.args[0],
-                  ctx: resolvedContext,
-                  type: procedure._def.type,
-                });
+              ctx = isFunction(ctxOrCallback)
+                ? await Promise.resolve(ctxOrCallback())
+                : ctxOrCallback;
+
+              return await procedure({
+                path: fullPath,
+                getRawInput: async () => opts.args[0],
+                ctx,
+                type: procedure._def.type,
               });
             } catch (cause) {
               options?.onError?.({
