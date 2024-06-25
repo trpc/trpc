@@ -7,7 +7,7 @@ import type {TRPCReconnectNotification,} from '../../@trpc/server/rpc';
 // eslint-disable-next-line no-restricted-imports
 import type {MaybePromise} from '../../unstable-core-do-not-import';
 import type {NodeHTTPCreateContextFnOptions} from '../node-http';
-import {getTrpcSubscriptionUtils, Subscription} from "@trpc/server/adapters/subscribable/base";
+import {getTrpcSubscriptionUtils} from "../../adapters/subscribable/base";
 
 /**
  * Importing ws causes a build error
@@ -66,12 +66,13 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
     opts: WSConnectionHandlerOptions<TRouter>,
 ) {
+    //const createContext = opts.createContext;
     return async (client: ws.WebSocket, req: IncomingMessage) => {
-        const clientSubscriptions = new Map<number | string, Subscription>();
-
-        const utils = await getTrpcSubscriptionUtils({
+        const clientSubscriptions = new Map<number | string, AbortController>();
+        const utils = await getTrpcSubscriptionUtils<TRouter, IncomingMessage, ws.WebSocket>({
             ...opts,
             req,
+            res: null,
             currentTransport: {
                 send: (data) => {
                     client.send(data);
@@ -106,8 +107,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             utils.handleError(cause)
         });
 
-        client.once('close', () => {
-            utils.handleClose()
+        client.once('close', async () => {
+            await utils.handleClose()
         });
     };
 }
