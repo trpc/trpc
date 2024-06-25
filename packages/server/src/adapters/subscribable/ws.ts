@@ -66,7 +66,6 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
     opts: WSConnectionHandlerOptions<TRouter>,
 ) {
-    //const createContext = opts.createContext;
     return async (client: ws.WebSocket, req: IncomingMessage) => {
         const clientSubscriptions = new Map<number | string, AbortController>();
         const utils = await getTrpcSubscriptionUtils<TRouter, IncomingMessage, ws.WebSocket>({
