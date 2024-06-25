@@ -74,7 +74,7 @@ const config = {
         format: ['PascalCase'],
         leadingUnderscore: 'allow',
         custom: {
-          regex: '^(T|\\$)[A-Z][a-zA-Z]+[0-9]*$',
+          regex: '^(T|\\$)([A-Z]([a-zA-Z]+))?[0-9]*$',
           match: true,
         },
       },

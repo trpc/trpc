@@ -4,6 +4,7 @@ import { buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = [
   'src/index.ts',
+  'src/rsc.tsx',
   'src/server/index.ts',
   'src/shared/index.ts',
 ];

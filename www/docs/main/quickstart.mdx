@@ -288,7 +288,7 @@ const appRouter = router({
 
   </TabItem>
   <TabItem value="valibot" label="Valibot">
-    With Valibot, you simply need to <code>wrap</code> your schema with <a href="https://typeschema.com">TypeSchema</a>.
+    The input parser can be any Valibot schema wrapped with <code>v.parser</code> or <code>v.parserAsync</code>.
 
 <br />
 <br />
@@ -302,13 +302,12 @@ const appRouter = router({
 import { db } from './db';
 import { publicProcedure, router } from './trpc';
 // ---cut---
-import { wrap } from '@typeschema/valibot';
-import { string } from 'valibot';
+import * as v from 'valibot';
 
 const appRouter = router({
   // ...
   userById: publicProcedure
-    .input(wrap(string()))
+    .input(v.parser(v.string()))
     .query(async (opts) => {
       const { input } = opts;
       //      ^?

@@ -57,10 +57,11 @@ import { useLoaderData } from 'react-router-dom';
 import type { AppRouter } from './server';
 
 const trpc = createTRPCReact<AppRouter>();
+const trpcClient = trpc.createClient({ links: [] });
 
 const queryClient = new QueryClient();
 
-const clientUtils = createTRPCQueryUtils({ queryClient, client: trpc });
+const clientUtils = createTRPCQueryUtils({ queryClient, client: trpcClient });
 
 // This is a react-router loader
 export async function loader() {

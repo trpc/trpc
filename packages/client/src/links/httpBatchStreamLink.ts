@@ -1,6 +1,6 @@
 import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import type { TRPCResponse } from '@trpc/server/rpc';
+import type { TRPCErrorShape, TRPCResponse } from '@trpc/server/rpc';
 import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
@@ -95,20 +95,24 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
 
           return {
             promise: responsePromise.then(async (res) => {
-              if (!res.body) {
-                throw new Error('Received response without body');
-              }
               const [head] = await jsonlStreamConsumer<
                 Record<string, Promise<any>>
               >({
-                from: res.body,
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                from: res.body!,
                 deserialize: resolvedOpts.transformer.output.deserialize,
                 // onError: console.error,
+                formatError(opts) {
+                  const error = opts.error as TRPCErrorShape;
+                  return TRPCClientError.from({
+                    error,
+                  });
+                },
               });
 
               const promises = Object.keys(batchOps).map(
                 async (key): Promise<HTTPResult> => {
-                  let json: TRPCResponse = await head[key];
+                  let json: TRPCResponse = await Promise.resolve(head[key]);
 
                   if ('result' in json) {
                     /**
@@ -143,11 +147,16 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
 
     const query = dataLoader(batchLoader('query'));
     const mutation = dataLoader(batchLoader('mutation'));
-    const subscription = dataLoader(batchLoader('subscription'));
 
-    const loaders = { query, subscription, mutation };
+    const loaders = { query, mutation };
     return ({ op }) => {
       return observable((observer) => {
+        /* istanbul ignore if -- @preserve */
+        if (op.type === 'subscription') {
+          throw new Error(
+            'Subscriptions are unsupported by `httpLink` - use `httpSubscriptionLink` or `wsLink`',
+          );
+        }
         const loader = loaders[op.type];
         const { promise, cancel } = loader.load(op);
 

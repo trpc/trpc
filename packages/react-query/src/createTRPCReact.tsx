@@ -174,6 +174,23 @@ export type DecoratedMutation<TDef extends ResolverDef> = {
     TContext
   >;
 };
+
+interface ProcedureUseSubscription<TDef extends ResolverDef> {
+  // Without skip token
+  (
+    input: TDef['input'],
+    opts: UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
+  ): void;
+
+  // With skip token
+  (
+    input: TDef['input'] | SkipToken,
+    opts: Omit<
+      UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
+      'enabled'
+    >,
+  ): void;
+}
 /**
  * @internal
  */
@@ -189,13 +206,7 @@ export type DecorateProcedure<
       /**
        * @link https://trpc.io/docs/v11/subscriptions
        */
-      useSubscription: (
-        input: TDef['input'],
-        opts?: UseTRPCSubscriptionOptions<
-          TDef['output'],
-          TRPCClientErrorLike<TDef>
-        >,
-      ) => void;
+      useSubscription: ProcedureUseSubscription<TDef>;
     }
   : never;
 
@@ -263,6 +274,12 @@ export function createHooksInternal<
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
   type CreateHooksInternal = CreateTRPCReact<TRouter, TSSRContext>;
 
+  const proxy = createReactDecoration<TRouter, TSSRContext>(
+    trpc,
+  ) as DecorateRouterRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >;
   return createFlatProxy<CreateHooksInternal>((key) => {
     if (key === 'useContext' || key === 'useUtils') {
       return () => {
@@ -278,7 +295,7 @@ export function createHooksInternal<
       return (trpc as any)[key];
     }
 
-    return createReactDecoration(key, trpc);
+    return proxy[key];
   });
 }
 

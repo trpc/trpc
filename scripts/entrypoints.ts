@@ -70,11 +70,11 @@ export async function generateEntrypoints(rawInputs: string[]) {
       const importPath =
         parts.at(-1) === 'index.ts'
           ? parts.slice(0, -1).join('/')
-          : pathWithoutSrc.replace(/\.ts$/, '');
+          : pathWithoutSrc.replace(/\.(ts|tsx)$/, '');
 
       // write this entrypoint to the package.json exports field
-      const esm = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.mjs');
-      const cjs = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.js');
+      const esm = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.mjs');
+      const cjs = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.js');
       pkgJson.exports[`./${importPath}`] = {
         import: esm,
         require: cjs,
@@ -128,7 +128,7 @@ export async function generateEntrypoints(rawInputs: string[]) {
 
   const turboPath = path.resolve('turbo.json');
   const turboJson = JSON.parse(fs.readFileSync(turboPath, 'utf8'));
-  turboJson.pipeline['codegen-entrypoints'].outputs = [...scriptOutputs];
+  turboJson.tasks['codegen-entrypoints'].outputs = [...scriptOutputs];
   const formattedTurboJson = prettier.format(JSON.stringify(turboJson), {
     parser: 'json',
     ...(await prettier.resolveConfig(turboPath)),

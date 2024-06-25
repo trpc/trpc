@@ -1,7 +1,8 @@
 import type {
-  AnyRootTypes,
+  AnyClientTypes,
   CombinedDataTransformer,
   ProcedureType,
+  TRPCAcceptHeader,
   TRPCResponse,
 } from '@trpc/server/unstable-core-do-not-import';
 import { getFetch } from '../../getFetch';
@@ -22,7 +23,7 @@ import type { HTTPHeaders, PromiseAndCancel } from '../types';
  * @internal
  */
 export type HTTPLinkBaseOptions<
-  TRoot extends Pick<AnyRootTypes, 'transformer'>,
+  TRoot extends Pick<AnyClientTypes, 'transformer'>,
 > = {
   url: string | URL;
   /**
@@ -50,10 +51,10 @@ export interface ResolvedHTTPLinkOptions {
 }
 
 export function resolveHTTPLinkOptions(
-  opts: HTTPLinkBaseOptions<AnyRootTypes>,
+  opts: HTTPLinkBaseOptions<AnyClientTypes>,
 ): ResolvedHTTPLinkOptions {
   return {
-    url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes
+    url: opts.url.toString(),
     fetch: opts.fetch,
     AbortController: getAbortController(opts.AbortController),
     transformer: getTransformer(opts.transformer),
@@ -74,6 +75,7 @@ function arrayToDict(array: unknown[]) {
 const METHOD = {
   query: 'GET',
   mutation: 'POST',
+  subscription: 'PATCH',
 } as const;
 
 export interface HTTPResult {
@@ -106,19 +108,20 @@ type GetUrl = (opts: HTTPBaseRequestOptions) => string;
 type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 
 export type ContentOptions = {
-  trpcAcceptHeader?: 'application/jsonl';
+  trpcAcceptHeader?: TRPCAcceptHeader;
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;
 };
 
 export const getUrl: GetUrl = (opts) => {
-  let url = opts.url + '/' + opts.path;
+  const base = opts.url.replace(/\/$/, ''); // Remove any trailing slashes
+  let url = base + '/' + opts.path;
   const queryParts: string[] = [];
   if ('inputs' in opts) {
     queryParts.push('batch=1');
   }
-  if (opts.type === 'query') {
+  if (opts.type === 'query' || opts.type === 'subscription') {
     const input = getInput(opts);
     if (input !== undefined && opts.methodOverride !== 'POST') {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
@@ -172,10 +175,6 @@ export async function fetchHTTPResponse(
     }
     return heads;
   })();
-  /* istanbul ignore if -- @preserve */
-  if (type === 'subscription') {
-    throw new Error('Subscriptions should use wsLink');
-  }
   const headers = {
     ...(opts.contentTypeHeader
       ? { 'content-type': opts.contentTypeHeader }

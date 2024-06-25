@@ -1,8 +1,8 @@
-import http from 'http';
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
-import type { ConsumerOnError, ProducerOnError } from './stream';
-import { jsonlStreamConsumer, jsonlStreamProducer } from './stream';
+import type { ConsumerOnError, ProducerOnError } from './jsonl';
+import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
+import { createServer } from './utils/createServer';
 
 test('encode/decode with superjson', async () => {
   const data = {
@@ -32,7 +32,6 @@ test('encode/decode with superjson', async () => {
     deserialize: (v) => SuperJSON.deserialize(v),
   });
 
-  // console.log(inspect(head, undefined, 10));
   {
     expect(head[0]).toBeInstanceOf(Promise);
 
@@ -140,7 +139,7 @@ test('encode/decode - error', async () => {
       ],
       Array [
         Object {
-          "error": [Error: iterable],
+          "error": [TRPCError: iterable],
           "path": Array [
             "1",
           ],
@@ -181,13 +180,18 @@ test('decode - bad data', async () => {
   }
 });
 
-function createServer(stream: ReadableStream, abortSignal: AbortController) {
-  const server = http.createServer(async (req, res) => {
+function createServerForStream(
+  stream: ReadableStream,
+  abortSignal: AbortController,
+  headers: Record<string, string> = {},
+) {
+  return createServer(async (req, res) => {
     req.once('aborted', () => {
       abortSignal.abort();
     });
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Transfer-Encoding', 'chunked');
+    for (const [key, value] of Object.entries(headers)) {
+      res.setHeader(key, value);
+    }
 
     const reader = stream.getReader();
     while (true) {
@@ -195,22 +199,11 @@ function createServer(stream: ReadableStream, abortSignal: AbortController) {
       if (done) {
         break;
       }
-      // console.log('write', value);
+
       res.write(value);
     }
     res.end();
   });
-  server.listen(0);
-  const port = (server.address() as any).port;
-
-  const url = `http://localhost:${port}`;
-
-  return {
-    url,
-    close: () => {
-      server.close();
-    },
-  };
 }
 test('e2e, create server', async () => {
   const data = {
@@ -240,7 +233,7 @@ test('e2e, create server', async () => {
     serialize: (v) => SuperJSON.serialize(v),
   });
 
-  const server = createServer(stream, new AbortController());
+  const server = createServerForStream(stream, new AbortController());
 
   const res = await fetch(server.url);
 
@@ -280,6 +273,8 @@ test('e2e, create server', async () => {
   }
   // await meta.reader.closed;
   expect(meta.controllers.size).toBe(0);
+
+  await server.close();
 });
 
 test('e2e, client aborts request halfway through', async () => {
@@ -312,7 +307,7 @@ test('e2e, client aborts request halfway through', async () => {
     data,
     onError: onProducerErrorSpy,
   });
-  const server = createServer(stream, serverAbort);
+  const server = createServerForStream(stream, serverAbort);
 
   const res = await fetch(server.url, {
     signal: clientAbort.signal,
@@ -354,7 +349,7 @@ test('e2e, client aborts request halfway through', async () => {
   `);
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
   expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
-  server.close();
+  await server.close();
 });
 
 test('e2e, encode/decode - maxDepth', async () => {
@@ -372,7 +367,7 @@ test('e2e, encode/decode - maxDepth', async () => {
     maxDepth: 1,
   });
 
-  const server = createServer(stream, new AbortController());
+  const server = createServerForStream(stream, new AbortController());
 
   const res = await fetch(server.url);
   const [head] = await jsonlStreamConsumer<typeof data>({
@@ -403,4 +398,6 @@ test('e2e, encode/decode - maxDepth', async () => {
       ],
     ]
   `);
+
+  await server.close();
 });
