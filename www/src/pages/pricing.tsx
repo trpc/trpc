@@ -1,6 +1,4 @@
 import { PageMetadata } from '@docusaurus/theme-common';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { RadioGroup } from '@headlessui/react';
 import { CheckIcon } from '@heroicons/react/20/solid';
 import Layout from '@theme/Layout';
 import React, { useState } from 'react';

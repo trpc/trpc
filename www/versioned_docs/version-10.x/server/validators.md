@@ -338,10 +338,10 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-### With [@effect/schema](https://github.com/Effect-TS/schema)
+### With [@effect/schema](https://github.com/Effect-TS/effect/tree/main/packages/schema)
 
 ```ts
-import * as S from '@effect/schema/Schema';
+import * as Schema from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
@@ -350,8 +350,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(S.parseSync(S.struct({ name: S.string })))
-    .output(S.parseSync(S.struct({ greeting: S.string })))
+    .input(Schema.decodeUnknownSync(Schema.Struct({ name: Schema.String })))
+    .output(Schema.decodeUnknownSync(Schema.Struct({ greeting: Schema.String })))
     .query(({ input }) => {
       //      ^?
       return {

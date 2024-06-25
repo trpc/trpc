@@ -1,19 +1,8 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { isAsyncIterable, isFunction, isObject } from '../utils';
-
-// ---------- utils
-
-function createReadableStream<TValue = unknown>() {
-  let controller: ReadableStreamDefaultController<TValue> =
-    null as unknown as ReadableStreamDefaultController<TValue>;
-  const stream = new ReadableStream<TValue>({
-    start(c) {
-      controller = c;
-    },
-  });
-
-  return [stream, controller] as const;
-}
+import { getTRPCErrorFromUnknown } from '../error/TRPCError';
+import { isAsyncIterable, isFunction, isObject, run } from '../utils';
+import type { Deferred } from './utils/createDeferred';
+import { createDeferred } from './utils/createDeferred';
+import { createReadableStream } from './utils/createReadableStream';
 
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
@@ -65,38 +54,32 @@ type ChunkDefinition = [
   type: ChunkValueType,
   chunkId: ChunkIndex,
 ];
-type HydratedValue = [
+type DehydratedValue = [
   // data
   [unknown],
   // chunk descriptions
   ...ChunkDefinition[],
 ];
 
-type Head = Record<string, HydratedValue>;
+type Head = Record<string, DehydratedValue>;
 type PromiseChunk =
   | [
       chunkIndex: ChunkIndex,
       status: PROMISE_STATUS_FULFILLED,
-      value: HydratedValue,
+      value: DehydratedValue,
     ]
-  | [
-      chunkIndex: ChunkIndex,
-      status: PROMISE_STATUS_REJECTED,
-      // do we want to serialize errors?
-      // , error?: unknown
-    ];
+  | [chunkIndex: ChunkIndex, status: PROMISE_STATUS_REJECTED, error: unknown];
 type IterableChunk =
   | [chunkIndex: ChunkIndex, status: ASYNC_ITERABLE_STATUS_DONE]
   | [
       chunkIndex: ChunkIndex,
       status: ASYNC_ITERABLE_STATUS_VALUE,
-      value: HydratedValue,
+      value: DehydratedValue,
     ]
   | [
       chunkIndex: ChunkIndex,
       status: ASYNC_ITERABLE_STATUS_ERROR,
-      // do we want to serialize errors?
-      // , error?: unknown
+      error: unknown,
     ];
 type ChunkData = PromiseChunk | IterableChunk;
 type PlaceholderValue = 0 & { __placeholder: true };
@@ -117,8 +100,12 @@ export type ProducerOnError = (opts: {
 }) => void;
 export interface ProducerOptions {
   serialize?: Serialize;
-  data: Record<number, unknown>;
+  data: Record<string, unknown> | unknown[];
   onError?: ProducerOnError;
+  formatError?: (opts: {
+    error: unknown;
+    path: (string | number)[];
+  }) => unknown;
   maxDepth?: number;
 }
 
@@ -133,14 +120,15 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const [stream, controller] = createReadableStream<ChunkData>();
+  const stream = createReadableStream<ChunkData>();
   const pending = new Set<ChunkIndex>();
+
   function maybeClose() {
-    if (pending.size === 0) {
-      controller.close();
+    if (pending.size === 0 && !stream.cancelled()) {
+      stream.controller.close();
     }
   }
-  function hydratePromise(
+  function dehydratePromise(
     promise: Promise<unknown>,
     path: (string | number)[],
   ) {
@@ -154,16 +142,25 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
-    const enqueue = (value: PromiseChunk) => {
-      controller.enqueue(value);
-    };
-    promise
+
+    Promise.race([promise, stream.cancelledPromise])
       .then((it) => {
-        enqueue([idx, PROMISE_STATUS_FULFILLED, hydrate(it, path)]);
+        if (it === null) {
+          return;
+        }
+        stream.controller.enqueue([
+          idx,
+          PROMISE_STATUS_FULFILLED,
+          dehydrate(it, path),
+        ]);
       })
-      .catch((err) => {
-        opts.onError?.({ error: err, path });
-        enqueue([idx, PROMISE_STATUS_REJECTED]);
+      .catch((cause) => {
+        opts.onError?.({ error: cause, path });
+        stream.controller.enqueue([
+          idx,
+          PROMISE_STATUS_REJECTED,
+          opts.formatError?.({ error: cause, path }),
+        ]);
       })
       .finally(() => {
         pending.delete(idx);
@@ -171,7 +168,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
       });
     return idx;
   }
-  function hydrateAsyncIterable(
+  function dehydrateAsyncIterable(
     iterable: AsyncIterable<unknown>,
     path: (string | number)[],
   ) {
@@ -185,24 +182,56 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
-    void (async () => {
-      try {
-        for await (const item of iterable) {
-          controller.enqueue([
+    run(async () => {
+      const iterator = iterable[Symbol.asyncIterator]();
+
+      while (true) {
+        const next = await Promise.race([
+          iterator.next().catch(getTRPCErrorFromUnknown),
+          stream.cancelledPromise,
+        ]);
+
+        if (next instanceof Error) {
+          opts.onError?.({ error: next, path });
+
+          stream.controller.enqueue([
             idx,
-            ASYNC_ITERABLE_STATUS_VALUE,
-            hydrate(item, path),
+            ASYNC_ITERABLE_STATUS_ERROR,
+            opts.formatError?.({ error: next, path }),
           ]);
+          return;
         }
-        controller.enqueue([idx, ASYNC_ITERABLE_STATUS_DONE]);
-      } catch (error) {
-        opts.onError?.({ error, path });
-        controller.enqueue([idx, ASYNC_ITERABLE_STATUS_ERROR]);
-      } finally {
-        pending.delete(idx);
-        maybeClose();
+        if (next === 'cancelled') {
+          await iterator.return?.();
+          break;
+        }
+        if (next.done) {
+          stream.controller.enqueue([idx, ASYNC_ITERABLE_STATUS_DONE]);
+          break;
+        }
+        stream.controller.enqueue([
+          idx,
+          ASYNC_ITERABLE_STATUS_VALUE,
+          dehydrate(next.value, path),
+        ]);
       }
-    })();
+
+      pending.delete(idx);
+      maybeClose();
+    }).catch((cause) => {
+      // this shouldn't happen, but node crashes if we don't catch it
+      opts.onError?.({
+        error: new Error(
+          'You found a bug - please report it on https://github.com/trpc/trpc',
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore https://github.com/tc39/proposal-error-cause
+          {
+            cause,
+          },
+        ),
+        path,
+      });
+    });
     return idx;
   }
   function checkMaxDepth(path: (string | number)[]) {
@@ -211,12 +240,12 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     }
     return null;
   }
-  function hydrateChunk(
+  function dehydrateChunk(
     value: unknown,
     path: (string | number)[],
   ): null | [type: ChunkValueType, chunkId: ChunkIndex] {
     if (isPromise(value)) {
-      return [CHUNK_VALUE_TYPE_PROMISE, hydratePromise(value, path)];
+      return [CHUNK_VALUE_TYPE_PROMISE, dehydratePromise(value, path)];
     }
     if (isAsyncIterable(value)) {
       if (opts.maxDepth && path.length >= opts.maxDepth) {
@@ -224,13 +253,16 @@ function createBatchStreamProducer(opts: ProducerOptions) {
       }
       return [
         CHUNK_VALUE_TYPE_ASYNC_ITERABLE,
-        hydrateAsyncIterable(value, path),
+        dehydrateAsyncIterable(value, path),
       ];
     }
     return null;
   }
-  function hydrate(value: unknown, path: (string | number)[]): HydratedValue {
-    const reg = hydrateChunk(value, path);
+  function dehydrate(
+    value: unknown,
+    path: (string | number)[],
+  ): DehydratedValue {
+    const reg = dehydrateChunk(value, path);
     if (reg) {
       return [[placeholder], [null, ...reg]];
     }
@@ -240,7 +272,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     const newObj = {} as Record<string, unknown>;
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
-      const transformed = hydrateChunk(item, [...path, key]);
+      const transformed = dehydrateChunk(item, [...path, key]);
       if (!transformed) {
         newObj[key] = item;
         continue;
@@ -253,10 +285,10 @@ function createBatchStreamProducer(opts: ProducerOptions) {
 
   const newHead: Head = {};
   for (const [key, item] of Object.entries(data)) {
-    newHead[key] = hydrate(item, [key]);
+    newHead[key] = dehydrate(item, [key]);
   }
 
-  return [newHead, stream] as const;
+  return [newHead, stream.readable] as const;
 }
 /**
  * JSON Lines stream producer
@@ -290,6 +322,7 @@ export function jsonlStreamProducer(opts: ProducerOptions) {
     )
     .pipeThrough(new TextEncoderStream());
 }
+
 class StreamInterruptedError extends Error {
   constructor(cause?: unknown) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -307,7 +340,7 @@ export type ConsumerOnError = (opts: { error: unknown }) => void;
 const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
   return {
     getReader() {
-      const [stream, controller] = createReadableStream<Uint8Array>();
+      const { readable, controller } = createReadableStream<Uint8Array>();
       source.on('data', (chunk) => {
         controller.enqueue(chunk);
       });
@@ -317,7 +350,7 @@ const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
       source.on('error', (error) => {
         controller.error(error);
       });
-      return stream.getReader();
+      return readable.getReader();
     },
   };
 };
@@ -382,19 +415,6 @@ function createConsumerStream<THead>(
   );
 }
 
-function createDeferred<TValue>() {
-  let resolve: (value: TValue) => void;
-  let reject: (error: unknown) => void;
-  const promise = new Promise<TValue>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-
-  return { promise, resolve: resolve!, reject: reject! };
-}
-
-type Deferred<TValue> = ReturnType<typeof createDeferred<TValue>>;
-
 /**
  * JSON Lines stream consumer
  * @see https://jsonlines.org/
@@ -403,6 +423,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   from: NodeJSReadableStreamEsque | WebReadableStreamEsque;
   deserialize?: Deserialize;
   onError?: ConsumerOnError;
+  formatError?: (opts: { error: unknown }) => Error;
 }) {
   const { deserialize = (v) => v } = opts;
 
@@ -423,10 +444,10 @@ export async function jsonlStreamConsumer<THead>(opts: {
   const chunkDeferred = new Map<ChunkIndex, Deferred<ChunkController>>();
   const controllers = new Map<ChunkIndex, ChunkController>();
 
-  function dehydrateChunkDefinition(value: ChunkDefinition) {
+  function hydrateChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const [stream, controller] = createReadableStream<ChunkData>();
+    const { readable, controller } = createReadableStream<ChunkData>();
     controllers.set(chunkId, controller);
 
     // resolve chunk deferred if it exists
@@ -440,7 +461,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
       case CHUNK_VALUE_TYPE_PROMISE: {
         return new Promise((resolve, reject) => {
           // listen for next value in the stream
-          const reader = stream.getReader();
+          const reader = readable.getReader();
           reader
             .read()
             .then((it) => {
@@ -456,10 +477,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
               const [_chunkId, status, data] = value as PromiseChunk;
               switch (status) {
                 case PROMISE_STATUS_FULFILLED:
-                  resolve(dehydrate(data));
+                  resolve(hydrate(data));
                   break;
                 case PROMISE_STATUS_REJECTED:
-                  reject(new AsyncError(data));
+                  reject(
+                    opts.formatError?.({ error: data }) ?? new AsyncError(data),
+                  );
                   break;
               }
             })
@@ -473,7 +496,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
         return {
           [Symbol.asyncIterator]: async function* () {
-            const reader = stream.getReader();
+            const reader = readable.getReader();
             while (true) {
               const { done, value } = await reader.read();
               if (done) {
@@ -487,14 +510,16 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
               switch (status) {
                 case ASYNC_ITERABLE_STATUS_VALUE:
-                  yield dehydrate(data);
+                  yield hydrate(data);
                   break;
                 case ASYNC_ITERABLE_STATUS_DONE:
                   controllers.delete(chunkId);
                   return;
                 case ASYNC_ITERABLE_STATUS_ERROR:
                   controllers.delete(chunkId);
-                  throw new AsyncError(data);
+                  throw (
+                    opts.formatError?.({ error: data }) ?? new AsyncError(data)
+                  );
               }
             }
           },
@@ -503,18 +528,18 @@ export async function jsonlStreamConsumer<THead>(opts: {
     }
   }
 
-  function dehydrate(value: HydratedValue): unknown {
+  function hydrate(value: DehydratedValue): unknown {
     const [[data], ...asyncProps] = value;
 
     for (const value of asyncProps) {
-      const dehydrated = dehydrateChunkDefinition(value);
+      const hydrated = hydrateChunkDefinition(value);
 
       const [path] = value;
       if (path === null) {
-        return dehydrated;
+        return hydrated;
       }
 
-      (data as any)[path] = dehydrated;
+      (data as any)[path] = hydrated;
     }
     return data;
   }
@@ -541,7 +566,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
             const head = chunkOrHead as Record<number | string, unknown>;
 
             for (const [key, value] of Object.entries(chunkOrHead)) {
-              const parsed = dehydrate(value);
+              const parsed = hydrate(value as any);
               head[key] = parsed;
             }
             headDeferred.resolve(head as THead);

@@ -1,4 +1,5 @@
-import { observable } from './observable';
+import { EventEmitter } from 'stream';
+import { observable, observableToAsyncIterable } from './observable';
 import { share, tap } from './operators';
 
 test('vanilla observable - complete()', () => {
@@ -139,4 +140,52 @@ test('pipe twice', () => {
     expect(pipe2.complete.mock.calls).toHaveLength(1);
     expect(end.complete.mock.calls).toHaveLength(1);
   }
+});
+
+test('observableToAsyncIterable()', async () => {
+  const obs = observable<number, Error>((observer) => {
+    observer.next(1);
+    observer.next(2);
+    observer.complete();
+  });
+
+  const aggregate: unknown[] = [];
+  for await (const value of observableToAsyncIterable(obs)) {
+    aggregate.push(value);
+  }
+  expect(aggregate).toMatchInlineSnapshot(`
+    Array [
+      1,
+      2,
+    ]
+  `);
+});
+
+test('observableToAsyncIterable() - doesnt hang', async () => {
+  const ee = new EventEmitter();
+  const obs = observable<number, Error>((observer) => {
+    const onData = (data: number) => {
+      observer.next(data);
+    };
+    ee.on('data', onData);
+    return () => {
+      ee.off('data', onData);
+    };
+  });
+
+  setTimeout(() => {
+    ee.emit('data', 1);
+    ee.emit('data', 2);
+    ee.emit('data', 3);
+  }, 1);
+
+  const aggregate: unknown[] = [];
+  for await (const value of observableToAsyncIterable(obs)) {
+    aggregate.push(value);
+    if (aggregate.length === 3) {
+      break;
+    }
+  }
+
+  expect(ee.listenerCount('data')).toBe(0);
 });

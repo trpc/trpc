@@ -338,6 +338,31 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+### With [@effect/schema](https://github.com/Effect-TS/effect/tree/main/packages/schema)
+
+```ts
+import * as Schema from '@effect/schema/Schema';
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(Schema.decodeUnknownSync(Schema.Struct({ name: Schema.String })))
+    .output(Schema.decodeUnknownSync(Schema.Struct({ greeting: Schema.String })))
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
 ### With [runtypes](https://github.com/pelotom/runtypes)
 
 ```ts twoslash
@@ -366,8 +391,7 @@ export type AppRouter = typeof appRouter;
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
-import { wrap } from '@typeschema/valibot';
-import { object, string } from 'valibot';
+import * as v from 'valibot';
 
 export const t = initTRPC.create();
 
@@ -375,8 +399,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(wrap(object({ name: string() })))
-    .output(wrap(object({ greeting: string() })))
+    .input(v.parser(v.object({ name: v.string() })))
+    .output(v.parser(v.object({ greeting: v.string() })))
     .query(({ input }) => {
       //      ^?
       return {

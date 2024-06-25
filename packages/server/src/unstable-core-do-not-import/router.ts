@@ -248,6 +248,18 @@ export function callProcedure(
     });
   }
 
+  /* istanbul ignore if -- @preserve */
+  if (
+    proc._def.type !== type &&
+    opts.allowMethodOverride &&
+    proc._def.type === 'subscription'
+  ) {
+    throw new TRPCError({
+      code: 'METHOD_NOT_SUPPORTED',
+      message: `Method override is not supported for subscriptions`,
+    });
+  }
+
   return proc(opts);
 }
 
@@ -264,36 +276,40 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
         onError?: RouterCallerErrorHandler<Context>;
       },
     ) {
-      const proxy = createRecursiveProxy(async ({ path, args }) => {
-        const fullPath = path.join('.');
+      return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
+        async ({ path, args }) => {
+          const fullPath = path.join('.');
 
-        const procedure = _def.procedures[fullPath] as AnyProcedure;
+          if (path.length === 1 && path[0] === '_def') {
+            return _def;
+          }
 
-        let ctx: Context | undefined = undefined;
-        try {
-          ctx = isFunction(ctxOrCallback)
-            ? await Promise.resolve(ctxOrCallback())
-            : ctxOrCallback;
+          const procedure = _def.procedures[fullPath] as AnyProcedure;
 
-          return await procedure({
-            path: fullPath,
-            getRawInput: async () => args[0],
-            ctx,
-            type: procedure._def.type,
-          });
-        } catch (cause) {
-          options?.onError?.({
-            ctx,
-            error: getTRPCErrorFromUnknown(cause),
-            input: args[0],
-            path: fullPath,
-            type: procedure._def.type,
-          });
-          throw cause;
-        }
-      });
+          let ctx: Context | undefined = undefined;
+          try {
+            ctx = isFunction(ctxOrCallback)
+              ? await Promise.resolve(ctxOrCallback())
+              : ctxOrCallback;
 
-      return proxy as ReturnType<RouterCaller<any, any>>;
+            return await procedure({
+              path: fullPath,
+              getRawInput: async () => args[0],
+              ctx,
+              type: procedure._def.type,
+            });
+          } catch (cause) {
+            options?.onError?.({
+              ctx,
+              error: getTRPCErrorFromUnknown(cause),
+              input: args[0],
+              path: fullPath,
+              type: procedure._def.type,
+            });
+            throw cause;
+          }
+        },
+      );
     };
   };
 }

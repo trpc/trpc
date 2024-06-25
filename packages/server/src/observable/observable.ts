@@ -4,6 +4,7 @@ import type {
   OperatorFunction,
   TeardownLogic,
   UnaryFunction,
+  Unsubscribable,
 } from './types';
 
 /** @public */
@@ -134,5 +135,67 @@ export function observableToPromise<TValue>(
     promise,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     abort: abort!,
+  };
+}
+
+/**
+ * @internal
+ */
+function observableToReadableStream<TValue>(
+  observable: Observable<TValue, unknown>,
+): ReadableStream<TValue> {
+  let unsub: Unsubscribable | null = null;
+  return new ReadableStream<TValue>({
+    start(controller) {
+      unsub = observable.subscribe({
+        next(data) {
+          controller.enqueue(data);
+        },
+        error(err) {
+          controller.error(err);
+        },
+        complete() {
+          controller.close();
+        },
+      });
+    },
+    cancel() {
+      unsub?.unsubscribe();
+    },
+  });
+}
+
+export function observableToAsyncIterable<TValue>(
+  observable: Observable<TValue, unknown>,
+): AsyncIterable<TValue> {
+  const stream = observableToReadableStream(observable);
+
+  const reader = stream.getReader();
+  const iterator: AsyncIterator<TValue> = {
+    async next() {
+      const value = await reader.read();
+      if (value.done) {
+        return {
+          value: undefined,
+          done: true,
+        };
+      }
+      return {
+        value: value.value,
+        done: false,
+      };
+    },
+    async return() {
+      await reader.cancel();
+      return {
+        value: undefined,
+        done: true,
+      };
+    },
+  };
+  return {
+    [Symbol.asyncIterator]() {
+      return iterator;
+    },
   };
 }

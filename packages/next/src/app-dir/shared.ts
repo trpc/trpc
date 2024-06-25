@@ -41,14 +41,16 @@ export type UseProcedureRecord<
 export function createUseProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
 ) {
-  return createRecursiveProxy((opts) => {
+  return createRecursiveProxy<
+    UseProcedureRecord<
+      TRouter['_def']['_config']['$types'],
+      TRouter['_def']['record']
+    >
+  >((opts) => {
     const path = opts.path.join('.');
 
     return client.query(path, ...opts.args);
-  }) as UseProcedureRecord<
-    TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record']
-  >;
+  });
 }
 
 type NextAppRouterUse<TRouter extends AnyRouter> = {

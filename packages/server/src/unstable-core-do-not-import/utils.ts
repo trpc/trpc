@@ -46,8 +46,18 @@ export function omitPrototype<TObj extends Record<string, unknown>>(
   return Object.assign(Object.create(null), obj);
 }
 
+const asyncIteratorsSupported =
+  typeof Symbol === 'function' && !!Symbol.asyncIterator;
+
 export function isAsyncIterable<TValue>(
   value: unknown,
 ): value is AsyncIterable<TValue> {
-  return isObject(value) && Symbol.asyncIterator in value;
+  return (
+    asyncIteratorsSupported && isObject(value) && Symbol.asyncIterator in value
+  );
 }
+
+/**
+ * Run an IIFE
+ */
+export const run = <TValue>(fn: () => TValue): TValue => fn();

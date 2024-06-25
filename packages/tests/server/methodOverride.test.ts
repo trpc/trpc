@@ -129,7 +129,7 @@ test('server: rejects method override from client when not enabled on the server
   );
 
   expect(err).toMatchInlineSnapshot(
-    `[TRPCClientError: No "mutation"-procedure on path "q"]`,
+    `[TRPCClientError: Unsupported POST-request to query procedure at path "q"]`,
   );
 });
 
@@ -146,6 +146,6 @@ test('cannot use method overriding with mutations', async () => {
     });
   });
   expect(err).toMatchInlineSnapshot(
-    `[TRPCClientError: No "query"-procedure on path "m"]`,
+    `[TRPCClientError: Unsupported GET-request to mutation procedure at path "m"]`,
   );
 });

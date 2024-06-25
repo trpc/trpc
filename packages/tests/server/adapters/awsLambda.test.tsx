@@ -133,12 +133,14 @@ test('v1 request info', async () => {
     Object {
       "result": Object {
         "data": Object {
+          "accept": null,
           "calls": Array [
             Object {
               "path": "request.info",
             },
           ],
           "isBatchCall": false,
+          "type": "query",
         },
       },
     }
@@ -288,6 +290,7 @@ test('test v2 format', async () => {
   );
   expect(result).toMatchInlineSnapshot(`
     Object {
+      "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
         "vary": "trpc-accept",
@@ -333,6 +336,7 @@ test('test v2 format with multiple / in query key', async () => {
   );
   expect(result).toMatchInlineSnapshot(`
     Object {
+      "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
         "vary": "trpc-accept",
@@ -379,6 +383,7 @@ test('test v2 format with non default routeKey', async () => {
   );
   expect(result).toMatchInlineSnapshot(`
     Object {
+      "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
         "vary": "trpc-accept",
@@ -424,6 +429,7 @@ test('test v2 format with non default routeKey and nested router', async () => {
   );
   expect(result).toMatchInlineSnapshot(`
     Object {
+      "cookies": Array [],
       "headers": Object {
         "content-type": "application/json",
         "vary": "trpc-accept",
@@ -508,6 +514,111 @@ test('test base64 encoded apigateway proxy integration', async () => {
       "result": Object {
         "data": Object {
           "counter": 2,
+        },
+      },
+    }
+  `);
+});
+
+test('v1 cookies', async () => {
+  const handler2 = trpcLambda.awsLambdaRequestHandler({
+    router,
+    createContext,
+    responseMeta: () => {
+      return {
+        headers: {
+          'Set-Cookie': ['cookie1', 'cookie2'],
+        },
+      };
+    },
+  });
+  const { body, ...result } = await handler2(
+    mockAPIGatewayProxyEventV1({
+      headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
+      method: 'GET',
+      path: 'hello',
+      queryStringParameters: {},
+      resource: '/hello',
+    }),
+    mockAPIGatewayContext(),
+  );
+  const parsedBody = JSON.parse(body ?? '');
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "headers": Object {
+        "content-type": "application/json",
+        "vary": "trpc-accept",
+      },
+      "multiValueHeaders": Object {
+        "set-cookie": Array [
+          "cookie1",
+          "cookie2",
+        ],
+      },
+      "statusCode": 200,
+    }
+  `);
+  expect(parsedBody).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": Object {
+          "text": "hello Lilja",
+        },
+      },
+    }
+  `);
+});
+
+test('v2 cookies', async () => {
+  const createContext = async ({
+    event,
+    info,
+  }: trpcLambda.CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
+    return {
+      user: event.headers['X-USER'],
+      info,
+    };
+  };
+  const handler2 = trpcLambda.awsLambdaRequestHandler({
+    router,
+    createContext,
+    responseMeta: () => {
+      return {
+        headers: {
+          'Set-Cookie': ['cookie1', 'cookie2'],
+        },
+      };
+    },
+  });
+  const { body, ...result } = await handler2(
+    mockAPIGatewayProxyEventV2({
+      headers: { 'Content-Type': 'application/json', 'X-USER': 'Lilja' },
+      method: 'GET',
+      path: 'hello/darkness/my/old/friend',
+      queryStringParameters: {},
+      routeKey: '$default',
+    }),
+    mockAPIGatewayContext(),
+  );
+  const parsedBody = JSON.parse(body ?? '');
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "cookies": Array [
+        "cookie1",
+        "cookie2",
+      ],
+      "headers": Object {
+        "content-type": "application/json",
+        "vary": "trpc-accept",
+      },
+      "statusCode": 200,
+    }
+  `);
+  expect(parsedBody).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": Object {
+          "text": "I've come to talk with you again",
         },
       },
     }

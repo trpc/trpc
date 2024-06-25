@@ -10,7 +10,6 @@
 
 // @trpc/server
 
-import { Readable } from 'node:stream';
 import { getTRPCErrorFromUnknown, type AnyRouter } from '../../@trpc/server';
 import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
 import { resolveResponse } from '../../@trpc/server/http';
@@ -56,17 +55,43 @@ export async function nodeHTTPRequestHandler<
       },
     });
 
-    if (opts.res.statusCode === 200) {
+    const { res } = opts;
+    if (res.statusCode === 200) {
       // if the status code is set, we assume that it's been manually overridden
-      opts.res.statusCode = response.status;
+      res.statusCode = response.status;
     }
     for (const [key, value] of response.headers) {
-      opts.res.setHeader(key, value);
+      res.setHeader(key, value);
     }
     if (response.body) {
-      Readable.fromWeb(response.body as any).pipe(opts.res);
-    } else {
-      opts.res.end();
+      const reader = response.body.getReader();
+      const onAbort = () => {
+        // cancelling the reader will cause the whole stream to be cancelled
+        reader.cancel().catch(() => {
+          // console.error('reader.cancel() error', err);
+        });
+      };
+      req.signal.addEventListener('abort', onAbort);
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+        if (!res.writable) {
+          break;
+        }
+        if (!res.write(value)) {
+          await new Promise<void>((resolve) => {
+            res.once('drain', resolve);
+          });
+        }
+        // IMPORTANT - flush the response buffer, otherwise the client will not receive the data until `.end()`
+        res.flush?.();
+      }
+      req.signal.removeEventListener('abort', onAbort);
     }
+    res.end();
   });
 }
