@@ -42,9 +42,9 @@ const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
 /**
  * @public
  */
-export type CreateWSSContextFnOptions = Omit<
-  NodeHTTPCreateContextFnOptions<IncomingMessage, ws.WebSocket>,
-  'info'
+export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
+  IncomingMessage,
+  ws.WebSocket
 >;
 
 /**
@@ -108,7 +108,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       return await createContext?.({
         req,
         res: client,
-        connectionParams: parseConnectionParamsFromURL(req.url ?? ''),
+        info: {
+          connectionParams: parseConnectionParamsFromURL(req.url ?? ''),
+          calls: [],
+          isBatchCall: false,
+          accept: null,
+          type: 'unknown',
+        },
       });
     }).catch((cause) => {
       throw getTRPCErrorFromUnknown(cause);
