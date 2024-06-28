@@ -8,8 +8,8 @@ const { z } = require('zod');
 
 /*eslint sort-keys: "error"*/
 const envSchema = z.object({
+  DATABASE_URL: z.string().url(),
   NODE_ENV: z.enum(['development', 'test', 'production']),
-  POSTGRES_URL_NON_POOLING: z.string().url(),
 });
 
 const env = envSchema.safeParse(process.env);
