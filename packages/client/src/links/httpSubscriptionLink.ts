@@ -3,13 +3,14 @@ import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
-  MaybePromise,
   SSEMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
   sseStreamConsumer,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { CallbackOrValue } from '../internals/resultOf';
+import { resultOf } from '../internals/resultOf';
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
@@ -19,19 +20,17 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * The URL to connect to (can be a function that returns a URL)
    */
-  url: string | (() => MaybePromise<string>);
+  url: CallbackOrValue<string>;
+
+  /**
+   * Connection params that can be picked up in `createContext()`
+   */
+  connectionParams?: CallbackOrValue<Record<string, unknown>>;
   /**
    * EventSource options
    */
   eventSourceOptions?: EventSourceInit;
 } & TransformerOptions<TRoot>;
-
-/**
- * Get the result of a value or function that returns a value
- */
-const resultOf = <T>(value: T | (() => T)): T => {
-  return typeof value === 'function' ? (value as () => T)() : value;
-};
 
 /**
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink

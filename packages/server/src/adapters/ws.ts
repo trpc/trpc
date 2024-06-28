@@ -12,7 +12,8 @@ import {
   transformTRPCResponse,
   TRPCError,
 } from '../@trpc/server';
-import type { BaseHandlerOptions } from '../@trpc/server/http';
+import type { ConnectionParams } from '../@trpc/server/http';
+import { toURL, type BaseHandlerOptions } from '../@trpc/server/http';
 import { parseTRPCMessage } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
@@ -28,6 +29,8 @@ import {
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
+import { parseConnectionParamsFromURL } from '../unstable-core-do-not-import/http/types';
+import { isObject } from '../unstable-core-do-not-import/utils';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
@@ -101,7 +104,20 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       );
     }
 
-    const ctxPromise = createContext?.({ req, res: client });
+    const ctxPromise: Promise<inferRouterContext<TRouter>> = run(async () => {
+      if (!createContext) {
+        return {};
+      }
+
+      const connectionParams = parseConnectionParamsFromURL(req.url ?? '');
+      return await createContext({
+        req,
+        res: client,
+        connectionParams,
+      });
+    }).catch((cause) => {
+      throw getTRPCErrorFromUnknown(cause);
+    });
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {

@@ -15,6 +15,7 @@ export type {
   ResponseMeta,
   ResponseMetaFn,
   TRPCRequestInfo,
+  ConnectionParams,
 } from '../../unstable-core-do-not-import';
 
 export { getBatchStreamFormatter } from '../../unstable-core-do-not-import';

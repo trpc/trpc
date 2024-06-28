@@ -240,3 +240,5 @@ test('disconnect and reconnect with an event id', async () => {
   await sleep(50);
   expect(ctx.infiniteYields).toHaveBeenCalledTimes(0);
 });
+
+describe('');

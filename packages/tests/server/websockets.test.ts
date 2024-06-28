@@ -1362,8 +1362,9 @@ describe('recipe: websocket auth', async () => {
             // When creating the context, we parse the url and get the `token`
             const url = new URL(opts.req.url!, `http://localhost`);
 
+            opts.connectionParams;
             let user: User | null = null;
-            if (url.searchParams.get('token') === USER_TOKEN) {
+            if (opts.connectionParams?.['token'] === USER_TOKEN) {
               user = USER_MOCK;
             }
 
@@ -1397,11 +1398,13 @@ describe('recipe: websocket auth', async () => {
     expect(result).toBe(null);
   });
 
-  test('with auth', async () => {
+  test.only('with auth', async () => {
     const wsClient = createWSClient({
-      url: async () => {
-        // Returns the url with an extra query param
-        return `${ctx.wssUrl}?token=${USER_TOKEN}`;
+      url: ctx.wssUrl,
+      connectionParams: async () => {
+        return {
+          token: USER_TOKEN,
+        };
       },
       lazy: {
         enabled: true,

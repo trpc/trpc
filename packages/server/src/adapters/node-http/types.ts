@@ -16,6 +16,7 @@ import type {
 } from '../../@trpc/server';
 // @trpc/server/http
 import type {
+  ConnectionParams,
   HTTPBaseHandlerOptions,
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
@@ -95,6 +96,7 @@ export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
   res: TResponse;
   info: TRPCRequestInfo;
+  connectionParams: ConnectionParams | null;
 };
 export type NodeHTTPCreateContextFn<
   TRouter extends AnyRouter,
