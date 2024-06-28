@@ -756,7 +756,7 @@ describe('regression test - slow createContext', () => {
       };
       const data = await new Promise<string>((resolve) => {
         rawClient.addEventListener('message', (msg) => {
-          resolve(msg.data as any);
+          resolve(msg.data as string);
         });
       });
       expect(JSON.parse(data)).toMatchInlineSnapshot(`
@@ -803,7 +803,7 @@ describe('regression test - slow createContext', () => {
 
       const responses: any[] = [];
       rawClient.addEventListener('message', (msg) => {
-        responses.push(JSON.parse(msg.data as any));
+        responses.push(JSON.parse(msg.data as string));
       });
       await new Promise<void>((resolve) => {
         rawClient.addEventListener('close', () => {
@@ -870,7 +870,7 @@ test('malformatted JSON', async () => {
 
   const res: any = await new Promise<string>((resolve) => {
     rawClient.addEventListener('message', (msg) => {
-      resolve(JSON.parse(msg.data as any));
+      resolve(JSON.parse(msg.data as string));
     });
   });
 
@@ -920,7 +920,7 @@ test('regression - badly shaped request', async () => {
   };
   const result = await new Promise<string>((resolve) => {
     rawClient.addEventListener('message', (msg) => {
-      resolve(msg.data as any);
+      resolve(msg.data as string);
     });
   });
   const data = JSON.parse(result);
@@ -965,7 +965,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
     const queryResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data as any);
+        resolve(msg.data as string);
       });
     });
 
@@ -996,7 +996,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
     const mutationResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data as any);
+        resolve(msg.data as string);
       });
     });
 
@@ -1037,7 +1037,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
     const startedResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data as any);
+        resolve(msg.data as string);
       });
     });
 
@@ -1055,7 +1055,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
     const messageResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data as any);
+        resolve(msg.data as string);
       });
 
       t.ee.emit('server:msg', { id: '1' });
@@ -1083,7 +1083,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
     };
     const stoppedResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data as any);
+        resolve(msg.data as string);
       });
       rawClient.send(JSON.stringify(subscriptionStopNotificationWithJsonRPC));
     });
