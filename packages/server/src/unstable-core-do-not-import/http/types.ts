@@ -74,6 +74,8 @@ interface TRPCRequestInfoProcedureCall {
   procedure: AnyProcedure | null;
 }
 
+export type TRPCRequestInfoConnectionParams = Record<string, unknown>;
+
 export interface TRPCRequestInfoBase {
   /**
    * The `trpc-accept` header
@@ -91,6 +93,10 @@ export interface TRPCRequestInfoBase {
    * The calls being made
    */
   calls: TRPCRequestInfoProcedureCall[];
+  /**
+   * Connection params when using `httpSubscriptionLink` or `createWSClient`
+   */
+  connectionParams: TRPCRequestInfoConnectionParams | null;
 }
 interface TRPCRequestInfoBatchCall extends TRPCRequestInfoBase {
   isBatchCall: true;
