@@ -3,7 +3,6 @@ import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
-  Simplify,
   SSEMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
@@ -19,15 +18,13 @@ import {
 } from './internals/urlWithConnectionParams';
 import type { TRPCLink } from './types';
 
-type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = Simplify<
-  {
-    /**
-     * EventSource options
-     */
-    eventSourceOptions?: EventSourceInit;
-  } & TransformerOptions<TRoot> &
-    UrlOptionsWithConnectionParams
->;
+type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
+  /**
+   * EventSource options
+   */
+  eventSourceOptions?: EventSourceInit;
+} & TransformerOptions<TRoot> &
+  UrlOptionsWithConnectionParams;
 
 /**
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink
