@@ -128,7 +128,8 @@ export const getUrl: GetUrl = (opts) => {
     }
   }
   if (queryParts.length) {
-    url += '?' + queryParts.join('&');
+    const prefix = url.includes('?') ? '&' : '?';
+    url += prefix + queryParts.join('&');
   }
   return url;
 };

@@ -3,35 +3,31 @@ import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
+  Simplify,
   SSEMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
   sseStreamConsumer,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { CallbackOrValue } from '../internals/resultOf';
-import { resultOf } from '../internals/resultOf';
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
+import {
+  urlWithConnectionParams,
+  type UrlOptionsWithConnectionParams,
+} from './internals/urlWithConnectionParams';
 import type { TRPCLink } from './types';
 
-type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
-  /**
-   * The URL to connect to (can be a function that returns a URL)
-   */
-  url: CallbackOrValue<string>;
-
-  /**
-   * Connection params that can be picked up in `createContext()`
-   * These are serialized as part of the URL
-   */
-  connectionParams?: CallbackOrValue<Record<string, unknown>>;
-  /**
-   * EventSource options
-   */
-  eventSourceOptions?: EventSourceInit;
-} & TransformerOptions<TRoot>;
+type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = Simplify<
+  {
+    /**
+     * EventSource options
+     */
+    eventSourceOptions?: EventSourceInit;
+  } & TransformerOptions<TRoot> &
+    UrlOptionsWithConnectionParams
+>;
 
 /**
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink
@@ -55,24 +51,14 @@ export function unstable_httpSubscriptionLink<
         let unsubscribed = false;
 
         run(async () => {
-          let url = getUrl({
+          const url = getUrl({
             transformer,
-            url: await resultOf(opts.url),
+            url: await urlWithConnectionParams(opts),
             input,
             path,
             type,
             AbortController: null,
           });
-
-          if (opts.connectionParams) {
-            const params = await resultOf(opts.connectionParams);
-
-            const prefix = url.includes('?') ? '&' : '?';
-            url +=
-              prefix +
-              'connectionParams=' +
-              encodeURIComponent(JSON.stringify(params));
-          }
 
           /* istanbul ignore if -- @preserve */
           if (unsubscribed) {
