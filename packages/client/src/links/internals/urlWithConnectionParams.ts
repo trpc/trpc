@@ -1,4 +1,14 @@
-import { resultOf, type CallbackOrValue } from '../../internals/resultOf';
+/**
+ * Get the result of a value or function that returns a value
+ */
+const resultOf = <T>(value: T | (() => T)): T => {
+  return typeof value === 'function' ? (value as () => T)() : value;
+};
+
+/**
+ * A value that can be wrapped in callback
+ */
+type CallbackOrValue<T> = T | (() => T | Promise<T>);
 
 export interface UrlOptionsWithConnectionParams {
   /**
