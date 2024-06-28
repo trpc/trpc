@@ -3,6 +3,7 @@ import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
+  createTRPCClient,
   splitLink,
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
@@ -241,4 +242,141 @@ test('disconnect and reconnect with an event id', async () => {
   expect(ctx.infiniteYields).toHaveBeenCalledTimes(0);
 });
 
-describe('');
+describe.only('auth', async () => {
+  const USER_TOKEN = 'supersecret';
+  type User = {
+    id: string;
+    username: string;
+  };
+  const USER_MOCK = {
+    id: '123',
+    username: 'KATT',
+  } as const satisfies User;
+  const t = initTRPC
+    .context<{
+      user: User | null;
+    }>()
+    .create();
+
+  const ctx = konn()
+    .beforeEach(() => {
+      const ee = new EventEmitter();
+      const eeEmit = (data: number) => {
+        ee.emit('data', data);
+      };
+
+      const appRouter = t.router({
+        iterableEvent: t.procedure.subscription(async function* (opts) {
+          for await (const data of on(ee, 'data')) {
+            const num = data[0] as number;
+            yield {
+              user: opts.ctx.user,
+              num,
+            };
+          }
+        }),
+      });
+
+      type AppRouter = typeof appRouter;
+
+      const opts = routerToServerAndClientNew(appRouter, {
+        server: {
+          async createContext(opts) {
+            // When creating the context, we parse the url and get the `token`
+            const url = new URL(opts.req.url!, `http://localhost`);
+
+            let user: User | null = null;
+            if (opts.connectionParams?.['token'] === USER_TOKEN) {
+              user = USER_MOCK;
+            }
+
+            return {
+              user,
+            };
+          },
+        },
+      });
+
+      return { ...opts, eeEmit };
+    })
+    .afterEach((ctx) => {
+      return ctx.close?.();
+    })
+    .done();
+  type AppRouter = typeof ctx.router;
+  test('do a call without auth', async () => {
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        unstable_httpSubscriptionLink({
+          url: ctx.httpUrl,
+        }),
+      ],
+    });
+
+    // sub
+    const onStarted = vi.fn<[]>();
+    const onData = vi.fn<[{ user: User | null; num: number }]>();
+    const subscription = client.iterableEvent.subscribe(undefined, {
+      onStarted: onStarted,
+      onData: onData,
+    });
+
+    await waitFor(() => {
+      expect(onStarted).toHaveBeenCalledTimes(1);
+    });
+
+    ctx.eeEmit(1);
+
+    await waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+
+    subscription.unsubscribe();
+
+    expect(onData.mock.calls[0]![0]).toEqual({
+      user: null,
+      num: 1,
+    });
+  });
+
+  test('with auth', async () => {
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        unstable_httpSubscriptionLink({
+          url: ctx.httpUrl,
+
+          connectionParams: async () => {
+            return {
+              token: USER_TOKEN,
+            };
+          },
+        }),
+      ],
+    });
+
+    // sub
+    const onStarted = vi.fn<[]>();
+    const onData = vi.fn<[{ user: User | null; num: number }]>();
+    const subscription = client.iterableEvent.subscribe(undefined, {
+      onStarted: onStarted,
+      onData: onData,
+    });
+
+    await waitFor(() => {
+      expect(onStarted).toHaveBeenCalledTimes(1);
+    });
+
+    ctx.eeEmit(1);
+
+    await waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+
+    subscription.unsubscribe();
+
+    expect(onData.mock.calls[0]![0]).toEqual({
+      user: USER_MOCK,
+      num: 1,
+    });
+  });
+});
