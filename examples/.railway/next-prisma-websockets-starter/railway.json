@@ -7,7 +7,7 @@
   "deploy": {
     "healthcheckPath": "/",
     "healthcheckTimeout": 100,
-    "restartPolicyType": "NEVER",
+    "restartPolicyType": "ON_FAILURE",
     "runtime": "LEGACY",
     "sleepApplication": true
   }
