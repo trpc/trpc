@@ -98,7 +98,7 @@ export interface TRPCRequestInfo {
   /**
    * Connection params when using `httpSubscriptionLink` or `createWSClient`
    */
-  connectionParams: Record<string, string> | null;
+  connectionParams: Dict<string> | null;
 }
 
 /**
