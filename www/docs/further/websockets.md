@@ -136,6 +136,18 @@ const client = createTRPCClient<AppRouter>({
 
 See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
 
+### Authentication without cookies {#auth}
+
+:::info
+If you're making a web app with cookies, you don't need to do anything special to authenticate with WebSockets.
+:::
+
+Since the WebSocket specification is missing a way of handling request headers, the way to send user specific headers to the connection is to append the data to the URL.
+
+**1. Use a dynamic `url` when creating `createWSClient`**
+
+**2. When creating your backend, use the `opts.req.url` in `createContext`-callback**
+
 ## WebSockets RPC Specification
 
 > You can read more details by drilling into the TypeScript definitions:
