@@ -104,7 +104,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       );
     }
 
-    const ctxPromise: Promise<inferRouterContext<TRouter>> = run(async () => {
+    const ctxPromise = run(async (): Promise<inferRouterContext<TRouter>> => {
       return await createContext?.({
         req,
         res: client,
