@@ -775,54 +775,50 @@ describe('regression test - slow createContext', () => {
     { retry: 5 },
   );
 
-  test(
-    'createContext throws',
-    async () => {
-      const createContext = vi.fn(async () => {
-        await waitMs(20);
-        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'test' });
-      });
-      const t = factory({
-        createContext,
-      });
-      // close built-in client immediately to prevent connection
-      t.wsClient.close();
-      const rawClient = new WebSocket(t.wssUrl);
+  test('createContext throws', async () => {
+    const createContext = vi.fn(async () => {
+      await waitMs(20);
+      throw new TRPCError({ code: 'UNAUTHORIZED', message: 'test' });
+    });
+    const t = factory({
+      createContext,
+    });
+    const rawClient = new WebSocket(t.wssUrl);
 
-      const msg: TRPCRequestMessage = {
-        id: 1,
-        method: 'query',
-        params: {
-          path: 'greeting',
-          input: null,
-        },
-      };
-      const msgStr = JSON.stringify(msg);
-      rawClient.onopen = () => {
-        rawClient.send(msgStr);
-      };
+    const msg: TRPCRequestMessage = {
+      id: 1,
+      method: 'query',
+      params: {
+        path: 'greeting',
+        input: null,
+      },
+    };
+    const msgStr = JSON.stringify(msg);
+    rawClient.onopen = () => {
+      rawClient.send(msgStr);
+    };
 
-      const responses: any[] = [];
-      rawClient.addEventListener('message', (msg) => {
-        responses.push(JSON.parse(msg.data));
+    const responses: any[] = [];
+    rawClient.addEventListener('message', (msg) => {
+      responses.push(JSON.parse(msg.data));
+    });
+    await new Promise<void>((resolve) => {
+      rawClient.addEventListener('close', () => {
+        resolve();
       });
-      await new Promise<void>((resolve) => {
-        rawClient.addEventListener('close', () => {
-          resolve();
-        });
-      });
-      for (const res of responses) {
-        expect(res).toHaveProperty('error');
-        expect(typeof res.error.data.stack).toBe('string');
-        res.error.data.stack = '[redacted]';
-      }
-      expect(responses).toHaveLength(2);
-      const [first, second] = responses;
+    });
+    for (const res of responses) {
+      expect(res).toHaveProperty('error');
+      expect(typeof res.error.data.stack).toBe('string');
+      res.error.data.stack = '[redacted]';
+    }
+    expect(responses).toHaveLength(2);
+    const [first, second] = responses;
 
-      expect(first.id).toBe(null);
-      expect(second.id).toBe(1);
+    expect(first.id).toBe(null);
+    expect(second.id).toBe(1);
 
-      expect(responses).toMatchInlineSnapshot(`
+    expect(responses).toMatchInlineSnapshot(`
       Array [
         Object {
           "error": Object {
@@ -852,11 +848,15 @@ describe('regression test - slow createContext', () => {
       ]
     `);
 
-      expect(createContext).toHaveBeenCalledTimes(1);
-      await t.close();
-    },
-    { retry: 5 },
-  );
+    await waitFor(() => {
+      expect(createContext).toHaveBeenCalledTimes(
+        2,
+        // built-in client calls it once as well
+      );
+    });
+
+    await t.close();
+  });
 });
 
 test('malformatted JSON', async () => {
@@ -1362,7 +1362,6 @@ describe('recipe: websocket auth', async () => {
             // When creating the context, we parse the url and get the `token`
             const url = new URL(opts.req.url!, `http://localhost`);
 
-            opts.connectionParams;
             let user: User | null = null;
             if (opts.connectionParams?.['token'] === USER_TOKEN) {
               user = USER_MOCK;
@@ -1398,7 +1397,7 @@ describe('recipe: websocket auth', async () => {
     expect(result).toBe(null);
   });
 
-  test.only('with auth', async () => {
+  test('with auth', async () => {
     const wsClient = createWSClient({
       url: ctx.wssUrl,
       connectionParams: async () => {

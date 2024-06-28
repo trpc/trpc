@@ -73,6 +73,7 @@ export interface WebSocketClientOptions {
   };
   /**
    * Connection params that can be picked up in `createContext()`
+   * These are serialized as part of the URL
    */
   connectionParams?: CallbackOrValue<ConnectionParams>;
 }
@@ -258,10 +259,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
       let url = await resultOf(opts.url);
       if (opts.connectionParams) {
         const params = await resultOf(opts.connectionParams);
-        // append params as query string connectionParams
 
         const prefix = url.includes('?') ? '&' : '?';
-        url += prefix + encodeURIComponent(JSON.stringify(params));
+        url +=
+          prefix +
+          'connectionParams=' +
+          encodeURIComponent(JSON.stringify(params));
       }
       const ws = new WebSocketImpl(url);
       self.ws = ws;

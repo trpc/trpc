@@ -105,15 +105,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     }
 
     const ctxPromise: Promise<inferRouterContext<TRouter>> = run(async () => {
-      if (!createContext) {
-        return {};
-      }
-
-      const connectionParams = parseConnectionParamsFromURL(req.url ?? '');
-      return await createContext({
+      return await createContext?.({
         req,
         res: client,
-        connectionParams,
+        connectionParams: parseConnectionParamsFromURL(req.url ?? ''),
       });
     }).catch((cause) => {
       throw getTRPCErrorFromUnknown(cause);

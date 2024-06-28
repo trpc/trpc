@@ -24,6 +24,7 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
 
   /**
    * Connection params that can be picked up in `createContext()`
+   * These are serialized as part of the URL
    */
   connectionParams?: CallbackOrValue<Record<string, unknown>>;
   /**
@@ -54,7 +55,7 @@ export function unstable_httpSubscriptionLink<
         let unsubscribed = false;
 
         run(async () => {
-          const url = getUrl({
+          let url = getUrl({
             transformer,
             url: await resultOf(opts.url),
             input,
@@ -62,6 +63,16 @@ export function unstable_httpSubscriptionLink<
             type,
             AbortController: null,
           });
+
+          if (opts.connectionParams) {
+            const params = await resultOf(opts.connectionParams);
+
+            const prefix = url.includes('?') ? '&' : '?';
+            url +=
+              prefix +
+              'connectionParams=' +
+              encodeURIComponent(JSON.stringify(params));
+          }
 
           /* istanbul ignore if -- @preserve */
           if (unsubscribed) {
