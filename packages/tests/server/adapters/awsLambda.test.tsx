@@ -139,6 +139,7 @@ test('v1 request info', async () => {
               "path": "request.info",
             },
           ],
+          "connectionParams": null,
           "isBatchCall": false,
           "type": "query",
         },

@@ -132,7 +132,7 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-### Using React
+## Using React
 
 See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
 
