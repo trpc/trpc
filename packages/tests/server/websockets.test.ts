@@ -2,7 +2,7 @@ import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
-import { createWSClient, wsLink } from '@trpc/client';
+import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
@@ -13,6 +13,7 @@ import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
 } from '@trpc/server/rpc';
+import { konn } from 'konn';
 import WebSocket, { Server } from 'ws';
 import { z } from 'zod';
 
@@ -756,7 +757,7 @@ describe('regression test - slow createContext', () => {
       };
       const data = await new Promise<string>((resolve) => {
         rawClient.addEventListener('message', (msg) => {
-          resolve(msg.data as any);
+          resolve(msg.data);
         });
       });
       expect(JSON.parse(data)).toMatchInlineSnapshot(`
@@ -803,7 +804,7 @@ describe('regression test - slow createContext', () => {
 
       const responses: any[] = [];
       rawClient.addEventListener('message', (msg) => {
-        responses.push(JSON.parse(msg.data as any));
+        responses.push(JSON.parse(msg.data));
       });
       await new Promise<void>((resolve) => {
         rawClient.addEventListener('close', () => {
@@ -870,7 +871,7 @@ test('malformatted JSON', async () => {
 
   const res: any = await new Promise<string>((resolve) => {
     rawClient.addEventListener('message', (msg) => {
-      resolve(JSON.parse(msg.data as any));
+      resolve(JSON.parse(msg.data));
     });
   });
 
@@ -920,7 +921,7 @@ test('regression - badly shaped request', async () => {
   };
   const result = await new Promise<string>((resolve) => {
     rawClient.addEventListener('message', (msg) => {
-      resolve(msg.data as any);
+      resolve(msg.data);
     });
   });
   const data = JSON.parse(result);
@@ -965,7 +966,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
     const queryResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data as any);
+        resolve(msg.data);
       });
     });
 
@@ -996,7 +997,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
     const mutationResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data as any);
+        resolve(msg.data);
       });
     });
 
@@ -1037,7 +1038,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
     const startedResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data as any);
+        resolve(msg.data);
       });
     });
 
@@ -1055,7 +1056,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
     const messageResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data as any);
+        resolve(msg.data);
       });
 
       t.ee.emit('server:msg', { id: '1' });
@@ -1083,7 +1084,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
     };
     const stoppedResult = await new Promise<string>((resolve) => {
       rawClient.addEventListener('message', (msg) => {
-        resolve(msg.data as any);
+        resolve(msg.data);
       });
       rawClient.send(JSON.stringify(subscriptionStopNotificationWithJsonRPC));
     });
@@ -1326,5 +1327,96 @@ describe('keep alive', () => {
       expect(pongMock).not.toHaveBeenCalled();
     }
     await ctx.close();
+  });
+});
+
+describe('recipe: websocket auth', async () => {
+  const USER_TOKEN = 'supersecret';
+  type User = {
+    id: string;
+    username: string;
+  };
+  const USER_MOCK = {
+    id: '123',
+    username: 'KATT',
+  } as const satisfies User;
+  const t = initTRPC
+    .context<{
+      user: User | null;
+    }>()
+    .create();
+
+  const appRouter = t.router({
+    whoami: t.procedure.query((opts) => {
+      return opts.ctx.user;
+    }),
+  });
+
+  type AppRouter = typeof appRouter;
+
+  const ctx = konn()
+    .beforeEach(() => {
+      const opts = routerToServerAndClientNew(appRouter, {
+        wssServer: {
+          async createContext(opts) {
+            // When creating the context, we parse the url and get the `token`
+            const url = new URL(opts.req.url!, `http://localhost`);
+
+            let user: User | null = null;
+            if (url.searchParams.get('token') === USER_TOKEN) {
+              user = USER_MOCK;
+            }
+
+            return {
+              user,
+            };
+          },
+        },
+      });
+
+      return opts;
+    })
+    .afterEach((ctx) => {
+      return ctx.close?.();
+    })
+    .done();
+
+  test('do a call without auth', async () => {
+    const wsClient = createWSClient({
+      url: ctx.wssUrl,
+    });
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        wsLink({
+          client: wsClient,
+        }),
+      ],
+    });
+    const result = await client.whoami.query();
+
+    expect(result).toBe(null);
+  });
+
+  test('with auth', async () => {
+    const wsClient = createWSClient({
+      url: async () => {
+        // Returns the url with an extra query param
+        return `${ctx.wssUrl}?token=${USER_TOKEN}`;
+      },
+      lazy: {
+        enabled: true,
+        closeMs: 0,
+      },
+    });
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        wsLink({
+          client: wsClient,
+        }),
+      ],
+    });
+    const result = await client.whoami.query();
+
+    expect(result).toEqual(USER_MOCK);
   });
 });
