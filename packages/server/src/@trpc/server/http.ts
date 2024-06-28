@@ -5,6 +5,7 @@ export {
 } from '../../unstable-core-do-not-import';
 export type {
   BaseHandlerOptions,
+  ConnectionParams,
   HTTPBaseHandlerOptions,
   HTTPErrorHandler,
   /**
@@ -15,8 +16,11 @@ export type {
   ResponseMeta,
   ResponseMetaFn,
   TRPCRequestInfo,
-  ConnectionParams,
 } from '../../unstable-core-do-not-import';
 
-export { getBatchStreamFormatter } from '../../unstable-core-do-not-import';
-export { octetInputParser, toURL } from '../../unstable-core-do-not-import';
+export {
+  getBatchStreamFormatter,
+  octetInputParser,
+  parseConnectionParamsFromURL,
+  toURL,
+} from '../../unstable-core-do-not-import';

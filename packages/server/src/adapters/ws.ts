@@ -12,8 +12,10 @@ import {
   transformTRPCResponse,
   TRPCError,
 } from '../@trpc/server';
-import type { ConnectionParams } from '../@trpc/server/http';
-import { toURL, type BaseHandlerOptions } from '../@trpc/server/http';
+import {
+  parseConnectionParamsFromURL,
+  type BaseHandlerOptions,
+} from '../@trpc/server/http';
 import { parseTRPCMessage } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
@@ -29,8 +31,6 @@ import {
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
-import { parseConnectionParamsFromURL } from '../unstable-core-do-not-import/http/types';
-import { isObject } from '../unstable-core-do-not-import/utils';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
