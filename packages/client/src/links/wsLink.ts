@@ -1,4 +1,4 @@
-import type { ConnectionParams } from '@trpc/server/http';
+import type { TRPCRequestInfo } from '@trpc/server/http';
 import type { Observer, UnsubscribeFn } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type {
@@ -75,7 +75,7 @@ export interface WebSocketClientOptions {
    * Connection params that can be picked up in `createContext()`
    * These are serialized as part of the URL
    */
-  connectionParams?: CallbackOrValue<ConnectionParams>;
+  connectionParams?: CallbackOrValue<TRPCRequestInfo['connectionParams']>;
 }
 
 type LazyOptions = Required<NonNullable<WebSocketClientOptions['lazy']>>;

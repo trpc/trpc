@@ -5,7 +5,6 @@ export {
 } from '../../unstable-core-do-not-import';
 export type {
   BaseHandlerOptions,
-  ConnectionParams,
   HTTPBaseHandlerOptions,
   HTTPErrorHandler,
   /**
