@@ -286,7 +286,7 @@ describe.only('auth', async () => {
             const url = new URL(opts.req.url!, `http://localhost`);
 
             let user: User | null = null;
-            if (opts.connectionParams?.['token'] === USER_TOKEN) {
+            if (opts.info.connectionParams?.['token'] === USER_TOKEN) {
               user = USER_MOCK;
             }
 

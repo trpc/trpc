@@ -2,11 +2,7 @@ import { TRPCError } from '../error/TRPCError';
 import type { AnyProcedure, ProcedureType } from '../procedure';
 import type { AnyRouter } from '../router';
 import { isObject, unsetMarker } from '../utils';
-import type {
-  TRPCAcceptHeader,
-  TRPCRequestInfo,
-  TRPCRequestInfoBase,
-} from './types';
+import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
 type GetRequestInfoOptions = {
   path: string;
@@ -165,13 +161,14 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const type: ProcedureType | 'unknown' =
       types.values().next().value ?? 'unknown';
 
-    const info: TRPCRequestInfoBase = {
+    const info: TRPCRequestInfo = {
       isBatchCall,
       accept: req.headers.get('trpc-accept') as TRPCAcceptHeader | null,
       calls,
       type,
+      connectionParams: null,
     };
-    return info as TRPCRequestInfo;
+    return info;
   },
 };
 
@@ -204,6 +201,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       ],
       isBatchCall: false,
       type: 'mutation',
+      connectionParams: null,
     };
   },
 };
@@ -238,6 +236,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       isBatchCall: false,
       accept: null,
       type: 'mutation',
+      connectionParams: null,
     };
   },
 };
