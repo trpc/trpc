@@ -235,6 +235,10 @@ module.exports = {
           showReadingTime: true,
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          remarkPlugins: [
+            [require("remark-shiki-twoslash").default, require("./shiki-twoslash.config")],
+            require("./mdx-to-jsx"), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
+          ]
         },
         theme: {
           customCss: ['./src/css/custom.css'],
