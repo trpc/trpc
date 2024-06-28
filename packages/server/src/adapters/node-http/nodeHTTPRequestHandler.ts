@@ -12,10 +12,7 @@
 
 import { getTRPCErrorFromUnknown, type AnyRouter } from '../../@trpc/server';
 import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
-import {
-  parseConnectionParamsFromURL,
-  resolveResponse,
-} from '../../@trpc/server/http';
+import { resolveResponse } from '../../@trpc/server/http';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
 import type {
   NodeHTTPRequest,
@@ -42,7 +39,6 @@ export async function nodeHTTPRequestHandler<
       return await opts.createContext?.({
         ...opts,
         ...innerOpts,
-        connectionParams: parseConnectionParamsFromURL(req.url),
       });
     };
 

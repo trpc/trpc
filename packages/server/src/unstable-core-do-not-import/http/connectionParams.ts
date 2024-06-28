@@ -3,11 +3,10 @@ import { isObject } from '../utils';
 import { toURL } from './toURL';
 import type { TRPCRequestInfo } from './types';
 
-export function parseConnectionParamsFromURL(
-  url: URL | string,
+export function parseConnectionParamsFromSearchParams(
+  searchParams: URLSearchParams,
 ): TRPCRequestInfo['connectionParams'] {
-  const u = url instanceof URL ? url : toURL(url);
-  const str = u.searchParams.get('connectionParams');
+  const str = searchParams.get('connectionParams');
   if (!str) {
     return null;
   }
@@ -36,4 +35,10 @@ export function parseConnectionParamsFromURL(
       cause,
     });
   }
+}
+export function parseConnectionParamsFromURL(
+  url: URL | string,
+): TRPCRequestInfo['connectionParams'] {
+  const urlCoerced = url instanceof URL ? url : toURL(url);
+  return parseConnectionParamsFromSearchParams(urlCoerced.searchParams);
 }

@@ -2,6 +2,7 @@ import { TRPCError } from '../error/TRPCError';
 import type { AnyProcedure, ProcedureType } from '../procedure';
 import type { AnyRouter } from '../router';
 import { isObject, unsetMarker } from '../utils';
+import { parseConnectionParamsFromSearchParams } from './connectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
 type GetRequestInfoOptions = {
@@ -166,7 +167,9 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       accept: req.headers.get('trpc-accept') as TRPCAcceptHeader | null,
       calls,
       type,
-      connectionParams: null,
+      connectionParams: parseConnectionParamsFromSearchParams(
+        opts.searchParams,
+      ),
     };
     return info;
   },

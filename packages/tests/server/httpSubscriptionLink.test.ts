@@ -242,7 +242,7 @@ test('disconnect and reconnect with an event id', async () => {
   expect(ctx.infiniteYields).toHaveBeenCalledTimes(0);
 });
 
-describe.only('auth', async () => {
+describe('auth', async () => {
   const USER_TOKEN = 'supersecret';
   type User = {
     id: string;
@@ -277,14 +277,9 @@ describe.only('auth', async () => {
         }),
       });
 
-      type AppRouter = typeof appRouter;
-
       const opts = routerToServerAndClientNew(appRouter, {
         server: {
           async createContext(opts) {
-            // When creating the context, we parse the url and get the `token`
-            const url = new URL(opts.req.url!, `http://localhost`);
-
             let user: User | null = null;
             if (opts.info.connectionParams?.['token'] === USER_TOKEN) {
               user = USER_MOCK;
