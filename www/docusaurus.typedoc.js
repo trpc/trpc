@@ -78,6 +78,10 @@ function generateTypedocDocusaurusPlugins(directories) {
         excludeProtected: true,
 
         parametersFormat: "table",
+        sidebar: {
+          autoConfiguration: true,
+          pretty: true
+        }
 
         //Possible not needed code:
         // docusaurus-plugin-typedoc options
