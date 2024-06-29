@@ -1907,22 +1907,22 @@ importers:
         specifier: ^3.3.2
         version: 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/module-type-aliases':
-        specifier: ^3.3.2
+        specifier: ^3.4.0
         version: 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
       '@docusaurus/plugin-content-docs':
-        specifier: ^3.3.2
+        specifier: ^3.4.0
         version: 3.4.0(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/preset-classic':
-        specifier: ^3.3.2
+        specifier: ^3.4.0
         version: 3.4.0(@algolia/client-search@4.14.2)(@swc/core@1.3.3)(@types/react@18.3.1)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(search-insights@2.14.0)(typescript@5.1.3)
       '@docusaurus/theme-classic':
-        specifier: ^3.3.2
+        specifier: ^3.4.0
         version: 3.4.0(@swc/core@1.3.3)(@types/react@18.3.1)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/theme-common':
-        specifier: ^3.3.2
+        specifier: ^3.4.0
         version: 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/types':
-        specifier: ^3.3.2
+        specifier: ^3.4.0
         version: 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
       '@headlessui/react':
         specifier: ^2.0.0
@@ -1973,8 +1973,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       micromark-extension-mdxjs:
-        specifier: ^2.0.0
-        version: 2.0.0
+        specifier: ^3.0.0
+        version: 3.0.0
       prism-react-renderer:
         specifier: ^2.3.1
         version: 2.3.1(react@18.3.1)
@@ -2013,7 +2013,7 @@ importers:
         specifier: ^7.23.2
         version: 7.23.2(@babel/core@7.23.2)
       '@docusaurus/tsconfig':
-        specifier: ^3.3.2
+        specifier: ^3.4.0
         version: 3.4.0
       '@octokit/graphql':
         specifier: ^8.1.1
@@ -5808,10 +5808,10 @@ packages:
       '@babel/traverse': 7.24.7
       '@docusaurus/cssnano-preset': 3.4.0
       '@docusaurus/logger': 3.4.0
-      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
-      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
+      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       '@docusaurus/utils-common': 3.4.0(@docusaurus/types@3.4.0)
-      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       autoprefixer: 10.4.19(postcss@8.4.38)
       babel-loader: 9.1.3(@babel/core@7.24.7)(webpack@5.92.1)
       babel-plugin-dynamic-import-node: 2.3.3
@@ -5904,7 +5904,7 @@ packages:
       tslib: 2.6.2
     dev: false
 
-  /@docusaurus/mdx-loader@3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1):
+  /@docusaurus/mdx-loader@3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3):
     resolution: {integrity: sha512-kSSbrrk4nTjf4d+wtBA9H+FGauf2gCax89kV8SUSJu3qaTdSIKdWERlngsiHaCFgZ7laTJ8a67UFf+xlFPtuTw==}
     engines: {node: '>=18.0'}
     peerDependencies:
@@ -5912,14 +5912,14 @@ packages:
       react-dom: ^18.0.0
     dependencies:
       '@docusaurus/logger': 3.4.0
-      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
-      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
+      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       '@mdx-js/mdx': 3.0.1
       '@slorber/remark-comment': 1.0.0
       escape-html: 1.0.3
       estree-util-value-to-estree: 3.1.2
       file-loader: 6.2.0(webpack@5.92.1)
-      fs-extra: 11.1.1
+      fs-extra: 11.2.0
       image-size: 1.0.2
       mdast-util-mdx: 3.0.0
       mdast-util-to-string: 4.0.0
@@ -5942,6 +5942,7 @@ packages:
       - '@swc/core'
       - esbuild
       - supports-color
+      - typescript
       - uglify-js
       - webpack-cli
     dev: false
@@ -5955,7 +5956,7 @@ packages:
       '@docusaurus/types': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
       '@types/history': 4.7.11
       '@types/react': 18.3.1
-      '@types/react-router-config': 5.0.6
+      '@types/react-router-config': 5.0.11
       '@types/react-router-dom': 5.3.3
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -5978,14 +5979,14 @@ packages:
     dependencies:
       '@docusaurus/core': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/logger': 3.4.0
-      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
+      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/types': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
-      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       '@docusaurus/utils-common': 3.4.0(@docusaurus/types@3.4.0)
-      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       cheerio: 1.0.0-rc.12
       feed: 4.2.2
-      fs-extra: 11.1.1
+      fs-extra: 11.2.0
       lodash: 4.17.21
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -6023,15 +6024,15 @@ packages:
     dependencies:
       '@docusaurus/core': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/logger': 3.4.0
-      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
+      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/module-type-aliases': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
       '@docusaurus/types': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
-      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       '@docusaurus/utils-common': 3.4.0(@docusaurus/types@3.4.0)
-      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       '@types/react-router-config': 5.0.11
       combine-promises: 1.1.0
-      fs-extra: 11.1.1
+      fs-extra: 11.2.0
       js-yaml: 4.1.0
       lodash: 4.17.21
       react: 18.3.1
@@ -6066,11 +6067,11 @@ packages:
       react-dom: ^18.0.0
     dependencies:
       '@docusaurus/core': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
-      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
+      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/types': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
-      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
-      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
-      fs-extra: 11.1.1
+      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
+      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
+      fs-extra: 11.2.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       tslib: 2.6.2
@@ -6103,8 +6104,8 @@ packages:
     dependencies:
       '@docusaurus/core': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/types': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
-      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
-      fs-extra: 11.1.1
+      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
+      fs-extra: 11.2.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-json-view-lite: 1.4.0(react@18.3.1)
@@ -6137,7 +6138,7 @@ packages:
     dependencies:
       '@docusaurus/core': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/types': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
-      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       tslib: 2.6.2
@@ -6169,7 +6170,7 @@ packages:
     dependencies:
       '@docusaurus/core': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/types': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
-      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       '@types/gtag.js': 0.0.12
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -6202,7 +6203,7 @@ packages:
     dependencies:
       '@docusaurus/core': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/types': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
-      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       tslib: 2.6.2
@@ -6235,10 +6236,10 @@ packages:
       '@docusaurus/core': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/logger': 3.4.0
       '@docusaurus/types': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
-      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       '@docusaurus/utils-common': 3.4.0(@docusaurus/types@3.4.0)
-      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
-      fs-extra: 11.1.1
+      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
+      fs-extra: 11.2.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       sitemap: 7.1.1
@@ -6323,7 +6324,7 @@ packages:
       react-dom: ^18.0.0
     dependencies:
       '@docusaurus/core': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
-      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
+      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/module-type-aliases': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
       '@docusaurus/plugin-content-blog': 3.4.0(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/plugin-content-docs': 3.4.0(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
@@ -6331,9 +6332,9 @@ packages:
       '@docusaurus/theme-common': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/theme-translations': 3.4.0
       '@docusaurus/types': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
-      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       '@docusaurus/utils-common': 3.4.0(@docusaurus/types@3.4.0)
-      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       '@mdx-js/react': 3.0.1(@types/react@18.3.1)(react@18.3.1)
       clsx: 2.0.0
       copy-text-to-clipboard: 3.2.0
@@ -6376,16 +6377,16 @@ packages:
       react: ^18.0.0
       react-dom: ^18.0.0
     dependencies:
-      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
+      '@docusaurus/mdx-loader': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/module-type-aliases': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
       '@docusaurus/plugin-content-blog': 3.4.0(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/plugin-content-docs': 3.4.0(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/plugin-content-pages': 3.4.0(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
-      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       '@docusaurus/utils-common': 3.4.0(@docusaurus/types@3.4.0)
       '@types/history': 4.7.11
       '@types/react': 18.3.1
-      '@types/react-router-config': 5.0.6
+      '@types/react-router-config': 5.0.11
       clsx: 2.0.0
       parse-numeric-range: 1.3.0
       prism-react-renderer: 2.3.1(react@18.3.1)
@@ -6426,13 +6427,13 @@ packages:
       '@docusaurus/plugin-content-docs': 3.4.0(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/theme-common': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(eslint@8.56.0)(react-dom@18.3.1)(react@18.3.1)(typescript@5.1.3)
       '@docusaurus/theme-translations': 3.4.0
-      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
-      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
+      '@docusaurus/utils-validation': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       algoliasearch: 4.23.3
       algoliasearch-helper: 3.22.1(algoliasearch@4.23.3)
       clsx: 2.0.0
       eta: 2.2.0
-      fs-extra: 11.1.1
+      fs-extra: 11.2.0
       lodash: 4.17.21
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -6465,7 +6466,7 @@ packages:
     resolution: {integrity: sha512-zSxCSpmQCCdQU5Q4CnX/ID8CSUUI3fvmq4hU/GNP/XoAWtXo9SAVnM3TzpU8Gb//H3WCsT8mJcTfyOk3d9ftNg==}
     engines: {node: '>=18.0'}
     dependencies:
-      fs-extra: 11.1.1
+      fs-extra: 11.2.0
       tslib: 2.6.2
     dev: false
 
@@ -6511,12 +6512,12 @@ packages:
       tslib: 2.6.2
     dev: false
 
-  /@docusaurus/utils-validation@3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3):
+  /@docusaurus/utils-validation@3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3):
     resolution: {integrity: sha512-hYQ9fM+AXYVTWxJOT1EuNaRnrR2WGpRdLDQG07O8UOpsvCPWUVOeo26Rbm0JWY2sGLfzAb+tvJ62yF+8F+TV0g==}
     engines: {node: '>=18.0'}
     dependencies:
       '@docusaurus/logger': 3.4.0
-      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)
+      '@docusaurus/utils': 3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3)
       '@docusaurus/utils-common': 3.4.0(@docusaurus/types@3.4.0)
       fs-extra: 11.2.0
       joi: 17.13.3
@@ -6528,11 +6529,12 @@ packages:
       - '@swc/core'
       - esbuild
       - supports-color
+      - typescript
       - uglify-js
       - webpack-cli
     dev: false
 
-  /@docusaurus/utils@3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3):
+  /@docusaurus/utils@3.4.0(@docusaurus/types@3.4.0)(@swc/core@1.3.3)(typescript@5.1.3):
     resolution: {integrity: sha512-fRwnu3L3nnWaXOgs88BVBmG1yGjcQqZNHG+vInhEa2Sz2oQB+ZjbEMO5Rh9ePFpZ0YDiDUhpaVjwmS+AU2F14g==}
     engines: {node: '>=18.0'}
     peerDependencies:
@@ -6544,10 +6546,10 @@ packages:
       '@docusaurus/logger': 3.4.0
       '@docusaurus/types': 3.4.0(@swc/core@1.3.3)(react-dom@18.3.1)(react@18.3.1)
       '@docusaurus/utils-common': 3.4.0(@docusaurus/types@3.4.0)
-      '@svgr/webpack': 8.1.0
+      '@svgr/webpack': 8.1.0(typescript@5.1.3)
       escape-string-regexp: 4.0.0
       file-loader: 6.2.0(webpack@5.92.1)
-      fs-extra: 11.1.1
+      fs-extra: 11.2.0
       github-slugger: 1.5.0
       globby: 11.1.0
       gray-matter: 4.0.3
@@ -6566,6 +6568,7 @@ packages:
       - '@swc/core'
       - esbuild
       - supports-color
+      - typescript
       - uglify-js
       - webpack-cli
     dev: false
@@ -9845,17 +9848,18 @@ packages:
       '@svgr/babel-plugin-transform-svg-component': 8.0.0(@babel/core@7.24.7)
     dev: false
 
-  /@svgr/core@8.1.0:
+  /@svgr/core@8.1.0(typescript@5.1.3):
     resolution: {integrity: sha512-8QqtOQT5ACVlmsvKOJNEaWmRPmcojMOzCz4Hs2BGG/toAp/K38LcsMRyLp349glq5AzJbCEeimEoxaX6v/fLrA==}
     engines: {node: '>=14'}
     dependencies:
       '@babel/core': 7.24.7
       '@svgr/babel-preset': 8.1.0(@babel/core@7.24.7)
       camelcase: 6.3.0
-      cosmiconfig: 8.2.0
+      cosmiconfig: 8.3.6(typescript@5.1.3)
       snake-case: 3.0.4
     transitivePeerDependencies:
       - supports-color
+      - typescript
     dev: false
 
   /@svgr/hast-util-to-babel-ast@8.0.0:
@@ -9874,26 +9878,28 @@ packages:
     dependencies:
       '@babel/core': 7.24.7
       '@svgr/babel-preset': 8.1.0(@babel/core@7.24.7)
-      '@svgr/core': 8.1.0
+      '@svgr/core': 8.1.0(typescript@5.1.3)
       '@svgr/hast-util-to-babel-ast': 8.0.0
       svg-parser: 2.0.4
     transitivePeerDependencies:
       - supports-color
     dev: false
 
-  /@svgr/plugin-svgo@8.1.0(@svgr/core@8.1.0):
+  /@svgr/plugin-svgo@8.1.0(@svgr/core@8.1.0)(typescript@5.1.3):
     resolution: {integrity: sha512-Ywtl837OGO9pTLIN/onoWLmDQ4zFUycI1g76vuKGEz6evR/ZTJlJuz3G/fIkb6OVBJ2g0o6CGJzaEjfmEo3AHA==}
     engines: {node: '>=14'}
     peerDependencies:
       '@svgr/core': '*'
     dependencies:
-      '@svgr/core': 8.1.0
-      cosmiconfig: 8.2.0
+      '@svgr/core': 8.1.0(typescript@5.1.3)
+      cosmiconfig: 8.3.6(typescript@5.1.3)
       deepmerge: 4.3.1
       svgo: 3.2.0
+    transitivePeerDependencies:
+      - typescript
     dev: false
 
-  /@svgr/webpack@8.1.0:
+  /@svgr/webpack@8.1.0(typescript@5.1.3):
     resolution: {integrity: sha512-LnhVjMWyMQV9ZmeEy26maJk+8HTIbd59cH4F2MJ439k9DqejRisfFNGAPvRYlKETuh9LrImlS8aKsBgKjMA8WA==}
     engines: {node: '>=14'}
     dependencies:
@@ -9902,11 +9908,12 @@ packages:
       '@babel/preset-env': 7.23.2(@babel/core@7.24.7)
       '@babel/preset-react': 7.24.7(@babel/core@7.24.7)
       '@babel/preset-typescript': 7.24.7(@babel/core@7.24.7)
-      '@svgr/core': 8.1.0
+      '@svgr/core': 8.1.0(typescript@5.1.3)
       '@svgr/plugin-jsx': 8.1.0(@svgr/core@8.1.0)
-      '@svgr/plugin-svgo': 8.1.0(@svgr/core@8.1.0)
+      '@svgr/plugin-svgo': 8.1.0(@svgr/core@8.1.0)(typescript@5.1.3)
     transitivePeerDependencies:
       - supports-color
+      - typescript
     dev: false
 
   /@swc/core-android-arm-eabi@1.3.3:
@@ -10558,14 +10565,6 @@ packages:
 
   /@types/react-router-config@5.0.11:
     resolution: {integrity: sha512-WmSAg7WgqW7m4x8Mt4N6ZyKz0BubSj/2tVUMsAHp+Yd2AMwcSbeFq9WympT19p5heCFmF97R9eD5uUR/t4HEqw==}
-    dependencies:
-      '@types/history': 4.7.11
-      '@types/react': 18.3.1
-      '@types/react-router': 5.1.19
-    dev: false
-
-  /@types/react-router-config@5.0.6:
-    resolution: {integrity: sha512-db1mx37a1EJDf1XeX8jJN7R3PZABmJQXR8r28yUjVMFSjkmnQo6X6pOEEmNl+Tp2gYQOGPdYbFIipBtdElZ3Yg==}
     dependencies:
       '@types/history': 4.7.11
       '@types/react': 18.3.1
@@ -15089,10 +15088,6 @@ packages:
       estree-walker: 3.0.3
     dev: false
 
-  /estree-util-is-identifier-name@2.1.0:
-    resolution: {integrity: sha512-bEN9VHRyXAUOjkKVQVvArFym08BTWB0aJPppZZr0UNyAqWsLaVfAqP7hbaTJjzHifmB5ebnR8Wm7r7yGN/HonQ==}
-    dev: false
-
   /estree-util-is-identifier-name@3.0.0:
     resolution: {integrity: sha512-hFtqIDZTIUZ9BXLb8y4pYGyk6+wekIivNVTcmvk8NoOh+VeRn5y6cEHzbURrWbfp1fIqdVipilzj+lfaadNZmg==}
     dev: false
@@ -18891,19 +18886,6 @@ packages:
       micromark-util-types: 2.0.0
     dev: false
 
-  /micromark-extension-mdx-expression@2.0.0:
-    resolution: {integrity: sha512-hUI6PJCCVaymBF5paL29sOpcbtVXtumDdJgBDxN+tbHlXAqQwNl4EhhJfx4fe7bUpEZzcFRIBAeOiGq7hsZBXw==}
-    dependencies:
-      '@types/estree': 1.0.5
-      devlop: 1.1.0
-      micromark-factory-mdx-expression: 2.0.1
-      micromark-factory-space: 2.0.0
-      micromark-util-character: 2.1.0
-      micromark-util-events-to-acorn: 2.0.2
-      micromark-util-symbol: 2.0.0
-      micromark-util-types: 2.0.0
-    dev: false
-
   /micromark-extension-mdx-expression@3.0.0:
     resolution: {integrity: sha512-sI0nwhUDz97xyzqJAbHQhp5TfaxEvZZZ2JDqUo+7NvyIYG6BZ5CPPqj2ogUoPJlmXHBnyZUzISg9+oUmU6tUjQ==}
     dependencies:
@@ -18915,21 +18897,6 @@ packages:
       micromark-util-events-to-acorn: 2.0.2
       micromark-util-symbol: 2.0.0
       micromark-util-types: 2.0.0
-    dev: false
-
-  /micromark-extension-mdx-jsx@2.0.0:
-    resolution: {integrity: sha512-hp6ff4eympWcq3Jh9XIJmJPNpM2RNmBjz5vvU1YkND7h4UwjSZas7lXSrAJjtTG7Z56JMMTyowwcbPkAjZmwMg==}
-    dependencies:
-      '@types/acorn': 4.0.6
-      '@types/estree': 1.0.5
-      devlop: 1.1.0
-      estree-util-is-identifier-name: 2.1.0
-      micromark-factory-mdx-expression: 2.0.1
-      micromark-factory-space: 2.0.0
-      micromark-util-character: 2.1.0
-      micromark-util-symbol: 2.0.0
-      micromark-util-types: 2.0.0
-      vfile-message: 4.0.2
     dev: false
 
   /micromark-extension-mdx-jsx@3.0.0:
@@ -18953,20 +18920,6 @@ packages:
       micromark-util-types: 2.0.0
     dev: false
 
-  /micromark-extension-mdxjs-esm@2.0.1:
-    resolution: {integrity: sha512-HLPrY5XLYzFtG5KxEcZXfUV/SOy9Eu3R+dnpP1P6ko/ZO9xceGxmgJOAMq4r/rPLrHaEosfhNIOXDcvFSkVfKQ==}
-    dependencies:
-      '@types/estree': 1.0.5
-      devlop: 1.1.0
-      micromark-core-commonmark: 2.0.1
-      micromark-util-character: 2.1.0
-      micromark-util-events-to-acorn: 2.0.2
-      micromark-util-symbol: 2.0.0
-      micromark-util-types: 2.0.0
-      unist-util-position-from-estree: 2.0.0
-      vfile-message: 4.0.2
-    dev: false
-
   /micromark-extension-mdxjs-esm@3.0.0:
     resolution: {integrity: sha512-DJFl4ZqkErRpq/dAPyeWp15tGrcrrJho1hKK5uBS70BCtfrIFg81sqcTVu3Ta+KD1Tk5vAtBNElWxtAa+m8K9A==}
     dependencies:
@@ -18979,19 +18932,6 @@ packages:
       micromark-util-types: 2.0.0
       unist-util-position-from-estree: 2.0.0
       vfile-message: 4.0.2
-    dev: false
-
-  /micromark-extension-mdxjs@2.0.0:
-    resolution: {integrity: sha512-cICbQUdcgFvfg3JH9XTqZoa1ONCZI0GsiOvl9672Ka3SilIo9kMmaKLdSd/QrDgNGxrirWtZfFh19DSKJUivWQ==}
-    dependencies:
-      acorn: 8.11.3
-      acorn-jsx: 5.3.2(acorn@8.11.3)
-      micromark-extension-mdx-expression: 2.0.0
-      micromark-extension-mdx-jsx: 2.0.0
-      micromark-extension-mdx-md: 2.0.0
-      micromark-extension-mdxjs-esm: 2.0.1
-      micromark-util-combine-extensions: 2.0.0
-      micromark-util-types: 2.0.0
     dev: false
 
   /micromark-extension-mdxjs@3.0.0:
@@ -19640,7 +19580,7 @@ packages:
       '@panva/hkdf': 1.1.1
       cookie: 0.5.0
       jose: 4.15.5
-      next: 14.1.4(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
+      next: 14.1.4(@babel/core@7.24.7)(react-dom@18.3.1)(react@18.3.1)
       oauth: 0.9.15
       openid-client: 5.6.5
       preact: 10.22.0
@@ -19731,6 +19671,7 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
+    dev: true
 
   /next@14.1.4(@babel/core@7.24.7)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-1WTaXeSrUwlz/XcnhGTY7+8eiaFvdet5z9u3V2jb+Ek1vFo0VhHKSAIJvDWfQpttWjnyw14kBeq28TPq7bTeEQ==}
@@ -24367,6 +24308,7 @@ packages:
       '@babel/core': 7.23.2
       client-only: 0.0.1
       react: 18.3.1
+    dev: true
 
   /styled-jsx@5.1.1(@babel/core@7.24.7)(react@18.2.0):
     resolution: {integrity: sha512-pW7uC1l4mBZ8ugbiZrcIsiIvVx1UmTfw7UkC3Um2tmfUq9Bhk8IiyEIPl6F8agHgjzku6j0xQEZbfA5uSgSaCw==}
