@@ -17,6 +17,7 @@ import { parseTRPCMessage } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
   TRPCClientOutgoingMessage,
+  TRPCConnectionParamsMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '../@trpc/server/rpc';
@@ -285,16 +286,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         const msgJSON: unknown = JSON.parse(message.toString());
 
         if (ctxPromise === unsetContextSymbol) {
-          ctxPromise = unsetContextSymbol;
-
-          if (!isObject(msgJSON)) {
-            throw new Error('Invalid connection params');
-          }
-
           ctxPromise = run(async () => {
-            const connectionParams = parseConnectionParamsFromUnknown(
-              msgJSON['data'],
-            );
+            const msg = msgJSON as TRPCConnectionParamsMessage;
+
+            if (!isObject(msgJSON)) {
+              throw new Error('Invalid connection params');
+            }
+            const connectionParams = parseConnectionParamsFromUnknown(msg.data);
 
             ctx = await createContext?.({
               req,
