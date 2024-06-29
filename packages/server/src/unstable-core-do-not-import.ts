@@ -16,7 +16,7 @@ export * from './unstable-core-do-not-import/error/formatter';
 export * from './unstable-core-do-not-import/error/getErrorShape';
 export * from './unstable-core-do-not-import/error/TRPCError';
 export * from './unstable-core-do-not-import/http/batchStreamFormatter';
-export * from './unstable-core-do-not-import/http/connectionParams';
+export * from './unstable-core-do-not-import/http/parseConnectionParams';
 export * from './unstable-core-do-not-import/http/contentType';
 export * from './unstable-core-do-not-import/http/contentTypeParsers';
 export * from './unstable-core-do-not-import/http/getHTTPStatusCode';

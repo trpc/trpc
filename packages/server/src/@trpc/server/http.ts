@@ -20,6 +20,7 @@ export type {
 export {
   getBatchStreamFormatter,
   octetInputParser,
-  parseConnectionParamsFromURL,
+  parseConnectionParamsFromUnknown,
+  parseConnectionParamsFromString,
   toURL,
 } from '../../unstable-core-do-not-import';

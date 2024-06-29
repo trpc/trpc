@@ -1,7 +1,9 @@
+import { type TRPCRequestInfo } from '@trpc/server/http';
+
 /**
  * Get the result of a value or function that returns a value
  */
-const resultOf = <T>(value: T | (() => T)): T => {
+export const resultOf = <T>(value: T | (() => T)): T => {
   return typeof value === 'function' ? (value as () => T)() : value;
 };
 
@@ -18,9 +20,9 @@ export interface UrlOptionsWithConnectionParams {
 
   /**
    * Connection params that can be picked up in `createContext()`
-   * These are serialized as part of the URL
+   * These are serialized as part of the URL for `httpSubscriptionLink` and sent as a first message in `wsLink`
    */
-  connectionParams?: CallbackOrValue<Record<string, unknown>>;
+  connectionParams?: CallbackOrValue<TRPCRequestInfo['connectionParams']>;
 }
 
 export async function urlWithConnectionParams(

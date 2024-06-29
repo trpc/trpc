@@ -1,18 +1,14 @@
 import { TRPCError } from '../error/TRPCError';
 import { isObject } from '../utils';
-import { toURL } from './toURL';
 import type { TRPCRequestInfo } from './types';
 
-export function parseConnectionParamsFromSearchParams(
-  searchParams: URLSearchParams,
+export function parseConnectionParamsFromUnknown(
+  parsed: unknown,
 ): TRPCRequestInfo['connectionParams'] {
-  const str = searchParams.get('connectionParams');
-  if (!str) {
-    return null;
-  }
   try {
-    const parsed = JSON.parse(str);
-
+    if (parsed === null) {
+      return null;
+    }
     if (!isObject(parsed)) {
       throw new Error('Expected object');
     }
@@ -31,14 +27,23 @@ export function parseConnectionParamsFromSearchParams(
   } catch (cause) {
     throw new TRPCError({
       code: 'BAD_REQUEST',
-      message: 'Not json parsable query params',
+      message: 'Invalid connection params shape',
       cause,
     });
   }
 }
-export function parseConnectionParamsFromURL(
-  url: URL | string,
+export function parseConnectionParamsFromString(
+  str: string,
 ): TRPCRequestInfo['connectionParams'] {
-  const urlCoerced = url instanceof URL ? url : toURL(url);
-  return parseConnectionParamsFromSearchParams(urlCoerced.searchParams);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(str);
+  } catch (cause) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Not json parsable query params',
+      cause,
+    });
+  }
+  return parseConnectionParamsFromUnknown(parsed);
 }

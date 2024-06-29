@@ -1394,7 +1394,7 @@ describe('websocket auth', async () => {
     expect(result).toBe(null);
   });
 
-  test('with auth', async () => {
+  test.only('with auth', async () => {
     const wsClient = createWSClient({
       url: ctx.wssUrl,
       connectionParams: async () => {

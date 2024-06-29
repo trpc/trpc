@@ -1,5 +1,6 @@
 import type { Observer, UnsubscribeFn } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
+import type { TRPCConnectionParamsMessage } from '@trpc/server/rpc';
 import type {
   AnyRouter,
   inferClientTypes,
@@ -16,7 +17,7 @@ import { TRPCClientError } from '../TRPCClientError';
 import type { TransformerOptions } from '../unstable-internals';
 import { getTransformer } from '../unstable-internals';
 import {
-  urlWithConnectionParams,
+  resultOf,
   type UrlOptionsWithConnectionParams,
 } from './internals/urlWithConnectionParams';
 import type { Operation, TRPCLink } from './types';
@@ -249,7 +250,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
     };
     run(async () => {
-      const url = await urlWithConnectionParams(opts);
+      const url = await resultOf(opts.url);
 
       const ws = new WebSocketImpl(url);
       self.ws = ws;
@@ -257,13 +258,28 @@ export function createWSClient(opts: WebSocketClientOptions) {
       clearTimeout(connectTimer);
       connectTimer = undefined;
 
-      ws.addEventListener('open', () => {
+      const connectionParamsPromise = run(async () => {
+        return (await resultOf(opts.connectionParams)) ?? null;
+      }).catch((error) => {
+        onError();
+        throw error;
+      });
+
+      ws.addEventListener('open', async () => {
         /* istanbul ignore next -- @preserve */
         if (activeConnection?.ws !== ws) {
           return;
         }
+        const connectionParams = await connectionParamsPromise;
         connectAttempt = 0;
         self.state = 'open';
+
+        const connectMsg: TRPCConnectionParamsMessage = {
+          method: 'connectionParams',
+          data: connectionParams,
+        };
+
+        ws.send(JSON.stringify(connectMsg));
 
         onOpen?.();
         dispatch();

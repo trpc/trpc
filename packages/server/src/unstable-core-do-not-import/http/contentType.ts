@@ -2,7 +2,7 @@ import { TRPCError } from '../error/TRPCError';
 import type { AnyProcedure, ProcedureType } from '../procedure';
 import type { AnyRouter } from '../router';
 import { isObject, unsetMarker } from '../utils';
-import { parseConnectionParamsFromSearchParams } from './connectionParams';
+import { parseConnectionParamsFromString } from './parseConnectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
 type GetRequestInfoOptions = {
@@ -162,14 +162,17 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const type: ProcedureType | 'unknown' =
       types.values().next().value ?? 'unknown';
 
+    const connectionParamsStr = opts.searchParams.get('connectionParams');
+
     const info: TRPCRequestInfo = {
       isBatchCall,
       accept: req.headers.get('trpc-accept') as TRPCAcceptHeader | null,
       calls,
       type,
-      connectionParams: parseConnectionParamsFromSearchParams(
-        opts.searchParams,
-      ),
+      connectionParams:
+        connectionParamsStr === null
+          ? null
+          : parseConnectionParamsFromString(connectionParamsStr),
     };
     return info;
   },
