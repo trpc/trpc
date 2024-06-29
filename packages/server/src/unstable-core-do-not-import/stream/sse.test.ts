@@ -30,7 +30,7 @@ test('e2e, server-sent events (SSE)', async () => {
     while (true) {
       i++;
       yield sse({
-        id: i,
+        id: String(i),
         data: i,
       });
 
@@ -154,7 +154,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
     function* yieldEvent() {
       i++;
       yield sse({
-        id: i,
+        id: String(i),
         data: i,
       });
     }
@@ -312,8 +312,16 @@ test('SSE on serverless - emit and disconnect early', async () => {
 
 test('sse()', () => {
   const event = sse({
-    id: 1,
+    id: String(1),
     data: { json: 1 },
   });
   expect(isSSEMessageEnvelope(event)).toBe(true);
+
+  // no properties
+  sse({
+    id: String(1),
+    data: { json: 1 },
+    // @ts-expect-error extras is not allowed
+    extras: {},
+  });
 });
