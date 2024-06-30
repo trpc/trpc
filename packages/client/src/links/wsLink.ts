@@ -280,8 +280,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
         if (activeConnection?.ws !== ws) {
           return;
         }
-        connectAttempt = 0;
-        self.state = 'open';
 
         if (connectionParamsPromise) {
           const connectMsg: TRPCConnectionParamsMessage = {
@@ -291,6 +289,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
           ws.send(JSON.stringify(connectMsg));
         }
+        connectAttempt = 0;
+        self.state = 'open';
 
         onOpen?.();
         dispatch();
