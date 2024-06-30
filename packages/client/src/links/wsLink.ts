@@ -1,4 +1,3 @@
-import type { TRPCRequestInfo } from '@trpc/server/http';
 import type { Observer, UnsubscribeFn } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type { TRPCConnectionParamsMessage } from '@trpc/server/rpc';
@@ -252,21 +251,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
     };
     run(async () => {
       let url = await resultOf(opts.url);
-      let connectionParamsPromise: null | Promise<
-        TRPCRequestInfo['connectionParams']
-      > = null;
       if (opts.connectionParams) {
+        // append `?connectionParams=1` when connection params are used
         const prefix = url.includes('?') ? '&' : '?';
         url += prefix + 'connectionParams=1';
-        connectionParamsPromise = run(async () => {
-          if (!opts.connectionParams) {
-            return null;
-          }
-          return (await resultOf(opts.connectionParams)) ?? null;
-        }).catch((error) => {
-          onError();
-          throw error;
-        });
       }
 
       const ws = new WebSocketImpl(url);
@@ -275,26 +263,34 @@ export function createWSClient(opts: WebSocketClientOptions) {
       clearTimeout(connectTimer);
       connectTimer = undefined;
 
-      ws.addEventListener('open', async () => {
-        /* istanbul ignore next -- @preserve */
-        if (activeConnection?.ws !== ws) {
-          return;
-        }
+      ws.addEventListener('open', () => {
+        run(async () => {
+          /* istanbul ignore next -- @preserve */
+          if (activeConnection?.ws !== ws) {
+            return;
+          }
+          if (opts.connectionParams) {
+            const connectMsg: TRPCConnectionParamsMessage = {
+              method: 'connectionParams',
+              data: await resultOf(opts.connectionParams),
+            };
 
-        connectAttempt = 0;
-        self.state = 'open';
+            ws.send(JSON.stringify(connectMsg));
+          }
 
-        if (connectionParamsPromise) {
-          const connectMsg: TRPCConnectionParamsMessage = {
-            method: 'connectionParams',
-            data: await connectionParamsPromise,
-          };
+          connectAttempt = 0;
+          self.state = 'open';
 
-          ws.send(JSON.stringify(connectMsg));
-        }
-
-        onOpen?.();
-        dispatch();
+          onOpen?.();
+          dispatch();
+        }).catch((cause) => {
+          ws.close(
+            // "Status codes in the range 3000-3999 are reserved for use by libraries, frameworks, and applications"
+            3000,
+            cause,
+          );
+          onError();
+        });
       });
       ws.addEventListener('error', onError);
       const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
