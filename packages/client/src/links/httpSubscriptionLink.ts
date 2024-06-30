@@ -13,10 +13,25 @@ import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
 import {
-  urlWithConnectionParams,
+  resultOf,
   type UrlOptionsWithConnectionParams,
 } from './internals/urlWithConnectionParams';
 import type { TRPCLink } from './types';
+
+async function urlWithConnectionParams(
+  opts: UrlOptionsWithConnectionParams,
+): Promise<string> {
+  let url = await resultOf(opts.url);
+  if (opts.connectionParams) {
+    const params = await resultOf(opts.connectionParams);
+
+    const prefix = url.includes('?') ? '&' : '?';
+    url +=
+      prefix + 'connectionParams=' + encodeURIComponent(JSON.stringify(params));
+  }
+
+  return url;
+}
 
 type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**

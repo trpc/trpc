@@ -24,18 +24,3 @@ export interface UrlOptionsWithConnectionParams {
    */
   connectionParams?: CallbackOrValue<TRPCRequestInfo['connectionParams']>;
 }
-
-export async function urlWithConnectionParams(
-  opts: UrlOptionsWithConnectionParams,
-): Promise<string> {
-  let url = await resultOf(opts.url);
-  if (opts.connectionParams) {
-    const params = await resultOf(opts.connectionParams);
-
-    const prefix = url.includes('?') ? '&' : '?';
-    url +=
-      prefix + 'connectionParams=' + encodeURIComponent(JSON.stringify(params));
-  }
-
-  return url;
-}
