@@ -1,4 +1,6 @@
+// @ts-check
 function remarkHtmlToJsx() {
+  // @ts-ignore
   async function transform(...args) {
     const { visit, SKIP } = await import("unist-util-visit");
     const { mdxFromMarkdown } = await import("mdast-util-mdx");

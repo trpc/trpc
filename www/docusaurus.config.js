@@ -227,8 +227,8 @@ module.exports = {
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
           remarkPlugins: [
-            [require("remark-shiki-twoslash").default, require("./shiki-twoslash.config")],
-            require("./mdx-to-jsx"), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
+            [require("remark-shiki-twoslash").default, require("./shikiTwoslash.config")],
+            require("./mdxToJsx"), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
           ]
         },
         blog: {
@@ -236,8 +236,8 @@ module.exports = {
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
           remarkPlugins: [
-            [require("remark-shiki-twoslash").default, require("./shiki-twoslash.config")],
-            require("./mdx-to-jsx"), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
+            [require("remark-shiki-twoslash").default, require("./shikiTwoslash.config")],
+            require("./mdxToJsx"), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
           ]
         },
         theme: {
