@@ -26,7 +26,7 @@ export function parseConnectionParamsFromUnknown(
     return parsed as Record<string, string>;
   } catch (cause) {
     throw new TRPCError({
-      code: 'BAD_REQUEST',
+      code: 'PARSE_ERROR',
       message: 'Invalid connection params shape',
       cause,
     });
@@ -40,7 +40,7 @@ export function parseConnectionParamsFromString(
     parsed = JSON.parse(str);
   } catch (cause) {
     throw new TRPCError({
-      code: 'BAD_REQUEST',
+      code: 'PARSE_ERROR',
       message: 'Not json parsable query params',
       cause,
     });

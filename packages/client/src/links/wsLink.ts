@@ -1,3 +1,4 @@
+import type { TRPCRequestInfo } from '@trpc/server/http';
 import type { Observer, UnsubscribeFn } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type { TRPCConnectionParamsMessage } from '@trpc/server/rpc';
@@ -250,7 +251,23 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
     };
     run(async () => {
-      const url = await resultOf(opts.url);
+      let url = await resultOf(opts.url);
+      let connectionParamsPromise: null | Promise<
+        TRPCRequestInfo['connectionParams']
+      > = null;
+      if (opts.connectionParams) {
+        const prefix = url.includes('?') ? '&' : '?';
+        url += prefix + 'connectionParams=1';
+        connectionParamsPromise = run(async () => {
+          if (!opts.connectionParams) {
+            return null;
+          }
+          return (await resultOf(opts.connectionParams)) ?? null;
+        }).catch((error) => {
+          onError();
+          throw error;
+        });
+      }
 
       const ws = new WebSocketImpl(url);
       self.ws = ws;
@@ -258,28 +275,22 @@ export function createWSClient(opts: WebSocketClientOptions) {
       clearTimeout(connectTimer);
       connectTimer = undefined;
 
-      const connectionParamsPromise = run(async () => {
-        return (await resultOf(opts.connectionParams)) ?? null;
-      }).catch((error) => {
-        onError();
-        throw error;
-      });
-
       ws.addEventListener('open', async () => {
         /* istanbul ignore next -- @preserve */
         if (activeConnection?.ws !== ws) {
           return;
         }
-        const connectionParams = await connectionParamsPromise;
         connectAttempt = 0;
         self.state = 'open';
 
-        const connectMsg: TRPCConnectionParamsMessage = {
-          method: 'connectionParams',
-          data: connectionParams,
-        };
+        if (connectionParamsPromise) {
+          const connectMsg: TRPCConnectionParamsMessage = {
+            method: 'connectionParams',
+            data: await connectionParamsPromise,
+          };
 
-        ws.send(JSON.stringify(connectMsg));
+          ws.send(JSON.stringify(connectMsg));
+        }
 
         onOpen?.();
         dispatch();

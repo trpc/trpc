@@ -1330,7 +1330,7 @@ describe('keep alive', () => {
   });
 });
 
-describe.only('websocket auth', async () => {
+describe('websocket auth', async () => {
   const USER_TOKEN = 'supersecret';
   type User = {
     id: string;
@@ -1370,6 +1370,7 @@ describe.only('websocket auth', async () => {
           },
         },
       });
+      opts.wsClient.close();
 
       return opts;
     })
