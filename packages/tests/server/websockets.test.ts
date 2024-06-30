@@ -1330,7 +1330,7 @@ describe('keep alive', () => {
   });
 });
 
-describe('websocket auth', async () => {
+describe.only('websocket auth', async () => {
   const USER_TOKEN = 'supersecret';
   type User = {
     id: string;
@@ -1394,7 +1394,7 @@ describe('websocket auth', async () => {
     expect(result).toBe(null);
   });
 
-  test.only('with auth', async () => {
+  test('with auth', async () => {
     const wsClient = createWSClient({
       url: ctx.wssUrl,
       connectionParams: async () => {

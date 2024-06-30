@@ -12,7 +12,8 @@ import {
   transformTRPCResponse,
   TRPCError,
 } from '../@trpc/server';
-import { type BaseHandlerOptions } from '../@trpc/server/http';
+import type { TRPCRequestInfo } from '../@trpc/server/http';
+import { toURL, type BaseHandlerOptions } from '../@trpc/server/http';
 import { parseTRPCMessage } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
@@ -95,6 +96,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   const { transformer } = router._def._config;
 
   return async (client: ws.WebSocket, req: IncomingMessage) => {
+    const url = toURL(req.url ?? '');
     const clientSubscriptions = new Map<number | string, AbortController>();
 
     function respond(untransformedJSON: TRPCResponseMessage) {
@@ -109,6 +111,58 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       | typeof unsetContextSymbol = unsetContextSymbol;
 
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
+
+    function createCtxPromise(
+      getConnectionParams: () => TRPCRequestInfo['connectionParams'],
+    ) {
+      ctxPromise = run(async () => {
+        ctx = await createContext?.({
+          req,
+          res: client,
+          info: {
+            connectionParams: getConnectionParams(),
+            calls: [],
+            isBatchCall: false,
+            accept: null,
+            type: 'unknown',
+          },
+        });
+
+        return ctx;
+      }).catch((cause) => {
+        const error = getTRPCErrorFromUnknown(cause);
+        opts.onError?.({
+          error,
+          path: undefined,
+          type: 'unknown',
+          ctx,
+          req,
+          input: undefined,
+        });
+        respond({
+          id: null,
+          error: getErrorShape({
+            config: router._def._config,
+            error,
+            type: 'unknown',
+            path: undefined,
+            input: undefined,
+            ctx,
+          }),
+        });
+
+        // close in next tick
+        (global.setImmediate ?? global.setTimeout)(() => {
+          client.close();
+        });
+
+        throw error;
+      });
+    }
+
+    // if (url.searchParams.get('connectionParams') === '1') {
+    //   createCtxPromise(())
+    // }
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
       const { id, jsonrpc } = msg;
@@ -286,7 +340,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         const msgJSON: unknown = JSON.parse(message.toString());
 
         if (ctxPromise === unsetContextSymbol) {
-          ctxPromise = run(async () => {
+          createCtxPromise(() => {
             const msg = msgJSON as TRPCConnectionParamsMessage;
 
             if (!isObject(msgJSON)) {
@@ -294,49 +348,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             }
             const connectionParams = parseConnectionParamsFromUnknown(msg.data);
 
-            ctx = await createContext?.({
-              req,
-              res: client,
-              info: {
-                connectionParams,
-                calls: [],
-                isBatchCall: false,
-                accept: null,
-                type: 'unknown',
-              },
-            });
-
-            return ctx;
-          }).catch((cause) => {
-            const error = getTRPCErrorFromUnknown(cause);
-            opts.onError?.({
-              error,
-              path: undefined,
-              type: 'unknown',
-              ctx,
-              req,
-              input: undefined,
-            });
-            respond({
-              id: null,
-              error: getErrorShape({
-                config: router._def._config,
-                error,
-                type: 'unknown',
-                path: undefined,
-                input: undefined,
-                ctx,
-              }),
-            });
-
-            // close in next tick
-            (global.setImmediate ?? global.setTimeout)(() => {
-              client.close();
-            });
-
-            throw error;
+            return connectionParams;
           });
-
           return;
         }
 
