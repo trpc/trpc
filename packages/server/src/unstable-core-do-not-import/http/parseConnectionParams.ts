@@ -41,7 +41,7 @@ export function parseConnectionParamsFromString(
   } catch (cause) {
     throw new TRPCError({
       code: 'PARSE_ERROR',
-      message: 'Not json parsable query params',
+      message: 'Not JSON-parsable query params',
       cause,
     });
   }
