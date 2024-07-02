@@ -9,6 +9,10 @@ slug: /client/links/httpSubscriptionLink
 
 SSE is a good option for real-time as it's a bit easier to deal with than WebSockets and handles things like reconnecting and continuing where it left off automatically.
 
+:::info
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
+:::
+
 ## Setup
 
 :::info
@@ -113,6 +117,60 @@ export const subRouter = router({
         });
       }
     }),
+});
+```
+
+## Authentication / connection params {#connectionParams}
+
+:::tip
+If you're doing a web application, you can ignore this section as the cookies are sent as part of the request.
+:::
+
+In order to authenticate with `EventSource`, you can define `connectionParams` to `createWSClient`. This will be sent as part of the URL.
+
+```ts twoslash title="server/context.ts"
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+
+export const createContext = async (opts: CreateHTTPContextOptions) => {
+  const token = opts.info.connectionParams?.token;
+  //    ^?
+
+  // [... authenticate]
+
+  return {};
+};
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+```ts title="client/trpc.ts"
+import {
+  createTRPCClient,
+  httpBatchLink,
+  splitLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
+import type { AppRouter } from '../server/index.js';
+
+// Initialize the tRPC client
+const trpc = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: unstable_httpSubscriptionLink({
+        url: 'http://localhost:3000',
+        connectionParams: async () => {
+          // Will be serialized as part of the URL
+          return {
+            token: 'supersecret',
+          };
+        },
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000',
+      }),
+    }),
+  ],
 });
 ```
 

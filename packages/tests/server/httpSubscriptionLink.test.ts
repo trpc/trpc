@@ -242,7 +242,7 @@ test('disconnect and reconnect with an event id', async () => {
   expect(ctx.infiniteYields).toHaveBeenCalledTimes(0);
 });
 
-describe('auth', async () => {
+describe('auth / connectionParams', async () => {
   const USER_TOKEN = 'supersecret';
   type User = {
     id: string;

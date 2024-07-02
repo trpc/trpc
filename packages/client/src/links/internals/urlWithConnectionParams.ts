@@ -19,8 +19,9 @@ export interface UrlOptionsWithConnectionParams {
   url: CallbackOrValue<string>;
 
   /**
-   * Connection params that can be picked up in `createContext()`
-   * These are serialized as part of the URL for `httpSubscriptionLink` and sent as a first message in `wsLink`
+   * Connection params that are available in `createContext()`
+   * - For `wsLink`/`wsClient`, these are sent as the first message
+   * - For `httpSubscriptionLink`, these are serialized as part of the URL under the `connectionParams` query
    */
   connectionParams?: CallbackOrValue<TRPCRequestInfo['connectionParams']>;
 }
