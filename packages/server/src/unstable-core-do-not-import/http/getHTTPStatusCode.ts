@@ -3,6 +3,7 @@ import type { TRPCError } from '../error/TRPCError';
 import type { TRPC_ERROR_CODES_BY_KEY, TRPCResponse } from '../rpc';
 import { TRPC_ERROR_CODES_BY_NUMBER } from '../rpc';
 import type { Maybe } from '../types';
+import { isObject } from '../utils';
 
 const JSONRPC2_TO_HTTP_CODE: Record<
   keyof typeof TRPC_ERROR_CODES_BY_KEY,
@@ -34,7 +35,7 @@ export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]): number {
   const arr = Array.isArray(json) ? json : [json];
   const httpStatuses = new Set<number>(
     arr.map((res) => {
-      if ('error' in res && res.error.data) {
+      if ('error' in res && isObject(res.error.data)) {
         const data = res.error.data as
           | Maybe<Record<string, unknown>>
           | DefaultErrorData;
