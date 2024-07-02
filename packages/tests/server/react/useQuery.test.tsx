@@ -4,22 +4,12 @@ import { skipToken, type InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
+import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
-
-function createDeferred<TValue>() {
-  let resolve: (value: TValue) => void;
-  let reject: (error: unknown) => void;
-  const promise = new Promise<TValue>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-
-  return { promise, resolve: resolve!, reject: reject! };
-}
 
 const ctx = konn()
   .beforeEach(() => {

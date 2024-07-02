@@ -230,7 +230,13 @@ export type UseTRPCSuspenseInfiniteQueryResult<TData, TError, TInput> = [
  * @internal
  */
 export type UseTRPCMutationResult<TData, TError, TVariables, TContext> =
-  TRPCHookResult & UseMutationResult<TData, TError, TVariables, TContext>;
+  TRPCHookResult &
+    UseMutationResult<
+      coerceAsyncIterableToArray<TData>,
+      TError,
+      TVariables,
+      TContext
+    >;
 
 export interface TRPCHookResult {
   trpc: {

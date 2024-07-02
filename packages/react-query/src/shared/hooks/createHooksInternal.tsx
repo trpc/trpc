@@ -186,29 +186,29 @@ export function createRootHooks<
                 ...getClientArgs(queryKey, actualOpts),
               );
 
-              if (isAsyncIterable(result)) {
-                const queryCache = queryClient.getQueryCache();
+              if (!isAsyncIterable(result)) {
+                return result;
+              }
+              const queryCache = queryClient.getQueryCache();
 
-                const query = queryCache.build(queryFunctionContext.queryKey, {
-                  queryKey,
-                });
+              const query = queryCache.build(queryFunctionContext.queryKey, {
+                queryKey,
+              });
+
+              query.setState({
+                data: [],
+                status: 'success',
+              });
+
+              const aggregate: unknown[] = [];
+              for await (const value of result) {
+                aggregate.push(value);
 
                 query.setState({
-                  data: [],
-                  status: 'success',
+                  data: [...aggregate],
                 });
-
-                const aggregate: unknown[] = [];
-                for await (const value of result) {
-                  aggregate.push(value);
-
-                  query.setState({
-                    data: [...aggregate],
-                  });
-                }
-                return aggregate;
               }
-              return result;
+              return aggregate;
             },
       },
       queryClient,
@@ -273,12 +273,37 @@ export function createRootHooks<
       queryClient.getMutationDefaults(mutationKey),
     );
 
+    // the result of `data` should be an array if we are using an async iterable
+    const [dataOverride, setDataOverride] = React.useState<unknown[] | null>(
+      null,
+    );
     const hook = __useMutation(
       {
         ...opts,
         mutationKey: mutationKey,
-        mutationFn: (input) => {
-          return client.mutation(...getClientArgs([path, { input }], opts));
+        mutationFn: async (input) => {
+          setDataOverride(null);
+          const result = await client.mutation(
+            ...getClientArgs([path, { input }], opts),
+          );
+
+          if (!isAsyncIterable(result)) {
+            return result;
+          }
+
+          // `mutateAsync()` returns an async iterable
+          async function* iterable() {
+            setDataOverride([]);
+            for await (const value of result as AsyncIterable<unknown>) {
+              setDataOverride((prev) => {
+                const next = [...(prev ?? []), value];
+                return next;
+              });
+              yield value;
+            }
+          }
+
+          return iterable();
         },
         onSuccess(...args) {
           const originalFn = () =>
@@ -297,6 +322,9 @@ export function createRootHooks<
     hook.trpc = useHookResult({
       path,
     });
+    if (dataOverride) {
+      hook.data = dataOverride;
+    }
 
     return hook;
   }
