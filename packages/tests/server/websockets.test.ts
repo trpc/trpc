@@ -486,7 +486,6 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   wsClient.close();
   expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
 
-  await close();
   await waitFor(() => {
     expect(conn.ws!.readyState).toBe(WebSocket.CLOSED);
   });
