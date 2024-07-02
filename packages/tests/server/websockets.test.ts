@@ -835,9 +835,14 @@ describe('regression test - slow createContext', () => {
 });
 
 test('malformatted JSON', async () => {
-  const t = factory();
-  // close built-in client immediately to prevent connection
-  t.wsClient.close();
+  const t = factory({
+    wsClient: {
+      lazy: {
+        enabled: true,
+        closeMs: 1,
+      },
+    },
+  });
   const rawClient = new WebSocket(t.wssUrl);
 
   rawClient.onopen = () => {
