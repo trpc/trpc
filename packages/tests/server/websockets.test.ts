@@ -471,121 +471,107 @@ test('sub emits errors', async () => {
   await close();
 });
 
-test(
-  'wait for slow queries/mutations before disconnecting',
-  async () => {
-    const { client, close, wsClient, onNewClient, onSlowMutationCalled } =
-      factory();
+test('wait for slow queries/mutations before disconnecting', async () => {
+  const { client, close, wsClient, onNewClient, onSlowMutationCalled } =
+    factory();
 
-    await waitFor(() => {
-      expect(onNewClient).toHaveBeenCalledTimes(1);
-    });
-    const promise = client.slow.mutate();
-    await waitFor(() => {
-      expect(onSlowMutationCalled).toHaveBeenCalledTimes(1);
-    });
-    const conn = wsClient.connection!;
-    wsClient.close();
-    expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
+  await waitFor(() => {
+    expect(onNewClient).toHaveBeenCalledTimes(1);
+  });
+  const promise = client.slow.mutate();
+  await waitFor(() => {
+    expect(onSlowMutationCalled).toHaveBeenCalledTimes(1);
+  });
+  const conn = wsClient.connection!;
+  wsClient.close();
+  expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
 
-    await close();
-    await waitFor(() => {
-      expect(conn.ws!.readyState).toBe(WebSocket.CLOSED);
-    });
-    await close();
-  },
-  {
-    retry: 5,
-  },
-);
+  await close();
+  await waitFor(() => {
+    expect(conn.ws!.readyState).toBe(WebSocket.CLOSED);
+  });
+  await close();
+});
 
-test(
-  'requests get aborted if called before connection is established and requests dispatched',
-  async () => {
-    const { client, close, wsClient, onNewClient } = factory();
+test('requests get aborted if called before connection is established and requests dispatched', async () => {
+  const { client, close, wsClient, onNewClient } = factory();
 
-    await waitFor(() => {
-      expect(onNewClient).toHaveBeenCalledTimes(1);
-    });
-    const promise = client.slow.mutate();
-    const conn = wsClient.connection;
-    wsClient.close();
-    await expect(promise).rejects.toMatchInlineSnapshot(
-      '[TRPCClientError: Closed before connection was established]',
-    );
-    await close();
-    await waitFor(() => {
-      expect(conn!.ws!.readyState).toBe(WebSocket.CLOSED);
-    });
-    await close();
-  },
-  {
-    // retry: 5
-  },
-);
+  await waitFor(() => {
+    expect(onNewClient).toHaveBeenCalledTimes(1);
+  });
+  const promise = client.slow.mutate();
+  const conn = wsClient.connection;
+  wsClient.close();
+  await expect(promise).rejects.toMatchInlineSnapshot(
+    '[TRPCClientError: Closed before connection was established]',
+  );
+  await close();
+  await waitFor(() => {
+    expect(conn!.ws!.readyState).toBe(WebSocket.CLOSED);
+  });
+  await close();
+});
 
-test(
-  'subscriptions are automatically resumed upon explicit reconnect request',
-  async () => {
-    const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
-      factory();
-    ee.once('subscription:created', () => {
-      setTimeout(() => {
-        ee.emit('server:msg', {
-          id: '1',
-        });
+test('subscriptions are automatically resumed upon explicit reconnect request', async () => {
+  const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
+    factory();
+  ee.once('subscription:created', () => {
+    setTimeout(() => {
+      ee.emit('server:msg', {
+        id: '1',
       });
     });
-    function createSub() {
-      const onStartedMock = vi.fn();
-      const onDataMock = vi.fn();
-      const onErrorMock = vi.fn();
-      const onStoppedMock = vi.fn();
-      const onCompleteMock = vi.fn();
-      const unsub = client.onMessageObservable.subscribe(undefined, {
-        onStarted: onStartedMock(),
-        onData: onDataMock,
-        onError: onErrorMock,
-        onStopped: onStoppedMock,
-        onComplete: onCompleteMock,
-      });
-      return {
-        onStartedMock,
-        onDataMock,
-        onErrorMock,
-        onStoppedMock,
-        onCompleteMock,
-        unsub,
-      };
-    }
-    const sub1 = createSub();
+  });
+  function createSub() {
+    const onStartedMock = vi.fn();
+    const onDataMock = vi.fn();
+    const onErrorMock = vi.fn();
+    const onStoppedMock = vi.fn();
+    const onCompleteMock = vi.fn();
+    const unsub = client.onMessageObservable.subscribe(undefined, {
+      onStarted: onStartedMock(),
+      onData: onDataMock,
+      onError: onErrorMock,
+      onStopped: onStoppedMock,
+      onComplete: onCompleteMock,
+    });
+    return {
+      onStartedMock,
+      onDataMock,
+      onErrorMock,
+      onStoppedMock,
+      onCompleteMock,
+      unsub,
+    };
+  }
+  const sub1 = createSub();
 
-    await waitFor(() => {
-      expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
-      expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
-      expect(onOpenMock).toHaveBeenCalledTimes(1);
-      expect(onCloseMock).toHaveBeenCalledTimes(0);
-    });
-    wssHandler.broadcastReconnectNotification();
-    await waitFor(() => {
-      expect(wss.clients.size).toBe(1);
-      expect(onOpenMock).toHaveBeenCalledTimes(2);
-      expect(onCloseMock).toHaveBeenCalledTimes(1);
-    });
+  await waitFor(() => {
+    expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
+    expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
+    expect(onOpenMock).toHaveBeenCalledTimes(1);
+    expect(onCloseMock).toHaveBeenCalledTimes(0);
+  });
+  wssHandler.broadcastReconnectNotification();
+  await waitFor(() => {
+    expect(wss.clients.size).toBe(1);
+    expect(onOpenMock).toHaveBeenCalledTimes(2);
+    expect(onCloseMock).toHaveBeenCalledTimes(1);
+  });
 
-    await waitFor(() => {
-      expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
-      expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
-    });
-    ee.emit('server:msg', {
-      id: '2',
-    });
+  await waitFor(() => {
+    expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
+    expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
+  });
+  ee.emit('server:msg', {
+    id: '2',
+  });
 
-    await waitFor(() => {
-      expect(sub1.onDataMock).toHaveBeenCalledTimes(2);
-    });
-    expect(sub1.onDataMock.mock.calls.map((args) => args[0]))
-      .toMatchInlineSnapshot(`
+  await waitFor(() => {
+    expect(sub1.onDataMock).toHaveBeenCalledTimes(2);
+  });
+  expect(sub1.onDataMock.mock.calls.map((args) => args[0]))
+    .toMatchInlineSnapshot(`
     Array [
       Object {
         "id": "1",
@@ -595,84 +581,78 @@ test(
       },
     ]
   `);
-    await waitFor(() => {
-      expect(wss.clients.size).toBe(1);
-    });
+  await waitFor(() => {
+    expect(wss.clients.size).toBe(1);
+  });
 
-    await close();
+  await close();
 
-    await waitFor(() => {
-      expect(onCloseMock).toHaveBeenCalledTimes(2);
-    });
-  },
-  {
-    // retry: 5
-  },
-);
+  await waitFor(() => {
+    expect(onCloseMock).toHaveBeenCalledTimes(2);
+  });
+});
 
-test(
-  'subscriptions are automatically resumed if connection is lost',
-  async () => {
-    const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
-      factory();
-    ee.once('subscription:created', () => {
-      setTimeout(() => {
-        ee.emit('server:msg', {
-          id: '1',
-        });
+test('subscriptions are automatically resumed if connection is lost', async () => {
+  const { client, close, ee, wssHandler, wss, onOpenMock, onCloseMock } =
+    factory();
+  ee.once('subscription:created', () => {
+    setTimeout(() => {
+      ee.emit('server:msg', {
+        id: '1',
       });
     });
-    function createSub() {
-      const onStartedMock = vi.fn();
-      const onDataMock = vi.fn();
-      const onErrorMock = vi.fn();
-      const onStoppedMock = vi.fn();
-      const onCompleteMock = vi.fn();
-      const unsub = client.onMessageObservable.subscribe(undefined, {
-        onStarted: onStartedMock(),
-        onData: onDataMock,
-        onError: onErrorMock,
-        onStopped: onStoppedMock,
-        onComplete: onCompleteMock,
-      });
-      return {
-        onStartedMock,
-        onDataMock,
-        onErrorMock,
-        onStoppedMock,
-        onCompleteMock,
-        unsub,
-      };
-    }
-    const sub1 = createSub();
+  });
+  function createSub() {
+    const onStartedMock = vi.fn();
+    const onDataMock = vi.fn();
+    const onErrorMock = vi.fn();
+    const onStoppedMock = vi.fn();
+    const onCompleteMock = vi.fn();
+    const unsub = client.onMessageObservable.subscribe(undefined, {
+      onStarted: onStartedMock(),
+      onData: onDataMock,
+      onError: onErrorMock,
+      onStopped: onStoppedMock,
+      onComplete: onCompleteMock,
+    });
+    return {
+      onStartedMock,
+      onDataMock,
+      onErrorMock,
+      onStoppedMock,
+      onCompleteMock,
+      unsub,
+    };
+  }
+  const sub1 = createSub();
 
-    await waitFor(() => {
-      expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
-      expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
-      expect(onOpenMock).toHaveBeenCalledTimes(1);
-      expect(onCloseMock).toHaveBeenCalledTimes(0);
-    });
-    // close connections forcefully
-    wss.clients.forEach((ws) => ws.close());
-    await waitFor(() => {
-      expect(wss.clients.size).toBe(1);
-      expect(onOpenMock).toHaveBeenCalledTimes(2);
-      expect(onCloseMock).toHaveBeenCalledTimes(1);
-    });
+  await waitFor(() => {
+    expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
+    expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
+    expect(onOpenMock).toHaveBeenCalledTimes(1);
+    expect(onCloseMock).toHaveBeenCalledTimes(0);
+  });
+  // close connections forcefully
+  wss.clients.forEach((ws) => ws.close());
+  await waitFor(() => {
+    expect(wss.clients.size).toBe(1);
+    expect(onOpenMock).toHaveBeenCalledTimes(2);
+    expect(onCloseMock).toHaveBeenCalledTimes(1);
+  });
 
-    await waitFor(() => {
-      expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
-      expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
-    });
-    ee.emit('server:msg', {
-      id: '2',
-    });
+  await waitFor(() => {
+    expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
+    expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
+  });
+  ee.emit('server:msg', {
+    id: '2',
+  });
 
-    await waitFor(() => {
-      expect(sub1.onDataMock).toHaveBeenCalledTimes(2);
-    });
-    expect(sub1.onDataMock.mock.calls.map((args) => args[0]))
-      .toMatchInlineSnapshot(`
+  await waitFor(() => {
+    expect(sub1.onDataMock).toHaveBeenCalledTimes(2);
+  });
+  expect(sub1.onDataMock.mock.calls.map((args) => args[0]))
+    .toMatchInlineSnapshot(`
     Array [
       Object {
         "id": "1",
@@ -682,20 +662,16 @@ test(
       },
     ]
   `);
-    await waitFor(() => {
-      expect(wss.clients.size).toBe(1);
-    });
+  await waitFor(() => {
+    expect(wss.clients.size).toBe(1);
+  });
 
-    await close();
+  await close();
 
-    await waitFor(() => {
-      expect(onCloseMock).toHaveBeenCalledTimes(2);
-    });
-  },
-  {
-    // retry: 5
-  },
-);
+  await waitFor(() => {
+    expect(onCloseMock).toHaveBeenCalledTimes(2);
+  });
+});
 
 test('not found error', async () => {
   const { client, close, router } = factory();
@@ -732,35 +708,33 @@ test('batching', async () => {
 });
 
 describe('regression test - slow createContext', () => {
-  test(
-    'send messages immediately on connection',
-    async () => {
-      const t = factory({
-        async createContext() {
-          await waitMs(50);
-          return {};
-        },
-      });
-      const rawClient = new WebSocket(t.wssUrl);
+  test('send messages immediately on connection', async () => {
+    const t = factory({
+      async createContext() {
+        await waitMs(50);
+        return {};
+      },
+    });
+    const rawClient = new WebSocket(t.wssUrl);
 
-      const msg: TRPCRequestMessage = {
-        id: 1,
-        method: 'query',
-        params: {
-          path: 'greeting',
-          input: null,
-        },
-      };
-      const msgStr = JSON.stringify(msg);
-      rawClient.onopen = () => {
-        rawClient.send(msgStr);
-      };
-      const data = await new Promise<string>((resolve) => {
-        rawClient.addEventListener('message', (msg) => {
-          resolve(msg.data as string);
-        });
+    const msg: TRPCRequestMessage = {
+      id: 1,
+      method: 'query',
+      params: {
+        path: 'greeting',
+        input: null,
+      },
+    };
+    const msgStr = JSON.stringify(msg);
+    rawClient.onopen = () => {
+      rawClient.send(msgStr);
+    };
+    const data = await new Promise<string>((resolve) => {
+      rawClient.addEventListener('message', (msg) => {
+        resolve(msg.data as string);
       });
-      expect(JSON.parse(data)).toMatchInlineSnapshot(`
+    });
+    expect(JSON.parse(data)).toMatchInlineSnapshot(`
       Object {
         "id": 1,
         "result": Object {
@@ -769,11 +743,9 @@ describe('regression test - slow createContext', () => {
         },
       }
     `);
-      rawClient.close();
-      await t.close();
-    },
-    { retry: 5 },
-  );
+    rawClient.close();
+    await t.close();
+  });
 
   test('createContext throws', async () => {
     const createContext = vi.fn(async () => {
@@ -782,6 +754,12 @@ describe('regression test - slow createContext', () => {
     });
     const t = factory({
       createContext,
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 1,
+        },
+      },
     });
     const rawClient = new WebSocket(t.wssUrl);
 
@@ -849,10 +827,7 @@ describe('regression test - slow createContext', () => {
     `);
 
     await waitFor(() => {
-      expect(createContext).toHaveBeenCalledTimes(
-        2,
-        // built-in client calls it once as well
-      );
+      expect(createContext).toHaveBeenCalledTimes(1);
     });
 
     await t.close();
