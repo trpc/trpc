@@ -1,10 +1,10 @@
 import type { Observer, UnsubscribeFn } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
+import type { TRPCConnectionParamsMessage } from '@trpc/server/rpc';
 import type {
   AnyRouter,
   inferClientTypes,
   inferRouterError,
-  MaybePromise,
   ProcedureType,
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
@@ -16,6 +16,10 @@ import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
 import type { TransformerOptions } from '../unstable-internals';
 import { getTransformer } from '../unstable-internals';
+import {
+  resultOf,
+  type UrlOptionsWithConnectionParams,
+} from './internals/urlWithConnectionParams';
 import type { Operation, TRPCLink } from './types';
 
 const run = <TResult>(fn: () => TResult): TResult => fn();
@@ -33,11 +37,7 @@ type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
 const exponentialBackoff = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
-export interface WebSocketClientOptions {
-  /**
-   * The URL to connect to (can be a function that returns a URL)
-   */
-  url: string | (() => MaybePromise<string>);
+export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
   /**
    * Ponyfill which WebSocket implementation to use
    */
@@ -79,7 +79,6 @@ const lazyDefaults: LazyOptions = {
 };
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
-    url,
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = exponentialBackoff,
     onOpen,
@@ -251,23 +250,47 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
     };
     run(async () => {
-      const urlString = typeof url === 'function' ? await url() : url;
-      const ws = new WebSocketImpl(urlString);
+      let url = await resultOf(opts.url);
+      if (opts.connectionParams) {
+        // append `?connectionParams=1` when connection params are used
+        const prefix = url.includes('?') ? '&' : '?';
+        url += prefix + 'connectionParams=1';
+      }
+
+      const ws = new WebSocketImpl(url);
       self.ws = ws;
 
       clearTimeout(connectTimer);
       connectTimer = undefined;
 
       ws.addEventListener('open', () => {
-        /* istanbul ignore next -- @preserve */
-        if (activeConnection?.ws !== ws) {
-          return;
-        }
-        connectAttempt = 0;
-        self.state = 'open';
+        run(async () => {
+          /* istanbul ignore next -- @preserve */
+          if (activeConnection?.ws !== ws) {
+            return;
+          }
+          if (opts.connectionParams) {
+            const connectMsg: TRPCConnectionParamsMessage = {
+              method: 'connectionParams',
+              data: await resultOf(opts.connectionParams),
+            };
 
-        onOpen?.();
-        dispatch();
+            ws.send(JSON.stringify(connectMsg));
+          }
+
+          connectAttempt = 0;
+          self.state = 'open';
+
+          onOpen?.();
+          dispatch();
+        }).catch((cause) => {
+          ws.close(
+            // "Status codes in the range 3000-3999 are reserved for use by libraries, frameworks, and applications"
+            3000,
+            cause,
+          );
+          onError();
+        });
       });
       ws.addEventListener('error', onError);
       const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
@@ -428,6 +451,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
     get connection() {
       return activeConnection;
     },
+    /**
+     * Reconnect to the WebSocket server
+     */
+    reconnect,
   };
 }
 export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;

@@ -17,5 +17,6 @@ export type {
   TRPCResultMessage,
   TRPCSubscriptionStopNotification,
   TRPCSuccessResponse,
+  TRPCConnectionParamsMessage,
 } from './envelopes';
 export { parseTRPCMessage } from './parseTRPCMessage';
