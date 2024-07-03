@@ -74,7 +74,11 @@ interface TRPCRequestInfoProcedureCall {
   procedure: AnyProcedure | null;
 }
 
-export interface TRPCRequestInfoBase {
+/**
+ * Information about the incoming request
+ * @public
+ */
+export interface TRPCRequestInfo {
   /**
    * The `trpc-accept` header
    */
@@ -91,23 +95,11 @@ export interface TRPCRequestInfoBase {
    * The calls being made
    */
   calls: TRPCRequestInfoProcedureCall[];
+  /**
+   * Connection params when using `httpSubscriptionLink` or `createWSClient`
+   */
+  connectionParams: Dict<string> | null;
 }
-interface TRPCRequestInfoBatchCall extends TRPCRequestInfoBase {
-  isBatchCall: true;
-  calls: TRPCRequestInfoProcedureCall[];
-}
-interface TRPCRequestInfoSingleCall extends TRPCRequestInfoBase {
-  isBatchCall: false;
-  calls: [TRPCRequestInfoProcedureCall];
-}
-
-/**
- * Information about the incoming request
- * @public
- */
-export type TRPCRequestInfo =
-  | TRPCRequestInfoBatchCall
-  | TRPCRequestInfoSingleCall;
 
 /**
  * Inner createContext function for `resolveResponse` used to forward `TRPCRequestInfo` to `createContext`

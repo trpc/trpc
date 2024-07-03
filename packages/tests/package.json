@@ -41,7 +41,7 @@
     "react-dom": "^18.3.1",
     "runtypes": "^6.6.0",
     "scale-codec": "^0.13.0",
-    "superstruct": "^1.0.0",
+    "superstruct": "^2.0.0",
     "supertest": "^7.0.0",
     "tsx": "^4.0.0",
     "tupleson": "0.23.1",

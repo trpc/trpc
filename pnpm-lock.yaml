@@ -1753,8 +1753,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       superstruct:
-        specifier: ^1.0.0
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       tslib:
         specifier: ^2.5.0
         version: 2.5.0
@@ -1876,8 +1876,8 @@ importers:
         specifier: ^0.13.0
         version: 0.13.0
       superstruct:
-        specifier: ^1.0.0
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       supertest:
         specifier: ^7.0.0
         version: 7.0.0
@@ -1948,8 +1948,8 @@ importers:
         specifier: ^10.45.1
         version: link:../packages/server
       '@unkey/ratelimit':
-        specifier: ^0.1.8
-        version: 0.1.8
+        specifier: ^0.3.0
+        version: 0.3.1
       '@visx/hierarchy':
         specifier: ^3.0.0
         version: 3.0.0(react@18.3.1)
@@ -2057,8 +2057,8 @@ importers:
         specifier: ^0.13.0
         version: 0.13.0
       superstruct:
-        specifier: ^1.0.0
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       tailwindcss:
         specifier: ^3.3.0
         version: 3.3.0(postcss@8.4.31)
@@ -9695,29 +9695,28 @@ packages:
   /@ungap/structured-clone@1.2.0:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
 
-  /@unkey/api@0.20.3:
-    resolution: {integrity: sha512-O9J/dnXNuuuz4qrgXXrpS0qL/pU3Ny6OVvhngZGSSlgAN3N8EwLT+K10IFIokYri0GEPDggPR8lSVnrw3qxkmQ==}
+  /@unkey/api@0.22.1:
+    resolution: {integrity: sha512-4evhhhRxORRIjseVLRZlJ8mXxGTD+YMfZqs/wLAHH/7XdNxQQZGuF8xkCKrGLy3q0RPFjVCm6Bg8Omy/Dsb2/A==}
     dependencies:
-      '@unkey/rbac': 0.1.13
+      '@unkey/rbac': 0.3.1
     dev: false
 
-  /@unkey/error@0.0.2:
-    resolution: {integrity: sha512-E4/2PClLeZ/X9nGUqe36xy/tX2KFwBsOrqCMZbG3mscAUsHtnjSLzV8xa9TVQlfH4tXt2mfgAqxLqEwr1ayZDA==}
+  /@unkey/error@0.2.0:
+    resolution: {integrity: sha512-DFGb4A7SrusZPP0FYuRIF0CO+Gi4etLUAEJ6EKc+TKYmscL0nEJ2Pr38FyX9MvjI4Wx5l35Wc9KsBjMm9Ybh7w==}
     dependencies:
       zod: 3.23.8
-      zod-error: 1.5.0
     dev: false
 
-  /@unkey/ratelimit@0.1.8:
-    resolution: {integrity: sha512-67zBHpZB4+F/sjU6EOyIm36XbinM5ChM8OKchLvUhsXuO9kCgBWpvASieO4rhwP4b1wLP8WUVNJ0jkWpmJ2+ig==}
+  /@unkey/ratelimit@0.3.1:
+    resolution: {integrity: sha512-qn5ZkvaZnn6694GIgAirr21ckpVvyEswxTw8gOxvt4iS65B6YNWwIK3S3i6HM7dh5HPYVcAQAESRy+40qXz0NA==}
     dependencies:
-      '@unkey/api': 0.20.3
+      '@unkey/api': 0.22.1
     dev: false
 
-  /@unkey/rbac@0.1.13:
-    resolution: {integrity: sha512-BUuKQb7xoI2e+UtuDvr5U0ShZkG1gG8UxG5VzL6tonmoxGVC1vP0ZS5TKMLbhjYD6Dh5SDeak95qGDsQdaX7Ew==}
+  /@unkey/rbac@0.3.1:
+    resolution: {integrity: sha512-Hj+52XRIlBBl3/qOUq9K71Fwy3PWExBQOpOClVYHdrcmbgqNL6L4EdW/BzliLhqPCdwZTPVSJTnZ3Hw4ZYixsQ==}
     dependencies:
-      '@unkey/error': 0.0.2
+      '@unkey/error': 0.2.0
       zod: 3.23.8
     dev: false
 
@@ -22525,8 +22524,8 @@ packages:
     dependencies:
       copy-anything: 3.0.2
 
-  /superstruct@1.0.3:
-    resolution: {integrity: sha512-8iTn3oSS8nRGn+C2pgXSKPI3jmpm6FExNazNpjvqS6ZUJQCej3PUXEKM8NjHBOs54ExM+LPW/FBRhymrdcCiSg==}
+  /superstruct@2.0.0:
+    resolution: {integrity: sha512-l9HkF2HGmEc4cm0Mc3E08o/lhminlAdDDekqc+m1urG+SK6CL3e0TL0EJ8QyXkDwfS69rgI94GOXLD4qCD+1WA==}
     engines: {node: '>=14.0.0'}
 
   /supertest@7.0.0:
@@ -24623,12 +24622,6 @@ packages:
       compress-commons: 4.1.1
       readable-stream: 3.6.2
     dev: true
-
-  /zod-error@1.5.0:
-    resolution: {integrity: sha512-zzopKZ/skI9iXpqCEPj+iLCKl9b88E43ehcU+sbRoHuwGd9F1IDVGQ70TyO6kmfiRL1g4IXkjsXK+g1gLYl4WQ==}
-    dependencies:
-      zod: 3.23.8
-    dev: false
 
   /zod-form-data@2.0.1(zod@3.23.8):
     resolution: {integrity: sha512-4jcsj3vFyFGINLLHEmehfOPKdcw+HqV65RwsV2IdyLHp9wpvGJRVXWg1yY8sq0ASEbQfTVBRtI7LcDGv3Qpj8g==}

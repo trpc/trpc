@@ -132,7 +132,48 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-### Using React
+## Authentication / connection params {#connectionParams}
+
+:::tip
+If you're doing a web application, you can ignore this section as the cookies are sent as part of the request.
+:::
+
+In order to authenticate with WebSockets, you can define `connectionParams` to `createWSClient`. This will be sent as the first message when the client establishes a WebSocket connection.
+
+```ts twoslash title="server/context.ts"
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+
+export const createContext = async (opts: CreateWSSContextFnOptions) => {
+  const token = opts.info.connectionParams?.token;
+  //    ^?
+
+  // [... authenticate]
+
+  return {};
+};
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+```ts title="client/trpc.ts"
+import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import type { AppRouter } from '~/server/routers/_app';
+
+const wsClient = createWSClient({
+  url: `ws://localhost:3000`,
+
+  connectionParams: async () => {
+    return {
+      token: 'supersecret',
+    };
+  },
+});
+export const trpc = createTRPCClient<AppRouter>({
+  links: [wsLink({ client: wsClient, transformer: superjson })],
+});
+```
+
+## Using React
 
 See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
 
@@ -220,6 +261,17 @@ _... below, or an error._
         type: 'stopped'; // subscription stopped
       }
   )
+}
+```
+
+#### Connection params
+
+If the connection is initialized with `?connectionParams=1`, the first message has to be connection params.
+
+```ts
+{
+  data: Record<string, string> | null;
+  method: 'connectionParams';
 }
 ```
 

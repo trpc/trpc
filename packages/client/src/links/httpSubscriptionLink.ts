@@ -3,7 +3,6 @@ import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
-  MaybePromise,
   SSEMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
@@ -13,25 +12,34 @@ import {
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
+import {
+  resultOf,
+  type UrlOptionsWithConnectionParams,
+} from './internals/urlWithConnectionParams';
 import type { TRPCLink } from './types';
 
+async function urlWithConnectionParams(
+  opts: UrlOptionsWithConnectionParams,
+): Promise<string> {
+  let url = await resultOf(opts.url);
+  if (opts.connectionParams) {
+    const params = await resultOf(opts.connectionParams);
+
+    const prefix = url.includes('?') ? '&' : '?';
+    url +=
+      prefix + 'connectionParams=' + encodeURIComponent(JSON.stringify(params));
+  }
+
+  return url;
+}
+
 type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
-  /**
-   * The URL to connect to (can be a function that returns a URL)
-   */
-  url: string | (() => MaybePromise<string>);
   /**
    * EventSource options
    */
   eventSourceOptions?: EventSourceInit;
-} & TransformerOptions<TRoot>;
-
-/**
- * Get the result of a value or function that returns a value
- */
-const resultOf = <T>(value: T | (() => T)): T => {
-  return typeof value === 'function' ? (value as () => T)() : value;
-};
+} & TransformerOptions<TRoot> &
+  UrlOptionsWithConnectionParams;
 
 /**
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink
@@ -57,7 +65,7 @@ export function unstable_httpSubscriptionLink<
         run(async () => {
           const url = getUrl({
             transformer,
-            url: await resultOf(opts.url),
+            url: await urlWithConnectionParams(opts),
             input,
             path,
             type,

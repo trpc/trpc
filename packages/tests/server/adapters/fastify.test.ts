@@ -478,6 +478,7 @@ describe('authorized user', () => {
             "path": "request.info",
           },
         ],
+        "connectionParams": null,
         "isBatchCall": true,
         "type": "query",
       }

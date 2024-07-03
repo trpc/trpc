@@ -24,7 +24,11 @@ const trpcClient = createTRPCClient<AppRouter>({
 });
 ```
 
-## `wsLink` Options
+## Authentication / Connection params
+
+[See more here](../../further/websockets.md#connection-params)
+
+## `wsLink` / `createWSClient` Options
 
 The `wsLink` function requires a `TRPCWebSocketClient` to be passed, which can be configured with the fields defined in `WebSocketClientOptions`:
 
@@ -46,6 +50,11 @@ export interface WebSocketClientOptions {
    * The URL to connect to (can be a function that returns a URL)
    */
   url: string | (() => MaybePromise<string>);
+  /**
+   * Connection params that are available in `createContext()`
+   * These are sent as the first message
+   */
+  connectionParams: string | (() => MaybePromise<string>);
   /**
    * Ponyfill which WebSocket implementation to use
    */
