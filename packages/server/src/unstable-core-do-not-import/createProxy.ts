@@ -13,9 +13,7 @@ function createInnerProxy(
   path: string[],
   cache: Record<string, unknown>,
 ) {
-  const cacheKey = path.join('.');
-
-  cache[cacheKey] ??= new Proxy(noop, {
+  return new Proxy(noop, {
     get(_obj, key) {
       if (typeof key !== 'string' || key === 'then') {
         // special case for if the proxy is accidentally treated
@@ -43,8 +41,6 @@ function createInnerProxy(
       return callback(opts);
     },
   });
-
-  return cache[cacheKey];
 }
 
 /**
