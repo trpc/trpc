@@ -81,8 +81,6 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
   getQueryClient: () => QueryClient,
 ) {
   type RootTypes = inferRouterRootTypes<TRouter>;
-  const def: AnyRouter['_def'] = (caller as any)._def;
-  const transformer = def._config.transformer;
 
   const wrappedProxy = createRecursiveProxy<
     DecorateRouterRecord<RootTypes, TRouter['_def']['record']>
@@ -106,8 +104,7 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
       return getQueryClient().prefetchQuery({
         ...args1,
         queryKey: getQueryKeyInternal(path, input, 'query'),
-        queryFn: () =>
-          promise.then((value) => transformer.output.serialize(value)),
+        queryFn: () => promise,
       });
     }
     if (helper === 'prefetchInfinite') {
@@ -118,8 +115,7 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
       return getQueryClient().prefetchInfiniteQuery({
         ...args1,
         queryKey: getQueryKeyInternal(path, input, 'infinite'),
-        queryFn: () =>
-          promise.then((value) => transformer.output.serialize(value)),
+        queryFn: () => promise,
         initialPageParam: args1?.initialCursor ?? null,
       });
     }

@@ -86,10 +86,5 @@
     "vitest": "^1.5.2",
     "vitest-environment-miniflare": "^2.14.1",
     "zod": "^3.0.0"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "@tanstack/query-core@5.45.0": "patches/@tanstack__query-core@5.45.0.patch"
-    }
   }
 }

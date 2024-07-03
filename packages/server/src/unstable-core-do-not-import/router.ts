@@ -1,5 +1,5 @@
 import type { Observable } from '../observable';
-import { createFlatProxy, createRecursiveProxy } from './createProxy';
+import { createRecursiveProxy } from './createProxy';
 import { defaultFormatter } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
@@ -276,40 +276,36 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
         onError?: RouterCallerErrorHandler<Context>;
       },
     ) {
-      return createFlatProxy((path) => {
-        if (path === '_def') return _def;
+      return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
+        async (opts) => {
+          const fullPath = opts.path.join('.');
 
-        return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
-          async (opts) => {
-            const fullPath = [path, ...opts.path].join('.');
+          const procedure = _def.procedures[fullPath] as AnyProcedure;
 
-            const procedure = _def.procedures[fullPath] as AnyProcedure;
+          let ctx: Context | undefined = undefined;
+          try {
+            ctx = isFunction(ctxOrCallback)
+              ? await Promise.resolve(ctxOrCallback())
+              : ctxOrCallback;
 
-            let ctx: Context | undefined = undefined;
-            try {
-              ctx = isFunction(ctxOrCallback)
-                ? await Promise.resolve(ctxOrCallback())
-                : ctxOrCallback;
-
-              return await procedure({
-                path: fullPath,
-                getRawInput: async () => opts.args[0],
-                ctx,
-                type: procedure._def.type,
-              });
-            } catch (cause) {
-              options?.onError?.({
-                ctx,
-                error: getTRPCErrorFromUnknown(cause),
-                input: opts.args[0],
-                path: fullPath,
-                type: procedure._def.type,
-              });
-              throw cause;
-            }
-          },
-        );
-      });
+            return await procedure({
+              path: fullPath,
+              getRawInput: async () => opts.args[0],
+              ctx,
+              type: procedure._def.type,
+            });
+          } catch (cause) {
+            options?.onError?.({
+              ctx,
+              error: getTRPCErrorFromUnknown(cause),
+              input: opts.args[0],
+              path: fullPath,
+              type: procedure._def.type,
+            });
+            throw cause;
+          }
+        },
+      );
     };
   };
 }
