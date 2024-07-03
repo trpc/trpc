@@ -13,8 +13,8 @@ const ctx = konn()
       deeply: {
         nested: {
           greeting: procedure.query(() => 'hello'),
+          echo: procedure.input(z.string()).query((opts) => opts.input),
         },
-        echo: procedure.input(z.string()).query((opts) => opts.input),
       },
     });
 
@@ -57,7 +57,7 @@ test('utils proxy in dependency array', async () => {
 test('call twice', async () => {
   const client = ctx.opts.client;
 
-  const deeply = client.deeply;
-  expect(await deeply.echo.query('hello')).toBe('hello');
-  expect(await deeply.echo.query('world')).toBe('world');
+  const nested = client.deeply.nested;
+  expect(await nested.echo.query('hello')).toBe('hello');
+  expect(await nested.echo.query('world')).toBe('world');
 });
