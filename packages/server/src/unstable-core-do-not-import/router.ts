@@ -277,8 +277,12 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
       },
     ) {
       return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
-        async (opts) => {
-          const fullPath = opts.path.join('.');
+        async ({ path, args }) => {
+          const fullPath = path.join('.');
+
+          if (path.length === 1 && path[0] === '_def') {
+            return _def;
+          }
 
           const procedure = _def.procedures[fullPath] as AnyProcedure;
 
@@ -290,7 +294,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
 
             return await procedure({
               path: fullPath,
-              getRawInput: async () => opts.args[0],
+              getRawInput: async () => args[0],
               ctx,
               type: procedure._def.type,
             });
@@ -298,7 +302,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
             options?.onError?.({
               ctx,
               error: getTRPCErrorFromUnknown(cause),
-              input: opts.args[0],
+              input: args[0],
               path: fullPath,
               type: procedure._def.type,
             });
