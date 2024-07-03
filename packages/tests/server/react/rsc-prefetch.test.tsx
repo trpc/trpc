@@ -70,6 +70,7 @@ const ctx = konn()
       ...ctx,
       trpc,
       HydrateClient,
+      getQueryClient,
     };
   })
   .afterEach(async (ctx) => {
@@ -78,7 +79,7 @@ const ctx = konn()
   .done();
 
 test('rsc prefetch helpers', async () => {
-  const { client, App, trpc, HydrateClient } = ctx;
+  const { client, App, trpc, HydrateClient, getQueryClient } = ctx;
 
   const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
@@ -100,13 +101,22 @@ test('rsc prefetch helpers', async () => {
     );
   }
 
-  const utils = render(
+  const utils1 = render(
     <App>
       <Parent />
     </App>,
   );
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`__result`);
+    expect(utils1.container).toHaveTextContent(`__result`);
+  });
+
+  const utils2 = render(
+    <App>
+      <Parent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils2.container).toHaveTextContent(`__result`);
   });
 
   // Should not have fetched from CC but taken promise from server client

@@ -90,6 +90,9 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     ) as unknown as DecorateProcedure<RootTypes, AnyProcedure>;
 
     const input = args[0];
+
+    console.log('proxy invoking', path, input, proc);
+
     const promise = proc(input);
 
     const queryFn = async () => {
