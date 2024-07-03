@@ -14,8 +14,8 @@ const ctx = konn()
         nested: {
           greeting: procedure.query(() => 'hello'),
         },
-        echo: procedure.input(z.string()).query((opts) => opts.input),
       },
+      echo: procedure.input(z.string()).query((opts) => opts.input),
     });
 
     return getServerAndReactClient(appRouter);
@@ -52,4 +52,11 @@ test('utils proxy in dependency array', async () => {
     expect(utils.container).toHaveTextContent(nonce);
   });
   expect(effectCount).toBe(1);
+});
+
+test('call twice', async () => {
+  const client = ctx.opts.client;
+
+  expect(await client.echo.query('hello')).toBe('hello');
+  expect(await client.echo.query('world')).toBe('world');
 });
