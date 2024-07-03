@@ -1748,8 +1748,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       superstruct:
-        specifier: ^1.0.0
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       tslib:
         specifier: ^2.5.0
         version: 2.5.0
@@ -1871,8 +1871,8 @@ importers:
         specifier: ^0.13.0
         version: 0.13.0
       superstruct:
-        specifier: ^1.0.0
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       supertest:
         specifier: ^7.0.0
         version: 7.0.0
@@ -2052,8 +2052,8 @@ importers:
         specifier: ^0.13.0
         version: 0.13.0
       superstruct:
-        specifier: ^1.0.0
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       tailwindcss:
         specifier: ^3.3.0
         version: 3.3.0(postcss@8.4.31)
@@ -22518,8 +22518,8 @@ packages:
     dependencies:
       copy-anything: 3.0.2
 
-  /superstruct@1.0.3:
-    resolution: {integrity: sha512-8iTn3oSS8nRGn+C2pgXSKPI3jmpm6FExNazNpjvqS6ZUJQCej3PUXEKM8NjHBOs54ExM+LPW/FBRhymrdcCiSg==}
+  /superstruct@2.0.0:
+    resolution: {integrity: sha512-l9HkF2HGmEc4cm0Mc3E08o/lhminlAdDDekqc+m1urG+SK6CL3e0TL0EJ8QyXkDwfS69rgI94GOXLD4qCD+1WA==}
     engines: {node: '>=14.0.0'}
 
   /supertest@7.0.0:
