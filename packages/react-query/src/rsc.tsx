@@ -72,7 +72,23 @@ type Caller<TRouter extends AnyRouter> = ReturnType<
 
 // ts-prune-ignore-next
 /**
- * @note This requires `@tanstack/react-query@^5.45.0`
+ * @note This requires `@tanstack/react-query@^5.49.0`
+ * @note Make sure to have `dehyrate.serializeData` and `hydrate.deserializeData`
+ * set to your data transformer in your `QueryClient` factory.
+ * @example
+ * ```ts
+ * export const createQueryClient = () =>
+ *   new QueryClient({
+ *     defaultOptions: {
+ *       dehydrate: {
+ *         serializeData: transformer.serialize,
+ *       },
+ *       hydrate: {
+ *         deserializeData: transformer.deserialize,
+ *       },
+ *     },
+ *   });
+ * ```
  */
 export function createHydrationHelpers<TRouter extends AnyRouter>(
   caller: AnyRouter extends TRouter
