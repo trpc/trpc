@@ -3,6 +3,7 @@ import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import * as React from 'react';
+import { z } from 'zod';
 
 const ctx = konn()
   .beforeEach(() => {
@@ -13,6 +14,7 @@ const ctx = konn()
         nested: {
           greeting: procedure.query(() => 'hello'),
         },
+        echo: procedure.input(z.string()).query((opts) => opts.input),
       },
     });
 
@@ -24,8 +26,6 @@ const ctx = konn()
   .done();
 
 test('utils proxy in dependency array', async () => {
-  // FIXME
-  return;
   const { client, App } = ctx;
   const nonce = '_______________nonce_______________';
   let effectCount = 0;
