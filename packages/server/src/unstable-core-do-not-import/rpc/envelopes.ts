@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
+import type { TRPCRequestInfo } from '../http/types';
 import type { ProcedureType } from '../procedure';
 import type { TRPC_ERROR_CODE_NUMBER } from './codes';
 
@@ -131,3 +132,11 @@ export type TRPCClientIncomingMessage<
   TResult = unknown,
   TError extends TRPCErrorShape = TRPCErrorShape,
 > = TRPCClientIncomingRequest | TRPCResponseMessage<TResult, TError>;
+
+/**
+ * The client sends connection params - always sent as the first message
+ */
+export interface TRPCConnectionParamsMessage
+  extends JSONRPC2.BaseRequest<'connectionParams'> {
+  data: TRPCRequestInfo['connectionParams'];
+}

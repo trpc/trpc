@@ -162,11 +162,11 @@ importers:
         specifier: ^0.4.4
         version: 0.4.4
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@tanstack/react-query-devtools':
-        specifier: ^5.45.0
-        version: 5.45.0(@tanstack/react-query@5.45.0)(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(@tanstack/react-query@5.49.2)(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -235,8 +235,8 @@ importers:
   examples/.test/diagnostics-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -318,8 +318,8 @@ importers:
   examples/.test/ssg:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -373,8 +373,8 @@ importers:
   examples/.test/ssg-infinite-serialization:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../../packages/client
@@ -720,8 +720,8 @@ importers:
   examples/minimal-content-types/client:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -803,8 +803,8 @@ importers:
   examples/minimal-react/client:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -871,8 +871,8 @@ importers:
   examples/next-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -920,8 +920,8 @@ importers:
   examples/next-edge-runtime:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -972,8 +972,8 @@ importers:
         specifier: ^2.9.11
         version: 2.9.11(react-hook-form@7.43.3)
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1024,8 +1024,8 @@ importers:
   examples/next-minimal-starter:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1073,8 +1073,8 @@ importers:
         specifier: ^5.12.1
         version: 5.12.1(prisma@5.12.1)
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1176,8 +1176,8 @@ importers:
         specifier: ^5.12.1
         version: 5.12.1(prisma@5.12.1)
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1228,8 +1228,8 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: ^5.45.0
-        version: 5.45.0(@tanstack/react-query@5.45.0)(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(@tanstack/react-query@5.49.2)(react@18.3.1)
       '@types/node':
         specifier: ^20.10.0
         version: 20.10.4
@@ -1258,8 +1258,8 @@ importers:
         specifier: ^5.12.1
         version: 5.12.1(prisma@5.12.1)
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1304,8 +1304,8 @@ importers:
         specifier: ^1.26.1
         version: 1.28.1
       '@tanstack/react-query-devtools':
-        specifier: ^5.45.0
-        version: 5.45.0(@tanstack/react-query@5.45.0)(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(@tanstack/react-query@5.49.2)(react@18.3.1)
       '@types/node':
         specifier: ^20.10.0
         version: 20.10.4
@@ -1373,11 +1373,11 @@ importers:
         specifier: ^1.0.2
         version: 1.1.0(@types/react@18.3.1)(react@18.3.1)
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@tanstack/react-query-devtools':
-        specifier: ^5.45.0
-        version: 5.45.0(@tanstack/react-query@5.45.0)(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(@tanstack/react-query@5.49.2)(react@18.3.1)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1586,8 +1586,8 @@ importers:
   packages/next:
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: 10.45.1
         version: link:../client
@@ -1637,8 +1637,8 @@ importers:
   packages/react-query:
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@trpc/client':
         specifier: 10.45.1
         version: link:../client
@@ -1688,8 +1688,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@types/aws-lambda':
         specifier: ^8.10.137
         version: 8.10.137
@@ -1748,8 +1748,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       superstruct:
-        specifier: ^1.0.0
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       tslib:
         specifier: ^2.5.0
         version: 2.5.0
@@ -1793,11 +1793,11 @@ importers:
         specifier: ^5.45.0
         version: 5.45.0
       '@tanstack/react-query':
-        specifier: ^5.45.0
-        version: 5.45.0(react@18.3.1)
+        specifier: ^5.49.2
+        version: 5.49.2(react@18.3.1)
       '@tanstack/react-query-persist-client':
         specifier: ^5.45.1
-        version: 5.45.1(@tanstack/react-query@5.45.0)(react@18.3.1)
+        version: 5.45.1(@tanstack/react-query@5.49.2)(react@18.3.1)
       '@testing-library/dom':
         specifier: ^10.0.0
         version: 10.0.0
@@ -1877,8 +1877,8 @@ importers:
         specifier: ^0.13.0
         version: 0.13.0
       superstruct:
-        specifier: ^1.0.0
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       supertest:
         specifier: ^7.0.0
         version: 7.0.0
@@ -1949,8 +1949,8 @@ importers:
         specifier: ^10.45.1
         version: link:../packages/server
       '@unkey/ratelimit':
-        specifier: ^0.1.8
-        version: 0.1.8
+        specifier: ^0.3.0
+        version: 0.3.1
       '@visx/hierarchy':
         specifier: ^3.0.0
         version: 3.0.0(react@18.3.1)
@@ -2058,8 +2058,8 @@ importers:
         specifier: ^0.13.0
         version: 0.13.0
       superstruct:
-        specifier: ^1.0.0
-        version: 1.0.3
+        specifier: ^2.0.0
+        version: 2.0.0
       tailwindcss:
         specifier: ^3.3.0
         version: 3.3.0(postcss@8.4.31)
@@ -8946,9 +8946,13 @@ packages:
 
   /@tanstack/query-core@5.45.0:
     resolution: {integrity: sha512-RVfIZQmFUTdjhSAAblvueimfngYyfN6HlwaJUPK71PKd7yi43Vs1S/rdimmZedPWX/WGppcq/U1HOj7O7FwYxw==}
+    dev: false
 
-  /@tanstack/query-devtools@5.37.1:
-    resolution: {integrity: sha512-XcG4IIHIv0YQKrexTqo2zogQWR1Sz672tX2KsfE9kzB+9zhx44vRKH5si4WDILE1PIWQpStFs/NnrDQrBAUQpg==}
+  /@tanstack/query-core@5.49.1:
+    resolution: {integrity: sha512-JnC9ndmD1KKS01Rt/ovRUB1tmwO7zkyXAyIxN9mznuJrcNtOrkmOnQqdJF2ib9oHzc2VxHomnEG7xyfo54Npkw==}
+
+  /@tanstack/query-devtools@5.49.1:
+    resolution: {integrity: sha512-9mBtuq76fp+OE780ImoNG109bM7lucZ9MLPLzAkQ2OMx+X6s3BfVATySTxm1Mrtui3qJIFo05ZI4zv9A44+GAg==}
 
   /@tanstack/query-persist-client-core@5.45.0:
     resolution: {integrity: sha512-iAETglkRB6FR1//185TcWGnMxkisJPnCrlvIhLpHzT4eKLmh4n4vq1Cys42YIJzM2il4YWf8P4refzdq4D5Vdw==}
@@ -8963,33 +8967,33 @@ packages:
       '@tanstack/query-persist-client-core': 5.45.0
     dev: false
 
-  /@tanstack/react-query-devtools@5.45.0(@tanstack/react-query@5.45.0)(react@18.3.1):
-    resolution: {integrity: sha512-bYHKCBQxRYQgQPPt+OdxJxoGag8SyPYxFxUsTHXERPnhD99I8iUV39XGYePyxKv5b3oME4fM1e8AgQ1aPxTQ6w==}
+  /@tanstack/react-query-devtools@5.49.2(@tanstack/react-query@5.49.2)(react@18.3.1):
+    resolution: {integrity: sha512-ARQ8GXaTcwXyXIv215sfFqT9s87Jj8vP8jAc9LlC28M+4RbexfBRvm+cra3Cn/xlXJrUEjijf+vUf1Ju9F1XJQ==}
     peerDependencies:
-      '@tanstack/react-query': ^5.45.0
+      '@tanstack/react-query': ^5.49.2
       react: ^18 || ^19
     dependencies:
-      '@tanstack/query-devtools': 5.37.1
-      '@tanstack/react-query': 5.45.0(react@18.3.1)
+      '@tanstack/query-devtools': 5.49.1
+      '@tanstack/react-query': 5.49.2(react@18.3.1)
       react: 18.3.1
 
-  /@tanstack/react-query-persist-client@5.45.1(@tanstack/react-query@5.45.0)(react@18.3.1):
+  /@tanstack/react-query-persist-client@5.45.1(@tanstack/react-query@5.49.2)(react@18.3.1):
     resolution: {integrity: sha512-Hk5rh2ov7YdHSP16HWnDbHcEAS19yJIvjQWGNXP6JiwZWbNJgXpKOriEOvHxLC5FPfEXl5MnA8cHTWj31kJv8Q==}
     peerDependencies:
       '@tanstack/react-query': ^5.45.1
       react: ^18 || ^19
     dependencies:
       '@tanstack/query-persist-client-core': 5.45.0
-      '@tanstack/react-query': 5.45.0(react@18.3.1)
+      '@tanstack/react-query': 5.49.2(react@18.3.1)
       react: 18.3.1
     dev: false
 
-  /@tanstack/react-query@5.45.0(react@18.3.1):
-    resolution: {integrity: sha512-y272cKRJp1BvehrWG4ashOBuqBj1Qm2O6fgYJ9LYSHrLdsCXl74GbSVjUQTReUdHuRIl9cEOoyPa6HYag400lw==}
+  /@tanstack/react-query@5.49.2(react@18.3.1):
+    resolution: {integrity: sha512-6rfwXDK9BvmHISbNFuGd+wY3P44lyW7lWiA9vIFGT/T0P9aHD1VkjTvcM4SDAIbAQ9ygEZZoLt7dlU1o3NjMVA==}
     peerDependencies:
       react: ^18.0.0
     dependencies:
-      '@tanstack/query-core': 5.45.0
+      '@tanstack/query-core': 5.49.1
       react: 18.3.1
 
   /@tanstack/react-virtual@3.5.0(react-dom@18.3.1)(react@18.3.1):
@@ -9719,29 +9723,28 @@ packages:
   /@ungap/structured-clone@1.2.0:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
 
-  /@unkey/api@0.20.3:
-    resolution: {integrity: sha512-O9J/dnXNuuuz4qrgXXrpS0qL/pU3Ny6OVvhngZGSSlgAN3N8EwLT+K10IFIokYri0GEPDggPR8lSVnrw3qxkmQ==}
+  /@unkey/api@0.22.1:
+    resolution: {integrity: sha512-4evhhhRxORRIjseVLRZlJ8mXxGTD+YMfZqs/wLAHH/7XdNxQQZGuF8xkCKrGLy3q0RPFjVCm6Bg8Omy/Dsb2/A==}
     dependencies:
-      '@unkey/rbac': 0.1.13
+      '@unkey/rbac': 0.3.1
     dev: false
 
-  /@unkey/error@0.0.2:
-    resolution: {integrity: sha512-E4/2PClLeZ/X9nGUqe36xy/tX2KFwBsOrqCMZbG3mscAUsHtnjSLzV8xa9TVQlfH4tXt2mfgAqxLqEwr1ayZDA==}
+  /@unkey/error@0.2.0:
+    resolution: {integrity: sha512-DFGb4A7SrusZPP0FYuRIF0CO+Gi4etLUAEJ6EKc+TKYmscL0nEJ2Pr38FyX9MvjI4Wx5l35Wc9KsBjMm9Ybh7w==}
     dependencies:
       zod: 3.23.8
-      zod-error: 1.5.0
     dev: false
 
-  /@unkey/ratelimit@0.1.8:
-    resolution: {integrity: sha512-67zBHpZB4+F/sjU6EOyIm36XbinM5ChM8OKchLvUhsXuO9kCgBWpvASieO4rhwP4b1wLP8WUVNJ0jkWpmJ2+ig==}
+  /@unkey/ratelimit@0.3.1:
+    resolution: {integrity: sha512-qn5ZkvaZnn6694GIgAirr21ckpVvyEswxTw8gOxvt4iS65B6YNWwIK3S3i6HM7dh5HPYVcAQAESRy+40qXz0NA==}
     dependencies:
-      '@unkey/api': 0.20.3
+      '@unkey/api': 0.22.1
     dev: false
 
-  /@unkey/rbac@0.1.13:
-    resolution: {integrity: sha512-BUuKQb7xoI2e+UtuDvr5U0ShZkG1gG8UxG5VzL6tonmoxGVC1vP0ZS5TKMLbhjYD6Dh5SDeak95qGDsQdaX7Ew==}
+  /@unkey/rbac@0.3.1:
+    resolution: {integrity: sha512-Hj+52XRIlBBl3/qOUq9K71Fwy3PWExBQOpOClVYHdrcmbgqNL6L4EdW/BzliLhqPCdwZTPVSJTnZ3Hw4ZYixsQ==}
     dependencies:
-      '@unkey/error': 0.0.2
+      '@unkey/error': 0.2.0
       zod: 3.23.8
     dev: false
 
@@ -22549,8 +22552,8 @@ packages:
     dependencies:
       copy-anything: 3.0.2
 
-  /superstruct@1.0.3:
-    resolution: {integrity: sha512-8iTn3oSS8nRGn+C2pgXSKPI3jmpm6FExNazNpjvqS6ZUJQCej3PUXEKM8NjHBOs54ExM+LPW/FBRhymrdcCiSg==}
+  /superstruct@2.0.0:
+    resolution: {integrity: sha512-l9HkF2HGmEc4cm0Mc3E08o/lhminlAdDDekqc+m1urG+SK6CL3e0TL0EJ8QyXkDwfS69rgI94GOXLD4qCD+1WA==}
     engines: {node: '>=14.0.0'}
 
   /supertest@7.0.0:
@@ -24647,12 +24650,6 @@ packages:
       compress-commons: 4.1.1
       readable-stream: 3.6.2
     dev: true
-
-  /zod-error@1.5.0:
-    resolution: {integrity: sha512-zzopKZ/skI9iXpqCEPj+iLCKl9b88E43ehcU+sbRoHuwGd9F1IDVGQ70TyO6kmfiRL1g4IXkjsXK+g1gLYl4WQ==}
-    dependencies:
-      zod: 3.23.8
-    dev: false
 
   /zod-form-data@2.0.1(zod@3.23.8):
     resolution: {integrity: sha512-4jcsj3vFyFGINLLHEmehfOPKdcw+HqV65RwsV2IdyLHp9wpvGJRVXWg1yY8sq0ASEbQfTVBRtI7LcDGv3Qpj8g==}

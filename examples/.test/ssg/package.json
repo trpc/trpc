@@ -11,7 +11,7 @@
     "test-start": "start-server-and-test start http://127.0.0.1:3000 test:e2e"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.45.0",
+    "@tanstack/react-query": "^5.49.2",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",

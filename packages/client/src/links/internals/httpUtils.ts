@@ -115,9 +115,15 @@ export type ContentOptions = {
 };
 
 export const getUrl: GetUrl = (opts) => {
-  const base = opts.url.replace(/\/$/, ''); // Remove any trailing slashes
+  const parts = opts.url.split('?') as [string, string?];
+  const base = parts[0].replace(/\/$/, ''); // Remove any trailing slashes
+
   let url = base + '/' + opts.path;
   const queryParts: string[] = [];
+
+  if (parts[1]) {
+    queryParts.push(parts[1]);
+  }
   if ('inputs' in opts) {
     queryParts.push('batch=1');
   }

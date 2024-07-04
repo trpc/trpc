@@ -12,19 +12,23 @@ import {
   transformTRPCResponse,
   TRPCError,
 } from '../@trpc/server';
-import type { BaseHandlerOptions } from '../@trpc/server/http';
+import type { TRPCRequestInfo } from '../@trpc/server/http';
+import { toURL, type BaseHandlerOptions } from '../@trpc/server/http';
 import { parseTRPCMessage } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
   TRPCClientOutgoingMessage,
+  TRPCConnectionParamsMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
 } from '../@trpc/server/rpc';
+import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable } from '../observable';
 import { observableToAsyncIterable } from '../observable/observable';
 // eslint-disable-next-line no-restricted-imports
 import {
   isAsyncIterable,
+  isObject,
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
@@ -39,9 +43,9 @@ const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
 /**
  * @public
  */
-export type CreateWSSContextFnOptions = Omit<
-  NodeHTTPCreateContextFnOptions<IncomingMessage, ws.WebSocket>,
-  'info'
+export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
+  IncomingMessage,
+  ws.WebSocket
 >;
 
 /**
@@ -84,6 +88,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
     };
   };
 
+const unsetContextSymbol = Symbol('unsetContext');
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
   opts: WSConnectionHandlerOptions<TRouter>,
 ) {
@@ -101,7 +106,65 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       );
     }
 
-    const ctxPromise = createContext?.({ req, res: client });
+    function createCtxPromise(
+      getConnectionParams: () => TRPCRequestInfo['connectionParams'],
+    ): Promise<inferRouterContext<TRouter>> {
+      return run(async () => {
+        ctx = await createContext?.({
+          req,
+          res: client,
+          info: {
+            connectionParams: getConnectionParams(),
+            calls: [],
+            isBatchCall: false,
+            accept: null,
+            type: 'unknown',
+          },
+        });
+
+        return ctx;
+      }).catch((cause) => {
+        const error = getTRPCErrorFromUnknown(cause);
+        opts.onError?.({
+          error,
+          path: undefined,
+          type: 'unknown',
+          ctx,
+          req,
+          input: undefined,
+        });
+        respond({
+          id: null,
+          error: getErrorShape({
+            config: router._def._config,
+            error,
+            type: 'unknown',
+            path: undefined,
+            input: undefined,
+            ctx,
+          }),
+        });
+
+        // close in next tick
+        (global.setImmediate ?? global.setTimeout)(() => {
+          client.close();
+        });
+
+        throw error;
+      });
+    }
+
+    /**
+     * promise for initializing the context
+     *
+     * - the context promise will be created immediately on connection if no connectionParams are expected
+     * - if connection params are expected, they will be created once received
+     */
+    let ctxPromise =
+      toURL(req.url ?? '').searchParams.get('connectionParams') === '1'
+        ? unsetContextSymbol
+        : createCtxPromise(() => null);
+
     let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
@@ -276,6 +339,30 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       }
     }
     client.on('message', async (message) => {
+      if (ctxPromise === unsetContextSymbol) {
+        // If the ctxPromise wasn't created immediately, we're expecting the first message to be a TRPCConnectionParamsMessage
+        ctxPromise = createCtxPromise(() => {
+          let msg;
+          try {
+            msg = JSON.parse(message.toString()) as TRPCConnectionParamsMessage;
+
+            if (!isObject(msg)) {
+              throw new Error('Message was not an object');
+            }
+          } catch (cause) {
+            throw new TRPCError({
+              code: 'PARSE_ERROR',
+              message: `Malformed TRPCConnectionParamsMessage`,
+              cause,
+            });
+          }
+
+          const connectionParams = parseConnectionParamsFromUnknown(msg.data);
+
+          return connectionParams;
+        });
+        return;
+      }
       try {
         const msgJSON: unknown = JSON.parse(message.toString());
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
@@ -324,38 +411,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       }
       clientSubscriptions.clear();
     });
-    async function createContextAsync() {
-      try {
-        ctx = await ctxPromise;
-      } catch (cause) {
-        const error = getTRPCErrorFromUnknown(cause);
-        opts.onError?.({
-          error,
-          path: undefined,
-          type: 'unknown',
-          ctx,
-          req,
-          input: undefined,
-        });
-        respond({
-          id: null,
-          error: getErrorShape({
-            config: router._def._config,
-            error,
-            type: 'unknown',
-            path: undefined,
-            input: undefined,
-            ctx,
-          }),
-        });
 
-        // close in next tick
-        (global.setImmediate ?? global.setTimeout)(() => {
-          client.close();
-        });
-      }
+    if (ctxPromise !== unsetContextSymbol) {
+      // prevent unhandled promise rejection errors
+      await ctxPromise.catch(() => null);
     }
-    await createContextAsync();
   };
 }
 

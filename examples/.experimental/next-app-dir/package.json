@@ -13,8 +13,8 @@
   "dependencies": {
     "@hookform/resolvers": "^2.9.11",
     "@js-temporal/polyfill": "^0.4.4",
-    "@tanstack/react-query": "^5.45.0",
-    "@tanstack/react-query-devtools": "^5.45.0",
+    "@tanstack/react-query": "^5.49.2",
+    "@tanstack/react-query-devtools": "^5.49.2",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
