@@ -82,7 +82,7 @@ export async function nodeHTTPRequestHandler<
         if (!res.writable) {
           break;
         }
-        if (!res.write(value)) {
+        if (res.write(value) === false) {
           await new Promise<void>((resolve) => {
             res.once('drain', resolve);
           });
