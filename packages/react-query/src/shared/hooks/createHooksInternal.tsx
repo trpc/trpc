@@ -6,6 +6,7 @@ import {
   useSuspenseInfiniteQuery as __useSuspenseInfiniteQuery,
   useSuspenseQueries as __useSuspenseQueries,
   useSuspenseQuery as __useSuspenseQuery,
+  usePrefetchQuery as _usePrefetchQuery,
   hashKey,
   skipToken,
   useQueryClient,
@@ -15,7 +16,11 @@ import { createTRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import type { SSRState, TRPCContextState } from '../../internals/context';
+import type {
+  SSRState,
+  TRPCContextState,
+  TRPCFetchQueryOptions,
+} from '../../internals/context';
 import { TRPCContext } from '../../internals/context';
 import { getClientArgs } from '../../internals/getClientArgs';
 import type { TRPCQueryKey } from '../../internals/getQueryKey';
@@ -219,6 +224,72 @@ export function createRootHooks<
     });
 
     return hook;
+  }
+
+  function usePrefetchQuery(
+    path: string[],
+    input: unknown,
+    opts?: TRPCFetchQueryOptions<unknown, TError>,
+  ): void {
+    const context = useContext();
+    const { abortOnUnmount, client, queryClient } = context;
+    const queryKey = getQueryKeyInternal(path, input, 'query');
+
+    const defaultOpts = queryClient.getQueryDefaults(queryKey);
+
+    const isInputSkipToken = input === skipToken;
+
+    const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, {
+      ...defaultOpts,
+      ...opts,
+    });
+
+    const shouldAbortOnUnmount = config?.abortOnUnmount ?? abortOnUnmount;
+
+    _usePrefetchQuery({
+      ...ssrOpts,
+      queryKey: queryKey as any,
+      queryFn: isInputSkipToken
+        ? input
+        : async (queryFunctionContext) => {
+            const actualOpts = {
+              ...ssrOpts,
+              trpc: {
+                ...(shouldAbortOnUnmount
+                  ? { signal: queryFunctionContext.signal }
+                  : {}),
+              },
+            };
+
+            const result = await client.query(
+              ...getClientArgs(queryKey, actualOpts),
+            );
+
+            if (isAsyncIterable(result)) {
+              const queryCache = queryClient.getQueryCache();
+
+              const query = queryCache.build(queryFunctionContext.queryKey, {
+                queryKey,
+              });
+
+              query.setState({
+                data: [],
+                status: 'success',
+              });
+
+              const aggregate: unknown[] = [];
+              for await (const value of result) {
+                aggregate.push(value);
+
+                query.setState({
+                  data: [...aggregate],
+                });
+              }
+              return aggregate;
+            }
+            return result;
+          },
+    });
   }
 
   function useSuspenseQuery(
@@ -534,6 +605,7 @@ export function createRootHooks<
     useContext,
     useUtils: useContext,
     useQuery,
+    usePrefetchQuery,
     useSuspenseQuery,
     useQueries,
     useSuspenseQueries,
