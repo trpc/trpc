@@ -8,6 +8,7 @@ on:
       - 'app-router-example'
       # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
     paths:
+      - '.github/setup/*'
       - '.github/workflows/release-tmp.yml'
       - 'packages/**'
       - '!packages/**/package.json'

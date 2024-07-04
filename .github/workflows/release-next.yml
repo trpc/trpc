@@ -5,6 +5,7 @@ on:
     branches:
       - 'next'
     paths:
+      - '.github/setup/*'
       - '.github/workflows/release-next.yml'
       - 'packages/**'
       - '!packages/**/package.json'
