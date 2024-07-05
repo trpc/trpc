@@ -245,7 +245,6 @@ function createBatchClient(opts: ClientOptions) {
       httpBatchLink({
         url: `http://${host}`,
         headers: opts.headers,
-        AbortController,
         fetch: fetch as any,
       }),
     ],
