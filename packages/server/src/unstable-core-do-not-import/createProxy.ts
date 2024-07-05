@@ -2,10 +2,16 @@ interface ProxyCallbackOptions {
   path: readonly string[];
   args: readonly unknown[];
 }
-type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
+type ProxyCallback = (opts: Readonly<ProxyCallbackOptions>) => unknown;
 
 const noop = () => {
   // noop
+};
+
+const freezeIfAvailable = (obj: object) => {
+  if (Object.freeze) {
+    Object.freeze(obj);
+  }
 };
 
 function createInnerProxy(
@@ -40,6 +46,9 @@ function createInnerProxy(
           path: path.slice(0, -1),
         };
       }
+      freezeIfAvailable(opts.args);
+      freezeIfAvailable(opts.path);
+      freezeIfAvailable(opts);
       return callback(opts);
     },
   });
