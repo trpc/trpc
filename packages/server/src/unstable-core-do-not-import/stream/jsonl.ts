@@ -457,7 +457,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
     }
   };
 
-  function hydrateChunkDefinition(value: ChunkDefinition, path: PathArray) {
+  function hydrateChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
     const { readable, controller } = createReadableStream<ChunkData>();
@@ -495,7 +495,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               const [_chunkId, status, data] = value as PromiseChunk;
               switch (status) {
                 case PROMISE_STATUS_FULFILLED:
-                  resolve(hydrate(data, path));
+                  resolve(hydrate(data));
 
                   break;
                 case PROMISE_STATUS_REJECTED:
@@ -538,7 +538,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
                   case ASYNC_ITERABLE_STATUS_VALUE:
                     return {
                       done: false,
-                      value: hydrate(data, path),
+                      value: hydrate(data),
                     };
                   case ASYNC_ITERABLE_STATUS_DONE:
                     controllers.delete(chunkId);
@@ -572,15 +572,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
     }
   }
 
-  function hydrate(value: DehydratedValue, path: PathArray): unknown {
+  function hydrate(value: DehydratedValue): unknown {
     const [[data], ...asyncProps] = value;
 
     for (const value of asyncProps) {
       const [key] = value;
-      const hydrated = hydrateChunkDefinition(
-        value,
-        key === null ? path : [...path, key],
-      );
+      const hydrated = hydrateChunkDefinition(value);
 
       if (key === null) {
         return hydrated;
@@ -613,7 +610,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
             const head = chunkOrHead as Record<number | string, unknown>;
 
             for (const [key, value] of Object.entries(chunkOrHead)) {
-              const parsed = hydrate(value as any, [key]);
+              const parsed = hydrate(value as any);
               head[key] = parsed;
             }
             headDeferred.resolve(head as THead);

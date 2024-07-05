@@ -392,6 +392,7 @@ test('e2e, client aborts request halfway through - through breaking async iterab
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     onError: onConsumerErrorSpy,
+    abortController: clientAbort,
   });
 
   {
