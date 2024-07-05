@@ -253,9 +253,14 @@ describe('no transformer', () => {
           ac.abort();
         }
         ctx.nextIterable();
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 5));
       }
     });
+    for (let i = 0; i < 10; i++) {
+      // release some more values, all shouldn't be yielded
+      await ctx.iterablePromise;
+      ctx.nextIterable();
+    }
 
     await waitFor(() => {
       expect(ctx.connections.size).toBe(0);
@@ -266,6 +271,8 @@ describe('no transformer', () => {
           1,
           2,
           3,
+          4,
+          5,
         ]
       `);
     expect(err).toMatchInlineSnapshot(`DOMException {}`);

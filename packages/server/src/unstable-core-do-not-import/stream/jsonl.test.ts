@@ -30,6 +30,7 @@ test('encode/decode with superjson', async () => {
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: null,
   });
 
   {
@@ -92,6 +93,7 @@ test('encode/decode - error', async () => {
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
     onError: onConsumerErrorSpy,
+    abortController: null,
   });
 
   {
@@ -171,6 +173,7 @@ test('decode - bad data', async () => {
     await jsonlStreamConsumer({
       from: textEncoder.readable,
       deserialize: (v) => SuperJSON.deserialize(v),
+      abortController: null,
     });
     expect(true).toBe(false);
   } catch (err) {
@@ -240,6 +243,7 @@ test('e2e, create server', async () => {
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: null,
   });
 
   {
