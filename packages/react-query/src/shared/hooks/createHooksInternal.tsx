@@ -137,7 +137,7 @@ export function createRootHooks<
   }
 
   function useQuery(
-    path: string[],
+    path: readonly string[],
     input: unknown,
     opts?: UseTRPCQueryOptions<unknown, unknown, TError>,
   ): UseTRPCQueryResult<unknown, TError> {
@@ -225,7 +225,7 @@ export function createRootHooks<
   }
 
   function useSuspenseQuery(
-    path: string[],
+    path: readonly string[],
     input: unknown,
     opts?: UseTRPCSuspenseQueryOptions<unknown, unknown, TError>,
   ): UseTRPCSuspenseQueryResult<unknown, TError> {
@@ -264,7 +264,7 @@ export function createRootHooks<
   }
 
   function useMutation(
-    path: string[],
+    path: readonly string[],
     opts?: UseTRPCMutationOptions<unknown, TError, unknown, unknown>,
   ): UseTRPCMutationResult<unknown, TError, unknown, unknown> {
     const { client } = useContext();
@@ -306,7 +306,7 @@ export function createRootHooks<
 
   /* istanbul ignore next -- @preserve */
   function useSubscription(
-    path: string[],
+    path: readonly string[],
     input: unknown,
     opts: UseTRPCSubscriptionOptions<unknown, TError>,
   ) {
@@ -352,7 +352,7 @@ export function createRootHooks<
   }
 
   function useInfiniteQuery(
-    path: string[],
+    path: readonly string[],
     input: unknown,
     opts: UseTRPCInfiniteQueryOptions<unknown, unknown, TError>,
   ): UseTRPCInfiniteQueryResult<unknown, TError, unknown> {
@@ -426,7 +426,7 @@ export function createRootHooks<
   }
 
   function useSuspenseInfiniteQuery(
-    path: string[],
+    path: readonly string[],
     input: unknown,
     opts: UseTRPCSuspenseInfiniteQueryOptions<unknown, unknown, TError>,
   ): UseTRPCSuspenseInfiniteQueryResult<unknown, TError, unknown> {
