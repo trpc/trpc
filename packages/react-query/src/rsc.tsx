@@ -91,8 +91,6 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
 
     const input = args[0];
 
-    console.trace('proxy invoking', path, input, proc);
-
     const promise = proc(input);
 
     const queryFn = async () => {

@@ -18,7 +18,6 @@ const ctx = konn()
       return (...args: Parameters<T>) => {
         const key = JSON.stringify(args);
         if (cache.has(key)) {
-          console.log('cache hit', key);
           return cache.get(key);
         }
         const result = fn(...args);
