@@ -78,10 +78,10 @@ type inferReactQueryProcedureOptionsInner<
     ? $Value extends RouterRecord
       ? inferReactQueryProcedureOptionsInner<TRoot, $Value>
       : $Value extends AnyMutationProcedure
-      ? InferMutationOptions<TRoot, $Value>
-      : $Value extends AnyQueryProcedure
-      ? InferQueryOptions<TRoot, $Value>
-      : never
+        ? InferMutationOptions<TRoot, $Value>
+        : $Value extends AnyQueryProcedure
+          ? InferQueryOptions<TRoot, $Value>
+          : never
     : never;
 };
 

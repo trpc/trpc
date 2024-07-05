@@ -37,18 +37,17 @@ import { mergeWithoutOverrides } from './utils';
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
   : TWith extends UnsetMarker
-  ? TType
-  : Simplify<TType & TWith>;
+    ? TType
+    : Simplify<TType & TWith>;
 ``;
 type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
-type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterable<
-  infer $Output
->
-  ? inferSSEOutput<$Output>
-  : inferObservableValue<TOutput>;
+type inferSubscriptionOutput<TOutput> =
+  TOutput extends AsyncIterable<infer $Output>
+    ? inferSSEOutput<$Output>
+    : inferObservableValue<TOutput>;
 
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
@@ -129,35 +128,36 @@ export type AnyProcedureBuilder = ProcedureBuilder<
  */
 export type inferProcedureBuilderResolverOptions<
   TProcedureBuilder extends AnyProcedureBuilder,
-> = TProcedureBuilder extends ProcedureBuilder<
-  infer TContext,
-  infer TMeta,
-  infer TContextOverrides,
-  infer _TInputIn,
-  infer TInputOut,
-  infer _TOutputIn,
-  infer _TOutputOut,
-  infer _TCaller
->
-  ? ProcedureResolverOptions<
-      TContext,
-      TMeta,
-      TContextOverrides,
-      TInputOut extends UnsetMarker
-        ? // if input is not set, we don't want to infer it as `undefined` since a procedure further down the chain might have set an input
-          unknown
-        : TInputOut extends object
-        ? Simplify<
-            TInputOut & {
-              /**
-               * Extra input params might have been added by a `.input()` further down the chain
-               */
-              [keyAddedByInputCallFurtherDown: string]: unknown;
-            }
-          >
-        : TInputOut
-    >
-  : never;
+> =
+  TProcedureBuilder extends ProcedureBuilder<
+    infer TContext,
+    infer TMeta,
+    infer TContextOverrides,
+    infer _TInputIn,
+    infer TInputOut,
+    infer _TOutputIn,
+    infer _TOutputOut,
+    infer _TCaller
+  >
+    ? ProcedureResolverOptions<
+        TContext,
+        TMeta,
+        TContextOverrides,
+        TInputOut extends UnsetMarker
+          ? // if input is not set, we don't want to infer it as `undefined` since a procedure further down the chain might have set an input
+            unknown
+          : TInputOut extends object
+            ? Simplify<
+                TInputOut & {
+                  /**
+                   * Extra input params might have been added by a `.input()` further down the chain
+                   */
+                  [keyAddedByInputCallFurtherDown: string]: unknown;
+                }
+              >
+            : TInputOut
+      >
+    : never;
 
 export interface ProcedureBuilder<
   TContext,
@@ -177,14 +177,14 @@ export interface ProcedureBuilder<
     schema: TInputOut extends UnsetMarker
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
-      ? TInputOut extends Record<string, unknown> | undefined
-        ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
-          ? undefined extends TInputOut
-            ? $Parser
-            : TypeError<'Cannot chain an optional parser to a required parser'>
-          : $Parser
-        : TypeError<'All input parsers did not resolve to an object'>
-      : TypeError<'All input parsers did not resolve to an object'>,
+        ? TInputOut extends Record<string, unknown> | undefined
+          ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
+            ? undefined extends TInputOut
+              ? $Parser
+              : TypeError<'Cannot chain an optional parser to a required parser'>
+            : $Parser
+          : TypeError<'All input parsers did not resolve to an object'>
+        : TypeError<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<
     TContext,
     TMeta,

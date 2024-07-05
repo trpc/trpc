@@ -119,9 +119,9 @@ type DecoratedProcedureSSGRecord<
     ? $Value extends RouterRecord
       ? DecoratedProcedureSSGRecord<TRoot, $Value>
       : // utils only apply to queries
-      $Value extends AnyQueryProcedure
-      ? DecorateProcedure<TRoot, $Value>
-      : never
+        $Value extends AnyQueryProcedure
+        ? DecorateProcedure<TRoot, $Value>
+        : never
     : never;
 };
 

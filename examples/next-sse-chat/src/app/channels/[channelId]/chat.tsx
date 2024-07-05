@@ -61,8 +61,8 @@ export function Chat(props: Readonly<{ channelId: string }>) {
                   {livePosts.query.isFetchingNextPage
                     ? 'Loading...'
                     : !livePosts.query.hasNextPage
-                    ? 'Fetched everything!'
-                    : 'Load more'}
+                      ? 'Fetched everything!'
+                      : 'Load more'}
                 </Button>
               </div>
 

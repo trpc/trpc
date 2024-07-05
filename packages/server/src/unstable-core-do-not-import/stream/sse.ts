@@ -207,11 +207,8 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
     }),
   );
 }
-export type inferSSEOutput<TData> = TData extends SSEMessageEnvelope<
-  infer $Data
->
-  ? $Data
-  : TData;
+export type inferSSEOutput<TData> =
+  TData extends SSEMessageEnvelope<infer $Data> ? $Data : TData;
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */

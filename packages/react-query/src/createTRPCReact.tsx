@@ -200,15 +200,15 @@ export type DecorateProcedure<
 > = TType extends 'query'
   ? DecoratedQuery<TDef>
   : TType extends 'mutation'
-  ? DecoratedMutation<TDef>
-  : TType extends 'subscription'
-  ? {
-      /**
-       * @link https://trpc.io/docs/v11/subscriptions
-       */
-      useSubscription: ProcedureUseSubscription<TDef>;
-    }
-  : never;
+    ? DecoratedMutation<TDef>
+    : TType extends 'subscription'
+      ? {
+          /**
+           * @link https://trpc.io/docs/v11/subscriptions
+           */
+          useSubscription: ProcedureUseSubscription<TDef>;
+        }
+      : never;
 
 /**
  * @internal
@@ -221,16 +221,16 @@ export type DecorateRouterRecord<
     ? $Value extends RouterRecord
       ? DecorateRouterRecord<TRoot, $Value>
       : $Value extends AnyProcedure
-      ? DecorateProcedure<
-          $Value['_def']['type'],
-          {
-            input: inferProcedureInput<$Value>;
-            output: inferTransformedProcedureOutput<TRoot, $Value>;
-            transformer: TRoot['transformer'];
-            errorShape: TRoot['errorShape'];
-          }
-        >
-      : never
+        ? DecorateProcedure<
+            $Value['_def']['type'],
+            {
+              input: inferProcedureInput<$Value>;
+              output: inferTransformedProcedureOutput<TRoot, $Value>;
+              transformer: TRoot['transformer'];
+              errorShape: TRoot['errorShape'];
+            }
+          >
+        : never
     : never;
 };
 

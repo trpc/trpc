@@ -432,11 +432,14 @@ describe('with transformer', () => {
     const iterable = await client.iterableWithError.query();
 
     const aggregated: unknown[] = [];
-    const error = await waitError(async () => {
-      for await (const value of iterable) {
-        aggregated.push(value);
-      }
-    }, TRPCClientError<typeof router>);
+    const error = await waitError(
+      async () => {
+        for await (const value of iterable) {
+          aggregated.push(value);
+        }
+      },
+      TRPCClientError<typeof router>,
+    );
 
     error.data!.stack = '[redacted]';
     expect(error.data).toMatchInlineSnapshot(`

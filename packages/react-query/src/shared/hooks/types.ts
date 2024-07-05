@@ -160,11 +160,8 @@ export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,
 ) => TRPCUntypedClient<TRouter>;
 
-type coerceAsyncIterableToArray<TValue> = TValue extends AsyncIterable<
-  infer $Inferred
->
-  ? $Inferred[]
-  : TValue;
+type coerceAsyncIterableToArray<TValue> =
+  TValue extends AsyncIterable<infer $Inferred> ? $Inferred[] : TValue;
 
 /**
  * @internal

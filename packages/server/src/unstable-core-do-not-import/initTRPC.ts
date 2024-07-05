@@ -16,12 +16,8 @@ import type { DataTransformerOptions } from './transformer';
 import { defaultTransformer, getDataTransformer } from './transformer';
 import type { Unwrap, ValidateShape } from './types';
 
-type inferErrorFormatterShape<TType> = TType extends ErrorFormatter<
-  any,
-  infer TShape
->
-  ? TShape
-  : DefaultErrorShape;
+type inferErrorFormatterShape<TType> =
+  TType extends ErrorFormatter<any, infer TShape> ? TShape : DefaultErrorShape;
 interface RuntimeConfigOptions<TContext extends object, TMeta extends object>
   extends Partial<
     Omit<

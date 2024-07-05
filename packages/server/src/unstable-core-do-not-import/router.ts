@@ -33,8 +33,8 @@ export type DecorateRouterRecord<TRecord extends RouterRecord> = {
   [TKey in keyof TRecord]: TRecord[TKey] extends AnyProcedure
     ? DecorateProcedure<TRecord[TKey]>
     : TRecord[TKey] extends RouterRecord
-    ? DecorateRouterRecord<TRecord[TKey]>
-    : never;
+      ? DecorateRouterRecord<TRecord[TKey]>
+      : never;
 };
 
 /**
@@ -142,10 +142,10 @@ export type DecorateCreateRouterOptions<
     ? $Value extends AnyProcedure
       ? $Value
       : $Value extends Router<any, infer TRecord>
-      ? TRecord
-      : $Value extends CreateRouterOptions
-      ? DecorateCreateRouterOptions<$Value>
-      : never
+        ? TRecord
+        : $Value extends CreateRouterOptions
+          ? DecorateCreateRouterOptions<$Value>
+          : never
     : never;
 };
 

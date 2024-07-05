@@ -16,7 +16,7 @@ importers:
         version: 6.0.0
       '@ianvs/prettier-plugin-sort-imports':
         specifier: ^4.0.0
-        version: 4.0.0(prettier@2.8.8)
+        version: 4.0.0(prettier@3.3.2)
       '@manypkg/cli':
         specifier: ^0.21.2
         version: 0.21.2
@@ -102,11 +102,11 @@ importers:
         specifier: ^6.0.0
         version: 6.1.1
       prettier:
-        specifier: ^2.8.8
-        version: 2.8.8
+        specifier: ^3.3.2
+        version: 3.3.2
       prettier-plugin-tailwindcss:
         specifier: ^0.4.0
-        version: 0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@2.8.8)
+        version: 0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@3.3.2)
       rollup:
         specifier: ^4.9.5
         version: 4.9.5
@@ -1146,8 +1146,8 @@ importers:
         specifier: ^8.4.14
         version: 8.4.31
       prettier:
-        specifier: ^2.8.8
-        version: 2.8.8
+        specifier: ^3.3.2
+        version: 3.3.2
       prisma:
         specifier: ^5.12.1
         version: 5.12.1
@@ -1346,8 +1346,8 @@ importers:
         specifier: ^8.4.14
         version: 8.4.31
       prettier:
-        specifier: ^2.8.8
-        version: 2.8.8
+        specifier: ^3.3.2
+        version: 3.3.2
       prisma:
         specifier: ^5.12.1
         version: 5.12.1
@@ -2043,8 +2043,8 @@ importers:
         specifier: ^8.4.14
         version: 8.4.31
       prettier:
-        specifier: ^2.8.8
-        version: 2.8.8
+        specifier: ^3.3.2
+        version: 3.3.2
       runtypes:
         specifier: ^6.6.0
         version: 6.6.0
@@ -2068,7 +2068,7 @@ importers:
         version: 0.24.7(typescript@5.1.3)
       typedoc-plugin-markdown:
         specifier: ^4.0.0-next.13
-        version: 4.0.0-next.13(prettier@2.8.8)(typedoc@0.24.7)
+        version: 4.0.0-next.13(prettier@3.3.2)(typedoc@0.24.7)
       typescript:
         specifier: npm:typescript@~5.1.3
         version: 5.1.3
@@ -6475,7 +6475,7 @@ packages:
     engines: {node: '>=6.9.0'}
     dev: false
 
-  /@ianvs/prettier-plugin-sort-imports@4.0.0(prettier@2.8.8):
+  /@ianvs/prettier-plugin-sort-imports@4.0.0(prettier@3.3.2):
     resolution: {integrity: sha512-56wYZhq/Ezt5o4Lzc+CEUV+sqTPEV2WcTFJSSLBOhe15yfIkrUheGeRvC3lg30VQ8K0J1kvWjXIY5lxeOlW2Tg==}
     peerDependencies:
       '@vue/compiler-sfc': '>=3.0.0'
@@ -6489,7 +6489,7 @@ packages:
       '@babel/parser': 7.21.8
       '@babel/traverse': 7.21.5
       '@babel/types': 7.21.5
-      prettier: 2.8.8
+      prettier: 3.3.2
       semver: 7.5.0
     transitivePeerDependencies:
       - supports-color
@@ -12639,7 +12639,7 @@ packages:
       typedoc-plugin-markdown: '>=4.0.0-next.13'
     dependencies:
       typedoc-plugin-frontmatter: 0.0.2
-      typedoc-plugin-markdown: 4.0.0-next.13(prettier@2.8.8)(typedoc@0.24.7)
+      typedoc-plugin-markdown: 4.0.0-next.13(prettier@3.3.2)(typedoc@0.24.7)
     dev: true
 
   /docusaurus-preset-shiki-twoslash@1.1.41:
@@ -19946,7 +19946,7 @@ packages:
     engines: {node: '>=4'}
     dev: false
 
-  /prettier-plugin-tailwindcss@0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@2.8.8):
+  /prettier-plugin-tailwindcss@0.4.0(@ianvs/prettier-plugin-sort-imports@4.0.0)(prettier@3.3.2):
     resolution: {integrity: sha512-Rna0sDPETA0KNhMHlN8wxKNgfSa8mTl2hPPAGxnbv6tUcHT6J4RQmQ8TLXyhB7Dm5Von4iHloBxTyClYM6wT0A==}
     engines: {node: '>=12.17.0'}
     peerDependencies:
@@ -19998,13 +19998,13 @@ packages:
       prettier-plugin-twig-melody:
         optional: true
     dependencies:
-      '@ianvs/prettier-plugin-sort-imports': 4.0.0(prettier@2.8.8)
-      prettier: 2.8.8
+      '@ianvs/prettier-plugin-sort-imports': 4.0.0(prettier@3.3.2)
+      prettier: 3.3.2
     dev: false
 
-  /prettier@2.8.8:
-    resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
-    engines: {node: '>=10.13.0'}
+  /prettier@3.3.2:
+    resolution: {integrity: sha512-rAVeHYMcv8ATV5d508CFdn+8/pHPpXeIid1DdrPwXnaAdH7cqjVbpJaT5eq4yRAFU/lsbwYwSF/n5iNrdJHPQA==}
+    engines: {node: '>=14'}
     hasBin: true
 
   /pretty-bytes@5.6.0:
@@ -23312,13 +23312,13 @@ packages:
       yaml: 2.3.3
     dev: true
 
-  /typedoc-plugin-markdown@4.0.0-next.13(prettier@2.8.8)(typedoc@0.24.7):
+  /typedoc-plugin-markdown@4.0.0-next.13(prettier@3.3.2)(typedoc@0.24.7):
     resolution: {integrity: sha512-ZOcLsJoGN4QI5x1iS2M5lj6bA3MABf6hA183W1KebbxcBA+SFr+XIu73Uovv3SiwqPa+viBftLzkZlLyA6J9bg==}
     peerDependencies:
       prettier: '>=1.8.0'
       typedoc: '>=0.24.0'
     dependencies:
-      prettier: 2.8.8
+      prettier: 3.3.2
       typedoc: 0.24.7(typescript@5.1.3)
     dev: true
 

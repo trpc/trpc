@@ -119,5 +119,5 @@ type UndefinedToOptional<T extends object> =
     (ExactOptionalPropertyTypes extends true
       ? HandleIndexSignature<T> & HandleUndefined<WithoutIndexSignature<T>>
       : HasIndexSignature<T> extends true
-      ? HandleIndexSignature<T>
-      : HandleUndefined<T>);
+        ? HandleIndexSignature<T>
+        : HandleUndefined<T>);

@@ -56,8 +56,8 @@ test('useInfiniteQuery()', async () => {
             {q.isFetchingNextPage
               ? 'Loading more...'
               : q.hasNextPage
-              ? 'Load More'
-              : 'Nothing more to load'}
+                ? 'Load More'
+                : 'Nothing more to load'}
           </button>
         </div>
         <div>
@@ -143,8 +143,8 @@ test('useInfiniteQuery bi-directional', async () => {
             {q.isFetchingPreviousPage
               ? 'Loading previous...'
               : q.hasPreviousPage
-              ? 'Load Previous'
-              : 'Nothing previous to load'}
+                ? 'Load Previous'
+                : 'Nothing previous to load'}
           </button>
         </div>
         {q.data?.pages.map((group, i) => (
@@ -165,8 +165,8 @@ test('useInfiniteQuery bi-directional', async () => {
             {q.isFetchingNextPage
               ? 'Loading more...'
               : q.hasNextPage
-              ? 'Load More'
-              : 'Nothing more to load'}
+                ? 'Load More'
+                : 'Nothing more to load'}
           </button>
         </div>
         <div>
@@ -272,8 +272,8 @@ test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
             {q.isFetchingNextPage
               ? 'Loading more...'
               : q.hasNextPage
-              ? 'Load More'
-              : 'Nothing more to load'}
+                ? 'Load More'
+                : 'Nothing more to load'}
           </button>
         </div>
         <div>
@@ -401,8 +401,8 @@ test('useInfiniteQuery and fetchInfiniteQuery', async () => {
             {q.isFetchingNextPage
               ? 'Loading more...'
               : q.hasNextPage
-              ? 'Load More'
-              : 'Nothing more to load'}
+                ? 'Load More'
+                : 'Nothing more to load'}
           </button>
         </div>
         <div>

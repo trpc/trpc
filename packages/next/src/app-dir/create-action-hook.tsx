@@ -81,16 +81,16 @@ export function experimental_serverActionLink<
         TypeError<'Generic parameter missing in `experimental_createActionHook<HERE>()` or experimental_serverActionLink<HERE>()'>,
       ]
     : inferClientTypes<TInferrable>['transformer'] extends true
-    ? [
-        opts: TransformerOptions<{
-          transformer: true;
-        }>,
-      ]
-    : [
-        opts?: TransformerOptions<{
-          transformer: false;
-        }>,
-      ]
+      ? [
+          opts: TransformerOptions<{
+            transformer: true;
+          }>,
+        ]
+      : [
+          opts?: TransformerOptions<{
+            transformer: false;
+          }>,
+        ]
 ): TRPCLink<TInferrable> {
   const [opts] = args as [CoercedTransformerParameters];
   const transformer = getTransformer(opts?.transformer);
