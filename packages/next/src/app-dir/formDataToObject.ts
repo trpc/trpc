@@ -1,26 +1,27 @@
-const isNumber = (value: string) => /^\d+$/.test(value);
-
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 function set(
   obj: Record<string, any>,
-  path: readonly string[],
+  path: string[] | string,
   value: unknown,
 ): void {
-  if (path.length > 1) {
-    const newPath = [...path];
-    const p = newPath.shift()!;
+  if (typeof path === 'string') {
+    path = path.split(/[\.\[\]]/).filter(Boolean);
+  }
 
-    obj[p] ??= isNumber(newPath[0]!) ? [] : {};
-    set(obj[p], newPath, value);
+  if (path.length > 1) {
+    const p = path.shift()!;
+    const isArrayIndex = /^\d+$/.test(path[0]!);
+    obj[p] = obj[p] || (isArrayIndex ? [] : {});
+    set(obj[p], path, value);
     return;
   }
-  const key = path[0]!;
-  if (obj[key] === undefined) {
-    obj[key] = value;
-  } else if (Array.isArray(obj[key])) {
-    obj[key] = value;
+  const p = path[0]!;
+  if (obj[p] === undefined) {
+    obj[p] = value;
+  } else if (Array.isArray(obj[p])) {
+    obj[p].push(value);
   } else {
-    obj[key] = [obj[key], value];
+    obj[p] = [obj[p], value];
   }
 }
 
@@ -28,9 +29,7 @@ export function formDataToObject(formData: FormData) {
   const obj: Record<string, unknown> = {};
 
   for (const [key, value] of formData.entries()) {
-    const parts = key.split(/[\.\[\]]/).filter(Boolean);
-    // console.log({ parts });
-    set(obj, parts, value);
+    set(obj, key, value);
   }
 
   return obj;
