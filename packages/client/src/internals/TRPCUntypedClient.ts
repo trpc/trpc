@@ -57,10 +57,10 @@ async function* abortableIterable<T>(
   signal: AbortSignal | undefined,
 ) {
   for await (const value of from) {
+    yield value;
     if (signal?.throwIfAborted()) {
       return;
     }
-    yield value;
   }
 }
 
