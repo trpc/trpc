@@ -2,7 +2,7 @@ interface ProxyCallbackOptions {
   path: readonly string[];
   args: readonly unknown[];
 }
-type ProxyCallback = (opts: Readonly<ProxyCallbackOptions>) => unknown;
+type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
 
 const noop = () => {
   // noop
@@ -48,7 +48,6 @@ function createInnerProxy(
       }
       freezeIfAvailable(opts.args);
       freezeIfAvailable(opts.path);
-      freezeIfAvailable(opts);
       return callback(opts);
     },
   });

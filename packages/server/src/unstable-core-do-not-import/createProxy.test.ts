@@ -19,3 +19,21 @@ test('createRecursiveProxy()', () => {
     args: [],
   });
 });
+
+test('createRecursiveProxy() - prevent mutation of args', () => {
+  const mutateArgs: any = createRecursiveProxy((opts) => {
+    // @ts-expect-error - mutate args
+    opts.args.push('mutated');
+    return opts;
+  });
+
+  expect(() => mutateArgs.foo.bar.query()).toThrowErrorMatchingInlineSnapshot(`[TypeError: Cannot add property 0, object is not extensible]`);
+
+  const mutatePath: any = createRecursiveProxy((opts) => {
+    // @ts-expect-error - mutate args
+    opts.path.push('mutated');
+    return opts;
+  });
+
+  expect(() => mutatePath.foo.bar.query()).toThrowErrorMatchingInlineSnapshot(`[TypeError: Cannot add property 3, object is not extensible]`);
+});
