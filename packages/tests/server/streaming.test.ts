@@ -272,11 +272,10 @@ describe('no transformer', () => {
           2,
           3,
           4,
-          5,
         ]
       `);
-    expect(err).toMatchInlineSnapshot(`DOMException {}`);
-    expect(err.message).toMatchInlineSnapshot(`"The operation was aborted."`);
+    expect(err).toMatchInlineSnapshot(`[Error: Invalid response or stream interrupted]`);
+    expect(err.message).toMatchInlineSnapshot(`"Invalid response or stream interrupted"`);
   });
 });
 

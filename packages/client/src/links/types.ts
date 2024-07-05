@@ -1,6 +1,7 @@
 import type { Observable, Observer } from '@trpc/server/observable';
 import type {
   InferrableClientTypes,
+  Maybe,
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -40,6 +41,7 @@ export type Operation<TInput = unknown> = {
   input: TInput;
   path: string;
   context: OperationContext;
+  signal: Maybe<AbortSignal>;
 };
 
 interface HeadersInitEsque {

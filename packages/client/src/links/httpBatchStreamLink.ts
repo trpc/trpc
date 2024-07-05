@@ -68,6 +68,21 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
           const ac = resolvedOpts.AbortController
             ? new resolvedOpts.AbortController()
             : null;
+
+          let abortCount = 0;
+          for (const op of batchOps) {
+            op.signal?.addEventListener(
+              'abort',
+              () => {
+                if (++abortCount === batchOps.length) {
+                  ac?.abort();
+                }
+              },
+              {
+                once: true,
+              },
+            );
+          }
           const responsePromise = fetchHTTPResponse(
             {
               ...resolvedOpts,

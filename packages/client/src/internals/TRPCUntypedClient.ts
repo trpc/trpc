@@ -6,9 +6,9 @@ import { observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
   InferrableClientTypes,
+  Maybe,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
-import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
 import type {
   OperationContext,
@@ -52,18 +52,6 @@ export type UntypedClientProperties =
   | 'runtime'
   | 'subscription';
 
-async function* abortableIterable<T>(
-  from: AsyncIterable<T>,
-  signal: AbortSignal | undefined,
-) {
-  for await (const value of from) {
-    yield value;
-    if (signal?.throwIfAborted()) {
-      return;
-    }
-  }
-}
-
 export class TRPCUntypedClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<AnyRouter>[];
   public readonly runtime: TRPCClientRuntime;
@@ -78,25 +66,19 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     this.links = opts.links.map((link) => link(this.runtime));
   }
 
-  private $request<TInput = unknown, TOutput = unknown>({
-    type,
-    input,
-    path,
-    context = {},
-  }: {
+  private $request<TInput = unknown, TOutput = unknown>(opts: {
     type: TRPCType;
     input: TInput;
     path: string;
     context?: OperationContext;
+    signal: Maybe<AbortSignal>;
   }) {
     const chain$ = createChain<AnyRouter, TInput, TOutput>({
       links: this.links as OperationLink<any, any, any>[],
       op: {
+        ...opts,
+        context: opts.context ?? {},
         id: ++this.requestId,
-        type,
-        path,
-        input,
-        context,
       },
     });
     return chain$.pipe(share());
@@ -107,7 +89,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     input: TInput;
     path: string;
     context?: OperationContext;
-    signal?: AbortSignal;
+    signal: Maybe<AbortSignal>;
   }): Promise<TOutput> {
     const req$ = this.$request<TInput, TOutput>(opts);
     type TValue = inferObservableValue<typeof req$>;
@@ -120,12 +102,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
         .then((envelope) => {
           const data = (envelope.result as any).data;
 
-          if (!isAsyncIterable(data)) {
-            resolve(data);
-            return;
-          }
-
-          resolve(abortableIterable(data, opts.signal) as any);
+          resolve(data);
         })
         .catch((err) => {
           reject(TRPCClientError.from(err));
@@ -165,6 +142,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
       path,
       input,
       context: opts?.context,
+      signal: null,
     });
     return observable$.subscribe({
       next(envelope) {
