@@ -27,7 +27,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type { ExtractCursorType } from '../shared';
-import type { TRPCQueryKey } from './getQueryKey';
+import type { TRPCMutationKey, TRPCQueryKey } from './getQueryKey';
 
 export type TRPCFetchQueryOptions<TOutput, TError> = DistributiveOmit<
   FetchQueryOptions<TOutput, TError>,
@@ -246,7 +246,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
    * @link https://tanstack.com/query/latest/docs/reference/QueryClient/#queryclientsetmutationdefaults
    */
   setMutationDefaults: (
-    mutationKey: [string[]],
+    mutationKey: TRPCMutationKey,
     options:
       | MutationOptions
       | ((args: {
@@ -257,11 +257,13 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   /**
    * @link https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientgetmutationdefaults
    */
-  getMutationDefaults: (mutationKey: [string[]]) => MutationOptions | undefined;
+  getMutationDefaults: (
+    mutationKey: TRPCMutationKey,
+  ) => MutationOptions | undefined;
 
   /**
    * @link https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientismutating
    */
-  isMutating: (filters: { mutationKey: [string[]] }) => number;
+  isMutating: (filters: { mutationKey: TRPCMutationKey }) => number;
 }
 export const TRPCContext = React.createContext?.(null as any);

@@ -38,7 +38,10 @@ import type {
 } from '../../internals/context';
 import { contextProps } from '../../internals/context';
 import type { QueryKeyKnown, QueryType } from '../../internals/getQueryKey';
-import { getQueryKeyInternal } from '../../internals/getQueryKey';
+import {
+  getMutationKeyInternal,
+  getQueryKeyInternal,
+} from '../../internals/getQueryKey';
 import type { InferMutationOptions } from '../../utils/inferReactQueryProcedure';
 import type { ExtractCursorType } from '../hooks/types';
 
@@ -366,9 +369,11 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
       getData: () => context.getQueryData(queryKey),
       getInfiniteData: () => context.getInfiniteQueryData(queryKey),
       setMutationDefaults: () =>
-        context.setMutationDefaults([queryKey[0]], input),
-      getMutationDefaults: () => context.getMutationDefaults([queryKey[0]]),
-      isMutating: () => context.isMutating({ mutationKey: [queryKey[0]] }),
+        context.setMutationDefaults(getMutationKeyInternal(path), input),
+      getMutationDefaults: () =>
+        context.getMutationDefaults(getMutationKeyInternal(path)),
+      isMutating: () =>
+        context.isMutating({ mutationKey: getMutationKeyInternal(path) }),
     };
 
     return contextMap[utilName]();
