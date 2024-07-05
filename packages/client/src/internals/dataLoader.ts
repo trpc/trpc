@@ -12,9 +12,7 @@ type Batch<TKey, TValue> = {
 };
 export type BatchLoader<TKey, TValue> = {
   validate: (keys: TKey[]) => boolean;
-  fetch: (keys: TKey[]) => {
-    promise: Promise<TValue[] | Promise<TValue>[]>;
-  };
+  fetch: (keys: TKey[]) => Promise<TValue[] | Promise<TValue>[]>;
 };
 
 /**
@@ -100,9 +98,7 @@ export function dataLoader<TKey, TValue>(
       for (const item of items) {
         item.batch = batch;
       }
-      const { promise } = batchLoader.fetch(
-        batch.items.map((_item) => _item.key),
-      );
+      const promise = batchLoader.fetch(batch.items.map((_item) => _item.key));
 
       promise
         .then(async (result) => {

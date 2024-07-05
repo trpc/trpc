@@ -70,20 +70,18 @@ export function httpBatchLink<TRouter extends AnyRouter>(
             },
             signal: ac.signal,
           });
-          return {
-            promise: promise.then((res) => {
-              const resJSON = Array.isArray(res.json)
-                ? res.json
-                : batchOps.map(() => res.json);
+          return promise.then((res) => {
+            const resJSON = Array.isArray(res.json)
+              ? res.json
+              : batchOps.map(() => res.json);
 
-              const result = resJSON.map((item) => ({
-                meta: res.meta,
-                json: item,
-              }));
+            const result = resJSON.map((item) => ({
+              meta: res.meta,
+              json: item,
+            }));
 
-              return result;
-            }),
-          };
+            return result;
+          });
         },
       };
     };
