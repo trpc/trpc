@@ -447,7 +447,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
   const deleteController = (idx: ChunkIndex) => {
     controllers.delete(idx);
-    if (controllers.size === 0 && chunkDeferred.size === 0) {
+    if (controllers.size === 0) {
       // nothing can be listening to the stream anymore
       abortController.abort();
     }
@@ -545,10 +545,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
               return: async () => {
                 deleteController(chunkId);
 
-                if (controllers.size === 0) {
-                  // nothing can be listening to the stream anymore
-                  abortController.abort();
-                }
                 return {
                   done: true,
                   value: undefined,
