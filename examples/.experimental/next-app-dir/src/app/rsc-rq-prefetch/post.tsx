@@ -18,7 +18,7 @@ export function Post() {
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <span>Title: {latestPost.title}</span>
         <span>Content: {latestPost.content}</span>
-        <span>Created At: {latestPost.createdAt.toLocaleString()}</span>
+        <span>Created At: {latestPost.createdAt.toLocaleString('en-US')}</span>
       </div>
       <form
         style={{

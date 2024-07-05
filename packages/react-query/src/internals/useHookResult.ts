@@ -5,7 +5,7 @@ import type { TRPCHookResult } from '../shared/hooks/types';
  * Makes a stable reference of the `trpc` prop
  */
 export function useHookResult(value: {
-  path: string[];
+  path: readonly string[];
 }): TRPCHookResult['trpc'] {
   const path = value.path.join('.');
   return React.useMemo(
