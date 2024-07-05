@@ -526,6 +526,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
                 }
                 if (done) {
                   controllers.delete(chunkId);
+                  maybeAbort();
                   return {
                     done: true,
                     value: undefined,
