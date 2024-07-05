@@ -23,7 +23,7 @@ describe('vanilla client procedure abortion', () => {
     const { close, client } = routerToServerAndClientNew(router);
 
     const promise = client.testQuery.query(undefined, { signal });
-    await waitMs(1);
+
     abortController.abort();
 
     await expect(promise).rejects.toThrowError(/aborted/);
@@ -37,7 +37,7 @@ describe('vanilla client procedure abortion', () => {
     const { close, client } = routerToServerAndClientNew(router);
 
     const promise = client.testMutation.mutate(undefined, { signal });
-    await waitMs(1);
+
     abortController.abort();
 
     await expect(promise).rejects.toThrowError(/aborted/);
