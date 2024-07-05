@@ -4,12 +4,10 @@ function set(
   _path: readonly string[] | string,
   value: unknown,
 ): void {
-  let path;
-  if (typeof _path === 'string') {
-    path = _path.split(/[\.\[\]]/).filter(Boolean);
-  } else {
-    path = [..._path];
-  }
+  const path =
+    typeof _path === 'string'
+      ? _path.split(/[\.\[\]]/).filter(Boolean)
+      : [..._path];
 
   if (path.length > 1) {
     const p = path.shift()!;
