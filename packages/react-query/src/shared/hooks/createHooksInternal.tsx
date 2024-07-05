@@ -17,12 +17,7 @@ import { createTRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import type {
-  SSRState,
-  TRPCContextState,
-  TRPCFetchInfiniteQueryOptions,
-  TRPCFetchQueryOptions,
-} from '../../internals/context';
+import type { SSRState, TRPCContextState } from '../../internals/context';
 import { TRPCContext } from '../../internals/context';
 import { getClientArgs } from '../../internals/getClientArgs';
 import type { TRPCQueryKey } from '../../internals/getQueryKey';
@@ -43,6 +38,8 @@ import type {
   UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
   UseTRPCMutationResult,
+  UseTRPCPrefetchInfiniteQueryOptions,
+  UseTRPCPrefetchQueryOptions,
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
   UseTRPCSubscriptionOptions,
@@ -231,31 +228,25 @@ export function createRootHooks<
   function usePrefetchQuery(
     path: string[],
     input: unknown,
-    opts?: TRPCFetchQueryOptions<unknown, TError>,
+    opts?: UseTRPCPrefetchQueryOptions<unknown, unknown, TError>,
   ): void {
     const context = useContext();
-    const { abortOnUnmount, client, queryClient } = context;
     const queryKey = getQueryKeyInternal(path, input, 'query');
-
-    const defaultOpts = queryClient.getQueryDefaults(queryKey);
 
     const isInputSkipToken = input === skipToken;
 
-    const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, {
-      ...defaultOpts,
-      ...opts,
-    });
-
-    const shouldAbortOnUnmount = config?.abortOnUnmount ?? abortOnUnmount;
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ??
+      config?.abortOnUnmount ??
+      context.abortOnUnmount;
 
     _usePrefetchQuery({
-      ...ssrOpts,
+      ...opts,
       queryKey: queryKey as any,
       queryFn: isInputSkipToken
         ? input
-        : async (queryFunctionContext) => {
+        : (queryFunctionContext) => {
             const actualOpts = {
-              ...ssrOpts,
               trpc: {
                 ...(shouldAbortOnUnmount
                   ? { signal: queryFunctionContext.signal }
@@ -263,33 +254,7 @@ export function createRootHooks<
               },
             };
 
-            const result = await client.query(
-              ...getClientArgs(queryKey, actualOpts),
-            );
-
-            if (isAsyncIterable(result)) {
-              const queryCache = queryClient.getQueryCache();
-
-              const query = queryCache.build(queryFunctionContext.queryKey, {
-                queryKey,
-              });
-
-              query.setState({
-                data: [],
-                status: 'success',
-              });
-
-              const aggregate: unknown[] = [];
-              for await (const value of result) {
-                aggregate.push(value);
-
-                query.setState({
-                  data: [...aggregate],
-                });
-              }
-              return aggregate;
-            }
-            return result;
+            return context.client.query(...getClientArgs(queryKey, actualOpts));
           },
     });
   }
@@ -498,12 +463,12 @@ export function createRootHooks<
   function usePrefetchInfiniteQuery(
     path: string[],
     input: unknown,
-    opts: TRPCFetchInfiniteQueryOptions<unknown, unknown, TError>,
+    opts: UseTRPCPrefetchInfiniteQueryOptions<unknown, unknown, TError>,
   ): void {
-    const { client, queryClient, abortOnUnmount } = useContext();
+    const context = useContext();
     const queryKey = getQueryKeyInternal(path, input, 'infinite');
 
-    const defaultOpts = queryClient.getQueryDefaults(queryKey);
+    const defaultOpts = context.queryClient.getQueryDefaults(queryKey);
 
     const isInputSkipToken = input === skipToken;
 
@@ -513,26 +478,27 @@ export function createRootHooks<
     });
 
     // request option should take priority over global
-    const shouldAbortOnUnmount = abortOnUnmount;
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ?? context.abortOnUnmount;
 
     __usePrefetchInfiniteQuery({
-      ...ssrOpts,
+      ...opts,
       initialPageParam: opts.initialCursor ?? null,
-      persister: opts.persister,
-      queryKey: queryKey as any,
+      queryKey,
       queryFn: isInputSkipToken
         ? input
         : (queryFunctionContext) => {
             const actualOpts = {
               ...ssrOpts,
               trpc: {
+                ...ssrOpts?.trpc,
                 ...(shouldAbortOnUnmount
                   ? { signal: queryFunctionContext.signal }
                   : {}),
               },
             };
 
-            return client.query(
+            return context.client.query(
               ...getClientArgs(queryKey, actualOpts, {
                 pageParam: queryFunctionContext.pageParam ?? opts.initialCursor,
                 direction: queryFunctionContext.direction,
