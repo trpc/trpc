@@ -786,6 +786,10 @@ importers:
         version: 5.5.2
 
   examples/minimal-react:
+    dependencies:
+      '@tanstack/react-query-devtools':
+        specifier: ^5.49.2
+        version: 5.49.2(@tanstack/react-query@5.49.2)(react@18.3.1)
     devDependencies:
       '@playwright/test':
         specifier: ^1.26.1
@@ -821,6 +825,9 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
     devDependencies:
+      '@tanstack/react-query-devtools':
+        specifier: ^5.49.2
+        version: 5.49.2(@tanstack/react-query@5.49.2)(react@18.3.1)
       '@types/react':
         specifier: ^18.3.1
         version: 18.3.1

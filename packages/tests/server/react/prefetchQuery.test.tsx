@@ -45,3 +45,45 @@ describe('prefetchQuery()', () => {
     });
   });
 });
+
+describe('usePrefetchQuery()', () => {
+  test('with input', async () => {
+    const { trpc, client, App } = factory;
+    function MyComponent() {
+      const [state, setState] = useState<string>('nope');
+      const [refreshState, setRefreshState] = useState(false);
+      const utils = trpc.useUtils();
+      const queryClient = useQueryClient();
+
+      useEffect(() => {
+        const unsub = queryClient.getQueryCache().subscribe((event) => {
+          setRefreshState(true);
+        });
+
+        return () => {
+          unsub();
+        };
+      }, [queryClient]);
+
+      useEffect(() => {
+        if (refreshState) {
+          setState(JSON.stringify(dehydrate(queryClient)));
+          setRefreshState(false);
+        }
+      }, [refreshState, queryClient]);
+
+      trpc.postById.usePrefetchQuery('1');
+
+      return <>{JSON.stringify(state)}</>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('first post');
+    });
+  });
+});
