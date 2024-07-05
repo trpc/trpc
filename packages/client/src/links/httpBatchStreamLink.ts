@@ -108,6 +108,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
                     error,
                   });
                 },
+                // pass in an abort controller here!?
               });
 
               const promises = Object.keys(batchOps).map(

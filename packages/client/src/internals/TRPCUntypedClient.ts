@@ -8,6 +8,7 @@ import type {
   InferrableClientTypes,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
+import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
 import type {
   OperationContext,
@@ -51,6 +52,18 @@ export type UntypedClientProperties =
   | 'runtime'
   | 'subscription';
 
+async function* cancellableIterator<T>(
+  from: AsyncIterable<T>,
+  signal: AbortSignal | undefined,
+) {
+  for await (const value of from) {
+    if (signal?.throwIfAborted()) {
+      return;
+    }
+    yield value;
+  }
+}
+
 export class TRPCUntypedClient<TRouter extends AnyRouter> {
   private readonly links: OperationLink<AnyRouter>[];
   public readonly runtime: TRPCClientRuntime;
@@ -88,6 +101,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     });
     return chain$.pipe(share());
   }
+
   private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
     type: TRPCType;
     input: TInput;
@@ -104,7 +118,13 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
 
       promise
         .then((envelope) => {
-          resolve((envelope.result as any).data);
+          const data = (envelope.result as any).data;
+
+          if (!isAsyncIterable(data)) {
+            return data;
+          }
+
+          resolve(cancellableIterator(data, opts.signal) as any);
         })
         .catch((err) => {
           reject(TRPCClientError.from(err));

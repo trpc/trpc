@@ -15,6 +15,7 @@ import {
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -30,6 +31,12 @@ describe('no transformer', () => {
       orderedResults.length = 0;
 
       const manualRelease = new Map<number, () => void>();
+
+      let iterableDeferred = createDeferred<void>();
+      const nextIterable = () => {
+        iterableDeferred.resolve();
+        iterableDeferred = createDeferred();
+      };
 
       const router = t.router({
         deferred: t.procedure
@@ -62,9 +69,18 @@ describe('no transformer', () => {
           }),
 
         iterable: t.procedure.query(async function* () {
-          yield 1;
-          yield 2;
-          yield 3;
+          for (let i = 0; i < 3; i++) {
+            yield i + 1;
+            await iterableDeferred.promise;
+          }
+        }),
+        iterableMutation: t.procedure.mutation(async function* () {
+          for (let i = 0; i < 10; i++) {
+            yield i + 1;
+            console.log('yielded', i + 1);
+            await iterableDeferred.promise;
+            iterableDeferred = createDeferred();
+          }
         }),
       });
 
@@ -102,6 +118,8 @@ describe('no transformer', () => {
       return {
         ...opts,
         manualRelease,
+        nextIterable,
+        iterablePromise: iterableDeferred.promise,
       };
     })
     .afterEach(async (opts) => {
@@ -206,6 +224,31 @@ describe('no transformer', () => {
         3,
       ]
     `);
+  });
+
+  test('iterable cancellation', async () => {
+    const { client } = ctx;
+    const ac = new AbortController();
+
+    const iterable = await client.iterableMutation.mutate(undefined, {
+      signal: ac.signal,
+    });
+    const aggregated: unknown[] = [];
+    ctx.nextIterable();
+    const err = await waitError(async () => {
+      for await (const value of iterable) {
+        aggregated.push(value);
+        if (value === 1) {
+          ac.abort();
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        ctx.nextIterable();
+      }
+    });
+    ctx.nextIterable();
+    ctx.nextIterable();
+    expect(err).toMatchInlineSnapshot(`DOMException {}`);
+    expect(err.message).toMatchInlineSnapshot(`"The operation was aborted."`);
   });
 });
 
