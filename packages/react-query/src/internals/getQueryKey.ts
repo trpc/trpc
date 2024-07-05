@@ -13,7 +13,7 @@ export type TRPCQueryKey = [
   { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
 ];
 
-export type TRPCMutationKey = [string[]]; // = [TRPCQueryKey[0]]
+export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]
 
 type ProcedureOrRouter =
   | DecoratedMutation<any>
@@ -73,7 +73,7 @@ export function getQueryKeyInternal(
   ];
 }
 
-export function getMutationKeyInternal(path: string[]) {
+export function getMutationKeyInternal(path: readonly string[]) {
   return getQueryKeyInternal(path, undefined, 'any') as TRPCMutationKey;
 }
 
