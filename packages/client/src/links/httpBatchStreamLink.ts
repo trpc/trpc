@@ -101,8 +101,8 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
             from: res.body!,
             deserialize: resolvedOpts.transformer.output.deserialize,
             // onError: console.error,
-            formatError(opts_6) {
-              const error = opts_6.error as TRPCErrorShape;
+            formatError(opts) {
+              const error = opts.error as TRPCErrorShape;
               return TRPCClientError.from({
                 error,
               });
