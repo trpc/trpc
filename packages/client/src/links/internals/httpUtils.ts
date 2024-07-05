@@ -238,9 +238,15 @@ export function mergeAbortSignals(
   };
 
   for (const o of opts) {
-    o.signal?.addEventListener('abort', onAbort, {
-      once: true,
-    });
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const signal = o.signal!;
+    if (signal.aborted) {
+      onAbort();
+    } else {
+      signal.addEventListener('abort', onAbort, {
+        once: true,
+      });
+    }
   }
 
   return ac;

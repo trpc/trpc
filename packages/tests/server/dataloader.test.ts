@@ -47,32 +47,6 @@ describe('basic', () => {
   });
 });
 
-describe('cancellation', () => {
-  const fetchFn = vi.fn();
-  const validateFn = vi.fn();
-  const cancelFn = vi.fn();
-  const loader = dataLoader<number, number>({
-    validate: () => {
-      return true;
-    },
-    fetch: (keys) => {
-      fetchFn();
-      const promise = new Promise<number[]>((resolve) => {
-        setTimeout(() => {
-          resolve(keys.map((v) => v + 1));
-        }, 10);
-      });
-      return { promise, cancel: cancelFn };
-    },
-  });
-
-  beforeEach(() => {
-    fetchFn.mockClear();
-    validateFn.mockClear();
-    cancelFn.mockClear();
-  });
-});
-
 test('errors', async () => {
   const loader = dataLoader<number, number>({
     validate: () => true,
