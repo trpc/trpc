@@ -293,6 +293,7 @@ test('e2e, client aborts request halfway through', async () => {
           yieldCalls();
           yield i;
           await new Promise((resolve) => setTimeout(resolve, 5));
+
           if (serverAbort.signal.aborted) {
             stopped = true;
             return;
@@ -349,6 +350,82 @@ test('e2e, client aborts request halfway through', async () => {
   `);
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
   expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
+
+  await server.close();
+});
+
+test('e2e, client aborts request halfway through - through breaking async iterable', async () => {
+  const serverAbort = new AbortController();
+  const clientAbort = new AbortController();
+  const yieldCalls = vi.fn();
+  let stopped = false;
+
+  const onConsumerErrorSpy = vi.fn<Parameters<ConsumerOnError>, null>();
+  const onProducerErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
+
+  const data = {
+    0: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        for (let i = 0; i < 10; i++) {
+          yieldCalls();
+          yield i;
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          if (serverAbort.signal.aborted) {
+            stopped = true;
+            return;
+          }
+        }
+        stopped = true;
+      },
+    }),
+  } as const;
+
+  const stream = jsonlStreamProducer({
+    data,
+    onError: onProducerErrorSpy,
+  });
+  const server = createServerForStream(stream, serverAbort);
+
+  const res = await fetch(server.url, {
+    signal: clientAbort.signal,
+  });
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
+    from: res.body!,
+    onError: onConsumerErrorSpy,
+  });
+
+  {
+    const iterable = await head[0];
+
+    for await (const item of iterable) {
+      if (item === 2) {
+        break;
+      }
+    }
+  }
+
+  await waitFor(() => {
+    expect(meta.controllers.size).toBe(0);
+  });
+  // wait for stopped
+  await waitFor(() => {
+    expect(stopped).toBe(true);
+  });
+
+  expect(yieldCalls.mock.calls.length).toBeGreaterThanOrEqual(3);
+  expect(yieldCalls.mock.calls.length).toBeLessThan(10);
+
+  const errors = onConsumerErrorSpy.mock.calls.map(
+    (it) => (it[0].error as Error).message,
+  );
+  expect(errors).toMatchInlineSnapshot(`
+    Array [
+      "The operation was aborted.",
+    ]
+  `);
+  expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
+  expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
+
   await server.close();
 });
 

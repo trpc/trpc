@@ -426,6 +426,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   formatError?: (opts: { error: unknown }) => Error;
 }) {
   const { deserialize = (v) => v } = opts;
+  const abortController = new AbortController();
 
   let source = createConsumerStream<Head>(opts.from);
   if (deserialize) {
@@ -443,6 +444,14 @@ export async function jsonlStreamConsumer<THead>(opts: {
   type ChunkController = ReadableStreamDefaultController<ControllerChunk>;
   const chunkDeferred = new Map<ChunkIndex, Deferred<ChunkController>>();
   const controllers = new Map<ChunkIndex, ChunkController>();
+
+  const deleteController = (idx: ChunkIndex) => {
+    controllers.delete(idx);
+    if (controllers.size === 0 && chunkDeferred.size === 0) {
+      // nothing can be listening to the stream anymore
+      abortController.abort();
+    }
+  };
 
   function hydrateChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
@@ -495,33 +504,58 @@ export async function jsonlStreamConsumer<THead>(opts: {
       }
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
         return {
-          [Symbol.asyncIterator]: async function* () {
+          [Symbol.asyncIterator]: () => {
             const reader = readable.getReader();
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) {
-                break;
-              }
-              if (value instanceof StreamInterruptedError) {
-                throw value;
-              }
+            const iterator: AsyncIterator<unknown> = {
+              next: async () => {
+                const { done, value } = await reader.read();
+                if (value instanceof StreamInterruptedError) {
+                  throw value;
+                }
+                if (done) {
+                  deleteController(chunkId);
+                  return {
+                    done: true,
+                    value: undefined,
+                  };
+                }
 
-              const [_chunkId, status, data] = value as IterableChunk;
+                const [_chunkId, status, data] = value as IterableChunk;
 
-              switch (status) {
-                case ASYNC_ITERABLE_STATUS_VALUE:
-                  yield hydrate(data);
-                  break;
-                case ASYNC_ITERABLE_STATUS_DONE:
-                  controllers.delete(chunkId);
-                  return;
-                case ASYNC_ITERABLE_STATUS_ERROR:
-                  controllers.delete(chunkId);
-                  throw (
-                    opts.formatError?.({ error: data }) ?? new AsyncError(data)
-                  );
-              }
-            }
+                switch (status) {
+                  case ASYNC_ITERABLE_STATUS_VALUE:
+                    return {
+                      done: false,
+                      value: hydrate(data),
+                    };
+                  case ASYNC_ITERABLE_STATUS_DONE:
+                    deleteController(chunkId);
+                    return {
+                      done: true,
+                      value: undefined,
+                    };
+                  case ASYNC_ITERABLE_STATUS_ERROR:
+                    deleteController(chunkId);
+                    throw (
+                      opts.formatError?.({ error: data }) ??
+                      new AsyncError(data)
+                    );
+                }
+              },
+              return: async () => {
+                deleteController(chunkId);
+
+                if (controllers.size === 0) {
+                  // nothing can be listening to the stream anymore
+                  abortController.abort();
+                }
+                return {
+                  done: true,
+                  value: undefined,
+                };
+              },
+            };
+            return iterator;
           },
         };
       }
@@ -561,6 +595,11 @@ export async function jsonlStreamConsumer<THead>(opts: {
   source
     .pipeTo(
       new WritableStream({
+        start(controller) {
+          abortController.signal.addEventListener('abort', () => {
+            controller.error(abortController.signal.reason);
+          });
+        },
         async write(chunkOrHead) {
           if (headDeferred) {
             const head = chunkOrHead as Record<number | string, unknown>;
