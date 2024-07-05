@@ -16,7 +16,7 @@ const freezeIfAvailable = (obj: object) => {
 
 function createInnerProxy(
   callback: ProxyCallback,
-  path: string[],
+  path: readonly string[],
   memo: Record<string, unknown>,
 ) {
   const cacheKey = path.join('.');
