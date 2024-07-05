@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 import { waitError, waitMs } from './___testHelpers';
 import { dataLoader } from '@trpc/client/internals/dataLoader';
 
@@ -12,10 +11,9 @@ describe('basic', () => {
     },
     fetch: (keys) => {
       fetchFn(keys);
-      const promise = new Promise<number[]>((resolve) => {
+      return new Promise((resolve) => {
         resolve(keys.map((v) => v + 1));
       });
-      return { promise, cancel: () => {} };
     },
   });
 
@@ -51,10 +49,9 @@ test('errors', async () => {
   const loader = dataLoader<number, number>({
     validate: () => true,
     fetch: () => {
-      const promise = new Promise<number[]>((_resolve, reject) => {
+      return new Promise((_resolve, reject) => {
         reject(new Error('Some error'));
       });
-      return { promise, cancel: () => {} };
     },
   });
 
@@ -76,10 +73,9 @@ describe('validation', () => {
     },
     fetch: (keys) => {
       fetchFn(keys);
-      const promise = new Promise<number[]>((resolve) => {
+      return new Promise((resolve) => {
         resolve(keys.map((v) => v + 1));
       });
-      return { promise, cancel: () => {} };
     },
   });
 
