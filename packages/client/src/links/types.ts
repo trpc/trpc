@@ -17,19 +17,6 @@ export {
 /**
  * @internal
  */
-export type CancelFn = () => void;
-
-/**
- * @internal
- */
-export type PromiseAndCancel<TValue> = {
-  promise: Promise<TValue>;
-  cancel: CancelFn;
-};
-
-/**
- * @internal
- */
 export interface OperationContext extends Record<string, unknown> {}
 
 /**
