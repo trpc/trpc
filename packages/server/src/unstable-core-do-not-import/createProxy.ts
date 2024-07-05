@@ -17,18 +17,18 @@ const freezeIfAvailable = (obj: object) => {
 function createInnerProxy(
   callback: ProxyCallback,
   path: string[],
-  cache: Record<string, unknown>,
+  memo: Record<string, unknown>,
 ) {
   const cacheKey = path.join('.');
 
-  cache[cacheKey] ??= new Proxy(noop, {
+  memo[cacheKey] ??= new Proxy(noop, {
     get(_obj, key) {
       if (typeof key !== 'string' || key === 'then') {
         // special case for if the proxy is accidentally treated
         // like a PromiseLike (like in `Promise.resolve(proxy)`)
         return undefined;
       }
-      return createInnerProxy(callback, [...path, key], cache);
+      return createInnerProxy(callback, [...path, key], memo);
     },
     apply(_1, _2, args) {
       const lastOfPath = path[path.length - 1];
@@ -53,7 +53,7 @@ function createInnerProxy(
     },
   });
 
-  return cache[cacheKey];
+  return memo[cacheKey];
 }
 
 /**
