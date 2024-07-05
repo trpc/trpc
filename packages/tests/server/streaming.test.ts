@@ -69,15 +69,8 @@ describe('no transformer', () => {
           }),
 
         iterable: t.procedure.query(async function* () {
-          for (let i = 0; i < 3; i++) {
-            yield i + 1;
-            await iterableDeferred.promise;
-          }
-        }),
-        iterableMutation: t.procedure.mutation(async function* () {
           for (let i = 0; i < 10; i++) {
             yield i + 1;
-            console.log('yielded', i + 1);
             await iterableDeferred.promise;
             iterableDeferred = createDeferred();
           }
@@ -216,12 +209,20 @@ describe('no transformer', () => {
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
       aggregated.push(value);
+      ctx.nextIterable();
     }
     expect(aggregated).toMatchInlineSnapshot(`
       Array [
         1,
         2,
         3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
       ]
     `);
   });
@@ -230,7 +231,7 @@ describe('no transformer', () => {
     const { client } = ctx;
     const ac = new AbortController();
 
-    const iterable = await client.iterableMutation.mutate(undefined, {
+    const iterable = await client.iterable.query(undefined, {
       signal: ac.signal,
     });
     const aggregated: unknown[] = [];

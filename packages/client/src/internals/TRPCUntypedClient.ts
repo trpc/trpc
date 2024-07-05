@@ -52,7 +52,7 @@ export type UntypedClientProperties =
   | 'runtime'
   | 'subscription';
 
-async function* cancellableIterator<T>(
+async function* abortableIterable<T>(
   from: AsyncIterable<T>,
   signal: AbortSignal | undefined,
 ) {
@@ -121,10 +121,11 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
           const data = (envelope.result as any).data;
 
           if (!isAsyncIterable(data)) {
-            return data;
+            resolve(data);
+            return;
           }
 
-          resolve(cancellableIterator(data, opts.signal) as any);
+          resolve(abortableIterable(data, opts.signal) as any);
         })
         .catch((err) => {
           reject(TRPCClientError.from(err));
