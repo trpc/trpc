@@ -1,13 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-function set(
-  obj: Record<string, any>,
-  path: string[] | string,
-  value: unknown,
-): void {
-  if (typeof path === 'string') {
-    path = path.split(/[\.\[\]]/).filter(Boolean);
-  }
-
+function set(obj: Record<string, any>, path: string[], value: unknown): void {
   if (path.length > 1) {
     const p = path.shift()!;
     const isArrayIndex = /^\d+$/.test(path[0]!);
@@ -29,7 +21,8 @@ export function formDataToObject(formData: FormData) {
   const obj: Record<string, unknown> = {};
 
   for (const [key, value] of formData.entries()) {
-    set(obj, key, value);
+    const parts = key.split(/[\.\[\]]/).filter(Boolean);
+    set(obj, parts, value);
   }
 
   return obj;
