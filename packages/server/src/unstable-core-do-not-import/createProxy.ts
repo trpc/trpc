@@ -14,8 +14,9 @@ function createInnerProxy(
   cache: Record<string, unknown>,
 ) {
   const cacheKey = path.join('.');
+  console.log({ cacheKey });
 
-  cache[cacheKey] ??= new Proxy(noop, {
+  return new Proxy(noop, {
     get(_obj, key) {
       if (typeof key !== 'string' || key === 'then') {
         // special case for if the proxy is accidentally treated
@@ -27,6 +28,7 @@ function createInnerProxy(
     apply(_1, _2, args) {
       const lastOfPath = path[path.length - 1];
 
+      console.log({ lastOfPath, path, args });
       let opts = { args, path };
       // special handling for e.g. `trpc.hello.call(this, 'there')` and `trpc.hello.apply(this, ['there'])
       if (lastOfPath === 'call') {
