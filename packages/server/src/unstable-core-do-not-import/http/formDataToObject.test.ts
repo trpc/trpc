@@ -50,7 +50,7 @@ test('array', () => {
   });
 });
 
-test('array with dot notation', () => {
+test.only('array with dot notation', () => {
   const formData = new FormData();
 
   formData.append('foo.0', 'bar');

@@ -1,10 +1,18 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-function set(obj: Record<string, any>, path: string[], value: unknown): void {
+
+const isNumberString = (str: string) => /^\d+$/.test(str);
+
+function set(
+  obj: Record<string, any>,
+  path: readonly string[],
+  value: unknown,
+): void {
   if (path.length > 1) {
-    const p = path.shift()!;
-    const isArrayIndex = /^\d+$/.test(path[0]!);
+    const newPath = [...path];
+    const p = newPath.shift()!;
+    const isArrayIndex = isNumberString(newPath[0]!);
     obj[p] = obj[p] || (isArrayIndex ? [] : {});
-    set(obj[p], path, value);
+    set(obj[p], newPath, value);
     return;
   }
   const p = path[0]!;
