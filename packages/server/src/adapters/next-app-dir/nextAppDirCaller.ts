@@ -1,5 +1,7 @@
 import type { CreateContextCallback } from '../../@trpc/server';
 import { getTRPCErrorFromUnknown, TRPCError } from '../../@trpc/server';
+// eslint-disable-next-line no-restricted-imports
+import { formDataToObject } from '../../unstable-core-do-not-import';
 // FIXME: fix lint rule, this is ok
 // eslint-disable-next-line no-restricted-imports
 import type { ErrorHandlerOptions } from '../../unstable-core-do-not-import/procedure';
@@ -12,7 +14,6 @@ import type {
   MaybePromise,
   Simplify,
 } from '../../unstable-core-do-not-import/types';
-import { formDataToObject } from './formDataToObject';
 import { TRPCRedirectError } from './redirect';
 import { rethrowNextErrors } from './rethrowNextErrors';
 
