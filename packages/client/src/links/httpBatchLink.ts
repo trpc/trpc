@@ -47,12 +47,12 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 
           return url.length <= maxURLLength;
         },
-        fetch(batchOps) {
+        async fetch(batchOps) {
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
           const ac = mergeAbortSignals(batchOps);
 
-          const promise = jsonHttpRequester({
+          const res = await jsonHttpRequester({
             ...resolvedOpts,
             path,
             inputs,
@@ -70,18 +70,14 @@ export function httpBatchLink<TRouter extends AnyRouter>(
             },
             signal: ac.signal,
           });
-          return promise.then((res) => {
-            const resJSON = Array.isArray(res.json)
-              ? res.json
-              : batchOps.map(() => res.json);
-
-            const result = resJSON.map((item) => ({
-              meta: res.meta,
-              json: item,
-            }));
-
-            return result;
-          });
+          const resJSON = Array.isArray(res.json)
+            ? res.json
+            : batchOps.map(() => res.json);
+          const result = resJSON.map((item) => ({
+            meta: res.meta,
+            json: item,
+          }));
+          return result;
         },
       };
     };

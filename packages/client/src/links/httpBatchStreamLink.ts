@@ -63,7 +63,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
 
           return url.length <= maxURLLength;
         },
-        fetch(batchOps) {
+        async fetch(batchOps) {
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
 
@@ -92,50 +92,48 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
             },
           });
 
-          return responsePromise.then(async (res) => {
-            const [head] = await jsonlStreamConsumer<
-              Record<string, Promise<any>>
-            >({
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              from: res.body!,
-              deserialize: resolvedOpts.transformer.output.deserialize,
-              // onError: console.error,
-              formatError(opts) {
-                const error = opts.error as TRPCErrorShape;
-                return TRPCClientError.from({
-                  error,
-                });
-              },
-              abortController: ac,
-            });
+          const res = await responsePromise;
+          const [head] = await jsonlStreamConsumer<
+            Record<string, Promise<any>>
+          >({
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            from: res.body!,
+            deserialize: resolvedOpts.transformer.output.deserialize,
+            // onError: console.error,
+            formatError(opts_6) {
+              const error = opts_6.error as TRPCErrorShape;
+              return TRPCClientError.from({
+                error,
+              });
+            },
+            abortController: ac,
+          });
+          const promises = Object.keys(batchOps).map(
+            async (key): Promise<HTTPResult> => {
+              let json: TRPCResponse = await Promise.resolve(head[key]);
 
-            const promises = Object.keys(batchOps).map(
-              async (key): Promise<HTTPResult> => {
-                let json: TRPCResponse = await Promise.resolve(head[key]);
-
-                if ('result' in json) {
-                  /**
-                   * Not very pretty, but we need to unwrap nested data as promises
-                   * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
-                   */
-                  const result = await Promise.resolve(json.result);
-                  json = {
-                    result: {
-                      data: await Promise.resolve(result.data),
-                    },
-                  };
-                }
-
-                return {
-                  json,
-                  meta: {
-                    response: res,
+              if ('result' in json) {
+                /**
+                 * Not very pretty, but we need to unwrap nested data as promises
+                 * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
+                 */
+                const result = await Promise.resolve(json.result);
+                json = {
+                  result: {
+                    data: await Promise.resolve(result.data),
                   },
                 };
-              },
-            );
-            return promises;
-          });
+              }
+
+              return {
+                json,
+                meta: {
+                  response: res,
+                },
+              };
+            },
+          );
+          return promises;
         },
       };
     };
