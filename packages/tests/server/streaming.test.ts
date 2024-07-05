@@ -1,5 +1,4 @@
 import { EventEmitter } from 'node:events';
-import { IncomingMessage, ServerResponse } from 'node:http';
 import {
   routerToServerAndClientNew,
   waitError,
@@ -15,18 +14,11 @@ import {
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
-import {
-  NodeHTTPCreateContextFnOptions,
-  NodeHTTPCreateContextOption,
-  NodeHTTPHandlerOptions,
-} from '@trpc/server/adapters/node-http';
 import { observable } from '@trpc/server/observable';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
-
-const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe('no transformer', () => {
   const orderedResults: number[] = [];
@@ -260,16 +252,22 @@ describe('no transformer', () => {
         if (value === 2) {
           ac.abort();
         }
-        await new Promise((resolve) => setTimeout(resolve, 5));
         ctx.nextIterable();
+        await new Promise((resolve) => setTimeout(resolve, 10));
       }
     });
-    ctx.nextIterable();
-    ctx.nextIterable();
 
     await waitFor(() => {
       expect(ctx.connections.size).toBe(0);
     });
+    expect(ctx.yieldSpy.mock.calls.flatMap((it) => it[0]))
+      .toMatchInlineSnapshot(`
+        Array [
+          1,
+          2,
+          3,
+        ]
+      `);
     expect(err).toMatchInlineSnapshot(`DOMException {}`);
     expect(err.message).toMatchInlineSnapshot(`"The operation was aborted."`);
   });

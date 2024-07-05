@@ -652,6 +652,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
     await headDeferred.promise,
     {
       controllers,
+      streamAbortController,
     },
   ] as const;
 }
