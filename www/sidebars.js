@@ -85,6 +85,7 @@ module.exports = {
             'client/react/setup',
             'client/react/infer-types',
             'client/react/useQuery',
+            'client/react/usePrefetchQuery',
             'client/react/useMutation',
             'client/react/useInfiniteQuery',
             'client/react/useUtils',
