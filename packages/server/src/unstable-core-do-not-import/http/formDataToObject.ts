@@ -9,10 +9,22 @@ function set(
 ): void {
   if (path.length > 1) {
     const newPath = [...path];
-    const p = newPath.shift()!;
-    const isArrayIndex = isNumberString(newPath[0]!);
-    obj[p] = obj[p] || (isArrayIndex ? [] : {});
-    set(obj[p], newPath, value);
+    const key = newPath.shift()!;
+    const nextKey = newPath[0]!;
+
+    if (!obj[key]) {
+      obj[key] = isNumberString(nextKey) ? [] : {};
+    } else if (Array.isArray(obj[key]) && !isNumberString(nextKey)) {
+      const newObj: Record<string, any> = {};
+      for (const [index, val] of obj[key].entries()) {
+        newObj[index] = val;
+      }
+
+      obj[key] = newObj;
+    }
+
+    set(obj[key], newPath, value);
+
     return;
   }
   const p = path[0]!;
