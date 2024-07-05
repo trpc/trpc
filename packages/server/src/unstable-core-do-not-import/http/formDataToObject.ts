@@ -15,12 +15,7 @@ function set(
     if (!obj[key]) {
       obj[key] = isNumberString(nextKey) ? [] : {};
     } else if (Array.isArray(obj[key]) && !isNumberString(nextKey)) {
-      const newObj: Record<string, any> = {};
-      for (const [index, val] of obj[key].entries()) {
-        newObj[index] = val;
-      }
-
-      obj[key] = newObj;
+      obj[key] = Object.fromEntries(Object.entries(obj[key]));
     }
 
     set(obj[key], newPath, value);
