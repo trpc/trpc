@@ -53,7 +53,6 @@ async function startServer(maxBodySize?: number) {
     links: [
       httpBatchLink({
         url: `http://localhost:${port}/trpc`,
-        AbortController,
         fetch: fetch as any,
       }),
     ],

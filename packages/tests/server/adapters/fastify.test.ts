@@ -229,7 +229,6 @@ function createClient(opts: ClientOptions) {
         false: unstable_httpBatchStreamLink({
           url: `http://${host}`,
           headers: opts.headers,
-          AbortController,
           fetch: fetch as any,
         }),
       }),
