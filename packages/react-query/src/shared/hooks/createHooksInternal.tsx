@@ -1,6 +1,7 @@
 import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
+  usePrefetchInfiniteQuery as __usePrefetchInfiniteQuery,
   useQueries as __useQueries,
   useQuery as __useQuery,
   useSuspenseInfiniteQuery as __useSuspenseInfiniteQuery,
@@ -19,6 +20,7 @@ import * as React from 'react';
 import type {
   SSRState,
   TRPCContextState,
+  TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
 } from '../../internals/context';
 import { TRPCContext } from '../../internals/context';
@@ -493,6 +495,53 @@ export function createRootHooks<
     return hook;
   }
 
+  function usePrefetchInfiniteQuery(
+    path: string[],
+    input: unknown,
+    opts: TRPCFetchInfiniteQueryOptions<unknown, unknown, TError>,
+  ): void {
+    const { client, queryClient, abortOnUnmount } = useContext();
+    const queryKey = getQueryKeyInternal(path, input, 'infinite');
+
+    const defaultOpts = queryClient.getQueryDefaults(queryKey);
+
+    const isInputSkipToken = input === skipToken;
+
+    const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, {
+      ...defaultOpts,
+      ...opts,
+    });
+
+    // request option should take priority over global
+    const shouldAbortOnUnmount = abortOnUnmount;
+
+    __usePrefetchInfiniteQuery({
+      ...ssrOpts,
+      initialPageParam: opts.initialCursor ?? null,
+      persister: opts.persister,
+      queryKey: queryKey as any,
+      queryFn: isInputSkipToken
+        ? input
+        : (queryFunctionContext) => {
+            const actualOpts = {
+              ...ssrOpts,
+              trpc: {
+                ...(shouldAbortOnUnmount
+                  ? { signal: queryFunctionContext.signal }
+                  : {}),
+              },
+            };
+
+            return client.query(
+              ...getClientArgs(queryKey, actualOpts, {
+                pageParam: queryFunctionContext.pageParam ?? opts.initialCursor,
+                direction: queryFunctionContext.direction,
+              }),
+            );
+          },
+    });
+  }
+
   function useSuspenseInfiniteQuery(
     path: string[],
     input: unknown,
@@ -612,6 +661,7 @@ export function createRootHooks<
     useMutation,
     useSubscription,
     useInfiniteQuery,
+    usePrefetchInfiniteQuery,
     useSuspenseInfiniteQuery,
   };
 }

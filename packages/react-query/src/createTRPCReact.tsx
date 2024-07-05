@@ -12,11 +12,16 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
+import { T } from 'vitest/dist/reporters-xEmem8D4';
 import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
 } from './internals/useQueries';
-import type { CreateReactUtils, TRPCFetchQueryOptions } from './shared';
+import type {
+  CreateReactUtils,
+  TRPCFetchInfiniteQueryOptions,
+  TRPCFetchQueryOptions,
+} from './shared';
 import { createReactDecoration, createReactQueryUtils } from './shared';
 import type { CreateReactQueryHooks } from './shared/hooks/createHooksInternal';
 import { createRootHooks } from './shared/hooks/createHooksInternal';
@@ -116,6 +121,14 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
           TRPCClientErrorLike<TDef>,
           TDef['input']
         >;
+        usePrefetchInfiniteQuery: (
+          input: Omit<TDef['input'], 'cursor' | 'direction'>,
+          opts: TRPCFetchInfiniteQueryOptions<
+            TDef['input'],
+            TDef['output'],
+            TRPCClientErrorLike<TDef>
+          >,
+        ) => void;
         /**
          * @link https://trpc.io/docs/v11/client/react/suspense
          */
