@@ -72,7 +72,7 @@ test('useQuery()', async () => {
         "id": "1",
       },
       "path": "greeting",
-      "signal": undefined,
+      "signal": null,
       "type": "query",
     }
   `);
