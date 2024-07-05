@@ -9,7 +9,7 @@ import type { DecorateRouterRecord } from '../shared';
 export type QueryType = 'any' | 'infinite' | 'query';
 
 export type TRPCQueryKey = [
-  string[],
+  readonly string[],
   { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
 ];
 
