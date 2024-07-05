@@ -239,7 +239,7 @@ describe('no transformer', () => {
     const err = await waitError(async () => {
       for await (const value of iterable) {
         aggregated.push(value);
-        if (value === 1) {
+        if (value === 2) {
           ac.abort();
         }
         await new Promise((resolve) => setTimeout(resolve, 5));

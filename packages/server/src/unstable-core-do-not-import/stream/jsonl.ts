@@ -442,7 +442,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   type ChunkController = ReadableStreamDefaultController<ControllerChunk>;
   type ControllerWrapper = {
     controller: ChunkController;
-    abortController: AbortController;
+    returned: boolean;
   };
   const chunkDeferred = new Map<ChunkIndex, Deferred<ControllerWrapper>>();
   const controllers = new Map<ChunkIndex, ControllerWrapper>();
@@ -454,7 +454,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
     const wrapper: ControllerWrapper = {
       controller,
-      abortController: new AbortController(),
+      returned: false,
     };
     controllers.set(chunkId, wrapper);
 
@@ -542,12 +542,10 @@ export async function jsonlStreamConsumer<THead>(opts: {
                 }
               },
               return: async () => {
-                wrapper.abortController.abort();
+                wrapper.returned = true;
                 if (
                   chunkDeferred.size === 0 &&
-                  Array.from(controllers.values()).every(
-                    (it) => it.abortController.signal.aborted,
-                  )
+                  Array.from(controllers.values()).every((it) => it.returned)
                 ) {
                   // nothing is listening to the stream anymore
                   streamAbortController.abort();
