@@ -12,7 +12,6 @@ import type {
   RequestInitEsque,
   ResponseEsque,
 } from '../../internals/types';
-import { TRPCClientError } from '../../TRPCClientError';
 import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
 import type { HTTPHeaders } from '../types';
@@ -189,27 +188,22 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
   });
 }
 
-export function httpRequest(opts: HTTPRequestOptions): Promise<HTTPResult> {
+export async function httpRequest(
+  opts: HTTPRequestOptions,
+): Promise<HTTPResult> {
   const meta = {} as HTTPResult['meta'];
 
-  return new Promise<HTTPResult>((resolve, reject) => {
-    fetchHTTPResponse(opts)
-      .then((_res) => {
-        meta.response = _res;
+  const res = await fetchHTTPResponse(opts);
+  meta.response = res;
 
-        return _res.json();
-      })
-      .then((json) => {
-        meta.responseJSON = json;
-        resolve({
-          json: json as TRPCResponse,
-          meta,
-        });
-      })
-      .catch((err) => {
-        reject(TRPCClientError.from(err, { meta }));
-      });
-  });
+  const json = await res.json();
+
+  meta.responseJSON = json;
+
+  return {
+    json: json as TRPCResponse,
+    meta,
+  };
 }
 
 /**
