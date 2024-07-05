@@ -174,7 +174,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
 
     const procedures: Record<string, AnyProcedure> = omitPrototype({});
 
-    function step(from: CreateRouterOptions, path: string[] = []) {
+    function step(from: CreateRouterOptions, path: readonly string[] = []) {
       const aggregate: RouterRecord = omitPrototype({});
       for (const [key, item] of Object.entries(from ?? {})) {
         if (isRouter(item)) {
