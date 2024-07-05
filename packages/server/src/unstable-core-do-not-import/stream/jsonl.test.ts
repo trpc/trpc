@@ -316,6 +316,7 @@ test('e2e, client aborts request halfway through', async () => {
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     onError: onConsumerErrorSpy,
+    abortController: clientAbort,
   });
 
   {
@@ -447,10 +448,14 @@ test('e2e, encode/decode - maxDepth', async () => {
 
   const server = createServerForStream(stream, new AbortController());
 
-  const res = await fetch(server.url);
+  const ac = new AbortController();
+  const res = await fetch(server.url, {
+    signal: ac.signal,
+  });
   const [head] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     deserialize: SuperJSON.deserialize,
+    abortController: ac,
   });
 
   {
