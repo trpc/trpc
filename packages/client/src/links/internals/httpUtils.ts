@@ -94,7 +94,7 @@ export type HTTPBaseRequestOptions = GetInputOptions &
   ResolvedHTTPLinkOptions & {
     type: ProcedureType;
     path: string;
-    signal: AbortSignal | null;
+    signal: Maybe<AbortSignal>;
   };
 
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
