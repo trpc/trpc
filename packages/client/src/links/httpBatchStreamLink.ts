@@ -95,7 +95,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
 
           return {
             promise: responsePromise.then(async (res) => {
-              const [head, streamOpts] = await jsonlStreamConsumer<
+              const [head] = await jsonlStreamConsumer<
                 Record<string, Promise<any>>
               >({
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -108,14 +108,8 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
                     error,
                   });
                 },
-                // pass in an abort controller here!?
+                abortController: ac,
               });
-              streamOpts.streamAbortController.signal.addEventListener(
-                'abort',
-                () => {
-                  ac?.abort();
-                },
-              );
 
               const promises = Object.keys(batchOps).map(
                 async (key): Promise<HTTPResult> => {

@@ -422,9 +422,9 @@ export async function jsonlStreamConsumer<THead>(opts: {
   deserialize?: Deserialize;
   onError?: ConsumerOnError;
   formatError?: (opts: { error: unknown }) => Error;
+  abortController: AbortController | null;
 }) {
   const { deserialize = (v) => v } = opts;
-  const streamAbortController = new AbortController();
 
   let source = createConsumerStream<Head>(opts.from);
   if (deserialize) {
@@ -453,7 +453,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
       Array.from(controllers.values()).every((it) => it.returned)
     ) {
       // nothing is listening to the stream anymore
-      streamAbortController.abort();
+      opts.abortController?.abort();
     }
   };
 
@@ -608,11 +608,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
   source
     .pipeTo(
       new WritableStream({
-        start(controller) {
-          streamAbortController.signal.addEventListener('abort', () => {
-            controller.error(streamAbortController.signal.reason);
-          });
-        },
         async write(chunkOrHead) {
           if (headDeferred) {
             const head = chunkOrHead as Record<number | string, unknown>;
@@ -652,7 +647,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
     await headDeferred.promise,
     {
       controllers,
-      streamAbortController,
     },
   ] as const;
 }
