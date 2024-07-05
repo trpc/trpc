@@ -82,7 +82,7 @@
     "npm-run-all2": "^6.0.0",
     "oauth": "^0.10.0",
     "postcss": "^8.4.14",
-    "prettier": "^3.3.2",
+    "prettier": "^2.8.8",
     "runtypes": "^6.6.0",
     "scale-codec": "^0.13.0",
     "superstruct": "^2.0.0",
