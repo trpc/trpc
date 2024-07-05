@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 function set(
   obj: Record<string, any>,
-  _path: readonly string[] | string,
+  path: string[] | string,
   value: unknown,
 ): void {
-  const path =
-    typeof _path === 'string'
-      ? _path.split(/[\.\[\]]/).filter(Boolean)
-      : [..._path];
+  if (typeof path === 'string') {
+    path = path.split(/[\.\[\]]/).filter(Boolean);
+  }
 
   if (path.length > 1) {
     const p = path.shift()!;
