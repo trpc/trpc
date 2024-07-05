@@ -12,7 +12,6 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import { T } from 'vitest/dist/reporters-xEmem8D4';
 import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
