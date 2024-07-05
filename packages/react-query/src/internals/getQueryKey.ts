@@ -24,7 +24,7 @@ type ProcedureOrRouter =
  * storing in tanstack query.
  **/
 export function getQueryKeyInternal(
-  path: string[],
+  path: readonly string[],
   input: unknown,
   type: QueryType,
 ): TRPCQueryKey {
