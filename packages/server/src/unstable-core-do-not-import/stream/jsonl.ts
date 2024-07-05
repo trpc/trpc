@@ -447,7 +447,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   const chunkDeferred = new Map<ChunkIndex, Deferred<ControllerWrapper>>();
   const controllers = new Map<ChunkIndex, ControllerWrapper>();
 
-  const maybeAbortStream = () => {
+  const maybeAbort = () => {
     if (
       chunkDeferred.size === 0 &&
       Array.from(controllers.values()).every((it) => it.returned)
@@ -510,7 +510,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               // reader.releaseLock();
               controllers.delete(chunkId);
 
-              maybeAbortStream();
+              maybeAbort();
             });
         });
       }
@@ -542,14 +542,14 @@ export async function jsonlStreamConsumer<THead>(opts: {
                     };
                   case ASYNC_ITERABLE_STATUS_DONE:
                     controllers.delete(chunkId);
-                    maybeAbortStream();
+                    maybeAbort();
                     return {
                       done: true,
                       value: undefined,
                     };
                   case ASYNC_ITERABLE_STATUS_ERROR:
                     controllers.delete(chunkId);
-                    maybeAbortStream();
+                    maybeAbort();
                     throw (
                       opts.formatError?.({ error: data }) ??
                       new AsyncError(data)
@@ -558,7 +558,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               },
               return: async () => {
                 wrapper.returned = true;
-                maybeAbortStream();
+                maybeAbort();
                 return {
                   done: true,
                   value: undefined,
