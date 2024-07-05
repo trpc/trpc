@@ -81,10 +81,7 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
   type RootTypes = inferRouterRootTypes<TRouter>;
   const wrappedProxy = createRecursiveProxy<
     DecorateRouterRecord<RootTypes, TRouter['_def']['record']>
-  >(async (opts) => {
-    const path = [...opts.path];
-    const args = [...opts.args];
-
+  >(async ({ path, args }) => {
     const proc = path.reduce(
       (acc, key) =>
         // @ts-expect-error - ??
