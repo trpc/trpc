@@ -445,14 +445,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
   const chunkDeferred = new Map<ChunkIndex, Deferred<ChunkController>>();
   const controllers = new Map<ChunkIndex, ChunkController>();
 
-  const deleteController = (idx: ChunkIndex) => {
-    controllers.delete(idx);
-    if (controllers.size === 0) {
-      // nothing can be listening to the stream anymore
-      abortController.abort();
-    }
-  };
-
   function hydrateChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
@@ -513,7 +505,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
                   throw value;
                 }
                 if (done) {
-                  deleteController(chunkId);
+                  controllers.delete(chunkId);
                   return {
                     done: true,
                     value: undefined,
@@ -529,13 +521,13 @@ export async function jsonlStreamConsumer<THead>(opts: {
                       value: hydrate(data),
                     };
                   case ASYNC_ITERABLE_STATUS_DONE:
-                    deleteController(chunkId);
+                    controllers.delete(chunkId);
                     return {
                       done: true,
                       value: undefined,
                     };
                   case ASYNC_ITERABLE_STATUS_ERROR:
-                    deleteController(chunkId);
+                    controllers.delete(chunkId);
                     throw (
                       opts.formatError?.({ error: data }) ??
                       new AsyncError(data)
@@ -543,8 +535,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
                 }
               },
               return: async () => {
-                deleteController(chunkId);
+                controllers.delete(chunkId);
 
+                if (controllers.size === 0 && chunkDeferred.size === 0) {
+                  // nothing is listening to the stream anymore
+                  abortController.abort();
+                }
                 return {
                   done: true,
                   value: undefined,
