@@ -25,11 +25,15 @@ test('deep key', () => {
   const formData = new FormData();
 
   formData.append('foo.bar.baz', 'qux');
+  formData.append('foo.bar.boo', 'boo');
+  formData.append('foo.bar.0', 'boo');
 
   expect(formDataToObject(formData)).toEqual({
     foo: {
       bar: {
         baz: 'qux',
+        boo: 'boo',
+        0: 'boo',
       },
     },
   });
