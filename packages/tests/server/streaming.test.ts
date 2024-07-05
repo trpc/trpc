@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { IncomingMessage, ServerResponse } from 'node:http';
 import {
   routerToServerAndClientNew,
   waitError,
@@ -14,6 +15,11 @@ import {
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
+import {
+  NodeHTTPCreateContextFnOptions,
+  NodeHTTPCreateContextOption,
+  NodeHTTPHandlerOptions,
+} from '@trpc/server/adapters/node-http';
 import { observable } from '@trpc/server/observable';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
@@ -37,6 +43,7 @@ describe('no transformer', () => {
         iterableDeferred.resolve();
         iterableDeferred = createDeferred();
       };
+      const yieldSpy = vi.fn((v: number) => v);
 
       const router = t.router({
         deferred: t.procedure
@@ -70,7 +77,7 @@ describe('no transformer', () => {
 
         iterable: t.procedure.query(async function* () {
           for (let i = 0; i < 10; i++) {
-            yield i + 1;
+            yield yieldSpy(i + 1);
             await iterableDeferred.promise;
             iterableDeferred = createDeferred();
           }
@@ -96,7 +103,17 @@ describe('no transformer', () => {
         };
       };
       const opts = routerToServerAndClientNew(router, {
-        server: {},
+        server: {
+          createContext: (opts) => {
+            return opts;
+          },
+        },
+        wsClient: {
+          lazy: {
+            enabled: true,
+            closeMs: 1,
+          },
+        },
         client(opts) {
           return {
             links: [
@@ -110,6 +127,7 @@ describe('no transformer', () => {
       });
       return {
         ...opts,
+        yieldSpy,
         manualRelease,
         nextIterable,
         iterablePromise: iterableDeferred.promise,
@@ -248,6 +266,10 @@ describe('no transformer', () => {
     });
     ctx.nextIterable();
     ctx.nextIterable();
+
+    await waitFor(() => {
+      expect(ctx.connections.size).toBe(0);
+    });
     expect(err).toMatchInlineSnapshot(`DOMException {}`);
     expect(err.message).toMatchInlineSnapshot(`"The operation was aborted."`);
   });
