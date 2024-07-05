@@ -447,6 +447,16 @@ export async function jsonlStreamConsumer<THead>(opts: {
   const chunkDeferred = new Map<ChunkIndex, Deferred<ControllerWrapper>>();
   const controllers = new Map<ChunkIndex, ControllerWrapper>();
 
+  const maybeAbortStream = () => {
+    if (
+      chunkDeferred.size === 0 &&
+      Array.from(controllers.values()).every((it) => it.returned)
+    ) {
+      // nothing is listening to the stream anymore
+      streamAbortController.abort();
+    }
+  };
+
   function hydrateChunkDefinition(value: ChunkDefinition, path: PathArray) {
     const [_path, type, chunkId] = value;
 
@@ -486,6 +496,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               switch (status) {
                 case PROMISE_STATUS_FULFILLED:
                   resolve(hydrate(data, path));
+
                   break;
                 case PROMISE_STATUS_REJECTED:
                   reject(
@@ -498,6 +509,8 @@ export async function jsonlStreamConsumer<THead>(opts: {
             .finally(() => {
               // reader.releaseLock();
               controllers.delete(chunkId);
+
+              maybeAbortStream();
             });
         });
       }
@@ -529,12 +542,14 @@ export async function jsonlStreamConsumer<THead>(opts: {
                     };
                   case ASYNC_ITERABLE_STATUS_DONE:
                     controllers.delete(chunkId);
+                    maybeAbortStream();
                     return {
                       done: true,
                       value: undefined,
                     };
                   case ASYNC_ITERABLE_STATUS_ERROR:
                     controllers.delete(chunkId);
+                    maybeAbortStream();
                     throw (
                       opts.formatError?.({ error: data }) ??
                       new AsyncError(data)
@@ -543,13 +558,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               },
               return: async () => {
                 wrapper.returned = true;
-                if (
-                  chunkDeferred.size === 0 &&
-                  Array.from(controllers.values()).every((it) => it.returned)
-                ) {
-                  // nothing is listening to the stream anymore
-                  streamAbortController.abort();
-                }
+                maybeAbortStream();
                 return {
                   done: true,
                   value: undefined,
