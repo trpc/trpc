@@ -1,18 +1,25 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+
+const isNumberString = (str: string) => /^\d+$/.test(str);
+
 function set(
   obj: Record<string, any>,
-  path: string[] | string,
+  path: readonly string[],
   value: unknown,
 ): void {
-  if (typeof path === 'string') {
-    path = path.split(/[\.\[\]]/).filter(Boolean);
-  }
-
   if (path.length > 1) {
-    const p = path.shift()!;
-    const isArrayIndex = /^\d+$/.test(path[0]!);
-    obj[p] = obj[p] || (isArrayIndex ? [] : {});
-    set(obj[p], path, value);
+    const newPath = [...path];
+    const key = newPath.shift()!;
+    const nextKey = newPath[0]!;
+
+    if (!obj[key]) {
+      obj[key] = isNumberString(nextKey) ? [] : {};
+    } else if (Array.isArray(obj[key]) && !isNumberString(nextKey)) {
+      obj[key] = Object.fromEntries(Object.entries(obj[key]));
+    }
+
+    set(obj[key], newPath, value);
+
     return;
   }
   const p = path[0]!;
@@ -29,7 +36,8 @@ export function formDataToObject(formData: FormData) {
   const obj: Record<string, unknown> = {};
 
   for (const [key, value] of formData.entries()) {
-    set(obj, key, value);
+    const parts = key.split(/[\.\[\]]/).filter(Boolean);
+    set(obj, parts, value);
   }
 
   return obj;
