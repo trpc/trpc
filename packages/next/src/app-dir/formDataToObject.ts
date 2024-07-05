@@ -1,15 +1,18 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 function set(
   obj: Record<string, any>,
-  path: readonly string[] | string,
+  _path: readonly string[] | string,
   value: unknown,
 ): void {
-  if (typeof path === 'string') {
-    path = path.split(/[\.\[\]]/).filter(Boolean);
+  let path;
+  if (typeof _path === 'string') {
+    path = _path.split(/[\.\[\]]/).filter(Boolean);
+  } else {
+    path = [..._path];
   }
 
   if (path.length > 1) {
-    const p = [...path].shift()!;
+    const p = path.shift()!;
     const isArrayIndex = /^\d+$/.test(path[0]!);
     obj[p] = obj[p] || (isArrayIndex ? [] : {});
     set(obj[p], path, value);
