@@ -3,7 +3,7 @@
  * This file is included in `/next.config.js` which ensures the app isn't built with invalid env vars.
  * It has to be a `.js`-file to be imported there.
  */
-/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { z } = require('zod');
 
 /*eslint sort-keys: "error"*/

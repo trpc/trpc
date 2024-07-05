@@ -8,6 +8,7 @@ test('decorate independently', () => {
   type Context = {
     user: User;
   };
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   type Meta = {
     // ..
   };
@@ -80,7 +81,7 @@ describe('standalone middleware', () => {
   test('without ctx', () => {
     const addBarToCtxMiddleware = experimental_trpcMiddleware().create(
       (opts) => {
-        // eslint-disable-next-line @typescript-eslint/ban-types
+        // eslint-disable-next-line @typescript-eslint/no-empty-object-type
         expectTypeOf(opts.ctx).toEqualTypeOf<object | {}>();
         return opts.next({
           ctx: {

@@ -100,7 +100,7 @@ export type Overwrite<TType, TWith> = TWith extends any
         ? { [key: string]: TWith[string] }
         : number extends keyof TWith
         ? { [key: number]: TWith[number] }
-        : // eslint-disable-next-line @typescript-eslint/ban-types
+        : // eslint-disable-next-line @typescript-eslint/no-empty-object-type
           {})
     : TWith
   : never;

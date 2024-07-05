@@ -318,7 +318,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
 type MergeRouters<
   TRouters extends AnyRouter[],
   TRoot extends AnyRootTypes = TRouters[0]['_def']['_config']['$types'],
-  // eslint-disable-next-line @typescript-eslint/ban-types
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   TRecord extends RouterRecord = {},
 > = TRouters extends [
   infer Head extends AnyRouter,

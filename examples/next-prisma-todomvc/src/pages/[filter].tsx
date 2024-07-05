@@ -221,6 +221,7 @@ export default function TodosPage(props: PageProps) {
 
           <input
             className="new-todo"
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
             placeholder={t('what_needs_to_be_done') as string}
             autoFocus
             onKeyDown={(e) => {

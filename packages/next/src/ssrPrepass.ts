@@ -59,7 +59,7 @@ export const ssrPrepass: TRPCPrepassHelper = (opts) => {
       if (typeof parent.ssr === 'function') {
         try {
           return await parent.ssr({ ctx: appOrPageCtx.ctx });
-        } catch (e) {
+        } catch {
           return false;
         }
       }

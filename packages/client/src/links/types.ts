@@ -62,6 +62,7 @@ export type TRPCFetch = (
   options?: RequestInit,
 ) => Promise<ResponseEsque>;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface TRPCClientRuntime {
   // nothing here anymore
 }

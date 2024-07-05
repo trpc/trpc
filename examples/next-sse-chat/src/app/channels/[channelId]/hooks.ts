@@ -112,6 +112,7 @@ export function useLivePosts(channelId: string) {
       },
       onError(err) {
         console.error('Subscription error:', err);
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         utils.post.infinite.invalidate();
       },
     },

@@ -99,7 +99,7 @@ describe('Zod schema serialization kitchen sink', () => {
       zUnion: string | number;
       zIntersection: { name: string; age: number };
       zLazy: string;
-      // eslint-disable-next-line @typescript-eslint/ban-types
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
       zPromise: {};
       // zFunction: (...args: any[]) => any; <-- not serialized, OK.
       zMap: object;

@@ -5,7 +5,7 @@ import type { Simplify, WithoutIndexSignature } from '../types';
  * @link https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
  */
 type JsonPrimitive = boolean | number | string | null;
-// eslint-disable-next-line @typescript-eslint/ban-types
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 type NonJsonPrimitive = Function | symbol | undefined;
 /*
  * `any` is the only type that can let you equate `0` with `1`

@@ -11,16 +11,8 @@ const config = {
   ],
   reportUnusedDisableDirectives: true,
   parserOptions: {
-    ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
-    sourceType: 'module', // Allows for the use of import
     tsconfigRootDir: __dirname,
-    project: [
-      './examples/.*/*/tsconfig.json',
-      './examples/*/tsconfig.json',
-      './packages/*/tsconfig.json',
-      './tsconfig.json',
-      './www/tsconfig.json',
-    ], // Allows for the use of rules which require parserServices to be generated
+    projectService: true,
   },
   // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
   rules: {
@@ -30,10 +22,18 @@ const config = {
     // These rules enabled in typescript-eslint's configs don't apply here
     '@typescript-eslint/consistent-indexed-object-style': 'off',
     '@typescript-eslint/consistent-type-definitions': 'off',
+    '@typescript-eslint/only-throw-error': 'off',
     '@typescript-eslint/no-empty-interface': 'off',
 
-    // Todo: do we want these?
+    // Todo: it would be nice to eventually enable / fully enable these...
+    '@typescript-eslint/no-base-to-string': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-unused-expressions': 'off',
+    '@typescript-eslint/no-empty-object-type': [
+      'error',
+      { allowInterfaces: 'with-single-extends' },
+    ],
+    '@typescript-eslint/prefer-promise-reject-errors': 'off',
 
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',

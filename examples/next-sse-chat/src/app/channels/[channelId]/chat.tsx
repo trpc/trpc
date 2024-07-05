@@ -55,6 +55,7 @@ export function Chat(props: Readonly<{ channelId: string }>) {
                     livePosts.query.isFetchingNextPage
                   }
                   onClick={() => {
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     livePosts.query.fetchNextPage();
                   }}
                 >

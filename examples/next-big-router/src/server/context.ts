@@ -1,5 +1,6 @@
 import type * as trpcNext from '@trpc/server/adapters/next';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface CreateContextOptions {
   // session: Session | null
 }
