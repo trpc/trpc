@@ -84,28 +84,23 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     return chain$.pipe(share());
   }
 
-  private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
+  private async requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
     type: TRPCType;
     input: TInput;
     path: string;
     context?: OperationContext;
     signal: Maybe<AbortSignal>;
   }): Promise<TOutput> {
-    const req$ = this.$request<TInput, TOutput>(opts);
-    type TValue = inferObservableValue<typeof req$>;
-    const promise = observableToPromise<TValue>(req$);
+    try {
+      const req$ = this.$request<TInput, TOutput>(opts);
+      type TValue = inferObservableValue<typeof req$>;
 
-    return new Promise<TOutput>((resolve, reject) => {
-      promise
-        .then((envelope) => {
-          const data = (envelope.result as any).data;
-
-          resolve(data);
-        })
-        .catch((err) => {
-          reject(TRPCClientError.from(err));
-        });
-    });
+      const envelope = await observableToPromise<TValue>(req$);
+      const data = (envelope.result as any).data;
+      return data;
+    } catch (err) {
+      throw TRPCClientError.from(err as Error);
+    }
   }
   public query(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({
