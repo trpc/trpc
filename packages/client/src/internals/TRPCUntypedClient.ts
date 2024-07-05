@@ -93,11 +93,9 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
   }): Promise<TOutput> {
     const req$ = this.$request<TInput, TOutput>(opts);
     type TValue = inferObservableValue<typeof req$>;
-    const { promise, abort } = observableToPromise<TValue>(req$);
+    const promise = observableToPromise<TValue>(req$);
 
-    const abortablePromise = new Promise<TOutput>((resolve, reject) => {
-      opts.signal?.addEventListener('abort', abort);
-
+    return new Promise<TOutput>((resolve, reject) => {
       promise
         .then((envelope) => {
           const data = (envelope.result as any).data;
@@ -108,8 +106,6 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
           reject(TRPCClientError.from(err));
         });
     });
-
-    return abortablePromise;
   }
   public query(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({

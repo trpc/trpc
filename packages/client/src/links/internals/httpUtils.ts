@@ -1,15 +1,13 @@
 import type {
   AnyClientTypes,
   CombinedDataTransformer,
+  Maybe,
   ProcedureType,
   TRPCAcceptHeader,
   TRPCResponse,
 } from '@trpc/server/unstable-core-do-not-import';
 import { getFetch } from '../../getFetch';
-import { getAbortController } from '../../internals/getAbortController';
 import type {
-  AbortControllerEsque,
-  AbortControllerInstanceEsque,
   FetchEsque,
   RequestInitEsque,
   ResponseEsque,
@@ -17,7 +15,7 @@ import type {
 import { TRPCClientError } from '../../TRPCClientError';
 import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
-import type { HTTPHeaders, PromiseAndCancel } from '../types';
+import type { HTTPHeaders } from '../types';
 
 /**
  * @internal
@@ -31,10 +29,6 @@ export type HTTPLinkBaseOptions<
    */
   fetch?: FetchEsque;
   /**
-   * Add ponyfill for AbortController
-   */
-  AbortController?: AbortControllerEsque | null;
-  /**
    * Send all requests `as POST`s requests regardless of the procedure type
    * The HTTP handler must separately allow overriding the method. See:
    * @link https://trpc.io/docs/rpc
@@ -45,7 +39,6 @@ export type HTTPLinkBaseOptions<
 export interface ResolvedHTTPLinkOptions {
   url: string;
   fetch?: FetchEsque;
-  AbortController: AbortControllerEsque | null;
   transformer: CombinedDataTransformer;
   methodOverride?: 'POST';
 }
@@ -56,7 +49,6 @@ export function resolveHTTPLinkOptions(
   return {
     url: opts.url.toString(),
     fetch: opts.fetch,
-    AbortController: getAbortController(opts.AbortController),
     transformer: getTransformer(opts.transformer),
     methodOverride: opts.methodOverride,
   };
@@ -102,6 +94,7 @@ export type HTTPBaseRequestOptions = GetInputOptions &
   ResolvedHTTPLinkOptions & {
     type: ProcedureType;
     path: string;
+    signal: AbortSignal | null;
   };
 
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
@@ -151,7 +144,7 @@ export type Requester = (
   opts: HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   },
-) => PromiseAndCancel<HTTPResult>;
+) => Promise<HTTPResult>;
 
 export const jsonHttpRequester: Requester = (opts) => {
   return httpRequest({
@@ -167,10 +160,7 @@ export type HTTPRequestOptions = ContentOptions &
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   };
 
-export async function fetchHTTPResponse(
-  opts: HTTPRequestOptions,
-  ac?: AbortControllerInstanceEsque | null,
-) {
+export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
   const { type } = opts;
@@ -193,24 +183,20 @@ export async function fetchHTTPResponse(
 
   return getFetch(opts.fetch)(url, {
     method: opts.methodOverride ?? METHOD[type],
-    signal: ac?.signal,
+    signal: opts.signal,
     body,
     headers,
   });
 }
 
-export function httpRequest(
-  opts: HTTPRequestOptions,
-): PromiseAndCancel<HTTPResult> {
-  const ac = opts.AbortController ? new opts.AbortController() : null;
+export function httpRequest(opts: HTTPRequestOptions): Promise<HTTPResult> {
   const meta = {} as HTTPResult['meta'];
 
-  let done = false;
-  const promise = new Promise<HTTPResult>((resolve, reject) => {
-    fetchHTTPResponse(opts, ac)
+  return new Promise<HTTPResult>((resolve, reject) => {
+    fetchHTTPResponse(opts)
       .then((_res) => {
         meta.response = _res;
-        done = true;
+
         return _res.json();
       })
       .then((json) => {
@@ -221,14 +207,41 @@ export function httpRequest(
         });
       })
       .catch((err) => {
-        done = true;
         reject(TRPCClientError.from(err, { meta }));
       });
   });
-  const cancel = () => {
-    if (!done) {
-      ac?.abort();
+}
+
+/**
+ * Merges multiple abort signals into a single one
+ * - When all signals have been aborted, the merged signal will be aborted
+ */
+export function mergeAbortSignals(
+  opts: {
+    signal: Maybe<AbortSignal>;
+  }[],
+): AbortController {
+  const ac = new AbortController();
+
+  if (opts.some((o) => !o.signal)) {
+    return ac;
+  }
+
+  const count = opts.length;
+
+  let abortedCount = 0;
+
+  const onAbort = () => {
+    if (++abortedCount === count) {
+      ac.abort();
     }
   };
-  return { promise, cancel };
+
+  for (const o of opts) {
+    o.signal?.addEventListener('abort', onAbort, {
+      once: true,
+    });
+  }
+
+  return ac;
 }

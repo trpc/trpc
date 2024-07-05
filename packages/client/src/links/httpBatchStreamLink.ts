@@ -13,6 +13,7 @@ import {
   fetchHTTPResponse,
   getBody,
   getUrl,
+  mergeAbortSignals,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import type { Operation, TRPCLink } from './types';
@@ -57,6 +58,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
             type,
             path,
             inputs,
+            signal: null,
           });
 
           return url.length <= maxURLLength;
@@ -65,48 +67,30 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
 
-          const ac = resolvedOpts.AbortController
-            ? new resolvedOpts.AbortController()
-            : null;
+          const ac = mergeAbortSignals(batchOps);
 
-          let abortCount = 0;
-          for (const op of batchOps) {
-            op.signal?.addEventListener(
-              'abort',
-              () => {
-                if (++abortCount === batchOps.length) {
-                  ac?.abort();
-                }
-              },
-              {
-                once: true,
-              },
-            );
-          }
-          const responsePromise = fetchHTTPResponse(
-            {
-              ...resolvedOpts,
-              type,
-              contentTypeHeader: 'application/json',
-              trpcAcceptHeader: 'application/jsonl',
-              getUrl,
-              getBody,
-              inputs,
-              path,
-              headers() {
-                if (!opts.headers) {
-                  return {};
-                }
-                if (typeof opts.headers === 'function') {
-                  return opts.headers({
-                    opList: batchOps as NonEmptyArray<Operation>,
-                  });
-                }
-                return opts.headers;
-              },
+          const responsePromise = fetchHTTPResponse({
+            ...resolvedOpts,
+            signal: ac.signal,
+            type,
+            contentTypeHeader: 'application/json',
+            trpcAcceptHeader: 'application/jsonl',
+            getUrl,
+            getBody,
+            inputs,
+            path,
+            headers() {
+              if (!opts.headers) {
+                return {};
+              }
+              if (typeof opts.headers === 'function') {
+                return opts.headers({
+                  opList: batchOps as NonEmptyArray<Operation>,
+                });
+              }
+              return opts.headers;
             },
-            ac,
-          );
+          });
 
           return {
             promise: responsePromise.then(async (res) => {
@@ -153,9 +137,6 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
               );
               return promises;
             }),
-            cancel() {
-              ac?.abort();
-            },
           };
         },
       };
@@ -174,7 +155,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
           );
         }
         const loader = loaders[op.type];
-        const { promise, cancel } = loader.load(op);
+        const promise = loader.load(op);
 
         let _res = undefined as HTTPResult | undefined;
         promise
@@ -207,7 +188,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
           });
 
         return () => {
-          cancel();
+          // noop
         };
       });
     };

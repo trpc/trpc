@@ -102,7 +102,6 @@ class ObservableAbortError extends Error {
 export function observableToPromise<TValue>(
   observable: Observable<TValue, unknown>,
 ) {
-  let abort: () => void;
   const promise = new Promise<TValue>((resolve, reject) => {
     let isDone = false;
     function onDone() {
@@ -129,13 +128,8 @@ export function observableToPromise<TValue>(
         onDone();
       },
     });
-    abort = onDone;
   });
-  return {
-    promise,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    abort: abort!,
-  };
+  return promise;
 }
 
 /**
