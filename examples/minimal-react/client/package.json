@@ -17,7 +17,6 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@tanstack/react-query-devtools": "^5.49.2",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^3.1.0",

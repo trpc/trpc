@@ -1,7 +1,7 @@
 import { trpc } from './utils/trpc';
 
 export function Greeting() {
-  const [data] = trpc.greeting.useSuspenseQuery({ name: 'tRPC user' });
+  const greeting = trpc.greeting.useQuery({ name: 'tRPC user' });
 
-  return <div>{data.text}</div>;
+  return <div>{greeting.data?.text}</div>;
 }
