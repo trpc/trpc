@@ -101,6 +101,7 @@ export interface TRPCRequestInfo {
   connectionParams: Dict<string> | null;
   /**
    * Signal when the request is aborted
+   * Can be used to abort async operations during the request, e.g. `fetch` requests or database queries
    */
   signal: AbortSignal;
 }
