@@ -405,6 +405,8 @@ test('e2e, client aborts request halfway through - through breaking async iterab
 
     for await (const item of iterable) {
       if (item === 2) {
+        // ✨ This will actually abort the full stream and the request since there's no more data to read
+
         break;
       }
     }
