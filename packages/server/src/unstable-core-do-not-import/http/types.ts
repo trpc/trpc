@@ -99,6 +99,10 @@ export interface TRPCRequestInfo {
    * Connection params when using `httpSubscriptionLink` or `createWSClient`
    */
   connectionParams: Dict<string> | null;
+  /**
+   * Signal when the request is aborted
+   */
+  signal: AbortSignal;
 }
 
 /**
