@@ -79,7 +79,7 @@ export interface RootConfig<TTypes extends RootTypes> {
        * Enable server-sent events (SSE) subscriptions
        * @default true
        */
-      enabled: boolean;
+      enabled?: boolean;
     } & Omit<SSEStreamProducerOptions, 'maxDepth' | 'data' | 'serialize'>;
   };
 }
