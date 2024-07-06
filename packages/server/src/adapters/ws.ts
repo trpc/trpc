@@ -107,11 +107,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       );
     }
 
-    async function createCtxPromise(
+    function createCtxPromise(
       getConnectionParams: () => TRPCRequestInfo['connectionParams'],
     ): Promise<inferRouterContext<TRouter>> {
-      try {
-        return await createContext?.({
+      return run(async () => {
+        ctx = await createContext?.({
           req,
           res: client,
           info: {
@@ -123,7 +123,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             signal: abortController.signal,
           },
         });
-      } catch (cause) {
+
+        return ctx;
+      }).catch((cause) => {
         const error = getTRPCErrorFromUnknown(cause);
         opts.onError?.({
           error,
@@ -151,7 +153,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
 
         throw error;
-      }
+      });
     }
 
     /**
@@ -165,7 +167,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         ? unsetContextSymbol
         : createCtxPromise(() => null);
 
-    const ctx: inferRouterContext<TRouter> | undefined = undefined;
+    let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
       const { id, jsonrpc } = msg;
