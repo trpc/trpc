@@ -97,6 +97,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
   return async (client: ws.WebSocket, req: IncomingMessage) => {
     const clientSubscriptions = new Map<number | string, AbortController>();
+    const abortController = new AbortController();
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
@@ -106,11 +107,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       );
     }
 
-    function createCtxPromise(
+    async function createCtxPromise(
       getConnectionParams: () => TRPCRequestInfo['connectionParams'],
     ): Promise<inferRouterContext<TRouter>> {
-      return run(async () => {
-        ctx = await createContext?.({
+      try {
+        return await createContext?.({
           req,
           res: client,
           info: {
@@ -119,11 +120,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             isBatchCall: false,
             accept: null,
             type: 'unknown',
+            signal: abortController.signal,
           },
         });
-
-        return ctx;
-      }).catch((cause) => {
+      } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         opts.onError?.({
           error,
@@ -151,7 +151,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
 
         throw error;
-      });
+      }
     }
 
     /**
@@ -165,7 +165,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         ? unsetContextSymbol
         : createCtxPromise(() => null);
 
-    let ctx: inferRouterContext<TRouter> | undefined = undefined;
+    const ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
       const { id, jsonrpc } = msg;
@@ -410,6 +410,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         sub.abort();
       }
       clientSubscriptions.clear();
+      abortController.abort();
     });
 
     if (ctxPromise !== unsetContextSymbol) {
