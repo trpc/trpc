@@ -100,7 +100,9 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     const { promise, abort } = observableToPromise<TValue>(req$);
 
     const abortablePromise = new Promise<TOutput>((resolve, reject) => {
-      opts.signal?.addEventListener('abort', abort);
+      opts.signal?.addEventListener('abort', abort, {
+        once: true,
+      });
 
       promise
         .then((envelope) => {
