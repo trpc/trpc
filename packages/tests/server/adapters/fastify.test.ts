@@ -478,6 +478,7 @@ describe('authorized user', () => {
         ],
         "connectionParams": null,
         "isBatchCall": true,
+        "signal": Object {},
         "type": "query",
       }
     `);

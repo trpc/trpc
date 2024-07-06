@@ -130,6 +130,7 @@ test('request info from context should include both calls', async () => {
         ],
         "connectionParams": null,
         "isBatchCall": true,
+        "signal": Object {},
         "type": "query",
       },
     ]
