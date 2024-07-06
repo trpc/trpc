@@ -52,7 +52,6 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           const inputs = batchOps.map((op) => op.input);
           const ac = mergeAbortSignals(batchOps);
 
-          ac.signal.throwIfAborted();
           const res = await jsonHttpRequester({
             ...resolvedOpts,
             path,

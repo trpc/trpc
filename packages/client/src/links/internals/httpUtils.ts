@@ -160,6 +160,7 @@ export type HTTPRequestOptions = ContentOptions &
   };
 
 export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
+  opts.signal?.throwIfAborted();
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
   const { type } = opts;

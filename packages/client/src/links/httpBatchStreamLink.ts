@@ -69,7 +69,6 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
 
           const ac = mergeAbortSignals(batchOps);
 
-          ac.signal.throwIfAborted();
           const responsePromise = fetchHTTPResponse({
             ...resolvedOpts,
             signal: ac.signal,
