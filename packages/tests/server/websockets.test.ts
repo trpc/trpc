@@ -4,7 +4,7 @@ import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
-import { initTRPC, TRPCError } from '@trpc/server';
+import { initTRPC, sse, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import type { Observer } from '@trpc/server/observable';
@@ -13,12 +13,14 @@ import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
 } from '@trpc/server/rpc';
+import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import WebSocket, { Server } from 'ws';
 import { z } from 'zod';
 
 type Message = {
   id: string;
+  title: string;
 };
 
 function factory(config?: {
@@ -38,6 +40,19 @@ function factory(config?: {
 
   const t = initTRPC.create();
 
+  let iterableDeferred = createDeferred<void>();
+  const nextIterable = () => {
+    iterableDeferred.resolve();
+    iterableDeferred = createDeferred();
+  };
+
+  const events = new Array(10).fill(null).map(
+    (_, i): Message => ({
+      id: String(i),
+      title: 'hello ' + i,
+    }),
+  );
+
   const appRouter = t.router({
     greeting: t.procedure.input(z.string().nullish()).query(({ input }) => {
       return `hello ${input ?? 'world'}`;
@@ -48,6 +63,30 @@ function factory(config?: {
       await waitMs(50);
       return 'slow query resolved';
     }),
+    iterable: t.procedure
+      .input(
+        z
+          .object({
+            lastEventId: z.coerce.number().nullish(),
+          })
+          .nullish(),
+      )
+      .subscription(async function* (opts) {
+        const from = opts?.input?.lastEventId ?? 0;
+
+        while (true) {
+          await iterableDeferred.promise;
+          const msg: Message = {
+            id: String(from),
+            title: 'hello ' + from,
+          };
+
+          yield sse({
+            id: String(from),
+            data: msg,
+          });
+        }
+      }),
 
     postEdit: t.procedure
       .input(
@@ -137,6 +176,7 @@ function factory(config?: {
     onOpenMock,
     onCloseMock,
     onSlowMutationCalled,
+    nextIterable,
   };
 }
 
@@ -1254,6 +1294,47 @@ describe('lazy mode', () => {
         expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
       });
     }
+    await ctx.close();
+  });
+});
+
+describe('lastEventId', () => {
+  test('lastEventId', async () => {
+    const ctx = factory({
+      wsClient: {},
+    });
+
+    const onData = vi.fn<
+      [
+        {
+          id: string;
+          data: Message;
+        },
+      ]
+    >();
+    const sub = ctx.client.iterable.subscribe(undefined, {
+      onStarted: () => {
+        ctx.nextIterable();
+      },
+      onData(data) {
+        console.log('data', data);
+        onData(data);
+      },
+    });
+
+    await waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+    expect(onData.mock.calls[0]![0]).toEqual([
+      {
+        id: '0',
+        data: {
+          id: '0',
+          title: 'hello 0',
+        },
+      },
+    ]);
+
     await ctx.close();
   });
 });
