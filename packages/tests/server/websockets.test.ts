@@ -46,13 +46,6 @@ function factory(config?: {
     iterableDeferred = createDeferred();
   };
 
-  const events = new Array(10).fill(null).map(
-    (_, i): Message => ({
-      id: String(i),
-      title: 'hello ' + i,
-    }),
-  );
-
   const appRouter = t.router({
     greeting: t.procedure.input(z.string().nullish()).query(({ input }) => {
       return `hello ${input ?? 'world'}`;
@@ -72,9 +65,10 @@ function factory(config?: {
           .nullish(),
       )
       .subscription(async function* (opts) {
-        const from = opts?.input?.lastEventId ?? 0;
+        let from = opts?.input?.lastEventId ?? 0;
 
         while (true) {
+          from++;
           await iterableDeferred.promise;
           const msg: Message = {
             id: String(from),
@@ -1316,7 +1310,7 @@ describe('lastEventId', () => {
     const sub = ctx.client.iterable.subscribe(undefined, {
       onStarted,
       onData(data) {
-        console.log('data', data);
+        // console.log('data', data);
         onData(data);
       },
     });
@@ -1332,10 +1326,10 @@ describe('lastEventId', () => {
         expect(onData).toHaveBeenCalledTimes(1);
       });
       expect(onData.mock.calls[0]![0]).toEqual({
-        id: '0',
+        id: '1',
         data: {
-          id: '0',
-          title: 'hello 0',
+          id: '1',
+          title: 'hello 1',
         },
       });
     }
@@ -1354,10 +1348,10 @@ describe('lastEventId', () => {
 
       // Expect the next message to be the second one
       expect(onData.mock.calls[1]![0]).toEqual({
-        id: '1',
+        id: '2',
         data: {
-          id: '1',
-          title: 'hello 1',
+          id: '2',
+          title: 'hello 2',
         },
       });
     }

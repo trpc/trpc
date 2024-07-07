@@ -171,6 +171,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
       const { id, jsonrpc } = msg;
+
       /* istanbul ignore next -- @preserve */
       if (id === null) {
         throw new TRPCError({
@@ -182,9 +183,22 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         clientSubscriptions.get(id)?.abort();
         return;
       }
-      const { path, input } = msg.params;
+      const { path, lastEventId } = msg.params;
+      let { input } = msg.params;
       const type = msg.method;
       try {
+        if (lastEventId !== undefined) {
+          if (isObject(input)) {
+            input = {
+              ...input,
+              lastEventId: lastEventId,
+            };
+          } else {
+            input ??= {
+              lastEventId: lastEventId,
+            };
+          }
+        }
         await ctxPromise; // asserts context has been set
 
         const result = await callProcedure({
@@ -195,7 +209,16 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           type,
         });
 
+        const isIterableResult =
+          isAsyncIterable(result) || isObservable(result);
+
         if (type !== 'subscription') {
+          if (isIterableResult) {
+            throw new TRPCError({
+              code: 'UNSUPPORTED_MEDIA_TYPE',
+              message: `Cannot return an async iterable or observable from a ${type} procedure with WebSockets`,
+            });
+          }
           // send the value as data if the method is not a subscription
           respond({
             id,
@@ -208,7 +231,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           return;
         }
 
-        if (!isObservable(result) && !isAsyncIterable(result)) {
+        if (!isIterableResult) {
           throw new TRPCError({
             message: `Subscription ${path} did not return an observable or a AsyncGenerator`,
             code: 'INTERNAL_SERVER_ERROR',
