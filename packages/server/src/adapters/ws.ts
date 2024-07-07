@@ -27,13 +27,15 @@ import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable } from '../observable';
 import { observableToAsyncIterable } from '../observable/observable';
 // eslint-disable-next-line no-restricted-imports
+
+// eslint-disable-next-line no-restricted-imports
 import {
   isAsyncIterable,
   isObject,
+  isSSEMessageEnvelope,
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
-import { isSSEMessageEnvelope } from '../unstable-core-do-not-import/stream/sse';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
