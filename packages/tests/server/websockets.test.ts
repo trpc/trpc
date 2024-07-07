@@ -1312,28 +1312,55 @@ describe('lastEventId', () => {
         },
       ]
     >();
+    const onStarted = vi.fn();
     const sub = ctx.client.iterable.subscribe(undefined, {
-      onStarted: () => {
-        ctx.nextIterable();
-      },
+      onStarted,
       onData(data) {
         console.log('data', data);
         onData(data);
       },
     });
 
-    await waitFor(() => {
-      expect(onData).toHaveBeenCalledTimes(1);
-    });
-    expect(onData.mock.calls[0]![0]).toEqual([
-      {
+    {
+      // connect and wait for the first message
+
+      await waitFor(() => {
+        expect(onStarted).toHaveBeenCalledTimes(1);
+      });
+      ctx.nextIterable();
+      await waitFor(() => {
+        expect(onData).toHaveBeenCalledTimes(1);
+      });
+      expect(onData.mock.calls[0]![0]).toEqual({
         id: '0',
         data: {
           id: '0',
           title: 'hello 0',
         },
-      },
-    ]);
+      });
+    }
+    {
+      // disconnect and wait for the next message
+      ctx.destroyConnections();
+
+      await waitFor(() => {
+        expect(onStarted).toHaveBeenCalledTimes(2);
+      });
+      ctx.nextIterable();
+
+      await waitFor(() => {
+        expect(onData).toHaveBeenCalledTimes(2);
+      });
+
+      // Expect the next message to be the second one
+      expect(onData.mock.calls[1]![0]).toEqual({
+        id: '1',
+        data: {
+          id: '1',
+          title: 'hello 1',
+        },
+      });
+    }
 
     await ctx.close();
   });

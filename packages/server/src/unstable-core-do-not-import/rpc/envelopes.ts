@@ -101,7 +101,13 @@ export interface TRPCResultMessage<TData>
   extends JSONRPC2.ResultResponse<
     | { type: 'started'; data?: never }
     | { type: 'stopped'; data?: never }
-    | (TRPCResult<TData> & { type: 'data' })
+    | (TRPCResult<TData> & {
+        type: 'data';
+        /**
+         * The id of the message to keep track of in case of a reconnect
+         */
+        id?: string;
+      })
   > {}
 
 export type TRPCResponseMessage<

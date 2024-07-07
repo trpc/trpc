@@ -21,6 +21,7 @@ import type {
   TRPCConnectionParamsMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
+  TRPCResultMessage,
 } from '../@trpc/server/rpc';
 import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable } from '../observable';
@@ -32,6 +33,7 @@ import {
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
+import { isSSEMessageEnvelope } from '../unstable-core-do-not-import/stream/sse';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
@@ -275,13 +277,21 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               break;
             }
 
+            const result: TRPCResultMessage<unknown>['result'] = {
+              type: 'data',
+              data: next.value,
+            };
+
+            if (isSSEMessageEnvelope(next.value)) {
+              const message = next.value[1];
+              result.id = message.id;
+              result.data = message;
+            }
+
             respond({
               id,
               jsonrpc,
-              result: {
-                type: 'data',
-                data: next.value,
-              },
+              result,
             });
           }
 
