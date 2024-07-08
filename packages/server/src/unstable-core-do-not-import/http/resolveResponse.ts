@@ -380,6 +380,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             ? observableToAsyncIterable(data)
             : data;
           const stream = sseStreamProducer({
+            ...router._def._config.experimental?.sseSubscriptions,
             data: dataAsIterable,
             serialize: (v) => config.transformer.output.serialize(v),
           });
