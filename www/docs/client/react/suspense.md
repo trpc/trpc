@@ -132,3 +132,55 @@ const Component = (props: { postIds: string[] }) => {
   return <>{/* [...] */}</>;
 };
 ```
+
+## Prefetching
+
+If you are using suspense queries, you can improve the preformance of your application by adoptiong a [render-as-you-fetch](https://reactjs.org/docs/concurrent-mode-suspense.html#approach-3-render-as-you-fetch) approach.
+:::note
+
+- Prefetching and the render-as-you-fetch model are very dependent on the framework and router you are using. We recommend reading your frameworks router docs along with the [@tanstack/react-query docs](https://tanstack.com/query/v4/docs/react/guides/prefetching) to understand how to implement these patterns.
+- If you are using Next.js please look at the docs on [Server-Side Helpers](/docs/client/nextjs/server-side-helpers) to implement server-side prefetching.
+  :::
+
+### Route level prefetching
+
+```tsx
+const utils = createTRPCQueryUtils({ queryClient, client: trpcClient });
+
+// tanstack router/ react router loader
+const loader = async (params: {id: string}) => utils.post.byId.ensureQueryData({id: params.id});
+
+```
+
+### `usePrefetchQuery`
+
+```tsx
+import { trpc } from '../utils/trpc';
+
+function PostViewPage(props: { postId: string }) {
+  trpc.post.all.usePrefetchQuery({ id: props.postId });
+
+  return <Suspense>
+    <PostView postId={props.postId} />
+  </Suspense>;
+};
+```
+
+### `usePrefetchInfiniteQuery`
+
+```tsx
+import { trpc } from '../utils/trpc';
+
+// will have to be passed to the child PostView `useSuspenseInfiniteQuery`
+export const getNextPageParam = (lastPage) => lastPage.nextCursor;
+
+function PostViewPage(props: { postId: string }) {
+  trpc.post.all.usePrefetchInfiniteQuery({}, { getNextPageParam });
+
+  return <Suspense>
+    <PostView postId={props.postId} />
+  </Suspense>;
+};
+
+
+```
