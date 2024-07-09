@@ -194,7 +194,7 @@ describe('usePrefetchInfiniteQuery()', () => {
       const queryClient = useQueryClient();
 
       useEffect(() => {
-        const unsub = queryClient.getQueryCache().subscribe((event) => {
+        const unsub = queryClient.getQueryCache().subscribe(() => {
           setRefreshState(true);
         });
 
