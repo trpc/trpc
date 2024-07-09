@@ -142,6 +142,18 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   onData: (data: TOutput) => void;
   onError?: (err: TError) => void;
 }
+
+export type SubscriptionState = 'connecting' | 'connected' | 'stopped';
+
+export interface UseTRPCSubscriptionResult<TOutput, TError> {
+  data: TOutput | undefined;
+  error: TError | undefined;
+  state: SubscriptionState;
+  isConnecting: boolean;
+  isConnected: boolean;
+  isStopped: boolean;
+}
+
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   extends TRPCContextProps<TRouter, TSSRContext> {
   children: ReactNode;

@@ -39,6 +39,7 @@ import type {
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
   UseTRPCSubscriptionOptions,
+  UseTRPCSubscriptionResult,
   UseTRPCSuspenseInfiniteQueryOptions,
   UseTRPCSuspenseInfiniteQueryResult,
   UseTRPCSuspenseQueryOptions,
@@ -306,10 +307,21 @@ export function createRootHooks<
     path: readonly string[],
     input: unknown,
     opts: UseTRPCSubscriptionOptions<unknown, TError>,
-  ) {
+  ): UseTRPCSubscriptionResult<unknown, TError> {
     const enabled = opts?.enabled ?? input !== skipToken;
     const queryKey = hashKey(getQueryKeyInternal(path, input, 'any'));
     const { client } = useContext();
+
+    const [subscriptionState, setSubscriptionState] = React.useState<
+      UseTRPCSubscriptionResult<unknown, TError>
+    >({
+      data: undefined,
+      error: undefined,
+      state: enabled ? 'connecting' : 'stopped',
+      isConnecting: enabled === true,
+      isConnected: false,
+      isStopped: !enabled,
+    });
 
     const optsRef = React.useRef<typeof opts>(opts);
     optsRef.current = opts;
@@ -319,6 +331,7 @@ export function createRootHooks<
         return;
       }
       let isStopped = false;
+
       const subscription = client.subscription(
         path.join('.'),
         input ?? undefined,
@@ -326,26 +339,57 @@ export function createRootHooks<
           onStarted: () => {
             if (!isStopped) {
               optsRef.current.onStarted?.();
+              setSubscriptionState((prev) => ({
+                ...prev,
+                state: 'connected',
+                isConnecting: false,
+                isConnected: true,
+              }));
             }
           },
           onData: (data) => {
             if (!isStopped) {
+              setSubscriptionState((prev) => ({
+                ...prev,
+                data,
+                error: undefined,
+              }));
               optsRef.current.onData(data);
             }
           },
           onError: (err) => {
             if (!isStopped) {
+              setSubscriptionState((prev) => ({
+                ...prev,
+                error: err,
+                state: enabled ? 'connecting' : 'stopped',
+                isStopped: !enabled,
+                isConnected: false,
+                isConnecting: enabled,
+              }));
               optsRef.current.onError?.(err);
             }
           },
         },
       );
+
       return () => {
         isStopped = true;
+        setSubscriptionState((prev) => ({
+          ...prev,
+          state: enabled ? 'connecting' : 'stopped',
+          isStopped: !enabled,
+          isConnected: false,
+          isConnecting: enabled,
+        }));
+
         subscription.unsubscribe();
       };
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryKey, enabled]);
+
+    return subscriptionState;
   }
 
   function useInfiniteQuery(
