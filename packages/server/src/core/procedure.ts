@@ -20,16 +20,24 @@ export interface ProcedureOptions {
 }
 
 /**
+ * Describe the shape of an input/output tuple: [[TInputIn, TInputOut], T[OutputIn, TOutputOut]]
+ * @internal
+ */
+export type ProcedureInputOutput<TInputIn = unknown, TInputOut = unknown, TOutputIn = unknown, TOutputOut = unknown> = {
+  inputIn: TInputIn;
+  inputOut: TInputOut;
+  outputIn: TOutputIn;
+  outputOut: TOutputOut;
+};
+
+/**
  * FIXME: this should only take 1 generic argument instead of a list
  * @internal
  */
 export interface ProcedureParams<
   TConfig extends AnyRootConfig = AnyRootConfig,
   TContextOut = unknown,
-  TInputIn = unknown,
-  TInputOut = unknown,
-  TOutputIn = unknown,
-  TOutputOut = unknown,
+  TInputOutputs extends readonly ProcedureInputOutput[] = readonly ProcedureInputOutput[],
   TMeta = unknown,
 > {
   _config: TConfig;
@@ -41,33 +49,22 @@ export interface ProcedureParams<
    * @internal
    */
   _ctx_out: TContextOut;
+
   /**
    * @internal
    */
-  _input_in: TInputIn;
-  /**
-   * @internal
-   */
-  _input_out: TInputOut;
-  /**
-   * @internal
-   */
-  _output_in: TOutputIn;
-  /**
-   * @internal
-   */
-  _output_out: TOutputOut;
+  _inputOutputs: TInputOutputs;
 }
 
 /**
  * @internal
  */
 export type ProcedureArgs<TParams extends ProcedureParams> =
-  TParams['_input_in'] extends UnsetMarker
+  TParams['_inputOutputs'] extends UnsetMarker
     ? [input?: undefined | void, opts?: ProcedureOptions]
-    : undefined extends TParams['_input_in']
-    ? [input?: TParams['_input_in'] | void, opts?: ProcedureOptions]
-    : [input: TParams['_input_in'], opts?: ProcedureOptions];
+    : undefined extends TParams['_inputOutputs'][number]['inputIn']
+    ? [input?: TParams['_inputOutputs'][number]['inputIn'] | void, opts?: ProcedureOptions]
+    : [input: TParams['_inputOutputs'][number]['inputIn'], opts?: ProcedureOptions];
 
 /**
  *

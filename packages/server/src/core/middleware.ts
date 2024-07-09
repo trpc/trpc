@@ -4,12 +4,11 @@ import type { AnyRootConfig, RootConfig } from './internals/config';
 import type { ParseFn } from './internals/getParseFn';
 import type { ProcedureBuilderMiddleware } from './internals/procedureBuilder';
 import type {
-  DefaultValue,
+  ApplyInputOutputsDefaultValue,
   MiddlewareMarker,
   Overwrite,
-  UnsetMarker,
 } from './internals/utils';
-import type { ProcedureParams } from './procedure';
+import type { ProcedureInputOutput, ProcedureParams } from './procedure';
 import type { ProcedureType } from './types';
 
 /**
@@ -64,13 +63,7 @@ export interface MiddlewareBuilder<
       _config: TRoot['_config'];
       _meta: TRoot['_meta'];
       _ctx_out: Overwrite<TRoot['_ctx_out'], TNewParams['_ctx_out']>;
-      _input_in: DefaultValue<TRoot['_input_in'], TNewParams['_input_in']>;
-      _input_out: DefaultValue<TRoot['_input_out'], TNewParams['_input_out']>;
-      _output_in: DefaultValue<TRoot['_output_in'], TNewParams['_output_in']>;
-      _output_out: DefaultValue<
-        TRoot['_output_out'],
-        TNewParams['_output_out']
-      >;
+      _inputOutputs: ApplyInputOutputsDefaultValue<TRoot['_inputOutputs'], TNewParams['_inputOutputs']>;
     } extends infer OParams extends ProcedureParams
       ?
           | MiddlewareBuilder<OParams, $Params>
@@ -102,10 +95,7 @@ type CreateMiddlewareReturnInput<
     _config: TPrev['_config'];
     _meta: TPrev['_meta'];
     _ctx_out: Overwrite<TPrev['_ctx_out'], TNext['_ctx_out']>;
-    _input_in: DefaultValue<TNext['_input_in'], TPrev['_input_in']>;
-    _input_out: DefaultValue<TNext['_input_out'], TPrev['_input_out']>;
-    _output_in: DefaultValue<TNext['_output_in'], TPrev['_output_in']>;
-    _output_out: DefaultValue<TNext['_output_out'], TPrev['_output_out']>;
+    _inputOutputs: ApplyInputOutputsDefaultValue<TPrev['_inputOutputs'], TNext['_inputOutputs']>;
   }
 >;
 
@@ -114,15 +104,12 @@ type CreateMiddlewareReturnInput<
  */
 type deriveParamsFromConfig<
   TConfig extends AnyRootConfig,
-  TInputIn = unknown,
+  TInputOutputs extends readonly ProcedureInputOutput[] = readonly ProcedureInputOutput[],
 > = {
   _config: TConfig;
   // eslint-disable-next-line @typescript-eslint/ban-types
   _ctx_out: {};
-  _input_out: UnsetMarker;
-  _input_in: TInputIn;
-  _output_in: unknown;
-  _output_out: unknown;
+  _inputOutputs: TInputOutputs;
   _meta: TConfig['$types']['meta'];
 };
 /**
@@ -138,7 +125,7 @@ export type MiddlewareFunction<
     >;
     type: ProcedureType;
     path: string;
-    input: TParams['_input_in'];
+    input: TParams['_inputOutputs'][number]['inputIn'];
     rawInput: unknown;
     meta: TParams['_meta'] | undefined;
     next: {
@@ -147,10 +134,7 @@ export type MiddlewareFunction<
         MiddlewareResult<{
           _config: TParams['_config'];
           _ctx_out: $Context;
-          _input_in: TParams['_input_in'];
-          _input_out: TParams['_input_out'];
-          _output_in: TParams['_output_in'];
-          _output_out: TParams['_output_out'];
+          _inputOutputs: TParams['_inputOutputs'];
           _meta: TParams['_meta'];
         }>
       >;
@@ -165,11 +149,11 @@ export type MiddlewareFunction<
  */
 export function createMiddlewareFactory<
   TConfig extends AnyRootConfig,
-  TInputIn = unknown,
+  TInputOutputs extends readonly ProcedureInputOutput[] = readonly ProcedureInputOutput[],
 >() {
   function createMiddlewareInner<TNewParams extends ProcedureParams>(
     middlewares: MiddlewareFunction<any, any>[],
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputOutputs>, TNewParams> {
     return {
       _middlewares: middlewares,
       unstable_pipe(middlewareBuilderOrFn) {
@@ -188,10 +172,10 @@ export function createMiddlewareFactory<
 
   function createMiddleware<TNewParams extends ProcedureParams>(
     fn: MiddlewareFunction<
-      deriveParamsFromConfig<TConfig, TInputIn>,
+      deriveParamsFromConfig<TConfig, TInputOutputs>,
       TNewParams
     >,
-  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputIn>, TNewParams> {
+  ): MiddlewareBuilder<deriveParamsFromConfig<TConfig, TInputOutputs>, TNewParams> {
     return createMiddlewareInner([fn]);
   }
 
@@ -212,7 +196,7 @@ export const experimental_standaloneMiddleware = <
       errorShape: object;
       transformer: object;
     }>,
-    TCtx extends { input: infer T } ? T : unknown
+    TCtx extends { input: infer T extends readonly ProcedureInputOutput[] } ? T : ProcedureInputOutput[]
   >(),
 });
 

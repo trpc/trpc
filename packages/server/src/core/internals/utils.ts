@@ -1,5 +1,5 @@
 import type { Simplify, WithoutIndexSignature } from '../../types';
-import type { ProcedureParams } from '../procedure';
+import type { ProcedureInputOutput, ProcedureParams } from '../procedure';
 
 /**
  * @internal
@@ -39,6 +39,19 @@ export type DefaultValue<TValue, TFallback> = UnsetMarker extends TValue
   ? TFallback
   : TValue;
 
+export type ApplyInputOutputsDefaultValue<TPrev extends readonly ProcedureInputOutput[], TNext extends readonly ProcedureInputOutput[]> =
+  TPrev extends [infer TRootHead extends ProcedureInputOutput, ...infer TRootRest extends readonly ProcedureInputOutput[]] ?
+    TNext extends [infer TNewParamsHead extends ProcedureInputOutput, ...infer TNewParamsRest extends readonly ProcedureInputOutput[]] ?
+      [{
+        inputIn: DefaultValue<TRootHead['inputIn'], TNewParamsHead['inputIn']>;
+        inputOut: DefaultValue<TRootHead['inputOut'], TNewParamsHead['inputOut']>;
+        outputIn: DefaultValue<TRootHead['outputIn'], TNewParamsHead['outputIn']>;
+        outputOut: DefaultValue<TRootHead['outputOut'], TNewParamsHead['outputOut']>;
+      }, ...ApplyInputOutputsDefaultValue<TRootRest, TNewParamsRest>] :
+    [] :
+  []
+;
+
 /**
  * @internal
  */
@@ -67,9 +80,9 @@ export interface ResolveOptions<TParams extends ProcedureParams> {
   ctx: Simplify<
     Overwrite<TParams['_config']['$types']['ctx'], TParams['_ctx_out']>
   >;
-  input: TParams['_input_out'] extends UnsetMarker
+  input: TParams['_inputOutputs'][number]['inputOut'] extends UnsetMarker
     ? undefined
-    : TParams['_input_out'];
+    : TParams['_inputOutputs'][number]['inputOut'];
 }
 
 /**
