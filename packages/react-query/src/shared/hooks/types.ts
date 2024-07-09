@@ -139,6 +139,7 @@ export interface UseTRPCMutationOptions<
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   enabled?: boolean;
   onStarted?: () => void;
+  onConnecting?: () => void;
   onData: (data: TOutput) => void;
   onError?: (err: TError) => void;
 }

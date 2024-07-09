@@ -336,6 +336,17 @@ export function createRootHooks<
         path.join('.'),
         input ?? undefined,
         {
+          onConnecting: () => {
+            if (!isStopped) {
+              optsRef.current.onConnecting?.();
+              setSubscriptionState((prev) => ({
+                ...prev,
+                state: 'connecting',
+                isConnecting: true,
+                isConnected: false,
+              }));
+            }
+          },
           onStarted: () => {
             if (!isStopped) {
               optsRef.current.onStarted?.();
@@ -362,10 +373,10 @@ export function createRootHooks<
               setSubscriptionState((prev) => ({
                 ...prev,
                 error: err,
-                state: enabled ? 'connecting' : 'stopped',
-                isStopped: !enabled,
+                state: 'stopped',
+                isStopped: true,
                 isConnected: false,
-                isConnecting: enabled,
+                isConnecting: false,
               }));
               optsRef.current.onError?.(err);
             }

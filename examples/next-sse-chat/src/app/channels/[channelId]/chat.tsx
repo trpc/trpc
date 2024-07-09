@@ -121,11 +121,10 @@ export function Chat(props: Readonly<{ channelId: string }>) {
         </div>
         <div className="border-t bg-white p-2 dark:border-gray-800 dark:bg-gray-900">
           {livePosts.connectionState.isConnecting && (
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="pb-2 text-sm text-gray-500 dark:text-gray-400">
               Connecting...
             </div>
           )}
-          {JSON.stringify(livePosts.connectionState.data, null, 2)}
           <AddMessageForm
             signedIn={!!session?.user}
             channelId={channelId}

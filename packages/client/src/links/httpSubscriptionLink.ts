@@ -78,6 +78,9 @@ export function unstable_httpSubscriptionLink<
             return;
           }
           eventSource = new EventSource(url, opts.eventSourceOptions);
+
+          observer.next({ result: { type: 'connecting' } });
+
           const onStarted = () => {
             observer.next({
               result: {
@@ -87,12 +90,16 @@ export function unstable_httpSubscriptionLink<
                 eventSource,
               },
             });
-
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            eventSource!.removeEventListener('open', onStarted);
           };
           // console.log('starting', new Date());
           eventSource.addEventListener('open', onStarted);
+
+          eventSource.addEventListener('error', () => {
+            if (eventSource?.readyState === EventSource.CONNECTING) {
+              observer.next({ result: { type: 'connecting' } });
+            }
+          });
+
           const iterable = sseStreamConsumer<Partial<SSEMessage>>({
             from: eventSource,
             deserialize: transformer.input.deserialize,
