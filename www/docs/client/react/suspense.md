@@ -135,11 +135,11 @@ const Component = (props: { postIds: string[] }) => {
 
 ## Prefetching
 
-If you are using suspense queries, you can improve the preformance of your application by adoptiong a [render-as-you-fetch](https://reactjs.org/docs/concurrent-mode-suspense.html#approach-3-render-as-you-fetch) approach.
+The preformance of suspense queries can be improved by prefetching the query data before the Suspense component is rendered (this is sometimes called ["render-as-you-fetch"](https://tanstack.com/query/v5/docs/framework/react/guides/suspense#fetch-on-render-vs-render-as-you-fetch).
 
 :::note
 
-- Prefetching and the render-as-you-fetch model are very dependent on the framework and router you are using. We recommend reading your frameworks router docs along with the [@tanstack/react-query docs](https://tanstack.com/query/v4/docs/react/guides/prefetching) to understand how to implement these patterns.
+- Prefetching and the render-as-you-fetch model are very dependent on the framework and router you are using. We recommend reading your frameworks router docs along with the [@tanstack/react-query docs](https://tanstack.com/query/v5/docs/react/guides/prefetching) to understand how to implement these patterns.
 - If you are using Next.js please look at the docs on [Server-Side Helpers](/docs/client/nextjs/server-side-helpers) to implement server-side prefetching.
 
 :::
