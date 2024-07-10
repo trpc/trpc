@@ -141,6 +141,7 @@ test('v1 request info', async () => {
           ],
           "connectionParams": null,
           "isBatchCall": false,
+          "signal": Object {},
           "type": "query",
         },
       },

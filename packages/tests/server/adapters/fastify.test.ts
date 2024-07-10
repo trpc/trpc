@@ -229,7 +229,6 @@ function createClient(opts: ClientOptions) {
         false: unstable_httpBatchStreamLink({
           url: `http://${host}`,
           headers: opts.headers,
-          AbortController,
           fetch: fetch as any,
         }),
       }),
@@ -246,7 +245,6 @@ function createBatchClient(opts: ClientOptions) {
       httpBatchLink({
         url: `http://${host}`,
         headers: opts.headers,
-        AbortController,
         fetch: fetch as any,
       }),
     ],
@@ -480,6 +478,7 @@ describe('authorized user', () => {
         ],
         "connectionParams": null,
         "isBatchCall": true,
+        "signal": Object {},
         "type": "query",
       }
     `);

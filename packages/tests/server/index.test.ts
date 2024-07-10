@@ -481,8 +481,8 @@ test('void mutation response', async () => {
 });
 
 // https://github.com/trpc/trpc/issues/559
-describe('ObservableAbortError', () => {
-  test('cancelling request should throw ObservableAbortError', async () => {
+describe('AbortError', () => {
+  test('cancelling request should throw AbortError', async () => {
     const t = initTRPC.create();
 
     const router = t.router({
@@ -509,7 +509,7 @@ describe('ObservableAbortError', () => {
 
     const err = onReject.mock.calls[0]![0]! as TRPCClientError<any>;
     expect(err.name).toBe('TRPCClientError');
-    expect(err.cause?.name).toBe('ObservableAbortError');
+    expect(err.cause?.name).toBe('AbortError');
 
     await close();
   });
@@ -539,21 +539,13 @@ describe('ObservableAbortError', () => {
     });
     const ac = new AbortController();
     const req1 = client.slow1.query(undefined, { signal: ac.signal });
-    const req2 = client.slow2.query();
-    const onReject1 = vi.fn();
-    req1.catch(onReject1);
+    const req2 = client.slow2.query(undefined, { signal: ac.signal });
 
-    await new Promise((resolve) => setTimeout(resolve, 5));
     ac.abort();
-    await waitFor(() => {
-      expect(onReject1).toHaveBeenCalledTimes(1);
-    });
+    const err = await waitError(Promise.all([req1, req2]), TRPCClientError);
 
-    const err = onReject1.mock.calls[0]![0]! as TRPCClientError<any>;
     expect(err).toBeInstanceOf(TRPCClientError);
-    expect(err.cause?.name).toBe('ObservableAbortError');
-
-    expect(await req2).toBe('slow2');
+    expect(err.cause?.name).toBe('AbortError');
 
     await close();
   });

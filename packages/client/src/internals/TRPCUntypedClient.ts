@@ -6,6 +6,7 @@ import { observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
   InferrableClientTypes,
+  Maybe,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
@@ -65,53 +66,41 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     this.links = opts.links.map((link) => link(this.runtime));
   }
 
-  private $request<TInput = unknown, TOutput = unknown>({
-    type,
-    input,
-    path,
-    context = {},
-  }: {
+  private $request<TInput = unknown, TOutput = unknown>(opts: {
     type: TRPCType;
     input: TInput;
     path: string;
     context?: OperationContext;
+    signal: Maybe<AbortSignal>;
   }) {
     const chain$ = createChain<AnyRouter, TInput, TOutput>({
       links: this.links as OperationLink<any, any, any>[],
       op: {
+        ...opts,
+        context: opts.context ?? {},
         id: ++this.requestId,
-        type,
-        path,
-        input,
-        context,
       },
     });
     return chain$.pipe(share());
   }
-  private requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
+
+  private async requestAsPromise<TInput = unknown, TOutput = unknown>(opts: {
     type: TRPCType;
     input: TInput;
     path: string;
     context?: OperationContext;
-    signal?: AbortSignal;
+    signal: Maybe<AbortSignal>;
   }): Promise<TOutput> {
-    const req$ = this.$request<TInput, TOutput>(opts);
-    type TValue = inferObservableValue<typeof req$>;
-    const { promise, abort } = observableToPromise<TValue>(req$);
+    try {
+      const req$ = this.$request<TInput, TOutput>(opts);
+      type TValue = inferObservableValue<typeof req$>;
 
-    const abortablePromise = new Promise<TOutput>((resolve, reject) => {
-      opts.signal?.addEventListener('abort', abort);
-
-      promise
-        .then((envelope) => {
-          resolve((envelope.result as any).data);
-        })
-        .catch((err) => {
-          reject(TRPCClientError.from(err));
-        });
-    });
-
-    return abortablePromise;
+      const envelope = await observableToPromise<TValue>(req$);
+      const data = (envelope.result as any).data;
+      return data;
+    } catch (err) {
+      throw TRPCClientError.from(err as Error);
+    }
   }
   public query(path: string, input?: unknown, opts?: TRPCRequestOptions) {
     return this.requestAsPromise<unknown, unknown>({
@@ -144,6 +133,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
       path,
       input,
       context: opts?.context,
+      signal: null,
     });
     return observable$.subscribe({
       next(envelope) {
