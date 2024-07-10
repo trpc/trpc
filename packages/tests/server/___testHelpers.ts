@@ -194,7 +194,15 @@ export async function waitError<TError extends Error = Error>(
       res = await fnOrPromise;
     }
   } catch (cause) {
-    expect(cause).toBeInstanceOf(Error);
+    // needs to be instanceof Error or DOMException
+    if (
+      cause instanceof Error === false &&
+      cause instanceof DOMException === false
+    ) {
+      throw new Error(
+        'Expected function to throw an error, but it threw something else',
+      );
+    }
     if (errorConstructor) {
       expect((cause as Error).name).toBe(errorConstructor.name);
     }

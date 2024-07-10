@@ -94,18 +94,16 @@ export function isPromise(value: unknown): value is Promise<unknown> {
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
 
+type PathArray = readonly (string | number)[];
 export type ProducerOnError = (opts: {
   error: unknown;
-  path: (string | number)[];
+  path: PathArray;
 }) => void;
 export interface ProducerOptions {
   serialize?: Serialize;
   data: Record<string, unknown> | unknown[];
   onError?: ProducerOnError;
-  formatError?: (opts: {
-    error: unknown;
-    path: (string | number)[];
-  }) => unknown;
+  formatError?: (opts: { error: unknown; path: PathArray }) => unknown;
   maxDepth?: number;
 }
 
@@ -424,6 +422,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   deserialize?: Deserialize;
   onError?: ConsumerOnError;
   formatError?: (opts: { error: unknown }) => Error;
+  abortController: AbortController | null;
 }) {
   const { deserialize = (v) => v } = opts;
 
@@ -441,19 +440,38 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
   type ControllerChunk = ChunkData | StreamInterruptedError;
   type ChunkController = ReadableStreamDefaultController<ControllerChunk>;
-  const chunkDeferred = new Map<ChunkIndex, Deferred<ChunkController>>();
-  const controllers = new Map<ChunkIndex, ChunkController>();
+  type ControllerWrapper = {
+    controller: ChunkController;
+    returned: boolean;
+  };
+  const chunkDeferred = new Map<ChunkIndex, Deferred<ControllerWrapper>>();
+  const controllers = new Map<ChunkIndex, ControllerWrapper>();
+
+  const maybeAbort = () => {
+    if (
+      chunkDeferred.size === 0 &&
+      Array.from(controllers.values()).every((it) => it.returned)
+    ) {
+      // nothing is listening to the stream anymore
+      opts.abortController?.abort();
+    }
+  };
 
   function hydrateChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
     const { readable, controller } = createReadableStream<ChunkData>();
-    controllers.set(chunkId, controller);
+
+    const wrapper: ControllerWrapper = {
+      controller,
+      returned: false,
+    };
+    controllers.set(chunkId, wrapper);
 
     // resolve chunk deferred if it exists
     const deferred = chunkDeferred.get(chunkId);
     if (deferred) {
-      deferred.resolve(controller);
+      deferred.resolve(wrapper);
       chunkDeferred.delete(chunkId);
     }
 
@@ -478,6 +496,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               switch (status) {
                 case PROMISE_STATUS_FULFILLED:
                   resolve(hydrate(data));
+
                   break;
                 case PROMISE_STATUS_REJECTED:
                   reject(
@@ -490,38 +509,64 @@ export async function jsonlStreamConsumer<THead>(opts: {
             .finally(() => {
               // reader.releaseLock();
               controllers.delete(chunkId);
+
+              maybeAbort();
             });
         });
       }
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
         return {
-          [Symbol.asyncIterator]: async function* () {
+          [Symbol.asyncIterator]: () => {
             const reader = readable.getReader();
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) {
-                break;
-              }
-              if (value instanceof StreamInterruptedError) {
-                throw value;
-              }
-
-              const [_chunkId, status, data] = value as IterableChunk;
-
-              switch (status) {
-                case ASYNC_ITERABLE_STATUS_VALUE:
-                  yield hydrate(data);
-                  break;
-                case ASYNC_ITERABLE_STATUS_DONE:
+            const iterator: AsyncIterator<unknown> = {
+              next: async () => {
+                const { done, value } = await reader.read();
+                if (value instanceof StreamInterruptedError) {
+                  throw value;
+                }
+                if (done) {
                   controllers.delete(chunkId);
-                  return;
-                case ASYNC_ITERABLE_STATUS_ERROR:
-                  controllers.delete(chunkId);
-                  throw (
-                    opts.formatError?.({ error: data }) ?? new AsyncError(data)
-                  );
-              }
-            }
+                  maybeAbort();
+                  return {
+                    done: true,
+                    value: undefined,
+                  };
+                }
+
+                const [_chunkId, status, data] = value as IterableChunk;
+
+                switch (status) {
+                  case ASYNC_ITERABLE_STATUS_VALUE:
+                    return {
+                      done: false,
+                      value: hydrate(data),
+                    };
+                  case ASYNC_ITERABLE_STATUS_DONE:
+                    controllers.delete(chunkId);
+                    maybeAbort();
+                    return {
+                      done: true,
+                      value: undefined,
+                    };
+                  case ASYNC_ITERABLE_STATUS_ERROR:
+                    controllers.delete(chunkId);
+                    maybeAbort();
+                    throw (
+                      opts.formatError?.({ error: data }) ??
+                      new AsyncError(data)
+                    );
+                }
+              },
+              return: async () => {
+                wrapper.returned = true;
+                maybeAbort();
+                return {
+                  done: true,
+                  value: undefined,
+                };
+              },
+            };
+            return iterator;
           },
         };
       }
@@ -532,14 +577,14 @@ export async function jsonlStreamConsumer<THead>(opts: {
     const [[data], ...asyncProps] = value;
 
     for (const value of asyncProps) {
+      const [key] = value;
       const hydrated = hydrateChunkDefinition(value);
 
-      const [path] = value;
-      if (path === null) {
+      if (key === null) {
         return hydrated;
       }
 
-      (data as any)[path] = hydrated;
+      (data as any)[key] = hydrated;
     }
     return data;
   }
@@ -552,7 +597,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
       deferred.reject(error);
     }
     chunkDeferred.clear();
-    for (const controller of controllers.values()) {
+    for (const { controller } of controllers.values()) {
       controller.enqueue(error);
       controller.close();
     }
@@ -575,17 +620,17 @@ export async function jsonlStreamConsumer<THead>(opts: {
           }
           const chunk = chunkOrHead as ChunkData;
           const [idx] = chunk;
-          let controller = controllers.get(idx);
-          if (!controller) {
+          let wrapper = controllers.get(idx);
+          if (!wrapper) {
             let deferred = chunkDeferred.get(idx);
             if (!deferred) {
-              deferred = createDeferred<ChunkController>();
+              deferred = createDeferred();
               chunkDeferred.set(idx, deferred);
             }
 
-            controller = await deferred.promise;
+            wrapper = await deferred.promise;
           }
-          controller.enqueue(chunk);
+          wrapper.controller.enqueue(chunk);
         },
         close: closeOrAbort,
         abort: closeOrAbort,

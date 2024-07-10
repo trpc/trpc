@@ -173,6 +173,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         connectionParamsStr === null
           ? null
           : parseConnectionParamsFromString(connectionParamsStr),
+      signal: req.signal,
     };
     return info;
   },
@@ -208,6 +209,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       isBatchCall: false,
       type: 'mutation',
       connectionParams: null,
+      signal: req.signal,
     };
   },
 };
@@ -243,6 +245,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       accept: null,
       type: 'mutation',
       connectionParams: null,
+      signal: req.signal,
     };
   },
 };
