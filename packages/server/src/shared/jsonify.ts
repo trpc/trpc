@@ -1,4 +1,4 @@
-import type { AnyProcedure } from '../core';
+import type { AnyProcedure, inferProcedureOutput } from '../core';
 import type { inferObservableValue } from '../observable';
 import type { DefaultDataTransformer } from '../transformer';
 import type { Serialize } from './internal/serialize';
@@ -6,13 +6,14 @@ import type { Serialize } from './internal/serialize';
 /**
  * @internal
  */
-export type inferTransformedProcedureOutput<TProcedure extends AnyProcedure> =
+export type inferTransformedProcedureOutput<TProcedure extends AnyProcedure, TInput = any> =
   TProcedure['_def']['_config']['transformer'] extends DefaultDataTransformer
-    ? Serialize<TProcedure['_def']['_output_out']>
-    : TProcedure['_def']['_output_out'];
+    ? Serialize<inferProcedureOutput<TProcedure, TInput>>
+    : inferProcedureOutput<TProcedure, TInput>;
 
 export type inferTransformedSubscriptionOutput<
   TProcedure extends AnyProcedure,
+  TInput
 > = TProcedure['_def']['_config']['transformer'] extends DefaultDataTransformer
-  ? Serialize<inferObservableValue<TProcedure['_def']['_output_out']>>
-  : inferObservableValue<TProcedure['_def']['_output_out']>;
+  ? Serialize<inferObservableValue<inferProcedureOutput<TProcedure, TInput>>>
+  : inferObservableValue<inferProcedureOutput<TProcedure, TInput>>;

@@ -16,6 +16,7 @@ import type {
   ProcedureArgs,
 } from './procedure';
 import type {
+  ExtractProcedureInputFromHandlerInput,
   inferHandlerInput,
   inferProcedureOutput,
   ProcedureType,
@@ -85,14 +86,15 @@ export type AnyRouterDef<
 type inferHandlerFn<TProcedures extends ProcedureRecord> = <
   TProcedure extends TProcedures[TPath],
   TPath extends string & keyof TProcedures,
+  THandlerInput extends inferHandlerInput<TProcedure>,
 >(
   path: TPath,
-  ...args: inferHandlerInput<TProcedure>
-) => Promise<inferProcedureOutput<TProcedure>>;
+  ...args: THandlerInput
+) => Promise<inferProcedureOutput<TProcedure, ExtractProcedureInputFromHandlerInput<THandlerInput>>>;
 
-type DecorateProcedure<TProcedure extends AnyProcedure> = (
-  input: ProcedureArgs<TProcedure['_def']>[0],
-) => Promise<TProcedure['_def']['_output_out']>;
+type DecorateProcedure<TProcedure extends AnyProcedure> = <THandlerInput extends inferHandlerInput<TProcedure>>(
+  ...args: THandlerInput
+) => Promise<inferProcedureOutput<TProcedure, ExtractProcedureInputFromHandlerInput<THandlerInput>>>;
 
 /**
  * @internal

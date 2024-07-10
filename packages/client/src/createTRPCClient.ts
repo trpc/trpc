@@ -28,7 +28,7 @@ export interface TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input?: TInput,
     opts?: TRPCRequestOptions,
-  ): Promise<inferProcedureOutput<TQueries[TPath]>>;
+  ): Promise<inferProcedureOutput<TQueries[TPath], TInput>>;
 
   mutation<
     TMutations extends TRouter['_def']['mutations'],
@@ -38,13 +38,13 @@ export interface TRPCClient<TRouter extends AnyRouter> {
     path: TPath,
     input?: TInput,
     opts?: TRPCRequestOptions,
-  ): Promise<inferTransformedProcedureOutput<TMutations[TPath]>>;
+  ): Promise<inferTransformedProcedureOutput<TMutations[TPath], TInput>>;
 
   subscription<
     TSubscriptions extends TRouter['_def']['subscriptions'],
     TPath extends string & keyof TSubscriptions,
     // TODO - this should probably be updated to use inferTransformedProcedureOutput but this is only hit for legacy clients
-    TOutput extends inferSubscriptionOutput<TRouter, TPath>,
+    TOutput extends inferSubscriptionOutput<TRouter, TPath, TInput>,
     TInput extends inferProcedureInput<TSubscriptions[TPath]>,
   >(
     path: TPath,

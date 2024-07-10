@@ -6,7 +6,7 @@ import type {
 import { dehydrate } from '@tanstack/react-query';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type {
-  AnyRouter,
+  AnyRouter, ExtractProcedureInputFromHandlerInput,
   inferHandlerInput,
   inferProcedureOutput,
 } from '@trpc/server';
@@ -89,9 +89,10 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   const fetchQuery = async <
     TPath extends string & keyof TQueries,
     TProcedure extends TQueries[TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
+    THandlerInput extends inferHandlerInput<TProcedure>,
+    TOutput extends inferProcedureOutput<TProcedure, ExtractProcedureInputFromHandlerInput<THandlerInput>>,
   >(
-    ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ...pathAndInput: [path: TPath, ...args: THandlerInput]
   ): Promise<TOutput> => {
     return queryClient.fetchQuery({
       queryKey: getArrayQueryKey(pathAndInput, 'query'),
@@ -103,9 +104,10 @@ export function createSSGHelpers<TRouter extends AnyRouter>(
   const fetchInfiniteQuery = async <
     TPath extends string & keyof TQueries,
     TProcedure extends TQueries[TPath],
-    TOutput extends inferProcedureOutput<TProcedure>,
+    THandlerInput extends inferHandlerInput<TProcedure>,
+    TOutput extends inferProcedureOutput<TProcedure, ExtractProcedureInputFromHandlerInput<THandlerInput>>,
   >(
-    ...pathAndInput: [path: TPath, ...args: inferHandlerInput<TProcedure>]
+    ...pathAndInput: [path: TPath, ...args: THandlerInput]
   ): Promise<InfiniteData<TOutput>> => {
     return queryClient.fetchInfiniteQuery({
       queryKey: getArrayQueryKey(pathAndInput, 'infinite'),

@@ -97,10 +97,8 @@ test('docs', async () => {
   const addedPost = await caller.post.add({
     title: 'How to make server-side call in tRPC',
   });
-  //     ^?
 
   const postList = await caller.post.list();
-  //       ^?
 
   expect(postList).toHaveLength(2);
 });

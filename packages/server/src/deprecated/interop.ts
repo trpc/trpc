@@ -42,10 +42,12 @@ type convertProcedureParams<
   ? ProcedureParams<
       TConfig,
       TContext,
-      TInput,
-      TParsedInput,
-      TOutput,
-      TFinalInput,
+      [{
+        inputIn: TInput,
+        inputOut: TParsedInput,
+        outputIn: TOutput,
+        outputOut: TFinalInput
+      }],
       TMeta
     >
   : never;
@@ -180,14 +182,13 @@ function migrateProcedure<
   const inputMiddleware = createInputMiddleware(inputParser);
 
   const builder = createBuilder({
-    inputs: [def.inputParser],
+    inputOutputs: [{ input: def.inputParser, output: def.outputParser }],
     middlewares: [
       ...(def.middlewares as any),
       inputMiddleware,
       createOutputMiddleware(outputParser),
     ],
     meta: def.meta,
-    output: def.outputParser,
     mutation: type === 'mutation',
     query: type === 'query',
     subscription: type === 'subscription',

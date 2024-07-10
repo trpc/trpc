@@ -7,7 +7,7 @@ import type {
 import type {
   AnyProcedure,
   AnyQueryProcedure,
-  AnyRouter,
+  AnyRouter, ExtractProcedureInputFromHandlerInput,
   Filter,
   inferHandlerInput,
   ProtectedIntersection,
@@ -21,16 +21,20 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = {
   /**
    * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
-  fetch(
-    ...args: inferHandlerInput<TProcedure>
-  ): Promise<inferTransformedProcedureOutput<TProcedure>>;
+  fetch<
+    THandlerInput extends inferHandlerInput<TProcedure>,
+  >(
+    ...args: THandlerInput
+  ): Promise<inferTransformedProcedureOutput<TProcedure, ExtractProcedureInputFromHandlerInput<THandlerInput>>>;
 
   /**
    * @link https://tanstack.com/query/v4/docs/react/guides/prefetching
    */
-  fetchInfinite(
-    ...args: inferHandlerInput<TProcedure>
-  ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure>>>;
+  fetchInfinite<
+    THandlerInput extends inferHandlerInput<TProcedure>,
+  >(
+    ...args: THandlerInput
+  ): Promise<InfiniteData<inferTransformedProcedureOutput<TProcedure, ExtractProcedureInputFromHandlerInput<THandlerInput>>>>;
 
   /**
    * @link https://tanstack.com/query/v4/docs/react/guides/prefetching

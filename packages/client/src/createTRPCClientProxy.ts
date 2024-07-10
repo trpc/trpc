@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import type {
+import {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
   AnyRouter,
-  AnySubscriptionProcedure,
+  AnySubscriptionProcedure, ExtractInputOutputEntry, ExtractProcedureInputFromHandlerInput,
   IntersectionError,
   ProcedureArgs,
   ProcedureRouterRecord,
@@ -32,16 +32,16 @@ export type inferRouterProxyClient<TRouter extends AnyRouter> =
   DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
 
 /** @internal */
-export type Resolver<TProcedure extends AnyProcedure> = (
-  ...args: ProcedureArgs<TProcedure['_def']>
-) => Promise<inferTransformedProcedureOutput<TProcedure>>;
+export type Resolver<TProcedure extends AnyProcedure> = <THandlerInput extends ProcedureArgs<TProcedure['_def']>>(
+  ...args: THandlerInput
+) => Promise<inferTransformedProcedureOutput<TProcedure, ExtractProcedureInputFromHandlerInput<THandlerInput>>>;
 
-type SubscriptionResolver<TProcedure extends AnyProcedure> = (
+type SubscriptionResolver<TProcedure extends AnyProcedure> = <THandlerInput extends ProcedureArgs<TProcedure['_def']>>(
   ...args: [
-    input: ProcedureArgs<TProcedure['_def']>[0],
+    input: THandlerInput[0],
     opts: Partial<
       TRPCSubscriptionObserver<
-        inferTransformedSubscriptionOutput<TProcedure>,
+        inferTransformedSubscriptionOutput<TProcedure, ExtractProcedureInputFromHandlerInput<THandlerInput>>,
         TRPCClientError<TProcedure>
       >
     > &

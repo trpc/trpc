@@ -8,8 +8,11 @@ import type {
   AnyRouter,
   inferProcedureInput,
   inferProcedureOutput,
-  ProcedureRouterRecord,
+  Procedure,
+  ProcedureRouterRecord
 } from '@trpc/server';
+import { type AnyRootConfig } from '@trpc/server';
+import type { UnsetMarker } from "@trpc/server/core/internals/utils";
 import type { TRPCResponse } from '@trpc/server/rpc';
 
 interface ProxyCallbackOptions {
@@ -46,9 +49,26 @@ function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
   return proxy;
 }
 
-type Resolver<TProcedure extends AnyProcedure> = (
-  input: inferProcedureInput<TProcedure>,
-) => Promise<inferProcedureOutput<TProcedure>>;
+type Resolver<TProcedure extends AnyProcedure> = <TInput extends inferProcedureInput<TProcedure>>(
+  ...args: undefined extends TInput ? [input?: TInput] : [input: TInput]
+) => Promise<inferProcedureOutput<TProcedure, NoInfer<TInput>>>;
+
+type TProcParams = {
+  _config: AnyRootConfig,
+  _ctx_out: unknown,
+  _meta: unknown,
+  _inputOutputs: [{
+    inputIn: UnsetMarker;
+    inputOut: UnsetMarker;
+    outputIn: number[];
+    outputOut: number[];
+  }]
+};
+type TProc = Procedure<'query', TProcParams>;
+
+type TestResolver = Resolver<TProc>;
+//    ^?
+
 type DecorateProcedure<TProcedure extends AnyProcedure> =
   TProcedure extends AnyQueryProcedure
     ? {

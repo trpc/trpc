@@ -1,3 +1,4 @@
+import { expectTypeOf } from "vitest";
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { createTRPCProxyClient, TRPCClientError } from '@trpc/client';
 import type { inferProcedureInput, inferProcedureParams } from '@trpc/server';
@@ -14,7 +15,7 @@ const ignoreErrors = async (fn: () => unknown) => {
   }
 };
 
-describe('double input validator', () => {
+describe('input output', () => {
   const t = initTRPC.create({
     errorFormatter({ shape, error }) {
       return {
@@ -26,37 +27,35 @@ describe('double input validator', () => {
       };
     },
   });
-  const roomProcedure = t.procedure.input(
-    z.object({
-      roomId: z.string(),
-    }),
-  );
-  const appRouter = t.router({
-    sendMessage: roomProcedure
-      .input(
-        z.object({
-          text: z.string(),
-          optionalKey: z.string().optional(),
-        }),
-      )
-      .mutation(({ input }) => {
-        return input;
-      }),
 
-    sendMessage2: roomProcedure
-      .input(
-        z.object({
-          text: z.string(),
-        }),
-      )
-      .mutation(({ input }) => {
-        //         ^?
-        input.roomId;
-        input.text;
-        return input;
-      }),
+  const getProcedure = t.procedure
+  .inputOutput(z.object({ type: z.literal('a') }), z.array(z.object({ type: z.literal('a') })))
+  .inputOutput(z.object({ type: z.literal('b') }), z.array(z.object({ type: z.literal('b') })))
+  .query(({ input }) => {
+    expectTypeOf(input).toEqualTypeOf<{ type: 'a' } | { type: 'b' }>();
+
+    if (input.type === 'a') {
+      return [{
+        type: 'a',
+      }];
+    }
+
+    if (input.type === 'b') {
+      return [{
+        type: 'b',
+      }];
+    }
+
+    throw new Error('Invalid input');
+  })
+  ;
+
+  const appRouter = t.router({
+    get: getProcedure
   });
+
   type AppRouter = typeof appRouter;
+
   const ctx = konn()
     .beforeEach(() => {
       const opts = routerToServerAndClientNew(appRouter);
@@ -68,27 +67,26 @@ describe('double input validator', () => {
     })
     .done();
 
+  // TODO complete tests
+  // submit PR draft and ask if I should continue to fix issues or if this PR will never be accepted anyway.
+
   test('happy path', async () => {
-    type Input = inferProcedureInput<AppRouter['sendMessage']>;
-    const data: Input = {
-      roomId: '123',
-      text: 'hello',
-    };
-    const result = await ctx.proxy.sendMessage.mutate(data);
+    type Input = inferProcedureInput<AppRouter['get']>;
+    const data: Input = { type: 'b' };
+    const result = await ctx.proxy.get.query(data);
 
     expect(result).toEqual(data);
-    expectTypeOf(result).toMatchTypeOf(data);
+    expectTypeOf(result).toEqualTypeOf<{ type: 'b' }[]>();
   });
 
   test('sad path', async () => {
-    type Input = inferProcedureInput<AppRouter['sendMessage']>;
+    type Input = inferProcedureInput<AppRouter['get']>;
     {
       // @ts-expect-error missing input params
-      const input: Input = {
-        roomId: '',
-      };
+      const input: Input = { type: 'c' };
       const error = await waitError<TRPCClientError<AppRouter>>(
-        ctx.proxy.sendMessage.mutate(input),
+        // @ts-expect-error invalid input
+        ctx.proxy.get.query(input),
         TRPCClientError,
       );
       expect(error.data).toHaveProperty('zod');
@@ -101,13 +99,12 @@ describe('double input validator', () => {
       `);
     }
     {
-      // @ts-expect-error missing input params
-      const input: Input = {
-        text: '',
-      };
+      // @ts-expect-error invalid input params
+      const input: Input = { type: 'c' };
 
       const error = await waitError<TRPCClientError<AppRouter>>(
-        ctx.proxy.sendMessage.mutate(input),
+        // @ts-expect-error invalid input
+        ctx.proxy.get.query(input),
         TRPCClientError,
       );
       expect(error.data!.zod!.fieldErrors).toMatchInlineSnapshot(`

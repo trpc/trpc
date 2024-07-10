@@ -1,5 +1,5 @@
 import type { AnyRootConfig } from './internals/config';
-import type {
+import {
   ProcedureBuilderDef,
   ProcedureCallOptions,
 } from './internals/procedureBuilder';
@@ -20,7 +20,6 @@ export interface ProcedureOptions {
 }
 
 /**
- * Describe the shape of an input/output tuple: [[TInputIn, TInputOut], T[OutputIn, TOutputOut]]
  * @internal
  */
 export type ProcedureInputOutput<TInputIn = unknown, TInputOut = unknown, TOutputIn = unknown, TOutputOut = unknown> = {
@@ -60,11 +59,69 @@ export interface ProcedureParams<
  * @internal
  */
 export type ProcedureArgs<TParams extends ProcedureParams> =
-  TParams['_inputOutputs'] extends UnsetMarker
-    ? [input?: undefined | void, opts?: ProcedureOptions]
-    : undefined extends TParams['_inputOutputs'][number]['inputIn']
-    ? [input?: TParams['_inputOutputs'][number]['inputIn'] | void, opts?: ProcedureOptions]
-    : [input: TParams['_inputOutputs'][number]['inputIn'], opts?: ProcedureOptions];
+  TParams['_inputOutputs'][number]['inputIn'] extends infer TInputDefs ?
+    TInputDefs extends infer TInputDef ?
+      TInputDef extends UnsetMarker ?
+        [input?: undefined | void, opts?: ProcedureOptions] :
+      undefined extends TInputDef ?
+        [input?: TInputDef | void, opts?: ProcedureOptions] :
+      [input: TInputDef, opts?: ProcedureOptions] :
+    never:
+  never
+;
+
+//    v?
+type TestProcArgsEmpty = ProcedureArgs<{
+  _config: AnyRootConfig,
+  _ctx_out: unknown,
+  _meta: unknown,
+  _inputOutputs: [{
+    inputIn: { type: 'a' };
+    inputOut: { type: 'a' };
+    outputIn: { type: 'a' }[];
+    outputOut: { type: 'a' }[];
+  },
+    {
+      inputIn: { type: 'b' };
+      inputOut: { type: 'b' };
+      outputIn: { type: 'b' }[];
+      outputOut: { type: 'b' }[];
+    }
+  ]
+}>
+
+//    v?
+type TestProcArgsSingle = ProcedureArgs<{
+  _config: AnyRootConfig,
+  _ctx_out: unknown,
+  _meta: unknown,
+  _inputOutputs: [{
+    inputIn: 'inputIn';
+    inputOut: 'inputOut';
+    outputIn: 'outputIn';
+    outputOut: 'outputOut';
+  }]
+}>
+
+//    v?
+type TestProcArgsMulti = ProcedureArgs<{
+  _config: AnyRootConfig,
+  _ctx_out: unknown,
+  _meta: unknown,
+  _inputOutputs: [{
+    inputIn: 'inputIn1';
+    inputOut: 'inputOut1';
+    outputIn: 'outputIn1';
+    outputOut: 'outputOut1';
+  },
+    {
+      inputIn: 'inputIn2';
+      inputOut: 'inputOut2';
+      outputIn: 'outputIn2';
+      outputOut: 'outputOut2';
+    }
+    ]
+}>
 
 /**
  *
@@ -72,7 +129,8 @@ export type ProcedureArgs<TParams extends ProcedureParams> =
  */
 export interface Procedure<
   TType extends ProcedureType,
-  TParams extends ProcedureParams,
+  TParams extends ProcedureParams<AnyRootConfig, unknown, TInputOutputs, unknown>,
+  TInputOutputs extends readonly ProcedureInputOutput[] = readonly ProcedureInputOutput[]
 > {
   _type: TType;
   _def: ProcedureBuilderDef<TParams> & TParams;

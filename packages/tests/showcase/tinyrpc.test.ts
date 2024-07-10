@@ -3,8 +3,10 @@
  */
 import '../server/___packages';
 import '@trpc/server';
-import { initTRPC, TRPCError } from '@trpc/server';
+import type { BuildProcedure} from '@trpc/server';
+import { type AnyRootConfig, initTRPC, TRPCError } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import type { UnsetMarker } from "@trpc/server/core/internals/utils";
 import fetch from 'node-fetch';
 import { z } from 'zod';
 import { createTinyRPCClient } from './tinyrpc';
@@ -22,6 +24,24 @@ const posts = [
     title: 'Hello World',
   },
 ];
+
+type TProcParams = {
+  _config: AnyRootConfig,
+  _ctx_out: unknown,
+  _meta: unknown,
+  _inputOutputs: [{
+    inputIn: UnsetMarker;
+    inputOut: UnsetMarker;
+    outputIn: UnsetMarker;
+    outputOut: UnsetMarker;
+  }]
+};
+
+
+type TestBuildProcedure = BuildProcedure<'query', TProcParams, number[]>;
+type Test1 = TestBuildProcedure['_def']['_inputOutputs'];
+//     ^?
+
 const appRouter = router({
   listPosts: publicProcedure.query(() => posts),
   addPost: publicProcedure
