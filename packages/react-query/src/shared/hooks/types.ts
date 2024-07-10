@@ -143,7 +143,7 @@ type StateCallbackOptions<TError> =
     }
   | {
       state: 'connecting';
-      data: null;
+      data: TError | null;
     }
   | {
       state: 'pending';
