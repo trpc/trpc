@@ -2,12 +2,13 @@
 
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { Avatar } from '~/components/avatar';
-import { Button } from '~/components/button';
+import { Button, buttonVariants } from '~/components/button';
 import { Textarea } from '~/components/input';
 import { trpc } from '~/lib/trpc';
 import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import * as React from 'react';
 import {
   useLivePosts,
@@ -126,9 +127,12 @@ export function Chat(props: Readonly<{ channelId: string }>) {
             </div>
           )}
           {livePosts.connection.isStopped && (
-            <div className="pb-2 text-sm text-gray-500 dark:text-gray-400">
-              An error occurred. Please try again later.
-            </div>
+            <Button
+              variant={'link'}
+              onClick={() => {
+                livePosts.connection.restart();
+              }}
+            ></Button>
           )}
           <AddMessageForm
             signedIn={!!session?.user}

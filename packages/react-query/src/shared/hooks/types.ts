@@ -184,13 +184,14 @@ export interface restartSubscriptionOptionsWithLastEventId
   sendLastEventId: boolean;
 }
 
-export type restartSubscriptionOptions<TLastEventIdInput extends boolean> =
-  TLastEventIdInput extends true
-    ? restartSubscriptionOptionsWithLastEventId
-    : restartSubscriptionOptionsBase;
+export type restartSubscriptionOptions<TInput> = TInput extends {
+  lastEventId?: string | null;
+} | void
+  ? restartSubscriptionOptionsWithLastEventId
+  : restartSubscriptionOptionsBase;
 
-export type restartSubscriptionFn<TLastEventIdInput extends boolean> = (
-  options?: restartSubscriptionOptions<TLastEventIdInput>,
+export type restartSubscriptionFn<TInput> = (
+  options?: restartSubscriptionOptions<TInput>,
 ) => void;
 
 export interface TRPCSubscriptionBaseResult<TInput, TError> {
@@ -270,13 +271,7 @@ export interface TRPCSubscriptionBaseResult<TInput, TError> {
   /**
    * Restart the subscription
    */
-  restart: restartSubscriptionFn<
-    TInput extends {
-      lastEventId: string | null;
-    }
-      ? true
-      : false
-  >;
+  restart: restartSubscriptionFn<TInput>;
 }
 
 export interface TRPCSubscriptionIdleResult<TInput, TError>
