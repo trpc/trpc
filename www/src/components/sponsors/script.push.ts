@@ -18,19 +18,16 @@ const sections: Def = {
   diamond: [],
   gold: [
     //
-    'tolahq',
+    'tryretool',
   ],
   silver: [
     //
-    'JasonDocton',
     'calcom',
-    // 'flightcontrolhq',
   ],
   bronze: [
     //
     'hidrb',
     'flylance-apps',
-    'echobind',
   ],
 };
 
