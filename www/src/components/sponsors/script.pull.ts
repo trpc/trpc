@@ -21,6 +21,9 @@ function ensureHttpAndAddRef(urlStr: string) {
   if (!url.searchParams.has('ref')) {
     url.searchParams.set('ref', 'trpc');
   }
+  url.searchParams.set('utm_source', 'github');
+  url.searchParams.set('utm_medium', 'referral');
+  url.searchParams.set('utm_campaign', 'trpc');
   return url.toString();
 }
 
