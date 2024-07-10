@@ -97,6 +97,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
   return async (client: ws.WebSocket, req: IncomingMessage) => {
     const clientSubscriptions = new Map<number | string, AbortController>();
+    const abortController = new AbortController();
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
@@ -119,6 +120,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             isBatchCall: false,
             accept: null,
             type: 'unknown',
+            signal: abortController.signal,
           },
         });
 
@@ -410,6 +412,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         sub.abort();
       }
       clientSubscriptions.clear();
+      abortController.abort();
     });
 
     if (ctxPromise !== unsetContextSymbol) {

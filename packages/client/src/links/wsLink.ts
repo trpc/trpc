@@ -486,7 +486,7 @@ export function wsLink<TRouter extends AnyRouter>(
         const input = transformer.input.serialize(op.input);
 
         const unsub = client.request(
-          { type, path, input, id, context },
+          { type, path, input, id, context, signal: null },
           {
             error(err) {
               observer.error(err as TRPCClientError<any>);

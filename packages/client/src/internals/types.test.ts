@@ -4,26 +4,7 @@ import type { fetch as undiciFetch } from 'undici';
 import { createTRPCClient } from '../createTRPCClient';
 import { getFetch } from '../getFetch';
 import { httpBatchLink } from '../links/httpBatchLink';
-import { getAbortController } from './getAbortController';
-import type {
-  AbortControllerEsque,
-  AbortControllerInstanceEsque,
-  FetchEsque,
-  ResponseEsque,
-} from './types';
-
-describe('AbortController', () => {
-  test('AbortControllerEsque', () => {
-    expectTypeOf(
-      getAbortController,
-    ).returns.toEqualTypeOf<AbortControllerEsque | null>();
-
-    expectTypeOf(() => {
-      const AbortController = getAbortController(undefined)!;
-      return new AbortController();
-    }).returns.toEqualTypeOf<AbortControllerInstanceEsque>();
-  });
-});
+import type { FetchEsque, ResponseEsque } from './types';
 
 describe('fetch', () => {
   test('parameters', () => {

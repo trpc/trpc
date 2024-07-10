@@ -1,37 +1,4 @@
 import { getFetch } from '@trpc/client';
-import { getAbortController } from '@trpc/client/internals/getAbortController';
-
-describe('getAbortController() from..', () => {
-  test('passed', () => {
-    const sym: any = Symbol('test');
-    expect(getAbortController(sym)).toBe(sym);
-  });
-  test('window', () => {
-    const sym: any = Symbol('test');
-    (global as any).AbortController = undefined;
-    (global as any).window = {
-      AbortController: sym,
-    };
-    expect(getAbortController(null)).toBe(sym);
-  });
-  test('global', () => {
-    const sym: any = Symbol('test');
-    (global as any).AbortController = sym;
-    (global as any).window = undefined;
-    expect(getAbortController(null)).toBe(sym);
-  });
-  test('window w. undefined AbortController -> global', () => {
-    const sym: any = Symbol('test');
-    (global as any).AbortController = sym;
-    (global as any).window = {};
-    expect(getAbortController(null)).toBe(sym);
-  });
-  test('neither', () => {
-    (global as any).AbortController = undefined;
-    (global as any).window = undefined;
-    expect(getAbortController(null)).toBe(null);
-  });
-});
 
 describe('getFetch() from...', () => {
   test('passed', () => {

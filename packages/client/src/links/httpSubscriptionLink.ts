@@ -69,7 +69,7 @@ export function unstable_httpSubscriptionLink<
             input,
             path,
             type,
-            AbortController: null,
+            signal: null,
           });
 
           /* istanbul ignore if -- @preserve */

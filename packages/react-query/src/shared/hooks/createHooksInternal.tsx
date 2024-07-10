@@ -181,7 +181,7 @@ export function createRootHooks<
                   ...ssrOpts?.trpc,
                   ...(shouldAbortOnUnmount
                     ? { signal: queryFunctionContext.signal }
-                    : {}),
+                    : { signal: null }),
                 },
               };
 
@@ -246,7 +246,7 @@ export function createRootHooks<
             trpc: {
               ...(shouldAbortOnUnmount
                 ? { signal: queryFunctionContext.signal }
-                : {}),
+                : { signal: null }),
             },
           };
 
@@ -403,7 +403,7 @@ export function createRootHooks<
                   ...ssrOpts?.trpc,
                   ...(shouldAbortOnUnmount
                     ? { signal: queryFunctionContext.signal }
-                    : {}),
+                    : { signal: null }),
                 },
               };
 

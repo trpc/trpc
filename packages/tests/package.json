@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "@fastify/busboy": "^2.0.0",
+    "@fastify/busboy": "^3.0.0",
     "@fastify/websocket": "^10.0.1",
     "@js-temporal/polyfill": "^0.4.4",
     "@miniflare/core": "^2.9.0",
