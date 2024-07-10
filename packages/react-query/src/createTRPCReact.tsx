@@ -190,7 +190,7 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
       UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
       'enabled'
     >,
-  ): UseTRPCSubscriptionResult<TDef['output'], TRPCClientErrorLike<TDef>>;
+  ): UseTRPCSubscriptionResult<TDef['input'], TRPCClientErrorLike<TDef>>;
 }
 /**
  * @internal
