@@ -99,7 +99,6 @@ export type TRPCClientOutgoingMessage =
 
 export interface TRPCResultMessage<TData>
   extends JSONRPC2.ResultResponse<
-    | { type: 'connecting'; data?: never }
     | { type: 'started'; data?: never }
     | { type: 'stopped'; data?: never }
     | (TRPCResult<TData> & { type: 'data' })

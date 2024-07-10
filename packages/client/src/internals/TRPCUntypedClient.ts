@@ -30,7 +30,6 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
   onStarted: (opts: { context: OperationContext | undefined }) => void;
   onData: (value: TValue) => void;
   onError: (err: TError) => void;
-  onConnecting: () => void;
   onStopped: () => void;
   onComplete: () => void;
 }
@@ -154,8 +153,6 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
           });
         } else if (envelope.result.type === 'stopped') {
           opts.onStopped?.();
-        } else if (envelope.result.type === 'connecting') {
-          opts.onConnecting?.();
         } else {
           opts.onData?.(envelope.result.data);
         }

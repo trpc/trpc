@@ -136,24 +136,246 @@ export interface UseTRPCMutationOptions<
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCUseQueryBaseOptions {}
 
+type StateCallbackOptions<TError> =
+  | {
+      state: 'idle';
+      data: null;
+    }
+  | {
+      state: 'connecting';
+      data: null;
+    }
+  | {
+      state: 'pending';
+      data: null;
+    }
+  | {
+      state: 'failed';
+      data: TError;
+    }
+  | {
+      state: 'success';
+      data: null;
+    };
+
+export type SubscriptionState = StateCallbackOptions<unknown>['state'];
+
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   enabled?: boolean;
+  /**
+   * @deprecated use onStateChange instead
+   */
   onStarted?: () => void;
-  onConnecting?: () => void;
-  onData: (data: TOutput) => void;
+  /**
+   * @deprecated use onStateChange instead
+   */
   onError?: (err: TError) => void;
+  onData: (data: TOutput) => void;
+  onStateChange?: (opts: StateCallbackOptions<TError>) => void;
 }
 
-export type SubscriptionState = 'connecting' | 'connected' | 'stopped';
+export interface restartSubscriptionOptionsBase {}
 
-export interface UseTRPCSubscriptionResult<TOutput, TError> {
-  data: TOutput | undefined;
-  error: TError | undefined;
-  state: SubscriptionState;
+export interface restartSubscriptionOptionsWithLastEventId
+  extends restartSubscriptionOptionsBase {
+  /**
+   * Defaults to `true` in case of failure or if the subscription is still active
+   */
+  sendLastEventId: boolean;
+}
+
+export type restartSubscriptionOptions<TLastEventIdInput extends boolean> =
+  TLastEventIdInput extends true
+    ? restartSubscriptionOptionsWithLastEventId
+    : restartSubscriptionOptionsBase;
+
+export type restartSubscriptionFn<TLastEventIdInput extends boolean> = (
+  options?: restartSubscriptionOptions<TLastEventIdInput>,
+) => void;
+
+export interface TRPCSubscriptionBaseResult<TInput, TError> {
+  /**
+   * The timestamp for when the connection was last (re-)established
+   */
+  connectionStartedAt: number;
+  /**
+   * The timestamp for when the connection was initially established
+   */
+  initialConnectionStartedAt: number;
+  /**
+   * The last error that has captured
+   * - Defaults to `null`
+   * - Resets to `null` after connection is re-established
+   */
+  error: TError | null;
+  /**
+   * The timestamp for when the last error was captured
+   */
+  errorUpdatedAt: number;
+  /**
+   * Reconnection attempts since last successful connection
+   */
+  reconnectionAttemptCount: number;
+  /**
+   * Error count since subscription was started
+   */
+  errorUpdateCount: number;
+  /**
+   * The error that caused the subscription to stop
+   */
+  failureReason: TError | null;
+  /**
+   * Is `true` when the subscription is establishing the initial connection
+   */
+  isStarting: boolean;
+  /**
+   * Is `true` when the subscription has successfully connected at least once
+   */
+  isStarted: boolean;
+  /**
+   * Is `true` if the subscription is (re-)establishing a connection
+   */
   isConnecting: boolean;
+  /**
+   * Is `true` when the subscription is connected
+   */
   isConnected: boolean;
+  /**
+   * Is `true` if the subscription is re-establishing a connection
+   */
+  isReconnecting: boolean;
+  /**
+   * Is `true` if the subscription is stopped either due to an error or if the subscription has successfully completed
+   * - No attempt to re-establish the connection will be made
+   */
   isStopped: boolean;
+  /**
+   * Is `true` if the subscription ended in an error state
+   */
+  isFailed: boolean;
+  /**
+   * Is `true` if the subscription has successfully completed
+   */
+  isSuccess: boolean;
+  /**
+   * The current state of the subscription
+   * - Will be:
+   *  - `'idle'` when the subscription is not enabled
+   *  - `'connecting'` when the subscription is (re-)establishing the connection
+   *  - `'pending'` when the subscription is connected and receiving data
+   *  - `'failed'` when the subscription has stopped due to an error
+   *  - `'success'` when the subscription has successfully completed
+   */
+  status: SubscriptionState;
+  /**
+   * Restart the subscription
+   */
+  restart: restartSubscriptionFn<
+    TInput extends {
+      lastEventId: string | null;
+    }
+      ? true
+      : false
+  >;
 }
+
+export interface TRPCSubscriptionIdleResult<TInput, TError>
+  extends TRPCSubscriptionBaseResult<TInput, TError> {
+  error: null;
+  failureReason: null;
+  isStarting: false;
+  isStarted: false;
+  isConnecting: false;
+  isConnected: false;
+  isReconnecting: false;
+  isStopped: false;
+  isFailed: false;
+  isSuccess: false;
+  status: 'idle';
+}
+
+export interface TRPCSubscriptionStartingResult<TInput, TError>
+  extends TRPCSubscriptionBaseResult<TInput, TError> {
+  error: null;
+  failureReason: null;
+  isStarting: true;
+  isStarted: false;
+  isConnecting: true;
+  isConnected: false;
+  isReconnecting: false;
+  isStopped: false;
+  isFailed: false;
+  isSuccess: false;
+  status: 'connecting';
+}
+
+export interface TRPCSubscriptionConnectedResult<TInput, TError>
+  extends TRPCSubscriptionBaseResult<TInput, TError> {
+  error: null;
+  failureReason: null;
+  isStarting: false;
+  isStarted: true;
+  isConnecting: false;
+  isConnected: true;
+  isReconnecting: false;
+  isStopped: false;
+  isFailed: false;
+  isSuccess: false;
+  status: 'pending';
+}
+
+export interface TRPCSubscriptionReconnectingResult<TInput, TError>
+  extends TRPCSubscriptionBaseResult<TInput, TError> {
+  error: TError;
+  failureReason: null;
+  isStarting: false;
+  isStarted: true;
+  isConnecting: true;
+  isConnected: false;
+  isReconnecting: true;
+  isStopped: false;
+  isFailed: false;
+  isSuccess: false;
+  status: 'connecting';
+}
+
+export interface TRPCSubscriptionFailureResult<TInput, TError>
+  extends TRPCSubscriptionBaseResult<TInput, TError> {
+  error: TError;
+  failureReason: TError;
+  isStarting: false;
+  isStarted: true;
+  isConnecting: false;
+  isConnected: false;
+  isReconnecting: false;
+  isStopped: true;
+  isFailed: true;
+  isSuccess: false;
+  status: 'failed';
+}
+
+export interface TRPCSubscriptionSuccessResult<TInput, TError>
+  extends TRPCSubscriptionBaseResult<TInput, TError> {
+  error: null;
+  failureReason: null;
+  isStarting: false;
+  isStarted: true;
+  isConnecting: false;
+  isConnected: false;
+  isReconnecting: false;
+  isStopped: true;
+  isFailed: false;
+  isSuccess: true;
+  status: 'success';
+}
+
+export type UseTRPCSubscriptionResult<TInput, TError> =
+  | TRPCSubscriptionIdleResult<TInput, TError>
+  | TRPCSubscriptionStartingResult<TInput, TError>
+  | TRPCSubscriptionConnectedResult<TInput, TError>
+  | TRPCSubscriptionReconnectingResult<TInput, TError>
+  | TRPCSubscriptionFailureResult<TInput, TError>
+  | TRPCSubscriptionSuccessResult<TInput, TError>;
 
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   extends TRPCContextProps<TRouter, TSSRContext> {
