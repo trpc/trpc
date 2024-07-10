@@ -174,12 +174,20 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   onStateChange?: (opts: StateCallbackOptions<TError>) => void;
 }
 
-export interface restartSubscriptionOptionsBase {}
+export interface restartSubscriptionOptionsBase {
+  /**
+   * Cancel the current subscription and re-establish a new one
+   * - Defaults to `true`
+   * - Set to `false` no new subscription will be established if there is already an active subscription
+   */
+  cancelSubscription?: boolean;
+}
 
 export interface restartSubscriptionOptionsWithLastEventId
   extends restartSubscriptionOptionsBase {
   /**
    * Defaults to `true` in case of failure or if the subscription is still active
+   * - When the susbscription has successfully completed, it will be set to `false`
    */
   sendLastEventId: boolean;
 }
