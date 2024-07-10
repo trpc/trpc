@@ -41,6 +41,7 @@ test('dedupeLink', async () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
 
@@ -52,6 +53,7 @@ test('dedupeLink', async () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
     const next = vi.fn();
@@ -104,6 +106,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
 
@@ -115,6 +118,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
     const next = vi.fn();

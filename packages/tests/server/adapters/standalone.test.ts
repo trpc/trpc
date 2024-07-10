@@ -46,7 +46,6 @@ function createClient(port: number, address: string) {
     links: [
       httpBatchLink({
         url: `http://${address}:${port}`,
-        AbortController,
         fetch: fetch as any,
       }),
     ],
