@@ -52,13 +52,10 @@ export const createQueryClient = () =>
         shouldDehydrateQuery: (query) =>
           defaultShouldDehydrateQuery(query) ||
           query.state.status === 'pending',
+        serializeData: transformer.serialize,
       },
       hydrate: {
-        // when the promise has resolved, deserialize the data
-        // since trpc will serialize it on the server. this
-        // allows you to return Date, Temporal etc from your
-        // procedure and have that auto-serialize on the client
-        transformPromise: (promise) => promise.then(transformer.deserialize),
+        deserializeData: transformer.deserialize,
       },
     },
   });

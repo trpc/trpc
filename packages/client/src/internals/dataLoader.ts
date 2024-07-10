@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import type { CancelFn, PromiseAndCancel } from '../links/types';
 
 type BatchItem<TKey, TValue> = {
   aborted: boolean;
@@ -10,14 +9,10 @@ type BatchItem<TKey, TValue> = {
 };
 type Batch<TKey, TValue> = {
   items: BatchItem<TKey, TValue>[];
-  cancel: CancelFn;
 };
 export type BatchLoader<TKey, TValue> = {
   validate: (keys: TKey[]) => boolean;
-  fetch: (keys: TKey[]) => {
-    promise: Promise<TValue[] | Promise<TValue>[]>;
-    cancel: CancelFn;
-  };
+  fetch: (keys: TKey[]) => Promise<TValue[] | Promise<TValue>[]>;
 };
 
 /**
@@ -99,15 +94,11 @@ export function dataLoader<TKey, TValue>(
       }
       const batch: Batch<TKey, TValue> = {
         items,
-        cancel: throwFatalError,
       };
       for (const item of items) {
         item.batch = batch;
       }
-      const { promise, cancel } = batchLoader.fetch(
-        batch.items.map((_item) => _item.key),
-      );
-      batch.cancel = cancel;
+      const promise = batchLoader.fetch(batch.items.map((_item) => _item.key));
 
       promise
         .then(async (result) => {
@@ -141,7 +132,7 @@ export function dataLoader<TKey, TValue>(
         });
     }
   }
-  function load(key: TKey): PromiseAndCancel<TValue> {
+  function load(key: TKey): Promise<TValue> {
     const item: BatchItem<TKey, TValue> = {
       aborted: false,
       key,
@@ -163,17 +154,8 @@ export function dataLoader<TKey, TValue>(
     if (!dispatchTimer) {
       dispatchTimer = setTimeout(dispatch);
     }
-    const cancel = () => {
-      item.aborted = true;
 
-      if (item.batch?.items.every((item) => item.aborted)) {
-        // All items in the batch have been cancelled
-        item.batch.cancel();
-        item.batch = null;
-      }
-    };
-
-    return { promise, cancel };
+    return promise;
   }
 
   return {

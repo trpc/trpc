@@ -5,9 +5,10 @@ on:
     branches:
       # Replace this with the branch you want to release from
       # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
-      - 'app-router-example'
+      - 'issues/5851-take-two'
       # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
     paths:
+      - '.github/setup/*'
       - '.github/workflows/release-tmp.yml'
       - 'packages/**'
       - '!packages/**/package.json'

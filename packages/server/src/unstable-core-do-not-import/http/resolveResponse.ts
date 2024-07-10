@@ -335,8 +335,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   config,
                   ctx,
                   error,
-                  input: call.result(),
-                  path: call.path,
+                  input: call!.result(),
+                  path: call!.path,
                   type: info.type,
                 }),
               }
@@ -370,7 +370,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           if (!isObservable(data) && !isAsyncIterable(data)) {
             throw new TRPCError({
-              message: `Subscription ${call.path} did not return an observable or a AsyncGenerator`,
+              message: `Subscription ${
+                call!.path
+              } did not return an observable or a AsyncGenerator`,
               code: 'INTERNAL_SERVER_ERROR',
             });
           }
@@ -378,6 +380,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             ? observableToAsyncIterable(data)
             : data;
           const stream = sseStreamProducer({
+            ...router._def._config.experimental?.sseSubscriptions,
             data: dataAsIterable,
             serialize: (v) => config.transformer.output.serialize(v),
           });
@@ -440,9 +443,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 config,
                 ctx,
                 error,
-                input: call.result(),
-                path: call.path,
-                type: call.procedure?._def.type ?? 'unknown',
+                input: call!.result(),
+                path: call!.path,
+                type: call!.procedure?._def.type ?? 'unknown',
               }),
             };
           }

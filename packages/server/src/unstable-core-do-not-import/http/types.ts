@@ -32,7 +32,7 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
    * The different tRPC paths requested
    * @deprecated use `info` instead, this will be removed in v12
    **/
-  paths: string[] | undefined;
+  paths: readonly string[] | undefined;
   info: TRPCRequestInfo | undefined;
   type: ProcedureType | 'unknown';
   errors: TRPCError[];
@@ -74,7 +74,11 @@ interface TRPCRequestInfoProcedureCall {
   procedure: AnyProcedure | null;
 }
 
-export interface TRPCRequestInfoBase {
+/**
+ * Information about the incoming request
+ * @public
+ */
+export interface TRPCRequestInfo {
   /**
    * The `trpc-accept` header
    */
@@ -91,23 +95,16 @@ export interface TRPCRequestInfoBase {
    * The calls being made
    */
   calls: TRPCRequestInfoProcedureCall[];
+  /**
+   * Connection params when using `httpSubscriptionLink` or `createWSClient`
+   */
+  connectionParams: Dict<string> | null;
+  /**
+   * Signal when the request is aborted
+   * Can be used to abort async operations during the request, e.g. `fetch()`-requests
+   */
+  signal: AbortSignal;
 }
-interface TRPCRequestInfoBatchCall extends TRPCRequestInfoBase {
-  isBatchCall: true;
-  calls: TRPCRequestInfoProcedureCall[];
-}
-interface TRPCRequestInfoSingleCall extends TRPCRequestInfoBase {
-  isBatchCall: false;
-  calls: [TRPCRequestInfoProcedureCall];
-}
-
-/**
- * Information about the incoming request
- * @public
- */
-export type TRPCRequestInfo =
-  | TRPCRequestInfoBatchCall
-  | TRPCRequestInfoSingleCall;
 
 /**
  * Inner createContext function for `resolveResponse` used to forward `TRPCRequestInfo` to `createContext`

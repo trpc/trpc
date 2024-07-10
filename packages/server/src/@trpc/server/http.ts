@@ -17,5 +17,10 @@ export type {
   TRPCRequestInfo,
 } from '../../unstable-core-do-not-import';
 
-export { getBatchStreamFormatter } from '../../unstable-core-do-not-import';
-export { octetInputParser, toURL } from '../../unstable-core-do-not-import';
+export {
+  getBatchStreamFormatter,
+  octetInputParser,
+  parseConnectionParamsFromUnknown,
+  parseConnectionParamsFromString,
+  toURL,
+} from '../../unstable-core-do-not-import';

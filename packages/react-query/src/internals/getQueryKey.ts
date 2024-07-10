@@ -9,7 +9,7 @@ import type { DecorateRouterRecord } from '../shared';
 export type QueryType = 'any' | 'infinite' | 'query';
 
 export type TRPCQueryKey = [
-  string[],
+  readonly string[],
   { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
 ];
 
@@ -24,7 +24,7 @@ type ProcedureOrRouter =
  * storing in tanstack query.
  **/
 export function getQueryKeyInternal(
-  path: string[],
+  path: readonly string[],
   input: unknown,
   type: QueryType,
 ): TRPCQueryKey {

@@ -72,6 +72,7 @@ test('useQuery()', async () => {
         "id": "1",
       },
       "path": "greeting",
+      "signal": null,
       "type": "query",
     }
   `);
@@ -121,6 +122,7 @@ test('useMutation()', async () => {
         "id": "1",
       },
       "path": "doSomething",
+      "signal": undefined,
       "type": "mutation",
     }
   `);

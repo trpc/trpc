@@ -24,6 +24,10 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Removal of `AbortControllerEsque`-ponyfill (rarely breaking)
+
+We have removed the `AbortControllerEsque`-ponyfill from tRPC, if you need to support older browsers you can use a polyfill like `abortcontroller-polyfill`.
+
 ### Support for Server-sent events (SSE) (non-breaking)
 
 We now support SSE for subscriptions, this means that you don't need to spin up a WebSocket server to get real-time updates in your application & that the client can automatically reconnect and resume if the connection is lost.

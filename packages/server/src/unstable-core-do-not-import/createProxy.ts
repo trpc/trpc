@@ -1,6 +1,6 @@
 interface ProxyCallbackOptions {
-  path: string[];
-  args: unknown[];
+  path: readonly string[];
+  args: readonly unknown[];
 }
 type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
 
@@ -8,21 +8,27 @@ const noop = () => {
   // noop
 };
 
+const freezeIfAvailable = (obj: object) => {
+  if (Object.freeze) {
+    Object.freeze(obj);
+  }
+};
+
 function createInnerProxy(
   callback: ProxyCallback,
-  path: string[],
-  cache: Record<string, unknown>,
+  path: readonly string[],
+  memo: Record<string, unknown>,
 ) {
   const cacheKey = path.join('.');
 
-  cache[cacheKey] ??= new Proxy(noop, {
+  memo[cacheKey] ??= new Proxy(noop, {
     get(_obj, key) {
       if (typeof key !== 'string' || key === 'then') {
         // special case for if the proxy is accidentally treated
         // like a PromiseLike (like in `Promise.resolve(proxy)`)
         return undefined;
       }
-      return createInnerProxy(callback, [...path, key], cache);
+      return createInnerProxy(callback, [...path, key], memo);
     },
     apply(_1, _2, args) {
       const lastOfPath = path[path.length - 1];
@@ -40,11 +46,13 @@ function createInnerProxy(
           path: path.slice(0, -1),
         };
       }
+      freezeIfAvailable(opts.args);
+      freezeIfAvailable(opts.path);
       return callback(opts);
     },
   });
 
-  return cache[cacheKey];
+  return memo[cacheKey];
 }
 
 /**

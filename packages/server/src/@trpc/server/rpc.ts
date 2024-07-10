@@ -18,6 +18,7 @@ export type {
   TRPCSuccessResponse,
   TRPC_ERROR_CODE_KEY,
   TRPC_ERROR_CODE_NUMBER,
+  TRPCConnectionParamsMessage,
 } from '../../unstable-core-do-not-import';
 export {
   TRPC_ERROR_CODES_BY_KEY,

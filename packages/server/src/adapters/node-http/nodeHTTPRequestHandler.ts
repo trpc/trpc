@@ -71,7 +71,9 @@ export async function nodeHTTPRequestHandler<
           // console.error('reader.cancel() error', err);
         });
       };
-      req.signal.addEventListener('abort', onAbort);
+      req.signal.addEventListener('abort', onAbort, {
+        once: true,
+      });
 
       while (true) {
         const { done, value } = await reader.read();
@@ -82,7 +84,7 @@ export async function nodeHTTPRequestHandler<
         if (!res.writable) {
           break;
         }
-        if (!res.write(value)) {
+        if (res.write(value) === false) {
           await new Promise<void>((resolve) => {
             res.once('drain', resolve);
           });
