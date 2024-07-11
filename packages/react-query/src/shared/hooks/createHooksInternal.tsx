@@ -343,7 +343,7 @@ export function createRootHooks<
                 ...prev,
                 state: 'connecting',
                 isConnecting: true,
-                isConnected: false,
+                isPending: false,
               }));
             }
           },
@@ -354,7 +354,7 @@ export function createRootHooks<
                 ...prev,
                 state: 'connected',
                 isConnecting: false,
-                isConnected: true,
+                isPending: true,
               }));
             }
           },
@@ -375,7 +375,7 @@ export function createRootHooks<
                 error: err,
                 state: 'stopped',
                 isStopped: true,
-                isConnected: false,
+                isPending: false,
                 isConnecting: false,
               }));
               optsRef.current.onError?.(err);
@@ -390,7 +390,7 @@ export function createRootHooks<
           ...prev,
           state: enabled ? 'connecting' : 'stopped',
           isStopped: !enabled,
-          isConnected: false,
+          isPending: false,
           isConnecting: enabled,
         }));
 

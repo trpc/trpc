@@ -150,12 +150,8 @@ type StateCallbackOptions<TError> =
       data: null;
     }
   | {
-      state: 'failed';
+      state: 'error';
       data: TError;
-    }
-  | {
-      state: 'success';
-      data: null;
     };
 
 export type SubscriptionState = StateCallbackOptions<unknown>['state'];
@@ -212,9 +208,9 @@ export interface TRPCSubscriptionBaseResult<TInput, TError> {
    */
   initialConnectionStartedAt: number;
   /**
-   * The last error that has captured
+   * The error that caused the subscription to stop
    * - Defaults to `null`
-   * - Resets to `null` after connection is re-established
+   * - Resets to `null` after the subscription is restarted and the connection is re-established
    */
   error: TError | null;
   /**
@@ -222,17 +218,13 @@ export interface TRPCSubscriptionBaseResult<TInput, TError> {
    */
   errorUpdatedAt: number;
   /**
+   * The reason for the reconnection
+   */
+  reconnectReason: TError | null;
+  /**
    * Reconnection attempts since last successful connection
    */
   reconnectionAttemptCount: number;
-  /**
-   * Error count since subscription was started
-   */
-  errorUpdateCount: number;
-  /**
-   * The error that caused the subscription to stop
-   */
-  failureReason: TError | null;
   /**
    * Is `true` when the subscription is establishing the initial connection
    */
@@ -243,37 +235,31 @@ export interface TRPCSubscriptionBaseResult<TInput, TError> {
   isStarted: boolean;
   /**
    * Is `true` if the subscription is (re-)establishing a connection
+   * - Alias for `status === 'connecting'`
    */
   isConnecting: boolean;
   /**
-   * Is `true` when the subscription is connected
+   * Is `true` when the subscription is connected and listening for data
+   * - Alias for `status === 'pending'`
    */
-  isConnected: boolean;
+  isPending: boolean;
   /**
    * Is `true` if the subscription is re-establishing a connection
+   * - Alias for `status === 'connecting' && isStarted === true`
    */
   isReconnecting: boolean;
   /**
-   * Is `true` if the subscription is stopped either due to an error or if the subscription has successfully completed
-   * - No attempt to re-establish the connection will be made
-   */
-  isStopped: boolean;
-  /**
    * Is `true` if the subscription ended in an error state
+   * - Alias for `status === 'error'`
    */
-  isFailed: boolean;
-  /**
-   * Is `true` if the subscription has successfully completed
-   */
-  isSuccess: boolean;
+  isError: boolean;
   /**
    * The current state of the subscription
    * - Will be:
    *  - `'idle'` when the subscription is not enabled
    *  - `'connecting'` when the subscription is (re-)establishing the connection
    *  - `'pending'` when the subscription is connected and receiving data
-   *  - `'failed'` when the subscription has stopped due to an error
-   *  - `'success'` when the subscription has successfully completed
+   *  - `'error'` when the subscription has stopped due to an error
    */
   status: SubscriptionState;
   /**
@@ -285,100 +271,73 @@ export interface TRPCSubscriptionBaseResult<TInput, TError> {
 export interface TRPCSubscriptionIdleResult<TInput, TError>
   extends TRPCSubscriptionBaseResult<TInput, TError> {
   error: null;
-  failureReason: null;
+  reconnectReason: null;
   isStarting: false;
   isStarted: false;
   isConnecting: false;
-  isConnected: false;
+  isPending: false;
   isReconnecting: false;
-  isStopped: false;
-  isFailed: false;
-  isSuccess: false;
+  isError: false;
   status: 'idle';
 }
 
 export interface TRPCSubscriptionStartingResult<TInput, TError>
   extends TRPCSubscriptionBaseResult<TInput, TError> {
   error: null;
-  failureReason: null;
+  reconnectReason: null;
   isStarting: true;
   isStarted: false;
   isConnecting: true;
-  isConnected: false;
+  isPending: false;
   isReconnecting: false;
-  isStopped: false;
-  isFailed: false;
-  isSuccess: false;
+  isError: false;
   status: 'connecting';
 }
 
-export interface TRPCSubscriptionConnectedResult<TInput, TError>
+export interface TRPCSubscriptionPendingResult<TInput, TError>
   extends TRPCSubscriptionBaseResult<TInput, TError> {
   error: null;
-  failureReason: null;
+  reconnectReason: null;
   isStarting: false;
   isStarted: true;
   isConnecting: false;
-  isConnected: true;
+  isPending: true;
   isReconnecting: false;
-  isStopped: false;
-  isFailed: false;
-  isSuccess: false;
+  isError: false;
   status: 'pending';
 }
 
 export interface TRPCSubscriptionReconnectingResult<TInput, TError>
   extends TRPCSubscriptionBaseResult<TInput, TError> {
-  error: TError;
-  failureReason: null;
+  error: null;
+  reconnectReason: TError;
   isStarting: false;
   isStarted: true;
   isConnecting: true;
-  isConnected: false;
+  isPending: false;
   isReconnecting: true;
-  isStopped: false;
-  isFailed: false;
-  isSuccess: false;
+  isError: false;
   status: 'connecting';
 }
 
-export interface TRPCSubscriptionFailureResult<TInput, TError>
+export interface TRPCSubscriptionErrorResult<TInput, TError>
   extends TRPCSubscriptionBaseResult<TInput, TError> {
   error: TError;
-  failureReason: TError;
   isStarting: false;
-  isStarted: true;
+  isStarted: true; // Not sure about this one
   isConnecting: false;
-  isConnected: false;
+  isPending: false;
   isReconnecting: false;
-  isStopped: true;
-  isFailed: true;
-  isSuccess: false;
-  status: 'failed';
-}
-
-export interface TRPCSubscriptionSuccessResult<TInput, TError>
-  extends TRPCSubscriptionBaseResult<TInput, TError> {
-  error: null;
-  failureReason: null;
-  isStarting: false;
-  isStarted: true;
-  isConnecting: false;
-  isConnected: false;
-  isReconnecting: false;
-  isStopped: true;
-  isFailed: false;
-  isSuccess: true;
-  status: 'success';
+  isError: true;
+  status: 'error';
 }
 
 export type UseTRPCSubscriptionResult<TInput, TError> =
   | TRPCSubscriptionIdleResult<TInput, TError>
   | TRPCSubscriptionStartingResult<TInput, TError>
-  | TRPCSubscriptionConnectedResult<TInput, TError>
+  | TRPCSubscriptionPendingResult<TInput, TError>
   | TRPCSubscriptionReconnectingResult<TInput, TError>
-  | TRPCSubscriptionFailureResult<TInput, TError>
-  | TRPCSubscriptionSuccessResult<TInput, TError>;
+  | TRPCSubscriptionErrorResult<TInput, TError>;
 
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   extends TRPCContextProps<TRouter, TSSRContext> {
