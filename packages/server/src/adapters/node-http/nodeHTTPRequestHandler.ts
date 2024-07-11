@@ -71,7 +71,9 @@ export async function nodeHTTPRequestHandler<
           // console.error('reader.cancel() error', err);
         });
       };
-      req.signal.addEventListener('abort', onAbort);
+      req.signal.addEventListener('abort', onAbort, {
+        once: true,
+      });
 
       while (true) {
         const { done, value } = await reader.read();

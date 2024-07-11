@@ -35,6 +35,7 @@ describe('chain', () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
 
@@ -82,6 +83,7 @@ describe('chain', () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
 

@@ -1,21 +1,3 @@
-export type AbortControllerEsque = new () => AbortControllerInstanceEsque;
-
-/**
- * Allows you to abort one or more requests.
- */
-export interface AbortControllerInstanceEsque {
-  /**
-   * The AbortSignal object associated with this object.
-   */
-  readonly signal: AbortSignal;
-
-  /**
-   * Sets this object's AbortSignal's aborted flag and signals to
-   * any observers that the associated activity is to be aborted.
-   */
-  abort(): void;
-}
-
 /**
  * A subset of the standard fetch function type needed by tRPC internally.
  * @see fetch from lib.dom.d.ts

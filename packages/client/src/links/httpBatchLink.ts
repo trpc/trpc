@@ -10,6 +10,7 @@ import type { HTTPResult } from './internals/httpUtils';
 import {
   getUrl,
   jsonHttpRequester,
+  mergeAbortSignals,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import type { Operation, TRPCLink } from './types';
@@ -41,15 +42,17 @@ export function httpBatchLink<TRouter extends AnyRouter>(
             type,
             path,
             inputs,
+            signal: null,
           });
 
           return url.length <= maxURLLength;
         },
-        fetch(batchOps) {
+        async fetch(batchOps) {
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
+          const ac = mergeAbortSignals(batchOps);
 
-          const requester = jsonHttpRequester({
+          const res = await jsonHttpRequester({
             ...resolvedOpts,
             path,
             inputs,
@@ -65,22 +68,16 @@ export function httpBatchLink<TRouter extends AnyRouter>(
               }
               return opts.headers;
             },
+            signal: ac.signal,
           });
-          return {
-            cancel: requester.cancel,
-            promise: requester.promise.then((res) => {
-              const resJSON = Array.isArray(res.json)
-                ? res.json
-                : batchOps.map(() => res.json);
-
-              const result = resJSON.map((item) => ({
-                meta: res.meta,
-                json: item,
-              }));
-
-              return result;
-            }),
-          };
+          const resJSON = Array.isArray(res.json)
+            ? res.json
+            : batchOps.map(() => res.json);
+          const result = resJSON.map((item) => ({
+            meta: res.meta,
+            json: item,
+          }));
+          return result;
         },
       };
     };
@@ -98,7 +95,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           );
         }
         const loader = loaders[op.type];
-        const { promise, cancel } = loader.load(op);
+        const promise = loader.load(op);
 
         let _res = undefined as HTTPResult | undefined;
         promise
@@ -132,7 +129,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
           });
 
         return () => {
-          cancel();
+          // noop
         };
       });
     };

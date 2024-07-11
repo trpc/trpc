@@ -5,7 +5,6 @@ import type {
   TRPCErrorResponse,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
-  getCauseFromUnknown,
   isObject,
   type DefaultErrorShape,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -38,6 +37,16 @@ function isTRPCErrorResponse(obj: unknown): obj is TRPCErrorResponse<any> {
     typeof obj['error']['code'] === 'number' &&
     typeof obj['error']['message'] === 'string'
   );
+}
+
+function getMessageFromUnknownError(err: unknown, fallback: string): string {
+  if (typeof err === 'string') {
+    return err;
+  }
+  if (isObject(err) && typeof err['message'] === 'string') {
+    return err['message'];
+  }
+  return fallback;
 }
 
 export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
@@ -102,16 +111,12 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
         result: cause,
       });
     }
-    if (!(cause instanceof Error)) {
-      return new TRPCClientError('Unknown error', {
+    return new TRPCClientError(
+      getMessageFromUnknownError(cause, 'Unknown error'),
+      {
         ...opts,
         cause: cause as any,
-      });
-    }
-
-    return new TRPCClientError(cause.message, {
-      ...opts,
-      cause: getCauseFromUnknown(cause),
-    });
+      },
+    );
   }
 }
