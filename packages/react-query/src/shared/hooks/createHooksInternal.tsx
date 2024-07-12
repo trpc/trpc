@@ -28,48 +28,28 @@ import type {
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
 import { createUseQueries } from '../proxy/useQueriesProxy';
 import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
-import type {
-  CreateClient,
-  TRPCProvider,
-  TRPCQueryOptions,
-  TRPCSubscriptionIdleResult,
-  TRPCSubscriptionStartingResult,
-  UseTRPCInfiniteQueryOptions,
-  UseTRPCInfiniteQueryResult,
-  UseTRPCMutationOptions,
-  UseTRPCMutationResult,
-  UseTRPCQueryOptions,
-  UseTRPCQueryResult,
-  UseTRPCSubscriptionOptions,
-  UseTRPCSubscriptionResult,
-  UseTRPCSuspenseInfiniteQueryOptions,
-  UseTRPCSuspenseInfiniteQueryResult,
-  UseTRPCSuspenseQueryOptions,
-  UseTRPCSuspenseQueryResult,
+import {
+  defaultIdleResult,
+  getErrorResult,
+  getPendingResult,
+  getReconnectingResult,
+  getStartingResult,
+  type CreateClient,
+  type TRPCProvider,
+  type TRPCQueryOptions,
+  type UseTRPCInfiniteQueryOptions,
+  type UseTRPCInfiniteQueryResult,
+  type UseTRPCMutationOptions,
+  type UseTRPCMutationResult,
+  type UseTRPCQueryOptions,
+  type UseTRPCQueryResult,
+  type UseTRPCSubscriptionOptions,
+  type UseTRPCSubscriptionResult,
+  type UseTRPCSuspenseInfiniteQueryOptions,
+  type UseTRPCSuspenseInfiniteQueryResult,
+  type UseTRPCSuspenseQueryOptions,
+  type UseTRPCSuspenseQueryResult,
 } from './types';
-
-const defaultIdleState: TRPCSubscriptionIdleResult<unknown, unknown> = {
-  connectionStartedAt: 0,
-  initialConnectionStartedAt: 0,
-  error: null,
-  errorUpdatedAt: 0,
-  reconnectReason: null,
-  reconnectionAttemptCount: 0,
-  isStarting: false,
-  isStarted: false,
-  isConnecting: false,
-  isPending: false,
-  isReconnecting: false,
-  isError: false,
-  status: 'idle',
-};
-
-const defaultStartingState: TRPCSubscriptionStartingResult<unknown, unknown> = {
-  ...defaultIdleState,
-  isConnecting: true,
-  isStarting: true,
-  status: 'connecting',
-};
 
 /**
  * @internal
@@ -339,7 +319,7 @@ export function createRootHooks<
 
     const [subscriptionState, setSubscriptionState] = React.useState<
       UseTRPCSubscriptionResult<unknown, TError>
-    >(enabled ? defaultStartingState : defaultIdleState);
+    >(enabled ? getStartingResult() : defaultIdleResult);
 
     const optsRef = React.useRef<typeof opts>(opts);
     optsRef.current = opts;
@@ -369,12 +349,53 @@ export function createRootHooks<
               optsRef.current.onError?.(err);
             }
           },
+          onStateChange: (state) => {
+            if (state.state === 'idle') {
+              setSubscriptionState(defaultIdleResult);
+
+              return;
+            }
+
+            if (state.state === 'connecting') {
+              setSubscriptionState(
+                (prev): UseTRPCSubscriptionResult<unknown, TError> => {
+                  if (
+                    prev.isStarting ||
+                    prev.status === 'idle' ||
+                    prev.isError
+                  ) {
+                    return getStartingResult(prev, state.data);
+                  }
+
+                  if (!state.data) {
+                    throw new Error('Reconnection without exception?');
+                  }
+
+                  return getReconnectingResult(prev, state.data);
+                },
+              );
+
+              return;
+            }
+
+            if (state.state === 'pending') {
+              setSubscriptionState((prev) => getPendingResult(prev));
+            }
+
+            if (state.state === 'error') {
+              setSubscriptionState((prev) => {
+                return getErrorResult(prev, state.data);
+              });
+            }
+          },
         },
       );
 
       return () => {
         isStopped = true;
         subscription.unsubscribe();
+
+        setSubscriptionState(defaultIdleResult);
       };
 
       // eslint-disable-next-line react-hooks/exhaustive-deps

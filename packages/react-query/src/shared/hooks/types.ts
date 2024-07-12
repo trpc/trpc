@@ -205,12 +205,17 @@ export interface TRPCSubscriptionBaseResult<_TInput, TError> {
   errorUpdatedAt: number;
   /**
    * The reason for the reconnection
+   * - Resets to `null` after the subscription is restarted and the connection is re-established
    */
-  reconnectReason: TError | null;
+  connectionError: TError | null;
   /**
    * Reconnection attempts since last successful connection
    */
-  reconnectionAttemptCount: number;
+  connectionAttemptCount: number;
+  /**
+   * The timestamp for when the last reconnection error was captured
+   */
+  connectionErrorUpdateAt: number;
   /**
    * Is `true` when the subscription is establishing the initial connection
    */
@@ -257,20 +262,44 @@ export interface TRPCSubscriptionBaseResult<_TInput, TError> {
 export interface TRPCSubscriptionIdleResult<TInput, TError>
   extends TRPCSubscriptionBaseResult<TInput, TError> {
   error: null;
-  reconnectReason: null;
+  errorUpdatedAt: 0;
+  connectionError: null;
   isStarting: false;
   isStarted: false;
   isConnecting: false;
   isPending: false;
   isReconnecting: false;
   isError: false;
+  connectionAttemptCount: 0;
+  connectionErrorUpdateAt: 0;
+  connectionStartedAt: 0;
+  initialConnectionStartedAt: 0;
   status: 'idle';
 }
 
+export const defaultIdleResult: TRPCSubscriptionIdleResult<unknown, unknown> = {
+  connectionStartedAt: 0,
+  initialConnectionStartedAt: 0,
+  error: null,
+  errorUpdatedAt: 0,
+  connectionError: null,
+  connectionAttemptCount: 0,
+  isStarting: false,
+  isStarted: false,
+  isConnecting: false,
+  isPending: false,
+  isReconnecting: false,
+  isError: false,
+  connectionErrorUpdateAt: 0,
+  status: 'idle',
+};
+
 export interface TRPCSubscriptionStartingResult<TInput, TError>
   extends TRPCSubscriptionBaseResult<TInput, TError> {
+  connectionStartedAt: 0;
+  initialConnectionStartedAt: 0;
   error: null;
-  reconnectReason: null;
+  connectionError: TError | null;
   isStarting: true;
   isStarted: false;
   isConnecting: true;
@@ -280,10 +309,51 @@ export interface TRPCSubscriptionStartingResult<TInput, TError>
   status: 'connecting';
 }
 
+export const getStartingResult = <TInput, TError>(
+  previous?:
+    | TRPCSubscriptionIdleResult<TInput, TError>
+    | TRPCSubscriptionStartingResult<TInput, TError>
+    | TRPCSubscriptionErrorResult<TInput, TError>,
+  error?: TError | null,
+): TRPCSubscriptionStartingResult<TInput, TError> => {
+  const now = Date.now();
+
+  if (previous) {
+    return {
+      ...defaultIdleResult,
+      ...previous,
+      connectionError: error ?? null,
+      isStarting: true,
+      isConnecting: true,
+      errorUpdatedAt: 0,
+      connectionAttemptCount: previous.connectionAttemptCount + 1,
+      connectionErrorUpdateAt: error ? now : 0,
+      connectionStartedAt: 0,
+      initialConnectionStartedAt: 0,
+      error: null,
+      isStarted: false,
+      isError: false,
+      status: 'connecting',
+    };
+  }
+
+  return {
+    ...defaultIdleResult,
+    connectionError: error ?? null,
+    isStarting: true,
+    isConnecting: true,
+    errorUpdatedAt: 0,
+    connectionAttemptCount: 0,
+    connectionErrorUpdateAt: error ? now : 0,
+    status: 'connecting',
+  };
+};
+
 export interface TRPCSubscriptionPendingResult<TInput, TError>
   extends TRPCSubscriptionBaseResult<TInput, TError> {
   error: null;
-  reconnectReason: null;
+  connectionError: null;
+  connectionAttemptCount: 0;
   isStarting: false;
   isStarted: true;
   isConnecting: false;
@@ -293,10 +363,47 @@ export interface TRPCSubscriptionPendingResult<TInput, TError>
   status: 'pending';
 }
 
+export const getPendingResult = <TInput, TError>(
+  previous: UseTRPCSubscriptionResult<TInput, TError>,
+): TRPCSubscriptionPendingResult<TInput, TError> => {
+  const time = Date.now();
+
+  if (previous.isStarting) {
+    return {
+      ...previous,
+      isStarting: false,
+      isStarted: true,
+      isConnecting: false,
+      isReconnecting: false,
+      isPending: true,
+      status: 'pending',
+      connectionStartedAt: time,
+      connectionAttemptCount: 0,
+      connectionError: null,
+      initialConnectionStartedAt: time,
+    };
+  }
+
+  return {
+    ...previous,
+    error: null,
+    isError: false,
+    isStarting: false,
+    isStarted: true,
+    isConnecting: false,
+    isReconnecting: false,
+    isPending: true,
+    status: 'pending',
+    connectionStartedAt: time,
+    connectionAttemptCount: 0,
+    connectionError: null,
+  };
+};
+
 export interface TRPCSubscriptionReconnectingResult<TInput, TError>
   extends TRPCSubscriptionBaseResult<TInput, TError> {
   error: null;
-  reconnectReason: TError;
+  connectionError: TError;
   isStarting: false;
   isStarted: true;
   isConnecting: true;
@@ -305,6 +412,25 @@ export interface TRPCSubscriptionReconnectingResult<TInput, TError>
   isError: false;
   status: 'connecting';
 }
+
+export const getReconnectingResult = <TInput, TError>(
+  previous:
+    | TRPCSubscriptionPendingResult<TInput, TError>
+    | TRPCSubscriptionReconnectingResult<TInput, TError>,
+  error: TError,
+): TRPCSubscriptionReconnectingResult<TInput, TError> => {
+  return {
+    ...previous,
+    isStarting: false,
+    isStarted: true,
+    isConnecting: true,
+    isReconnecting: true,
+    isPending: false,
+    status: 'connecting',
+    connectionError: error,
+    connectionAttemptCount: previous.connectionAttemptCount + 1,
+  };
+};
 
 export interface TRPCSubscriptionErrorResult<TInput, TError>
   extends TRPCSubscriptionBaseResult<TInput, TError> {
@@ -317,6 +443,24 @@ export interface TRPCSubscriptionErrorResult<TInput, TError>
   isError: true;
   status: 'error';
 }
+
+export const getErrorResult = <TInput, TError>(
+  previous: UseTRPCSubscriptionResult<TInput, TError>,
+  error: TError,
+): TRPCSubscriptionErrorResult<TInput, TError> => {
+  return {
+    ...previous,
+    isStarting: false,
+    isStarted: true,
+    isConnecting: false,
+    isReconnecting: false,
+    isPending: false,
+    isError: true,
+    status: 'error',
+    error,
+    errorUpdatedAt: Date.now(),
+  };
+};
 
 export type UseTRPCSubscriptionResult<TInput, TError> =
   | TRPCSubscriptionIdleResult<TInput, TError>

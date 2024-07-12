@@ -59,7 +59,6 @@ export type ConnectionState = 'idle' | 'connecting' | 'pending' | 'error';
 
 export interface ConnectionStateMessageBase {
   type: 'state';
-  state: ConnectionState;
 }
 
 export interface IdleStateMessage extends ConnectionStateMessageBase {

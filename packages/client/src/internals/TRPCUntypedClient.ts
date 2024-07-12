@@ -34,9 +34,7 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
   onError: (err: TError) => void;
   onStopped: () => void;
   onComplete: () => void;
-  onStateChange: (
-    state: Omit<TRPCConnectionStateMessage<TError>, 'type'>,
-  ) => void;
+  onStateChange: (state: TRPCConnectionStateMessage<TError>) => void;
 }
 
 /** @internal */
