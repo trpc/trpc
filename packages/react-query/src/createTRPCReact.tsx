@@ -204,7 +204,7 @@ export type DecorateProcedure<
   : TType extends 'subscription'
   ? {
       /**
-       * @link https://trpc.io/docs/v11/subscriptions
+       * {@link https://trpc.io/docs/v11/subscriptions}
        */
       useSubscription: ProcedureUseSubscription<TDef>;
     }
@@ -241,11 +241,11 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   /**
    * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
    *
-   * @link https://trpc.io/docs/v11/client/react/useUtils
+   * {@link https://trpc.io/docs/v11/client/react/useUtils}
    */
   useContext(): CreateReactUtils<TRouter, TSSRContext>;
   /**
-   * @link https://trpc.io/docs/v11/client/react/useUtils
+   * {@link https://trpc.io/docs/v11/client/react/useUtils}
    */
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;

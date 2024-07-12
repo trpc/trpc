@@ -96,7 +96,7 @@ type GetParams<TProcedureOrRouter extends ProcedureOrRouter> =
  * @param procedureOrRouter - procedure or AnyRouter
  * @param input - input to procedureOrRouter
  * @param type - defaults to `any`
- * @link https://trpc.io/docs/v11/getQueryKey
+ * {@link https://trpc.io/docs/v11/getQueryKey}
  */
 export function getQueryKey<TProcedureOrRouter extends ProcedureOrRouter>(
   procedureOrRouter: TProcedureOrRouter,
