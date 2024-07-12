@@ -15,6 +15,7 @@ import type {
 import type { TRPCClientError } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
 import type {
+  AnyMutationProcedure,
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
@@ -37,10 +38,14 @@ import type {
 } from '../../internals/context';
 import { contextProps } from '../../internals/context';
 import type { QueryKeyKnown, QueryType } from '../../internals/getQueryKey';
-import { getQueryKeyInternal } from '../../internals/getQueryKey';
+import {
+  getMutationKeyInternal,
+  getQueryKeyInternal,
+} from '../../internals/getQueryKey';
+import type { InferMutationOptions } from '../../utils/inferReactQueryProcedure';
 import type { ExtractCursorType } from '../hooks/types';
 
-type DecorateProcedure<
+type DecorateQueryProcedure<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyQueryProcedure,
 > = {
@@ -225,6 +230,25 @@ type DecorateProcedure<
     | undefined;
 };
 
+type DecorateMutationProcedure<
+  TRoot extends AnyRootTypes,
+  TProcedure extends AnyMutationProcedure,
+> = {
+  setMutationDefaults(
+    options:
+      | InferMutationOptions<TRoot, TProcedure>
+      | ((args: {
+          canonicalMutationFn: NonNullable<
+            InferMutationOptions<TRoot, TProcedure>['mutationFn']
+          >;
+        }) => InferMutationOptions<TRoot, TProcedure>),
+  ): void;
+
+  getMutationDefaults(): InferMutationOptions<TRoot, TProcedure> | undefined;
+
+  isMutating(): number;
+};
+
 /**
  * this is the type that is used to add in procedures that can be used on
  * an entire router
@@ -252,14 +276,16 @@ export type DecoratedProcedureUtilsRecord<
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
       ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateRouter
-      : // utils only apply to queries
-      $Value extends AnyQueryProcedure
-      ? DecorateProcedure<TRoot, $Value>
+      : $Value extends AnyQueryProcedure
+      ? DecorateQueryProcedure<TRoot, $Value>
+      : $Value extends AnyMutationProcedure
+      ? DecorateMutationProcedure<TRoot, $Value>
       : never
     : never;
 }; // Add functions that should be available at utils root
 
-type AnyDecoratedProcedure = DecorateProcedure<any, any>;
+type AnyDecoratedProcedure = DecorateQueryProcedure<any, any> &
+  DecorateMutationProcedure<any, any>;
 
 export type CreateReactUtils<
   TRouter extends AnyRouter,
@@ -296,6 +322,9 @@ export const getQueryType = (
     case 'setInfiniteData':
       return 'infinite';
 
+    case 'setMutationDefaults':
+    case 'getMutationDefaults':
+    case 'isMutating':
     case 'cancel':
     case 'invalidate':
     case 'refetch':
@@ -321,6 +350,9 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
     const queryKey = getQueryKeyInternal(path, input, queryType);
 
     const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
+      /**
+       * DecorateQueryProcedure
+       */
       fetch: () => context.fetchQuery(queryKey, ...args),
       fetchInfinite: () => context.fetchInfiniteQuery(queryKey, args[0]),
       prefetch: () => context.prefetchQuery(queryKey, ...args),
@@ -340,6 +372,15 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
       },
       getData: () => context.getQueryData(queryKey),
       getInfiniteData: () => context.getInfiniteQueryData(queryKey),
+      /**
+       * DecorateMutationProcedure
+       */
+      setMutationDefaults: () =>
+        context.setMutationDefaults(getMutationKeyInternal(path), input),
+      getMutationDefaults: () =>
+        context.getMutationDefaults(getMutationKeyInternal(path)),
+      isMutating: () =>
+        context.isMutating({ mutationKey: getMutationKeyInternal(path) }),
     };
 
     return contextMap[utilName]();
