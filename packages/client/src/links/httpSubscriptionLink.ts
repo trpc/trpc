@@ -78,6 +78,13 @@ export function unstable_httpSubscriptionLink<
             return;
           }
           eventSource = new EventSource(url, opts.eventSourceOptions);
+          observer.next({
+            result: {
+              type: 'state',
+              state: 'connecting',
+              data: null,
+            },
+          });
 
           const onStarted = () => {
             observer.next({
@@ -94,6 +101,33 @@ export function unstable_httpSubscriptionLink<
           };
           // console.log('starting', new Date());
           eventSource.addEventListener('open', onStarted);
+
+          eventSource.addEventListener('open', () => {
+            observer.next({
+              result: {
+                type: 'state',
+                state: 'pending',
+              },
+            });
+          });
+
+          eventSource.addEventListener('error', () => {
+            if (eventSource?.readyState === EventSource.CLOSED) {
+              return;
+            }
+
+            const error = TRPCClientError.from(
+              new Error(`EventSource Network Error`),
+            );
+
+            observer.next({
+              result: {
+                type: 'state',
+                state: 'connecting',
+                data: error,
+              },
+            });
+          });
 
           const iterable = sseStreamConsumer<Partial<SSEMessage>>({
             from: eventSource,
@@ -116,12 +150,36 @@ export function unstable_httpSubscriptionLink<
             },
           });
           observer.complete();
+
+          observer.next({
+            result: {
+              type: 'state',
+              state: 'idle',
+            },
+          });
         }).catch((error) => {
-          observer.error(TRPCClientError.from(error));
+          const trpcError = TRPCClientError.from(error);
+
+          observer.error(trpcError);
+          observer.next({
+            result: {
+              type: 'state',
+              state: 'error',
+              data: TRPCClientError.from(trpcError),
+            },
+          });
         });
 
         return () => {
           observer.complete();
+
+          observer.next({
+            result: {
+              type: 'state',
+              state: 'idle',
+            },
+          });
+
           eventSource?.close();
           unsubscribed = true;
         };
