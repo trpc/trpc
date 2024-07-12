@@ -110,6 +110,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     function createCtxPromise(
       getConnectionParams: () => TRPCRequestInfo['connectionParams'],
     ): Promise<inferRouterContext<TRouter>> {
+      let ctx: inferRouterContext<TRouter> | undefined = undefined;
+      
       return run(async () => {
         ctx = await createContext?.({
           req,
@@ -166,8 +168,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       toURL(req.url ?? '').searchParams.get('connectionParams') === '1'
         ? unsetContextSymbol
         : createCtxPromise(() => null);
-
-    let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
       const { id, jsonrpc } = msg;
