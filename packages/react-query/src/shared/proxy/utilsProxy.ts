@@ -45,9 +45,9 @@ import {
 import type { InferMutationOptions } from '../../utils/inferReactQueryProcedure';
 import type { ExtractCursorType } from '../hooks/types';
 
-type DecorateProcedure<
+type DecorateQueryProcedure<
   TRoot extends AnyRootTypes,
-  TProcedure extends AnyQueryProcedure | AnyMutationProcedure,
+  TProcedure extends AnyQueryProcedure,
 > = {
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
@@ -228,7 +228,12 @@ type DecorateProcedure<
         NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
       >
     | undefined;
+};
 
+type DecorateMutationProcedure<
+  TRoot extends AnyRootTypes,
+  TProcedure extends AnyMutationProcedure,
+> = {
   setMutationDefaults(
     options:
       | InferMutationOptions<TRoot, TProcedure>
@@ -243,11 +248,6 @@ type DecorateProcedure<
 
   isMutating(): number;
 };
-
-type DecorateMutationProcedureKeys = keyof Pick<
-  AnyDecoratedProcedure,
-  'isMutating' | 'getMutationDefaults' | 'setMutationDefaults'
->;
 
 /**
  * this is the type that is used to add in procedures that can be used on
@@ -277,14 +277,15 @@ export type DecoratedProcedureUtilsRecord<
     ? $Value extends RouterRecord
       ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateRouter
       : $Value extends AnyQueryProcedure
-      ? Omit<DecorateProcedure<TRoot, $Value>, DecorateMutationProcedureKeys>
+      ? DecorateQueryProcedure<TRoot, $Value>
       : $Value extends AnyMutationProcedure
-      ? Pick<DecorateProcedure<TRoot, $Value>, DecorateMutationProcedureKeys>
+      ? DecorateMutationProcedure<TRoot, $Value>
       : never
     : never;
 }; // Add functions that should be available at utils root
 
-type AnyDecoratedProcedure = DecorateProcedure<any, any>;
+type AnyDecoratedProcedure = DecorateQueryProcedure<any, any> &
+  DecorateMutationProcedure<any, any>;
 
 export type CreateReactUtils<
   TRouter extends AnyRouter,
@@ -349,6 +350,9 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
     const queryKey = getQueryKeyInternal(path, input, queryType);
 
     const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
+      /**
+       * DecorateQueryProcedure
+       */
       fetch: () => context.fetchQuery(queryKey, ...args),
       fetchInfinite: () => context.fetchInfiniteQuery(queryKey, args[0]),
       prefetch: () => context.prefetchQuery(queryKey, ...args),
@@ -368,6 +372,9 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
       },
       getData: () => context.getQueryData(queryKey),
       getInfiniteData: () => context.getInfiniteQueryData(queryKey),
+      /**
+       * DecorateMutationProcedure
+       */
       setMutationDefaults: () =>
         context.setMutationDefaults(getMutationKeyInternal(path), input),
       getMutationDefaults: () =>
