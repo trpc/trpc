@@ -121,12 +121,17 @@ export function Chat(props: Readonly<{ channelId: string }>) {
           </div>
         </div>
         <div className="border-t bg-white p-2 dark:border-gray-800 dark:bg-gray-900">
-          {livePosts.connection.isConnecting && (
+          {livePosts.connection.isStarting && (
             <div className="pb-2 text-sm text-gray-500 dark:text-gray-400">
-              Connecting...
+              Connecting... {livePosts.connection.connectionAttemptCount}
             </div>
           )}
-          {livePosts.connection.isStopped && (
+          {livePosts.connection.isReconnecting && (
+            <div className="pb-2 text-sm text-gray-500 dark:text-gray-400">
+              Reconnecting... {livePosts.connection.connectionAttemptCount}
+            </div>
+          )}
+          {livePosts.connection.isError && (
             <Button
               variant={'link'}
               onClick={() => {

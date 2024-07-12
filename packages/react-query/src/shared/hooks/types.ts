@@ -20,10 +20,10 @@ import type {
 import type {
   ConnectionState,
   CreateTRPCClientOptions,
+  TRPCConnectionStateMessage,
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
-import type { TRPCSubscriptionObserver } from '@trpc/client/internals/TRPCUntypedClient';
 import type {
   AnyRouter,
   DistributiveOmit,
@@ -149,11 +149,7 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
    */
   onError?: (err: TError) => void;
   onData: (data: TOutput) => void;
-  onStateChange?: (
-    state: Parameters<
-      TRPCSubscriptionObserver<unknown, TError>['onStateChange']
-    >,
-  ) => void;
+  onStateChange?: (state: TRPCConnectionStateMessage<TError>) => void;
 }
 
 export interface restartSubscriptionOptionsBase {
@@ -184,7 +180,7 @@ export type restartSubscriptionFn<TInput> = (
   options?: restartSubscriptionOptions<TInput>,
 ) => void;
 
-export interface TRPCSubscriptionBaseResult<_TInput, TError> {
+export interface TRPCSubscriptionBaseResult<TInput, TError> {
   /**
    * The timestamp for when the connection was last (re-)established
    */
@@ -256,7 +252,7 @@ export interface TRPCSubscriptionBaseResult<_TInput, TError> {
   /**
    * Restart the subscription
    */
-  /* restart: restartSubscriptionFn<TInput>; */
+  restart: restartSubscriptionFn<TInput>;
 }
 
 export interface TRPCSubscriptionIdleResult<TInput, TError>
@@ -277,7 +273,10 @@ export interface TRPCSubscriptionIdleResult<TInput, TError>
   status: 'idle';
 }
 
-export const defaultIdleResult: TRPCSubscriptionIdleResult<unknown, unknown> = {
+const defaultIdleResult: Omit<
+  TRPCSubscriptionIdleResult<unknown, unknown>,
+  'restart'
+> = {
   connectionStartedAt: 0,
   initialConnectionStartedAt: 0,
   error: null,
@@ -292,6 +291,15 @@ export const defaultIdleResult: TRPCSubscriptionIdleResult<unknown, unknown> = {
   isError: false,
   connectionErrorUpdateAt: 0,
   status: 'idle',
+};
+
+export const getIdleResult = <TInput, TError>(
+  restart: restartSubscriptionFn<TInput>,
+): TRPCSubscriptionIdleResult<TInput, TError> => {
+  return {
+    ...defaultIdleResult,
+    restart,
+  };
 };
 
 export interface TRPCSubscriptionStartingResult<TInput, TError>
@@ -310,6 +318,7 @@ export interface TRPCSubscriptionStartingResult<TInput, TError>
 }
 
 export const getStartingResult = <TInput, TError>(
+  restart: restartSubscriptionFn<TInput>,
   previous?:
     | TRPCSubscriptionIdleResult<TInput, TError>
     | TRPCSubscriptionStartingResult<TInput, TError>
@@ -338,7 +347,7 @@ export const getStartingResult = <TInput, TError>(
   }
 
   return {
-    ...defaultIdleResult,
+    ...getIdleResult(restart),
     connectionError: error ?? null,
     isStarting: true,
     isConnecting: true,

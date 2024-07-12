@@ -145,10 +145,10 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
           });
         } else if (envelope.result.type === 'stopped') {
           opts.onStopped?.();
-        } else if (envelope.result.type === 'data') {
-          opts.onData?.(envelope.result.data);
         } else if (envelope.result.type === 'state') {
           opts.onStateChange?.(envelope.result);
+        } else {
+          opts.onData?.(envelope.result.data);
         }
       },
       error(err) {

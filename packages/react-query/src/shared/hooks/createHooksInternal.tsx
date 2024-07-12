@@ -28,9 +28,10 @@ import type {
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
 import { createUseQueries } from '../proxy/useQueriesProxy';
 import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
+import type { restartSubscriptionFn } from './types';
 import {
-  defaultIdleResult,
   getErrorResult,
+  getIdleResult,
   getPendingResult,
   getReconnectingResult,
   getStartingResult,
@@ -317,9 +318,17 @@ export function createRootHooks<
     const queryKey = hashKey(getQueryKeyInternal(path, input, 'any'));
     const { client } = useContext();
 
+    const restart = React.useRef<restartSubscriptionFn<unknown>>(() =>
+      console.warn('restart() called before subscription'),
+    );
+
     const [subscriptionState, setSubscriptionState] = React.useState<
       UseTRPCSubscriptionResult<unknown, TError>
-    >(enabled ? getStartingResult() : defaultIdleResult);
+    >(
+      enabled
+        ? getStartingResult(restart.current)
+        : getIdleResult(restart.current),
+    );
 
     const optsRef = React.useRef<typeof opts>(opts);
     optsRef.current = opts;
@@ -351,7 +360,7 @@ export function createRootHooks<
           },
           onStateChange: (state) => {
             if (state.state === 'idle') {
-              setSubscriptionState(defaultIdleResult);
+              setSubscriptionState(getIdleResult(restart.current));
 
               return;
             }
@@ -364,7 +373,7 @@ export function createRootHooks<
                     prev.status === 'idle' ||
                     prev.isError
                   ) {
-                    return getStartingResult(prev, state.data);
+                    return getStartingResult(restart.current, prev, state.data);
                   }
 
                   if (!state.data) {
@@ -391,11 +400,13 @@ export function createRootHooks<
         },
       );
 
+      const effectRestart = restart.current;
+
       return () => {
         isStopped = true;
         subscription.unsubscribe();
 
-        setSubscriptionState(defaultIdleResult);
+        setSubscriptionState(getIdleResult(effectRestart));
       };
 
       // eslint-disable-next-line react-hooks/exhaustive-deps
