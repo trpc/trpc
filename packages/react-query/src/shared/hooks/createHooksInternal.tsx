@@ -32,6 +32,8 @@ import type {
   CreateClient,
   TRPCProvider,
   TRPCQueryOptions,
+  TRPCSubscriptionIdleResult,
+  TRPCSubscriptionStartingResult,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
@@ -45,6 +47,29 @@ import type {
   UseTRPCSuspenseQueryOptions,
   UseTRPCSuspenseQueryResult,
 } from './types';
+
+const defaultIdleState: TRPCSubscriptionIdleResult<unknown, unknown> = {
+  connectionStartedAt: 0,
+  initialConnectionStartedAt: 0,
+  error: null,
+  errorUpdatedAt: 0,
+  reconnectReason: null,
+  reconnectionAttemptCount: 0,
+  isStarting: false,
+  isStarted: false,
+  isConnecting: false,
+  isPending: false,
+  isReconnecting: false,
+  isError: false,
+  status: 'idle',
+};
+
+const defaultStartingState: TRPCSubscriptionStartingResult<unknown, unknown> = {
+  ...defaultIdleState,
+  isConnecting: true,
+  isStarting: true,
+  status: 'connecting',
+};
 
 /**
  * @internal
@@ -314,14 +339,7 @@ export function createRootHooks<
 
     const [subscriptionState, setSubscriptionState] = React.useState<
       UseTRPCSubscriptionResult<unknown, TError>
-    >({
-      data: undefined,
-      error: undefined,
-      state: enabled ? 'connecting' : 'stopped',
-      isConnecting: enabled === true,
-      isConnected: false,
-      isStopped: !enabled,
-    });
+    >(enabled ? defaultStartingState : defaultIdleState);
 
     const optsRef = React.useRef<typeof opts>(opts);
     optsRef.current = opts;
@@ -336,48 +354,18 @@ export function createRootHooks<
         path.join('.'),
         input ?? undefined,
         {
-          onConnecting: () => {
-            if (!isStopped) {
-              optsRef.current.onConnecting?.();
-              setSubscriptionState((prev) => ({
-                ...prev,
-                state: 'connecting',
-                isConnecting: true,
-                isPending: false,
-              }));
-            }
-          },
           onStarted: () => {
             if (!isStopped) {
               optsRef.current.onStarted?.();
-              setSubscriptionState((prev) => ({
-                ...prev,
-                state: 'connected',
-                isConnecting: false,
-                isPending: true,
-              }));
             }
           },
           onData: (data) => {
             if (!isStopped) {
-              setSubscriptionState((prev) => ({
-                ...prev,
-                data,
-                error: undefined,
-              }));
               optsRef.current.onData(data);
             }
           },
           onError: (err) => {
             if (!isStopped) {
-              setSubscriptionState((prev) => ({
-                ...prev,
-                error: err,
-                state: 'stopped',
-                isStopped: true,
-                isPending: false,
-                isConnecting: false,
-              }));
               optsRef.current.onError?.(err);
             }
           },
@@ -386,14 +374,6 @@ export function createRootHooks<
 
       return () => {
         isStopped = true;
-        setSubscriptionState((prev) => ({
-          ...prev,
-          state: enabled ? 'connecting' : 'stopped',
-          isStopped: !enabled,
-          isPending: false,
-          isConnecting: enabled,
-        }));
-
         subscription.unsubscribe();
       };
 

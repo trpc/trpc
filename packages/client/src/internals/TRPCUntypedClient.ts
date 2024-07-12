@@ -14,6 +14,7 @@ import type {
   OperationContext,
   OperationLink,
   TRPCClientRuntime,
+  TRPCConnectionStateMessage,
   TRPCLink,
 } from '../links/types';
 import { TRPCClientError } from '../TRPCClientError';
@@ -33,6 +34,9 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
   onError: (err: TError) => void;
   onStopped: () => void;
   onComplete: () => void;
+  onStateChange: (
+    state: Omit<TRPCConnectionStateMessage<TError>, 'type'>,
+  ) => void;
 }
 
 /** @internal */
@@ -143,8 +147,10 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
           });
         } else if (envelope.result.type === 'stopped') {
           opts.onStopped?.();
-        } else {
+        } else if (envelope.result.type === 'data') {
           opts.onData?.(envelope.result.data);
+        } else if (envelope.result.type === 'state') {
+          opts.onStateChange?.(envelope.result);
         }
       },
       error(err) {

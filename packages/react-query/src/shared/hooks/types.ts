@@ -18,10 +18,12 @@ import type {
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
 import type {
+  ConnectionState,
   CreateTRPCClientOptions,
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
+import type { TRPCSubscriptionObserver } from '@trpc/client/internals/TRPCUntypedClient';
 import type {
   AnyRouter,
   DistributiveOmit,
@@ -136,26 +138,6 @@ export interface UseTRPCMutationOptions<
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCUseQueryBaseOptions {}
 
-type StateCallbackOptions<TError> =
-  | {
-      state: 'idle';
-      data: null;
-    }
-  | {
-      state: 'connecting';
-      data: TError | null;
-    }
-  | {
-      state: 'pending';
-      data: null;
-    }
-  | {
-      state: 'error';
-      data: TError;
-    };
-
-export type SubscriptionState = StateCallbackOptions<unknown>['state'];
-
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   enabled?: boolean;
   /**
@@ -167,7 +149,11 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
    */
   onError?: (err: TError) => void;
   onData: (data: TOutput) => void;
-  onStateChange?: (opts: StateCallbackOptions<TError>) => void;
+  onStateChange?: (
+    state: Parameters<
+      TRPCSubscriptionObserver<unknown, TError>['onStateChange']
+    >,
+  ) => void;
 }
 
 export interface restartSubscriptionOptionsBase {
@@ -185,7 +171,7 @@ export interface restartSubscriptionOptionsWithLastEventId
    * Defaults to `true` in case of failure or if the subscription is still active
    * - When the susbscription has successfully completed, it will be set to `false`
    */
-  sendLastEventId: boolean;
+  sendLastEventId?: boolean;
 }
 
 export type restartSubscriptionOptions<TInput> = TInput extends {
@@ -198,7 +184,7 @@ export type restartSubscriptionFn<TInput> = (
   options?: restartSubscriptionOptions<TInput>,
 ) => void;
 
-export interface TRPCSubscriptionBaseResult<TInput, TError> {
+export interface TRPCSubscriptionBaseResult<_TInput, TError> {
   /**
    * The timestamp for when the connection was last (re-)established
    */
@@ -261,11 +247,11 @@ export interface TRPCSubscriptionBaseResult<TInput, TError> {
    *  - `'pending'` when the subscription is connected and receiving data
    *  - `'error'` when the subscription has stopped due to an error
    */
-  status: SubscriptionState;
+  status: ConnectionState;
   /**
    * Restart the subscription
    */
-  restart: restartSubscriptionFn<TInput>;
+  /* restart: restartSubscriptionFn<TInput>; */
 }
 
 export interface TRPCSubscriptionIdleResult<TInput, TError>
