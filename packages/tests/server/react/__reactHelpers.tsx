@@ -1,6 +1,8 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
+import type { Persister } from '@tanstack/react-query-persist-client';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import type { Operation } from '@trpc/client';
 import {
   getUntypedClient,
@@ -19,7 +21,8 @@ import React from 'react';
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,
   opts?: {
-    subscriptions: 'ws' | 'http';
+    subscriptions?: 'ws' | 'http';
+    persister?: Persister;
   },
 ) {
   const spyLink = vi.fn((_op: Operation<unknown>) => {
@@ -76,9 +79,25 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
       <baseProxy.Provider
         {...{ queryClient, client: getUntypedClient(ctx.client) }}
       >
-        <QueryClientProvider client={queryClient}>
-          {props.children}
-        </QueryClientProvider>
+        {opts?.persister ? (
+          <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{
+              persister: opts.persister,
+            }}
+            onSuccess={() => {
+              queryClient.resumePausedMutations().then(() => {
+                queryClient.invalidateQueries();
+              });
+            }}
+          >
+            {props.children}
+          </PersistQueryClientProvider>
+        ) : (
+          <QueryClientProvider client={queryClient}>
+            {props.children}
+          </QueryClientProvider>
+        )}
       </baseProxy.Provider>
     );
   }
