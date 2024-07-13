@@ -39,13 +39,7 @@ const listWithAnd = (list: string[]) => {
 };
 
 function SubscriptionStatus(props: {
-  subscription: UseTRPCSubscriptionResult<
-    unknown,
-    unknown,
-    {
-      message: string;
-    }
-  >;
+  subscription: ReturnType<typeof useLivePosts>['subscription'];
 }) {
   const { subscription } = props;
   return (
