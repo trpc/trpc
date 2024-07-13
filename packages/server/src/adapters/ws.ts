@@ -152,7 +152,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
 
         // close in next tick
-        (global.setImmediate ?? global.setTimeout)(() => {
+        (globalThis.setImmediate ?? globalThis.setTimeout)(() => {
           client.close();
         });
 
