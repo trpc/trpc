@@ -30,10 +30,10 @@ import { createUseQueries } from '../proxy/useQueriesProxy';
 import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 import type { restartSubscriptionFn } from './types';
 import {
+  getConnectingResult,
   getErrorResult,
   getIdleResult,
   getPendingResult,
-  getReconnectingResult,
   getStartingResult,
   type CreateClient,
   type TRPCProvider,
@@ -51,6 +51,20 @@ import {
   type UseTRPCSuspenseQueryOptions,
   type UseTRPCSuspenseQueryResult,
 } from './types';
+
+const trackResult = <T extends UseTRPCSubscriptionResult<unknown, unknown>>(
+  result: T,
+  onTrackResult: (key: keyof T) => void,
+): T => {
+  const trackedResult = new Proxy(result, {
+    get(target, prop) {
+      onTrackResult(prop as keyof T);
+      return target[prop as keyof T];
+    },
+  });
+
+  return trackedResult;
+};
 
 /**
  * @internal
@@ -316,19 +330,70 @@ export function createRootHooks<
   ): UseTRPCSubscriptionResult<unknown, TError> {
     const enabled = opts?.enabled ?? input !== skipToken;
     const queryKey = hashKey(getQueryKeyInternal(path, input, 'any'));
-    const { client } = useContext();
+
+    const trackedProps = React.useRef(
+      new Set<keyof UseTRPCSubscriptionResult<unknown, TError>>([]),
+    );
+
+    const addTrackedProp = React.useCallback(
+      (key: keyof UseTRPCSubscriptionResult<unknown, TError>) => {
+        trackedProps.current.add(key);
+      },
+      [],
+    );
 
     const restart = React.useRef<restartSubscriptionFn<unknown>>(() =>
       console.warn('restart() called before subscription'),
     );
 
-    const [subscriptionState, setSubscriptionState] = React.useState<
+    const currentResult = React.useRef<
       UseTRPCSubscriptionResult<unknown, TError>
     >(
       enabled
         ? getStartingResult(restart.current)
         : getIdleResult(restart.current),
     );
+
+    const [subscriptionState, setSubscriptionState] = React.useState(
+      trackResult(currentResult.current, addTrackedProp),
+    );
+
+    const updateSubscriptionState = React.useCallback(
+      (
+        opts:
+          | UseTRPCSubscriptionResult<unknown, TError>
+          | ((
+              prev: UseTRPCSubscriptionResult<unknown, TError>,
+            ) => UseTRPCSubscriptionResult<unknown, TError>),
+      ) => {
+        const oldResult = currentResult.current;
+
+        const newResult =
+          typeof opts === 'function' ? opts(currentResult.current) : opts;
+
+        currentResult.current = newResult;
+
+        let shouldUpdate = false;
+
+        for (const key of trackedProps.current) {
+          if (oldResult[key] !== newResult[key]) {
+            shouldUpdate = true;
+            break;
+          }
+        }
+
+        if (shouldUpdate) {
+          console.log('updating');
+          setSubscriptionState(trackResult(newResult, addTrackedProp));
+          return;
+        }
+
+        console.log('not updating');
+      },
+      [addTrackedProp],
+    );
+
+    const { client } = useContext();
 
     const optsRef = React.useRef<typeof opts>(opts);
     optsRef.current = opts;
@@ -360,39 +425,25 @@ export function createRootHooks<
           },
           onStateChange: (state) => {
             if (state.state === 'idle') {
-              setSubscriptionState(getIdleResult(restart.current));
+              updateSubscriptionState(getIdleResult(restart.current));
 
               return;
             }
 
             if (state.state === 'connecting') {
-              setSubscriptionState(
-                (prev): UseTRPCSubscriptionResult<unknown, TError> => {
-                  if (
-                    prev.isStarting ||
-                    prev.status === 'idle' ||
-                    prev.isError
-                  ) {
-                    return getStartingResult(restart.current, prev, state.data);
-                  }
-
-                  if (!state.data) {
-                    throw new Error('Reconnection without exception?');
-                  }
-
-                  return getReconnectingResult(prev, state.data);
-                },
-              );
+              updateSubscriptionState((prev) => {
+                return getConnectingResult(prev, state.data ?? null);
+              });
 
               return;
             }
 
             if (state.state === 'pending') {
-              setSubscriptionState((prev) => getPendingResult(prev));
+              updateSubscriptionState((prev) => getPendingResult(prev));
             }
 
             if (state.state === 'error') {
-              setSubscriptionState((prev) => {
+              updateSubscriptionState((prev) => {
                 return getErrorResult(prev, state.data);
               });
             }
@@ -406,7 +457,7 @@ export function createRootHooks<
         isStopped = true;
         subscription.unsubscribe();
 
-        setSubscriptionState(getIdleResult(effectRestart));
+        updateSubscriptionState(getIdleResult(effectRestart));
       };
 
       // eslint-disable-next-line react-hooks/exhaustive-deps
