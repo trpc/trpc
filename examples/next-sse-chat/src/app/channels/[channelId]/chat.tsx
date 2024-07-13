@@ -41,6 +41,7 @@ const listWithAnd = (list: string[]) => {
 function SubscriptionStatus(props: {
   subscription: UseTRPCSubscriptionResult<
     unknown,
+    unknown,
     {
       message: string;
     }
@@ -67,10 +68,10 @@ function SubscriptionStatus(props: {
             // treat idle and connecting the same
             return (
               <div>
-                Connecting...{' '}
-                {subscription.connectionError
-                  ? 'There are connection issues'
-                  : ''}
+                Connecting... {/* Using `isError` for less rerenders */}
+                {subscription.isError
+                  ? '(There are connection problems)'
+                  : ''}{' '}
               </div>
             );
           case 'error':

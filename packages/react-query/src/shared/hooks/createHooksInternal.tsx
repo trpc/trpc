@@ -344,9 +344,9 @@ export function createRootHooks<
       [],
     );
 
-    const restart = React.useRef<restartSubscriptionFn<unknown>>(() =>
-      console.warn('restart() called before subscription'),
-    );
+    const restart = React.useRef<restartSubscriptionFn<unknown>>(() => {
+      throw new Error('not implemented');
+    });
 
     const currentResult = React.useRef<
       UseTRPCSubscriptionResult<unknown, unknown, TError>
