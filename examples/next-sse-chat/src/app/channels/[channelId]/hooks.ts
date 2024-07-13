@@ -104,7 +104,7 @@ export function useLivePosts(channelId: string) {
     // Changing this value will trigger a new subscription
     setLastEventId(messages.at(-1)?.id ?? null);
   }
-  const connection = trpc.post.onAdd.useSubscription(
+  const subscription = trpc.post.onAdd.useSubscription(
     lastEventId === false ? skipToken : { channelId, lastEventId },
     {
       onData(event) {
@@ -119,6 +119,6 @@ export function useLivePosts(channelId: string) {
   return {
     query,
     messages,
-    connection,
+    subscription,
   };
 }

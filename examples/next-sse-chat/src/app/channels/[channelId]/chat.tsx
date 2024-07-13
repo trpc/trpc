@@ -1,6 +1,8 @@
 'use client';
 
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { TRPCClientErrorLike } from '@trpc/client';
+import type { UseTRPCSubscriptionResult } from '@trpc/react-query/shared';
 import { Avatar } from '~/components/avatar';
 import { Button, buttonVariants } from '~/components/button';
 import { Textarea } from '~/components/input';
@@ -16,6 +18,10 @@ import {
   useWhoIsTyping,
 } from './hooks';
 
+const run = <TResult,>(fn: () => TResult): TResult => fn();
+const assertUnreachable = (_value: never): never => {
+  throw new Error('Unreachable');
+};
 const pluralize = (count: number, singular: string, plural: string) =>
   count === 1 ? singular : plural;
 
@@ -32,6 +38,68 @@ const listWithAnd = (list: string[]) => {
   return `${list.slice(0, -1).join(', ')}, and ${list.at(-1)}`;
 };
 
+function SubscriptionStatus(props: {
+  subscription: UseTRPCSubscriptionResult<
+    unknown,
+    {
+      message: string;
+    }
+  >;
+}) {
+  const { subscription } = props;
+  return (
+    <div
+      className={cx(
+        'rounded-full p-2 text-sm',
+        (subscription.status === 'idle' ||
+          subscription.status === 'connecting') &&
+          'bg-white text-gray-500 dark:bg-gray-900 dark:text-gray-400',
+        subscription.status === 'error' &&
+          'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+        subscription.status === 'pending' &&
+          'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+      )}
+    >
+      {run(() => {
+        switch (subscription.status) {
+          case 'idle':
+          case 'connecting':
+            // treat idle and connecting the same
+            return (
+              <div>
+                Connecting...{' '}
+                {subscription.connectionError
+                  ? 'There are connection issues'
+                  : ''}
+              </div>
+            );
+          case 'error':
+            // something went wrong
+            return (
+              <div>
+                Error - <em>{subscription.error.message}</em>
+                <a
+                  href="#"
+                  onClick={() => {
+                    subscription.restart();
+                  }}
+                  className="hover underline"
+                >
+                  Try Again
+                </a>
+              </div>
+            );
+          case 'pending':
+            // we are polling for new messages
+            return <div>Connected - awaiting messages</div>;
+          default:
+            assertUnreachable(subscription);
+        }
+      })}
+    </div>
+  );
+}
+
 export function Chat(props: Readonly<{ channelId: string }>) {
   const { channelId } = props;
   const livePosts = useLivePosts(channelId);
@@ -42,6 +110,13 @@ export function Chat(props: Readonly<{ channelId: string }>) {
   return (
     <main className="flex-1 overflow-hidden">
       <div className="flex h-full flex-col">
+        {/* connection status indicator */}
+        <div className="relative flex items-center justify-center gap-2 p-4 sm:p-6 lg:p-8">
+          {/* connection status indicator - centered */}
+          <div className="absolute right-0 top-0 flex items-center justify-center gap-2 rounded-full p-2 text-sm">
+            <SubscriptionStatus subscription={livePosts.subscription} />
+          </div>
+        </div>
         <div
           className="flex flex-1 flex-col-reverse overflow-y-scroll p-4 sm:p-6 lg:p-8"
           ref={scrollRef}
@@ -120,30 +195,8 @@ export function Chat(props: Readonly<{ channelId: string }>) {
             </p>
           </div>
         </div>
+
         <div className="border-t bg-white p-2 dark:border-gray-800 dark:bg-gray-900">
-          {livePosts.connection.isStarting && (
-            <div className="pb-2 text-sm text-gray-500 dark:text-gray-400">
-              Connecting...{' '}
-              {livePosts.connection.connectionError
-                ? 'There are connection issues'
-                : ''}
-            </div>
-          )}
-          {livePosts.connection.isReconnecting && (
-            <div className="pb-2 text-sm text-gray-500 dark:text-gray-400">
-              Reconnecting...
-            </div>
-          )}
-          {livePosts.connection.isError && (
-            <Button
-              variant={'link'}
-              onClick={() => {
-                livePosts.connection.restart();
-              }}
-            >
-              Try Again
-            </Button>
-          )}
           <AddMessageForm
             signedIn={!!session?.user}
             channelId={channelId}
