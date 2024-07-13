@@ -203,10 +203,10 @@ import { ReadableStream, TransformStream } from 'web-streams-polyfill';
 declare global {
   interface EventSource extends RNEventSource {}
 }
-global.EventSource = global.EventSource || RNEventSource;
+globalThis.EventSource = globalThis.EventSource || RNEventSource;
 
-global.ReadableStream = global.ReadableStream || ReadableStream;
-global.TransformStream = global.TransformStream || TransformStream;
+globalThis.ReadableStream = globalThis.ReadableStream || ReadableStream;
+globalThis.TransformStream = globalThis.TransformStream || TransformStream;
 ```
 
 Once the polyfills are added, you can continue setting up the `httpSubscriptionLink` as described in the [setup](#setup) section.
