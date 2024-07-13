@@ -52,7 +52,9 @@ import {
   type UseTRPCSuspenseQueryResult,
 } from './types';
 
-const trackResult = <T extends UseTRPCSubscriptionResult<unknown, unknown>>(
+const trackResult = <
+  T extends UseTRPCSubscriptionResult<unknown, unknown, unknown>,
+>(
   result: T,
   onTrackResult: (key: keyof T) => void,
 ): T => {
@@ -327,16 +329,16 @@ export function createRootHooks<
     path: readonly string[],
     input: unknown,
     opts: UseTRPCSubscriptionOptions<unknown, TError>,
-  ): UseTRPCSubscriptionResult<unknown, TError> {
+  ): UseTRPCSubscriptionResult<unknown, unknown, TError> {
     const enabled = opts?.enabled ?? input !== skipToken;
     const queryKey = hashKey(getQueryKeyInternal(path, input, 'any'));
 
     const trackedProps = React.useRef(
-      new Set<keyof UseTRPCSubscriptionResult<unknown, TError>>([]),
+      new Set<keyof UseTRPCSubscriptionResult<unknown, unknown, TError>>([]),
     );
 
     const addTrackedProp = React.useCallback(
-      (key: keyof UseTRPCSubscriptionResult<unknown, TError>) => {
+      (key: keyof UseTRPCSubscriptionResult<unknown, unknown, TError>) => {
         trackedProps.current.add(key);
       },
       [],
@@ -347,7 +349,7 @@ export function createRootHooks<
     );
 
     const currentResult = React.useRef<
-      UseTRPCSubscriptionResult<unknown, TError>
+      UseTRPCSubscriptionResult<unknown, unknown, TError>
     >(
       enabled
         ? getStartingResult(restart.current)
@@ -361,10 +363,10 @@ export function createRootHooks<
     const updateSubscriptionState = React.useCallback(
       (
         opts:
-          | UseTRPCSubscriptionResult<unknown, TError>
+          | UseTRPCSubscriptionResult<unknown, unknown, TError>
           | ((
-              prev: UseTRPCSubscriptionResult<unknown, TError>,
-            ) => UseTRPCSubscriptionResult<unknown, TError>),
+              prev: UseTRPCSubscriptionResult<unknown, unknown, TError>,
+            ) => UseTRPCSubscriptionResult<unknown, unknown, TError>),
       ) => {
         const oldResult = currentResult.current;
 
@@ -416,6 +418,14 @@ export function createRootHooks<
           onData: (data) => {
             if (!isStopped) {
               optsRef.current.onData(data);
+
+              updateSubscriptionState((prev) => {
+                if (prev.isPending) {
+                  return getPendingResult(prev, data);
+                }
+
+                return prev;
+              });
             }
           },
           onError: (err) => {

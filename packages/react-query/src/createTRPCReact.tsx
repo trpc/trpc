@@ -181,7 +181,11 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
   (
     input: TDef['input'],
     opts: UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
-  ): UseTRPCSubscriptionResult<TDef['output'], TRPCClientErrorLike<TDef>>;
+  ): UseTRPCSubscriptionResult<
+    TDef['input'],
+    TDef['output'],
+    TRPCClientErrorLike<TDef>
+  >;
 
   // With skip token
   (
@@ -190,7 +194,11 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
       UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
       'enabled'
     >,
-  ): UseTRPCSubscriptionResult<TDef['input'], TRPCClientErrorLike<TDef>>;
+  ): UseTRPCSubscriptionResult<
+    TDef['input'],
+    TDef['output'],
+    TRPCClientErrorLike<TDef>
+  >;
 }
 /**
  * @internal

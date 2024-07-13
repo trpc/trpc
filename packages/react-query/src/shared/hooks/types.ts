@@ -180,7 +180,11 @@ export type restartSubscriptionFn<TInput> = (
   options?: restartSubscriptionOptions<TInput>,
 ) => void;
 
-export interface TRPCSubscriptionBaseResult<TInput, TError> {
+export interface TRPCSubscriptionBaseResult<TInput, TOutput, TError> {
+  /**
+   * The last data received from the subscription
+   */
+  data: TOutput | null;
   /**
    * The timestamp for when the connection was last (re-)established
    */
@@ -255,8 +259,9 @@ export interface TRPCSubscriptionBaseResult<TInput, TError> {
   restart: restartSubscriptionFn<TInput>;
 }
 
-export interface TRPCSubscriptionIdleResult<TInput, TError>
-  extends TRPCSubscriptionBaseResult<TInput, TError> {
+export interface TRPCSubscriptionIdleResult<TInput, TOutput, TError>
+  extends TRPCSubscriptionBaseResult<TInput, TOutput, TError> {
+  data: null;
   error: null;
   errorUpdatedAt: 0;
   connectionError: null;
@@ -274,9 +279,10 @@ export interface TRPCSubscriptionIdleResult<TInput, TError>
 }
 
 const defaultIdleResult: Omit<
-  TRPCSubscriptionIdleResult<unknown, unknown>,
+  TRPCSubscriptionIdleResult<unknown, unknown, unknown>,
   'restart'
 > = {
+  data: null,
   connectionStartedAt: 0,
   initialConnectionStartedAt: 0,
   error: null,
@@ -293,20 +299,22 @@ const defaultIdleResult: Omit<
   status: 'idle',
 };
 
-export const getIdleResult = <TInput, TError>(
+export const getIdleResult = <TInput, TOutput, TError>(
   restart: restartSubscriptionFn<TInput>,
-): TRPCSubscriptionIdleResult<TInput, TError> => {
+): TRPCSubscriptionIdleResult<TInput, TOutput, TError> => {
   return {
     ...defaultIdleResult,
+    data: null,
     restart,
   };
 };
 
-export interface TRPCSubscriptionStartingResult<TInput, TError>
-  extends TRPCSubscriptionBaseResult<TInput, TError> {
+export interface TRPCSubscriptionStartingResult<TInput, TOutput, TError>
+  extends TRPCSubscriptionBaseResult<TInput, TOutput, TError> {
   connectionStartedAt: 0;
   initialConnectionStartedAt: 0;
   error: null;
+  data: null;
   connectionError: TError | null;
   isStarting: true;
   isStarted: false;
@@ -317,20 +325,21 @@ export interface TRPCSubscriptionStartingResult<TInput, TError>
   status: 'connecting';
 }
 
-export const getStartingResult = <TInput, TError>(
+export const getStartingResult = <TInput, TOutput, TError>(
   restart: restartSubscriptionFn<TInput>,
   previous?:
-    | TRPCSubscriptionIdleResult<TInput, TError>
-    | TRPCSubscriptionStartingResult<TInput, TError>
-    | TRPCSubscriptionErrorResult<TInput, TError>,
+    | TRPCSubscriptionIdleResult<TInput, TOutput, TError>
+    | TRPCSubscriptionErrorResult<TInput, TOutput, TError>
+    | TRPCSubscriptionStartingResult<TInput, TOutput, TError>,
   error?: TError | null,
-): TRPCSubscriptionStartingResult<TInput, TError> => {
+): TRPCSubscriptionStartingResult<TInput, TOutput, TError> => {
   const now = Date.now();
 
   if (previous) {
     return {
       ...defaultIdleResult,
       ...previous,
+      data: null,
       connectionError: error ?? null,
       isStarting: true,
       isConnecting: true,
@@ -358,8 +367,8 @@ export const getStartingResult = <TInput, TError>(
   };
 };
 
-export interface TRPCSubscriptionPendingResult<TInput, TError>
-  extends TRPCSubscriptionBaseResult<TInput, TError> {
+export interface TRPCSubscriptionPendingResult<TInput, TOutput, TError>
+  extends TRPCSubscriptionBaseResult<TInput, TOutput, TError> {
   error: null;
   connectionError: null;
   connectionAttemptCount: 0;
@@ -372,14 +381,16 @@ export interface TRPCSubscriptionPendingResult<TInput, TError>
   status: 'pending';
 }
 
-export const getPendingResult = <TInput, TError>(
-  previous: UseTRPCSubscriptionResult<TInput, TError>,
-): TRPCSubscriptionPendingResult<TInput, TError> => {
+export const getPendingResult = <TInput, TOutput, TError>(
+  previous: UseTRPCSubscriptionResult<TInput, TOutput, TError>,
+  data?: TOutput,
+): TRPCSubscriptionPendingResult<TInput, TOutput, TError> => {
   const time = Date.now();
 
   if (previous.isStarting) {
     return {
       ...previous,
+      error: null,
       isStarting: false,
       isStarted: true,
       isConnecting: false,
@@ -395,6 +406,7 @@ export const getPendingResult = <TInput, TError>(
 
   return {
     ...previous,
+    data: data ?? previous.data,
     error: null,
     isError: false,
     isStarting: false,
@@ -409,8 +421,8 @@ export const getPendingResult = <TInput, TError>(
   };
 };
 
-export interface TRPCSubscriptionReconnectingResult<TInput, TError>
-  extends TRPCSubscriptionBaseResult<TInput, TError> {
+export interface TRPCSubscriptionReconnectingResult<TInput, TOutput, TError>
+  extends TRPCSubscriptionBaseResult<TInput, TOutput, TError> {
   error: null;
   connectionError: TError;
   isStarting: false;
@@ -422,12 +434,12 @@ export interface TRPCSubscriptionReconnectingResult<TInput, TError>
   status: 'connecting';
 }
 
-export const getReconnectingResult = <TInput, TError>(
+export const getReconnectingResult = <TInput, TOutput, TError>(
   previous:
-    | TRPCSubscriptionPendingResult<TInput, TError>
-    | TRPCSubscriptionReconnectingResult<TInput, TError>,
+    | TRPCSubscriptionPendingResult<TInput, TOutput, TError>
+    | TRPCSubscriptionReconnectingResult<TInput, TOutput, TError>,
   error: TError,
-): TRPCSubscriptionReconnectingResult<TInput, TError> => {
+): TRPCSubscriptionReconnectingResult<TInput, TOutput, TError> => {
   return {
     ...previous,
     isStarting: false,
@@ -441,8 +453,21 @@ export const getReconnectingResult = <TInput, TError>(
   };
 };
 
-export interface TRPCSubscriptionErrorResult<TInput, TError>
-  extends TRPCSubscriptionBaseResult<TInput, TError> {
+export const getConnectingResult = <TInput, TOutput, TError>(
+  previous: UseTRPCSubscriptionResult<TInput, TOutput, TError>,
+  error: TError | null,
+): TRPCSubscriptionConnectingResult<TInput, TOutput, TError> => {
+  if (previous.isReconnecting || previous.isPending) {
+    if (!error) throw new Error('Reconnecting without error?');
+
+    return getReconnectingResult(previous, error);
+  }
+
+  return getStartingResult(previous.restart, previous, error);
+};
+
+export interface TRPCSubscriptionErrorResult<TInput, TOutput, TError>
+  extends TRPCSubscriptionBaseResult<TInput, TOutput, TError> {
   error: TError;
   isStarting: false;
   isStarted: true; // Not sure about this one
@@ -453,10 +478,10 @@ export interface TRPCSubscriptionErrorResult<TInput, TError>
   status: 'error';
 }
 
-export const getErrorResult = <TInput, TError>(
-  previous: UseTRPCSubscriptionResult<TInput, TError>,
+export const getErrorResult = <TInput, TOutput, TError>(
+  previous: UseTRPCSubscriptionResult<TInput, TOutput, TError>,
   error: TError,
-): TRPCSubscriptionErrorResult<TInput, TError> => {
+): TRPCSubscriptionErrorResult<TInput, TOutput, TError> => {
   return {
     ...previous,
     isStarting: false,
@@ -471,12 +496,15 @@ export const getErrorResult = <TInput, TError>(
   };
 };
 
-export type UseTRPCSubscriptionResult<TInput, TError> =
-  | TRPCSubscriptionIdleResult<TInput, TError>
-  | TRPCSubscriptionStartingResult<TInput, TError>
-  | TRPCSubscriptionPendingResult<TInput, TError>
-  | TRPCSubscriptionReconnectingResult<TInput, TError>
-  | TRPCSubscriptionErrorResult<TInput, TError>;
+export type TRPCSubscriptionConnectingResult<TInput, TOutput, TError> =
+  | TRPCSubscriptionStartingResult<TInput, TOutput, TError>
+  | TRPCSubscriptionReconnectingResult<TInput, TOutput, TError>;
+
+export type UseTRPCSubscriptionResult<TInput, TOutput, TError> =
+  | TRPCSubscriptionIdleResult<TInput, TOutput, TError>
+  | TRPCSubscriptionPendingResult<TInput, TOutput, TError>
+  | TRPCSubscriptionConnectingResult<TInput, TOutput, TError>
+  | TRPCSubscriptionErrorResult<TInput, TOutput, TError>;
 
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   extends TRPCContextProps<TRouter, TSSRContext> {
