@@ -192,8 +192,7 @@ const throwIfAborted = (signal: Maybe<AbortSignal>) => {
 };
 
 export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
-  const { signal } = opts;
-  throwIfAborted(signal);
+  throwIfAborted(opts.signal);
 
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
