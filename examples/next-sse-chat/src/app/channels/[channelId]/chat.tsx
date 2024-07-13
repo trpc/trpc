@@ -123,12 +123,15 @@ export function Chat(props: Readonly<{ channelId: string }>) {
         <div className="border-t bg-white p-2 dark:border-gray-800 dark:bg-gray-900">
           {livePosts.connection.isStarting && (
             <div className="pb-2 text-sm text-gray-500 dark:text-gray-400">
-              Connecting... {livePosts.connection.connectionAttemptCount}
+              Connecting...{' '}
+              {livePosts.connection.connectionError
+                ? 'There are connection issues'
+                : ''}
             </div>
           )}
           {livePosts.connection.isReconnecting && (
             <div className="pb-2 text-sm text-gray-500 dark:text-gray-400">
-              Reconnecting... {livePosts.connection.connectionAttemptCount}
+              Reconnecting...
             </div>
           )}
           {livePosts.connection.isError && (
@@ -137,7 +140,9 @@ export function Chat(props: Readonly<{ channelId: string }>) {
               onClick={() => {
                 livePosts.connection.restart();
               }}
-            ></Button>
+            >
+              Try Again
+            </Button>
           )}
           <AddMessageForm
             signedIn={!!session?.user}
