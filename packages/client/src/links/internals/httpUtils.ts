@@ -154,6 +154,17 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
+/**
+ * Polyfill for DOMException with AbortError name
+ */
+class AbortError extends Error {
+  constructor(message = "aborted") {
+    super(message);
+    this.name = "AbortError";
+    this.message = message;
+  }
+}
+
 export type HTTPRequestOptions = ContentOptions &
   HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
@@ -161,7 +172,7 @@ export type HTTPRequestOptions = ContentOptions &
 
 export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
   if (opts.signal?.aborted) {
-    throw new Error('AbortError')
+    throw new AbortError()
   }
 
   const url = opts.getUrl(opts);
