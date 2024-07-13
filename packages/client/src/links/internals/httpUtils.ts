@@ -161,7 +161,7 @@ export type HTTPRequestOptions = ContentOptions &
 
 export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
   if (opts.signal?.aborted) {
-    throw new Error(opts.signal.reason || 'Aborted')
+    throw new Error('AbortError')
   }
 
   const url = opts.getUrl(opts);
