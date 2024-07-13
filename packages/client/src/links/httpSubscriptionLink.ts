@@ -111,14 +111,16 @@ export function unstable_httpSubscriptionLink<
             });
           });
 
-          eventSource.addEventListener('error', () => {
+          eventSource.addEventListener('error', (event) => {
+            // sseStreamConsumer handles this already
             if (eventSource?.readyState === EventSource.CLOSED) {
               return;
             }
 
-            const error = TRPCClientError.from(
-              new Error(`EventSource Network Error`),
-            );
+            const error =
+              event instanceof ErrorEvent
+                ? TRPCClientError.from(event.error)
+                : TRPCClientError.from(new Error(`Unknown EventSource error`));
 
             observer.next({
               result: {
