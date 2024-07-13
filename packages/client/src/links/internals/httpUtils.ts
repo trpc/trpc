@@ -158,9 +158,9 @@ export const jsonHttpRequester: Requester = (opts) => {
  * Polyfill for DOMException with AbortError name
  */
 class AbortError extends Error {
-  constructor(message = "aborted") {
+  constructor(message = 'aborted') {
     super(message);
-    this.name = "AbortError";
+    this.name = 'AbortError';
     this.message = message;
   }
 }
@@ -170,10 +170,30 @@ export type HTTPRequestOptions = ContentOptions &
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   };
 
-export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
-  if (opts.signal?.aborted) {
-    throw new AbortError();
+/**
+ * Polyfill for `signal.throwIfAborted()`
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/throwIfAborted
+ */
+const throwIfAborted = (signal: Maybe<AbortSignal>) => {
+  if (!signal?.aborted) {
+    return;
   }
+  // If available, use the native implementation
+  signal.throwIfAborted?.();
+
+  // If we have `DOMException`, use it
+  if (typeof DOMException !== 'undefined') {
+    throw new DOMException('AbortError', 'AbortError');
+  }
+
+  // Otherwise, use our own implementation
+  throw new AbortError();
+};
+
+export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
+  const { signal } = opts;
+  throwIfAborted(signal);
 
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
