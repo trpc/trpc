@@ -158,10 +158,11 @@ export const jsonHttpRequester: Requester = (opts) => {
  * Polyfill for DOMException with AbortError name
  */
 class AbortError extends Error {
-  constructor(message = 'aborted') {
-    super(message);
-    this.name = 'AbortError';
-    this.message = message;
+  constructor() {
+    const name = 'AbortError';
+    super(name);
+    this.name = name;
+    this.message = name;
   }
 }
 
