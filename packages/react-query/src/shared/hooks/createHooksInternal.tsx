@@ -19,7 +19,10 @@ import type { SSRState, TRPCContextState } from '../../internals/context';
 import { TRPCContext } from '../../internals/context';
 import { getClientArgs } from '../../internals/getClientArgs';
 import type { TRPCQueryKey } from '../../internals/getQueryKey';
-import { getQueryKeyInternal } from '../../internals/getQueryKey';
+import {
+  getMutationKeyInternal,
+  getQueryKeyInternal,
+} from '../../internals/getQueryKey';
 import { useHookResult } from '../../internals/useHookResult';
 import type {
   TRPCUseQueries,
@@ -290,7 +293,7 @@ export function createRootHooks<
     const { client } = useContext();
     const queryClient = useQueryClient();
 
-    const mutationKey = [path];
+    const mutationKey = getMutationKeyInternal(path);
 
     const defaultOpts = queryClient.defaultMutationOptions(
       queryClient.getMutationDefaults(mutationKey),
