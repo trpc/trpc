@@ -262,7 +262,7 @@ function AddMessageForm(props: {
           onChange={(e) => setMessage(e.target.value)}
           rows={message.split(/\r|\n/).length}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && e.metaKey) {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
               void postMessage();
             }
