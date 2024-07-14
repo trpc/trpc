@@ -86,6 +86,17 @@ export type TRPCConnectionStateMessage<TError> =
   | PendingStateMessage
   | ErrorStateMessage<TError>;
 
+export const isConnectionStateMessage = <TError>(
+  msg: unknown,
+): msg is TRPCConnectionStateMessage<TError> => {
+  return (
+    typeof msg === 'object' &&
+    msg !== null &&
+    'type' in msg &&
+    msg.type === 'state'
+  );
+};
+
 /**
  * @internal
  */
