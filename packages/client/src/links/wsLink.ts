@@ -563,7 +563,7 @@ export function wsLink<TRouter extends AnyRouter>(
                 return;
               }
 
-              if (!('id' in message)) throw new Error('Expected id in message');
+              if (!('id' in message)) return;
 
               const transformed = transformResult(message, transformer.output);
 
