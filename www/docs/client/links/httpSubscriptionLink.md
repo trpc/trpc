@@ -85,7 +85,7 @@ If you `yield` an event using our `sse()`-helper and include an `id`, the browse
 You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
 
 :::info
-If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as and intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
 :::
 
 
@@ -126,7 +126,7 @@ export const subRouter = router({
 ```
 
 ### Error handling
-Throwing an error in the function propagates to `trpc`'s `onError()` onn the backend, but the event is not serialized and sent to the frontend as is.
+Throwing an error in the function propagates to `trpc`'s `onError()` on the backend, but the event is not serialized and sent to the frontend as is.
 
 ## Authentication / connection params {#connectionParams}
 
