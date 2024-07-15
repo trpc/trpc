@@ -597,6 +597,13 @@ export function wsLink<TRouter extends AnyRouter>(
         );
         return () => {
           unsub();
+          observer.next({
+            result: {
+              type: 'state',
+              state: 'idle',
+            },
+            context: context,
+          });
         };
       });
     };
