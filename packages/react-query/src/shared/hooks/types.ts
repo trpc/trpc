@@ -180,7 +180,7 @@ export type restartSubscriptionFn<TInput> = (
   options?: restartSubscriptionOptions<TInput>,
 ) => void;
 
-export interface TRPCSubscriptionBaseResult<TInput, TOutput, TError> {
+export interface TRPCSubscriptionBaseResult<_TInput, TOutput, TError> {
   /**
    * The last data received from the subscription
    */
@@ -256,7 +256,7 @@ export interface TRPCSubscriptionBaseResult<TInput, TOutput, TError> {
   /**
    * Restart the subscription
    */
-  restart: restartSubscriptionFn<TInput>;
+  // restart: restartSubscriptionFn<TInput>;
 }
 
 export interface TRPCSubscriptionIdleResult<TInput, TOutput, TError>
@@ -299,13 +299,16 @@ const defaultIdleResult: Omit<
   status: 'idle',
 };
 
-export const getIdleResult = <TInput, TOutput, TError>(
-  restart: restartSubscriptionFn<TInput>,
-): TRPCSubscriptionIdleResult<TInput, TOutput, TError> => {
+export const getIdleResult = <
+  TInput,
+  TOutput,
+  TError,
+>(): //  restart: restartSubscriptionFn<TInput>,
+TRPCSubscriptionIdleResult<TInput, TOutput, TError> => {
   return {
     ...defaultIdleResult,
     data: null,
-    restart,
+    //    restart,
   };
 };
 
@@ -326,7 +329,7 @@ export interface TRPCSubscriptionStartingResult<TInput, TOutput, TError>
 }
 
 export const getStartingResult = <TInput, TOutput, TError>(
-  restart: restartSubscriptionFn<TInput>,
+  // restart: restartSubscriptionFn<TInput>,
   previous?:
     | TRPCSubscriptionIdleResult<TInput, TOutput, TError>
     | TRPCSubscriptionErrorResult<TInput, TOutput, TError>
@@ -356,7 +359,7 @@ export const getStartingResult = <TInput, TOutput, TError>(
   }
 
   return {
-    ...getIdleResult(restart),
+    ...getIdleResult(/*restart*/),
     connectionError: error ?? null,
     isStarting: true,
     isConnecting: true,
@@ -463,7 +466,7 @@ export const getConnectingResult = <TInput, TOutput, TError>(
     return getReconnectingResult(previous, error);
   }
 
-  return getStartingResult(previous.restart, previous, error);
+  return getStartingResult(/*previous.restart, */ previous, error);
 };
 
 export interface TRPCSubscriptionErrorResult<TInput, TOutput, TError>

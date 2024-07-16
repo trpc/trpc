@@ -31,7 +31,7 @@ import type {
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
 import { createUseQueries } from '../proxy/useQueriesProxy';
 import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
-import type { restartSubscriptionFn } from './types';
+// import type { restartSubscriptionFn } from './types';
 import {
   getConnectingResult,
   getErrorResult,
@@ -347,16 +347,16 @@ export function createRootHooks<
       [],
     );
 
-    const restart = React.useRef<restartSubscriptionFn<unknown>>(() => {
-      throw new Error('not implemented');
-    });
+    // const restart = React.useRef<restartSubscriptionFn<unknown>>(() => {
+    //   throw new Error('not implemented');
+    // });
 
     const currentResult = React.useRef<
       UseTRPCSubscriptionResult<unknown, unknown, TError>
     >(
       enabled
-        ? getStartingResult(restart.current)
-        : getIdleResult(restart.current),
+        ? getStartingResult(/* restart.current */)
+        : getIdleResult(/* restart.current */),
     );
 
     const [subscriptionState, setSubscriptionState] = React.useState(
@@ -435,7 +435,7 @@ export function createRootHooks<
           },
           onStateChange: (state) => {
             if (state.state === 'idle') {
-              updateSubscriptionState(getIdleResult(restart.current));
+              updateSubscriptionState(getIdleResult(/* restart.current */));
 
               return;
             }
@@ -461,13 +461,13 @@ export function createRootHooks<
         },
       );
 
-      const effectRestart = restart.current;
+      // const effectRestart = restart.current;
 
       return () => {
         isStopped = true;
         subscription.unsubscribe();
 
-        updateSubscriptionState(getIdleResult(effectRestart));
+        updateSubscriptionState(getIdleResult(/* effectRestart */));
       };
 
       // eslint-disable-next-line react-hooks/exhaustive-deps
