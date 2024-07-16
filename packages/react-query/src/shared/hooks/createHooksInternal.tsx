@@ -388,12 +388,9 @@ export function createRootHooks<
         }
 
         if (shouldUpdate) {
-          console.log('updating');
           setSubscriptionState(trackResult(newResult, addTrackedProp));
           return;
         }
-
-        console.log('not updating');
       },
       [addTrackedProp],
     );
