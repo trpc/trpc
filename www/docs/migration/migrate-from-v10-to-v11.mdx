@@ -24,6 +24,16 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### useSubscription improvements (non-breaking)
+
+When subscribing to procedures using the [useSubscription](../client/react/useSubscription.md) hook it will now return information about the status of the subscription and the connection.
+
+### subscription improvements (non-breaking)
+
+Added a `onStateChange` callback on the client for subscriptions. This callback can be used to track the state of the subscription.
+
+- `onError` has been deprecated in favor of `onStateChange`
+
 ### Removal of `AbortControllerEsque`-ponyfill (rarely breaking)
 
 We have removed the `AbortControllerEsque`-ponyfill from tRPC, if you need to support older browsers you can use a polyfill like `abortcontroller-polyfill`.

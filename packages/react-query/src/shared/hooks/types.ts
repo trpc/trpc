@@ -140,9 +140,6 @@ export interface UseTRPCMutationOptions<
 
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   enabled?: boolean;
-  /**
-   * @deprecated use onStateChange instead
-   */
   onStarted?: () => void;
   /**
    * @deprecated use onStateChange instead
@@ -215,7 +212,7 @@ export interface TRPCSubscriptionBaseResult<_TInput, TOutput, TError> {
   /**
    * The timestamp for when the last reconnection error was captured
    */
-  connectionErrorUpdateAt: number;
+  connectionErrorUpdatedAt: number;
   /**
    * Is `true` when the subscription is establishing the initial connection
    */
@@ -272,7 +269,7 @@ export interface TRPCSubscriptionIdleResult<TInput, TOutput, TError>
   isReconnecting: false;
   isError: false;
   connectionAttemptCount: 0;
-  connectionErrorUpdateAt: 0;
+  connectionErrorUpdatedAt: 0;
   connectionStartedAt: 0;
   initialConnectionStartedAt: 0;
   status: 'idle';
@@ -295,7 +292,7 @@ const defaultIdleResult: Omit<
   isPending: false,
   isReconnecting: false,
   isError: false,
-  connectionErrorUpdateAt: 0,
+  connectionErrorUpdatedAt: 0,
   status: 'idle',
 };
 
@@ -348,7 +345,7 @@ export const getStartingResult = <TInput, TOutput, TError>(
       isConnecting: true,
       errorUpdatedAt: 0,
       connectionAttemptCount: previous.connectionAttemptCount + 1,
-      connectionErrorUpdateAt: error ? now : 0,
+      connectionErrorUpdatedAt: error ? now : 0,
       connectionStartedAt: 0,
       initialConnectionStartedAt: 0,
       error: null,
@@ -365,7 +362,7 @@ export const getStartingResult = <TInput, TOutput, TError>(
     isConnecting: true,
     errorUpdatedAt: 0,
     connectionAttemptCount: 0,
-    connectionErrorUpdateAt: error ? now : 0,
+    connectionErrorUpdatedAt: error ? now : 0,
     status: 'connecting',
   };
 };
