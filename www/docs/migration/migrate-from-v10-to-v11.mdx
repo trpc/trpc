@@ -24,6 +24,10 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### `useSubscription` improvements (non-breaking)
+
+When subscribing to procedures using the [useSubscription](../client/react/useSubscription.md) hook it will now return information about the status of the subscription and the connection.
+
 ### Subscription procedure output type changed to `AsyncGenerator` (non-breaking)
 
 If you've used subscriptions with async generators with the v11, this might be breaking with how you infer your types.
