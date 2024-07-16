@@ -133,7 +133,7 @@ export function unstable_httpSubscriptionLink<
 
           const iterable = sseStreamConsumer<Partial<SSEMessage>>({
             from: eventSource,
-            deserialize: transformer.input.deserialize,
+            deserialize: transformer.output.deserialize,
           });
 
           for await (const chunk of iterable) {

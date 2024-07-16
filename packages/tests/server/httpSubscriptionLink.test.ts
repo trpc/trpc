@@ -8,8 +8,10 @@ import {
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
+import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, sse } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -372,6 +374,83 @@ describe('auth / connectionParams', async () => {
     expect(onData.mock.calls[0]![0]).toEqual({
       user: USER_MOCK,
       num: 1,
+    });
+  });
+});
+
+describe('transformers / different serialize-deserialize', async () => {
+  const transformer: TRPCCombinedDataTransformer = {
+    input: superjson,
+    output: {
+      serialize: (object: any) => uneval(object),
+      deserialize: (object: any) => {
+        return eval(`(${object})`);
+      },
+    },
+  };
+  const t = initTRPC.create({ transformer });
+
+  const ctx = konn()
+    .beforeEach(() => {
+      const ee = new EventEmitter();
+      const eeEmit = (data: number) => {
+        ee.emit('data', data);
+      };
+
+      const appRouter = t.router({
+        iterableEvent: t.procedure.subscription(async function* () {
+          for await (const data of on(ee, 'data')) {
+            const num = data[0] as number;
+            yield sse({
+              id: num.toString(),
+              data: { num },
+            });
+          }
+        }),
+      });
+
+      const opts = routerToServerAndClientNew(appRouter, {});
+
+      return { ...opts, eeEmit };
+    })
+    .afterEach((ctx) => {
+      return ctx.close?.();
+    })
+    .done();
+
+  type AppRouter = typeof ctx.router;
+  test('serializes correctly', async () => {
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        unstable_httpSubscriptionLink({
+          url: ctx.httpUrl,
+          transformer,
+        }),
+      ],
+    });
+
+    const onStarted = vi.fn<[]>();
+    const onData = vi.fn<[{ id: string; data: { num: number } }]>();
+    const subscription = client.iterableEvent.subscribe(undefined, {
+      onStarted: onStarted,
+      onData: onData,
+    });
+
+    await waitFor(() => {
+      expect(onStarted).toHaveBeenCalledTimes(1);
+    });
+
+    ctx.eeEmit(1);
+
+    await waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+
+    subscription.unsubscribe();
+
+    expect(onData.mock.calls[0]![0]).toEqual({
+      id: '1',
+      data: { num: 1 },
     });
   });
 });
