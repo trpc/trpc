@@ -88,7 +88,6 @@ You can send an initial `lastEventId` when initializing the subscription and it 
 If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
 :::
 
-
 ```ts
 import EventEmitter, { on } from 'events';
 import type { Post } from '@prisma/client';
@@ -126,6 +125,7 @@ export const subRouter = router({
 ```
 
 ### Error handling
+
 Throwing an error in the function propagates to `trpc`'s `onError()` on the backend, but the event is not serialized and sent to the frontend as is.
 
 ## Authentication / connection params {#connectionParams}
@@ -134,7 +134,7 @@ Throwing an error in the function propagates to `trpc`'s `onError()` on the back
 If you're doing a web application, you can ignore this section as the cookies are sent as part of the request.
 :::
 
-In order to authenticate with `EventSource`, you can define `connectionParams` to `createWSClient`. This will be sent as part of the URL.
+In order to authenticate with `EventSource`, you can define `connectionParams` to `createWSClient`. **This will be sent as part of the URL.**
 
 ```ts twoslash title="server/context.ts"
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
@@ -173,6 +173,48 @@ const trpc = createTRPCClient<AppRouter>({
             token: 'supersecret',
           };
         },
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000',
+      }),
+    }),
+  ],
+});
+```
+
+### Don't like passing `connectionParams` as part of the URL?
+
+You can also ponyfill (or polyfill) `EventSource` and use the `options` -callback instead of `connectionParams`.
+
+```tsx
+import {
+  createTRPCClient,
+  httpBatchLink,
+  splitLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
+import type { AppRouter } from '../server/index.js';
+
+import { EventSourcePolyfill } from 'event-source-polyfill';
+
+
+// Initialize the tRPC client
+const trpc = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: unstable_httpSubscriptionLink({
+        url: 'http://localhost:3000',
+        // ponyfill for EventSource that handles headers
+        EventSource: EventSourcePolyfill as any,
+        // options to pass to the EventSource constructor
+        eventSourceOptions: async () => {
+          return {
+            headers: {
+              'authorization': 'Bearer supersecret'
+            }
+          } as any;
+        }
       }),
       false: httpBatchLink({
         url: 'http://localhost:3000',

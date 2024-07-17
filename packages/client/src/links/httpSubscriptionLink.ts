@@ -55,6 +55,7 @@ export function unstable_httpSubscriptionLink<
   opts: HTTPSubscriptionLinkOptions<inferClientTypes<TInferrable>>,
 ): TRPCLink<TInferrable> {
   const transformer = getTransformer(opts.transformer);
+  const ES = opts.EventSource ?? EventSource;
   return () => {
     return ({ op }) => {
       return observable((observer) => {
@@ -83,7 +84,7 @@ export function unstable_httpSubscriptionLink<
             // already unsubscribed - rare race condition
             return;
           }
-          eventSource = new EventSource(url, eventSourceOptions);
+          eventSource = new ES(url, eventSourceOptions);
           const onStarted = () => {
             observer.next({
               result: {
