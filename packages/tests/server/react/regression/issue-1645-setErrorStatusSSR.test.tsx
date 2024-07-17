@@ -22,7 +22,7 @@ test('regression: SSR with error sets `status`=`error`', async () => {
 
   let queryState: any;
   // @ts-ignore
-  delete global.window;
+  delete globalThis.window;
   const { trpc, trpcClientOptions } = factory;
   const App: AppType = () => {
     // @ts-ignore
@@ -54,7 +54,7 @@ test('regression: SSR with error sets `status`=`error`', async () => {
   } as any);
 
   // @ts-ignore
-  global.window = window;
+  globalThis.window = window;
   expect(queryState.query1.error).toMatchInlineSnapshot(
     `[TRPCClientError: No procedure found on path "bad_useQuery"]`,
   );

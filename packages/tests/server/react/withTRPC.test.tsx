@@ -20,7 +20,7 @@ describe('withTRPC()', () => {
     const { window } = global;
 
     // @ts-ignore
-    delete global.window;
+    delete globalThis.window;
     const { trpc, trpcClientOptions } = ctx;
     const App: AppType = () => {
       const query = trpc.allPosts.useQuery();
@@ -39,7 +39,7 @@ describe('withTRPC()', () => {
     } as any);
 
     // @ts-ignore
-    global.window = window;
+    globalThis.window = window;
     const utils = render(<Wrapped {...props} />);
     expect(utils.container).toHaveTextContent('first post');
   });
@@ -49,7 +49,7 @@ describe('withTRPC()', () => {
       // @ts-ignore
       const { window } = global;
       // @ts-ignore
-      delete global.window;
+      delete globalThis.window;
       const { trpc, trpcClientOptions } = ctx;
       const App: AppType = () => {
         const query = trpc.allPosts.useQuery();
@@ -74,7 +74,7 @@ describe('withTRPC()', () => {
         ctx: mockContext,
       } as any);
       // @ts-ignore
-      global.window = window;
+      globalThis.window = window;
       const utils = render(<Wrapped {...props} />);
       expect(utils.container).toHaveTextContent('first post');
     });
@@ -83,7 +83,7 @@ describe('withTRPC()', () => {
       // @ts-ignore
       const { window } = global;
       // @ts-ignore
-      delete global.window;
+      delete globalThis.window;
       const { trpc, trpcClientOptions } = ctx;
       const App: AppType = () => {
         const query = trpc.allPosts.useQuery();
@@ -108,7 +108,7 @@ describe('withTRPC()', () => {
         ctx: mockContext,
       } as any);
       // @ts-ignore
-      global.window = window;
+      globalThis.window = window;
       const utils = render(<Wrapped {...props} />);
       expect(utils.container).not.toHaveTextContent('first post');
     });
@@ -117,7 +117,7 @@ describe('withTRPC()', () => {
       // @ts-ignore
       const { window } = global;
       // @ts-ignore
-      delete global.window;
+      delete globalThis.window;
       const { trpc, trpcClientOptions } = ctx;
       const App: AppType = () => {
         const query = trpc.allPosts.useQuery();
@@ -142,7 +142,7 @@ describe('withTRPC()', () => {
         ctx: mockContext,
       } as any);
       // @ts-ignore
-      global.window = window;
+      globalThis.window = window;
       const utils = render(<Wrapped {...props} />);
       expect(utils.container).not.toHaveTextContent('first post');
     });
@@ -151,7 +151,7 @@ describe('withTRPC()', () => {
       // @ts-ignore
       const { window } = global;
       // @ts-ignore
-      delete global.window;
+      delete globalThis.window;
       const { trpc, trpcClientOptions } = ctx;
       const App: AppType = () => {
         const query = trpc.allPosts.useQuery();
@@ -177,7 +177,7 @@ describe('withTRPC()', () => {
         ctx: mockContext,
       } as any);
       // @ts-ignore
-      global.window = window;
+      globalThis.window = window;
       const utils = render(<Wrapped {...props} />);
       expect(utils.container).toHaveTextContent('first post');
     }, 7000); // increase the timeout just for this test
@@ -213,7 +213,7 @@ describe('withTRPC()', () => {
       const { window } = global;
 
       // @ts-ignore
-      delete global.window;
+      delete globalThis.window;
       const { trpc, trpcClientOptions } = ctx;
 
       const App: AppType = () => {
@@ -248,7 +248,7 @@ describe('withTRPC()', () => {
         ctx: mockContext,
       } as any);
 
-      global.window = window;
+      globalThis.window = window;
 
       const utils = render(<Wrapped {...props} />);
       expect(utils.container).not.toHaveTextContent('first post');
@@ -293,7 +293,7 @@ describe('withTRPC()', () => {
     const { window } = global;
 
     // @ts-ignore
-    delete global.window;
+    delete globalThis.window;
     const { trpc, trpcClientOptions } = ctx;
     const App: AppType = () => {
       const results = trpc.useQueries((t) => {
@@ -352,7 +352,7 @@ describe('withTRPC()', () => {
     `);
 
     // @ts-ignore
-    global.window = window;
+    globalThis.window = window;
 
     const utils = render(<Wrapped {...props} />);
     expect(utils.container).toHaveTextContent('first post');
@@ -362,7 +362,7 @@ describe('withTRPC()', () => {
     const { window } = global;
 
     // @ts-ignore
-    delete global.window;
+    delete globalThis.window;
     const { trpc, trpcClientOptions } = ctx;
     const App: AppType = () => {
       const query = trpc.paginatedPosts.useInfiniteQuery(
@@ -387,7 +387,7 @@ describe('withTRPC()', () => {
       Component: <div />,
     } as any);
 
-    global.window = window;
+    globalThis.window = window;
 
     const utils = render(<Wrapped {...props} />);
     expect(utils.container).toHaveTextContent('first post');
@@ -423,7 +423,7 @@ describe('withTRPC()', () => {
       const { window } = global;
 
       // @ts-ignore
-      delete global.window;
+      delete globalThis.window;
       const { trpc, trpcClientOptions } = ctx;
       const App: AppType = () => {
         const query = trpc.allPosts.useQuery(undefined, {
@@ -443,7 +443,7 @@ describe('withTRPC()', () => {
         Component: <div />,
       } as any);
 
-      global.window = window;
+      globalThis.window = window;
 
       const utils = render(<Wrapped {...props} />);
       expect(utils.container).not.toHaveTextContent('first post');
@@ -458,7 +458,7 @@ describe('withTRPC()', () => {
       const { window } = global;
 
       // @ts-ignore
-      delete global.window;
+      delete globalThis.window;
       const { trpc, trpcClientOptions } = ctx;
       const App: AppType = () => {
         const query = trpc.paginatedPosts.useInfiniteQuery(
@@ -486,7 +486,7 @@ describe('withTRPC()', () => {
         Component: <div />,
       } as any);
 
-      global.window = window;
+      globalThis.window = window;
 
       const utils = render(<Wrapped {...props} />);
       expect(utils.container).not.toHaveTextContent('first post');
@@ -503,7 +503,7 @@ describe('withTRPC()', () => {
     const { window } = global;
 
     // @ts-ignore
-    delete global.window;
+    delete globalThis.window;
     const { trpc, trpcClientOptions, createContext } = ctx;
     const App: AppType = () => {
       const query1 = trpc.postById.useQuery('1');
@@ -524,7 +524,7 @@ describe('withTRPC()', () => {
     } as any);
 
     // @ts-ignore
-    global.window = window;
+    globalThis.window = window;
 
     const utils = render(<Wrapped {...props} />);
     expect(utils.container).toHaveTextContent('first post');
@@ -540,7 +540,7 @@ describe('withTRPC()', () => {
         const { window } = global;
 
         // @ts-ignore
-        delete global.window;
+        delete globalThis.window;
         const { trpc, trpcClientOptions } = ctx;
         const App: AppType = () => {
           const query1 = trpc.postById.useQuery('1');
@@ -567,7 +567,7 @@ describe('withTRPC()', () => {
           Component: <div />,
         } as any);
 
-        global.window = window;
+        globalThis.window = window;
 
         const utils = render(<Wrapped {...props} />);
 
@@ -584,7 +584,7 @@ describe('withTRPC()', () => {
         const { window } = global;
 
         // @ts-ignore
-        delete global.window;
+        delete globalThis.window;
         const { trpc, trpcClientOptions } = ctx;
         const App: AppType = () => {
           const query1 = trpc.postById.useQuery('1');
@@ -617,7 +617,7 @@ describe('withTRPC()', () => {
           };
         };
 
-        global.window = window;
+        globalThis.window = window;
 
         const utils = render(<Wrapped {...(props as any)} />);
 
@@ -633,7 +633,7 @@ describe('withTRPC()', () => {
         const { window } = global;
 
         // @ts-ignore
-        delete global.window;
+        delete globalThis.window;
         const { trpc, trpcClientOptions } = ctx;
         const App: AppType = () => {
           const query1 = trpc.postById.useQuery('1');
@@ -666,7 +666,7 @@ describe('withTRPC()', () => {
           Component: <div />,
         } as any);
 
-        global.window = window;
+        globalThis.window = window;
 
         const utils = render(<Wrapped {...props} />);
 
@@ -686,7 +686,7 @@ describe('withTRPC()', () => {
         const { window } = global;
 
         // @ts-ignore
-        delete global.window;
+        delete globalThis.window;
         const { trpc, trpcClientOptions } = ctx;
         const App: AppType = () => {
           const query1 = trpc.paginatedPosts.useInfiniteQuery(
@@ -722,7 +722,7 @@ describe('withTRPC()', () => {
           Component: <div />,
         } as any);
 
-        global.window = window;
+        globalThis.window = window;
 
         const utils = render(<Wrapped {...props} />);
 
@@ -740,7 +740,7 @@ describe('withTRPC()', () => {
         const { window } = global;
 
         // @ts-ignore
-        delete global.window;
+        delete globalThis.window;
         const { trpc, trpcClientOptions } = ctx;
         const App: AppType = () => {
           const query1 = trpc.paginatedPosts.useInfiniteQuery(
@@ -776,7 +776,7 @@ describe('withTRPC()', () => {
           Component: <div />,
         } as any);
 
-        global.window = window;
+        globalThis.window = window;
 
         const utils = render(<Wrapped {...props} />);
 
@@ -798,7 +798,7 @@ describe('withTRPC()', () => {
       const { window } = global;
 
       // @ts-ignore
-      delete global.window;
+      delete globalThis.window;
       const { trpc, trpcClientOptions } = ctx;
       const App = () => {
         const query = trpc.allPosts.useQuery();
@@ -810,7 +810,7 @@ describe('withTRPC()', () => {
       })(App);
 
       // @ts-ignore
-      global.window = window;
+      globalThis.window = window;
 
       const utils = render(<Wrapped />);
       expect(utils.container).not.toHaveTextContent('first post');
@@ -825,7 +825,7 @@ describe('withTRPC()', () => {
       const { window } = global;
 
       // @ts-ignore
-      delete global.window;
+      delete globalThis.window;
       const { trpc, trpcClientOptions } = ctx;
       const App = () => {
         const query = trpc.allPosts.useQuery();
@@ -839,7 +839,7 @@ describe('withTRPC()', () => {
       })(App);
 
       // @ts-ignore
-      global.window = window;
+      globalThis.window = window;
 
       // ssr should not work
 
