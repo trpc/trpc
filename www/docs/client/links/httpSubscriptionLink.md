@@ -182,7 +182,7 @@ const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
-### Don't like passing `connectionParams` as part of the URL?
+## Authorization by polyfilling `EventSource` and passing `eventSourceOptions` {#authorization-by-polyfilling-eventsource}
 
 You can also force polyfill `EventSource` and use the `options` -callback instead of `connectionParams`.
 
