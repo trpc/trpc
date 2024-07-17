@@ -39,6 +39,10 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * EventSource options
    */
   eventSourceOptions?: CallbackOrValue<EventSourceInit>;
+  /**
+   * A ponyfill for EventSource
+   */
+  EventSource: typeof EventSource;
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 

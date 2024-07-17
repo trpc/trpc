@@ -228,5 +228,9 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * @link https://trpc.io/docs/v11/data-transformers
    **/
   transformer?: DataTransformerOptions;
+  /**
+   * A ponyfill for EventSource
+   */
+  EventSource?: Constructor<EventSource>;
 };
 ```
