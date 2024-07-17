@@ -184,7 +184,7 @@ const trpc = createTRPCClient<AppRouter>({
 
 ## Authorization by polyfilling `EventSource` and passing `eventSourceOptions` {#authorization-by-polyfilling-eventsource}
 
-You can also force polyfill `EventSource` and use the `options` -callback instead of `connectionParams`.
+You can also polyfill `EventSource` and use the `options` -callback instead of `connectionParams`.
 
 ```tsx
 import {
