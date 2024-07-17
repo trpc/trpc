@@ -36,13 +36,9 @@ async function urlWithConnectionParams(
 
 type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
-   * EventSource options
+   * EventSource options or a callback that returns them
    */
   eventSourceOptions?: CallbackOrValue<EventSourceInit>;
-  /**
-   * A ponyfill for EventSource
-   */
-  EventSource: typeof EventSource;
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 

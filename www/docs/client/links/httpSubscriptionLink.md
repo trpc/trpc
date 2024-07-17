@@ -184,7 +184,7 @@ const trpc = createTRPCClient<AppRouter>({
 
 ### Don't like passing `connectionParams` as part of the URL?
 
-You can also ponyfill (or polyfill) `EventSource` and use the `options` -callback instead of `connectionParams`.
+You can also force polyfill `EventSource` and use the `options` -callback instead of `connectionParams`.
 
 ```tsx
 import {
@@ -194,9 +194,10 @@ import {
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import type { AppRouter } from '../server/index.js';
-
 import { EventSourcePolyfill } from 'event-source-polyfill';
 
+// polyfill EventSource
+globalThis.EventSource = EventSourcePolyfill;
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
@@ -205,9 +206,7 @@ const trpc = createTRPCClient<AppRouter>({
       condition: (op) => op.type === 'subscription',
       true: unstable_httpSubscriptionLink({
         url: 'http://localhost:3000',
-        // ponyfill for EventSource that handles headers
-        EventSource: EventSourcePolyfill as any,
-        // options to pass to the EventSource constructor
+        // options to pass to the EventSourcePolyfill constructor
         eventSourceOptions: async () => {
           return {
             headers: {
@@ -264,23 +263,22 @@ Once the polyfills are added, you can continue setting up the `httpSubscriptionL
 ## `httpSubscriptionLink` Options
 
 ```ts
+type MaybePromise<TValue> = TValue | Promise<TValue>;
+type CallbackOrValue<TValue> = TValue | (() => MaybePromise<TValue>);
+
 type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * The URL to connect to (can be a function that returns a URL)
    */
-  url: string | (() => MaybePromise<string>);
+  url: CallbackOrValue<string>;
   /**
    * EventSource options
    */
-  eventSourceOptions?: EventSourceInit;
+  eventSourceOptions?: CallbackOrValue<EventSourceInit>;
   /**
    * Data transformer
    * @link https://trpc.io/docs/v11/data-transformers
    **/
   transformer?: DataTransformerOptions;
-  /**
-   * A ponyfill for EventSource
-   */
-  EventSource?: Constructor<EventSource>;
 };
 ```
