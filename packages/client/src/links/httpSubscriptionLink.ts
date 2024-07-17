@@ -12,6 +12,7 @@ import {
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
+import type { CallbackOrValue } from './internals/urlWithConnectionParams';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
@@ -37,7 +38,7 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * EventSource options
    */
-  eventSourceOptions?: EventSourceInit;
+  eventSourceOptions?: CallbackOrValue<EventSourceInit>;
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -72,12 +73,13 @@ export function unstable_httpSubscriptionLink<
             signal: null,
           });
 
+          const eventSourceOptions = await resultOf(opts.eventSourceOptions);
           /* istanbul ignore if -- @preserve */
           if (unsubscribed) {
             // already unsubscribed - rare race condition
             return;
           }
-          eventSource = new EventSource(url, opts.eventSourceOptions);
+          eventSource = new EventSource(url, eventSourceOptions);
           const onStarted = () => {
             observer.next({
               result: {
