@@ -212,7 +212,7 @@ const trpc = createTRPCClient<AppRouter>({
             headers: {
               'authorization': 'Bearer supersecret'
             }
-          } as any;
+          }; // you either need to typecast to `EventSourceInit` or use `as any` or override the types by a `declare global` statement
         }
       }),
       false: httpBatchLink({
