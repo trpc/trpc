@@ -23,14 +23,14 @@ import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 
+/**
+ * Zod schema for an async iterable
+ * - validates that the value is an async iterable
+ * - validates each item in the async iterable
+ */
 function zIterable<T>(schema: z.ZodType<T>) {
   return z
-    .custom<AsyncIterable<T>>((val) => {
-      if (!isAsyncIterable(val)) {
-        return false;
-      }
-      return true;
-    })
+    .custom<AsyncIterable<T>>((val) => isAsyncIterable(val))
     .transform(async function* (iter) {
       for await (const item of iter) {
         yield schema.parse(item);
