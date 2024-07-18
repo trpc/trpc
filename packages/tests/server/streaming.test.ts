@@ -15,10 +15,28 @@ import {
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  isAsyncIterable,
+} from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
+
+function zIterable<T>(schema: z.ZodType<T>) {
+  return z
+    .custom<AsyncIterable<T>>((val) => {
+      if (!isAsyncIterable(val)) {
+        return false;
+      }
+      return true;
+    })
+    .transform(async function* (iter) {
+      for await (const item of iter) {
+        yield schema.parse(item);
+      }
+    });
+}
 
 describe('no transformer', () => {
   const orderedResults: number[] = [];
@@ -67,13 +85,15 @@ describe('no transformer', () => {
             return opts.input.id;
           }),
 
-        iterable: t.procedure.query(async function* () {
-          for (let i = 0; i < 10; i++) {
-            yield yieldSpy(i + 1);
-            await iterableDeferred.promise;
-            iterableDeferred = createDeferred();
-          }
-        }),
+        iterable: t.procedure
+          .output(zIterable(z.number()))
+          .query(async function* () {
+            for (let i = 0; i < 10; i++) {
+              yield yieldSpy(i + 1);
+              await iterableDeferred.promise;
+              iterableDeferred = createDeferred();
+            }
+          }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -211,7 +231,7 @@ describe('no transformer', () => {
     `);
   });
 
-  test('iterable', async () => {
+  test.only('iterable', async () => {
     const { client } = ctx;
 
     const iterable = await client.iterable.query();
@@ -274,8 +294,12 @@ describe('no transformer', () => {
           4,
         ]
       `);
-    expect(err).toMatchInlineSnapshot(`[Error: Invalid response or stream interrupted]`);
-    expect(err.message).toMatchInlineSnapshot(`"Invalid response or stream interrupted"`);
+    expect(err).toMatchInlineSnapshot(
+      `[Error: Invalid response or stream interrupted]`,
+    );
+    expect(err.message).toMatchInlineSnapshot(
+      `"Invalid response or stream interrupted"`,
+    );
   });
 });
 
