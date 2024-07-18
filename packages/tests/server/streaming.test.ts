@@ -231,7 +231,7 @@ describe('no transformer', () => {
     `);
   });
 
-  test.only('iterable', async () => {
+  test('iterable', async () => {
     const { client } = ctx;
 
     const iterable = await client.iterable.query();
