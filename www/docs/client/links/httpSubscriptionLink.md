@@ -78,9 +78,9 @@ export const subRouter = router({
 });
 ```
 
-### Automatic tracking of id using `sse()` (recommended)
+### Automatic tracking of id using `tracked()` (recommended)
 
-If you `yield` an event using our `sse()`-helper and include an `id`, the browser will automatically reconnect when it gets disconnected and send the last known ID - this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
+If you `yield` an event using our `tracked()`-helper and include an `id`, the browser will automatically reconnect when it gets disconnected and send the last known ID - this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
 
 You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
 
@@ -114,11 +114,8 @@ export const subRouter = router({
       // listen for new events
       for await (const [data] of on(ee, 'add')) {
         const post = data as Post;
-        yield sse({
-          // yielding the post id ensures the client can reconnect at any time and get the latest events this id
-          id: post.id,
-          data: post,
-        });
+        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+        yield tracked(post.id, post);
       }
     }),
 });

@@ -9,7 +9,7 @@ import {
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
-import { initTRPC, sse, tracked } from '@trpc/server';
+import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
@@ -398,10 +398,7 @@ describe('transformers / different serialize-deserialize', async () => {
         iterableEvent: t.procedure.subscription(async function* () {
           for await (const data of on(ee, 'data')) {
             const num = data[0] as number;
-            yield sse({
-              id: num.toString(),
-              data: { num },
-            });
+            yield tracked(String(num), { num });
           }
         }),
       });

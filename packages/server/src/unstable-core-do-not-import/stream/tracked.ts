@@ -23,13 +23,7 @@ export function sse<TData>(event: {
   id: string;
   data: TData;
 }): TrackedEnvelope<TData> {
-  if (event.id === '') {
-    // This could be removed by using different event names for `yield sse(x)`-emitted events and `yield y`-emitted events
-    throw new Error(
-      '`id` must not be an empty string as empty string is the same as not setting the id at all',
-    );
-  }
-  return [event.id as TrackedId, event.data, trackedSymbol];
+  return tracked(event.id, event.data);
 }
 
 export function isTrackedEnvelope<TData>(
