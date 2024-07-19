@@ -1,13 +1,8 @@
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
-import {
-  isSSEMessageEnvelope,
-  sse,
-  sseHeaders,
-  sseStreamConsumer,
-  sseStreamProducer,
-} from './sse';
+import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
+import { isTrackedEnvelope, sse, tracked } from './tracked';
 import { createServer } from './utils/createServer';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
@@ -29,10 +24,7 @@ test('e2e, server-sent events (SSE)', async () => {
     let i = lastEventId ?? 0;
     while (true) {
       i++;
-      yield sse({
-        id: String(i),
-        data: i,
-      });
+      yield tracked(String(i), i);
 
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
@@ -153,10 +145,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
 
     function* yieldEvent() {
       i++;
-      yield sse({
-        id: String(i),
-        data: i,
-      });
+      yield tracked(String(i), i);
     }
     while (true) {
       // yield 2 events at a time to test if the client will get both without reconnecting in between
@@ -315,7 +304,7 @@ test('sse()', () => {
     id: String(1),
     data: { json: 1 },
   });
-  expect(isSSEMessageEnvelope(event)).toBe(true);
+  expect(isTrackedEnvelope(event)).toBe(true);
 
   // no properties
   sse({

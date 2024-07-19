@@ -27,12 +27,10 @@ import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable } from '../observable';
 import { observableToAsyncIterable } from '../observable/observable';
 // eslint-disable-next-line no-restricted-imports
-
-// eslint-disable-next-line no-restricted-imports
 import {
   isAsyncIterable,
   isObject,
-  isSSEMessageEnvelope,
+  isTrackedEnvelope,
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
@@ -309,10 +307,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               data: next.value,
             };
 
-            if (isSSEMessageEnvelope(next.value)) {
-              const message = next.value[1];
-              result.id = message.id;
-              result.data = message;
+            if (isTrackedEnvelope(next.value)) {
+              const [id, data] = next.value;
+              result.id = id;
+              result.data = data;
             }
 
             respond({

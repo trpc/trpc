@@ -3,7 +3,7 @@ import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
-  SSEMessage,
+  TrackedMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
@@ -96,7 +96,7 @@ export function unstable_httpSubscriptionLink<
           };
           // console.log('starting', new Date());
           eventSource.addEventListener('open', onStarted);
-          const iterable = sseStreamConsumer<Partial<SSEMessage>>({
+          const iterable = sseStreamConsumer<Partial<TrackedMessage>>({
             from: eventSource,
             deserialize: transformer.output.deserialize,
           });
