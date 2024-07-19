@@ -80,7 +80,7 @@ export function Chat(props: Readonly<{ channelId: string }>) {
                     <Avatar
                       alt="Avatar"
                       className="size-8"
-                      initials={item.name?.substring(0, 2)}
+                      initials={item.name.substring(0, 2)}
                       src={`https://github.com/${item.name}.png`}
                     />
 
@@ -96,7 +96,15 @@ export function Chat(props: Readonly<{ channelId: string }>) {
                         <p>{item.text}</p>
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {item.name} ·{' '}
+                        <a
+                          href={`https://github.com/${item.name}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline"
+                        >
+                          {item.name}
+                        </a>{' '}
+                        ·{' '}
                         {isToday(item.createdAt)
                           ? formatDistanceToNow(item.createdAt) + ' ago'
                           : format(item.createdAt, 'MMM d, yyyy h:mm a')}
