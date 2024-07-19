@@ -1,7 +1,7 @@
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { run } from '../utils';
 import type { ConsumerOnError } from './jsonl';
-import type { inferTrackedOutput, TrackedEnvelope } from './tracked';
+import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
 import { createTimeoutPromise } from './utils/createDeferred';
 import { createReadableStream } from './utils/createReadableStream';
