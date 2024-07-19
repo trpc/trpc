@@ -310,7 +310,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             if (isTrackedEnvelope(next.value)) {
               const [id, data] = next.value;
               result.id = id;
-              result.data = data;
+              result.data = {
+                id,
+                data,
+              };
             }
 
             respond({
