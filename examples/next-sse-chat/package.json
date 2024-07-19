@@ -10,7 +10,8 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "migrate": "drizzle-kit migrate"
+    "migrate": "drizzle-kit migrate",
+    "generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@headlessui/react": "^2.0.4",
