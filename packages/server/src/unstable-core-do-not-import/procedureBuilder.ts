@@ -92,6 +92,7 @@ export interface ProcedureResolverOptions<
 > {
   ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
+  lastEventId: string | null;
 }
 
 /**
@@ -530,6 +531,7 @@ export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
   getRawInput: GetRawInputFn;
   input?: unknown;
+  lastEventId: string | null;
   path: string;
   type: ProcedureType;
 }
@@ -568,6 +570,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
           getRawInput: callOpts.getRawInput ?? opts.getRawInput,
           meta: _def.meta,
           input: callOpts.input,
+          lastEventId: opts.lastEventId,
           next(_nextOpts?: any) {
             const nextOpts = _nextOpts as
               | {

@@ -72,6 +72,11 @@ interface TRPCRequestInfoProcedureCall {
    * @internal
    */
   procedure: AnyProcedure | null;
+  /**
+   * Last event id that the client has received
+   * Only available when using `httpSubscriptionLink` or `wsLink` and the `tracked()`-helper
+   */
+  lastEventId: string | null;
 }
 
 /**

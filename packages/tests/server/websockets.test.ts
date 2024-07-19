@@ -60,12 +60,12 @@ function factory(config?: {
       .input(
         z
           .object({
-            lastEventId: z.coerce.number().nullish(),
+            from: z.string().nullish(),
           })
           .nullish(),
       )
       .subscription(async function* (opts) {
-        let from = opts?.input?.lastEventId ?? 0;
+        let from = Number(opts.lastEventId ?? opts?.input?.from ?? 0);
 
         while (true) {
           from++;
@@ -1290,7 +1290,7 @@ describe('lazy mode', () => {
 });
 
 describe('lastEventId', () => {
-  test('lastEventId', async () => {
+  test('lastEventId from input', async () => {
     const ctx = factory({
       wsClient: {},
     });

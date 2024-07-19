@@ -185,11 +185,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         clientSubscriptions.get(id)?.abort();
         return;
       }
-      const { path, lastEventId } = msg.params;
+      const { path, lastEventId = null } = msg.params;
       let { input } = msg.params;
       const type = msg.method;
       try {
-        if (lastEventId !== undefined) {
+        if (lastEventId !== null) {
           if (isObject(input)) {
             input = {
               ...input,
@@ -209,6 +209,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           getRawInput: async () => input,
           ctx,
           type,
+          lastEventId,
         });
 
         const isIterableResult =

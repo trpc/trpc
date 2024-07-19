@@ -20,6 +20,9 @@ export interface RouterRecord {
 
 type DecorateProcedure<TProcedure extends AnyProcedure> = (
   input: inferProcedureInput<TProcedure>,
+  opts?: {
+    lastEventId?: string | null;
+  },
 ) => Promise<
   TProcedure['_def']['type'] extends 'subscription'
     ? Observable<inferProcedureOutput<TProcedure>, TRPCError>
@@ -75,7 +78,6 @@ export interface Router<
     record: TRecord;
   };
   /**
-   * @deprecated use `t.createCallerFactory(router)` instead
    * @link https://trpc.io/docs/v11/server/server-side-calls
    */
   createCaller: RouterCaller<TRoot, TRecord>;
@@ -285,6 +287,9 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
           }
 
           const procedure = _def.procedures[fullPath] as AnyProcedure;
+          const [input, callOptions] = args as Parameters<
+            DecorateProcedure<any>
+          >;
 
           let ctx: Context | undefined = undefined;
           try {
@@ -297,12 +302,13 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
               getRawInput: async () => args[0],
               ctx,
               type: procedure._def.type,
+              lastEventId: callOptions?.lastEventId ?? null,
             });
           } catch (cause) {
             options?.onError?.({
               ctx,
               error: getTRPCErrorFromUnknown(cause),
-              input: args[0],
+              input,
               path: fullPath,
               type: procedure._def.type,
             });

@@ -112,6 +112,13 @@ const jsonContentTypeHandler: ContentTypeHandler = {
     const calls = paths.map((path, index): TRPCRequestInfo['calls'][number] => {
       const procedure: AnyProcedure | null =
         opts.router._def.procedures[path] ?? null;
+
+      const lastEventId =
+        procedure?._def.type === 'subscription'
+          ? opts.headers.get('last-event-id') ??
+            opts.searchParams.get('lastEventId') ??
+            opts.searchParams.get('Last-Event-Id')
+          : null;
       return {
         path,
         procedure,
@@ -119,23 +126,16 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           const inputs = await getInputs.read();
           let input = inputs[index];
 
-          if (procedure?._def.type === 'subscription') {
-            const lastEventId =
-              opts.headers.get('last-event-id') ??
-              opts.searchParams.get('lastEventId') ??
-              opts.searchParams.get('Last-Event-Id');
-
-            if (lastEventId) {
-              if (isObject(input)) {
-                input = {
-                  ...input,
-                  lastEventId: lastEventId,
-                };
-              } else {
-                input ??= {
-                  lastEventId: lastEventId,
-                };
-              }
+          if (lastEventId) {
+            if (isObject(input)) {
+              input = {
+                ...input,
+                lastEventId: lastEventId,
+              };
+            } else {
+              input ??= {
+                lastEventId: lastEventId,
+              };
             }
           }
           return input;
@@ -143,6 +143,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
         result: () => {
           return getInputs.result()?.[index];
         },
+        lastEventId,
       };
     });
 
@@ -204,6 +205,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
           getRawInput: getInputs.read,
           result: getInputs.result,
           procedure: opts.router._def.procedures[opts.path] ?? null,
+          lastEventId: null,
         },
       ],
       isBatchCall: false,
@@ -239,6 +241,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
           getRawInput: getInputs.read,
           result: getInputs.result,
           procedure: opts.router._def.procedures[opts.path] ?? null,
+          lastEventId: null,
         },
       ],
       isBatchCall: false,

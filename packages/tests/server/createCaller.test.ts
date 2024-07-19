@@ -177,6 +177,24 @@ test('input query', async () => {
   expectTypeOf<string>(result);
 });
 
+test('lastEventId', async () => {
+  const router = t.router({
+    greeting: t.procedure
+      .use((opts) => {
+        expect(opts.lastEventId).toBe('2');
+        return opts.next();
+      })
+      .query((opts) => opts.lastEventId),
+  });
+
+  const caller = router.createCaller({});
+  const result = await caller.greeting(undefined, {
+    lastEventId: '2',
+  });
+
+  expect(result).toBe('2');
+});
+
 test('input mutation', async () => {
   const posts = ['One', 'Two', 'Three'];
 
