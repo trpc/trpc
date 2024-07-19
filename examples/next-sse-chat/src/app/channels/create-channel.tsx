@@ -22,6 +22,9 @@ export function CreateChannelDialog() {
       router.push(`/channels/${id}`);
       router.refresh();
     },
+    onError(err) {
+      alert('Error: ' + err.message);
+    },
   });
 
   return (
