@@ -1353,6 +1353,7 @@ describe('lastEventId', () => {
       });
     }
 
+    sub.unsubscribe();
     await ctx.close();
   });
 });
