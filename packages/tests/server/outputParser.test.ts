@@ -5,6 +5,7 @@ import * as t from 'superstruct';
 import * as v from 'valibot';
 import * as yup from 'yup';
 import { z } from 'zod';
+import { Type as tb } from "@sinclair/typebox";
 
 test('zod', async () => {
   const trpc = initTRPC.create();
@@ -37,6 +38,39 @@ test('zod', async () => {
 
   await close();
 });
+
+test('typebox', async () => {
+  const trpc = initTRPC.create();
+  const router = trpc.router({
+    q: trpc.procedure
+      .input(tb.Union([tb.String(), tb.Number()]))
+      .output(
+        tb.Object({
+          input: tb.String(),
+        }),
+      )
+      // @ts-expect-error mismatch between input and output
+      .query((opts) => {
+        return { input: opts.input };
+      }),
+  });
+  const { client, close } = routerToServerAndClientNew(router);
+
+  const output = await client.q.query('foobar');
+  expectTypeOf(output.input).toBeString();
+  expect(output).toMatchInlineSnapshot(`
+    Object {
+      "input": "foobar",
+    }
+  `);
+
+  await expect(client.q.query(1234)).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Output validation failed]`,
+  );
+
+  await close();
+});
+
 
 test('zod async', async () => {
   const trpc = initTRPC.create();

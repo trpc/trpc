@@ -1,3 +1,10 @@
+import {
+  Infer,
+  InferIn,
+  wrap,
+  type Schema as TypeschemaSchema,
+} from '@typeschema/main';
+
 // zod / typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
   _input: TInput;
@@ -44,10 +51,10 @@ export type ParserWithInputOutput<TInput, TParsedInput> =
   | ParserZodEsque<TInput, TParsedInput>
   | ParserValibotEsque<TInput, TParsedInput>;
 
-export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
+export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any> | TypeschemaSchema
 
 export type inferParser<TParser extends Parser> =
-  TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>
+   TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>
     ? {
         in: $TIn;
         out: $TOut;
@@ -56,6 +63,11 @@ export type inferParser<TParser extends Parser> =
     ? {
         in: $InOut;
         out: $InOut;
+      }
+    : TParser extends TypeschemaSchema
+    ? {
+        in: InferIn<TParser>;
+        out: Infer<TParser>;
       }
     : never;
 
@@ -98,6 +110,10 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
       return value as TType;
     };
   }
+
+  try {
+    return wrap(parser).parse as any;
+  } catch (_e) {}
 
   throw new Error('Could not find a validator fn');
 }

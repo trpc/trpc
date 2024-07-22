@@ -3,7 +3,7 @@
  *
  * This file is here to:
  * - make TypeScript happy and prevent _"The inferred type of 'createContext' cannot be named without a reference to [...]"_.
- * - the the glue between the official `@trpc/*`-packages
+ * - the glue between the official `@trpc/*`-packages
  *
  *
  * If you seem to need to import anything from here, please open an issue at https://github.com/trpc/trpc/issues
