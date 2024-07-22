@@ -190,7 +190,7 @@ importers:
         version: 18.3.0
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       next-auth:
         specifier: ^4.22.1
         version: 4.24.5(next@14.2.5)(react-dom@18.3.1)(react@18.3.1)
@@ -223,8 +223,8 @@ importers:
         version: 3.23.8
     devDependencies:
       '@playwright/test':
-        specifier: ^1.26.1
-        version: 1.28.1
+        specifier: ^1.45.2
+        version: 1.45.2
       start-server-and-test:
         specifier: ^1.12.0
         version: 1.14.0
@@ -251,7 +251,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -297,7 +297,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
     devDependencies:
       '@tsconfig/esm':
         specifier: ^1.0.3
@@ -334,7 +334,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -349,8 +349,8 @@ importers:
         version: 3.23.8
     devDependencies:
       '@playwright/test':
-        specifier: ^1.26.1
-        version: 1.28.1
+        specifier: ^1.45.2
+        version: 1.45.2
       '@types/node':
         specifier: ^20.10.0
         version: 20.10.4
@@ -389,7 +389,7 @@ importers:
         version: link:../../../packages/server
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -401,8 +401,8 @@ importers:
         version: 3.23.8
     devDependencies:
       '@playwright/test':
-        specifier: ^1.26.1
-        version: 1.28.1
+        specifier: ^1.45.2
+        version: 1.45.2
       '@types/node':
         specifier: ^20.10.0
         version: 20.10.4
@@ -705,8 +705,8 @@ importers:
   examples/minimal-content-types:
     devDependencies:
       '@playwright/test':
-        specifier: ^1.26.1
-        version: 1.28.1
+        specifier: ^1.45.2
+        version: 1.45.2
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -788,8 +788,8 @@ importers:
   examples/minimal-react:
     devDependencies:
       '@playwright/test':
-        specifier: ^1.26.1
-        version: 1.28.1
+        specifier: ^1.45.2
+        version: 1.45.2
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -887,7 +887,7 @@ importers:
         version: link:../../packages/server
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -936,7 +936,7 @@ importers:
         version: link:../../packages/server
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -988,7 +988,7 @@ importers:
         version: link:../../packages/server
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1040,7 +1040,7 @@ importers:
         version: link:../../packages/server
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1092,7 +1092,7 @@ importers:
         version: 2.0.0
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1107,8 +1107,8 @@ importers:
         version: 3.23.8
     devDependencies:
       '@playwright/test':
-        specifier: ^1.26.1
-        version: 1.28.1
+        specifier: ^1.45.2
+        version: 1.45.2
       '@types/node':
         specifier: ^20.10.0
         version: 20.10.4
@@ -1198,7 +1198,7 @@ importers:
         version: 22.4.13
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       next-i18next:
         specifier: ^13.2.2
         version: 13.2.2(i18next@22.4.13)(next@14.2.5)(react-i18next@12.2.0)(react@18.3.1)
@@ -1225,8 +1225,8 @@ importers:
         version: 3.23.8
     devDependencies:
       '@playwright/test':
-        specifier: ^1.26.1
-        version: 1.28.1
+        specifier: ^1.45.2
+        version: 1.45.2
       '@tanstack/react-query-devtools':
         specifier: ^5.51.11
         version: 5.51.11(@tanstack/react-query@5.51.11)(react@18.3.1)
@@ -1277,7 +1277,7 @@ importers:
         version: 2.0.0
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       next-auth:
         specifier: ^4.22.1
         version: 4.24.5(next@14.2.5)(react-dom@18.3.1)(react@18.3.1)
@@ -1301,8 +1301,8 @@ importers:
         version: 3.23.8
     devDependencies:
       '@playwright/test':
-        specifier: ^1.26.1
-        version: 1.28.1
+        specifier: ^1.45.2
+        version: 1.45.2
       '@tanstack/react-query-devtools':
         specifier: ^5.51.11
         version: 5.51.11(@tanstack/react-query@5.51.11)(react@18.3.1)
@@ -1398,7 +1398,7 @@ importers:
         version: 0.31.2(@types/react@18.3.1)(postgres@3.4.4)(react@18.3.1)
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       next-auth:
         specifier: npm:next-auth@5.0.0-beta.19
         version: 5.0.0-beta.19(next@14.2.5)(react@18.3.1)
@@ -1617,7 +1617,7 @@ importers:
         version: 4.19.2
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1662,7 +1662,7 @@ importers:
         version: 4.19.2
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1734,7 +1734,7 @@ importers:
         version: 1.8.8
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1860,7 +1860,7 @@ importers:
         version: 1.8.8
       next:
         specifier: ^14.2.5
-        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+        version: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       node-fetch:
         specifier: ^3.3.0
         version: 3.3.0
@@ -8085,14 +8085,12 @@ packages:
       tslib: 2.6.2
     dev: true
 
-  /@playwright/test@1.28.1:
-    resolution: {integrity: sha512-xN6spdqrNlwSn9KabIhqfZR7IWjPpFK1835tFNgjrlysaSezuX8PYUwaz38V/yI8TJLG9PkAMEXoHRXYXlpTPQ==}
-    engines: {node: '>=14'}
-    deprecated: Please update to the latest version of Playwright to test up-to-date browsers.
+  /@playwright/test@1.45.2:
+    resolution: {integrity: sha512-JxG9eq92ET75EbVi3s+4sYbcG7q72ECeZNbdBlaMkGcNbiDQ4cAi8U2QP5oKkOx+1gpaiL1LDStmzCaEM1Z6fQ==}
+    engines: {node: '>=18'}
     hasBin: true
     dependencies:
-      '@types/node': 20.10.4
-      playwright-core: 1.28.1
+      playwright: 1.45.2
 
   /@pnpm/config.env-replace@1.1.0:
     resolution: {integrity: sha512-htyl8TWnKL7K/ESFa1oW2UB5lVDxuF5DpM7tBi6Hu2LNL3mWkIzNLG6N4zoCUP1lCKNxWy/3iu8mS8MvToGd6w==}
@@ -14965,6 +14963,13 @@ packages:
       type: 2.7.2
     dev: true
 
+  /fsevents@2.3.2:
+    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+    requiresBuild: true
+    optional: true
+
   /fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -18023,7 +18028,7 @@ packages:
       '@panva/hkdf': 1.1.1
       cookie: 0.5.0
       jose: 4.15.5
-      next: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+      next: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       oauth: 0.9.15
       openid-client: 5.6.5
       preact: 10.22.0
@@ -18049,7 +18054,7 @@ packages:
         optional: true
     dependencies:
       '@auth/core': 0.32.0
-      next: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+      next: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react: 18.3.1
     dev: false
 
@@ -18068,7 +18073,7 @@ packages:
       hoist-non-react-statics: 3.3.2
       i18next: 22.4.13
       i18next-fs-backend: 2.1.1
-      next: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+      next: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1)
       react: 18.3.1
       react-i18next: 12.2.0(i18next@22.4.13)(react-dom@18.3.1)(react@18.3.1)
     dev: false
@@ -18119,7 +18124,7 @@ packages:
       - babel-plugin-macros
     dev: true
 
-  /next@14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1):
+  /next@14.2.5(@babel/core@7.24.7)(@playwright/test@1.45.2)(react-dom@18.3.1)(react@18.3.1):
     resolution: {integrity: sha512-0f8aRfBVL+mpzfBjYfQuLWh2WyAwtJXCRfkPF4UJ5qd2YwrHczsrSzXU4tRMV0OAxR8ZJZWPFn6uhSC56UTsLA==}
     engines: {node: '>=18.17.0'}
     hasBin: true
@@ -18138,7 +18143,7 @@ packages:
         optional: true
     dependencies:
       '@next/env': 14.2.5
-      '@playwright/test': 1.28.1
+      '@playwright/test': 1.45.2
       '@swc/helpers': 0.5.5
       busboy: 1.6.0
       caniuse-lite: 1.0.30001632
@@ -19383,6 +19388,12 @@ packages:
     resolution: {integrity: sha512-3PixLnGPno0E8rSBJjtwqTwJe3Yw72QwBBBxNoukIj3lEeBNXwbNiKrNuB1oyQgTBw5QHUhNO3SteEtHaMK6ag==}
     engines: {node: '>=14'}
     hasBin: true
+    dev: false
+
+  /playwright-core@1.45.2:
+    resolution: {integrity: sha512-ha175tAWb0dTK0X4orvBIqi3jGEt701SMxMhyujxNrgd8K0Uy5wMSwwcQHtyB4om7INUkfndx02XnQ2p6dvLDw==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   /playwright@1.28.1:
     resolution: {integrity: sha512-92Sz6XBlfHlb9tK5UCDzIFAuIkHHpemA9zwUaqvo+w7sFMSmVMGmvKcbptof/eJObq63PGnMhM75x7qxhTR78Q==}
@@ -19392,6 +19403,15 @@ packages:
     dependencies:
       playwright-core: 1.28.1
     dev: false
+
+  /playwright@1.45.2:
+    resolution: {integrity: sha512-ReywF2t/0teRvNBpfIgh5e4wnrI/8Su8ssdo5XsQKpjxJj+jspm00jSoz9BTg91TT0c9HRjXO7LBNVrgYj9X0g==}
+    engines: {node: '>=18'}
+    hasBin: true
+    dependencies:
+      playwright-core: 1.45.2
+    optionalDependencies:
+      fsevents: 2.3.2
 
   /pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
