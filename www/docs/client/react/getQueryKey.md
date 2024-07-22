@@ -59,7 +59,5 @@ function MyComponent() {
 Similarly to queries, we provide a getMutationKey for mutations. The underlying function is the same as getQueryKey (in fact, you could technically use getQueryKey for mutations as well), the only difference is in semantics.
 
 ```tsx
-function getMutationKey(
-  procedure: AnyMutationProcedure,
-): TRPCMutationKey
+function getMutationKey(procedure: AnyMutationProcedure): TRPCMutationKey;
 ```

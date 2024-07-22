@@ -192,8 +192,8 @@ import {
   splitLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
-import type { AppRouter } from '../server/index.js';
 import { EventSourcePolyfill } from 'event-source-polyfill';
+import type { AppRouter } from '../server/index.js';
 
 // polyfill EventSource
 globalThis.EventSource = EventSourcePolyfill;
@@ -209,10 +209,10 @@ const trpc = createTRPCClient<AppRouter>({
         eventSourceOptions: async () => {
           return {
             headers: {
-              'authorization': 'Bearer supersecret'
-            }
+              authorization: 'Bearer supersecret',
+            },
           }; // you either need to typecast to `EventSourceInit` or use `as any` or override the types by a `declare global` statement
-        }
+        },
       }),
       false: httpBatchLink({
         url: 'http://localhost:3000',
