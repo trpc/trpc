@@ -288,13 +288,11 @@ describe('with transformer', () => {
   const ctx = konn()
     .beforeEach(() => {
       const onIterableInfiniteSpy = vi.fn<
-        [
-          {
-            input: {
-              lastEventId?: number;
-            };
-          },
-        ]
+        (args: {
+          input: {
+            lastEventId?: number;
+          };
+        }) => void
       >();
       const ee = new EventEmitter();
       const eeEmit = (data: number) => {
