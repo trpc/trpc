@@ -522,8 +522,6 @@ export function wsLink<TRouter extends AnyRouter>(
           { type, path, input, id, context, signal: null },
           {
             error(err) {
-              observer.error(err as TRPCClientError<any>);
-
               observer.next({
                 result: {
                   type: 'state',
@@ -532,6 +530,7 @@ export function wsLink<TRouter extends AnyRouter>(
                 },
                 context: context,
               });
+              observer.error(err as TRPCClientError<any>);
 
               unsub();
             },
@@ -578,7 +577,7 @@ export function wsLink<TRouter extends AnyRouter>(
                   },
                   context: context,
                 });
-                observer.error(TRPCClientError.from(transformed.error));
+                observer.error(TRPCClientError.from(error));
                 return;
               }
               observer.next({
