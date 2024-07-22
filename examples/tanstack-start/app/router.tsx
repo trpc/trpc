@@ -13,6 +13,15 @@ import { trpc } from './trpc/react';
 // definitely end up in a more streamlined API in the future. This is just
 // to show what's possible with the current APIs.
 
+function getUrl() {
+  const base = (() => {
+    if (typeof window !== 'undefined') return '';
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+    return `http://localhost:${process.env.PORT ?? 3000}`;
+  })();
+  return base + '/api/trpc';
+}
+
 export function createRouter() {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -25,7 +34,7 @@ export function createRouter() {
     links: [
       unstable_httpBatchStreamLink({
         transformer: superjson,
-        url: 'http://localhost:3000/api/trpc', // FIXME:
+        url: getUrl(),
       }),
     ],
   });

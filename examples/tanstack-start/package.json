@@ -8,7 +8,8 @@
     "build": "vinxi build",
     "start": "vinxi start",
     "lint": "eslint app",
-    "test": "playwright test --project=chromium"
+    "test-dev": "playwright test --project=dev",
+    "test-start": "playwright test --project=prod"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.51.11",

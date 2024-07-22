@@ -10,92 +10,92 @@
 
 // Import Routes
 
-import { Route as rootRoute } from './routes/__root';
-import { Route as IndexImport } from './routes/index';
-import { Route as PostsImport } from './routes/posts';
-import { Route as PostsPostIdDeepImport } from './routes/posts_.$postId.deep';
-import { Route as PostsPostIdImport } from './routes/posts.$postId';
-import { Route as PostsIndexImport } from './routes/posts.index';
-import { Route as RedirectImport } from './routes/redirect';
+import { Route as rootRoute } from './routes/__root'
+import { Route as RedirectImport } from './routes/redirect'
+import { Route as PostsImport } from './routes/posts'
+import { Route as IndexImport } from './routes/index'
+import { Route as PostsIndexImport } from './routes/posts.index'
+import { Route as PostsPostIdImport } from './routes/posts.$postId'
+import { Route as PostsPostIdDeepImport } from './routes/posts_.$postId.deep'
 
 // Create/Update Routes
 
 const RedirectRoute = RedirectImport.update({
   path: '/redirect',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const PostsRoute = PostsImport.update({
   path: '/posts',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const IndexRoute = IndexImport.update({
   path: '/',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const PostsIndexRoute = PostsIndexImport.update({
   path: '/',
   getParentRoute: () => PostsRoute,
-} as any);
+} as any)
 
 const PostsPostIdRoute = PostsPostIdImport.update({
   path: '/$postId',
   getParentRoute: () => PostsRoute,
-} as any);
+} as any)
 
 const PostsPostIdDeepRoute = PostsPostIdDeepImport.update({
   path: '/posts/$postId/deep',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/': {
-      id: '/';
-      path: '/';
-      fullPath: '/';
-      preLoaderRoute: typeof IndexImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
     '/posts': {
-      id: '/posts';
-      path: '/posts';
-      fullPath: '/posts';
-      preLoaderRoute: typeof PostsImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/posts'
+      path: '/posts'
+      fullPath: '/posts'
+      preLoaderRoute: typeof PostsImport
+      parentRoute: typeof rootRoute
+    }
     '/redirect': {
-      id: '/redirect';
-      path: '/redirect';
-      fullPath: '/redirect';
-      preLoaderRoute: typeof RedirectImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/redirect'
+      path: '/redirect'
+      fullPath: '/redirect'
+      preLoaderRoute: typeof RedirectImport
+      parentRoute: typeof rootRoute
+    }
     '/posts/$postId': {
-      id: '/posts/$postId';
-      path: '/$postId';
-      fullPath: '/posts/$postId';
-      preLoaderRoute: typeof PostsPostIdImport;
-      parentRoute: typeof PostsImport;
-    };
+      id: '/posts/$postId'
+      path: '/$postId'
+      fullPath: '/posts/$postId'
+      preLoaderRoute: typeof PostsPostIdImport
+      parentRoute: typeof PostsImport
+    }
     '/posts/': {
-      id: '/posts/';
-      path: '/';
-      fullPath: '/posts/';
-      preLoaderRoute: typeof PostsIndexImport;
-      parentRoute: typeof PostsImport;
-    };
+      id: '/posts/'
+      path: '/'
+      fullPath: '/posts/'
+      preLoaderRoute: typeof PostsIndexImport
+      parentRoute: typeof PostsImport
+    }
     '/posts/$postId/deep': {
-      id: '/posts/$postId/deep';
-      path: '/posts/$postId/deep';
-      fullPath: '/posts/$postId/deep';
-      preLoaderRoute: typeof PostsPostIdDeepImport;
-      parentRoute: typeof rootRoute;
-    };
+      id: '/posts/$postId/deep'
+      path: '/posts/$postId/deep'
+      fullPath: '/posts/$postId/deep'
+      preLoaderRoute: typeof PostsPostIdDeepImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -106,7 +106,7 @@ export const routeTree = rootRoute.addChildren({
   PostsRoute: PostsRoute.addChildren({ PostsPostIdRoute, PostsIndexRoute }),
   RedirectRoute,
   PostsPostIdDeepRoute,
-});
+})
 
 /* prettier-ignore-end */
 
