@@ -15,6 +15,7 @@ const tssHandler = createStartHandler({
 
 export default eventHandler(async (event) => {
   if (event.path.startsWith('/api/trpc')) {
+    // TODO: Split this out to a separate vinxi router once TSR has a way to configure vinxi / have api routes
     return fetchRequestHandler({
       req: toWebRequest(event),
       router: trpcRouter,
