@@ -1,38 +1,29 @@
-import { ErrorComponent, Link, createFileRoute } from '@tanstack/react-router'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { postQueryOptions } from '../utils/posts'
-import type { ErrorComponentProps } from '@tanstack/react-router'
-import { NotFound } from '~/components/NotFound'
+import { createFileRoute, ErrorComponent, Link } from '@tanstack/react-router';
+import type { ErrorComponentProps } from '@tanstack/react-router';
+import { NotFound } from '~/components/NotFound';
+import { trpc } from '~/trpc/react';
 
 export const Route = createFileRoute('/posts/$postId')({
   loader: async ({ params: { postId }, context }) => {
-    const data = await context.queryClient.ensureQueryData(
-      postQueryOptions(postId),
-    )
+    const data = await context.trpc.post.byId.fetch({ id: postId });
 
-    return {
-      title: data.title,
-    }
+    return { title: data.title };
   },
-  meta: ({ loaderData }) => [
-    {
-      title: loaderData.title,
-    },
-  ],
-  errorComponent: PostErrorComponent as any,
+  meta: ({ loaderData }) => [{ title: loaderData.title }],
+  errorComponent: PostErrorComponent,
   notFoundComponent: () => {
-    return <NotFound>Post not found</NotFound>
+    return <NotFound>Post not found</NotFound>;
   },
   component: PostComponent,
-})
+});
 
 export function PostErrorComponent({ error }: ErrorComponentProps) {
-  return <ErrorComponent error={error} />
+  return <ErrorComponent error={error} />;
 }
 
 function PostComponent() {
-  const { postId } = Route.useParams()
-  const postQuery = useSuspenseQuery(postQueryOptions(postId))
+  const { postId } = Route.useParams();
+  const [, postQuery] = trpc.post.byId.useSuspenseQuery({ id: postId });
 
   return (
     <div className="space-y-2">
@@ -49,5 +40,5 @@ function PostComponent() {
         Deep View
       </Link>
     </div>
-  )
+  );
 }

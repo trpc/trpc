@@ -23,10 +23,13 @@
     "@trpc/server": "npm:@trpc/server@next",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "superjson": "^1.12.4",
     "tailwind-merge": "^2.0.0",
+    "vinxi": "0.3.12",
     "zod": "^3.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^8.57.0",
     "@playwright/test": "^1.26.1",
     "@tailwindcss/vite": "npm:@tailwindcss/vite@4.0.0-alpha.17",
     "@types/node": "^20.10.0",

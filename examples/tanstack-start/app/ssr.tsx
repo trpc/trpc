@@ -1,12 +1,26 @@
+import { getRouterManifest } from '@tanstack/start/router-manifest';
 import {
   createStartHandler,
   defaultStreamHandler,
-} from '@tanstack/start/server'
-import { getRouterManifest } from '@tanstack/start/router-manifest'
+} from '@tanstack/start/server';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { eventHandler, toWebRequest } from 'vinxi/http';
+import { createRouter } from './router';
+import { trpcRouter } from './trpc/router';
 
-import { createRouter } from './router'
-
-export default createStartHandler({
+const tssHandler = createStartHandler({
   createRouter,
   getRouterManifest,
-})(defaultStreamHandler)
+})(defaultStreamHandler);
+
+export default eventHandler(async (event) => {
+  if (event.path.startsWith('/api/trpc')) {
+    return fetchRequestHandler({
+      req: toWebRequest(event),
+      router: trpcRouter,
+      endpoint: '/api/trpc',
+    });
+  }
+
+  return tssHandler(event);
+});
