@@ -31,6 +31,7 @@ const config = {
     '@typescript-eslint/consistent-indexed-object-style': 'off',
     '@typescript-eslint/consistent-type-definitions': 'off',
     '@typescript-eslint/no-empty-interface': 'off',
+    '@typescript-eslint/array-type': 'off',
 
     // Todo: do we want these?
     '@typescript-eslint/no-explicit-any': 'off',

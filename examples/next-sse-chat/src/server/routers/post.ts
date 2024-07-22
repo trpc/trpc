@@ -102,7 +102,7 @@ export const postRouter = router({
       };
 
       // We use a readable stream here to prevent the client from missing events
-      // created between the fetching & yield'ing of `newItemsSinceCursor` and the 
+      // created between the fetching & yield'ing of `newItemsSinceCursor` and the
       // subscription to the ee
       const stream = new ReadableStream<PostType>({
         async start(controller) {
