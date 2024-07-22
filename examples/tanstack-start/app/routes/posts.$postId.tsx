@@ -5,7 +5,9 @@ import { trpc } from '~/trpc/react';
 
 export const Route = createFileRoute('/posts/$postId')({
   loader: async ({ params: { postId }, context }) => {
-    const data = await context.trpc.post.byId.fetch({ id: postId });
+    const data = await context.queryClient.ensureQueryData(
+      context.trpc.post.byId.queryOptions({ id: postId }),
+    );
 
     return { title: data.title };
   },

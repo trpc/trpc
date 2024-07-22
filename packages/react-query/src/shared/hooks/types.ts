@@ -1,4 +1,5 @@
 import type {
+  DefinedInitialDataOptions,
   DefinedUseQueryResult,
   DehydratedState,
   InfiniteData,
@@ -6,6 +7,7 @@ import type {
   InitialDataFunction,
   QueryObserverSuccessResult,
   QueryOptions,
+  UndefinedInitialDataOptions,
   UseBaseQueryOptions,
   UseInfiniteQueryOptions,
   UseInfiniteQueryResult,
@@ -54,6 +56,17 @@ export interface TRPCUseQueryBaseOptions {
    */
   trpc?: TRPCReactRequestOptions;
 }
+
+export interface UseTRPCUseQueryOptions<TOutput, TData, TError>
+  extends DistributiveOmit<
+      UndefinedInitialDataOptions<TOutput, TError, TData, TRPCQueryKey>,
+      'queryKey'
+    >,
+    TRPCUseQueryBaseOptions {}
+
+export interface DefinedUseTRPCUseQueryOptions<TOutput, TData, TError>
+  extends DefinedInitialDataOptions<TOutput, TError, TData, TRPCQueryKey>,
+    TRPCUseQueryBaseOptions {}
 
 export interface UseTRPCQueryOptions<
   TOutput,

@@ -1,8 +1,11 @@
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
   DehydratedState,
   DehydrateOptions,
   InfiniteData,
   QueryClient,
+  UndefinedInitialDataOptions,
 } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
 import type { inferRouterClient, TRPCClientError } from '@trpc/client';
@@ -30,6 +33,7 @@ import {
   createFlatProxy,
   createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCQueryKey } from '../internals/getQueryKey';
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import type {
   CreateTRPCReactQueryClientConfig,
@@ -56,6 +60,51 @@ type DecorateProcedure<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = {
+  queryOptions(
+    input: inferProcedureInput<TProcedure>,
+    opts?: Omit<
+      UndefinedInitialDataOptions<
+        inferTransformedProcedureOutput<TRoot, TProcedure>,
+        TRPCClientError<TRoot>,
+        inferTransformedProcedureOutput<TRoot, TProcedure>,
+        TRPCQueryKey
+      >,
+      'queryKey' | 'queryFn' | 'queryKeyHashFn' | 'queryHash'
+    >,
+  ): UndefinedInitialDataOptions<
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TRPCClientError<TRoot>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TRPCQueryKey
+  > & {
+    queryKey: DataTag<
+      TRPCQueryKey,
+      inferTransformedProcedureOutput<TRoot, TProcedure>
+    >;
+  };
+  queryOptions(
+    input: inferProcedureInput<TProcedure>,
+    opts?: Omit<
+      DefinedInitialDataOptions<
+        inferTransformedProcedureOutput<TRoot, TProcedure>,
+        TRPCClientError<TRoot>,
+        inferTransformedProcedureOutput<TRoot, TProcedure>,
+        TRPCQueryKey
+      >,
+      'queryKey' | 'queryFn' | 'queryKeyHashFn' | 'queryHash'
+    >,
+  ): DefinedInitialDataOptions<
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TRPCClientError<TRoot>,
+    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TRPCQueryKey
+  > & {
+    queryKey: DataTag<
+      TRPCQueryKey,
+      inferTransformedProcedureOutput<TRoot, TProcedure>
+    >;
+  };
+
   /**
    * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
@@ -209,6 +258,10 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     );
 
     const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
+      queryOptions: () => {
+        const args1 = args[1] as Maybe<any>;
+        return { ...args1, queryKey, queryFn };
+      },
       fetch: () => {
         const args1 = args[1] as Maybe<TRPCFetchQueryOptions<any, any>>;
         return queryClient.fetchQuery({ ...args1, queryKey, queryFn });

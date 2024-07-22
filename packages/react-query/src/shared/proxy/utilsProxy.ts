@@ -49,6 +49,10 @@ type DecorateQueryProcedure<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyQueryProcedure,
 > = {
+  queryOptions(
+    input: inferProcedureInput<TProcedure>,
+    opts?: any,
+  ): inferProcedureInput<TProcedure>;
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
    */
@@ -308,6 +312,7 @@ export const getQueryType = (
   utilName: keyof AnyDecoratedProcedure,
 ): QueryType => {
   switch (utilName) {
+    case 'queryOptions':
     case 'fetch':
     case 'ensureData':
     case 'prefetch':
@@ -350,6 +355,7 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
     const queryKey = getQueryKeyInternal(path, input, queryType);
 
     const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
+      queryOptions: () => input,
       /**
        * DecorateQueryProcedure
        */

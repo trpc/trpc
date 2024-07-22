@@ -1,3 +1,7 @@
+import type {
+  DataTag,
+  UndefinedInitialDataOptions,
+} from '@tanstack/react-query';
 import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
@@ -134,6 +138,43 @@ export function createRootHooks<
           ...opts,
         }
       : opts;
+  }
+
+  function useQueryOptions(
+    path: readonly string[],
+    input: unknown,
+    opts?: UndefinedInitialDataOptions<unknown, TError>,
+  ): UndefinedInitialDataOptions<unknown, TError> & {
+    queryKey: DataTag<TRPCQueryKey, unknown>;
+  } {
+    const { client } = useContext();
+
+    const queryKey = getQueryKeyInternal(path, input, 'query');
+    const isInputSkipToken = input === skipToken;
+
+    return {
+      ...opts,
+      queryKey: queryKey as any,
+      queryFn: isInputSkipToken
+        ? input
+        : async (_queryFunctionContext) => {
+            const actualOpts = {
+              ...opts,
+              // trpc: {
+              //   ...opts?.trpc,
+              //   ...(queryFunctionContext.signal
+              //     ? { signal: queryFunctionContext.signal }
+              //     : {}),
+              // },
+            };
+
+            const result = await client.query(
+              ...getClientArgs(queryKey, actualOpts),
+            );
+
+            return result;
+          },
+    };
   }
 
   function useQuery(
@@ -536,6 +577,7 @@ export function createRootHooks<
     createClient,
     useContext,
     useUtils: useContext,
+    useQueryOptions,
     useQuery,
     useSuspenseQuery,
     useQueries,

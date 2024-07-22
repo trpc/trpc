@@ -1,8 +1,26 @@
-import type { QueryClient } from '@tanstack/react-query';
+import type {
+  QueryClient,
+  UndefinedInitialDataOptions,
+} from '@tanstack/react-query';
 import type {
   AnyRouter,
   MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import/types';
+
+export interface TRPCQueryBaseOptions {
+  /**
+   * tRPC-related options
+   */
+  trpc?: Record<never, never>;
+}
+
+export interface TRPCQueryOptions<TOutput, TData, TError>
+  extends DistributiveOmit<
+      UndefinedInitialDataOptions<TOutput, TError, TData, any>,
+      'queryKey' | 'queryFn' | 'queryHashFn'
+    >,
+    TRPCQueryBaseOptions {}
 
 /**
  * @internal

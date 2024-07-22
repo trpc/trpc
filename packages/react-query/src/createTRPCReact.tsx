@@ -1,4 +1,4 @@
-import type { SkipToken } from '@tanstack/react-query';
+import type { DataTag, SkipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type {
   AnyProcedure,
@@ -12,6 +12,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
+import type { TRPCQueryKey } from './internals/getQueryKey';
 import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
@@ -24,6 +25,7 @@ import type {
   CreateClient,
   DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
+  DefinedUseTRPCUseQueryOptions,
   TRPCProvider,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
@@ -36,6 +38,7 @@ import type {
   UseTRPCSuspenseInfiniteQueryResult,
   UseTRPCSuspenseQueryOptions,
   UseTRPCSuspenseQueryResult,
+  UseTRPCUseQueryOptions,
 } from './shared/hooks/types';
 import type { CreateTRPCReactOptions } from './shared/types';
 
@@ -45,6 +48,54 @@ type ResolverDef = {
   transformer: boolean;
   errorShape: any;
 };
+
+/**
+ * @internal
+ */
+export interface ProcedureQueryOptions<TDef extends ResolverDef> {
+  <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
+    input: TDef['input'] | SkipToken,
+    opts?: DefinedUseTRPCUseQueryOptions<
+      TQueryFnData,
+      TData,
+      TRPCClientErrorLike<{
+        errorShape: TDef['errorShape'];
+        transformer: TDef['transformer'];
+      }>
+    >,
+  ): DefinedUseTRPCUseQueryOptions<
+    TQueryFnData,
+    TData,
+    TRPCClientErrorLike<{
+      errorShape: TDef['errorShape'];
+      transformer: TDef['transformer'];
+    }>
+  > & {
+    queryKey: DataTag<TRPCQueryKey, TData>;
+  };
+
+  <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
+    input: TDef['input'] | SkipToken,
+    opts?: UseTRPCUseQueryOptions<
+      TQueryFnData,
+      TData,
+      TRPCClientErrorLike<{
+        errorShape: TDef['errorShape'];
+        transformer: TDef['transformer'];
+      }>
+    >,
+  ): UseTRPCUseQueryOptions<
+    TQueryFnData,
+    TData,
+    TRPCClientErrorLike<{
+      errorShape: TDef['errorShape'];
+      transformer: TDef['transformer'];
+    }>
+  > & {
+    queryKey: DataTag<TRPCQueryKey, TData>;
+  };
+}
+
 /**
  * @internal
  */
@@ -130,6 +181,7 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
  * @internal
  */
 export type DecoratedQueryMethods<TDef extends ResolverDef> = {
+  useQueryOptions: ProcedureQueryOptions<TDef>;
   /**
    * @link https://trpc.io/docs/v11/client/react/useQuery
    */

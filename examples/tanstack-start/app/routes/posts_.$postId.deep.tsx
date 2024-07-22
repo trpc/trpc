@@ -1,11 +1,14 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { trpc } from '~/trpc/react';
 import { PostErrorComponent } from './posts.$postId';
 
 export const Route = createFileRoute('/posts/$postId/deep')({
   loader: async ({ params: { postId }, context }) => {
-    const data = await context.trpc.post.byId.fetch({ id: postId });
-    //
+    const data = await context.queryClient.ensureQueryData(
+      //  ^?
+      context.trpc.post.byId.queryOptions({ id: postId }),
+    );
 
     return { title: data.title };
   },
@@ -16,7 +19,12 @@ export const Route = createFileRoute('/posts/$postId/deep')({
 
 function PostDeepComponent() {
   const { postId } = Route.useParams();
-  const [, postQuery] = trpc.post.byId.useSuspenseQuery({ id: postId });
+
+  const postQuery = useSuspenseQuery(
+    trpc.post.byId.useQueryOptions({ id: postId }),
+  );
+  postQuery.data;
+  //        ^?
 
   return (
     <div className="space-y-2 p-2">
