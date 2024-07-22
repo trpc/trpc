@@ -117,7 +117,7 @@ describe.each([
     await waitFor(() => {
       expect(onDataMock).toHaveBeenCalledTimes(1);
     });
-    expect(onDataMock.mock.calls[0][0]).toEqual(30);
+    expect(onDataMock.mock.calls[0]?.[0]).toEqual(30);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__data:30`);
     });
