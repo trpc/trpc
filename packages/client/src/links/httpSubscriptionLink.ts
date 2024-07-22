@@ -121,7 +121,7 @@ export function unstable_httpSubscriptionLink<
             }
 
             const error =
-              event instanceof ErrorEvent
+              globalThis.ErrorEvent && event instanceof ErrorEvent
                 ? TRPCClientError.from(event.error)
                 : TRPCClientError.from(new Error(`Unknown EventSource error`));
 

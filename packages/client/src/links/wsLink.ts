@@ -320,7 +320,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         });
       });
       ws.addEventListener('error', (event) => {
-        if (event instanceof ErrorEvent) {
+        if (globalThis.ErrorEvent && event instanceof ErrorEvent) {
           onError(event.error);
         } else {
           onError(new Error('Unknown WebSocket error'));
