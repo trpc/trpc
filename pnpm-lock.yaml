@@ -1688,12 +1688,6 @@ importers:
         specifier: ^0.32.34
         version: 0.32.34
     devDependencies:
-      '@deepkit/type':
-        specifier: ^1.0.1-alpha.153
-        version: 1.0.1-alpha.153(@deepkit/core@1.0.1-alpha.147)
-      '@effect/schema':
-        specifier: ^0.68.26
-        version: 0.68.26
       '@fastify/websocket':
         specifier: ^10.0.1
         version: 10.0.1
@@ -1721,15 +1715,12 @@ importers:
       '@types/ws':
         specifier: ^8.2.0
         version: 8.5.10
-      '@typeschema/all':
-        specifier: ^0.13.10
-        version: 0.13.10(@deepkit/type@1.0.1-alpha.153(@deepkit/core@1.0.1-alpha.147))(@effect/schema@0.68.26)(@sinclair/typebox@0.32.34)(@types/json-schema@7.0.15)(arktype@2.0.0-beta.0)(fastest-validator@1.18.0)(fp-ts@2.13.1)(io-ts@2.2.21(fp-ts@2.13.1))(superstruct@2.0.0)(valibot@0.36.0)(yup@1.0.0)(zod@3.23.8)
       '@typeschema/main':
         specifier: ^0.13.10
-        version: 0.13.10(o6lwcliglnlkocklxklc4sj7ae)
-      arktype:
-        specifier: ^2.0.0-beta.0
-        version: 2.0.0-beta.0
+        version: 0.13.10(rispzbospfl6rvglriciueyu54)
+      '@typeschema/typebox':
+        specifier: ^0.13.4
+        version: 0.13.4(@sinclair/typebox@0.32.34)(@types/json-schema@7.0.15)
       devalue:
         specifier: ^5.0.0
         version: 5.0.0
@@ -1739,9 +1730,6 @@ importers:
       express:
         specifier: ^4.17.1
         version: 4.19.2
-      fastest-validator:
-        specifier: ^1.18.0
-        version: 1.18.0
       fastify:
         specifier: ^4.16.0
         version: 4.26.2
@@ -1856,6 +1844,9 @@ importers:
       '@typeschema/main':
         specifier: ^0.13.10
         version: 0.13.10(rispzbospfl6rvglriciueyu54)
+      '@typeschema/typebox':
+        specifier: ^0.13.4
+        version: 0.13.4(@sinclair/typebox@0.32.34)(@types/json-schema@7.0.15)
       abort-controller:
         specifier: ^3.0.0
         version: 3.0.0
@@ -2232,12 +2223,6 @@ packages:
   '@ampproject/remapping@2.2.1':
     resolution: {integrity: sha512-lFMjJTrFL3j7L9yBxwYfCq2k6qqwHyzuUl/XBnif78PWTJYyL/dfowQHWE3sp6U6ZzqWiiIZnpTMO96zhkjwtg==}
     engines: {node: '>=6.0.0'}
-
-  '@ark/schema@0.2.0':
-    resolution: {integrity: sha512-IkNWCSHdjaoemMXpps4uFHEAQzwJPbTAS8K2vcQpk90sa+eNBuPSVyB/81/Qyl1VYW0iX3ceGC5NL/OznQv1jg==}
-
-  '@ark/util@0.1.0':
-    resolution: {integrity: sha512-qCLYICQoCy3kEKDVwirQp8qvxhY7NJd8BhhoHaj1l3wCFAk9NUbcDsxAkPStZEMdPI/d7NcbGJe8SWZuRG2twQ==}
 
   '@auth/core@0.32.0':
     resolution: {integrity: sha512-3+ssTScBd+1fd0/fscAyQN1tSygXzuhysuVVzB942ggU4mdfiTbv36P0ccVnExKWYJKvu3E2r3/zxXCCAmTOrg==}
@@ -3238,17 +3223,6 @@ packages:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
     engines: {node: '>=0.1.90'}
 
-  '@deepkit/core@1.0.1-alpha.147':
-    resolution: {integrity: sha512-kVA9w3mFsP8mXxEdDFvM3FZveUbwgltVWNu7nSh1qyMCaYJPNynmIy+1Wwkh3+CGsPc3hAp1r2dMysORsIVt5A==}
-
-  '@deepkit/type-spec@1.0.1-alpha.116':
-    resolution: {integrity: sha512-8LDtbhLlZTKJGocdmpB/Td5nor5Pm90i4TuZbRIJEAofuEFAXM80tT7xZZLl9AFtGJaATZd7Lv0jViwspXKvxg==}
-
-  '@deepkit/type@1.0.1-alpha.153':
-    resolution: {integrity: sha512-7GQgB6sF7RBqpqwU7j2pbLtu3DqoBsKEobSBSa9AfoutlPIZeqY2gYCsq8beN/H6zT/1K5GtRM5oYIfZ2tWTsg==}
-    peerDependencies:
-      '@deepkit/core': ^1.0.1-alpha.13
-
   '@docsearch/css@3.3.0':
     resolution: {integrity: sha512-rODCdDtGyudLj+Va8b6w6Y85KE85bXRsps/R4Yjwt5vueXKXZQKYw0aA9knxLBT6a/bI/GMrAcmCR75KYOM6hg==}
 
@@ -3427,11 +3401,6 @@ packages:
 
   '@edge-runtime/vm@2.0.2':
     resolution: {integrity: sha512-yQFE4H5R7jy98xRMnH3dOt3PQkORVtKTT2gn0U86JBHWMvoSZxvd1hw8UXxJtyp+bqW3yV7N1oTwDdX71It+Gg==}
-
-  '@effect/schema@0.68.26':
-    resolution: {integrity: sha512-o1O/ZmlHXRe9t548YrQ9sudjRWJqCtsU9KnQHzvZm5pHSc4reuZVQufCXctcR0aETf9OFOYUuETrxjEQehq/Lg==}
-    peerDependencies:
-      effect: ^3.5.6
 
   '@emotion/is-prop-valid@0.8.8':
     resolution: {integrity: sha512-u5WtneEAr5IDG2Wv65yhunPSMLIpuKsbuOktRojfrEiEvRyC85LgPMZI63cr7NUqT8ZIGdSVg8ZKGxIug4lXcA==}
@@ -5697,9 +5666,6 @@ packages:
   '@types/unist@2.0.6':
     resolution: {integrity: sha512-PBjIUxZHOuj0R15/xuwJYjFi+KZdNFrehocChv4g5hu6aFroHue8m0lBP0POdK2nKzbw0cgV1mws8+V/JAcEkQ==}
 
-  '@types/uuid@8.3.4':
-    resolution: {integrity: sha512-c/I8ZRb51j+pYGAu5CrFMRxqZ2ke4y2grEBO5AUjgSkSk+qT2Ea+OdWElz/OiMf5MNpn2b17kuVBwZLQJXzihw==}
-
   '@types/ws@8.5.10':
     resolution: {integrity: sha512-vmQSUcfalpIq0R9q7uTo2lXs6eGIpt9wtnLdMv9LVpIjCA/+ufZRozlVoVelIYixx1ugCBKDhn89vnsEGOCx9A==}
 
@@ -5708,9 +5674,6 @@ packages:
 
   '@types/yargs@17.0.14':
     resolution: {integrity: sha512-9Pj7abXoW1RSTcZaL2Hk6G2XyLMlp5ECdVC/Zf2p/KBjC3srijLGgRAXOBjtFrJoIrvxdTKyKDA14bEcbxBaWw==}
-
-  '@typeschema/all@0.13.10':
-    resolution: {integrity: sha512-VRqR47p3JaCFhOw/+aP43TcNQNGoBg5GOKNtiCVsA//8ntxq2h3HgN6y91u4Vs/Q7J5O9hV8EG8W1+SkiNTixg==}
 
   '@typeschema/arktype@0.13.2':
     resolution: {integrity: sha512-B+qAQ09HMPe7fOaEkodEX/eccDpoBHCw37gNhhpR1jhdXGVtKerXoMsmEzzYst5fe6Rbp5kNa7/nacuFXAYfAA==}
@@ -6371,9 +6334,6 @@ packages:
 
   arktype@1.0.14-alpha:
     resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
-
-  arktype@2.0.0-beta.0:
-    resolution: {integrity: sha512-fE3ssMiXjr/bLqFPzlDhRlXngdyHQreu7p7i8+dtcY1CA+f8WrVUcue6JxywhnqEJXPG4HOcIwQcC+q4VfeUMQ==}
 
   array-buffer-byte-length@1.0.0:
     resolution: {integrity: sha512-LPuwb2P+NrQw3XhxGc36+XSvuBPopovXYTR9Ew++Du9Yb/bx5AzBfrIsBoj0EZUifjQU+sHL21sseZ3jerWO/A==}
@@ -8347,10 +8307,6 @@ packages:
     resolution: {integrity: sha512-hMQ4CX1p1izmuLYyZqLMO/qGNw10wSv9QDCPfzXfyFrOaCSSoRfqE1Kf1s5an66J5JZC62NewG+mK49jOCtQew==}
     engines: {node: '>=4'}
 
-  fast-check@3.20.0:
-    resolution: {integrity: sha512-pZIjqLpOZgdSLecec4GKC3Zq5702MZ34upMKxojnNVSWA0K64V3pXOBT1Wdsrc3AphLtzRBbsi8bRWF4TUGmUg==}
-    engines: {node: '>=8.0.0'}
-
   fast-content-type-parse@1.1.0:
     resolution: {integrity: sha512-fBHHqSTFLVnR61C+gltJuE5GkVQMV0S2nqUO8TJ+5Z3qAKG8vAx4FKai1s5jq/inV1+sREynIWSuQ6HgoSXpDQ==}
 
@@ -8403,9 +8359,6 @@ packages:
   fastest-levenshtein@1.0.16:
     resolution: {integrity: sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg==}
     engines: {node: '>= 4.9.1'}
-
-  fastest-validator@1.18.0:
-    resolution: {integrity: sha512-3v6UJF1U/b56GqzDZqEtgPi2g261eGI9zQWDUrmOVKHiAktFIsHklp4XViX+a4yF7S5JjPm4KKmkgCsaara03g==}
 
   fastify-plugin@4.5.0:
     resolution: {integrity: sha512-79ak0JxddO0utAXAQ5ccKhvs6vX2MGyHHMMsmZkBANrq3hXc1CHzvNPHOcvTsVMEPl5I+NT+RO4YKMGehOfSIg==}
@@ -11843,9 +11796,6 @@ packages:
   pure-color@1.3.0:
     resolution: {integrity: sha512-QFADYnsVoBMw1srW7OVKEYjG+MbIa49s54w1MA1EDY6r2r/sTcKKYqRX1f4GYvnXP7eN/Pe9HFcX+hwzmrXRHA==}
 
-  pure-rand@6.1.0:
-    resolution: {integrity: sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==}
-
   qs@6.11.0:
     resolution: {integrity: sha512-MvjoMCJwEarSbUYk5O+nmoSzSutSsTwF85zcHPQ9OrlFoZOYIjaqBAJIqIXjptyD5vThxGq52Xu/MaJzRkIk4Q==}
     engines: {node: '>=0.6'}
@@ -13206,10 +13156,6 @@ packages:
     resolution: {integrity: sha512-/OaKK0xYrs3DmxRYqL/yDc+FxFUVYhDlXMhRmv3z915w2HF1tnN1omB354j8VUGO/hbRzyD6Y3sA7v7GS/ceog==}
     engines: {node: '>=4'}
 
-  to-fast-properties@3.0.1:
-    resolution: {integrity: sha512-/wtNi1tW1F3nf0OL6AqVxGw9Tr1ET70InMhJuVxPwFdGqparF0nQ4UWGLf2DsoI2bFDtthlBnALncZpUzOnsUw==}
-    engines: {node: '>=8'}
-
   to-readable-stream@1.0.0:
     resolution: {integrity: sha512-Iq25XBt6zD5npPhlLVXGFN3/gyR2/qODcKNNyTMd4vbm39HUaOiAM4PMq0eMVC/Tkxz+Zjdsc55g9yyz+Yq00Q==}
     engines: {node: '>=6'}
@@ -14278,12 +14224,6 @@ snapshots:
     dependencies:
       '@jridgewell/gen-mapping': 0.3.3
       '@jridgewell/trace-mapping': 0.3.18
-
-  '@ark/schema@0.2.0':
-    dependencies:
-      '@ark/util': 0.1.0
-
-  '@ark/util@0.1.0': {}
 
   '@auth/core@0.32.0':
     dependencies:
@@ -15763,21 +15703,6 @@ snapshots:
   '@colors/colors@1.5.0':
     optional: true
 
-  '@deepkit/core@1.0.1-alpha.147':
-    dependencies:
-      dot-prop: 5.3.0
-      to-fast-properties: 3.0.1
-
-  '@deepkit/type-spec@1.0.1-alpha.116': {}
-
-  '@deepkit/type@1.0.1-alpha.153(@deepkit/core@1.0.1-alpha.147)':
-    dependencies:
-      '@deepkit/core': 1.0.1-alpha.147
-      '@deepkit/type-spec': 1.0.1-alpha.116
-      '@types/uuid': 8.3.4
-      buffer: 5.7.1
-      uuid: 8.3.2
-
   '@docsearch/css@3.3.0': {}
 
   '@docsearch/react@3.3.0(@algolia/client-search@4.14.2)(@types/react@18.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
@@ -16431,10 +16356,6 @@ snapshots:
   '@edge-runtime/vm@2.0.2':
     dependencies:
       '@edge-runtime/primitives': 2.0.2
-
-  '@effect/schema@0.68.26':
-    dependencies:
-      fast-check: 3.20.0
 
   '@emotion/is-prop-valid@0.8.8':
     dependencies:
@@ -18865,8 +18786,6 @@ snapshots:
 
   '@types/unist@2.0.6': {}
 
-  '@types/uuid@8.3.4': {}
-
   '@types/ws@8.5.10':
     dependencies:
       '@types/node': 20.10.4
@@ -18877,57 +18796,6 @@ snapshots:
     dependencies:
       '@types/yargs-parser': 21.0.0
 
-  '@typeschema/all@0.13.10(@deepkit/type@1.0.1-alpha.153(@deepkit/core@1.0.1-alpha.147))(@effect/schema@0.68.26)(@sinclair/typebox@0.32.34)(@types/json-schema@7.0.15)(arktype@2.0.0-beta.0)(fastest-validator@1.18.0)(fp-ts@2.13.1)(io-ts@2.2.21(fp-ts@2.13.1))(superstruct@2.0.0)(valibot@0.36.0)(yup@1.0.0)(zod@3.23.8)':
-    dependencies:
-      '@typeschema/arktype': 0.13.2(@types/json-schema@7.0.15)(arktype@2.0.0-beta.0)
-      '@typeschema/class-validator': 0.1.2(@types/json-schema@7.0.15)
-      '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
-      '@typeschema/deepkit': 0.13.4(@deepkit/type@1.0.1-alpha.153(@deepkit/core@1.0.1-alpha.147))(@types/json-schema@7.0.15)
-      '@typeschema/effect': 0.13.4(@effect/schema@0.68.26)(@types/json-schema@7.0.15)
-      '@typeschema/fastest-validator': 0.1.0(@types/json-schema@7.0.15)(fastest-validator@1.18.0)
-      '@typeschema/function': 0.13.2(@types/json-schema@7.0.15)
-      '@typeschema/io-ts': 0.13.3(@types/json-schema@7.0.15)(fp-ts@2.13.1)(io-ts@2.2.21(fp-ts@2.13.1))
-      '@typeschema/joi': 0.13.3(@types/json-schema@7.0.15)
-      '@typeschema/json': 0.13.3(@types/json-schema@7.0.15)
-      '@typeschema/main': 0.13.10(o6lwcliglnlkocklxklc4sj7ae)
-      '@typeschema/ow': 0.13.3(@types/json-schema@7.0.15)
-      '@typeschema/runtypes': 0.13.2(@types/json-schema@7.0.15)(runtypes@6.6.0)
-      '@typeschema/superstruct': 0.13.2(@types/json-schema@7.0.15)(superstruct@2.0.0)
-      '@typeschema/suretype': 0.1.0(@types/json-schema@7.0.15)
-      '@typeschema/typebox': 0.13.4(@sinclair/typebox@0.32.34)(@types/json-schema@7.0.15)
-      '@typeschema/valibot': 0.13.5(@types/json-schema@7.0.15)(valibot@0.36.0)
-      '@typeschema/valita': 0.1.0(@types/json-schema@7.0.15)
-      '@typeschema/vine': 0.1.0(@types/json-schema@7.0.15)
-      '@typeschema/yup': 0.13.3(@types/json-schema@7.0.15)(yup@1.0.0)
-      '@typeschema/zod': 0.13.3(@types/json-schema@7.0.15)(zod@3.23.8)
-    transitivePeerDependencies:
-      - '@badrap/valita'
-      - '@deepkit/type'
-      - '@effect/schema'
-      - '@gcornut/valibot-json-schema'
-      - '@sinclair/typebox'
-      - '@sodaru/yup-to-json-schema'
-      - '@types/json-schema'
-      - '@vinejs/vine'
-      - ajv
-      - arktype
-      - class-validator
-      - effect
-      - fastest-validator
-      - fp-ts
-      - io-ts
-      - joi
-      - joi-to-json
-      - json-schema-to-ts
-      - ow
-      - runtypes
-      - superstruct
-      - suretype
-      - valibot
-      - yup
-      - zod
-      - zod-to-json-schema
-
   '@typeschema/arktype@0.13.2(@types/json-schema@7.0.15)(arktype@1.0.14-alpha)':
     dependencies:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
@@ -18937,53 +18805,44 @@ snapshots:
       - '@types/json-schema'
     optional: true
 
-  '@typeschema/arktype@0.13.2(@types/json-schema@7.0.15)(arktype@2.0.0-beta.0)':
-    dependencies:
-      '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
-    optionalDependencies:
-      arktype: 2.0.0-beta.0
-    transitivePeerDependencies:
-      - '@types/json-schema'
-
   '@typeschema/class-validator@0.1.2(@types/json-schema@7.0.15)':
     dependencies:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/core@0.13.2(@types/json-schema@7.0.15)':
     optionalDependencies:
       '@types/json-schema': 7.0.15
 
-  '@typeschema/deepkit@0.13.4(@deepkit/type@1.0.1-alpha.153(@deepkit/core@1.0.1-alpha.147))(@types/json-schema@7.0.15)':
+  '@typeschema/deepkit@0.13.4(@types/json-schema@7.0.15)':
     dependencies:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
-    optionalDependencies:
-      '@deepkit/type': 1.0.1-alpha.153(@deepkit/core@1.0.1-alpha.147)
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
-  '@typeschema/effect@0.13.4(@effect/schema@0.68.26)(@types/json-schema@7.0.15)':
+  '@typeschema/effect@0.13.4(@types/json-schema@7.0.15)':
     dependencies:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
-    optionalDependencies:
-      '@effect/schema': 0.68.26
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
-  '@typeschema/fastest-validator@0.1.0(@types/json-schema@7.0.15)(fastest-validator@1.18.0)':
+  '@typeschema/fastest-validator@0.1.0(@types/json-schema@7.0.15)':
     dependencies:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
-    optionalDependencies:
-      fastest-validator: 1.18.0
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/function@0.13.2(@types/json-schema@7.0.15)':
     dependencies:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/io-ts@0.13.3(@types/json-schema@7.0.15)(fp-ts@2.13.1)(io-ts@2.2.21(fp-ts@2.13.1))':
     dependencies:
@@ -18993,44 +18852,21 @@ snapshots:
       io-ts: 2.2.21(fp-ts@2.13.1)
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/joi@0.13.3(@types/json-schema@7.0.15)':
     dependencies:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/json@0.13.3(@types/json-schema@7.0.15)':
     dependencies:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
     transitivePeerDependencies:
       - '@types/json-schema'
-
-  '@typeschema/main@0.13.10(o6lwcliglnlkocklxklc4sj7ae)':
-    dependencies:
-      '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
-    optionalDependencies:
-      '@typeschema/arktype': 0.13.2(@types/json-schema@7.0.15)(arktype@2.0.0-beta.0)
-      '@typeschema/class-validator': 0.1.2(@types/json-schema@7.0.15)
-      '@typeschema/deepkit': 0.13.4(@deepkit/type@1.0.1-alpha.153(@deepkit/core@1.0.1-alpha.147))(@types/json-schema@7.0.15)
-      '@typeschema/effect': 0.13.4(@effect/schema@0.68.26)(@types/json-schema@7.0.15)
-      '@typeschema/fastest-validator': 0.1.0(@types/json-schema@7.0.15)(fastest-validator@1.18.0)
-      '@typeschema/function': 0.13.2(@types/json-schema@7.0.15)
-      '@typeschema/io-ts': 0.13.3(@types/json-schema@7.0.15)(fp-ts@2.13.1)(io-ts@2.2.21(fp-ts@2.13.1))
-      '@typeschema/joi': 0.13.3(@types/json-schema@7.0.15)
-      '@typeschema/json': 0.13.3(@types/json-schema@7.0.15)
-      '@typeschema/ow': 0.13.3(@types/json-schema@7.0.15)
-      '@typeschema/runtypes': 0.13.2(@types/json-schema@7.0.15)(runtypes@6.6.0)
-      '@typeschema/superstruct': 0.13.2(@types/json-schema@7.0.15)(superstruct@2.0.0)
-      '@typeschema/suretype': 0.1.0(@types/json-schema@7.0.15)
-      '@typeschema/typebox': 0.13.4(@sinclair/typebox@0.32.34)(@types/json-schema@7.0.15)
-      '@typeschema/valibot': 0.13.5(@types/json-schema@7.0.15)(valibot@0.36.0)
-      '@typeschema/valita': 0.1.0(@types/json-schema@7.0.15)
-      '@typeschema/vine': 0.1.0(@types/json-schema@7.0.15)
-      '@typeschema/yup': 0.13.3(@types/json-schema@7.0.15)(yup@1.0.0)
-      '@typeschema/zod': 0.13.3(@types/json-schema@7.0.15)(zod@3.23.8)
-    transitivePeerDependencies:
-      - '@types/json-schema'
+    optional: true
 
   '@typeschema/main@0.13.10(rispzbospfl6rvglriciueyu54)':
     dependencies:
@@ -19038,9 +18874,9 @@ snapshots:
     optionalDependencies:
       '@typeschema/arktype': 0.13.2(@types/json-schema@7.0.15)(arktype@1.0.14-alpha)
       '@typeschema/class-validator': 0.1.2(@types/json-schema@7.0.15)
-      '@typeschema/deepkit': 0.13.4(@deepkit/type@1.0.1-alpha.153(@deepkit/core@1.0.1-alpha.147))(@types/json-schema@7.0.15)
-      '@typeschema/effect': 0.13.4(@effect/schema@0.68.26)(@types/json-schema@7.0.15)
-      '@typeschema/fastest-validator': 0.1.0(@types/json-schema@7.0.15)(fastest-validator@1.18.0)
+      '@typeschema/deepkit': 0.13.4(@types/json-schema@7.0.15)
+      '@typeschema/effect': 0.13.4(@types/json-schema@7.0.15)
+      '@typeschema/fastest-validator': 0.1.0(@types/json-schema@7.0.15)
       '@typeschema/function': 0.13.2(@types/json-schema@7.0.15)
       '@typeschema/io-ts': 0.13.3(@types/json-schema@7.0.15)(fp-ts@2.13.1)(io-ts@2.2.21(fp-ts@2.13.1))
       '@typeschema/joi': 0.13.3(@types/json-schema@7.0.15)
@@ -19063,6 +18899,7 @@ snapshots:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/runtypes@0.13.2(@types/json-schema@7.0.15)(runtypes@6.6.0)':
     dependencies:
@@ -19071,6 +18908,7 @@ snapshots:
       runtypes: 6.6.0
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/superstruct@0.13.2(@types/json-schema@7.0.15)(superstruct@2.0.0)':
     dependencies:
@@ -19079,12 +18917,14 @@ snapshots:
       superstruct: 2.0.0
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/suretype@0.1.0(@types/json-schema@7.0.15)':
     dependencies:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/typebox@0.13.4(@sinclair/typebox@0.32.34)(@types/json-schema@7.0.15)':
     dependencies:
@@ -19101,18 +18941,21 @@ snapshots:
       valibot: 0.36.0
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/valita@0.1.0(@types/json-schema@7.0.15)':
     dependencies:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/vine@0.1.0(@types/json-schema@7.0.15)':
     dependencies:
       '@typeschema/core': 0.13.2(@types/json-schema@7.0.15)
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/yup@0.13.3(@types/json-schema@7.0.15)(yup@1.0.0)':
     dependencies:
@@ -19121,6 +18964,7 @@ snapshots:
       yup: 1.0.0
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typeschema/zod@0.13.3(@types/json-schema@7.0.15)(zod@3.23.8)':
     dependencies:
@@ -19129,6 +18973,7 @@ snapshots:
       zod: 3.23.8
     transitivePeerDependencies:
       - '@types/json-schema'
+    optional: true
 
   '@typescript-eslint/eslint-plugin@7.7.1(@typescript-eslint/parser@7.7.1(eslint@8.56.0)(typescript@5.5.2))(eslint@8.56.0)(typescript@5.5.2)':
     dependencies:
@@ -19686,11 +19531,6 @@ snapshots:
       dequal: 2.0.3
 
   arktype@1.0.14-alpha: {}
-
-  arktype@2.0.0-beta.0:
-    dependencies:
-      '@ark/schema': 0.2.0
-      '@ark/util': 0.1.0
 
   array-buffer-byte-length@1.0.0:
     dependencies:
@@ -22092,10 +21932,6 @@ snapshots:
       iconv-lite: 0.4.24
       tmp: 0.0.33
 
-  fast-check@3.20.0:
-    dependencies:
-      pure-rand: 6.1.0
-
   fast-content-type-parse@1.1.0: {}
 
   fast-decode-uri-component@1.0.1: {}
@@ -22153,8 +21989,6 @@ snapshots:
       strnum: 1.0.5
 
   fastest-levenshtein@1.0.16: {}
-
-  fastest-validator@1.18.0: {}
 
   fastify-plugin@4.5.0: {}
 
@@ -25851,8 +25685,6 @@ snapshots:
 
   pure-color@1.3.0: {}
 
-  pure-rand@6.1.0: {}
-
   qs@6.11.0:
     dependencies:
       side-channel: 1.0.4
@@ -27622,8 +27454,6 @@ snapshots:
   to-buffer@1.1.1: {}
 
   to-fast-properties@2.0.0: {}
-
-  to-fast-properties@3.0.1: {}
 
   to-readable-stream@1.0.0: {}
 
