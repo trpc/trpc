@@ -274,8 +274,12 @@ describe('no transformer', () => {
           4,
         ]
       `);
-    expect(err).toMatchInlineSnapshot(`[Error: Invalid response or stream interrupted]`);
-    expect(err.message).toMatchInlineSnapshot(`"Invalid response or stream interrupted"`);
+    expect(err).toMatchInlineSnapshot(
+      `[Error: Invalid response or stream interrupted]`,
+    );
+    expect(err.message).toMatchInlineSnapshot(
+      `"Invalid response or stream interrupted"`,
+    );
   });
 });
 

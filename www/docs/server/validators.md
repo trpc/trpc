@@ -351,7 +351,9 @@ const publicProcedure = t.procedure;
 export const appRouter = t.router({
   hello: publicProcedure
     .input(Schema.decodeUnknownSync(Schema.Struct({ name: Schema.String })))
-    .output(Schema.decodeUnknownSync(Schema.Struct({ greeting: Schema.String })))
+    .output(
+      Schema.decodeUnknownSync(Schema.Struct({ greeting: Schema.String })),
+    )
     .query(({ input }) => {
       //      ^?
       return {

@@ -145,7 +145,7 @@ const ctx = konn()
             const last = items[items.length - 1];
             const nextIndex = db.posts.findIndex((item) => item === last) + 1;
             if (db.posts[nextIndex]) {
-              nextCursor = db.posts[nextIndex]!.createdAt;
+              nextCursor = db.posts[nextIndex].createdAt;
             }
             return {
               items,

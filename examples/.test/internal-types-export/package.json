@@ -10,13 +10,13 @@
     "@tsconfig/node-lts": "^18.12.2",
     "@tsconfig/strictest": "^2.0.1",
     "@types/node": "^20.10.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.3"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
-    "next": "^14.1.4"
+    "next": "^14.2.5"
   }
 }
