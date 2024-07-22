@@ -5,7 +5,7 @@ import tsConfigPaths from 'vite-tsconfig-paths';
 export default defineConfig({
   vite: {
     plugins: () => [
-      tailwindcss() as any,
+      tailwindcss() as never,
       tsConfigPaths({
         projects: ['./tsconfig.json'],
       }),

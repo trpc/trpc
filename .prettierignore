@@ -13,3 +13,4 @@ pnpm-lock.yaml
 www/docs/main/quickstart.mdx
 .turbo
 .vinxi
+.output
