@@ -165,7 +165,6 @@ export function unstable_httpSubscriptionLink<
         }).catch((error) => {
           const trpcError = TRPCClientError.from(error);
 
-          observer.error(trpcError);
           observer.next({
             result: {
               type: 'state',
@@ -173,6 +172,7 @@ export function unstable_httpSubscriptionLink<
               data: TRPCClientError.from(trpcError),
             },
           });
+          observer.error(trpcError);
         });
 
         return () => {
