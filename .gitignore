@@ -4,6 +4,7 @@ dist/
 .next/
 .turbo/
 .vercel/
+.vinxi/
 .eslintcache
 *.tsbuildinfo
 
@@ -27,4 +28,3 @@ packages/*/*/
 packages/tests/node_modules
 
 examples/next-big-router/src/server/routers
-.vinxi
