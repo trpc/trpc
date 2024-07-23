@@ -1,7 +1,3 @@
-import type {
-  DataTag,
-  UndefinedInitialDataOptions,
-} from '@tanstack/react-query';
 import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
@@ -39,6 +35,8 @@ import type {
   CreateClient,
   TRPCProvider,
   TRPCQueryOptions,
+  UndefinedUseTRPCUseQueryOptionsIn,
+  UndefinedUseTRPCUseQueryOptionsOut,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
@@ -143,10 +141,8 @@ export function createRootHooks<
   function useQueryOptions(
     path: readonly string[],
     input: unknown,
-    opts?: UndefinedInitialDataOptions<unknown, TError>,
-  ): UndefinedInitialDataOptions<unknown, TError> & {
-    queryKey: DataTag<TRPCQueryKey, unknown>;
-  } {
+    opts?: UndefinedUseTRPCUseQueryOptionsIn<unknown, unknown, TError>,
+  ): UndefinedUseTRPCUseQueryOptionsOut<unknown, unknown, TError> {
     const { client } = useContext();
 
     const queryKey = getQueryKeyInternal(path, input, 'query');
@@ -154,6 +150,7 @@ export function createRootHooks<
 
     return {
       ...opts,
+      trpc: useHookResult({ path }),
       queryKey: queryKey as any,
       queryFn: isInputSkipToken
         ? input

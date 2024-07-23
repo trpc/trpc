@@ -26,8 +26,7 @@ export interface UndefinedTRPCQueryOptionsIn<TOutput, TError>
     TRPCQueryBaseOptions {}
 
 export interface UndefinedTRPCQueryOptionsOut<TOutput, TError>
-  extends UndefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
-    TRPCQueryBaseOptions {
+  extends UndefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey> {
   queryKey: DataTag<TRPCQueryKey, TOutput>;
 }
 
@@ -39,8 +38,7 @@ export interface DefinedTRPCQueryOptionsIn<TOutput, TError>
     TRPCQueryBaseOptions {}
 
 export interface DefinedTRPCQueryOptionsOut<TOutput, TError>
-  extends DefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
-    TRPCQueryBaseOptions {
+  extends DefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey> {
   queryKey: DataTag<TRPCQueryKey, TOutput>;
 }
 

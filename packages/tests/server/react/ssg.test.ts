@@ -55,3 +55,13 @@ test('prefetchInfinite and dehydrate', async () => {
   const data = JSON.stringify(ssg.dehydrate());
   expect(data).toContain('__infResult');
 });
+
+test('using queryOptions', async () => {
+  const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
+
+  const post = await ssg.queryClient.fetchQuery(
+    ssg.post.byId.queryOptions({ id: '1' }),
+  );
+  expectTypeOf<'__result'>(post);
+  expect(post).toStrictEqual('__result');
+});

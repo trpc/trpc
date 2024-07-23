@@ -1,6 +1,6 @@
 import { waitMs } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
-import { skipToken, type InfiniteData } from '@tanstack/react-query';
+import { skipToken, useQuery, type InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
@@ -310,6 +310,33 @@ describe('useQuery()', () => {
         },
       ]
     `);
+  });
+
+  test('using queryOptions', async () => {
+    const { client, App } = ctx;
+    function MyComponent() {
+      const queryOptions = client.post.byId.useQueryOptions({ id: '1' });
+      expect(queryOptions.trpc.path).toBe('post.byId');
+      const query1 = useQuery(queryOptions);
+
+      if (!query1.data) {
+        return <>...</>;
+      }
+
+      type TData = (typeof query1)['data'];
+      expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+
+      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`__result`);
+    });
   });
 });
 

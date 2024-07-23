@@ -1,4 +1,4 @@
-import type { DataTag, SkipToken } from '@tanstack/react-query';
+import type { SkipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type {
   AnyProcedure,
@@ -12,7 +12,6 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { createFlatProxy } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import type { TRPCQueryKey } from './internals/getQueryKey';
 import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
@@ -25,8 +24,10 @@ import type {
   CreateClient,
   DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
-  DefinedUseTRPCUseQueryOptions,
+  DefinedUseTRPCUseQueryOptionsIn,
+  DefinedUseTRPCUseQueryOptionsOut,
   TRPCProvider,
+  UndefinedUseTRPCUseQueryOptionsIn,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
@@ -38,7 +39,6 @@ import type {
   UseTRPCSuspenseInfiniteQueryResult,
   UseTRPCSuspenseQueryOptions,
   UseTRPCSuspenseQueryResult,
-  UseTRPCUseQueryOptions,
 } from './shared/hooks/types';
 import type { CreateTRPCReactOptions } from './shared/types';
 
@@ -55,7 +55,7 @@ type ResolverDef = {
 export interface ProcedureQueryOptions<TDef extends ResolverDef> {
   <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
-    opts?: DefinedUseTRPCUseQueryOptions<
+    opts?: DefinedUseTRPCUseQueryOptionsIn<
       TQueryFnData,
       TData,
       TRPCClientErrorLike<{
@@ -63,20 +63,18 @@ export interface ProcedureQueryOptions<TDef extends ResolverDef> {
         transformer: TDef['transformer'];
       }>
     >,
-  ): DefinedUseTRPCUseQueryOptions<
+  ): DefinedUseTRPCUseQueryOptionsOut<
     TQueryFnData,
     TData,
     TRPCClientErrorLike<{
       errorShape: TDef['errorShape'];
       transformer: TDef['transformer'];
     }>
-  > & {
-    queryKey: DataTag<TRPCQueryKey, TData>;
-  };
+  >;
 
   <TQueryFnData extends TDef['output'] = TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
-    opts?: UseTRPCUseQueryOptions<
+    opts?: UndefinedUseTRPCUseQueryOptionsIn<
       TQueryFnData,
       TData,
       TRPCClientErrorLike<{
@@ -84,16 +82,14 @@ export interface ProcedureQueryOptions<TDef extends ResolverDef> {
         transformer: TDef['transformer'];
       }>
     >,
-  ): UseTRPCUseQueryOptions<
+  ): UndefinedUseTRPCUseQueryOptionsIn<
     TQueryFnData,
     TData,
     TRPCClientErrorLike<{
       errorShape: TDef['errorShape'];
       transformer: TDef['transformer'];
     }>
-  > & {
-    queryKey: DataTag<TRPCQueryKey, TData>;
-  };
+  >;
 }
 
 /**
