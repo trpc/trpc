@@ -22,11 +22,18 @@ import type {
   TRPCUntypedClient,
 } from '@trpc/client';
 import type {
+  AnyClientTypes,
   AnyRouter,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import type { ExtractCursorType } from '../shared';
+import type {
+  DefinedTRPCQueryOptionsIn,
+  DefinedTRPCQueryOptionsOut,
+  ExtractCursorType,
+  UndefinedTRPCQueryOptionsIn,
+  UndefinedTRPCQueryOptionsOut,
+} from '../shared';
 import type { TRPCMutationKey, TRPCQueryKey } from './getQueryKey';
 
 export type TRPCFetchQueryOptions<TOutput, TError> = DistributiveOmit<
@@ -118,6 +125,17 @@ export interface TRPCContextState<
  * @internal
  */
 export interface TRPCQueryUtils<TRouter extends AnyRouter> {
+  queryOptions(
+    queryKey: TRPCQueryKey,
+    opts?: UndefinedTRPCQueryOptionsIn<
+      unknown,
+      TRPCClientError<AnyClientTypes>
+    >,
+  ): UndefinedTRPCQueryOptionsOut<unknown, TRPCClientError<AnyClientTypes>>;
+  queryOptions(
+    queryKey: TRPCQueryKey,
+    opts?: DefinedTRPCQueryOptionsIn<unknown, TRPCClientError<AnyClientTypes>>,
+  ): DefinedTRPCQueryOptionsOut<unknown, TRPCClientError<AnyClientTypes>>;
   /**
    * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
    */

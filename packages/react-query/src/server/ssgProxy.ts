@@ -1,11 +1,8 @@
 import type {
-  DataTag,
-  DefinedInitialDataOptions,
   DehydratedState,
   DehydrateOptions,
   InfiniteData,
   QueryClient,
-  UndefinedInitialDataOptions,
 } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
 import type { inferRouterClient, TRPCClientError } from '@trpc/client';
@@ -33,13 +30,16 @@ import {
   createFlatProxy,
   createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { TRPCQueryKey } from '../internals/getQueryKey';
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import type {
   CreateTRPCReactQueryClientConfig,
+  DefinedTRPCQueryOptionsIn,
+  DefinedTRPCQueryOptionsOut,
   ExtractCursorType,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
+  UndefinedTRPCQueryOptionsIn,
+  UndefinedTRPCQueryOptionsOut,
 } from '../shared';
 import { getQueryClient, getQueryType } from '../shared';
 
@@ -62,48 +62,24 @@ type DecorateProcedure<
 > = {
   queryOptions(
     input: inferProcedureInput<TProcedure>,
-    opts?: Omit<
-      UndefinedInitialDataOptions<
-        inferTransformedProcedureOutput<TRoot, TProcedure>,
-        TRPCClientError<TRoot>,
-        inferTransformedProcedureOutput<TRoot, TProcedure>,
-        TRPCQueryKey
-      >,
-      'queryKey' | 'queryFn' | 'queryKeyHashFn' | 'queryHash'
+    opts?: UndefinedTRPCQueryOptionsIn<
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
-  ): UndefinedInitialDataOptions<
+  ): UndefinedTRPCQueryOptionsOut<
     inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TRPCClientError<TRoot>,
-    inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TRPCQueryKey
-  > & {
-    queryKey: DataTag<
-      TRPCQueryKey,
-      inferTransformedProcedureOutput<TRoot, TProcedure>
-    >;
-  };
+    TRPCClientError<TRoot>
+  >;
   queryOptions(
     input: inferProcedureInput<TProcedure>,
-    opts?: Omit<
-      DefinedInitialDataOptions<
-        inferTransformedProcedureOutput<TRoot, TProcedure>,
-        TRPCClientError<TRoot>,
-        inferTransformedProcedureOutput<TRoot, TProcedure>,
-        TRPCQueryKey
-      >,
-      'queryKey' | 'queryFn' | 'queryKeyHashFn' | 'queryHash'
+    opts?: DefinedTRPCQueryOptionsIn<
+      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TRPCClientError<TRoot>
     >,
-  ): DefinedInitialDataOptions<
+  ): DefinedTRPCQueryOptionsOut<
     inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TRPCClientError<TRoot>,
-    inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TRPCQueryKey
-  > & {
-    queryKey: DataTag<
-      TRPCQueryKey,
-      inferTransformedProcedureOutput<TRoot, TProcedure>
-    >;
-  };
+    TRPCClientError<TRoot>
+  >;
 
   /**
    * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching

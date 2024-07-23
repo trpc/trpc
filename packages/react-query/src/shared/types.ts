@@ -1,12 +1,15 @@
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
   QueryClient,
   UndefinedInitialDataOptions,
 } from '@tanstack/react-query';
 import type {
   AnyRouter,
+  DistributiveOmit,
   MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import/types';
+import type { TRPCQueryKey } from '../internals/getQueryKey';
 
 export interface TRPCQueryBaseOptions {
   /**
@@ -15,12 +18,31 @@ export interface TRPCQueryBaseOptions {
   trpc?: Record<never, never>;
 }
 
-export interface TRPCQueryOptions<TOutput, TData, TError>
+export interface UndefinedTRPCQueryOptionsIn<TOutput, TError>
   extends DistributiveOmit<
-      UndefinedInitialDataOptions<TOutput, TError, TData, any>,
-      'queryKey' | 'queryFn' | 'queryHashFn'
+      UndefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
+      'queryKey' | 'queryFn' | 'queryHashFn' | 'queryHash'
     >,
     TRPCQueryBaseOptions {}
+
+export interface UndefinedTRPCQueryOptionsOut<TOutput, TError>
+  extends UndefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
+    TRPCQueryBaseOptions {
+  queryKey: DataTag<TRPCQueryKey, TOutput>;
+}
+
+export interface DefinedTRPCQueryOptionsIn<TOutput, TError>
+  extends DistributiveOmit<
+      DefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
+      'queryKey' | 'queryFn' | 'queryHashFn' | 'queryHash'
+    >,
+    TRPCQueryBaseOptions {}
+
+export interface DefinedTRPCQueryOptionsOut<TOutput, TError>
+  extends DefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
+    TRPCQueryBaseOptions {
+  queryKey: DataTag<TRPCQueryKey, TOutput>;
+}
 
 /**
  * @internal

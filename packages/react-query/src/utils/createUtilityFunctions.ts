@@ -1,4 +1,4 @@
-import type { QueryClient } from '@tanstack/react-query';
+import { queryOptions, type QueryClient } from '@tanstack/react-query';
 import type { CreateTRPCClient } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
@@ -30,6 +30,15 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
 
   return {
+    queryOptions: (queryKey, opts) => {
+      return queryOptions({
+        ...opts,
+        initialData: opts?.initialData as any,
+        queryKey,
+        queryFn: () => untypedClient.query(...getClientArgs(queryKey, opts)),
+      });
+    },
+
     fetchQuery: (queryKey, opts) => {
       return queryClient.fetchQuery({
         ...opts,
