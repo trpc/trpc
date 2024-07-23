@@ -121,7 +121,7 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
           TDef['input']
         >;
         usePrefetchInfiniteQuery: (
-          input: Omit<TDef['input'], 'cursor' | 'direction'>,
+          input: Omit<TDef['input'], ReservedInfiniteQueryKeys> | SkipToken,
           opts: TRPCFetchInfiniteQueryOptions<
             TDef['input'],
             TDef['output'],
