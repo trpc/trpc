@@ -62,7 +62,7 @@
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-turbo": "^2.0.9",
-    "eslint-plugin-unicorn": "54.0.0",
+    "eslint-plugin-unicorn": "55.0.0",
     "event-source-polyfill": "^1.0.31",
     "express": "^4.17.1",
     "fast-glob": "^3.2.12",
