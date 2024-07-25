@@ -145,5 +145,31 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     getInfiniteQueryData: (queryKey) => {
       return queryClient.getQueryData(queryKey);
     },
+
+    setMutationDefaults: (mutationKey, options) => {
+      const path = mutationKey[0];
+      const canonicalMutationFn = (input: unknown) => {
+        return untypedClient.mutation(
+          ...getClientArgs([path, { input }], opts),
+        );
+      };
+      return queryClient.setMutationDefaults(
+        mutationKey,
+        typeof options === 'function'
+          ? options({ canonicalMutationFn })
+          : options,
+      );
+    },
+
+    getMutationDefaults: (mutationKey) => {
+      return queryClient.getMutationDefaults(mutationKey);
+    },
+
+    isMutating: (filters) => {
+      return queryClient.isMutating({
+        ...filters,
+        exact: true,
+      });
+    },
   };
 }

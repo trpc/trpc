@@ -51,8 +51,8 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     CreateHTTPHandlerOptions<TRouter>['createContext']
   >;
 
-  const onErrorSpy = vitest.fn<Parameters<OnError>, void>();
-  const createContextSpy = vitest.fn<Parameters<CreateContext>, void>();
+  const onErrorSpy = vitest.fn<OnError>();
+  const createContextSpy = vitest.fn<CreateContext>();
   const serverOverrides: Partial<CreateHTTPHandlerOptions<TRouter>> =
     opts?.server ?? {};
 
@@ -72,7 +72,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
       return opts?.server?.createContext?.(it) ?? it;
     },
   });
-  const onRequestSpy = vitest.fn<Parameters<typeof handler>, void>();
+  const onRequestSpy = vitest.fn<typeof handler>();
 
   const httpServer = http.createServer((...args) => {
     onRequestSpy(...args);
@@ -194,7 +194,15 @@ export async function waitError<TError extends Error = Error>(
       res = await fnOrPromise;
     }
   } catch (cause) {
-    expect(cause).toBeInstanceOf(Error);
+    // needs to be instanceof Error or DOMException
+    if (
+      cause instanceof Error === false &&
+      cause instanceof DOMException === false
+    ) {
+      throw new Error(
+        'Expected function to throw an error, but it threw something else',
+      );
+    }
     if (errorConstructor) {
       expect((cause as Error).name).toBe(errorConstructor.name);
     }

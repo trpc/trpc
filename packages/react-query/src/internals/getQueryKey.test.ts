@@ -1,10 +1,11 @@
-import { getQueryKeyInternal } from './getQueryKey';
+import { getMutationKeyInternal, getQueryKeyInternal } from './getQueryKey';
 
 test('getArrayQueryKey', () => {
   // empty path should not nest an extra array
   expect(getQueryKeyInternal([], undefined, 'any')).toMatchInlineSnapshot(
     `Array []`,
   );
+  expect(getMutationKeyInternal([])).toMatchInlineSnapshot(`Array []`);
 
   // should not nest an empty object
   expect(getQueryKeyInternal(['foo'], undefined, 'any')).toMatchInlineSnapshot(`
@@ -36,6 +37,13 @@ test('getArrayQueryKey', () => {
       },
     ]
   `);
+  expect(getMutationKeyInternal(['foo'])).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        "foo",
+      ],
+    ]
+  `);
 
   // some proc may have dot separated parts
   expect(getQueryKeyInternal(['foo', 'bar.baz'], 'bar', 'query'))
@@ -50,6 +58,15 @@ test('getArrayQueryKey', () => {
         "input": "bar",
         "type": "query",
       },
+    ]
+  `);
+  expect(getMutationKeyInternal(['foo', 'bar.baz'])).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        "foo",
+        "bar",
+        "baz",
+      ],
     ]
   `);
 

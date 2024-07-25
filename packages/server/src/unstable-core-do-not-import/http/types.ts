@@ -99,6 +99,11 @@ export interface TRPCRequestInfo {
    * Connection params when using `httpSubscriptionLink` or `createWSClient`
    */
   connectionParams: Dict<string> | null;
+  /**
+   * Signal when the request is aborted
+   * Can be used to abort async operations during the request, e.g. `fetch()`-requests
+   */
+  signal: AbortSignal;
 }
 
 /**

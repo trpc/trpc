@@ -88,7 +88,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
     };
   };
 
-const unsetContextSymbol = Symbol('unsetContext');
+const unsetContextPromiseSymbol = Symbol('unsetContextPromise');
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
   opts: WSConnectionHandlerOptions<TRouter>,
 ) {
@@ -97,6 +97,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
   return async (client: ws.WebSocket, req: IncomingMessage) => {
     const clientSubscriptions = new Map<number | string, AbortController>();
+    const abortController = new AbortController();
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
@@ -119,6 +120,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             isBatchCall: false,
             accept: null,
             type: 'unknown',
+            signal: abortController.signal,
           },
         });
 
@@ -146,13 +148,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
 
         // close in next tick
-        (global.setImmediate ?? global.setTimeout)(() => {
+        (globalThis.setImmediate ?? globalThis.setTimeout)(() => {
           client.close();
         });
 
         throw error;
       });
     }
+
+    let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     /**
      * promise for initializing the context
@@ -162,10 +166,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
      */
     let ctxPromise =
       toURL(req.url ?? '').searchParams.get('connectionParams') === '1'
-        ? unsetContextSymbol
+        ? unsetContextPromiseSymbol
         : createCtxPromise(() => null);
-
-    let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
       const { id, jsonrpc } = msg;
@@ -339,7 +341,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       }
     }
     client.on('message', async (message) => {
-      if (ctxPromise === unsetContextSymbol) {
+      if (ctxPromise === unsetContextPromiseSymbol) {
         // If the ctxPromise wasn't created immediately, we're expecting the first message to be a TRPCConnectionParamsMessage
         ctxPromise = createCtxPromise(() => {
           let msg;
@@ -410,9 +412,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         sub.abort();
       }
       clientSubscriptions.clear();
+      abortController.abort();
     });
 
-    if (ctxPromise !== unsetContextSymbol) {
+    if (ctxPromise !== unsetContextPromiseSymbol) {
       // prevent unhandled promise rejection errors
       await ctxPromise.catch(() => null);
     }

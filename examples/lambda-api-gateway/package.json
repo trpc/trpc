@@ -20,10 +20,10 @@
   "devDependencies": {
     "@types/node": "^20.10.0",
     "esbuild": "^0.17.10",
-    "eslint": "^8.56.0",
+    "eslint": "^8.57.0",
     "serverless": "^3.18.1",
     "serverless-esbuild": "^1.39.0",
     "serverless-offline": "^12.0.4",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.3"
   }
 }
