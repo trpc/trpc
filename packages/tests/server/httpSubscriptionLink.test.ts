@@ -9,7 +9,7 @@ import {
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
-import { initTRPC, sse, TRPCError } from '@trpc/server';
+import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
@@ -56,10 +56,7 @@ const ctx = konn()
             });
             let idx = opts.input.lastEventId ?? 0;
             while (true) {
-              yield sse({
-                id: String(idx),
-                data: idx,
-              });
+              yield tracked(String(idx), idx);
               idx++;
               await sleep();
               infiniteYields();
@@ -367,7 +364,7 @@ describe('auth / connectionParams', async () => {
   });
 });
 
-describe('subscription throws an error', async () => {
+describe.only('subscription throws an error', async () => {
   const USER_TOKEN = 'supersecret';
   type User = {
     id: string;
@@ -511,10 +508,7 @@ describe('transformers / different serialize-deserialize', async () => {
         iterableEvent: t.procedure.subscription(async function* () {
           for await (const data of on(ee, 'data')) {
             const num = data[0] as number;
-            yield sse({
-              id: num.toString(),
-              data: { num },
-            });
+            yield tracked(String(num), { num });
           }
         }),
       });
