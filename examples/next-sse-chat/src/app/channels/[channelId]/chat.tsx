@@ -67,7 +67,7 @@ export function Chat(props: Readonly<{ channelId: string }>) {
               </div>
 
               {livePosts.messages?.map((item) => {
-                const isMe = item.author === session?.user?.name;
+                const isMe = item.name === session?.user?.name;
 
                 return (
                   <div
@@ -80,8 +80,8 @@ export function Chat(props: Readonly<{ channelId: string }>) {
                     <Avatar
                       alt="Avatar"
                       className="size-8"
-                      initials={item.author?.substring(0, 2)}
-                      src={`https://github.com/${item.author}.png`}
+                      initials={item.name.substring(0, 2)}
+                      src={`https://github.com/${item.name}.png`}
                     />
 
                     <div className="flex flex-col gap-1">
@@ -96,7 +96,15 @@ export function Chat(props: Readonly<{ channelId: string }>) {
                         <p>{item.text}</p>
                       </div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {item.author} ·{' '}
+                        <a
+                          href={`https://github.com/${item.name}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline"
+                        >
+                          {item.name}
+                        </a>{' '}
+                        ·{' '}
                         {isToday(item.createdAt)
                           ? formatDistanceToNow(item.createdAt) + ' ago'
                           : format(item.createdAt, 'MMM d, yyyy h:mm a')}
