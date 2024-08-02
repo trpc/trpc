@@ -1,12 +1,7 @@
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
-import {
-  isSerializedSSEError,
-  sseHeaders,
-  sseStreamConsumer,
-  sseStreamProducer,
-} from './sse';
+import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
 import { createServer } from './utils/createServer';
 
@@ -100,8 +95,8 @@ test('e2e, server-sent events (SSE)', async () => {
   const ITERATIONS = 10;
   const values: number[] = [];
   for await (const value of iterable) {
-    if (isSerializedSSEError(value)) {
-      throw value[0];
+    if (!value.ok) {
+      throw value.error;
     }
     if (values.length === ITERATIONS) {
       break;
@@ -135,8 +130,8 @@ test('e2e, server-sent events (SSE)', async () => {
   });
 
   for await (const value of iterable) {
-    if (isSerializedSSEError(value)) {
-      throw value[0];
+    if (!value.ok) {
+      throw value.error;
     }
     if (values.length === ITERATIONS * 2) {
       break;
@@ -242,8 +237,8 @@ test('SSE on serverless - emit and disconnect early', async () => {
   const ITERATIONS = 3;
   const values: number[] = [];
   for await (const value of iterable) {
-    if (isSerializedSSEError(value)) {
-      throw value[0];
+    if (!value.ok) {
+      throw value.error;
     }
     // console.log({ value });
     values.push(value.data);
