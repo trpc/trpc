@@ -80,8 +80,10 @@ test('encode/decode - error', async () => {
 
   const errors: unknown[] = [];
 
-  const onProducerErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
-  const onConsumerErrorSpy = vi.fn<Parameters<ConsumerOnError>, null>();
+  const onProducerErrorSpy =
+    vi.fn<(...args: Parameters<ProducerOnError>) => void>();
+  const onConsumerErrorSpy =
+    vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
 
   const stream = jsonlStreamProducer({
     data,
@@ -287,8 +289,10 @@ test('e2e, client aborts request halfway through', async () => {
   const yieldCalls = vi.fn();
   let stopped = false;
 
-  const onConsumerErrorSpy = vi.fn<Parameters<ConsumerOnError>, null>();
-  const onProducerErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
+  const onConsumerErrorSpy =
+    vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
+  const onProducerErrorSpy =
+    vi.fn<(...args: Parameters<ProducerOnError>) => void>();
 
   const data = {
     0: Promise.resolve({
@@ -365,8 +369,10 @@ test('e2e, client aborts request halfway through - through breaking async iterab
   const yieldCalls = vi.fn();
   let stopped = false;
 
-  const onConsumerErrorSpy = vi.fn<Parameters<ConsumerOnError>, null>();
-  const onProducerErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
+  const onConsumerErrorSpy =
+    vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
+  const onProducerErrorSpy =
+    vi.fn<(...args: Parameters<ProducerOnError>) => void>();
 
   const data = {
     0: Promise.resolve({
@@ -438,7 +444,7 @@ test('e2e, client aborts request halfway through - through breaking async iterab
 });
 
 test('e2e, encode/decode - maxDepth', async () => {
-  const onError = vi.fn<Parameters<ProducerOnError>, null>();
+  const onError = vi.fn<(...args: Parameters<ProducerOnError>) => void>();
   const data = {
     0: Promise.resolve({
       foo: 'bar',

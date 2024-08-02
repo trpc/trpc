@@ -1295,14 +1295,8 @@ describe('lastEventId', () => {
       wsClient: {},
     });
 
-    const onData = vi.fn<
-      [
-        {
-          id: string;
-          data: Message;
-        },
-      ]
-    >();
+    const onData = vi.fn<(val: { id: string; data: Message }) => void>();
+
     const onStarted = vi.fn();
     const sub = ctx.client.iterable.subscribe(undefined, {
       onStarted,
