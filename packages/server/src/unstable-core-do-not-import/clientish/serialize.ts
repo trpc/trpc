@@ -26,7 +26,7 @@ type IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never
 export type Serialize<T> =
   IsAny<T> extends true ? any :
   unknown extends T ? unknown :
-  T extends AsyncIterable<infer U> ? AsyncIterable<Serialize<U>> :
+  T extends AsyncGenerator<infer $T, infer $Return, infer $Next> ? AsyncGenerator<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :
   T extends JsonReturnable ? T :
   T extends Map<any, any> | Set<any> ? object :
   T extends NonJsonPrimitive ? never :
