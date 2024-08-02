@@ -249,7 +249,7 @@ export function sseStreamConsumer<TData>(opts: {
           const value = await reader.read();
           if (value.done) {
             return {
-              value: value.value,
+              value: undefined,
               done: true,
             };
           }
