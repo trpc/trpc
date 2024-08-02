@@ -30,8 +30,8 @@ type PROMISE_STATUS_FULFILLED = typeof PROMISE_STATUS_FULFILLED;
 const PROMISE_STATUS_REJECTED = 1;
 type PROMISE_STATUS_REJECTED = typeof PROMISE_STATUS_REJECTED;
 
-const ASYNC_ITERABLE_STATUS_DONE = 0;
-type ASYNC_ITERABLE_STATUS_DONE = typeof ASYNC_ITERABLE_STATUS_DONE;
+const ASYNC_ITERABLE_STATUS_RETURN = 0;
+type ASYNC_ITERABLE_STATUS_DONE = typeof ASYNC_ITERABLE_STATUS_RETURN;
 const ASYNC_ITERABLE_STATUS_VALUE = 1;
 type ASYNC_ITERABLE_STATUS_VALUE = typeof ASYNC_ITERABLE_STATUS_VALUE;
 const ASYNC_ITERABLE_STATUS_ERROR = 2;
@@ -70,7 +70,11 @@ type PromiseChunk =
     ]
   | [chunkIndex: ChunkIndex, status: PROMISE_STATUS_REJECTED, error: unknown];
 type IterableChunk =
-  | [chunkIndex: ChunkIndex, status: ASYNC_ITERABLE_STATUS_DONE]
+  | [
+      chunkIndex: ChunkIndex,
+      status: ASYNC_ITERABLE_STATUS_DONE,
+      value: DehydratedValue,
+    ]
   | [
       chunkIndex: ChunkIndex,
       status: ASYNC_ITERABLE_STATUS_VALUE,
@@ -204,7 +208,11 @@ function createBatchStreamProducer(opts: ProducerOptions) {
           break;
         }
         if (next.done) {
-          stream.controller.enqueue([idx, ASYNC_ITERABLE_STATUS_DONE]);
+          stream.controller.enqueue([
+            idx,
+            ASYNC_ITERABLE_STATUS_RETURN,
+            dehydrate(next.value, path),
+          ]);
           break;
         }
         stream.controller.enqueue([
@@ -541,12 +549,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
                       done: false,
                       value: hydrate(data),
                     };
-                  case ASYNC_ITERABLE_STATUS_DONE:
+                  case ASYNC_ITERABLE_STATUS_RETURN:
                     controllers.delete(chunkId);
                     maybeAbort();
                     return {
                       done: true,
-                      value: undefined,
+                      value: hydrate(data),
                     };
                   case ASYNC_ITERABLE_STATUS_ERROR:
                     controllers.delete(chunkId);

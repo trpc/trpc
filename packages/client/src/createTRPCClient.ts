@@ -36,18 +36,11 @@ type ResolverDef = {
   errorShape: any;
 };
 
-/**
- * We don't serialize async generators fully, so we need to coerce them to async iterables
- */
-type coerceAsyncGeneratorToAsyncIterable<T> = T extends AsyncGenerator<infer U>
-  ? AsyncIterable<U>
-  : T;
-
 /** @internal */
 export type Resolver<TDef extends ResolverDef> = (
   input: TDef['input'],
   opts?: ProcedureOptions,
-) => Promise<coerceAsyncGeneratorToAsyncIterable<TDef['output']>>;
+) => Promise<TDef['output']>;
 
 type SubscriptionResolver<TDef extends ResolverDef> = (
   input: TDef['input'],
