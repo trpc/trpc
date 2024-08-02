@@ -98,6 +98,7 @@ test('e2e, server-sent events (SSE)', async () => {
     if (!value.ok) {
       throw value.error;
     }
+    values.push(value.data.data);
     if (values.length === ITERATIONS) {
       break;
     }
@@ -133,6 +134,7 @@ test('e2e, server-sent events (SSE)', async () => {
     if (!value.ok) {
       throw value.error;
     }
+    values.push(value.data.data);
     if (values.length === ITERATIONS * 2) {
       break;
     }
@@ -241,7 +243,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
       throw value.error;
     }
     // console.log({ value });
-    values.push(value.data);
+    values.push(value.data.data);
     if (values.length === ITERATIONS) {
       break;
     }
