@@ -73,6 +73,7 @@ describe('no transformer', () => {
             await iterableDeferred.promise;
             iterableDeferred = createDeferred();
           }
+          return 'done';
         }),
       });
 
@@ -216,6 +217,9 @@ describe('no transformer', () => {
 
     const iterable = await client.iterable.query();
 
+    expectTypeOf(iterable).toEqualTypeOf<
+      AsyncGenerator<number, string, unknown>
+    >();
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
       aggregated.push(value);
@@ -235,6 +239,22 @@ describe('no transformer', () => {
         10,
       ]
     `);
+  });
+
+  test('iterable return', async () => {
+    const { client } = ctx;
+
+    const iterable = await client.iterable.query();
+    const iterator = iterable[Symbol.asyncIterator]();
+
+    const aggregated: unknown[] = [];
+
+    let r;
+    while (!(r = await iterator.next()).done) {
+      aggregated.push(r.value);
+      ctx.nextIterable();
+    }
+    expect(r.value).toBe('done');
   });
 
   test('iterable cancellation', async () => {
@@ -327,9 +347,11 @@ describe('with transformer', () => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
         iterable: t.procedure.query(async function* () {
-          yield 1;
+          yield 1 as number;
           yield 2;
           yield 3;
+
+          return 'done';
         }),
         iterableWithError: t.procedure.query(async function* () {
           yield 1;
@@ -438,6 +460,10 @@ describe('with transformer', () => {
 
     const iterable = await client.iterable.query();
 
+    expectTypeOf(iterable).toEqualTypeOf<
+      AsyncGenerator<number, string, unknown>
+    >();
+
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
       aggregated.push(value);
@@ -449,6 +475,28 @@ describe('with transformer', () => {
         3,
       ]
     `);
+  });
+
+  test('iterable return', async () => {
+    const { client } = ctx;
+
+    const iterable = await client.iterable.query();
+    const iterator = iterable[Symbol.asyncIterator]();
+
+    const aggregated: unknown[] = [];
+
+    let r;
+    while (!(r = await iterator.next()).done) {
+      aggregated.push(r.value);
+    }
+    expect(aggregated).toMatchInlineSnapshot(`
+      Array [
+        1,
+        2,
+        3,
+      ]
+    `);
+    expect(r.value).toBe('done');
   });
 
   test('call deferred procedures with httpBatchLink', async () => {
