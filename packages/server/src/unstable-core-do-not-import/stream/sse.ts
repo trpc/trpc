@@ -42,11 +42,6 @@ export interface SSEStreamProducerOptions {
    * @default false
    */
   emitAndEndImmediately?: boolean;
-  /**
-   *
-   * @param opts
-   * @returns
-   */
   formatError?: (opts: { error: unknown }) => unknown;
 }
 
