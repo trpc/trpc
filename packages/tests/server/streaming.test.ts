@@ -215,6 +215,7 @@ describe('no transformer', () => {
     const { client } = ctx;
 
     const iterable = await client.iterable.query();
+    expectTypeOf(iterable).toEqualTypeOf<AsyncIterable<number>>();
 
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
@@ -327,7 +328,7 @@ describe('with transformer', () => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
         iterable: t.procedure.query(async function* () {
-          yield 1;
+          yield 1 as number;
           yield 2;
           yield 3;
         }),
@@ -437,6 +438,7 @@ describe('with transformer', () => {
     const { client } = ctx;
 
     const iterable = await client.iterable.query();
+    expectTypeOf(iterable).toEqualTypeOf<AsyncIterable<number>>();
 
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
