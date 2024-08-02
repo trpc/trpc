@@ -5,15 +5,21 @@ import type { TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   splitLink,
+  TRPCClientError,
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
-import type { TRPCCombinedDataTransformer } from '@trpc/server';
+import type { TRPCSubscriptionObserver } from '@trpc/client/unstable-internals';
+import type {
+  inferRouterError,
+  TRPCCombinedDataTransformer,
+} from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
+import { $ } from 'vitest/dist/reporters-B7ebVMkT';
 import { z } from 'zod';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -167,57 +173,96 @@ test('iterable event', async () => {
   });
 });
 
-test(
-  'iterable event with error',
-  async () => {
-    const { client } = ctx;
+test('iterable event with error', async () => {
+  const { client } = ctx;
 
-    const onStarted =
-      vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
-    const onData = vi.fn<(args: number) => void>();
-    const subscription = client.sub.iterableEvent.subscribe(undefined, {
-      onStarted: onStarted,
-      onData: onData,
-    });
+  type $Observers = TRPCSubscriptionObserver<
+    number,
+    TRPCClientError<typeof ctx.router>
+  >;
 
-    await waitFor(() => {
-      expect(onStarted).toHaveBeenCalledTimes(1);
-    });
-    ctx.eeEmit(1);
+  const onStarted = vi.fn<$Observers['onStarted']>();
+  const onData = vi.fn<$Observers['onData']>();
+  const onStateChange = vi.fn<$Observers['onStateChange']>();
 
-    await waitFor(() => {
-      expect(onData).toHaveBeenCalledTimes(1);
-    });
+  const subscription = client.sub.iterableEvent.subscribe(undefined, {
+    onStarted,
+    onData,
+    onStateChange,
+  });
 
-    const release = suppressLogs();
-    ctx.eeEmit(new Error('test error'));
-    await waitFor(
-      async () => {
-        expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
-      },
-      {
-        timeout: 5_000,
-      },
-    );
-    release();
+  await waitFor(() => {
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+  ctx.eeEmit(1);
 
-    ctx.eeEmit(2);
+  await waitFor(() => {
+    expect(onData).toHaveBeenCalledTimes(1);
+  });
 
-    await waitFor(
-      () => {
-        expect(onData).toHaveBeenCalledTimes(2);
-      },
-      {
-        timeout: 10_000,
-      },
-    );
+  const release = suppressLogs();
+  ctx.eeEmit(new Error('test error'));
+  await waitFor(
+    async () => {
+      expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
+    },
+    {
+      timeout: 5_000,
+    },
+  );
+  release();
 
-    subscription.unsubscribe();
-  },
-  {
-    timeout: 60_000,
-  },
-);
+  ctx.eeEmit(2);
+
+  await waitFor(() => {
+    expect(onData).toHaveBeenCalledTimes(2);
+  });
+
+  expect(onStateChange.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "error": null,
+          "state": "connecting",
+          "type": "state",
+        },
+      ],
+      Array [
+        Object {
+          "state": "pending",
+          "type": "state",
+        },
+      ],
+      Array [
+        Object {
+          "error": [TRPCClientError: test error],
+          "state": "connecting",
+          "type": "state",
+        },
+      ],
+      Array [
+        Object {
+          "state": "pending",
+          "type": "state",
+        },
+      ],
+    ]
+  `);
+
+  const connectingWithErrorEvent = onStateChange.mock.calls
+    .map((it) => it[0])
+    .find((opts) => opts.state === 'connecting' && !!opts.error);
+  assert(connectingWithErrorEvent);
+  assert(connectingWithErrorEvent.state === 'connecting');
+  assert(connectingWithErrorEvent.error);
+
+  expect(connectingWithErrorEvent.error).toBeInstanceOf(
+    TRPCClientError<typeof ctx.router>,
+  );
+  expect(connectingWithErrorEvent.error.message).toBe('test error');
+
+  subscription.unsubscribe();
+});
 
 test('disconnect and reconnect with an event id', async () => {
   const { client } = ctx;

@@ -68,7 +68,7 @@ export interface IdleStateMessage extends ConnectionStateMessageBase {
 export interface ConnectingStateMessage<TError>
   extends ConnectionStateMessageBase {
   state: 'connecting';
-  data: TError | null;
+  error: TError | null;
 }
 
 export interface PendingStateMessage extends ConnectionStateMessageBase {
@@ -77,7 +77,7 @@ export interface PendingStateMessage extends ConnectionStateMessageBase {
 
 export interface ErrorStateMessage<TError> extends ConnectionStateMessageBase {
   state: 'error';
-  data: TError;
+  error: TError;
 }
 
 export type TRPCConnectionStateMessage<TError> =

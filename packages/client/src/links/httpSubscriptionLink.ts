@@ -1,4 +1,5 @@
 import { observable } from '@trpc/server/observable';
+import type { TRPCErrorResponse } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
   inferClientTypes,
@@ -62,6 +63,11 @@ export function unstable_httpSubscriptionLink<
 
         let eventSource: EventSource | null = null;
         let unsubscribed = false;
+        /**
+         * The last known error that the client has received
+         * Will be reset whenever a new message is received
+         */
+        let lastKnownError: TRPCClientError<TInferrable> | null = null;
 
         run(async () => {
           const url = getUrl({
@@ -84,7 +90,7 @@ export function unstable_httpSubscriptionLink<
             result: {
               type: 'state',
               state: 'connecting',
-              data: null,
+              error: null,
             },
           });
 
@@ -114,23 +120,35 @@ export function unstable_httpSubscriptionLink<
           });
 
           eventSource.addEventListener('error', (event) => {
-            // sseStreamConsumer handles this already
-            if (eventSource?.readyState === EventSource.CLOSED) {
-              return;
+            switch (eventSource?.readyState) {
+              case EventSource.CONNECTING: {
+                observer.next({
+                  result: {
+                    type: 'state',
+                    state: 'connecting',
+                    error: lastKnownError,
+                  },
+                });
+                return;
+              }
+              case EventSource.CLOSED: {
+                const error =
+                  globalThis.ErrorEvent && event instanceof ErrorEvent
+                    ? TRPCClientError.from(event.error)
+                    : TRPCClientError.from(
+                        new Error(`Unknown EventSource error`),
+                      );
+
+                observer.next({
+                  result: {
+                    type: 'state',
+                    state: 'connecting',
+                    error: lastKnownError ?? error,
+                  },
+                });
+                return;
+              }
             }
-
-            const error =
-              globalThis.ErrorEvent && event instanceof ErrorEvent
-                ? TRPCClientError.from(event.error)
-                : TRPCClientError.from(new Error(`Unknown EventSource error`));
-
-            observer.next({
-              result: {
-                type: 'state',
-                state: 'connecting',
-                data: error,
-              },
-            });
           });
 
           const iterable = sseStreamConsumer<{
@@ -143,9 +161,14 @@ export function unstable_httpSubscriptionLink<
 
           for await (const chunk of iterable) {
             if (!chunk.ok) {
-              // TODO: handle in https://github.com/trpc/trpc/issues/5871
+              const error = chunk.error as TRPCErrorResponse['error'];
+
+              lastKnownError = TRPCClientError.from({
+                error,
+              });
               continue;
             }
+            lastKnownError = null;
             const chunkData = chunk.data;
 
             // if the `tracked()`-helper is used, we always have an `id` field
@@ -177,7 +200,7 @@ export function unstable_httpSubscriptionLink<
             result: {
               type: 'state',
               state: 'error',
-              data: TRPCClientError.from(trpcError),
+              error: trpcError,
             },
           });
           observer.error(trpcError);
