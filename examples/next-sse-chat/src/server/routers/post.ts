@@ -23,7 +23,7 @@ export const postRouter = router({
         .values({
           id: opts.input.id,
           text: opts.input.text,
-          author: opts.ctx.user.name,
+          name: opts.ctx.user.name,
           channelId,
         })
         .returning();
