@@ -106,7 +106,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   /**
    * pending outgoing requests that are awaiting callback
    */
-  type TCallbacks = WSCallbackObserver<AnyRouter, unknown>;
+  type TCallbacks = WSCallbackObserver<AnyRouter, TRPCClientError<AnyRouter>>;
   type WsRequest = {
     /**
      * Reference to the WebSocket instance this request was made to
@@ -259,7 +259,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
           result: {
             type: 'state',
             state: 'connecting',
-            data: cause ?? null,
+            error: cause ?? null,
           },
         });
       }
@@ -544,16 +544,16 @@ export function wsLink<TRouter extends AnyRouter>(
         const unsub = client.request({
           op: { type, path, input, id, context, signal: null },
           callbacks: {
-            error(err) {
+            error(error) {
               observer.next({
                 result: {
                   type: 'state',
                   state: 'error',
-                  data: err,
+                  error,
                 },
                 context: context,
               });
-              observer.error(err as TRPCClientError<any>);
+              observer.error(error);
 
               unsub();
             },
@@ -596,7 +596,7 @@ export function wsLink<TRouter extends AnyRouter>(
                   result: {
                     type: 'state',
                     state: 'error',
-                    data: error,
+                    error,
                   },
                   context: context,
                 });
