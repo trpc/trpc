@@ -65,7 +65,7 @@ export default async function Home() {
                 className={buttonVariants({ variant: 'link' })}
                 href={`/channels/${channel.id}`}
               >
-                <HashtagIcon className="size-4 mr-2" />
+                <HashtagIcon className="mr-2 size-4" />
                 {channel.name}
               </Link>
             ))}
