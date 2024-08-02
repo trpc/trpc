@@ -25,7 +25,7 @@ const ctx = konn()
       vi.fn<(args: { input: { lastEventId?: number } }) => void>();
 
     const ee = new EventEmitter();
-    const eeEmit = (data: number) => {
+    const eeEmit = (data: number | Error) => {
       ee.emit('data', data);
     };
 
@@ -39,8 +39,12 @@ const ctx = konn()
       sub: {
         iterableEvent: t.procedure.subscription(async function* () {
           for await (const data of on(ee, 'data')) {
-            const num = data[0] as number;
-            yield num;
+            const thing = data[0] as number | Error;
+
+            if (thing instanceof Error) {
+              throw thing;
+            }
+            yield thing;
           }
         }),
 
@@ -117,7 +121,7 @@ const ctx = konn()
   })
   .done();
 
-test('iterable', async () => {
+test('iterable event', async () => {
   const { client } = ctx;
 
   const onStarted = vi.fn<() => void>();
@@ -162,6 +166,58 @@ test('iterable', async () => {
     expect(ctx.ee.listenerCount('data')).toBe(0);
   });
 });
+
+test(
+  'iterable event with error',
+  async () => {
+    const { client } = ctx;
+
+    const onStarted =
+      vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
+    const onData = vi.fn<(args: number) => void>();
+    const subscription = client.sub.iterableEvent.subscribe(undefined, {
+      onStarted: onStarted,
+      onData: onData,
+    });
+
+    await waitFor(() => {
+      expect(onStarted).toHaveBeenCalledTimes(1);
+    });
+    ctx.eeEmit(1);
+
+    await waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+
+    const release = suppressLogs();
+    ctx.eeEmit(new Error('test error'));
+    await waitFor(
+      async () => {
+        expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
+      },
+      {
+        timeout: 5_000,
+      },
+    );
+    release();
+
+    ctx.eeEmit(2);
+
+    await waitFor(
+      () => {
+        expect(onData).toHaveBeenCalledTimes(2);
+      },
+      {
+        timeout: 10_000,
+      },
+    );
+
+    subscription.unsubscribe();
+  },
+  {
+    timeout: 60_000,
+  },
+);
 
 test('disconnect and reconnect with an event id', async () => {
   const { client } = ctx;
@@ -359,127 +415,6 @@ describe('auth / connectionParams', async () => {
 
     expect(onData.mock.calls[0]![0]).toEqual({
       user: USER_MOCK,
-      num: 1,
-    });
-  });
-});
-
-describe.only('subscription throws an error', async () => {
-  const USER_TOKEN = 'supersecret';
-  type User = {
-    id: string;
-    username: string;
-  };
-  const USER_MOCK = {
-    id: '123',
-    username: 'KATT',
-  } as const satisfies User;
-  const t = initTRPC
-    .context<{
-      user: User | null;
-    }>()
-    .create();
-
-  const ctx = konn()
-    .beforeEach(() => {
-      const ee = new EventEmitter();
-      const eeEmit = (data: number | Error) => {
-        ee.emit('data', data);
-      };
-
-      const appRouter = t.router({
-        iterableEvent: t.procedure.subscription(async function* (opts) {
-          for await (const data of on(ee, 'data')) {
-            const numOrErr = data[0] as number | Error;
-
-            if (numOrErr instanceof Error) {
-              throw new TRPCError({
-                code: 'BAD_REQUEST',
-                cause: numOrErr,
-                message: 'Test Throwing Error',
-              });
-            }
-
-            yield {
-              user: opts.ctx.user,
-              num: numOrErr,
-            };
-          }
-        }),
-      });
-
-      const opts = routerToServerAndClientNew(appRouter, {
-        server: {
-          async createContext(opts) {
-            let user: User | null = null;
-            if (opts.info.connectionParams?.['token'] === USER_TOKEN) {
-              user = USER_MOCK;
-            }
-
-            return {
-              user,
-            };
-          },
-        },
-      });
-
-      return { ...opts, eeEmit };
-    })
-    .afterEach((ctx) => {
-      return ctx.close?.();
-    })
-    .done();
-
-  type AppRouter = typeof ctx.router;
-
-  test('calls the subscription but an error is thrown in the stream', async () => {
-    const client = createTRPCClient<AppRouter>({
-      links: [
-        unstable_httpSubscriptionLink({
-          url: ctx.httpUrl,
-        }),
-      ],
-    });
-
-    // sub
-    const onStarted = vi.fn<() => void>();
-    const onData = vi.fn<(args: { user: User | null; num: number }) => void>();
-    const onError = vi.fn<(error: unknown) => void>();
-    const subscription = client.iterableEvent.subscribe(undefined, {
-      onStarted: onStarted,
-      onData: onData,
-      onError: onError,
-    });
-
-    await waitFor(() => {
-      expect(onStarted).toHaveBeenCalledTimes(1);
-    });
-
-    ctx.eeEmit(1);
-
-    await waitFor(() => {
-      expect(onData).toHaveBeenCalledTimes(1);
-      expect(onError).toHaveBeenCalledTimes(0);
-    });
-
-    ctx.eeEmit(new Error('test error'));
-
-    await waitFor(() => {
-      expect(onError).toHaveBeenCalledTimes(1);
-    });
-
-    // TODO: should the connection be dropped when an error is thrown? Or should the connection stay open to try again?
-    ctx.eeEmit(9);
-
-    await waitFor(() => {
-      expect(onData).toHaveBeenCalledTimes(2);
-      expect(onError).toHaveBeenCalledTimes(1);
-    });
-
-    subscription.unsubscribe();
-
-    expect(onData.mock.calls[0]![0]).toEqual({
-      user: null,
       num: 1,
     });
   });

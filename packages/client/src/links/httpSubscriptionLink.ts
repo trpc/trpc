@@ -5,6 +5,7 @@ import type {
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
+  isSerializedSSEError,
   run,
   sseStreamConsumer,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -106,6 +107,13 @@ export function unstable_httpSubscriptionLink<
           });
 
           for await (const chunk of iterable) {
+            if (isSerializedSSEError(chunk)) {
+              const [_err] = chunk;
+
+              // TODO: handle in https://github.com/trpc/trpc/issues/5871
+              continue;
+            }
+
             // if the `tracked()`-helper is used, we always have an `id` field
             const data = 'id' in chunk ? chunk : chunk.data;
             observer.next({
