@@ -182,11 +182,9 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
 
 const serializedErrorSymbol = Symbol(SERIALIZED_ERROR_EVENT);
 type SerializedErrorEnvelope = [unknown, typeof serializedErrorSymbol];
-export const isSerializedSSEError = (
-  v: unknown,
-): v is SerializedErrorEnvelope => {
+export function isSerializedSSEError(v: unknown): v is SerializedErrorEnvelope {
   return Array.isArray(v) && v[1] === serializedErrorSymbol;
-};
+}
 
 type ConsumerIterableValue<TData> =
   | inferTrackedOutput<TData>
