@@ -8,10 +8,12 @@ export const Post = pgTable('post', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  channelId: text('channel_id').references(() => Channel.id),
+  channelId: text('channel_id')
+    .notNull()
+    .references(() => Channel.id),
 
-  author: text('name'),
-  text: text('text'),
+  name: text('name').notNull(),
+  text: text('text').notNull(),
 
   createdAt: timestamp('created_at', {
     mode: 'date',
