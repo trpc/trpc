@@ -42,7 +42,10 @@ export interface SSEStreamProducerOptions {
    * @default false
    */
   emitAndEndImmediately?: boolean;
+  formatError?: (opts: { error: unknown }) => unknown;
 }
+
+const SERIALIZED_ERROR_EVENT = 'serialized-error';
 
 type SSEvent = Partial<{
   id: string;
@@ -106,7 +109,13 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
       }
 
       if (next instanceof Error) {
-        stream.controller.error(next);
+        const data = opts.formatError
+          ? opts.formatError({ error: next })
+          : null;
+        stream.controller.enqueue({
+          event: SERIALIZED_ERROR_EVENT,
+          data: JSON.stringify(serialize(data)),
+        });
         break;
       }
       if (next.done) {
@@ -165,15 +174,25 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
     }),
   );
 }
+
+type ConsumerStreamResult<TData> =
+  | {
+      ok: true;
+      data: inferTrackedOutput<TData>;
+    }
+  | {
+      ok: false;
+      error: unknown;
+    };
+
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
-
 export function sseStreamConsumer<TData>(opts: {
   from: EventSource;
   onError?: ConsumerOnError;
   deserialize?: Deserialize;
-}): AsyncIterable<inferTrackedOutput<TData>> {
+}): AsyncIterable<ConsumerStreamResult<TData>> {
   const { deserialize = (v) => v } = opts;
   const eventSource = opts.from;
 
@@ -181,21 +200,37 @@ export function sseStreamConsumer<TData>(opts: {
 
   const transform = new TransformStream<
     MessageEvent,
-    inferTrackedOutput<TData>
+    ConsumerStreamResult<TData>
   >({
     async transform(chunk, controller) {
+      const data = deserialize(JSON.parse(chunk.data));
+      if (chunk.type === SERIALIZED_ERROR_EVENT) {
+        controller.enqueue({
+          ok: false,
+          error: data,
+        });
+        return;
+      }
+      // console.debug('transforming', chunk.type, chunk.data);
       const def: SSEvent = {
-        data: deserialize(JSON.parse(chunk.data)),
+        data,
       };
 
       if (chunk.lastEventId) {
         def.id = chunk.lastEventId;
       }
-      controller.enqueue(def as inferTrackedOutput<TData>);
+
+      controller.enqueue({
+        ok: true,
+        data: def as inferTrackedOutput<TData>,
+      });
     },
   });
 
   eventSource.addEventListener('message', (msg) => {
+    stream.controller.enqueue(msg);
+  });
+  eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
     stream.controller.enqueue(msg);
   });
   eventSource.addEventListener('error', (cause) => {
@@ -209,7 +244,7 @@ export function sseStreamConsumer<TData>(opts: {
     [Symbol.asyncIterator]() {
       const reader = readable.getReader();
 
-      const iterator: AsyncIterator<inferTrackedOutput<TData>> = {
+      const iterator: AsyncIterator<ConsumerStreamResult<TData>> = {
         async next() {
           const value = await reader.read();
           if (value.done) {

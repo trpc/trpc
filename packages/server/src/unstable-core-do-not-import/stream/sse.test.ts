@@ -95,7 +95,10 @@ test('e2e, server-sent events (SSE)', async () => {
   const ITERATIONS = 10;
   const values: number[] = [];
   for await (const value of iterable) {
-    values.push(value.data);
+    if (!value.ok) {
+      throw value.error;
+    }
+    values.push(value.data.data);
     if (values.length === ITERATIONS) {
       break;
     }
@@ -128,7 +131,10 @@ test('e2e, server-sent events (SSE)', async () => {
   });
 
   for await (const value of iterable) {
-    values.push(value.data);
+    if (!value.ok) {
+      throw value.error;
+    }
+    values.push(value.data.data);
     if (values.length === ITERATIONS * 2) {
       break;
     }
@@ -233,8 +239,11 @@ test('SSE on serverless - emit and disconnect early', async () => {
   const ITERATIONS = 3;
   const values: number[] = [];
   for await (const value of iterable) {
+    if (!value.ok) {
+      throw value.error;
+    }
     // console.log({ value });
-    values.push(value.data);
+    values.push(value.data.data);
     if (values.length === ITERATIONS) {
       break;
     }

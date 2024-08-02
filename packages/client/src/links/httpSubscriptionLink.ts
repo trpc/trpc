@@ -106,8 +106,14 @@ export function unstable_httpSubscriptionLink<
           });
 
           for await (const chunk of iterable) {
+            if (!chunk.ok) {
+              // TODO: handle in https://github.com/trpc/trpc/issues/5871
+              continue;
+            }
+            const chunkData = chunk.data;
+
             // if the `tracked()`-helper is used, we always have an `id` field
-            const data = 'id' in chunk ? chunk : chunk.data;
+            const data = 'id' in chunkData ? chunkData : chunkData.data;
             observer.next({
               result: {
                 data,
