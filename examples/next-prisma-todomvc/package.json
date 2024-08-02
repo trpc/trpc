@@ -22,14 +22,14 @@
   },
   "dependencies": {
     "@prisma/client": "^5.12.1",
-    "@tanstack/react-query": "^5.49.2",
+    "@tanstack/react-query": "^5.51.11",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
     "clsx": "^2.0.0",
     "i18next": "^22.4.13",
-    "next": "^14.1.4",
+    "next": "^14.2.5",
     "next-i18next": "^13.2.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -41,14 +41,14 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.26.1",
-    "@tanstack/react-query-devtools": "^5.49.2",
+    "@tanstack/react-query-devtools": "^5.51.11",
     "@types/node": "^20.10.0",
     "@types/react": "^18.3.1",
-    "eslint": "^8.56.0",
+    "eslint": "^8.57.0",
     "npm-run-all": "^4.1.5",
     "prisma": "^5.12.1",
     "start-server-and-test": "^1.12.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.3"
   },
   "publishConfig": {
     "access": "restricted"

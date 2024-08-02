@@ -80,7 +80,10 @@ export interface RootConfig<TTypes extends RootTypes> {
        * @default true
        */
       enabled?: boolean;
-    } & Omit<SSEStreamProducerOptions, 'maxDepth' | 'data' | 'serialize'>;
+    } & Pick<
+      SSEStreamProducerOptions,
+      'ping' | 'emitAndEndImmediately' | 'maxDurationMs'
+    >;
   };
 }
 
