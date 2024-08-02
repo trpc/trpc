@@ -1,12 +1,7 @@
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
-import {
-  isSerializedSSEError,
-  sseHeaders,
-  sseStreamConsumer,
-  sseStreamProducer,
-} from './sse';
+import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
 import { createServer } from './utils/createServer';
 
@@ -100,9 +95,7 @@ test('e2e, server-sent events (SSE)', async () => {
   const ITERATIONS = 10;
   const values: number[] = [];
   for await (const value of iterable) {
-    if (isSerializedSSEError(value)) {
-      throw value[0];
-    }
+    values.push(value.data);
     if (values.length === ITERATIONS) {
       break;
     }
@@ -135,9 +128,7 @@ test('e2e, server-sent events (SSE)', async () => {
   });
 
   for await (const value of iterable) {
-    if (isSerializedSSEError(value)) {
-      throw value[0];
-    }
+    values.push(value.data);
     if (values.length === ITERATIONS * 2) {
       break;
     }
@@ -242,9 +233,6 @@ test('SSE on serverless - emit and disconnect early', async () => {
   const ITERATIONS = 3;
   const values: number[] = [];
   for await (const value of iterable) {
-    if (isSerializedSSEError(value)) {
-      throw value[0];
-    }
     // console.log({ value });
     values.push(value.data);
     if (values.length === ITERATIONS) {
@@ -326,33 +314,3 @@ test('sse()', () => {
     extras: {},
   });
 });
-
-type Constructor<T extends object = object> = new (...args: any[]) => T;
-
-// TODO: move to a test-utils package
-async function waitError<TError extends Error = Error>(
-  /**
-   * Function callback or promise that you expect will throw
-   */
-  fnOrPromise: Promise<unknown> | (() => unknown),
-  /**
-   * Force error constructor to be of specific type
-   * @default Error
-   **/
-  errorConstructor?: Constructor<TError>,
-): Promise<TError> {
-  try {
-    if (typeof fnOrPromise === 'function') {
-      await fnOrPromise();
-    } else {
-      await fnOrPromise;
-    }
-  } catch (cause) {
-    expect(cause).toBeInstanceOf(Error);
-    if (errorConstructor) {
-      expect((cause as Error).name).toBe(errorConstructor.name);
-    }
-    return cause as TError;
-  }
-  throw new Error('Function did not throw');
-}
