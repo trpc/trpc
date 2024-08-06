@@ -27,7 +27,9 @@ test('createRecursiveProxy() - prevent mutation of args', () => {
     return opts;
   });
 
-  expect(() => mutateArgs.foo.bar.query()).toThrowErrorMatchingInlineSnapshot(`[TypeError: Cannot add property 0, object is not extensible]`);
+  expect(() => mutateArgs.foo.bar.query()).toThrowErrorMatchingInlineSnapshot(
+    `[TypeError: Cannot add property 0, object is not extensible]`,
+  );
 
   const mutatePath: any = createRecursiveProxy((opts) => {
     // @ts-expect-error - mutate args
@@ -35,5 +37,7 @@ test('createRecursiveProxy() - prevent mutation of args', () => {
     return opts;
   });
 
-  expect(() => mutatePath.foo.bar.query()).toThrowErrorMatchingInlineSnapshot(`[TypeError: Cannot add property 3, object is not extensible]`);
+  expect(() => mutatePath.foo.bar.query()).toThrowErrorMatchingInlineSnapshot(
+    `[TypeError: Cannot add property 3, object is not extensible]`,
+  );
 });

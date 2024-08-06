@@ -9,7 +9,7 @@ import {
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
-import { initTRPC, sse } from '@trpc/server';
+import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
@@ -21,17 +21,11 @@ const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 const orderedResults: number[] = [];
 const ctx = konn()
   .beforeEach(() => {
-    const onIterableInfiniteSpy = vi.fn<
-      [
-        {
-          input: {
-            lastEventId?: number;
-          };
-        },
-      ]
-    >();
+    const onIterableInfiniteSpy =
+      vi.fn<(args: { input: { lastEventId?: number } }) => void>();
+
     const ee = new EventEmitter();
-    const eeEmit = (data: number) => {
+    const eeEmit = (data: number | Error) => {
       ee.emit('data', data);
     };
 
@@ -45,8 +39,12 @@ const ctx = konn()
       sub: {
         iterableEvent: t.procedure.subscription(async function* () {
           for await (const data of on(ee, 'data')) {
-            const num = data[0] as number;
-            yield num;
+            const thing = data[0] as number | Error;
+
+            if (thing instanceof Error) {
+              throw thing;
+            }
+            yield thing;
           }
         }),
 
@@ -62,10 +60,7 @@ const ctx = konn()
             });
             let idx = opts.input.lastEventId ?? 0;
             while (true) {
-              yield sse({
-                id: String(idx),
-                data: idx,
-              });
+              yield tracked(String(idx), idx);
               idx++;
               await sleep();
               infiniteYields();
@@ -126,11 +121,11 @@ const ctx = konn()
   })
   .done();
 
-test('iterable', async () => {
+test('iterable event', async () => {
   const { client } = ctx;
 
-  const onStarted = vi.fn<[]>();
-  const onData = vi.fn<[number]>();
+  const onStarted = vi.fn<() => void>();
+  const onData = vi.fn<(data: number) => void>();
   const subscription = client.sub.iterableEvent.subscribe(undefined, {
     onStarted: onStarted,
     onData(it) {
@@ -172,17 +167,64 @@ test('iterable', async () => {
   });
 });
 
+test(
+  'iterable event with error',
+  async () => {
+    const { client } = ctx;
+
+    const onStarted =
+      vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
+    const onData = vi.fn<(args: number) => void>();
+    const subscription = client.sub.iterableEvent.subscribe(undefined, {
+      onStarted: onStarted,
+      onData: onData,
+    });
+
+    await waitFor(() => {
+      expect(onStarted).toHaveBeenCalledTimes(1);
+    });
+    ctx.eeEmit(1);
+
+    await waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+
+    const release = suppressLogs();
+    ctx.eeEmit(new Error('test error'));
+    await waitFor(
+      async () => {
+        expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
+      },
+      {
+        timeout: 5_000,
+      },
+    );
+    release();
+
+    ctx.eeEmit(2);
+
+    await waitFor(
+      () => {
+        expect(onData).toHaveBeenCalledTimes(2);
+      },
+      {
+        timeout: 10_000,
+      },
+    );
+
+    subscription.unsubscribe();
+  },
+  {
+    timeout: 60_000,
+  },
+);
+
 test('disconnect and reconnect with an event id', async () => {
   const { client } = ctx;
 
-  const onStarted = vi.fn<
-    [
-      {
-        context: Record<string, unknown> | undefined;
-      },
-    ]
-  >();
-  const onData = vi.fn<{ data: number; id: string }[]>();
+  const onStarted =
+    vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
+  const onData = vi.fn<(args: { data: number; id: string }) => void>();
   const subscription = client.sub.iterableInfinite.subscribe(
     {},
     {
@@ -311,8 +353,8 @@ describe('auth / connectionParams', async () => {
     });
 
     // sub
-    const onStarted = vi.fn<[]>();
-    const onData = vi.fn<[{ user: User | null; num: number }]>();
+    const onStarted = vi.fn<() => void>();
+    const onData = vi.fn<(args: { user: User | null; num: number }) => void>();
     const subscription = client.iterableEvent.subscribe(undefined, {
       onStarted: onStarted,
       onData: onData,
@@ -352,8 +394,8 @@ describe('auth / connectionParams', async () => {
     });
 
     // sub
-    const onStarted = vi.fn<[]>();
-    const onData = vi.fn<[{ user: User | null; num: number }]>();
+    const onStarted = vi.fn<() => void>();
+    const onData = vi.fn<(args: { user: User | null; num: number }) => void>();
     const subscription = client.iterableEvent.subscribe(undefined, {
       onStarted: onStarted,
       onData: onData,
@@ -401,10 +443,7 @@ describe('transformers / different serialize-deserialize', async () => {
         iterableEvent: t.procedure.subscription(async function* () {
           for await (const data of on(ee, 'data')) {
             const num = data[0] as number;
-            yield sse({
-              id: num.toString(),
-              data: { num },
-            });
+            yield tracked(String(num), { num });
           }
         }),
       });
@@ -429,8 +468,9 @@ describe('transformers / different serialize-deserialize', async () => {
       ],
     });
 
-    const onStarted = vi.fn<[]>();
-    const onData = vi.fn<[{ id: string; data: { num: number } }]>();
+    const onStarted = vi.fn<() => void>();
+    const onData =
+      vi.fn<(args: { id: string; data: { num: number } }) => void>();
     const subscription = client.iterableEvent.subscribe(undefined, {
       onStarted: onStarted,
       onData: onData,
