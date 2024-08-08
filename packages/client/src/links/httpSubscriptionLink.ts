@@ -3,7 +3,6 @@ import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
-  SSEMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
@@ -96,14 +95,25 @@ export function unstable_httpSubscriptionLink<
           };
           // console.log('starting', new Date());
           eventSource.addEventListener('open', onStarted);
-          const iterable = sseStreamConsumer<Partial<SSEMessage>>({
+          const iterable = sseStreamConsumer<
+            Partial<{
+              id?: string;
+              data: unknown;
+            }>
+          >({
             from: eventSource,
             deserialize: transformer.output.deserialize,
           });
 
           for await (const chunk of iterable) {
-            // if the `sse({})`-helper is used, we always have an `id` field
-            const data = 'id' in chunk ? chunk : chunk.data;
+            if (!chunk.ok) {
+              // TODO: handle in https://github.com/trpc/trpc/issues/5871
+              continue;
+            }
+            const chunkData = chunk.data;
+
+            // if the `tracked()`-helper is used, we always have an `id` field
+            const data = 'id' in chunkData ? chunkData : chunkData.data;
             observer.next({
               result: {
                 data,

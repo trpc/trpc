@@ -10,7 +10,7 @@ export default async function Home() {
   const channels = await caller.channel.list();
 
   return (
-    <div className="flex-1 overflow-y-hidden">
+    <div className="flex-1 overflow-y-auto">
       <div className="flex h-full flex-col">
         <header className="p-4">
           <h1 className="text-3xl font-bold text-gray-950 dark:text-gray-50">

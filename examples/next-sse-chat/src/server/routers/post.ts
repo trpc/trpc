@@ -1,4 +1,4 @@
-import { sse } from '@trpc/server';
+import { sse, tracked } from '@trpc/server';
 import { streamToAsyncIterable } from '~/lib/stream-to-async-iterator';
 import { db } from '~/server/db/client';
 import { Post, type PostType } from '~/server/db/schema';
@@ -23,7 +23,7 @@ export const postRouter = router({
         .values({
           id: opts.input.id,
           text: opts.input.text,
-          author: opts.ctx.user.name,
+          name: opts.ctx.user.name,
           channelId,
         })
         .returning();
@@ -137,11 +137,8 @@ export const postRouter = router({
       });
 
       for await (const post of streamToAsyncIterable(stream)) {
-        yield sse({
-          // yielding the post id ensures the client can reconnect at any time and get the latest events this id
-          id: post.id,
-          data: post,
-        });
+        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+        yield tracked(post.id, post);
       }
     }),
 });

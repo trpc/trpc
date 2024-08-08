@@ -173,6 +173,51 @@ export const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
+### Automatic tracking of id using `tracked()` (recommended)
+
+If you `yield` an event using our `tracked()`-helper and include an `id`, the client will automatically reconnect when it gets disconnected and send the last known ID when reconnecting as part of the `lastEventId`-input.
+
+You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
+
+:::info
+If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+:::
+
+```ts
+import EventEmitter, { on } from 'events';
+import type { Post } from '@prisma/client';
+import { sse } from '@trpc/server';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
+
+const ee = new EventEmitter();
+
+export const subRouter = router({
+  onPostAdd: publicProcedure
+    .input(
+      z
+        .object({
+          // lastEventId is the last event id that the client has received
+          // On the first call, it will be whatever was passed in the initial setup
+          // If the client reconnects, it will be the last event id that the client received
+          lastEventId: z.string().nullish(),
+        })
+        .optional(),
+    )
+    .subscription(async function* (opts) {
+      if (opts.input.lastEventId) {
+        // [...] get the posts since the last event id and yield them
+      }
+      // listen for new events
+      for await (const [data] of on(ee, 'add')) {
+        const post = data as Post;
+        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+        yield tracked(post.id, post);
+      }
+    }),
+});
+```
+
 ## Using React
 
 See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
