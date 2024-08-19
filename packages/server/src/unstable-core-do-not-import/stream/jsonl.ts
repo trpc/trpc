@@ -2,7 +2,10 @@ import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-import { createReadableStream } from './utils/createReadableStream';
+import {
+  createReadableStream,
+  isCancelledStreamResult,
+} from './utils/createReadableStream';
 
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
@@ -147,6 +150,9 @@ function createBatchStreamProducer(opts: ProducerOptions) {
 
     Promise.race([promise, stream.cancelledPromise])
       .then((it) => {
+        if (isCancelledStreamResult(it)) {
+          return;
+        }
         stream.controller.enqueue([
           idx,
           PROMISE_STATUS_FULFILLED,
@@ -200,7 +206,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
           ]);
           return;
         }
-        if (next === 'cancelled') {
+        if (isCancelledStreamResult(next)) {
           await iterator.return?.();
           break;
         }
