@@ -461,7 +461,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 /**
  * Handle WebSocket keep-alive messages
  */
-function handleKeepAlive(
+export function handleKeepAlive(
   client: ws.WebSocket,
   pingMs = 30000,
   pongWaitMs = 5000,
