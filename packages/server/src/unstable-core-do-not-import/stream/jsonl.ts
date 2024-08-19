@@ -147,9 +147,6 @@ function createBatchStreamProducer(opts: ProducerOptions) {
 
     Promise.race([promise, stream.cancelledPromise])
       .then((it) => {
-        if (it === null) {
-          return;
-        }
         stream.controller.enqueue([
           idx,
           PROMISE_STATUS_FULFILLED,
@@ -250,6 +247,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     value: unknown,
     path: (string | number)[],
   ): null | [type: ChunkValueType, chunkId: ChunkIndex] {
+    console.log('dehydrateChunk', value, path);
     if (isPromise(value)) {
       return [CHUNK_VALUE_TYPE_PROMISE, dehydratePromise(value, path)];
     }

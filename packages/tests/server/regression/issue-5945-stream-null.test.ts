@@ -1,32 +1,96 @@
-import { routerToServerAndClientNew, waitError } from '../___testHelpers';
-import type { TRPCClientError } from '@trpc/client';
-import { httpLink, unstable_httpBatchStreamLink } from '@trpc/client';
-import type { TRPCError } from '@trpc/server';
+import { routerToServerAndClientNew } from '../___testHelpers';
+import { unstable_httpBatchStreamLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
+import superjson from 'superjson';
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
-    const appRouter = t.router({
-      greeting: t.procedure.query(() => {
-        return null;
-      }),
-    });
+describe('without transformer', () => {
+  const ctx = konn()
+    .beforeEach(() => {
+      const t = initTRPC.create();
+      const appRouter = t.router({
+        returnNull: t.procedure.query(() => {
+          return null;
+        }),
+        returnUndefined: t.procedure.query(() => {
+          return undefined;
+        }),
+        returnString: t.procedure.query(() => {
+          return 'hello';
+        }),
+      });
 
-    return routerToServerAndClientNew(appRouter, {
-      client({ httpUrl }) {
-        return {
-          links: [unstable_httpBatchStreamLink({ url: httpUrl })],
-        };
-      },
-    });
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+      return routerToServerAndClientNew(appRouter, {
+        client({ httpUrl }) {
+          return {
+            links: [unstable_httpBatchStreamLink({ url: httpUrl })],
+          };
+        },
+      });
+    })
+    .afterEach(async (ctx) => {
+      await ctx?.close?.();
+    })
+    .done();
 
-test('preserve `.cause` even on non-error objects', async () => {
-  expect(await ctx.client.greeting.query()).toBe(null);
+  test('return string', async () => {
+    expect(await ctx.client.returnString.query()).toBe('hello');
+  });
+
+  test('return null', async () => {
+    expect(await ctx.client.returnNull.query()).toBe(null);
+  });
+
+  test.only('return undefined', async () => {
+    expect(await ctx.client.returnUndefined.query()).toBe(undefined);
+  });
+});
+
+describe('with transformer', () => {
+  const ctx = konn()
+    .beforeEach(() => {
+      const t = initTRPC.create({
+        transformer: superjson,
+      });
+      const appRouter = t.router({
+        returnNull: t.procedure.query(() => {
+          return null;
+        }),
+        returnUndefined: t.procedure.query(() => {
+          return undefined;
+        }),
+        returnString: t.procedure.query(() => {
+          return 'hello';
+        }),
+      });
+
+      return routerToServerAndClientNew(appRouter, {
+        client({ httpUrl }) {
+          return {
+            links: [
+              unstable_httpBatchStreamLink({
+                url: httpUrl,
+                transformer: superjson,
+              }),
+            ],
+          };
+        },
+      });
+    })
+    .afterEach(async (ctx) => {
+      await ctx?.close?.();
+    })
+    .done();
+
+  test('return string', async () => {
+    expect(await ctx.client.returnString.query()).toBe('hello');
+  });
+
+  test('return null', async () => {
+    expect(await ctx.client.returnNull.query()).toBe(null);
+  });
+
+  test('return undefined', async () => {
+    expect(await ctx.client.returnUndefined.query()).toBe(undefined);
+  });
 });
