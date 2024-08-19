@@ -243,7 +243,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     }
     return null;
   }
-  function dehydrateChunk(
+  function dehydrateAsync(
     value: unknown,
     path: (string | number)[],
   ): null | [type: ChunkValueType, chunkId: ChunkIndex] {
@@ -265,20 +265,20 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     value: unknown,
     path: (string | number)[],
   ): DehydratedValue {
-    const reg = dehydrateChunk(value, path);
-    if (reg) {
-      return [[placeholder], [null, ...reg]];
-    }
     if (value === undefined) {
       return [[]];
     }
     if (!isObject(value)) {
       return [[value]];
     }
+    const reg = dehydrateAsync(value, path);
+    if (reg) {
+      return [[placeholder], [null, ...reg]];
+    }
     const newObj = {} as Record<string, unknown>;
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
-      const transformed = dehydrateChunk(item, [...path, key]);
+      const transformed = dehydrateAsync(item, [...path, key]);
       if (!transformed) {
         newObj[key] = item;
         continue;
