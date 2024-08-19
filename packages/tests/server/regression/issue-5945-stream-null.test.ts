@@ -41,7 +41,7 @@ describe('without transformer', () => {
     expect(await ctx.client.returnNull.query()).toBe(null);
   });
 
-  test.only('return undefined', async () => {
+  test('return undefined', async () => {
     expect(await ctx.client.returnUndefined.query()).toBe(undefined);
   });
 });

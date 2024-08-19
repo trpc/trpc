@@ -89,7 +89,10 @@ export async function nodeHTTPRequestHandler<
             res.once('drain', resolve);
           });
         }
-        console.log('wrote', Buffer.from(value).toString());
+
+        // useful for debugging chunked responses:
+        // console.log('wrote', Buffer.from(value).toString());
+
         // IMPORTANT - flush the response buffer, otherwise the client will not receive the data until `.end()`
         res.flush?.();
       }

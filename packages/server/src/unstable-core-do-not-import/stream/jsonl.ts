@@ -56,7 +56,7 @@ type ChunkDefinition = [
 ];
 type DehydratedValue = [
   // data
-  [unknown],
+  [unknown] | [],
   // chunk descriptions
   ...ChunkDefinition[],
 ];
@@ -247,7 +247,6 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     value: unknown,
     path: (string | number)[],
   ): null | [type: ChunkValueType, chunkId: ChunkIndex] {
-    console.log('dehydrateChunk', value, path);
     if (isPromise(value)) {
       return [CHUNK_VALUE_TYPE_PROMISE, dehydratePromise(value, path)];
     }
@@ -269,6 +268,9 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     const reg = dehydrateChunk(value, path);
     if (reg) {
       return [[placeholder], [null, ...reg]];
+    }
+    if (value === undefined) {
+      return [[]];
     }
     if (!isObject(value)) {
       return [[value]];
