@@ -2,7 +2,10 @@ import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-import { createReadableStream } from './utils/createReadableStream';
+import {
+  createReadableStream,
+  isCancelledStreamResult,
+} from './utils/createReadableStream';
 
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
@@ -56,7 +59,7 @@ type ChunkDefinition = [
 ];
 type DehydratedValue = [
   // data
-  [unknown],
+  [unknown] | [],
   // chunk descriptions
   ...ChunkDefinition[],
 ];
@@ -147,7 +150,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
 
     Promise.race([promise, stream.cancelledPromise])
       .then((it) => {
-        if (it === null) {
+        if (isCancelledStreamResult(it)) {
           return;
         }
         stream.controller.enqueue([
@@ -203,7 +206,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
           ]);
           return;
         }
-        if (next === 'cancelled') {
+        if (isCancelledStreamResult(next)) {
           await iterator.return?.();
           break;
         }
@@ -246,7 +249,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     }
     return null;
   }
-  function dehydrateChunk(
+  function dehydrateAsync(
     value: unknown,
     path: (string | number)[],
   ): null | [type: ChunkValueType, chunkId: ChunkIndex] {
@@ -268,17 +271,20 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     value: unknown,
     path: (string | number)[],
   ): DehydratedValue {
-    const reg = dehydrateChunk(value, path);
-    if (reg) {
-      return [[placeholder], [null, ...reg]];
+    if (value === undefined) {
+      return [[]];
     }
     if (!isObject(value)) {
       return [[value]];
     }
+    const reg = dehydrateAsync(value, path);
+    if (reg) {
+      return [[placeholder], [null, ...reg]];
+    }
     const newObj = {} as Record<string, unknown>;
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
-      const transformed = dehydrateChunk(item, [...path, key]);
+      const transformed = dehydrateAsync(item, [...path, key]);
       if (!transformed) {
         newObj[key] = item;
         continue;
