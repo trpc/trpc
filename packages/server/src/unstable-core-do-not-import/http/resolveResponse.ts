@@ -368,6 +368,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
 
+          if(error) throw error;
+
           if (!isObservable(data) && !isAsyncIterable(data)) {
             throw new TRPCError({
               message: `Subscription ${
