@@ -368,6 +368,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
 
+          /**
+           * Previously, any error throw in middleware before an SSE subscription would result in data having a value of `null`.
+           * This means it would fail the following "isObservable(data)" and "isAsyncIterable(data)" checks, and an INTERNAL_SERVER_ERROR would always be thrown.
+           * So, if you wanted to throw a custom error, that'd be impossible.
+           * Checking to see if the error variable is defined before checking if it is an observable or async iterable fixes this issue.
+           */
           if(error) throw error;
 
           if (!isObservable(data) && !isAsyncIterable(data)) {
