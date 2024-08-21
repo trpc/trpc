@@ -1,10 +1,10 @@
-import type { CreateTRPCProxyClient } from '@trpc/client';
+import type { CreateTRPCClient } from '@trpc/client';
 import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
-import { createRecursiveProxy } from '@trpc/server/shared';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCNextAppRouterOptions } from './shared';
 
 export {
@@ -14,8 +14,6 @@ export {
   experimental_serverActionLink,
   // ts-prune-ignore-next
   type UseTRPCActionResult,
-  // ts-prune-ignore-next
-  type inferActionResultProps,
 } from './create-action-hook';
 
 type QueryResult = {
@@ -33,7 +31,7 @@ export function experimental_createTRPCNextAppDirClient<
 
   const cache = new Map<string, QueryResult>();
 
-  return createRecursiveProxy(({ path, args }) => {
+  return createRecursiveProxy<CreateTRPCClient<TRouter>>(({ path, args }) => {
     // const pathCopy = [key, ...path];
     const pathCopy = [...path];
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -65,6 +63,6 @@ export function experimental_createTRPCNextAppDirClient<
     });
 
     return promise;
-  }) as CreateTRPCProxyClient<TRouter>;
+  });
   // });
 }

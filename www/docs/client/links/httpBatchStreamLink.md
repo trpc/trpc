@@ -22,10 +22,10 @@ If you require the ability to change/set response headers (which includes cookie
 You can import and add the `httpBatchStreamLink` to the `links` array as such:
 
 ```ts title="client/index.ts"
-import { createTRPCProxyClient, httpBatchStreamLink } from '@trpc/client';
+import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
 import type { AppRouter } from '../server';
 
-const client = createTRPCProxyClient<AppRouter>({
+const client = createTRPCClient<AppRouter>({
   links: [
     httpBatchStreamLink({
       url: 'http://localhost:3000',
@@ -46,18 +46,13 @@ const somePosts = await Promise.all([
 
 ## Streaming mode
 
-> ⚠️ This link is unstable and may change in the future.
-
 When batching requests together, the behavior of a regular `httpBatchLink` is to wait for all requests to finish before sending the response. If you want to send responses as soon as they are ready, you can use `httpBatchStreamLink` instead. This is useful for long-running requests.
 
 ```ts title="client/index.ts"
-import {
-  createTRPCProxyClient,
-  unstable_httpBatchStreamLink,
-} from '@trpc/client';
+import { createTRPCClient, unstable_httpBatchStreamLink } from '@trpc/client';
 import type { AppRouter } from '../server';
 
-const client = createTRPCProxyClient<AppRouter>({
+const client = createTRPCClient<AppRouter>({
   links: [
     unstable_httpBatchStreamLink({
       url: 'http://localhost:3000',
@@ -68,9 +63,61 @@ const client = createTRPCProxyClient<AppRouter>({
 
 Compared to a regular `httpBatchLink`, a `unstable_httpBatchStreamLink` will:
 
-- Cause the requests to be sent with a `Trpc-Batch-Mode: stream` header
-- Cause the response to be sent with a `Transfer-Encoding: chunked` and `Vary: trpc-batch-mode` headers
+- Cause the requests to be sent with a `trpc-accept: application/jsonl` header
+- Cause the response to be sent with a `transfer-encoding: chunked` and `content-type: application/jsonl`
 - Remove the `data` key from the argument object passed to `responseMeta` (because with a streamed response, the headers are sent before the data is available)
+
+## Async generators and deferred promises {#generators}
+
+You can try this out on the homepage of tRPC.io: [https://trpc.io/?try=minimal#try-it-out](/?try=minimal#try-it-out)
+
+```ts twoslash
+// @target: esnext
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create({});
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+// ---cut---
+// @filename: server.ts
+import { publicProcedure, router } from './trpc';
+
+const appRouter = router({
+  examples: {
+    iterable: publicProcedure.query(async function* () {
+      for (let i = 0; i < 3; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        yield i;
+      }
+    }),
+  },
+});
+
+export type AppRouter = typeof appRouter;
+
+
+// @filename: client.ts
+import { createTRPCClient, unstable_httpBatchStreamLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const trpc = createTRPCClient<AppRouter>({
+  links: [
+    unstable_httpBatchStreamLink({
+      url: 'http://localhost:3000',
+    }),
+  ],
+});
+const iterable = await trpc.examples.iterable.query();
+//      ^?
+
+for await (const value of iterable) {
+  console.log('Iterable:', value);
+  //                         ^?
+}
+```
 
 ## Compatibility (client-side)
 
@@ -89,15 +136,7 @@ This includes support for `undici`, `node-fetch`, native Node.js fetch implement
 
 ### React Native
 
-Receiving the stream relies on the `TextDecoder` API, which is not available in React Native. If you still want to enable streaming, you can use a polyfill and pass it to the `httpBatchStreamLink` options:
-
-```ts
-unstable_httpBatchStreamLink({
-  url: 'http://localhost:3000',
-  textDecoder: new TextDecoder(),
-  // ^? textDecoder: { decode: (input: Uint8Array) => string }
-});
-```
+Receiving the stream relies on the `TextDecoder` and `TextDecoderStream` APIs, which is not available in React Native. If you still want to enable streaming, you need to polyfill those.
 
 ## Compatibility (server-side)
 

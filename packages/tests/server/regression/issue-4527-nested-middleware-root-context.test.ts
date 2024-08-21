@@ -1,4 +1,4 @@
-import { initTRPC, TRPCError } from '@trpc/server/src';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 test('root context override on nested middlewares', () => {
@@ -18,7 +18,7 @@ test('root context override on nested middlewares', () => {
   });
 
   const formDataMiddleware = t.middleware(async ({ next }) => {
-    return next({ rawInput: new FormData() });
+    return next({ getRawInput: async () => new FormData() });
   });
 
   // root context -> enforceApiKey -> formDataMiddleware

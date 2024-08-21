@@ -26,9 +26,12 @@ function writeFileSyncRecursive(filePath: string, content: string) {
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
-export async function generateEntrypoints(inputs: string[]) {
+export async function generateEntrypoints(rawInputs: string[]) {
+  const inputs = [...rawInputs];
   // set some defaults for the package.json
+
   const pkgJsonPath = path.resolve('package.json');
+
   const pkgJson: PackageJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
 
   pkgJson.files = ['dist', 'src', 'README.md'];
@@ -44,6 +47,7 @@ export async function generateEntrypoints(inputs: string[]) {
   // Added to turbo.json pipeline output to ensure cache works
   const scriptOutputs = new Set<string>();
   scriptOutputs.add('package.json');
+  scriptOutputs.add('dist/**');
 
   /** Parse the inputs to get the user-import-paths, e.g.
    *  src/adapters/aws-lambda/index.ts -> adapters/aws-lambda
@@ -55,6 +59,7 @@ export async function generateEntrypoints(inputs: string[]) {
    */
   inputs
     .filter((i) => i !== 'src/index.ts') // index included by default above
+    .sort()
     .forEach((i) => {
       // first, exclude 'src' part of the path
       const parts = i.split('/').slice(1);
@@ -65,11 +70,11 @@ export async function generateEntrypoints(inputs: string[]) {
       const importPath =
         parts.at(-1) === 'index.ts'
           ? parts.slice(0, -1).join('/')
-          : pathWithoutSrc.replace(/\.ts$/, '');
+          : pathWithoutSrc.replace(/\.(ts|tsx)$/, '');
 
       // write this entrypoint to the package.json exports field
-      const esm = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.mjs');
-      const cjs = './dist/' + pathWithoutSrc.replace(/\.ts$/, '.js');
+      const esm = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.mjs');
+      const cjs = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.js');
       pkgJson.exports[`./${importPath}`] = {
         import: esm,
         require: cjs,
@@ -78,11 +83,14 @@ export async function generateEntrypoints(inputs: string[]) {
 
       // create the barrelfile, linking the declared exports to the compiled files in dist
       const importDepth = importPath.split('/').length || 1;
-      const resolvedImport = path.join(
+
+      // in windows, "path.join" uses backslashes, it leads escape characters
+      const resolvedImport = [
         ...Array(importDepth).fill('..'),
         'dist',
         importPath,
-      );
+      ].join('/');
+
       // index.js
       const indexFile = path.resolve(importPath, 'index.js');
       const indexFileContent = `module.exports = require('${resolvedImport}');\n`;
@@ -120,7 +128,7 @@ export async function generateEntrypoints(inputs: string[]) {
 
   const turboPath = path.resolve('turbo.json');
   const turboJson = JSON.parse(fs.readFileSync(turboPath, 'utf8'));
-  turboJson.pipeline['codegen-entrypoints'].outputs = [...scriptOutputs];
+  turboJson.tasks['codegen-entrypoints'].outputs = [...scriptOutputs];
   const formattedTurboJson = prettier.format(JSON.stringify(turboJson), {
     parser: 'json',
     ...(await prettier.resolveConfig(turboPath)),

@@ -64,14 +64,14 @@ const ctx = konn()
 
 describe('getQueryKeys', () => {
   test('no input', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
 
     function MyComponent() {
-      const happy1 = getQueryKey(proxy.post.all, undefined, 'query');
-      const happy2 = getQueryKey(proxy.post.all);
+      const happy1 = getQueryKey(client.post.all, undefined, 'query');
+      const happy2 = getQueryKey(client.post.all);
 
       // @ts-expect-error - post.all has no input
-      const sad = getQueryKey(proxy.post.all, 'foo');
+      const sad = getQueryKey(client.post.all, 'foo');
 
       return (
         <>
@@ -98,16 +98,16 @@ describe('getQueryKeys', () => {
   });
 
   test('with input', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
 
     function MyComponent() {
-      const happy1 = getQueryKey(proxy.post.byId, { id: 1 }, 'query');
+      const happy1 = getQueryKey(client.post.byId, { id: 1 }, 'query');
       // input is fuzzy matched so should not be required
-      const happy2 = getQueryKey(proxy.post.byId, undefined, 'query');
-      const happy3 = getQueryKey(proxy.post.byId);
+      const happy2 = getQueryKey(client.post.byId, undefined, 'query');
+      const happy3 = getQueryKey(client.post.byId);
 
       // doesn't really make sense but should still work
-      const happyIsh = getQueryKey(proxy.post.byId, { id: 1 });
+      const happyIsh = getQueryKey(client.post.byId, { id: 1 });
 
       return (
         <>
@@ -142,13 +142,13 @@ describe('getQueryKeys', () => {
   });
 
   test('undefined input but type', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
 
     function MyComponent() {
-      const happy = getQueryKey(proxy.post.list, undefined, 'infinite');
+      const happy = getQueryKey(client.post.list, undefined, 'infinite');
 
       // @ts-expect-error - cursor is not a valid input
-      const sad = getQueryKey(proxy.post.list, { cursor: 1 }, 'infinite');
+      const sad = getQueryKey(client.post.list, { cursor: 1 }, 'infinite');
 
       return (
         <>
@@ -171,16 +171,16 @@ describe('getQueryKeys', () => {
   });
 
   test('undefined input but type', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
 
     function MyComponent() {
-      const happy = getQueryKey(proxy.post.list, undefined, 'infinite');
+      const happy = getQueryKey(client.post.list, undefined, 'infinite');
 
       // @ts-expect-error - cursor is not a valid input
-      const sad = getQueryKey(proxy.post.list, { cursor: 1 }, 'infinite');
+      const sad = getQueryKey(client.post.list, { cursor: 1 }, 'infinite');
 
       // @ts-expect-error - input is always invalid
-      const sad2 = getQueryKey(proxy.post.list, { anyKey: 1 }, 'infinite');
+      const sad2 = getQueryKey(client.post.list, { anyKey: 1 }, 'infinite');
 
       return (
         <>
@@ -203,27 +203,35 @@ describe('getQueryKeys', () => {
   });
 
   test('extra key in input but type', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
 
     function MyComponent() {
       const happy = getQueryKey(
-        proxy.post.moreLists,
+        client.post.moreLists,
         { anotherKey: 1 },
         'infinite',
       );
 
       // these should also be valid since the input is fuzzy matched
-      getQueryKey(proxy.post.moreLists, undefined, 'infinite');
-      getQueryKey(proxy.post.moreLists, undefined);
-      getQueryKey(proxy.post.moreLists);
-      getQueryKey(proxy.post.moreLists, {}, 'infinite');
-      getQueryKey(proxy.post.moreLists, { anotherKey: 1 });
+      getQueryKey(client.post.moreLists, undefined, 'infinite');
+      getQueryKey(client.post.moreLists, undefined);
+      getQueryKey(client.post.moreLists);
+      getQueryKey(client.post.moreLists, {}, 'infinite');
+      getQueryKey(client.post.moreLists, { anotherKey: 1 });
 
-      // @ts-expect-error - cursor is not a valid input
-      const sad2 = getQueryKey(proxy.post.moreLists, { cursor: 1 }, 'infinite');
+      const sad2 = getQueryKey(
+        client.post.moreLists,
+        // @ts-expect-error - cursor is not a valid input
+        { cursor: 1 },
+        'infinite',
+      );
 
-      // @ts-expect-error - input is always invalid
-      const sad3 = getQueryKey(proxy.post.moreLists, { anyKey: 1 }, 'infinite');
+      const sad3 = getQueryKey(
+        client.post.moreLists,
+        // @ts-expect-error - input is always invalid
+        { anyKey: 1 },
+        'infinite',
+      );
 
       return (
         <>
@@ -249,10 +257,10 @@ describe('getQueryKeys', () => {
   });
 
   test('infinite', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
 
     function MyComponent() {
-      const happy = getQueryKey(proxy.post.list, undefined, 'infinite');
+      const happy = getQueryKey(client.post.list, undefined, 'infinite');
 
       return (
         <>
@@ -275,13 +283,13 @@ describe('getQueryKeys', () => {
   });
 
   test('mutation', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
 
     function MyComponent() {
-      const happy = getQueryKey(proxy.post.update);
+      const happy = getQueryKey(client.post.update);
 
       // @ts-expect-error - mutations takes no input
-      const sad = getQueryKey(proxy.post.update, { name: 'trash' });
+      const sad = getQueryKey(client.post.update, { name: 'trash' });
 
       return (
         <div>
@@ -304,13 +312,13 @@ describe('getQueryKeys', () => {
   });
 
   test('on router', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
 
     function MyComponent() {
-      const happy = getQueryKey(proxy.post);
+      const happy = getQueryKey(client.post);
 
       // @ts-expect-error - router has no input
-      const sad = getQueryKey(proxy.post, 'foo');
+      const sad = getQueryKey(client.post, 'foo');
 
       return (
         <div>
@@ -333,13 +341,13 @@ describe('getQueryKeys', () => {
   });
 
   test('forwarded to a real method', async () => {
-    const { proxy, App } = ctx;
+    const { client, App } = ctx;
 
     function MyComponent() {
-      proxy.post.all.useQuery();
+      client.post.all.useQuery();
 
-      const qKey = getQueryKey(proxy.post.all, undefined, 'query');
-      const isFetching = useIsFetching(qKey);
+      const qKey = getQueryKey(client.post.all, undefined, 'query');
+      const isFetching = useIsFetching({ queryKey: qKey });
 
       return <div>{isFetching}</div>;
     }
@@ -358,149 +366,10 @@ describe('getQueryKeys', () => {
   });
 
   test('outside of the react context', () => {
-    const { proxy } = ctx;
+    const { client } = ctx;
 
-    const all = getQueryKey(proxy.post.all, undefined, 'query');
-    const byId = getQueryKey(proxy.post.byId, { id: 1 }, 'query');
-
-    expect(all).toEqual([['post', 'all'], { type: 'query' }]);
-    expect(byId).toEqual([
-      ['post', 'byId'],
-      { input: { id: 1 }, type: 'query' },
-    ]);
-  });
-});
-
-describe('getQueryKeys deprecated', () => {
-  test('no input', async () => {
-    const { proxy, App } = ctx;
-
-    function MyComponent() {
-      const happy1 = proxy.post.all.getQueryKey(undefined, 'query');
-      const happy2 = proxy.post.all.getQueryKey();
-
-      // @ts-expect-error - post.all has no input
-      const sad = proxy.post.all.getQueryKey('foo');
-
-      return (
-        <>
-          <pre data-testid="qKey1">{JSON.stringify(happy1)}</pre>
-          <pre data-testid="qKey2">{JSON.stringify(happy2)}</pre>
-        </>
-      );
-    }
-
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
-
-    await waitFor(() => {
-      expect(utils.getByTestId('qKey1')).toHaveTextContent(
-        JSON.stringify([['post', 'all'], { type: 'query' }]),
-      );
-      expect(utils.getByTestId('qKey2')).toHaveTextContent(
-        JSON.stringify([['post', 'all']]),
-      );
-    });
-  });
-
-  test('with input', async () => {
-    const { proxy, App } = ctx;
-
-    function MyComponent() {
-      const happy1 = proxy.post.byId.getQueryKey({ id: 1 }, 'query');
-
-      // doesn't really make sense but should still work
-      const happyIsh = proxy.post.byId.getQueryKey({ id: 1 });
-
-      // @ts-expect-error - post.byId has required input
-      const sad = proxy.post.byId.getQueryKey(undefined, 'query');
-
-      return (
-        <>
-          <pre data-testid="qKey1">{JSON.stringify(happy1)}</pre>
-          <pre data-testid="qKey2">{JSON.stringify(happyIsh)}</pre>
-        </>
-      );
-    }
-
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
-
-    await waitFor(() => {
-      expect(utils.getByTestId('qKey1')).toHaveTextContent(
-        JSON.stringify([['post', 'byId'], { input: { id: 1 }, type: 'query' }]),
-      );
-      expect(utils.getByTestId('qKey2')).toHaveTextContent(
-        JSON.stringify([['post', 'byId'], { input: { id: 1 } }]),
-      );
-    });
-  });
-
-  test('on router', async () => {
-    const { proxy, App } = ctx;
-
-    function MyComponent() {
-      const happy = proxy.post.getQueryKey();
-
-      // @ts-expect-error - router has no input
-      const sad = proxy.post.getQueryKey('foo');
-
-      return (
-        <div>
-          <pre data-testid="qKey">{JSON.stringify(happy)}</pre>
-        </div>
-      );
-    }
-
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
-
-    await waitFor(() => {
-      expect(utils.getByTestId('qKey')).toHaveTextContent(
-        JSON.stringify([['post']]),
-      );
-    });
-  });
-
-  test('forwarded to a real method', async () => {
-    const { proxy, App } = ctx;
-
-    function MyComponent() {
-      proxy.post.all.useQuery();
-
-      const qKey = proxy.post.all.getQueryKey(undefined, 'query');
-      const isFetching = useIsFetching(qKey);
-
-      return <div>{isFetching}</div>;
-    }
-
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
-
-    // should be fetching initially, and then not
-    expect(utils.container).toHaveTextContent('1');
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('0');
-    });
-  });
-
-  test('outside of the react context', () => {
-    const { proxy } = ctx;
-
-    const all = proxy.post.all.getQueryKey(undefined, 'query');
-    const byId = proxy.post.byId.getQueryKey({ id: 1 }, 'query');
+    const all = getQueryKey(client.post.all, undefined, 'query');
+    const byId = getQueryKey(client.post.byId, { id: 1 }, 'query');
 
     expect(all).toEqual([['post', 'all'], { type: 'query' }]);
     expect(byId).toEqual([

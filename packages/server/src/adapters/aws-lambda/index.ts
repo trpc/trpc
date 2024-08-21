@@ -1,113 +1,76 @@
+/**
+ * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
+ *
+ * @example
+ * ```ts
+ * import type { AnyTRPCRouter } from '@trpc/server'
+ * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
+ * ```
+ */
+import type { Context as APIGWContext } from 'aws-lambda';
+// @trpc/server
 import type {
-  APIGatewayProxyEvent,
-  APIGatewayProxyEventV2,
-  APIGatewayProxyResult,
-  APIGatewayProxyStructuredResultV2,
-  Context as APIGWContext,
-} from 'aws-lambda';
-import { TRPCError } from '../..';
-import type { AnyRouter, inferRouterContext } from '../../core';
-import type { HTTPRequest } from '../../http';
-import { resolveHTTPResponse } from '../../http';
-import type { HTTPResponse } from '../../http/internals/types';
+  AnyRouter,
+  CreateContextCallback,
+  inferRouterContext,
+} from '../../@trpc/server';
+// @trpc/server
 import type {
-  APIGatewayEvent,
-  APIGatewayResult,
-  AWSLambdaOptions,
-} from './utils';
-import {
-  getHTTPMethod,
-  getPath,
-  isPayloadV1,
-  isPayloadV2,
-  transformHeaders,
-  UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
-} from './utils';
+  HTTPBaseHandlerOptions,
+  ResolveHTTPRequestOptionsContextFn,
+  TRPCRequestInfo,
+} from '../../@trpc/server/http';
+import { resolveResponse } from '../../@trpc/server/http';
+import type { inferAPIGWReturn, LambdaEvent } from './getPlanner';
+import { getPlanner } from './getPlanner';
 
-export * from './utils';
+export type CreateAWSLambdaContextOptions<TEvent extends LambdaEvent> = {
+  event: TEvent;
+  context: APIGWContext;
+  info: TRPCRequestInfo;
+};
 
-function lambdaEventToHTTPRequest(event: APIGatewayEvent): HTTPRequest {
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(
-    event.queryStringParameters ?? {},
-  )) {
-    if (typeof value !== 'undefined') {
-      query.append(key, value);
-    }
-  }
+export type AWSLambdaOptions<
+  TRouter extends AnyRouter,
+  TEvent extends LambdaEvent,
+> =
+  | HTTPBaseHandlerOptions<TRouter, TEvent> &
+      CreateContextCallback<
+        inferRouterContext<AnyRouter>,
+        AWSLambdaCreateContextFn<TRouter, TEvent>
+      >;
 
-  let body: string | null | undefined;
-  if (event.body && event.isBase64Encoded) {
-    body = Buffer.from(event.body, 'base64').toString('utf8');
-  } else {
-    body = event.body;
-  }
+export type AWSLambdaCreateContextFn<
+  TRouter extends AnyRouter,
+  TEvent extends LambdaEvent,
+> = ({
+  event,
+  context,
+  info,
+}: CreateAWSLambdaContextOptions<TEvent>) =>
+  | inferRouterContext<TRouter>
+  | Promise<inferRouterContext<TRouter>>;
 
-  return {
-    method: getHTTPMethod(event),
-    query: query,
-    headers: event.headers,
-    body: body,
-  };
-}
-
-function tRPCOutputToAPIGatewayOutput<
-  TEvent extends APIGatewayEvent,
-  TResult extends APIGatewayResult,
->(event: TEvent, response: HTTPResponse): TResult {
-  if (isPayloadV1(event)) {
-    const resp: APIGatewayProxyResult = {
-      statusCode: response.status,
-      body: response.body ?? '',
-      headers: transformHeaders(response.headers ?? {}),
-    };
-    return resp as TResult;
-  } else if (isPayloadV2(event)) {
-    const resp: APIGatewayProxyStructuredResultV2 = {
-      statusCode: response.status,
-      body: response.body ?? undefined,
-      headers: transformHeaders(response.headers ?? {}),
-    };
-    return resp as TResult;
-  } else {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: UNKNOWN_PAYLOAD_FORMAT_VERSION_ERROR_MESSAGE,
-    });
-  }
-}
-
-/** 1:1 mapping of v1 or v2 input events, deduces which is which.
- * @internal
- **/
-type inferAPIGWReturn<TType> = TType extends APIGatewayProxyEvent
-  ? APIGatewayProxyResult
-  : TType extends APIGatewayProxyEventV2
-  ? APIGatewayProxyStructuredResultV2
-  : never;
 export function awsLambdaRequestHandler<
   TRouter extends AnyRouter,
-  TEvent extends APIGatewayEvent,
-  TResult extends inferAPIGWReturn<TEvent>,
+  TEvent extends LambdaEvent,
 >(
   opts: AWSLambdaOptions<TRouter, TEvent>,
-): (event: TEvent, context: APIGWContext) => Promise<TResult> {
+): (event: TEvent, context: APIGWContext) => Promise<inferAPIGWReturn<TEvent>> {
   return async (event, context) => {
-    const req = lambdaEventToHTTPRequest(event);
-    const path = getPath(event);
-    const createContext = async function _createContext(): Promise<
-      inferRouterContext<TRouter>
-    > {
-      return await opts.createContext?.({ event, context });
+    const planner = getPlanner(event);
+
+    const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
+      innerOpts,
+    ) => {
+      return await opts.createContext?.({ event, context, ...innerOpts });
     };
 
-    const response = await resolveHTTPResponse({
-      router: opts.router,
-      batching: opts.batching,
-      responseMeta: opts?.responseMeta,
+    const response = await resolveResponse({
+      ...opts,
       createContext,
-      req,
-      path,
+      req: planner.request,
+      path: planner.path,
       error: null,
       onError(o) {
         opts?.onError?.({
@@ -117,6 +80,6 @@ export function awsLambdaRequestHandler<
       },
     });
 
-    return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
+    return await planner.toResult(response);
   };
 }

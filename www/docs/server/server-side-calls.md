@@ -291,3 +291,55 @@ export default async (
   }
 };
 ```
+
+### Error handling
+
+The `createFactoryCaller` and the `createCaller` function can take an error handler through the `onError` option. This can be used to throw errors that are not wrapped in a TRPCError, or respond to errors in some other way. Any handler passed to createCallerFactory will be called before the handler passed to createCaller.
+The handler is called with the same arguments as an error formatter would be, except for the shape field:
+
+```ts
+{
+  ctx: unknown; // The request context
+  error: TRPCError; // The TRPCError that was thrown
+  path: string | undefined; // The path of the procedure that threw the error
+  input: unknown; // The input that was passed to the procedure
+  type: 'query' | 'mutation' | 'subscription' | 'unknown'; // The type of the procedure that threw the error
+}
+```
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC
+  .context<{
+    foo?: 'bar';
+  }>()
+  .create();
+
+const router = t.router({
+  greeting: t.procedure.input(z.object({ name: z.string() })).query((opts) => {
+    if (opts.input.name === 'invalid') {
+      throw new Error('Invalid name');
+    }
+
+    return `Hello ${opts.input.name}`;
+  }),
+});
+
+const caller = router.createCaller(
+  {
+    /* context */
+  },
+  {
+    onError: (opts) => {
+      console.error('An error occurred:', opts.error);
+    },
+  },
+);
+
+// The following will log "An error occurred: Error: Invalid name", and then throw a plain error
+//  with the message "This is a custom error"
+await caller.greeting({ name: 'invalid' });
+```

@@ -1,6 +1,6 @@
 import { ignoreErrors } from './___testHelpers';
-import { createTRPCUntypedClient } from '@trpc/client/src';
-import type { Unsubscribable } from '@trpc/server/src/observable';
+import { createTRPCUntypedClient } from '@trpc/client';
+import type { Unsubscribable } from '@trpc/server/observable';
 
 test('loosely typed parameters', () => {
   const client = createTRPCUntypedClient({
@@ -47,12 +47,12 @@ test('query and mutation result type is Promise<any>', () => {
 
   ignoreErrors(async () => {
     const queryResult = client.query('foo');
-    expectTypeOf<typeof queryResult>().toEqualTypeOf<Promise<any>>();
+    expectTypeOf<typeof queryResult>().toEqualTypeOf<Promise<unknown>>();
     const awaitedQueryResult = await queryResult;
     expectTypeOf<typeof awaitedQueryResult>().toBeUnknown();
 
     const mutationResult = client.query('foo');
-    expectTypeOf<typeof mutationResult>().toEqualTypeOf<Promise<any>>();
+    expectTypeOf<typeof mutationResult>().toEqualTypeOf<Promise<unknown>>();
     const awaitedMutationResult = await mutationResult;
     expectTypeOf<typeof awaitedMutationResult>().toBeUnknown();
   });

@@ -312,7 +312,12 @@
     },
     {
       "source": "/sponsor",
-      "destination": "https://github.com/sponsors/KATT",
+      "destination": "https://github.com/sponsors/trpc",
+      "permanent": false
+    },
+    {
+      "source": "/buy/tier-pro",
+      "destination": "https://github.com/sponsors/trpc/sponsorships?tier_id=73667",
       "permanent": false
     },
     {
@@ -328,11 +333,6 @@
     {
       "source": "/docs/extra",
       "destination": "/docs/further",
-      "permanent": true
-    },
-    {
-      "source": "/docs/v10/:path*",
-      "destination": "/docs/:path*",
       "permanent": true
     },
     {
@@ -503,6 +503,26 @@
     {
       "source": "/docs/reactjs/:path",
       "destination": "/docs/client/react/:path",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v11/:path*",
+      "destination": "/docs/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v11/",
+      "destination": "/docs/",
+      "permanent": true
+    },
+    {
+      "source": "/docs/v11",
+      "destination": "/docs/",
+      "permanent": true
+    },
+    {
+      "source": "/docs/migrate-from-v9-to-v10",
+      "destination": "/docs/v10/migrate-from-v9-to-v10",
       "permanent": true
     }
   ]

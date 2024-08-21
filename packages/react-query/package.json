@@ -17,7 +17,7 @@
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore --report-unused-disable-directives src",
+    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore src",
     "ts-watch": "tsc --watch"
   },
   "exports": {
@@ -26,6 +26,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./rsc": {
+      "import": "./dist/rsc.mjs",
+      "require": "./dist/rsc.js",
+      "default": "./dist/rsc.js"
     },
     "./server": {
       "import": "./dist/server/index.mjs",
@@ -36,11 +41,6 @@
       "import": "./dist/shared/index.mjs",
       "require": "./dist/shared/index.js",
       "default": "./dist/shared/index.js"
-    },
-    "./ssg": {
-      "import": "./dist/ssg/index.mjs",
-      "require": "./dist/ssg/index.js",
-      "default": "./dist/ssg/index.js"
     }
   },
   "files": [
@@ -48,9 +48,9 @@
     "src",
     "README.md",
     "package.json",
+    "rsc",
     "server",
     "shared",
-    "ssg",
     "!**/*.test.*"
   ],
   "eslintConfig": {
@@ -62,26 +62,28 @@
       ]
     }
   },
+  "dependencies": {},
   "peerDependencies": {
-    "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.45.2",
-    "@trpc/server": "10.45.2",
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
+    "@tanstack/react-query": "^5.49.2",
+    "@trpc/client": "10.45.1",
+    "@trpc/server": "^10.45.1",
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^4.18.0",
-    "@trpc/client": "10.45.2",
-    "@trpc/server": "10.45.2",
+    "@tanstack/react-query": "^5.51.11",
+    "@trpc/client": "10.45.1",
+    "@trpc/server": "^10.45.1",
     "@types/express": "^4.17.17",
     "@types/node": "^20.10.0",
-    "@types/react": "^18.2.33",
-    "eslint": "^8.40.0",
+    "@types/react": "^18.3.1",
+    "eslint": "^8.57.0",
     "express": "^4.17.1",
-    "next": "^14.0.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "rollup": "^2.79.1",
+    "next": "^14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "rollup": "^4.9.5",
+    "tslib": "^2.5.0",
     "tsx": "^4.0.0",
     "zod": "^3.0.0"
   },

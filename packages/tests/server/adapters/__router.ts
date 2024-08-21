@@ -1,10 +1,12 @@
 import { initTRPC, TRPCError } from '@trpc/server';
+import type { TRPCRequestInfo } from '@trpc/server/http';
 import { z } from 'zod';
 
 export type Context = {
   user: {
     name: string;
   } | null;
+  info: TRPCRequestInfo;
 };
 
 const t = initTRPC.context<Context>().create();
@@ -21,6 +23,14 @@ export const router = t.router({
     .query(({ input, ctx }) => ({
       text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
     })),
+  helloMutation: t.procedure
+    .input(z.string())
+    .mutation(({ input }) => `hello ${input}`),
+  request: t.router({
+    info: t.procedure.query(({ ctx }) => {
+      return ctx.info;
+    }),
+  }),
   exampleError: t.procedure.query(() => {
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',

@@ -23,8 +23,8 @@ tRPC's support for Next.js is far more expansive than just an adapter. This page
       <td>Next.js Minimal Starter</td>
       <td>
         <ul>
-          <li><a href="https://githubbox.com/trpc/trpc/tree/main/examples/next-minimal-starter">CodeSandbox</a></li>
-          <li><a href="https://github.com/trpc/trpc/tree/main/examples/next-minimal-starter">Source</a></li>
+          <li><a href="https://githubbox.com/trpc/trpc/tree/next/examples/next-minimal-starter">CodeSandbox</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/next/examples/next-minimal-starter">Source</a></li>
         </ul>
       </td>
     </tr>
@@ -40,7 +40,7 @@ import { createNextApiHandler } from '@trpc/server/adapters/next';
 import { createContext } from '../../../server/trpc/context';
 import { appRouter } from '../../../server/trpc/router/_app';
 
-// @see https://nextjs.org/docs/api-routes/introduction
+// @link https://nextjs.org/docs/api-routes/introduction
 export default createNextApiHandler({
   router: appRouter,
   createContext,
@@ -64,7 +64,7 @@ const nextApiHandler = createNextApiHandler({
   createContext,
 });
 
-// @see https://nextjs.org/docs/api-routes/introduction
+// @link https://nextjs.org/docs/api-routes/introduction
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
@@ -104,13 +104,14 @@ If you're trying out the Next.js App Router and want to use [route handlers](htt
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { appRouter } from '~/server/api/router';
 
-const handler = (req: Request) =>
-  fetchRequestHandler({
+function handler(req: Request) {
+  return fetchRequestHandler({
     endpoint: '/api/trpc',
     req,
     router: appRouter,
     createContext: () => ({ ... })
   });
+}
 
 export { handler as GET, handler as POST };
 ```

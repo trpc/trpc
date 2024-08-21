@@ -1,8 +1,8 @@
 /* istanbul ignore file -- @preserve */
 // We're not actually exporting this link
-import type { AnyRouter } from '@trpc/server';
 import type { Observable } from '@trpc/server/observable';
 import { observable, share } from '@trpc/server/observable';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCLink } from '../types';
 
 /**

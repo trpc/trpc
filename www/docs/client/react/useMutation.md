@@ -6,10 +6,10 @@ slug: /client/react/useMutation
 ---
 
 :::note
-The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [mutations](https://tanstack.com/query/v4/docs/react/guides/mutations).
+The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [mutations](https://tanstack.com/query/v5/docs/framework/react/guides/mutations).
 :::
 
-Works like react-query's mutations - [see their docs](https://tanstack.com/query/v4/docs/react/guides/mutations).
+Works like react-query's mutations - [see their docs](https://tanstack.com/query/v5/docs/framework/react/guides/mutations).
 
 ### Example
 
@@ -61,7 +61,7 @@ export function MyComponent() {
   return (
     <div>
       <h1>Login Form</h1>
-      <button onClick={handleLogin} disabled={mutation.isLoading}>
+      <button onClick={handleLogin} disabled={mutation.isPending}>
         Login
       </button>
 

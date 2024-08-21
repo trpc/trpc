@@ -3,11 +3,14 @@
 //  building factories which can produce common functionality over a homologous data source.
 //
 import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
-import type { AnyRootConfig } from '@trpc/server';
 import { TRPCError } from '@trpc/server';
-import type { createBuilder } from '@trpc/server/core/internals/procedureBuilder';
-import type { createRouterFactory } from '@trpc/server/core/router';
+import type {
+  AnyRootTypes,
+  createBuilder,
+} from '@trpc/server/unstable-core-do-not-import';
 import z from 'zod';
+import type { $RootTypes } from './polymorphism.common';
+import { t } from './polymorphism.common';
 
 //
 // DTOs
@@ -30,11 +33,8 @@ export type FileExportStatusType = z.infer<typeof FileExportStatus>;
 // Dependencies
 //
 
-type RouterFactory<TConfig extends AnyRootConfig> = ReturnType<
-  typeof createRouterFactory<TConfig>
->;
-type BaseProcedure<TConfig extends AnyRootConfig> = ReturnType<
-  typeof createBuilder<TConfig>
+type BaseProcedure<TRoot extends AnyRootTypes> = ReturnType<
+  typeof createBuilder<TRoot['ctx'], TRoot['meta']>
 >;
 
 export type DataProvider = FileExportStatusType[];
@@ -47,15 +47,9 @@ export type DataProvider = FileExportStatusType[];
 let COUNTER = 1;
 
 export function createExportRoute<
-  TConfig extends AnyRootConfig,
-  TRouterFactory extends RouterFactory<TConfig>,
-  TBaseProcedure extends BaseProcedure<TConfig>,
->(
-  createRouter: TRouterFactory,
-  baseProcedure: TBaseProcedure,
-  dataProvider: DataProvider,
-) {
-  return createRouter({
+  TBaseProcedure extends BaseProcedure<$RootTypes>,
+>(baseProcedure: TBaseProcedure, dataProvider: DataProvider) {
+  return t.router({
     start: baseProcedure
       .input(FileExportRequest)
       .output(FileExportStatus)

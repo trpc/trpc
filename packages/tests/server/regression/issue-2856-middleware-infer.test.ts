@@ -1,4 +1,3 @@
-import '../___packages';
 import type { TRPCError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 

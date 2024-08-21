@@ -1,4 +1,5 @@
-import { RollupOptions } from 'rollup';
+import { fileURLToPath } from 'url';
+import type { RollupOptions } from 'rollup';
 import { buildConfig } from '../../scripts/getRollupConfig';
 
 export const input = [
@@ -7,11 +8,12 @@ export const input = [
   'src/app-dir/client.ts',
   'src/app-dir/links/nextCache.ts',
   'src/app-dir/links/nextHttp.ts',
+  'src/ssrPrepass.ts',
 ];
 
 export default function rollup(): RollupOptions[] {
   return buildConfig({
     input,
-    packageDir: __dirname,
+    packageDir: fileURLToPath(new URL('.', import.meta.url)),
   });
 }

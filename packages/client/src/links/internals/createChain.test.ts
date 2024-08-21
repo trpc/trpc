@@ -1,5 +1,5 @@
 import { observable } from '@trpc/server/observable';
-import type { AnyRouter } from '@trpc/server/src';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from './createChain';
 
 describe('chain', () => {
@@ -35,6 +35,7 @@ describe('chain', () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
 
@@ -82,6 +83,7 @@ describe('chain', () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
 

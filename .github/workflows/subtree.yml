@@ -1,5 +1,6 @@
 name: subtree-matrix
 on:
+  workflow_dispatch:
   push:
     branches:
       - next
@@ -15,15 +16,16 @@ jobs:
       matrix:
         path: [
             #
-            next-prisma-starter,
-            next-prisma-websockets-starter,
-            next-prisma-todomvc,
-            next-minimal-starter,
-            next-big-router,
-            minimal,
-            minimal-react,
-            .experimental/next-formdata,
             .experimental/next-app-dir,
+            minimal-react,
+            minimal,
+            next-big-router,
+            next-formdata,
+            next-minimal-starter,
+            next-prisma-starter,
+            next-prisma-todomvc,
+            next-prisma-websockets-starter,
+            next-sse-chat,
           ]
 
     name: Update downstream ${{ matrix.path }} package
@@ -34,7 +36,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run find-and-replace to remove '.experimental/' from above paths
-        uses: mad9000/actions-find-and-replace-string@4
+        uses: mad9000/actions-find-and-replace-string@5
         id: findandreplace
         with:
           source: ${{ matrix.path }}
@@ -43,7 +45,7 @@ jobs:
       - name: Get the above output
         run: echo "The replaced value is ${{ steps.findandreplace.outputs.value }}"
 
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
@@ -51,14 +53,10 @@ jobs:
 
       - name: Install dependencies and create separate lockfile
         run: |
-          echo "shared-workspace-lockfile=false" >> .npmrc
-          echo "link-workspace-packages=false" >> .npmrc
-          PWD_ROOT=${PWD}
           cd ./examples/${{ matrix.path }}
-          cp ${PWD_ROOT}/pnpm-lock.yaml .
-          # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "canary" in the package.json
-          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "canary"/g'
-          pnpm install --no-frozen-lockfile --ignore-scripts
+          # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "next" in the package.json
+          find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "next"/g'
+          pnpm install --no-frozen-lockfile --ignore-scripts --ignore-workspace
 
       - name: Commit changes
         run: |

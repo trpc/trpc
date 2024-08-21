@@ -8,7 +8,7 @@ test.setTimeout(35e3);
 test('server-cacheLink: refreshing the page should reuse the cached value', async ({
   page,
 }) => {
-  await page.goto('/rsc');
+  await page.goto('/rsc-links');
   await page.reload();
 
   await page.waitForSelector('text=hello i never hit an api endpoint');
@@ -25,7 +25,7 @@ test('server-cacheLink: refreshing the page should reuse the cached value', asyn
 test('server-cacheLink: revalidating should load new content', async ({
   page,
 }) => {
-  await page.goto('/rsc');
+  await page.goto('/rsc-links');
   await page.reload();
 
   await page.waitForSelector('text=hello i never hit an api endpoint');

@@ -1,5 +1,4 @@
-import '../___packages';
-import { createProxySSGHelpers } from '@trpc/react-query/ssg';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server';
 
 test('createSSGPromise', async () => {
@@ -9,7 +8,7 @@ test('createSSGPromise', async () => {
     foo: t.procedure.query(() => 'bar'),
   });
   async function createSSGProxy() {
-    return createProxySSGHelpers({
+    return createServerSideHelpers({
       router,
       ctx: {},
     });

@@ -1,21 +1,3 @@
-export type AbortControllerEsque = new () => AbortControllerInstanceEsque;
-
-/**
- * Allows you to abort one or more requests.
- */
-export interface AbortControllerInstanceEsque {
-  /**
-   * The AbortSignal object associated with this object.
-   */
-  readonly signal: AbortSignal;
-
-  /**
-   * Sets this object's AbortSignal's aborted flag and signals to
-   * any observers that the associated activity is to be aborted.
-   */
-  abort(): void;
-}
-
 /**
  * A subset of the standard fetch function type needed by tRPC internally.
  * @see fetch from lib.dom.d.ts
@@ -52,7 +34,7 @@ export interface RequestInitEsque {
   /**
    * Sets the request's body.
    */
-  body?: FormData | ReadableStream | string | null;
+  body?: FormData | string | null | Uint8Array | Blob | File;
 
   /**
    * Sets the request's associated headers.
@@ -78,12 +60,19 @@ export type WebReadableStreamEsque = {
   getReader: () => ReadableStreamDefaultReader<Uint8Array>;
 };
 
+export type NodeJSReadableStreamEsque = {
+  on(
+    eventName: string | symbol,
+    listener: (...args: any[]) => void,
+  ): NodeJSReadableStreamEsque;
+};
+
 /**
  * A subset of the standard Response properties needed by tRPC internally.
  * @see Response from lib.dom.d.ts
  */
 export interface ResponseEsque {
-  readonly body?: NodeJS.ReadableStream | WebReadableStreamEsque | null;
+  readonly body?: NodeJSReadableStreamEsque | WebReadableStreamEsque | null;
   /**
    * @remarks
    * The built-in Response::json() method returns Promise<any>, but

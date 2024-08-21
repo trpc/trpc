@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createAppRouter } from '../__testHelpers';
-import { withTRPC } from '@trpc/next/src';
+import { withTRPC } from '@trpc/next';
+import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { AppType } from 'next/dist/shared/lib/utils';
 import React from 'react';
 
@@ -21,7 +22,7 @@ test('regression: SSR with error sets `status`=`error`', async () => {
 
   let queryState: any;
   // @ts-ignore
-  delete global.window;
+  delete globalThis.window;
   const { trpc, trpcClientOptions } = factory;
   const App: AppType = () => {
     // @ts-ignore
@@ -44,6 +45,7 @@ test('regression: SSR with error sets `status`=`error`', async () => {
   const Wrapped = withTRPC({
     config: () => trpcClientOptions,
     ssr: true,
+    ssrPrepass,
   })(App);
 
   await Wrapped.getInitialProps!({
@@ -52,12 +54,12 @@ test('regression: SSR with error sets `status`=`error`', async () => {
   } as any);
 
   // @ts-ignore
-  global.window = window;
+  globalThis.window = window;
   expect(queryState.query1.error).toMatchInlineSnapshot(
-    `[TRPCClientError: No "query"-procedure on path "bad_useQuery"]`,
+    `[TRPCClientError: No procedure found on path "bad_useQuery"]`,
   );
   expect(queryState.query2.error).toMatchInlineSnapshot(
-    `[TRPCClientError: No "query"-procedure on path "bad_useInfiniteQuery"]`,
+    `[TRPCClientError: No procedure found on path "bad_useInfiniteQuery"]`,
   );
   expect(queryState.query1.status).toBe('error');
   expect(queryState.query2.status).toBe('error');

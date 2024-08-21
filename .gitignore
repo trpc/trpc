@@ -7,6 +7,8 @@ dist/
 .eslintcache
 *.tsbuildinfo
 
+db.sqlite
+
 node_modules/
 package-lock.json
 yarn.lock
@@ -14,7 +16,6 @@ yarn.lock
 yalc.lock
 
 coverage/
-playwright/
 __generated__/
 
 

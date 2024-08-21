@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata = {
   title: 'Create Next App',
@@ -46,6 +47,7 @@ export default function RootLayout({
             {children}
           </div>
         </main>
+        <Toaster />
       </body>
     </html>
   );

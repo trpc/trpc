@@ -1,63 +1,192 @@
+import type { AnyRouter, ProcedureType } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
+import type { TRPCErrorShape, TRPCResponse } from '@trpc/server/rpc';
+import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
+import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
+import type { BatchLoader } from '../internals/dataLoader';
+import { dataLoader } from '../internals/dataLoader';
 import type { NonEmptyArray } from '../internals/types';
+import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
-import type { RequesterFn } from './internals/createHTTPBatchLink';
-import { createHTTPBatchLink } from './internals/createHTTPBatchLink';
-import { getTextDecoder } from './internals/getTextDecoder';
-import { streamingJsonHttpRequester } from './internals/parseJSONStream';
-import type { TextDecoderEsque } from './internals/streamingUtils';
-import type { Operation } from './types';
+import type { HTTPResult } from './internals/httpUtils';
+import {
+  fetchHTTPResponse,
+  getBody,
+  getUrl,
+  mergeAbortSignals,
+  resolveHTTPLinkOptions,
+} from './internals/httpUtils';
+import type { Operation, TRPCLink } from './types';
 
-export interface HTTPBatchStreamLinkOptions extends HTTPBatchLinkOptions {
-  /**
-   * Will default to the webAPI `TextDecoder`,
-   * but you can use this option if your client
-   * runtime doesn't provide it.
-   */
-  textDecoder?: TextDecoderEsque;
-}
+export type HTTPBatchStreamLinkOptions<TRoot extends AnyRootTypes> =
+  HTTPBatchLinkOptions<TRoot> & {
+    /**
+     * Maximum number of calls in a single batch request
+     * @default Infinity
+     */
+    maxItems?: number;
+  };
 
-const streamRequester: RequesterFn<HTTPBatchStreamLinkOptions> = (
-  requesterOpts,
-) => {
-  const textDecoder = getTextDecoder(requesterOpts.opts.textDecoder);
-  return (batchOps, unitResolver) => {
-    const path = batchOps.map((op) => op.path).join(',');
-    const inputs = batchOps.map((op) => op.input);
+/**
+ * @see https://trpc.io/docs/client/links/httpBatchStreamLink
+ */
+export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
+  opts: HTTPBatchStreamLinkOptions<TRouter['_def']['_config']['$types']>,
+): TRPCLink<TRouter> {
+  const resolvedOpts = resolveHTTPLinkOptions(opts);
+  const maxURLLength = opts.maxURLLength ?? Infinity;
+  const maxItems = opts.maxItems ?? Infinity;
 
-    const { cancel, promise } = streamingJsonHttpRequester(
-      {
-        ...requesterOpts,
-        textDecoder,
-        path,
-        inputs,
-        headers() {
-          if (!requesterOpts.opts.headers) {
-            return {};
+  return () => {
+    const batchLoader = (
+      type: ProcedureType,
+    ): BatchLoader<Operation, HTTPResult> => {
+      return {
+        validate(batchOps) {
+          if (maxURLLength === Infinity && maxItems === Infinity) {
+            // escape hatch for quick calcs
+            return true;
           }
-          if (typeof requesterOpts.opts.headers === 'function') {
-            return requesterOpts.opts.headers({
-              opList: batchOps as NonEmptyArray<Operation>,
-            });
+          if (batchOps.length > maxItems) {
+            return false;
           }
-          return requesterOpts.opts.headers;
+          const path = batchOps.map((op) => op.path).join(',');
+          const inputs = batchOps.map((op) => op.input);
+
+          const url = getUrl({
+            ...resolvedOpts,
+            type,
+            path,
+            inputs,
+            signal: null,
+          });
+
+          return url.length <= maxURLLength;
         },
-      },
-      (index, res) => {
-        unitResolver(index, res);
-      },
-    );
+        async fetch(batchOps) {
+          const path = batchOps.map((op) => op.path).join(',');
+          const inputs = batchOps.map((op) => op.input);
 
-    return {
-      /**
-       * return an empty array because the batchLoader expects an array of results
-       * but we've already called the `unitResolver` for each of them, there's
-       * nothing left to do here.
-       */
-      promise: promise.then(() => []),
-      cancel,
+          const ac = mergeAbortSignals(batchOps);
+
+          const responsePromise = fetchHTTPResponse({
+            ...resolvedOpts,
+            signal: ac.signal,
+            type,
+            contentTypeHeader: 'application/json',
+            trpcAcceptHeader: 'application/jsonl',
+            getUrl,
+            getBody,
+            inputs,
+            path,
+            headers() {
+              if (!opts.headers) {
+                return {};
+              }
+              if (typeof opts.headers === 'function') {
+                return opts.headers({
+                  opList: batchOps as NonEmptyArray<Operation>,
+                });
+              }
+              return opts.headers;
+            },
+          });
+
+          const res = await responsePromise;
+          const [head] = await jsonlStreamConsumer<
+            Record<string, Promise<any>>
+          >({
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            from: res.body!,
+            deserialize: resolvedOpts.transformer.output.deserialize,
+            // onError: console.error,
+            formatError(opts) {
+              const error = opts.error as TRPCErrorShape;
+              return TRPCClientError.from({
+                error,
+              });
+            },
+            abortController: ac,
+          });
+          const promises = Object.keys(batchOps).map(
+            async (key): Promise<HTTPResult> => {
+              let json: TRPCResponse = await Promise.resolve(head[key]);
+
+              if ('result' in json) {
+                /**
+                 * Not very pretty, but we need to unwrap nested data as promises
+                 * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
+                 */
+                const result = await Promise.resolve(json.result);
+                json = {
+                  result: {
+                    data: await Promise.resolve(result.data),
+                  },
+                };
+              }
+
+              return {
+                json,
+                meta: {
+                  response: res,
+                },
+              };
+            },
+          );
+          return promises;
+        },
+      };
+    };
+
+    const query = dataLoader(batchLoader('query'));
+    const mutation = dataLoader(batchLoader('mutation'));
+
+    const loaders = { query, mutation };
+    return ({ op }) => {
+      return observable((observer) => {
+        /* istanbul ignore if -- @preserve */
+        if (op.type === 'subscription') {
+          throw new Error(
+            'Subscriptions are unsupported by `httpLink` - use `httpSubscriptionLink` or `wsLink`',
+          );
+        }
+        const loader = loaders[op.type];
+        const promise = loader.load(op);
+
+        let _res = undefined as HTTPResult | undefined;
+        promise
+          .then((res) => {
+            _res = res;
+            if ('error' in res.json) {
+              observer.error(
+                TRPCClientError.from(res.json, {
+                  meta: res.meta,
+                }),
+              );
+              return;
+            } else if ('result' in res.json) {
+              observer.next({
+                context: res.meta,
+                result: res.json.result,
+              });
+              observer.complete();
+              return;
+            }
+
+            observer.complete();
+          })
+          .catch((err) => {
+            observer.error(
+              TRPCClientError.from(err, {
+                meta: _res?.meta,
+              }),
+            );
+          });
+
+        return () => {
+          // noop
+        };
+      });
     };
   };
-};
-
-export const unstable_httpBatchStreamLink =
-  createHTTPBatchLink(streamRequester);
+}

@@ -1,9 +1,6 @@
-import type {
-  inferRouterInputs,
-  inferRouterOutputs,
-  Overwrite,
-} from '@trpc/server';
-import { initTRPC, Simplify } from '@trpc/server';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
+import type { Overwrite } from '@trpc/server/unstable-core-do-not-import';
 import * as z from 'zod';
 
 export function hardcodedExample() {
@@ -59,6 +56,7 @@ describe('inferRouterInputs/inferRouterOutputs', () => {
     }>();
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: unknown;
+      [x: number]: unknown;
       name: string;
     }>();
   });
@@ -72,6 +70,7 @@ describe('inferRouterInputs/inferRouterOutputs', () => {
     }>();
     expectTypeOf<Output>().toEqualTypeOf<{
       [x: string]: unknown;
+      [x: number]: unknown;
       name: string;
     }>();
   });

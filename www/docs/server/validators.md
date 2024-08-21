@@ -338,10 +338,10 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-### With [@effect/schema](https://github.com/Effect-TS/schema)
+### With [@effect/schema](https://github.com/Effect-TS/effect/tree/main/packages/schema)
 
-```ts twoslash
-import * as S from '@effect/schema/Schema';
+```ts
+import * as Schema from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
@@ -350,8 +350,10 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(S.parseSync(S.struct({ name: S.string })))
-    .output(S.parseSync(S.struct({ greeting: S.string })))
+    .input(Schema.decodeUnknownSync(Schema.Struct({ name: Schema.String })))
+    .output(
+      Schema.decodeUnknownSync(Schema.Struct({ greeting: Schema.String })),
+    )
     .query(({ input }) => {
       //      ^?
       return {
@@ -390,9 +392,8 @@ export type AppRouter = typeof appRouter;
 ### With [Valibot](https://github.com/fabian-hiller/valibot)
 
 ```ts twoslash
-import { wrap } from '@decs/typeschema';
 import { initTRPC } from '@trpc/server';
-import { object, string } from 'valibot';
+import * as v from 'valibot';
 
 export const t = initTRPC.create();
 
@@ -400,8 +401,57 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(wrap(object({ name: string() })))
-    .output(wrap(object({ greeting: string() })))
+    .input(v.parser(v.object({ name: v.string() })))
+    .output(v.parser(v.object({ greeting: v.string() })))
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [@robolex/sure](https://github.com/robolex-app/public_ts)
+
+You're able to define your own Error types and error throwing function if necessary.
+As a convenience `@robolex/sure` provides [sure/src/err.ts](https://github.com/robolex-app/public_ts/blob/main/packages/sure/src/err.ts):
+
+```ts
+// sure/src/err.ts
+export const err = (schema) => (input) => {
+  const [good, result] = schema(input);
+  if (good) return result;
+  throw result;
+};
+```
+
+```ts
+import { err, object, string } from '@robolex/sure';
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(
+      err(
+        object({
+          name: string,
+        }),
+      ),
+    )
+    .output(
+      err(
+        object({
+          greeting: string,
+        }),
+      ),
+    )
     .query(({ input }) => {
       //      ^?
       return {

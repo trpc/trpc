@@ -15,22 +15,22 @@ const ctx = konn()
 
 test('vanilla', async () => {
   const { opts } = ctx;
-  const { proxy } = opts;
+  const { client } = opts;
 
   {
-    const result = await proxy.r0.greeting.query({ who: 'KATT' });
+    const result = await client.r0.greeting.query({ who: 'KATT' });
 
     expect(result).toBe('hello KATT');
     expectTypeOf(result).not.toBeAny();
     expectTypeOf(result).toMatchTypeOf<string>();
   }
   {
-    const result = await proxy.r10.grandchild.grandChildMutation.mutate();
+    const result = await client.r10.grandchild.grandChildMutation.mutate();
     expect(result).toBe('grandChildMutation');
   }
 
   {
-    const result = await proxy.r499.greeting.query({ who: 'KATT' });
+    const result = await client.r499.greeting.query({ who: 'KATT' });
 
     expect(result).toBe('hello KATT');
     expectTypeOf(result).not.toBeAny();
@@ -39,9 +39,9 @@ test('vanilla', async () => {
 });
 
 test('useQuery()', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const query1 = proxy.r499.greeting.useQuery({ who: 'KATT' });
+    const query1 = client.r499.greeting.useQuery({ who: 'KATT' });
 
     if (!query1.data) {
       return <>...</>;

@@ -1,7 +1,6 @@
-import '../___packages';
 import http from 'http';
 import { waitError } from '../___testHelpers';
-import { createTRPCProxyClient, httpLink, TRPCClientError } from '@trpc/client';
+import { createTRPCClient, httpLink, TRPCClientError } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
 import fetch from 'node-fetch';
 import superjson from 'superjson';
@@ -35,7 +34,7 @@ test('badly formatted response', async () => {
     res.write(JSON.stringify({}));
     res.end();
   });
-  const client: any = createTRPCProxyClient({
+  const client: any = createTRPCClient({
     links: [
       httpLink({
         url: server.url,
@@ -62,14 +61,14 @@ test('badly formatted superjson response', async () => {
     );
     res.end();
   });
-  const client: any = createTRPCProxyClient({
+  const client: any = createTRPCClient({
     links: [
       httpLink({
         url: server.url,
         fetch: fetch as any,
+        transformer: superjson,
       }),
     ],
-    transformer: superjson,
   });
 
   const error = await waitError(client.test.query(), TRPCClientError);
@@ -90,14 +89,14 @@ test('badly formatted superjson response', async () => {
     );
     res.end();
   });
-  const client: any = createTRPCProxyClient({
+  const client: any = createTRPCClient({
     links: [
       httpLink({
         url: server.url,
         fetch: fetch as any,
+        transformer: superjson,
       }),
     ],
-    transformer: superjson,
   });
 
   const error = await waitError(client.test.query(), TRPCClientError);
@@ -118,7 +117,7 @@ test('bad link', async () => {
     );
     res.end();
   });
-  const client: any = createTRPCProxyClient({
+  const client: any = createTRPCClient({
     links: [
       () => (opts) => {
         return observable((observer) => {

@@ -1,8 +1,8 @@
 import { observable } from '@trpc/server/observable';
-import type { OperationLink, TRPCLink } from '../';
-import { splitLink } from '../';
-import type { AnyRouter } from '../../../server/src';
-import { createChain } from '../links/internals/createChain';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import { createChain } from './internals/createChain';
+import { splitLink } from './splitLink';
+import type { OperationLink, TRPCLink } from './types';
 
 test('splitLink', () => {
   const wsLinkSpy = vi.fn();
@@ -34,6 +34,7 @@ test('splitLink', () => {
       path: '.',
       id: 0,
       context: {},
+      signal: null,
     },
   }).subscribe({});
   expect(httpLinkSpy).toHaveBeenCalledTimes(1);
@@ -48,6 +49,7 @@ test('splitLink', () => {
       path: '.',
       id: 0,
       context: {},
+      signal: null,
     },
   }).subscribe({});
   expect(httpLinkSpy).toHaveBeenCalledTimes(0);

@@ -1,4 +1,4 @@
-import type { AnyRouter } from '@trpc/server';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCClientOptions } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
 

@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { render, waitFor } from '@testing-library/react';
-import { initTRPC } from '@trpc/server/src';
+import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
@@ -33,9 +33,9 @@ const ctx = konn()
   .done();
 
 test('useQuery()', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const greetingQuery = proxy.greeting.useQuery(
+    const greetingQuery = client.greeting.useQuery(
       {
         id: '1',
       },
@@ -60,8 +60,8 @@ test('useQuery()', async () => {
     expect(utils.container).toHaveTextContent(`__result`);
   });
   expect(ctx.spyLink).toHaveBeenCalledTimes(1);
-  const firstCall = ctx.spyLink.mock.calls[0]![0]!;
-  expect(firstCall.context.foo).toBe('bar');
+  const firstCall = ctx.spyLink.mock.calls[0]![0];
+  expect(firstCall.context['foo']).toBe('bar');
   expect(firstCall).toMatchInlineSnapshot(`
     Object {
       "context": Object {
@@ -72,15 +72,16 @@ test('useQuery()', async () => {
         "id": "1",
       },
       "path": "greeting",
+      "signal": null,
       "type": "query",
     }
   `);
 });
 
 test('useMutation()', async () => {
-  const { proxy, App } = ctx;
+  const { client, App } = ctx;
   function MyComponent() {
-    const doSomethingMutation = proxy.doSomething.useMutation({
+    const doSomethingMutation = client.doSomething.useMutation({
       trpc: {
         context: {
           foo: 'bar',
@@ -109,8 +110,8 @@ test('useMutation()', async () => {
     expect(utils.container).toHaveTextContent(`__result`);
   });
   expect(ctx.spyLink).toHaveBeenCalledTimes(1);
-  const firstCall = ctx.spyLink.mock.calls[0]![0]!;
-  expect(firstCall.context.foo).toBe('bar');
+  const firstCall = ctx.spyLink.mock.calls[0]![0];
+  expect(firstCall.context['foo']).toBe('bar');
   expect(firstCall).toMatchInlineSnapshot(`
     Object {
       "context": Object {
@@ -121,6 +122,7 @@ test('useMutation()', async () => {
         "id": "1",
       },
       "path": "doSomething",
+      "signal": undefined,
       "type": "mutation",
     }
   `);

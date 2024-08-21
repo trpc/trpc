@@ -2,9 +2,17 @@
 
 import type { TRPCLink } from '@trpc/client';
 import { TRPCClientError } from '@trpc/client';
-import type { AnyRouter, inferRouterContext } from '@trpc/server';
-import { callProcedure } from '@trpc/server';
+import {
+  getTransformer,
+  type TransformerOptions,
+} from '@trpc/client/unstable-internals';
 import { observable } from '@trpc/server/observable';
+import type {
+  AnyRouter,
+  inferClientTypes,
+  inferRouterContext,
+} from '@trpc/server/unstable-core-do-not-import';
+import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
 import { generateCacheTag } from '../shared';
 
@@ -13,13 +21,14 @@ type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   createContext: () => Promise<inferRouterContext<TRouter>>;
   /** how many seconds the cache should hold before revalidating */
   revalidate?: number | false;
-};
+} & TransformerOptions<inferClientTypes<TRouter>>;
 
 // ts-prune-ignore-next
 export function experimental_nextCacheLink<TRouter extends AnyRouter>(
   opts: NextCacheLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
-  return (runtime) =>
+  const transformer = getTransformer(opts.transformer);
+  return () =>
     ({ op }) =>
       observable((observer) => {
         const { path, input, type, context } = op;
@@ -27,8 +36,9 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
         const cacheTag = generateCacheTag(path, input);
         // Let per-request revalidate override global revalidate
         const requestRevalidate =
-          typeof context.revalidate === 'number' || context.revalidate === false
-            ? context.revalidate
+          typeof context['revalidate'] === 'number' ||
+          context['revalidate'] === false
+            ? context['revalidate']
             : undefined;
         const revalidate = requestRevalidate ?? opts.revalidate ?? false;
 
@@ -42,13 +52,13 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
               const procedureResult = await callProcedure({
                 procedures: opts.router._def.procedures,
                 path,
-                rawInput: input,
+                getRawInput: async () => input,
                 ctx: ctx,
                 type,
               });
 
               // We need to serialize cause the cache only accepts JSON
-              return runtime.transformer.serialize(procedureResult);
+              return transformer.input.serialize(procedureResult);
             };
 
             if (type === 'query') {
@@ -66,7 +76,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
 
         promise
           .then((data) => {
-            const transformedResult = runtime.transformer.deserialize(data);
+            const transformedResult = transformer.output.deserialize(data);
             observer.next({ result: { data: transformedResult } });
             observer.complete();
           })

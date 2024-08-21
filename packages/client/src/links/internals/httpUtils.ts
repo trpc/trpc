@@ -1,50 +1,55 @@
-import type { ProcedureType } from '@trpc/server';
-import type { TRPCResponse } from '@trpc/server/rpc';
-import { getFetch } from '../../getFetch';
-import { getAbortController } from '../../internals/getAbortController';
 import type {
-  AbortControllerEsque,
-  AbortControllerInstanceEsque,
+  AnyClientTypes,
+  CombinedDataTransformer,
+  Maybe,
+  ProcedureType,
+  TRPCAcceptHeader,
+  TRPCResponse,
+} from '@trpc/server/unstable-core-do-not-import';
+import { getFetch } from '../../getFetch';
+import type {
   FetchEsque,
   RequestInitEsque,
   ResponseEsque,
 } from '../../internals/types';
-import { TRPCClientError } from '../../TRPCClientError';
-import type { TextDecoderEsque } from '../internals/streamingUtils';
-import type {
-  HTTPHeaders,
-  PromiseAndCancel,
-  TRPCClientRuntime,
-} from '../types';
+import type { TransformerOptions } from '../../unstable-internals';
+import { getTransformer } from '../../unstable-internals';
+import type { HTTPHeaders } from '../types';
 
 /**
  * @internal
  */
-export interface HTTPLinkBaseOptions {
+export type HTTPLinkBaseOptions<
+  TRoot extends Pick<AnyClientTypes, 'transformer'>,
+> = {
   url: string | URL;
   /**
    * Add ponyfill for fetch
    */
   fetch?: FetchEsque;
   /**
-   * Add ponyfill for AbortController
+   * Send all requests `as POST`s requests regardless of the procedure type
+   * The HTTP handler must separately allow overriding the method. See:
+   * @link https://trpc.io/docs/rpc
    */
-  AbortController?: AbortControllerEsque | null;
-}
+  methodOverride?: 'POST';
+} & TransformerOptions<TRoot>;
 
 export interface ResolvedHTTPLinkOptions {
   url: string;
   fetch?: FetchEsque;
-  AbortController: AbortControllerEsque | null;
+  transformer: CombinedDataTransformer;
+  methodOverride?: 'POST';
 }
 
 export function resolveHTTPLinkOptions(
-  opts: HTTPLinkBaseOptions,
+  opts: HTTPLinkBaseOptions<AnyClientTypes>,
 ): ResolvedHTTPLinkOptions {
   return {
-    url: opts.url.toString().replace(/\/$/, ''), // Remove any trailing slashes
+    url: opts.url.toString(),
     fetch: opts.fetch,
-    AbortController: getAbortController(opts.AbortController),
+    transformer: getTransformer(opts.transformer),
+    methodOverride: opts.methodOverride,
   };
 }
 
@@ -61,6 +66,7 @@ function arrayToDict(array: unknown[]) {
 const METHOD = {
   query: 'GET',
   mutation: 'POST',
+  subscription: 'PATCH',
 } as const;
 
 export interface HTTPResult {
@@ -72,14 +78,14 @@ export interface HTTPResult {
 }
 
 type GetInputOptions = {
-  runtime: TRPCClientRuntime;
+  transformer: CombinedDataTransformer;
 } & ({ input: unknown } | { inputs: unknown[] });
 
-function getInput(opts: GetInputOptions) {
+export function getInput(opts: GetInputOptions) {
   return 'input' in opts
-    ? opts.runtime.transformer.serialize(opts.input)
+    ? opts.transformer.input.serialize(opts.input)
     : arrayToDict(
-        opts.inputs.map((_input) => opts.runtime.transformer.serialize(_input)),
+        opts.inputs.map((_input) => opts.transformer.input.serialize(_input)),
       );
 }
 
@@ -87,29 +93,35 @@ export type HTTPBaseRequestOptions = GetInputOptions &
   ResolvedHTTPLinkOptions & {
     type: ProcedureType;
     path: string;
+    signal: Maybe<AbortSignal>;
   };
 
-export type GetUrl = (opts: HTTPBaseRequestOptions) => string;
-export type GetBody = (
-  opts: HTTPBaseRequestOptions,
-) => RequestInitEsque['body'];
+type GetUrl = (opts: HTTPBaseRequestOptions) => string;
+type GetBody = (opts: HTTPBaseRequestOptions) => RequestInitEsque['body'];
 
 export type ContentOptions = {
-  batchModeHeader?: 'stream';
+  trpcAcceptHeader?: TRPCAcceptHeader;
   contentTypeHeader?: string;
   getUrl: GetUrl;
   getBody: GetBody;
 };
 
 export const getUrl: GetUrl = (opts) => {
-  let url = opts.url + '/' + opts.path;
+  const parts = opts.url.split('?') as [string, string?];
+  const base = parts[0].replace(/\/$/, ''); // Remove any trailing slashes
+
+  let url = base + '/' + opts.path;
   const queryParts: string[] = [];
+
+  if (parts[1]) {
+    queryParts.push(parts[1]);
+  }
   if ('inputs' in opts) {
     queryParts.push('batch=1');
   }
-  if (opts.type === 'query') {
+  if (opts.type === 'query' || opts.type === 'subscription') {
     const input = getInput(opts);
-    if (input !== undefined) {
+    if (input !== undefined && opts.methodOverride !== 'POST') {
       queryParts.push(`input=${encodeURIComponent(JSON.stringify(input))}`);
     }
   }
@@ -120,7 +132,7 @@ export const getUrl: GetUrl = (opts) => {
 };
 
 export const getBody: GetBody = (opts) => {
-  if (opts.type === 'query') {
+  if (opts.type === 'query' && opts.methodOverride !== 'POST') {
     return undefined;
   }
   const input = getInput(opts);
@@ -131,7 +143,7 @@ export type Requester = (
   opts: HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   },
-) => PromiseAndCancel<HTTPResult>;
+) => Promise<HTTPResult>;
 
 export const jsonHttpRequester: Requester = (opts) => {
   return httpRequest({
@@ -142,72 +154,129 @@ export const jsonHttpRequester: Requester = (opts) => {
   });
 };
 
+/**
+ * Polyfill for DOMException with AbortError name
+ */
+class AbortError extends Error {
+  constructor() {
+    const name = 'AbortError';
+    super(name);
+    this.name = name;
+    this.message = name;
+  }
+}
+
 export type HTTPRequestOptions = ContentOptions &
   HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
-    TextDecoder?: TextDecoderEsque;
   };
 
-export async function fetchHTTPResponse(
-  opts: HTTPRequestOptions,
-  ac?: AbortControllerInstanceEsque | null,
-) {
+/**
+ * Polyfill for `signal.throwIfAborted()`
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/throwIfAborted
+ */
+const throwIfAborted = (signal: Maybe<AbortSignal>) => {
+  if (!signal?.aborted) {
+    return;
+  }
+  // If available, use the native implementation
+  signal.throwIfAborted?.();
+
+  // If we have `DOMException`, use it
+  if (typeof DOMException !== 'undefined') {
+    throw new DOMException('AbortError', 'AbortError');
+  }
+
+  // Otherwise, use our own implementation
+  throw new AbortError();
+};
+
+export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
+  throwIfAborted(opts.signal);
+
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
   const { type } = opts;
-  const resolvedHeaders = await opts.headers();
-  /* istanbul ignore if -- @preserve */
-  if (type === 'subscription') {
-    throw new Error('Subscriptions should use wsLink');
-  }
+  const resolvedHeaders = await (async () => {
+    const heads = await opts.headers();
+    if (Symbol.iterator in heads) {
+      return Object.fromEntries(heads);
+    }
+    return heads;
+  })();
   const headers = {
     ...(opts.contentTypeHeader
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
-    ...(opts.batchModeHeader
-      ? { 'trpc-batch-mode': opts.batchModeHeader }
-      : {}),
+    ...(opts.trpcAcceptHeader
+      ? { 'trpc-accept': opts.trpcAcceptHeader }
+      : undefined),
     ...resolvedHeaders,
   };
 
   return getFetch(opts.fetch)(url, {
-    method: METHOD[type],
-    signal: ac?.signal,
-    body: body,
+    method: opts.methodOverride ?? METHOD[type],
+    signal: opts.signal,
+    body,
     headers,
   });
 }
 
-export function httpRequest(
+export async function httpRequest(
   opts: HTTPRequestOptions,
-): PromiseAndCancel<HTTPResult> {
-  const ac = opts.AbortController ? new opts.AbortController() : null;
+): Promise<HTTPResult> {
   const meta = {} as HTTPResult['meta'];
 
-  let done = false;
-  const promise = new Promise<HTTPResult>((resolve, reject) => {
-    fetchHTTPResponse(opts, ac)
-      .then((_res) => {
-        meta.response = _res;
-        done = true;
-        return _res.json();
-      })
-      .then((json) => {
-        meta.responseJSON = json;
-        resolve({
-          json: json as TRPCResponse,
-          meta,
-        });
-      })
-      .catch((err) => {
-        done = true;
-        reject(TRPCClientError.from(err, { meta }));
-      });
-  });
-  const cancel = () => {
-    if (!done) {
-      ac?.abort();
+  const res = await fetchHTTPResponse(opts);
+  meta.response = res;
+
+  const json = await res.json();
+
+  meta.responseJSON = json;
+
+  return {
+    json: json as TRPCResponse,
+    meta,
+  };
+}
+
+/**
+ * Merges multiple abort signals into a single one
+ * - When all signals have been aborted, the merged signal will be aborted
+ */
+export function mergeAbortSignals(
+  opts: {
+    signal: Maybe<AbortSignal>;
+  }[],
+): AbortController {
+  const ac = new AbortController();
+
+  if (opts.some((o) => !o.signal)) {
+    return ac;
+  }
+
+  const count = opts.length;
+
+  let abortedCount = 0;
+
+  const onAbort = () => {
+    if (++abortedCount === count) {
+      ac.abort();
     }
   };
-  return { promise, cancel };
+
+  for (const o of opts) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const signal = o.signal!;
+    if (signal.aborted) {
+      onAbort();
+    } else {
+      signal.addEventListener('abort', onAbort, {
+        once: true,
+      });
+    }
+  }
+
+  return ac;
 }

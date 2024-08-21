@@ -1,6 +1,6 @@
 import { waitFor } from '@testing-library/dom';
-import type { AnyRouter } from '@trpc/server/src';
-import { observable } from '@trpc/server/src/observable';
+import { observable } from '@trpc/server/observable';
+import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import type { OperationLink } from '../..';
 import { createChain } from './createChain';
 import { dedupeLink } from './dedupeLink';
@@ -41,6 +41,7 @@ test('dedupeLink', async () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
 
@@ -52,6 +53,7 @@ test('dedupeLink', async () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
     const next = vi.fn();
@@ -104,6 +106,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
 
@@ -115,6 +118,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
         input: 'world',
         path: 'hello',
         context: {},
+        signal: null,
       },
     });
     const next = vi.fn();

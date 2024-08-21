@@ -2,12 +2,18 @@ import { routerToServerAndClientNew } from '../___testHelpers';
 import { createQueryClient, createQueryClientConfig } from '../__queryClient';
 import { QueryClientProvider } from '@tanstack/react-query';
 import type { TRPCWebSocketClient } from '@trpc/client';
-import { createWSClient, httpBatchLink, splitLink, wsLink } from '@trpc/client';
+import {
+  createWSClient,
+  getUntypedClient,
+  httpBatchLink,
+  splitLink,
+  wsLink,
+} from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import type { OutputWithCursor } from '@trpc/react-query/shared';
 import { initTRPC, TRPCError } from '@trpc/server';
-import { observable } from '@trpc/server/src/observable';
-import { subscriptionPullFactory } from '@trpc/server/src/subscription';
+import type { Observable, Observer } from '@trpc/server/observable';
+import { observable } from '@trpc/server/observable';
 import hash from 'hash-sum';
 import type { ReactNode } from 'react';
 import React from 'react';
@@ -18,6 +24,43 @@ export type Post = {
   title: string;
   createdAt: number;
 };
+
+function subscriptionPullFactory<TOutput>(opts: {
+  /**
+   * The interval of how often the function should run
+   */
+  intervalMs: number;
+  pull(emit: Observer<TOutput, unknown>): Promise<void> | void;
+}): Observable<TOutput, unknown> {
+  let timer: any;
+  let stopped = false;
+  async function _pull(emit: Observer<TOutput, unknown>) {
+    /* istanbul ignore next */
+    if (stopped) {
+      return;
+    }
+    try {
+      await opts.pull(emit);
+    } catch (err /* istanbul ignore next */) {
+      emit.error(err as Error);
+    }
+
+    /* istanbul ignore else */
+    if (!stopped) {
+      timer = setTimeout(() => _pull(emit), opts.intervalMs);
+    }
+  }
+
+  return observable<TOutput>((emit) => {
+    _pull(emit).catch((err) => {
+      emit.error(err as Error);
+    });
+    return () => {
+      clearTimeout(timer);
+      stopped = true;
+    };
+  });
+}
 
 export function createAppRouter() {
   const db: {
@@ -32,6 +75,7 @@ export function createAppRouter() {
   const createContext = vi.fn(() => ({}));
   const allPosts = vi.fn();
   const postById = vi.fn();
+  const paginatedPosts = vi.fn();
   let wsClient: TRPCWebSocketClient = null as any;
 
   const t = initTRPC.create({
@@ -72,6 +116,7 @@ export function createAppRouter() {
           .default({}),
       )
       .query(({ input }) => {
+        paginatedPosts(input);
         const items: typeof db.posts = [];
         const limit = input.limit;
         const { cursor } = input;
@@ -88,11 +133,56 @@ export function createAppRouter() {
         const last = items[items.length - 1];
         const nextIndex = db.posts.findIndex((item) => item === last) + 1;
         if (db.posts[nextIndex]) {
-          nextCursor = db.posts[nextIndex]!.createdAt;
+          nextCursor = db.posts[nextIndex].createdAt;
         }
         return {
           items,
           nextCursor,
+        };
+      }),
+    biDirectionalPaginatedPosts: t.procedure
+      .input(
+        z.object({
+          limit: z.number().min(1).max(100).default(50),
+          cursor: z.number().nullish().default(null),
+          direction: z.union([z.literal('forward'), z.literal('backward')]),
+        }),
+      )
+      .query(({ input }) => {
+        paginatedPosts(input);
+        const items: typeof db.posts = [];
+        const limit = input.limit;
+        const { cursor } = input;
+        let nextCursor: typeof cursor = null;
+        let prevCursor: typeof cursor = null;
+        for (const element of db.posts) {
+          if (
+            cursor != null &&
+            (input.direction === 'forward'
+              ? element.createdAt < cursor
+              : element.createdAt > cursor)
+          ) {
+            continue;
+          }
+          items.push(element);
+          if (items.length >= limit) {
+            break;
+          }
+        }
+        const last = items[items.length - 1];
+        const first = items[0];
+        const nextIndex = db.posts.findIndex((item) => item === last) + 1;
+        const prevIndex = db.posts.findIndex((item) => item === first) - 1;
+        if (db.posts[nextIndex]) {
+          nextCursor = db.posts[nextIndex].createdAt;
+        }
+        if (db.posts[prevIndex]) {
+          prevCursor = db.posts[prevIndex].createdAt;
+        }
+        return {
+          items,
+          nextCursor,
+          prevCursor,
         };
       }),
 
@@ -183,9 +273,6 @@ export function createAppRouter() {
     {
       server: {
         createContext,
-        batching: {
-          enabled: true,
-        },
       },
       client({ httpUrl, wssUrl }) {
         wsClient = createWSClient({
@@ -239,7 +326,7 @@ export function createAppRouter() {
 
   function App(props: { children: ReactNode }) {
     return (
-      <trpc.Provider {...{ queryClient, client }}>
+      <trpc.Provider {...{ queryClient, client: getUntypedClient(client) }}>
         <QueryClientProvider client={queryClient}>
           {props.children}
         </QueryClientProvider>
@@ -258,6 +345,7 @@ export function createAppRouter() {
     resolvers: {
       postById,
       allPosts,
+      paginatedPosts,
     },
     queryClient,
     createContext,

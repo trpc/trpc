@@ -1,8 +1,11 @@
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client';
-import type { AnyRouter, DefaultErrorShape } from '@trpc/server';
+import type { AnyRouter } from '@trpc/server';
 import { initTRPC, TRPCError } from '@trpc/server';
-import type { DefaultErrorData } from '@trpc/server/src/error/formatter';
+import type {
+  DefaultErrorData,
+  DefaultErrorShape,
+} from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import { z, ZodError } from 'zod';
 
@@ -36,7 +39,7 @@ describe('no custom error formatter', () => {
     .done();
 
   test('infer errors with type guard', async () => {
-    const err = await waitError(ctx.proxy.greeting.query());
+    const err = await waitError(ctx.client.greeting.query());
 
     if (!isTRPCClientError<typeof appRouter>(err)) {
       throw new Error('Bad');
@@ -82,7 +85,7 @@ describe('with custom error formatter', () => {
     .done();
 
   test('infer errors with type guard', async () => {
-    const err = await waitError(ctx.proxy.greeting.query());
+    const err = await waitError(ctx.client.greeting.query());
 
     if (!isTRPCClientError<typeof appRouter>(err)) {
       throw new Error('Bad');
@@ -173,7 +176,7 @@ describe('custom error sub-classes', () => {
     .done();
 
   test('infer errors with type guard', async () => {
-    const err = await waitError(ctx.proxy.greeting.query());
+    const err = await waitError(ctx.client.greeting.query());
 
     if (!isTRPCClientError<typeof appRouter>(err)) {
       throw new Error('Bad');
@@ -240,7 +243,7 @@ describe('zod errors according to docs', () => {
 
   test('zod errors according to docs', async () => {
     // bad query
-    const err = await waitError(ctx.proxy.greeting.query(5));
+    const err = await waitError(ctx.client.greeting.query(5));
     assert(isTRPCClientError<typeof appRouter>(err));
     assert(err.data);
     assert(err.data.zodError);
@@ -258,6 +261,6 @@ describe('zod errors according to docs', () => {
     `);
 
     // good
-    expect(await ctx.proxy.greeting.query(10)).toBe(10);
+    expect(await ctx.client.greeting.query(10)).toBe(10);
   });
 });

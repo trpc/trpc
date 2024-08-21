@@ -4,7 +4,7 @@
  */
 import { PrismaClient } from '@prisma/client';
 
-const prismaGlobal = global as typeof global & {
+const prismaGlobal = globalThis as typeof globalThis & {
   prisma?: PrismaClient;
 };
 

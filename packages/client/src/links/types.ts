@@ -1,25 +1,18 @@
-import type {
-  AnyRouter,
-  CombinedDataTransformer,
-  DataTransformer,
-} from '@trpc/server';
 import type { Observable, Observer } from '@trpc/server/observable';
-import type { TRPCResultMessage, TRPCSuccessResponse } from '@trpc/server/rpc';
+import type {
+  InferrableClientTypes,
+  Maybe,
+  TRPCResultMessage,
+  TRPCSuccessResponse,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { ResponseEsque } from '../internals/types';
 import type { TRPCClientError } from '../TRPCClientError';
 
-/**
- * @internal
- */
-export type CancelFn = () => void;
-
-/**
- * @internal
- */
-export type PromiseAndCancel<TValue> = {
-  promise: Promise<TValue>;
-  cancel: CancelFn;
-};
+export {
+  isNonJsonSerializable,
+  isFormData,
+  isOctetType,
+} from './internals/contentTypes';
 
 /**
  * @internal
@@ -35,12 +28,19 @@ export type Operation<TInput = unknown> = {
   input: TInput;
   path: string;
   context: OperationContext;
+  signal: Maybe<AbortSignal>;
 };
+
+interface HeadersInitEsque {
+  [Symbol.iterator](): IterableIterator<[string, string]>;
+}
 
 /**
  * @internal
  */
-export type HTTPHeaders = Record<string, string[] | string | undefined>;
+export type HTTPHeaders =
+  | HeadersInitEsque
+  | Record<string, string[] | string | undefined>;
 
 /**
  * The default `fetch` implementation has an overloaded signature. By convention this library
@@ -52,9 +52,7 @@ export type TRPCFetch = (
 ) => Promise<ResponseEsque>;
 
 export interface TRPCClientRuntime {
-  transformer: DataTransformer;
-  // FIXME: we should be able to remove this - added as `withTRPC()` needs it, but we can have it as an extra option on SSR instead
-  combinedTransformer: CombinedDataTransformer;
+  // nothing here anymore
 }
 
 /**
@@ -71,33 +69,35 @@ export interface OperationResultEnvelope<TOutput> {
  * @internal
  */
 export type OperationResultObservable<
-  TRouter extends AnyRouter,
+  TInferrable extends InferrableClientTypes,
   TOutput,
-> = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
+> = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TInferrable>>;
 
 /**
  * @internal
  */
 export type OperationResultObserver<
-  TRouter extends AnyRouter,
+  TInferrable extends InferrableClientTypes,
   TOutput,
-> = Observer<OperationResultEnvelope<TOutput>, TRPCClientError<TRouter>>;
+> = Observer<OperationResultEnvelope<TOutput>, TRPCClientError<TInferrable>>;
 
 /**
  * @internal
  */
 export type OperationLink<
-  TRouter extends AnyRouter,
+  TInferrable extends InferrableClientTypes,
   TInput = unknown,
   TOutput = unknown,
 > = (opts: {
   op: Operation<TInput>;
-  next: (op: Operation<TInput>) => OperationResultObservable<TRouter, TOutput>;
-}) => OperationResultObservable<TRouter, TOutput>;
+  next: (
+    op: Operation<TInput>,
+  ) => OperationResultObservable<TInferrable, TOutput>;
+}) => OperationResultObservable<TInferrable, TOutput>;
 
 /**
  * @public
  */
-export type TRPCLink<TRouter extends AnyRouter> = (
+export type TRPCLink<TInferrable extends InferrableClientTypes> = (
   opts: TRPCClientRuntime,
-) => OperationLink<TRouter>;
+) => OperationLink<TInferrable>;

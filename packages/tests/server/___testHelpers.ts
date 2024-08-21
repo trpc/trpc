@@ -1,60 +1,91 @@
 import type { IncomingMessage } from 'http';
-import type {
-  TRPCWebSocketClient,
-  WebSocketClientOptions,
-} from '@trpc/client/src';
+import http from 'http';
+import type { AddressInfo, Socket } from 'net';
+import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import {
   createTRPCClient,
-  createTRPCClientProxy,
   createWSClient,
   httpBatchLink,
-} from '@trpc/client/src';
-import type { WithTRPCConfig } from '@trpc/next/src';
-import type { OnErrorFunction } from '@trpc/server/internals/types';
-import type { AnyRouter as AnyNewRouter } from '@trpc/server/src';
-import type { CreateHTTPHandlerOptions } from '@trpc/server/src/adapters/standalone';
-import { createHTTPServer } from '@trpc/server/src/adapters/standalone';
-import type { WSSHandlerOptions } from '@trpc/server/src/adapters/ws';
-import { applyWSSHandler } from '@trpc/server/src/adapters/ws';
+  TRPCClientError,
+} from '@trpc/client';
+import type { WithTRPCConfig } from '@trpc/next';
+import { type AnyRouter } from '@trpc/server';
+import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
+import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import type { HTTPErrorHandler } from '@trpc/server/http';
+import type {
+  DataTransformerOptions,
+  InferrableClientTypes,
+} from '@trpc/server/unstable-core-do-not-import';
+import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
-import './___packages';
 
+(global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = WebSocket as any;
 
-export type CreateClientCallback = (opts: {
+export type CreateClientCallback<TRouter extends AnyRouter> = (opts: {
   httpUrl: string;
   wssUrl: string;
   wsClient: TRPCWebSocketClient;
-}) => Partial<WithTRPCConfig<AnyNewRouter>>;
+  transformer?: DataTransformerOptions;
+}) => Partial<WithTRPCConfig<TRouter>>;
 
-export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
+export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   router: TRouter,
   opts?: {
     server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
     wssServer?: Partial<WSSHandlerOptions<TRouter>>;
     wsClient?: Partial<WebSocketClientOptions>;
-    client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback;
+    client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback<TRouter>;
+    transformer?: DataTransformerOptions;
   },
 ) {
   // http
-  type OnError = OnErrorFunction<TRouter, IncomingMessage>;
+  type OnError = HTTPErrorHandler<TRouter, IncomingMessage>;
+  type CreateContext = NonNullable<
+    CreateHTTPHandlerOptions<TRouter>['createContext']
+  >;
 
-  const onError = vitest.fn<Parameters<OnError>, void>();
-  const httpServer = createHTTPServer({
-    router: router,
-    createContext: ({ req, res }) => ({ req, res }),
-    onError: onError as OnError,
-    ...(opts?.server ?? {
-      batching: {
-        enabled: true,
-      },
-    }),
+  const onErrorSpy = vitest.fn<OnError>();
+  const createContextSpy = vitest.fn<CreateContext>();
+  const serverOverrides: Partial<CreateHTTPHandlerOptions<TRouter>> =
+    opts?.server ?? {};
+
+  const onReqAborted = vitest.fn();
+  const handler = createHTTPHandler({
+    router,
+    ...serverOverrides,
+    onError(it) {
+      onErrorSpy(it);
+      return opts?.server?.onError?.(it);
+    },
+    createContext(it) {
+      (createContextSpy as any)(it);
+
+      it.req.on('aborted', onReqAborted);
+
+      return opts?.server?.createContext?.(it) ?? it;
+    },
   });
-  const { port: httpPort } = httpServer.listen(0);
-  const httpUrl = `http://localhost:${httpPort}`;
+  const onRequestSpy = vitest.fn<typeof handler>();
+
+  const httpServer = http.createServer((...args) => {
+    onRequestSpy(...args);
+    handler(...args);
+  });
+
+  const connections = new Set<Socket>();
+  httpServer.on('connection', (conn) => {
+    connections.add(conn);
+    conn.once('close', () => {
+      connections.delete(conn);
+    });
+  });
 
   // wss
   const wss = new WebSocketServer({ port: 0 });
@@ -62,11 +93,18 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   const applyWSSHandlerOpts: WSSHandlerOptions<TRouter> = {
     wss,
     router,
-    createContext: ({ req, res }) => ({ req, res }),
     ...((opts?.wssServer as any) ?? {}),
+    createContext(it) {
+      // (createContextSpy as any)(it);
+      return opts?.wssServer?.createContext?.(it) ?? it;
+    },
   };
   const wssHandler = applyWSSHandler(applyWSSHandlerOpts);
   const wssUrl = `ws://localhost:${wssPort}`;
+
+  const server = httpServer.listen(0);
+  const httpPort = (server.address() as AddressInfo).port;
+  const httpUrl = `http://localhost:${httpPort}`;
 
   // client
   const wsClient = createWSClient({
@@ -74,7 +112,12 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     ...opts?.wsClient,
   });
   const trpcClientOptions = {
-    links: [httpBatchLink({ url: httpUrl })],
+    links: [
+      httpBatchLink({
+        url: httpUrl,
+        transformer: opts?.transformer as any,
+      }),
+    ],
     ...(opts?.client
       ? typeof opts.client === 'function'
         ? opts.client({ httpUrl, wssUrl, wsClient })
@@ -83,18 +126,15 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
   } as WithTRPCConfig<typeof router>;
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
-  const proxy = createTRPCClientProxy<typeof router>(client);
-  return {
+
+  const ctx = {
     wsClient,
     client,
-    proxy,
     close: async () => {
+      ctx.destroyConnections();
       await Promise.all([
-        new Promise((resolve) => httpServer.server.close(resolve)),
+        new Promise((resolve) => server.close(resolve)),
         new Promise((resolve) => {
-          wss.clients.forEach((ws) => {
-            ws.close();
-          });
           wss.close(resolve);
         }),
       ]);
@@ -107,9 +147,26 @@ export function routerToServerAndClientNew<TRouter extends AnyNewRouter>(
     wssUrl,
     applyWSSHandlerOpts,
     wssHandler,
+    connections,
     wss,
-    onError,
+    onErrorSpy,
+    createContextSpy,
+    onRequestSpy,
+    onReqAborted,
+    /**
+     * Destroy all open connections to the server
+     */
+    destroyConnections: () => {
+      for (const client of ctx.wss.clients) {
+        client.close();
+      }
+      for (const conn of connections) {
+        conn.emit('close');
+        conn.destroy();
+      }
+    },
   };
+  return ctx;
 }
 
 export async function waitMs(ms: number) {
@@ -129,26 +186,63 @@ export async function waitError<TError extends Error = Error>(
    **/
   errorConstructor?: Constructor<TError>,
 ): Promise<TError> {
+  let res;
   try {
     if (typeof fnOrPromise === 'function') {
-      await fnOrPromise();
+      res = await fnOrPromise();
     } else {
-      await fnOrPromise;
+      res = await fnOrPromise;
     }
   } catch (cause) {
-    expect(cause).toBeInstanceOf(Error);
+    // needs to be instanceof Error or DOMException
+    if (
+      cause instanceof Error === false &&
+      cause instanceof DOMException === false
+    ) {
+      throw new Error(
+        'Expected function to throw an error, but it threw something else',
+      );
+    }
     if (errorConstructor) {
       expect((cause as Error).name).toBe(errorConstructor.name);
     }
     return cause as TError;
   }
+
+  // eslint-disable-next-line no-console
+  console.warn('Expected function to throw, but it did not. Result:', res);
   throw new Error('Function did not throw');
 }
 
+export async function waitTRPCClientError<TRoot extends InferrableClientTypes>(
+  fnOrPromise: Promise<unknown> | (() => unknown),
+) {
+  return waitError<TRPCClientError<TRoot>>(fnOrPromise, TRPCClientError);
+}
+/* eslint-disable no-console */
+export const suppressLogs = () => {
+  const log = console.log;
+  const error = console.error;
+  const noop = () => {
+    // ignore
+  };
+  console.log = noop;
+  console.error = noop;
+  return () => {
+    console.log = log;
+    console.error = error;
+  };
+};
 export const ignoreErrors = async (fn: () => unknown) => {
+  /* eslint-enable no-console */
+  const release = suppressLogs();
   try {
     await fn();
   } catch {
     // ignore
+  } finally {
+    release();
   }
 };
+
+export const doNotExecute = (_func: () => void) => true;

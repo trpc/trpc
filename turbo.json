@@ -6,13 +6,18 @@
     "scripts/entrypoints.ts",
     "scripts/getRollupConfig.ts"
   ],
-  "pipeline": {
+  "globalEnv": [
+    "CI",
+    "NODE_ENV",
+    "DATABASE_URL",
+    "NEXTAUTH_SECRET",
+    "AUTH_GITHUB_ID",
+    "AUTH_GITHUB_SECRET"
+  ],
+  "tasks": {
     "codegen-entrypoints": {},
     "codegen-tests": {
-      "outputs": [
-        "server/__generated__/bigBoi/**",
-        "server/__generated__/bigLegacyRouter/**"
-      ]
+      "outputs": ["server/__generated__/bigBoi/**"]
     },
     "prebuild": {
       "cache": false
@@ -28,7 +33,7 @@
         "docs/typedoc/**"
       ]
     },
-    "@examples/minimal-react#build": {
+    "examples-minimal-react#build": {
       "outputs": ["client/dist/**", "server/dist/**"]
     },
     "dev": {

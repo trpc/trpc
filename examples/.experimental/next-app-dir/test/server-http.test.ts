@@ -8,7 +8,7 @@ test.setTimeout(35e3);
 test('server-httpLink: refreshing the page should reuse the cached value', async ({
   page,
 }) => {
-  await page.goto('/rsc');
+  await page.goto('/rsc-links');
   await page.reload();
 
   await page.waitForSelector('text=hello from server');
@@ -21,7 +21,7 @@ test('server-httpLink: refreshing the page should reuse the cached value', async
 test('server-httpLink: revalidating should load new content', async ({
   page,
 }) => {
-  await page.goto('/rsc');
+  await page.goto('/rsc-links');
   await page.reload();
 
   await page.waitForSelector('text=hello from server');
@@ -35,7 +35,7 @@ test('server-httpLink: revalidating should load new content', async ({
 test('server-httpLink: requests are properly separated in the cache', async ({
   page,
 }) => {
-  await page.goto('/rsc');
+  await page.goto('/rsc-links');
   await page.reload();
 
   await page.waitForSelector('text=hello from server1');

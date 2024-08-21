@@ -103,7 +103,7 @@ import React from 'react';
 import { trpc } from '../utils/trpc';
 
 function PostView() {
-  const [pages, allPostsQuery] = trpc.post.all.useSuspenseInfiniteQuery(
+  const [{ pages }, allPostsQuery] = trpc.post.all.useSuspenseInfiniteQuery(
     {},
     {
       getNextPageParam(lastPage) {
@@ -117,4 +117,18 @@ function PostView() {
 
   return <>{/* ... */}</>;
 }
+```
+
+### `useSuspenseQueries()`
+
+Suspense equivalent of [`useQueries()`](./useQueries.md).
+
+```tsx
+const Component = (props: { postIds: string[] }) => {
+  const [posts, postQueries] = trpc.useSuspenseQueries((t) =>
+    props.postIds.map((id) => t.post.byId({ id })),
+  );
+
+  return <>{/* [...] */}</>;
+};
 ```

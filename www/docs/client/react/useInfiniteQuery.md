@@ -8,7 +8,7 @@ slug: /client/react/useInfiniteQuery
 :::info
 
 - Your procedure needs to accept a `cursor` input of any type (`string`, `number`, etc) to expose this hook.
-- For more details on infinite queries read the [react-query docs](https://tanstack.com/query/v4/docs/react/reference/useInfiniteQuery)
+- For more details on infinite queries read the [react-query docs](https://tanstack.com/query/v5/docs/framework/react/reference/useInfiniteQuery)
 - In this example we're using Prisma - see their docs on [cursor-based pagination](https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination)
 
 :::
@@ -28,6 +28,7 @@ export const appRouter = t.router({
       z.object({
         limit: z.number().min(1).max(100).nullish(),
         cursor: z.number().nullish(), // <-- "cursor" needs to exist, but can be any type
+        direction: z.enum(['forward', 'backward']), // optional, useful for bi-directional query
       }),
     )
     .query(async (opts) => {

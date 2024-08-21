@@ -8,8 +8,8 @@ const config = {
     'plugin:@typescript-eslint/stylistic-type-checked',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
-    'prettier',
   ],
+  reportUnusedDisableDirectives: true,
   parserOptions: {
     ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
     sourceType: 'module', // Allows for the use of import
@@ -31,12 +31,10 @@ const config = {
     '@typescript-eslint/consistent-indexed-object-style': 'off',
     '@typescript-eslint/consistent-type-definitions': 'off',
     '@typescript-eslint/no-empty-interface': 'off',
+    '@typescript-eslint/array-type': 'off',
 
     // Todo: do we want these?
     '@typescript-eslint/no-explicit-any': 'off',
-
-    '@typescript-eslint/consistent-type-imports': 'error',
-    '@typescript-eslint/consistent-type-exports': 'error',
 
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
@@ -54,7 +52,11 @@ const config = {
           '\\.d\\.ts$',
           'issue-\\d+-.*\\.test\\.tsx?$',
           '\\.(t|j)sx$',
+          '@trpc/*',
+          'unstable-*',
+          'script',
           'URL',
+          'next-app-dir',
         ],
       },
     ],
@@ -73,12 +75,26 @@ const config = {
         format: ['PascalCase'],
         leadingUnderscore: 'allow',
         custom: {
-          regex: '^(T|\\$)[A-Z][a-zA-Z]+[0-9]*$',
+          regex: '^(T|\\$)([A-Z]([a-zA-Z]+))?[0-9]*$',
           match: true,
         },
       },
     ],
     'max-params': ['error', 3],
+    '@typescript-eslint/consistent-type-imports': 'error',
+    '@typescript-eslint/consistent-type-exports': 'error',
+    '@typescript-eslint/no-restricted-imports': [
+      'error',
+      {
+        patterns: [
+          {
+            group: ['@trpc/*/src'],
+            message: 'Remove the "`/src`" part of this import',
+            allowTypeImports: false,
+          },
+        ],
+      },
+    ],
   },
   overrides: [
     // {
@@ -133,6 +149,26 @@ const config = {
       files: ['packages/**/*'],
       rules: {
         'no-console': 'error',
+      },
+    },
+    {
+      files: ['packages/server/src/adapters/**/*'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              {
+                group: ['@trpc/server'],
+              },
+              {
+                group: ['unstable-core-do-not-import'],
+                message:
+                  'Use e.g. `../@trpc/server/http` instead - avoiding importing core helps us ensure third party adapters can be made',
+              },
+            ],
+          },
+        ],
       },
     },
   ],

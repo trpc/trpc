@@ -4,16 +4,21 @@ import type {
   TRPCRequestOptions,
 } from '@trpc/client';
 import { createTRPCUntypedClient, TRPCClientError } from '@trpc/client';
-import { transformResult } from '@trpc/client/shared';
 import type {
-  AnyProcedure,
-  AnyRouter,
-  inferHandlerInput,
+  CoercedTransformerParameters,
+  TransformerOptions,
+} from '@trpc/client/unstable-internals';
+import { getTransformer } from '@trpc/client/unstable-internals';
+import { observable } from '@trpc/server/observable';
+import type {
+  inferClientTypes,
+  InferrableClientTypes,
   MaybePromise,
   ProcedureOptions,
   Simplify,
-} from '@trpc/server';
-import { observable } from '@trpc/server/observable';
+  TypeError,
+} from '@trpc/server/unstable-core-do-not-import';
+import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TRPCActionHandler } from './server';
 import type { ActionHandlerDef } from './shared';
@@ -69,9 +74,27 @@ type ActionContext = {
 
 // ts-prune-ignore-next
 export function experimental_serverActionLink<
-  TRouter extends AnyRouter = AnyRouter,
->(): TRPCLink<TRouter> {
-  return (runtime) =>
+  TInferrable extends InferrableClientTypes,
+>(
+  ...args: InferrableClientTypes extends TInferrable
+    ? [
+        TypeError<'Generic parameter missing in `experimental_createActionHook<HERE>()` or experimental_serverActionLink<HERE>()'>,
+      ]
+    : inferClientTypes<TInferrable>['transformer'] extends true
+    ? [
+        opts: TransformerOptions<{
+          transformer: true;
+        }>,
+      ]
+    : [
+        opts?: TransformerOptions<{
+          transformer: false;
+        }>,
+      ]
+): TRPCLink<TInferrable> {
+  const [opts] = args as [CoercedTransformerParameters];
+  const transformer = getTransformer(opts?.transformer);
+  return () =>
     ({ op }) =>
       observable((observer) => {
         const context = op.context as ActionContext;
@@ -80,10 +103,10 @@ export function experimental_serverActionLink<
           ._action(
             isFormData(op.input)
               ? op.input
-              : runtime.transformer.serialize(op.input),
+              : transformer.input.serialize(op.input),
           )
           .then((data) => {
-            const transformed = transformResult(data, runtime);
+            const transformed = transformResult(data, transformer.output);
 
             if (!transformed.ok) {
               observer.error(TRPCClientError.from(transformed.error, {}));
@@ -101,29 +124,24 @@ export function experimental_serverActionLink<
       });
 }
 
-// ts-prune-ignore-next
-/**
- * @internal
- */
-export type inferActionResultProps<TProc extends AnyProcedure> = {
-  input: inferHandlerInput<TProc>[0];
-  output: TProc['_def']['_output_out'];
-  errorShape: TProc['_def']['_config']['$types']['errorShape'];
-};
-
 interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
   onSuccess?: (result: TDef['output']) => MaybePromise<void> | void;
   onError?: (result: TRPCClientError<TDef['errorShape']>) => MaybePromise<void>;
 }
-
 // ts-prune-ignore-next
-export function experimental_createActionHook<TRouter extends AnyRouter>(
-  opts: CreateTRPCClientOptions<TRouter>,
+export function experimental_createActionHook<
+  TInferrable extends InferrableClientTypes,
+>(
+  opts: InferrableClientTypes extends TInferrable
+    ? TypeError<'Generic parameter missing in `experimental_createActionHook<HERE>()`'>
+    : CreateTRPCClientOptions<TInferrable>,
 ) {
   type ActionContext = {
     _action: (...args: any[]) => Promise<any>;
   };
-  const client = createTRPCUntypedClient(opts);
+  const client = createTRPCUntypedClient(
+    opts as Exclude<typeof opts, TypeError<any>>,
+  );
   return function useAction<TDef extends ActionHandlerDef>(
     handler: TRPCActionHandler<TDef>,
     useActionOpts?: UseTRPCActionOptions<Simplify<TDef>>,
