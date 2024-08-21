@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { initTRPC } from '@trpc/server';
 import * as arktype from 'arktype';
+import * as arktype2 from 'arktype2';
 import myzod from 'myzod';
 import * as T from 'runtypes';
 import * as $ from 'scale-codec';
@@ -320,7 +321,57 @@ test('myzod', async () => {
   await close();
 });
 
-test('arktype schema - [not officially supported]', async () => {
+test('arktype v1 schema', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure
+      .input(arktype.type({ text: 'string' }))
+      .query(({ input }) => {
+        expectTypeOf(input).toEqualTypeOf<{ text: string }>();
+        return {
+          input,
+        };
+      }),
+  });
+
+  const { close, client } = routerToServerAndClientNew(router);
+  const res = await client.num.query({ text: '123' });
+  expect(res.input).toMatchObject({ text: '123' });
+
+  // @ts-expect-error this only accepts a `number`
+  await expect(client.num.query('13')).rejects.toMatchInlineSnapshot(`
+	[TRPCClientError: Must be an object (was string)]
+`);
+  await close();
+});
+
+test('arktype v2 schema', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure
+      .input(arktype2.type({ text: 'string' }))
+      .query(({ input }) => {
+        expectTypeOf(input).toEqualTypeOf<{ text: string }>();
+        return {
+          input,
+        };
+      }),
+  });
+
+  const { close, client } = routerToServerAndClientNew(router);
+  const res = await client.num.query({ text: '123' });
+  expect(res.input).toMatchObject({ text: '123' });
+
+  // @ts-expect-error this only accepts a `number`
+  await expect(client.num.query('13')).rejects.toMatchInlineSnapshot(`
+	[TRPCClientError: Must be an object (was string)]
+`);
+  await close();
+});
+
+test('arktype schema - using .assert', async () => {
   const t = initTRPC.create();
 
   const router = t.router({

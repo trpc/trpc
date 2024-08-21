@@ -1590,10 +1590,10 @@ importers:
         version: 5.51.11(react@18.3.1)
       '@trpc/client':
         specifier: 10.45.1
-        version: link:../client
+        version: 10.45.1(@trpc/server@packages+server)
       '@trpc/react-query':
         specifier: 10.45.1
-        version: link:../react-query
+        version: 10.45.1(@tanstack/react-query@5.51.11)(@trpc/client@10.45.1)(@trpc/server@packages+server)(react-dom@18.3.1)(react@18.3.1)
       '@trpc/server':
         specifier: ^10.45.1
         version: link:../server
@@ -1641,7 +1641,7 @@ importers:
         version: 5.51.11(react@18.3.1)
       '@trpc/client':
         specifier: 10.45.1
-        version: link:../client
+        version: 10.45.1(@trpc/server@packages+server)
       '@trpc/server':
         specifier: ^10.45.1
         version: link:../server
@@ -1812,13 +1812,13 @@ importers:
         version: 14.4.3(@testing-library/dom@10.0.0)
       '@trpc/client':
         specifier: 10.45.1
-        version: link:../client
+        version: 10.45.1(@trpc/server@packages+server)
       '@trpc/next':
         specifier: 10.45.1
-        version: link:../next
+        version: 10.45.1(@tanstack/react-query@5.51.11)(@trpc/client@10.45.1)(@trpc/react-query@10.45.1)(@trpc/server@packages+server)(next@14.2.5)(react-dom@18.3.1)(react@18.3.1)
       '@trpc/react-query':
         specifier: 10.45.1
-        version: link:../react-query
+        version: 10.45.1(@tanstack/react-query@5.51.11)(@trpc/client@10.45.1)(@trpc/server@packages+server)(react-dom@18.3.1)(react@18.3.1)
       '@trpc/server':
         specifier: ^10.45.1
         version: link:../server
@@ -1831,6 +1831,9 @@ importers:
       arktype:
         specifier: 1.0.14-alpha
         version: 1.0.14-alpha
+      arktype2:
+        specifier: npm:arktype@2.0.0-beta.6
+        version: /arktype@2.0.0-beta.6
       dataloader:
         specifier: ^2.2.2
         version: 2.2.2
@@ -2317,6 +2320,16 @@ packages:
     dependencies:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
+
+  /@ark/schema@0.3.3:
+    resolution: {integrity: sha512-SA4QggzaKHxkNB+faWmhSJbCPMHmGBCpb6dNG3VIt5VOMZhZJJSD76/tOUzQvvJNzztHkTakrTZea+iKsEDcRQ==}
+    dependencies:
+      '@ark/util': 0.2.2
+    dev: false
+
+  /@ark/util@0.2.2:
+    resolution: {integrity: sha512-ryZ4+f3SlReQRH9nTFLK5EeU1Pan5ZfS+ACPSk0ir5uujJouFmvOdnkVfeAJAgeOb3kKmUM9kjelv1cwH2ScZg==}
+    dev: false
 
   /@auth/core@0.32.0:
     resolution: {integrity: sha512-3+ssTScBd+1fd0/fscAyQN1tSygXzuhysuVVzB942ggU4mdfiTbv36P0ccVnExKWYJKvu3E2r3/zxXCCAmTOrg==}
@@ -9227,6 +9240,48 @@ packages:
     engines: {node: '>= 10'}
     dev: false
 
+  /@trpc/client@10.45.1(@trpc/server@packages+server):
+    resolution: {integrity: sha512-nVbAk1xpIiI64WgzXGgfxPOGgHoYvffn1IsjV1D/Ri7DL4BKuo2qtZ7UQ+OuHkzH2M8j4ikSVBDpk545fOdvpw==}
+    peerDependencies:
+      '@trpc/server': 10.45.1
+    dependencies:
+      '@trpc/server': link:packages/server
+
+  /@trpc/next@10.45.1(@tanstack/react-query@5.51.11)(@trpc/client@10.45.1)(@trpc/react-query@10.45.1)(@trpc/server@packages+server)(next@14.2.5)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-HSuQ0OcKUtt8mcQ4Mz4GQpy5PkNYJNvC9EEHkqTkEGa71BLEPKviyVWaE7biOlxjA0tM0aDOM21id+cRkEpfXA==}
+    peerDependencies:
+      '@tanstack/react-query': ^4.18.0
+      '@trpc/client': 10.45.1
+      '@trpc/react-query': 10.45.1
+      '@trpc/server': 10.45.1
+      next: '*'
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@tanstack/react-query': 5.51.11(react@18.3.1)
+      '@trpc/client': 10.45.1(@trpc/server@packages+server)
+      '@trpc/react-query': 10.45.1(@tanstack/react-query@5.51.11)(@trpc/client@10.45.1)(@trpc/server@packages+server)(react-dom@18.3.1)(react@18.3.1)
+      '@trpc/server': link:packages/server
+      next: 14.2.5(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    dev: false
+
+  /@trpc/react-query@10.45.1(@tanstack/react-query@5.51.11)(@trpc/client@10.45.1)(@trpc/server@packages+server)(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-48OOMpwVjQFUQJqlp9/tW1lqESZg9YEqB5iVci7mYaDzZPEs/YUcV85XKvYzgeW+7K9oShX/JMVce8muON/6uQ==}
+    peerDependencies:
+      '@tanstack/react-query': ^4.18.0
+      '@trpc/client': 10.45.1
+      '@trpc/server': 10.45.1
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+    dependencies:
+      '@tanstack/react-query': 5.51.11(react@18.3.1)
+      '@trpc/client': 10.45.1(@trpc/server@packages+server)
+      '@trpc/server': link:packages/server
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   /@trysound/sax@0.2.0:
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
     engines: {node: '>=10.13.0'}
@@ -10501,6 +10556,13 @@ packages:
   /arktype@1.0.14-alpha:
     resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
     requiresBuild: true
+
+  /arktype@2.0.0-beta.6:
+    resolution: {integrity: sha512-tbH5/h0z371sgrJIAhZhH2BcrErWv8uQIPVcLmknJ8ffov5/ZbMNufrQ3hG9avGKTcVnVmdQoPhl1WuKuagqXA==}
+    dependencies:
+      '@ark/schema': 0.3.3
+      '@ark/util': 0.2.2
+    dev: false
 
   /array-buffer-byte-length@1.0.0:
     resolution: {integrity: sha512-LPuwb2P+NrQw3XhxGc36+XSvuBPopovXYTR9Ew++Du9Yb/bx5AzBfrIsBoj0EZUifjQU+sHL21sseZ3jerWO/A==}

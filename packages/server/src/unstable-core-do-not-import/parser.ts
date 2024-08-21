@@ -13,6 +13,11 @@ export type ParserValibotEsque<TInput, TParsedInput> = {
   };
 };
 
+export type ParserArkTypeEsque<TInput, TParsedInput> = {
+  inferIn: TInput;
+  infer: TParsedInput;
+};
+
 export type ParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
 };
@@ -42,7 +47,8 @@ export type ParserWithoutInput<TInput> =
 
 export type ParserWithInputOutput<TInput, TParsedInput> =
   | ParserZodEsque<TInput, TParsedInput>
-  | ParserValibotEsque<TInput, TParsedInput>;
+  | ParserValibotEsque<TInput, TParsedInput>
+  | ParserArkTypeEsque<TInput, TParsedInput>;
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
@@ -89,6 +95,11 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   if (typeof parser.create === 'function') {
     // ParserSuperstructEsque
     return parser.create.bind(parser);
+  }
+
+  if (typeof parser.assert === 'function' && parser.$) {
+    // ParserArkTypeEsque
+    return parser.assert.bind(parser);
   }
 
   if (typeof parser.assert === 'function') {
