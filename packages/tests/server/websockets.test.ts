@@ -129,6 +129,7 @@ function factory(config?: {
   });
 
   const onOpenMock = vi.fn();
+  const onErrorMock = vi.fn();
   const onCloseMock = vi.fn();
 
   expectTypeOf(appRouter).toMatchTypeOf<AnyRouter>();
@@ -139,6 +140,7 @@ function factory(config?: {
     wsClient: {
       retryDelayMs: () => 10,
       onOpen: onOpenMock,
+      onError: onErrorMock,
       onClose: onCloseMock,
       ...config?.wsClient,
     },
@@ -165,6 +167,7 @@ function factory(config?: {
     onNewMessageSubscription,
     onNewClient,
     onOpenMock,
+    onErrorMock,
     onCloseMock,
     onSlowMutationCalled,
     nextIterable,
@@ -1491,5 +1494,26 @@ describe('auth / connectionParams', async () => {
     const result = await client.whoami.query();
 
     expect(result).toEqual(USER_MOCK);
+  });
+});
+
+describe('wsClient onError', () => {
+  const badWsUrl = 'ws://localhost:9999';
+
+  test('is called on connection error', async () => {
+    const onErrorMock = vi.fn();
+    onErrorMock.mockReturnValue(true);
+
+    const wsClient = createWSClient({
+      url: badWsUrl,
+      onError: onErrorMock,
+    });
+
+    {
+      await waitFor(() => {
+        expect(onErrorMock).toHaveBeenCalled();
+      });
+    }
+    wsClient.close();
   });
 });

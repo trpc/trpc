@@ -52,6 +52,10 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
    */
   onOpen?: () => void;
   /**
+   * Triggered when a WebSocket connection encounters an error
+   */
+  onError?: (evt?: Event) => void;
+  /**
    * Triggered when a WebSocket connection is closed
    */
   onClose?: (cause?: { code?: number }) => void;
@@ -82,6 +86,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = exponentialBackoff,
     onOpen,
+    onError,
     onClose,
   } = opts;
   const lazyOpts: LazyOptions = {
@@ -251,11 +256,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     clearTimeout(lazyDisconnectTimer);
 
-    const onError = () => {
+    const onErrorInternal = (evt?: Event) => {
       self.state = 'closed';
       if (self === activeConnection) {
         tryReconnect(self);
       }
+      onError?.(evt);
     };
     run(async () => {
       let url = await resultOf(opts.url);
@@ -297,10 +303,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
             3000,
             cause,
           );
-          onError();
+          onErrorInternal();
         });
       });
-      ws.addEventListener('error', onError);
+      ws.addEventListener('error', onErrorInternal);
       const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
         if (self !== activeConnection) {
           return;
@@ -399,7 +405,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
           }
         }
       });
-    }).catch(onError);
+    }).catch(onErrorInternal);
     return self;
   }
 

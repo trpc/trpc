@@ -69,6 +69,10 @@ export interface WebSocketClientOptions {
    */
   onOpen?: () => void;
   /**
+   * Triggered when a WebSocket connection encounters an error
+   */
+  onError?: (evt?: Event) => void;
+  /**
    * Triggered when a WebSocket connection is closed
    */
   onClose?: (cause?: { code?: number }) => void;
