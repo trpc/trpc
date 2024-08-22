@@ -1516,4 +1516,146 @@ describe('wsClient onError', () => {
     }
     wsClient.close();
   });
+
+  test('can prohibit reconnection', async () => {
+    const onErrorMock = vi.fn();
+    onErrorMock.mockReturnValue(false);
+    const retryDelayMsMock = vi.fn();
+    retryDelayMsMock.mockReturnValue(100);
+
+    const wsClient = createWSClient({
+      url: badWsUrl,
+      onError: onErrorMock,
+      retryDelayMs: retryDelayMsMock,
+    });
+
+    {
+      await waitFor(() => {
+        expect(onErrorMock).toHaveBeenCalledTimes(1);
+        expect(retryDelayMsMock).toHaveBeenCalledTimes(0);
+        expect(wsClient.connection?.state).toBe('closed');
+      });
+    }
+
+    await waitMs(100);
+    expect(retryDelayMsMock).toHaveBeenCalledTimes(0);
+
+    wsClient.close();
+  });
+
+  test('can prohibit reconnection with a promise', async () => {
+    const onErrorMock = vi.fn().mockImplementation(async () => false);
+    const retryDelayMsMock = vi.fn();
+    retryDelayMsMock.mockReturnValue(100);
+
+    const wsClient = createWSClient({
+      url: badWsUrl,
+      onError: onErrorMock,
+      retryDelayMs: retryDelayMsMock,
+    });
+
+    {
+      await waitFor(() => {
+        expect(onErrorMock).toHaveBeenCalledTimes(1);
+        expect(retryDelayMsMock).toHaveBeenCalledTimes(0);
+        expect(wsClient.connection?.state).toBe('closed');
+      });
+    }
+
+    await waitMs(100);
+    expect(retryDelayMsMock).toHaveBeenCalledTimes(0);
+
+    wsClient.close();
+  });
+
+  test('defaults to reconnecting anyway if onError throws', async () => {
+    const onErrorMock = vi.fn().mockImplementation(() => {
+      throw Error('Oops');
+    });
+    const retryDelayMsMock = vi.fn();
+    retryDelayMsMock.mockReturnValue(100);
+
+    const wsClient = createWSClient({
+      url: badWsUrl,
+      onError: onErrorMock,
+      retryDelayMs: retryDelayMsMock,
+    });
+
+    {
+      await waitFor(() => {
+        expect(onErrorMock).toHaveBeenCalledTimes(1);
+        expect(retryDelayMsMock).toHaveBeenCalledTimes(1);
+        // expect(wsClient.connection?.state).toBe('con');
+      });
+    }
+
+    await waitMs(100);
+    expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
+
+    wsClient.close();
+  });
+
+  test('defaults to reconnecting anyway if onError throws as a promise', async () => {
+    const onErrorMock = vi.fn().mockImplementation(async () => {
+      throw Error('Oops');
+    });
+    const retryDelayMsMock = vi.fn();
+    retryDelayMsMock.mockReturnValue(100);
+
+    const wsClient = createWSClient({
+      url: badWsUrl,
+      onError: onErrorMock,
+      retryDelayMs: retryDelayMsMock,
+    });
+
+    {
+      await waitFor(() => {
+        expect(onErrorMock).toHaveBeenCalledTimes(1);
+        expect(retryDelayMsMock).toHaveBeenCalledTimes(1);
+        // expect(wsClient.connection?.state).toBe('con');
+      });
+    }
+
+    await waitMs(100);
+    expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
+
+    wsClient.close();
+  });
+
+  test('can reconnect explicitly', async () => {
+    const onErrorMock = vi
+      .fn()
+      .mockImplementationOnce(() => false)
+      .mockImplementation(() => true);
+    const retryDelayMsMock = vi.fn();
+    retryDelayMsMock.mockReturnValue(100);
+
+    const wsClient = createWSClient({
+      url: badWsUrl,
+      onError: onErrorMock,
+      retryDelayMs: retryDelayMsMock,
+    });
+
+    {
+      await waitFor(() => {
+        expect(onErrorMock).toHaveBeenCalledTimes(1);
+        expect(retryDelayMsMock).toHaveBeenCalledTimes(0);
+        expect(wsClient.connection?.state).toBe('closed');
+      });
+    }
+
+    await waitMs(100);
+    expect(retryDelayMsMock).toHaveBeenCalledTimes(0);
+
+    wsClient.reconnect();
+
+    {
+      await waitFor(() => {
+        expect(onErrorMock).toHaveBeenCalledTimes(2);
+        expect(retryDelayMsMock).toHaveBeenCalledTimes(1);
+      });
+    }
+
+    wsClient.close();
+  });
 });

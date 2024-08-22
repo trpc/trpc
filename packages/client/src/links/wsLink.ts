@@ -37,6 +37,10 @@ type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
 const exponentialBackoff = (attemptIndex: number) =>
   attemptIndex === 0 ? 0 : Math.min(1000 * 2 ** attemptIndex, 30000);
 
+const ignoredPromiseRejection = () => {
+  // noop
+};
+
 export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
   /**
    * Ponyfill which WebSocket implementation to use
@@ -53,8 +57,10 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
   onOpen?: () => void;
   /**
    * Triggered when a WebSocket connection encounters an error
+   * Must return true if reconnection should be attempted, false if not
+   * If a provided Promise rejects, reconnection remains allowed
    */
-  onError?: (evt?: Event) => void;
+  onError?: (evt?: Event) => Promise<boolean> | boolean;
   /**
    * Triggered when a WebSocket connection is closed
    */
@@ -126,6 +132,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   let connectAttempt = 0;
   let connectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
   let connectionIndex = 0;
+  let mayReconnect = Promise.resolve(true);
   let lazyDisconnectTimer: ReturnType<typeof setTimeout> | undefined =
     undefined;
   let activeConnection: null | Connection = lazyOpts.enabled
@@ -202,6 +209,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       // Skip reconnecting if there are pending requests and we're in lazy mode
       return;
     }
+    mayReconnect = Promise.resolve(true);
     const oldConnection = activeConnection;
     activeConnection = createConnection();
     oldConnection && closeIfNoPending(oldConnection);
@@ -256,12 +264,17 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     clearTimeout(lazyDisconnectTimer);
 
-    const onErrorInternal = (evt?: Event) => {
+    const onErrorInternal = async (evt?: Event) => {
       self.state = 'closed';
-      if (self === activeConnection) {
+      if (onError) {
+        // ensure we get a Promise even if the user provided a normal function
+        mayReconnect = Promise.resolve(onError(evt))
+          // if the user provided Promise rejects, default to allowing reconnection
+          .catch(() => true);
+      }
+      if ((await mayReconnect) && self === activeConnection) {
         tryReconnect(self);
       }
-      onError?.(evt);
     };
     run(async () => {
       let url = await resultOf(opts.url);
@@ -297,16 +310,20 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
           onOpen?.();
           dispatch();
-        }).catch((cause) => {
+        }).catch(async (cause) => {
           ws.close(
             // "Status codes in the range 3000-3999 are reserved for use by libraries, frameworks, and applications"
             3000,
             cause,
           );
-          onErrorInternal();
+          await onErrorInternal().catch(ignoredPromiseRejection);
         });
       });
-      ws.addEventListener('error', onErrorInternal);
+      ws.addEventListener(
+        'error',
+        async (evt) =>
+          await onErrorInternal(evt).catch(ignoredPromiseRejection),
+      );
       const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
         if (self !== activeConnection) {
           return;
@@ -368,13 +385,13 @@ export function createWSClient(opts: WebSocketClientOptions) {
         }
       });
 
-      ws.addEventListener('close', ({ code }) => {
+      ws.addEventListener('close', async ({ code }) => {
         if (self.state === 'open') {
           onClose?.({ code });
         }
         self.state = 'closed';
 
-        if (activeConnection === self) {
+        if ((await mayReconnect) && activeConnection === self) {
           // connection might have been replaced already
           tryReconnect(self);
         }
@@ -405,7 +422,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
           }
         }
       });
-    }).catch(onErrorInternal);
+    })
+      .catch(onErrorInternal)
+      .catch(ignoredPromiseRejection);
     return self;
   }
 
