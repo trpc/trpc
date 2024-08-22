@@ -70,6 +70,11 @@ export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
 
+  if (typeof parser === 'function' && typeof parser.assert === 'function') {
+    // ParserArkTypeEsque
+    return parser.assert.bind(parser);
+  }
+
   if (typeof parser === 'function') {
     // ParserValibotEsque (>= v0.31.0)
     // ParserCustomValidatorEsque
@@ -95,11 +100,6 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   if (typeof parser.create === 'function') {
     // ParserSuperstructEsque
     return parser.create.bind(parser);
-  }
-
-  if (typeof parser.assert === 'function' && parser.$) {
-    // ParserArkTypeEsque
-    return parser.assert.bind(parser);
   }
 
   if (typeof parser.assert === 'function') {

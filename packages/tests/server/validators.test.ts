@@ -339,10 +339,10 @@ test('arktype v1 schema', async () => {
   const res = await client.num.query({ text: '123' });
   expect(res.input).toMatchObject({ text: '123' });
 
-  // @ts-expect-error this only accepts a `number`
-  await expect(client.num.query('13')).rejects.toMatchInlineSnapshot(`
-	[TRPCClientError: Must be an object (was string)]
-`);
+  // @ts-expect-error this only accepts {text: string}
+  await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`
+    [TRPCClientError: text must be a string (was number)]
+  `);
   await close();
 });
 
@@ -364,10 +364,10 @@ test('arktype v2 schema', async () => {
   const res = await client.num.query({ text: '123' });
   expect(res.input).toMatchObject({ text: '123' });
 
-  // @ts-expect-error this only accepts a `number`
-  await expect(client.num.query('13')).rejects.toMatchInlineSnapshot(`
-	[TRPCClientError: Must be an object (was string)]
-`);
+  // @ts-expect-error this only accepts {text: string}
+  await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`
+    [TRPCClientError: text must be a string (was number)]
+  `);
   await close();
 });
 
@@ -378,7 +378,7 @@ test('arktype schema - using .assert', async () => {
     num: t.procedure
       .input(arktype.type({ text: 'string' }).assert)
       .query(({ input }) => {
-        expectTypeOf(input).toMatchTypeOf<{ text: string }>();
+        expectTypeOf(input).toEqualTypeOf<{ text: string }>();
         return {
           input,
         };
@@ -389,10 +389,10 @@ test('arktype schema - using .assert', async () => {
   const res = await client.num.query({ text: '123' });
   expect(res.input).toMatchObject({ text: '123' });
 
-  // @ts-expect-error this only accepts a `number`
-  await expect(client.num.query('13')).rejects.toMatchInlineSnapshot(`
-	[TRPCClientError: Must be an object (was string)]
-`);
+  // @ts-expect-error this only accepts {text: string}
+  await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`
+    [TRPCClientError: text must be a string (was number)]
+  `);
   await close();
 });
 test('runtypes', async () => {
