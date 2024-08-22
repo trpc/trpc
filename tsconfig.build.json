@@ -18,7 +18,7 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "node",
     "jsx": "react",
     "esModuleInterop": true,
     "skipLibCheck": true,
