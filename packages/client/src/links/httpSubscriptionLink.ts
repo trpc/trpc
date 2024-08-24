@@ -1,4 +1,5 @@
 import { observable } from '@trpc/server/observable';
+import type { TRPCErrorResponse } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
   inferClientTypes,
@@ -62,6 +63,11 @@ export function unstable_httpSubscriptionLink<
 
         let eventSource: EventSource | null = null;
         let unsubscribed = false;
+        /**
+         * The last known error that the client has received
+         * Will be reset whenever a new message is received
+         */
+        let lastKnownError: TRPCClientError<TInferrable> | null = null;
 
         run(async () => {
           const url = getUrl({
@@ -80,6 +86,14 @@ export function unstable_httpSubscriptionLink<
             return;
           }
           eventSource = new EventSource(url, eventSourceOptions);
+          observer.next({
+            result: {
+              type: 'state',
+              state: 'connecting',
+              error: null,
+            },
+          });
+
           const onStarted = () => {
             observer.next({
               result: {
@@ -95,21 +109,66 @@ export function unstable_httpSubscriptionLink<
           };
           // console.log('starting', new Date());
           eventSource.addEventListener('open', onStarted);
-          const iterable = sseStreamConsumer<
-            Partial<{
-              id?: string;
-              data: unknown;
-            }>
-          >({
+
+          eventSource.addEventListener('open', () => {
+            observer.next({
+              result: {
+                type: 'state',
+                state: 'pending',
+              },
+            });
+          });
+
+          eventSource.addEventListener('error', (event) => {
+            switch (eventSource?.readyState) {
+              case EventSource.CONNECTING: {
+                observer.next({
+                  result: {
+                    type: 'state',
+                    state: 'connecting',
+                    error: lastKnownError,
+                  },
+                });
+                return;
+              }
+              case EventSource.CLOSED: {
+                const error =
+                  globalThis.ErrorEvent && event instanceof ErrorEvent
+                    ? TRPCClientError.from(event.error)
+                    : TRPCClientError.from(
+                        new Error(`Unknown EventSource error`),
+                      );
+
+                observer.next({
+                  result: {
+                    type: 'state',
+                    state: 'connecting',
+                    error: lastKnownError ?? error,
+                  },
+                });
+                return;
+              }
+            }
+          });
+
+          const iterable = sseStreamConsumer<{
+            id?: string;
+            data?: unknown;
+          }>({
             from: eventSource,
             deserialize: transformer.output.deserialize,
           });
 
           for await (const chunk of iterable) {
             if (!chunk.ok) {
-              // TODO: handle in https://github.com/trpc/trpc/issues/5871
+              const error = chunk.error as TRPCErrorResponse['error'];
+
+              lastKnownError = TRPCClientError.from({
+                error,
+              });
               continue;
             }
+            lastKnownError = null;
             const chunkData = chunk.data;
 
             // if the `tracked()`-helper is used, we always have an `id` field
@@ -127,12 +186,36 @@ export function unstable_httpSubscriptionLink<
             },
           });
           observer.complete();
+
+          observer.next({
+            result: {
+              type: 'state',
+              state: 'idle',
+            },
+          });
         }).catch((error) => {
-          observer.error(TRPCClientError.from(error));
+          const trpcError = TRPCClientError.from(error);
+
+          observer.next({
+            result: {
+              type: 'state',
+              state: 'error',
+              error: trpcError,
+            },
+          });
+          observer.error(trpcError);
         });
 
         return () => {
           observer.complete();
+
+          observer.next({
+            result: {
+              type: 'state',
+              state: 'idle',
+            },
+          });
+
           eventSource?.close();
           unsubscribed = true;
         };

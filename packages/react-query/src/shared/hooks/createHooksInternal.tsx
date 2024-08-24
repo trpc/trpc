@@ -30,22 +30,45 @@ import type {
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
 import { createUseQueries } from '../proxy/useQueriesProxy';
 import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
-import type {
-  CreateClient,
-  TRPCProvider,
-  TRPCQueryOptions,
-  UseTRPCInfiniteQueryOptions,
-  UseTRPCInfiniteQueryResult,
-  UseTRPCMutationOptions,
-  UseTRPCMutationResult,
-  UseTRPCQueryOptions,
-  UseTRPCQueryResult,
-  UseTRPCSubscriptionOptions,
-  UseTRPCSuspenseInfiniteQueryOptions,
-  UseTRPCSuspenseInfiniteQueryResult,
-  UseTRPCSuspenseQueryOptions,
-  UseTRPCSuspenseQueryResult,
+// import type { restartSubscriptionFn } from './types';
+import {
+  getConnectingResult,
+  getErrorResult,
+  getIdleResult,
+  getPendingResult,
+  getStartingResult,
+  type CreateClient,
+  type TRPCProvider,
+  type TRPCQueryOptions,
+  type UseTRPCInfiniteQueryOptions,
+  type UseTRPCInfiniteQueryResult,
+  type UseTRPCMutationOptions,
+  type UseTRPCMutationResult,
+  type UseTRPCQueryOptions,
+  type UseTRPCQueryResult,
+  type UseTRPCSubscriptionOptions,
+  type UseTRPCSubscriptionResult,
+  type UseTRPCSuspenseInfiniteQueryOptions,
+  type UseTRPCSuspenseInfiniteQueryResult,
+  type UseTRPCSuspenseQueryOptions,
+  type UseTRPCSuspenseQueryResult,
 } from './types';
+
+const trackResult = <
+  T extends UseTRPCSubscriptionResult<unknown, unknown, unknown>,
+>(
+  result: T,
+  onTrackResult: (key: keyof T) => void,
+): T => {
+  const trackedResult = new Proxy(result, {
+    get(target, prop) {
+      onTrackResult(prop as keyof T);
+      return target[prop as keyof T];
+    },
+  });
+
+  return trackedResult;
+};
 
 /**
  * @internal
@@ -307,9 +330,69 @@ export function createRootHooks<
     path: readonly string[],
     input: unknown,
     opts: UseTRPCSubscriptionOptions<unknown, TError>,
-  ) {
+  ): UseTRPCSubscriptionResult<unknown, unknown, TError> {
     const enabled = opts?.enabled ?? input !== skipToken;
     const queryKey = hashKey(getQueryKeyInternal(path, input, 'any'));
+
+    const trackedProps = React.useRef(
+      new Set<keyof UseTRPCSubscriptionResult<unknown, unknown, TError>>([]),
+    );
+
+    const addTrackedProp = React.useCallback(
+      (key: keyof UseTRPCSubscriptionResult<unknown, unknown, TError>) => {
+        trackedProps.current.add(key);
+      },
+      [],
+    );
+
+    // const restart = React.useRef<restartSubscriptionFn<unknown>>(() => {
+    //   throw new Error('not implemented');
+    // });
+
+    const currentResult = React.useRef<
+      UseTRPCSubscriptionResult<unknown, unknown, TError>
+    >(
+      enabled
+        ? getStartingResult(/* restart.current */)
+        : getIdleResult(/* restart.current */),
+    );
+
+    const [subscriptionState, setSubscriptionState] = React.useState(
+      trackResult(currentResult.current, addTrackedProp),
+    );
+
+    const updateSubscriptionState = React.useCallback(
+      (
+        opts:
+          | UseTRPCSubscriptionResult<unknown, unknown, TError>
+          | ((
+              prev: UseTRPCSubscriptionResult<unknown, unknown, TError>,
+            ) => UseTRPCSubscriptionResult<unknown, unknown, TError>),
+      ) => {
+        const oldResult = currentResult.current;
+
+        const newResult =
+          typeof opts === 'function' ? opts(currentResult.current) : opts;
+
+        currentResult.current = newResult;
+
+        let shouldUpdate = false;
+
+        for (const key of trackedProps.current) {
+          if (oldResult[key] !== newResult[key]) {
+            shouldUpdate = true;
+            break;
+          }
+        }
+
+        if (shouldUpdate) {
+          setSubscriptionState(trackResult(newResult, addTrackedProp));
+          return;
+        }
+      },
+      [addTrackedProp],
+    );
+
     const { client } = useContext();
 
     const optsRef = React.useRef<typeof opts>(opts);
@@ -320,6 +403,7 @@ export function createRootHooks<
         return;
       }
       let isStopped = false;
+
       const subscription = client.subscription(
         path.join('.'),
         input ?? undefined,
@@ -332,6 +416,14 @@ export function createRootHooks<
           onData: (data) => {
             if (!isStopped) {
               optsRef.current.onData(data);
+
+              updateSubscriptionState((prev) => {
+                if (prev.isPending) {
+                  return getPendingResult(prev, data);
+                }
+
+                return prev;
+              });
             }
           },
           onError: (err) => {
@@ -339,14 +431,47 @@ export function createRootHooks<
               optsRef.current.onError?.(err);
             }
           },
+          onStateChange: (state) => {
+            if (state.state === 'idle') {
+              updateSubscriptionState(getIdleResult(/* restart.current */));
+
+              return;
+            }
+
+            if (state.state === 'connecting') {
+              updateSubscriptionState((prev) => {
+                return getConnectingResult(prev, state.data ?? null);
+              });
+
+              return;
+            }
+
+            if (state.state === 'pending') {
+              updateSubscriptionState((prev) => getPendingResult(prev));
+            }
+
+            if (state.state === 'error') {
+              updateSubscriptionState((prev) => {
+                return getErrorResult(prev, state.data);
+              });
+            }
+          },
         },
       );
+
+      // const effectRestart = restart.current;
+
       return () => {
         isStopped = true;
         subscription.unsubscribe();
+
+        updateSubscriptionState(getIdleResult(/* effectRestart */));
       };
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryKey, enabled]);
+
+    return subscriptionState;
   }
 
   function useInfiniteQuery(

@@ -55,11 +55,54 @@ export interface TRPCClientRuntime {
   // nothing here anymore
 }
 
+export type ConnectionState = 'idle' | 'connecting' | 'pending' | 'error';
+
+export interface ConnectionStateMessageBase {
+  type: 'state';
+}
+
+export interface IdleStateMessage extends ConnectionStateMessageBase {
+  state: 'idle';
+}
+
+export interface ConnectingStateMessage<TError>
+  extends ConnectionStateMessageBase {
+  state: 'connecting';
+  error: TError | null;
+}
+
+export interface PendingStateMessage extends ConnectionStateMessageBase {
+  state: 'pending';
+}
+
+export interface ErrorStateMessage<TError> extends ConnectionStateMessageBase {
+  state: 'error';
+  error: TError;
+}
+
+export type TRPCConnectionStateMessage<TError> =
+  | IdleStateMessage
+  | ConnectingStateMessage<TError>
+  | PendingStateMessage
+  | ErrorStateMessage<TError>;
+
+export const isConnectionStateMessage = <TError>(
+  msg: unknown,
+): msg is TRPCConnectionStateMessage<TError> => {
+  return (
+    typeof msg === 'object' &&
+    msg !== null &&
+    'type' in msg &&
+    msg.type === 'state'
+  );
+};
+
 /**
  * @internal
  */
-export interface OperationResultEnvelope<TOutput> {
+export interface OperationResultEnvelope<TOutput, TError = unknown> {
   result:
+    | TRPCConnectionStateMessage<TError>
     | TRPCResultMessage<TOutput>['result']
     | TRPCSuccessResponse<TOutput>['result'];
   context?: OperationContext;
@@ -71,7 +114,10 @@ export interface OperationResultEnvelope<TOutput> {
 export type OperationResultObservable<
   TInferrable extends InferrableClientTypes,
   TOutput,
-> = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TInferrable>>;
+> = Observable<
+  OperationResultEnvelope<TOutput, TRPCClientError<TInferrable>>,
+  TRPCClientError<TInferrable>
+>;
 
 /**
  * @internal

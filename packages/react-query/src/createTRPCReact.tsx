@@ -32,6 +32,7 @@ import type {
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
   UseTRPCSubscriptionOptions,
+  UseTRPCSubscriptionResult,
   UseTRPCSuspenseInfiniteQueryOptions,
   UseTRPCSuspenseInfiniteQueryResult,
   UseTRPCSuspenseQueryOptions,
@@ -180,7 +181,11 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
   (
     input: TDef['input'],
     opts: UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
-  ): void;
+  ): UseTRPCSubscriptionResult<
+    TDef['input'],
+    TDef['output'],
+    TRPCClientErrorLike<TDef>
+  >;
 
   // With skip token
   (
@@ -189,7 +194,11 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
       UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
       'enabled'
     >,
-  ): void;
+  ): UseTRPCSubscriptionResult<
+    TDef['input'],
+    TDef['output'],
+    TRPCClientErrorLike<TDef>
+  >;
 }
 /**
  * @internal
