@@ -71,7 +71,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
 
   if (typeof parser === 'function' && typeof parser.assert === 'function') {
-    // ParserArkTypeEsque
+    // ParserArkTypeEsque - arktype schemas shouldn't be called as a function because they return a union type instead of throwing
     return parser.assert.bind(parser);
   }
 
