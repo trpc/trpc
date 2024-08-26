@@ -366,7 +366,7 @@ test('arktype v2 schema', async () => {
 
   // @ts-expect-error this only accepts {text: string}
   await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`
-    [TRPCClientError: text must be a string (was number)]
+    [TRPCClientError: text must be a string (was a number)]
   `);
   await close();
 });
