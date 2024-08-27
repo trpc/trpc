@@ -1,6 +1,8 @@
 import type {
   DefinedUseQueryResult,
   DehydratedState,
+  FetchInfiniteQueryOptions,
+  FetchQueryOptions,
   InfiniteData,
   InfiniteQueryObserverSuccessResult,
   InitialDataFunction,
@@ -73,6 +75,13 @@ export interface UseTRPCSuspenseQueryOptions<TOutput, TData, TError>
     >,
     TRPCUseQueryBaseOptions {}
 
+export interface UseTRPCPrefetchQueryOptions<TOutput, TData, TError>
+  extends DistributiveOmit<
+      FetchQueryOptions<TOutput, TError, TData, any>,
+      'queryKey'
+    >,
+    TRPCUseQueryBaseOptions {}
+
 /** @internal **/
 export interface DefinedUseTRPCQueryOptions<
   TOutput,
@@ -111,6 +120,21 @@ export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
     TRPCUseQueryBaseOptions {
   initialCursor?: ExtractCursorType<TInput>;
 }
+
+export type UseTRPCPrefetchInfiniteQueryOptions<TInput, TOutput, TError> =
+  DistributiveOmit<
+    FetchInfiniteQueryOptions<
+      TOutput,
+      TError,
+      TOutput,
+      any,
+      ExtractCursorType<TInput>
+    >,
+    'queryKey' | 'initialPageParam'
+  > &
+    TRPCUseQueryBaseOptions & {
+      initialCursor?: ExtractCursorType<TInput>;
+    };
 
 export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
   extends DistributiveOmit<
