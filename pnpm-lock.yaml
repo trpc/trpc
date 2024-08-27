@@ -1760,8 +1760,8 @@ importers:
         specifier: ^5.5.3
         version: 5.5.3
       valibot:
-        specifier: ^0.38.0
-        version: 0.38.0(typescript@5.5.3)
+        specifier: ^0.39.0
+        version: 0.39.0(typescript@5.5.3)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -1892,8 +1892,8 @@ importers:
         specifier: ^5.5.3
         version: 5.5.3
       valibot:
-        specifier: ^0.38.0
-        version: 0.38.0(typescript@5.5.3)
+        specifier: ^0.39.0
+        version: 0.39.0(typescript@5.5.3)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -2079,8 +2079,8 @@ importers:
         specifier: npm:typescript@~5.1.3
         version: 5.1.6
       valibot:
-        specifier: ^0.38.0
-        version: 0.38.0(typescript@5.1.6)
+        specifier: ^0.39.0
+        version: 0.39.0(typescript@5.1.6)
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -23988,8 +23988,8 @@ packages:
     resolution: {integrity: sha512-l8lCEmLcLYZh4nbunNZvQCJc5pv7+RCwa8q/LdUx8u7lsWvPDKmpodJAJNwkAhJC//dFY48KuIEmjtd4RViDrA==}
     dev: false
 
-  /valibot@0.38.0(typescript@5.1.6):
-    resolution: {integrity: sha512-RCJa0fetnzp+h+KN9BdgYOgtsMAG9bfoJ9JSjIhFHobKWVWyzM3jjaeNTdpFK9tQtf3q1sguXeERJ/LcmdFE7w==}
+  /valibot@0.39.0(typescript@5.1.6):
+    resolution: {integrity: sha512-d+vE8SDRNy9zKg6No5MHz2tdz8H6CW8X3OdqYdmlhnoqQmEoM6Hu0hJUrZv3tPSVrzZkIIMCtdCQtMzcM6NCWw==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -23999,8 +23999,8 @@ packages:
       typescript: 5.1.6
     dev: true
 
-  /valibot@0.38.0(typescript@5.5.3):
-    resolution: {integrity: sha512-RCJa0fetnzp+h+KN9BdgYOgtsMAG9bfoJ9JSjIhFHobKWVWyzM3jjaeNTdpFK9tQtf3q1sguXeERJ/LcmdFE7w==}
+  /valibot@0.39.0(typescript@5.5.3):
+    resolution: {integrity: sha512-d+vE8SDRNy9zKg6No5MHz2tdz8H6CW8X3OdqYdmlhnoqQmEoM6Hu0hJUrZv3tPSVrzZkIIMCtdCQtMzcM6NCWw==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
