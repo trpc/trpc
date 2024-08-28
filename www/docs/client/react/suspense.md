@@ -150,8 +150,8 @@ The preformance of suspense queries can be improved by prefetching the query dat
 const utils = createTRPCQueryUtils({ queryClient, client: trpcClient });
 
 // tanstack router/ react router loader
-const loader = async (params: {id: string}) => utils.post.byId.ensureQueryData({id: params.id});
-
+const loader = async (params: { id: string }) =>
+  utils.post.byId.ensureQueryData({ id: params.id });
 ```
 
 ### Component-level prefetching with `usePrefetchQuery`
@@ -162,10 +162,12 @@ import { trpc } from '../utils/trpc';
 function PostViewPage(props: { postId: string }) {
   trpc.post.byId.usePrefetchQuery({ id: props.postId });
 
-  return <Suspense>
-    <PostView postId={props.postId} />
-  </Suspense>;
-};
+  return (
+    <Suspense>
+      <PostView postId={props.postId} />
+    </Suspense>
+  );
+}
 ```
 
 ### Component-level prefetching with `usePrefetchInfiniteQuery`
@@ -179,10 +181,10 @@ export const getNextPageParam = (lastPage) => lastPage.nextCursor;
 function PostViewPage(props: { postId: string }) {
   trpc.post.all.usePrefetchInfiniteQuery({}, { getNextPageParam });
 
-  return <Suspense>
-    <PostView postId={props.postId} />
-  </Suspense>;
-};
-
-
+  return (
+    <Suspense>
+      <PostView postId={props.postId} />
+    </Suspense>
+  );
+}
 ```

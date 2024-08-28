@@ -83,6 +83,7 @@ module.exports = {
           },
           items: [
             'client/react/setup',
+            'client/react/server-components',
             'client/react/infer-types',
             'client/react/useQuery',
             'client/react/useMutation',
