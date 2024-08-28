@@ -163,9 +163,8 @@ The `trpc/client.tsx` is the entrypoint when consuming your tRPC API from client
 your tRPC router and create typesafe hooks using `createTRPCReact`. We'll also export our context provider from this file.
 
 ```tsx title='trpc/client.tsx'
-'use client';
+'use client'; // <-- to make sure we can mount the Provider from a server component
 
-// <-- to make sure we can mount the Provider from a server component
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink } from '@trpc/client';
