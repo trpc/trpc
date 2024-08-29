@@ -1832,8 +1832,8 @@ importers:
         specifier: 1.0.14-alpha
         version: 1.0.14-alpha
       arktype2:
-        specifier: npm:arktype@2.0.0-rc.2
-        version: /arktype@2.0.0-rc.2
+        specifier: npm:arktype@2.0.0-rc.3
+        version: /arktype@2.0.0-rc.3
       dataloader:
         specifier: ^2.2.2
         version: 2.2.2
@@ -10515,8 +10515,8 @@ packages:
     resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
     requiresBuild: true
 
-  /arktype@2.0.0-rc.2:
-    resolution: {integrity: sha512-9YYnGKG72Oq5GrSxgEC7TNSO+Y86+s11oU/SevmaoIDwTsLYT0fC6bKxeeiX3a/xP/A2ysMfHS83H+9KfPCwhw==}
+  /arktype@2.0.0-rc.3:
+    resolution: {integrity: sha512-LR9wjFUoXu+rlRhzilugJsTaaspPHcbVxuYPGO9E9soC6CXjNlHFxMDa/4hWWBXBjl/GPUoQL1+94oo+/mIYpA==}
     dependencies:
       '@ark/schema': 0.5.0
       '@ark/util': 0.5.0
