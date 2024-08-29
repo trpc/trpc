@@ -1832,8 +1832,8 @@ importers:
         specifier: 1.0.14-alpha
         version: 1.0.14-alpha
       arktype2:
-        specifier: npm:arktype@2.0.0-rc.0
-        version: /arktype@2.0.0-rc.0
+        specifier: npm:arktype@2.0.0-rc.2
+        version: /arktype@2.0.0-rc.2
       dataloader:
         specifier: ^2.2.2
         version: 2.2.2
@@ -2321,14 +2321,14 @@ packages:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
 
-  /@ark/schema@0.4.0:
-    resolution: {integrity: sha512-8U+qNYIu+pFFXd44cqd8lTexPg3bWLpDP9aJ7PKOO6Ec/WonaMEN5JBiwfX/VNBA14lmR4/NLs54CdSzm860VQ==}
+  /@ark/schema@0.5.0:
+    resolution: {integrity: sha512-Tai9AF/wBh2iv9ejBoovC1JUc/qjmnM66TbUJIyXDj131/+FjoKY8Ab/aHjAvuV4J/WMTyYhG72TmhnjOnVeWw==}
     dependencies:
-      '@ark/util': 0.3.0
+      '@ark/util': 0.5.0
     dev: false
 
-  /@ark/util@0.3.0:
-    resolution: {integrity: sha512-rH6FF1/+JXagsmhTeUHPmwS0gshof0BLDHXYPMQA/ApTN91VM4Cce//HTIMuuVC8KqX6VyQbMsgfF4PffGX53g==}
+  /@ark/util@0.5.0:
+    resolution: {integrity: sha512-Th8Hi5/E3mZ4gRz5wdmx5ov8T0NfAZyok0ALeIrNOZHOkC676s1cLO0E7LAfpINMG7eBi6iYYQxhmhS7pfvuZA==}
     dev: false
 
   /@auth/core@0.32.0:
@@ -10515,11 +10515,11 @@ packages:
     resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
     requiresBuild: true
 
-  /arktype@2.0.0-rc.0:
-    resolution: {integrity: sha512-bHEu42yMwdsy75q3u7Y8eitRRgv5a8RS36c3hzr1QofCbcBwXl8TCcxcUysBUxEHQKHRQOCATA23ioelKmN8tg==}
+  /arktype@2.0.0-rc.2:
+    resolution: {integrity: sha512-9YYnGKG72Oq5GrSxgEC7TNSO+Y86+s11oU/SevmaoIDwTsLYT0fC6bKxeeiX3a/xP/A2ysMfHS83H+9KfPCwhw==}
     dependencies:
-      '@ark/schema': 0.4.0
-      '@ark/util': 0.3.0
+      '@ark/schema': 0.5.0
+      '@ark/util': 0.5.0
     dev: false
 
   /array-buffer-byte-length@1.0.0:
