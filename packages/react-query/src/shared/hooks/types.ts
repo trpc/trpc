@@ -28,7 +28,7 @@ import type {
   AnyRouter,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import type { TRPCContextProps } from '../../internals/context';
 import type { TRPCQueryKey } from '../../internals/getQueryKey';
 
