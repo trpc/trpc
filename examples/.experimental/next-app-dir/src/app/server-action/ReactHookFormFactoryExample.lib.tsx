@@ -10,6 +10,7 @@ import type { UseTRPCActionResult } from '@trpc/next/app-dir/client';
 import type { TRPCActionHandler } from '@trpc/next/app-dir/server';
 import type { ActionHandlerDef } from '@trpc/next/dist/app-dir/shared';
 import { useAction } from '~/trpc/client';
+import type { JSX } from 'react';
 import { useRef } from 'react';
 import type { UseFormProps, UseFormReturn } from 'react-hook-form';
 import {
