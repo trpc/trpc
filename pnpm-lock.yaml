@@ -1760,8 +1760,8 @@ importers:
         specifier: ^5.5.3
         version: 5.5.3
       valibot:
-        specifier: ^0.38.0
-        version: 0.38.0(typescript@5.5.3)
+        specifier: ^0.41.0
+        version: 0.41.0(typescript@5.5.3)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -1831,6 +1831,9 @@ importers:
       arktype:
         specifier: 1.0.14-alpha
         version: 1.0.14-alpha
+      arktype2:
+        specifier: npm:arktype@2.0.0-rc.6
+        version: /arktype@2.0.0-rc.6
       dataloader:
         specifier: ^2.2.2
         version: 2.2.2
@@ -1892,8 +1895,8 @@ importers:
         specifier: ^5.5.3
         version: 5.5.3
       valibot:
-        specifier: ^0.38.0
-        version: 0.38.0(typescript@5.5.3)
+        specifier: ^0.41.0
+        version: 0.41.0(typescript@5.5.3)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -2079,8 +2082,8 @@ importers:
         specifier: npm:typescript@~5.1.3
         version: 5.1.6
       valibot:
-        specifier: ^0.38.0
-        version: 0.38.0(typescript@5.1.6)
+        specifier: ^0.41.0
+        version: 0.41.0(typescript@5.1.6)
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -2317,6 +2320,16 @@ packages:
     dependencies:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
+
+  /@ark/schema@0.8.0:
+    resolution: {integrity: sha512-KBLSrYCx277rxotEW8PFEahKA7bvm3FuYY+uBRVlV0e8JM27JCUnfZhnlc8YusNfsi/g6A+ZgQ7WLGJnOOt9lw==}
+    dependencies:
+      '@ark/util': 0.8.0
+    dev: false
+
+  /@ark/util@0.8.0:
+    resolution: {integrity: sha512-wEifILuwx3WK6UakDW+5ymVOblYuh+xg/zlLfWqs8FxePx7yQXlckXFy29HnhSlVuZ/AYdrCQ/7NxZOryZ2Uug==}
+    dev: false
 
   /@auth/core@0.32.0:
     resolution: {integrity: sha512-3+ssTScBd+1fd0/fscAyQN1tSygXzuhysuVVzB942ggU4mdfiTbv36P0ccVnExKWYJKvu3E2r3/zxXCCAmTOrg==}
@@ -10501,6 +10514,13 @@ packages:
   /arktype@1.0.14-alpha:
     resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
     requiresBuild: true
+
+  /arktype@2.0.0-rc.6:
+    resolution: {integrity: sha512-ACggpf/N2HhITbQxpcsDnzJwzy0YbukfcmZUIazaJuHj+WVb1T8XVxtiEZxPqrfAY9AyP6bEr09bURdjXnpZdA==}
+    dependencies:
+      '@ark/schema': 0.8.0
+      '@ark/util': 0.8.0
+    dev: false
 
   /array-buffer-byte-length@1.0.0:
     resolution: {integrity: sha512-LPuwb2P+NrQw3XhxGc36+XSvuBPopovXYTR9Ew++Du9Yb/bx5AzBfrIsBoj0EZUifjQU+sHL21sseZ3jerWO/A==}
@@ -23988,8 +24008,8 @@ packages:
     resolution: {integrity: sha512-l8lCEmLcLYZh4nbunNZvQCJc5pv7+RCwa8q/LdUx8u7lsWvPDKmpodJAJNwkAhJC//dFY48KuIEmjtd4RViDrA==}
     dev: false
 
-  /valibot@0.38.0(typescript@5.1.6):
-    resolution: {integrity: sha512-RCJa0fetnzp+h+KN9BdgYOgtsMAG9bfoJ9JSjIhFHobKWVWyzM3jjaeNTdpFK9tQtf3q1sguXeERJ/LcmdFE7w==}
+  /valibot@0.41.0(typescript@5.1.6):
+    resolution: {integrity: sha512-igDBb8CTYr8YTQlOKgaN9nSS0Be7z+WRuaeYqGf3Cjz3aKmSnqEmYnkfVjzIuumGqfHpa3fLIvMEAfhrpqN8ng==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -23999,8 +24019,8 @@ packages:
       typescript: 5.1.6
     dev: true
 
-  /valibot@0.38.0(typescript@5.5.3):
-    resolution: {integrity: sha512-RCJa0fetnzp+h+KN9BdgYOgtsMAG9bfoJ9JSjIhFHobKWVWyzM3jjaeNTdpFK9tQtf3q1sguXeERJ/LcmdFE7w==}
+  /valibot@0.41.0(typescript@5.5.3):
+    resolution: {integrity: sha512-igDBb8CTYr8YTQlOKgaN9nSS0Be7z+WRuaeYqGf3Cjz3aKmSnqEmYnkfVjzIuumGqfHpa3fLIvMEAfhrpqN8ng==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
