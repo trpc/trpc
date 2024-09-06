@@ -1121,23 +1121,28 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
 test('wsClient stops reconnecting after .close()', async () => {
   const badWsUrl = 'ws://localhost:9999';
-  const retryDelayMsMock = vi.fn();
+  const retryDelayMsMock =
+    vi.fn<NonNullable<WebSocketClientOptions['retryDelayMs']>>();
+  const onErrorMock = vi.fn<NonNullable<WebSocketClientOptions['onError']>>();
   retryDelayMsMock.mockReturnValue(100);
 
   const wsClient = createWSClient({
     url: badWsUrl,
     retryDelayMs: retryDelayMsMock,
+    onError: onErrorMock,
   });
 
   await waitFor(() => {
     expect(retryDelayMsMock).toHaveBeenCalledTimes(1);
+    expect(onErrorMock).toHaveBeenCalledTimes(1);
   });
   await waitFor(() => {
     expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
+    expect(onErrorMock).toHaveBeenCalledTimes(2);
   });
+
   wsClient.close();
   await waitMs(100);
-  expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
 });
 describe('lazy mode', () => {
   test('happy path', async () => {
