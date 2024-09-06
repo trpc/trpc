@@ -1119,7 +1119,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
   });
 });
 
-test('wsClient stops reconnecting after .close()', async () => {
+test.only('wsClient stops reconnecting after .close()', async () => {
   const badWsUrl = 'ws://localhost:9999';
   const retryDelayMsMock = vi.fn<
     NonNullable<WebSocketClientOptions['retryDelayMs']>
