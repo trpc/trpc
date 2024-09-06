@@ -70,10 +70,8 @@ export interface WebSocketClientOptions {
   onOpen?: () => void;
   /**
    * Triggered when a WebSocket connection encounters an error
-   * Must return true if reconnection should be attempted, false if not
-   * If a provided Promise rejects, reconnection remains allowed
    */
-  onError?: (evt?: Event) => Promise<boolean> | boolean;
+  onError?: (evt?: Event) => void;
   /**
    * Triggered when a WebSocket connection is closed
    */
