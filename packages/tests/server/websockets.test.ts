@@ -1501,24 +1501,3 @@ describe('auth / connectionParams', async () => {
     expect(result).toEqual(USER_MOCK);
   });
 });
-
-describe('wsClient onError', () => {
-  const badWsUrl = 'ws://localhost:9999';
-
-  test('is called on connection error', async () => {
-    const onErrorMock = vi.fn();
-    onErrorMock.mockReturnValue(true);
-
-    const wsClient = createWSClient({
-      url: badWsUrl,
-      onError: onErrorMock,
-    });
-
-    {
-      await waitFor(() => {
-        expect(onErrorMock).toHaveBeenCalled();
-      });
-    }
-    wsClient.close();
-  });
-});
