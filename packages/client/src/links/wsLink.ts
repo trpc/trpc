@@ -85,9 +85,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
   const {
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = exponentialBackoff,
-    onOpen,
-    onError,
-    onClose,
   } = opts;
   const lazyOpts: LazyOptions = {
     ...lazyDefaults,
@@ -256,12 +253,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     clearTimeout(lazyDisconnectTimer);
 
-    const onErrorInternal = (evt?: Event) => {
+    const onError = (evt?: Event) => {
       self.state = 'closed';
       if (self === activeConnection) {
         tryReconnect(self);
       }
-      onError?.(evt);
+      opts.onError?.(evt);
     };
     run(async () => {
       let url = await resultOf(opts.url);
@@ -295,7 +292,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
           connectAttempt = 0;
           self.state = 'open';
 
-          onOpen?.();
+          opts.onOpen?.();
           dispatch();
         }).catch((cause) => {
           ws.close(
@@ -303,10 +300,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
             3000,
             cause,
           );
-          onErrorInternal();
+          onError();
         });
       });
-      ws.addEventListener('error', onErrorInternal);
+      ws.addEventListener('error', onError);
       const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
         if (self !== activeConnection) {
           return;
@@ -370,7 +367,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
       ws.addEventListener('close', ({ code }) => {
         if (self.state === 'open') {
-          onClose?.({ code });
+          opts.onClose?.({ code });
         }
         self.state = 'closed';
 
@@ -405,7 +402,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
           }
         }
       });
-    }).catch(onErrorInternal);
+    }).catch(onError);
     return self;
   }
 
