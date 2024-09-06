@@ -1143,6 +1143,9 @@ test('wsClient stops reconnecting after .close()', async () => {
 
   wsClient.close();
   await waitMs(100);
+
+  expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
+  expect(onErrorMock).toHaveBeenCalledTimes(2);
 });
 describe('lazy mode', () => {
   test('happy path', async () => {
