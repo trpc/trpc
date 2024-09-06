@@ -129,6 +129,7 @@ function factory(config?: {
   });
 
   const onOpenMock = vi.fn();
+  const onErrorMock = vi.fn();
   const onCloseMock = vi.fn();
 
   expectTypeOf(appRouter).toMatchTypeOf<AnyRouter>();
@@ -139,6 +140,7 @@ function factory(config?: {
     wsClient: {
       retryDelayMs: () => 10,
       onOpen: onOpenMock,
+      onError: onErrorMock,
       onClose: onCloseMock,
       ...config?.wsClient,
     },
@@ -165,6 +167,7 @@ function factory(config?: {
     onNewMessageSubscription,
     onNewClient,
     onOpenMock,
+    onErrorMock,
     onCloseMock,
     onSlowMutationCalled,
     nextIterable,
@@ -1118,23 +1121,31 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
 test('wsClient stops reconnecting after .close()', async () => {
   const badWsUrl = 'ws://localhost:9999';
-  const retryDelayMsMock = vi.fn();
-  retryDelayMsMock.mockReturnValue(100);
+  const retryDelayMsMock =
+    vi.fn<NonNullable<WebSocketClientOptions['retryDelayMs']>>();
+  const onErrorMock = vi.fn<NonNullable<WebSocketClientOptions['onError']>>();
+  retryDelayMsMock.mockReturnValue(50);
 
   const wsClient = createWSClient({
     url: badWsUrl,
     retryDelayMs: retryDelayMsMock,
+    onError: onErrorMock,
   });
 
   await waitFor(() => {
     expect(retryDelayMsMock).toHaveBeenCalledTimes(1);
+    expect(onErrorMock).toHaveBeenCalledTimes(1);
   });
   await waitFor(() => {
     expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
+    expect(onErrorMock).toHaveBeenCalledTimes(2);
   });
+
   wsClient.close();
   await waitMs(100);
+
   expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
+  expect(onErrorMock).toHaveBeenCalledTimes(2);
 });
 describe('lazy mode', () => {
   test('happy path', async () => {
