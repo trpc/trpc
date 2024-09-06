@@ -52,6 +52,10 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
    */
   onOpen?: () => void;
   /**
+   * Triggered when a WebSocket connection encounters an error
+   */
+  onError?: (evt?: Event) => void;
+  /**
    * Triggered when a WebSocket connection is closed
    */
   onClose?: (cause?: { code?: number }) => void;
@@ -81,8 +85,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
   const {
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = exponentialBackoff,
-    onOpen,
-    onClose,
   } = opts;
   const lazyOpts: LazyOptions = {
     ...lazyDefaults,
@@ -251,11 +253,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     clearTimeout(lazyDisconnectTimer);
 
-    const onError = () => {
+    const onError = (evt?: Event) => {
       self.state = 'closed';
       if (self === activeConnection) {
         tryReconnect(self);
       }
+      opts.onError?.(evt);
     };
     run(async () => {
       let url = await resultOf(opts.url);
@@ -289,7 +292,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
           connectAttempt = 0;
           self.state = 'open';
 
-          onOpen?.();
+          opts.onOpen?.();
           dispatch();
         }).catch((cause) => {
           ws.close(
@@ -364,7 +367,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
       ws.addEventListener('close', ({ code }) => {
         if (self.state === 'open') {
-          onClose?.({ code });
+          opts.onClose?.({ code });
         }
         self.state = 'closed';
 
