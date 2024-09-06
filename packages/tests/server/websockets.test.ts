@@ -1124,7 +1124,7 @@ test('wsClient stops reconnecting after .close()', async () => {
   const retryDelayMsMock =
     vi.fn<NonNullable<WebSocketClientOptions['retryDelayMs']>>();
   const onErrorMock = vi.fn<NonNullable<WebSocketClientOptions['onError']>>();
-  retryDelayMsMock.mockReturnValue(100);
+  retryDelayMsMock.mockReturnValue(50);
 
   const wsClient = createWSClient({
     url: badWsUrl,
