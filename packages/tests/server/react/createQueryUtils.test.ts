@@ -264,6 +264,13 @@ describe('createTRPCQueryUtils()', () => {
       meta: {
         hello: 'trpc',
       },
+      onMutate: () => ({ foo: 'bar' }),
+      onSuccess: (_data, _vars, ctx) => {
+        expectTypeOf(ctx).toEqualTypeOf<{ foo: string }>();
+      },
+      onError: (_err, _vars, ctx) => {
+        expectTypeOf(ctx).toEqualTypeOf<{ foo: string } | undefined>();
+      },
     });
     expect(clientUtils.addPost.getMutationDefaults()?.meta).toEqual({
       hello: 'trpc',
