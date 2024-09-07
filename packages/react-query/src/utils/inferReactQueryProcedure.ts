@@ -39,10 +39,12 @@ export type InferQueryOptions<
 export type InferMutationOptions<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
+  TContext = unknown,
 > = UseTRPCMutationOptions<
   inferProcedureInput<TProcedure>,
   TRPCClientErrorLike<TRoot>,
-  inferTransformedProcedureOutput<TRoot, TProcedure>
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
+  TContext
 >;
 
 /**
