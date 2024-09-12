@@ -278,6 +278,8 @@ export default async function Home() {
 ```
 
 ```tsx title='app/client-greeting.tsx'
+'use client'; // <-- hooks can only be used in client components
+
 import { trpc } from '~/trpc/client';
 
 export function ClientGreeting() {
@@ -315,6 +317,8 @@ export default async function Home() {
 ```
 
 ```tsx title='app/client-greeting.tsx'
+'use client';
+
 import { trpc } from '~/trpc/client';
 
 export function ClientGreeting() {
