@@ -178,11 +178,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
     });
   }
   function tryReconnect(conn: Connection) {
+    conn.state = 'connecting';
     if (!!connectTimer) {
       return;
     }
-
-    conn.state = 'connecting';
     const timeout = retryDelayFn(connectAttempt++);
     reconnectInMs(timeout);
   }
