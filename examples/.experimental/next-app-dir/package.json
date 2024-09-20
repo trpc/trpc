@@ -13,8 +13,8 @@
   "dependencies": {
     "@hookform/resolvers": "^2.9.11",
     "@js-temporal/polyfill": "^0.4.4",
-    "@tanstack/react-query": "^5.51.11",
-    "@tanstack/react-query-devtools": "^5.51.11",
+    "@tanstack/react-query": "^5.54.1",
+    "@tanstack/react-query-devtools": "^5.54.1",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
@@ -31,7 +31,7 @@
     "server-only": "^0.0.1",
     "superjson": "^1.12.4",
     "trpc-api": "link:./src/trpc",
-    "typescript": "^5.5.3",
+    "typescript": "^5.6.2",
     "zod": "^3.0.0"
   },
   "devDependencies": {
