@@ -234,14 +234,14 @@ type DecorateMutationProcedure<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyMutationProcedure,
 > = {
-  setMutationDefaults<TContext = unknown>(
+  setMutationDefaults<TMeta = unknown>(
     options:
-      | InferMutationOptions<TRoot, TProcedure, TContext>
+      | InferMutationOptions<TRoot, TProcedure, TMeta>
       | ((args: {
           canonicalMutationFn: NonNullable<
             InferMutationOptions<TRoot, TProcedure>['mutationFn']
           >;
-        }) => InferMutationOptions<TRoot, TProcedure, TContext>),
+        }) => InferMutationOptions<TRoot, TProcedure, TMeta>),
   ): void;
 
   getMutationDefaults(): InferMutationOptions<TRoot, TProcedure> | undefined;
