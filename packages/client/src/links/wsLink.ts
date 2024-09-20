@@ -397,11 +397,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
       });
 
       ws.addEventListener('close', ({ code }) => {
-        if (self.state === 'open') {
+        const wasOpen = self.state === 'open';
+        onCloseOrError();
+
+        if (wasOpen) {
           opts.onClose?.({ code });
         }
-
-        onCloseOrError();
       });
     }).catch(onError);
     return self;
