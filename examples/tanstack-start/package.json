@@ -41,7 +41,7 @@
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "tailwindcss": "npm:tailwindcss@4.0.0-alpha.17",
-    "typescript": "^5.5.3",
+    "typescript": "^5.6.2",
     "typescript-eslint": "7.16.1",
     "vite": "^5.3.4",
     "vite-tsconfig-paths": "^4.3.2"
