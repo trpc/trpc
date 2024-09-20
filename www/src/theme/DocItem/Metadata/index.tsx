@@ -4,7 +4,7 @@ import React from 'react';
 import { docsParams } from '../../../../og-image/utils/zodParams';
 import { useEnv } from '../../../utils/useEnv';
 
-export default function DocItemMetadata(): JSX.Element {
+export default function DocItemMetadata(): React.JSX.Element {
   const { metadata } = useDoc();
   const { title, description } = metadata;
 

@@ -2,7 +2,10 @@ import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-import { createReadableStream } from './utils/createReadableStream';
+import {
+  createReadableStream,
+  isCancelledStreamResult,
+} from './utils/createReadableStream';
 
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
@@ -30,8 +33,8 @@ type PROMISE_STATUS_FULFILLED = typeof PROMISE_STATUS_FULFILLED;
 const PROMISE_STATUS_REJECTED = 1;
 type PROMISE_STATUS_REJECTED = typeof PROMISE_STATUS_REJECTED;
 
-const ASYNC_ITERABLE_STATUS_DONE = 0;
-type ASYNC_ITERABLE_STATUS_DONE = typeof ASYNC_ITERABLE_STATUS_DONE;
+const ASYNC_ITERABLE_STATUS_RETURN = 0;
+type ASYNC_ITERABLE_STATUS_RETURN = typeof ASYNC_ITERABLE_STATUS_RETURN;
 const ASYNC_ITERABLE_STATUS_VALUE = 1;
 type ASYNC_ITERABLE_STATUS_VALUE = typeof ASYNC_ITERABLE_STATUS_VALUE;
 const ASYNC_ITERABLE_STATUS_ERROR = 2;
@@ -56,7 +59,7 @@ type ChunkDefinition = [
 ];
 type DehydratedValue = [
   // data
-  [unknown],
+  [unknown] | [],
   // chunk descriptions
   ...ChunkDefinition[],
 ];
@@ -70,7 +73,11 @@ type PromiseChunk =
     ]
   | [chunkIndex: ChunkIndex, status: PROMISE_STATUS_REJECTED, error: unknown];
 type IterableChunk =
-  | [chunkIndex: ChunkIndex, status: ASYNC_ITERABLE_STATUS_DONE]
+  | [
+      chunkIndex: ChunkIndex,
+      status: ASYNC_ITERABLE_STATUS_RETURN,
+      value: DehydratedValue,
+    ]
   | [
       chunkIndex: ChunkIndex,
       status: ASYNC_ITERABLE_STATUS_VALUE,
@@ -143,7 +150,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
 
     Promise.race([promise, stream.cancelledPromise])
       .then((it) => {
-        if (it === null) {
+        if (isCancelledStreamResult(it)) {
           return;
         }
         stream.controller.enqueue([
@@ -199,12 +206,16 @@ function createBatchStreamProducer(opts: ProducerOptions) {
           ]);
           return;
         }
-        if (next === 'cancelled') {
+        if (isCancelledStreamResult(next)) {
           await iterator.return?.();
           break;
         }
         if (next.done) {
-          stream.controller.enqueue([idx, ASYNC_ITERABLE_STATUS_DONE]);
+          stream.controller.enqueue([
+            idx,
+            ASYNC_ITERABLE_STATUS_RETURN,
+            dehydrate(next.value, path),
+          ]);
           break;
         }
         stream.controller.enqueue([
@@ -238,7 +249,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     }
     return null;
   }
-  function dehydrateChunk(
+  function dehydrateAsync(
     value: unknown,
     path: (string | number)[],
   ): null | [type: ChunkValueType, chunkId: ChunkIndex] {
@@ -260,17 +271,20 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     value: unknown,
     path: (string | number)[],
   ): DehydratedValue {
-    const reg = dehydrateChunk(value, path);
-    if (reg) {
-      return [[placeholder], [null, ...reg]];
+    if (value === undefined) {
+      return [[]];
     }
     if (!isObject(value)) {
       return [[value]];
     }
+    const reg = dehydrateAsync(value, path);
+    if (reg) {
+      return [[placeholder], [null, ...reg]];
+    }
     const newObj = {} as Record<string, unknown>;
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
-      const transformed = dehydrateChunk(item, [...path, key]);
+      const transformed = dehydrateAsync(item, [...path, key]);
       if (!transformed) {
         newObj[key] = item;
         continue;
@@ -541,12 +555,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
                       done: false,
                       value: hydrate(data),
                     };
-                  case ASYNC_ITERABLE_STATUS_DONE:
+                  case ASYNC_ITERABLE_STATUS_RETURN:
                     controllers.delete(chunkId);
                     maybeAbort();
                     return {
                       done: true,
-                      value: undefined,
+                      value: hydrate(data),
                     };
                   case ASYNC_ITERABLE_STATUS_ERROR:
                     controllers.delete(chunkId);

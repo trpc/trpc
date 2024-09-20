@@ -1,14 +1,15 @@
 import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
+  usePrefetchInfiniteQuery as __usePrefetchInfiniteQuery,
   useQueries as __useQueries,
   useQuery as __useQuery,
   useSuspenseInfiniteQuery as __useSuspenseInfiniteQuery,
   useSuspenseQueries as __useSuspenseQueries,
   useSuspenseQuery as __useSuspenseQuery,
+  usePrefetchQuery as _usePrefetchQuery,
   hashKey,
   skipToken,
-  useQueryClient,
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { createTRPCUntypedClient } from '@trpc/client';
@@ -39,6 +40,8 @@ import type {
   UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
   UseTRPCMutationResult,
+  UseTRPCPrefetchInfiniteQueryOptions,
+  UseTRPCPrefetchQueryOptions,
   UseTRPCQueryOptions,
   UseTRPCQueryResult,
   UseTRPCSubscriptionOptions,
@@ -224,6 +227,40 @@ export function createRootHooks<
     return hook;
   }
 
+  function usePrefetchQuery(
+    path: string[],
+    input: unknown,
+    opts?: UseTRPCPrefetchQueryOptions<unknown, unknown, TError>,
+  ): void {
+    const context = useContext();
+    const queryKey = getQueryKeyInternal(path, input, 'query');
+
+    const isInputSkipToken = input === skipToken;
+
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ??
+      config?.abortOnUnmount ??
+      context.abortOnUnmount;
+
+    _usePrefetchQuery({
+      ...opts,
+      queryKey: queryKey as any,
+      queryFn: isInputSkipToken
+        ? input
+        : (queryFunctionContext) => {
+            const actualOpts = {
+              trpc: {
+                ...(shouldAbortOnUnmount
+                  ? { signal: queryFunctionContext.signal }
+                  : {}),
+              },
+            };
+
+            return context.client.query(...getClientArgs(queryKey, actualOpts));
+          },
+    });
+  }
+
   function useSuspenseQuery(
     path: readonly string[],
     input: unknown,
@@ -267,8 +304,7 @@ export function createRootHooks<
     path: readonly string[],
     opts?: UseTRPCMutationOptions<unknown, TError, unknown, unknown>,
   ): UseTRPCMutationResult<unknown, TError, unknown, unknown> {
-    const { client } = useContext();
-    const queryClient = useQueryClient();
+    const { client, queryClient } = useContext();
 
     const mutationKey = getMutationKeyInternal(path);
 
@@ -425,6 +461,54 @@ export function createRootHooks<
     return hook;
   }
 
+  function usePrefetchInfiniteQuery(
+    path: string[],
+    input: unknown,
+    opts: UseTRPCPrefetchInfiniteQueryOptions<unknown, unknown, TError>,
+  ): void {
+    const context = useContext();
+    const queryKey = getQueryKeyInternal(path, input, 'infinite');
+
+    const defaultOpts = context.queryClient.getQueryDefaults(queryKey);
+
+    const isInputSkipToken = input === skipToken;
+
+    const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, {
+      ...defaultOpts,
+      ...opts,
+    });
+
+    // request option should take priority over global
+    const shouldAbortOnUnmount =
+      opts?.trpc?.abortOnUnmount ?? context.abortOnUnmount;
+
+    __usePrefetchInfiniteQuery({
+      ...opts,
+      initialPageParam: opts.initialCursor ?? null,
+      queryKey,
+      queryFn: isInputSkipToken
+        ? input
+        : (queryFunctionContext) => {
+            const actualOpts = {
+              ...ssrOpts,
+              trpc: {
+                ...ssrOpts?.trpc,
+                ...(shouldAbortOnUnmount
+                  ? { signal: queryFunctionContext.signal }
+                  : {}),
+              },
+            };
+
+            return context.client.query(
+              ...getClientArgs(queryKey, actualOpts, {
+                pageParam: queryFunctionContext.pageParam ?? opts.initialCursor,
+                direction: queryFunctionContext.direction,
+              }),
+            );
+          },
+    });
+  }
+
   function useSuspenseInfiniteQuery(
     path: readonly string[],
     input: unknown,
@@ -537,12 +621,14 @@ export function createRootHooks<
     useContext,
     useUtils: useContext,
     useQuery,
+    usePrefetchQuery,
     useSuspenseQuery,
     useQueries,
     useSuspenseQueries,
     useMutation,
     useSubscription,
     useInfiniteQuery,
+    usePrefetchInfiniteQuery,
     useSuspenseInfiniteQuery,
   };
 }

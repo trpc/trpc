@@ -78,9 +78,9 @@ export const subRouter = router({
 });
 ```
 
-### Automatic tracking of id using `sse()` (recommended)
+### Automatic tracking of id using `tracked()` (recommended)
 
-If you `yield` an event using our `sse()`-helper and include an `id`, the browser will automatically reconnect when it gets disconnected and send the last known ID - this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
+If you `yield` an event using our `tracked()`-helper and include an `id`, the browser will automatically reconnect when it gets disconnected and send the last known ID - this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
 
 You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
 
@@ -91,7 +91,7 @@ If you're fetching data based on the `lastEventId`, and capturing all events is 
 ```ts
 import EventEmitter, { on } from 'events';
 import type { Post } from '@prisma/client';
-import { sse } from '@trpc/server';
+import { tracked } from '@trpc/server';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 
@@ -100,12 +100,14 @@ const ee = new EventEmitter();
 export const subRouter = router({
   onPostAdd: publicProcedure
     .input(
-      z.object({
-        // lastEventId is the last event id that the client has received
-        // On the first call, it will be whatever was passed in the initial setup
-        // If the client reconnects, it will be the last event id that the client received
-        lastEventId: z.string().nullish(),
-      }),
+      z
+        .object({
+          // lastEventId is the last event id that the client has received
+          // On the first call, it will be whatever was passed in the initial setup
+          // If the client reconnects, it will be the last event id that the client received
+          lastEventId: z.string().nullish(),
+        })
+        .optional(),
     )
     .subscription(async function* (opts) {
       if (opts.input.lastEventId) {
@@ -114,11 +116,8 @@ export const subRouter = router({
       // listen for new events
       for await (const [data] of on(ee, 'add')) {
         const post = data as Post;
-        yield sse({
-          // yielding the post id ensures the client can reconnect at any time and get the latest events this id
-          id: post.id,
-          data: post,
-        });
+        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+        yield tracked(post.id, post);
       }
     }),
 });

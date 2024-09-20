@@ -368,6 +368,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
 
+          if (error) {
+            throw error;
+          }
+
           if (!isObservable(data) && !isAsyncIterable(data)) {
             throw new TRPCError({
               message: `Subscription ${
@@ -380,9 +384,21 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             ? observableToAsyncIterable(data)
             : data;
           const stream = sseStreamProducer({
-            ...router._def._config.experimental?.sseSubscriptions,
+            ...config.experimental?.sseSubscriptions,
             data: dataAsIterable,
             serialize: (v) => config.transformer.output.serialize(v),
+            formatError(errorOpts) {
+              const shape = getErrorShape({
+                config,
+                ctx,
+                error: getTRPCErrorFromUnknown(errorOpts.error),
+                input: call?.result(),
+                path: call?.path,
+                type: call?.procedure?._def.type ?? 'unknown',
+              });
+
+              return shape;
+            },
           });
           for (const [key, value] of Object.entries(sseHeaders)) {
             headers.set(key, value);

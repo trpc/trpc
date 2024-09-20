@@ -21,6 +21,7 @@ import type {
   TRPCConnectionParamsMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
+  TRPCResultMessage,
 } from '../@trpc/server/rpc';
 import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable } from '../observable';
@@ -29,6 +30,7 @@ import { observableToAsyncIterable } from '../observable/observable';
 import {
   isAsyncIterable,
   isObject,
+  isTrackedEnvelope,
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
@@ -171,6 +173,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
       const { id, jsonrpc } = msg;
+
       /* istanbul ignore next -- @preserve */
       if (id === null) {
         throw new TRPCError({
@@ -182,9 +185,22 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         clientSubscriptions.get(id)?.abort();
         return;
       }
-      const { path, input } = msg.params;
+      const { path, lastEventId } = msg.params;
+      let { input } = msg.params;
       const type = msg.method;
       try {
+        if (lastEventId !== undefined) {
+          if (isObject(input)) {
+            input = {
+              ...input,
+              lastEventId: lastEventId,
+            };
+          } else {
+            input ??= {
+              lastEventId: lastEventId,
+            };
+          }
+        }
         await ctxPromise; // asserts context has been set
 
         const result = await callProcedure({
@@ -195,7 +211,16 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           type,
         });
 
+        const isIterableResult =
+          isAsyncIterable(result) || isObservable(result);
+
         if (type !== 'subscription') {
+          if (isIterableResult) {
+            throw new TRPCError({
+              code: 'UNSUPPORTED_MEDIA_TYPE',
+              message: `Cannot return an async iterable or observable from a ${type} procedure with WebSockets`,
+            });
+          }
           // send the value as data if the method is not a subscription
           respond({
             id,
@@ -208,7 +233,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           return;
         }
 
-        if (!isObservable(result) && !isAsyncIterable(result)) {
+        if (!isIterableResult) {
           throw new TRPCError({
             message: `Subscription ${path} did not return an observable or a AsyncGenerator`,
             code: 'INTERNAL_SERVER_ERROR',
@@ -277,13 +302,24 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               break;
             }
 
+            const result: TRPCResultMessage<unknown>['result'] = {
+              type: 'data',
+              data: next.value,
+            };
+
+            if (isTrackedEnvelope(next.value)) {
+              const [id, data] = next.value;
+              result.id = id;
+              result.data = {
+                id,
+                data,
+              };
+            }
+
             respond({
               id,
               jsonrpc,
-              result: {
-                type: 'data',
-                data: next.value,
-              },
+              result,
             });
           }
 
@@ -425,7 +461,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 /**
  * Handle WebSocket keep-alive messages
  */
-function handleKeepAlive(
+export function handleKeepAlive(
   client: ws.WebSocket,
   pingMs = 30000,
   pongWaitMs = 5000,

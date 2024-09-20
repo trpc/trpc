@@ -52,6 +52,10 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
    */
   onOpen?: () => void;
   /**
+   * Triggered when a WebSocket connection encounters an error
+   */
+  onError?: (evt?: Event) => void;
+  /**
    * Triggered when a WebSocket connection is closed
    */
   onClose?: (cause?: { code?: number }) => void;
@@ -81,8 +85,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
   const {
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = exponentialBackoff,
-    onOpen,
-    onClose,
   } = opts;
   const lazyOpts: LazyOptions = {
     ...lazyDefaults,
@@ -103,7 +105,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
    * pending outgoing requests that are awaiting callback
    */
   type TCallbacks = WSCallbackObserver<AnyRouter, unknown>;
-  type TRequest = {
+  type WsRequest = {
     /**
      * Reference to the WebSocket instance this request was made to
      */
@@ -111,8 +113,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
     type: ProcedureType;
     callbacks: TCallbacks;
     op: Operation;
+    /**
+     * The last event id that the client has received
+     */
+    lastEventId: string | undefined;
   };
-  const pendingRequests: Record<number | string, TRequest> =
+  const pendingRequests: Record<number | string, WsRequest> =
     Object.create(null);
   let connectAttempt = 0;
   let connectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
@@ -210,11 +216,15 @@ export function createWSClient(opts: WebSocketClientOptions) {
       conn.ws?.close();
     }
   }
-  function resumeSubscriptionOnReconnect(req: TRequest) {
+  function resumeSubscriptionOnReconnect(req: WsRequest) {
     if (outgoing.some((r) => r.id === req.op.id)) {
       return;
     }
-    request(req.op, req.callbacks);
+    request({
+      op: req.op,
+      callbacks: req.callbacks,
+      lastEventId: req.lastEventId,
+    });
   }
 
   const startLazyDisconnectTimer = () => {
@@ -243,11 +253,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     clearTimeout(lazyDisconnectTimer);
 
-    const onError = () => {
+    const onError = (evt?: Event) => {
       self.state = 'closed';
       if (self === activeConnection) {
         tryReconnect(self);
       }
+      opts.onError?.(evt);
     };
     run(async () => {
       let url = await resultOf(opts.url);
@@ -281,7 +292,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
           connectAttempt = 0;
           self.state = 'open';
 
-          onOpen?.();
+          opts.onOpen?.();
           dispatch();
         }).catch((cause) => {
           ws.close(
@@ -325,6 +336,13 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
         if (
           'result' in data &&
+          data.result.type === 'data' &&
+          typeof data.result.id === 'string'
+        ) {
+          req.lastEventId = data.result.id;
+        }
+        if (
+          'result' in data &&
           data.result.type === 'stopped' &&
           activeConnection === self
         ) {
@@ -349,7 +367,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
       ws.addEventListener('close', ({ code }) => {
         if (self.state === 'open') {
-          onClose?.({ code });
+          opts.onClose?.({ code });
         }
         self.state = 'closed';
 
@@ -388,7 +406,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
     return self;
   }
 
-  function request(op: Operation, callbacks: TCallbacks): UnsubscribeFn {
+  function request(opts: {
+    op: Operation;
+    callbacks: TCallbacks;
+    lastEventId: string | undefined;
+  }): UnsubscribeFn {
+    const { op, callbacks, lastEventId } = opts;
     const { type, input, path, id } = op;
     const envelope: TRPCRequestMessage = {
       id,
@@ -396,13 +419,16 @@ export function createWSClient(opts: WebSocketClientOptions) {
       params: {
         input,
         path,
+        lastEventId,
       },
     };
+
     pendingRequests[id] = {
       connection: null,
       type,
       callbacks,
       op,
+      lastEventId,
     };
 
     // enqueue message
@@ -485,9 +511,9 @@ export function wsLink<TRouter extends AnyRouter>(
 
         const input = transformer.input.serialize(op.input);
 
-        const unsub = client.request(
-          { type, path, input, id, context, signal: null },
-          {
+        const unsub = client.request({
+          op: { type, path, input, id, context, signal: null },
+          callbacks: {
             error(err) {
               observer.error(err as TRPCClientError<any>);
               unsub();
@@ -514,7 +540,8 @@ export function wsLink<TRouter extends AnyRouter>(
               }
             },
           },
-        );
+          lastEventId: undefined,
+        });
         return () => {
           unsub();
         };
