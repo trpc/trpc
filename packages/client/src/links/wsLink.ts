@@ -357,10 +357,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
         req.callbacks.next?.(data);
         if (self === activeConnection && req.connection !== activeConnection) {
-          // gracefully replace old connection with this
-          const oldConn = req.connection;
+          // gracefully replace old connection with a new connection
           req.connection = self;
-          oldConn && closeIfNoPending(oldConn);
+        }
+        if (req.connection !== self) {
+          // the connection has been replaced
+          return;
         }
 
         if (
