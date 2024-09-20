@@ -32,7 +32,7 @@
     "dataloader": "^2.2.2",
     "devalue": "^5.0.0",
     "eslint": "^8.57.0",
-    "fastify": "^4.16.0",
+    "fastify": "^5.0.0",
     "fastify-plugin": "^5.0.0",
     "jsdom": "^24.0.0",
     "konn": "^0.7.0",
