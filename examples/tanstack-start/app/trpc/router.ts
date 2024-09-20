@@ -13,7 +13,6 @@ const postRouter = {
     const posts = await fetch(
       'https://jsonplaceholder.typicode.com/posts',
     ).then((r) => r.json() as Promise<Array<Post>>);
-
     return posts.slice(0, 10);
   }),
   byId: publicProcedure
