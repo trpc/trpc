@@ -53,7 +53,7 @@ export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]): number {
 
   const httpStatus = httpStatuses.values().next().value;
 
-  return httpStatus;
+  return httpStatus as number;
 }
 
 export function getHTTPStatusCodeFromError(error: TRPCError) {
