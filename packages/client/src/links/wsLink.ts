@@ -269,10 +269,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
         // The connection was closed either unexpectedly or because of a reconnect
         if (req.type === 'subscription') {
-          if (activeConnection === self) {
-            // Subscriptions will resume after we've reconnected
-            resumeSubscriptionOnReconnect(req);
-          }
+          // Subscriptions will resume after we've reconnected
+          resumeSubscriptionOnReconnect(req);
         } else {
           // Queries and mutations will error if interrupted
           delete pendingRequests[key];
