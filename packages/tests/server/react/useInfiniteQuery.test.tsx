@@ -2,6 +2,7 @@ import { ignoreErrors } from '../___testHelpers';
 import { createQueryClient } from '../__queryClient';
 import type { Post } from './__testHelpers';
 import { createAppRouter } from './__testHelpers';
+import type { InfiniteData } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -627,4 +628,44 @@ test('regression 5412: invalidating a query', async () => {
 
   expect(posts).toHaveTextContent('first post');
   expect(posts).toHaveTextContent('second post');
+});
+
+test('regression 5809: select()', async () => {
+  const { trpc, App } = factory;
+
+  function MyComponent() {
+    const q = trpc.paginatedPosts.useInfiniteQuery(
+      {
+        limit: 1,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+        select: (data) => {
+          return {
+            ...data,
+            pages: data.pages.map((page) => {
+              return {
+                ...page,
+                foo: 'bar' as const,
+              };
+            }),
+          };
+        },
+      },
+    );
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+    expectTypeOf(q.data?.pages[0]?.foo!).toEqualTypeOf<'bar'>();
+
+    return <div>foo:{q.data?.pages[0]?.foo}</div>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('foo:bar');
+  });
 });
