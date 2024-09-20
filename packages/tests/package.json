@@ -11,7 +11,7 @@
   "dependencies": {
     "@cloudflare/workers-types": "^4.0.0",
     "@fastify/busboy": "^3.0.0",
-    "@fastify/websocket": "^10.0.1",
+    "@fastify/websocket": "^11.0.0",
     "@js-temporal/polyfill": "^0.4.4",
     "@miniflare/core": "^2.9.0",
     "@tanstack/query-sync-storage-persister": "^5.51.9",
