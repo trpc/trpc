@@ -253,7 +253,7 @@ describe('onError handler', () => {
     await expect(caller.thrower()).rejects.toThrow('error');
 
     expect(callerHandler).toHaveBeenCalledOnce();
-    expect(callerHandler.mock.calls[0][0]).toMatchInlineSnapshot(`
+    expect(callerHandler.mock.calls[0]?.[0]).toMatchInlineSnapshot(`
       Object {
         "ctx": Object {
           "foo": "bar",

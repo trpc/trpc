@@ -21,6 +21,7 @@ import type {
   TRPCConnectionParamsMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
+  TRPCResultMessage,
 } from '../@trpc/server/rpc';
 import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable } from '../observable';
@@ -29,6 +30,7 @@ import { observableToAsyncIterable } from '../observable/observable';
 import {
   isAsyncIterable,
   isObject,
+  isTrackedEnvelope,
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
@@ -88,7 +90,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
     };
   };
 
-const unsetContextSymbol = Symbol('unsetContext');
+const unsetContextPromiseSymbol = Symbol('unsetContextPromise');
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
   opts: WSConnectionHandlerOptions<TRouter>,
 ) {
@@ -148,13 +150,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
 
         // close in next tick
-        (global.setImmediate ?? global.setTimeout)(() => {
+        (globalThis.setImmediate ?? globalThis.setTimeout)(() => {
           client.close();
         });
 
         throw error;
       });
     }
+
+    let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     /**
      * promise for initializing the context
@@ -164,13 +168,12 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
      */
     let ctxPromise =
       toURL(req.url ?? '').searchParams.get('connectionParams') === '1'
-        ? unsetContextSymbol
+        ? unsetContextPromiseSymbol
         : createCtxPromise(() => null);
-
-    let ctx: inferRouterContext<TRouter> | undefined = undefined;
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
       const { id, jsonrpc } = msg;
+
       /* istanbul ignore next -- @preserve */
       if (id === null) {
         throw new TRPCError({
@@ -182,9 +185,22 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         clientSubscriptions.get(id)?.abort();
         return;
       }
-      const { path, input } = msg.params;
+      const { path, lastEventId } = msg.params;
+      let { input } = msg.params;
       const type = msg.method;
       try {
+        if (lastEventId !== undefined) {
+          if (isObject(input)) {
+            input = {
+              ...input,
+              lastEventId: lastEventId,
+            };
+          } else {
+            input ??= {
+              lastEventId: lastEventId,
+            };
+          }
+        }
         await ctxPromise; // asserts context has been set
 
         const result = await callProcedure({
@@ -195,7 +211,16 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           type,
         });
 
+        const isIterableResult =
+          isAsyncIterable(result) || isObservable(result);
+
         if (type !== 'subscription') {
+          if (isIterableResult) {
+            throw new TRPCError({
+              code: 'UNSUPPORTED_MEDIA_TYPE',
+              message: `Cannot return an async iterable or observable from a ${type} procedure with WebSockets`,
+            });
+          }
           // send the value as data if the method is not a subscription
           respond({
             id,
@@ -208,7 +233,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           return;
         }
 
-        if (!isObservable(result) && !isAsyncIterable(result)) {
+        if (!isIterableResult) {
           throw new TRPCError({
             message: `Subscription ${path} did not return an observable or a AsyncGenerator`,
             code: 'INTERNAL_SERVER_ERROR',
@@ -277,13 +302,24 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               break;
             }
 
+            const result: TRPCResultMessage<unknown>['result'] = {
+              type: 'data',
+              data: next.value,
+            };
+
+            if (isTrackedEnvelope(next.value)) {
+              const [id, data] = next.value;
+              result.id = id;
+              result.data = {
+                id,
+                data,
+              };
+            }
+
             respond({
               id,
               jsonrpc,
-              result: {
-                type: 'data',
-                data: next.value,
-              },
+              result,
             });
           }
 
@@ -341,7 +377,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       }
     }
     client.on('message', async (message) => {
-      if (ctxPromise === unsetContextSymbol) {
+      if (ctxPromise === unsetContextPromiseSymbol) {
         // If the ctxPromise wasn't created immediately, we're expecting the first message to be a TRPCConnectionParamsMessage
         ctxPromise = createCtxPromise(() => {
           let msg;
@@ -415,7 +451,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       abortController.abort();
     });
 
-    if (ctxPromise !== unsetContextSymbol) {
+    if (ctxPromise !== unsetContextPromiseSymbol) {
       // prevent unhandled promise rejection errors
       await ctxPromise.catch(() => null);
     }
@@ -425,7 +461,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 /**
  * Handle WebSocket keep-alive messages
  */
-function handleKeepAlive(
+export function handleKeepAlive(
   client: ws.WebSocket,
   pingMs = 30000,
   pongWaitMs = 5000,

@@ -351,7 +351,9 @@ const publicProcedure = t.procedure;
 export const appRouter = t.router({
   hello: publicProcedure
     .input(Schema.decodeUnknownSync(Schema.Struct({ name: Schema.String })))
-    .output(Schema.decodeUnknownSync(Schema.Struct({ greeting: Schema.String })))
+    .output(
+      Schema.decodeUnknownSync(Schema.Struct({ greeting: Schema.String })),
+    )
     .query(({ input }) => {
       //      ^?
       return {
@@ -452,6 +454,31 @@ export const appRouter = t.router({
     )
     .query(({ input }) => {
       //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [TypeBox](https://github.com/sinclairzx81/typebox)
+
+```ts
+import { Type } from '@sinclair/typebox';
+import { initTRPC } from '@trpc/server';
+import { wrap } from '@typeschema/typebox';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(wrap(Type.Object({ name: Type.String() })))
+    .output(wrap(Type.Object({ greeting: Type.String() })))
+    .query(({ input }) => {
       return {
         greeting: `hello ${input.name}`,
       };

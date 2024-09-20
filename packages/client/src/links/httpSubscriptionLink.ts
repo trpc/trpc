@@ -3,7 +3,6 @@ import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
-  SSEMessage,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
@@ -12,6 +11,7 @@ import {
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
+import type { CallbackOrValue } from './internals/urlWithConnectionParams';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
@@ -35,9 +35,9 @@ async function urlWithConnectionParams(
 
 type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
-   * EventSource options
+   * EventSource options or a callback that returns them
    */
-  eventSourceOptions?: EventSourceInit;
+  eventSourceOptions?: CallbackOrValue<EventSourceInit>;
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -50,6 +50,7 @@ export function unstable_httpSubscriptionLink<
   opts: HTTPSubscriptionLinkOptions<inferClientTypes<TInferrable>>,
 ): TRPCLink<TInferrable> {
   const transformer = getTransformer(opts.transformer);
+
   return () => {
     return ({ op }) => {
       return observable((observer) => {
@@ -72,12 +73,13 @@ export function unstable_httpSubscriptionLink<
             signal: null,
           });
 
+          const eventSourceOptions = await resultOf(opts.eventSourceOptions);
           /* istanbul ignore if -- @preserve */
           if (unsubscribed) {
             // already unsubscribed - rare race condition
             return;
           }
-          eventSource = new EventSource(url, opts.eventSourceOptions);
+          eventSource = new EventSource(url, eventSourceOptions);
           const onStarted = () => {
             observer.next({
               result: {
@@ -93,14 +95,25 @@ export function unstable_httpSubscriptionLink<
           };
           // console.log('starting', new Date());
           eventSource.addEventListener('open', onStarted);
-          const iterable = sseStreamConsumer<Partial<SSEMessage>>({
+          const iterable = sseStreamConsumer<
+            Partial<{
+              id?: string;
+              data: unknown;
+            }>
+          >({
             from: eventSource,
-            deserialize: transformer.input.deserialize,
+            deserialize: transformer.output.deserialize,
           });
 
           for await (const chunk of iterable) {
-            // if the `sse({})`-helper is used, we always have an `id` field
-            const data = 'id' in chunk ? chunk : chunk.data;
+            if (!chunk.ok) {
+              // TODO: handle in https://github.com/trpc/trpc/issues/5871
+              continue;
+            }
+            const chunkData = chunk.data;
+
+            // if the `tracked()`-helper is used, we always have an `id` field
+            const data = 'id' in chunkData ? chunkData : chunkData.data;
             observer.next({
               result: {
                 data,

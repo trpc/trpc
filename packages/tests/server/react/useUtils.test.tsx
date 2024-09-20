@@ -266,6 +266,9 @@ test('invalidate', async () => {
 
                   // @ts-expect-error Should not exist
                   utils.post.create.invalidate;
+
+                  // @ts-expect-error Should not exist
+                  utils.post.all.setMutationDefaults;
                 },
               },
             );
@@ -817,5 +820,50 @@ describe('query keys are stored separately', () => {
       ]
     `);
     expect(data.infinite).toBeUndefined();
+  });
+});
+
+test('isMutating', async () => {
+  const { client, App } = ctx;
+
+  function MyComponent() {
+    const createPostMutation = client.post.create.useMutation();
+    const isMutating = client.useUtils().post.create.isMutating();
+    const [isMutatingHistory, setIsMutatingHistory] = useState<number[]>([]);
+
+    useEffect(() => {
+      setIsMutatingHistory((prev) => {
+        const last = prev[prev.length - 1];
+        return last !== isMutating ? [...prev, isMutating] : prev;
+      });
+    });
+
+    return (
+      <>
+        <button
+          data-testid="add-post"
+          onClick={() => {
+            createPostMutation.mutate({ text: '' });
+          }}
+        />
+        <span data-testid="is-mutating-history">
+          {isMutatingHistory.join(',')}
+        </span>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  const addPostButton = await utils.findByTestId('add-post');
+  const isMutatingHistorySpan = await utils.findByTestId('is-mutating-history');
+
+  await userEvent.click(addPostButton);
+  await waitFor(() => {
+    expect(isMutatingHistorySpan).toHaveTextContent('0,1,0');
   });
 });

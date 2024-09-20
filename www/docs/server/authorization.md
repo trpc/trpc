@@ -68,6 +68,7 @@ const appRouter = t.router({
 
 ```ts title='server/routers/_app.ts'
 import { initTRPC, TRPCError } from '@trpc/server';
+import type { Context } from '../context';
 
 export const t = initTRPC.context<Context>().create();
 

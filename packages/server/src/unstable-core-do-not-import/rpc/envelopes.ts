@@ -49,7 +49,17 @@ export namespace JSONRPC2 {
 /////////////////////////// HTTP envelopes ///////////////////////
 
 export interface TRPCRequest
-  extends JSONRPC2.Request<ProcedureType, { path: string; input: unknown }> {}
+  extends JSONRPC2.Request<
+    ProcedureType,
+    {
+      path: string;
+      input: unknown;
+      /**
+       * The last event id that the client received
+       */
+      lastEventId?: string;
+    }
+  > {}
 
 export interface TRPCResult<TData = unknown> {
   data: TData;
@@ -101,7 +111,13 @@ export interface TRPCResultMessage<TData>
   extends JSONRPC2.ResultResponse<
     | { type: 'started'; data?: never }
     | { type: 'stopped'; data?: never }
-    | (TRPCResult<TData> & { type: 'data' })
+    | (TRPCResult<TData> & {
+        type: 'data';
+        /**
+         * The id of the message to keep track of in case of a reconnect
+         */
+        id?: string;
+      })
   > {}
 
 export type TRPCResponseMessage<

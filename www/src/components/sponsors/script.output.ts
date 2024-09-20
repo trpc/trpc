@@ -35,11 +35,11 @@ export const topSponsors = [
     "createdAt": 1651211349000
   },
   {
-    "name": "tryretool",
+    "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
     "weight": 9,
     "login": "tryretool",
-    "link": "https://github.com/tryretool",
+    "link": "http://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
   }
 ] as const;
@@ -201,7 +201,7 @@ export const allSponsors = [
   {
     "name": "Drew Powers",
     "imgSrc": "https://avatars.githubusercontent.com/u/49917220?u=ceb7a6b68f6366882ac7bc599383382f48e41e94&v=4",
-    "weight": 2,
+    "weight": 3,
     "login": "drwpwrs",
     "link": "https://github.com/drwpwrs",
     "createdAt": 1687018575000
@@ -279,11 +279,11 @@ export const allSponsors = [
     "createdAt": 1720253577000
   },
   {
-    "name": "tryretool",
+    "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
     "weight": 9,
     "login": "tryretool",
-    "link": "https://github.com/tryretool",
+    "link": "http://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
   }
 ] as const;

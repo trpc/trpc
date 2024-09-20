@@ -49,7 +49,7 @@ test('withTRPC - SSR', async () => {
   const { window } = global;
 
   // @ts-ignore
-  delete global.window;
+  delete globalThis.window;
 
   const trpc = createTRPCNext({
     config() {
@@ -98,5 +98,5 @@ test('withTRPC - SSR', async () => {
   `);
 
   // @ts-ignore
-  global.window = window;
+  globalThis.window = window;
 });

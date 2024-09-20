@@ -67,9 +67,12 @@ export function parseTRPCMessage(
   }
   assertIsProcedureType(method);
   assertIsObject(params);
-  const { input: rawInput, path } = params;
+  const { input: rawInput, path, lastEventId } = params;
 
   assertIsString(path);
+  if (lastEventId !== undefined) {
+    assertIsString(lastEventId);
+  }
 
   const input = transformer.input.deserialize(rawInput);
 
@@ -80,6 +83,7 @@ export function parseTRPCMessage(
     params: {
       input,
       path,
+      lastEventId,
     },
   };
 }

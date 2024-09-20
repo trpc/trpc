@@ -17,10 +17,13 @@ import * as React from 'react';
 export function CreateChannelDialog() {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
-  const { mutate: createChannel } = trpc.channel.create.useMutation({
+  const mutation = trpc.channel.create.useMutation({
     onSuccess: (id) => {
       router.push(`/channels/${id}`);
       router.refresh();
+    },
+    onError(err) {
+      alert('Error: ' + err.message);
     },
   });
 
@@ -35,7 +38,7 @@ export function CreateChannelDialog() {
           onSubmit={(e) => {
             e.preventDefault();
             const name = new FormData(e.currentTarget).get('name') as string;
-            createChannel({ name });
+            mutation.mutate({ name });
           }}
         >
           <DialogBody>
@@ -57,7 +60,11 @@ export function CreateChannelDialog() {
             >
               Cancel
             </Button>
-            <Button type="submit" variant="default">
+            <Button
+              type="submit"
+              variant="default"
+              disabled={mutation.isPending}
+            >
               Create
             </Button>
           </DialogActions>

@@ -10,7 +10,7 @@ export const resultOf = <T>(value: T | (() => T)): T => {
 /**
  * A value that can be wrapped in callback
  */
-type CallbackOrValue<T> = T | (() => T | Promise<T>);
+export type CallbackOrValue<T> = T | (() => T | Promise<T>);
 
 export interface UrlOptionsWithConnectionParams {
   /**
