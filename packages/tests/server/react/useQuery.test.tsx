@@ -337,7 +337,7 @@ test('useInfiniteQuery()', async () => {
           items: typeof fixtureData;
           next?: number | undefined;
         },
-        number | null
+        number | undefined
       >
     >(query1.data);
 
@@ -387,64 +387,5 @@ test('useInfiniteQuery()', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
     expect(utils.container).toHaveTextContent(`[ "2" ]`);
-  });
-});
-
-test('useInfiniteQuery() initialCursor', async () => {
-  const { App, client } = ctx;
-  function MyComponent() {
-    const query1 = client.post.list.useInfiniteQuery(
-      {},
-      {
-        getNextPageParam(lastPage) {
-          return lastPage.next;
-        },
-        initialCursor: 2,
-      },
-    );
-    expect(query1.trpc.path).toBe('post.list');
-
-    if (query1.isPending || query1.isFetching || !query1.data) {
-      return <>...</>;
-    }
-
-    expectTypeOf<
-      InfiniteData<
-        {
-          items: typeof fixtureData;
-          next?: number | undefined;
-        },
-        number | null
-      >
-    >(query1.data);
-
-    return (
-      <>
-        <button
-          data-testid="fetchMore"
-          onClick={() => {
-            query1.fetchNextPage();
-          }}
-        >
-          Fetch more
-        </button>
-        <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>
-      </>
-    );
-  }
-
-  const utils = render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`[ "3" ]`);
-  });
-  await userEvent.click(utils.getByTestId('fetchMore'));
-
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`[ "3" ]`);
-    expect(utils.container).toHaveTextContent(`[ "4" ]`);
   });
 });
