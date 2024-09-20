@@ -58,11 +58,11 @@ Here's the steps I followed to trace tRPC:
 3. You'll be given a `trace/trace.json` file on your machine. You can open that file in a trace analysis app (I use [Perfetto](https://ui.perfetto.dev/)) or `chrome://tracing`.
 
 This is where things get interesting and we can start to learn about the performance profile of the types in the application. Here's what the first trace looked like:
-![trace bar showing that src/pages/index.ts took 332ms to type-check](https://user-images.githubusercontent.com/58836760/190300723-5366674f-2fe0-48e9-8a00-7a8bc85b5c91.png)
+![trace bar showing that src/pages/index.ts took 332ms to type-check](https://assets.trpc.io/www/blog/2023-01-14-typescript-performance-lessons/trace-1.png)
 
 A longer bar means more time spent performing that process. I've selected the top green bar for this screenshot, indicating that `src/pages/index.ts` is the bottleneck. Under the `Duration` field, you'll see that it took 332ms - an enormous amount of time to spend type-checking! The blue `checkVariableDeclaration` bar tells us the compiler spent most of its time on one variable.
 Clicking on that bar will tell us which one it is:
-![trace info showing the variable's position is 275](https://user-images.githubusercontent.com/58836760/212483649-65e30d0f-497b-4af4-a58d-57f83e92a273.png)
+![trace info showing the variable's position is 275](https://assets.trpc.io/www/blog/2023-01-14-typescript-performance-lessons/trace-2.png)
 The `pos` field reveals the position of the variable in the file's text. Going to that position in `src/pages/index.ts` reveals that the culprit is `utils = trpc.useContext()`!
 
 But how could this be? We're just using a simple hook! Let's look at the code:
@@ -180,7 +180,7 @@ Now, we can remove `OmitNeverKeys` because the procedures are pre-sorted so a ro
 ## Did it work?
 
 Our new trace shows that the bottleneck has been removed:
-![trace bar showing that src/pages/index.ts took 136ms to type-check](https://user-images.githubusercontent.com/58836760/190300687-ef85589e-a997-4fa0-be0f-547f12801b2c.png)
+![trace bar showing that src/pages/index.ts took 136ms to type-check](https://assets.trpc.io/www/blog/2023-01-14-typescript-performance-lessons/trace-3.png)
 
 A substantial improvement! Type-checking time went from 332ms to 136ms 🤯! This may not seem like much in the big picture but it's a huge win. 200ms is a small amount once - but think about:
 
