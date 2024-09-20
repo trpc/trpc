@@ -28,7 +28,7 @@
     "@types/node": "^20.10.0",
     "abort-controller": "^3.0.0",
     "arktype": "1.0.14-alpha",
-    "arktype2": "npm:arktype@2.0.0-rc.10",
+    "arktype2": "npm:arktype@2.0.0-rc.12",
     "dataloader": "^2.2.2",
     "devalue": "^5.0.0",
     "eslint": "^8.57.0",
