@@ -233,7 +233,7 @@ Mount the provider in the root of your application (e.g. `app/layout.tsx` when u
 To prefetch queries from server components, we use a tRPC caller. The `@trpc/react-query/rsc` module exports a thin wrapper around
 [`createCaller`](https://trpc.io/docs/server/server-side-calls) that integrates with your React Query client.
 
-```tsx title='trpc/client.tsx'
+```tsx title='trpc/server.tsx'
 import 'server-only'; // <-- ensure this file cannot be imported from the client
 
 import { createHydrationHelpers } from '@trpc/react-query/rsc';
