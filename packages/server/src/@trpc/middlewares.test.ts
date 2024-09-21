@@ -7,59 +7,21 @@ import type {
   ParseFn,
   Parser,
 } from '../unstable-core-do-not-import/parser';
-import type { TypeError } from '../unstable-core-do-not-import/types';
+import type {
+  GetRawInputFn,
+  MaybePromise,
+  Overwrite,
+  Simplify,
+  TypeError,
+} from '../unstable-core-do-not-import/types';
 import {
   isObject,
   type UnsetMarker,
 } from '../unstable-core-do-not-import/utils';
 
-/**
- * See https://github.com/microsoft/TypeScript/issues/41966#issuecomment-758187996
- * Fixes issues with iterating over keys of objects with index signatures.
- * Without this, iterations over keys of objects with index signatures will lose
- * type information about the keys and only the index signature will remain.
- * @internal
- */
-type WithoutIndexSignature<TObj> = {
-  [K in keyof TObj as string extends K
-    ? never
-    : number extends K
-    ? never
-    : K]: TObj[K];
-};
-
-type Overwrite<TType, TWith> = TWith extends any
-  ? TType extends object
-    ? {
-        [K in  // Exclude index signature from keys
-          | keyof WithoutIndexSignature<TType>
-          | keyof WithoutIndexSignature<TWith>]: K extends keyof TWith
-          ? TWith[K]
-          : K extends keyof TType
-          ? TType[K]
-          : never;
-      } & (string extends keyof TWith // Handle cases with an index signature
-        ? { [key: string]: TWith[string] }
-        : number extends keyof TWith
-        ? { [key: number]: TWith[number] }
-        : // eslint-disable-next-line @typescript-eslint/ban-types
-          {})
-    : TWith
-  : never;
-
-/**
- * @internal
- * Returns the raw input type of a procedure
- */
-export type GetRawInputFn = () => Promise<unknown>;
-
-/**
- * @internal
- * @link https://github.com/ianstormtaylor/superstruct/blob/7973400cd04d8ad92bbdc2b6f35acbfb3c934079/src/utils.ts#L323-L325
- */
-export type Simplify<TType> = TType extends any[] | Date
-  ? TType
-  : { [K in keyof TType]: TType[K] };
+type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
+  ? TFallback
+  : TValue;
 
 ///////////////////// implementation /////////////////////
 
@@ -123,38 +85,66 @@ export type MiddlewareResult<_TContextOverride> =
   | MiddlewareErrorResult<_TContextOverride>
   | MiddlewareOKResult<_TContextOverride>;
 
+interface MiddlewareOptions {
+  ctx: any;
+  ctx_overrides: any;
+
+  meta: any;
+
+  input_in: any;
+  input_out: any;
+
+  output_in: any;
+  output_out: any;
+}
+
 /**
  * @internal
  */
 export type MiddlewareFunction<
-  TContext,
-  TMeta,
-  TContextOverridesIn,
+  TOptions extends MiddlewareOptions,
   $ContextOverridesOut,
-  TInputOut,
 > = {
   (opts: {
-    ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
+    ctx: Simplify<Overwrite<TOptions['ctx'], TOptions['ctx_overrides']>>;
 
     path: string;
-    input: TInputOut;
+    input: TOptions['input_out'];
     getRawInput: GetRawInputFn;
-    meta: TMeta | undefined;
+    meta: TOptions['meta'] | undefined;
     next: {
-      (): Promise<MiddlewareResult<TContextOverridesIn>>;
+      (): Promise<MiddlewareResult<TOptions['ctx_overrides']>>;
       <$ContextOverride>(opts: {
         ctx?: $ContextOverride;
         input?: unknown;
       }): Promise<MiddlewareResult<$ContextOverride>>;
       (opts: { getRawInput: GetRawInputFn }): Promise<
-        MiddlewareResult<TContextOverridesIn>
+        MiddlewareResult<TOptions['ctx_overrides']>
       >;
     };
   }): Promise<MiddlewareResult<$ContextOverridesOut>>;
   _type?: string | undefined;
 };
 
-export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
+/**
+ * Procedure resolver options (what the `.query()`, `.mutation()`, and `.subscription()` functions receive)
+ * @internal
+ */
+export interface MiddlewareResolverOptions<TOptions extends MiddlewareOptions> {
+  ctx: Simplify<Overwrite<TOptions['ctx'], TOptions['ctx_overrides']>>;
+  input: TOptions['input_out'] extends UnsetMarker
+    ? undefined
+    : TOptions['input_out'];
+}
+
+type MiddlewareResolver<TOptions extends MiddlewareOptions, $Output> = (
+  opts: MiddlewareResolverOptions<TOptions>,
+) => MaybePromise<
+  // If an output parser is defined, we need to return what the parser expects, otherwise we return the inferred type
+  DefaultValue<TOptions['output_in'], $Output>
+>;
+
+export type AnyMiddlewareFunction = MiddlewareFunction<any, any>;
 
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
@@ -166,15 +156,15 @@ type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
  * @internal
  */
 export function createMiddlewareBuilder<TContext, TMeta>() {
-  return null as never as MiddlewareBuilder<
-    TContext,
-    TMeta,
-    object,
-    UnsetMarker,
-    UnsetMarker,
-    UnsetMarker,
-    UnsetMarker
-  >;
+  return null as never as MiddlewareBuilder<{
+    ctx: TContext;
+    ctx_overrides: object;
+    meta: TMeta;
+    input_in: UnsetMarker;
+    input_out: UnsetMarker;
+    output_in: UnsetMarker;
+    output_out: UnsetMarker;
+  }>;
 }
 
 /**
@@ -238,139 +228,163 @@ export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
   return outputMiddleware;
 }
 
-export interface MiddlewareBuilder<
-  TContext,
-  TMeta,
-  TContextOverrides,
-  TInputIn,
-  TInputOut,
-  TOutputIn,
-  TOutputOut,
+interface MiddlewareCompleted<
+  TOptions extends Pick<MiddlewareOptions, 'ctx' | 'input_in' | 'output_out'>,
 > {
+  _def: {
+    $types: TOptions;
+    middlewares: AnyMiddlewareFunction[];
+  };
+}
+export interface MiddlewareBuilder<TOptions extends MiddlewareOptions> {
+  _def: {
+    $types: TOptions;
+    middlewares: AnyMiddlewareFunction[];
+  };
   /**
    * Add an input parser to the procedure.
    * @link https://trpc.io/docs/v11/server/validators
    */
-  input<$Parser extends Parser>(
-    schema: TInputOut extends UnsetMarker
+  input: <$Parser extends Parser>(
+    schema: TOptions['input_in'] extends UnsetMarker
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
-      ? TInputOut extends Record<string, unknown> | undefined
+      ? TOptions['input_in'] extends Record<string, unknown> | undefined
         ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
-          ? undefined extends TInputOut
+          ? undefined extends TOptions['input_in']
             ? $Parser
             : TypeError<'Cannot chain an optional parser to a required parser'>
           : $Parser
         : TypeError<'All input parsers did not resolve to an object'>
       : TypeError<'All input parsers did not resolve to an object'>,
-  ): MiddlewareBuilder<
-    TContext,
-    TMeta,
-    TContextOverrides,
-    IntersectIfDefined<TInputIn, inferParser<$Parser>['in']>,
-    IntersectIfDefined<TInputOut, inferParser<$Parser>['out']>,
-    TOutputIn,
-    TOutputOut
+  ) => MiddlewareBuilder<
+    Overwrite<
+      TOptions,
+      {
+        input_in: IntersectIfDefined<
+          TOptions['input_in'],
+          inferParser<$Parser>['in']
+        >;
+        input_out: IntersectIfDefined<
+          TOptions['input_out'],
+          inferParser<$Parser>['out']
+        >;
+      }
+    >
   >;
   /**
    * Add an output parser to the procedure.
    * @link https://trpc.io/docs/v11/server/validators
    */
-  output<$Parser extends Parser>(
+  output: <$Parser extends Parser>(
     schema: $Parser,
-  ): MiddlewareBuilder<
-    TContext,
-    TMeta,
-    TContextOverrides,
-    TInputIn,
-    TInputOut,
-    IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
-    IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>
+  ) => MiddlewareBuilder<
+    Overwrite<
+      TOptions,
+      {
+        output_in: IntersectIfDefined<
+          TOptions['output_in'],
+          inferParser<$Parser>['in']
+        >;
+        output_out: IntersectIfDefined<
+          TOptions['output_out'],
+          inferParser<$Parser>['out']
+        >;
+      }
+    >
   >;
   /**
    * Add a meta data to the procedure.
    * @link https://trpc.io/docs/v11/server/metadata
    */
-  meta(
-    meta: TMeta,
-  ): MiddlewareBuilder<
-    TContext,
-    TMeta,
-    TContextOverrides,
-    TInputIn,
-    TInputOut,
-    TOutputIn,
-    TOutputOut
-  >;
+  meta: (meta: TOptions['meta']) => MiddlewareBuilder<TOptions>;
   /**
    * Add a middleware to the procedure.
    * @link https://trpc.io/docs/v11/server/middlewares
    */
-  use<$ContextOverridesOut>(
-    fn: MiddlewareFunction<
-      TContext,
-      TMeta,
-      TContextOverrides,
-      $ContextOverridesOut,
-      TInputOut
-    >,
-  ): MiddlewareBuilder<
-    TContext,
-    TMeta,
-    Overwrite<TContextOverrides, $ContextOverridesOut>,
-    TInputIn,
-    TInputOut,
-    TOutputIn,
-    TOutputOut
+  use: <$ContextOverridesOut>(
+    fn: MiddlewareFunction<TOptions, $ContextOverridesOut>,
+  ) => MiddlewareBuilder<
+    Overwrite<
+      TOptions,
+      {
+        ctx_overrides: Overwrite<
+          TOptions['ctx_overrides'],
+          $ContextOverridesOut
+        >;
+      }
+    >
   >;
-
   /**
-   * Combine two procedure builders
+   * Concat two middleware builders
    */
-  unstable_concat<
-    $Context,
-    $Meta,
-    $ContextOverrides,
-    $InputIn,
-    $InputOut,
-    $OutputIn,
-    $OutputOut,
-  >(
-    builder: Overwrite<TContext, TContextOverrides> extends $Context
-      ? TMeta extends $Meta
-        ? MiddlewareBuilder<
-            $Context,
-            $Meta,
-            $ContextOverrides,
-            $InputIn,
-            $InputOut,
-            $OutputIn,
-            $OutputOut
-          >
+  concat: <$Options extends MiddlewareOptions>(
+    builder: Overwrite<
+      TOptions['ctx'],
+      $Options['ctx_overrides']
+    > extends $Options['ctx']
+      ? $Options['meta'] extends TOptions['meta']
+        ? MiddlewareBuilder<$Options>
         : TypeError<'Meta mismatch'>
       : TypeError<'Context mismatch'>,
-  ): MiddlewareBuilder<
-    TContext,
-    TMeta,
-    Overwrite<TContextOverrides, $ContextOverrides>,
-    IntersectIfDefined<TInputIn, $InputIn>,
-    IntersectIfDefined<TInputIn, $InputOut>,
-    IntersectIfDefined<TOutputIn, $OutputIn>,
-    IntersectIfDefined<TOutputOut, $OutputOut>
+  ) => MiddlewareBuilder<
+    Overwrite<
+      TOptions,
+      {
+        ctx: TOptions['ctx'];
+        meta: TOptions['meta'];
+        ctx_overrides: Overwrite<
+          TOptions['ctx_overrides'],
+          $Options['ctx_overrides']
+        >;
+        input_in: IntersectIfDefined<
+          TOptions['input_in'],
+          $Options['input_in']
+        >;
+        input_out: IntersectIfDefined<
+          TOptions['input_out'],
+          $Options['input_out']
+        >;
+        output_in: IntersectIfDefined<
+          TOptions['output_in'],
+          $Options['output_in']
+        >;
+        output_out: IntersectIfDefined<
+          TOptions['output_out'],
+          $Options['output_out']
+        >;
+      }
+    >
   >;
+  return: <$Output>(
+    fn: MiddlewareResolver<TOptions, $Output>,
+  ) => MiddlewareCompleted<{
+    ctx: TOptions['ctx'];
+    input_in: TOptions['input_in'];
+    output_out: $Output;
+  }>;
 }
 
 test('middleware builder', () => {
-  type Context = {
+  interface Context {
     foo: string;
-  };
-  type Meta = {
+  }
+  interface Meta {
     bar: string;
-  };
+  }
 
   const mw = createMiddlewareBuilder<Context, Meta>();
 
-  mw.input(z.object({ foo: z.string() }))
+  mw.input(
+    z.object({
+      foo: z.string(),
+    }),
+  )
+    .input(
+      z.object({
+        lengthOf: z.string().transform((it) => it.length),
+      }),
+    )
     .use((opts) =>
       opts.next({
         ctx: {
@@ -379,12 +393,41 @@ test('middleware builder', () => {
       }),
     )
     .use((opts) => {
+      opts.ctx.bar;
       expectTypeOf(opts.ctx).toEqualTypeOf<{
         foo: string;
         bar: string;
       }>();
       expectTypeOf(opts.meta).toEqualTypeOf<Meta | undefined>();
+      expectTypeOf(opts.input).toEqualTypeOf<{
+        foo: string;
+        lengthOf: number;
+      }>();
 
       return opts.next();
     });
+});
+
+test('middleware builder returns', () => {
+  const mw = createMiddlewareBuilder<object, object>();
+
+  const res = mw.input(z.object({ foo: z.string() })).return((opts) => {
+    return opts.input.foo;
+  });
+});
+
+test('concat', () => {
+  const a = createMiddlewareBuilder<object, object>().input(
+    z.object({ foo: z.string() }),
+  );
+  const b = createMiddlewareBuilder<object, object>().input(
+    z.object({ bar: z.string() }),
+  );
+
+  const concat = a.concat(b);
+
+  expectTypeOf(concat._def.$types.input_in).toEqualTypeOf<{
+    foo: string;
+    bar: string;
+  }>();
 });
