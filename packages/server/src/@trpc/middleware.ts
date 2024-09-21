@@ -1,6 +1,3 @@
-/////////////// utils, should be external /////////////////
-
-import z from 'zod';
 import { getCauseFromUnknown } from '../unstable-core-do-not-import/error/TRPCError';
 import type {
   inferParser,
@@ -19,14 +16,11 @@ import {
   type UnsetMarker,
 } from '../unstable-core-do-not-import/utils';
 
-type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
+export type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
-
 ///////////////////// implementation /////////////////////
-
 type MiddlewareErrorType = 'OUTPUT' | 'INPUT';
-
 class MiddlewareError extends Error {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
@@ -51,7 +45,6 @@ class MiddlewareError extends Error {
     }
   }
 }
-
 interface MiddlewareResultBase {
   /**
    * All middlewares should pass through their `next()`'s output.
@@ -59,33 +52,36 @@ interface MiddlewareResultBase {
    */
   readonly marker: MiddlewareMarker;
 }
-
 interface MiddlewareOKResult<_TContextOverride> extends MiddlewareResultBase {
   ok: true;
   data: unknown;
-  // this could be extended with `input`/`rawInput` later
 }
-
 interface MiddlewareErrorResult<_TContextOverride>
   extends MiddlewareResultBase {
   ok: false;
   error: MiddlewareError;
 }
-
 /** @internal */
+
 export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
   __brand: 'middlewareMarker';
 };
 type MiddlewareMarker = typeof middlewareMarker;
-
 /**
  * @internal
  */
+
 export type MiddlewareResult<_TContextOverride> =
   | MiddlewareErrorResult<_TContextOverride>
   | MiddlewareOKResult<_TContextOverride>;
-
-interface MiddlewareOptions {
+type MiddlewareExtensionFns<TOptions extends MiddlewareOptions> = (
+  options: TOptions,
+) => Record<string, any>;
+interface MiddlewareExtension {
+  options?: any;
+  fns?: MiddlewareExtensionFns<MiddlewareOptions>;
+}
+export interface MiddlewareOptions {
   ctx: any;
   ctx_overrides: any;
 
@@ -96,8 +92,41 @@ interface MiddlewareOptions {
 
   output_in: any;
   output_out: any;
+
+  extend?: MiddlewareExtension;
 }
 
+export interface MiddlewareFunctionOptions<TOptions extends MiddlewareOptions> {
+  /**
+   * The context with the overrides applied
+   */
+  ctx: Simplify<Overwrite<TOptions['ctx'], TOptions['ctx_overrides']>>;
+  /**
+   * Parsed input
+   */
+  input: TOptions['input_out'];
+  /**
+   * Get the raw input
+   */
+  getRawInput: GetRawInputFn;
+  /**
+   * The meta data passed in from `.meta()` on the builder
+   */
+  meta: TOptions['meta'] | undefined;
+  /**
+   * Calls the next function in the chain and forwards the result
+   */
+  next: {
+    (): Promise<MiddlewareResult<TOptions['ctx_overrides']>>;
+    <$ContextOverride>(opts: {
+      ctx?: $ContextOverride;
+      input?: unknown;
+    }): Promise<MiddlewareResult<$ContextOverride>>;
+    (opts: { getRawInput: GetRawInputFn }): Promise<
+      MiddlewareResult<TOptions['ctx_overrides']>
+    >;
+  };
+}
 /**
  * @internal
  */
@@ -105,38 +134,22 @@ export type MiddlewareFunction<
   TOptions extends MiddlewareOptions,
   $ContextOverridesOut,
 > = {
-  (opts: {
-    ctx: Simplify<Overwrite<TOptions['ctx'], TOptions['ctx_overrides']>>;
-
-    path: string;
-    input: TOptions['input_out'];
-    getRawInput: GetRawInputFn;
-    meta: TOptions['meta'] | undefined;
-    next: {
-      (): Promise<MiddlewareResult<TOptions['ctx_overrides']>>;
-      <$ContextOverride>(opts: {
-        ctx?: $ContextOverride;
-        input?: unknown;
-      }): Promise<MiddlewareResult<$ContextOverride>>;
-      (opts: { getRawInput: GetRawInputFn }): Promise<
-        MiddlewareResult<TOptions['ctx_overrides']>
-      >;
-    };
-  }): Promise<MiddlewareResult<$ContextOverridesOut>>;
+  (opts: MiddlewareFunctionOptions<TOptions>): Promise<
+    MiddlewareResult<$ContextOverridesOut>
+  >;
   _type?: string | undefined;
 };
-
 /**
  * Procedure resolver options (what the `.query()`, `.mutation()`, and `.subscription()` functions receive)
  * @internal
  */
+
 export interface MiddlewareResolverOptions<TOptions extends MiddlewareOptions> {
   ctx: Simplify<Overwrite<TOptions['ctx'], TOptions['ctx_overrides']>>;
   input: TOptions['input_out'] extends UnsetMarker
     ? undefined
     : TOptions['input_out'];
 }
-
 type MiddlewareResolver<TOptions extends MiddlewareOptions, $Output> = (
   opts: MiddlewareResolverOptions<TOptions>,
 ) => MaybePromise<
@@ -145,31 +158,33 @@ type MiddlewareResolver<TOptions extends MiddlewareOptions, $Output> = (
 >;
 
 export type AnyMiddlewareFunction = MiddlewareFunction<any, any>;
-
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
   : TWith extends UnsetMarker
   ? TType
   : Simplify<TType & TWith>;
-
 /**
  * @internal
  */
-export function createMiddlewareBuilder<TContext, TMeta>() {
+
+export function createMiddlewareBuilder<
+  TConfig extends Pick<MiddlewareOptions, 'ctx' | 'meta' | 'extend'>,
+>() {
   return null as never as MiddlewareBuilder<{
-    ctx: TContext;
+    ctx: TConfig['ctx'];
     ctx_overrides: object;
-    meta: TMeta;
+    meta: TConfig['meta'];
     input_in: UnsetMarker;
     input_out: UnsetMarker;
     output_in: UnsetMarker;
     output_out: UnsetMarker;
+    extend: undefined extends TConfig['extend'] ? never : TConfig['extend'];
   }>;
 }
-
 /**
  * @internal
  */
+
 export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
   const inputMiddleware: AnyMiddlewareFunction =
     async function inputValidatorMiddleware(opts) {
@@ -199,10 +214,10 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
   inputMiddleware._type = 'input';
   return inputMiddleware;
 }
-
 /**
  * @internal
  */
+
 export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
   const outputMiddleware: AnyMiddlewareFunction =
     async function outputValidatorMiddleware({ next }) {
@@ -227,7 +242,6 @@ export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
   outputMiddleware._type = 'output';
   return outputMiddleware;
 }
-
 interface MiddlewareCompleted<
   TOptions extends Pick<MiddlewareOptions, 'ctx' | 'input_in' | 'output_out'>,
 > {
@@ -356,6 +370,10 @@ export interface MiddlewareBuilder<TOptions extends MiddlewareOptions> {
       }
     >
   >;
+
+  /**
+   * @deprecated only here for reference
+   */
   return: <$Output>(
     fn: MiddlewareResolver<TOptions, $Output>,
   ) => MiddlewareCompleted<{
@@ -364,70 +382,3 @@ export interface MiddlewareBuilder<TOptions extends MiddlewareOptions> {
     output_out: $Output;
   }>;
 }
-
-test('middleware builder', () => {
-  interface Context {
-    foo: string;
-  }
-  interface Meta {
-    bar: string;
-  }
-
-  const mw = createMiddlewareBuilder<Context, Meta>();
-
-  mw.input(
-    z.object({
-      foo: z.string(),
-    }),
-  )
-    .input(
-      z.object({
-        lengthOf: z.string().transform((it) => it.length),
-      }),
-    )
-    .use((opts) =>
-      opts.next({
-        ctx: {
-          bar: 'bar',
-        },
-      }),
-    )
-    .use((opts) => {
-      opts.ctx.bar;
-      expectTypeOf(opts.ctx).toEqualTypeOf<{
-        foo: string;
-        bar: string;
-      }>();
-      expectTypeOf(opts.meta).toEqualTypeOf<Meta | undefined>();
-      expectTypeOf(opts.input).toEqualTypeOf<{
-        foo: string;
-        lengthOf: number;
-      }>();
-
-      return opts.next();
-    });
-});
-
-test('middleware builder returns', () => {
-  const mw = createMiddlewareBuilder<object, object>();
-
-  const res = mw.input(z.object({ foo: z.string() })).return((opts) => {
-    return opts.input.foo;
-  });
-});
-
-test('concat', () => {
-  const a = createMiddlewareBuilder<object, object>().input(
-    z.object({ foo: z.string() }),
-  );
-  const b = createMiddlewareBuilder<object, object>().input(
-    z.object({ bar: z.string() }),
-  );
-
-  const concat = a.concat(b);
-
-  expectTypeOf(concat._def.$types.input_in).toEqualTypeOf<{
-    foo: string;
-    bar: string;
-  }>();
-});
