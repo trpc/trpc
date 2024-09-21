@@ -1,5 +1,8 @@
 import z from 'zod';
-import type { QueryProcedure } from '../unstable-core-do-not-import/procedure';
+import type {
+  ProcedureType,
+  QueryProcedure,
+} from '../unstable-core-do-not-import/procedure';
 import type {
   MaybePromise,
   Overwrite,
@@ -7,7 +10,7 @@ import type {
 } from '../unstable-core-do-not-import/types';
 import type { UnsetMarker } from '../unstable-core-do-not-import/utils';
 import type { DefaultValue, MiddlewareOptions } from './middleware';
-import { createMiddlewareBuilder } from './middleware';
+import { createBuilder, createMiddlewareBuilder } from './middleware';
 
 interface ProcedureResolverOptions<TOptions extends MiddlewareOptions> {
   ctx: Simplify<Overwrite<TOptions['ctx'], TOptions['ctx_overrides']>>;
@@ -25,8 +28,11 @@ type ProcedureResolver<TOptions extends MiddlewareOptions, $Output> = (
 
 declare module './middleware' {
   interface MiddlewareFunctionOptions<TOptions extends MiddlewareOptions> {
+    /**
+     * The path of the procedure that is being called
+     */
     path: string;
-    type: string;
+    type: ProcedureType;
   }
 
   interface MiddlewareBuilder<TOptions extends MiddlewareOptions> {
@@ -47,16 +53,25 @@ test('extended options', () => {
 
   mw.use((opts) => {
     expectTypeOf(opts.path).toBeString();
-    expectTypeOf(opts.type).toBeString();
+    expectTypeOf(opts.type).toEqualTypeOf<ProcedureType>();
     return opts.next();
   });
 });
 
 test('extended fns', () => {
-  const mw = createMiddlewareBuilder<{
+  const mw = createBuilder<{
     ctx: object;
     meta: object;
-  }>();
+  }>(
+    {},
+    {
+      builder: () => ({
+        query: (fn) => {
+          return null as any;
+        },
+      }),
+    },
+  );
 
   const res = mw.input(z.string()).query((opts) => {
     return opts.input;

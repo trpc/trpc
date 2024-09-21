@@ -1,6 +1,7 @@
 /////////////// utils, should be external /////////////////
 
 import z from 'zod';
+import type { inferMiddlewareBuilderOptions } from './middleware';
 import { createMiddlewareBuilder } from './middleware';
 
 test('middleware builder', () => {
@@ -49,17 +50,6 @@ test('middleware builder', () => {
     });
 });
 
-test('middleware builder returns', () => {
-  const mw = createMiddlewareBuilder<{
-    ctx: object;
-    meta: object;
-  }>();
-
-  const res = mw.input(z.object({ foo: z.string() })).return((opts) => {
-    return opts.input.foo;
-  });
-});
-
 test('concat', () => {
   const a = createMiddlewareBuilder<{
     ctx: object;
@@ -72,7 +62,8 @@ test('concat', () => {
 
   const concat = a.concat(b);
 
-  expectTypeOf(concat._def.$types.input_in).toEqualTypeOf<{
+  const $types = null! as inferMiddlewareBuilderOptions<typeof concat>;
+  expectTypeOf($types.input_out).toEqualTypeOf<{
     foo: string;
     bar: string;
   }>();

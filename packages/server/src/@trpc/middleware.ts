@@ -1,18 +1,19 @@
 import { getCauseFromUnknown } from '../unstable-core-do-not-import/error/TRPCError';
-import type {
-  inferParser,
-  ParseFn,
-  Parser,
+import {
+  getParseFn,
+  type inferParser,
+  type ParseFn,
+  type Parser,
 } from '../unstable-core-do-not-import/parser';
 import type {
   GetRawInputFn,
-  MaybePromise,
   Overwrite,
   Simplify,
   TypeError,
 } from '../unstable-core-do-not-import/types';
 import {
   isObject,
+  mergeWithoutOverrides,
   type UnsetMarker,
 } from '../unstable-core-do-not-import/utils';
 
@@ -74,13 +75,7 @@ type MiddlewareMarker = typeof middlewareMarker;
 export type MiddlewareResult<_TContextOverride> =
   | MiddlewareErrorResult<_TContextOverride>
   | MiddlewareOKResult<_TContextOverride>;
-type MiddlewareExtensionFns<TOptions extends MiddlewareOptions> = (
-  options: TOptions,
-) => Record<string, any>;
-interface MiddlewareExtension {
-  options?: any;
-  fns?: MiddlewareExtensionFns<MiddlewareOptions>;
-}
+
 export interface MiddlewareOptions {
   ctx: any;
   ctx_overrides: any;
@@ -92,8 +87,6 @@ export interface MiddlewareOptions {
 
   output_in: any;
   output_out: any;
-
-  extend?: MiddlewareExtension;
 }
 
 export interface MiddlewareFunctionOptions<TOptions extends MiddlewareOptions> {
@@ -150,12 +143,6 @@ export interface MiddlewareResolverOptions<TOptions extends MiddlewareOptions> {
     ? undefined
     : TOptions['input_out'];
 }
-type MiddlewareResolver<TOptions extends MiddlewareOptions, $Output> = (
-  opts: MiddlewareResolverOptions<TOptions>,
-) => MaybePromise<
-  // If an output parser is defined, we need to return what the parser expects, otherwise we return the inferred type
-  DefaultValue<TOptions['output_in'], $Output>
->;
 
 export type AnyMiddlewareFunction = MiddlewareFunction<any, any>;
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
@@ -167,18 +154,16 @@ type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
  * @internal
  */
 
-export function createMiddlewareBuilder<
-  TConfig extends Pick<MiddlewareOptions, 'ctx' | 'meta' | 'extend'>,
->() {
+type FactoryOptions = Pick<MiddlewareOptions, 'ctx' | 'meta'>;
+export function createMiddlewareBuilder<TOptions extends FactoryOptions>() {
   return null as never as MiddlewareBuilder<{
-    ctx: TConfig['ctx'];
+    ctx: TOptions['ctx'];
     ctx_overrides: object;
-    meta: TConfig['meta'];
+    meta: TOptions['meta'];
     input_in: UnsetMarker;
     input_out: UnsetMarker;
     output_in: UnsetMarker;
     output_out: UnsetMarker;
-    extend: undefined extends TConfig['extend'] ? never : TConfig['extend'];
   }>;
 }
 /**
@@ -242,19 +227,14 @@ export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
   outputMiddleware._type = 'output';
   return outputMiddleware;
 }
-interface MiddlewareCompleted<
-  TOptions extends Pick<MiddlewareOptions, 'ctx' | 'input_in' | 'output_out'>,
-> {
-  _def: {
-    $types: TOptions;
-    middlewares: AnyMiddlewareFunction[];
-  };
+export interface MiddlewareBuilderDef<TOptions extends MiddlewareOptions> {
+  middlewares: AnyMiddlewareFunction[];
+  inputs: Parser[];
+  output?: Parser;
+  meta?: TOptions['meta'];
 }
 export interface MiddlewareBuilder<TOptions extends MiddlewareOptions> {
-  _def: {
-    $types: TOptions;
-    middlewares: AnyMiddlewareFunction[];
-  };
+  _def: MiddlewareBuilderDef<TOptions>;
   /**
    * Add an input parser to the procedure.
    * @link https://trpc.io/docs/v11/server/validators
@@ -370,15 +350,105 @@ export interface MiddlewareBuilder<TOptions extends MiddlewareOptions> {
       }
     >
   >;
-
-  /**
-   * @deprecated only here for reference
-   */
-  return: <$Output>(
-    fn: MiddlewareResolver<TOptions, $Output>,
-  ) => MiddlewareCompleted<{
-    ctx: TOptions['ctx'];
-    input_in: TOptions['input_in'];
-    output_out: $Output;
-  }>;
 }
+
+type MiddlewareBuilderProps =
+  | 'use'
+  | 'meta'
+  | 'input'
+  | 'output'
+  | 'concat'
+  | '_def';
+
+type AnyMiddlewareBuilderWithoutExtensions = Pick<
+  MiddlewareBuilder<any>,
+  MiddlewareBuilderProps
+>;
+
+type MiddlewareBuilderExtensions = Omit<
+  MiddlewareBuilder<any>,
+  MiddlewareBuilderProps
+>;
+
+export function createBuilder<TOptions extends FactoryOptions>(
+  initDef: Partial<MiddlewareBuilderDef<any>> = {},
+  opts: {
+    builder: (
+      builder: AnyMiddlewareBuilderWithoutExtensions,
+    ) => MiddlewareBuilderExtensions;
+  },
+): MiddlewareBuilder<{
+  ctx: TOptions['ctx'];
+  meta: TOptions['meta'];
+  ctx_overrides: object;
+  input_in: UnsetMarker;
+  input_out: UnsetMarker;
+  output_in: UnsetMarker;
+  output_out: UnsetMarker;
+}> {
+  const _def: MiddlewareBuilderDef<any> = {
+    inputs: [],
+    middlewares: [],
+    ...initDef,
+  };
+
+  function mergeBuilders(
+    def2: Partial<MiddlewareBuilderDef<any>>,
+  ): MiddlewareBuilder<any> {
+    const { middlewares = [], inputs, meta, ...rest } = def2;
+
+    return createBuilder(
+      {
+        ...mergeWithoutOverrides(_def as Record<string, any>, rest),
+        inputs: [..._def.inputs, ...(inputs ?? [])],
+        middlewares: [..._def.middlewares, ...middlewares],
+        meta: _def.meta && meta ? { ..._def.meta, ...meta } : meta ?? _def.meta,
+      },
+      opts,
+    );
+  }
+
+  const base: AnyMiddlewareBuilderWithoutExtensions = {
+    _def,
+    input(input) {
+      const parser = getParseFn(input as Parser);
+      return mergeBuilders({
+        inputs: [input as Parser],
+        middlewares: [createInputMiddleware(parser)],
+      });
+    },
+    output(output: Parser) {
+      const parser = getParseFn(output);
+      return mergeBuilders({
+        output,
+        middlewares: [createOutputMiddleware(parser)],
+      });
+    },
+    meta(meta) {
+      return mergeBuilders({
+        meta,
+      });
+    },
+    use(fn) {
+      return mergeBuilders({
+        middlewares: [fn],
+      });
+    },
+    concat(builder) {
+      return mergeBuilders((builder as any)._def);
+    },
+  };
+
+  const full: MiddlewareBuilder<any> = {
+    ...base,
+    ...opts.builder(base),
+  };
+
+  return full;
+}
+
+export type inferMiddlewareBuilderOptions<T> = T extends MiddlewareBuilder<
+  infer U
+>
+  ? U
+  : never;
