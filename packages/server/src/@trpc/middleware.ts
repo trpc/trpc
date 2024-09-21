@@ -1,10 +1,4 @@
 import { getCauseFromUnknown } from '../unstable-core-do-not-import/error/TRPCError';
-import {
-  getParseFn,
-  type inferParser,
-  type ParseFn,
-  type Parser,
-} from '../unstable-core-do-not-import/parser';
 import type {
   GetRawInputFn,
   Overwrite,
@@ -16,6 +10,12 @@ import {
   mergeWithoutOverrides,
   type UnsetMarker,
 } from '../unstable-core-do-not-import/utils';
+import {
+  getParseFn,
+  type inferParser,
+  type ParseFn,
+  type Parser,
+} from './parser';
 
 export type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
@@ -87,6 +87,7 @@ export interface MiddlewareOptions {
 
   output_in: any;
   output_out: any;
+  errors: any[];
 }
 
 export interface MiddlewareFunctionOptions<TOptions extends MiddlewareOptions> {
@@ -369,6 +370,7 @@ export function createMiddlewareBuilder<TOptions extends FactoryOptions>(opts: {
   input_out: UnsetMarker;
   output_in: UnsetMarker;
   output_out: UnsetMarker;
+  errors: [];
 }> {
   const _def: MiddlewareBuilderDef<any> = {
     inputs: [],
