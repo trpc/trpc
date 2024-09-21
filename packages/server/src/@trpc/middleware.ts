@@ -12,6 +12,7 @@ import {
 } from '../unstable-core-do-not-import/utils';
 import {
   getParseFn,
+  isTypedParserResult,
   type inferParser,
   type ParseFn,
   type Parser,
@@ -21,7 +22,7 @@ export type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 ///////////////////// implementation /////////////////////
-type MiddlewareErrorType = 'OUTPUT' | 'INPUT';
+type MiddlewareErrorType = 'OUTPUT' | 'INPUT' | 'INPUT_TYPED';
 class MiddlewareError extends Error {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
@@ -157,7 +158,7 @@ type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
 
 type FactoryOptions = Pick<MiddlewareOptions, 'ctx' | 'meta'>;
 
-export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
+export function createInputMiddleware(parse: ParseFn<any>) {
   const inputMiddleware: AnyMiddlewareFunction =
     async function inputValidatorMiddleware(opts) {
       let parsedInput: ReturnType<typeof parse>;
@@ -165,6 +166,17 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
       const rawInput = await opts.getRawInput();
       try {
         parsedInput = await parse(rawInput);
+        if (isTypedParserResult(parsedInput)) {
+          const [ok, valueOrError] = parsedInput;
+          if (ok) {
+            parsedInput = valueOrError;
+          } else {
+            throw new MiddlewareError({
+              cause: valueOrError,
+              type: 'INPUT_TYPED',
+            });
+          }
+        }
       } catch (cause) {
         throw new MiddlewareError({
           cause,
@@ -190,7 +202,7 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
  * @internal
  */
 
-export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
+export function createOutputMiddleware(parse: ParseFn<any>) {
   const outputMiddleware: AnyMiddlewareFunction =
     async function outputValidatorMiddleware({ next }) {
       const result = await next();

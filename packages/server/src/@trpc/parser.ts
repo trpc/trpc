@@ -1,5 +1,20 @@
-// zod / typeschema
-export interface ParserZodEsque<TInput, TParsedInput> {
+// zod
+export interface ParserZodEsque<TInput, TParsedInput, TError> {
+  _input: TInput;
+  _output: TParsedInput;
+  safeParseAsync: (input: unknown) => Promise<
+    | {
+        success: true;
+        data: TParsedInput;
+      }
+    | {
+        success: false;
+        error: TError;
+      }
+  >;
+}
+
+export interface ParserTypeschemaEsque<TInput, TParsedInput> {
   _input: TInput;
   _output: TParsedInput;
 }
@@ -41,39 +56,98 @@ export type ParserWithoutInput<TInput> =
   | ParserYupEsque<TInput>;
 
 export type ParserWithInputOutput<TInput, TParsedInput> =
-  | ParserZodEsque<TInput, TParsedInput>
+  | ParserTypeschemaEsque<TInput, TParsedInput>
   | ParserValibotEsque<TInput, TParsedInput>
   | ParserArkTypeEsque<TInput, TParsedInput>;
 
-export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
+export type ParserWithError<TInput, TParsedInput, TError> = ParserZodEsque<
+  TInput,
+  TParsedInput,
+  TError
+>;
+
+export type Parser =
+  | ParserWithInputOutput<any, any>
+  | ParserWithoutInput<any>
+  | ParserWithError<any, any, any>;
+
+interface ParserDef {
+  in: any;
+  out: any;
+  error: any;
+}
+
+const parserMarker = 'parserMarker' as 'parserMarker' & {
+  __brand: 'parserMarker';
+};
 
 export type inferParser<TParser extends Parser> =
-  TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>
+  TParser extends ParserWithError<infer $In, infer $Out, infer $Err>
     ? {
-        in: $TIn;
+        in: $In;
+        out: $Out;
+        error: $Err;
+      }
+    : TParser extends ParserWithInputOutput<infer $In, infer $TOut>
+    ? {
+        in: $In;
         out: $TOut;
+        error: never;
       }
     : TParser extends ParserWithoutInput<infer $InOut>
     ? {
         in: $InOut;
         out: $InOut;
+        error: never;
       }
     : never;
 
-export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
+type TypedOKResult<TDef extends ParserDef> = [
+  true,
+  TDef['out'],
+  typeof parserMarker,
+];
+type TypedErrorResult<TDef extends ParserDef> = [
+  false,
+  TDef['error'],
+  typeof parserMarker,
+];
 
-export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
+type TypedResult<TDef extends ParserDef> =
+  | TypedOKResult<TDef>
+  | TypedErrorResult<TDef>;
+
+export function isTypedParserResult(v: unknown): v is TypedResult<any> {
+  return Array.isArray(v) && v[2] === parserMarker;
+}
+
+export type ParseFn<TDef extends ParserDef> = (
+  value: unknown,
+) => Promise<TypedResult<TDef>> | TDef['out'];
+
+export function getParseFn(procedureParser: Parser): ParseFn<{
+  in: unknown;
+  out: unknown;
+  error: unknown;
+}> {
   const parser = procedureParser as any;
 
-  //   if (typeof parser === 'function' && typeof parser.assert === 'function') {
-  //     // ParserArkTypeEsque - arktype schemas shouldn't be called as a function because they return a union type instead of throwing
-  //     return parser.assert.bind(parser);
-  //   }
+  if (typeof parser === 'function' && typeof parser.assert === 'function') {
+    // ParserArkTypeEsque - arktype schemas shouldn't be called as a function because they return a union type instead of throwing
+    return parser.assert.bind(parser);
+  }
 
-  if (typeof parser === 'function') {
-    // ParserValibotEsque (>= v0.31.0)
-    // ParserCustomValidatorEsque
-    return parser;
+  if (typeof parser.safeParseAsync === 'function') {
+    // ParserZodEsque
+    return async (value) => {
+      const result = await (
+        parser as ParserZodEsque<any, any, any>
+      ).safeParseAsync(value);
+      if (result.success) {
+        return [true, result.data, parserMarker] as const;
+      }
+      return [false, result.error, parserMarker] as const;
+    };
   }
 
   if (typeof parser.parseAsync === 'function') {
@@ -101,7 +175,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     // ParserScaleEsque
     return (value) => {
       parser.assert(value);
-      return value as TType;
+      return value;
     };
   }
 

@@ -4,7 +4,7 @@ import z from 'zod';
 import type { inferMiddlewareBuilderOptions } from './middleware';
 import { createMiddlewareBuilder } from './middleware';
 
-const IGNORE_EXTENSIONS = {} as any;
+const IGNORE_EXTENSIONS = null as any;
 
 test('middleware builder', () => {
   interface Context {
@@ -67,9 +67,20 @@ test('concat', () => {
 
   const concat = a.concat(b);
 
-  const $types = null! as inferMiddlewareBuilderOptions<typeof concat>;
-  expectTypeOf($types.input_out).toEqualTypeOf<{
+  type $Types = inferMiddlewareBuilderOptions<typeof concat>;
+  expectTypeOf<$Types['input_out']>().toEqualTypeOf<{
     foo: string;
     bar: string;
   }>();
+});
+
+test('errors', async () => {
+  const parser = z.object({ foo: z.string() });
+  const res = await parser.safeParseAsync({ foo: 'bar' });
+  if (res.success) {
+    res.success;
+    res.data;
+  } else {
+    res.error;
+  }
 });
