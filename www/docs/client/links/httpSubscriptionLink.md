@@ -84,7 +84,7 @@ If you `yield` an event using our `tracked()`-helper and include an `id`, the br
 
 You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
 
-:::info
+:::tip
 If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
 :::
 
@@ -120,6 +120,34 @@ export const subRouter = router({
         yield tracked(post.id, post);
       }
     }),
+});
+```
+
+### Cleanup of side effects
+
+If you need to clean up any side-effects of your subscription you can use the [`try...finally`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return#using_return_with_try...finally) pattern, as `trpc` invokes the `.return()` of the Generator Instance when the subscription stops for any reason.
+
+```ts
+import EventEmitter, { on } from 'events';
+import type { Post } from '@prisma/client';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
+
+const ee = new EventEmitter();
+
+export const subRouter = router({
+  onPostAdd: publicProcedure.subscription(async function* (opts) {
+    let timeout;
+    try {
+      for await (const [data] of on(ee, 'add')) {
+        timeout = setTimeout(() => console.log('Pretend like this is useful'));
+        const post = data as Post;
+        yield post;
+      }
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
+  }),
 });
 ```
 
