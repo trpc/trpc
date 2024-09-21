@@ -155,20 +155,6 @@ type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
  */
 
 type FactoryOptions = Pick<MiddlewareOptions, 'ctx' | 'meta'>;
-export function createMiddlewareBuilder<TOptions extends FactoryOptions>() {
-  return null as never as MiddlewareBuilder<{
-    ctx: TOptions['ctx'];
-    ctx_overrides: object;
-    meta: TOptions['meta'];
-    input_in: UnsetMarker;
-    input_out: UnsetMarker;
-    output_in: UnsetMarker;
-    output_out: UnsetMarker;
-  }>;
-}
-/**
- * @internal
- */
 
 export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
   const inputMiddleware: AnyMiddlewareFunction =
@@ -370,14 +356,12 @@ type MiddlewareBuilderExtensions = Omit<
   MiddlewareBuilderProps
 >;
 
-export function createBuilder<TOptions extends FactoryOptions>(
-  initDef: Partial<MiddlewareBuilderDef<any>> = {},
-  opts: {
-    builder: (
-      builder: AnyMiddlewareBuilderWithoutExtensions,
-    ) => MiddlewareBuilderExtensions;
-  },
-): MiddlewareBuilder<{
+export function createMiddlewareBuilder<TOptions extends FactoryOptions>(opts: {
+  _def?: Partial<MiddlewareBuilderDef<any>>;
+  builder: (
+    builder: Pick<AnyMiddlewareBuilderWithoutExtensions, '_def'>,
+  ) => MiddlewareBuilderExtensions;
+}): MiddlewareBuilder<{
   ctx: TOptions['ctx'];
   meta: TOptions['meta'];
   ctx_overrides: object;
@@ -389,59 +373,60 @@ export function createBuilder<TOptions extends FactoryOptions>(
   const _def: MiddlewareBuilderDef<any> = {
     inputs: [],
     middlewares: [],
-    ...initDef,
+    ...opts._def,
   };
 
-  function mergeBuilders(
+  function apply(
     def2: Partial<MiddlewareBuilderDef<any>>,
   ): MiddlewareBuilder<any> {
     const { middlewares = [], inputs, meta, ...rest } = def2;
 
-    return createBuilder(
-      {
+    return createMiddlewareBuilder({
+      ...opts,
+      _def: {
         ...mergeWithoutOverrides(_def as Record<string, any>, rest),
         inputs: [..._def.inputs, ...(inputs ?? [])],
         middlewares: [..._def.middlewares, ...middlewares],
         meta: _def.meta && meta ? { ..._def.meta, ...meta } : meta ?? _def.meta,
       },
-      opts,
-    );
+    });
   }
 
   const base: AnyMiddlewareBuilderWithoutExtensions = {
     _def,
     input(input) {
       const parser = getParseFn(input as Parser);
-      return mergeBuilders({
+
+      return apply({
         inputs: [input as Parser],
         middlewares: [createInputMiddleware(parser)],
       });
     },
     output(output: Parser) {
       const parser = getParseFn(output);
-      return mergeBuilders({
+      return apply({
         output,
         middlewares: [createOutputMiddleware(parser)],
       });
     },
     meta(meta) {
-      return mergeBuilders({
+      return apply({
         meta,
       });
     },
     use(fn) {
-      return mergeBuilders({
+      return apply({
         middlewares: [fn],
       });
     },
     concat(builder) {
-      return mergeBuilders((builder as any)._def);
+      return apply((builder as any)._def);
     },
   };
 
   const full: MiddlewareBuilder<any> = {
     ...base,
-    ...opts.builder(base),
+    ...opts?.builder?.(base),
   };
 
   return full;

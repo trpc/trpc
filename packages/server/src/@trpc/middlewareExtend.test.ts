@@ -10,7 +10,7 @@ import type {
 } from '../unstable-core-do-not-import/types';
 import type { UnsetMarker } from '../unstable-core-do-not-import/utils';
 import type { DefaultValue, MiddlewareOptions } from './middleware';
-import { createBuilder, createMiddlewareBuilder } from './middleware';
+import { createMiddlewareBuilder } from './middleware';
 
 interface ProcedureResolverOptions<TOptions extends MiddlewareOptions> {
   ctx: Simplify<Overwrite<TOptions['ctx'], TOptions['ctx_overrides']>>;
@@ -49,7 +49,9 @@ test('extended options', () => {
   const mw = createMiddlewareBuilder<{
     ctx: object;
     meta: object;
-  }>();
+  }>({
+    builder: null as any,
+  });
 
   mw.use((opts) => {
     expectTypeOf(opts.path).toBeString();
@@ -59,19 +61,17 @@ test('extended options', () => {
 });
 
 test('extended fns', () => {
-  const mw = createBuilder<{
+  const mw = createMiddlewareBuilder<{
     ctx: object;
     meta: object;
-  }>(
-    {},
-    {
-      builder: () => ({
-        query: (fn) => {
-          return null as any;
-        },
-      }),
-    },
-  );
+  }>({
+    builder: (builder) => ({
+      query: (fn) => {
+        builder._def;
+        return null as any;
+      },
+    }),
+  });
 
   const res = mw.input(z.string()).query((opts) => {
     return opts.input;

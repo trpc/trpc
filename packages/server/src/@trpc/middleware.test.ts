@@ -4,6 +4,8 @@ import z from 'zod';
 import type { inferMiddlewareBuilderOptions } from './middleware';
 import { createMiddlewareBuilder } from './middleware';
 
+const IGNORE_EXTENSIONS = {} as any;
+
 test('middleware builder', () => {
   interface Context {
     foo: string;
@@ -15,7 +17,9 @@ test('middleware builder', () => {
   const mw = createMiddlewareBuilder<{
     ctx: Context;
     meta: Meta;
-  }>();
+  }>({
+    builder: IGNORE_EXTENSIONS,
+  });
 
   mw.input(
     z.object({
@@ -51,14 +55,15 @@ test('middleware builder', () => {
 });
 
 test('concat', () => {
-  const a = createMiddlewareBuilder<{
+  const base = createMiddlewareBuilder<{
     ctx: object;
     meta: object;
-  }>().input(z.object({ foo: z.string() }));
-  const b = createMiddlewareBuilder<{
-    ctx: object;
-    meta: object;
-  }>().input(z.object({ bar: z.string() }));
+  }>({
+    builder: IGNORE_EXTENSIONS,
+  });
+
+  const a = base.input(z.object({ foo: z.string() }));
+  const b = base.input(z.object({ bar: z.string() }));
 
   const concat = a.concat(b);
 
