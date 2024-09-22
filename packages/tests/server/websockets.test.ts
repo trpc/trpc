@@ -1365,10 +1365,10 @@ describe('lastEventId', () => {
 });
 
 describe('keep alive', () => {
-  beforeEach(() => {
+  beforeAll(() => {
     vi.useFakeTimers();
   });
-  afterEach(() => {
+  afterAll(() => {
     vi.useRealTimers();
   });
   function attachPongMock(wss: WebSocket.Server, pongMock: () => void) {
@@ -1407,7 +1407,7 @@ describe('keep alive', () => {
     const { wsClient, wss } = ctx;
     await attachPongMock(wss, pongMock);
     {
-      await vi.advanceTimersByTimeAsync(60000);
+      await vi.advanceTimersByTimeAsync(60_000);
       expect(wsClient.connection).not.toBe(null);
       expect(pongMock).not.toHaveBeenCalled();
     }
