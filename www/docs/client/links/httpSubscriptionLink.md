@@ -156,7 +156,7 @@ export const subRouter = router({
 });
 ```
 
-### Error handling
+## Error handling
 
 Throwing an error in the function propagates to `trpc`'s `onError()` on the backend, but the event is not serialized and sent to the frontend as is.
 
