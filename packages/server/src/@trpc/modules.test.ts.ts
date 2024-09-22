@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { Overwrite, ValueOf } from '../unstable-core-do-not-import/types';
-import { mergeWithoutOverrides } from '../unstable-core-do-not-import/utils';
+import type { Overwrite } from '../unstable-core-do-not-import/types';
 
+export type ValueOf<TObj> = TObj[keyof TObj];
 
-type UnionToIntersection<T> = (
-  T extends any ? (k: T) => void : never
-) extends (k: infer I) => void
+type UnionToIntersection<T> = (T extends any ? (k: T) => void : never) extends (
+  k: infer I,
+) => void
   ? I
-  : never
+  : never;
 
 ///////////// module base ////////////
 
@@ -32,17 +32,12 @@ export type GetModuleDef<
   T extends ModuleName,
 > = MiddlewareModules<TOptions, T>[T];
 
-type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
-  x: infer I,
-) => void
-  ? I
-  : never;
-
 export type Builder<
   TOptions extends MiddlewareOptions,
   TModules extends ModuleName,
-> = UnionToIntersection<MiddlewareModules<TOptions, TModules>[TModules]['builderProps']>
-  
+> = UnionToIntersection<
+  MiddlewareModules<TOptions, TModules>[TModules]['builderProps']
+>;
 
 export type Module<TName extends ModuleName> = {
   name: TName;
@@ -75,7 +70,7 @@ function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
 
   const builderProps: Record<any, any> = {};
   for (const module of initializedModules) {
-    mergeWithoutOverrides(builderProps, module.builderProps);
+    Object.assign(builderProps, module.builderProps);
   }
 
   return {
@@ -206,6 +201,9 @@ const extensionModule = (): Module<typeof extension> => ({
       foo: 'bar';
     };
   }>();
+
+  builder;
+  // ^?
 
   const res1 = builder.test();
   //     ^?
