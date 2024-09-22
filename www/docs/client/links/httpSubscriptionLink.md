@@ -79,7 +79,7 @@ export const subRouter = router({
 });
 ```
 
-## Automatic tracking of id using `tracked()` (recommended)
+## Automatic tracking of id using `tracked()` (recommended) {#tracked}
 
 If you `yield` an event using our `tracked()`-helper and include an `id`, the browser will automatically reconnect when it gets disconnected and send the last known ID - this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
 
@@ -158,7 +158,7 @@ export const subRouter = router({
 
 ## Error handling
 
-Throwing an error in the function propagates to `trpc`'s `onError()` on the backend, but the event is not serialized and sent to the frontend as is.
+Throwing an error in a generator function propagates to `trpc`'s `onError()` on the backend, but the error will not be sent to the client - the client will automatically reconnect based on the last event id that is [tracked using `tracked()`](#tracked).
 
 ## Authorization and headers
 
