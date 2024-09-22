@@ -160,7 +160,7 @@ export const subRouter = router({
 
 Throwing an error in a generator function propagates to `trpc`'s `onError()` on the backend, but the error will not be sent to the client - the client will automatically reconnect based on the last event id that is [tracked using `tracked()`](#tracked).
 
-## Authorization and headers
+## Headers and authorization / authentication
 
 ### Web apps
 
