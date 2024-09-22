@@ -517,7 +517,7 @@ test('wait for slow queries/mutations before disconnecting', async () => {
     factory();
 
   await waitFor(() => {
-    expect(onNewClient).toHaveBeenCalledTimes(1);
+    expect(wsClient.connection?.state === 'open').toBe(true);
   });
   const promise = client.slow.mutate();
   await waitFor(() => {
