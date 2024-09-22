@@ -291,6 +291,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           getRawInput: call.getRawInput,
           ctx,
           type: proc._def.type,
+          signal: opts.req.signal,
         });
         return [data];
       } catch (cause) {
