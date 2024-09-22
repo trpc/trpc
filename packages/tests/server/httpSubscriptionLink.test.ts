@@ -37,8 +37,10 @@ const ctx = konn()
 
     const router = t.router({
       sub: {
-        iterableEvent: t.procedure.subscription(async function* () {
-          for await (const data of on(ee, 'data')) {
+        iterableEvent: t.procedure.subscription(async function* (opts) {
+          for await (const data of on(ee, 'data', {
+            signal: opts.signal,
+          })) {
             const thing = data[0] as number | Error;
 
             if (thing instanceof Error) {
@@ -158,9 +160,6 @@ test('iterable event', async () => {
   await waitFor(() => {
     expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
   });
-
-  ctx.eeEmit(4);
-  ctx.eeEmit(5);
 
   await waitFor(() => {
     expect(ctx.ee.listenerCount('data')).toBe(0);
@@ -311,7 +310,9 @@ describe('auth / connectionParams', async () => {
 
       const appRouter = t.router({
         iterableEvent: t.procedure.subscription(async function* (opts) {
-          for await (const data of on(ee, 'data')) {
+          for await (const data of on(ee, 'data', {
+            signal: opts.signal,
+          })) {
             const num = data[0] as number;
             yield {
               user: opts.ctx.user,
@@ -440,8 +441,10 @@ describe('transformers / different serialize-deserialize', async () => {
       };
 
       const appRouter = t.router({
-        iterableEvent: t.procedure.subscription(async function* () {
-          for await (const data of on(ee, 'data')) {
+        iterableEvent: t.procedure.subscription(async function* (opts) {
+          for await (const data of on(ee, 'data', {
+            signal: opts.signal,
+          })) {
             const num = data[0] as number;
             yield tracked(String(num), { num });
           }
@@ -494,3 +497,5 @@ describe('transformers / different serialize-deserialize', async () => {
     });
   });
 });
+
+test;

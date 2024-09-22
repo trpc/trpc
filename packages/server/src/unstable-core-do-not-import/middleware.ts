@@ -100,6 +100,7 @@ export type MiddlewareFunction<
     input: TInputOut;
     getRawInput: GetRawInputFn;
     meta: TMeta | undefined;
+    signal: AbortSignal | undefined;
     next: {
       (): Promise<MiddlewareResult<TContextOverridesIn>>;
       <$ContextOverride>(opts: {
