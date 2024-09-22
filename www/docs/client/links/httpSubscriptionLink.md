@@ -221,7 +221,7 @@ const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
-### Connection params {#connectionParams}
+#### Connection params {#connectionParams}
 
 In order to authenticate with `EventSource`, you can define `connectionParams` to `createWSClient`. **This will be sent as part of the URL.**
 
