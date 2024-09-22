@@ -274,16 +274,16 @@ const HomeContent: React.FC = () => {
         <Features />
       </motion.section>
 
+      <section>
+        <CompaniesUsing />
+      </section>
+
       <section className="py-4 md:py-8">
         <QuickIntro />
       </section>
 
       <section className={'mx-auto hidden max-w-[1600px] md:block'}>
         <TryItOut />
-      </section>
-
-      <section>
-        <CompaniesUsing />
       </section>
 
       <section className="mx-auto max-w-[80ch] px-6 md:px-0">
