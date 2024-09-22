@@ -104,7 +104,7 @@ function factory(config?: {
 
     onMessageObservable: t.procedure
       .input(z.string().nullish())
-      .subscription((opts) => {
+      .subscription(() => {
         const sub = observable<Message>((emit) => {
           subRef.current = emit;
           const onMessage = (data: Message) => {
