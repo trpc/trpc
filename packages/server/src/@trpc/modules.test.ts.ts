@@ -2,7 +2,13 @@
 import type { Overwrite, ValueOf } from '../unstable-core-do-not-import/types';
 import { mergeWithoutOverrides } from '../unstable-core-do-not-import/utils';
 
-type Flatten<T> = { [K in keyof T]: T[K] };
+
+type UnionToIntersection<T> = (
+  T extends any ? (k: T) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never
+
 ///////////// module base ////////////
 
 interface MiddlewareOptions {
@@ -35,12 +41,8 @@ type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
 export type Builder<
   TOptions extends MiddlewareOptions,
   TModules extends ModuleName,
-> = {
-  [K in keyof GetModuleDef<TOptions, TModules>['builderProps']]: GetModuleDef<
-    TOptions,
-    TModules
-  >['builderProps'][K];
-};
+> = UnionToIntersection<MiddlewareModules<TOptions, TModules>[TModules]['builderProps']>
+  
 
 export type Module<TName extends ModuleName> = {
   name: TName;
@@ -102,7 +104,7 @@ export interface CoreModuleOptions extends MiddlewareOptions {
 
 const core = Symbol('core');
 
-interface CoreModuleBuilderProps<
+interface CoreModuleBuilder<
   TOptions extends MiddlewareOptions,
   TModules extends ModuleName,
 > {
@@ -122,7 +124,7 @@ export interface MiddlewareModules<
 > {
   [core]: {
     pipeProps: CoreModuleOptions;
-    builderProps: CoreModuleBuilderProps<TOptions, TModules>;
+    builderProps: CoreModuleBuilder<TOptions, TModules>;
   };
 }
 
@@ -146,6 +148,7 @@ interface ExtensionModuleBuilder<
 > {
   extFn: () => Builder<TOptions, TModules>;
 }
+
 export interface MiddlewareModules<
   TOptions extends MiddlewareOptions,
   TModules extends ModuleName,
@@ -165,6 +168,7 @@ const extensionModule = (): Module<typeof extension> => ({
 //////// build api /////////
 
 {
+  // coreo nly
   const api = buildApi([coreModule()]);
 
   const builder = api.createBuilder<{
@@ -180,9 +184,12 @@ const extensionModule = (): Module<typeof extension> => ({
   builder.extFn();
 }
 {
+  // extension only
   const api = buildApi([extensionModule()]);
 
-  const builder = api.createBuilder<{}>();
+  const builder = api.createBuilder<{
+    //
+  }>();
 
   builder.extFn();
 
@@ -191,6 +198,7 @@ const extensionModule = (): Module<typeof extension> => ({
 }
 
 {
+  // core + extension
   const api = buildApi([coreModule(), extensionModule()]);
 
   const builder = api.createBuilder<{
