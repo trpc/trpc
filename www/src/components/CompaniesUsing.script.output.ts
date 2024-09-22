@@ -15,10 +15,6 @@ export const companies = [
     "name": "Documenso"
   },
   {
-    "src": "/logos/Fintory.svg",
-    "name": "Fintory"
-  },
-  {
     "src": "/logos/Google.svg",
     "name": "Google"
   },
