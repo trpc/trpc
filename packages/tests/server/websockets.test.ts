@@ -40,7 +40,7 @@ function factory(config?: {
   } = {} as any;
   const onNewMessageSubscription = vi.fn();
   const subscriptionEnded = vi.fn();
-  const onNewClient = vi.fn();
+
   const onSlowMutationCalled = vi.fn();
 
   const t = initTRPC.create();
@@ -166,13 +166,11 @@ function factory(config?: {
     },
   });
 
-  opts.wss.addListener('connection', onNewClient);
   return {
     ...opts,
     ee,
     subRef,
     onNewMessageSubscription,
-    onNewClient,
     onOpenMock,
     onErrorMock,
     onCloseMock,
@@ -489,8 +487,6 @@ test('sub emits errors', async () => {
       subRef.current.error(new Error('test'));
     });
   });
-  const onNewClient = vi.fn();
-  wss.addListener('connection', onNewClient);
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
@@ -513,8 +509,7 @@ test('sub emits errors', async () => {
 });
 
 test('wait for slow queries/mutations before disconnecting', async () => {
-  const { client, close, wsClient, onNewClient, onSlowMutationCalled } =
-    factory();
+  const { client, close, wsClient, onSlowMutationCalled } = factory();
 
   await waitFor(() => {
     expect(wsClient.connection?.state === 'open').toBe(true);
@@ -534,10 +529,10 @@ test('wait for slow queries/mutations before disconnecting', async () => {
 });
 
 test('requests get aborted if called before connection is established and requests dispatched', async () => {
-  const { client, close, wsClient, onNewClient } = factory();
+  const { client, close, wsClient } = factory();
 
   await waitFor(() => {
-    expect(onNewClient).toHaveBeenCalledTimes(1);
+    expect(wsClient.connection?.state === 'open').toBe(true);
   });
   const promise = client.slow.mutate();
   const conn = wsClient.connection;
