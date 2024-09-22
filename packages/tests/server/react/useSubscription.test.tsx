@@ -31,10 +31,12 @@ describe.each([
       const appRouter = t.router({
         onEventIterable: t.procedure
           .input(z.number())
-          .subscription(async function* ({ input }) {
-            for await (const event of on(ee, 'data')) {
+          .subscription(async function* (opts) {
+            for await (const event of on(ee, 'data', {
+              signal: opts.signal,
+            })) {
               const data = event[0] as number;
-              yield data + input;
+              yield data + opts.input;
             }
           }),
         onEventObservable: t.procedure

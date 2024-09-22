@@ -203,12 +203,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
         await ctxPromise; // asserts context has been set
 
+        const abortController = new AbortController();
         const result = await callProcedure({
           procedures: router._def.procedures,
           path,
           getRawInput: async () => input,
           ctx,
           type,
+          signal: abortController.signal,
         });
 
         const isIterableResult =
@@ -264,7 +266,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
         const iterator: AsyncIterator<unknown> =
           iterable[Symbol.asyncIterator]();
-        const abortController = new AbortController();
 
         const abortPromise = new Promise<'abort'>((resolve) => {
           abortController.signal.onabort = () => resolve('abort');

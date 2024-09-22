@@ -49,7 +49,7 @@ export interface RequestInitEsque {
   /**
    * Sets the request's signal.
    */
-  signal?: AbortSignal | null;
+  signal?: AbortSignal | undefined;
 }
 
 /**

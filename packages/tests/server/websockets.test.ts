@@ -118,11 +118,13 @@ function factory(config?: {
 
     onMessageIterable: t.procedure
       .input(z.string().nullish())
-      .subscription(async function* () {
+      .subscription(async function* (opts) {
         ee.emit('subscription:created');
         onNewMessageSubscription();
 
-        for await (const data of on(ee, 'server:msg')) {
+        for await (const data of on(ee, 'server:msg', {
+          signal: opts.signal,
+        })) {
           yield data[0] as Message;
         }
       }),
@@ -326,11 +328,10 @@ test('basic subscription test (iterator)', async () => {
 
   subscription.unsubscribe();
 
-  // iterator won't return until the *next* message is emitted
-  await waitMs(20);
-  ee.emit('server:msg', {
-    id: '4',
+  await waitFor(() => {
+    expect(ee.listenerCount('data')).toBe(0);
   });
+
   await waitFor(() => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);

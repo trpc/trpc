@@ -272,8 +272,9 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
 
     return function createCaller(
       ctxOrCallback,
-      options?: {
+      opts?: {
         onError?: RouterCallerErrorHandler<Context>;
+        signal?: AbortSignal;
       },
     ) {
       return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
@@ -297,9 +298,10 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
               getRawInput: async () => args[0],
               ctx,
               type: procedure._def.type,
+              signal: opts?.signal,
             });
           } catch (cause) {
-            options?.onError?.({
+            opts?.onError?.({
               ctx,
               error: getTRPCErrorFromUnknown(cause),
               input: args[0],
