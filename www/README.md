@@ -16,23 +16,11 @@ TYPEDOC=0 pnpm dev
 
 This command starts a local development server and open up a browser window. Most changes are reflected live without having to restart the server.
 
-It also starts [open graph](#og-images) image generation on port `3001`.
+It also starts [open graph](#og-images) image generation on port `3001` which you can completely ignore if it's not working.
 
-## Build
-
-```console
-pnpm build
-```
-
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
-
-## Deployment
-
-```console
-GIT_USER=<Your GitHub username> USE_SSH=true yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+> [!NOTE]
+>
+> Starting the `dev` server is notoriously slow for now, but once you have the site running, hot reloading should be very fast.
 
 ## OG Images
 
