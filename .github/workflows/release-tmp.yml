@@ -1,0 +1,43 @@
+name: Release "@tmp"-tagged packages
+
+on:
+  push:
+    branches:
+      # Replace this with the branch you want to release from
+      # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
+      - 'issues/5851-take-two'
+      # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
+    paths:
+      - '.github/setup/*'
+      - '.github/workflows/release-tmp.yml'
+      - 'packages/**'
+      - '!packages/**/package.json'
+      - '!packages/test/**'
+
+jobs:
+  publish:
+    timeout-minutes: 10
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/setup
+
+      - name: Check version
+        run: |
+          if [[ $(node -p "require('./packages/server/package.json').version.startsWith('10.')") != true ]]; then
+            echo "Error: The version in packages/server/package.json must start with '10.'"
+            exit 1
+          fi
+      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > $HOME/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - run: pnpm lerna publish --force-publish --canary major --preid "alpha-tmp-$(pnpm --silent current-branch)" --dist-tag tmp --yes
