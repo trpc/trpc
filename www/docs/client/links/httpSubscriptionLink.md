@@ -178,9 +178,9 @@ httpSubscriptionLink({
 });
 ```
 
-### Custom headers by polyfilling `EventSource` and passing `eventSourceOptions` {#authorization-by-polyfilling-eventsource} (recommended for other environments)
+### Custom headers by polyfilling `EventSource` {#authorization-by-polyfilling-eventsource} (recommended for other environments)
 
-You can polyfill `EventSource` and use the `options` -callback to populate headers.
+You can polyfill `EventSource` and use the `eventSourceOptions` -callback to populate headers.
 
 ```tsx
 import {
