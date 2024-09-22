@@ -26,30 +26,41 @@ export type GetModuleDef<
   T extends ModuleName,
 > = MiddlewareModules<TOptions, T>[T];
 
+type UnionToIntersection<U> = (U extends any ? (x: U) => void : never) extends (
+  x: infer I,
+) => void
+  ? I
+  : never;
+
 export type Builder<
   TOptions extends MiddlewareOptions,
   TModules extends ModuleName,
-> = GetModuleDef<TOptions, TModules>['builderProps'];
+> = {
+  [K in keyof GetModuleDef<TOptions, TModules>['builderProps']]: GetModuleDef<
+    TOptions,
+    TModules
+  >['builderProps'][K];
+};
 
-export type ModuleDefinition<TName extends ModuleName> = {
+export type Module<TName extends ModuleName> = {
   name: TName;
   init(): {
     /**
      * Properties that are injected into the arguments of the middlewares
-     * 
+     *
      */
     injectPipeProps: () => AnyMiddlewareModule[TName];
     /**
      * Builder properties
-     * Eg. 
+     * Eg.
      */
     builderProps: AnyMiddlewareModule[TName]['builderProps'];
   };
 };
 
-function buildApi<
-  TModules extends [ModuleDefinition<any>, ...ModuleDefinition<any>[]],
->(modules: TModules) {
+function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
+  modules: TModules,
+) {
   type $Name = TModules[number]['name'];
   type GetModuleDef<
     TName extends $Name,
@@ -91,12 +102,15 @@ export interface CoreModuleOptions extends MiddlewareOptions {
 
 const core = Symbol('core');
 
-interface CoreModuleBuilderProps<TOptions extends MiddlewareOptions, TModules extends ModuleName> {
+interface CoreModuleBuilderProps<
+  TOptions extends MiddlewareOptions,
+  TModules extends ModuleName,
+> {
   coreFn: () => Builder<
     Overwrite<
       TOptions,
       {
-        foo: 'bar';
+        _________ADDED_FROM_CORE_________: 'bar';
       }
     >,
     TModules
@@ -112,7 +126,7 @@ export interface MiddlewareModules<
   };
 }
 
-const coreModule = (): ModuleDefinition<typeof core> => ({
+const coreModule = (): Module<typeof core> => ({
   name: core,
   init() {
     throw new Error('Not implemented');
@@ -120,13 +134,16 @@ const coreModule = (): ModuleDefinition<typeof core> => ({
 });
 ////////// extension definition //////////
 
-interface ExtensionModuleOptions  {
+interface ExtensionModuleOptions {
   ext: true;
 }
 
 const extension = Symbol('extension');
 
-interface ExtensionModuleBuilder<TOptions extends MiddlewareOptions, TModules extends ModuleName> {
+interface ExtensionModuleBuilder<
+  TOptions extends MiddlewareOptions,
+  TModules extends ModuleName,
+> {
   extFn: () => Builder<TOptions, TModules>;
 }
 export interface MiddlewareModules<
@@ -139,7 +156,7 @@ export interface MiddlewareModules<
   };
 }
 
-const extensionModule = (): ModuleDefinition<typeof extension> => ({
+const extensionModule = (): Module<typeof extension> => ({
   name: extension,
   init() {
     throw new Error('Not implemented');
@@ -157,6 +174,20 @@ const extensionModule = (): ModuleDefinition<typeof extension> => ({
   }>();
 
   const res = builder.coreFn();
+  //     ^?
+
+  // @ts-expect-error - extension not added
+  builder.extFn();
+}
+{
+  const api = buildApi([extensionModule()]);
+
+  const builder = api.createBuilder<{}>();
+
+  builder.extFn();
+
+  // @ts-expect-error - core not added
+  builder.coreFn();
 }
 
 {
@@ -168,6 +199,8 @@ const extensionModule = (): ModuleDefinition<typeof extension> => ({
     };
   }>();
 
-  const res = builder.test();
-  const res = builder.ext();
+  const res1 = builder.test();
+  //     ^?
+  const res2 = builder.ext();
+  //     ^?
 }
