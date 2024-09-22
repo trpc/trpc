@@ -66,10 +66,25 @@ export interface MutationProcedure<TDef extends BuiltProcedureDef>
 export interface SubscriptionProcedure<TDef extends BuiltProcedureDef>
   extends Procedure<'subscription', TDef> {}
 
+/**
+ * @deprecated
+ */
+export interface LegacyObservableSubscriptionProcedure<
+  TDef extends BuiltProcedureDef,
+> extends SubscriptionProcedure<TDef> {
+  _observable: true;
+}
+
 export type AnyQueryProcedure = QueryProcedure<any>;
 export type AnyMutationProcedure = MutationProcedure<any>;
-export type AnySubscriptionProcedure = SubscriptionProcedure<any>;
-export type AnyProcedure = Procedure<ProcedureType, any>;
+export type AnySubscriptionProcedure =
+  | SubscriptionProcedure<any>
+  | LegacyObservableSubscriptionProcedure<any>;
+
+export type AnyProcedure =
+  | AnyQueryProcedure
+  | AnyMutationProcedure
+  | AnySubscriptionProcedure;
 
 export type inferProcedureInput<TProcedure extends AnyProcedure> =
   undefined extends inferProcedureParams<TProcedure>['$types']['input']

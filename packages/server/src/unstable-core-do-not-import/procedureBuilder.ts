@@ -17,7 +17,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnySubscriptionProcedure,
+  LegacyObservableSubscriptionProcedure,
   MutationProcedure,
   ProcedureType,
   QueryProcedure,
@@ -49,6 +49,17 @@ type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterable<
 >
   ? inferTrackedOutput<$Output>
   : inferObservableValue<TOutput>;
+
+type inferSubscriptionProcedure<TInputIn, TOutputOut, $Output> =
+  $Output extends AsyncIterable<any>
+    ? SubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
+      }>
+    : LegacyObservableSubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
+      }>;
 
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
@@ -356,10 +367,7 @@ export interface ProcedureBuilder<
     >,
   ): TCaller extends true
     ? TypeError<'Not implemented'>
-    : SubscriptionProcedure<{
-        input: DefaultValue<TInputIn, void>;
-        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
-      }>;
+    : inferSubscriptionProcedure<TInputIn, TOutputOut, $Output>;
 
   /**
    * Overrides the way a procedure is invoked
@@ -469,10 +477,7 @@ export function createBuilder<TContext, TMeta>(
       ) as AnyMutationProcedure;
     },
     subscription(resolver) {
-      return createResolver(
-        { ..._def, type: 'subscription' },
-        resolver,
-      ) as AnySubscriptionProcedure;
+      return createResolver({ ..._def, type: 'subscription' }, resolver) as any;
     },
     experimental_caller(caller) {
       return createNewBuilder(_def, {

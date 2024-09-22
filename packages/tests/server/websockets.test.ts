@@ -7,13 +7,18 @@ import type { AnyRouter } from '@trpc/server';
 import { initTRPC, sse, tracked, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import type { Observer } from '@trpc/server/observable';
+import type { Observable, Observer } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
 } from '@trpc/server/rpc';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  LegacyObservableSubscriptionProcedure,
+  SubscriptionProcedure,
+} from '@trpc/server/unstable-core-do-not-import/procedure';
+import { run } from '@trpc/server/unstable-core-do-not-import/utils';
 import { konn } from 'konn';
 import WebSocket, { Server } from 'ws';
 import { z } from 'zod';
@@ -99,7 +104,7 @@ function factory(config?: {
 
     onMessageObservable: t.procedure
       .input(z.string().nullish())
-      .subscription(({}) => {
+      .subscription((opts) => {
         const sub = observable<Message>((emit) => {
           subRef.current = emit;
           const onMessage = (data: Message) => {
@@ -172,6 +177,7 @@ function factory(config?: {
     onErrorMock,
     onCloseMock,
     onSlowMutationCalled,
+    subscriptionEnded,
     nextIterable,
   };
 }
@@ -1503,5 +1509,117 @@ describe('auth / connectionParams', async () => {
     const result = await client.whoami.query();
 
     expect(result).toEqual(USER_MOCK);
+  });
+});
+
+describe('subscriptions with createCaller', () => {
+  test('iterable', async () => {
+    const ctx = factory();
+
+    expectTypeOf(ctx.router.onMessageIterable).toEqualTypeOf<
+      SubscriptionProcedure<{
+        input: string | null | undefined;
+        output: Message;
+      }>
+    >();
+    const abortController = new AbortController();
+    const caller = ctx.router.createCaller(
+      {},
+      {
+        signal: abortController.signal,
+      },
+    );
+    const result = await caller.onMessageIterable();
+    expectTypeOf(result).toMatchTypeOf<AsyncIterable<Message>>();
+
+    const msgs: Message[] = [];
+    const onDone = vi.fn();
+    const onError = vi.fn();
+
+    void run(async () => {
+      for await (const msg of result) {
+        msgs.push(msg);
+      }
+      onDone();
+    }).catch(onError);
+
+    ctx.ee.emit('server:msg', {
+      id: '1',
+    });
+    ctx.ee.emit('server:msg', {
+      id: '2',
+    });
+
+    await waitFor(() => {
+      expect(msgs).toHaveLength(2);
+    });
+
+    abortController.abort();
+
+    await waitFor(() => {
+      expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+    });
+    await waitFor(() => {
+      expect(onDone).toHaveBeenCalledTimes(0);
+      expect(onError).toHaveBeenCalledTimes(1);
+    });
+    expect(onError.mock.calls[0]).toMatchInlineSnapshot(`
+      Array [
+        [AbortError: The operation was aborted],
+      ]
+    `);
+  });
+
+  test('observable', async () => {
+    const ctx = factory();
+
+    expectTypeOf(ctx.router.onMessageObservable).toEqualTypeOf<
+      LegacyObservableSubscriptionProcedure<{
+        input: string | null | undefined;
+        output: Message;
+      }>
+    >();
+
+    const abortController = new AbortController();
+    const caller = ctx.router.createCaller(
+      {},
+      {
+        signal: abortController.signal,
+      },
+    );
+    const obs = await caller.onMessageObservable();
+    expectTypeOf(obs).toMatchTypeOf<Observable<Message, TRPCError>>();
+
+    const msgs: Message[] = [];
+    const onDone = vi.fn();
+    const onError = vi.fn();
+
+    const sub = obs.subscribe({
+      next(msg) {
+        msgs.push(msg);
+      },
+      error: onError,
+      complete: onDone,
+    });
+    abortController.signal.addEventListener('abort', () => {
+      sub.unsubscribe();
+    });
+    ctx.ee.emit('server:msg', {
+      id: '1',
+    });
+    ctx.ee.emit('server:msg', {
+      id: '2',
+    });
+
+    await waitFor(() => {
+      expect(msgs).toHaveLength(2);
+    });
+
+    abortController.abort();
+
+    await waitFor(() => {
+      expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+      expect(ctx.subscriptionEnded).toHaveBeenCalledTimes(1);
+    });
   });
 });
