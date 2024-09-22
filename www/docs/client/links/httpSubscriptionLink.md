@@ -69,12 +69,9 @@ const ee = new EventEmitter();
 
 export const subRouter = router({
   onPostAdd: publicProcedure.subscription(async function* (opts) {
-    // Abort signal of the request
-    const { signal } = opts;
-
     // listen for new events
     for await (const [data] of on(ee, 'add', {
-      // Passing the AbortSignal of the request makes the event emitter is cancelled
+      // Passing the AbortSignal from the request automatically cancels the event emitter when the request is aborted
       signal: opts.signal,
     })) {
       const post = data as Post;

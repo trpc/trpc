@@ -210,6 +210,7 @@ export const subRouter = router({
       }
       // listen for new events
       for await (const [data] of on(ee, 'add'), {
+        // Passing the AbortSignal from the request automatically cancels the event emitter when the subscription is aborted
         signal: opts.signal,
       }) {
         const post = data as Post;
