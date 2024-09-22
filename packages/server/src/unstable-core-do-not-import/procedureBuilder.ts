@@ -544,6 +544,46 @@ This is a client-only function.
 If you want to call this function on the server, see https://trpc.io/docs/v11/server/server-side-calls
 `.trim();
 
+// run the middlewares recursively with the resolver as the last one
+async function callRecursive(
+  index: number,
+  _def: AnyProcedureBuilderDef,
+  opts: ProcedureCallOptions<any>,
+): Promise<MiddlewareResult<any>> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const middleware = _def.middlewares[index]!;
+    const result = await middleware({
+      ...opts,
+      meta: _def.meta,
+      input: opts.input,
+      next(_nextOpts?: any) {
+        const nextOpts = _nextOpts as
+          | {
+              ctx?: Record<string, unknown>;
+              input?: unknown;
+              getRawInput?: GetRawInputFn;
+            }
+          | undefined;
+
+        return callRecursive(index + 1, _def, {
+          ...opts,
+          ctx: nextOpts?.ctx ? { ...opts.ctx, ...nextOpts.ctx } : opts.ctx,
+          input: nextOpts && 'input' in nextOpts ? nextOpts.input : opts.input,
+          getRawInput: nextOpts?.getRawInput ?? opts.getRawInput,
+        });
+      },
+    });
+    return result;
+  } catch (cause) {
+    return {
+      ok: false,
+      error: getTRPCErrorFromUnknown(cause),
+      marker: middlewareMarker,
+    };
+  }
+}
+
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
   async function procedure(opts: ProcedureCallOptions<unknown>) {
     // is direct server-side call
@@ -551,48 +591,8 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       throw new Error(codeblock);
     }
 
-    // run the middlewares recursively with the resolver as the last one
-    async function callRecursive(
-      index: number,
-      opts: ProcedureCallOptions<any>,
-    ): Promise<MiddlewareResult<any>> {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const middleware = _def.middlewares[index]!;
-        const result = await middleware({
-          ...opts,
-          meta: _def.meta,
-          input: opts.input,
-          next(_nextOpts?: any) {
-            const nextOpts = _nextOpts as
-              | {
-                  ctx?: Record<string, unknown>;
-                  input?: unknown;
-                  getRawInput?: GetRawInputFn;
-                }
-              | undefined;
-
-            return callRecursive(index + 1, {
-              ...opts,
-              ctx: nextOpts?.ctx ? { ...opts.ctx, ...nextOpts.ctx } : opts.ctx,
-              input:
-                nextOpts && 'input' in nextOpts ? nextOpts.input : opts.input,
-              getRawInput: nextOpts?.getRawInput ?? opts.getRawInput,
-            });
-          },
-        });
-        return result;
-      } catch (cause) {
-        return {
-          ok: false,
-          error: getTRPCErrorFromUnknown(cause),
-          marker: middlewareMarker,
-        };
-      }
-    }
-
     // there's always at least one "next" since we wrap this.resolver in a middleware
-    const result = await callRecursive(0, opts);
+    const result = await callRecursive(0, _def, opts);
 
     if (!result) {
       throw new TRPCError({
