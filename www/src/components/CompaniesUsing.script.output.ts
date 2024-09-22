@@ -47,10 +47,6 @@ export const companies = [
     "name": "Pleo"
   },
   {
-    "src": "/logos/Snaplet.svg",
-    "name": "Snaplet"
-  },
-  {
     "src": "/logos/napo.svg",
     "name": "napo"
   }

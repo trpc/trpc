@@ -28,7 +28,8 @@ export const CompaniesUsing = () => {
                 <img
                   src={it.src}
                   alt={it.name}
-                  className="max-h-9 grayscale dark:invert"
+                  className="max-h-9 grayscale transition-all hover:grayscale-0 dark:invert"
+                  title={it.name}
                 />
               </li>
             ))}
