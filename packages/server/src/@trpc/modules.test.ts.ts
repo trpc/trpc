@@ -34,7 +34,15 @@ export type Builder<
 export type ModuleDefinition<TName extends ModuleName> = {
   name: TName;
   init(): {
+    /**
+     * Properties that are injected into the arguments of the middlewares
+     * 
+     */
     injectPipeProps: () => AnyMiddlewareModule[TName];
+    /**
+     * Builder properties
+     * Eg. 
+     */
     builderProps: AnyMiddlewareModule[TName]['builderProps'];
   };
 };
