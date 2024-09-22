@@ -81,7 +81,7 @@
     "ts-prune": "^0.10.3",
     "tsx": "^4.0.0",
     "turbo": "^2.0.9",
-    "typescript": "^5.5.3",
+    "typescript": "^5.6.2",
     "vite": "^5.3.4",
     "vitest": "^2.0.4",
     "vitest-environment-miniflare": "^2.14.1",

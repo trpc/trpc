@@ -53,7 +53,8 @@ export function getHTTPStatusCode(json: TRPCResponse | TRPCResponse[]): number {
 
   const httpStatus = httpStatuses.values().next().value;
 
-  return httpStatus;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return httpStatus!;
 }
 
 export function getHTTPStatusCodeFromError(error: TRPCError) {

@@ -51,13 +51,11 @@ const trpcClient = createTRPCClient<AppRouter>({
 });
 ```
 
-## Usage
+## Basic example
 
 :::tip
 For a full example, see [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat).
 :::
-
-### Basic example
 
 ```ts
 import EventEmitter, { on } from 'events';
@@ -70,7 +68,10 @@ const ee = new EventEmitter();
 export const subRouter = router({
   onPostAdd: publicProcedure.subscription(async function* (opts) {
     // listen for new events
-    for await (const [data] of on(ee, 'add')) {
+    for await (const [data] of on(ee, 'add', {
+      // Passing the AbortSignal from the request automatically cancels the event emitter when the request is aborted
+      signal: opts.signal,
+    })) {
       const post = data as Post;
       yield post;
     }
@@ -78,13 +79,13 @@ export const subRouter = router({
 });
 ```
 
-### Automatic tracking of id using `tracked()` (recommended)
+## Automatic tracking of id using `tracked()` (recommended) {#tracked}
 
 If you `yield` an event using our `tracked()`-helper and include an `id`, the browser will automatically reconnect when it gets disconnected and send the last known ID - this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
 
 You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
 
-:::info
+:::tip
 If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
 :::
 
@@ -114,7 +115,9 @@ export const subRouter = router({
         // [...] get the posts since the last event id and yield them
       }
       // listen for new events
-      for await (const [data] of on(ee, 'add')) {
+      for await (const [data] of on(ee, 'add'), {
+        signal: opts.signal,
+      }) {
         const post = data as Post;
         // tracking the post id ensures the client can reconnect at any time and get the latest events this id
         yield tracked(post.id, post);
@@ -123,17 +126,110 @@ export const subRouter = router({
 });
 ```
 
-### Error handling
+## Cleanup of side effects
 
-Throwing an error in the function propagates to `trpc`'s `onError()` on the backend, but the event is not serialized and sent to the frontend as is.
+If you need to clean up any side-effects of your subscription you can use the [`try...finally`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return#using_return_with_try...finally) pattern, as `trpc` invokes the `.return()` of the Generator Instance when the subscription stops for any reason.
 
-## Authentication / connection params {#connectionParams}
+```ts
+import EventEmitter, { on } from 'events';
+import type { Post } from '@prisma/client';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
 
-:::tip
-If you're doing a web application, you can ignore this section as the cookies are sent as part of the request.
-:::
+const ee = new EventEmitter();
 
-In order to authenticate with `EventSource`, you can define `connectionParams` to `createWSClient`. **This will be sent as part of the URL.**
+export const subRouter = router({
+  onPostAdd: publicProcedure.subscription(async function* (opts) {
+    let timeout;
+    try {
+      for await (const [data] of on(ee, 'add'), {
+        signal: opts.signal,
+      }) {
+        timeout = setTimeout(() => console.log('Pretend like this is useful'));
+        const post = data as Post;
+        yield post;
+      }
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
+  }),
+});
+```
+
+## Error handling
+
+Throwing an error in a generator function propagates to `trpc`'s `onError()` on the backend, but the error will not be sent to the client - the client will automatically reconnect based on the last event id that is [tracked using `tracked()`](#tracked).
+
+## Headers and authorization / authentication
+
+### Web apps
+
+#### Same domain
+
+If you're doing a web application, cookies are sent as part of the request as long as your client is on the same domain as the server.
+
+#### Cross-domain
+
+If the client and server are not on the same domain, you can use `withCredentials: true` ([read more on MDN here](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/withCredentials)).
+
+**Example:**
+
+```tsx
+// [...]
+unstable_httpSubscriptionLink({
+  url: 'https://example.com/api/trpc',
+  eventSourceOptions: {
+    withCredentials: true, // <---
+  },
+});
+```
+
+### Custom headers through polyfill {#authorization-by-polyfilling-eventsource}
+
+**Recommended for non-web environments**
+
+You can polyfill `EventSource` and use the `eventSourceOptions` -callback to populate headers.
+
+```tsx
+import {
+  createTRPCClient,
+  httpBatchLink,
+  splitLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
+import { EventSourcePolyfill } from 'event-source-polyfill';
+import type { AppRouter } from '../server/index.js';
+
+// polyfill EventSource
+globalThis.EventSource = EventSourcePolyfill;
+
+// Initialize the tRPC client
+const trpc = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: unstable_httpSubscriptionLink({
+        url: 'http://localhost:3000',
+        // options to pass to the EventSourcePolyfill constructor
+        eventSourceOptions: async () => {
+          return {
+            headers: {
+              authorization: 'Bearer supersecret',
+            },
+          }; // you either need to typecast to `EventSourceInit` or use `as any` or override the types by a `declare global` statement
+        },
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000',
+      }),
+    }),
+  ],
+});
+```
+
+### Connection params {#connectionParams}
+
+In order to authenticate with `EventSource`, you can define `connectionParams` in `httpSubscriptionLink`. This will be sent as part of the URL, which is why other methods are preferred).
 
 ```ts twoslash title="server/context.ts"
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
@@ -171,47 +267,6 @@ const trpc = createTRPCClient<AppRouter>({
           return {
             token: 'supersecret',
           };
-        },
-      }),
-      false: httpBatchLink({
-        url: 'http://localhost:3000',
-      }),
-    }),
-  ],
-});
-```
-
-## Authorization by polyfilling `EventSource` and passing `eventSourceOptions` {#authorization-by-polyfilling-eventsource}
-
-You can also polyfill `EventSource` and use the `options` -callback instead of `connectionParams`.
-
-```tsx
-import {
-  createTRPCClient,
-  httpBatchLink,
-  splitLink,
-  unstable_httpSubscriptionLink,
-} from '@trpc/client';
-import { EventSourcePolyfill } from 'event-source-polyfill';
-import type { AppRouter } from '../server/index.js';
-
-// polyfill EventSource
-globalThis.EventSource = EventSourcePolyfill;
-
-// Initialize the tRPC client
-const trpc = createTRPCClient<AppRouter>({
-  links: [
-    splitLink({
-      condition: (op) => op.type === 'subscription',
-      true: unstable_httpSubscriptionLink({
-        url: 'http://localhost:3000',
-        // options to pass to the EventSourcePolyfill constructor
-        eventSourceOptions: async () => {
-          return {
-            headers: {
-              authorization: 'Bearer supersecret',
-            },
-          }; // you either need to typecast to `EventSourceInit` or use `as any` or override the types by a `declare global` statement
         },
       }),
       false: httpBatchLink({

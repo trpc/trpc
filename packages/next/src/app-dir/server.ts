@@ -158,6 +158,8 @@ export function experimental_createServerActionHandler<
               path: '',
               getRawInput: async () => rawInput,
               type: proc._def.type,
+              // is it possible to get the AbortSignal from the request?
+              signal: undefined,
             });
 
         const transformedJSON = transformTRPCResponse(config, {
