@@ -35,6 +35,10 @@ export const companies = [
     "name": "Newfront"
   },
   {
+    "src": "/logos/PayPal.svg",
+    "name": "PayPal"
+  },
+  {
     "src": "/logos/Ping.gg.svg",
     "name": "Ping.gg"
   },
