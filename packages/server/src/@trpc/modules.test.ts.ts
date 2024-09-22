@@ -141,6 +141,9 @@ interface ExtensionModuleBuilder<
   TOptions extends MiddlewareOptions,
   TModules extends ModuleName,
 > {
+  /**
+   * WOOOOOT
+   */
   extFn: () => Builder<TOptions, TModules>;
 }
 
@@ -208,6 +211,7 @@ const extensionModule = (): Module<typeof extension> => ({
   const res1 = builder.extFn();
   //     ^?
   const res2 = builder.coreFn();
+
   //     ^?
 
   const res3 = builder.coreFn().extFn().coreFn();
