@@ -164,13 +164,19 @@ Throwing an error in the function propagates to `trpc`'s `onError()` on the back
 
 ### Web apps
 
-If you're doing a web application, cookies are sent as part of the request as long as you're on the same domain.
+#### Same domain
 
-If you're not on the same domain, you can use `withCredentials` to use CORS - [read more on MDN here](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/withCredentials).
+If you're doing a web application, cookies are sent as part of the request as long as your client is on the same domain as the server.
+
+#### Cross-domain
+
+If the client and server are not on the same domain, you can use `withCredentials: true` ([read more on MDN here](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/withCredentials)).
+
+**Example:**
 
 ```tsx
 // [...]
-httpSubscriptionLink({
+unstable_httpSubscriptionLink({
   url: 'https://example.com/api/trpc',
   eventSourceOptions: {
     withCredentials: true, // <---
@@ -178,7 +184,9 @@ httpSubscriptionLink({
 });
 ```
 
-### Custom headers by polyfilling `EventSource` {#authorization-by-polyfilling-eventsource} (recommended for other environments)
+### Custom headers through polyfill {#authorization-by-polyfilling-eventsource}
+
+**Recommended for non-web environments**
 
 You can polyfill `EventSource` and use the `eventSourceOptions` -callback to populate headers.
 
@@ -221,7 +229,7 @@ const trpc = createTRPCClient<AppRouter>({
 
 ### Connection params {#connectionParams}
 
-In order to authenticate with `EventSource`, you can define `connectionParams` in `unstable_httpSubscriptionLink`. **This will be sent as part of the URL.**
+In order to authenticate with `EventSource`, you can define `connectionParams` in `httpSubscriptionLink`. This will be sent as part of the URL, which is why other methods are preferred).
 
 ```ts twoslash title="server/context.ts"
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
