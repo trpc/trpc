@@ -1380,8 +1380,8 @@ describe('keep alive', () => {
     });
   }
   test('pong message should be received', async () => {
-    const pingMs = 2000;
-    const pongWaitMs = 5000;
+    const pingMs = 2_000;
+    const pongWaitMs = 5_000;
     const ctx = factory({
       wssServer: {
         keepAlive: {
