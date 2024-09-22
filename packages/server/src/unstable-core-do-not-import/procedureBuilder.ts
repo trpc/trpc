@@ -553,20 +553,20 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
 
     // run the middlewares recursively with the resolver as the last one
     async function callRecursive(
-      callOpts: ProcedureCallOptions<any>,
-      index = 0,
+      index: number,
+      opts: ProcedureCallOptions<any>,
     ): Promise<MiddlewareResult<any>> {
       try {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const middleware = _def.middlewares[index]!;
         const result = await middleware({
-          ctx: callOpts.ctx,
-          signal: callOpts.signal,
+          ctx: opts.ctx,
+          signal: opts.signal,
           type: opts.type,
           path: opts.path,
-          getRawInput: callOpts.getRawInput ?? opts.getRawInput,
+          getRawInput: opts.getRawInput ?? opts.getRawInput,
           meta: _def.meta,
-          input: callOpts.input,
+          input: opts.input,
           next(_nextOpts?: any) {
             const nextOpts = _nextOpts as
               | {
@@ -576,20 +576,13 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
                 }
               | undefined;
 
-            return callRecursive(
-              {
-                ...opts,
-                ctx: nextOpts?.ctx
-                  ? { ...callOpts.ctx, ...nextOpts.ctx }
-                  : callOpts.ctx,
-                input:
-                  nextOpts && 'input' in nextOpts
-                    ? nextOpts.input
-                    : callOpts.input,
-                getRawInput: nextOpts?.getRawInput ?? callOpts.getRawInput,
-              },
-              index + 1,
-            );
+            return callRecursive(index + 1, {
+              ...opts,
+              ctx: nextOpts?.ctx ? { ...opts.ctx, ...nextOpts.ctx } : opts.ctx,
+              input:
+                nextOpts && 'input' in nextOpts ? nextOpts.input : opts.input,
+              getRawInput: nextOpts?.getRawInput ?? opts.getRawInput,
+            });
           },
         });
         return result;
@@ -603,7 +596,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
     }
 
     // there's always at least one "next" since we wrap this.resolver in a middleware
-    const result = await callRecursive(opts);
+    const result = await callRecursive(0, opts);
 
     if (!result) {
       throw new TRPCError({
