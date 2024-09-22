@@ -205,8 +205,8 @@ const extensionModule = (): Module<typeof extension> => ({
   builder;
   // ^?
 
-  const res1 = builder.test();
+  const res1 = builder.extFn();
   //     ^?
-  const res2 = builder.ext();
+  const res2 = builder.coreFn();
   //     ^?
 }
