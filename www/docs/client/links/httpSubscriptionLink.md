@@ -51,13 +51,11 @@ const trpcClient = createTRPCClient<AppRouter>({
 });
 ```
 
-## Usage
+## Basic example
 
 :::tip
 For a full example, see [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat).
 :::
-
-### Basic example
 
 ```ts
 import EventEmitter, { on } from 'events';
@@ -81,7 +79,7 @@ export const subRouter = router({
 });
 ```
 
-### Automatic tracking of id using `tracked()` (recommended)
+## Automatic tracking of id using `tracked()` (recommended)
 
 If you `yield` an event using our `tracked()`-helper and include an `id`, the browser will automatically reconnect when it gets disconnected and send the last known ID - this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
 
@@ -128,7 +126,7 @@ export const subRouter = router({
 });
 ```
 
-### Cleanup of side effects
+## Cleanup of side effects
 
 If you need to clean up any side-effects of your subscription you can use the [`try...finally`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return#using_return_with_try...finally) pattern, as `trpc` invokes the `.return()` of the Generator Instance when the subscription stops for any reason.
 
