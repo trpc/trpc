@@ -178,11 +178,9 @@ httpSubscriptionLink({
 });
 ```
 
-### Other environments
+### Custom headers by polyfilling `EventSource` and passing `eventSourceOptions` {#authorization-by-polyfilling-eventsource} (recommended for other environments)
 
-#### Custom headers by polyfilling `EventSource` and passing `eventSourceOptions` {#authorization-by-polyfilling-eventsource} (recommended)
-
-You can also polyfill `EventSource` and use the `options` -callback instead of `connectionParams`.
+You can polyfill `EventSource` and use the `options` -callback to populate headers.
 
 ```tsx
 import {
@@ -221,9 +219,9 @@ const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
-#### Connection params {#connectionParams}
+### Connection params {#connectionParams}
 
-In order to authenticate with `EventSource`, you can define `connectionParams` to `createWSClient`. **This will be sent as part of the URL.**
+In order to authenticate with `EventSource`, you can define `connectionParams` in `unstable_httpSubscriptionLink`. **This will be sent as part of the URL.**
 
 ```ts twoslash title="server/context.ts"
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
