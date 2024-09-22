@@ -2,6 +2,7 @@
 import type { Overwrite, ValueOf } from '../unstable-core-do-not-import/types';
 import { mergeWithoutOverrides } from '../unstable-core-do-not-import/utils';
 
+type Flatten<T> = { [K in keyof T]: T[K] };
 ///////////// module base ////////////
 
 interface MiddlewareOptions {
@@ -20,10 +21,15 @@ export type ModuleName = keyof MiddlewareModules<any, any>;
 
 export type MiddlewareModuleName = keyof MiddlewareModules<any, any>;
 
+export type GetModuleDef<
+  TOptions extends MiddlewareOptions,
+  T extends ModuleName,
+> = MiddlewareModules<TOptions, T>[T];
+
 export type Builder<
   TOptions extends MiddlewareOptions,
   TModules extends ModuleName,
-> = MiddlewareModules<TOptions, TModules>;
+> = GetModuleDef<TOptions, TModules>['builderProps'];
 
 export type ModuleDefinition<TName extends ModuleName> = {
   name: TName;
@@ -52,8 +58,18 @@ function buildApi<
   }
 
   return {
-    createBuilder: <TOptions extends Partial<MiddlewareOptions>>() => {
-      //
+    createBuilder: <TOptions extends Partial<MiddlewareOptions>>(): Builder<
+      Overwrite<
+        {
+          ctx: object;
+          meta: object;
+          ctx_overrides: object;
+        },
+        TOptions
+      >,
+      $Name
+    > => {
+      throw new Error('Not implemented');
     },
   };
 }
@@ -66,23 +82,25 @@ export interface CoreModuleOptions extends MiddlewareOptions {
 }
 
 const core = Symbol('core');
+
+interface CoreModuleBuilderProps<TOptions extends MiddlewareOptions, TModules extends ModuleName> {
+  coreFn: () => Builder<
+    Overwrite<
+      TOptions,
+      {
+        foo: 'bar';
+      }
+    >,
+    TModules
+  >;
+}
 export interface MiddlewareModules<
   TOptions extends MiddlewareOptions,
   TModules extends ModuleName,
 > {
   [core]: {
     pipeProps: CoreModuleOptions;
-    builderProps: {
-      test: () => Builder<
-        Overwrite<
-          TOptions,
-          {
-            foo: 'bar';
-          }
-        >,
-        TModules
-      >;
-    };
+    builderProps: CoreModuleBuilderProps<TOptions, TModules>;
   };
 }
 
@@ -94,22 +112,22 @@ const coreModule = (): ModuleDefinition<typeof core> => ({
 });
 ////////// extension definition //////////
 
-interface ExtensionModuleOptions extends MiddlewareOptions {
+interface ExtensionModuleOptions  {
   ext: true;
 }
 
 const extension = Symbol('extension');
+
+interface ExtensionModuleBuilder<TOptions extends MiddlewareOptions, TModules extends ModuleName> {
+  extFn: () => Builder<TOptions, TModules>;
+}
 export interface MiddlewareModules<
   TOptions extends MiddlewareOptions,
   TModules extends ModuleName,
 > {
   [extension]: {
-    pipeProps: {
-      _ext: true;
-    };
-    builderProps: {
-      ext: () => Builder<TOptions, TModules>;
-    };
+    pipeProps: ExtensionModuleOptions;
+    builderProps: ExtensionModuleBuilder<TOptions, TModules>;
   };
 }
 
@@ -121,6 +139,27 @@ const extensionModule = (): ModuleDefinition<typeof extension> => ({
 });
 //////// build api /////////
 
-const api = buildApi([coreModule()]);
+{
+  const api = buildApi([coreModule()]);
 
-api.createBuilder<{ foo: 'bar' }>().test();
+  const builder = api.createBuilder<{
+    ctx: {
+      foo: 'bar';
+    };
+  }>();
+
+  const res = builder.coreFn();
+}
+
+{
+  const api = buildApi([coreModule(), extensionModule()]);
+
+  const builder = api.createBuilder<{
+    ctx: {
+      foo: 'bar';
+    };
+  }>();
+
+  const res = builder.test();
+  const res = builder.ext();
+}
