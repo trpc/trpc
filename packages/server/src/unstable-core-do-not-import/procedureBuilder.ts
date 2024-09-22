@@ -560,11 +560,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const middleware = _def.middlewares[index]!;
         const result = await middleware({
-          ctx: opts.ctx,
-          signal: opts.signal,
-          type: opts.type,
-          path: opts.path,
-          getRawInput: opts.getRawInput ?? opts.getRawInput,
+          ...opts,
           meta: _def.meta,
           input: opts.input,
           next(_nextOpts?: any) {
