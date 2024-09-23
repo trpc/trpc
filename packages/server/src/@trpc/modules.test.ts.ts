@@ -17,6 +17,9 @@ type UnionToIntersection<T> = (T extends any ? (k: T) => void : never) extends (
 ///////////// module base ////////////
 
 interface MiddlewareOptions {
+  /**
+   * THe modules that are being used
+   */
   $module: ModuleName;
   ctx: any;
   ctx_overrides: any;
@@ -37,7 +40,14 @@ export type GetModuleDef<
 
 export type Builder<TOptions extends MiddlewareOptions> = UnionToIntersection<
   MiddlewareModules<TOptions>[TOptions['$module']]['builderProps']
->;
+> & {
+  [' options']: TOptions;
+};
+export type inferBuilderOptions<TBuilder> = TBuilder extends Builder<
+  infer TOptions
+>
+  ? TOptions
+  : never;
 
 export type Module<TName extends ModuleName> = {
   name: TName;
@@ -103,7 +113,7 @@ interface CoreModuleBuilder<TOptions extends MiddlewareOptions> {
     Merge<
       TOptions,
       {
-        _________ADDED_FROM_CORE_________: 'bar';
+        _________ADDED_FROM_CORE_________: true;
       }
     >
   >;
@@ -195,8 +205,14 @@ const extensionModule = (): Module<typeof extension> => ({
   // ^?
 
   const res1 = builder.extFn();
+
   //     ^?
   const res2 = builder.coreFn();
+
+  type $Options = inferBuilderOptions<typeof res2>;
+  expectTypeOf<$Options>().toMatchTypeOf<{
+    _________ADDED_FROM_CORE_________: true;
+  }>();
 
   //     ^?
 
