@@ -40,11 +40,11 @@ export type GetModuleDef<
   T extends ModuleName,
 > = MiddlewareModules<TOptions>[T];
 
-const optionsSymbol = Symbol();
+const $typesSymbol = Symbol();
 export type Builder<TOptions extends MiddlewareOptions> = UnionToIntersection<
   MiddlewareModules<TOptions>[TOptions['$module']]['builderProps']
 > & {
-  [optionsSymbol]: TOptions;
+  [$typesSymbol]: TOptions;
 };
 export type inferBuilderOptions<TBuilder> = TBuilder extends Builder<
   infer TOptions
