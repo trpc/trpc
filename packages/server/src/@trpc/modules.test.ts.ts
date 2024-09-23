@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
+import { expectTypeOf } from 'vitest';
+
 type Merge<T1, T2> = {
   [$Key in keyof T1 | keyof T2]: $Key extends keyof T2
     ? T2[$Key]
@@ -38,10 +40,11 @@ export type GetModuleDef<
   T extends ModuleName,
 > = MiddlewareModules<TOptions>[T];
 
+const optionsSymbol = Symbol();
 export type Builder<TOptions extends MiddlewareOptions> = UnionToIntersection<
   MiddlewareModules<TOptions>[TOptions['$module']]['builderProps']
 > & {
-  [' options']: TOptions;
+  [optionsSymbol]: TOptions;
 };
 export type inferBuilderOptions<TBuilder> = TBuilder extends Builder<
   infer TOptions
