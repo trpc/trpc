@@ -12,31 +12,26 @@ type UnionToIntersection<T> = (T extends any ? (k: T) => void : never) extends (
 ///////////// module base ////////////
 
 interface MiddlewareOptions {
+  $module: ModuleName;
   ctx: any;
   ctx_overrides: any;
 
   meta: any;
 }
 
-export interface MiddlewareModules<
-  TOptions extends MiddlewareOptions,
-  TModules extends ModuleName,
-> {}
+export interface MiddlewareModules<TOptions extends MiddlewareOptions> {}
 
-export type ModuleName = keyof MiddlewareModules<any, any>;
+export type ModuleName = keyof MiddlewareModules<any>;
 
-export type MiddlewareModuleName = keyof MiddlewareModules<any, any>;
+export type MiddlewareModuleName = keyof MiddlewareModules<any>;
 
 export type GetModuleDef<
   TOptions extends MiddlewareOptions,
   T extends ModuleName,
-> = MiddlewareModules<TOptions, T>[T];
+> = MiddlewareModules<TOptions>[T];
 
-export type Builder<
-  TOptions extends MiddlewareOptions,
-  TModules extends ModuleName,
-> = UnionToIntersection<
-  MiddlewareModules<TOptions, TModules>[TModules]['builderProps']
+export type Builder<TOptions extends MiddlewareOptions> = UnionToIntersection<
+  MiddlewareModules<TOptions>[TOptions['$module']]['builderProps']
 >;
 
 export type Module<TName extends ModuleName> = {
@@ -59,10 +54,8 @@ function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
   modules: TModules,
 ) {
   type $Name = TModules[number]['name'];
-  type GetModuleDef<
-    TName extends $Name,
-    TOptions extends MiddlewareOptions = any,
-  > = MiddlewareModules<TOptions, TName>;
+  type GetModuleDef<TOptions extends MiddlewareOptions = any> =
+    MiddlewareModules<TOptions>;
 
   type AllOptions = GetModuleDef<$Name>;
 
@@ -76,21 +69,25 @@ function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
   return {
     createBuilder: <TOptions extends Partial<MiddlewareOptions>>(): Builder<
       Overwrite<
+        Overwrite<
+          {
+            ctx: object;
+            meta: object;
+            ctx_overrides: object;
+          },
+          TOptions
+        >,
         {
-          ctx: object;
-          meta: object;
-          ctx_overrides: object;
-        },
-        TOptions
-      >,
-      $Name
+          $module: $Name;
+        }
+      >
     > => {
       throw new Error('Not implemented');
     },
   };
 }
 
-export type AnyMiddlewareModule = MiddlewareModules<any, any>;
+export type AnyMiddlewareModule = MiddlewareModules<any>;
 /////// core module definition /////////
 
 export interface CoreModuleOptions extends MiddlewareOptions {
@@ -99,27 +96,20 @@ export interface CoreModuleOptions extends MiddlewareOptions {
 
 const core = Symbol('core');
 
-interface CoreModuleBuilder<
-  TOptions extends MiddlewareOptions,
-  TModules extends ModuleName,
-> {
+interface CoreModuleBuilder<TOptions extends MiddlewareOptions> {
   coreFn: () => Builder<
     Overwrite<
       TOptions,
       {
         _________ADDED_FROM_CORE_________: 'bar';
       }
-    >,
-    TModules
+    >
   >;
 }
-export interface MiddlewareModules<
-  TOptions extends MiddlewareOptions,
-  TModules extends ModuleName,
-> {
+export interface MiddlewareModules<TOptions extends MiddlewareOptions> {
   [core]: {
     pipeProps: CoreModuleOptions;
-    builderProps: CoreModuleBuilder<TOptions, TModules>;
+    builderProps: CoreModuleBuilder<TOptions>;
   };
 }
 
@@ -137,23 +127,17 @@ interface ExtensionModuleOptions {
 
 const extension = Symbol('extension');
 
-interface ExtensionModuleBuilder<
-  TOptions extends MiddlewareOptions,
-  TModules extends ModuleName,
-> {
+interface ExtensionModuleBuilder<TOptions extends MiddlewareOptions> {
   /**
    * WOOOOOT
    */
-  extFn: () => Builder<TOptions, TModules>;
+  extFn: () => Builder<TOptions>;
 }
 
-export interface MiddlewareModules<
-  TOptions extends MiddlewareOptions,
-  TModules extends ModuleName,
-> {
+export interface MiddlewareModules<TOptions extends MiddlewareOptions> {
   [extension]: {
     pipeProps: ExtensionModuleOptions;
-    builderProps: ExtensionModuleBuilder<TOptions, TModules>;
+    builderProps: ExtensionModuleBuilder<TOptions>;
   };
 }
 
