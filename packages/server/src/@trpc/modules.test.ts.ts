@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-type Spread<T1, T2> = {
+type Merge<T1, T2> = {
   [$Key in keyof T1 | keyof T2]: $Key extends keyof T2
     ? T2[$Key]
     : $Key extends keyof T1
@@ -72,19 +72,16 @@ function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
   }
 
   return {
-    createBuilder: <TOptions extends Partial<MiddlewareOptions>>(): Builder<
-      Spread<
-        Spread<
-          {
-            ctx: object;
-            meta: object;
-            ctx_overrides: object;
-          },
-          TOptions
-        >,
+    createBuilder: <
+      TOptions extends Omit<Partial<MiddlewareOptions>, '$module'>,
+    >(): Builder<
+      Merge<
         {
-          $module: $Name;
-        }
+          ctx: object;
+          meta: object;
+          ctx_overrides: object;
+        },
+        Merge<TOptions, { $module: $Name }>
       >
     > => {
       throw new Error('Not implemented');
@@ -103,7 +100,7 @@ const core = Symbol('core');
 
 interface CoreModuleBuilder<TOptions extends MiddlewareOptions> {
   coreFn: () => Builder<
-    Spread<
+    Merge<
       TOptions,
       {
         _________ADDED_FROM_CORE_________: 'bar';
