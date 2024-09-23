@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { Overwrite } from '../unstable-core-do-not-import/types';
 
-export type ValueOf<TObj> = TObj[keyof TObj];
+type Spread<TType, TWith> = {
+  [K in keyof TType | keyof TWith]: K extends keyof TWith
+    ? TWith[K]
+    : K extends keyof TType
+    ? TType[K]
+    : never;
+};
 
 type UnionToIntersection<T> = (T extends any ? (k: T) => void : never) extends (
   k: infer I,
@@ -68,8 +73,8 @@ function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
 
   return {
     createBuilder: <TOptions extends Partial<MiddlewareOptions>>(): Builder<
-      Overwrite<
-        Overwrite<
+      Spread<
+        Spread<
           {
             ctx: object;
             meta: object;
@@ -98,7 +103,7 @@ const core = Symbol('core');
 
 interface CoreModuleBuilder<TOptions extends MiddlewareOptions> {
   coreFn: () => Builder<
-    Overwrite<
+    Spread<
       TOptions,
       {
         _________ADDED_FROM_CORE_________: 'bar';
