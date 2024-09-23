@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-type Spread<TType, TWith> = {
-  [K in keyof TType | keyof TWith]: K extends keyof TWith
-    ? TWith[K]
-    : K extends keyof TType
-    ? TType[K]
+type Spread<T1, T2> = {
+  [$Key in keyof T1 | keyof T2]: $Key extends keyof T2
+    ? T2[$Key]
+    : $Key extends keyof T1
+    ? T1[$Key]
     : never;
 };
 
