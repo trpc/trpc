@@ -263,8 +263,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
   };
 
   function createConnection(): Connection {
-    let pingTimeout: ReturnType<typeof setTimeout> | undefined;
-    let pongTimeout: ReturnType<typeof setTimeout> | undefined;
+    let pingTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+    let pongTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
     const self: Connection = {
       id: ++connectionIndex,
       state: 'connecting',
