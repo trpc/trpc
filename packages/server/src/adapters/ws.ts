@@ -521,7 +521,11 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
 
     onConnection(client, req).catch((cause) => {
       opts.onError?.({
-        error: getTRPCErrorFromUnknown(cause),
+        error: new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          cause,
+          message: 'Failed to handle WebSocket connection - this a bug in tRPC',
+        }),
         req: req,
         path: undefined,
         type: 'unknown',
