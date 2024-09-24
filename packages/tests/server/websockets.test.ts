@@ -1426,8 +1426,8 @@ describe('keep alive from the client', () => {
   });
 
   test('pong message should be received', async () => {
-    const pingMs = 2_000;
-    const pongWaitMs = 5_000;
+    const intervalMs = 2_000;
+    const pongTimeoutMs = 5_000;
     const onClose = vi.fn();
     const ctx = factory({
       wssServer: {
@@ -1443,8 +1443,8 @@ describe('keep alive from the client', () => {
         },
         keepAlive: {
           enabled: true,
-          intervalMs: pingMs,
-          pongTimeoutMs: pongWaitMs,
+          intervalMs,
+          pongTimeoutMs,
         },
         onClose,
       },
@@ -1464,8 +1464,8 @@ describe('keep alive from the client', () => {
       }
     });
 
-    await vi.advanceTimersByTimeAsync(pingMs);
-    await vi.advanceTimersByTimeAsync(pongWaitMs);
+    await vi.advanceTimersByTimeAsync(intervalMs);
+    await vi.advanceTimersByTimeAsync(pongTimeoutMs);
 
     expect(onPong).toHaveBeenCalled();
 
@@ -1475,8 +1475,8 @@ describe('keep alive from the client', () => {
   });
 
   test('should close if no pong is received', async () => {
-    const pingMs = 2_000;
-    const pongWaitMs = 5_000;
+    const intervalMs = 2_000;
+    const pongTimeoutMs = 5_000;
     const onClose = vi.fn();
     const ctx = factory({
       wssServer: {
@@ -1492,8 +1492,8 @@ describe('keep alive from the client', () => {
         },
         keepAlive: {
           enabled: true,
-          intervalMs: pingMs,
-          pongTimeoutMs: pongWaitMs,
+          intervalMs,
+          pongTimeoutMs,
         },
         onClose,
       },
@@ -1513,8 +1513,8 @@ describe('keep alive from the client', () => {
       }
     });
 
-    await vi.advanceTimersByTimeAsync(pingMs);
-    await vi.advanceTimersByTimeAsync(pongWaitMs);
+    await vi.advanceTimersByTimeAsync(intervalMs);
+    await vi.advanceTimersByTimeAsync(pongTimeoutMs);
 
     expect(onPong).toHaveBeenCalledTimes(0);
 
