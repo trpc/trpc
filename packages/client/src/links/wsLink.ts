@@ -354,7 +354,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
           const { pongTimeoutMs = 1_000, intervalMs = 5_000 } = opts.keepAlive;
 
           const schedulePing = () => {
-            const schedulePong = () => {
+            const schedulePongTimeout = () => {
               pongTimeout = setTimeout(() => {
                 ws.close(3001);
                 onClose(3001);
@@ -362,7 +362,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
             };
             pingTimeout = setTimeout(() => {
               ws.send('PING');
-              schedulePong();
+              schedulePongTimeout();
             }, intervalMs);
           };
           ws.addEventListener('message', () => {
