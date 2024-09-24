@@ -374,11 +374,11 @@ export function createWSClient(opts: WebSocketClientOptions) {
           schedulePing();
         }
         run(async () => {
-          handleKeepAlive();
           /* istanbul ignore next -- @preserve */
           if (activeConnection?.ws !== ws) {
             return;
           }
+          handleKeepAlive();
 
           await sendConnectionParams();
 
