@@ -75,7 +75,7 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
     closeMs: number;
   };
   /**
-   * Sending ping messages to the server to keep the connection
+   * Send ping messages to the server and kill the connection if no pong message is returned
    */
   keepAlive?: {
     /**
