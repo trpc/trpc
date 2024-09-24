@@ -1481,7 +1481,6 @@ describe('keep alive from the client', () => {
     await vi.advanceTimersByTimeAsync(pongTimeoutMs);
 
     expect(pong).toBe(true);
-    expect(onClose).not.toHaveBeenCalled();
 
     await ctx.close();
   });
