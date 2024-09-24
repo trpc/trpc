@@ -273,11 +273,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
     clearTimeout(lazyDisconnectTimer);
 
     const onCloseOrError = () => {
+      clearTimeout(pingTimeout);
+      clearTimeout(pongTimeout);
+
       if (self.state === 'closed') {
         return;
       }
-      clearTimeout(pingTimeout);
-      clearTimeout(pongTimeout);
 
       (self as Connection).state = 'closed';
       if (activeConnection === self) {
@@ -303,6 +304,15 @@ export function createWSClient(opts: WebSocketClientOptions) {
             ),
           );
         }
+      }
+    };
+
+    const onClose = (code: number) => {
+      const wasOpen = self.state === 'open';
+      onCloseOrError();
+
+      if (wasOpen) {
+        opts.onClose?.({ code });
       }
     };
 
@@ -337,17 +347,26 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
           ws.send(JSON.stringify(connectMsg));
         }
-        async function handleKeepAlive() {
+        function handleKeepAlive() {
           if (!opts.keepAlive?.enabled) {
             return;
           }
           const { pongTimeoutMs = 1_000, intervalMs = 5_000 } = opts.keepAlive;
 
           function sendPing() {
-            ws.send('ping');
+            ws.send('PING');
             pongTimeout = setTimeout(() => {
-              ws.close(4499, 'pong timeout');
+              ws.close(3001);
+              onClose(3001);
             }, pongTimeoutMs);
+            const onMessage = (msg: MessageEvent) => {
+              if (msg.data === 'PONG') {
+                clearTimeout(pongTimeout);
+                pingTimeout = setTimeout(sendPing, intervalMs);
+              }
+              ws.removeEventListener('message', onMessage);
+            };
+            ws.addEventListener('message', onMessage);
           }
           pingTimeout = setTimeout(sendPing, intervalMs);
         }
@@ -356,8 +375,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
           if (activeConnection?.ws !== ws) {
             return;
           }
+
           await sendConnectionParams();
-          await handleKeepAlive();
+
+          handleKeepAlive();
 
           connectAttempt = 0;
           self.state = 'open';
@@ -421,7 +442,11 @@ export function createWSClient(opts: WebSocketClientOptions) {
           req.callbacks.complete();
         }
       };
+
       ws.addEventListener('message', ({ data }) => {
+        if (data === 'PONG') {
+          return;
+        }
         startLazyDisconnectTimer();
 
         const msg = JSON.parse(data) as TRPCClientIncomingMessage;
@@ -439,6 +464,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
       ws.addEventListener('close', ({ code }) => {
         const wasOpen = self.state === 'open';
+
         onCloseOrError();
 
         if (wasOpen) {

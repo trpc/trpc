@@ -98,7 +98,7 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
 
 const unsetContextPromiseSymbol = Symbol('unsetContextPromise');
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
-  opts: WSConnectionHandlerOptions<TRouter>,
+  opts: WSSHandlerOptions<TRouter>,
 ) {
   const { createContext, router } = opts;
   const { transformer } = router._def._config;
@@ -106,6 +106,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   return async (client: ws.WebSocket, req: IncomingMessage) => {
     const clientSubscriptions = new Map<number | string, AbortController>();
     const abortController = new AbortController();
+
+    if (opts.keepAlive?.enabled) {
+      const { pingMs, pongWaitMs } = opts.keepAlive;
+      handleKeepAlive(client, pingMs, pongWaitMs);
+    }
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
@@ -409,6 +414,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         return;
       }
       try {
+        const str = message.toString();
+        if (str === 'PING') {
+          if (!opts.dangerouslyDisablePong) {
+            client.send('PONG');
+          }
+
+          return;
+        }
         const msgJSON: unknown = JSON.parse(message.toString());
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs
@@ -502,22 +515,23 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
   // const { wss, prefix, keepAlive } = opts;
 
   const onConnection = getWSConnectionHandler(opts);
-  opts.wss.on('connection', async (client, req) => {
+  opts.wss.on('connection', (client, req) => {
     if (opts.prefix && !req.url?.startsWith(opts.prefix)) {
       return;
     }
 
-    await onConnection(client, req);
-    if (opts.keepAlive?.enabled) {
-      const { pingMs, pongWaitMs } = opts.keepAlive;
-      handleKeepAlive(client, pingMs, pongWaitMs);
-    }
-    if (!opts.dangerouslyDisablePong) {
-      client.on('message', (msg) => {
-        console.log('received', msg.toString());
-        client.pong();
+    onConnection(client, req).catch((cause) => {
+      opts.onError?.({
+        error: getTRPCErrorFromUnknown(cause),
+        req: req,
+        path: undefined,
+        type: 'unknown',
+        ctx: undefined,
+        input: undefined,
       });
-    }
+
+      client.close();
+    });
   });
 
   return {
