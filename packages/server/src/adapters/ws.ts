@@ -513,8 +513,8 @@ export function handleKeepAlive(
   client.on('message', onMessage);
 
   client.on('close', () => {
-    ping && clearTimeout(ping);
-    timeout && clearTimeout(timeout);
+    clearTimeout(ping);
+    clearTimeout(timeout);
   });
 
   schedulePing();
