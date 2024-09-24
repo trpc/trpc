@@ -388,13 +388,21 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
       }
     }
-    client.on('message', async (message) => {
+    client.on('message', async (rawData) => {
+      const msgStr = rawData.toString();
+      if (msgStr === 'PING') {
+        if (!opts.dangerouslyDisablePong) {
+          client.send('PONG');
+        }
+
+        return;
+      }
       if (ctxPromise === unsetContextPromiseSymbol) {
         // If the ctxPromise wasn't created immediately, we're expecting the first message to be a TRPCConnectionParamsMessage
         ctxPromise = createCtxPromise(() => {
           let msg;
           try {
-            msg = JSON.parse(message.toString()) as TRPCConnectionParamsMessage;
+            msg = JSON.parse(msgStr) as TRPCConnectionParamsMessage;
 
             if (!isObject(msg)) {
               throw new Error('Message was not an object');
@@ -414,15 +422,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         return;
       }
       try {
-        const str = message.toString();
-        if (str === 'PING') {
-          if (!opts.dangerouslyDisablePong) {
-            client.send('PONG');
-          }
-
-          return;
-        }
-        const msgJSON: unknown = JSON.parse(str);
+        const msgJSON: unknown = JSON.parse(msgStr);
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs
           .map((raw) => parseTRPCMessage(raw, transformer))
