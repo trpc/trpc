@@ -472,8 +472,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     });
 
     if (ctxPromise !== unsetContextPromiseSymbol) {
-      // prevent unhandled promise rejection errors
-      await ctxPromise.catch(() => null);
+      await ctxPromise;
     }
   };
 }
@@ -524,7 +523,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         error: new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           cause,
-          message: 'Failed to handle WebSocket connection - this a bug in tRPC',
+          message: 'Failed to handle WebSocket connection',
         }),
         req: req,
         path: undefined,
