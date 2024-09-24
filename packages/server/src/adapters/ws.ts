@@ -512,7 +512,6 @@ export function handleKeepAlive(
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  // const { wss, prefix, keepAlive } = opts;
 
   const onConnection = getWSConnectionHandler(opts);
   opts.wss.on('connection', (client, req) => {
