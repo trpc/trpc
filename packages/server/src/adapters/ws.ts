@@ -422,7 +422,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
           return;
         }
-        const msgJSON: unknown = JSON.parse(message.toString());
+        const msgJSON: unknown = JSON.parse(str);
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs
           .map((raw) => parseTRPCMessage(raw, transformer))
