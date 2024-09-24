@@ -1471,7 +1471,6 @@ describe('keep alive from the client', () => {
 
     let pong = false;
     ctx.wsClient.connection!.ws!.addEventListener('message', (msg) => {
-      console.log('-------------------------', JSON.stringify(msg.data));
       if (msg.data == 'PONG') {
         pong = true;
       }
