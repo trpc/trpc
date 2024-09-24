@@ -75,7 +75,7 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
     closeMs: number;
   };
   /**
-   * Enable sending ping messages to keep a connection alive
+   * Sending ping messages to the server to keep the connection
    */
   keepAlive?: {
     /**
@@ -88,7 +88,7 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
      */
     intervalMs?: number;
     /**
-     * Close the WebSocket after this many milliseconds after the server not responding
+     * Close the WebSocket after this many milliseconds if the server does not respond
      * @default 1_000
      */
     pongTimeoutMs?: number;

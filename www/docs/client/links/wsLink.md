@@ -91,6 +91,25 @@ export interface WebSocketClientOptions {
      */
     closeMs: number;
   };
+  /**
+   * Sending ping messages to the server to keep the connection
+   */
+  keepAlive?: {
+    /**
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Send a ping message every this many milliseconds
+     * @default 5_000
+     */
+    intervalMs?: number;
+    /**
+     * Close the WebSocket after this many milliseconds if the server does not respond
+     * @default 1_000
+     */
+    pongTimeoutMs?: number;
+  };
 }
 ```
 
