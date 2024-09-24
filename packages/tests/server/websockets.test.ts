@@ -1365,7 +1365,7 @@ describe('lastEventId', () => {
   });
 });
 
-describe('keep alive', () => {
+describe('keep alive on the server', () => {
   beforeAll(() => {
     vi.useFakeTimers();
   });
@@ -1413,6 +1413,57 @@ describe('keep alive', () => {
       expect(pongMock).not.toHaveBeenCalled();
     }
     await ctx.close();
+  });
+});
+
+describe.only('keep alive from the client', () => {
+  beforeAll(() => {
+    vi.useFakeTimers();
+  });
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
+  function attachPingMock(wss: WebSocket.Server) {
+    const onPing = vi.fn(() => {
+      // noop
+    });
+    wss.on('connection', (ws) => {
+      ws.on('ping', onPing);
+    });
+
+    return onPing;
+  }
+
+  test('pong message should be received', async () => {
+    const pingMs = 2_000;
+    const pongWaitMs = 5_000;
+    const ctx = factory({
+      wssServer: {
+        dangerouslyDisablePong: false,
+      },
+      wsClient: {
+        lazy: {
+          enabled: false,
+          closeMs: 0,
+        },
+        keepAlive: {
+          enabled: true,
+          intervalMs: pingMs,
+          pongTimeoutMs: pongWaitMs,
+        },
+      },
+    });
+    const wsClient = ctx.client;
+
+    const onPing = attachPingMock(ctx.wss);
+
+    {
+      await vi.advanceTimersByTimeAsync(pingMs + 100);
+      await vi.advanceTimersByTimeAsync(pongWaitMs + 100);
+
+      expect(onPing).toHaveBeenCalledTimes(1);
+    }
   });
 });
 

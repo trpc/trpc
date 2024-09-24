@@ -88,6 +88,12 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
        */
       pongWaitMs?: number;
     };
+    /**
+     * Disable responding to ping messages from the client
+     * **Not recommended** - this is mainly used for testing
+     * @default false
+     */
+    dangerouslyDisablePong?: boolean;
   };
 
 const unsetContextPromiseSymbol = Symbol('unsetContextPromise');
@@ -493,18 +499,24 @@ export function handleKeepAlive(
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  const { wss, prefix, keepAlive } = opts;
+  // const { wss, prefix, keepAlive } = opts;
 
   const onConnection = getWSConnectionHandler(opts);
-  wss.on('connection', async (client, req) => {
-    if (prefix && !req.url?.startsWith(prefix)) {
+  opts.wss.on('connection', async (client, req) => {
+    if (opts.prefix && !req.url?.startsWith(opts.prefix)) {
       return;
     }
 
     await onConnection(client, req);
-    if (keepAlive?.enabled) {
-      const { pingMs, pongWaitMs } = keepAlive;
+    if (opts.keepAlive?.enabled) {
+      const { pingMs, pongWaitMs } = opts.keepAlive;
       handleKeepAlive(client, pingMs, pongWaitMs);
+    }
+    if (!opts.dangerouslyDisablePong) {
+      client.on('message', (msg) => {
+        console.log('received', msg.toString());
+        client.pong();
+      });
     }
   });
 
@@ -515,7 +527,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         method: 'reconnect',
       };
       const data = JSON.stringify(response);
-      for (const client of wss.clients) {
+      for (const client of opts.wss.clients) {
         if (client.readyState === WEBSOCKET_OPEN) {
           client.send(data);
         }

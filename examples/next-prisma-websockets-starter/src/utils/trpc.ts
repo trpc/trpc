@@ -43,6 +43,13 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
   const client = createWSClient({
     url: WS_URL,
   });
+  setInterval(() => {
+    console.log({
+      date: new Date(),
+      connection: client.connection?.state,
+      readyState: client.connection?.ws?.readyState,
+    });
+  }, 5_000);
   return wsLink({
     client,
     /**

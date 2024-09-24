@@ -74,6 +74,25 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
      */
     closeMs: number;
   };
+  /**
+   * Enable sending ping messages to keep a connection alive
+   */
+  keepAlive?: {
+    /**
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Send a ping message every this many milliseconds
+     * @default 5_000
+     */
+    intervalMs?: number;
+    /**
+     * Close the WebSocket after this many milliseconds after the server not responding
+     * @default 1_000
+     */
+    pongTimeoutMs?: number;
+  };
 }
 
 type LazyOptions = Required<NonNullable<WebSocketClientOptions['lazy']>>;
@@ -244,6 +263,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
   };
 
   function createConnection(): Connection {
+    let pingTimeout: ReturnType<typeof setTimeout> | undefined;
+    let pongTimeout: ReturnType<typeof setTimeout> | undefined;
     const self: Connection = {
       id: ++connectionIndex,
       state: 'connecting',
@@ -255,6 +276,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
       if (self.state === 'closed') {
         return;
       }
+      clearTimeout(pingTimeout);
+      clearTimeout(pongTimeout);
 
       (self as Connection).state = 'closed';
       if (activeConnection === self) {
@@ -302,19 +325,39 @@ export function createWSClient(opts: WebSocketClientOptions) {
       connectTimer = undefined;
 
       ws.addEventListener('open', () => {
+        async function sendConnectionParams() {
+          if (!opts.connectionParams) {
+            return;
+          }
+
+          const connectMsg: TRPCConnectionParamsMessage = {
+            method: 'connectionParams',
+            data: await resultOf(opts.connectionParams),
+          };
+
+          ws.send(JSON.stringify(connectMsg));
+        }
+        async function handleKeepAlive() {
+          if (!opts.keepAlive?.enabled) {
+            return;
+          }
+          const { pongTimeoutMs = 1_000, intervalMs = 5_000 } = opts.keepAlive;
+
+          function sendPing() {
+            ws.send('ping');
+            pongTimeout = setTimeout(() => {
+              ws.close(4499, 'pong timeout');
+            }, pongTimeoutMs);
+          }
+          pingTimeout = setTimeout(sendPing, intervalMs);
+        }
         run(async () => {
           /* istanbul ignore next -- @preserve */
           if (activeConnection?.ws !== ws) {
             return;
           }
-          if (opts.connectionParams) {
-            const connectMsg: TRPCConnectionParamsMessage = {
-              method: 'connectionParams',
-              data: await resultOf(opts.connectionParams),
-            };
-
-            ws.send(JSON.stringify(connectMsg));
-          }
+          await sendConnectionParams();
+          await handleKeepAlive();
 
           connectAttempt = 0;
           self.state = 'open';
