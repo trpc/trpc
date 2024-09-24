@@ -79,20 +79,26 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
       enabled: boolean;
       /**
        * Heartbeat interval in milliseconds
-       * @default 30000
+       * @default 30_000
        */
       pingMs?: number;
       /**
        * Terminate the WebSocket if no pong is received after this many milliseconds
-       * @default 5000
+       * @default 5_000
        */
       pongWaitMs?: number;
     };
+    /**
+     * Disable responding to ping messages from the client
+     * **Not recommended** - this is mainly used for testing
+     * @default false
+     */
+    dangerouslyDisablePong?: boolean;
   };
 
 const unsetContextPromiseSymbol = Symbol('unsetContextPromise');
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
-  opts: WSConnectionHandlerOptions<TRouter>,
+  opts: WSSHandlerOptions<TRouter>,
 ) {
   const { createContext, router } = opts;
   const { transformer } = router._def._config;
@@ -100,6 +106,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   return async (client: ws.WebSocket, req: IncomingMessage) => {
     const clientSubscriptions = new Map<number | string, AbortController>();
     const abortController = new AbortController();
+
+    if (opts.keepAlive?.enabled) {
+      const { pingMs, pongWaitMs } = opts.keepAlive;
+      handleKeepAlive(client, pingMs, pongWaitMs);
+    }
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
@@ -403,7 +414,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         return;
       }
       try {
-        const msgJSON: unknown = JSON.parse(message.toString());
+        const str = message.toString();
+        if (str === 'PING') {
+          if (!opts.dangerouslyDisablePong) {
+            client.send('PONG');
+          }
+
+          return;
+        }
+        const msgJSON: unknown = JSON.parse(str);
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs
           .map((raw) => parseTRPCMessage(raw, transformer))
@@ -453,8 +472,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     });
 
     if (ctxPromise !== unsetContextPromiseSymbol) {
-      // prevent unhandled promise rejection errors
-      await ctxPromise.catch(() => null);
+      await ctxPromise;
     }
   };
 }
@@ -464,8 +482,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
  */
 export function handleKeepAlive(
   client: ws.WebSocket,
-  pingMs = 30000,
-  pongWaitMs = 5000,
+  pingMs = 30_000,
+  pongWaitMs = 5_000,
 ) {
   let heartbeatTimeout: NodeJS.Timeout | undefined;
   const heartbeatInterval = setInterval(() => {
@@ -493,19 +511,28 @@ export function handleKeepAlive(
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  const { wss, prefix, keepAlive } = opts;
-
   const onConnection = getWSConnectionHandler(opts);
-  wss.on('connection', async (client, req) => {
-    if (prefix && !req.url?.startsWith(prefix)) {
+  opts.wss.on('connection', (client, req) => {
+    if (opts.prefix && !req.url?.startsWith(opts.prefix)) {
       return;
     }
 
-    await onConnection(client, req);
-    if (keepAlive?.enabled) {
-      const { pingMs, pongWaitMs } = keepAlive;
-      handleKeepAlive(client, pingMs, pongWaitMs);
-    }
+    onConnection(client, req).catch((cause) => {
+      opts.onError?.({
+        error: new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          cause,
+          message: 'Failed to handle WebSocket connection',
+        }),
+        req: req,
+        path: undefined,
+        type: 'unknown',
+        ctx: undefined,
+        input: undefined,
+      });
+
+      client.close();
+    });
   });
 
   return {
@@ -515,7 +542,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         method: 'reconnect',
       };
       const data = JSON.stringify(response);
-      for (const client of wss.clients) {
+      for (const client of opts.wss.clients) {
         if (client.readyState === WEBSOCKET_OPEN) {
           client.send(data);
         }

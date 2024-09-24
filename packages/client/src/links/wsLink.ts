@@ -74,6 +74,25 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
      */
     closeMs: number;
   };
+  /**
+   * Send ping messages to the server and kill the connection if no pong message is returned
+   */
+  keepAlive?: {
+    /**
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Send a ping message every this many milliseconds
+     * @default 5_000
+     */
+    intervalMs?: number;
+    /**
+     * Close the WebSocket after this many milliseconds if the server does not respond
+     * @default 1_000
+     */
+    pongTimeoutMs?: number;
+  };
 }
 
 type LazyOptions = Required<NonNullable<WebSocketClientOptions['lazy']>>;
@@ -244,6 +263,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
   };
 
   function createConnection(): Connection {
+    let pingTimeout: ReturnType<typeof setTimeout> | undefined;
+    let pongTimeout: ReturnType<typeof setTimeout> | undefined;
     const self: Connection = {
       id: ++connectionIndex,
       state: 'connecting',
@@ -252,6 +273,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
     clearTimeout(lazyDisconnectTimer);
 
     const onCloseOrError = () => {
+      clearTimeout(pingTimeout);
+      clearTimeout(pongTimeout);
+
       if (self.state === 'closed') {
         return;
       }
@@ -283,6 +307,15 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
     };
 
+    const onClose = (code: number) => {
+      const wasOpen = self.state === 'open';
+      onCloseOrError();
+
+      if (wasOpen) {
+        opts.onClose?.({ code });
+      }
+    };
+
     const onError = (evt?: Event) => {
       onCloseOrError();
       opts.onError?.(evt);
@@ -302,19 +335,50 @@ export function createWSClient(opts: WebSocketClientOptions) {
       connectTimer = undefined;
 
       ws.addEventListener('open', () => {
+        async function sendConnectionParams() {
+          if (!opts.connectionParams) {
+            return;
+          }
+
+          const connectMsg: TRPCConnectionParamsMessage = {
+            method: 'connectionParams',
+            data: await resultOf(opts.connectionParams),
+          };
+
+          ws.send(JSON.stringify(connectMsg));
+        }
+        function handleKeepAlive() {
+          if (!opts.keepAlive?.enabled) {
+            return;
+          }
+          const { pongTimeoutMs = 1_000, intervalMs = 5_000 } = opts.keepAlive;
+
+          function sendPing() {
+            ws.send('PING');
+            pongTimeout = setTimeout(() => {
+              ws.close(3001);
+              onClose(3001);
+            }, pongTimeoutMs);
+            const onMessage = (msg: MessageEvent) => {
+              if (msg.data === 'PONG') {
+                clearTimeout(pongTimeout);
+                pingTimeout = setTimeout(sendPing, intervalMs);
+              }
+              ws.removeEventListener('message', onMessage);
+            };
+            ws.addEventListener('message', onMessage);
+          }
+          pingTimeout = setTimeout(sendPing, intervalMs);
+        }
         run(async () => {
           /* istanbul ignore next -- @preserve */
           if (activeConnection?.ws !== ws) {
             return;
           }
-          if (opts.connectionParams) {
-            const connectMsg: TRPCConnectionParamsMessage = {
-              method: 'connectionParams',
-              data: await resultOf(opts.connectionParams),
-            };
 
-            ws.send(JSON.stringify(connectMsg));
-          }
+          await sendConnectionParams();
+
+          handleKeepAlive();
 
           connectAttempt = 0;
           self.state = 'open';
@@ -378,7 +442,11 @@ export function createWSClient(opts: WebSocketClientOptions) {
           req.callbacks.complete();
         }
       };
+
       ws.addEventListener('message', ({ data }) => {
+        if (data === 'PONG') {
+          return;
+        }
         startLazyDisconnectTimer();
 
         const msg = JSON.parse(data) as TRPCClientIncomingMessage;
@@ -396,6 +464,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
       ws.addEventListener('close', ({ code }) => {
         const wasOpen = self.state === 'open';
+
         onCloseOrError();
 
         if (wasOpen) {

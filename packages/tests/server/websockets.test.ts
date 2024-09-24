@@ -1365,7 +1365,7 @@ describe('lastEventId', () => {
   });
 });
 
-describe('keep alive', () => {
+describe('keep alive on the server', () => {
   beforeAll(() => {
     vi.useFakeTimers();
   });
@@ -1373,6 +1373,7 @@ describe('keep alive', () => {
     vi.useRealTimers();
   });
   function attachPongMock(wss: WebSocket.Server, pongMock: () => void) {
+    const onPong = vi.fn();
     return new Promise((resolve) => {
       wss.on('connection', (ws) => {
         ws.on('pong', pongMock);
@@ -1412,6 +1413,113 @@ describe('keep alive', () => {
       expect(wsClient.connection).not.toBe(null);
       expect(pongMock).not.toHaveBeenCalled();
     }
+    await ctx.close();
+  });
+});
+
+describe('keep alive from the client', () => {
+  beforeAll(() => {
+    vi.useFakeTimers();
+  });
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
+  test('pong message should be received', async () => {
+    const intervalMs = 2_000;
+    const pongTimeoutMs = 5_000;
+    const onClose = vi.fn();
+    const ctx = factory({
+      wssServer: {
+        dangerouslyDisablePong: false,
+        keepAlive: {
+          enabled: false,
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: false,
+          closeMs: 0,
+        },
+        keepAlive: {
+          enabled: true,
+          intervalMs,
+          pongTimeoutMs,
+        },
+        onClose,
+      },
+    });
+
+    while (true) {
+      if (ctx.wsClient.connection?.state === 'open') {
+        break;
+      }
+      await vi.advanceTimersByTimeAsync(1);
+    }
+
+    const onPong = vi.fn();
+    ctx.wsClient.connection.ws.addEventListener('message', (msg) => {
+      if (msg.data === 'PONG') {
+        onPong();
+      }
+    });
+
+    await vi.advanceTimersByTimeAsync(intervalMs);
+    await vi.advanceTimersByTimeAsync(pongTimeoutMs);
+
+    expect(onPong).toHaveBeenCalled();
+
+    expect(onClose).toHaveBeenCalledTimes(0);
+
+    await ctx.close();
+  });
+
+  test('should close if no pong is received', async () => {
+    const intervalMs = 2_000;
+    const pongTimeoutMs = 5_000;
+    const onClose = vi.fn();
+    const ctx = factory({
+      wssServer: {
+        dangerouslyDisablePong: true,
+        keepAlive: {
+          enabled: false,
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: false,
+          closeMs: 0,
+        },
+        keepAlive: {
+          enabled: true,
+          intervalMs,
+          pongTimeoutMs,
+        },
+        onClose,
+      },
+    });
+
+    while (true) {
+      if (ctx.wsClient.connection?.state === 'open') {
+        break;
+      }
+      await vi.advanceTimersByTimeAsync(1);
+    }
+
+    const onPong = vi.fn();
+    ctx.wsClient.connection.ws.addEventListener('message', (msg) => {
+      if (msg.data === 'PONG') {
+        onPong();
+      }
+    });
+
+    await vi.advanceTimersByTimeAsync(intervalMs);
+    await vi.advanceTimersByTimeAsync(pongTimeoutMs);
+
+    expect(onPong).toHaveBeenCalledTimes(0);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+
     await ctx.close();
   });
 });
