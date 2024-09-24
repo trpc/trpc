@@ -263,8 +263,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
   };
 
   function createConnection(): Connection {
-    let pingTimeout: ReturnType<typeof setTimeout> | undefined;
-    let pongTimeout: ReturnType<typeof setTimeout> | undefined;
+    let pingTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+    let pongTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
     const self: Connection = {
       id: ++connectionIndex,
       state: 'connecting',
@@ -353,32 +353,34 @@ export function createWSClient(opts: WebSocketClientOptions) {
           }
           const { pongTimeoutMs = 1_000, intervalMs = 5_000 } = opts.keepAlive;
 
-          function sendPing() {
-            ws.send('PING');
-            pongTimeout = setTimeout(() => {
-              ws.close(3001);
-              onClose(3001);
-            }, pongTimeoutMs);
-            const onMessage = (msg: MessageEvent) => {
-              if (msg.data === 'PONG') {
-                clearTimeout(pongTimeout);
-                pingTimeout = setTimeout(sendPing, intervalMs);
-              }
-              ws.removeEventListener('message', onMessage);
+          const schedulePing = () => {
+            const schedulePongTimeout = () => {
+              pongTimeout = setTimeout(() => {
+                ws.close(3001);
+                onClose(3001);
+              }, pongTimeoutMs);
             };
-            ws.addEventListener('message', onMessage);
-          }
-          pingTimeout = setTimeout(sendPing, intervalMs);
+            pingTimeout = setTimeout(() => {
+              ws.send('PING');
+              schedulePongTimeout();
+            }, intervalMs);
+          };
+          ws.addEventListener('message', () => {
+            clearTimeout(pingTimeout);
+            clearTimeout(pongTimeout);
+
+            schedulePing();
+          });
+          schedulePing();
         }
         run(async () => {
           /* istanbul ignore next -- @preserve */
           if (activeConnection?.ws !== ws) {
             return;
           }
+          handleKeepAlive();
 
           await sendConnectionParams();
-
-          handleKeepAlive();
 
           connectAttempt = 0;
           self.state = 'open';
@@ -445,6 +447,10 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
       ws.addEventListener('message', ({ data }) => {
         if (data === 'PONG') {
+          return;
+        }
+        if (data === 'PING') {
+          ws.send('PONG');
           return;
         }
         startLazyDisconnectTimer();

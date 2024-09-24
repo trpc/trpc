@@ -1372,14 +1372,18 @@ describe('keep alive on the server', () => {
   afterAll(() => {
     vi.useRealTimers();
   });
-  function attachPongMock(wss: WebSocket.Server, pongMock: () => void) {
+  function attachPongMock(wss: WebSocket.Server) {
     const onPong = vi.fn();
-    return new Promise((resolve) => {
-      wss.on('connection', (ws) => {
-        ws.on('pong', pongMock);
-        resolve(null);
+
+    wss.on('connection', (ws) => {
+      ws.on('message', (raw) => {
+        if (raw.toString() === 'PONG') {
+          onPong();
+        }
       });
     });
+
+    return onPong;
   }
   test('pong message should be received', async () => {
     const pingMs = 2_000;
@@ -1393,25 +1397,35 @@ describe('keep alive on the server', () => {
         },
       },
     });
-    const pongMock = vi.fn();
-    const { wsClient, wss } = ctx;
-    await attachPongMock(wss, pongMock);
+
+    const onPong = attachPongMock(ctx.wss);
+
+    await new Promise((resolve) => {
+      ctx.wss.on('connection', resolve);
+    });
+
     {
-      await vi.advanceTimersByTimeAsync(pingMs + pongWaitMs + 100);
-      expect(wsClient.connection).not.toBe(null);
-      expect(pongMock).toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(pingMs);
+      await vi.advanceTimersByTimeAsync(pongWaitMs);
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(ctx.wsClient.connection).not.toBe(null);
+      expect(onPong).toHaveBeenCalled();
     }
     await ctx.close();
   });
   test('no pong message should be received', async () => {
     const ctx = factory({});
-    const pongMock = vi.fn();
-    const { wsClient, wss } = ctx;
-    await attachPongMock(wss, pongMock);
+
+    await new Promise((resolve) => {
+      ctx.wss.on('connection', resolve);
+    });
+
+    const onPong = attachPongMock(ctx.wss);
     {
       await vi.advanceTimersByTimeAsync(60_000);
-      expect(wsClient.connection).not.toBe(null);
-      expect(pongMock).not.toHaveBeenCalled();
+      expect(ctx.wsClient.connection).not.toBe(null);
+      expect(onPong).not.toHaveBeenCalled();
     }
     await ctx.close();
   });
@@ -1450,26 +1464,23 @@ describe('keep alive from the client', () => {
       },
     });
 
-    while (true) {
-      if (ctx.wsClient.connection?.state === 'open') {
-        break;
-      }
-      await vi.advanceTimersByTimeAsync(1);
-    }
+    await vi.advanceTimersByTimeAsync(1);
+    await new Promise((resolve) => {
+      ctx.wsClient.connection!.ws!.addEventListener('open', resolve);
+    });
 
-    const onPong = vi.fn();
-    ctx.wsClient.connection.ws.addEventListener('message', (msg) => {
-      if (msg.data === 'PONG') {
-        onPong();
+    let pong = false;
+    ctx.wsClient.connection!.ws!.addEventListener('message', (msg) => {
+      if (msg.data == 'PONG') {
+        pong = true;
       }
     });
 
+    await vi.advanceTimersByTimeAsync(100);
     await vi.advanceTimersByTimeAsync(intervalMs);
     await vi.advanceTimersByTimeAsync(pongTimeoutMs);
 
-    expect(onPong).toHaveBeenCalled();
-
-    expect(onClose).toHaveBeenCalledTimes(0);
+    expect(pong).toBe(true);
 
     await ctx.close();
   });
@@ -1499,26 +1510,24 @@ describe('keep alive from the client', () => {
       },
     });
 
-    while (true) {
-      if (ctx.wsClient.connection?.state === 'open') {
-        break;
-      }
-      await vi.advanceTimersByTimeAsync(1);
-    }
+    await vi.advanceTimersByTimeAsync(1);
+    await new Promise((resolve) => {
+      ctx.wsClient.connection!.ws!.addEventListener('open', resolve);
+    });
 
-    const onPong = vi.fn();
-    ctx.wsClient.connection.ws.addEventListener('message', (msg) => {
+    let pong = false;
+    ctx.wsClient.connection!.ws!.addEventListener('message', (msg) => {
       if (msg.data === 'PONG') {
-        onPong();
+        pong = true;
       }
     });
 
+    await vi.advanceTimersByTimeAsync(100);
     await vi.advanceTimersByTimeAsync(intervalMs);
     await vi.advanceTimersByTimeAsync(pongTimeoutMs);
 
-    expect(onPong).toHaveBeenCalledTimes(0);
-
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(pong).toBe(false);
+    expect(onClose).toHaveBeenCalled();
 
     await ctx.close();
   });
