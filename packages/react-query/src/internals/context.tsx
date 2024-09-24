@@ -29,11 +29,17 @@ import * as React from 'react';
 import type { ExtractCursorType } from '../shared';
 import type { TRPCMutationKey, TRPCQueryKey } from './getQueryKey';
 
-export type TRPCFetchQueryOptions<TOutput, TError> = DistributiveOmit<
-  FetchQueryOptions<TOutput, TError>,
-  'queryKey'
-> &
-  TRPCRequestOptions;
+interface TRPCUseUtilsOptions {
+  /**
+   * tRPC-related options
+   */
+  trpc?: TRPCRequestOptions;
+}
+export interface TRPCFetchQueryOptions<TOutput, TError>
+  extends DistributiveOmit<FetchQueryOptions<TOutput, TError>, 'queryKey'>,
+    TRPCUseUtilsOptions {
+  //
+}
 
 export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
   DistributiveOmit<
@@ -46,7 +52,7 @@ export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
     >,
     'queryKey' | 'initialPageParam'
   > &
-    TRPCRequestOptions & {
+    TRPCUseUtilsOptions & {
       initialCursor?: ExtractCursorType<TInput>;
     };
 
