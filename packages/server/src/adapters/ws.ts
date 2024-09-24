@@ -79,12 +79,12 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
       enabled: boolean;
       /**
        * Heartbeat interval in milliseconds
-       * @default 30000
+       * @default 30_000
        */
       pingMs?: number;
       /**
        * Terminate the WebSocket if no pong is received after this many milliseconds
-       * @default 5000
+       * @default 5_000
        */
       pongWaitMs?: number;
     };
@@ -482,8 +482,8 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
  */
 export function handleKeepAlive(
   client: ws.WebSocket,
-  pingMs = 30000,
-  pongWaitMs = 5000,
+  pingMs = 30_000,
+  pongWaitMs = 5_000,
 ) {
   let heartbeatTimeout: NodeJS.Timeout | undefined;
   const heartbeatInterval = setInterval(() => {
@@ -511,7 +511,6 @@ export function handleKeepAlive(
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-
   const onConnection = getWSConnectionHandler(opts);
   opts.wss.on('connection', (client, req) => {
     if (opts.prefix && !req.url?.startsWith(opts.prefix)) {
