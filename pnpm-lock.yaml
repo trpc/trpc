@@ -1581,7 +1581,7 @@ importers:
         version: 4.6.2
       undici:
         specifier: ^6.0.1
-        version: 6.19.3
+        version: 6.19.4
 
   packages/next:
     devDependencies:
@@ -23806,8 +23806,8 @@ packages:
     resolution: {integrity: sha512-6fB3a+SNnWEm4CJbgo0/CWR8RGcOCQP68SF4X0mxtYTq2VNN8T88NYrWVBAeSX+zb7bny2dx2iYhP3XHi00omg==}
     engines: {node: '>=12.18'}
 
-  /undici@6.19.3:
-    resolution: {integrity: sha512-xWvTmUYvfiKATSKntAVRpPO5bfRcrG9FpiHI916j8dK8nUMjeM0uE8dx7ftKoPUQ2RtRi0KMDL10/03orVgTMA==}
+  /undici@6.19.4:
+    resolution: {integrity: sha512-i3uaEUwNdkRq2qtTRRJb13moW5HWqviu7Vl7oYRYz++uPtGHJj+x7TGjcEuwS5Mt2P4nA0U9dhIX3DdB6JGY0g==}
     engines: {node: '>=18.17'}
     dev: true
 
