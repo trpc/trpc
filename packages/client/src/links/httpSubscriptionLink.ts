@@ -59,98 +59,91 @@ export function unstable_httpSubscriptionLink<
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
 
-        let eventSource: EventSource | null = null;
+        let eventSource: EventSourceWrapper | null = null;
         let unsubscribed = false;
 
-        function startSubscription() {
-          run(async () => {
-            const url = getUrl({
-              transformer,
-              url: await urlWithConnectionParams(opts),
-              input,
-              path,
-              type,
-              signal: null,
-            });
+        run(async () => {
+          const url = getUrl({
+            transformer,
+            url: await urlWithConnectionParams(opts),
+            input,
+            path,
+            type,
+            signal: null,
+          });
 
-            const eventSourceOptions = await resultOf(opts.eventSourceOptions);
-            /* istanbul ignore if -- @preserve */
-            if (unsubscribed) {
-              // already unsubscribed - rare race condition
-              return;
-            }
+          const eventSourceOptions = await resultOf(opts.eventSourceOptions);
+          /* istanbul ignore if -- @preserve */
+          if (unsubscribed) {
+            // already unsubscribed - rare race condition
+            return;
+          }
 
-            eventSource = new EventSource(url, eventSourceOptions);
+          eventSource = new EventSourceWrapper(url, eventSourceOptions);
 
-            const onStarted = () => {
-              observer.next({
-                result: {
-                  type: 'started',
-                },
-                context: {
-                  eventSource,
-                },
-              });
-
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              eventSource!.removeEventListener('open', onStarted);
-            };
-            // console.log('starting', new Date());
-            eventSource.addEventListener('open', onStarted);
-
-            eventSource.addEventListener('error', (ev) => {
-              if (
-                'status' in ev &&
-                typeof ev.status === 'number' &&
-                [401, 403].includes(ev.status)
-              ) {
-                console.log('Restarted EventSource due to 401/403 error');
-
-                const oldEventSource = eventSource;
-                oldEventSource?.close();
-
-                startSubscription();
-              }
-            });
-
-            const iterable = sseStreamConsumer<
-              Partial<{
-                id?: string;
-                data: unknown;
-              }>
-            >({
-              from: eventSource,
-              deserialize: transformer.output.deserialize,
-            });
-
-            for await (const chunk of iterable) {
-              if (!chunk.ok) {
-                // TODO: handle in https://github.com/trpc/trpc/issues/5871
-                continue;
-              }
-              const chunkData = chunk.data;
-
-              // if the `tracked()`-helper is used, we always have an `id` field
-              const data = 'id' in chunkData ? chunkData : chunkData.data;
-              observer.next({
-                result: {
-                  data,
-                },
-              });
-            }
-
+          const onStarted = () => {
             observer.next({
               result: {
-                type: 'stopped',
+                type: 'started',
+              },
+              context: {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                eventSource: eventSource!.getEventSource(),
               },
             });
-            observer.complete();
-          }).catch((error) => {
-            observer.error(TRPCClientError.from(error));
-          });
-        }
+          };
+          eventSource.addEventListener('open', onStarted, { once: true });
 
-        startSubscription();
+          eventSource.addEventListener('error', async (ev) => {
+            if (
+              'status' in ev &&
+              typeof ev.status === 'number' &&
+              [401, 403].includes(ev.status)
+            ) {
+              console.log('Restarted EventSource due to 401/403 error');
+
+              eventSource?.restart(
+                url,
+                await resultOf(opts.eventSourceOptions),
+              );
+            }
+          });
+
+          const iterable = sseStreamConsumer<
+            Partial<{
+              id?: string;
+              data: unknown;
+            }>
+          >({
+            from: eventSource,
+            deserialize: transformer.output.deserialize,
+          });
+
+          for await (const chunk of iterable) {
+            if (!chunk.ok) {
+              // TODO: handle in https://github.com/trpc/trpc/issues/5871
+              continue;
+            }
+            const chunkData = chunk.data;
+
+            // if the `tracked()`-helper is used, we always have an `id` field
+            const data = 'id' in chunkData ? chunkData : chunkData.data;
+            observer.next({
+              result: {
+                data,
+              },
+            });
+          }
+
+          observer.next({
+            result: {
+              type: 'stopped',
+            },
+          });
+          observer.complete();
+        }).catch((error) => {
+          observer.error(TRPCClientError.from(error));
+        });
 
         return () => {
           observer.complete();
@@ -160,4 +153,69 @@ export function unstable_httpSubscriptionLink<
       });
     };
   };
+}
+
+/**
+ * We wrap EventSource so that is can be reinitialized with new options
+ */
+class EventSourceWrapper implements Partial<EventSource> {
+  private es: EventSource;
+
+  private listeners: Partial<Record<keyof EventSourceEventMap, any[][]>> = {};
+
+  constructor(url: string, options: EventSourceInit | undefined) {
+    this.es = new EventSource(url, options);
+  }
+
+  restart(url: string, options: EventSourceInit | undefined) {
+    this.es.close();
+    this.es = new EventSource(url, options);
+
+    for (const type in this.listeners) {
+      for (const [t, l, o] of this.listeners[
+        type as keyof EventSourceEventMap
+      ] ?? []) {
+        this.es.addEventListener(t as string, l, o);
+      }
+    }
+  }
+
+  close() {
+    this.listeners = {};
+    this.es.close();
+  }
+
+  getEventSource() {
+    return this.es;
+  }
+
+  get readyState() {
+    return this.es.readyState;
+  }
+
+  addEventListener<TEvent extends keyof EventSourceEventMap>(
+    type: TEvent,
+    listener: (this: EventSource, ev: EventSourceEventMap[TEvent]) => any,
+    options?: boolean | AddEventListenerOptions,
+  ) {
+    this.listeners[type] ??= [];
+    this.listeners[type].push([type, listener, options]);
+
+    this.es.addEventListener(type, listener, options);
+  }
+
+  removeEventListener<TEvent extends keyof EventSourceEventMap>(
+    type: TEvent,
+    listener: (this: EventSource, ev: EventSourceEventMap[TEvent]) => any,
+    options?: boolean | EventListenerOptions,
+  ) {
+    this.listeners[type] ??= [];
+    for (const [t, l, o] of this.listeners[type] ?? []) {
+      if (t === type && l === listener) {
+        this.listeners[type].splice(this.listeners[type].indexOf([t, l, o]), 1);
+      }
+    }
+
+    this.es.removeEventListener(type, listener, options);
+  }
 }

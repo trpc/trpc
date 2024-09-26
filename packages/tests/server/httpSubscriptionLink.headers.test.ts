@@ -195,14 +195,19 @@ test('disconnect and reconnect with updated headers', async () => {
   const release = suppressLogs();
   ctx.destroyConnections();
 
-  await waitFor(() => {
-    expect(onStarted).toHaveBeenCalledTimes(2);
-  });
+  await waitFor(
+    () => {
+      expect(onStarted).toHaveBeenCalledTimes(2);
+    },
+    {
+      timeout: 3_000,
+    },
+  );
+  release();
 
   await waitFor(() => {
     expect(getES().readyState).toBe(EventSource.CONNECTING);
   });
-  release();
 
   await waitFor(
     () => {

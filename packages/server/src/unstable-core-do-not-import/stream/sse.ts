@@ -189,7 +189,7 @@ type ConsumerStreamResult<TData> =
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
 export function sseStreamConsumer<TData>(opts: {
-  from: EventSource;
+  from: Pick<EventSource, 'addEventListener' | 'readyState'>;
   onError?: ConsumerOnError;
   deserialize?: Deserialize;
 }): AsyncIterable<ConsumerStreamResult<TData>> {
@@ -240,6 +240,7 @@ export function sseStreamConsumer<TData>(opts: {
   });
 
   const readable = stream.readable.pipeThrough(transform);
+
   return {
     [Symbol.asyncIterator]() {
       const reader = readable.getReader();
