@@ -4,6 +4,7 @@ import { db } from '~/server/db/client';
 import { Post, type PostType } from '~/server/db/schema';
 import { z } from 'zod';
 import { authedProcedure, publicProcedure, router } from '../trpc';
+import type { MyEvents } from './channel';
 import { currentlyTyping, ee } from './channel';
 
 export const postRouter = router({
@@ -106,7 +107,7 @@ export const postRouter = router({
       // subscription to the ee
       const stream = new ReadableStream<PostType>({
         async start(controller) {
-          const onAdd = (channelId: string, data: PostType) => {
+          const onAdd: MyEvents['add'] = (channelId, data) => {
             if (channelId === opts.input.channelId) {
               controller.enqueue(data);
             }

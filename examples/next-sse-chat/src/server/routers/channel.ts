@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 export type WhoIsTyping = Record<string, { lastTyped: Date }>;
 
-interface MyEvents {
+export interface MyEvents {
   add: (channelId: string, data: PostType) => void;
   isTypingUpdate: (channelId: string, who: WhoIsTyping) => void;
 }
