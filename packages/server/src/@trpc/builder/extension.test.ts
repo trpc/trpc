@@ -1,12 +1,7 @@
 /////// core module definition /////////
 
 import type { Builder, inferBuilderOptions } from './builder';
-import {
-  buildApi,
-  type Merge,
-  type MiddlewareOptions,
-  type Module,
-} from './builder';
+import { buildApi, type MiddlewareOptions, type Module } from './builder';
 import { coreModule } from './core';
 
 export interface CoreModuleOptions extends MiddlewareOptions {
@@ -46,7 +41,7 @@ const extensionModule = (): Module<typeof extension> => ({
 //////// build api /////////
 
 {
-  // coreo nly
+  // core only
   const api = buildApi([coreModule()]);
 
   const builder = api.createBuilder<{
@@ -119,3 +114,53 @@ const extensionModule = (): Module<typeof extension> => ({
 
   const _res3 = builder.coreFn().extFn().coreFn();
 }
+
+test('core module', () => {
+  const api = buildApi([coreModule()]);
+
+  const builder = api.createBuilder<{
+    ctx: {
+      foo: 'bar';
+    };
+  }>();
+
+  const res = builder.coreFn();
+
+  type $Options = inferBuilderOptions<typeof res>;
+  expectTypeOf<$Options>().toMatchTypeOf<{
+    _________ADDED_FROM_CORE_________: true;
+  }>();
+
+  // @ts-expect-error - extension not added
+  builder.extFn();
+});
+
+test('extension module', () => {
+  const api = buildApi([extensionModule()]);
+
+  const builder = api.createBuilder<{
+    //
+  }>();
+
+  builder.extFn();
+});
+
+test('core + extension', () => {
+  const api = buildApi([coreModule(), extensionModule()]);
+
+  const builder = api.createBuilder<{
+    ctx: {
+      foo: 'bar';
+    };
+  }>();
+
+  builder.coreFn();
+  builder.extFn();
+
+  const res = builder.coreFn().extFn();
+
+  type $Options = inferBuilderOptions<typeof res>;
+  expectTypeOf<$Options>().toMatchTypeOf<{
+    _________ADDED_FROM_CORE_________: true;
+  }>();
+});
