@@ -136,7 +136,9 @@ export const postRouter = router({
         },
       });
 
-      for await (const post of streamToAsyncIterable(stream)) {
+      for await (const post of streamToAsyncIterable(stream, {
+        signal: opts.signal,
+      })) {
         // tracking the post id ensures the client can reconnect at any time and get the latest events this id
         yield tracked(post.id, post);
       }
