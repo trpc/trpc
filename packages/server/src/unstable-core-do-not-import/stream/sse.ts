@@ -192,6 +192,7 @@ export function sseStreamConsumer<TData>(opts: {
   from: Pick<EventSource, 'addEventListener' | 'readyState'>;
   onError?: ConsumerOnError;
   deserialize?: Deserialize;
+  tryHandleError?: (error: Event) => Promise<boolean | undefined>;
 }): AsyncIterable<ConsumerStreamResult<TData>> {
   const { deserialize = (v) => v } = opts;
   const eventSource = opts.from;
@@ -233,7 +234,12 @@ export function sseStreamConsumer<TData>(opts: {
   eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
     stream.controller.enqueue(msg);
   });
-  eventSource.addEventListener('error', (cause) => {
+  eventSource.addEventListener('error', async (cause) => {
+    const handled = await opts.tryHandleError?.(cause);
+    if (handled === true) {
+      return;
+    }
+
     if (eventSource.readyState === EventSource.CLOSED) {
       stream.controller.error(cause);
     }

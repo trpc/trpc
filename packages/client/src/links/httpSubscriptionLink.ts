@@ -94,21 +94,6 @@ export function unstable_httpSubscriptionLink<
           };
           eventSource.addEventListener('open', onStarted, { once: true });
 
-          eventSource.addEventListener('error', async (ev) => {
-            if (
-              'status' in ev &&
-              typeof ev.status === 'number' &&
-              [401, 403].includes(ev.status)
-            ) {
-              console.log('Restarted EventSource due to 401/403 error');
-
-              eventSource?.restart(
-                url,
-                await resultOf(opts.eventSourceOptions),
-              );
-            }
-          });
-
           const iterable = sseStreamConsumer<
             Partial<{
               id?: string;
@@ -117,6 +102,23 @@ export function unstable_httpSubscriptionLink<
           >({
             from: eventSource,
             deserialize: transformer.output.deserialize,
+            tryHandleError: async (ev) => {
+              if (
+                'status' in ev &&
+                typeof ev.status === 'number' &&
+                [401, 403].includes(ev.status) &&
+                eventSource
+              ) {
+                console.log('Restarted EventSource due to 401/403 error');
+
+                eventSource.restart(
+                  url,
+                  await resultOf(opts.eventSourceOptions),
+                );
+
+                return true;
+              }
+            },
           });
 
           for await (const chunk of iterable) {
