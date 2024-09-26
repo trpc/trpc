@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-export type Merge<T1, T2> = {
+export type Assign<T1, T2> = {
   [$Key in keyof T1 | keyof T2]: $Key extends keyof T2
     ? T2[$Key]
     : $Key extends keyof T1
@@ -20,27 +20,25 @@ export interface MiddlewareOptions {
   /**
    * THe modules that are being used
    */
-  $module: ModuleName;
+  $module: BuilderModuleName;
   ctx: any;
   ctx_overrides: any;
 
   meta: any;
 }
 
-export interface MiddlewareModules<TOptions extends MiddlewareOptions> {}
+export interface BuilderModules<TOptions extends MiddlewareOptions> {}
 
-export type ModuleName = keyof MiddlewareModules<any>;
-
-export type MiddlewareModuleName = keyof MiddlewareModules<any>;
+export type BuilderModuleName = keyof BuilderModules<any>;
 
 export type GetModuleDef<
   TOptions extends MiddlewareOptions,
-  T extends ModuleName,
-> = MiddlewareModules<TOptions>[T];
+  T extends BuilderModuleName,
+> = BuilderModules<TOptions>[T];
 
 const $typesSymbol = Symbol();
 export type Builder<TOptions extends MiddlewareOptions> = UnionToIntersection<
-  MiddlewareModules<TOptions>[TOptions['$module']]['builderProps']
+  BuilderModules<TOptions>[TOptions['$module']]['builderProps']
 > & {
   [$typesSymbol]: TOptions;
 };
@@ -50,19 +48,19 @@ export type inferBuilderOptions<TBuilder> = TBuilder extends Builder<
   ? TOptions
   : never;
 
-export type Module<TName extends ModuleName> = {
+export type Module<TName extends BuilderModuleName> = {
   name: TName;
   init(): {
     /**
      * Properties that are injected into the arguments of the middlewares
      *
      */
-    injectPipeProps: () => AnyMiddlewareModule[TName];
+    injectPipeProps: () => AnyBuilderModule[TName];
     /**
      * Builder properties
      * Eg.
      */
-    builderProps: AnyMiddlewareModule[TName]['builderProps'];
+    builderProps: AnyBuilderModule[TName]['builderProps'];
   };
 };
 
@@ -71,7 +69,7 @@ export function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
 ) {
   type $Name = TModules[number]['name'];
   type GetModuleDef<TOptions extends MiddlewareOptions = any> =
-    MiddlewareModules<TOptions>;
+    BuilderModules<TOptions>;
 
   type AllOptions = GetModuleDef<$Name>;
 
@@ -86,13 +84,13 @@ export function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
     createBuilder: <
       TOptions extends Omit<Partial<MiddlewareOptions>, '$module'>,
     >(): Builder<
-      Merge<
+      Assign<
         {
           ctx: object;
           meta: object;
           ctx_overrides: object;
         },
-        Merge<TOptions, { $module: $Name }>
+        Assign<TOptions, { $module: $Name }>
       >
     > => {
       throw new Error('Not implemented');
@@ -100,7 +98,7 @@ export function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
   };
 }
 
-export type AnyMiddlewareModule = MiddlewareModules<any>;
+export type AnyBuilderModule = BuilderModules<any>;
 
 //////////////// no-op ////////////////
 
@@ -108,7 +106,7 @@ const placeholder = Symbol();
 
 interface Placeholder<_TOptions extends MiddlewareOptions> {}
 
-export interface MiddlewareModules<TOptions extends MiddlewareOptions> {
+export interface BuilderModules<TOptions extends MiddlewareOptions> {
   [placeholder]: {
     pipeProps: Placeholder<TOptions>;
     builderProps: Placeholder<TOptions>;

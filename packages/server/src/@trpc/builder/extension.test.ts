@@ -24,7 +24,7 @@ interface ExtensionModuleBuilder<TOptions extends MiddlewareOptions> {
 }
 
 declare module './builder' {
-  export interface MiddlewareModules<TOptions extends MiddlewareOptions> {
+  export interface BuilderModules<TOptions extends MiddlewareOptions> {
     [extension]: {
       pipeProps: ExtensionModuleOptions;
       builderProps: ExtensionModuleBuilder<TOptions>;

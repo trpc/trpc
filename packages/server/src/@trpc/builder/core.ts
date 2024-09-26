@@ -1,7 +1,7 @@
 /////// core module definition /////////
 
 import type { Builder } from './builder';
-import { type Merge, type MiddlewareOptions, type Module } from './builder';
+import { type Assign, type MiddlewareOptions, type Module } from './builder';
 
 export interface CoreModuleOptions extends MiddlewareOptions {
   core: true;
@@ -11,7 +11,7 @@ const core = Symbol('core');
 
 interface CoreModuleBuilder<TOptions extends MiddlewareOptions> {
   coreFn: () => Builder<
-    Merge<
+    Assign<
       TOptions,
       {
         _________ADDED_FROM_CORE_________: true;
@@ -21,7 +21,7 @@ interface CoreModuleBuilder<TOptions extends MiddlewareOptions> {
 }
 
 declare module './builder' {
-  export interface MiddlewareModules<TOptions extends MiddlewareOptions> {
+  export interface BuilderModules<TOptions extends MiddlewareOptions> {
     [core]: {
       pipeProps: CoreModuleOptions;
       builderProps: CoreModuleBuilder<TOptions>;
