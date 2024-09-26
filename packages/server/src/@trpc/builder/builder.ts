@@ -101,3 +101,16 @@ export function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
 }
 
 export type AnyMiddlewareModule = MiddlewareModules<any>;
+
+//////////////// no-op ////////////////
+
+const placeholder = Symbol();
+
+interface Placeholder<_TOptions extends MiddlewareOptions> {}
+
+export interface MiddlewareModules<TOptions extends MiddlewareOptions> {
+  [placeholder]: {
+    pipeProps: Placeholder<TOptions>;
+    builderProps: Placeholder<TOptions>;
+  };
+}
