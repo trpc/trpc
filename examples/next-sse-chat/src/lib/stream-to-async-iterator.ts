@@ -2,6 +2,7 @@ export function streamToAsyncIterable<TValue>(
   stream: ReadableStream<TValue>,
 ): AsyncIterable<TValue> {
   const reader = stream.getReader();
+
   const iterator: AsyncIterator<TValue> = {
     async next() {
       const value = await reader.read();

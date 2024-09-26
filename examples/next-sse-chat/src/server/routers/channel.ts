@@ -26,8 +26,9 @@ declare interface MyEventEmitter {
 class MyEventEmitter extends EventEmitter {
   public toIterable<TEv extends keyof MyEvents>(
     event: TEv,
+    opts: Parameters<typeof on>[2],
   ): AsyncIterable<Parameters<MyEvents[TEv]>> {
-    return on(this, event);
+    return on(this, event, opts);
   }
 }
 
@@ -121,7 +122,11 @@ export const channelRouter = {
       // emit who is currently typing
       yield* maybeYield(currentlyTyping[channelId] ?? {});
 
-      for await (const [channelId, who] of ee.toIterable('isTypingUpdate')) {
+      for await (const [channelId, who] of ee.toIterable('isTypingUpdate', {
+        signal: opts.signal,
+      })) {
+        // print listener count of ee for 'isTypingUpdate'
+        console.log('COUNT', ee.listenerCount('isTypingUpdate'));
         if (channelId === opts.input.channelId) {
           yield* maybeYield(who);
         }
