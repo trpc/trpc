@@ -186,7 +186,7 @@ If you're fetching data based on the `lastEventId`, and capturing all events is 
 ```ts
 import EventEmitter, { on } from 'events';
 import type { Post } from '@prisma/client';
-import { sse } from '@trpc/server';
+import { tracked } from '@trpc/server';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 
