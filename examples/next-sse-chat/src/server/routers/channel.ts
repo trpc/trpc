@@ -124,8 +124,6 @@ export const channelRouter = {
       for await (const [channelId, who] of ee.toIterable('isTypingUpdate', {
         signal: opts.signal,
       })) {
-        // print listener count of ee for 'isTypingUpdate'
-        console.log('COUNT', ee.listenerCount('isTypingUpdate'));
         if (channelId === opts.input.channelId) {
           yield* maybeYield(who);
         }
