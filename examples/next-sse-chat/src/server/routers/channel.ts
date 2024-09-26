@@ -25,7 +25,7 @@ declare interface MyEventEmitter {
 class MyEventEmitter extends EventEmitter {
   public toIterable<TEv extends keyof MyEvents>(
     event: TEv,
-    opts: Parameters<typeof on>[2],
+    opts: NonNullable<Parameters<typeof on>[2]>,
   ): AsyncIterable<Parameters<MyEvents[TEv]>> {
     return on(this, event, opts);
   }
