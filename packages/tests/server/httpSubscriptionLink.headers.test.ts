@@ -20,6 +20,10 @@ const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 const orderedResults: number[] = [];
 const ctx = konn()
   .beforeEach(() => {
+    //
+    // This is the heart of the test, the client will send this along and the server
+    // will increment it on each createContext(). If the latest version is
+    // always sent then the server will always receive the latest version
     let incrementingTestHeader = 1;
 
     globalThis.EventSource = EventSourcePolyfill as typeof EventSource;
