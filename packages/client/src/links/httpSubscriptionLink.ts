@@ -11,7 +11,6 @@ import {
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
-import type { CallbackOrValue } from './internals/urlWithConnectionParams';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
@@ -37,7 +36,7 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * EventSource options or a callback that returns them
    */
-  eventSourceOptions?: CallbackOrValue<EventSourceInit>;
+  eventSourceOptions?: () => EventSourceInit | Promise<EventSourceInit>;
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 

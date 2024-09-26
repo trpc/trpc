@@ -98,7 +98,7 @@ const ctx = konn()
             'expecting to be to be:',
             incrementingTestHeader,
           );
-          debugger;
+
           const expectedHeader = `x-test: ${incrementingTestHeader}`;
           const receivedHeader = `x-test: ${opts.req.headers['x-test']}`;
           expect(receivedHeader).toBe(String(expectedHeader));

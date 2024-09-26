@@ -73,8 +73,10 @@ If the client and server are not on the same domain, you can use `withCredential
 // [...]
 unstable_httpSubscriptionLink({
   url: 'https://example.com/api/trpc',
-  eventSourceOptions: {
-    withCredentials: true, // <---
+  eventSourceOptions() {
+    return {
+      withCredentials: true, // <---
+    }
   },
 });
 ```
