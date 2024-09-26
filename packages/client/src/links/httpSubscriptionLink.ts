@@ -62,73 +62,95 @@ export function unstable_httpSubscriptionLink<
         let eventSource: EventSource | null = null;
         let unsubscribed = false;
 
-        run(async () => {
-          const url = getUrl({
-            transformer,
-            url: await urlWithConnectionParams(opts),
-            input,
-            path,
-            type,
-            signal: null,
-          });
-
-          const eventSourceOptions = await resultOf(opts.eventSourceOptions);
-          /* istanbul ignore if -- @preserve */
-          if (unsubscribed) {
-            // already unsubscribed - rare race condition
-            return;
-          }
-          eventSource = new EventSource(url, eventSourceOptions);
-          const onStarted = () => {
-            observer.next({
-              result: {
-                type: 'started',
-              },
-              context: {
-                eventSource,
-              },
+        function startSubscription() {
+          run(async () => {
+            const url = getUrl({
+              transformer,
+              url: await urlWithConnectionParams(opts),
+              input,
+              path,
+              type,
+              signal: null,
             });
 
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            eventSource!.removeEventListener('open', onStarted);
-          };
-          // console.log('starting', new Date());
-          eventSource.addEventListener('open', onStarted);
-          const iterable = sseStreamConsumer<
-            Partial<{
-              id?: string;
-              data: unknown;
-            }>
-          >({
-            from: eventSource,
-            deserialize: transformer.output.deserialize,
-          });
-
-          for await (const chunk of iterable) {
-            if (!chunk.ok) {
-              // TODO: handle in https://github.com/trpc/trpc/issues/5871
-              continue;
+            const eventSourceOptions = await resultOf(opts.eventSourceOptions);
+            /* istanbul ignore if -- @preserve */
+            if (unsubscribed) {
+              // already unsubscribed - rare race condition
+              return;
             }
-            const chunkData = chunk.data;
 
-            // if the `tracked()`-helper is used, we always have an `id` field
-            const data = 'id' in chunkData ? chunkData : chunkData.data;
+            eventSource = new EventSource(url, eventSourceOptions);
+
+            const onStarted = () => {
+              observer.next({
+                result: {
+                  type: 'started',
+                },
+                context: {
+                  eventSource,
+                },
+              });
+
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              eventSource!.removeEventListener('open', onStarted);
+            };
+            // console.log('starting', new Date());
+            eventSource.addEventListener('open', onStarted);
+
+            eventSource.addEventListener('error', (ev) => {
+              if (
+                'status' in ev &&
+                typeof ev.status === 'number' &&
+                [401, 403].includes(ev.status)
+              ) {
+                console.log('Restarted EventSource due to 401/403 error');
+
+                const oldEventSource = eventSource;
+                oldEventSource?.close();
+
+                startSubscription();
+              }
+            });
+
+            const iterable = sseStreamConsumer<
+              Partial<{
+                id?: string;
+                data: unknown;
+              }>
+            >({
+              from: eventSource,
+              deserialize: transformer.output.deserialize,
+            });
+
+            for await (const chunk of iterable) {
+              if (!chunk.ok) {
+                // TODO: handle in https://github.com/trpc/trpc/issues/5871
+                continue;
+              }
+              const chunkData = chunk.data;
+
+              // if the `tracked()`-helper is used, we always have an `id` field
+              const data = 'id' in chunkData ? chunkData : chunkData.data;
+              observer.next({
+                result: {
+                  data,
+                },
+              });
+            }
+
             observer.next({
               result: {
-                data,
+                type: 'stopped',
               },
             });
-          }
-
-          observer.next({
-            result: {
-              type: 'stopped',
-            },
+            observer.complete();
+          }).catch((error) => {
+            observer.error(TRPCClientError.from(error));
           });
-          observer.complete();
-        }).catch((error) => {
-          observer.error(TRPCClientError.from(error));
-        });
+        }
+
+        startSubscription();
 
         return () => {
           observer.complete();

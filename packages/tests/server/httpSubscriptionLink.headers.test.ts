@@ -7,7 +7,7 @@ import {
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
-import { initTRPC, tracked } from '@trpc/server';
+import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type { EventSourcePolyfillInit } from 'event-source-polyfill';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
@@ -88,7 +88,7 @@ const ctx = konn()
       server: {
         onError(err) {
           // eslint-disable-next-line no-console
-          console.error('caught server error', err);
+          console.error('caught server error:', err.error.message);
         },
         createContext(opts) {
           // eslint-disable-next-line no-console
@@ -101,7 +101,12 @@ const ctx = konn()
 
           const expectedHeader = `x-test: ${incrementingTestHeader}`;
           const receivedHeader = `x-test: ${opts.req.headers['x-test']}`;
-          expect(receivedHeader).toBe(String(expectedHeader));
+          if (expectedHeader !== receivedHeader) {
+            throw new TRPCError({
+              code: 'UNAUTHORIZED',
+              message: 'x-test header mismatch. this means the test has failed',
+            });
+          }
 
           // Increment header so next time a connection is made we expect this version
           incrementingTestHeader++;
@@ -167,9 +172,13 @@ test('disconnect and reconnect with updated headers', async () => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
-  // @ts-expect-error lint makes this accessing annoying
-  const es = onStarted.mock.calls[0]![0].context?.eventSource;
-  assert(es instanceof EventSource);
+  function getES() {
+    const lastCall = onStarted.mock.calls.length - 1;
+    // @ts-expect-error lint makes this accessing annoying
+    const es = onStarted.mock.calls[lastCall]![0].context?.eventSource;
+    assert(es instanceof EventSource);
+    return es;
+  }
 
   await waitFor(() => {
     expect(onData.mock.calls.length).toBeGreaterThan(5);
@@ -182,17 +191,22 @@ test('disconnect and reconnect with updated headers', async () => {
 
   expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(1);
 
-  expect(es.readyState).toBe(EventSource.OPEN);
+  expect(getES().readyState).toBe(EventSource.OPEN);
   const release = suppressLogs();
   ctx.destroyConnections();
+
   await waitFor(() => {
-    expect(es.readyState).toBe(EventSource.CONNECTING);
+    expect(onStarted).toHaveBeenCalledTimes(2);
+  });
+
+  await waitFor(() => {
+    expect(getES().readyState).toBe(EventSource.CONNECTING);
   });
   release();
 
   await waitFor(
     () => {
-      expect(es.readyState).toBe(EventSource.OPEN);
+      expect(getES().readyState).toBe(EventSource.OPEN);
     },
     {
       timeout: 3_000,
@@ -204,7 +218,7 @@ test('disconnect and reconnect with updated headers', async () => {
   expect(lastCall.input.lastEventId).toBeGreaterThan(5);
 
   subscription.unsubscribe();
-  expect(es.readyState).toBe(EventSource.CLOSED);
+  expect(getES().readyState).toBe(EventSource.CLOSED);
 
   // const lastEventId = onData.mock.calls.at(-1)[0]![0]!
   await waitFor(() => {
