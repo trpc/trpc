@@ -1,4 +1,4 @@
-import { sse, tracked } from '@trpc/server';
+import { tracked } from '@trpc/server';
 import { streamToAsyncIterable } from '~/lib/stream-to-async-iterator';
 import { db } from '~/server/db/client';
 import { Post, type PostType } from '~/server/db/schema';

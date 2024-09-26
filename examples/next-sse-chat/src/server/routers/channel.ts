@@ -1,6 +1,5 @@
 import EventEmitter, { on } from 'node:events';
 import type { TRPCRouterRecord } from '@trpc/server';
-import { sse } from '@trpc/server';
 import { db } from '~/server/db/client';
 import type { PostType } from '~/server/db/schema';
 import { Channel } from '~/server/db/schema';
