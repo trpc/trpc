@@ -165,7 +165,7 @@ const extensionModule = (): Module<typeof extension> => ({
 //////// build api /////////
 
 {
-  // coreo nly
+  // core only
   const api = buildApi([coreModule()]);
 
   const builder = api.createBuilder<{
