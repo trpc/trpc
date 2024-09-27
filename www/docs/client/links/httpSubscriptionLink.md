@@ -115,6 +115,12 @@ const trpc = createTRPCClient<AppRouter>({
             },
           }; // you either need to typecast to `EventSourceInit` or use `as any` or override the types by a `declare global` statement
         },
+
+        // Optional: EventSource will automatically recover from disconnections, but always uses the initial headers
+        // If your auth header expires, you can force a restart and fresh eventSourceOptions() call with shouldReinitialize()
+        shouldReinitialize(status, _error) {
+          return [401, 403].includes(status);
+        },
       }),
       false: httpBatchLink({
         url: 'http://localhost:3000',
