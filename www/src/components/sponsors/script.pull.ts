@@ -213,15 +213,15 @@ async function main() {
     //   // 8 months between 1st of sept and 1st of april
     //   createdAt: Date.now() - 8 * 30 * 24 * 60 * 60 * 1000,
     // });
-    // add keenetics
+    // add keenethics
     rawList.push({
       __typename: 'Organization',
-      name: 'Keenetics',
-      imgSrc: 'https://github.com/keenetics.png',
+      name: 'keenethics',
+      imgSrc: 'https://github.com/keenethics.png',
       monthlyPriceInDollars: 1110,
-      link: 'https://keenetics.com',
+      link: 'https://keenethics.com',
       privacyLevel: 'PUBLIC',
-      login: 'Keenetics',
+      login: 'keenethics',
       createdAt: new Date('2024-09-27').getTime(),
     });
     const list = rawList.map((sponsor) => {
