@@ -1,11 +1,7 @@
 ---
 slug: introducing-trpc
 title: Introducing tRPC
-author: Alex / KATT 🐱
-author_title: Creator of tRPC
-author_url: https://twitter.com/alexdotjs
-author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
-tags: [trpc]
+authors: [KATT]
 ---
 
 I'm Alex, or "KATT" on GitHub, and I want to tell you about a library called [tRPC](https://trpc.io). I've not published any articles about, so I'm just writing this intro to get the ball rolling (but we have already somehow reached >530 🌟 on GitHub). Expect articles & video intros to come! If you want to stay up-to-date or want to ask questions, you can follow me on Twitter at [@alexdotjs](https://twitter.com/alexdotjs).
