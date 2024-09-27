@@ -17,13 +17,13 @@ export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
       /**
-       * @link https://trpc.io/docs/v11/client/links
+       * @see https://trpc.io/docs/v11/client/links
        */
       links: [
         httpBatchLink({
           url: getBaseUrl() + '/api/trpc',
           /**
-           * @link https://trpc.io/docs/v11/data-transformers
+           * @see https://trpc.io/docs/v11/data-transformers
            */
           transformer: superjson,
         }),

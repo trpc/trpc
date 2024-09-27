@@ -1,6 +1,6 @@
 /**
  * Originally from Vercel's Satori project.
- * @link https://github.com/vercel/satori/blob/main/playground/pages/api/font.ts
+ * @see https://github.com/vercel/satori/blob/main/playground/pages/api/font.ts
  */
 import type { NextRequest } from 'next/server';
 import { fontParams } from 'utils/zodParams';

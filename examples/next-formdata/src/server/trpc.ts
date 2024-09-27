@@ -4,8 +4,8 @@
  * - We export only the functionality that we use so we can enforce which base procedures should be used
  *
  * Learn how to create protected base procedures and other things below:
- * @link https://trpc.io/docs/v11/router
- * @link https://trpc.io/docs/v11/procedures
+ * @see https://trpc.io/docs/v11/router
+ * @see https://trpc.io/docs/v11/procedures
  */
 import { initTRPC } from '@trpc/server';
 import type * as trpcNext from '@trpc/server/adapters/next';
@@ -13,7 +13,7 @@ import { ZodError } from 'zod';
 
 /**
  * Creates context for an incoming request
- * @link https://trpc.io/docs/v11/context
+ * @see https://trpc.io/docs/v11/context
  */
 export async function createContext(opts: trpcNext.CreateNextContextOptions) {
   return {

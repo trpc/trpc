@@ -50,7 +50,7 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
   /**
    * Add handler to be called before response is sent to the user
    * Useful for setting cache headers
-   * @link https://trpc.io/docs/v11/caching
+   * @see https://trpc.io/docs/v11/caching
    */
   responseMeta?: ResponseMetaFn<TRouter>;
 }

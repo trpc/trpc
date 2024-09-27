@@ -24,7 +24,7 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
   if (typeof window === 'undefined') {
     return httpBatchLink({
       /**
-       * @link https://trpc.io/docs/v11/data-transformers
+       * @see https://trpc.io/docs/v11/data-transformers
        */
       transformer: superjson,
       url: `${APP_URL}/api/trpc`,
@@ -46,7 +46,7 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
   return wsLink({
     client,
     /**
-     * @link https://trpc.io/docs/v11/data-transformers
+     * @see https://trpc.io/docs/v11/data-transformers
      */
     transformer: superjson,
   });
@@ -54,23 +54,23 @@ function getEndingLink(ctx: NextPageContext | undefined): TRPCLink<AppRouter> {
 
 /**
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
- * @link https://trpc.io/docs/v11/react#3-create-trpc-hooks
+ * @see https://trpc.io/docs/v11/react#3-create-trpc-hooks
  */
 export const trpc = createTRPCNext<AppRouter>({
   /**
-   * @link https://trpc.io/docs/v11/ssr
+   * @see https://trpc.io/docs/v11/ssr
    */
   ssr: true,
   ssrPrepass,
   config({ ctx }) {
     /**
      * If you want to use SSR, you need to use the server's full URL
-     * @link https://trpc.io/docs/v11/ssr
+     * @see https://trpc.io/docs/v11/ssr
      */
 
     return {
       /**
-       * @link https://trpc.io/docs/v11/client/links
+       * @see https://trpc.io/docs/v11/client/links
        */
       links: [
         // adds pretty logs to your console in development and logs errors in production
@@ -83,13 +83,13 @@ export const trpc = createTRPCNext<AppRouter>({
         getEndingLink(ctx),
       ],
       /**
-       * @link https://tanstack.com/query/v5/docs/reference/QueryClient
+       * @see https://tanstack.com/query/v5/docs/reference/QueryClient
        */
       queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };
   },
   /**
-   * @link https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/v11/data-transformers
    */
   transformer: superjson,
 });

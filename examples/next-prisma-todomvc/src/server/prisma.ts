@@ -1,5 +1,5 @@
 /**
- * @link https://prisma.io/docs/support/help-articles/nextjs-prisma-client-dev-practices
+ * @see https://prisma.io/docs/support/help-articles/nextjs-prisma-client-dev-practices
  */
 import { PrismaClient } from '@prisma/client';
 

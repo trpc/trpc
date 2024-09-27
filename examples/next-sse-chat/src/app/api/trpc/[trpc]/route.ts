@@ -11,11 +11,11 @@ const handler = (req: Request) =>
     req,
     endpoint: '/api/trpc',
     /**
-     * @link https://trpc.io/docs/v11/context
+     * @see https://trpc.io/docs/v11/context
      */
     createContext,
     /**
-     * @link https://trpc.io/docs/v11/error-handling
+     * @see https://trpc.io/docs/v11/error-handling
      */
     onError({ error }) {
       if (error.code === 'INTERNAL_SERVER_ERROR') {

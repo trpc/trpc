@@ -38,7 +38,7 @@ import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
  * Importing ws causes a build error
- * @link https://github.com/trpc/trpc/pull/5279
+ * @see https://github.com/trpc/trpc/pull/5279
  */
 const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
 

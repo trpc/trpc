@@ -145,7 +145,7 @@ export default withTRPC<AppRouter>({
   config({ ctx }) {
     /**
      * If you want to use SSR, you need to use the server's full URL
-     * @link https://trpc.io/docs/ssr
+     * @see https://trpc.io/docs/ssr
      */
     const url = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}/api/trpc`
@@ -154,13 +154,13 @@ export default withTRPC<AppRouter>({
     return {
       url,
       /**
-       * @link https://tanstack.com/query/v3/docs/react/reference/QueryClient
+       * @see https://tanstack.com/query/v3/docs/react/reference/QueryClient
        */
       // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };
   },
   /**
-   * @link https://trpc.io/docs/ssr
+   * @see https://trpc.io/docs/ssr
    */
   ssr: true,
 })(MyApp);
