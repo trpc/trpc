@@ -2050,7 +2050,7 @@ importers:
         version: 10.4.13(postcss@8.4.39)
       docusaurus-plugin-typedoc:
         specifier: 1.0.5
-        version: 1.0.5(typedoc-plugin-markdown@4.1.0)
+        version: 1.0.5(typedoc-plugin-markdown@4.2.8)
       dotenv:
         specifier: ^16.0.1
         version: 16.0.3
@@ -2097,8 +2097,8 @@ importers:
         specifier: 0.26.7
         version: 0.26.7(typescript@5.1.6)
       typedoc-plugin-markdown:
-        specifier: 4.1.0
-        version: 4.1.0(typedoc@0.26.7)
+        specifier: 4.2.8
+        version: 4.2.8(typedoc@0.26.7)
       typescript:
         specifier: npm:typescript@~5.1.3
         version: 5.1.6
@@ -14176,12 +14176,12 @@ packages:
     dependencies:
       esutils: 2.0.3
 
-  /docusaurus-plugin-typedoc@1.0.5(typedoc-plugin-markdown@4.1.0):
+  /docusaurus-plugin-typedoc@1.0.5(typedoc-plugin-markdown@4.2.8):
     resolution: {integrity: sha512-mv8LBJYilGOOPLqaIM3vbYc34m4qwOCpb4WfP24DOPFNj2uiTerw8sg9MGvN6Jx2+J8rq9/WMnjcyz3UMqoIIQ==}
     peerDependencies:
       typedoc-plugin-markdown: '>=4.0.0'
     dependencies:
-      typedoc-plugin-markdown: 4.1.0(typedoc@0.26.7)
+      typedoc-plugin-markdown: 4.2.8(typedoc@0.26.7)
     dev: true
 
   /docusaurus-preset-shiki-twoslash@1.1.41:
@@ -25698,8 +25698,8 @@ packages:
     resolution: {integrity: sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==}
     dev: false
 
-  /typedoc-plugin-markdown@4.1.0(typedoc@0.26.7):
-    resolution: {integrity: sha512-sUiEJVaa6+MOFShRy14j1OP/VXC5OLyHNecJ2nKeGuBy2M3YiMatSLoIiddFAqVptSuILJTZiJzCBIY6yzAVyg==}
+  /typedoc-plugin-markdown@4.2.8(typedoc@0.26.7):
+    resolution: {integrity: sha512-1EDsc66jaCjZtxdYy+Rl0KDU1WY/iyuCOOPaeFzcYFZ81FNXV8CmgUDOHri20WGmYnkEM5nQ+ooxj1vyuQo0Lg==}
     engines: {node: '>= 18'}
     peerDependencies:
       typedoc: 0.26.x
