@@ -76,10 +76,8 @@ type CreateBuilder<TModules extends BuilderModuleName> = <
       meta: object;
       ctx_overrides: object;
     },
-    TOptions
-  > & {
-    [loadedModules]: TModules;
-  }
+    Assign<TOptions, { [loadedModules]: TModules }>
+  >
 >;
 
 export function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
