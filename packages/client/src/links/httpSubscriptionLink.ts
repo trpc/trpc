@@ -181,9 +181,15 @@ class EventSourceWrapper implements Partial<EventSource> {
   }
 
   restart(url: string, options: EventSourceInit | undefined) {
+    for (const type in this.listeners) {
+      for (const [t, l, o] of this.listeners[
+        type as keyof EventSourceEventMap
+      ] ?? []) {
+        this.es.removeEventListener(t as string, l, o);
+      }
+    }
     this.es.close();
     this.es = new EventSource(url, options);
-
     for (const type in this.listeners) {
       for (const [t, l, o] of this.listeners[
         type as keyof EventSourceEventMap
