@@ -216,7 +216,7 @@ async function main() {
     // add keenethics
     rawList.push({
       __typename: 'Organization',
-      name: 'keenethics',
+      name: 'KeenEthics',
       imgSrc: 'https://github.com/keenethics.png',
       monthlyPriceInDollars: 1110,
       link: 'https://keenethics.com',

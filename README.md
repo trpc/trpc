@@ -161,7 +161,7 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 <table>
   <tr>
    <td align="center"><a href="https://cal.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/79145102?v=4&s=150" width="150" alt="Cal.com,%20Inc."/><br />Cal.com, Inc.</a></td>
-   <td align="center"><a href="https://keenethics.com"><img src="https://github.com/keenethics.png?s=150" width="150" alt="keenethics"/><br />keenethics</a></td>
+   <td align="center"><a href="https://keenethics.com"><img src="https://github.com/keenethics.png?s=150" width="150" alt="KeenEthics"/><br />KeenEthics</a></td>
   </tr>
 </table>
 
