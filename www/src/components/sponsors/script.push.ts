@@ -23,7 +23,7 @@ const sections: Def = {
   silver: [
     //
     'calcom',
-    'keenetics',
+    'keenethics',
   ],
   bronze: [
     //
