@@ -192,7 +192,7 @@ export function sseStreamConsumer<TData>(opts: {
   from: Pick<EventSource, 'addEventListener' | 'readyState'>;
   onError?: ConsumerOnError;
   deserialize?: Deserialize;
-  tryHandleError?: (error: Event) => Promise<boolean | undefined>;
+  tryHandleError?: (error: Event) => Promise<boolean>;
 }): AsyncIterable<ConsumerStreamResult<TData>> {
   const { deserialize = (v) => v } = opts;
   const eventSource = opts.from;

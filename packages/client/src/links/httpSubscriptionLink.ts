@@ -127,6 +127,8 @@ export function unstable_httpSubscriptionLink<
 
                 return true;
               }
+
+              return false;
             },
           });
 
