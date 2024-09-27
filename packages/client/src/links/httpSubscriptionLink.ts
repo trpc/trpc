@@ -37,6 +37,16 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * EventSource options or a callback that returns them
    */
   eventSourceOptions?: () => EventSourceInit | Promise<EventSourceInit>;
+  /**
+   * For a given error, should we reinitialize the underlying EventSource?
+   *
+   * This is useful where a long running subscription might be interrupted by a recoverable network error,
+   * but the existing authorization header might have expired in the mean-time
+   */
+  shouldReinitialize?: (
+    status: number,
+    error: Event,
+  ) => boolean | Promise<boolean>;
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -106,11 +116,10 @@ export function unstable_httpSubscriptionLink<
               if (
                 'status' in ev &&
                 typeof ev.status === 'number' &&
-                [401, 403].includes(ev.status) &&
-                eventSource
+                typeof opts.shouldReinitialize === 'function' &&
+                eventSource &&
+                (await opts.shouldReinitialize(ev.status, ev))
               ) {
-                console.log('Restarted EventSource due to 401/403 error');
-
                 eventSource.restart(
                   url,
                   await resultOf(opts.eventSourceOptions),

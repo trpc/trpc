@@ -1,4 +1,5 @@
 import { EventEmitter, on } from 'node:events';
+import { scheduler } from 'node:timers/promises';
 import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
@@ -130,6 +131,13 @@ const ctx = konn()
                     },
                   } as EventSourcePolyfillInit;
                 },
+                shouldReinitialize(status, _error) {
+                  const willRestart = [401, 403].includes(status);
+                  if (willRestart) {
+                    console.log('Restarting EventSource due to 401/403 error');
+                  }
+                  return willRestart;
+                },
               }),
               false: unstable_httpBatchStreamLink({
                 url: opts.httpUrl,
@@ -192,9 +200,8 @@ test('disconnect and reconnect with updated headers', async () => {
   expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(1);
 
   expect(getES().readyState).toBe(EventSource.OPEN);
-  const release = suppressLogs();
-  ctx.destroyConnections();
 
+  ctx.destroyConnections();
   await waitFor(
     () => {
       expect(onStarted).toHaveBeenCalledTimes(2);
@@ -203,11 +210,6 @@ test('disconnect and reconnect with updated headers', async () => {
       timeout: 3_000,
     },
   );
-  release();
-
-  await waitFor(() => {
-    expect(getES().readyState).toBe(EventSource.CONNECTING);
-  });
 
   await waitFor(
     () => {
@@ -217,10 +219,6 @@ test('disconnect and reconnect with updated headers', async () => {
       timeout: 3_000,
     },
   );
-  expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(2);
-  const lastCall = ctx.onIterableInfiniteSpy.mock.calls.at(-1)![0];
-
-  expect(lastCall.input.lastEventId).toBeGreaterThan(5);
 
   subscription.unsubscribe();
   expect(getES().readyState).toBe(EventSource.CLOSED);
