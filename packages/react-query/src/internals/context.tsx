@@ -5,6 +5,7 @@ import type {
   InfiniteData,
   InvalidateOptions,
   InvalidateQueryFilters,
+  MutationOptions,
   QueryClient,
   QueryFilters,
   QueryKey,
@@ -26,13 +27,19 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type { ExtractCursorType } from '../shared';
-import type { TRPCQueryKey } from './getQueryKey';
+import type { TRPCMutationKey, TRPCQueryKey } from './getQueryKey';
 
-export type TRPCFetchQueryOptions<TOutput, TError> = DistributiveOmit<
-  FetchQueryOptions<TOutput, TError>,
-  'queryKey'
-> &
-  TRPCRequestOptions;
+interface TRPCUseUtilsOptions {
+  /**
+   * tRPC-related options
+   */
+  trpc?: TRPCRequestOptions;
+}
+export interface TRPCFetchQueryOptions<TOutput, TError>
+  extends DistributiveOmit<FetchQueryOptions<TOutput, TError>, 'queryKey'>,
+    TRPCUseUtilsOptions {
+  //
+}
 
 export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
   DistributiveOmit<
@@ -45,7 +52,7 @@ export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
     >,
     'queryKey' | 'initialPageParam'
   > &
-    TRPCRequestOptions & {
+    TRPCUseUtilsOptions & {
       initialCursor?: ExtractCursorType<TInput>;
     };
 
@@ -240,5 +247,29 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   getInfiniteQueryData: (
     queryKey: TRPCQueryKey,
   ) => InfiniteData<unknown> | undefined;
+
+  /**
+   * @link https://tanstack.com/query/latest/docs/reference/QueryClient/#queryclientsetmutationdefaults
+   */
+  setMutationDefaults: (
+    mutationKey: TRPCMutationKey,
+    options:
+      | MutationOptions
+      | ((args: {
+          canonicalMutationFn: (input: unknown) => Promise<unknown>;
+        }) => MutationOptions),
+  ) => void;
+
+  /**
+   * @link https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientgetmutationdefaults
+   */
+  getMutationDefaults: (
+    mutationKey: TRPCMutationKey,
+  ) => MutationOptions | undefined;
+
+  /**
+   * @link https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientismutating
+   */
+  isMutating: (filters: { mutationKey: TRPCMutationKey }) => number;
 }
 export const TRPCContext = React.createContext?.(null as any);

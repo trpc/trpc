@@ -9,10 +9,14 @@ slug: /client/links/httpSubscriptionLink
 
 SSE is a good option for real-time as it's a bit easier to deal with than WebSockets and handles things like reconnecting and continuing where it left off automatically.
 
-## Setup
+:::info
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
+:::
+
+## Setup {#setup}
 
 :::info
-If your client's environment doesn't support EventSource, you need an [EventSource polyfill](https://www.npmjs.com/package/event-source-polyfill).
+If your client's environment doesn't support EventSource, you need an [EventSource polyfill](https://www.npmjs.com/package/event-source-polyfill). For React Native specific instructions please defer to the [compatibility section](#compatibility-react-native).
 :::
 
 To use `httpSubscriptionLink`, you need to use a [splitLink](./splitLink.mdx) to make it explicit that we want to use SSE for subscriptions.
@@ -47,13 +51,11 @@ const trpcClient = createTRPCClient<AppRouter>({
 });
 ```
 
-## Usage
+## Basic example
 
 :::tip
 For a full example, see [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat).
 :::
-
-### Basic example
 
 ```ts
 import EventEmitter, { on } from 'events';
@@ -66,7 +68,10 @@ const ee = new EventEmitter();
 export const subRouter = router({
   onPostAdd: publicProcedure.subscription(async function* (opts) {
     // listen for new events
-    for await (const [data] of on(ee, 'add')) {
+    for await (const [data] of on(ee, 'add', {
+      // Passing the AbortSignal from the request automatically cancels the event emitter when the request is aborted
+      signal: opts.signal,
+    })) {
       const post = data as Post;
       yield post;
     }
@@ -74,16 +79,20 @@ export const subRouter = router({
 });
 ```
 
-### Automatic tracking of id using `sse()` (recommended)
+## Automatic tracking of id using `tracked()` (recommended) {#tracked}
 
-If you `yield` an event using our `sse()`-helper and include an `id`, the browser will automatically reconnect when it gets disconnected and send the last known ID - this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
+If you `yield` an event using our `tracked()`-helper and include an `id`, the browser will automatically reconnect when it gets disconnected and send the last known ID - this is part of the [`EventSource`-spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#the-last-event-id-header) and will be propagated through `lastEventId` in your `.input()`.
 
 You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
+
+:::tip
+If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+:::
 
 ```ts
 import EventEmitter, { on } from 'events';
 import type { Post } from '@prisma/client';
-import { sse } from '@trpc/server';
+import { tracked } from '@trpc/server';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 
@@ -92,42 +101,234 @@ const ee = new EventEmitter();
 export const subRouter = router({
   onPostAdd: publicProcedure
     .input(
-      z.object({
-        // lastEventId is the last event id that the client has received
-        // On the first call, it will be whatever was passed in the initial setup
-        // If the client reconnects, it will be the last event id that the client received
-        lastEventId: z.string().nullish(),
-      }),
+      z
+        .object({
+          // lastEventId is the last event id that the client has received
+          // On the first call, it will be whatever was passed in the initial setup
+          // If the client reconnects, it will be the last event id that the client received
+          lastEventId: z.string().nullish(),
+        })
+        .optional(),
     )
     .subscription(async function* (opts) {
       if (opts.input.lastEventId) {
         // [...] get the posts since the last event id and yield them
       }
       // listen for new events
-      for await (const [data] of on(ee, 'add')) {
+      for await (const [data] of on(ee, 'add'), {
+        signal: opts.signal,
+      }) {
         const post = data as Post;
-        yield sse({
-          // yielding the post id ensures the client can reconnect at any time and get the latest events this id
-          id: post.id,
-          data: post,
-        });
+        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+        yield tracked(post.id, post);
       }
     }),
 });
 ```
 
+## Cleanup of side effects
+
+If you need to clean up any side-effects of your subscription you can use the [`try...finally`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return#using_return_with_try...finally) pattern, as `trpc` invokes the `.return()` of the Generator Instance when the subscription stops for any reason.
+
+```ts
+import EventEmitter, { on } from 'events';
+import type { Post } from '@prisma/client';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
+
+const ee = new EventEmitter();
+
+export const subRouter = router({
+  onPostAdd: publicProcedure.subscription(async function* (opts) {
+    let timeout;
+    try {
+      for await (const [data] of on(ee, 'add'), {
+        signal: opts.signal,
+      }) {
+        timeout = setTimeout(() => console.log('Pretend like this is useful'));
+        const post = data as Post;
+        yield post;
+      }
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
+  }),
+});
+```
+
+## Error handling
+
+Throwing an error in a generator function propagates to `trpc`'s `onError()` on the backend, but the error will not be sent to the client - the client will automatically reconnect based on the last event id that is [tracked using `tracked()`](#tracked).
+
+## Headers and authorization / authentication
+
+### Web apps
+
+#### Same domain
+
+If you're doing a web application, cookies are sent as part of the request as long as your client is on the same domain as the server.
+
+#### Cross-domain
+
+If the client and server are not on the same domain, you can use `withCredentials: true` ([read more on MDN here](https://developer.mozilla.org/en-US/docs/Web/API/EventSource/withCredentials)).
+
+**Example:**
+
+```tsx
+// [...]
+unstable_httpSubscriptionLink({
+  url: 'https://example.com/api/trpc',
+  eventSourceOptions: {
+    withCredentials: true, // <---
+  },
+});
+```
+
+### Custom headers through polyfill {#authorization-by-polyfilling-eventsource}
+
+**Recommended for non-web environments**
+
+You can polyfill `EventSource` and use the `eventSourceOptions` -callback to populate headers.
+
+```tsx
+import {
+  createTRPCClient,
+  httpBatchLink,
+  splitLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
+import { EventSourcePolyfill } from 'event-source-polyfill';
+import type { AppRouter } from '../server/index.js';
+
+// polyfill EventSource
+globalThis.EventSource = EventSourcePolyfill;
+
+// Initialize the tRPC client
+const trpc = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: unstable_httpSubscriptionLink({
+        url: 'http://localhost:3000',
+        // options to pass to the EventSourcePolyfill constructor
+        eventSourceOptions: async () => {
+          return {
+            headers: {
+              authorization: 'Bearer supersecret',
+            },
+          }; // you either need to typecast to `EventSourceInit` or use `as any` or override the types by a `declare global` statement
+        },
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000',
+      }),
+    }),
+  ],
+});
+```
+
+### Connection params {#connectionParams}
+
+In order to authenticate with `EventSource`, you can define `connectionParams` in `httpSubscriptionLink`. This will be sent as part of the URL, which is why other methods are preferred).
+
+```ts twoslash title="server/context.ts"
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+
+export const createContext = async (opts: CreateHTTPContextOptions) => {
+  const token = opts.info.connectionParams?.token;
+  //    ^?
+
+  // [... authenticate]
+
+  return {};
+};
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+```ts title="client/trpc.ts"
+import {
+  createTRPCClient,
+  httpBatchLink,
+  splitLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
+import type { AppRouter } from '../server/index.js';
+
+// Initialize the tRPC client
+const trpc = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: unstable_httpSubscriptionLink({
+        url: 'http://localhost:3000',
+        connectionParams: async () => {
+          // Will be serialized as part of the URL
+          return {
+            token: 'supersecret',
+          };
+        },
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000',
+      }),
+    }),
+  ],
+});
+```
+
+## Compatibility (React Native) {#compatibility-react-native}
+
+The `httpSubscriptionLink` makes use of the `EventSource` API, Streams API, and `AsyncIterator`s, these are not natively supported by React Native and will have to be polyfilled.
+
+To polyfill `EventSource` we recommend to use a polyfill that utilizes the networking library exposed by React Native, over using a polyfill that using the `XMLHttpRequest` API. Libraries that polyfill `EventSource` using `XMLHttpRequest` fail to reconnect after the app has been in the background. Consider using the [rn-eventsource-reborn](https://www.npmjs.com/package/rn-eventsource-reborn) package.
+
+The Streams API can be polyfilled using the [web-streams-polyfill](https://www.npmjs.com/package/web-streams-polyfill) package.
+
+`AsyncIterator`s can be polyfilled using the [@azure/core-asynciterator-polyfill](https://www.npmjs.com/package/@azure/core-asynciterator-polyfill) package.
+
+### Installation
+
+Install the required polyfills:
+
+import { InstallSnippet } from '@site/src/components/InstallSnippet';
+
+<InstallSnippet pkgs="rn-eventsource-reborn web-streams-polyfill @azure/core-asynciterator-polyfill" />
+
+Add the polyfills to your project before the link is used (e.g. where you add your TRPCReact.Provider):
+
+```ts title="utils/api.tsx"
+import '@azure/core-asynciterator-polyfill';
+import { RNEventSource } from 'rn-eventsource-reborn';
+import { ReadableStream, TransformStream } from 'web-streams-polyfill';
+
+// RNEventSource extends EventSource's functionality, you can add this to make the typing reflect this but it's not a requirement
+declare global {
+  interface EventSource extends RNEventSource {}
+}
+globalThis.EventSource = globalThis.EventSource || RNEventSource;
+
+globalThis.ReadableStream = globalThis.ReadableStream || ReadableStream;
+globalThis.TransformStream = globalThis.TransformStream || TransformStream;
+```
+
+Once the polyfills are added, you can continue setting up the `httpSubscriptionLink` as described in the [setup](#setup) section.
+
 ## `httpSubscriptionLink` Options
 
 ```ts
+type MaybePromise<TValue> = TValue | Promise<TValue>;
+type CallbackOrValue<TValue> = TValue | (() => MaybePromise<TValue>);
+
 type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * The URL to connect to (can be a function that returns a URL)
    */
-  url: string | (() => MaybePromise<string>);
+  url: CallbackOrValue<string>;
   /**
    * EventSource options
    */
-  eventSourceOptions?: EventSourceInit;
+  eventSourceOptions?: CallbackOrValue<EventSourceInit>;
   /**
    * Data transformer
    * @link https://trpc.io/docs/v11/data-transformers

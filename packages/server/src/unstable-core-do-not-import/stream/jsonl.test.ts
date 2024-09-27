@@ -30,6 +30,7 @@ test('encode/decode with superjson', async () => {
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: null,
   });
 
   {
@@ -79,8 +80,10 @@ test('encode/decode - error', async () => {
 
   const errors: unknown[] = [];
 
-  const onProducerErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
-  const onConsumerErrorSpy = vi.fn<Parameters<ConsumerOnError>, null>();
+  const onProducerErrorSpy =
+    vi.fn<(...args: Parameters<ProducerOnError>) => void>();
+  const onConsumerErrorSpy =
+    vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
 
   const stream = jsonlStreamProducer({
     data,
@@ -92,6 +95,7 @@ test('encode/decode - error', async () => {
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
     onError: onConsumerErrorSpy,
+    abortController: null,
   });
 
   {
@@ -171,6 +175,7 @@ test('decode - bad data', async () => {
     await jsonlStreamConsumer({
       from: textEncoder.readable,
       deserialize: (v) => SuperJSON.deserialize(v),
+      abortController: null,
     });
     expect(true).toBe(false);
   } catch (err) {
@@ -240,6 +245,7 @@ test('e2e, create server', async () => {
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: null,
   });
 
   {
@@ -283,8 +289,10 @@ test('e2e, client aborts request halfway through', async () => {
   const yieldCalls = vi.fn();
   let stopped = false;
 
-  const onConsumerErrorSpy = vi.fn<Parameters<ConsumerOnError>, null>();
-  const onProducerErrorSpy = vi.fn<Parameters<ProducerOnError>, null>();
+  const onConsumerErrorSpy =
+    vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
+  const onProducerErrorSpy =
+    vi.fn<(...args: Parameters<ProducerOnError>) => void>();
 
   const data = {
     0: Promise.resolve({
@@ -293,6 +301,7 @@ test('e2e, client aborts request halfway through', async () => {
           yieldCalls();
           yield i;
           await new Promise((resolve) => setTimeout(resolve, 5));
+
           if (serverAbort.signal.aborted) {
             stopped = true;
             return;
@@ -315,6 +324,7 @@ test('e2e, client aborts request halfway through', async () => {
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     onError: onConsumerErrorSpy,
+    abortController: clientAbort,
   });
 
   {
@@ -349,11 +359,92 @@ test('e2e, client aborts request halfway through', async () => {
   `);
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
   expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
+
+  await server.close();
+});
+
+test('e2e, client aborts request halfway through - through breaking async iterable', async () => {
+  const serverAbort = new AbortController();
+  const clientAbort = new AbortController();
+  const yieldCalls = vi.fn();
+  let stopped = false;
+
+  const onConsumerErrorSpy =
+    vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
+  const onProducerErrorSpy =
+    vi.fn<(...args: Parameters<ProducerOnError>) => void>();
+
+  const data = {
+    0: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        for (let i = 0; i < 10; i++) {
+          yieldCalls();
+          yield i;
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          if (serverAbort.signal.aborted) {
+            stopped = true;
+            return;
+          }
+        }
+        stopped = true;
+      },
+    }),
+  } as const;
+
+  const stream = jsonlStreamProducer({
+    data,
+    onError: onProducerErrorSpy,
+  });
+  const server = createServerForStream(stream, serverAbort);
+
+  const res = await fetch(server.url, {
+    signal: clientAbort.signal,
+  });
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
+    from: res.body!,
+    onError: onConsumerErrorSpy,
+    abortController: clientAbort,
+  });
+
+  {
+    const iterable = await head[0];
+
+    for await (const item of iterable) {
+      if (item === 2) {
+        // ✨ This will actually abort the full stream and the request since there's no more data to read
+
+        break;
+      }
+    }
+  }
+
+  await waitFor(() => {
+    expect(meta.controllers.size).toBe(0);
+  });
+  // wait for stopped
+  await waitFor(() => {
+    expect(stopped).toBe(true);
+  });
+
+  expect(yieldCalls.mock.calls.length).toBeGreaterThanOrEqual(3);
+  expect(yieldCalls.mock.calls.length).toBeLessThan(10);
+
+  const errors = onConsumerErrorSpy.mock.calls.map(
+    (it) => (it[0].error as Error).message,
+  );
+  expect(errors).toMatchInlineSnapshot(`
+    Array [
+      "The operation was aborted.",
+    ]
+  `);
+  expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
+  expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
+
   await server.close();
 });
 
 test('e2e, encode/decode - maxDepth', async () => {
-  const onError = vi.fn<Parameters<ProducerOnError>, null>();
+  const onError = vi.fn<(...args: Parameters<ProducerOnError>) => void>();
   const data = {
     0: Promise.resolve({
       foo: 'bar',
@@ -369,10 +460,14 @@ test('e2e, encode/decode - maxDepth', async () => {
 
   const server = createServerForStream(stream, new AbortController());
 
-  const res = await fetch(server.url);
+  const ac = new AbortController();
+  const res = await fetch(server.url, {
+    signal: ac.signal,
+  });
   const [head] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     deserialize: SuperJSON.deserialize,
+    abortController: ac,
   });
 
   {

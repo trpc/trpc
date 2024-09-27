@@ -61,7 +61,7 @@ test('useSuspenseInfiniteQuery()', async () => {
           items: typeof fixtureData;
           next?: number | undefined;
         },
-        number | null
+        number | undefined
       >
     >(query1.data);
 
@@ -71,7 +71,7 @@ test('useSuspenseInfiniteQuery()', async () => {
           items: typeof fixtureData;
           next?: number | undefined;
         },
-        number | null
+        number | undefined
       >
     >(data);
 

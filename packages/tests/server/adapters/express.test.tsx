@@ -53,7 +53,6 @@ async function startServer(maxBodySize?: number) {
     links: [
       httpBatchLink({
         url: `http://localhost:${port}/trpc`,
-        AbortController,
         fetch: fetch as any,
       }),
     ],
@@ -129,7 +128,9 @@ test('request info from context should include both calls', async () => {
             "path": "request.info",
           },
         ],
+        "connectionParams": null,
         "isBatchCall": true,
+        "signal": Object {},
         "type": "query",
       },
     ]

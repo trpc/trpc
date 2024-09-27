@@ -1,6 +1,6 @@
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 
-global.fetch = vi.fn() as any;
+globalThis.fetch = vi.fn() as any;
 
 describe('typedefs on createClient', () => {
   test('ok to pass only links', () => {

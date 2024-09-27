@@ -15,11 +15,10 @@ import {
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
-
-const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe('no transformer', () => {
   const orderedResults: number[] = [];
@@ -30,6 +29,13 @@ describe('no transformer', () => {
       orderedResults.length = 0;
 
       const manualRelease = new Map<number, () => void>();
+
+      let iterableDeferred = createDeferred<void>();
+      const nextIterable = () => {
+        iterableDeferred.resolve();
+        iterableDeferred = createDeferred();
+      };
+      const yieldSpy = vi.fn((v: number) => v);
 
       const router = t.router({
         deferred: t.procedure
@@ -62,9 +68,12 @@ describe('no transformer', () => {
           }),
 
         iterable: t.procedure.query(async function* () {
-          yield 1;
-          yield 2;
-          yield 3;
+          for (let i = 0; i < 10; i++) {
+            yield yieldSpy(i + 1);
+            await iterableDeferred.promise;
+            iterableDeferred = createDeferred();
+          }
+          return 'done';
         }),
       });
 
@@ -87,7 +96,17 @@ describe('no transformer', () => {
         };
       };
       const opts = routerToServerAndClientNew(router, {
-        server: {},
+        server: {
+          createContext: (opts) => {
+            return opts;
+          },
+        },
+        wsClient: {
+          lazy: {
+            enabled: true,
+            closeMs: 1,
+          },
+        },
         client(opts) {
           return {
             links: [
@@ -101,7 +120,10 @@ describe('no transformer', () => {
       });
       return {
         ...opts,
+        yieldSpy,
         manualRelease,
+        nextIterable,
+        iterablePromise: iterableDeferred.promise,
       };
     })
     .afterEach(async (opts) => {
@@ -195,17 +217,89 @@ describe('no transformer', () => {
 
     const iterable = await client.iterable.query();
 
+    expectTypeOf(iterable).toEqualTypeOf<
+      AsyncGenerator<number, string, unknown>
+    >();
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
       aggregated.push(value);
+      ctx.nextIterable();
     }
     expect(aggregated).toMatchInlineSnapshot(`
       Array [
         1,
         2,
         3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
       ]
     `);
+  });
+
+  test('iterable return', async () => {
+    const { client } = ctx;
+
+    const iterable = await client.iterable.query();
+    const iterator = iterable[Symbol.asyncIterator]();
+
+    const aggregated: unknown[] = [];
+
+    let r;
+    while (!(r = await iterator.next()).done) {
+      aggregated.push(r.value);
+      ctx.nextIterable();
+    }
+    expect(r.value).toBe('done');
+  });
+
+  test('iterable cancellation', async () => {
+    const { client } = ctx;
+    const ac = new AbortController();
+
+    const iterable = await client.iterable.query(undefined, {
+      signal: ac.signal,
+    });
+    const aggregated: unknown[] = [];
+    ctx.nextIterable();
+    const err = await waitError(async () => {
+      for await (const value of iterable) {
+        aggregated.push(value);
+        if (value === 2) {
+          ac.abort();
+        }
+        ctx.nextIterable();
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+    });
+    for (let i = 0; i < 10; i++) {
+      // release some more values, all shouldn't be yielded
+      await ctx.iterablePromise;
+      ctx.nextIterable();
+    }
+
+    await waitFor(() => {
+      expect(ctx.connections.size).toBe(0);
+    });
+    expect(ctx.yieldSpy.mock.calls.flatMap((it) => it[0]))
+      .toMatchInlineSnapshot(`
+        Array [
+          1,
+          2,
+          3,
+          4,
+        ]
+      `);
+    expect(err).toMatchInlineSnapshot(
+      `[Error: Invalid response or stream interrupted]`,
+    );
+    expect(err.message).toMatchInlineSnapshot(
+      `"Invalid response or stream interrupted"`,
+    );
   });
 });
 
@@ -214,13 +308,11 @@ describe('with transformer', () => {
   const ctx = konn()
     .beforeEach(() => {
       const onIterableInfiniteSpy = vi.fn<
-        [
-          {
-            input: {
-              lastEventId?: number;
-            };
-          },
-        ]
+        (args: {
+          input: {
+            lastEventId?: number;
+          };
+        }) => void
       >();
       const ee = new EventEmitter();
       const eeEmit = (data: number) => {
@@ -255,9 +347,11 @@ describe('with transformer', () => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
         iterable: t.procedure.query(async function* () {
-          yield 1;
+          yield 1 as number;
           yield 2;
           yield 3;
+
+          return 'done';
         }),
         iterableWithError: t.procedure.query(async function* () {
           yield 1;
@@ -366,6 +460,10 @@ describe('with transformer', () => {
 
     const iterable = await client.iterable.query();
 
+    expectTypeOf(iterable).toEqualTypeOf<
+      AsyncGenerator<number, string, unknown>
+    >();
+
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
       aggregated.push(value);
@@ -377,6 +475,28 @@ describe('with transformer', () => {
         3,
       ]
     `);
+  });
+
+  test('iterable return', async () => {
+    const { client } = ctx;
+
+    const iterable = await client.iterable.query();
+    const iterator = iterable[Symbol.asyncIterator]();
+
+    const aggregated: unknown[] = [];
+
+    let r;
+    while (!(r = await iterator.next()).done) {
+      aggregated.push(r.value);
+    }
+    expect(aggregated).toMatchInlineSnapshot(`
+      Array [
+        1,
+        2,
+        3,
+      ]
+    `);
+    expect(r.value).toBe('done');
   });
 
   test('call deferred procedures with httpBatchLink', async () => {

@@ -132,7 +132,96 @@ const client = createTRPCClient<AppRouter>({
 });
 ```
 
-### Using React
+## Authentication / connection params {#connectionParams}
+
+:::tip
+If you're doing a web application, you can ignore this section as the cookies are sent as part of the request.
+:::
+
+In order to authenticate with WebSockets, you can define `connectionParams` to `createWSClient`. This will be sent as the first message when the client establishes a WebSocket connection.
+
+```ts twoslash title="server/context.ts"
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+
+export const createContext = async (opts: CreateWSSContextFnOptions) => {
+  const token = opts.info.connectionParams?.token;
+  //    ^?
+
+  // [... authenticate]
+
+  return {};
+};
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+```ts title="client/trpc.ts"
+import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import type { AppRouter } from '~/server/routers/_app';
+
+const wsClient = createWSClient({
+  url: `ws://localhost:3000`,
+
+  connectionParams: async () => {
+    return {
+      token: 'supersecret',
+    };
+  },
+});
+export const trpc = createTRPCClient<AppRouter>({
+  links: [wsLink({ client: wsClient, transformer: superjson })],
+});
+```
+
+### Automatic tracking of id using `tracked()` (recommended)
+
+If you `yield` an event using our `tracked()`-helper and include an `id`, the client will automatically reconnect when it gets disconnected and send the last known ID when reconnecting as part of the `lastEventId`-input.
+
+You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
+
+:::info
+If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+:::
+
+```ts
+import EventEmitter, { on } from 'events';
+import type { Post } from '@prisma/client';
+import { tracked } from '@trpc/server';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
+
+const ee = new EventEmitter();
+
+export const subRouter = router({
+  onPostAdd: publicProcedure
+    .input(
+      z
+        .object({
+          // lastEventId is the last event id that the client has received
+          // On the first call, it will be whatever was passed in the initial setup
+          // If the client reconnects, it will be the last event id that the client received
+          lastEventId: z.string().nullish(),
+        })
+        .optional(),
+    )
+    .subscription(async function* (opts) {
+      if (opts.input.lastEventId) {
+        // [...] get the posts since the last event id and yield them
+      }
+      // listen for new events
+      for await (const [data] of on(ee, 'add'), {
+        // Passing the AbortSignal from the request automatically cancels the event emitter when the subscription is aborted
+        signal: opts.signal,
+      }) {
+        const post = data as Post;
+        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+        yield tracked(post.id, post);
+      }
+    }),
+});
+```
+
+## Using React
 
 See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
 
@@ -220,6 +309,17 @@ _... below, or an error._
         type: 'stopped'; // subscription stopped
       }
   )
+}
+```
+
+#### Connection params
+
+If the connection is initialized with `?connectionParams=1`, the first message has to be connection params.
+
+```ts
+{
+  data: Record<string, string> | null;
+  method: 'connectionParams';
 }
 ```
 

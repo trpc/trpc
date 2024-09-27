@@ -12,8 +12,8 @@ You may need to call your procedure(s) directly from the same server they're hos
 `createCaller` should not be used to call procedures from within other procedures. This creates overhead by (potentially) creating context again, executing all middlewares, and validating the input - all of which were already done by the current procedure. Instead, you should extract the shared logic into a separate function and call that from within the procedures, like so:
 
 <div className="flex gap-2 w-full justify-between pt-2">
-  <img src="https://user-images.githubusercontent.com/51714798/212568342-0a8440cb-68ed-48ae-9849-8c7bc417633e.png" className="w-[49.5%]" />
-  <img src="https://user-images.githubusercontent.com/51714798/212568254-06cc56d0-35f6-4bb5-bff9-d25caf092c2c.png" className="w-[49.5%]" />
+  <img src="https://assets.trpc.io/www/docs/server/server-side-calls/bad.png" className="w-[49.5%]" />
+  <img src="https://assets.trpc.io/www/docs/server/server-side-calls/good.png" className="w-[49.5%]" />
 </div>
 
 :::
@@ -295,7 +295,7 @@ export default async (
 ### Error handling
 
 The `createFactoryCaller` and the `createCaller` function can take an error handler through the `onError` option. This can be used to throw errors that are not wrapped in a TRPCError, or respond to errors in some other way. Any handler passed to createCallerFactory will be called before the handler passed to createCaller.
-The handler is called with the same arguments as an error formatter would be, expect for the shape field:
+The handler is called with the same arguments as an error formatter would be, except for the shape field:
 
 ```ts
 {

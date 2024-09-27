@@ -13,13 +13,16 @@ import type {
 import type { TRPCResponse } from '@trpc/server/rpc';
 
 interface ProxyCallbackOptions {
-  path: string[];
-  args: unknown[];
+  path: readonly string[];
+  args: readonly unknown[];
 }
 
 type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
 
-function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
+function createRecursiveProxy(
+  callback: ProxyCallback,
+  path: readonly string[],
+) {
   const proxy: unknown = new Proxy(
     () => {
       // dummy no-op function since we don't have any

@@ -92,6 +92,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           type,
           path,
           input,
+          signal: op.signal,
           headers() {
             if (!opts.headers) {
               return {};
@@ -105,7 +106,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           },
         });
         let meta: HTTPResult['meta'] | undefined = undefined;
-        request.promise
+        request
           .then((res) => {
             meta = res.meta;
             const transformed = transformResult(
@@ -132,7 +133,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           });
 
         return () => {
-          request.cancel();
+          // noop
         };
       });
     };

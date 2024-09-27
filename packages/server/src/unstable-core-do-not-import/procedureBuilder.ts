@@ -17,13 +17,13 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnySubscriptionProcedure,
+  LegacyObservableSubscriptionProcedure,
   MutationProcedure,
   ProcedureType,
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
-import type { inferSSEOutput } from './stream/sse';
+import type { inferTrackedOutput } from './stream/tracked';
 import type {
   GetRawInputFn,
   MaybePromise,
@@ -47,8 +47,19 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
 type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterable<
   infer $Output
 >
-  ? inferSSEOutput<$Output>
+  ? inferTrackedOutput<$Output>
   : inferObservableValue<TOutput>;
+
+type inferSubscriptionProcedure<TInputIn, TOutputOut, $Output> =
+  $Output extends AsyncIterable<any>
+    ? SubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
+      }>
+    : LegacyObservableSubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
+      }>;
 
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
@@ -92,6 +103,10 @@ export interface ProcedureResolverOptions<
 > {
   ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
+  /**
+   * The AbortSignal of the request
+   */
+  signal: AbortSignal | undefined;
 }
 
 /**
@@ -352,10 +367,7 @@ export interface ProcedureBuilder<
     >,
   ): TCaller extends true
     ? TypeError<'Not implemented'>
-    : SubscriptionProcedure<{
-        input: DefaultValue<TInputIn, void>;
-        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
-      }>;
+    : inferSubscriptionProcedure<TInputIn, TOutputOut, $Output>;
 
   /**
    * Overrides the way a procedure is invoked
@@ -465,10 +477,7 @@ export function createBuilder<TContext, TMeta>(
       ) as AnyMutationProcedure;
     },
     subscription(resolver) {
-      return createResolver(
-        { ..._def, type: 'subscription' },
-        resolver,
-      ) as AnySubscriptionProcedure;
+      return createResolver({ ..._def, type: 'subscription' }, resolver) as any;
     },
     experimental_caller(caller) {
       return createNewBuilder(_def, {
@@ -532,12 +541,53 @@ export interface ProcedureCallOptions<TContext> {
   input?: unknown;
   path: string;
   type: ProcedureType;
+  signal: AbortSignal | undefined;
 }
 
 const codeblock = `
 This is a client-only function.
 If you want to call this function on the server, see https://trpc.io/docs/v11/server/server-side-calls
 `.trim();
+
+// run the middlewares recursively with the resolver as the last one
+async function callRecursive(
+  index: number,
+  _def: AnyProcedureBuilderDef,
+  opts: ProcedureCallOptions<any>,
+): Promise<MiddlewareResult<any>> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const middleware = _def.middlewares[index]!;
+    const result = await middleware({
+      ...opts,
+      meta: _def.meta,
+      input: opts.input,
+      next(_nextOpts?: any) {
+        const nextOpts = _nextOpts as
+          | {
+              ctx?: Record<string, unknown>;
+              input?: unknown;
+              getRawInput?: GetRawInputFn;
+            }
+          | undefined;
+
+        return callRecursive(index + 1, _def, {
+          ...opts,
+          ctx: nextOpts?.ctx ? { ...opts.ctx, ...nextOpts.ctx } : opts.ctx,
+          input: nextOpts && 'input' in nextOpts ? nextOpts.input : opts.input,
+          getRawInput: nextOpts?.getRawInput ?? opts.getRawInput,
+        });
+      },
+    });
+    return result;
+  } catch (cause) {
+    return {
+      ok: false,
+      error: getTRPCErrorFromUnknown(cause),
+      marker: middlewareMarker,
+    };
+  }
+}
 
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
   async function procedure(opts: ProcedureCallOptions<unknown>) {
@@ -546,66 +596,8 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       throw new Error(codeblock);
     }
 
-    // run the middlewares recursively with the resolver as the last one
-    async function callRecursive(
-      callOpts: {
-        ctx: any;
-        index: number;
-        input?: unknown;
-        getRawInput?: GetRawInputFn;
-      } = {
-        index: 0,
-        ctx: opts.ctx,
-      },
-    ): Promise<MiddlewareResult<any>> {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const middleware = _def.middlewares[callOpts.index]!;
-        const result = await middleware({
-          ctx: callOpts.ctx,
-          type: opts.type,
-          path: opts.path,
-          getRawInput: callOpts.getRawInput ?? opts.getRawInput,
-          meta: _def.meta,
-          input: callOpts.input,
-          next(_nextOpts?: any) {
-            const nextOpts = _nextOpts as
-              | {
-                  ctx?: Record<string, unknown>;
-                  input?: unknown;
-                  getRawInput?: GetRawInputFn;
-                }
-              | undefined;
-
-            return callRecursive({
-              index: callOpts.index + 1,
-              ctx:
-                nextOpts && 'ctx' in nextOpts
-                  ? { ...callOpts.ctx, ...nextOpts.ctx }
-                  : callOpts.ctx,
-              input:
-                nextOpts && 'input' in nextOpts
-                  ? nextOpts.input
-                  : callOpts.input,
-              getRawInput:
-                nextOpts && 'getRawInput' in nextOpts
-                  ? nextOpts.getRawInput
-                  : callOpts.getRawInput,
-            });
-          },
-        });
-        return result;
-      } catch (cause) {
-        return {
-          ok: false,
-          error: getTRPCErrorFromUnknown(cause),
-          marker: middlewareMarker,
-        };
-      }
-    }
-
     // there's always at least one "next" since we wrap this.resolver in a middleware
-    const result = await callRecursive();
+    const result = await callRecursive(0, _def, opts);
 
     if (!result) {
       throw new TRPCError({

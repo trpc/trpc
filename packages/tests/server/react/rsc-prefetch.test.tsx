@@ -10,23 +10,24 @@ import { konn } from 'konn';
 import React from 'react';
 import { z } from 'zod';
 
-// mock of React.cache deduplication
-const cache = <T extends (...args: any[]) => any>(fn: T) => {
-  const cache = new Map<string, ReturnType<T>>();
-  return (...args: Parameters<T>) => {
-    const key = JSON.stringify(args);
-    if (cache.has(key)) {
-      return cache.get(key);
-    }
-    const result = fn(...args);
-    cache.set(key, result);
-    return result;
-  };
-};
-
 const ctx = konn()
   .beforeEach(() => {
+    // mock of React.cache deduplication
+    const cache = <T extends (...args: any[]) => any>(fn: T) => {
+      const cache = new Map<string, ReturnType<T>>();
+      return (...args: Parameters<T>) => {
+        const key = JSON.stringify(args);
+        if (cache.has(key)) {
+          return cache.get(key);
+        }
+        const result = fn(...args);
+        cache.set(key, result);
+        return result;
+      };
+    };
+
     const t = initTRPC.create();
+    const postByIdInvokations = vi.fn();
     const appRouter = t.router({
       post: t.router({
         byId: t.procedure
@@ -35,7 +36,13 @@ const ctx = konn()
               id: z.string(),
             }),
           )
-          .query(() => '__result' as const),
+          .query((opts) => {
+            postByIdInvokations({
+              input: opts.input,
+            });
+
+            return `__result${opts.input.id}` as const;
+          }),
       }),
     });
 
@@ -70,6 +77,8 @@ const ctx = konn()
       ...ctx,
       trpc,
       HydrateClient,
+      getQueryClient,
+      postByIdInvokations,
     };
   })
   .afterEach(async (ctx) => {
@@ -78,21 +87,31 @@ const ctx = konn()
   .done();
 
 test('rsc prefetch helpers', async () => {
-  const { client, App, trpc, HydrateClient } = ctx;
+  const { client, App, trpc, HydrateClient, getQueryClient } = ctx;
 
   const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
   function MyComponent() {
-    const { data } = client.post.byId.useQuery({
+    const q1 = client.post.byId.useQuery({
       id: '1',
     });
 
-    return <>{data}</>;
+    const q2 = client.post.byId.useQuery({
+      id: '2',
+    });
+
+    return (
+      <>
+        {q1.data}
+        {q2.data}
+      </>
+    );
   }
 
   // Imaginary RSC prefetch parent component
   function Parent() {
     void trpc.post.byId.prefetch({ id: '1' });
+    void trpc.post.byId.prefetch({ id: '2' });
     return (
       <HydrateClient>
         <MyComponent />
@@ -100,14 +119,16 @@ test('rsc prefetch helpers', async () => {
     );
   }
 
-  const utils = render(
+  const utils1 = render(
     <App>
       <Parent />
     </App>,
   );
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`__result`);
+    expect(utils1.container).toHaveTextContent('__result1');
+    expect(utils1.container).toHaveTextContent('__result2');
   });
+  expect(ctx.postByIdInvokations).toHaveBeenCalledTimes(2);
 
   // Should not have fetched from CC but taken promise from server client
   expect(fetchSpy).toHaveBeenCalledTimes(0);

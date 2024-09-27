@@ -47,10 +47,11 @@ test('chainer', async () => {
       path: 'hello',
       input: null,
       context: {},
+      signal: null,
     },
   });
 
-  const result = await observableToPromise(chain).promise;
+  const result = await observableToPromise(chain);
   expect(result?.context?.['response']).toBeTruthy();
   result.context!['response'] = '[redacted]' as any;
   expect(result).toMatchInlineSnapshot(`
@@ -93,6 +94,7 @@ test('cancel request', async () => {
       path: 'hello',
       input: null,
       context: {},
+      signal: null,
     },
   });
 
@@ -134,6 +136,7 @@ describe('batching', () => {
         path: 'hello',
         input: null,
         context: {},
+        signal: null,
       },
     });
 
@@ -145,12 +148,13 @@ describe('batching', () => {
         path: 'hello',
         input: 'alexdotjs',
         context: {},
+        signal: null,
       },
     });
 
     const results = await Promise.all([
-      observableToPromise(chain1).promise,
-      observableToPromise(chain2).promise,
+      observableToPromise(chain1),
+      observableToPromise(chain2),
     ]);
     for (const res of results) {
       expect(res?.context?.['response']).toBeTruthy();
@@ -249,6 +253,7 @@ describe('batching', () => {
         path: 'deferred',
         input: { wait: 2 },
         context: {},
+        signal: null,
       },
     });
 
@@ -260,12 +265,13 @@ describe('batching', () => {
         path: 'deferred',
         input: { wait: 1 },
         context: {},
+        signal: null,
       },
     });
 
     const results = await Promise.all([
-      observableToPromise(chain1).promise,
-      observableToPromise(chain2).promise,
+      observableToPromise(chain1),
+      observableToPromise(chain2),
     ]);
     for (const res of results) {
       expect(res?.context?.['response']).toBeTruthy();
@@ -479,6 +485,7 @@ describe('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        signal: null,
       },
     })
       .subscribe({})
@@ -506,6 +513,7 @@ describe('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        signal: null,
       },
     })
       .subscribe({})
@@ -527,6 +535,7 @@ describe('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        signal: null,
       },
     })
       .subscribe({})
@@ -549,6 +558,7 @@ describe('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        signal: null,
       },
     })
       .subscribe({})
@@ -578,6 +588,7 @@ describe('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        signal: null,
       },
     })
       .subscribe({})
@@ -607,6 +618,7 @@ describe('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        signal: null,
       },
     })
       .subscribe({})
@@ -640,6 +652,7 @@ describe('loggerLink', () => {
         context: {
           ok: true,
         },
+        signal: null,
       },
     })
       .subscribe({})
@@ -671,6 +684,7 @@ describe('loggerLink', () => {
         context: {
           ok: true,
         },
+        signal: null,
       },
     })
       .subscribe({})
@@ -694,6 +708,7 @@ describe('loggerLink', () => {
         input: null,
         path: 'n/a',
         context: {},
+        signal: null,
       },
     })
       .subscribe({})
@@ -706,6 +721,7 @@ describe('loggerLink', () => {
         "id": 1,
         "input": null,
         "path": "n/a",
+        "signal": null,
         "type": "query",
       }
     `);
@@ -720,6 +736,7 @@ describe('loggerLink', () => {
         "input": null,
         "path": "n/a",
         "result": [TRPCClientError: ..],
+        "signal": null,
         "type": "query",
       }
     `);
@@ -810,10 +827,11 @@ test('init with URL object', async () => {
       path: 'hello',
       input: null,
       context: {},
+      signal: null,
     },
   });
 
-  const result = await observableToPromise(chain).promise;
+  const result = await observableToPromise(chain);
   expect(result?.context?.['response']).toBeTruthy();
   result.context!['response'] = '[redacted]' as any;
   expect(result).toMatchInlineSnapshot(`

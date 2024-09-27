@@ -33,9 +33,7 @@ export function createServer(
   return {
     url,
     close: async () => {
-      await new Promise((resolve) => {
-        server.close(resolve);
-      });
+      await forceClose();
     },
     restart: async () => {
       await forceClose();

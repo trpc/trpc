@@ -154,6 +154,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
             getRawInput: async () => queryOpts.input,
             ctx,
             type: 'query',
+            signal: undefined,
           });
         },
       };

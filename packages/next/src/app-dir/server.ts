@@ -18,6 +18,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createRecursiveProxy,
+  formDataToObject,
   getErrorShape,
   getTRPCErrorFromUnknown,
   transformTRPCResponse,
@@ -27,7 +28,6 @@ import { revalidateTag } from 'next/cache';
 import { isNotFoundError } from 'next/dist/client/components/not-found';
 import { isRedirectError } from 'next/dist/client/components/redirect';
 import { cache } from 'react';
-import { formDataToObject } from './formDataToObject';
 import type {
   ActionHandlerDef,
   CreateTRPCNextAppRouterOptions,
@@ -158,6 +158,8 @@ export function experimental_createServerActionHandler<
               path: '',
               getRawInput: async () => rawInput,
               type: proc._def.type,
+              // is it possible to get the AbortSignal from the request?
+              signal: undefined,
             });
 
         const transformedJSON = transformTRPCResponse(config, {

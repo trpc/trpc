@@ -435,7 +435,7 @@ details p {
 }
 
 .DocSearch.DocSearch-Button {
-  @apply rounded-md bg-zinc-100 dark:bg-zinc-800;
+  @apply sm:min-w-[139px] rounded-md bg-zinc-100 dark:bg-zinc-800;
 }
 
 .DocSearch-Button-Keys {

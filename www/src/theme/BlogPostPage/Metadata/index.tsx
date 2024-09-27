@@ -4,7 +4,7 @@ import React from 'react';
 import { blogParams } from '../../../../og-image/utils/zodParams';
 import { useEnv } from '../../../utils/useEnv';
 
-export default function BlogPostPageMetadata(): JSX.Element {
+export default function BlogPostPageMetadata(): React.JSX.Element {
   const { metadata } = useBlogPost();
   const { title, description, date, tags, authors, frontMatter } = metadata;
   const { keywords } = frontMatter;

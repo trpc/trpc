@@ -46,6 +46,7 @@ test('untyped caller', async () => {
     path: 'test',
     type: 'query',
     input: 'foo',
+    signal: undefined,
   });
   expect(result).toBe('foo');
 });
@@ -70,6 +71,7 @@ test('getRawInput fails', async () => {
       path: 'test',
       type: 'query',
       input: 'foo',
+      signal: undefined,
     }),
   );
 

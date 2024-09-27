@@ -9,9 +9,11 @@ import type { DecorateRouterRecord } from '../shared';
 export type QueryType = 'any' | 'infinite' | 'query';
 
 export type TRPCQueryKey = [
-  string[],
+  readonly string[],
   { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
 ];
+
+export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]
 
 type ProcedureOrRouter =
   | DecoratedMutation<any>
@@ -24,7 +26,7 @@ type ProcedureOrRouter =
  * storing in tanstack query.
  **/
 export function getQueryKeyInternal(
-  path: string[],
+  path: readonly string[],
   input: unknown,
   type: QueryType,
 ): TRPCQueryKey {
@@ -36,6 +38,8 @@ export function getQueryKeyInternal(
   const splitPath = path.flatMap((part) => part.split('.'));
 
   if (!input && (!type || type === 'any')) {
+    // this matches also all mutations (see `getMutationKeyInternal`)
+
     // for `utils.invalidate()` to match all queries (including vanilla react-query)
     // we don't want nested array if path is empty, i.e. `[]` instead of `[[]]`
     return splitPath.length ? [splitPath] : ([] as unknown as TRPCQueryKey);
@@ -67,6 +71,10 @@ export function getQueryKeyInternal(
       ...(type && type !== 'any' && { type: type }),
     },
   ];
+}
+
+export function getMutationKeyInternal(path: readonly string[]) {
+  return getQueryKeyInternal(path, undefined, 'any') as TRPCMutationKey;
 }
 
 type GetInfiniteQueryInput<
@@ -115,3 +123,16 @@ export type QueryKeyKnown<TInput, TType extends Exclude<QueryType, 'any'>> = [
   string[],
   { input?: GetQueryProcedureInput<TInput>; type: TType }?,
 ];
+
+/**
+ * Method to extract the mutation key for a procedure
+ * @param procedure - procedure
+ * @link https://trpc.io/docs/v11/getQueryKey#mutations
+ */
+export function getMutationKey<TProcedure extends DecoratedMutation<any>>(
+  procedure: TProcedure,
+) {
+  // @ts-expect-error - we don't expose _def on the type layer
+  const path = procedure._def().path as string[];
+  return getMutationKeyInternal(path);
+}

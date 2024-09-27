@@ -13,6 +13,7 @@ import {
   fetchHTTPResponse,
   getBody,
   getUrl,
+  mergeAbortSignals,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import type { Operation, TRPCLink } from './types';
@@ -57,90 +58,82 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
             type,
             path,
             inputs,
+            signal: null,
           });
 
           return url.length <= maxURLLength;
         },
-        fetch(batchOps) {
+        async fetch(batchOps) {
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
 
-          const ac = resolvedOpts.AbortController
-            ? new resolvedOpts.AbortController()
-            : null;
-          const responsePromise = fetchHTTPResponse(
-            {
-              ...resolvedOpts,
-              type,
-              contentTypeHeader: 'application/json',
-              trpcAcceptHeader: 'application/jsonl',
-              getUrl,
-              getBody,
-              inputs,
-              path,
-              headers() {
-                if (!opts.headers) {
-                  return {};
-                }
-                if (typeof opts.headers === 'function') {
-                  return opts.headers({
-                    opList: batchOps as NonEmptyArray<Operation>,
-                  });
-                }
-                return opts.headers;
-              },
-            },
-            ac,
-          );
+          const ac = mergeAbortSignals(batchOps);
 
-          return {
-            promise: responsePromise.then(async (res) => {
-              const [head] = await jsonlStreamConsumer<
-                Record<string, Promise<any>>
-              >({
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                from: res.body!,
-                deserialize: resolvedOpts.transformer.output.deserialize,
-                // onError: console.error,
-                formatError(opts) {
-                  const error = opts.error as TRPCErrorShape;
-                  return TRPCClientError.from({
-                    error,
-                  });
-                },
+          const responsePromise = fetchHTTPResponse({
+            ...resolvedOpts,
+            signal: ac.signal,
+            type,
+            contentTypeHeader: 'application/json',
+            trpcAcceptHeader: 'application/jsonl',
+            getUrl,
+            getBody,
+            inputs,
+            path,
+            headers() {
+              if (!opts.headers) {
+                return {};
+              }
+              if (typeof opts.headers === 'function') {
+                return opts.headers({
+                  opList: batchOps as NonEmptyArray<Operation>,
+                });
+              }
+              return opts.headers;
+            },
+          });
+
+          const res = await responsePromise;
+          const [head] = await jsonlStreamConsumer<
+            Record<string, Promise<any>>
+          >({
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            from: res.body!,
+            deserialize: resolvedOpts.transformer.output.deserialize,
+            // onError: console.error,
+            formatError(opts) {
+              const error = opts.error as TRPCErrorShape;
+              return TRPCClientError.from({
+                error,
               });
-
-              const promises = Object.keys(batchOps).map(
-                async (key): Promise<HTTPResult> => {
-                  let json: TRPCResponse = await Promise.resolve(head[key]);
-
-                  if ('result' in json) {
-                    /**
-                     * Not very pretty, but we need to unwrap nested data as promises
-                     * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
-                     */
-                    const result = await Promise.resolve(json.result);
-                    json = {
-                      result: {
-                        data: await Promise.resolve(result.data),
-                      },
-                    };
-                  }
-
-                  return {
-                    json,
-                    meta: {
-                      response: res,
-                    },
-                  };
-                },
-              );
-              return promises;
-            }),
-            cancel() {
-              ac?.abort();
             },
-          };
+            abortController: ac,
+          });
+          const promises = Object.keys(batchOps).map(
+            async (key): Promise<HTTPResult> => {
+              let json: TRPCResponse = await Promise.resolve(head[key]);
+
+              if ('result' in json) {
+                /**
+                 * Not very pretty, but we need to unwrap nested data as promises
+                 * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
+                 */
+                const result = await Promise.resolve(json.result);
+                json = {
+                  result: {
+                    data: await Promise.resolve(result.data),
+                  },
+                };
+              }
+
+              return {
+                json,
+                meta: {
+                  response: res,
+                },
+              };
+            },
+          );
+          return promises;
         },
       };
     };
@@ -158,7 +151,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
           );
         }
         const loader = loaders[op.type];
-        const { promise, cancel } = loader.load(op);
+        const promise = loader.load(op);
 
         let _res = undefined as HTTPResult | undefined;
         promise
@@ -191,7 +184,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
           });
 
         return () => {
-          cancel();
+          // noop
         };
       });
     };
