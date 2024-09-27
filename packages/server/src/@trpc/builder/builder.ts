@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
+import type { TypeError } from '@trpc/server/unstable-core-do-not-import/types';
+
 export type Assign<T1, T2> = {
   [$Key in keyof T1 | keyof T2]: $Key extends keyof T2
     ? T2[$Key]
@@ -14,13 +16,14 @@ type UnionToIntersection<T> = (T extends any ? (k: T) => void : never) extends (
   ? I
   : never;
 
-///////////// module base ////////////
+export const loadedModules = Symbol();
 
+///////////// module base ////////////
 export interface MiddlewareOptions {
   /**
-   * THe modules that are being used
+   * The modules that are being used
    */
-  $module: BuilderModuleName;
+  [loadedModules]: BuilderModuleName;
   ctx: any;
   ctx_overrides: any;
 
@@ -38,7 +41,7 @@ export type GetModuleDef<
 
 const $typesSymbol = Symbol();
 export type Builder<TOptions extends MiddlewareOptions> = UnionToIntersection<
-  BuilderModules<TOptions>[TOptions['$module']]['builderProps']
+  BuilderModules<TOptions>[TOptions[typeof loadedModules]]['builderProps']
 > & {
   [$typesSymbol]: TOptions;
 };
@@ -64,9 +67,24 @@ export type Module<TName extends BuilderModuleName> = {
   };
 };
 
+type CreateBuilder<TModules extends BuilderModuleName> = <
+  TOptions extends Partial<Omit<MiddlewareOptions, typeof loadedModules>>,
+>() => Builder<
+  Assign<
+    {
+      ctx: object;
+      meta: object;
+      ctx_overrides: object;
+    },
+    TOptions
+  > & {
+    [loadedModules]: TModules;
+  }
+>;
+
 export function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
   modules: TModules,
-) {
+): CreateBuilder<TModules[number]['name']> {
   type $Name = TModules[number]['name'];
   type GetModuleDef<TOptions extends MiddlewareOptions = any> =
     BuilderModules<TOptions>;
@@ -80,21 +98,8 @@ export function buildApi<TModules extends [Module<any>, ...Module<any>[]]>(
     Object.assign(builderProps, module.builderProps);
   }
 
-  return {
-    createBuilder: <
-      TOptions extends Omit<Partial<MiddlewareOptions>, '$module'>,
-    >(): Builder<
-      Assign<
-        {
-          ctx: object;
-          meta: object;
-          ctx_overrides: object;
-        },
-        Assign<TOptions, { $module: $Name }>
-      >
-    > => {
-      throw new Error('Not implemented');
-    },
+  return function createBuilder() {
+    throw new Error('Not implemented');
   };
 }
 

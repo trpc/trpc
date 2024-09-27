@@ -4,12 +4,7 @@ import type { Builder, inferBuilderOptions } from './builder';
 import { buildApi, type MiddlewareOptions, type Module } from './builder';
 import { coreModule } from './core';
 
-export interface CoreModuleOptions extends MiddlewareOptions {
-  core: true;
-}
-
 ////////// extension definition //////////
-
 interface ExtensionModuleOptions {
   ext: true;
 }
@@ -40,85 +35,10 @@ const extensionModule = (): Module<typeof extension> => ({
 
 //////// build api /////////
 
-{
-  // core only
-  const api = buildApi([coreModule()]);
-
-  const builder = api.createBuilder<{
-    ctx: {
-      foo: 'bar';
-    };
-  }>();
-
-  const _res = builder.coreFn();
-  //     ^?
-
-  // @ts-expect-error - extension not added
-  builder.extFn();
-}
-
-{
-  // core only
-  const api = buildApi([coreModule()]);
-
-  const builder = api.createBuilder<{
-    ctx: {
-      foo: 'bar';
-    };
-  }>();
-
-  const _res = builder.coreFn();
-  //     ^?
-
-  // @ts-expect-error - extension not added
-  builder.extFn();
-}
-{
-  // extension only
-  const api = buildApi([extensionModule()]);
-
-  const builder = api.createBuilder<{
-    //
-  }>();
-
-  builder.extFn();
-
-  // @ts-expect-error - core not added
-  builder.coreFn();
-}
-
-{
-  // core + extension
-  const api = buildApi([coreModule(), extensionModule()]);
-
-  const builder = api.createBuilder<{
-    ctx: {
-      foo: 'bar';
-    };
-  }>();
-
-  builder;
-  // ^?
-
-  const _res1 = builder.extFn();
-
-  //     ^?
-  const res2 = builder.coreFn();
-
-  type $Options = inferBuilderOptions<typeof res2>;
-  expectTypeOf<$Options>().toMatchTypeOf<{
-    _________ADDED_FROM_CORE_________: true;
-  }>();
-
-  //     ^?
-
-  const _res3 = builder.coreFn().extFn().coreFn();
-}
-
 test('core module', () => {
   const api = buildApi([coreModule()]);
 
-  const builder = api.createBuilder<{
+  const builder = api<{
     ctx: {
       foo: 'bar';
     };
@@ -138,7 +58,7 @@ test('core module', () => {
 test('extension module', () => {
   const api = buildApi([extensionModule()]);
 
-  const builder = api.createBuilder<{
+  const builder = api<{
     //
   }>();
 
@@ -148,7 +68,7 @@ test('extension module', () => {
 test('core + extension', () => {
   const api = buildApi([coreModule(), extensionModule()]);
 
-  const builder = api.createBuilder<{
+  const builder = api<{
     ctx: {
       foo: 'bar';
     };
