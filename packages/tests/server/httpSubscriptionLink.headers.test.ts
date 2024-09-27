@@ -134,6 +134,7 @@ const ctx = konn()
                 shouldReinitialize(status, _error) {
                   const willRestart = [401, 403].includes(status);
                   if (willRestart) {
+                    // eslint-disable-next-line no-console
                     console.log('Restarting EventSource due to 401/403 error');
                   }
                   return willRestart;
