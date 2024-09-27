@@ -319,11 +319,11 @@ export const allSponsors = [
     "createdAt": 1727023800000
   },
   {
-    "name": "Keenetics",
-    "imgSrc": "https://github.com/keenetics.png",
+    "name": "KeenEthics",
+    "imgSrc": "https://github.com/keenethics.png",
     "weight": 9,
-    "login": "Keenetics",
-    "link": "https://keenetics.com",
+    "login": "keenethics",
+    "link": "https://keenethics.com",
     "createdAt": 1727395200000
   },
   {
