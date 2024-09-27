@@ -137,7 +137,7 @@ export const allSponsors = [
   {
     "name": "Tom Ballinger",
     "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
-    "weight": 5,
+    "weight": 6,
     "login": "thomasballinger",
     "link": "http://ballingt.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1662563270000
@@ -273,7 +273,7 @@ export const allSponsors = [
   {
     "name": "Jaron Heard",
     "imgSrc": "https://avatars.githubusercontent.com/u/7065695?u=127a7eca50605c12366363d6aba3da9e749aeff7&v=4",
-    "weight": 2,
+    "weight": 3,
     "login": "jaronheard",
     "link": "http://www.jaronheard.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1722033178000
@@ -309,5 +309,29 @@ export const allSponsors = [
     "login": "zeroxkitakitsune",
     "link": "https://github.com/zeroxkitakitsune",
     "createdAt": 1725668156000
+  },
+  {
+    "name": "Banks Nussman",
+    "imgSrc": "https://avatars.githubusercontent.com/u/6440455?u=620a6db2fd54f8b2388ee02e5d963c743af89f34&v=4",
+    "weight": 2,
+    "login": "bnussman",
+    "link": "https://nussman.us/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1727023800000
+  },
+  {
+    "name": "Keenetics",
+    "imgSrc": "https://github.com/keenetics.png",
+    "weight": 9,
+    "login": "Keenetics",
+    "link": "https://keenetics.com",
+    "createdAt": 1727395200000
+  },
+  {
+    "name": "Gadi Cohen",
+    "imgSrc": "https://avatars.githubusercontent.com/u/381978?v=4",
+    "weight": 2,
+    "login": "gadicc",
+    "link": "https://github.com/gadicc",
+    "createdAt": 1727433891000
   }
 ] as const;

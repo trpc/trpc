@@ -32,7 +32,7 @@ import {
 
 const trpcClient = createTRPCClient<AppRouter>({
   /**
-   * @link https://trpc.io/docs/v11/client/links
+   * @see https://trpc.io/docs/v11/client/links
    */
   links: [
     // adds pretty logs to your console in development and logs errors in production
@@ -331,7 +331,7 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   eventSourceOptions?: CallbackOrValue<EventSourceInit>;
   /**
    * Data transformer
-   * @link https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/v11/data-transformers
    **/
   transformer?: DataTransformerOptions;
 };

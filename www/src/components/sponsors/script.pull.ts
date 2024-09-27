@@ -205,7 +205,7 @@ async function main() {
     // rawList.push({
     //   __typename: 'Organization',
     //   name: 'Tola',
-    //   imgSrc: 'https://avatars.githubusercontent.com/u/92736868?v=4',
+    //   imgSrc: 'https://github.com/tolahq.png',
     //   monthlyPriceInDollars: 1110,
     //   link: 'https://tolahq.com/?ref=trpc',
     //   privacyLevel: 'PUBLIC',
@@ -213,6 +213,17 @@ async function main() {
     //   // 8 months between 1st of sept and 1st of april
     //   createdAt: Date.now() - 8 * 30 * 24 * 60 * 60 * 1000,
     // });
+    // add keenetics
+    rawList.push({
+      __typename: 'Organization',
+      name: 'Keenetics',
+      imgSrc: 'https://github.com/keenetics.png',
+      monthlyPriceInDollars: 1110,
+      link: 'https://keenetics.com',
+      privacyLevel: 'PUBLIC',
+      login: 'Keenetics',
+      createdAt: new Date('2024-09-27').getTime(),
+    });
     const list = rawList.map((sponsor) => {
       // calculate total value
       const MONTH_MS = 30 * 24 * 60 * 60 * 1000;

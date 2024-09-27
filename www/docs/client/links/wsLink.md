@@ -37,7 +37,7 @@ export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
   /**
    * Data transformer
-   * @link https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/v11/data-transformers
    **/
   transformer?: DataTransformerOptions;
 }

@@ -54,7 +54,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
           /**
            * In a real app you probably don't want to use this manually
            * Checkout React Hook Form - it works great with tRPC
-           * @link https://react-hook-form.com/
+           * @see https://react-hook-form.com/
            */
           await postMessage();
         }}
@@ -316,7 +316,7 @@ export default function IndexPage() {
  * - Export `appRouter` & `createContext` from [trpc].ts
  * - Make the `opts` object optional on `createContext()`
  *
- * @link https://trpc.io/docs/v11/ssg
+ * @see https://trpc.io/docs/v11/ssg
  */
 // export const getStaticProps = async (
 //   context: GetStaticPropsContext<{ filter: string }>,

@@ -50,7 +50,7 @@ type DecorateQueryProcedure<
   TProcedure extends AnyQueryProcedure,
 > = {
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
    */
   fetch(
     input: inferProcedureInput<TProcedure>,
@@ -61,7 +61,7 @@ type DecorateQueryProcedure<
   ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchinfinitequery
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchinfinitequery
    */
   fetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -78,7 +78,7 @@ type DecorateQueryProcedure<
   >;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientprefetchquery
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientprefetchquery
    */
   prefetch(
     input: inferProcedureInput<TProcedure>,
@@ -89,7 +89,7 @@ type DecorateQueryProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientprefetchinfinitequery
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientprefetchinfinitequery
    */
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -101,7 +101,7 @@ type DecorateQueryProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientensurequerydata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientensurequerydata
    */
   ensureData(
     input: inferProcedureInput<TProcedure>,
@@ -112,7 +112,7 @@ type DecorateQueryProcedure<
   ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientinvalidatequeries
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientinvalidatequeries
    */
   invalidate(
     input?: DeepPartial<inferProcedureInput<TProcedure>>,
@@ -135,7 +135,7 @@ type DecorateQueryProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientrefetchqueries
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientrefetchqueries
    */
   refetch(
     input?: inferProcedureInput<TProcedure>,
@@ -144,7 +144,7 @@ type DecorateQueryProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientcancelqueries
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientcancelqueries
    */
   cancel(
     input?: inferProcedureInput<TProcedure>,
@@ -152,7 +152,7 @@ type DecorateQueryProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientresetqueries
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientresetqueries
    */
   reset(
     input?: inferProcedureInput<TProcedure>,
@@ -160,7 +160,7 @@ type DecorateQueryProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
    */
   setData(
     /**
@@ -175,7 +175,7 @@ type DecorateQueryProcedure<
   ): void;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
    */
   setQueriesData(
     /**
@@ -191,7 +191,7 @@ type DecorateQueryProcedure<
   ): [QueryKey, inferTransformedProcedureOutput<TRoot, TProcedure>];
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
    */
   setInfiniteData(
     input: inferProcedureInput<TProcedure>,
@@ -211,14 +211,14 @@ type DecorateQueryProcedure<
   ): void;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata
    */
   getData(
     input?: inferProcedureInput<TProcedure>,
   ): inferTransformedProcedureOutput<TRoot, TProcedure> | undefined;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata
    */
   getInfiniteData(
     input?: inferProcedureInput<TProcedure>,
@@ -256,8 +256,8 @@ type DecorateMutationProcedure<
 type DecorateRouter = {
   /**
    * Invalidate the full router
-   * @link https://trpc.io/docs/v10/useContext#query-invalidation
-   * @link https://tanstack.com/query/v5/docs/framework/react/guides/query-invalidation
+   * @see https://trpc.io/docs/v10/useContext#query-invalidation
+   * @see https://tanstack.com/query/v5/docs/framework/react/guides/query-invalidation
    */
   invalidate(
     input?: undefined,

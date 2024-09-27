@@ -1,7 +1,8 @@
 // @ts-check
 /* eslint-disable @typescript-eslint/no-var-requires */
 
-const { parseEnv } = require('./src/utils/env');
+import {parseEnv} from "./src/utils/env";
+
 const env = parseEnv(process.env);
 
 module.exports = {

@@ -80,7 +80,7 @@ export interface Router<
   };
   /**
    * @deprecated use `t.createCallerFactory(router)` instead
-   * @link https://trpc.io/docs/v11/server/server-side-calls
+   * @see https://trpc.io/docs/v11/server/server-side-calls
    */
   createCaller: RouterCaller<TRoot, TRecord>;
 }

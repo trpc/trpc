@@ -36,7 +36,7 @@ interface RuntimeConfigOptions<TContext extends object, TMeta extends object>
   > {
   /**
    * Use a data transformer
-   * @link https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/v11/data-transformers
    */
   transformer?: DataTransformerOptions;
 }
@@ -46,7 +46,7 @@ type ContextCallback = (...args: any[]) => object | Promise<object>;
 class TRPCBuilder<TContext extends object, TMeta extends object> {
   /**
    * Add a context shape as a generic to the root object
-   * @link https://trpc.io/docs/v11/server/context
+   * @see https://trpc.io/docs/v11/server/context
    */
   context<TNewContext extends object | ContextCallback>() {
     return new TRPCBuilder<
@@ -57,7 +57,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
 
   /**
    * Add a meta shape as a generic to the root object
-   * @link https://trpc.io/docs/v11/quickstart
+   * @see https://trpc.io/docs/v11/quickstart
    */
   meta<TNewMeta extends object>() {
     return new TRPCBuilder<TContext, TNewMeta>();
@@ -65,7 +65,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
 
   /**
    * Create the root object
-   * @link https://trpc.io/docs/v11/server/routers#initialize-trpc
+   * @see https://trpc.io/docs/v11/server/routers#initialize-trpc
    */
   create<TOptions extends RuntimeConfigOptions<TContext, TMeta>>(
     opts?:
@@ -116,29 +116,29 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
       _config: config,
       /**
        * Builder object for creating procedures
-       * @link https://trpc.io/docs/v11/server/procedures
+       * @see https://trpc.io/docs/v11/server/procedures
        */
       procedure: createBuilder<$Root['ctx'], $Root['meta']>({
         meta: opts?.defaultMeta,
       }),
       /**
        * Create reusable middlewares
-       * @link https://trpc.io/docs/v11/server/middlewares
+       * @see https://trpc.io/docs/v11/server/middlewares
        */
       middleware: createMiddlewareFactory<$Root['ctx'], $Root['meta']>(),
       /**
        * Create a router
-       * @link https://trpc.io/docs/v11/server/routers
+       * @see https://trpc.io/docs/v11/server/routers
        */
       router: createRouterFactory<$Root>(config),
       /**
        * Merge Routers
-       * @link https://trpc.io/docs/v11/server/merging-routers
+       * @see https://trpc.io/docs/v11/server/merging-routers
        */
       mergeRouters,
       /**
        * Create a server-side caller for a router
-       * @link https://trpc.io/docs/v11/server/server-side-calls
+       * @see https://trpc.io/docs/v11/server/server-side-calls
        */
       createCallerFactory: createCallerFactory<$Root>(),
     };
@@ -147,7 +147,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
 
 /**
  * Builder to initialize the tRPC root object - use this exactly once per backend
- * @link https://trpc.io/docs/v11/quickstart
+ * @see https://trpc.io/docs/v11/quickstart
  */
 export const initTRPC = new TRPCBuilder();
 export type { TRPCBuilder };

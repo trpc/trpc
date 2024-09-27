@@ -123,7 +123,7 @@ export function createRootHooks<
 
   /**
    * Hack to make sure errors return `status`='error` when doing SSR
-   * @link https://github.com/trpc/trpc/pull/1645
+   * @see https://github.com/trpc/trpc/pull/1645
    */
   function useSSRQueryOptionsIfNeeded<
     TOptions extends { retryOnMount?: boolean } | undefined,

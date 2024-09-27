@@ -51,7 +51,7 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
   WithTRPCOptions<TRouter> & {
     /**
      * If you enable this, you also need to add a `ssrPrepass`-prop
-     * @link https://trpc.io/docs/client/nextjs/ssr
+     * @see https://trpc.io/docs/client/nextjs/ssr
      */
     ssr:
       | true
@@ -62,7 +62,7 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
     }) => ResponseMeta;
     /**
      * use `import { ssrPrepass } from '@trpc/next/ssrPrepass'`
-     * @link https://trpc.io/docs/client/nextjs/ssr
+     * @see https://trpc.io/docs/client/nextjs/ssr
      */
     ssrPrepass: TRPCPrepassHelper;
   };

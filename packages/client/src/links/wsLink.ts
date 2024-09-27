@@ -572,7 +572,7 @@ class TRPCWebSocketClosedError extends Error {
 }
 
 /**
- * @link https://trpc.io/docs/v11/client/links/wsLink
+ * @see https://trpc.io/docs/v11/client/links/wsLink
  */
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions<TRouter>,

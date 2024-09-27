@@ -47,14 +47,14 @@ export function TRPCProviders(props: Readonly<{ children: React.ReactNode }>) {
           true: unstable_httpSubscriptionLink({
             url: getUrl(),
             /**
-             * @link https://trpc.io/docs/v11/data-transformers
+             * @see https://trpc.io/docs/v11/data-transformers
              */
             transformer: SuperJSON,
           }),
           false: httpBatchLink({
             url: getUrl(),
             /**
-             * @link https://trpc.io/docs/v11/data-transformers
+             * @see https://trpc.io/docs/v11/data-transformers
              */
             transformer: SuperJSON,
           }),
