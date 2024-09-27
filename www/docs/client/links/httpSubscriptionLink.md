@@ -336,3 +336,12 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   transformer?: DataTransformerOptions;
 };
 ```
+
+## Framework Compatibility
+
+Before implementing `httpSubscriptionLink`, it's important to ensure that your framework supports the EventSource protocol. Some frameworks may have limitations or require additional configuration.
+
+:::caution
+**Next.js Compatibility:** Users of Next.js, particularly those using the Pages Router, should be aware of potential issues with Server-Sent Events (SSE) implementation. The Next.js Pages Router has known limitations in supporting SSE out of the box.
+
+For more information, refer to [this GitHub discussion](https://github.com/vercel/next.js/discussions/48427).
