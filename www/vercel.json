@@ -529,7 +529,7 @@
       "source": "/docs/websockets",
       "destination": "/docs/server/websockets",
       "permanent": true
-    }
+    },
     {
       "source": "/docs/subscriptions",
       "destination": "/docs/server/subscriptions",
