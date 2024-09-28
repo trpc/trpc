@@ -272,9 +272,6 @@ export function zIterable<
   yieldSchema: z.ZodType<TYieldIn, any, TYieldOut>,
   returnSchema?: z.ZodType<TReturnIn, any, TReturnOut>,
 ) {
-  type GeneratorIn = AsyncGenerator<TYieldIn, TReturnIn, unknown>;
-  type GeneratorOut = AsyncGenerator<TYieldOut, TReturnOut, unknown>;
-
   return z
     .custom<AsyncGenerator<TYieldIn, TReturnIn>>((val) => isAsyncIterable(val))
     .transform(async function* (iter) {
@@ -289,5 +286,9 @@ export function zIterable<
         yield yieldSchema.parseAsync(next.value);
       }
       return;
-    }) as any as z.ZodType<GeneratorOut, any, GeneratorIn>;
+    }) as any as z.ZodType<
+    AsyncGenerator<TYieldIn, TReturnIn, unknown>,
+    any,
+    AsyncGenerator<TYieldOut, TReturnOut, unknown>
+  >;
 }
