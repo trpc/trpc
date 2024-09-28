@@ -5,7 +5,7 @@ sidebar_label: WebSocket Link
 slug: /client/links/wsLink
 ---
 
-`wsLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../../further/websockets.md).
+`wsLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../../server/subscriptions.md)).
 
 ## Usage
 
@@ -26,7 +26,7 @@ const trpcClient = createTRPCClient<AppRouter>({
 
 ## Authentication / Connection params
 
-[See more here](../../further/websockets.md#connection-params)
+[See more here](../../server/websockets.md#connection-params)
 
 ## `wsLink` / `createWSClient` Options
 
