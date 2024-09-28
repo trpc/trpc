@@ -2,7 +2,7 @@
 id: subscriptions
 title: Subscriptions
 sidebar_label: Subscriptions
-slug: /subscriptions
+slug: /server/subscriptions
 ---
 
 ## Introduction

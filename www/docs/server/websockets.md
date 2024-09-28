@@ -2,13 +2,13 @@
 id: websockets
 title: WebSockets
 sidebar_label: WebSockets
-slug: /websockets
+slug: /server/websockets
 ---
 
 You can use WebSockets for all or some of the communication with your server, see [wsLink](../client/links/wsLink.md) for how to set it up on the client.
 
 :::tip
-The document here outlines the specific details of using WebSockets. For general usage of subscriptions, see [our subscriptions guide](../further/subscriptions.md).
+The document here outlines the specific details of using WebSockets. For general usage of subscriptions, see [our subscriptions guide](../server/subscriptions.md).
 :::
 
 ### Creating a WebSocket-server

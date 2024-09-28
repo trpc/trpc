@@ -152,7 +152,7 @@
       "items": [
         "further/faq",
         "further/rpc",
-        "further/subscriptions",
+        "server/subscriptions",
         "further/further-reading"
       ]
     },

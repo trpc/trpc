@@ -52,7 +52,7 @@ const trpcClient = createTRPCClient<AppRouter>({
 ```
 
 :::tip
-The document here outlines the specific details of using `httpSubscriptionLink`. For general usage of subscriptions, see [our subscriptions guide](../../further/subscriptions.md).
+The document here outlines the specific details of using `httpSubscriptionLink`. For general usage of subscriptions, see [our subscriptions guide](../../server/subscriptions.md).
 :::
 
 ## Headers and authorization / authentication
