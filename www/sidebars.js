@@ -1,7 +1,6 @@
 // @ts-check
-/* eslint-disable @typescript-eslint/no-var-requires */
 
-import {parseEnv} from "./src/utils/env";
+import { parseEnv } from './src/utils/env';
 
 const env = parseEnv(process.env);
 
@@ -63,6 +62,8 @@ module.exports = {
         'server/data-transformers',
         'server/metadata',
         'server/caching',
+        'server/subscriptions',
+        'server/websockets',
       ],
     },
     {
@@ -160,13 +161,7 @@ module.exports = {
         title: 'Extra Information',
         slug: '/further',
       },
-      items: [
-        'further/faq',
-        'further/rpc',
-        'further/subscriptions',
-        'further/websockets',
-        'further/further-reading',
-      ],
+      items: ['further/faq', 'further/rpc', 'further/further-reading'],
     },
     ...(env.TYPEDOC
       ? [

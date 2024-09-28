@@ -1,7 +1,12 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
+import {
+  routerToServerAndClientNew,
+  suppressLogs,
+  zAsyncGenerator,
+  zAsyncIterable,
+} from './___testHelpers';
 import { waitFor } from '@testing-library/react';
-import type { TRPCLink } from '@trpc/client';
+import type { TRPCClientError, TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   splitLink,
@@ -37,18 +42,20 @@ const ctx = konn()
 
     const router = t.router({
       sub: {
-        iterableEvent: t.procedure.subscription(async function* (opts) {
-          for await (const data of on(ee, 'data', {
-            signal: opts.signal,
-          })) {
-            const thing = data[0] as number | Error;
+        iterableEvent: t.procedure
+          .output(zAsyncIterable(z.number()))
+          .subscription(async function* (opts) {
+            for await (const data of on(ee, 'data', {
+              signal: opts.signal,
+            })) {
+              const thing = data[0] as number | Error;
 
-            if (thing instanceof Error) {
-              throw thing;
+              if (thing instanceof Error) {
+                throw thing;
+              }
+              yield thing;
             }
-            yield thing;
-          }
-        }),
+          }),
 
         iterableInfinite: t.procedure
           .input(
@@ -217,6 +224,44 @@ test(
     timeout: 60_000,
   },
 );
+
+test('iterable event with bad yield', async () => {
+  const onStarted = vi.fn<() => void>();
+  const onData = vi.fn<(data: number) => void>();
+  const onError = vi.fn<(err: TRPCClientError<typeof ctx.router>) => void>();
+  const subscription = ctx.client.sub.iterableEvent.subscribe(undefined, {
+    onStarted: onStarted,
+    onData(it) {
+      onData(it);
+    },
+    onError: onError,
+  });
+
+  await waitFor(() => {
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+
+  ctx.eeEmit(1);
+  ctx.eeEmit('NOT_A_NUMBER' as never);
+  await waitFor(() => {
+    expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
+  });
+  const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
+  expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
+  expect(serverError.message).toMatchInlineSnapshot(`
+    "[
+      {
+        "code": "invalid_type",
+        "expected": "number",
+        "received": "string",
+        "path": [],
+        "message": "Expected number, received string"
+      }
+    ]"
+  `);
+
+  subscription.unsubscribe();
+});
 
 test('disconnect and reconnect with an event id', async () => {
   const { client } = ctx;

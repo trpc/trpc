@@ -2,66 +2,14 @@
 id: websockets
 title: WebSockets
 sidebar_label: WebSockets
-slug: /websockets
+slug: /server/websockets
 ---
 
 You can use WebSockets for all or some of the communication with your server, see [wsLink](../client/links/wsLink.md) for how to set it up on the client.
 
-## Using Subscriptions
-
 :::tip
-
-- For a full-stack example have a look at [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
-- For a bare-minimum Node.js example see [/examples/standalone-server](https://github.com/trpc/trpc/tree/next/examples/standalone-server).
-
+The document here outlines the specific details of using WebSockets. For general usage of subscriptions, see [our subscriptions guide](../server/subscriptions.md).
 :::
-
-### Adding a subscription procedure
-
-```tsx title='server/router.ts'
-import { EventEmitter } from 'events';
-import { initTRPC } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
-import { z } from 'zod';
-
-// create a global event emitter (could be replaced by redis, etc)
-const ee = new EventEmitter();
-
-const t = initTRPC.create();
-
-export const appRouter = t.router({
-  onAdd: t.procedure.subscription(() => {
-    // return an `observable` with a callback which is triggered immediately
-    return observable<Post>((emit) => {
-      const onAdd = (data: Post) => {
-        // emit data to client
-        emit.next(data);
-      };
-
-      // trigger `onAdd()` when `add` is triggered in our event emitter
-      ee.on('add', onAdd);
-
-      // unsubscribe function when client disconnects or stops subscribing
-      return () => {
-        ee.off('add', onAdd);
-      };
-    });
-  }),
-  add: t.procedure
-    .input(
-      z.object({
-        id: z.string().uuid().optional(),
-        text: z.string().min(1),
-      }),
-    )
-    .mutation(async (opts) => {
-      const post = { ...opts.input }; /* [..] add to db */
-
-      ee.emit('add', post);
-      return post;
-    }),
-});
-```
 
 ### Creating a WebSocket-server
 
@@ -185,7 +133,6 @@ If you're fetching data based on the `lastEventId`, and capturing all events is 
 
 ```ts
 import EventEmitter, { on } from 'events';
-import type { Post } from '@prisma/client';
 import { tracked } from '@trpc/server';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
@@ -220,10 +167,6 @@ export const subRouter = router({
     }),
 });
 ```
-
-## Using React
-
-See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
 
 ## WebSockets RPC Specification
 

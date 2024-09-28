@@ -384,18 +384,33 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const dataAsIterable = isObservable(data)
             ? observableToAsyncIterable(data)
             : data;
+
           const stream = sseStreamProducer({
             ...config.experimental?.sseSubscriptions,
             data: dataAsIterable,
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {
+              const error = getTRPCErrorFromUnknown(errorOpts.error);
+              const input = call?.result();
+              const path = call?.path;
+              const type = call?.procedure?._def.type ?? 'unknown';
+
               const shape = getErrorShape({
                 config,
                 ctx,
-                error: getTRPCErrorFromUnknown(errorOpts.error),
-                input: call?.result(),
-                path: call?.path,
-                type: call?.procedure?._def.type ?? 'unknown',
+                error,
+                input,
+                path,
+                type,
+              });
+
+              opts.onError?.({
+                error,
+                path,
+                input,
+                ctx,
+                req: opts.req,
+                type,
               });
 
               return shape;

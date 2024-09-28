@@ -22,6 +22,7 @@ import type {
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
+import { z } from 'zod';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
@@ -246,3 +247,62 @@ export const ignoreErrors = async (fn: () => unknown) => {
 };
 
 export const doNotExecute = (_func: () => void) => true;
+
+function isAsyncIterable<TValue, TReturn = unknown>(
+  value: unknown,
+): value is AsyncIterable<TValue, TReturn> {
+  return !!value && typeof value === 'object' && Symbol.asyncIterator in value;
+}
+
+/**
+ * Zod schema for an async iterable
+ * - validates that the value is an async iterable
+ * - validates each item in the async iterable
+ * - validates the return value of the async iterable
+ */
+export function zAsyncGenerator<
+  TYieldIn,
+  TYieldOut,
+  TReturnIn = void,
+  TReturnOut = void,
+>(
+  yieldSchema: z.ZodType<TYieldIn, any, TYieldOut>,
+  returnSchema?: z.ZodType<TReturnIn, any, TReturnOut>,
+) {
+  return z
+    .custom<AsyncGenerator<TYieldIn, TReturnIn>>((val) => isAsyncIterable(val))
+    .transform(async function* (iter) {
+      const iterator = iter[Symbol.asyncIterator]();
+      let next;
+      while ((next = await iterator.next()) && !next.done) {
+        yield yieldSchema.parseAsync(next.value);
+      }
+      if (returnSchema) {
+        return await returnSchema.parseAsync(next.value);
+      }
+      return;
+    }) as any as z.ZodType<
+    AsyncGenerator<TYieldIn, TReturnIn, unknown>,
+    any,
+    AsyncGenerator<TYieldOut, TReturnOut, unknown>
+  >;
+}
+
+/**
+ * Zod schema for an async iterable
+ * - validates that the value is an async iterable
+ * - validates each item in the async iterable
+ */
+export function zAsyncIterable<TYieldIn, TYieldOut>(
+  yieldSchema: z.ZodType<TYieldIn, any, TYieldOut>,
+) {
+  return z
+    .custom<AsyncIterable<TYieldIn, void, unknown>>((val) =>
+      isAsyncIterable(val),
+    )
+    .transform(async function* (iter) {
+      for await (const data of iter) {
+        yield yieldSchema.parseAsync(data);
+      }
+    });
+}
