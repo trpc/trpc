@@ -22,6 +22,7 @@ import type {
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
+import { z } from 'zod';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
@@ -246,3 +247,47 @@ export const ignoreErrors = async (fn: () => unknown) => {
 };
 
 export const doNotExecute = (_func: () => void) => true;
+
+function isAsyncIterable<TValue>(
+  yieldValue: unknown,
+): yieldValue is AsyncGenerator<TValue> {
+  return (
+    !!yieldValue &&
+    typeof yieldValue === 'object' &&
+    Symbol.asyncIterator in yieldValue
+  );
+}
+
+/**
+ * Zod schema for an async iterable
+ * - validates that the value is an async iterable
+ * - validates each item in the async iterable
+ */
+export function zIterable<
+  TYieldIn,
+  TYieldOut,
+  TReturnIn = void,
+  TReturnOut = void,
+>(
+  yieldSchema: z.ZodType<TYieldIn, any, TYieldOut>,
+  returnSchema?: z.ZodType<TReturnIn, any, TReturnOut>,
+) {
+  type GeneratorIn = AsyncGenerator<TYieldIn, TReturnIn, unknown>;
+  type GeneratorOut = AsyncGenerator<TYieldOut, TReturnOut, unknown>;
+
+  return z
+    .custom<AsyncGenerator<TYieldIn, TReturnIn>>((val) => isAsyncIterable(val))
+    .transform(async function* (iter) {
+      const iterator = iter[Symbol.asyncIterator]();
+      let next;
+      while ((next = await iterator.next())) {
+        if (next.done) {
+          return returnSchema
+            ? await returnSchema.parseAsync(next.value)
+            : void 0;
+        }
+        yield yieldSchema.parseAsync(next.value);
+      }
+      return;
+    }) as any as z.ZodType<GeneratorOut, any, GeneratorIn>;
+}

@@ -3,6 +3,7 @@ import {
   routerToServerAndClientNew,
   waitError,
   waitTRPCClientError,
+  zIterable,
 } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
@@ -15,7 +16,10 @@ import {
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  isAsyncIterable,
+} from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -67,14 +71,32 @@ describe('no transformer', () => {
             return opts.input.id;
           }),
 
-        iterable: t.procedure.query(async function* () {
-          for (let i = 0; i < 10; i++) {
-            yield yieldSpy(i + 1);
-            await iterableDeferred.promise;
-            iterableDeferred = createDeferred();
-          }
-          return 'done';
-        }),
+        iterable: t.procedure
+          .input(
+            z
+              .object({
+                badYield: z.boolean(),
+                badReturn: z.boolean(),
+              })
+              .partial()
+              .optional(),
+          )
+          .output(zIterable(z.number(), z.string()))
+          .query(async function* (opts) {
+            for (let i = 0; i < 10; i++) {
+              yield yieldSpy(i + 1);
+              await iterableDeferred.promise;
+              iterableDeferred = createDeferred();
+            }
+
+            if (opts.input?.badYield) {
+              yield 'ONLY_YIELDS_NUMBERS' as never;
+            }
+            if (opts.input?.badReturn) {
+              return 123 as never;
+            }
+            return 'done';
+          }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -300,6 +322,64 @@ describe('no transformer', () => {
     expect(err.message).toMatchInlineSnapshot(
       `"Invalid response or stream interrupted"`,
     );
+  });
+
+  test('output validation iterable yield error', async () => {
+    const clientError = await waitError(async () => {
+      const iterable = await ctx.client.iterable.query({
+        badYield: true,
+      });
+      for await (const value of iterable) {
+        ctx.nextIterable();
+      }
+    }, TRPCClientError<typeof ctx.router>);
+
+    expect(clientError.data?.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(clientError.message).toMatchInlineSnapshot(`
+      "[
+        {
+          "code": "invalid_type",
+          "expected": "number",
+          "received": "string",
+          "path": [],
+          "message": "Expected number, received string"
+        }
+      ]"
+    `);
+    expect(ctx.onErrorSpy).toHaveBeenCalledOnce();
+
+    const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
+    expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(serverError.message).toMatchInlineSnapshot(`""`);
+  });
+
+  test('output validation iterable return error', async () => {
+    const clientError = await waitError(async () => {
+      const iterable = await ctx.client.iterable.query({
+        badReturn: true,
+      });
+      for await (const value of iterable) {
+        ctx.nextIterable();
+      }
+    }, TRPCClientError<typeof ctx.router>);
+
+    expect(clientError.data?.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(clientError.message).toMatchInlineSnapshot(`
+      "[
+        {
+          "code": "invalid_type",
+          "expected": "string",
+          "received": "number",
+          "path": [],
+          "message": "Expected string, received number"
+        }
+      ]"
+    `);
+    expect(ctx.onErrorSpy).toHaveBeenCalledOnce();
+
+    const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
+    expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(serverError.message).toMatchInlineSnapshot(`""`);
   });
 });
 
