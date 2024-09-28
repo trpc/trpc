@@ -487,9 +487,7 @@ export function createBuilder<TContext, TMeta>(
         resolver,
       ) as AnyMutationProcedure;
     },
-    subscription(
-      resolver: ProcedureResolver<any, any, any, any, any, $Output>,
-    ) {
+    subscription(resolver: ProcedureResolver<any, any, any, any, any, any>) {
       return createResolver({ ..._def, type: 'subscription' }, resolver) as any;
     },
     experimental_caller(caller) {
