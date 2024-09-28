@@ -3,7 +3,7 @@ import {
   routerToServerAndClientNew,
   waitError,
   waitTRPCClientError,
-  zIterable,
+  zAsyncGenerator,
 } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
@@ -81,7 +81,7 @@ describe('no transformer', () => {
               .partial()
               .optional(),
           )
-          .output(zIterable(z.number(), z.string()))
+          .output(zAsyncGenerator(z.number(), z.string()))
           .query(async function* (opts) {
             for (let i = 0; i < 10; i++) {
               yield yieldSpy(i + 1);

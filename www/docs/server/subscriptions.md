@@ -142,3 +142,55 @@ export const subRouter = router({
 Throwing an error in a generator function propagates to `trpc`'s `onError()` on the backend, but the error will not be sent to the client - the client will automatically reconnect based on the last event id that is [tracked using `tracked()`](#tracked).
 
 If this is surprising behavior to you and you have a finite amount of data to send, you should consider using [httpBatchStreamLink](../client/links/httpBatchStreamLink.md) instead.
+
+## Output validation {#output-validation}
+
+Since subscriptions are async iterators, you have to go through the iterator to validate the output.
+
+### Example with zod
+
+```ts title="zAsyncIterable.ts"
+function isAsyncIterable<TValue, TReturn = unknown>(
+  value: unknown,
+): value is AsyncIterable<TValue, TReturn> {
+  return !!value && typeof value === 'object' && Symbol.asyncIterator in value;
+}
+
+/**
+ * Zod schema for an async iterable
+ * - validates that the value is an async iterable
+ * - parses each item in the async iterable
+ */
+export function zAsyncIterable<TYieldIn, TYieldOut>(
+  yieldSchema: z.ZodType<TYieldIn, any, TYieldOut>,
+) {
+  return z
+    .custom<AsyncIterable<TYieldIn, void, unknown>>((val) =>
+      isAsyncIterable(val),
+    )
+    .transform(async function* (iter) {
+      for await (const data of iter) {
+        yield yieldSchema.parseAsync(data);
+      }
+    });
+}
+```
+
+Now you can use this helper to validate the output of your subscription procedures:
+
+```ts title="_app.ts"
+import { publicProcedure, router } from '../trpc';
+import { zAsyncIterable } from './zAsyncIterable';
+
+export const appRouter = router({
+  mySubscription: publicProcedure
+    .output(zAsyncIterable(z.number()))
+    .subscription(async function* (opts) {
+      for await (const data of on(ee, 'add', {
+        signal: opts.signal,
+      })) {
+        yield data as number;
+      }
+    }),
+});
+```

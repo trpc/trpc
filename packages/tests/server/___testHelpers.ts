@@ -248,22 +248,19 @@ export const ignoreErrors = async (fn: () => unknown) => {
 
 export const doNotExecute = (_func: () => void) => true;
 
-function isAsyncIterable<TValue>(
-  yieldValue: unknown,
-): yieldValue is AsyncGenerator<TValue> {
-  return (
-    !!yieldValue &&
-    typeof yieldValue === 'object' &&
-    Symbol.asyncIterator in yieldValue
-  );
+function isAsyncIterable<TValue, TReturn = unknown>(
+  value: unknown,
+): value is AsyncIterable<TValue, TReturn> {
+  return !!value && typeof value === 'object' && Symbol.asyncIterator in value;
 }
 
 /**
  * Zod schema for an async iterable
  * - validates that the value is an async iterable
  * - validates each item in the async iterable
+ * - validates the return value of the async iterable
  */
-export function zIterable<
+export function zAsyncGenerator<
   TYieldIn,
   TYieldOut,
   TReturnIn = void,
@@ -289,4 +286,23 @@ export function zIterable<
     any,
     AsyncGenerator<TYieldOut, TReturnOut, unknown>
   >;
+}
+
+/**
+ * Zod schema for an async iterable
+ * - validates that the value is an async iterable
+ * - validates each item in the async iterable
+ */
+export function zAsyncIterable<TYieldIn, TYieldOut>(
+  yieldSchema: z.ZodType<TYieldIn, any, TYieldOut>,
+) {
+  return z
+    .custom<AsyncIterable<TYieldIn, void, unknown>>((val) =>
+      isAsyncIterable(val),
+    )
+    .transform(async function* (iter) {
+      for await (const data of iter) {
+        yield yieldSchema.parseAsync(data);
+      }
+    });
 }

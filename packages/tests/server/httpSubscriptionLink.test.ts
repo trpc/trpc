@@ -2,7 +2,8 @@ import { EventEmitter, on } from 'node:events';
 import {
   routerToServerAndClientNew,
   suppressLogs,
-  zIterable,
+  zAsyncGenerator,
+  zAsyncIterable,
 } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, TRPCLink } from '@trpc/client';
@@ -42,7 +43,7 @@ const ctx = konn()
     const router = t.router({
       sub: {
         iterableEvent: t.procedure
-          .output(zIterable(z.number()))
+          .output(zAsyncIterable(z.number()))
           .subscription(async function* (opts) {
             for await (const data of on(ee, 'data', {
               signal: opts.signal,
