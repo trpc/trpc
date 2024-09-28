@@ -13,8 +13,6 @@ Use subscriptions when you need to push real-time updates to the client.
 
 The client establishes and maintains a persistent connection to the server. It automatically attempts to reconnect and recovers gracefully if disconnected with the help of [`tracked()`](#tracked) events.
 
-If you have a finite amount of events to stream, you should consider using [httpBatchStreamLink](../client/links/httpBatchStreamLink.md) instead.
-
 ## WebSockets or Server-sent Events?
 
 You can either use WebSockets or [Server-sent Events](https://en.wikipedia.org/wiki/Server-sent_events) (SSE) to setup real-time subscriptions in tRPC.
@@ -142,3 +140,5 @@ export const subRouter = router({
 ## Error handling
 
 Throwing an error in a generator function propagates to `trpc`'s `onError()` on the backend, but the error will not be sent to the client - the client will automatically reconnect based on the last event id that is [tracked using `tracked()`](#tracked).
+
+If this is surprising behavior to you and you have a finite amount of data to send, you should consider using [httpBatchStreamLink](../client/links/httpBatchStreamLink.md) instead.
