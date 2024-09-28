@@ -245,3 +245,7 @@ export const appRouter = t.router({
   }),
 });
 ```
+
+## Subscriptions
+
+For information on subscriptions, see [our subscriptions guide](../further/subscriptions.md).

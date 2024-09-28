@@ -11,6 +11,8 @@ Use subscriptions when you need to push real-time updates to the client whenever
 
 The client connects to the server and keeps the connection open and will with to the best of its ability reconnect and gracefully recover if you track the emissions using [`tracked()`](#tracked).
 
+If you have a finite amount of events to stream, you should consider using [httpBatchStreamLink](../client/links/httpBatchStreamLink.md) instead.
+
 ## WebSockets or Server-sent Events?
 
 You can either use WebSockets or [Server-sent Events](https://en.wikipedia.org/wiki/Server-sent_events) (SSE) to setup real-time subscriptions in tRPC.
@@ -20,21 +22,13 @@ You can either use WebSockets or [Server-sent Events](https://en.wikipedia.org/w
 
 If you are unsure which one to use, we recommend using SSE for subscriptions as it's easier to setup and don't require setting up a WebSocket server.
 
-## When to use subscriptions?
-
-Subscriptions are a type of real-time event stream between the client and server.
-
-Use subscriptions when you need to push real-time updates to the client whenever the server emits a new event.
-
-The client connects to the server and keeps the connection open and will with to the best of its ability reconnect and gracefully recover if you track the emissions using `tracked()`.
-
-If you have a finite amount of events to stream, you should consider using [httpBatchStreamLink](../client/links/httpBatchStreamLink.md) instead.
-
 ## Reference projects
 
-- For a bare-minimum Node.js using **SSE** example see [/examples/standalone-server](https://github.com/trpc/trpc/tree/next/examples/standalone-server).
-- For a full-stack with **SSE** example see [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat).
-- For a full-stack with **WebSockets** example have a look at [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
+| Type       | Example Type                         | Link                                                                                                                       |
+| ---------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| SSE        | Bare-minimum Node.js SSE example     | [/examples/standalone-server](https://github.com/trpc/trpc/tree/next/examples/standalone-server)                           |
+| SSE        | Full-stack SSE implementation        | [github.com/trpc/examples-next-sse-chat](https://github.com/trpc/examples-next-sse-chat)                                   |
+| WebSockets | Full-stack WebSockets implementation | [github.com/trpc/examples-next-prisma-websockets-starter](https://github.com/trpc/examples-next-prisma-starter-websockets) |
 
 ## Basic example
 
