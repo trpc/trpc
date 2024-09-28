@@ -9,7 +9,7 @@ A procedure is a function which is exposed to the client, it can be one of:
 
 - a `Query` - used to fetch data, generally does not change any data
 - a `Mutation` - used to send data, often for create/update/delete purposes
-- a `Subscription` - you might not need this, and we have [dedicated documentation](/docs/subscriptions)
+- a `Subscription` - you might not need this, and we have [dedicated documentation](../further/subscriptions.md)
 
 Procedures in tRPC are very flexible primitives to create backend functions. They use an immutable builder pattern, which means you can [create reusable base procedures](#reusable-base-procedures) that share functionality among multiple procedures.
 
