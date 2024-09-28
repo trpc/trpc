@@ -1,8 +1,9 @@
+import { isObservable, transformObservable } from '../observable/observable';
 import { TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
-import type { GetRawInputFn, Overwrite, Simplify } from './types';
-import { isObject } from './utils';
+import type { GetRawInputFn, MaybePromise, Overwrite, Simplify } from './types';
+import { isAsyncIterable, isObject } from './utils';
 
 /** @internal */
 export const middlewareMarker = 'middlewareMarker' as 'middlewareMarker' & {
@@ -213,26 +214,50 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
  * @internal
  */
 export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
+  async function transformData(data: unknown) {
+    try {
+      return await parse(data);
+    } catch (cause) {
+      throw new TRPCError({
+        message: 'Output validation failed',
+        code: 'INTERNAL_SERVER_ERROR',
+        cause,
+      });
+    }
+  }
+
+  async function* transformAsyncIterable<TInput, TOutput>(iterable: AsyncIterable<TInput>, transform: (value: TInput) => MaybePromise<TOutput>) {
+    for await (const value of iterable) {
+      yield await transform(value);
+    }
+  }
+
   const outputMiddleware: AnyMiddlewareFunction =
-    async function outputValidatorMiddleware({ next }) {
+    async function outputValidatorMiddleware({ next, type }) {
       const result = await next();
       if (!result.ok) {
         // pass through failures without validating
         return result;
       }
-      try {
-        const data = await parse(result.data);
+
+      if (type === 'subscription' && isObservable(result.data)) {
         return {
           ...result,
-          data,
+          data: transformObservable(result.data, transformData),
         };
-      } catch (cause) {
-        throw new TRPCError({
-          message: 'Output validation failed',
-          code: 'INTERNAL_SERVER_ERROR',
-          cause,
-        });
       }
+
+      if (type === 'subscription' && isAsyncIterable(result.data)) {
+        return {
+          ...result,
+          data: transformAsyncIterable(result.data, transformData),
+        };
+      }
+
+      return {
+        ...result,
+        data: await transformData(result.data),
+      };
     };
   outputMiddleware._type = 'output';
   return outputMiddleware;

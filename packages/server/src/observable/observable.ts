@@ -1,3 +1,4 @@
+import type { MaybePromise } from '../unstable-core-do-not-import/types';
 import type {
   Observable,
   Observer,
@@ -185,4 +186,28 @@ export function observableToAsyncIterable<TValue>(
       return iterator;
     },
   };
+}
+
+export function transformObservable<TValue, TError, TTransformedValue>(
+  inputObservable: Observable<TValue, TError>,
+  transform: (value: TValue) => MaybePromise<TTransformedValue>,
+): Observable<TTransformedValue, unknown> {
+  return observable(emit => {
+    // ensure order is maintained
+    let previousPromise = Promise.resolve();
+    inputObservable.subscribe({
+      next(value) {
+        previousPromise = previousPromise
+          .then(() => transform(value))
+          .then(parsedValue => emit.next(parsedValue))
+          .catch(cause => emit.error(cause));
+      },
+      complete() {
+        previousPromise = previousPromise.then(() => emit.complete());
+      },
+      error(cause) {
+        previousPromise = previousPromise.then(() => emit.error(cause));
+      },
+    });
+  });
 }

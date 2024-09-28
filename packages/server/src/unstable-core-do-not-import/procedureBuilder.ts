@@ -1,4 +1,4 @@
-import type { inferObservableValue } from '../observable';
+import type { inferObservableValue, Observable } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -356,18 +356,18 @@ export interface ProcedureBuilder<
    * Subscription procedure
    * @see https://trpc.io/docs/v11/concepts#vocabulary
    */
-  subscription<$Output>(
-    resolver: ProcedureResolver<
-      TContext,
-      TMeta,
-      TContextOverrides,
-      TInputOut,
-      TOutputIn,
-      $Output
-    >,
+  subscription<$Output, TResolver extends ProcedureResolver<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    TInputOut,
+    TOutputIn extends UnsetMarker ? UnsetMarker : Observable<TOutputIn, unknown> | AsyncIterable<TOutputIn>,
+    $Output
+  >>(
+    resolver: TResolver,
   ): TCaller extends true
     ? TypeError<'Not implemented'>
-    : inferSubscriptionProcedure<TInputIn, TOutputOut, $Output>;
+    : inferSubscriptionProcedure<TInputIn, TOutputOut, ReturnType<TResolver>>;
 
   /**
    * Overrides the way a procedure is invoked
