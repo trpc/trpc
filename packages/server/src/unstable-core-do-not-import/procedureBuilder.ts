@@ -345,7 +345,7 @@ export interface ProcedureBuilder<
    * Subscription procedure
    * @see https://trpc.io/docs/v11/server/subscriptions
    */
-  subscription<$Output extends AsyncGenerator<any, any, any>>(
+  subscription<$Output extends AsyncGenerator<any, void, any>>(
     resolver: ProcedureResolver<
       TContext,
       TMeta,
