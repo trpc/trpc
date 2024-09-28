@@ -92,6 +92,7 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
         closedPromise,
         maxDurationPromise.promise,
       ]);
+      console.log('next', next);
 
       pingPromise.clear();
       if (next === 'closed') {

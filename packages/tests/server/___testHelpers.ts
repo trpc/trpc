@@ -277,13 +277,11 @@ export function zIterable<
     .transform(async function* (iter) {
       const iterator = iter[Symbol.asyncIterator]();
       let next;
-      while ((next = await iterator.next())) {
-        if (next.done) {
-          return returnSchema
-            ? await returnSchema.parseAsync(next.value)
-            : void 0;
-        }
+      while ((next = await iterator.next()) && !next.done) {
         yield yieldSchema.parseAsync(next.value);
+      }
+      if (returnSchema) {
+        return await returnSchema.parseAsync(next.value);
       }
       return;
     }) as any as z.ZodType<

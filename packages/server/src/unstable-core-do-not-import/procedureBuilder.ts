@@ -50,16 +50,18 @@ type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterable<
   ? inferTrackedOutput<$Output>
   : inferObservableValue<TOutput>;
 
-type inferSubscriptionProcedure<TInputIn, TOutputOut, $Output> =
-  $Output extends AsyncIterable<any>
-    ? SubscriptionProcedure<{
-        input: DefaultValue<TInputIn, void>;
-        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
-      }>
-    : LegacyObservableSubscriptionProcedure<{
-        input: DefaultValue<TInputIn, void>;
-        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
-      }>;
+type inferSubscriptionProcedure<TInputIn, TOutputOut, $Output> = DefaultValue<
+  TOutputOut,
+  $Output
+> extends AsyncIterable<any>
+  ? SubscriptionProcedure<{
+      input: DefaultValue<TInputIn, void>;
+      output: inferSubscriptionOutput<DefaultValue<TOutputOut, $Output>>;
+    }>
+  : LegacyObservableSubscriptionProcedure<{
+      input: DefaultValue<TInputIn, void>;
+      output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
+    }>;
 
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
