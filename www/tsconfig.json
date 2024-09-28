@@ -2,7 +2,12 @@
   "extends": "@docusaurus/tsconfig",
   "compilerOptions": {
     "strict": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": [
+      "node",
+      "@docusaurus/module-type-aliases",
+      "@docusaurus/theme-classic"
+    ]
   },
   "include": ["src", "*.ts", "*.js", ".eslintrc.js", "global.d.ts"]
 }
