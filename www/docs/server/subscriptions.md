@@ -184,10 +184,10 @@ export const appRouter = router({
   mySubscription: publicProcedure
     .output(zAsyncIterable(z.number()))
     .subscription(async function* (opts) {
-      for await (const data of on(ee, 'add', {
-        signal: opts.signal,
-      })) {
-        yield data as number;
+      while (true) {
+        yield Math.random();
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }),
 });
