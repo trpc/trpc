@@ -5,11 +5,13 @@ sidebar_label: Subscriptions
 slug: /subscriptions
 ---
 
+## Introduction
+
 Subscriptions are a type of real-time event stream between the client and server.
 
-Use subscriptions when you need to push real-time updates to the client whenever the server emits a new event.
+Use subscriptions when you need to push real-time updates to the client.
 
-The client connects to the server and keeps the connection open and will with to the best of its ability reconnect and gracefully recover if you track the emissions using [`tracked()`](#tracked).
+The client establishes and maintains a persistent connection to the server. It automatically attempts to reconnect and recovers gracefully if disconnected with the help of [`tracked()`](#tracked) events.
 
 If you have a finite amount of events to stream, you should consider using [httpBatchStreamLink](../client/links/httpBatchStreamLink.md) instead.
 
