@@ -168,10 +168,6 @@ export const subRouter = router({
 });
 ```
 
-## Using React
-
-See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
-
 ## WebSockets RPC Specification
 
 > You can read more details by drilling into the TypeScript definitions:
