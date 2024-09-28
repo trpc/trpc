@@ -1,4 +1,4 @@
-import type { inferObservableValue } from '../observable';
+import type { inferObservableValue, Observable } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -49,19 +49,6 @@ type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterable<
 >
   ? inferTrackedOutput<$Output>
   : inferObservableValue<TOutput>;
-
-type inferSubscriptionProcedure<TInputIn, TOutputOut, $Output> = DefaultValue<
-  TOutputOut,
-  $Output
-> extends AsyncIterable<any>
-  ? SubscriptionProcedure<{
-      input: DefaultValue<TInputIn, void>;
-      output: inferSubscriptionOutput<DefaultValue<TOutputOut, $Output>>;
-    }>
-  : LegacyObservableSubscriptionProcedure<{
-      input: DefaultValue<TInputIn, void>;
-      output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
-    }>;
 
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
@@ -356,9 +343,9 @@ export interface ProcedureBuilder<
 
   /**
    * Subscription procedure
-   * @see https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/v11/server/subscriptions
    */
-  subscription<$Output>(
+  subscription<$Output extends AsyncGenerator<any, any, any>>(
     resolver: ProcedureResolver<
       TContext,
       TMeta,
@@ -369,8 +356,30 @@ export interface ProcedureBuilder<
     >,
   ): TCaller extends true
     ? TypeError<'Not implemented'>
-    : inferSubscriptionProcedure<TInputIn, TOutputOut, $Output>;
-
+    : SubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: inferSubscriptionOutput<DefaultValue<TOutputOut, $Output>>;
+      }>;
+  /**
+   * @deprecated Using subscriptions with an observable is deprecated. Use an async generator instead.
+   * This feature will be removed in v12 of tRPC.
+   * @see https://trpc.io/docs/v11/server/subscriptions
+   */
+  subscription<$Output extends Observable<any, any>>(
+    resolver: ProcedureResolver<
+      TContext,
+      TMeta,
+      TContextOverrides,
+      TInputOut,
+      TOutputIn,
+      $Output
+    >,
+  ): TCaller extends true
+    ? TypeError<'Not implemented'>
+    : LegacyObservableSubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: inferObservableValue<DefaultValue<TOutputOut, $Output>>;
+      }>;
   /**
    * Overrides the way a procedure is invoked
    * Do not use this unless you know what you're doing - this is an experimental API
@@ -478,7 +487,7 @@ export function createBuilder<TContext, TMeta>(
         resolver,
       ) as AnyMutationProcedure;
     },
-    subscription(resolver) {
+    subscription(resolver: ProcedureResolver<any, any, any, any, any, any>) {
       return createResolver({ ..._def, type: 'subscription' }, resolver) as any;
     },
     experimental_caller(caller) {
