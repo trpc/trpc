@@ -1,10 +1,5 @@
 import { EventEmitter, on } from 'node:events';
-import {
-  routerToServerAndClientNew,
-  suppressLogs,
-  zAsyncGenerator,
-  zAsyncIterable,
-} from './___testHelpers';
+import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, TRPCLink } from '@trpc/client';
 import {
@@ -14,12 +9,13 @@ import {
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
-import { initTRPC, tracked, TRPCError } from '@trpc/server';
+import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
+import { zAsyncGenerator } from './zAsyncGenerator';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -43,7 +39,12 @@ const ctx = konn()
     const router = t.router({
       sub: {
         iterableEvent: t.procedure
-          .output(zAsyncIterable(z.number()))
+          .output(
+            zAsyncGenerator({
+              yield: z.number(),
+              tracked: false,
+            }),
+          )
           .subscription(async function* (opts) {
             for await (const data of on(ee, 'data', {
               signal: opts.signal,
@@ -63,6 +64,7 @@ const ctx = konn()
               lastEventId: z.coerce.number().min(0).optional(),
             }),
           )
+          .output(zAsyncGenerator({ yield: z.number(), tracked: true }))
           .subscription(async function* (opts) {
             onIterableInfiniteSpy({
               input: opts.input,
@@ -273,7 +275,9 @@ test('disconnect and reconnect with an event id', async () => {
     {},
     {
       onStarted: onStarted,
-      onData,
+      onData(d) {
+        onData(d);
+      },
     },
   );
 

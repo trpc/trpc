@@ -1,11 +1,11 @@
-const trackedSymbol = Symbol('TrackedEnvelope');
+const trackedSymbol = Symbol();
 
 type TrackedId = string & {
   __brand: 'TrackedId';
 };
 export type TrackedEnvelope<TData> = [TrackedId, TData, typeof trackedSymbol];
 
-type Tracked<TData> = {
+type TrackedData<TData> = {
   /**
    * The id of the message to keep track of in case the connection gets lost
    */
@@ -19,10 +19,7 @@ type Tracked<TData> = {
  * Produce a typed server-sent event message
  * @deprecated use `tracked(id, data)` instead
  */
-export function sse<TData>(event: {
-  id: string;
-  data: TData;
-}): TrackedEnvelope<TData> {
+export function sse<TData>(event: { id: string; data: TData }) {
   return tracked(event.id, event.data);
 }
 
@@ -51,5 +48,5 @@ export function tracked<TData>(
 export type inferTrackedOutput<TData> = TData extends TrackedEnvelope<
   infer $Data
 >
-  ? Tracked<$Data>
+  ? TrackedData<$Data>
   : TData;

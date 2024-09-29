@@ -160,10 +160,11 @@ export interface UseTRPCMutationOptions<
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCUseQueryBaseOptions {}
 
+type inferAsyncIterableYield<T> = T extends AsyncIterable<infer U> ? U : T;
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   enabled?: boolean;
   onStarted?: () => void;
-  onData: (data: TOutput) => void;
+  onData: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
 }
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>

@@ -25,7 +25,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
   TProcedure['_def']['type'] extends 'subscription'
     ? TProcedure extends LegacyObservableSubscriptionProcedure<any>
       ? Observable<inferProcedureOutput<TProcedure>, TRPCError>
-      : AsyncIterable<inferProcedureOutput<TProcedure>>
+      : inferProcedureOutput<TProcedure>
     : inferProcedureOutput<TProcedure>
 >;
 

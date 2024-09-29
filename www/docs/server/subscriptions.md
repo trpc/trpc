@@ -147,30 +147,82 @@ Since subscriptions are async iterators, you have to go through the iterator to 
 
 ### Example with zod
 
-```ts title="zAsyncIterable.ts"
+```ts title="zAsyncGenerator.ts"
+import type { TrackedEnvelope } from '@trpc/server';
+import { isTrackedEnvelope, tracked } from '@trpc/server';
+import { z } from 'zod';
+
 function isAsyncIterable<TValue, TReturn = unknown>(
   value: unknown,
 ): value is AsyncIterable<TValue, TReturn> {
   return !!value && typeof value === 'object' && Symbol.asyncIterator in value;
 }
+const trackedEnvelopeSchema =
+  z.custom<TrackedEnvelope<unknown>>(isTrackedEnvelope);
 
 /**
- * Zod schema for an async iterable
- * - validates that the value is an async iterable
- * - parses each item in the async iterable
+ * A Zod schema helper designed specifically for validating async generators. This schema ensures that:
+ * 1. The value being validated is an async iterable.
+ * 2. Each item yielded by the async iterable conforms to a specified type.
+ * 3. The return value of the async iterable, if any, also conforms to a specified type.
  */
-export function zAsyncIterable<TYieldIn, TYieldOut>(
-  yieldSchema: z.ZodType<TYieldIn, any, TYieldOut>,
-) {
+export function zAsyncGenerator<
+  TYieldIn,
+  TYieldOut,
+  TReturnIn = void,
+  TReturnOut = void,
+  Tracked extends boolean = false,
+>(opts: {
+  /**
+   * Validate the value yielded by the async generator
+   */
+  yield: z.ZodType<TYieldIn, any, TYieldOut>;
+  /**
+   * Validate the return value of the async generator
+   * @remark not applicable for subscriptions
+   */
+  return?: z.ZodType<TReturnIn, any, TReturnOut>;
+  /**
+   * Whether if the yielded values are tracked
+   * @remark only applicable for subscriptions
+   */
+  tracked?: Tracked;
+}) {
   return z
-    .custom<AsyncIterable<TYieldIn, void, unknown>>((val) =>
-      isAsyncIterable(val),
-    )
+    .custom<
+      AsyncGenerator<
+        Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
+        TReturnIn
+      >
+    >((val) => isAsyncIterable(val))
     .transform(async function* (iter) {
-      for await (const data of iter) {
-        yield yieldSchema.parseAsync(data);
+      const iterator = iter[Symbol.asyncIterator]();
+      let next;
+      while ((next = await iterator.next()) && !next.done) {
+        if (opts.tracked) {
+          const [id, data] = trackedEnvelopeSchema.parse(next.value);
+          yield tracked(id, await opts.yield.parseAsync(data));
+          continue;
+        }
+        yield opts.yield.parseAsync(next.value);
       }
-    });
+      if (opts.return) {
+        return await opts.return.parseAsync(next.value);
+      }
+      return;
+    }) as z.ZodType<
+    AsyncGenerator<
+      Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
+      TReturnIn,
+      unknown
+    >,
+    any,
+    AsyncGenerator<
+      Tracked extends true ? TrackedEnvelope<TYieldOut> : TYieldOut,
+      TReturnOut,
+      unknown
+    >
+  >;
 }
 ```
 
@@ -178,14 +230,30 @@ Now you can use this helper to validate the output of your subscription procedur
 
 ```ts title="_app.ts"
 import { publicProcedure, router } from '../trpc';
-import { zAsyncIterable } from './zAsyncIterable';
+import { zAsyncGenerator } from './zAsyncGenerator';
 
 export const appRouter = router({
   mySubscription: publicProcedure
-    .output(zAsyncIterable(z.number()))
+    .input(
+      z.object({
+        lastEventId: z.coerce.number().min(0).optional(),
+      }),
+    )
+    .output(
+      zAsyncGenerator({
+        yield: z.object({
+          count: z.number(),
+        }),
+        tracked: true,
+      }),
+    )
     .subscription(async function* (opts) {
+      let index = opts.input.lastEventId ?? 0;
       while (true) {
-        yield Math.random();
+        index++;
+        yield tracked(index, {
+          count: index,
+        });
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }

@@ -2,7 +2,7 @@ import { createDeferred } from './createDeferred';
 
 // ---------- utils
 
-const cancelledStreamSymbol = Symbol('cancelledReadableStream');
+const cancelledStreamSymbol = Symbol();
 /**
  * One-off readable stream
  */
