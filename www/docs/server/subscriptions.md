@@ -148,6 +148,9 @@ Since subscriptions are async iterators, you have to go through the iterator to 
 ### Example with zod
 
 ```ts title="zAsyncIterable.ts"
+import { isTrackedEnvelope, tracked, type TrackedEnvelope } from '@trpc/server';
+import { z } from 'zod';
+
 function isAsyncIterable<TValue, TReturn = unknown>(
   value: unknown,
 ): value is AsyncIterable<TValue, TReturn> {
@@ -169,6 +172,28 @@ export function zAsyncIterable<TYieldIn, TYieldOut>(
     .transform(async function* (iter) {
       for await (const data of iter) {
         yield yieldSchema.parseAsync(data);
+      }
+    });
+}
+
+/**
+ * Zod schema for an async iterable
+ * - Validates that the schema is tracked
+ * - Validates that the value is an async iterable
+ * - Validates each item in the async iterable
+ */
+export function zAsyncIterableTracked<TYieldIn, TYieldOut>(
+  yieldSchema: z.ZodType<TYieldIn, any, TYieldOut>,
+) {
+  const trackedEnvelopeSchema =
+    z.custom<TrackedEnvelope<TYieldIn>>(isTrackedEnvelope);
+
+  return z
+    .custom<AsyncIterable<TrackedEnvelope<TYieldIn>, any, any>>(isAsyncIterable)
+    .transform(async function* (iter) {
+      for await (const data of iter) {
+        const [id, value] = trackedEnvelopeSchema.parse(data);
+        yield tracked(id, yieldSchema.parse(value));
       }
     });
 }

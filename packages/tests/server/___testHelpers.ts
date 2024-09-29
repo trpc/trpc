@@ -9,7 +9,12 @@ import {
   TRPCClientError,
 } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
-import { type AnyRouter } from '@trpc/server';
+import {
+  isTrackedEnvelope,
+  tracked,
+  type AnyRouter,
+  type TrackedEnvelope,
+} from '@trpc/server';
 import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
@@ -19,11 +24,6 @@ import type {
   DataTransformerOptions,
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
-import {
-  isTrackedEnvelope,
-  tracked,
-  type TrackedEnvelope,
-} from '@trpc/server/unstable-core-do-not-import/stream/tracked';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -295,8 +295,8 @@ export function zAsyncGenerator<
 
 /**
  * Zod schema for an async iterable
- * - validates that the value is an async iterable
- * - validates each item in the async iterable
+ * - Validates that the value is an async iterable
+ * - Validates each item in the async iterable
  */
 export function zAsyncIterable<TYieldIn, TYieldOut>(
   yieldSchema: z.ZodType<TYieldIn, any, TYieldOut>,
@@ -314,18 +314,18 @@ export function zAsyncIterable<TYieldIn, TYieldOut>(
 
 /**
  * Zod schema for an async iterable
- * - validates that the value is an async iterable
- * - validates each item in the async iterable
+ * - Validates that the schema is tracked
+ * - Validates that the value is an async iterable
+ * - Validates each item in the async iterable
  */
 export function zAsyncIterableTracked<TYieldIn, TYieldOut>(
   yieldSchema: z.ZodType<TYieldIn, any, TYieldOut>,
 ) {
   const trackedEnvelopeSchema =
     z.custom<TrackedEnvelope<TYieldIn>>(isTrackedEnvelope);
+
   return z
-    .custom<AsyncGenerator<TrackedEnvelope<TYieldIn>, any, any>>((val) =>
-      isAsyncIterable(val),
-    )
+    .custom<AsyncIterable<TrackedEnvelope<TYieldIn>, any, any>>(isAsyncIterable)
     .transform(async function* (iter) {
       for await (const data of iter) {
         const [id, value] = trackedEnvelopeSchema.parse(data);

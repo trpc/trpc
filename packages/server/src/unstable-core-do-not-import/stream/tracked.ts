@@ -3,7 +3,7 @@ const trackedSymbol = Symbol();
 type TrackedId = string & {
   __brand: 'TrackedId';
 };
-type TrackedEnvelope<TData> = [TrackedId, TData, typeof trackedSymbol];
+export type TrackedEnvelope<TData> = [TrackedId, TData, typeof trackedSymbol];
 
 type TrackedData<TData> = {
   /**
