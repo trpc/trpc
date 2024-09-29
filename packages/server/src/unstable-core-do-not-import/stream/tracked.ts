@@ -5,7 +5,7 @@ type TrackedId = string & {
 };
 export type TrackedEnvelope<TData> = [TrackedId, TData, typeof trackedSymbol];
 
-type Tracked<TData> = {
+export type TrackedData<TData> = {
   /**
    * The id of the message to keep track of in case the connection gets lost
    */
@@ -19,10 +19,7 @@ type Tracked<TData> = {
  * Produce a typed server-sent event message
  * @deprecated use `tracked(id, data)` instead
  */
-export function sse<TData>(event: {
-  id: string;
-  data: TData;
-}): TrackedEnvelope<TData> {
+export function sse<TData>(event: { id: string; data: TData }) {
   return tracked(event.id, event.data);
 }
 
@@ -35,21 +32,19 @@ export function isTrackedEnvelope<TData>(
 /**
  * Automatically track an event so that it can be resumed from a given id if the connection is lost
  */
-export function tracked<TData>(
-  id: string,
-  data: TData,
-): TrackedEnvelope<TData> {
+export function tracked<TData>(id: string, data: TData): TrackedData<TData> {
   if (id === '') {
     // This limitation could be removed by using different SSE event names / channels for tracked event and non-tracked event
     throw new Error(
       '`id` must not be an empty string as empty string is the same as not setting the id at all',
     );
   }
-  return [id as TrackedId, data, trackedSymbol];
+  // @ts-expect-error we lie about the return value
+  return [id as TrackedId, data, trackedSymbol] as TrackedData<TData>;
 }
 
 export type inferTrackedOutput<TData> = TData extends TrackedEnvelope<
   infer $Data
 >
-  ? Tracked<$Data>
+  ? TrackedData<$Data>
   : TData;

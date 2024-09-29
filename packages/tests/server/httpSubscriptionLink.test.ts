@@ -2,7 +2,6 @@ import { EventEmitter, on } from 'node:events';
 import {
   routerToServerAndClientNew,
   suppressLogs,
-  zAsyncGenerator,
   zAsyncIterable,
 } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
@@ -14,7 +13,7 @@ import {
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
-import { initTRPC, tracked, TRPCError } from '@trpc/server';
+import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
@@ -62,6 +61,14 @@ const ctx = konn()
             z.object({
               lastEventId: z.coerce.number().min(0).optional(),
             }),
+          )
+          .output(
+            zAsyncIterable(
+              z.object({
+                id: z.string(),
+                data: z.number(),
+              }),
+            ),
           )
           .subscription(async function* (opts) {
             onIterableInfiniteSpy({

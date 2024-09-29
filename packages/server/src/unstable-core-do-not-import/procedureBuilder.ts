@@ -23,7 +23,6 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
-import type { inferTrackedOutput } from './stream/tracked';
 import type {
   GetRawInputFn,
   MaybePromise,
@@ -44,12 +43,23 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
-type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterator<
+type inferAsyncIterator<TOutput> = TOutput extends AsyncIterator<
   infer $Yield,
   infer $Return,
   infer $Next
 >
-  ? AsyncGenerator<inferTrackedOutput<$Yield>, $Return, $Next>
+  ? {
+      yield: $Yield;
+      return: $Return;
+      next: $Next;
+    }
+  : never;
+type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterator<any>
+  ? AsyncGenerator<
+      inferAsyncIterator<TOutput>['yield'],
+      inferAsyncIterator<TOutput>['return'],
+      inferAsyncIterator<TOutput>['next']
+    >
   : TypeError<'Subscription output could not be inferred'>;
 
 export type CallerOverride<TContext> = (opts: {
