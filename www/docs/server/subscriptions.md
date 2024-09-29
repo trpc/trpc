@@ -234,19 +234,21 @@ import { zAsyncGenerator } from './zAsyncGenerator';
 
 export const appRouter = router({
   mySubscription: publicProcedure
+    .input(
+      z.object({
+        lastEventId: z.coerce.number().min(0).optional(),
+      }),
+    )
     .output(
       zAsyncGenerator({
         yield: z.object({
           count: z.number(),
-        })
+        }),
         tracked: true,
       }),
     )
     .subscription(async function* (opts) {
-      let index = 0;
-      if (opts.input.lastEventId) {
-        index = Number(opts.input.lastEventId);
-      }
+      let index = opts.input.lastEventId ?? 0;
       while (true) {
         index++;
         yield tracked(index, {
