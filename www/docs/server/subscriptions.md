@@ -148,6 +148,7 @@ Since subscriptions are async iterators, you have to go through the iterator to 
 ### Example with zod
 
 ```ts title="zAsyncGenerator.ts"import type { TrackedEnvelope } from '@trpc/server';
+import type { TrackedEnvelope } from '@trpc/server';
 import { isTrackedEnvelope, tracked } from '@trpc/server';
 import { z } from 'zod';
 
@@ -160,10 +161,10 @@ const trackedEnvelopeSchema =
   z.custom<TrackedEnvelope<unknown>>(isTrackedEnvelope);
 
 /**
- * Zod schema for an async generators
- * - validates that the value is an async iterable
- * - validates each item in the async iterable
- * - validates the return value of the async iterable
+ * A Zod schema helper designed specifically for validating async generators. This schema ensures that:
+ * 1. The value being validated is an async iterable.
+ * 2. Each item yielded by the async iterable conforms to a specified type.
+ * 3. The return value of the async iterable, if any, also conforms to a specified type.
  */
 export function zAsyncGenerator<
   TYieldIn,
@@ -245,7 +246,7 @@ export const appRouter = router({
         index = Number(opts.input.lastEventId);
       }
       while (true) {
-        yield ++i;
+        yield ++index;
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
