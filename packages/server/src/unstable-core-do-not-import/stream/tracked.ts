@@ -1,11 +1,11 @@
-const trackedSymbol = Symbol('TrackedEnvelope');
+const trackedSymbol = Symbol();
 
 type TrackedId = string & {
   __brand: 'TrackedId';
 };
-export type TrackedEnvelope<TData> = [TrackedId, TData, typeof trackedSymbol];
+type TrackedEnvelope<TData> = [TrackedId, TData, typeof trackedSymbol];
 
-export type TrackedData<TData> = {
+type TrackedData<TData> = {
   /**
    * The id of the message to keep track of in case the connection gets lost
    */
