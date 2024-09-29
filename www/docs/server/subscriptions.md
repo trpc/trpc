@@ -236,7 +236,9 @@ export const appRouter = router({
   mySubscription: publicProcedure
     .output(
       zAsyncGenerator({
-        yield: z.number(),
+        yield: z.object({
+          count: z.number(),
+        })
         tracked: true,
       }),
     )
@@ -246,7 +248,10 @@ export const appRouter = router({
         index = Number(opts.input.lastEventId);
       }
       while (true) {
-        yield ++index;
+        index++;
+        yield tracked(index, {
+          count: index,
+        });
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
