@@ -61,7 +61,9 @@ type inferAsyncIterableYield<TOutput> = TOutput extends AsyncGenerator<
 
 </details>
 
-The reason is that it enables us to leverage the `return`-type of `AsyncGenerator`s in the future without breaking changes
+This change has been made to ensure the library remains compatible with future updates and allows for the use of the `return` type in subscriptions' `AsyncGenerator`s.
+
+See [subscriptions docs](../server/subscriptions.md#output-validators) for more information.
 
 ### Added support for output validators in subscriptions (non-breaking)
 
