@@ -31,6 +31,7 @@ export function isTrackedEnvelope<TData>(
 
 /**
  * Automatically track an event so that it can be resumed from a given id if the connection is lost
+ * @remark - do not use this type directly outside of `.subscription()` functions as we actually lie about the response value here in order to make our inference easier
  */
 export function tracked<TData>(id: string, data: TData): TrackedData<TData> {
   if (id === '') {
