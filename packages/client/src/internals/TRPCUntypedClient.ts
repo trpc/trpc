@@ -31,7 +31,7 @@ type inferAsyncIterableYield<T> = T extends AsyncIterable<infer U> ? U : T;
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
   onStarted: (opts: { context: OperationContext | undefined }) => void;
-  onData: (value: coerceAsyncIterable<TValue>) => void;
+  onData: (value: inferAsyncIterableYield<TValue>) => void;
   onError: (err: TError) => void;
   onStopped: () => void;
   onComplete: () => void;
