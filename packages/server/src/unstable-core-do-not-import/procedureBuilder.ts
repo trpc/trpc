@@ -44,10 +44,12 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
-type inferSubscriptionOutput<TOutput> = TOutput extends AsyncGenerator<
-  infer $Output
+type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterator<
+  infer $Yield,
+  infer $Return,
+  infer $Next
 >
-  ? AsyncGenerator<inferTrackedOutput<$Output>, void, unknown>
+  ? AsyncGenerator<inferTrackedOutput<$Yield>, $Return, $Next>
   : TypeError<'Subscription output could not be inferred'>;
 
 export type CallerOverride<TContext> = (opts: {
