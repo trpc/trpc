@@ -27,7 +27,7 @@ export interface TRPCRequestOptions {
   signal?: AbortSignal;
 }
 
-type coerceAsyncIterable<T> = T extends AsyncIterable<infer U> ? U : T;
+type inferAsyncIterableYield<T> = T extends AsyncIterable<infer U> ? U : T;
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
   onStarted: (opts: { context: OperationContext | undefined }) => void;
