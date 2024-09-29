@@ -60,7 +60,7 @@ export function zAsyncGenerator<
         return await opts.return.parseAsync(next.value);
       }
       return;
-    }) as any as z.ZodType<
+    }) as z.ZodType<
     AsyncGenerator<
       Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
       TReturnIn,

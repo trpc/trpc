@@ -147,7 +147,7 @@ Since subscriptions are async iterators, you have to go through the iterator to 
 
 ### Example with zod
 
-```ts title="zAsyncGenerator.ts"import type { TrackedEnvelope } from '@trpc/server';
+```ts title="zAsyncGenerator.ts"
 import type { TrackedEnvelope } from '@trpc/server';
 import { isTrackedEnvelope, tracked } from '@trpc/server';
 import { z } from 'zod';
@@ -210,7 +210,7 @@ export function zAsyncGenerator<
         return await opts.return.parseAsync(next.value);
       }
       return;
-    }) as any as z.ZodType<
+    }) as z.ZodType<
     AsyncGenerator<
       Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
       TReturnIn,
