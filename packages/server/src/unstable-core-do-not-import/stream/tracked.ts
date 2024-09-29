@@ -31,17 +31,18 @@ export function isTrackedEnvelope<TData>(
 
 /**
  * Automatically track an event so that it can be resumed from a given id if the connection is lost
- * @remark - do not use this type directly outside of `.subscription()` functions as we actually lie about the response value here in order to make our inference easier
  */
-export function tracked<TData>(id: string, data: TData): TrackedData<TData> {
+export function tracked<TData>(
+  id: string,
+  data: TData,
+): TrackedEnvelope<TData> {
   if (id === '') {
     // This limitation could be removed by using different SSE event names / channels for tracked event and non-tracked event
     throw new Error(
       '`id` must not be an empty string as empty string is the same as not setting the id at all',
     );
   }
-  // @ts-expect-error we lie about the return value
-  return [id as TrackedId, data, trackedSymbol] as TrackedData<TData>;
+  return [id as TrackedId, data, trackedSymbol];
 }
 
 export type inferTrackedOutput<TData> = TData extends TrackedEnvelope<

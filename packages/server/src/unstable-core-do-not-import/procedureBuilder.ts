@@ -23,6 +23,7 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
+import type { inferTrackedOutput } from './stream/tracked';
 import type {
   GetRawInputFn,
   MaybePromise,
@@ -56,7 +57,7 @@ type inferAsyncIterator<TOutput> = TOutput extends AsyncIterator<
   : never;
 type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterator<any>
   ? AsyncGenerator<
-      inferAsyncIterator<TOutput>['yield'],
+      inferTrackedOutput<inferAsyncIterator<TOutput>['yield']>,
       inferAsyncIterator<TOutput>['return'],
       inferAsyncIterator<TOutput>['next']
     >

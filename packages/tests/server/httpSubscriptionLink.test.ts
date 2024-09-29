@@ -3,6 +3,7 @@ import {
   routerToServerAndClientNew,
   suppressLogs,
   zAsyncIterable,
+  zAsyncIterableTracked,
 } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, TRPCLink } from '@trpc/client';
@@ -62,14 +63,7 @@ const ctx = konn()
               lastEventId: z.coerce.number().min(0).optional(),
             }),
           )
-          .output(
-            zAsyncIterable(
-              z.object({
-                id: z.string(),
-                data: z.number(),
-              }),
-            ),
-          )
+          .output(zAsyncIterableTracked(z.number()))
           .subscription(async function* (opts) {
             onIterableInfiniteSpy({
               input: opts.input,
@@ -280,7 +274,9 @@ test('disconnect and reconnect with an event id', async () => {
     {},
     {
       onStarted: onStarted,
-      onData,
+      onData(d) {
+        onData(d);
+      },
     },
   );
 

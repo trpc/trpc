@@ -19,6 +19,11 @@ import type {
   DataTransformerOptions,
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
+import {
+  isTrackedEnvelope,
+  tracked,
+  type TrackedEnvelope,
+} from '@trpc/server/unstable-core-do-not-import/stream/tracked';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -303,6 +308,28 @@ export function zAsyncIterable<TYieldIn, TYieldOut>(
     .transform(async function* (iter) {
       for await (const data of iter) {
         yield yieldSchema.parseAsync(data);
+      }
+    });
+}
+
+/**
+ * Zod schema for an async iterable
+ * - validates that the value is an async iterable
+ * - validates each item in the async iterable
+ */
+export function zAsyncIterableTracked<TYieldIn, TYieldOut>(
+  yieldSchema: z.ZodType<TYieldIn, any, TYieldOut>,
+) {
+  const trackedEnvelopeSchema =
+    z.custom<TrackedEnvelope<TYieldIn>>(isTrackedEnvelope);
+  return z
+    .custom<AsyncGenerator<TrackedEnvelope<TYieldIn>, any, any>>((val) =>
+      isAsyncIterable(val),
+    )
+    .transform(async function* (iter) {
+      for await (const data of iter) {
+        const [id, value] = trackedEnvelopeSchema.parse(data);
+        yield tracked(id, yieldSchema.parse(value));
       }
     });
 }
