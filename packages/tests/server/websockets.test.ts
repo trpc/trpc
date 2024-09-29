@@ -1631,7 +1631,7 @@ describe('subscriptions with createCaller', () => {
     expectTypeOf(ctx.router.onMessageIterable).toEqualTypeOf<
       SubscriptionProcedure<{
         input: string | null | undefined;
-        output: Message;
+        output: AsyncGenerator<Message, void, unknown>;
       }>
     >();
     const abortController = new AbortController();
