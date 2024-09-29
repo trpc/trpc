@@ -55,7 +55,7 @@ type inferAsyncIterator<TOutput> = TOutput extends AsyncIterator<
       next: $Next;
     }
   : never;
-type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterator<any>
+type inferSubscriptionOutput<TOutput> = TOutput extends AsyncGenerator
   ? AsyncGenerator<
       inferTrackedOutput<inferAsyncIterator<TOutput>['yield']>,
       inferAsyncIterator<TOutput>['return'],
