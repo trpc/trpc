@@ -4,9 +4,8 @@ import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
-import { initTRPC, sse, tracked, TRPCError } from '@trpc/server';
+import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
-import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import type { Observable, Observer } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type {
@@ -20,7 +19,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import/procedure';
 import { run } from '@trpc/server/unstable-core-do-not-import/utils';
 import { konn } from 'konn';
-import WebSocket, { Server } from 'ws';
+import WebSocket from 'ws';
 import { z } from 'zod';
 
 type Message = {

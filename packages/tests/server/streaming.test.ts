@@ -3,7 +3,6 @@ import {
   routerToServerAndClientNew,
   waitError,
   waitTRPCClientError,
-  zAsyncGenerator,
 } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
@@ -23,6 +22,7 @@ import {
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
+import { zAsyncGenerator } from './zAsyncGenerator';
 
 describe('no transformer', () => {
   const orderedResults: number[] = [];
@@ -81,7 +81,12 @@ describe('no transformer', () => {
               .partial()
               .optional(),
           )
-          .output(zAsyncGenerator(z.number(), z.string()))
+          .output(
+            zAsyncGenerator({
+              yield: z.number(),
+              return: z.string(),
+            }),
+          )
           .query(async function* (opts) {
             for (let i = 0; i < 10; i++) {
               yield yieldSpy(i + 1);
