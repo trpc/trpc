@@ -11,6 +11,7 @@ import {
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
+import type { CallbackOrValue } from './internals/urlWithConnectionParams';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
@@ -36,14 +37,14 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * EventSource options or a callback that returns them
    */
-  eventSourceOptions?: () => EventSourceInit | Promise<EventSourceInit>;
+  eventSourceOptions?: CallbackOrValue<EventSourceInit>;
   /**
    * For a given error, should we reinitialize the underlying EventSource?
    *
    * This is useful where a long running subscription might be interrupted by a recoverable network error,
    * but the existing authorization header might have expired in the mean-time
    */
-  shouldReinitialize?: (
+  shouldRecreateOnError?: (
     status: number,
     error: Event,
   ) => boolean | Promise<boolean>;
@@ -116,10 +117,17 @@ export function unstable_httpSubscriptionLink<
               if (
                 'status' in ev &&
                 typeof ev.status === 'number' &&
-                typeof opts.shouldReinitialize === 'function' &&
+                typeof opts.shouldRecreateOnError === 'function' &&
                 eventSource &&
-                (await opts.shouldReinitialize(ev.status, ev))
+                (await opts.shouldRecreateOnError(ev.status, ev))
               ) {
+                if (typeof opts.eventSourceOptions !== 'function') {
+                  // eslint-disable-next-line no-console
+                  console.warn(
+                    'shouldRecreateOnError has returned true but eventSourceOptions is not a function. This means eventSourceOptions will not be updated',
+                  );
+                }
+
                 eventSource.restart(
                   url,
                   await resultOf(opts.eventSourceOptions),

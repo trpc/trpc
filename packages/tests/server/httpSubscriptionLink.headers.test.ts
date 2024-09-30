@@ -131,7 +131,7 @@ const ctx = konn()
                     },
                   } as EventSourcePolyfillInit;
                 },
-                shouldReinitialize(status, _error) {
+                shouldRecreateOnError(status, _error) {
                   const willRestart = [401, 403].includes(status);
                   if (willRestart) {
                     // eslint-disable-next-line no-console
