@@ -125,39 +125,28 @@ export function unstable_httpSubscriptionLink<
             deserialize: transformer.output.deserialize,
             tryHandleError: async (ev) => {
               if (
-                'status' in ev &&
-                typeof ev.status === 'number' &&
                 typeof opts.shouldRecreateOnError === 'function' &&
                 eventSource
               ) {
-                let recreateOnErrorOpts: RecreateOnErrorOpt = {
-                  type: 'raw',
-                  event: ev,
-                };
-                if ('status' in ev && typeof ev.status === 'number') {
-                  recreateOnErrorOpts = {
-                    type: 'http-error',
-                    status: ev.status,
-                    event: ev,
-                  };
-                }
+                const recreateOnErrorOpts = createRecreateOnErrorOpts(ev);
 
                 const shouldRestart = await opts.shouldRecreateOnError(
                   recreateOnErrorOpts,
                 );
+
                 if (!shouldRestart) {
                   return false;
                 }
 
-                if (typeof opts.eventSourceOptions !== 'function') {
-                  // eslint-disable-next-line no-console
-                  console.warn(
-                    'shouldRecreateOnError has returned true but eventSourceOptions is not a function. This means eventSourceOptions will not be updated',
-                  );
-                }
-
                 eventSource.restart(
-                  url,
+                  getUrl({
+                    transformer,
+                    url: await urlWithConnectionParams(opts),
+                    input,
+                    path,
+                    type,
+                    signal: null,
+                  }),
                   await resultOf(opts.eventSourceOptions),
                 );
 
@@ -204,34 +193,56 @@ export function unstable_httpSubscriptionLink<
   };
 }
 
+function createRecreateOnErrorOpts(ev: Event): RecreateOnErrorOpt {
+  if ('status' in ev && typeof ev.status === 'number') {
+    return {
+      type: 'http-error',
+      status: ev.status,
+      event: ev,
+    };
+  }
+
+  return {
+    type: 'raw',
+    event: ev,
+  };
+}
+
 /**
  * We wrap EventSource so that is can be reinitialized with new options
  */
 class EventSourceWrapper implements Partial<EventSource> {
   private es: EventSource;
 
-  private listeners: Partial<Record<keyof EventSourceEventMap, any[][]>> = {};
+  private listeners: Partial<
+    Record<
+      keyof EventSourceEventMap,
+      Parameters<EventSource['addEventListener']>[]
+    >
+  > = {};
+  private *getAllEventListeners() {
+    for (const _type in this.listeners) {
+      const type = _type as keyof EventSourceEventMap;
+      for (const listener of this.listeners[type] ?? []) {
+        yield listener;
+      }
+    }
+  }
 
   constructor(url: string, options: EventSourceInit | undefined) {
     this.es = new EventSource(url, options);
   }
 
   restart(url: string, options: EventSourceInit | undefined) {
-    for (const type in this.listeners) {
-      for (const [t, l, o] of this.listeners[
-        type as keyof EventSourceEventMap
-      ] ?? []) {
-        this.es.removeEventListener(t as string, l, o);
-      }
+    for (const [type, callback, options] of this.getAllEventListeners()) {
+      this.es.removeEventListener(type, callback, options);
     }
+
     this.es.close();
     this.es = new EventSource(url, options);
-    for (const type in this.listeners) {
-      for (const [t, l, o] of this.listeners[
-        type as keyof EventSourceEventMap
-      ] ?? []) {
-        this.es.addEventListener(t as string, l, o);
-      }
+
+    for (const [type, callback, options] of this.getAllEventListeners()) {
+      this.es.addEventListener(type, callback, options);
     }
   }
 
@@ -254,7 +265,7 @@ class EventSourceWrapper implements Partial<EventSource> {
     options?: boolean | AddEventListenerOptions,
   ) {
     this.listeners[type] ??= [];
-    this.listeners[type].push([type, listener, options]);
+    this.listeners[type].push([type, listener as any, options]);
 
     this.es.addEventListener(type, listener, options);
   }
@@ -265,12 +276,13 @@ class EventSourceWrapper implements Partial<EventSource> {
     options?: boolean | EventListenerOptions,
   ) {
     this.listeners[type] ??= [];
-    for (const [t, l, o] of this.listeners[type] ?? []) {
-      if (t === type && l === listener) {
-        this.listeners[type].splice(this.listeners[type].indexOf([t, l, o]), 1);
-      }
-    }
 
+    const indexToRemove = this.listeners[type]?.findIndex(
+      ([_type, thisListener]) => thisListener === listener,
+    );
+    if (typeof indexToRemove === 'number' && indexToRemove >= 0) {
+      this.listeners[type].splice(indexToRemove, 1);
+    }
     this.es.removeEventListener(type, listener, options);
   }
 }
