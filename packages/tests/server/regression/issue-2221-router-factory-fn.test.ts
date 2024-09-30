@@ -81,6 +81,7 @@ test('first example', async () => {
 });
 
 test('second example', async () => {
+  // This is all the code you need to define wherever you define your `initTRPC()`
   function createRouterFromBuilder<TBuilder>(builder: TBuilder) {
     return function createRouter<TRouterRecord extends TRPCRouterRecord>(
       callback: (base: TBuilder) => TRouterRecord,
