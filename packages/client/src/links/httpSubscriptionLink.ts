@@ -33,6 +33,17 @@ async function urlWithConnectionParams(
   return url;
 }
 
+type RecreateOnErrorOpt =
+  | {
+      type: 'raw';
+      event: Event;
+    }
+  | {
+      type: 'http-error';
+      status: number;
+      event: Event;
+    };
+
 type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * EventSource options or a callback that returns them
@@ -45,8 +56,7 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * but the existing authorization header might have expired in the mean-time
    */
   shouldRecreateOnError?: (
-    status: number,
-    error: Event,
+    opt: RecreateOnErrorOpt,
   ) => boolean | Promise<boolean>;
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
@@ -118,9 +128,27 @@ export function unstable_httpSubscriptionLink<
                 'status' in ev &&
                 typeof ev.status === 'number' &&
                 typeof opts.shouldRecreateOnError === 'function' &&
-                eventSource &&
-                (await opts.shouldRecreateOnError(ev.status, ev))
+                eventSource
               ) {
+                let recreateOnErrorOpts: RecreateOnErrorOpt = {
+                  type: 'raw',
+                  event: ev,
+                };
+                if ('status' in ev && typeof ev.status === 'number') {
+                  recreateOnErrorOpts = {
+                    type: 'http-error',
+                    status: ev.status,
+                    event: ev,
+                  };
+                }
+
+                const shouldRestart = await opts.shouldRecreateOnError(
+                  recreateOnErrorOpts,
+                );
+                if (!shouldRestart) {
+                  return false;
+                }
+
                 if (typeof opts.eventSourceOptions !== 'function') {
                   // eslint-disable-next-line no-console
                   console.warn(

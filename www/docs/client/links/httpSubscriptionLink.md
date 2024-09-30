@@ -119,7 +119,7 @@ const trpc = createTRPCClient<AppRouter>({
         // Optional: EventSource will automatically recover from disconnections, but always uses the initial headers
         // If your auth header expires, you can force a restart and fresh eventSourceOptions() call when shouldRecreateOnError() returns true
         shouldRecreateOnError(status, _error) {
-          return [401, 403].includes(status);
+          return opts.type === 'http-error' && [401, 403].includes(opts.status);
         },
       }),
       false: httpBatchLink({

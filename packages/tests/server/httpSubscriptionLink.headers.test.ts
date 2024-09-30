@@ -131,8 +131,11 @@ const ctx = konn()
                     },
                   } as EventSourcePolyfillInit;
                 },
-                shouldRecreateOnError(status, _error) {
-                  const willRestart = [401, 403].includes(status);
+                shouldRecreateOnError(opts) {
+                  const willRestart =
+                    opts.type === 'http-error' &&
+                    [401, 403].includes(opts.status);
+
                   if (willRestart) {
                     // eslint-disable-next-line no-console
                     console.log('Restarting EventSource due to 401/403 error');
