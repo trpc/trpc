@@ -27,7 +27,7 @@ const publicProcedure = t.procedure.meta({ kind: 'public' });
 /**
  * Protected base procedure
  */
-const authedProcedure = t.procedure
+const authedProcedure = publicProcedure
   .use(function isAuthed(opts) {
     const { session } = opts.ctx;
 
@@ -220,9 +220,7 @@ test('suggestion - validate routers', () => {
       },
     });
 
-    expect(() =>
-      validateRouter(appRouter),
-    ).toThrowErrorMatchingInlineSnapshot(`
+    expect(() => validateRouter(appRouter)).toThrowErrorMatchingInlineSnapshot(`
       [Error: Invalid router setup. Errors: [
           {
               "path": "post.add",
