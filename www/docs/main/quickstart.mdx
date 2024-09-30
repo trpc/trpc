@@ -426,13 +426,13 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 // @include: server
 // @filename: client.ts
 // ---cut---
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 //     👆 **type-only** import
 
 // Pass AppRouter as generic here. 👇 This lets the `trpc` object know
 // what procedures are available on the server and their input/output types.
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -456,10 +456,10 @@ You now have access to your API procedures on the `trpc` object. Try it out!
 // @filename: server.ts
 // @include: server
 // @filename: client.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -489,10 +489,10 @@ You can open up your Intellisense to explore your API on your frontend. You'll f
 // @filename: server.ts
 // @include: server
 // @filename: client.ts
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
       url: 'http://localhost:3000',
