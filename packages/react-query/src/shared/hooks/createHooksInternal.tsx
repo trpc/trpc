@@ -316,9 +316,12 @@ export function createRootHooks<
       {
         ...opts,
         mutationKey: mutationKey,
-        mutationFn: (input) => {
-          return client.mutation(...getClientArgs([path, { input }], opts));
-        },
+        mutationFn:
+          opts?.mutationFn ??
+          defaultOpts?.mutationFn ??
+          ((input) => {
+            return client.mutation(...getClientArgs([path, { input }], opts));
+          }),
         onSuccess(...args) {
           const originalFn = () =>
             opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
