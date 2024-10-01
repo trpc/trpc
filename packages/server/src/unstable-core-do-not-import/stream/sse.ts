@@ -228,6 +228,7 @@ export function sseStreamConsumer<TData>(opts: {
     },
   });
 
+  let errorLock: Promise<void | 'CANCEL_ALL'> | undefined = undefined;
   eventSource.addEventListener('message', (msg) => {
     stream.controller.enqueue(msg);
   });
@@ -235,7 +236,19 @@ export function sseStreamConsumer<TData>(opts: {
     stream.controller.enqueue(msg);
   });
   eventSource.addEventListener('error', async (cause) => {
+    // We prevent more than 1 error handler from waiting at the same time
+    const result = await errorLock;
+    if (result === 'CANCEL_ALL') {
+      return;
+    }
+
+    const resolvable = createResolvable<void | 'CANCEL_ALL'>();
+    errorLock = resolvable.promise;
+
     const handled = await opts.tryHandleError?.(cause);
+
+    resolvable.resolve();
+
     if (handled === true) {
       return;
     }
@@ -276,6 +289,20 @@ export function sseStreamConsumer<TData>(opts: {
       return iterator;
     },
   };
+}
+
+function createResolvable<T = void>() {
+  const NOOP = () => void 0;
+  let resolve: (value: T) => void = NOOP;
+  const promise = new Promise<T>((_resolve) => {
+    resolve = _resolve;
+  });
+
+  if (resolve === NOOP) {
+    throw 'Unlock not assigned';
+  }
+
+  return { promise, resolve };
 }
 
 export const sseHeaders = {
