@@ -125,35 +125,35 @@ export function unstable_httpSubscriptionLink<
             deserialize: transformer.output.deserialize,
             tryHandleError: async (ev) => {
               if (
-                typeof opts.shouldRecreateOnError === 'function' &&
-                eventSource
+                typeof opts.shouldRecreateOnError !== 'function' ||
+                !eventSource
               ) {
-                const recreateOnErrorOpts = createRecreateOnErrorOpts(ev);
-
-                const shouldRestart = await opts.shouldRecreateOnError(
-                  recreateOnErrorOpts,
-                );
-
-                if (!shouldRestart) {
-                  return false;
-                }
-
-                eventSource.restart(
-                  getUrl({
-                    transformer,
-                    url: await urlWithConnectionParams(opts),
-                    input,
-                    path,
-                    type,
-                    signal: null,
-                  }),
-                  await resultOf(opts.eventSourceOptions),
-                );
-
-                return true;
+                return false;
               }
 
-              return false;
+              const recreateOnErrorOpts = createRecreateOnErrorOpts(ev);
+
+              const shouldRestart = await opts.shouldRecreateOnError(
+                recreateOnErrorOpts,
+              );
+
+              if (!shouldRestart) {
+                return false;
+              }
+
+              eventSource.restart(
+                getUrl({
+                  transformer,
+                  url: await urlWithConnectionParams(opts),
+                  input,
+                  path,
+                  type,
+                  signal: null,
+                }),
+                await resultOf(opts.eventSourceOptions),
+              );
+
+              return true;
             },
           });
 
@@ -222,7 +222,7 @@ class EventSourceWrapper implements Partial<EventSource> {
   > = {};
   private *getAllEventListeners() {
     for (const _type in this.listeners) {
-      const type = _type as keyof EventSourceEventMap;
+      const type = _type as keyof typeof this.listeners;
       for (const listener of this.listeners[type] ?? []) {
         yield listener;
       }

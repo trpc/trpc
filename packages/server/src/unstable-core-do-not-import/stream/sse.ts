@@ -3,7 +3,7 @@ import { run } from '../utils';
 import type { ConsumerOnError } from './jsonl';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
-import { createTimeoutPromise } from './utils/createDeferred';
+import { createDeferred, createTimeoutPromise } from './utils/createDeferred';
 import { createReadableStream } from './utils/createReadableStream';
 
 type Serialize = (value: any) => any;
@@ -242,7 +242,7 @@ export function sseStreamConsumer<TData>(opts: {
       return;
     }
 
-    const resolvable = createResolvable<void | 'CANCEL_ALL'>();
+    const resolvable = createDeferred<void | 'CANCEL_ALL'>();
     errorLock = resolvable.promise;
 
     const handled = await opts.tryHandleError?.(cause);
@@ -289,20 +289,6 @@ export function sseStreamConsumer<TData>(opts: {
       return iterator;
     },
   };
-}
-
-function createResolvable<T = void>() {
-  const NOOP = () => void 0;
-  let resolve: (value: T) => void = NOOP;
-  const promise = new Promise<T>((_resolve) => {
-    resolve = _resolve;
-  });
-
-  if (resolve === NOOP) {
-    throw 'Unlock not assigned';
-  }
-
-  return { promise, resolve };
 }
 
 export const sseHeaders = {
