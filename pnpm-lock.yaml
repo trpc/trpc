@@ -1687,6 +1687,9 @@ importers:
       '@fastify/websocket':
         specifier: ^10.0.1
         version: 10.0.1
+      '@standard-schema/spec':
+        specifier: 1.0.0-beta.0
+        version: 1.0.0-beta.0
       '@tanstack/react-query':
         specifier: ^5.54.1
         version: 5.55.0(react@18.3.1)
@@ -1760,8 +1763,8 @@ importers:
         specifier: ^5.6.2
         version: 5.6.2
       valibot:
-        specifier: ^0.42.0
-        version: 0.42.0(typescript@5.6.2)
+        specifier: 1.0.0-beta.0
+        version: 1.0.0-beta.0(typescript@5.6.2)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -1894,9 +1897,12 @@ importers:
       typescript:
         specifier: ^5.6.2
         version: 5.6.2
-      valibot:
-        specifier: ^0.42.0
-        version: 0.42.0(typescript@5.6.2)
+      valibot0:
+        specifier: npm:valibot@^0.42.0
+        version: /valibot@0.42.0(typescript@5.6.2)
+      valibot1:
+        specifier: npm:valibot@^1.0.0-beta.0
+        version: /valibot@1.0.0-beta.0(typescript@5.6.2)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -10006,6 +10012,10 @@ packages:
       micromark-util-character: 1.2.0
       micromark-util-symbol: 1.1.0
     dev: false
+
+  /@standard-schema/spec@1.0.0-beta.0:
+    resolution: {integrity: sha512-//opTrDGFcAaG8BNc0btA5wwU1V573X/UezT5jgfwucdZEbzukpKCsFUJVskH6aJ3KNVOXdSbhS4YWFfnyLVbA==}
+    dev: true
 
   /@svgr/babel-plugin-add-jsx-attribute@8.0.0(@babel/core@7.24.7):
     resolution: {integrity: sha512-b9MIk7yhdS1pMCZM8VeNfUlSKVRhsHZNMl5O9SfaX0l0t5wjdgu4IDzGB8bpnGBBOjGST3rRFVsaaEtI4W6f7g==}
@@ -26094,6 +26104,17 @@ packages:
 
   /valibot@0.42.0(typescript@5.6.2):
     resolution: {integrity: sha512-igMdmHXxDiQY714ssh9bGisMqJ2yg7sko1KOmv/omnrIacGtP6mGrbvVT1IuV1bDrHyG9ybgpHwG1UElDiDCLg==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+    dependencies:
+      typescript: 5.6.2
+    dev: false
+
+  /valibot@1.0.0-beta.0(typescript@5.6.2):
+    resolution: {integrity: sha512-Q/oine+NPMXdIy3vwluw0vidHLk0mTPUQBRHc+EHZXnEWF3KzLx1YLsVHPVrgHaMGRfV58P9eGOgxJvi0a059w==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:

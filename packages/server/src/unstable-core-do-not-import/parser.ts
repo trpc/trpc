@@ -18,6 +18,13 @@ export type ParserArkTypeEsque<TInput, TParsedInput> = {
   infer: TParsedInput;
 };
 
+export type ParserStandardSchemaEsque<TInput, TParsedInput> = {
+  '~types'?: {
+    input: TInput;
+    output: TParsedInput;
+  };
+};
+
 export type ParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
 };
@@ -48,7 +55,8 @@ export type ParserWithoutInput<TInput> =
 export type ParserWithInputOutput<TInput, TParsedInput> =
   | ParserZodEsque<TInput, TParsedInput>
   | ParserValibotEsque<TInput, TParsedInput>
-  | ParserArkTypeEsque<TInput, TParsedInput>;
+  | ParserArkTypeEsque<TInput, TParsedInput>
+  | ParserStandardSchemaEsque<TInput, TParsedInput>;
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
@@ -107,6 +115,18 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     return (value) => {
       parser.assert(value);
       return value as TType;
+    };
+  }
+
+  if ('~standard' in parser) {
+    // StandardSchemaEsque
+    return async (value) => {
+      const result = await parser['~validate']({ value });
+      if (result.issues) {
+        console.error('Schema issues:', result.issues);
+        throw new Error(result.issues[0].message);
+      }
+      return result.value;
     };
   }
 
