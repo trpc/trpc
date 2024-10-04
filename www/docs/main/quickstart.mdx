@@ -288,7 +288,7 @@ const appRouter = router({
 
   </TabItem>
   <TabItem value="valibot" label="Valibot">
-    The input parser can be any Valibot schema wrapped with <code>v.parser</code> or <code>v.parserAsync</code>.
+    The input parser can be any Valibot schema, e.g. <code>v.string()</code> or <code>v.object({})</code>.
 
 <br />
 <br />
@@ -307,7 +307,7 @@ import * as v from 'valibot';
 const appRouter = router({
   // ...
   userById: publicProcedure
-    .input(v.parser(v.string()))
+    .input(v.string())
     .query(async (opts) => {
       const { input } = opts;
       //      ^?
