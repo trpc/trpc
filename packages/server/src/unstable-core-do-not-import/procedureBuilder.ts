@@ -1,4 +1,4 @@
-import type { inferObservableValue } from '../observable';
+import type { inferObservableValue, Observable } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -17,7 +17,7 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnySubscriptionProcedure,
+  LegacyObservableSubscriptionProcedure,
   MutationProcedure,
   ProcedureType,
   QueryProcedure,
@@ -44,11 +44,24 @@ type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
-type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterable<
-  infer $Output
+type inferAsyncIterator<TOutput> = TOutput extends AsyncIterator<
+  infer $Yield,
+  infer $Return,
+  infer $Next
 >
-  ? inferTrackedOutput<$Output>
-  : inferObservableValue<TOutput>;
+  ? {
+      yield: $Yield;
+      return: $Return;
+      next: $Next;
+    }
+  : never;
+type inferSubscriptionOutput<TOutput> = TOutput extends AsyncGenerator
+  ? AsyncGenerator<
+      inferTrackedOutput<inferAsyncIterator<TOutput>['yield']>,
+      inferAsyncIterator<TOutput>['return'],
+      inferAsyncIterator<TOutput>['next']
+    >
+  : TypeError<'Subscription output could not be inferred'>;
 
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
@@ -92,6 +105,10 @@ export interface ProcedureResolverOptions<
 > {
   ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
+  /**
+   * The AbortSignal of the request
+   */
+  signal: AbortSignal | undefined;
 }
 
 /**
@@ -171,7 +188,7 @@ export interface ProcedureBuilder<
 > {
   /**
    * Add an input parser to the procedure.
-   * @link https://trpc.io/docs/v11/server/validators
+   * @see https://trpc.io/docs/v11/server/validators
    */
   input<$Parser extends Parser>(
     schema: TInputOut extends UnsetMarker
@@ -197,7 +214,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add an output parser to the procedure.
-   * @link https://trpc.io/docs/v11/server/validators
+   * @see https://trpc.io/docs/v11/server/validators
    */
   output<$Parser extends Parser>(
     schema: $Parser,
@@ -213,7 +230,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a meta data to the procedure.
-   * @link https://trpc.io/docs/v11/server/metadata
+   * @see https://trpc.io/docs/v11/server/metadata
    */
   meta(
     meta: TMeta,
@@ -229,7 +246,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a middleware to the procedure.
-   * @link https://trpc.io/docs/v11/server/middlewares
+   * @see https://trpc.io/docs/v11/server/middlewares
    */
   use<$ContextOverridesOut>(
     fn:
@@ -295,7 +312,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Query procedure
-   * @link https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/v11/concepts#vocabulary
    */
   query<$Output>(
     resolver: ProcedureResolver<
@@ -317,7 +334,7 @@ export interface ProcedureBuilder<
 
   /**
    * Mutation procedure
-   * @link https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/v11/concepts#vocabulary
    */
   mutation<$Output>(
     resolver: ProcedureResolver<
@@ -339,9 +356,9 @@ export interface ProcedureBuilder<
 
   /**
    * Subscription procedure
-   * @link https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/v11/server/subscriptions
    */
-  subscription<$Output>(
+  subscription<$Output extends AsyncGenerator<any, void, any>>(
     resolver: ProcedureResolver<
       TContext,
       TMeta,
@@ -354,9 +371,28 @@ export interface ProcedureBuilder<
     ? TypeError<'Not implemented'>
     : SubscriptionProcedure<{
         input: DefaultValue<TInputIn, void>;
-        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
+        output: inferSubscriptionOutput<DefaultValue<TOutputOut, $Output>>;
       }>;
-
+  /**
+   * @deprecated Using subscriptions with an observable is deprecated. Use an async generator instead.
+   * This feature will be removed in v12 of tRPC.
+   * @see https://trpc.io/docs/v11/server/subscriptions
+   */
+  subscription<$Output extends Observable<any, any>>(
+    resolver: ProcedureResolver<
+      TContext,
+      TMeta,
+      TContextOverrides,
+      TInputOut,
+      TOutputIn,
+      $Output
+    >,
+  ): TCaller extends true
+    ? TypeError<'Not implemented'>
+    : LegacyObservableSubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: inferObservableValue<DefaultValue<TOutputOut, $Output>>;
+      }>;
   /**
    * Overrides the way a procedure is invoked
    * Do not use this unless you know what you're doing - this is an experimental API
@@ -464,11 +500,8 @@ export function createBuilder<TContext, TMeta>(
         resolver,
       ) as AnyMutationProcedure;
     },
-    subscription(resolver) {
-      return createResolver(
-        { ..._def, type: 'subscription' },
-        resolver,
-      ) as AnySubscriptionProcedure;
+    subscription(resolver: ProcedureResolver<any, any, any, any, any, any>) {
+      return createResolver({ ..._def, type: 'subscription' }, resolver) as any;
     },
     experimental_caller(caller) {
       return createNewBuilder(_def, {
@@ -532,12 +565,53 @@ export interface ProcedureCallOptions<TContext> {
   input?: unknown;
   path: string;
   type: ProcedureType;
+  signal: AbortSignal | undefined;
 }
 
 const codeblock = `
 This is a client-only function.
 If you want to call this function on the server, see https://trpc.io/docs/v11/server/server-side-calls
 `.trim();
+
+// run the middlewares recursively with the resolver as the last one
+async function callRecursive(
+  index: number,
+  _def: AnyProcedureBuilderDef,
+  opts: ProcedureCallOptions<any>,
+): Promise<MiddlewareResult<any>> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const middleware = _def.middlewares[index]!;
+    const result = await middleware({
+      ...opts,
+      meta: _def.meta,
+      input: opts.input,
+      next(_nextOpts?: any) {
+        const nextOpts = _nextOpts as
+          | {
+              ctx?: Record<string, unknown>;
+              input?: unknown;
+              getRawInput?: GetRawInputFn;
+            }
+          | undefined;
+
+        return callRecursive(index + 1, _def, {
+          ...opts,
+          ctx: nextOpts?.ctx ? { ...opts.ctx, ...nextOpts.ctx } : opts.ctx,
+          input: nextOpts && 'input' in nextOpts ? nextOpts.input : opts.input,
+          getRawInput: nextOpts?.getRawInput ?? opts.getRawInput,
+        });
+      },
+    });
+    return result;
+  } catch (cause) {
+    return {
+      ok: false,
+      error: getTRPCErrorFromUnknown(cause),
+      marker: middlewareMarker,
+    };
+  }
+}
 
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
   async function procedure(opts: ProcedureCallOptions<unknown>) {
@@ -546,66 +620,8 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
       throw new Error(codeblock);
     }
 
-    // run the middlewares recursively with the resolver as the last one
-    async function callRecursive(
-      callOpts: {
-        ctx: any;
-        index: number;
-        input?: unknown;
-        getRawInput?: GetRawInputFn;
-      } = {
-        index: 0,
-        ctx: opts.ctx,
-      },
-    ): Promise<MiddlewareResult<any>> {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const middleware = _def.middlewares[callOpts.index]!;
-        const result = await middleware({
-          ctx: callOpts.ctx,
-          type: opts.type,
-          path: opts.path,
-          getRawInput: callOpts.getRawInput ?? opts.getRawInput,
-          meta: _def.meta,
-          input: callOpts.input,
-          next(_nextOpts?: any) {
-            const nextOpts = _nextOpts as
-              | {
-                  ctx?: Record<string, unknown>;
-                  input?: unknown;
-                  getRawInput?: GetRawInputFn;
-                }
-              | undefined;
-
-            return callRecursive({
-              index: callOpts.index + 1,
-              ctx:
-                nextOpts && 'ctx' in nextOpts
-                  ? { ...callOpts.ctx, ...nextOpts.ctx }
-                  : callOpts.ctx,
-              input:
-                nextOpts && 'input' in nextOpts
-                  ? nextOpts.input
-                  : callOpts.input,
-              getRawInput:
-                nextOpts && 'getRawInput' in nextOpts
-                  ? nextOpts.getRawInput
-                  : callOpts.getRawInput,
-            });
-          },
-        });
-        return result;
-      } catch (cause) {
-        return {
-          ok: false,
-          error: getTRPCErrorFromUnknown(cause),
-          marker: middlewareMarker,
-        };
-      }
-    }
-
     // there's always at least one "next" since we wrap this.resolver in a middleware
-    const result = await callRecursive();
+    const result = await callRecursive(0, _def, opts);
 
     if (!result) {
       throw new TRPCError({

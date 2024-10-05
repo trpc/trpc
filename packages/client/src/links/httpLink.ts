@@ -29,7 +29,7 @@ export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
     /**
      * Headers to be set on outgoing requests or a callback that of said headers
-     * @link http://trpc.io/docs/client/headers
+     * @see http://trpc.io/docs/client/headers
      */
     headers?:
       | HTTPHeaders
@@ -70,7 +70,7 @@ const universalRequester: Requester = (opts) => {
 };
 
 /**
- * @link https://trpc.io/docs/client/links/httpLink
+ * @see https://trpc.io/docs/client/links/httpLink
  */
 export function httpLink<TRouter extends AnyRouter = AnyRouter>(
   opts: HTTPLinkOptions<TRouter['_def']['_config']['$types']>,

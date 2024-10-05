@@ -17,7 +17,7 @@ type TransformerOptionYes = {
    * Data transformer
    *
    * You must use the same transformer on the backend and frontend
-   * @link https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/v11/data-transformers
    **/
   transformer: DataTransformerOptions;
 };
@@ -26,7 +26,7 @@ type TransformerOptionNo = {
    * Data transformer
    *
    * You must use the same transformer on the backend and frontend
-   * @link https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/v11/data-transformers
    **/
   transformer?: TypeError<'You must define a transformer on your your `initTRPC`-object first'>;
 };

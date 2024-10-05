@@ -29,6 +29,7 @@ test('experimental caller', async () => {
             getRawInput: async () => input,
             path: '',
             input,
+            signal: undefined,
           });
         }
         case 'query': {
@@ -39,6 +40,7 @@ test('experimental caller', async () => {
             getRawInput: async () => input,
             path: '',
             input,
+            signal: undefined,
           });
         }
         default: {

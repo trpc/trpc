@@ -5,7 +5,7 @@ import { konn } from 'konn';
 
 /**
  * For reference,
- * @link https://github.com/trpc/trpc/issues/4486
+ * @see https://github.com/trpc/trpc/issues/4486
  */
 
 const fixtureData = ['1', '2'];

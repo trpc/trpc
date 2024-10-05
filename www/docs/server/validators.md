@@ -120,6 +120,12 @@ export const appRouter = t.router({
 });
 ```
 
+### Output validation of subscriptions
+
+Since subscriptions are async iterators, you can use the same validation techniques as above.
+
+Have a look at the [subscriptions guide](subscriptions.md#output-validation) for more information.
+
 ## The most basic validator: a function
 
 You can define a validator without any 3rd party dependencies, with a function.

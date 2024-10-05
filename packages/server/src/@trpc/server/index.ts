@@ -42,6 +42,8 @@ export {
    */
   sse,
   tracked,
+  type TrackedEnvelope,
+  isTrackedEnvelope,
 } from '../../unstable-core-do-not-import';
 
 export type {

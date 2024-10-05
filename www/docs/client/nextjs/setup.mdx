@@ -168,7 +168,7 @@ export const trpc = createTRPCNext<AppRouter>({
         httpBatchLink({
           /**
            * If you want to use SSR, you need to use the server's full URL
-           * @link https://trpc.io/docs/v11/ssr
+           * @see https://trpc.io/docs/v11/ssr
            **/
           url: `${getBaseUrl()}/api/trpc`,
 
@@ -183,7 +183,7 @@ export const trpc = createTRPCNext<AppRouter>({
     };
   },
   /**
-   * @link https://trpc.io/docs/v11/ssr
+   * @see https://trpc.io/docs/v11/ssr
    **/
   ssr: false,
 });
@@ -274,4 +274,4 @@ export const trpc = createTRPCNext<AppRouter>({
 
 Browse the rest of the docs to learn more about things like [authorization](/docs/server/authorization), [middlewares](/docs/server/middlewares), and [error handling](/docs/server/error-handling).
 
-You can also find information about [queries](/docs/client/react/usequery) and [mutations](/docs/client/react/useMutation) now that you're using `@trpc/react-query@next`@next.
+You can also find information about [queries](/docs/client/react/useQuery) and [mutations](/docs/client/react/useMutation) now that you're using `@trpc/react-query@next`@next.

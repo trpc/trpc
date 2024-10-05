@@ -30,7 +30,7 @@ export type HTTPLinkBaseOptions<
   /**
    * Send all requests `as POST`s requests regardless of the procedure type
    * The HTTP handler must separately allow overriding the method. See:
-   * @link https://trpc.io/docs/rpc
+   * @see https://trpc.io/docs/rpc
    */
   methodOverride?: 'POST';
 } & TransformerOptions<TRoot>;

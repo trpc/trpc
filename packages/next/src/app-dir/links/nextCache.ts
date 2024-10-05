@@ -55,6 +55,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
                 getRawInput: async () => input,
                 ctx: ctx,
                 type,
+                signal: undefined,
               });
 
               // We need to serialize cause the cache only accepts JSON
