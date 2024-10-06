@@ -2,6 +2,8 @@
   "extends": "@docusaurus/tsconfig",
   "compilerOptions": {
     "strict": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
     "noEmit": true,
     "types": [
       "node",
