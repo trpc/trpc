@@ -11,7 +11,7 @@ import {
 import type { SSEStreamConsumerOptions } from '@trpc/server/unstable-core-do-not-import/stream/sse';
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
-import { allAbortSignals, getUrl } from './internals/httpUtils';
+import { getUrl, raceAbortSignals } from './internals/httpUtils';
 import type { CallbackOrValue } from './internals/urlWithConnectionParams';
 import {
   resultOf,
@@ -63,7 +63,8 @@ export function unstable_httpSubscriptionLink<
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
 
-        const ac = allAbortSignals([op]);
+        const ac = new AbortController();
+        const signal = raceAbortSignals(op.signal);
         const eventSourceStream = sseStreamConsumer<
           Partial<{
             id?: string;
@@ -80,7 +81,7 @@ export function unstable_httpSubscriptionLink<
               signal: null,
             }),
           init: () => resultOf(opts.eventSourceOptions),
-          signal: ac.signal,
+          signal,
           deserialize: transformer.output.deserialize,
           shouldRecreateOnError: opts.shouldRecreateOnError,
         });

@@ -85,20 +85,20 @@ const ctx = konn()
       };
     };
 
+    const recreateOnErrorTypes: string[] = [];
+
     const opts = routerToServerAndClientNew(router, {
       server: {
-        onError(err) {
-          // eslint-disable-next-line no-console
-          console.error('caught server error:', err.error.message);
+        onError(_err) {
+          // console.error('caught server error:', _err.error.message);
         },
         createContext(opts) {
-          // eslint-disable-next-line no-console
-          console.log(
-            'new connection made with x-test:',
-            opts.req.headers['x-test'],
-            'expecting to be to be:',
-            incrementingTestHeader,
-          );
+          // console.log(
+          //   'new connection made with x-test:',
+          //   opts.req.headers['x-test'],
+          //   'expecting to be to be:',
+          //   incrementingTestHeader,
+          // );
 
           const expectedHeader = `x-test: ${incrementingTestHeader}`;
           const receivedHeader = `x-test: ${opts.req.headers['x-test']}`;
@@ -132,9 +132,14 @@ const ctx = konn()
                   } as EventSourcePolyfillInit;
                 },
                 shouldRecreateOnError(opts) {
+                  if (opts.type !== 'event') {
+                    return false;
+                  }
+                  const ev = opts.event;
                   const willRestart =
-                    opts.type === 'http-error' &&
-                    [401, 403].includes(opts.status);
+                    'status' in ev &&
+                    typeof ev.status === 'number' &&
+                    [401, 403].includes(ev.status);
 
                   if (willRestart) {
                     // eslint-disable-next-line no-console
@@ -205,24 +210,29 @@ test('disconnect and reconnect with updated headers', async () => {
 
   expect(getES().readyState).toBe(EventSource.OPEN);
 
-  ctx.destroyConnections();
-  await waitFor(
-    () => {
-      expect(onStarted).toHaveBeenCalledTimes(2);
-    },
-    {
-      timeout: 3_000,
-    },
-  );
+  {
+    // restart server
+    const release = suppressLogs();
+    ctx.destroyConnections();
+    await waitFor(
+      () => {
+        expect(onStarted).toHaveBeenCalledTimes(2);
+      },
+      {
+        timeout: 3_000,
+      },
+    );
 
-  await waitFor(
-    () => {
-      expect(getES().readyState).toBe(EventSource.OPEN);
-    },
-    {
-      timeout: 3_000,
-    },
-  );
+    await waitFor(
+      () => {
+        expect(getES().readyState).toBe(EventSource.OPEN);
+      },
+      {
+        timeout: 3_000,
+      },
+    );
+    release();
+  }
 
   subscription.unsubscribe();
   expect(getES().readyState).toBe(EventSource.CLOSED);
