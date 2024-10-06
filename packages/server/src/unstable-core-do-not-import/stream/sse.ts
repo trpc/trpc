@@ -269,11 +269,11 @@ export function sseStreamConsumer<TData>(
       });
     };
 
-    const pauseDispatch = async (fn: () => Promise<void>) => {
+    const pauseDispatch = (fn: () => Promise<void>) => {
       const deferred = createDeferred<void>();
       lock = deferred.promise;
       try {
-        return await fn();
+        return fn();
       } finally {
         deferred.resolve();
       }
