@@ -1,4 +1,4 @@
-import type { Maybe } from '@trpc/server/unstable-core-do-not-import/types';
+import type { Maybe } from '@trpc/server/unstable-core-do-not-import';
 
 /**
  * Like `Promise.all()` but for abort signals
