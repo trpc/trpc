@@ -18,11 +18,11 @@ export function allAbortSignals(...signals: Maybe<AbortSignal>[]): AbortSignal {
     }
   };
 
-  for (const signal of signals.filter((it) => !!it)) {
-    if (signal.aborted) {
+  for (const signal of signals) {
+    if (signal?.aborted) {
       onAbort();
     } else {
-      signal.addEventListener('abort', onAbort, {
+      signal?.addEventListener('abort', onAbort, {
         once: true,
       });
     }
@@ -39,11 +39,11 @@ export function raceAbortSignals(
 ): AbortSignal {
   const ac = new AbortController();
 
-  for (const signal of signals.filter((it) => !!it)) {
-    if (signal.aborted) {
+  for (const signal of signals) {
+    if (signal?.aborted) {
       ac.abort();
     } else {
-      signal.addEventListener('abort', () => ac.abort(), { once: true });
+      signal?.addEventListener('abort', () => ac.abort(), { once: true });
     }
   }
 
