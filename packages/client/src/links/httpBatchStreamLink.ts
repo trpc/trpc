@@ -5,7 +5,7 @@ import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
-import { allAbortSignals } from '../internals/signals';
+import { allAbortSignals, raceAbortSignals } from '../internals/signals';
 import type { NonEmptyArray } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
@@ -67,11 +67,15 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
 
-          const ac = allAbortSignals(batchOps);
+          const batchSignals = allAbortSignals(batchOps);
+          const abortController = new AbortController();
 
           const responsePromise = fetchHTTPResponse({
             ...resolvedOpts,
-            signal: ac.signal,
+            signal: raceAbortSignals(
+              batchSignals.signal,
+              abortController.signal,
+            ),
             type,
             contentTypeHeader: 'application/json',
             trpcAcceptHeader: 'application/jsonl',
@@ -106,7 +110,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
                 error,
               });
             },
-            abortController: ac,
+            abortController,
           });
           const promises = Object.keys(batchOps).map(
             async (key): Promise<HTTPResult> => {
