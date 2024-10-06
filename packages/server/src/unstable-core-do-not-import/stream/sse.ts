@@ -3,7 +3,7 @@ import { run } from '../utils';
 import type { ConsumerOnError } from './jsonl';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
-import { createTimeoutPromise } from './utils/createDeferred';
+import { createDeferred, createTimeoutPromise } from './utils/createDeferred';
 import { createReadableStream } from './utils/createReadableStream';
 
 type Serialize = (value: any) => any;
@@ -189,9 +189,10 @@ type ConsumerStreamResult<TData> =
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
 export function sseStreamConsumer<TData>(opts: {
-  from: EventSource;
+  from: Pick<EventSource, 'addEventListener' | 'readyState'>;
   onError?: ConsumerOnError;
   deserialize?: Deserialize;
+  tryHandleError?: (error: Event) => Promise<boolean>;
 }): AsyncIterable<ConsumerStreamResult<TData>> {
   const { deserialize = (v) => v } = opts;
   const eventSource = opts.from;
@@ -227,19 +228,38 @@ export function sseStreamConsumer<TData>(opts: {
     },
   });
 
+  let errorLock: Promise<void | 'CANCEL_ALL'> | undefined = undefined;
   eventSource.addEventListener('message', (msg) => {
     stream.controller.enqueue(msg);
   });
   eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
     stream.controller.enqueue(msg);
   });
-  eventSource.addEventListener('error', (cause) => {
+  eventSource.addEventListener('error', async (cause) => {
+    // We prevent more than 1 error handler from waiting at the same time
+    const result = await errorLock;
+    if (result === 'CANCEL_ALL') {
+      return;
+    }
+
+    const resolvable = createDeferred<void | 'CANCEL_ALL'>();
+    errorLock = resolvable.promise;
+
+    const handled = await opts.tryHandleError?.(cause);
+
+    resolvable.resolve();
+
+    if (handled === true) {
+      return;
+    }
+
     if (eventSource.readyState === EventSource.CLOSED) {
       stream.controller.error(cause);
     }
   });
 
   const readable = stream.readable.pipeThrough(transform);
+
   return {
     [Symbol.asyncIterator]() {
       const reader = readable.getReader();

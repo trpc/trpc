@@ -73,8 +73,10 @@ If the client and server are not on the same domain, you can use `withCredential
 // [...]
 unstable_httpSubscriptionLink({
   url: 'https://example.com/api/trpc',
-  eventSourceOptions: {
-    withCredentials: true, // <---
+  eventSourceOptions() {
+    return {
+      withCredentials: true, // <---
+    }
   },
 });
 ```
@@ -112,6 +114,59 @@ const trpc = createTRPCClient<AppRouter>({
               authorization: 'Bearer supersecret',
             },
           }; // you either need to typecast to `EventSourceInit` or use `as any` or override the types by a `declare global` statement
+        },
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000',
+      }),
+    }),
+  ],
+});
+```
+
+### Updating configuration on an active connection {#updatingConfig}
+
+Since `httpSubscriptionLink` is built on SSE via `EventSource`, connections which encounter errors such as network failures or bad response codes will be seamlessly retried. EventSource cannot re-run the `eventSourceOptions()` or `url()` options to update its configuration though, for instance where authentication has expired since the last connection.
+
+We support fully restarting the connection when an error occurs
+
+```tsx
+import {
+  createTRPCClient,
+  httpBatchLink,
+  splitLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
+import { EventSourcePolyfill, EventSourcePolyfillInit } from 'event-source-polyfill';
+import type { AppRouter } from '../server/index.js';
+
+// polyfill EventSource
+globalThis.EventSource = EventSourcePolyfill;
+
+// Initialize the tRPC client
+const trpc = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: unstable_httpSubscriptionLink({
+        url: async () => {
+          // calculate the latest URL if needed...
+          return getAuthenticatedUri()
+        },
+        eventSourceOptions: async () => {
+          // ...or maybe renew an access token
+          const token = await auth.getOrRenewToken()
+
+          return {
+            headers: {
+              authorization: 'Bearer ' + token,
+            },
+          } as EventSourcePolyfillInit;
+        },
+
+        // In this example we handle an authentication failure
+        shouldRecreateOnError(opts) {
+          return opts.type === 'http-error' && [401, 403].includes(opts.status);
         },
       }),
       false: httpBatchLink({

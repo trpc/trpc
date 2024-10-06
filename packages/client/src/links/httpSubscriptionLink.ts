@@ -33,11 +33,31 @@ async function urlWithConnectionParams(
   return url;
 }
 
+type RecreateOnErrorOpt =
+  | {
+      type: 'raw';
+      event: Event;
+    }
+  | {
+      type: 'http-error';
+      status: number;
+      event: Event;
+    };
+
 type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * EventSource options or a callback that returns them
    */
   eventSourceOptions?: CallbackOrValue<EventSourceInit>;
+  /**
+   * For a given error, should we reinitialize the underlying EventSource?
+   *
+   * This is useful where a long running subscription might be interrupted by a recoverable network error,
+   * but the existing authorization in a header or URI has expired in the mean-time
+   */
+  shouldRecreateOnError?: (
+    opt: RecreateOnErrorOpt,
+  ) => boolean | Promise<boolean>;
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -60,7 +80,7 @@ export function unstable_httpSubscriptionLink<
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
 
-        let eventSource: EventSource | null = null;
+        let eventSource: EventSourceWrapper | null = null;
         let unsubscribed = false;
 
         run(async () => {
@@ -79,22 +99,22 @@ export function unstable_httpSubscriptionLink<
             // already unsubscribed - rare race condition
             return;
           }
-          eventSource = new EventSource(url, eventSourceOptions);
+
+          eventSource = new EventSourceWrapper(url, eventSourceOptions);
+
           const onStarted = () => {
             observer.next({
               result: {
                 type: 'started',
               },
               context: {
-                eventSource,
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                eventSource: eventSource!.getEventSource(),
               },
             });
-
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            eventSource!.removeEventListener('open', onStarted);
           };
-          // console.log('starting', new Date());
-          eventSource.addEventListener('open', onStarted);
+          eventSource.addEventListener('open', onStarted, { once: true });
+
           const iterable = sseStreamConsumer<
             Partial<{
               id?: string;
@@ -103,6 +123,38 @@ export function unstable_httpSubscriptionLink<
           >({
             from: eventSource,
             deserialize: transformer.output.deserialize,
+            tryHandleError: async (ev) => {
+              if (
+                typeof opts.shouldRecreateOnError !== 'function' ||
+                !eventSource
+              ) {
+                return false;
+              }
+
+              const recreateOnErrorOpts = createRecreateOnErrorOpts(ev);
+
+              const shouldRestart = await opts.shouldRecreateOnError(
+                recreateOnErrorOpts,
+              );
+
+              if (!shouldRestart) {
+                return false;
+              }
+
+              eventSource.restart(
+                getUrl({
+                  transformer,
+                  url: await urlWithConnectionParams(opts),
+                  input,
+                  path,
+                  type,
+                  signal: null,
+                }),
+                await resultOf(opts.eventSourceOptions),
+              );
+
+              return true;
+            },
           });
 
           for await (const chunk of iterable) {
@@ -139,4 +191,98 @@ export function unstable_httpSubscriptionLink<
       });
     };
   };
+}
+
+function createRecreateOnErrorOpts(ev: Event): RecreateOnErrorOpt {
+  if ('status' in ev && typeof ev.status === 'number') {
+    return {
+      type: 'http-error',
+      status: ev.status,
+      event: ev,
+    };
+  }
+
+  return {
+    type: 'raw',
+    event: ev,
+  };
+}
+
+/**
+ * We wrap EventSource so that is can be reinitialized with new options
+ */
+class EventSourceWrapper implements Partial<EventSource> {
+  private es: EventSource;
+
+  private listeners: Partial<
+    Record<
+      keyof EventSourceEventMap,
+      Parameters<EventSource['addEventListener']>[]
+    >
+  > = {};
+  private *getAllEventListeners() {
+    for (const _type in this.listeners) {
+      const type = _type as keyof typeof this.listeners;
+      for (const listener of this.listeners[type] ?? []) {
+        yield listener;
+      }
+    }
+  }
+
+  constructor(url: string, options: EventSourceInit | undefined) {
+    this.es = new EventSource(url, options);
+  }
+
+  restart(url: string, options: EventSourceInit | undefined) {
+    for (const [type, callback, options] of this.getAllEventListeners()) {
+      this.es.removeEventListener(type, callback, options);
+    }
+
+    this.es.close();
+    this.es = new EventSource(url, options);
+
+    for (const [type, callback, options] of this.getAllEventListeners()) {
+      this.es.addEventListener(type, callback, options);
+    }
+  }
+
+  close() {
+    this.listeners = {};
+    this.es.close();
+  }
+
+  getEventSource() {
+    return this.es;
+  }
+
+  get readyState() {
+    return this.es.readyState;
+  }
+
+  addEventListener<TEvent extends keyof EventSourceEventMap>(
+    type: TEvent,
+    listener: (this: EventSource, ev: EventSourceEventMap[TEvent]) => any,
+    options?: boolean | AddEventListenerOptions,
+  ) {
+    this.listeners[type] ??= [];
+    this.listeners[type].push([type, listener as any, options]);
+
+    this.es.addEventListener(type, listener, options);
+  }
+
+  removeEventListener<TEvent extends keyof EventSourceEventMap>(
+    type: TEvent,
+    listener: (this: EventSource, ev: EventSourceEventMap[TEvent]) => any,
+    options?: boolean | EventListenerOptions,
+  ) {
+    this.listeners[type] ??= [];
+
+    const indexToRemove = this.listeners[type]?.findIndex(
+      ([_type, thisListener]) => thisListener === listener,
+    );
+    if (typeof indexToRemove === 'number' && indexToRemove >= 0) {
+      this.listeners[type].splice(indexToRemove, 1);
+    }
+    this.es.removeEventListener(type, listener, options);
+  }
 }
