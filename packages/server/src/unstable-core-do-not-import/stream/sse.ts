@@ -235,7 +235,7 @@ export function sseStreamConsumer<TData>(
 
   const stream = createReadableStream<ConsumerStreamResult<TData>>();
 
-  const initEventSource = async () => {
+  const createEventSource = async () => {
     const es = new EventSource(await opts.url(), await opts.init());
 
     if (signal.aborted) {
@@ -244,27 +244,25 @@ export function sseStreamConsumer<TData>(
       signal.addEventListener('abort', () => es.close());
     }
 
-    const handleIfNotReplaced = (fn: () => void | Promise<void>) => {
+    /**
+     * Dispatch an event to the stream controller
+     *
+     * Will be a no-op if the event source has been replaced
+     */
+    const dispatch = (
+      fn: (controller: typeof stream.controller) => void | Promise<void>,
+    ) => {
       run(async () => {
         await lock;
         if (es === eventSource) {
-          await fn();
+          await fn(stream.controller);
         }
       }).catch((error) => {
         stream.controller.error(error);
       });
     };
 
-    es.addEventListener('open', () => {
-      handleIfNotReplaced(() => {
-        stream.controller.enqueue({
-          type: 'opened',
-          eventSource: es,
-        });
-      });
-    });
-
-    const pauseEvents = async (fn: () => Promise<void>) => {
+    const pauseDispatch = async (fn: () => Promise<void>) => {
       const deferred = createDeferred<void>();
       lock = deferred.promise;
       try {
@@ -274,23 +272,32 @@ export function sseStreamConsumer<TData>(
       }
     };
 
+    es.addEventListener('open', () => {
+      dispatch((controller) => {
+        controller.enqueue({
+          type: 'opened',
+          eventSource: es,
+        });
+      });
+    });
+
     es.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
-      handleIfNotReplaced(async () => {
+      dispatch(async () => {
         const shouldRecreateOnError = opts.shouldRecreateOnError;
         if (shouldRecreateOnError) {
-          await pauseEvents(async () => {
+          await pauseDispatch(async () => {
             const recreate = await shouldRecreateOnError({
               type: SERIALIZED_ERROR_EVENT,
               error: deserialize(JSON.parse(msg.data)),
             });
             if (recreate) {
               es.close();
-              eventSource = await initEventSource();
+              eventSource = await createEventSource();
             }
           });
         }
-        handleIfNotReplaced(() => {
-          stream.controller.enqueue({
+        dispatch((controller) => {
+          controller.enqueue({
             type: 'error',
             error: deserialize(JSON.parse(msg.data)),
             eventSource: es,
@@ -299,31 +306,31 @@ export function sseStreamConsumer<TData>(
       });
     });
     es.addEventListener('error', (event) => {
-      handleIfNotReplaced(async () => {
+      dispatch(async () => {
         const shouldRecreateOnError = opts.shouldRecreateOnError;
         if (shouldRecreateOnError) {
-          await pauseEvents(async () => {
+          await pauseDispatch(async () => {
             const recreate = await shouldRecreateOnError({
               type: 'event',
               event,
             });
             if (recreate) {
               es.close();
-              eventSource = await initEventSource();
+              eventSource = await createEventSource();
               return;
             }
           });
         }
 
-        handleIfNotReplaced(() => {
+        dispatch((controller) => {
           if (es.readyState === EventSource.CLOSED) {
-            stream.controller.error(event);
+            controller.error(event);
           }
         });
       });
     });
     es.addEventListener('message', (msg) => {
-      handleIfNotReplaced(() => {
+      dispatch((controller) => {
         const chunk = deserialize(JSON.parse(msg.data));
 
         const def: SSEvent = {
@@ -332,7 +339,7 @@ export function sseStreamConsumer<TData>(
         if (msg.lastEventId) {
           def.id = msg.lastEventId;
         }
-        stream.controller.enqueue({
+        controller.enqueue({
           type: 'data',
           data: def as inferTrackedOutput<TData>,
           eventSource: es,
@@ -342,7 +349,7 @@ export function sseStreamConsumer<TData>(
     return es;
   };
 
-  const eventSourcePromise = initEventSource().then((it) => {
+  const eventSourcePromise = createEventSource().then((it) => {
     eventSource = it;
   });
   return {
