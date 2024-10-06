@@ -64,7 +64,7 @@ export function unstable_httpSubscriptionLink<
         }
 
         const ac = new AbortController();
-        const signal = raceAbortSignals(op.signal);
+        const signal = raceAbortSignals(op.signal, ac.signal);
         const eventSourceStream = sseStreamConsumer<
           Partial<{
             id?: string;
