@@ -175,21 +175,22 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
   );
 }
 
-interface ConsumerStreamResultData<TData> {
+interface ConsumerStreamResultBase {
+  eventSource: EventSource;
+}
+
+interface ConsumerStreamResultData<TData> extends ConsumerStreamResultBase {
   type: 'data';
   data: inferTrackedOutput<TData>;
-  eventSource: EventSource;
 }
 
-interface ConsumerStreamResultError {
+interface ConsumerStreamResultError extends ConsumerStreamResultBase {
   type: 'error';
   error: unknown;
-  eventSource: EventSource;
 }
 
-interface ConsumerStreamResultOpened {
+interface ConsumerStreamResultOpened extends ConsumerStreamResultBase {
   type: 'opened';
-  eventSource: EventSource;
 }
 
 type ConsumerStreamResult<TData> =
