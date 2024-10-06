@@ -131,7 +131,7 @@ Since `httpSubscriptionLink` is built on SSE via `EventSource`, connections whic
 We support fully restarting the connection when an error occurs.
 
 :::caution
-Note that this will cause the `EventSource` and any [`tracked()`](../../server/subscriptions.md#tracked)-events will be lost.
+Note that this will cause the `EventSource` to be re-created from scratch and any [`tracked()`](../../server/subscriptions.md#tracked)-events to be lost.
 :::
 
 ```tsx

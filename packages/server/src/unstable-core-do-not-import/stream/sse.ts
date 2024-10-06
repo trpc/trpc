@@ -207,12 +207,6 @@ export interface SSEStreamConsumerOptions {
   url: () => MaybePromise<string>;
   init: () => MaybePromise<EventSourceInit> | undefined;
   signal: AbortSignal;
-  /**
-   * For a given error, should we reinitialize the underlying EventSource?
-   *
-   * This is useful where a long running subscription might be interrupted by a recoverable network error,
-   * but the existing authorization in a header or URI has expired in the mean-time
-   */
   shouldRecreateOnError?: (
     opts:
       | {

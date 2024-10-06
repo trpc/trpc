@@ -40,6 +40,9 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * EventSource options or a callback that returns them
    */
   eventSourceOptions?: CallbackOrValue<EventSourceInit>;
+  /**
+   * @see https://trpc.io/docs/client/links/httpSubscriptionLink#updatingConfig
+   */
   experimental_shouldRecreateOnError?: SSEStreamConsumerOptions['shouldRecreateOnError'];
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
