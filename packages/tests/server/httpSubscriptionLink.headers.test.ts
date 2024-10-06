@@ -131,7 +131,7 @@ const ctx = konn()
                     },
                   } as EventSourcePolyfillInit;
                 },
-                shouldRecreateOnError(opts) {
+                experimental_shouldRecreateOnError(opts) {
                   let willRestart = false;
                   if (opts.type === 'event') {
                     const ev = opts.event;

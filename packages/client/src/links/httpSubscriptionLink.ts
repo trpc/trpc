@@ -39,8 +39,8 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * EventSource options or a callback that returns them
    */
   eventSourceOptions?: CallbackOrValue<EventSourceInit>;
-} & Pick<SSEStreamConsumerOptions, 'shouldRecreateOnError'> &
-  TransformerOptions<TRoot> &
+  experimental_shouldRecreateOnError?: SSEStreamConsumerOptions['shouldRecreateOnError'];
+} & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
 /**
@@ -83,7 +83,7 @@ export function unstable_httpSubscriptionLink<
           init: () => resultOf(opts.eventSourceOptions),
           signal,
           deserialize: transformer.output.deserialize,
-          shouldRecreateOnError: opts.shouldRecreateOnError,
+          shouldRecreateOnError: opts.experimental_shouldRecreateOnError,
         });
 
         run(async () => {

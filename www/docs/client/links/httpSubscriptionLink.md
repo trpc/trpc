@@ -169,7 +169,7 @@ const trpc = createTRPCClient<AppRouter>({
         },
 
         // In this example we handle an authentication failure
-        shouldRecreateOnError(opts) {
+        experimental_shouldRecreateOnError(opts) {
           let willRestart = false;
           if (opts.type === 'event') {
             const ev = opts.event;
@@ -305,7 +305,7 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * This is useful where a long running subscription might be interrupted by a recoverable network error,
    * but the existing authorization in a header or URI has expired in the mean-time
    */
-  shouldRecreateOnError?: (
+  experimental_shouldRecreateOnError?: (
     opts:
       | {
           type: 'event';
