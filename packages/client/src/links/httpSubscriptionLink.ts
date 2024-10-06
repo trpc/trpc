@@ -9,9 +9,10 @@ import {
   run,
   sseStreamConsumer,
 } from '@trpc/server/unstable-core-do-not-import';
+import { raceAbortSignals } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
-import { getUrl, raceAbortSignals } from './internals/httpUtils';
+import { getUrl } from './internals/httpUtils';
 import type { CallbackOrValue } from './internals/urlWithConnectionParams';
 import {
   resultOf,
