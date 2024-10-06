@@ -10,7 +10,7 @@ import {
 } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
-import { getUrl } from './internals/httpUtils';
+import { getUrl, mergeAbortSignals } from './internals/httpUtils';
 import type { CallbackOrValue } from './internals/urlWithConnectionParams';
 import {
   resultOf,
@@ -75,89 +75,31 @@ export function unstable_httpSubscriptionLink<
     return ({ op }) => {
       return observable((observer) => {
         const { type, path, input } = op;
+
         /* istanbul ignore if -- @preserve */
         if (type !== 'subscription') {
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
 
-        let eventSource: EventSourceWrapper | null = null;
-        let unsubscribed = false;
+        const ac = new AbortController();
+
+        const signal = mergeAbortSignals([ac, op]);
+        const eventSourceStream = sseStreamConsumer<
+          Partial<{
+            id?: string;
+            data: unknown;
+          }>
+        >({
+          url: () => urlWithConnectionParams(opts),
+          init: () => resultOf(opts.eventSourceOptions),
+          signal,
+          deserialize: transformer.output.deserialize,
+        });
 
         run(async () => {
-          const url = getUrl({
-            transformer,
-            url: await urlWithConnectionParams(opts),
-            input,
-            path,
-            type,
-            signal: null,
-          });
+          const reader = eventSourceStream.getReader();
 
-          const eventSourceOptions = await resultOf(opts.eventSourceOptions);
-          /* istanbul ignore if -- @preserve */
-          if (unsubscribed) {
-            // already unsubscribed - rare race condition
-            return;
-          }
-
-          eventSource = new EventSourceWrapper(url, eventSourceOptions);
-
-          const onStarted = () => {
-            observer.next({
-              result: {
-                type: 'started',
-              },
-              context: {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                eventSource: eventSource!.getEventSource(),
-              },
-            });
-          };
-          eventSource.addEventListener('open', onStarted, { once: true });
-
-          const iterable = sseStreamConsumer<
-            Partial<{
-              id?: string;
-              data: unknown;
-            }>
-          >({
-            from: eventSource,
-            deserialize: transformer.output.deserialize,
-            tryHandleError: async (ev) => {
-              if (
-                typeof opts.shouldRecreateOnError !== 'function' ||
-                !eventSource
-              ) {
-                return false;
-              }
-
-              const recreateOnErrorOpts = createRecreateOnErrorOpts(ev);
-
-              const shouldRestart = await opts.shouldRecreateOnError(
-                recreateOnErrorOpts,
-              );
-
-              if (!shouldRestart) {
-                return false;
-              }
-
-              eventSource.restart(
-                getUrl({
-                  transformer,
-                  url: await urlWithConnectionParams(opts),
-                  input,
-                  path,
-                  type,
-                  signal: null,
-                }),
-                await resultOf(opts.eventSourceOptions),
-              );
-
-              return true;
-            },
-          });
-
-          for await (const chunk of iterable) {
+          for await (const chunk of reader) {
             if (!chunk.ok) {
               // TODO: handle in https://github.com/trpc/trpc/issues/5871
               continue;
@@ -185,8 +127,7 @@ export function unstable_httpSubscriptionLink<
 
         return () => {
           observer.complete();
-          eventSource?.close();
-          unsubscribed = true;
+          ac.abort();
         };
       });
     };

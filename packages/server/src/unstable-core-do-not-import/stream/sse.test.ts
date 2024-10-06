@@ -19,7 +19,7 @@ export const suppressLogs = () => {
     console.error = error;
   };
 };
-test('e2e, server-sent events (SSE)', async () => {
+test.only('e2e, server-sent events (SSE)', async () => {
   async function* data(lastEventId?: Maybe<number>) {
     let i = lastEventId ?? 0;
     while (true) {
@@ -84,7 +84,9 @@ test('e2e, server-sent events (SSE)', async () => {
   });
 
   const iterable = sseStreamConsumer<Data>({
-    from: es,
+    url: () => server.url,
+    signal: new AbortController().signal,
+    init: () => ({}),
     deserialize: SuperJSON.deserialize,
   });
 
@@ -95,12 +97,15 @@ test('e2e, server-sent events (SSE)', async () => {
   const ITERATIONS = 10;
   const values: number[] = [];
   for await (const value of iterable) {
-    if (!value.ok) {
+    if (value.type === 'error') {
       throw value.error;
     }
-    values.push(value.data.data);
-    if (values.length === ITERATIONS) {
-      break;
+    if (value.type === 'data') {
+      console.log('data', value);
+      values.push(value.data.data);
+      if (values.length === ITERATIONS) {
+        break;
+      }
     }
   }
   expect(values).toEqual(range(1, ITERATIONS + 1));
@@ -131,12 +136,14 @@ test('e2e, server-sent events (SSE)', async () => {
   });
 
   for await (const value of iterable) {
-    if (!value.ok) {
+    if (value.type === 'error') {
       throw value.error;
     }
-    values.push(value.data.data);
-    if (values.length === ITERATIONS * 2) {
-      break;
+    if (value.type === 'data') {
+      values.push(value.data.data);
+      if (values.length === ITERATIONS) {
+        break;
+      }
     }
   }
 
@@ -239,13 +246,19 @@ test('SSE on serverless - emit and disconnect early', async () => {
   const ITERATIONS = 3;
   const values: number[] = [];
   for await (const value of iterable) {
-    if (!value.ok) {
-      throw value.error;
-    }
-    // console.log({ value });
-    values.push(value.data.data);
-    if (values.length === ITERATIONS) {
-      break;
+    switch (value.type) {
+      case 'opened': {
+        continue;
+      }
+      case 'error': {
+        throw value.error;
+      }
+      case 'data': {
+        values.push(value.data.data);
+        if (values.length === ITERATIONS) {
+          break;
+        }
+      }
     }
   }
   expect(values).toEqual(range(1, ITERATIONS + 1));

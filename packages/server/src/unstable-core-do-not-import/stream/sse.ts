@@ -233,8 +233,10 @@ export function sseStreamConsumer<TData>(opts: {
   const signal = raceSignals(ac.signal, opts.signal);
   const readable = new ReadableStream<ConsumerStreamResult<TData>>({
     async start(controller) {
+      console.log('start');
       const initEventSource = async () => {
         const es = new EventSource(await opts.url(), await opts.init());
+        console.log('initEventSource', es);
 
         if (signal.aborted) {
           es.close();
@@ -254,6 +256,7 @@ export function sseStreamConsumer<TData>(opts: {
         };
 
         es.addEventListener('open', () => {
+          console.log('open');
           handleIfNotReplaced(() => {
             controller.enqueue({
               type: 'opened',
@@ -281,10 +284,30 @@ export function sseStreamConsumer<TData>(opts: {
             });
           });
         });
-        es.addEventListener('error', () => {});
+        es.addEventListener('error', (event) => {
+          handleIfNotReplaced(async () => {
+            if (opts.shouldRecreateOnError) {
+              const recreate = await opts.shouldRecreateOnError({
+                type: 'event',
+                event,
+              });
+              if (recreate) {
+                es.close();
+                eventSource = await initEventSource();
+                return;
+              }
+            }
+
+            if (es.readyState === EventSource.CLOSED) {
+              controller.error(event);
+            }
+          });
+        });
         es.addEventListener('message', (msg) => {
           handleIfNotReplaced(() => {
             const chunk = deserialize(JSON.parse(msg.data));
+            console.log('message', chunk);
+
             const def: SSEvent = {
               data: chunk.data,
             };
@@ -300,7 +323,7 @@ export function sseStreamConsumer<TData>(opts: {
         return es;
       };
 
-      await initEventSource();
+      eventSource = await initEventSource();
     },
     cancel() {
       ac.abort();
