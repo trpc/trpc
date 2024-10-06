@@ -10,7 +10,7 @@ import {
 } from '@trpc/client';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import type { EventSourcePolyfillInit } from 'event-source-polyfill';
+import type { Event, EventSourcePolyfillInit } from 'event-source-polyfill';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import { konn } from 'konn';
 import superjson from 'superjson';
@@ -132,15 +132,14 @@ const ctx = konn()
                   } as EventSourcePolyfillInit;
                 },
                 shouldRecreateOnError(opts) {
-                  if (opts.type !== 'event') {
-                    return false;
+                  let willRestart = false;
+                  if (opts.type === 'event') {
+                    const ev = opts.event;
+                    willRestart =
+                      'status' in ev &&
+                      typeof ev.status === 'number' &&
+                      [401, 403].includes(ev.status);
                   }
-                  const ev = opts.event;
-                  const willRestart =
-                    'status' in ev &&
-                    typeof ev.status === 'number' &&
-                    [401, 403].includes(ev.status);
-
                   if (willRestart) {
                     // eslint-disable-next-line no-console
                     console.log('Restarting EventSource due to 401/403 error');

@@ -197,16 +197,6 @@ type ConsumerStreamResult<TData> =
   | ConsumerStreamResultError
   | ConsumerStreamResultOpened;
 
-type RecreateOnErrorOpt =
-  | {
-      type: 'event';
-      event: Event;
-    }
-  | {
-      type: 'serialized-error';
-      error: unknown;
-    };
-
 export interface SSEStreamConsumerOptions {
   url: () => MaybePromise<string>;
   init: () => MaybePromise<EventSourceInit> | undefined;
@@ -218,7 +208,15 @@ export interface SSEStreamConsumerOptions {
    * but the existing authorization in a header or URI has expired in the mean-time
    */
   shouldRecreateOnError?: (
-    opt: RecreateOnErrorOpt,
+    opts:
+      | {
+          type: 'event';
+          event: Event;
+        }
+      | {
+          type: 'serialized-error';
+          error: unknown;
+        },
   ) => boolean | Promise<boolean>;
   deserialize?: Deserialize;
 }
