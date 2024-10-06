@@ -198,20 +198,7 @@ type RecreateOnErrorOpt =
       error: unknown;
     };
 
-const raceSignals = (...signals: AbortSignal[]) => {
-  const controller = new AbortController();
-
-  for (const signal of signals) {
-    signal.addEventListener('abort', () => controller.abort(), {
-      once: true,
-    });
-  }
-  return controller.signal;
-};
-/**
- * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
- */
-export function sseStreamConsumer<TData>(opts: {
+export interface SSEStreamConsumerOptions {
   url: () => MaybePromise<string>;
   init: () => MaybePromise<EventSourceInit> | undefined;
   signal: AbortSignal;
@@ -225,118 +212,120 @@ export function sseStreamConsumer<TData>(opts: {
     opt: RecreateOnErrorOpt,
   ) => boolean | Promise<boolean>;
   deserialize?: Deserialize;
-}): AsyncIterable<ConsumerStreamResult<TData>> {
+}
+/**
+ * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
+ */
+export function sseStreamConsumer<TData>(
+  opts: SSEStreamConsumerOptions,
+): AsyncIterable<ConsumerStreamResult<TData>> {
   const { deserialize = (v) => v } = opts;
-  let lock: Promise<void> = Promise.resolve();
-  let eventSource: EventSource | null = null;
-  const ac = new AbortController();
-  const signal = raceSignals(ac.signal, opts.signal);
-  const readable = new ReadableStream<ConsumerStreamResult<TData>>({
-    async start(controller) {
-      console.log('start');
-      const initEventSource = async () => {
-        const es = new EventSource(await opts.url(), await opts.init());
-        console.log('initEventSource', es);
 
-        if (signal.aborted) {
-          es.close();
-        } else {
-          signal.addEventListener('abort', () => es.close());
+  const signal = opts.signal;
+
+  let eventSource: EventSource | null = null;
+  let lock: Promise<void> = Promise.resolve();
+
+  const stream = createReadableStream<ConsumerStreamResult<TData>>();
+
+  const initEventSource = async () => {
+    const es = new EventSource(await opts.url(), await opts.init());
+
+    if (signal.aborted) {
+      es.close();
+    } else {
+      signal.addEventListener('abort', () => es.close());
+    }
+
+    const handleIfNotReplaced = (fn: () => void | Promise<void>) => {
+      run(async () => {
+        await lock;
+        if (es === eventSource) {
+          await fn();
+        }
+      }).catch((error) => {
+        stream.controller.error(error);
+      });
+    };
+
+    es.addEventListener('open', () => {
+      handleIfNotReplaced(() => {
+        stream.controller.enqueue({
+          type: 'opened',
+        });
+      });
+    });
+    es.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
+      handleIfNotReplaced(async () => {
+        if (opts.shouldRecreateOnError) {
+          const deferred = createDeferred<void>();
+          lock = deferred.promise;
+          const recreate = await opts.shouldRecreateOnError({
+            type: SERIALIZED_ERROR_EVENT,
+            error: deserialize(JSON.parse(msg.data)),
+          });
+          if (recreate) {
+            es.close();
+            eventSource = await initEventSource();
+          }
+          deferred.resolve();
+        }
+        stream.controller.enqueue({
+          type: 'error',
+          error: deserialize(JSON.parse(msg.data)),
+        });
+      });
+    });
+    es.addEventListener('error', (event) => {
+      handleIfNotReplaced(async () => {
+        if (opts.shouldRecreateOnError) {
+          const recreate = await opts.shouldRecreateOnError({
+            type: 'event',
+            event,
+          });
+          if (recreate) {
+            es.close();
+            eventSource = await initEventSource();
+            return;
+          }
         }
 
-        const handleIfNotReplaced = (fn: () => void | Promise<void>) => {
-          run(async () => {
-            await lock;
-            if (es === eventSource) {
-              await fn();
-            }
-          }).catch((error) => {
-            controller.error(error);
-          });
+        if (es.readyState === EventSource.CLOSED) {
+          stream.controller.error(event);
+        }
+      });
+    });
+    es.addEventListener('message', (msg) => {
+      handleIfNotReplaced(() => {
+        const chunk = deserialize(JSON.parse(msg.data));
+
+        const def: SSEvent = {
+          data: chunk,
         };
-
-        es.addEventListener('open', () => {
-          console.log('open');
-          handleIfNotReplaced(() => {
-            controller.enqueue({
-              type: 'opened',
-            });
-          });
+        if (chunk.id) {
+          def.id = chunk.id;
+        }
+        stream.controller.enqueue({
+          type: 'data',
+          data: def as inferTrackedOutput<TData>,
         });
-        es.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
-          handleIfNotReplaced(async () => {
-            if (opts.shouldRecreateOnError) {
-              const deferred = createDeferred<void>();
-              lock = deferred.promise;
-              const recreate = await opts.shouldRecreateOnError({
-                type: SERIALIZED_ERROR_EVENT,
-                error: deserialize(JSON.parse(msg.data)),
-              });
-              if (recreate) {
-                es.close();
-                eventSource = await initEventSource();
-              }
-              deferred.resolve();
-            }
-            controller.enqueue({
-              type: 'error',
-              error: deserialize(JSON.parse(msg.data)),
-            });
-          });
-        });
-        es.addEventListener('error', (event) => {
-          handleIfNotReplaced(async () => {
-            if (opts.shouldRecreateOnError) {
-              const recreate = await opts.shouldRecreateOnError({
-                type: 'event',
-                event,
-              });
-              if (recreate) {
-                es.close();
-                eventSource = await initEventSource();
-                return;
-              }
-            }
+      });
+    });
+    return es;
+  };
 
-            if (es.readyState === EventSource.CLOSED) {
-              controller.error(event);
-            }
-          });
-        });
-        es.addEventListener('message', (msg) => {
-          handleIfNotReplaced(() => {
-            const chunk = deserialize(JSON.parse(msg.data));
-            console.log('message', chunk);
-
-            const def: SSEvent = {
-              data: chunk.data,
-            };
-            if (chunk.id) {
-              def.id = chunk.id;
-            }
-            controller.enqueue({
-              type: 'data',
-              data: def as inferTrackedOutput<TData>,
-            });
-          });
-        });
-        return es;
-      };
-
-      eventSource = await initEventSource();
-    },
-    cancel() {
-      ac.abort();
-    },
+  const eventSourcePromise = initEventSource().then((it) => {
+    eventSource = it;
   });
-
   return {
     [Symbol.asyncIterator]() {
-      const reader = readable.getReader();
+      const reader = stream.readable.getReader();
 
       const iterator: AsyncIterator<ConsumerStreamResult<TData>> = {
         async next() {
+          await eventSourcePromise;
           const value = await reader.read();
+
           if (value.done) {
             return {
               value: undefined,
