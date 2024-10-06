@@ -95,6 +95,7 @@ const config = {
         ],
       },
     ],
+    '@typescript-eslint/switch-exhaustiveness-check': 'error',
   },
   overrides: [
     // {

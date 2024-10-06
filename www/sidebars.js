@@ -1,7 +1,7 @@
 // @ts-check
-/* eslint-disable @typescript-eslint/no-var-requires */
 
-const { parseEnv } = require('./src/utils/env');
+import { parseEnv } from './src/utils/env';
+
 const env = parseEnv(process.env);
 
 module.exports = {
@@ -62,6 +62,8 @@ module.exports = {
         'server/data-transformers',
         'server/metadata',
         'server/caching',
+        'server/subscriptions',
+        'server/websockets',
       ],
     },
     {
@@ -83,6 +85,7 @@ module.exports = {
           },
           items: [
             'client/react/setup',
+            'client/react/server-components',
             'client/react/infer-types',
             'client/react/useQuery',
             'client/react/useMutation',
@@ -159,13 +162,7 @@ module.exports = {
         title: 'Extra Information',
         slug: '/further',
       },
-      items: [
-        'further/faq',
-        'further/rpc',
-        'further/subscriptions',
-        'further/websockets',
-        'further/further-reading',
-      ],
+      items: ['further/faq', 'further/rpc', 'further/further-reading'],
     },
     ...(env.TYPEDOC
       ? [

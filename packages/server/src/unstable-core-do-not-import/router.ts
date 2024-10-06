@@ -7,6 +7,7 @@ import type {
   ErrorHandlerOptions,
   inferProcedureInput,
   inferProcedureOutput,
+  LegacyObservableSubscriptionProcedure,
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
@@ -22,7 +23,9 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
   input: inferProcedureInput<TProcedure>,
 ) => Promise<
   TProcedure['_def']['type'] extends 'subscription'
-    ? Observable<inferProcedureOutput<TProcedure>, TRPCError>
+    ? TProcedure extends LegacyObservableSubscriptionProcedure<any>
+      ? Observable<inferProcedureOutput<TProcedure>, TRPCError>
+      : inferProcedureOutput<TProcedure>
     : inferProcedureOutput<TProcedure>
 >;
 
@@ -60,6 +63,7 @@ export type RouterCaller<
   ctx: TRoot['ctx'] | (() => MaybePromise<TRoot['ctx']>),
   options?: {
     onError?: RouterCallerErrorHandler<TRoot['ctx']>;
+    signal?: AbortSignal;
   },
 ) => DecorateRouterRecord<TRecord>;
 
@@ -76,7 +80,7 @@ export interface Router<
   };
   /**
    * @deprecated use `t.createCallerFactory(router)` instead
-   * @link https://trpc.io/docs/v11/server/server-side-calls
+   * @see https://trpc.io/docs/v11/server/server-side-calls
    */
   createCaller: RouterCaller<TRoot, TRecord>;
 }
@@ -270,12 +274,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
     const _def = router._def;
     type Context = TRoot['ctx'];
 
-    return function createCaller(
-      ctxOrCallback,
-      options?: {
-        onError?: RouterCallerErrorHandler<Context>;
-      },
-    ) {
+    return function createCaller(ctxOrCallback, opts) {
       return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
         async ({ path, args }) => {
           const fullPath = path.join('.');
@@ -297,9 +296,10 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
               getRawInput: async () => args[0],
               ctx,
               type: procedure._def.type,
+              signal: opts?.signal,
             });
           } catch (cause) {
-            options?.onError?.({
+            opts?.onError?.({
               ctx,
               error: getTRPCErrorFromUnknown(cause),
               input: args[0],

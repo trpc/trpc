@@ -20,18 +20,14 @@ import {
   resultOf,
   type UrlOptionsWithConnectionParams,
 } from './internals/urlWithConnectionParams';
-import {
-  isConnectionStateMessage,
-  type Operation,
-  type TRPCConnectionStateMessage,
-  type TRPCLink,
-} from './types';
+import type { Operation, TRPCLink } from './types';
 
 const run = <TResult>(fn: () => TResult): TResult => fn();
 
-type WSCallbackResult<TRouter extends AnyRouter, TOutput> =
-  | TRPCResponseMessage<TOutput, inferRouterError<TRouter>>
-  | { result: TRPCConnectionStateMessage<inferRouterError<TRouter>> };
+type WSCallbackResult<TRouter extends AnyRouter, TOutput> = TRPCResponseMessage<
+  TOutput,
+  inferRouterError<TRouter>
+>;
 
 type WSCallbackObserver<TRouter extends AnyRouter, TOutput> = Observer<
   WSCallbackResult<TRouter, TOutput>,
@@ -56,6 +52,10 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
    */
   onOpen?: () => void;
   /**
+   * Triggered when a WebSocket connection encounters an error
+   */
+  onError?: (evt?: Event) => void;
+  /**
    * Triggered when a WebSocket connection is closed
    */
   onClose?: (cause?: { code?: number }) => void;
@@ -74,6 +74,25 @@ export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
      */
     closeMs: number;
   };
+  /**
+   * Send ping messages to the server and kill the connection if no pong message is returned
+   */
+  keepAlive?: {
+    /**
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Send a ping message every this many milliseconds
+     * @default 5_000
+     */
+    intervalMs?: number;
+    /**
+     * Close the WebSocket after this many milliseconds if the server does not respond
+     * @default 1_000
+     */
+    pongTimeoutMs?: number;
+  };
 }
 
 type LazyOptions = Required<NonNullable<WebSocketClientOptions['lazy']>>;
@@ -85,8 +104,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
   const {
     WebSocket: WebSocketImpl = WebSocket,
     retryDelayMs: retryDelayFn = exponentialBackoff,
-    onOpen,
-    onClose,
   } = opts;
   const lazyOpts: LazyOptions = {
     ...lazyDefaults,
@@ -106,7 +123,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
   /**
    * pending outgoing requests that are awaiting callback
    */
-  type TCallbacks = WSCallbackObserver<AnyRouter, TRPCClientError<AnyRouter>>;
+  type TCallbacks = WSCallbackObserver<AnyRouter, unknown>;
   type WsRequest = {
     /**
      * Reference to the WebSocket instance this request was made to
@@ -129,7 +146,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     undefined;
   let activeConnection: null | Connection = lazyOpts.enabled
     ? null
-    : createConnection(null);
+    : createConnection();
 
   type Connection = {
     id: number;
@@ -153,7 +170,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
    */
   function dispatch() {
     if (!activeConnection) {
-      activeConnection = createConnection(null);
+      activeConnection = createConnection();
       return;
     }
     // using a timeout to batch messages
@@ -179,14 +196,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
       startLazyDisconnectTimer();
     });
   }
-  function tryReconnect(conn: Connection, cause: Error | null) {
+  function tryReconnect() {
     if (!!connectTimer) {
       return;
     }
-
-    conn.state = 'connecting';
     const timeout = retryDelayFn(connectAttempt++);
-    reconnectInMs(timeout, cause);
+    reconnectInMs(timeout);
   }
   function hasPendingRequests(conn?: Connection) {
     const requests = Object.values(pendingRequests);
@@ -196,20 +211,20 @@ export function createWSClient(opts: WebSocketClientOptions) {
     return requests.some((req) => req.connection === conn);
   }
 
-  function reconnect(cause: Error | null) {
+  function reconnect() {
     if (lazyOpts.enabled && !hasPendingRequests()) {
       // Skip reconnecting if there are pending requests and we're in lazy mode
       return;
     }
     const oldConnection = activeConnection;
-    activeConnection = createConnection(cause);
+    activeConnection = createConnection();
     oldConnection && closeIfNoPending(oldConnection);
   }
-  function reconnectInMs(ms: number, cause: Error | null) {
+  function reconnectInMs(ms: number) {
     if (connectTimer) {
       return;
     }
-    connectTimer = setTimeout(reconnect, ms, cause);
+    connectTimer = setTimeout(reconnect, ms);
   }
 
   function closeIfNoPending(conn: Connection) {
@@ -247,31 +262,63 @@ export function createWSClient(opts: WebSocketClientOptions) {
     }, lazyOpts.closeMs);
   };
 
-  function createConnection(cause: Error | null): Connection {
+  function createConnection(): Connection {
+    let pingTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+    let pongTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
     const self: Connection = {
       id: ++connectionIndex,
       state: 'connecting',
     } as Connection;
 
-    for (const req of Object.values(pendingRequests)) {
-      if (req.type === 'subscription') {
-        req.callbacks.next?.({
-          result: {
-            type: 'state',
-            state: 'connecting',
-            error: cause ?? null,
-          },
-        });
-      }
-    }
-
     clearTimeout(lazyDisconnectTimer);
 
-    const onError = (cause: Error | null) => {
-      self.state = 'closed';
-      if (self === activeConnection) {
-        tryReconnect(self, cause);
+    const onCloseOrError = () => {
+      clearTimeout(pingTimeout);
+      clearTimeout(pongTimeout);
+
+      if (self.state === 'closed') {
+        return;
       }
+
+      (self as Connection).state = 'closed';
+      if (activeConnection === self) {
+        // connection might have been replaced already
+        tryReconnect();
+      }
+
+      for (const [key, req] of Object.entries(pendingRequests)) {
+        if (req.connection !== self) {
+          continue;
+        }
+
+        // The connection was closed either unexpectedly or because of a reconnect
+        if (req.type === 'subscription') {
+          // Subscriptions will resume after we've reconnected
+          resumeSubscriptionOnReconnect(req);
+        } else {
+          // Queries and mutations will error if interrupted
+          delete pendingRequests[key];
+          req.callbacks.error?.(
+            TRPCClientError.from(
+              new TRPCWebSocketClosedError('WebSocket closed prematurely'),
+            ),
+          );
+        }
+      }
+    };
+
+    const onClose = (code: number) => {
+      const wasOpen = self.state === 'open';
+      onCloseOrError();
+
+      if (wasOpen) {
+        opts.onClose?.({ code });
+      }
+    };
+
+    const onError = (evt?: Event) => {
+      onCloseOrError();
+      opts.onError?.(evt);
     };
     run(async () => {
       let url = await resultOf(opts.url);
@@ -288,35 +335,57 @@ export function createWSClient(opts: WebSocketClientOptions) {
       connectTimer = undefined;
 
       ws.addEventListener('open', () => {
+        async function sendConnectionParams() {
+          if (!opts.connectionParams) {
+            return;
+          }
+
+          const connectMsg: TRPCConnectionParamsMessage = {
+            method: 'connectionParams',
+            data: await resultOf(opts.connectionParams),
+          };
+
+          ws.send(JSON.stringify(connectMsg));
+        }
+        function handleKeepAlive() {
+          if (!opts.keepAlive?.enabled) {
+            return;
+          }
+          const { pongTimeoutMs = 1_000, intervalMs = 5_000 } = opts.keepAlive;
+
+          const schedulePing = () => {
+            const schedulePongTimeout = () => {
+              pongTimeout = setTimeout(() => {
+                ws.close(3001);
+                onClose(3001);
+              }, pongTimeoutMs);
+            };
+            pingTimeout = setTimeout(() => {
+              ws.send('PING');
+              schedulePongTimeout();
+            }, intervalMs);
+          };
+          ws.addEventListener('message', () => {
+            clearTimeout(pingTimeout);
+            clearTimeout(pongTimeout);
+
+            schedulePing();
+          });
+          schedulePing();
+        }
         run(async () => {
           /* istanbul ignore next -- @preserve */
           if (activeConnection?.ws !== ws) {
             return;
           }
-          if (opts.connectionParams) {
-            const connectMsg: TRPCConnectionParamsMessage = {
-              method: 'connectionParams',
-              data: await resultOf(opts.connectionParams),
-            };
+          handleKeepAlive();
 
-            ws.send(JSON.stringify(connectMsg));
-          }
+          await sendConnectionParams();
 
           connectAttempt = 0;
           self.state = 'open';
 
-          for (const req of Object.values(pendingRequests)) {
-            if (req.type === 'subscription') {
-              req.callbacks.next?.({
-                result: {
-                  type: 'state',
-                  state: 'pending',
-                },
-              });
-            }
-          }
-
-          onOpen?.();
+          opts.onOpen?.();
           dispatch();
         }).catch((cause) => {
           ws.close(
@@ -324,23 +393,17 @@ export function createWSClient(opts: WebSocketClientOptions) {
             3000,
             cause,
           );
-          onError(cause);
+          onError();
         });
       });
-      ws.addEventListener('error', (event) => {
-        if (globalThis.ErrorEvent && event instanceof ErrorEvent) {
-          onError(event.error);
-        } else {
-          onError(new Error('Unknown WebSocket error'));
-        }
-      });
+      ws.addEventListener('error', onError);
       const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
         if (self !== activeConnection) {
           return;
         }
 
         if (req.method === 'reconnect') {
-          reconnect(new Error('Server requested reconnect'));
+          reconnect();
           // notify subscribers
           for (const pendingReq of Object.values(pendingRequests)) {
             if (pendingReq.type === 'subscription') {
@@ -358,10 +421,12 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
         req.callbacks.next?.(data);
         if (self === activeConnection && req.connection !== activeConnection) {
-          // gracefully replace old connection with this
-          const oldConn = req.connection;
+          // gracefully replace old connection with a new connection
           req.connection = self;
-          oldConn && closeIfNoPending(oldConn);
+        }
+        if (req.connection !== self) {
+          // the connection has been replaced
+          return;
         }
 
         if (
@@ -379,7 +444,15 @@ export function createWSClient(opts: WebSocketClientOptions) {
           req.callbacks.complete();
         }
       };
+
       ws.addEventListener('message', ({ data }) => {
+        if (data === 'PONG') {
+          return;
+        }
+        if (data === 'PING') {
+          ws.send('PONG');
+          return;
+        }
         startLazyDisconnectTimer();
 
         const msg = JSON.parse(data) as TRPCClientIncomingMessage;
@@ -395,41 +468,13 @@ export function createWSClient(opts: WebSocketClientOptions) {
         }
       });
 
-      ws.addEventListener('close', ({ code, reason }) => {
-        if (self.state === 'open') {
-          onClose?.({ code });
-        }
-        self.state = 'closed';
+      ws.addEventListener('close', ({ code }) => {
+        const wasOpen = self.state === 'open';
 
-        if (activeConnection === self) {
-          // connection might have been replaced already
-          tryReconnect(self, new Error(reason));
-        }
+        onCloseOrError();
 
-        for (const [key, req] of Object.entries(pendingRequests)) {
-          if (req.connection !== self) {
-            continue;
-          }
-
-          if (self.state === 'closed') {
-            // If the connection was closed, we just call `complete()` on the request
-            delete pendingRequests[key];
-            req.callbacks.complete?.();
-            continue;
-          }
-          // The connection was closed either unexpectedly or because of a reconnect
-          if (req.type === 'subscription') {
-            // Subscriptions will resume after we've reconnected
-            resumeSubscriptionOnReconnect(req);
-          } else {
-            // Queries and mutations will error if interrupted
-            delete pendingRequests[key];
-            req.callbacks.error?.(
-              TRPCClientError.from(
-                new TRPCWebSocketClosedError('WebSocket closed prematurely'),
-              ),
-            );
-          }
+        if (wasOpen) {
+          opts.onClose?.({ code });
         }
       });
     }).catch(onError);
@@ -527,7 +572,7 @@ class TRPCWebSocketClosedError extends Error {
 }
 
 /**
- * @link https://trpc.io/docs/v11/client/links/wsLink
+ * @see https://trpc.io/docs/v11/client/links/wsLink
  */
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions<TRouter>,
@@ -544,68 +589,22 @@ export function wsLink<TRouter extends AnyRouter>(
         const unsub = client.request({
           op: { type, path, input, id, context, signal: null },
           callbacks: {
-            error(error) {
-              observer.next({
-                result: {
-                  type: 'state',
-                  state: 'error',
-                  error,
-                },
-                context: context,
-              });
-              observer.error(error);
-
+            error(err) {
+              observer.error(err as TRPCClientError<any>);
               unsub();
             },
             complete() {
               observer.complete();
-
-              observer.next({
-                result: {
-                  type: 'state',
-                  state: 'idle',
-                },
-                context: context,
-              });
             },
             next(message) {
-              if (
-                'result' in message &&
-                isConnectionStateMessage<TRPCClientError<TRouter>>(
-                  message.result,
-                )
-              ) {
-                message.result;
-
-                observer.next({
-                  result: message.result,
-                  context: context,
-                });
-
-                return;
-              }
-
-              if (!('id' in message)) return;
-
               const transformed = transformResult(message, transformer.output);
 
               if (!transformed.ok) {
-                const error = TRPCClientError.from(transformed.error);
-
-                observer.next({
-                  result: {
-                    type: 'state',
-                    state: 'error',
-                    error,
-                  },
-                  context: context,
-                });
-                observer.error(TRPCClientError.from(error));
+                observer.error(TRPCClientError.from(transformed.error));
                 return;
               }
               observer.next({
                 result: transformed.result,
-                context: context,
               });
 
               if (op.type !== 'subscription') {
@@ -620,13 +619,6 @@ export function wsLink<TRouter extends AnyRouter>(
         });
         return () => {
           unsub();
-          observer.next({
-            result: {
-              type: 'state',
-              state: 'idle',
-            },
-            context: context,
-          });
         };
       });
     };

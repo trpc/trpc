@@ -4,18 +4,22 @@ import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
-import { initTRPC, sse, tracked, TRPCError } from '@trpc/server';
+import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
-import { applyWSSHandler } from '@trpc/server/adapters/ws';
-import type { Observer } from '@trpc/server/observable';
+import type { Observable, Observer } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
 } from '@trpc/server/rpc';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  LegacyObservableSubscriptionProcedure,
+  SubscriptionProcedure,
+} from '@trpc/server/unstable-core-do-not-import/procedure';
+import { run } from '@trpc/server/unstable-core-do-not-import/utils';
 import { konn } from 'konn';
-import WebSocket, { Server } from 'ws';
+import WebSocket from 'ws';
 import { z } from 'zod';
 
 type Message = {
@@ -35,7 +39,7 @@ function factory(config?: {
   } = {} as any;
   const onNewMessageSubscription = vi.fn();
   const subscriptionEnded = vi.fn();
-  const onNewClient = vi.fn();
+
   const onSlowMutationCalled = vi.fn();
 
   const t = initTRPC.create();
@@ -99,7 +103,7 @@ function factory(config?: {
 
     onMessageObservable: t.procedure
       .input(z.string().nullish())
-      .subscription(({}) => {
+      .subscription(() => {
         const sub = observable<Message>((emit) => {
           subRef.current = emit;
           const onMessage = (data: Message) => {
@@ -118,17 +122,20 @@ function factory(config?: {
 
     onMessageIterable: t.procedure
       .input(z.string().nullish())
-      .subscription(async function* () {
+      .subscription(async function* (opts) {
         ee.emit('subscription:created');
         onNewMessageSubscription();
 
-        for await (const data of on(ee, 'server:msg')) {
+        for await (const data of on(ee, 'server:msg', {
+          signal: opts.signal,
+        })) {
           yield data[0] as Message;
         }
       }),
   });
 
   const onOpenMock = vi.fn();
+  const onErrorMock = vi.fn();
   const onCloseMock = vi.fn();
 
   expectTypeOf(appRouter).toMatchTypeOf<AnyRouter>();
@@ -139,6 +146,7 @@ function factory(config?: {
     wsClient: {
       retryDelayMs: () => 10,
       onOpen: onOpenMock,
+      onError: onErrorMock,
       onClose: onCloseMock,
       ...config?.wsClient,
     },
@@ -157,16 +165,16 @@ function factory(config?: {
     },
   });
 
-  opts.wss.addListener('connection', onNewClient);
   return {
     ...opts,
     ee,
     subRef,
     onNewMessageSubscription,
-    onNewClient,
     onOpenMock,
+    onErrorMock,
     onCloseMock,
     onSlowMutationCalled,
+    subscriptionEnded,
     nextIterable,
   };
 }
@@ -323,11 +331,10 @@ test('basic subscription test (iterator)', async () => {
 
   subscription.unsubscribe();
 
-  // iterator won't return until the *next* message is emitted
-  await waitMs(20);
-  ee.emit('server:msg', {
-    id: '4',
+  await waitFor(() => {
+    expect(ee.listenerCount('data')).toBe(0);
   });
+
   await waitFor(() => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);
@@ -479,8 +486,6 @@ test('sub emits errors', async () => {
       subRef.current.error(new Error('test'));
     });
   });
-  const onNewClient = vi.fn();
-  wss.addListener('connection', onNewClient);
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
   const onErrorMock = vi.fn();
@@ -503,11 +508,10 @@ test('sub emits errors', async () => {
 });
 
 test('wait for slow queries/mutations before disconnecting', async () => {
-  const { client, close, wsClient, onNewClient, onSlowMutationCalled } =
-    factory();
+  const { client, close, wsClient, onSlowMutationCalled } = factory();
 
   await waitFor(() => {
-    expect(onNewClient).toHaveBeenCalledTimes(1);
+    expect(wsClient.connection?.state === 'open').toBe(true);
   });
   const promise = client.slow.mutate();
   await waitFor(() => {
@@ -524,10 +528,10 @@ test('wait for slow queries/mutations before disconnecting', async () => {
 });
 
 test('requests get aborted if called before connection is established and requests dispatched', async () => {
-  const { client, close, wsClient, onNewClient } = factory();
+  const { client, close, wsClient } = factory();
 
   await waitFor(() => {
-    expect(onNewClient).toHaveBeenCalledTimes(1);
+    expect(wsClient.connection?.state === 'open').toBe(true);
   });
   const promise = client.slow.mutate();
   const conn = wsClient.connection;
@@ -1118,23 +1122,31 @@ describe('include "jsonrpc" in response if sent with message', () => {
 
 test('wsClient stops reconnecting after .close()', async () => {
   const badWsUrl = 'ws://localhost:9999';
-  const retryDelayMsMock = vi.fn();
-  retryDelayMsMock.mockReturnValue(100);
+  const retryDelayMsMock = vi.fn<
+    NonNullable<WebSocketClientOptions['retryDelayMs']>
+  >(() => 100);
+  const onErrorMock = vi.fn<NonNullable<WebSocketClientOptions['onError']>>();
 
   const wsClient = createWSClient({
     url: badWsUrl,
     retryDelayMs: retryDelayMsMock,
+    onError: onErrorMock,
   });
 
   await waitFor(() => {
     expect(retryDelayMsMock).toHaveBeenCalledTimes(1);
+    expect(onErrorMock).toHaveBeenCalledTimes(1);
   });
   await waitFor(() => {
     expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
+    expect(onErrorMock).toHaveBeenCalledTimes(2);
   });
+
   wsClient.close();
   await waitMs(100);
+
   expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
+  expect(onErrorMock).toHaveBeenCalledTimes(2);
 });
 describe('lazy mode', () => {
   test('happy path', async () => {
@@ -1352,24 +1364,29 @@ describe('lastEventId', () => {
   });
 });
 
-describe('keep alive', () => {
-  beforeEach(() => {
+describe('keep alive on the server', () => {
+  beforeAll(() => {
     vi.useFakeTimers();
   });
-  afterEach(() => {
+  afterAll(() => {
     vi.useRealTimers();
   });
-  function attachPongMock(wss: WebSocket.Server, pongMock: () => void) {
-    return new Promise((resolve) => {
-      wss.on('connection', (ws) => {
-        ws.on('pong', pongMock);
-        resolve(null);
+  function attachPongMock(wss: WebSocket.Server) {
+    const onPong = vi.fn();
+
+    wss.on('connection', (ws) => {
+      ws.on('message', (raw) => {
+        if (raw.toString() === 'PONG') {
+          onPong();
+        }
       });
     });
+
+    return onPong;
   }
   test('pong message should be received', async () => {
-    const pingMs = 2000;
-    const pongWaitMs = 5000;
+    const pingMs = 2_000;
+    const pongWaitMs = 5_000;
     const ctx = factory({
       wssServer: {
         keepAlive: {
@@ -1379,26 +1396,138 @@ describe('keep alive', () => {
         },
       },
     });
-    const pongMock = vi.fn();
-    const { wsClient, wss } = ctx;
-    await attachPongMock(wss, pongMock);
+
+    const onPong = attachPongMock(ctx.wss);
+
+    await new Promise((resolve) => {
+      ctx.wss.on('connection', resolve);
+    });
+
     {
-      await vi.advanceTimersByTimeAsync(pingMs + pongWaitMs + 100);
-      expect(wsClient.connection).not.toBe(null);
-      expect(pongMock).toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(pingMs);
+      await vi.advanceTimersByTimeAsync(pongWaitMs);
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(ctx.wsClient.connection).not.toBe(null);
+      expect(onPong).toHaveBeenCalled();
     }
     await ctx.close();
   });
   test('no pong message should be received', async () => {
     const ctx = factory({});
-    const pongMock = vi.fn();
-    const { wsClient, wss } = ctx;
-    await attachPongMock(wss, pongMock);
+
+    await new Promise((resolve) => {
+      ctx.wss.on('connection', resolve);
+    });
+
+    const onPong = attachPongMock(ctx.wss);
     {
-      await vi.advanceTimersByTimeAsync(60000);
-      expect(wsClient.connection).not.toBe(null);
-      expect(pongMock).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(ctx.wsClient.connection).not.toBe(null);
+      expect(onPong).not.toHaveBeenCalled();
     }
+    await ctx.close();
+  });
+});
+
+describe('keep alive from the client', () => {
+  beforeAll(() => {
+    vi.useFakeTimers();
+  });
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
+  test('pong message should be received', async () => {
+    const intervalMs = 2_000;
+    const pongTimeoutMs = 5_000;
+    const onClose = vi.fn();
+    const ctx = factory({
+      wssServer: {
+        dangerouslyDisablePong: false,
+        keepAlive: {
+          enabled: false,
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: false,
+          closeMs: 0,
+        },
+        keepAlive: {
+          enabled: true,
+          intervalMs,
+          pongTimeoutMs,
+        },
+        onClose,
+      },
+    });
+
+    await vi.advanceTimersByTimeAsync(1);
+    await new Promise((resolve) => {
+      ctx.wsClient.connection!.ws!.addEventListener('open', resolve);
+    });
+
+    let pong = false;
+    ctx.wsClient.connection!.ws!.addEventListener('message', (msg) => {
+      if (msg.data == 'PONG') {
+        pong = true;
+      }
+    });
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(intervalMs);
+    await vi.advanceTimersByTimeAsync(pongTimeoutMs);
+
+    expect(pong).toBe(true);
+
+    await ctx.close();
+  });
+
+  test('should close if no pong is received', async () => {
+    const intervalMs = 2_000;
+    const pongTimeoutMs = 5_000;
+    const onClose = vi.fn();
+    const ctx = factory({
+      wssServer: {
+        dangerouslyDisablePong: true,
+        keepAlive: {
+          enabled: false,
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: false,
+          closeMs: 0,
+        },
+        keepAlive: {
+          enabled: true,
+          intervalMs,
+          pongTimeoutMs,
+        },
+        onClose,
+      },
+    });
+
+    await vi.advanceTimersByTimeAsync(1);
+    await new Promise((resolve) => {
+      ctx.wsClient.connection!.ws!.addEventListener('open', resolve);
+    });
+
+    let pong = false;
+    ctx.wsClient.connection!.ws!.addEventListener('message', (msg) => {
+      if (msg.data === 'PONG') {
+        pong = true;
+      }
+    });
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(intervalMs);
+    await vi.advanceTimersByTimeAsync(pongTimeoutMs);
+
+    expect(pong).toBe(false);
+    expect(onClose).toHaveBeenCalled();
+
     await ctx.close();
   });
 });
@@ -1491,5 +1620,117 @@ describe('auth / connectionParams', async () => {
     const result = await client.whoami.query();
 
     expect(result).toEqual(USER_MOCK);
+  });
+});
+
+describe('subscriptions with createCaller', () => {
+  test('iterable', async () => {
+    const ctx = factory();
+
+    expectTypeOf(ctx.router.onMessageIterable).toEqualTypeOf<
+      SubscriptionProcedure<{
+        input: string | null | undefined;
+        output: AsyncGenerator<Message, void, any>;
+      }>
+    >();
+    const abortController = new AbortController();
+    const caller = ctx.router.createCaller(
+      {},
+      {
+        signal: abortController.signal,
+      },
+    );
+    const result = await caller.onMessageIterable();
+    expectTypeOf(result).toMatchTypeOf<AsyncIterable<Message>>();
+
+    const msgs: Message[] = [];
+    const onDone = vi.fn();
+    const onError = vi.fn();
+
+    void run(async () => {
+      for await (const msg of result) {
+        msgs.push(msg);
+      }
+      onDone();
+    }).catch(onError);
+
+    ctx.ee.emit('server:msg', {
+      id: '1',
+    });
+    ctx.ee.emit('server:msg', {
+      id: '2',
+    });
+
+    await waitFor(() => {
+      expect(msgs).toHaveLength(2);
+    });
+
+    abortController.abort();
+
+    await waitFor(() => {
+      expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+    });
+    await waitFor(() => {
+      expect(onDone).toHaveBeenCalledTimes(0);
+      expect(onError).toHaveBeenCalledTimes(1);
+    });
+    expect(onError.mock.calls[0]).toMatchInlineSnapshot(`
+      Array [
+        [AbortError: The operation was aborted],
+      ]
+    `);
+  });
+
+  test('observable', async () => {
+    const ctx = factory();
+
+    expectTypeOf(ctx.router.onMessageObservable).toEqualTypeOf<
+      LegacyObservableSubscriptionProcedure<{
+        input: string | null | undefined;
+        output: Message;
+      }>
+    >();
+
+    const abortController = new AbortController();
+    const caller = ctx.router.createCaller(
+      {},
+      {
+        signal: abortController.signal,
+      },
+    );
+    const obs = await caller.onMessageObservable();
+    expectTypeOf(obs).toMatchTypeOf<Observable<Message, TRPCError>>();
+
+    const msgs: Message[] = [];
+    const onDone = vi.fn();
+    const onError = vi.fn();
+
+    const sub = obs.subscribe({
+      next(msg) {
+        msgs.push(msg);
+      },
+      error: onError,
+      complete: onDone,
+    });
+    abortController.signal.addEventListener('abort', () => {
+      sub.unsubscribe();
+    });
+    ctx.ee.emit('server:msg', {
+      id: '1',
+    });
+    ctx.ee.emit('server:msg', {
+      id: '2',
+    });
+
+    await waitFor(() => {
+      expect(msgs).toHaveLength(2);
+    });
+
+    abortController.abort();
+
+    await waitFor(() => {
+      expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+      expect(ctx.subscriptionEnded).toHaveBeenCalledTimes(1);
+    });
   });
 });

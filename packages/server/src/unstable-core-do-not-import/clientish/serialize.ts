@@ -2,7 +2,7 @@
 import type { Simplify, WithoutIndexSignature } from '../types';
 
 /**
- * @link https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
+ * @see https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
  */
 type JsonPrimitive = boolean | number | string | null;
 // eslint-disable-next-line @typescript-eslint/ban-types

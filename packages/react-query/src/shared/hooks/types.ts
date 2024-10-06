@@ -1,6 +1,8 @@
 import type {
   DefinedUseQueryResult,
   DehydratedState,
+  FetchInfiniteQueryOptions,
+  FetchQueryOptions,
   InfiniteData,
   InfiniteQueryObserverSuccessResult,
   InitialDataFunction,
@@ -28,7 +30,7 @@ import type {
   AnyRouter,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import type { TRPCContextProps } from '../../internals/context';
 import type { TRPCQueryKey } from '../../internals/getQueryKey';
 
@@ -75,6 +77,13 @@ export interface UseTRPCSuspenseQueryOptions<TOutput, TData, TError>
     >,
     TRPCUseQueryBaseOptions {}
 
+export interface UseTRPCPrefetchQueryOptions<TOutput, TData, TError>
+  extends DistributiveOmit<
+      FetchQueryOptions<TOutput, TError, TData, any>,
+      'queryKey'
+    >,
+    TRPCUseQueryBaseOptions {}
+
 /** @internal **/
 export interface DefinedUseTRPCQueryOptions<
   TOutput,
@@ -114,6 +123,21 @@ export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
   initialCursor?: ExtractCursorType<TInput>;
 }
 
+export type UseTRPCPrefetchInfiniteQueryOptions<TInput, TOutput, TError> =
+  DistributiveOmit<
+    FetchInfiniteQueryOptions<
+      TOutput,
+      TError,
+      TOutput,
+      any,
+      ExtractCursorType<TInput>
+    >,
+    'queryKey' | 'initialPageParam'
+  > &
+    TRPCUseQueryBaseOptions & {
+      initialCursor?: ExtractCursorType<TInput>;
+    };
+
 export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
   extends DistributiveOmit<
       UseSuspenseInfiniteQueryOptions<
@@ -138,14 +162,18 @@ export interface UseTRPCMutationOptions<
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCUseQueryBaseOptions {}
 
+type inferAsyncIterableYield<T> = T extends AsyncIterable<infer U> ? U : T;
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   enabled?: boolean;
+  /**
+   * @deprecated use onStateChange instead
+   */
   onStarted?: () => void;
+  onData: (data: inferAsyncIterableYield<TOutput>) => void;
   /**
    * @deprecated use onStateChange instead
    */
   onError?: (err: TError) => void;
-  onData: (data: TOutput) => void;
   onStateChange?: (state: TRPCConnectionStateMessage<TError>) => void;
 }
 

@@ -49,8 +49,8 @@ export default withTRPC<AppRouter>({
       url,
       /**
        * Set custom request headers on every request from tRPC
-       * @link http://localhost:3000/docs/v9/header
-       * @link http://localhost:3000/docs/v9/ssr
+       * @see http://localhost:3000/docs/v9/header
+       * @see http://localhost:3000/docs/v9/ssr
        */
       headers() {
         if (ctx?.req) {

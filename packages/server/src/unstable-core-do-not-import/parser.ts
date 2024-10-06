@@ -13,6 +13,11 @@ export type ParserValibotEsque<TInput, TParsedInput> = {
   };
 };
 
+export type ParserArkTypeEsque<TInput, TParsedInput> = {
+  inferIn: TInput;
+  infer: TParsedInput;
+};
+
 export type ParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
 };
@@ -42,7 +47,8 @@ export type ParserWithoutInput<TInput> =
 
 export type ParserWithInputOutput<TInput, TParsedInput> =
   | ParserZodEsque<TInput, TParsedInput>
-  | ParserValibotEsque<TInput, TParsedInput>;
+  | ParserValibotEsque<TInput, TParsedInput>
+  | ParserArkTypeEsque<TInput, TParsedInput>;
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
@@ -63,6 +69,11 @@ export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 
 export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
+
+  if (typeof parser === 'function' && typeof parser.assert === 'function') {
+    // ParserArkTypeEsque - arktype schemas shouldn't be called as a function because they return a union type instead of throwing
+    return parser.assert.bind(parser);
+  }
 
   if (typeof parser === 'function') {
     // ParserValibotEsque (>= v0.31.0)

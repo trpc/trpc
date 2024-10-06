@@ -8,7 +8,7 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
     maxURLLength?: number;
     /**
      * Headers to be set on outgoing requests or a callback that of said headers
-     * @link http://trpc.io/docs/client/headers
+     * @see http://trpc.io/docs/client/headers
      */
     headers?:
       | HTTPHeaders

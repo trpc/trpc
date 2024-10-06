@@ -586,9 +586,7 @@ describe('issue #5530 - cannot receive new WebSocket messages after receiving 16
     const data = 'A'.repeat(8192);
 
     for (let i = 0; i < 4; i++) {
-      expect(await app.client.echo.query(data)).toMatchInlineSnapshot(
-        `"${data}"`,
-      );
+      expect(await app.client.echo.query(data)).toBe(data);
     }
   });
 });

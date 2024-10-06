@@ -69,7 +69,7 @@ function generateTypedocDocusaurusPlugins(directories) {
           (it) => `../packages/${directory}/src/${it}`,
         ),
         tsconfig: `../packages/${directory}/tsconfig.build.json`,
-        out: `./typedoc/${directory}`,
+        out: `./docs/typedoc/${directory}`,
         readme: 'none',
         sourceLinkTemplate:
           'https://github.com/trpc/trpc/blob/{gitRevision}/{path}#L{line}',
@@ -77,20 +77,19 @@ function generateTypedocDocusaurusPlugins(directories) {
         excludePrivate: true,
         excludeProtected: true,
 
+        parametersFormat: "table",
+        sidebar: {
+          autoConfiguration: true,
+          pretty: true
+        }
+
+        //Possible not needed code:
         // docusaurus-plugin-typedoc options
         // https://github.com/tgreyuk/typedoc-plugin-markdown/tree/master/packages/docusaurus-plugin-typedoc#plugin-options
-        sidebar: {
-          categoryLabel: `@trpc/${directory}`,
-          position: idx,
-        },
-
-        // Markdown options
-        // https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs#markdown-front-matter
-        frontmatterGlobals: {
-          pagination_prev: null,
-          pagination_next: null,
-          custom_edit_url: null,
-        },
+        // sidebar: {
+        //   categoryLabel: `@trpc/${directory}`,
+        //   position: idx,
+        // },
       },
     ];
   });

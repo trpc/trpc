@@ -100,6 +100,7 @@ export type MiddlewareFunction<
     input: TInputOut;
     getRawInput: GetRawInputFn;
     meta: TMeta | undefined;
+    signal: AbortSignal | undefined;
     next: {
       (): Promise<MiddlewareResult<TContextOverridesIn>>;
       <$ContextOverride>(opts: {
@@ -157,7 +158,7 @@ export function createMiddlewareFactory<
 
 /**
  * Create a standalone middleware
- * @link https://trpc.io/docs/v11/server/middlewares#experimental-standalone-middlewares
+ * @see https://trpc.io/docs/v11/server/middlewares#experimental-standalone-middlewares
  * @deprecated use `.unstable_concat()` instead
  */
 export const experimental_standaloneMiddleware = <

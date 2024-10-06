@@ -1,6 +1,5 @@
 import EventEmitter, { on } from 'node:events';
 import type { TRPCRouterRecord } from '@trpc/server';
-import { sse } from '@trpc/server';
 import { db } from '~/server/db/client';
 import type { PostType } from '~/server/db/schema';
 import { Channel } from '~/server/db/schema';
@@ -9,7 +8,7 @@ import { z } from 'zod';
 
 export type WhoIsTyping = Record<string, { lastTyped: Date }>;
 
-interface MyEvents {
+export interface MyEvents {
   add: (channelId: string, data: PostType) => void;
   isTypingUpdate: (channelId: string, who: WhoIsTyping) => void;
 }
@@ -26,8 +25,9 @@ declare interface MyEventEmitter {
 class MyEventEmitter extends EventEmitter {
   public toIterable<TEv extends keyof MyEvents>(
     event: TEv,
+    opts: NonNullable<Parameters<typeof on>[2]>,
   ): AsyncIterable<Parameters<MyEvents[TEv]>> {
-    return on(this, event);
+    return on(this, event, opts);
   }
 }
 
@@ -121,7 +121,9 @@ export const channelRouter = {
       // emit who is currently typing
       yield* maybeYield(currentlyTyping[channelId] ?? {});
 
-      for await (const [channelId, who] of ee.toIterable('isTypingUpdate')) {
+      for await (const [channelId, who] of ee.toIterable('isTypingUpdate', {
+        signal: opts.signal,
+      })) {
         if (channelId === opts.input.channelId) {
           yield* maybeYield(who);
         }

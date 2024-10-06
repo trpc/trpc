@@ -761,68 +761,6 @@ export const tweets = {
         },
         {
             "public_metrics": {
-                "retweet_count": 4,
-                "reply_count": 0,
-                "like_count": 21,
-                "quote_count": 1
-            },
-            "entities": {
-                "mentions": [
-                    {
-                        "start": 17,
-                        "end": 27,
-                        "username": "alexdotjs",
-                        "id": "171393795"
-                    }
-                ],
-                "urls": [
-                    {
-                        "start": 74,
-                        "end": 97,
-                        "url": "https://t.co/nDoH2Sp5bm",
-                        "expanded_url": "https://github.com/sponsors/KATT?sc=t&sp=mshd",
-                        "display_url": "github.com/sponsors/KATT?…",
-                        "images": [
-                            {
-                                "url": "https://pbs.twimg.com/news_img/1567953031546675202/ZGw0E637?format=jpg&name=orig",
-                                "width": 400,
-                                "height": 400
-                            },
-                            {
-                                "url": "https://pbs.twimg.com/news_img/1567953031546675202/ZGw0E637?format=jpg&name=150x150",
-                                "width": 150,
-                                "height": 150
-                            }
-                        ],
-                        "status": 200,
-                        "title": "Sponsor @KATT on GitHub Sponsors",
-                        "description": "I am Alex, a fully-stacked TypeScripter from Sweden & the creator of [**tRPC**](https://trpc.io).",
-                        "unwound_url": "https://github.com/sponsors/KATT?sc=t&sp=mshd"
-                    }
-                ],
-                "annotations": [
-                    {
-                        "start": 36,
-                        "end": 39,
-                        "probability": 0.8363,
-                        "type": "Other",
-                        "normalized_text": "tRPC"
-                    }
-                ]
-            },
-            "conversation_id": "1561974448676171776",
-            "lang": "en",
-            "author_id": "889854671526834176",
-            "text": "💖 I'm sponsoring @alexdotjs because tRPC has helped to build apps faster. https://t.co/nDoH2Sp5bm",
-            "source": "Twitter Web App",
-            "id": "1561974448676171776",
-            "created_at": "2022-08-23T07:11:43.000Z",
-            "edit_history_tweet_ids": [
-                "1561974448676171776"
-            ]
-        },
-        {
-            "public_metrics": {
                 "retweet_count": 7,
                 "reply_count": 1,
                 "like_count": 52,
@@ -1020,7 +958,7 @@ export const tweets = {
             {
                 "id": "14904098",
                 "username": "leeb",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/826651806696501248/TOro78hz_normal.jpg",
+                "profile_image_url": "https://github.com/leebyron.png",
                 "public_metrics": {
                     "followers_count": 30789,
                     "following_count": 607,
@@ -1032,7 +970,7 @@ export const tweets = {
             {
                 "id": "786375418685165568",
                 "username": "t3dotgg",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1603145433160638464/abnjKPL-_normal.png",
+                "profile_image_url": "https://github.com/t3dotgg.png",
                 "public_metrics": {
                     "followers_count": 41941,
                     "following_count": 2007,
@@ -1044,7 +982,7 @@ export const tweets = {
             {
                 "id": "2451223458",
                 "username": "mxstbr",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1243119189319208960/Dd5Vwx5a_normal.jpg",
+                "profile_image_url": "https://github.com/mxstbr.png",
                 "public_metrics": {
                     "followers_count": 49404,
                     "following_count": 15,
@@ -1092,7 +1030,7 @@ export const tweets = {
             {
                 "id": "44217212",
                 "username": "TkDodo",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1538855291604942848/STbt4nxl_normal.jpg",
+                "profile_image_url": "https://github.com/TkDodo.png",
                 "public_metrics": {
                     "followers_count": 13326,
                     "following_count": 337,
@@ -1116,7 +1054,7 @@ export const tweets = {
             {
                 "id": "1029051636",
                 "username": "grabbou",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1672503099317993474/uVJMO2u4_normal.jpg",
+                "profile_image_url": "https://github.com/grabbou.png",
                 "public_metrics": {
                     "followers_count": 10891,
                     "following_count": 416,
@@ -1128,7 +1066,7 @@ export const tweets = {
             {
                 "id": "389681470",
                 "username": "kentcdodds",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1567269493608714241/6ACZo99k_normal.jpg",
+                "profile_image_url": "https://github.com/kentcdodds.png",
                 "public_metrics": {
                     "followers_count": 202620,
                     "following_count": 164,
@@ -1236,7 +1174,7 @@ export const tweets = {
             {
                 "id": "1175800857431965696",
                 "username": "osamaqarem",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1487323235398082564/H0Xc6QsN_normal.jpg",
+                "profile_image_url": "https://github.com/osamaqarem.png",
                 "public_metrics": {
                     "followers_count": 170,
                     "following_count": 106,
@@ -1366,21 +1304,9 @@ export const tweets = {
                 "name": "Tailwind CSS"
             },
             {
-                "id": "889854671526834176",
-                "username": "wikitable",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1562019463893241857/7e5r3Yfu_normal.jpg",
-                "public_metrics": {
-                    "followers_count": 59,
-                    "following_count": 205,
-                    "tweet_count": 255,
-                    "listed_count": 1
-                },
-                "name": "Martin"
-            },
-            {
                 "id": "3895021",
                 "username": "jokull",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1389495075248484354/pmii-f0T_normal.jpg",
+                "profile_image_url": "https://github.com/jokull.png",
                 "public_metrics": {
                     "followers_count": 2560,
                     "following_count": 681,
@@ -2502,68 +2428,6 @@ export const tweets = {
                 "created_at": "2022-08-26T17:50:03.000Z",
                 "edit_history_tweet_ids": [
                     "1563222253751324675"
-                ]
-            },
-            {
-                "public_metrics": {
-                    "retweet_count": 4,
-                    "reply_count": 0,
-                    "like_count": 21,
-                    "quote_count": 1
-                },
-                "entities": {
-                    "mentions": [
-                        {
-                            "start": 17,
-                            "end": 27,
-                            "username": "alexdotjs",
-                            "id": "171393795"
-                        }
-                    ],
-                    "urls": [
-                        {
-                            "start": 74,
-                            "end": 97,
-                            "url": "https://t.co/nDoH2Sp5bm",
-                            "expanded_url": "https://github.com/sponsors/KATT?sc=t&sp=mshd",
-                            "display_url": "github.com/sponsors/KATT?…",
-                            "images": [
-                                {
-                                    "url": "https://pbs.twimg.com/news_img/1567953031546675202/ZGw0E637?format=jpg&name=orig",
-                                    "width": 400,
-                                    "height": 400
-                                },
-                                {
-                                    "url": "https://pbs.twimg.com/news_img/1567953031546675202/ZGw0E637?format=jpg&name=150x150",
-                                    "width": 150,
-                                    "height": 150
-                                }
-                            ],
-                            "status": 200,
-                            "title": "Sponsor @KATT on GitHub Sponsors",
-                            "description": "I am Alex, a fully-stacked TypeScripter from Sweden & the creator of [**tRPC**](https://trpc.io).",
-                            "unwound_url": "https://github.com/sponsors/KATT?sc=t&sp=mshd"
-                        }
-                    ],
-                    "annotations": [
-                        {
-                            "start": 36,
-                            "end": 39,
-                            "probability": 0.8363,
-                            "type": "Other",
-                            "normalized_text": "tRPC"
-                        }
-                    ]
-                },
-                "conversation_id": "1561974448676171776",
-                "lang": "en",
-                "author_id": "889854671526834176",
-                "text": "💖 I'm sponsoring @alexdotjs because tRPC has helped to build apps faster. https://t.co/nDoH2Sp5bm",
-                "source": "Twitter Web App",
-                "id": "1561974448676171776",
-                "created_at": "2022-08-23T07:11:43.000Z",
-                "edit_history_tweet_ids": [
-                    "1561974448676171776"
                 ]
             },
             {

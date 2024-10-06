@@ -104,7 +104,7 @@ type GetParams<TProcedureOrRouter extends ProcedureOrRouter> =
  * @param procedureOrRouter - procedure or AnyRouter
  * @param input - input to procedureOrRouter
  * @param type - defaults to `any`
- * @link https://trpc.io/docs/v11/getQueryKey
+ * @see https://trpc.io/docs/v11/getQueryKey
  */
 export function getQueryKey<TProcedureOrRouter extends ProcedureOrRouter>(
   procedureOrRouter: TProcedureOrRouter,
@@ -127,7 +127,7 @@ export type QueryKeyKnown<TInput, TType extends Exclude<QueryType, 'any'>> = [
 /**
  * Method to extract the mutation key for a procedure
  * @param procedure - procedure
- * @link https://trpc.io/docs/v11/getQueryKey#mutations
+ * @see https://trpc.io/docs/v11/getQueryKey#mutations
  */
 export function getMutationKey<TProcedure extends DecoratedMutation<any>>(
   procedure: TProcedure,

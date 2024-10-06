@@ -96,6 +96,7 @@ export function nextAppDirCaller<TContext, TMeta>(
             getRawInput: async () => input,
             path,
             input,
+            signal: undefined,
           })
           .then((data) => {
             if (data instanceof TRPCRedirectError) throw data;
@@ -112,6 +113,7 @@ export function nextAppDirCaller<TContext, TMeta>(
             getRawInput: async () => input,
             path,
             input,
+            signal: undefined,
           })
           .then((data) => {
             if (data instanceof TRPCRedirectError) throw data;

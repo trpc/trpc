@@ -62,16 +62,27 @@ describe('createTRPCQueryUtils()', () => {
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
 
+    const context = {
+      ___TEST___: true,
+    };
+
     const q = await clientUtils.paginatedPosts.fetchInfinite(
       { limit: 1 },
       {
         pages: 3,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
+        trpc: {
+          context,
+        },
       },
     );
 
     expectTypeOf(q.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
     expect(q.pages[0]!.items[0]!.title).toBe('first post');
+
+    expect(factory.linkSpy.up.mock.calls[0]![0]!.context).toMatchObject(
+      context,
+    );
   });
 
   test('prefetchQuery()', async () => {
@@ -79,13 +90,25 @@ describe('createTRPCQueryUtils()', () => {
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
 
-    await clientUtils.postById.prefetch('1');
+    const context = {
+      ___TEST___: true,
+    };
+
+    await clientUtils.postById.prefetch('1', {
+      trpc: {
+        context,
+      },
+    });
 
     // Because we are using `prefetchQuery` here, it should always be only a single call
     // as the first invocation will fetch and cache the data, and any consecutive calls
     // will not go through `postById.fetch`, but rather get the data directly from cache.
     expect(factory.resolvers.postById.mock.calls.length).toBe(1);
     expect(factory.resolvers.postById.mock.calls[0]![0]).toBe('1');
+
+    expect(factory.linkSpy.up.mock.calls[0]![0]!.context).toMatchObject(
+      context,
+    );
   });
 
   test('prefetchInfiniteQuery()', async () => {
@@ -93,11 +116,18 @@ describe('createTRPCQueryUtils()', () => {
     const queryClient = createQueryClient();
     const clientUtils = createTRPCQueryUtils({ queryClient, client });
 
+    const context = {
+      ___TEST___: true,
+    };
+
     const q = await clientUtils.paginatedPosts.prefetchInfinite(
       { limit: 1 },
       {
         pages: 1,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
+        trpc: {
+          context,
+        },
       },
     );
 
@@ -105,6 +135,9 @@ describe('createTRPCQueryUtils()', () => {
     // as the first invocation will fetch and cache the data, and any consecutive calls
     // will not go through `paginatedPosts.fetchInfinite`, but rather get the data directly from cache.
     expect(factory.resolvers.paginatedPosts.mock.calls.length).toBe(1);
+    expect(factory.linkSpy.up.mock.calls[0]![0]!.context).toMatchObject(
+      context,
+    );
   });
 
   test('invalidateQueries()', async () => {
@@ -263,6 +296,13 @@ describe('createTRPCQueryUtils()', () => {
     clientUtils.addPost.setMutationDefaults({
       meta: {
         hello: 'trpc',
+      },
+      onMutate: () => ({ foo: 'bar' }),
+      onSuccess: (_data, _vars, ctx) => {
+        expectTypeOf(ctx).toEqualTypeOf<{ foo: string }>();
+      },
+      onError: (_err, _vars, ctx) => {
+        expectTypeOf(ctx).toEqualTypeOf<{ foo: string } | undefined>();
       },
     });
     expect(clientUtils.addPost.getMutationDefaults()?.meta).toEqual({

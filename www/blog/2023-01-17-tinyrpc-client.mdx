@@ -1,13 +1,12 @@
 ---
 slug: tinyrpc-client
 title: Writing a tiny tRPC client
-author: Julius Marminge
-author_title: tRPC Core Team Member
-author_url: https://twitter.com/jullerino
-author_image_url: https://github.com/juliusmarminge.png
+authors: [juliusmarminge]
 ---
 
 Ever wondered how tRPC works? Maybe you want to start contributing to the project but you're frightened by the internals? The aim of this post is to familiarize you with the internals of tRPC by writing a minimal client that covers the big parts of how tRPC works.
+
+{/* truncate */}
 
 :::info
 
@@ -250,7 +249,7 @@ This looks a bit magical, what does this do?
 
 Below is a visual representation of how the proxy works on the call `trpc.post.byId.query({ id: 1 })`:
 
-![proxy](https://user-images.githubusercontent.com/51714798/212561242-28e8bcd2-220a-4f9c-b5fa-ef4d940baee6.png)
+![proxy](https://assets.trpc.io/www/blog/2023-01-17-tinyrpc-client/proxy.png)
 
 ### 🧩 Putting it all together
 

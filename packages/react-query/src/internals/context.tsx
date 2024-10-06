@@ -29,11 +29,17 @@ import * as React from 'react';
 import type { ExtractCursorType } from '../shared';
 import type { TRPCMutationKey, TRPCQueryKey } from './getQueryKey';
 
-export type TRPCFetchQueryOptions<TOutput, TError> = DistributiveOmit<
-  FetchQueryOptions<TOutput, TError>,
-  'queryKey'
-> &
-  TRPCRequestOptions;
+interface TRPCUseUtilsOptions {
+  /**
+   * tRPC-related options
+   */
+  trpc?: TRPCRequestOptions;
+}
+export interface TRPCFetchQueryOptions<TOutput, TError>
+  extends DistributiveOmit<FetchQueryOptions<TOutput, TError>, 'queryKey'>,
+    TRPCUseUtilsOptions {
+  //
+}
 
 export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
   DistributiveOmit<
@@ -46,7 +52,7 @@ export type TRPCFetchInfiniteQueryOptions<TInput, TOutput, TError> =
     >,
     'queryKey' | 'initialPageParam'
   > &
-    TRPCRequestOptions & {
+    TRPCUseUtilsOptions & {
       initialCursor?: ExtractCursorType<TInput>;
     };
 
@@ -119,14 +125,14 @@ export interface TRPCContextState<
  */
 export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
    */
   fetchQuery: (
     queryKey: TRPCQueryKey,
     opts?: TRPCFetchQueryOptions<unknown, TRPCClientError<TRouter>>,
   ) => Promise<unknown>;
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchinfinitequery
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchinfinitequery
    */
   fetchInfiniteQuery: (
     queryKey: TRPCQueryKey,
@@ -137,7 +143,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
     >,
   ) => Promise<InfiniteData<unknown, unknown>>;
   /**
-   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
+   * @see https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   prefetchQuery: (
     queryKey: TRPCQueryKey,
@@ -145,7 +151,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientprefetchinfinitequery
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientprefetchinfinitequery
    */
   prefetchInfiniteQuery: (
     queryKey: TRPCQueryKey,
@@ -157,7 +163,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientensurequerydata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientensurequerydata
    */
   ensureQueryData: (
     queryKey: TRPCQueryKey,
@@ -165,7 +171,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => Promise<unknown>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/framework/react/guides/query-invalidation
+   * @see https://tanstack.com/query/v5/docs/framework/react/guides/query-invalidation
    */
   invalidateQueries: (
     queryKey: TRPCQueryKey,
@@ -174,7 +180,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientresetqueries
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientresetqueries
    */
   resetQueries: (
     queryKey: TRPCQueryKey,
@@ -183,7 +189,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientrefetchqueries
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientrefetchqueries
    */
   refetchQueries: (
     queryKey: TRPCQueryKey,
@@ -192,7 +198,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/framework/react/guides/query-cancellation
+   * @see https://tanstack.com/query/v5/docs/framework/react/guides/query-cancellation
    */
   cancelQuery: (
     queryKey: TRPCQueryKey,
@@ -200,7 +206,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
    */
   setQueryData: (
     queryKey: TRPCQueryKey,
@@ -209,7 +215,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => void;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetqueriesdata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetqueriesdata
    */
   setQueriesData: (
     queryKey: TRPCQueryKey,
@@ -219,12 +225,12 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => [QueryKey, unknown][];
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata
    */
   getQueryData: (queryKey: TRPCQueryKey) => unknown;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientsetquerydata
    */
   setInfiniteQueryData: (
     queryKey: TRPCQueryKey,
@@ -236,14 +242,14 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => void;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata
+   * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientgetquerydata
    */
   getInfiniteQueryData: (
     queryKey: TRPCQueryKey,
   ) => InfiniteData<unknown> | undefined;
 
   /**
-   * @link https://tanstack.com/query/latest/docs/reference/QueryClient/#queryclientsetmutationdefaults
+   * @see https://tanstack.com/query/latest/docs/reference/QueryClient/#queryclientsetmutationdefaults
    */
   setMutationDefaults: (
     mutationKey: TRPCMutationKey,
@@ -255,14 +261,14 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   ) => void;
 
   /**
-   * @link https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientgetmutationdefaults
+   * @see https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientgetmutationdefaults
    */
   getMutationDefaults: (
     mutationKey: TRPCMutationKey,
   ) => MutationOptions | undefined;
 
   /**
-   * @link https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientismutating
+   * @see https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientismutating
    */
   isMutating: (filters: { mutationKey: TRPCMutationKey }) => number;
 }

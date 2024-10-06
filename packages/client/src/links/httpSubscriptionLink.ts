@@ -1,14 +1,15 @@
 import { observable } from '@trpc/server/observable';
-import type { TRPCErrorResponse } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
+  SSEStreamConsumerOptions,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
   sseStreamConsumer,
 } from '@trpc/server/unstable-core-do-not-import';
+import { raceAbortSignals } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
@@ -39,6 +40,10 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * EventSource options or a callback that returns them
    */
   eventSourceOptions?: CallbackOrValue<EventSourceInit>;
+  /**
+   * @see https://trpc.io/docs/client/links/httpSubscriptionLink#updatingConfig
+   */
+  experimental_shouldRecreateOnError?: SSEStreamConsumerOptions['shouldRecreateOnError'];
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -56,128 +61,73 @@ export function unstable_httpSubscriptionLink<
     return ({ op }) => {
       return observable((observer) => {
         const { type, path, input } = op;
+
         /* istanbul ignore if -- @preserve */
         if (type !== 'subscription') {
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
 
-        let eventSource: EventSource | null = null;
-        let unsubscribed = false;
-        /**
-         * The last known error that the client has received
-         * Will be reset whenever a new message is received
-         */
-        let lastKnownError: TRPCClientError<TInferrable> | null = null;
+        const ac = new AbortController();
+        const signal = raceAbortSignals(op.signal, ac.signal);
+        const eventSourceStream = sseStreamConsumer<
+          Partial<{
+            id?: string;
+            data: unknown;
+          }>
+        >({
+          url: async () =>
+            getUrl({
+              transformer,
+              url: await urlWithConnectionParams(opts),
+              input,
+              path,
+              type,
+              signal: null,
+            }),
+          init: () => resultOf(opts.eventSourceOptions),
+          signal,
+          deserialize: transformer.output.deserialize,
+          shouldRecreateOnError: opts.experimental_shouldRecreateOnError,
+        });
 
         run(async () => {
-          const url = getUrl({
-            transformer,
-            url: await urlWithConnectionParams(opts),
-            input,
-            path,
-            type,
-            signal: null,
-          });
+          for await (const chunk of eventSourceStream) {
+            switch (chunk.type) {
+              case 'data':
+                const chunkData = chunk.data;
 
-          const eventSourceOptions = await resultOf(opts.eventSourceOptions);
-          /* istanbul ignore if -- @preserve */
-          if (unsubscribed) {
-            // already unsubscribed - rare race condition
-            return;
-          }
-          eventSource = new EventSource(url, eventSourceOptions);
-          observer.next({
-            result: {
-              type: 'state',
-              state: 'connecting',
-              error: null,
-            },
-          });
-
-          const onStarted = () => {
-            observer.next({
-              result: {
-                type: 'started',
-              },
-              context: {
-                eventSource,
-              },
-            });
-
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            eventSource!.removeEventListener('open', onStarted);
-          };
-          // console.log('starting', new Date());
-          eventSource.addEventListener('open', onStarted);
-
-          eventSource.addEventListener('open', () => {
-            observer.next({
-              result: {
-                type: 'state',
-                state: 'pending',
-              },
-            });
-          });
-
-          eventSource.addEventListener('error', (event) => {
-            switch (eventSource?.readyState) {
-              case EventSource.CONNECTING: {
-                observer.next({
-                  result: {
-                    type: 'state',
-                    state: 'connecting',
-                    error: lastKnownError,
-                  },
-                });
-                return;
-              }
-              case EventSource.CLOSED: {
-                const error =
-                  globalThis.ErrorEvent && event instanceof ErrorEvent
-                    ? TRPCClientError.from(event.error)
-                    : TRPCClientError.from(
-                        new Error(`Unknown EventSource error`),
-                      );
+                // if the `tracked()`-helper is used, we always have an `id` field
+                const data = 'id' in chunkData ? chunkData : chunkData.data;
 
                 observer.next({
                   result: {
-                    type: 'state',
-                    state: 'connecting',
-                    error: lastKnownError ?? error,
+                    data,
+                  },
+                  context: {
+                    eventSource: chunk.eventSource,
                   },
                 });
-                return;
+                break;
+              case 'opened': {
+                observer.next({
+                  result: {
+                    type: 'started',
+                  },
+                  context: {
+                    eventSource: chunk.eventSource,
+                  },
+                });
+                break;
+              }
+              case 'error': {
+                // TODO: handle in https://github.com/trpc/trpc/issues/5871
+                break;
+              }
+              case 'connecting': {
+                // TODO: handle in https://github.com/trpc/trpc/issues/5871
+                break;
               }
             }
-          });
-
-          const iterable = sseStreamConsumer<{
-            id?: string;
-            data?: unknown;
-          }>({
-            from: eventSource,
-            deserialize: transformer.output.deserialize,
-          });
-
-          for await (const chunk of iterable) {
-            if (!chunk.ok) {
-              const error = chunk.error as TRPCErrorResponse['error'];
-
-              lastKnownError = TRPCClientError.from({
-                error,
-              });
-              continue;
-            }
-            lastKnownError = null;
-            const chunkData = chunk.data;
-
-            // if the `tracked()`-helper is used, we always have an `id` field
-            const data = 'id' in chunkData ? chunkData : chunkData.data;
-            observer.next({
-              result: {
-                data,
-              },
-            });
           }
 
           observer.next({
@@ -186,38 +136,13 @@ export function unstable_httpSubscriptionLink<
             },
           });
           observer.complete();
-
-          observer.next({
-            result: {
-              type: 'state',
-              state: 'idle',
-            },
-          });
         }).catch((error) => {
-          const trpcError = TRPCClientError.from(error);
-
-          observer.next({
-            result: {
-              type: 'state',
-              state: 'error',
-              error: trpcError,
-            },
-          });
-          observer.error(trpcError);
+          observer.error(TRPCClientError.from(error));
         });
 
         return () => {
           observer.complete();
-
-          observer.next({
-            result: {
-              type: 'state',
-              state: 'idle',
-            },
-          });
-
-          eventSource?.close();
-          unsubscribed = true;
+          ac.abort();
         };
       });
     };

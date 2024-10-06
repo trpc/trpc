@@ -167,9 +167,9 @@ Your endpoints are now available via HTTP!
 | `getUser`    | `GET http://localhost:3000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
 | `createUser` | `POST http://localhost:3000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
 
-## How to enable subscriptions (WebSocket)
+## Enable WebSockets
 
-The Fastify adapter supports [subscriptions](/docs/subscriptions) via the [@fastify/websocket](https://www.npmjs.com/package/@fastify/websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin. The minimum Fastify version required for `@fastify/websocket` is `3.11.0`.
+The Fastify adapter supports [WebSockets](../websockets.md) via the [@fastify/websocket](https://www.npmjs.com/package/@fastify/websocket) plugin. All you have to do in addition to the above steps is install the dependency, add some subscriptions to your router and activate the `useWSS` [option](#fastify-plugin-options) in the plugin. The minimum Fastify version required for `@fastify/websocket` is `3.11.0`.
 
 ### Install dependencies
 
@@ -196,15 +196,11 @@ import { observable } from '@trpc/server/observable';
 const t = initTRPC.create();
 
 export const appRouter = t.router({
-  randomNumber: t.procedure.subscription(() => {
-    return observable<{ randomNumber: number }>((emit) => {
-      const timer = setInterval(() => {
-        emit.next({ randomNumber: Math.random() });
-      }, 1000);
-      return () => {
-        clearInterval(timer);
-      };
-    });
+  randomNumber: t.procedure.subscription(async function* () {
+    while (true) {
+      yield { randomNumber: Math.random() };
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
   }),
 });
 ```
@@ -214,6 +210,14 @@ export const appRouter = t.router({
 ```ts title='server.ts'
 server.register(fastifyTRPCPlugin, {
   useWSS: true,
+  // Enable heartbeat messages to keep connection open (disabled by default)
+  keepAlive: {
+    enabled: true,
+    // server ping message interval in milliseconds
+    pingMs: 30000,
+    // connection is terminated if pong message is not received in this many milliseconds
+    pongWaitMs: 5000,
+  },
   // ...
 });
 ```
