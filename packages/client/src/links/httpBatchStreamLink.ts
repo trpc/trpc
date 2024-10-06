@@ -67,15 +67,14 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
 
-          const batchSignals = allAbortSignals(batchOps);
+          const batchSignals = allAbortSignals(
+            ...batchOps.map((op) => op.signal),
+          );
           const abortController = new AbortController();
 
           const responsePromise = fetchHTTPResponse({
             ...resolvedOpts,
-            signal: raceAbortSignals(
-              batchSignals.signal,
-              abortController.signal,
-            ),
+            signal: raceAbortSignals(batchSignals, abortController.signal),
             type,
             contentTypeHeader: 'application/json',
             trpcAcceptHeader: 'application/jsonl',

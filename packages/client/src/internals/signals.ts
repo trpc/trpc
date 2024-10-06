@@ -5,18 +5,10 @@ import type { Maybe } from '@trpc/server/unstable-core-do-not-import';
  * - When all signals have been aborted, the merged signal will be aborted
  * - If one signal is `null`, no signal will be aborted
  */
-export function allAbortSignals(
-  opts: {
-    signal: Maybe<AbortSignal>;
-  }[],
-): AbortController {
+export function allAbortSignals(...signals: Maybe<AbortSignal>[]): AbortSignal {
   const ac = new AbortController();
 
-  if (opts.some((o) => !o.signal)) {
-    return ac;
-  }
-
-  const count = opts.length;
+  const count = signals.length;
 
   let abortedCount = 0;
 
@@ -26,9 +18,7 @@ export function allAbortSignals(
     }
   };
 
-  for (const o of opts) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const signal = o.signal!;
+  for (const signal of signals.filter((it) => !!it)) {
     if (signal.aborted) {
       onAbort();
     } else {
@@ -38,7 +28,7 @@ export function allAbortSignals(
     }
   }
 
-  return ac;
+  return ac.signal;
 }
 
 /**
@@ -50,9 +40,10 @@ export function raceAbortSignals(
   const ac = new AbortController();
 
   for (const signal of signals.filter((it) => !!it)) {
-    signal.addEventListener('abort', () => ac.abort(), { once: true });
     if (signal.aborted) {
       ac.abort();
+    } else {
+      signal.addEventListener('abort', () => ac.abort(), { once: true });
     }
   }
 

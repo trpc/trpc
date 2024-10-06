@@ -50,7 +50,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         async fetch(batchOps) {
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
-          const ac = allAbortSignals(batchOps);
+          const signal = allAbortSignals(...batchOps.map((op) => op.signal));
 
           const res = await jsonHttpRequester({
             ...resolvedOpts,
@@ -68,7 +68,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
               }
               return opts.headers;
             },
-            signal: ac.signal,
+            signal,
           });
           const resJSON = Array.isArray(res.json)
             ? res.json
