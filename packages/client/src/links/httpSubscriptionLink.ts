@@ -120,6 +120,9 @@ export function unstable_httpSubscriptionLink<
                 // TODO: handle in https://github.com/trpc/trpc/issues/5871
                 break;
               }
+              case 'connecting': {
+                // TODO: handle in https://github.com/trpc/trpc/issues/5871
+              }
             }
           }
 
