@@ -1,6 +1,6 @@
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
+import type { MaybePromise } from '../types';
 import { run } from '../utils';
-import type { ConsumerOnError } from './jsonl';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
 import { createDeferred, createTimeoutPromise } from './utils/createDeferred';
@@ -177,88 +177,135 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
 
 type ConsumerStreamResult<TData> =
   | {
-      ok: true;
+      type: 'data';
       data: inferTrackedOutput<TData>;
     }
   | {
-      ok: false;
+      type: 'error';
+      error: unknown;
+    }
+  | {
+      type: 'opened';
+    };
+
+type RecreateOnErrorOpt =
+  | {
+      type: 'event';
+      event: Event;
+    }
+  | {
+      type: 'serialized-error';
       error: unknown;
     };
 
+const raceSignals = (...signals: AbortSignal[]) => {
+  const controller = new AbortController();
+
+  for (const signal of signals) {
+    signal.addEventListener('abort', () => controller.abort(), {
+      once: true,
+    });
+  }
+  return controller.signal;
+};
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
 export function sseStreamConsumer<TData>(opts: {
-  from: Pick<EventSource, 'addEventListener' | 'readyState'>;
-  onError?: ConsumerOnError;
+  url: () => MaybePromise<string>;
+  init: () => MaybePromise<EventSourceInit> | undefined;
+  signal: AbortSignal;
+  /**
+   * For a given error, should we reinitialize the underlying EventSource?
+   *
+   * This is useful where a long running subscription might be interrupted by a recoverable network error,
+   * but the existing authorization in a header or URI has expired in the mean-time
+   */
+  shouldRecreateOnError?: (
+    opt: RecreateOnErrorOpt,
+  ) => boolean | Promise<boolean>;
   deserialize?: Deserialize;
-  tryHandleError?: (error: Event) => Promise<boolean>;
 }): AsyncIterable<ConsumerStreamResult<TData>> {
   const { deserialize = (v) => v } = opts;
-  const eventSource = opts.from;
+  let lock: Promise<void> = Promise.resolve();
+  let eventSource: EventSource | null = null;
+  const ac = new AbortController();
+  const signal = raceSignals(ac.signal, opts.signal);
+  const readable = new ReadableStream<ConsumerStreamResult<TData>>({
+    async start(controller) {
+      const initEventSource = async () => {
+        const es = new EventSource(await opts.url(), await opts.init());
 
-  const stream = createReadableStream<MessageEvent>();
+        if (signal.aborted) {
+          es.close();
+        } else {
+          signal.addEventListener('abort', () => es.close());
+        }
 
-  const transform = new TransformStream<
-    MessageEvent,
-    ConsumerStreamResult<TData>
-  >({
-    async transform(chunk, controller) {
-      const data = deserialize(JSON.parse(chunk.data));
-      if (chunk.type === SERIALIZED_ERROR_EVENT) {
-        controller.enqueue({
-          ok: false,
-          error: data,
+        const handleIfNotReplaced = (fn: () => void | Promise<void>) => {
+          run(async () => {
+            await lock;
+            if (es === eventSource) {
+              await fn();
+            }
+          }).catch((error) => {
+            controller.error(error);
+          });
+        };
+
+        es.addEventListener('open', () => {
+          handleIfNotReplaced(() => {
+            controller.enqueue({
+              type: 'opened',
+            });
+          });
         });
-        return;
-      }
-      // console.debug('transforming', chunk.type, chunk.data);
-      const def: SSEvent = {
-        data,
+        es.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
+          handleIfNotReplaced(async () => {
+            if (opts.shouldRecreateOnError) {
+              const deferred = createDeferred<void>();
+              lock = deferred.promise;
+              const recreate = await opts.shouldRecreateOnError({
+                type: SERIALIZED_ERROR_EVENT,
+                error: deserialize(JSON.parse(msg.data)),
+              });
+              if (recreate) {
+                es.close();
+                eventSource = await initEventSource();
+              }
+              deferred.resolve();
+            }
+            controller.enqueue({
+              type: 'error',
+              error: deserialize(JSON.parse(msg.data)),
+            });
+          });
+        });
+        es.addEventListener('error', () => {});
+        es.addEventListener('message', (msg) => {
+          handleIfNotReplaced(() => {
+            const chunk = deserialize(JSON.parse(msg.data));
+            const def: SSEvent = {
+              data: chunk.data,
+            };
+            if (chunk.id) {
+              def.id = chunk.id;
+            }
+            controller.enqueue({
+              type: 'data',
+              data: def as inferTrackedOutput<TData>,
+            });
+          });
+        });
+        return es;
       };
 
-      if (chunk.lastEventId) {
-        def.id = chunk.lastEventId;
-      }
-
-      controller.enqueue({
-        ok: true,
-        data: def as inferTrackedOutput<TData>,
-      });
+      await initEventSource();
+    },
+    cancel() {
+      ac.abort();
     },
   });
-
-  let errorLock: Promise<void | 'CANCEL_ALL'> | undefined = undefined;
-  eventSource.addEventListener('message', (msg) => {
-    stream.controller.enqueue(msg);
-  });
-  eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
-    stream.controller.enqueue(msg);
-  });
-  eventSource.addEventListener('error', async (cause) => {
-    // We prevent more than 1 error handler from waiting at the same time
-    const result = await errorLock;
-    if (result === 'CANCEL_ALL') {
-      return;
-    }
-
-    const resolvable = createDeferred<void | 'CANCEL_ALL'>();
-    errorLock = resolvable.promise;
-
-    const handled = await opts.tryHandleError?.(cause);
-
-    resolvable.resolve();
-
-    if (handled === true) {
-      return;
-    }
-
-    if (eventSource.readyState === EventSource.CLOSED) {
-      stream.controller.error(cause);
-    }
-  });
-
-  const readable = stream.readable.pipeThrough(transform);
 
   return {
     [Symbol.asyncIterator]() {
