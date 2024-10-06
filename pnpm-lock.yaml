@@ -1683,6 +1683,10 @@ importers:
         version: 3.23.8
 
   packages/server:
+    dependencies:
+      '@standard-schema/utils':
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       '@fastify/websocket':
         specifier: ^10.0.1
@@ -10016,6 +10020,10 @@ packages:
   /@standard-schema/spec@1.0.0-beta.0:
     resolution: {integrity: sha512-//opTrDGFcAaG8BNc0btA5wwU1V573X/UezT5jgfwucdZEbzukpKCsFUJVskH6aJ3KNVOXdSbhS4YWFfnyLVbA==}
     dev: true
+
+  /@standard-schema/utils@0.1.0:
+    resolution: {integrity: sha512-aszjDe1Jof2Jj+jUufEhvmDHIygHwNajN7UGgj3gq83CYAOugIZHf8F/3OgVbLt+/IaXiH6CRgX5i0DSanecww==}
+    dev: false
 
   /@svgr/babel-plugin-add-jsx-attribute@8.0.0(@babel/core@7.24.7):
     resolution: {integrity: sha512-b9MIk7yhdS1pMCZM8VeNfUlSKVRhsHZNMl5O9SfaX0l0t5wjdgu4IDzGB8bpnGBBOjGST3rRFVsaaEtI4W6f7g==}
@@ -20089,7 +20097,7 @@ packages:
       '@panva/hkdf': 1.1.1
       cookie: 0.5.0
       jose: 4.15.5
-      next: 14.2.10(@babel/core@7.23.2)(react-dom@18.3.1)(react@18.3.1)
+      next: 14.2.10(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1)
       oauth: 0.9.15
       openid-client: 5.6.5
       preact: 10.22.0
@@ -20183,6 +20191,7 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
+    dev: true
 
   /next@14.2.10(@babel/core@7.24.7)(@playwright/test@1.28.1)(react-dom@18.3.1)(react@18.3.1):
     resolution: {integrity: sha512-sDDExXnh33cY3RkS9JuFEKaS4HmlWmDKP1VJioucCG6z5KuA008DPsDZOzi8UfqEk3Ii+2NCQSJrfbEWtZZfww==}
@@ -24823,6 +24832,7 @@ packages:
       '@babel/core': 7.23.2
       client-only: 0.0.1
       react: 18.3.1
+    dev: true
 
   /styled-jsx@5.1.1(@babel/core@7.24.7)(react@18.2.0):
     resolution: {integrity: sha512-pW7uC1l4mBZ8ugbiZrcIsiIvVx1UmTfw7UkC3Um2tmfUq9Bhk8IiyEIPl6F8agHgjzku6j0xQEZbfA5uSgSaCw==}

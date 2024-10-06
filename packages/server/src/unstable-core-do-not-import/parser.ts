@@ -1,3 +1,5 @@
+import { SchemaError } from '@standard-schema/utils';
+
 // zod / typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
   _input: TInput;
@@ -123,8 +125,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     return async (value) => {
       const result = await parser['~validate']({ value });
       if (result.issues) {
-        console.error('Schema issues:', result.issues);
-        throw new Error(result.issues[0].message);
+        throw new SchemaError(result.issues);
       }
       return result.value;
     };
