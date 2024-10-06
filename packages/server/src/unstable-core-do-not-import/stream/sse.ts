@@ -263,45 +263,63 @@ export function sseStreamConsumer<TData>(
         });
       });
     });
+
+    const pauseEvents = async (fn: () => Promise<void>) => {
+      const deferred = createDeferred<void>();
+      lock = deferred.promise;
+      try {
+        return await fn();
+      } finally {
+        deferred.resolve();
+      }
+    };
+
     es.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
       handleIfNotReplaced(async () => {
-        if (opts.shouldRecreateOnError) {
-          const deferred = createDeferred<void>();
-          lock = deferred.promise;
-          const recreate = await opts.shouldRecreateOnError({
-            type: SERIALIZED_ERROR_EVENT,
-            error: deserialize(JSON.parse(msg.data)),
+        const shouldRecreateOnError = opts.shouldRecreateOnError;
+        if (shouldRecreateOnError) {
+          await pauseEvents(async () => {
+            const recreate = await shouldRecreateOnError({
+              type: SERIALIZED_ERROR_EVENT,
+              error: deserialize(JSON.parse(msg.data)),
+            });
+            if (recreate) {
+              es.close();
+              eventSource = await initEventSource();
+            }
           });
-          if (recreate) {
-            es.close();
-            eventSource = await initEventSource();
-          }
-          deferred.resolve();
         }
-        stream.controller.enqueue({
-          type: 'error',
-          error: deserialize(JSON.parse(msg.data)),
-          eventSource: es,
+        handleIfNotReplaced(() => {
+          stream.controller.enqueue({
+            type: 'error',
+            error: deserialize(JSON.parse(msg.data)),
+            eventSource: es,
+          });
         });
       });
     });
     es.addEventListener('error', (event) => {
       handleIfNotReplaced(async () => {
-        if (opts.shouldRecreateOnError) {
-          const recreate = await opts.shouldRecreateOnError({
-            type: 'event',
-            event,
+        const shouldRecreateOnError = opts.shouldRecreateOnError;
+        if (shouldRecreateOnError) {
+          await pauseEvents(async () => {
+            const recreate = await shouldRecreateOnError({
+              type: 'event',
+              event,
+            });
+            if (recreate) {
+              es.close();
+              eventSource = await initEventSource();
+              return;
+            }
           });
-          if (recreate) {
-            es.close();
-            eventSource = await initEventSource();
-            return;
-          }
         }
 
-        if (es.readyState === EventSource.CLOSED) {
-          stream.controller.error(event);
-        }
+        handleIfNotReplaced(() => {
+          if (es.readyState === EventSource.CLOSED) {
+            stream.controller.error(event);
+          }
+        });
       });
     });
     es.addEventListener('message', (msg) => {
