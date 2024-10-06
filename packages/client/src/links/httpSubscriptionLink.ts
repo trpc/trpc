@@ -3,12 +3,12 @@ import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
+  SSEStreamConsumerOptions,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
   sseStreamConsumer,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { SSEStreamConsumerOptions } from '@trpc/server/unstable-core-do-not-import/stream/sse';
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl, raceAbortSignals } from './internals/httpUtils';
