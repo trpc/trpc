@@ -128,7 +128,11 @@ const trpc = createTRPCClient<AppRouter>({
 
 Since `httpSubscriptionLink` is built on SSE via `EventSource`, connections which encounter errors such as network failures or bad response codes will be seamlessly retried. EventSource cannot re-run the `eventSourceOptions()` or `url()` options to update its configuration though, for instance where authentication has expired since the last connection.
 
-We support fully restarting the connection when an error occurs. Note that this will cause the `EventSource` and any [`tracked()`](../../server/subscriptions.md#tracked)-events will be lost.
+We support fully restarting the connection when an error occurs.
+
+:::caution
+Note that this will cause the `EventSource` and any [`tracked()`](../../server/subscriptions.md#tracked)-events will be lost.
+:::
 
 ```tsx
 import {
