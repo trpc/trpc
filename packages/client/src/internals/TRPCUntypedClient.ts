@@ -128,16 +128,14 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     opts: Partial<
       TRPCSubscriptionObserver<unknown, TRPCClientError<AnyRouter>>
     > &
-      Omit<TRPCRequestOptions, 'signal'>,
+      TRPCRequestOptions,
   ): Unsubscribable {
-    const ac = new AbortController();
-
     const observable$ = this.$request({
       type: 'subscription',
       path,
       input,
       context: opts?.context,
-      signal: ac.signal,
+      signal: opts.signal,
     });
     return observable$.subscribe({
       next(envelope) {
