@@ -92,6 +92,7 @@ test('e2e, server-sent events (SSE)', async () => {
       return false;
     }),
   });
+  let es: EventSource | null = null;
 
   function range(start: number, end: number) {
     return Array.from({ length: end - start }, (_, i) => i + start);
@@ -99,7 +100,10 @@ test('e2e, server-sent events (SSE)', async () => {
 
   const ITERATIONS = 10;
   const values: number[] = [];
+  const allEvents: inferAsyncIterable<typeof iterable>[] = [];
   for await (const value of iterable) {
+    allEvents.push(value);
+    es = value.eventSource;
     if (value.type === 'error') {
       throw value.error;
     }
@@ -116,11 +120,17 @@ test('e2e, server-sent events (SSE)', async () => {
   await Promise.all([
     await server.restart(),
     // wait for an error, the EventSource will reconnect
-    shouldRecreateOnError.promise,
+    await new Promise<void>((resolve) => {
+      es!.addEventListener('error', () => {
+        resolve();
+      });
+    }),
   ]);
   release();
 
   for await (const value of iterable) {
+    allEvents.push(value);
+    es = value.eventSource;
     if (value.type === 'error') {
       throw value.error;
     }
@@ -135,6 +145,8 @@ test('e2e, server-sent events (SSE)', async () => {
   ac.abort();
   await server.close();
   expect(values).toEqual(range(1, ITERATIONS * 2 + 1));
+
+  expect(allEvents.filter((it) => it.type === 'connecting')).toHaveLength(2);
 });
 
 test('SSE on serverless - emit and disconnect early', async () => {
@@ -216,16 +228,11 @@ test('SSE on serverless - emit and disconnect early', async () => {
   });
 
   const ac = new AbortController();
-  const deferred = createDeferred<void>();
 
   const iterable = sseStreamConsumer<Data>({
     // from: es,
     url: () => server.url,
     signal: ac.signal,
-    shouldRecreateOnError: () => {
-      deferred.resolve();
-      return false;
-    },
     init: () => ({}),
     deserialize: SuperJSON.deserialize,
   });

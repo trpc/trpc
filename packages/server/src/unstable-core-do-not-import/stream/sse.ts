@@ -193,10 +193,15 @@ interface ConsumerStreamResultOpened extends ConsumerStreamResultBase {
   type: 'opened';
 }
 
+interface ConsumerStreamResultConnecting extends ConsumerStreamResultBase {
+  type: 'connecting';
+}
+
 type ConsumerStreamResult<TData> =
   | ConsumerStreamResultData<TData>
   | ConsumerStreamResultError
-  | ConsumerStreamResultOpened;
+  | ConsumerStreamResultOpened
+  | ConsumerStreamResultConnecting;
 
 export interface SSEStreamConsumerOptions {
   url: () => MaybePromise<string>;
@@ -236,8 +241,9 @@ export function sseStreamConsumer<TData>(
 
   const stream = createReadableStream<ConsumerStreamResult<TData>>();
 
-  const createEventSource = async () => {
-    const es = new EventSource(await opts.url(), await opts.init());
+  async function createEventSource() {
+    const [url, init] = await Promise.all([opts.url(), opts.init()]);
+    const es = new EventSource(url, init);
 
     if (signal.aborted) {
       es.close();
@@ -292,8 +298,7 @@ export function sseStreamConsumer<TData>(
               error: deserialize(JSON.parse(msg.data)),
             });
             if (recreate) {
-              es.close();
-              eventSource = await createEventSource();
+              await recreateEventSource();
             }
           });
         }
@@ -316,9 +321,7 @@ export function sseStreamConsumer<TData>(
               event,
             });
             if (recreate) {
-              es.close();
-              eventSource = await createEventSource();
-              return;
+              await recreateEventSource();
             }
           });
         }
@@ -326,6 +329,11 @@ export function sseStreamConsumer<TData>(
         dispatch((controller) => {
           if (es.readyState === EventSource.CLOSED) {
             controller.error(event);
+          } else {
+            controller.enqueue({
+              type: 'connecting',
+              eventSource: es,
+            });
           }
         });
       });
@@ -348,10 +356,19 @@ export function sseStreamConsumer<TData>(
       });
     });
     return es;
-  };
+  }
+  async function recreateEventSource() {
+    eventSource?.close();
+    eventSource = await createEventSource();
 
-  const eventSourcePromise = createEventSource().then((it) => {
-    eventSource = it;
+    stream.controller.enqueue({
+      type: 'connecting',
+      eventSource,
+    });
+  }
+
+  recreateEventSource().catch(() => {
+    // prevent unhandled promise rejection
   });
   return {
     [Symbol.asyncIterator]() {
@@ -359,7 +376,6 @@ export function sseStreamConsumer<TData>(
 
       const iterator: AsyncIterator<ConsumerStreamResult<TData>> = {
         async next() {
-          await eventSourcePromise;
           const value = await reader.read();
 
           if (value.done) {
