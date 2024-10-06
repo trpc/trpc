@@ -10,6 +10,7 @@ import type {
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
+import { raceAbortSignals } from '../links/internals/httpUtils';
 import type {
   OperationContext,
   OperationLink,
@@ -130,14 +131,18 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     > &
       TRPCRequestOptions,
   ): Unsubscribable {
+    const ac = new AbortController();
+
+    const signal = raceAbortSignals(ac.signal, opts.signal);
+
     const observable$ = this.$request({
       type: 'subscription',
       path,
       input,
       context: opts?.context,
-      signal: null,
+      signal,
     });
-    return observable$.subscribe({
+    const obs = observable$.subscribe({
       next(envelope) {
         if (envelope.result.type === 'started') {
           opts.onStarted?.({
@@ -156,5 +161,11 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
         opts.onComplete?.();
       },
     });
+    return {
+      unsubscribe() {
+        ac.abort();
+        obs.unsubscribe();
+      },
+    };
   }
 }

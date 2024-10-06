@@ -8,9 +8,9 @@ import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
 import type { HTTPResult } from './internals/httpUtils';
 import {
+  allAbortSignals,
   getUrl,
   jsonHttpRequester,
-  mergeAbortSignals,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import type { Operation, TRPCLink } from './types';
@@ -50,7 +50,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         async fetch(batchOps) {
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
-          const ac = mergeAbortSignals(batchOps);
+          const ac = allAbortSignals(batchOps);
 
           const res = await jsonHttpRequester({
             ...resolvedOpts,

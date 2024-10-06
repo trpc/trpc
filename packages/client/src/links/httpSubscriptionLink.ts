@@ -8,9 +8,10 @@ import {
   run,
   sseStreamConsumer,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { SSEStreamConsumerOptions } from '@trpc/server/unstable-core-do-not-import/stream/sse';
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
-import { getUrl, mergeAbortSignals } from './internals/httpUtils';
+import { allAbortSignals, getUrl } from './internals/httpUtils';
 import type { CallbackOrValue } from './internals/urlWithConnectionParams';
 import {
   resultOf,
@@ -33,32 +34,13 @@ async function urlWithConnectionParams(
   return url;
 }
 
-type RecreateOnErrorOpt =
-  | {
-      type: 'raw';
-      event: Event;
-    }
-  | {
-      type: 'http-error';
-      status: number;
-      event: Event;
-    };
-
 type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * EventSource options or a callback that returns them
    */
   eventSourceOptions?: CallbackOrValue<EventSourceInit>;
-  /**
-   * For a given error, should we reinitialize the underlying EventSource?
-   *
-   * This is useful where a long running subscription might be interrupted by a recoverable network error,
-   * but the existing authorization in a header or URI has expired in the mean-time
-   */
-  shouldRecreateOnError?: (
-    opt: RecreateOnErrorOpt,
-  ) => boolean | Promise<boolean>;
-} & TransformerOptions<TRoot> &
+} & Pick<SSEStreamConsumerOptions, 'shouldRecreateOnError'> &
+  TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
 /**
@@ -81,38 +63,62 @@ export function unstable_httpSubscriptionLink<
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
 
-        const ac = new AbortController();
-
-        const signal = mergeAbortSignals([ac, op]);
+        const ac = allAbortSignals([op]);
         const eventSourceStream = sseStreamConsumer<
           Partial<{
             id?: string;
             data: unknown;
           }>
         >({
-          url: () => urlWithConnectionParams(opts),
+          url: async () =>
+            getUrl({
+              transformer,
+              url: await urlWithConnectionParams(opts),
+              input,
+              path,
+              type,
+              signal: null,
+            }),
           init: () => resultOf(opts.eventSourceOptions),
-          signal,
+          signal: ac.signal,
           deserialize: transformer.output.deserialize,
+          shouldRecreateOnError: opts.shouldRecreateOnError,
         });
 
         run(async () => {
-          const reader = eventSourceStream.getReader();
+          for await (const chunk of eventSourceStream) {
+            switch (chunk.type) {
+              case 'data':
+                const chunkData = chunk.data;
 
-          for await (const chunk of reader) {
-            if (!chunk.ok) {
-              // TODO: handle in https://github.com/trpc/trpc/issues/5871
-              continue;
+                // if the `tracked()`-helper is used, we always have an `id` field
+                const data = 'id' in chunkData ? chunkData : chunkData.data;
+
+                observer.next({
+                  result: {
+                    data,
+                  },
+                  context: {
+                    eventSource: chunk.eventSource,
+                  },
+                });
+                break;
+              case 'opened': {
+                observer.next({
+                  result: {
+                    type: 'started',
+                  },
+                  context: {
+                    eventSource: chunk.eventSource,
+                  },
+                });
+                break;
+              }
+              case 'error': {
+                // TODO: handle in https://github.com/trpc/trpc/issues/5871
+                break;
+              }
             }
-            const chunkData = chunk.data;
-
-            // if the `tracked()`-helper is used, we always have an `id` field
-            const data = 'id' in chunkData ? chunkData : chunkData.data;
-            observer.next({
-              result: {
-                data,
-              },
-            });
           }
 
           observer.next({
@@ -132,98 +138,4 @@ export function unstable_httpSubscriptionLink<
       });
     };
   };
-}
-
-function createRecreateOnErrorOpts(ev: Event): RecreateOnErrorOpt {
-  if ('status' in ev && typeof ev.status === 'number') {
-    return {
-      type: 'http-error',
-      status: ev.status,
-      event: ev,
-    };
-  }
-
-  return {
-    type: 'raw',
-    event: ev,
-  };
-}
-
-/**
- * We wrap EventSource so that is can be reinitialized with new options
- */
-class EventSourceWrapper implements Partial<EventSource> {
-  private es: EventSource;
-
-  private listeners: Partial<
-    Record<
-      keyof EventSourceEventMap,
-      Parameters<EventSource['addEventListener']>[]
-    >
-  > = {};
-  private *getAllEventListeners() {
-    for (const _type in this.listeners) {
-      const type = _type as keyof typeof this.listeners;
-      for (const listener of this.listeners[type] ?? []) {
-        yield listener;
-      }
-    }
-  }
-
-  constructor(url: string, options: EventSourceInit | undefined) {
-    this.es = new EventSource(url, options);
-  }
-
-  restart(url: string, options: EventSourceInit | undefined) {
-    for (const [type, callback, options] of this.getAllEventListeners()) {
-      this.es.removeEventListener(type, callback, options);
-    }
-
-    this.es.close();
-    this.es = new EventSource(url, options);
-
-    for (const [type, callback, options] of this.getAllEventListeners()) {
-      this.es.addEventListener(type, callback, options);
-    }
-  }
-
-  close() {
-    this.listeners = {};
-    this.es.close();
-  }
-
-  getEventSource() {
-    return this.es;
-  }
-
-  get readyState() {
-    return this.es.readyState;
-  }
-
-  addEventListener<TEvent extends keyof EventSourceEventMap>(
-    type: TEvent,
-    listener: (this: EventSource, ev: EventSourceEventMap[TEvent]) => any,
-    options?: boolean | AddEventListenerOptions,
-  ) {
-    this.listeners[type] ??= [];
-    this.listeners[type].push([type, listener as any, options]);
-
-    this.es.addEventListener(type, listener, options);
-  }
-
-  removeEventListener<TEvent extends keyof EventSourceEventMap>(
-    type: TEvent,
-    listener: (this: EventSource, ev: EventSourceEventMap[TEvent]) => any,
-    options?: boolean | EventListenerOptions,
-  ) {
-    this.listeners[type] ??= [];
-
-    const indexToRemove = this.listeners[type]?.findIndex(
-      ([_type, thisListener]) => thisListener === listener,
-    );
-    if (typeof indexToRemove === 'number' && indexToRemove >= 0) {
-      this.listeners[type].splice(indexToRemove, 1);
-    }
-    this.es.removeEventListener(type, listener, options);
-  }
 }

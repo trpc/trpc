@@ -175,18 +175,27 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
   );
 }
 
+interface ConsumerStreamResultData<TData> {
+  type: 'data';
+  data: inferTrackedOutput<TData>;
+  eventSource: EventSource;
+}
+
+interface ConsumerStreamResultError {
+  type: 'error';
+  error: unknown;
+  eventSource: EventSource;
+}
+
+interface ConsumerStreamResultOpened {
+  type: 'opened';
+  eventSource: EventSource;
+}
+
 type ConsumerStreamResult<TData> =
-  | {
-      type: 'data';
-      data: inferTrackedOutput<TData>;
-    }
-  | {
-      type: 'error';
-      error: unknown;
-    }
-  | {
-      type: 'opened';
-    };
+  | ConsumerStreamResultData<TData>
+  | ConsumerStreamResultError
+  | ConsumerStreamResultOpened;
 
 type RecreateOnErrorOpt =
   | {
@@ -252,6 +261,7 @@ export function sseStreamConsumer<TData>(
       handleIfNotReplaced(() => {
         stream.controller.enqueue({
           type: 'opened',
+          eventSource: es,
         });
       });
     });
@@ -273,6 +283,7 @@ export function sseStreamConsumer<TData>(
         stream.controller.enqueue({
           type: 'error',
           error: deserialize(JSON.parse(msg.data)),
+          eventSource: es,
         });
       });
     });
@@ -302,12 +313,13 @@ export function sseStreamConsumer<TData>(
         const def: SSEvent = {
           data: chunk,
         };
-        if (chunk.id) {
-          def.id = chunk.id;
+        if (msg.lastEventId) {
+          def.id = msg.lastEventId;
         }
         stream.controller.enqueue({
           type: 'data',
           data: def as inferTrackedOutput<TData>,
+          eventSource: es,
         });
       });
     });

@@ -242,10 +242,11 @@ export async function httpRequest(
 }
 
 /**
- * Merges multiple abort signals into a single one
+ * Like `Promise.all()` but for abort signals
  * - When all signals have been aborted, the merged signal will be aborted
+ * - If one signal is `null`, no signal will be aborted
  */
-export function mergeAbortSignals(
+export function allAbortSignals(
   opts: {
     signal: Maybe<AbortSignal>;
   }[],
@@ -279,4 +280,22 @@ export function mergeAbortSignals(
   }
 
   return ac;
+}
+
+/**
+ * Like `Promise.race` but for abort signals
+ */
+export function raceAbortSignals(
+  ...signals: Maybe<AbortSignal>[]
+): AbortSignal {
+  const ac = new AbortController();
+
+  for (const signal of signals.filter((it) => !!it)) {
+    signal.addEventListener('abort', () => ac.abort(), { once: true });
+    if (signal.aborted) {
+      ac.abort();
+    }
+  }
+
+  return ac.signal;
 }
