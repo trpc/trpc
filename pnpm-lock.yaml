@@ -1683,10 +1683,6 @@ importers:
         version: 3.23.8
 
   packages/server:
-    dependencies:
-      '@standard-schema/utils':
-        specifier: ^0.1.0
-        version: 0.1.0
     devDependencies:
       '@fastify/websocket':
         specifier: ^10.0.1
@@ -10020,10 +10016,6 @@ packages:
   /@standard-schema/spec@1.0.0-beta.0:
     resolution: {integrity: sha512-//opTrDGFcAaG8BNc0btA5wwU1V573X/UezT5jgfwucdZEbzukpKCsFUJVskH6aJ3KNVOXdSbhS4YWFfnyLVbA==}
     dev: true
-
-  /@standard-schema/utils@0.1.0:
-    resolution: {integrity: sha512-aszjDe1Jof2Jj+jUufEhvmDHIygHwNajN7UGgj3gq83CYAOugIZHf8F/3OgVbLt+/IaXiH6CRgX5i0DSanecww==}
-    dev: false
 
   /@svgr/babel-plugin-add-jsx-attribute@8.0.0(@babel/core@7.24.7):
     resolution: {integrity: sha512-b9MIk7yhdS1pMCZM8VeNfUlSKVRhsHZNMl5O9SfaX0l0t5wjdgu4IDzGB8bpnGBBOjGST3rRFVsaaEtI4W6f7g==}

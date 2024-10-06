@@ -149,8 +149,5 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ],
-  "dependencies": {
-    "@standard-schema/utils": "^0.1.0"
-  }
+  ]
 }
