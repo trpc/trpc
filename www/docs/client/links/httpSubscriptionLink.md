@@ -76,7 +76,7 @@ unstable_httpSubscriptionLink({
   eventSourceOptions() {
     return {
       withCredentials: true, // <---
-    }
+    };
   },
 });
 ```
@@ -141,7 +141,10 @@ import {
   splitLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
-import { EventSourcePolyfill, EventSourcePolyfillInit } from 'event-source-polyfill';
+import {
+  EventSourcePolyfill,
+  EventSourcePolyfillInit,
+} from 'event-source-polyfill';
 import type { AppRouter } from '../server/index.js';
 
 // polyfill EventSource
@@ -155,11 +158,11 @@ const trpc = createTRPCClient<AppRouter>({
       true: unstable_httpSubscriptionLink({
         url: async () => {
           // calculate the latest URL if needed...
-          return getAuthenticatedUri()
+          return getAuthenticatedUri();
         },
         eventSourceOptions: async () => {
           // ...or maybe renew an access token
-          const token = await auth.getOrRenewToken()
+          const token = await auth.getOrRenewToken();
 
           return {
             headers: {

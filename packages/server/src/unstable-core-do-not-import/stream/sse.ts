@@ -241,9 +241,10 @@ export function sseStreamConsumer<TData>(
 
   const stream = createReadableStream<ConsumerStreamResult<TData>>();
 
-  async function createEventSource() {
-    const [url, init] = await Promise.all([opts.url(), opts.init()]);
-    const es = new EventSource(url, init);
+  function createEventSource(
+    ...args: ConstructorParameters<typeof EventSource>
+  ) {
+    const es = new EventSource(...args);
 
     if (signal.aborted) {
       es.close();
@@ -357,8 +358,8 @@ export function sseStreamConsumer<TData>(
   }
   async function recreateEventSource() {
     eventSource?.close();
-    eventSource = await createEventSource();
-
+    const [url, init] = await Promise.all([opts.url(), opts.init()]);
+    eventSource = createEventSource(url, init);
     stream.controller.enqueue({
       type: 'connecting',
       eventSource,
