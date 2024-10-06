@@ -237,7 +237,7 @@ export function sseStreamConsumer<TData>(
   const signal = opts.signal;
 
   let eventSource: EventSource | null = null;
-  let lock: Promise<void> = Promise.resolve();
+  let lock: Promise<void> | null = null;
 
   const stream = createReadableStream<ConsumerStreamResult<TData>>();
 
@@ -259,9 +259,11 @@ export function sseStreamConsumer<TData>(
      */
     const dispatch = (
       fn: (controller: typeof stream.controller) => void | Promise<void>,
-    ) => {
+    ): void => {
       run(async () => {
-        await lock;
+        while (lock) {
+          await lock;
+        }
         if (es === eventSource) {
           await fn(stream.controller);
         }
@@ -270,12 +272,20 @@ export function sseStreamConsumer<TData>(
       });
     };
 
-    const pauseDispatch = (fn: () => Promise<void>) => {
+    const pauseDispatch = async (fn: () => Promise<void>): Promise<void> => {
+      while (lock) {
+        await lock;
+      }
+      if (es !== eventSource) {
+        return;
+      }
+
       const deferred = createDeferred<void>();
       lock = deferred.promise;
       try {
-        return fn();
+        await fn();
       } finally {
+        lock = null;
         deferred.resolve();
       }
     };
