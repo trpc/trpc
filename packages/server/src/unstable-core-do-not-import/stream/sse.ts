@@ -232,7 +232,7 @@ export interface SSEStreamConsumerOptions {
 export function sseStreamConsumer<TData>(
   opts: SSEStreamConsumerOptions,
 ): AsyncIterable<ConsumerStreamResult<TData>> {
-  const { deserialize = (v) => v } = opts;
+  const { deserialize = (v) => v, shouldRecreateOnError } = opts;
 
   const signal = opts.signal;
 
@@ -290,7 +290,6 @@ export function sseStreamConsumer<TData>(
 
     es.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
       dispatch(async () => {
-        const shouldRecreateOnError = opts.shouldRecreateOnError;
         if (shouldRecreateOnError) {
           await pauseDispatch(async () => {
             const recreate = await shouldRecreateOnError({
@@ -313,7 +312,6 @@ export function sseStreamConsumer<TData>(
     });
     es.addEventListener('error', (event) => {
       dispatch(async () => {
-        const shouldRecreateOnError = opts.shouldRecreateOnError;
         if (shouldRecreateOnError) {
           await pauseDispatch(async () => {
             const recreate = await shouldRecreateOnError({
