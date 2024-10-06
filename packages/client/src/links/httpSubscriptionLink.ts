@@ -122,6 +122,7 @@ export function unstable_httpSubscriptionLink<
               }
               case 'connecting': {
                 // TODO: handle in https://github.com/trpc/trpc/issues/5871
+                break;
               }
             }
           }
