@@ -166,15 +166,15 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
   );
 
-  const initState: TRPCConnectionState<unknown> = activeConnection
+  const initState: TRPCConnectionState<Error> = activeConnection
     ? {
         type: 'state',
-        state: 'idle',
+        state: 'connecting',
+        error: null,
       }
     : {
         type: 'state',
-        state: 'connecting',
-        error: undefined,
+        state: 'idle',
       };
   const connectionState =
     observableValue<TRPCConnectionState<unknown>>(initState);
@@ -184,7 +184,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
    */
   function dispatch() {
     if (!activeConnection) {
-      activeConnection = createConnection();
+      reconnect(null);
       return;
     }
     // using a timeout to batch messages
@@ -214,14 +214,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
     if (!!connectTimer) {
       return;
     }
+
     const timeout = retryDelayFn(connectAttempt++);
-    reconnectInMs(timeout);
-    // Update connection state
-    connectionState.set({
-      type: 'state',
-      state: 'connecting',
-      error: cause,
-    });
+    reconnectInMs(timeout, cause);
   }
   function hasPendingRequests(conn?: Connection) {
     const requests = Object.values(pendingRequests);
@@ -231,7 +226,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     return requests.some((req) => req.connection === conn);
   }
 
-  function reconnect() {
+  function reconnect(cause: Error | null) {
     if (lazyOpts.enabled && !hasPendingRequests()) {
       // Skip reconnecting if there aren't pending requests and we're in lazy mode
       return;
@@ -239,12 +234,23 @@ export function createWSClient(opts: WebSocketClientOptions) {
     const oldConnection = activeConnection;
     activeConnection = createConnection();
     oldConnection && closeIfNoPending(oldConnection);
+
+    const currentState = connectionState.get();
+    if (currentState.state !== 'connecting') {
+      connectionState.set({
+        type: 'state',
+        state: 'connecting',
+        error: cause,
+      });
+    }
   }
-  function reconnectInMs(ms: number) {
+  function reconnectInMs(ms: number, cause: Error | null) {
     if (connectTimer) {
       return;
     }
-    connectTimer = setTimeout(reconnect, ms);
+    connectTimer = setTimeout(() => {
+      reconnect(cause);
+    }, ms);
   }
 
   function closeIfNoPending(conn: Connection) {
@@ -421,7 +427,11 @@ export function createWSClient(opts: WebSocketClientOptions) {
         }
 
         if (req.method === 'reconnect') {
-          reconnect();
+          reconnect(
+            new TRPCWebSocketClosedError({
+              message: 'Server requested reconnect',
+            }),
+          );
           // notify subscribers
           for (const pendingReq of Object.values(pendingRequests)) {
             if (pendingReq.type === 'subscription') {

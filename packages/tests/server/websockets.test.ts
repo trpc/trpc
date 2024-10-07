@@ -3,6 +3,7 @@ import { routerToServerAndClientNew, waitMs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
@@ -142,6 +143,9 @@ function factory(config?: {
   // TODO: Uncomment when the expect-type library gets fixed
   // expectTypeOf<AnyRouter>().toMatchTypeOf<typeof appRouter>();
 
+  const connectionState =
+    vi.fn<Observer<TRPCConnectionState<unknown>, never>['next']>();
+
   const opts = routerToServerAndClientNew(appRouter, {
     wsClient: {
       retryDelayMs: () => 10,
@@ -151,6 +155,7 @@ function factory(config?: {
       ...config?.wsClient,
     },
     client({ wsClient }) {
+      wsClient.connectionState.subscribe({ next: connectionState });
       return {
         links: [wsLink({ client: wsClient })],
       };
@@ -176,16 +181,35 @@ function factory(config?: {
     onSlowMutationCalled,
     subscriptionEnded,
     nextIterable,
+    connectionState,
   };
 }
 
 test('query', async () => {
-  const { client: client, close } = factory();
-  expect(await client.greeting.query()).toBe('hello world');
-  expect(await client.greeting.query(null)).toBe('hello world');
-  expect(await client.greeting.query('alexdotjs')).toBe('hello alexdotjs');
+  const ctx = factory();
+  expect(await ctx.client.greeting.query()).toBe('hello world');
+  expect(await ctx.client.greeting.query(null)).toBe('hello world');
+  expect(await ctx.client.greeting.query('alexdotjs')).toBe('hello alexdotjs');
 
-  await close();
+  await ctx.close();
+
+  expect(ctx.connectionState.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "error": null,
+          "state": "connecting",
+          "type": "state",
+        },
+      ],
+      Array [
+        Object {
+          "state": "pending",
+          "type": "state",
+        },
+      ],
+    ]
+  `);
 });
 
 test('mutation', async () => {
@@ -276,7 +300,8 @@ test('basic subscription test (observable)', async () => {
     Array [
       Array [
         Object {
-          "state": "idle",
+          "error": null,
+          "state": "connecting",
           "type": "state",
         },
       ],
@@ -1217,6 +1242,20 @@ describe('lazy mode', () => {
         expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
       });
     }
+
+    expect(
+      ctx.connectionState.mock.calls.map((it) => it[0]?.state),
+    ).toMatchInlineSnapshot(`
+      Array [
+        "idle",
+        "connecting",
+        "pending",
+        "idle",
+        "connecting",
+        "pending",
+        "idle",
+      ]
+    `);
 
     await ctx.close();
   });
