@@ -176,6 +176,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
     : {
         type: 'state',
         state: 'idle',
+        error: null,
       };
   const connectionState =
     behaviorSubject<TRPCConnectionState<Error>>(initState);
@@ -288,6 +289,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         connectionState.next({
           type: 'state',
           state: 'idle',
+          error: null,
         });
       }
     }, lazyOpts.closeMs);
@@ -425,6 +427,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
           connectionState.next({
             type: 'state',
             state: 'pending',
+            error: null,
           });
 
           opts.onOpen?.();

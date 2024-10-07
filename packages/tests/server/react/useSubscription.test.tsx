@@ -285,17 +285,15 @@ describe('connection state - ws', () => {
     expect(diff(queryResult)).toMatchInlineSnapshot(`
       Array [
         Object {
-          "connectionError": undefined,
+          "connectionError": null,
           "connectionState": "idle",
           "data": undefined,
           "status": "connecting",
         },
         Object {
-          "connectionError": null,
           "connectionState": "connecting",
         },
         Object {
-          "connectionError": undefined,
           "connectionState": "pending",
         },
         Object {
@@ -315,6 +313,7 @@ describe('connection state - ws', () => {
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('connectionState:pending');
+      expect(utils.container).toHaveTextContent('status:pending');
     });
 
     expect(diff(queryResult)).toMatchInlineSnapshot(`
@@ -326,11 +325,19 @@ describe('connection state - ws', () => {
           "status": "pending",
         },
         Object {
-          "connectionError": undefined,
+          "connectionError": null,
           "connectionState": "pending",
         },
       ]
     `);
+
+    // emit
+    ctx.ee.emit('data', 40);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('data:50');
+    });
+
     utils.unmount();
   });
 });

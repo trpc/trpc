@@ -382,7 +382,7 @@ export function createRootHooks<
             data: undefined,
             error: undefined,
             status: 'connecting',
-            connectionError: undefined,
+            connectionError: null,
             connectionState: 'idle',
           }
         : {
@@ -390,7 +390,7 @@ export function createRootHooks<
             error: undefined,
             status: 'idle',
             connectionState: 'idle',
-            connectionError: undefined,
+            connectionError: null,
           },
     );
 
@@ -432,7 +432,6 @@ export function createRootHooks<
               updateState((prev) => ({
                 ...prev,
                 status: 'pending',
-                data: undefined,
                 error: undefined,
               }));
             }
@@ -468,6 +467,10 @@ export function createRootHooks<
             updateState((prev) => ({
               ...prev,
               ...delta,
+              // if the connection is now connecting, we need to update the status to connecting
+              status: (result.state === 'connecting'
+                ? 'pending'
+                : prev.status) as any,
             }));
           },
         },

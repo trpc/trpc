@@ -5,7 +5,7 @@ interface ConnectionStateBase {
 
 export interface ConnectionIdleState extends ConnectionStateBase {
   state: 'idle';
-  error?: never;
+  error: null;
 }
 
 export interface ConnectionConnectingState<TError> extends ConnectionStateBase {
@@ -15,7 +15,7 @@ export interface ConnectionConnectingState<TError> extends ConnectionStateBase {
 
 export interface ConnectionPendingState extends ConnectionStateBase {
   state: 'pending';
-  error?: never;
+  error: null;
 }
 
 export interface ConnectionErrorState<TError> extends ConnectionStateBase {
