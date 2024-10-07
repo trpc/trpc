@@ -353,8 +353,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
       onCloseOrError(new TRPCWebSocketClosedError({ cause: evt }));
       opts.onError?.(evt);
     };
-    run(async () => {
-      let url = await resultOf(opts.url);
+
+    function connect(url: string) {
       if (opts.connectionParams) {
         // append `?connectionParams=1` when connection params are used
         const prefix = url.includes('?') ? '&' : '?';
@@ -529,7 +529,13 @@ export function createWSClient(opts: WebSocketClientOptions) {
           opts.onClose?.(event);
         }
       };
-    }).catch(onError);
+    }
+
+    Promise.resolve(resultOf(opts.url))
+      .then(connect)
+      .catch(() => {
+        onCloseOrError(new Error('Failed to resolve url'));
+      });
     return self;
   }
 
