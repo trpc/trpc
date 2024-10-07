@@ -87,13 +87,22 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
         'ping' as const,
       );
       const next = await Promise.race([
-        nextPromise.catch(getTRPCErrorFromUnknown),
+        nextPromise.catch((err) => {
+          if (err instanceof Error && err.name === 'AbortError') {
+            // Fixes so that aborting the request does not throw an error
+            return 'aborted' as const;
+          }
+          return getTRPCErrorFromUnknown(err);
+        }),
         pingPromise.promise,
         closedPromise,
         maxDurationPromise.promise,
       ]);
 
       pingPromise.clear();
+      if (next === 'aborted') {
+        break;
+      }
       if (next === 'closed') {
         break;
       }
