@@ -94,9 +94,9 @@ export const subRouter = router({
         // [...] get the posts since the last event id and yield them
       }
       // listen for new events
-      for await (const [data] of on(ee, 'add'), {
+      for await (const [data] of on(ee, 'add', {
         signal: opts.signal,
-      }) {
+      })) {
         const post = data as Post;
         // tracking the post id ensures the client can reconnect at any time and get the latest events this id
         yield tracked(post.id, post);
@@ -121,9 +121,9 @@ export const subRouter = router({
   onPostAdd: publicProcedure.subscription(async function* (opts) {
     let timeout;
     try {
-      for await (const [data] of on(ee, 'add'), {
+      for await (const [data] of on(ee, 'add', {
         signal: opts.signal,
-      }) {
+      })) {
         timeout = setTimeout(() => console.log('Pretend like this is useful'));
         const post = data as Post;
         yield post;
