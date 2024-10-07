@@ -1,3 +1,4 @@
+import { unsetMarker } from '../unstable-core-do-not-import/utils';
 import type {
   Observable,
   Observer,
@@ -183,6 +184,42 @@ export function observableToAsyncIterable<TValue>(
   return {
     [Symbol.asyncIterator]() {
       return iterator;
+    },
+  };
+}
+
+/**
+ * @internal
+ */
+export function observableSignal<TValue>(value?: TValue) {
+  let _value: TValue | typeof unsetMarker = value ?? unsetMarker;
+
+  const observerList: Observer<TValue, never>[] = [];
+
+  const addObserver = (observer: Observer<TValue, never>) => {
+    if (_value !== unsetMarker) {
+      observer.next(_value);
+    }
+    observerList.push(observer);
+  };
+  const removeObserver = (observer: Observer<TValue, never>) => {
+    observerList.splice(observerList.indexOf(observer), 1);
+  };
+  return {
+    observable: observable<TValue, never>((observer) => {
+      addObserver(observer);
+      return () => {
+        removeObserver(observer);
+      };
+    }),
+    set: (value: TValue) => {
+      if (value === _value) {
+        return;
+      }
+      _value = value;
+      for (const observer of observerList) {
+        observer.next(value);
+      }
     },
   };
 }

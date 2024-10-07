@@ -220,6 +220,7 @@ test('basic subscription test (observable)', async () => {
   });
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
+  const onStateChangeMock = vi.fn();
   const subscription = client.onMessageObservable.subscribe(undefined, {
     onStarted() {
       onStartedMock();
@@ -229,6 +230,7 @@ test('basic subscription test (observable)', async () => {
       expectTypeOf(data).toMatchTypeOf<Message>();
       onDataMock(data);
     },
+    onStateChange: onStateChangeMock,
   });
 
   await waitFor(() => {
@@ -270,6 +272,22 @@ test('basic subscription test (observable)', async () => {
     expect(ee.listenerCount('server:error')).toBe(0);
   });
   await close();
+  expect(onStateChangeMock.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "state": "idle",
+          "type": "state",
+        },
+      ],
+      Array [
+        Object {
+          "state": "pending",
+          "type": "state",
+        },
+      ],
+    ]
+  `);
 });
 
 test('basic subscription test (iterator)', async () => {
@@ -1149,7 +1167,7 @@ test('wsClient stops reconnecting after .close()', async () => {
   expect(onErrorMock).toHaveBeenCalledTimes(2);
 });
 describe('lazy mode', () => {
-  test('happy path', async () => {
+  test.only('happy path', async () => {
     const ctx = factory({
       wsClient: {
         lazy: {

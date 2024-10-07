@@ -3,6 +3,11 @@ interface ConnectionStateBase {
   data?: never;
 }
 
+export interface IdleState extends ConnectionStateBase {
+  state: 'idle';
+  error?: never;
+}
+
 interface ConnectingState<TError> extends ConnectionStateBase {
   state: 'connecting';
   error: TError | null;
@@ -19,6 +24,7 @@ interface ErrorState<TError> extends ConnectionStateBase {
 }
 
 export type TRPCConnectionState<TError> =
+  | IdleState
   | ConnectingState<TError>
   | PendingState
   | ErrorState<TError>;
