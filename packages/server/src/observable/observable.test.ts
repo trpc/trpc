@@ -1,8 +1,8 @@
 import { EventEmitter } from 'stream';
 import {
   observable,
-  observableSignal,
   observableToAsyncIterable,
+  observableValue,
 } from './observable';
 import { share, tap } from './operators';
 
@@ -194,36 +194,36 @@ test('observableToAsyncIterable() - doesnt hang', async () => {
   expect(ee.listenerCount('data')).toBe(0);
 });
 
-test('observableSignal', () => {
-  const signal = observableSignal(1);
+test('observableValue', () => {
+  const value = observableValue(1);
 
-  expect(signal.get()).toBe(1);
-  expectTypeOf(signal.get()).toBeNumber();
+  expect(value.get()).toBe(1);
+  expectTypeOf(value.get()).toBeNumber();
   const next1 = vi.fn();
   const next2 = vi.fn();
-  const sub = signal.observable.subscribe({
+  const sub = value.observable.subscribe({
     next: next1,
   });
 
   expect(next1).toHaveBeenCalledWith(1);
 
-  signal.set(2);
+  value.set(2);
   expect(next1).toHaveBeenCalledWith(2);
 
-  const sub2 = signal.observable.subscribe({
+  const sub2 = value.observable.subscribe({
     next: next2,
   });
 
   expect(next1).toHaveBeenCalledWith(2);
   sub.unsubscribe();
 
-  signal.set(3);
+  value.set(3);
   expect(next1).not.toHaveBeenCalledWith(3);
   expect(next2).toHaveBeenCalledWith(3);
 
   sub2.unsubscribe();
 
-  signal.set(4);
+  value.set(4);
   expect(next2).not.toHaveBeenCalledWith(4);
   expect(next1).not.toHaveBeenCalledWith(4);
 });

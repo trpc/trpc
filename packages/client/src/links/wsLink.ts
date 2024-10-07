@@ -1,6 +1,5 @@
 import type { Observer, UnsubscribeFn } from '@trpc/server/observable';
-import { observable } from '@trpc/server/observable';
-import { observableSignal } from '@trpc/server/observable/observable';
+import { observable, observableValue } from '@trpc/server/observable';
 import type { TRPCConnectionParamsMessage } from '@trpc/server/rpc';
 import type {
   AnyRouter,
@@ -178,7 +177,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         error: undefined,
       };
   const connectionState =
-    observableSignal<TRPCConnectionState<unknown>>(initState);
+    observableValue<TRPCConnectionState<unknown>>(initState);
 
   /**
    * tries to send the list of messages

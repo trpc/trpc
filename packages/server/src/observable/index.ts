@@ -1,5 +1,10 @@
 export type { inferObservableValue } from './observable';
-export { isObservable, observable, observableToPromise } from './observable';
+export {
+  isObservable,
+  observable,
+  observableToPromise,
+  observableValue,
+} from './observable';
 export { map, share, tap } from './operators';
 export type {
   Observable,
