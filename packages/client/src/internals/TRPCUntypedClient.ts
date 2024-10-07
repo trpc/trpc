@@ -10,6 +10,7 @@ import type {
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
+import type { TRPCConnectionState } from '../links/internals/subscriptions';
 import type {
   OperationContext,
   OperationLink,
@@ -35,6 +36,7 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
   onError: (err: TError) => void;
   onStopped: () => void;
   onComplete: () => void;
+  onStateChange: (state: TRPCConnectionState<TError>) => void;
 }
 
 /** @internal */
@@ -139,14 +141,26 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     });
     return observable$.subscribe({
       next(envelope) {
-        if (envelope.result.type === 'started') {
-          opts.onStarted?.({
-            context: envelope.context,
-          });
-        } else if (envelope.result.type === 'stopped') {
-          opts.onStopped?.();
-        } else {
-          opts.onData?.(envelope.result.data);
+        switch (envelope.result.type) {
+          case 'state': {
+            opts.onStateChange?.(envelope.result);
+            break;
+          }
+          case 'started': {
+            opts.onStarted?.({
+              context: envelope.context,
+            });
+            break;
+          }
+          case 'stopped': {
+            opts.onStopped?.();
+            break;
+          }
+          case 'data':
+          case undefined: {
+            opts.onData?.(envelope.result.data);
+            break;
+          }
         }
       },
       error(err) {
