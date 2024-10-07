@@ -1,6 +1,7 @@
 import { EventEmitter, on } from 'events';
 import { ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
+import { skipToken } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC, sse } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -8,15 +9,10 @@ import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
 
-describe.each([
-  //
-  'http',
-  'ws',
-] as const)('useSubscription - %s', (protocol) => {
-  const ee = new EventEmitter();
-
-  const ctx = konn()
+const getCtx = (protocol: 'http' | 'ws') => {
+  return konn()
     .beforeEach(() => {
+      const ee = new EventEmitter();
       const t = initTRPC.create({
         errorFormatter({ shape }) {
           return {
@@ -54,16 +50,26 @@ describe.each([
           }),
       });
 
-      return getServerAndReactClient(appRouter, {
-        subscriptions: protocol,
-      });
+      return {
+        ...getServerAndReactClient(appRouter, {
+          subscriptions: protocol,
+        }),
+        ee,
+      };
     })
     .afterEach(async (ctx) => {
       await ctx?.close?.();
     })
     .done();
+};
+describe.each([
+  //
+  'http',
+  'ws',
+] as const)('useSubscription - %s', (protocol) => {
+  const ctx = getCtx(protocol);
 
-  test('useSubscription - iterable', async () => {
+  test('iterable', async () => {
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
@@ -114,7 +120,7 @@ describe.each([
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__connected`);
     });
-    ee.emit('data', 20);
+    ctx.ee.emit('data', 20);
 
     await waitFor(() => {
       expect(onDataMock).toHaveBeenCalledTimes(1);
@@ -139,15 +145,15 @@ describe.each([
     });
 
     // we need to emit data to trigger unsubscribe
-    ee.emit('data', 40);
+    ctx.ee.emit('data', 40);
 
     await waitFor(() => {
       // no event listeners
-      expect(ee.listenerCount('data')).toBe(0);
+      expect(ctx.ee.listenerCount('data')).toBe(0);
     });
   });
 
-  test('useSubscription - observable()', async () => {
+  test('observable()', async () => {
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
@@ -197,7 +203,7 @@ describe.each([
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__connected`);
     });
-    ee.emit('data', 20);
+    ctx.ee.emit('data', 20);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__data:30`);
     });
@@ -210,7 +216,121 @@ describe.each([
 
     await waitFor(() => {
       // no event listeners
-      expect(ee.listenerCount('data')).toBe(0);
+      expect(ctx.ee.listenerCount('data')).toBe(0);
     });
+  });
+});
+
+describe('connection state - ws', () => {
+  const ctx = getCtx('ws');
+
+  test('iterable', async () => {
+    const { App, client } = ctx;
+
+    const queryResult: unknown[] = [];
+
+    function MyComponent() {
+      const result = client.onEventObservable.useSubscription(10);
+
+      queryResult.push({
+        status: result.status,
+        connectionState: result.connectionState,
+        connectionError: result.connectionError,
+        data: result.data,
+      });
+
+      return (
+        <>
+          <>connectionState:{result.connectionState} </>
+          <>status:{result.status}</>
+          <>data:{result.data}</>
+        </>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    // emit
+    ctx.ee.emit('data', 20);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`data:30`);
+    });
+
+    /**
+     * a function that displays the diff over time in a list of values
+     */
+    function diff(list: any[]) {
+      return list.map((item, index) => {
+        if (index === 0) return item;
+
+        const prev = list[index - 1]!;
+        const diff = {} as any;
+        for (const key in item) {
+          if (item[key] !== prev[key]) {
+            diff[key] = item[key];
+          }
+        }
+        return diff;
+      });
+    }
+
+    expect(diff(queryResult)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "connectionError": undefined,
+          "connectionState": "idle",
+          "data": undefined,
+          "status": "connecting",
+        },
+        Object {
+          "connectionError": null,
+          "connectionState": "connecting",
+        },
+        Object {
+          "connectionError": undefined,
+          "connectionState": "pending",
+        },
+        Object {
+          "status": "pending",
+        },
+        Object {
+          "data": 30,
+        },
+      ]
+    `);
+    queryResult.length = 0;
+    ctx.destroyConnections();
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('connectionState:connecting');
+    });
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('connectionState:pending');
+    });
+
+    expect(diff(queryResult)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "connectionError": [TRPCWebSocketClosedError: WebSocket closed],
+          "connectionState": "connecting",
+          "data": 30,
+          "status": "pending",
+        },
+        Object {
+          "connectionError": undefined,
+          "connectionState": "pending",
+        },
+      ]
+    `);
+    utils.unmount();
   });
 });

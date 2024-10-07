@@ -3,28 +3,28 @@ interface ConnectionStateBase {
   data?: never;
 }
 
-interface IdleState extends ConnectionStateBase {
+export interface ConnectionIdleState extends ConnectionStateBase {
   state: 'idle';
   error?: never;
 }
 
-interface ConnectingState<TError> extends ConnectionStateBase {
+export interface ConnectionConnectingState<TError> extends ConnectionStateBase {
   state: 'connecting';
   error: TError | null;
 }
 
-interface PendingState extends ConnectionStateBase {
+export interface ConnectionPendingState extends ConnectionStateBase {
   state: 'pending';
   error?: never;
 }
 
-interface ErrorState<TError> extends ConnectionStateBase {
+export interface ConnectionErrorState<TError> extends ConnectionStateBase {
   state: 'error';
   error: TError;
 }
 
 export type TRPCConnectionState<TError> =
-  | IdleState
-  | ConnectingState<TError>
-  | PendingState
-  | ErrorState<TError>;
+  | ConnectionIdleState
+  | ConnectionConnectingState<TError>
+  | ConnectionPendingState
+  | ConnectionErrorState<TError>;

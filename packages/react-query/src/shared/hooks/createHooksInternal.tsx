@@ -36,6 +36,8 @@ import type {
   CreateClient,
   TRPCProvider,
   TRPCQueryOptions,
+  TRPCSubscriptionConnectionState,
+  TRPCSubscriptionResult,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
@@ -50,6 +52,20 @@ import type {
   UseTRPCSuspenseQueryOptions,
   UseTRPCSuspenseQueryResult,
 } from './types';
+
+const trackResult = <T extends object>(
+  result: T,
+  onTrackResult: (key: keyof T) => void,
+): T => {
+  const trackedResult = new Proxy(result, {
+    get(target, prop) {
+      onTrackResult(prop as keyof T);
+      return target[prop as keyof T];
+    },
+  });
+
+  return trackedResult;
+};
 
 /**
  * @internal
@@ -353,6 +369,54 @@ export function createRootHooks<
     const optsRef = React.useRef<typeof opts>(opts);
     optsRef.current = opts;
 
+    type $Result = TRPCSubscriptionResult<unknown, TError>;
+
+    const trackedProps = React.useRef(new Set<keyof $Result>([]));
+
+    const addTrackedProp = React.useCallback((key: keyof $Result) => {
+      trackedProps.current.add(key);
+    }, []);
+    const resultRef = React.useRef<$Result>(
+      enabled
+        ? {
+            data: undefined,
+            error: undefined,
+            status: 'connecting',
+            connectionError: undefined,
+            connectionState: 'idle',
+          }
+        : {
+            data: undefined,
+            error: undefined,
+            status: 'idle',
+            connectionState: 'idle',
+            connectionError: undefined,
+          },
+    );
+
+    const [state, setState] = React.useState<$Result>(
+      trackResult(resultRef.current, addTrackedProp),
+    );
+
+    const updateState = React.useCallback(
+      (callback: (prevState: $Result) => $Result) => {
+        const prev = resultRef.current;
+        const next = (resultRef.current = callback(prev));
+
+        let shouldUpdate = false;
+        for (const key of trackedProps.current) {
+          if (prev[key] !== next[key]) {
+            shouldUpdate = true;
+            break;
+          }
+        }
+        if (shouldUpdate) {
+          setState(trackResult(next, addTrackedProp));
+        }
+      },
+      [addTrackedProp],
+    );
+
     React.useEffect(() => {
       if (!enabled) {
         return;
@@ -365,26 +429,63 @@ export function createRootHooks<
           onStarted: () => {
             if (!isStopped) {
               optsRef.current.onStarted?.();
+              updateState((prev) => ({
+                ...prev,
+                status: 'pending',
+                data: undefined,
+                error: undefined,
+              }));
             }
           },
           onData: (data) => {
             if (!isStopped) {
-              optsRef.current.onData(data);
+              optsRef.current.onData?.(data);
+              updateState((prev) => ({
+                ...prev,
+                status: 'pending',
+                data,
+                error: undefined,
+              }));
             }
           },
-          onError: (err) => {
+          onError: (error) => {
             if (!isStopped) {
-              optsRef.current.onError?.(err);
+              optsRef.current.onError?.(error);
+              updateState((prev) => ({
+                ...prev,
+                status: 'error',
+                error,
+              }));
             }
+          },
+          onStateChange: (result) => {
+            opts.onStateChange?.(result);
+
+            const delta = {
+              connectionState: result.state,
+              connectionError: result.error,
+            } as TRPCSubscriptionConnectionState<TError>;
+            updateState((prev) => ({
+              ...prev,
+              ...delta,
+            }));
           },
         },
       );
       return () => {
         isStopped = true;
         subscription.unsubscribe();
+        updateState((prev) => ({
+          ...prev,
+          status: 'idle',
+          data: undefined,
+          error: undefined,
+        }));
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryKey, enabled]);
+
+    return state;
   }
 
   function useInfiniteQuery(

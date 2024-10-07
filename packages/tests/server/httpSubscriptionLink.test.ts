@@ -8,6 +8,7 @@ import {
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
+import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -186,9 +187,14 @@ test(
     const onStarted =
       vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
     const onData = vi.fn<(args: number) => void>();
+    const onStateChange =
+      vi.fn<
+        (args: TRPCConnectionState<TRPCClientError<typeof ctx.router>>) => void
+      >();
     const subscription = client.sub.iterableEvent.subscribe(undefined, {
       onStarted: onStarted,
       onData: onData,
+      onStateChange: onStateChange,
     });
 
     await waitFor(() => {
@@ -224,6 +230,37 @@ test(
     );
 
     subscription.unsubscribe();
+
+    expect(onStateChange.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "error": null,
+            "state": "connecting",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "state": "pending",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "error": [TRPCClientError: test error],
+            "state": "connecting",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "state": "pending",
+            "type": "state",
+          },
+        ],
+      ]
+    `);
   },
 );
 

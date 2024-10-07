@@ -25,6 +25,12 @@ import type {
   TRPCUntypedClient,
 } from '@trpc/client';
 import type {
+  ConnectionConnectingState,
+  ConnectionIdleState,
+  ConnectionPendingState,
+  TRPCConnectionState,
+} from '@trpc/client/unstable-internals';
+import type {
   AnyRouter,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -164,9 +170,78 @@ type inferAsyncIterableYield<T> = T extends AsyncIterable<infer U> ? U : T;
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   enabled?: boolean;
   onStarted?: () => void;
-  onData: (data: inferAsyncIterableYield<TOutput>) => void;
+  onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
+  onStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
+
+export interface UseTRPCSubscriptionConnectionIdleResult<_TError> {
+  connectionState: ConnectionIdleState['state'];
+  connectionError: ConnectionIdleState['error'];
+}
+
+export interface UseTRPCSubscriptionConnectionConnectingResult<TError> {
+  connectionState: ConnectionConnectingState<TError>['state'];
+  connectionError: ConnectionConnectingState<TError>['error'];
+}
+
+export interface UseTRPCSubscriptionConnectionPendingResult<_TError> {
+  connectionState: ConnectionPendingState['state'];
+  connectionError: ConnectionPendingState['error'];
+}
+
+export interface UseTRPCSubscriptionConnectionErrorResult<TError> {
+  connectionState: 'error';
+  connectionError: TRPCConnectionState<TError>['error'];
+}
+
+export type TRPCSubscriptionConnectionState<TError> =
+  | UseTRPCSubscriptionConnectionIdleResult<TError>
+  | UseTRPCSubscriptionConnectionConnectingResult<TError>
+  | UseTRPCSubscriptionConnectionPendingResult<TError>
+  | UseTRPCSubscriptionConnectionErrorResult<TError>;
+
+export interface TRPCSubscriptionBaseResult<TOutput, TError> {
+  status: 'idle' | 'connecting' | 'pending' | 'error';
+  data: undefined | TOutput;
+  error: undefined | TError;
+}
+
+export interface TRPCSubscriptionIdleResult<TOutput> {
+  status: 'idle';
+  data: TOutput;
+  error: undefined;
+}
+
+export interface TRPCSubscriptionConnectingResult<TOutput, TError>
+  extends TRPCSubscriptionBaseResult<TOutput, TError> {
+  status: 'connecting';
+  data: undefined;
+  error: undefined;
+}
+
+export interface TRPCSubscriptionPendingResult<TOutput>
+  extends TRPCSubscriptionBaseResult<TOutput, undefined> {
+  status: 'pending';
+  data: TOutput;
+  error: undefined;
+}
+
+export interface TRPCSubscriptionErrorResult<TOutput, TError>
+  extends TRPCSubscriptionBaseResult<TOutput, TError> {
+  status: 'error';
+  data: TOutput | undefined;
+  error: TError;
+}
+
+export type TRPCSubscriptionResult<TOutput, TError> = (
+  | TRPCSubscriptionIdleResult<TOutput>
+  | TRPCSubscriptionConnectingResult<TOutput, TError>
+  | TRPCSubscriptionErrorResult<TOutput, TError>
+  | TRPCSubscriptionPendingResult<TOutput>
+) &
+  TRPCSubscriptionConnectionState<TError>;
+
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   extends TRPCContextProps<TRouter, TSSRContext> {
   children: ReactNode;

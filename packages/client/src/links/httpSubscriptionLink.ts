@@ -143,7 +143,7 @@ export function unstable_httpSubscriptionLink<
               case 'error': {
                 connectionState.next({
                   type: 'state',
-                  state: 'error',
+                  state: 'connecting',
                   error: TRPCClientError.from(
                     chunk.error as TRPCErrorResponse<any>,
                   ),
@@ -151,11 +151,13 @@ export function unstable_httpSubscriptionLink<
                 break;
               }
               case 'connecting': {
-                connectionState.next({
-                  type: 'state',
-                  state: 'connecting',
-                  error: null,
-                });
+                if (connectionState.get().state !== 'connecting') {
+                  connectionState.next({
+                    type: 'state',
+                    state: 'connecting',
+                    error: null,
+                  });
+                }
                 break;
               }
             }
@@ -173,6 +175,11 @@ export function unstable_httpSubscriptionLink<
           observer.complete();
         }).catch((error) => {
           observer.error(TRPCClientError.from(error));
+          connectionState.next({
+            type: 'state',
+            state: 'error',
+            error: TRPCClientError.from(error),
+          });
         });
 
         return () => {
