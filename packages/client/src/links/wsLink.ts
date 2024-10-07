@@ -276,9 +276,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         return;
       }
 
-      console.log('lazy close');
-      if (!hasPendingRequests(activeConnection)) {
-        console.log('closing');
+      if (!hasPendingRequests()) {
         activeConnection.ws?.close();
         activeConnection = null;
         connectionState.set({
@@ -326,32 +324,14 @@ export function createWSClient(opts: WebSocketClientOptions) {
           // Queries and mutations will error if interrupted
           delete pendingRequests[key];
           req.callbacks.error?.(
-            TRPCClientError.from(
-              cause ??
-                new TRPCWebSocketClosedError('WebSocket closed prematurely', {
-                  cause: undefined,
-                }),
-            ),
+            TRPCClientError.from(cause ?? new TRPCWebSocketClosedError()),
           );
         }
       }
     };
 
-    const onClose = (code: number) => {
-      const wasOpen = self.state === 'open';
-      onCloseOrError(
-        new TRPCWebSocketClosedError('WebSocket closed prematurely', {
-          cause: code,
-        }),
-      );
-
-      if (wasOpen) {
-        opts.onClose?.({ code });
-      }
-    };
-
     const onError = (evt?: Event) => {
-      onCloseOrError(new Error('WebSocket connection failed', { cause: evt }));
+      onCloseOrError(new TRPCWebSocketClosedError({ cause: evt }));
       opts.onError?.(evt);
     };
     run(async () => {
@@ -391,7 +371,6 @@ export function createWSClient(opts: WebSocketClientOptions) {
             const schedulePongTimeout = () => {
               pongTimeout = setTimeout(() => {
                 ws.close(3001);
-                onClose(3001);
               }, pongTimeoutMs);
             };
             pingTimeout = setTimeout(() => {
@@ -511,7 +490,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       ws.addEventListener('close', (event) => {
         const wasOpen = self.state === 'open';
 
-        onClose(event.code);
+        onCloseOrError(new TRPCWebSocketClosedError({ cause: event }));
 
         if (wasOpen) {
           opts.onClose?.(event);
@@ -579,7 +558,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
           // close pending requests that aren't attached to a connection yet
           req.callbacks.error(
             TRPCClientError.from(
-              new Error('Closed before connection was established'),
+              new TRPCWebSocketClosedError({
+                message: 'Closed before connection was established',
+              }),
             ),
           );
         }
@@ -606,13 +587,15 @@ export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   client: TRPCWebSocketClient;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 class TRPCWebSocketClosedError extends Error {
-  constructor(
-    message: string,
-    opts: {
-      cause: unknown;
-    },
-  ) {
-    super(message, opts);
+  constructor(opts?: { cause?: unknown; message?: string }) {
+    super(
+      opts?.message ?? 'WebSocket closed',
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore https://github.com/tc39/proposal-error-cause
+      {
+        cause: opts?.cause,
+      },
+    );
     this.name = 'TRPCWebSocketClosedError';
     Object.setPrototypeOf(this, TRPCWebSocketClosedError.prototype);
   }

@@ -1,4 +1,3 @@
-import { unsetMarker } from '../unstable-core-do-not-import/utils';
 import type {
   Observable,
   Observer,
@@ -192,12 +191,12 @@ export function observableToAsyncIterable<TValue>(
  * @internal
  */
 export function observableSignal<TValue>(value?: TValue) {
-  let _value: TValue | typeof unsetMarker = value ?? unsetMarker;
+  let _value: TValue | undefined = value;
 
   const observerList: Observer<TValue, never>[] = [];
 
   const addObserver = (observer: Observer<TValue, never>) => {
-    if (_value !== unsetMarker) {
+    if (_value !== undefined) {
       observer.next(_value);
     }
     observerList.push(observer);
@@ -221,5 +220,6 @@ export function observableSignal<TValue>(value?: TValue) {
         observer.next(value);
       }
     },
+    get: () => _value,
   };
 }

@@ -1167,7 +1167,7 @@ test('wsClient stops reconnecting after .close()', async () => {
   expect(onErrorMock).toHaveBeenCalledTimes(2);
 });
 describe('lazy mode', () => {
-  test.only('happy path', async () => {
+  test('happy path', async () => {
     const ctx = factory({
       wsClient: {
         lazy: {
