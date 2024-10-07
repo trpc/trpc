@@ -1,3 +1,4 @@
+import type { Result } from '../unstable-core-do-not-import';
 import type {
   Observable,
   Observer,
@@ -9,9 +10,9 @@ import type {
 
 /** @public */
 export type inferObservableValue<TObservable> = TObservable extends Observable<
-  infer TValue,
-  unknown
->
+    infer TValue,
+    unknown
+  >
   ? TValue
   : never;
 
@@ -130,16 +131,17 @@ export function observableToPromise<TValue>(
  */
 function observableToReadableStream<TValue>(
   observable: Observable<TValue, unknown>,
-): ReadableStream<TValue> {
+): ReadableStream<Result<TValue>> {
   let unsub: Unsubscribable | null = null;
-  return new ReadableStream<TValue>({
+  return new ReadableStream<Result<TValue>>({
     start(controller) {
       unsub = observable.subscribe({
         next(data) {
-          controller.enqueue(data);
+          controller.enqueue({ isOk: true, value: data });
         },
-        error(err) {
-          controller.error(err);
+        error(error) {
+          controller.enqueue({ isOk: false, error });
+          controller.close();
         },
         complete() {
           controller.close();
@@ -167,8 +169,12 @@ export function observableToAsyncIterable<TValue>(
           done: true,
         };
       }
+      const { value: result } = value;
+      if (!result.isOk) {
+        throw result.error;
+      }
       return {
-        value: value.value,
+        value: result.value,
         done: false,
       };
     },
