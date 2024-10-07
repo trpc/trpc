@@ -1,16 +1,13 @@
 'use client';
 
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
-import { TRPCClientErrorLike } from '@trpc/client';
-import type { UseTRPCSubscriptionResult } from '@trpc/react-query/shared';
 import { Avatar } from '~/components/avatar';
-import { Button, buttonVariants } from '~/components/button';
+import { Button } from '~/components/button';
 import { Textarea } from '~/components/input';
 import { trpc } from '~/lib/trpc';
 import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import { useSession } from 'next-auth/react';
-import Link from 'next/link';
 import * as React from 'react';
 import {
   useLivePosts,
@@ -45,7 +42,7 @@ function SubscriptionStatus(props: {
   return (
     <div
       className={cx(
-        'rounded-full p-2 text-sm',
+        'rounded-full p-2 text-sm transition-colors',
         run(() => {
           switch (subscription.status) {
             case 'idle':
@@ -274,7 +271,7 @@ function AddMessageForm(props: {
           onChange={(e) => setMessage(e.target.value)}
           rows={message.split(/\r|\n/).length}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+            if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
               void postMessage();
             }
