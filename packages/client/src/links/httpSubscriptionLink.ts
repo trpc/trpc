@@ -1,4 +1,4 @@
-import { observable, observableValue } from '@trpc/server/observable';
+import { behaviorSubject, observable } from '@trpc/server/observable';
 import type { TRPCErrorResponse } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
@@ -92,7 +92,7 @@ export function unstable_httpSubscriptionLink<
           shouldRecreateOnError: opts.experimental_shouldRecreateOnError,
         });
 
-        const connectionState = observableValue<
+        const connectionState = behaviorSubject<
           TRPCConnectionState<TRPCClientError<any>>
         >({
           type: 'state',
@@ -100,7 +100,7 @@ export function unstable_httpSubscriptionLink<
           error: null,
         });
 
-        const connectionSub = connectionState.observable.subscribe({
+        const connectionSub = connectionState.subscribe({
           next(state) {
             observer.next({
               result: state,
@@ -134,14 +134,14 @@ export function unstable_httpSubscriptionLink<
                     eventSource: chunk.eventSource,
                   },
                 });
-                connectionState.set({
+                connectionState.next({
                   type: 'state',
                   state: 'pending',
                 });
                 break;
               }
               case 'error': {
-                connectionState.set({
+                connectionState.next({
                   type: 'state',
                   state: 'error',
                   error: TRPCClientError.from(
@@ -151,7 +151,7 @@ export function unstable_httpSubscriptionLink<
                 break;
               }
               case 'connecting': {
-                connectionState.set({
+                connectionState.next({
                   type: 'state',
                   state: 'connecting',
                   error: null,

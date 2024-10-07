@@ -1,5 +1,5 @@
 import type { Observer, UnsubscribeFn } from '@trpc/server/observable';
-import { observable, observableValue } from '@trpc/server/observable';
+import { behaviorSubject, observable } from '@trpc/server/observable';
 import type { TRPCConnectionParamsMessage } from '@trpc/server/rpc';
 import type {
   AnyRouter,
@@ -177,7 +177,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         state: 'idle',
       };
   const connectionState =
-    observableValue<TRPCConnectionState<Error>>(initState);
+    behaviorSubject<TRPCConnectionState<Error>>(initState);
 
   /**
    * tries to send the list of messages
@@ -237,7 +237,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     const currentState = connectionState.get();
     if (currentState.state !== 'connecting') {
-      connectionState.set({
+      connectionState.next({
         type: 'state',
         state: 'connecting',
         error: cause,
@@ -284,7 +284,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       if (!hasPendingRequests()) {
         activeConnection.ws?.close();
         activeConnection = null;
-        connectionState.set({
+        connectionState.next({
           type: 'state',
           state: 'idle',
         });
@@ -404,7 +404,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
           self.state = 'open';
 
           // Update connection state
-          connectionState.set({
+          connectionState.next({
             type: 'state',
             state: 'pending',
           });
@@ -587,7 +587,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
      * Reconnect to the WebSocket server
      */
     reconnect,
-    connectionState: connectionState.observable,
+    connectionState: connectionState,
   };
 }
 export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
