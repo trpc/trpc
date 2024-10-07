@@ -200,7 +200,8 @@ const defaultLogger =
     const fn: 'error' | 'log' =
       props.direction === 'down' &&
       props.result &&
-      (props.result instanceof Error || 'error' in props.result.result)
+      (props.result instanceof Error ||
+        ('error' in props.result.result && props.result.result.error))
         ? 'error'
         : 'log';
 

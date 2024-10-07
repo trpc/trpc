@@ -48,7 +48,7 @@ export function useThrottledIsTypingMutation(channelId: string) {
 }
 
 export function useLivePosts(channelId: string) {
-  const [data, query] = trpc.post.infinite.useSuspenseInfiniteQuery(
+  const [, query] = trpc.post.infinite.useSuspenseInfiniteQuery(
     { channelId },
     {
       getNextPageParam: (d) => d.nextCursor,
@@ -104,7 +104,7 @@ export function useLivePosts(channelId: string) {
     // Changing this value will trigger a new subscription
     setLastEventId(messages.at(-1)?.id ?? null);
   }
-  trpc.post.onAdd.useSubscription(
+  const subscription = trpc.post.onAdd.useSubscription(
     lastEventId === false ? skipToken : { channelId, lastEventId },
     {
       onData(event) {
@@ -119,5 +119,6 @@ export function useLivePosts(channelId: string) {
   return {
     query,
     messages,
+    subscription,
   };
 }
