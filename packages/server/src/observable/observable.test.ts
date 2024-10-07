@@ -195,8 +195,10 @@ test('observableToAsyncIterable() - doesnt hang', async () => {
 });
 
 test('observableSignal', () => {
-  const signal = observableSignal<number>(1);
+  const signal = observableSignal(1);
 
+  expect(signal.get()).toBe(1);
+  expectTypeOf(signal.get()).toBeNumber();
   const next1 = vi.fn();
   const next2 = vi.fn();
   const sub = signal.observable.subscribe({

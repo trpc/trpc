@@ -187,9 +187,24 @@ export function observableToAsyncIterable<TValue>(
   };
 }
 
+interface ObservableSignal<TValue> {
+  observable: Observable<TValue, never>;
+  set: (value: TValue) => void;
+  get: () => TValue;
+}
+
 /**
  * @internal
  */
+export function observableSignal<TValue>(
+  value: TValue,
+): ObservableSignal<TValue>;
+/**
+ * @internal
+ */
+export function observableSignal<TValue>(): ObservableSignal<
+  TValue | undefined
+>;
 export function observableSignal<TValue>(value?: TValue) {
   let _value: TValue | undefined = value;
 
