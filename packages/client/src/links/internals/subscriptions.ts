@@ -3,7 +3,7 @@ interface ConnectionStateBase {
   data?: never;
 }
 
-export interface IdleState extends ConnectionStateBase {
+interface IdleState extends ConnectionStateBase {
   state: 'idle';
   error?: never;
 }
