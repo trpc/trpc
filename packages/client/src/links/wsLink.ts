@@ -101,6 +101,7 @@ const lazyDefaults: LazyOptions = {
   enabled: false,
   closeMs: 0,
 };
+
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
     WebSocket: WebSocketImpl = WebSocket,

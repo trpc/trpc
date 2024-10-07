@@ -1,6 +1,6 @@
 export type { inferObservableValue } from './observable';
 export { isObservable, observable, observableToPromise } from './observable';
-export { map, share, tap } from './operators';
+export { map, share, tap, distinctUntilDeepChanged } from './operators';
 export type {
   Observable,
   Observer,
