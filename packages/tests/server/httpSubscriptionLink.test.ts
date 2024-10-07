@@ -177,6 +177,9 @@ test('iterable event', async () => {
 
 test(
   'iterable event with error',
+  {
+    timeout: 60_000,
+  },
   async () => {
     const { client } = ctx;
 
@@ -221,9 +224,6 @@ test(
     );
 
     subscription.unsubscribe();
-  },
-  {
-    timeout: 60_000,
   },
 );
 
