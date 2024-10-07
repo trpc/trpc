@@ -10,9 +10,9 @@ import type {
 
 /** @public */
 export type inferObservableValue<TObservable> = TObservable extends Observable<
-    infer TValue,
-    unknown
-  >
+  infer TValue,
+  unknown
+>
   ? TValue
   : never;
 
@@ -137,10 +137,10 @@ function observableToReadableStream<TValue>(
     start(controller) {
       unsub = observable.subscribe({
         next(data) {
-          controller.enqueue({ isOk: true, value: data });
+          controller.enqueue({ ok: true, value: data });
         },
         error(error) {
-          controller.enqueue({ isOk: false, error });
+          controller.enqueue({ ok: false, error });
           controller.close();
         },
         complete() {
@@ -170,7 +170,7 @@ export function observableToAsyncIterable<TValue>(
         };
       }
       const { value: result } = value;
-      if (!result.isOk) {
+      if (!result.ok) {
         throw result.error;
       }
       return {
