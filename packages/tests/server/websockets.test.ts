@@ -1243,9 +1243,8 @@ describe('lazy mode', () => {
       });
     }
 
-    expect(
-      ctx.connectionState.mock.calls.map((it) => it[0]?.state),
-    ).toMatchInlineSnapshot(`
+    expect(ctx.connectionState.mock.calls.map((it) => it[0]?.state))
+      .toMatchInlineSnapshot(`
       Array [
         "idle",
         "connecting",
@@ -1583,7 +1582,8 @@ describe('keep alive from the client', () => {
     await vi.advanceTimersByTimeAsync(pongTimeoutMs);
 
     expect(pong).toBe(false);
-    expect(onClose).toHaveBeenCalled();
+
+    expect(onClose).toHaveBeenCalledTimes(1);
 
     await ctx.close();
   });

@@ -303,15 +303,28 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     clearTimeout(lazyDisconnectTimer);
 
+    function destroy() {
+      const noop = () => {
+        // no-op
+      };
+      const { ws } = self;
+      if (ws) {
+        ws.onclose = noop;
+        ws.onerror = noop;
+        ws.onmessage = noop;
+        ws.onopen = noop;
+
+        ws.close();
+      }
+
+      self.state = 'closed';
+    }
+
     const onCloseOrError = (cause: Error | null) => {
       clearTimeout(pingTimeout);
       clearTimeout(pongTimeout);
 
-      if (self.state === 'closed') {
-        return;
-      }
-
-      (self as Connection).state = 'closed';
+      self.state = 'closed';
       if (activeConnection === self) {
         // connection might have been replaced already
         tryReconnect(cause);
@@ -376,7 +389,11 @@ export function createWSClient(opts: WebSocketClientOptions) {
           const schedulePing = () => {
             const schedulePongTimeout = () => {
               pongTimeout = setTimeout(() => {
-                ws.close(3001);
+                const wasOpen = self.state === 'open';
+                destroy();
+                if (wasOpen) {
+                  opts.onClose?.();
+                }
               }, pongTimeoutMs);
             };
             pingTimeout = setTimeout(() => {
@@ -412,13 +429,17 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
           opts.onOpen?.();
           dispatch();
-        }).catch((cause) => {
+        }).catch((cause: unknown) => {
           ws.close(
             // "Status codes in the range 3000-3999 are reserved for use by libraries, frameworks, and applications"
             3000,
-            cause,
           );
-          onError();
+          onCloseOrError(
+            new TRPCWebSocketClosedError({
+              message: 'Initialization error',
+              cause,
+            }),
+          );
         });
       });
       ws.addEventListener('error', onError);
@@ -500,6 +521,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       ws.addEventListener('close', (event) => {
         const wasOpen = self.state === 'open';
 
+        destroy();
         onCloseOrError(new TRPCWebSocketClosedError({ cause: event }));
 
         if (wasOpen) {
