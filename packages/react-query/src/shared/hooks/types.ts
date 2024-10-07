@@ -26,6 +26,7 @@ import type {
 } from '@trpc/client';
 import type {
   ConnectionConnectingState,
+  ConnectionErrorState,
   ConnectionIdleState,
   ConnectionPendingState,
   TRPCConnectionState,
@@ -190,8 +191,8 @@ export interface UseTRPCSubscriptionConnectionPendingResult<_TError> {
 }
 
 export interface UseTRPCSubscriptionConnectionErrorResult<TError> {
-  connectionState: 'error';
-  connectionError: TRPCConnectionState<TError>['error'];
+  connectionState: ConnectionErrorState<TError>['state'];
+  connectionError: ConnectionErrorState<TError>['error'];
 }
 
 export type TRPCSubscriptionConnectionState<TError> =
