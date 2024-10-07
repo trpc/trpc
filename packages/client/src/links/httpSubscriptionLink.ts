@@ -1,4 +1,5 @@
-import { observable } from '@trpc/server/observable';
+import { observable, observableValue } from '@trpc/server/observable';
+import type { TRPCErrorResponse } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
   inferClientTypes,
@@ -11,6 +12,7 @@ import {
 } from '@trpc/server/unstable-core-do-not-import';
 import { raceAbortSignals } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
+import type { TRPCConnectionState } from '../unstable-internals';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
 import type { CallbackOrValue } from './internals/urlWithConnectionParams';
@@ -90,6 +92,21 @@ export function unstable_httpSubscriptionLink<
           shouldRecreateOnError: opts.experimental_shouldRecreateOnError,
         });
 
+        const connectionState = observableValue<
+          TRPCConnectionState<TRPCClientError<any>>
+        >({
+          type: 'state',
+          state: 'connecting',
+          error: null,
+        });
+
+        const connectionSub = connectionState.observable.subscribe({
+          next(state) {
+            observer.next({
+              result: state,
+            });
+          },
+        });
         run(async () => {
           for await (const chunk of eventSourceStream) {
             switch (chunk.type) {
@@ -117,14 +134,28 @@ export function unstable_httpSubscriptionLink<
                     eventSource: chunk.eventSource,
                   },
                 });
+                connectionState.set({
+                  type: 'state',
+                  state: 'pending',
+                });
                 break;
               }
               case 'error': {
-                // TODO: handle in https://github.com/trpc/trpc/issues/5871
+                connectionState.set({
+                  type: 'state',
+                  state: 'error',
+                  error: TRPCClientError.from(
+                    chunk.error as TRPCErrorResponse<any>,
+                  ),
+                });
                 break;
               }
               case 'connecting': {
-                // TODO: handle in https://github.com/trpc/trpc/issues/5871
+                connectionState.set({
+                  type: 'state',
+                  state: 'connecting',
+                  error: null,
+                });
                 break;
               }
             }
@@ -143,6 +174,7 @@ export function unstable_httpSubscriptionLink<
         return () => {
           observer.complete();
           ac.abort();
+          connectionSub.unsubscribe();
         };
       });
     };

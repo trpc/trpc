@@ -177,7 +177,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         state: 'idle',
       };
   const connectionState =
-    observableValue<TRPCConnectionState<unknown>>(initState);
+    observableValue<TRPCConnectionState<Error>>(initState);
 
   /**
    * tries to send the list of messages
