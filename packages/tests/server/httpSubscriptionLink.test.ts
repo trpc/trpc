@@ -242,6 +242,7 @@ test(
         ],
         Array [
           Object {
+            "error": null,
             "state": "pending",
             "type": "state",
           },
@@ -255,6 +256,7 @@ test(
         ],
         Array [
           Object {
+            "error": null,
             "state": "pending",
             "type": "state",
           },
