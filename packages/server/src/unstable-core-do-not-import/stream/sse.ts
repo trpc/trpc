@@ -89,7 +89,7 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
       const next = await Promise.race([
         nextPromise.catch((err) => {
           if (err instanceof Error && err.name === 'AbortError') {
-            // Fixes so that aborting the request does not throw an error
+            // Ensures that aborting the request doesn't throw an error
             return 'aborted' as const;
           }
           return getTRPCErrorFromUnknown(err);

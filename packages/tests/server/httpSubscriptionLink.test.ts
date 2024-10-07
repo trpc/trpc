@@ -171,6 +171,8 @@ test('iterable event', async () => {
     expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
   });
 
+  expect(ctx.onErrorSpy).not.toHaveBeenCalled();
+
   await waitFor(() => {
     expect(ctx.ee.listenerCount('data')).toBe(0);
   });
