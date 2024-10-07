@@ -34,9 +34,9 @@ export type FilterKeys<TObj extends object, TFilter> = {
 /**
  * @internal
  */
-export type Result<TType, ErrType = unknown> =
+export type Result<TType, TErr = unknown> =
   | { isOk: true; value: TType }
-  | { isOk: false; error: ErrType };
+  | { isOk: false; error: TErr };
 
 /**
  * @internal
