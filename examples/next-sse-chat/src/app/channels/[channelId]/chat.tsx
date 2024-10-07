@@ -9,11 +9,7 @@ import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import { useSession } from 'next-auth/react';
 import * as React from 'react';
-import {
-  useLivePosts,
-  useThrottledIsTypingMutation,
-  useWhoIsTyping,
-} from './hooks';
+import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
 
 const run = <TResult,>(fn: () => TResult): TResult => fn();
 const assertUnreachable = (_value: never): never => {
@@ -99,7 +95,9 @@ function SubscriptionStatus(props: {
 export function Chat(props: Readonly<{ channelId: string }>) {
   const { channelId } = props;
   const livePosts = useLivePosts(channelId);
-  const currentlyTyping = useWhoIsTyping(channelId);
+  const currentlyTyping = trpc.channel.whoIsTyping.useSubscription({
+    channelId,
+  });
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const session = useSession().data;
 
@@ -187,9 +185,9 @@ export function Chat(props: Readonly<{ channelId: string }>) {
               })}
             </div>
             <p className="text-sm italic text-gray-400">
-              {currentlyTyping.length ? (
-                `${listWithAnd(currentlyTyping)} ${pluralize(
-                  currentlyTyping.length,
+              {currentlyTyping.data?.length ? (
+                `${listWithAnd(currentlyTyping.data)} ${pluralize(
+                  currentlyTyping.data.length,
                   'is',
                   'are',
                 )} typing...`

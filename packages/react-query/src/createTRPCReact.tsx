@@ -15,6 +15,7 @@ import type {
   AnyProcedure,
   AnyRootTypes,
   AnyRouter,
+  inferAsyncIterableYield,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProcedureType,
@@ -378,19 +379,28 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
   (
     input: TDef['input'],
     opts?: UseTRPCSubscriptionOptions<
-      TDef['output'],
+      inferAsyncIterableYield<TDef['output']>,
       TRPCClientErrorLike<TDef>
     >,
-  ): TRPCSubscriptionResult<TDef['output'], TRPCClientErrorLike<TDef>>;
+  ): TRPCSubscriptionResult<
+    inferAsyncIterableYield<TDef['output']>,
+    TRPCClientErrorLike<TDef>
+  >;
 
   // With skip token
   (
     input: TDef['input'] | SkipToken,
     opts?: Omit<
-      UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
+      UseTRPCSubscriptionOptions<
+        inferAsyncIterableYield<TDef['output']>,
+        TRPCClientErrorLike<TDef>
+      >,
       'enabled'
     >,
-  ): TRPCSubscriptionResult<TDef['output'], TRPCClientErrorLike<TDef>>;
+  ): TRPCSubscriptionResult<
+    inferAsyncIterableYield<TDef['output']>,
+    TRPCClientErrorLike<TDef>
+  >;
 }
 /**
  * @internal

@@ -5,6 +5,7 @@ import type {
 import { observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
+  inferAsyncIterableYield,
   InferrableClientTypes,
   Maybe,
   TypeError,
@@ -27,8 +28,6 @@ export interface TRPCRequestOptions {
   context?: OperationContext;
   signal?: AbortSignal;
 }
-
-type inferAsyncIterableYield<T> = T extends AsyncIterable<infer U> ? U : T;
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
   onStarted: (opts: { context: OperationContext | undefined }) => void;

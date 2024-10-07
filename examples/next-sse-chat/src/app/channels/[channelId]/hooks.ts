@@ -2,20 +2,6 @@ import { skipToken } from '@tanstack/react-query';
 import { trpc } from '~/lib/trpc';
 import * as React from 'react';
 
-export function useWhoIsTyping(channelId: string) {
-  const [currentlyTyping, setCurrentlyTyping] = React.useState<string[]>([]);
-  trpc.channel.whoIsTyping.useSubscription(
-    { channelId },
-    {
-      onData(list) {
-        setCurrentlyTyping(list);
-      },
-    },
-  );
-
-  return currentlyTyping;
-}
-
 /**
  * Set isTyping with a throttle of 1s
  * Triggers immediately if state changes
