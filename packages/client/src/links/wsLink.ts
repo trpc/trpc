@@ -367,7 +367,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       clearTimeout(connectTimer);
       connectTimer = undefined;
 
-      ws.addEventListener('open', () => {
+      ws.onopen = () => {
         async function sendConnectionParams() {
           if (!opts.connectionParams) {
             return;
@@ -441,8 +441,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
             }),
           );
         });
-      });
-      ws.addEventListener('error', onError);
+      };
+      ws.onerror = onError;
       const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
         if (self !== activeConnection) {
           return;
@@ -495,7 +495,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
         }
       };
 
-      ws.addEventListener('message', ({ data }) => {
+      ws.onmessage = (event) => {
+        const { data } = event;
         if (data === 'PONG') {
           return;
         }
@@ -516,9 +517,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
           // when receiving a message, we close old connection that has no pending requests
           closeIfNoPending(self);
         }
-      });
+      };
 
-      ws.addEventListener('close', (event) => {
+      ws.onclose = (event) => {
         const wasOpen = self.state === 'open';
 
         destroy();
@@ -527,7 +528,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
         if (wasOpen) {
           opts.onClose?.(event);
         }
-      });
+      };
     }).catch(onError);
     return self;
   }
