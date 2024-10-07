@@ -468,9 +468,12 @@ export function createRootHooks<
               ...prev,
               ...delta,
               // if the connection is now connecting, we need to update the status to connecting
-              status: (result.state === 'connecting'
-                ? 'connecting'
-                : prev.status) as any,
+              ...(result.state === 'connecting'
+                ? {
+                    status: 'connecting',
+                    error: undefined,
+                  }
+                : ({} as object)),
             }));
           },
         },

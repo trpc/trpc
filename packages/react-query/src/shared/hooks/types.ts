@@ -216,7 +216,7 @@ export interface TRPCSubscriptionIdleResult<TOutput> {
 export interface TRPCSubscriptionConnectingResult<TOutput, TError>
   extends TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'connecting';
-  data: undefined;
+  data: undefined | TOutput;
   error: undefined;
 }
 
