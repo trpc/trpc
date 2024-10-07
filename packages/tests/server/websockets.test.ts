@@ -204,6 +204,7 @@ test('query', async () => {
       ],
       Array [
         Object {
+          "error": null,
           "state": "pending",
           "type": "state",
         },
@@ -307,6 +308,7 @@ test('basic subscription test (observable)', async () => {
       ],
       Array [
         Object {
+          "error": null,
           "state": "pending",
           "type": "state",
         },

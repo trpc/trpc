@@ -233,15 +233,12 @@ describe('connection state - ws', () => {
       const result = client.onEventObservable.useSubscription(10);
 
       queryResult.push({
-        status: result.status,
-        connectionState: result.connectionState,
-        connectionError: result.connectionError,
-        data: result.data,
+        ...result,
       });
 
       return (
         <>
-          <>connectionState:{result.connectionState} </>
+          <>connectionState:{result.connectionState}</>
           <>status:{result.status}</>
           <>data:{result.data}</>
         </>
@@ -288,6 +285,7 @@ describe('connection state - ws', () => {
           "connectionError": null,
           "connectionState": "idle",
           "data": undefined,
+          "error": undefined,
           "status": "connecting",
         },
         Object {
@@ -322,21 +320,37 @@ describe('connection state - ws', () => {
           "connectionError": [TRPCWebSocketClosedError: WebSocket closed],
           "connectionState": "connecting",
           "data": 30,
-          "status": "pending",
+          "error": undefined,
+          "status": "connecting",
         },
         Object {
           "connectionError": null,
           "connectionState": "pending",
         },
+        Object {
+          "status": "pending",
+        },
       ]
     `);
 
+    queryResult.length = 0;
     // emit
     ctx.ee.emit('data', 40);
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent('data:50');
     });
+    expect(diff(queryResult)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "connectionError": null,
+          "connectionState": "pending",
+          "data": 50,
+          "error": undefined,
+          "status": "pending",
+        },
+      ]
+    `);
 
     utils.unmount();
   });

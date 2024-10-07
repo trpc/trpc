@@ -469,7 +469,7 @@ export function createRootHooks<
               ...delta,
               // if the connection is now connecting, we need to update the status to connecting
               status: (result.state === 'connecting'
-                ? 'pending'
+                ? 'connecting'
                 : prev.status) as any,
             }));
           },
