@@ -90,18 +90,15 @@ export function useLivePosts(channelId: string) {
     // Changing this value will trigger a new subscription
     setLastEventId(messages.at(-1)?.id ?? null);
   }
-  const subscription = trpc.post.onAdd.useSubscription(
-    lastEventId === false ? skipToken : { channelId, lastEventId },
-    {
-      onData(event) {
-        addMessages([event.data]);
-      },
-      onError(err) {
-        console.error('Subscription error:', err);
-        utils.post.infinite.invalidate();
-      },
+  const subscription = trpc.post.onAdd.useSubscription(skipToken, {
+    onData(event) {
+      addMessages([event.data]);
     },
-  );
+    onError(err) {
+      console.error('Subscription error:', err);
+      utils.post.infinite.invalidate();
+    },
+  });
   return {
     query,
     messages,
