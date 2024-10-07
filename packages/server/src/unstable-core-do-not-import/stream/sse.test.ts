@@ -1,6 +1,6 @@
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
-import type { Maybe } from '../types';
+import type { inferAsyncIterableYield, Maybe } from '../types';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
 import { createDeferred } from './utils/createDeferred';
@@ -30,8 +30,7 @@ test('e2e, server-sent events (SSE)', async () => {
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
   }
-  type inferAsyncIterable<T> = T extends AsyncIterable<infer U> ? U : never;
-  type Data = inferAsyncIterable<ReturnType<typeof data>>;
+  type Data = inferAsyncIterableYield<ReturnType<typeof data>>;
 
   const written: string[] = [];
   const server = createServer(async (req, res) => {
@@ -100,7 +99,7 @@ test('e2e, server-sent events (SSE)', async () => {
 
   const ITERATIONS = 10;
   const values: number[] = [];
-  const allEvents: inferAsyncIterable<typeof iterable>[] = [];
+  const allEvents: inferAsyncIterableYield<typeof iterable>[] = [];
   for await (const value of iterable) {
     allEvents.push(value);
     es = value.eventSource;
@@ -165,8 +164,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
   }
-  type inferAsyncIterable<T> = T extends AsyncIterable<infer U> ? U : never;
-  type Data = inferAsyncIterable<ReturnType<typeof data>>;
+  type Data = inferAsyncIterableYield<ReturnType<typeof data>>;
 
   type RequestTrace = {
     lastEventId: string | null;
