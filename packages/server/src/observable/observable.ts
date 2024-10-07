@@ -152,6 +152,7 @@ function observableToReadableStream<TValue>(
   });
 }
 
+/** @internal */
 export function observableToAsyncIterable<TValue>(
   observable: Observable<TValue, unknown>,
 ): AsyncIterable<TValue> {
