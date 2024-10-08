@@ -34,6 +34,13 @@ export type FilterKeys<TObj extends object, TFilter> = {
 /**
  * @internal
  */
+export type Result<TType, TErr = unknown> =
+  | { ok: true; value: TType }
+  | { ok: false; error: TErr };
+
+/**
+ * @internal
+ */
 export type Filter<TObj extends object, TFilter> = Pick<
   TObj,
   FilterKeys<TObj, TFilter>
