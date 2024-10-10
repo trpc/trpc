@@ -34,9 +34,9 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
 ): NextApiHandler {
   let path = '';
-  return async (req, res) => {
-    await run(async () => {
-      function getPath() {
+  return (req, res) => {
+    try {
+      path = run(() => {
         if (typeof req.query['trpc'] === 'string') {
           return req.query['trpc'];
         }
@@ -48,22 +48,21 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
             'Query "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
           code: 'INTERNAL_SERVER_ERROR',
         });
-      }
-      path = getPath();
+      });
 
-      await nodeHTTPRequestHandler({
+      nodeHTTPRequestHandler({
         ...(opts as any),
         req,
         res,
         path,
       });
-    }).catch(
+    } catch (cause) {
       internal_exceptionHandler({
         req,
         res,
         path,
         ...opts,
-      }),
-    );
+      })(cause);
+    }
   };
 }

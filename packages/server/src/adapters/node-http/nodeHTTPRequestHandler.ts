@@ -57,7 +57,7 @@ export function internal_exceptionHandler<
   };
 }
 
-export async function nodeHTTPRequestHandler<
+export function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
