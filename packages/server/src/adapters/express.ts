@@ -24,16 +24,16 @@ export type CreateExpressMiddlewareOptions<TRouter extends AnyRouter> =
   NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>;
 
 export function createExpressMiddleware<TRouter extends AnyRouter>(
-  opts: CreateExpressMiddlewareOptions<TRouter>,
+  opts: NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>,
 ): express.Handler {
   return async (req, res) => {
-    const endpoint = req.path.slice(1);
+    const path = req.path.slice(1);
 
     await nodeHTTPRequestHandler({
       ...(opts as any),
       req,
       res,
-      path: endpoint,
+      path,
     });
   };
 }
