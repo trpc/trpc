@@ -7,7 +7,7 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
-import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiRequest, NextApiResponse } from 'next';
 // @trpc/server
 import type { AnyRouter } from '../@trpc/server';
 // @trpc/server

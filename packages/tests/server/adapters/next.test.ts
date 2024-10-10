@@ -1,10 +1,9 @@
 import { EventEmitter } from 'events';
-import { waitFor } from '@testing-library/dom';
 import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
 import type { TRPCResponse } from '@trpc/server/rpc';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import';
+import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 // @ts-expect-error - no types
 import _request from 'supertest';
 
