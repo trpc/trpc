@@ -230,7 +230,16 @@ describe('connection state - ws', () => {
     const queryResult: unknown[] = [];
 
     function MyComponent() {
-      const result = client.onEventObservable.useSubscription(10);
+      const result = client.onEventObservable.useSubscription(10, {
+        onError(err, opts) {
+          // only called when the connection is closed and can't be reconnected
+          if (err == 'UNAUTHORIZED') {
+            opts.reconnect();
+            return null;
+          }
+          return err;
+        },
+      });
 
       queryResult.push({
         ...result,

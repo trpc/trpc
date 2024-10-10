@@ -173,6 +173,7 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   onData?: (data: TOutput) => void;
   onError?: (err: TError) => void;
   onStateChange?: (state: TRPCConnectionState<TError>) => void;
+  // onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
 export interface UseTRPCSubscriptionConnectionIdleResult<_TError> {
