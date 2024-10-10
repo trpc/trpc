@@ -10,8 +10,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import http from 'http';
 // @trpc/server
-import type { AnyRouter } from '../@trpc/server';
+import { getTRPCErrorFromUnknown, type AnyRouter } from '../@trpc/server';
 import { toURL } from '../@trpc/server/http';
+// eslint-disable-next-line no-restricted-imports
+import { getErrorShape, run } from '../unstable-core-do-not-import';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
@@ -26,28 +28,44 @@ export type CreateHTTPContextOptions = NodeHTTPCreateContextFnOptions<
   http.ServerResponse
 >;
 
-export function createHTTPHandler<TRouter extends AnyRouter>(
-  opts: CreateHTTPHandlerOptions<TRouter>,
-) {
-  return async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    const url = toURL(req.url!);
-
-    // get procedure path and remove the leading slash
-    // /procedure -> procedure
-    const path = url.pathname.slice(1);
-
-    await nodeHTTPRequestHandler({
-      ...(opts as any),
-      req,
-      res,
-      path,
-    });
-  };
-}
-
 export function createHTTPServer<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
-  const handler = createHTTPHandler(opts);
-  return http.createServer(handler);
+  return http.createServer((req, res) => {
+    run(async () => {
+      const url = toURL(req.url!);
+
+      // get procedure path and remove the leading slash
+      // /procedure -> procedure
+      const path = url.pathname.slice(1);
+
+      await nodeHTTPRequestHandler({
+        ...(opts as any),
+        req,
+        res,
+        path,
+      });
+    }).catch((cause) => {
+      const error = getTRPCErrorFromUnknown(cause);
+
+      const shape = getErrorShape({
+        config: opts.router._def._config,
+        error,
+        type: 'unknown',
+        path: undefined,
+        input: undefined,
+        ctx: undefined,
+      });
+      opts.onError?.({
+        req,
+        error,
+        type: 'unknown',
+        path: undefined,
+        input: undefined,
+        ctx: undefined,
+      });
+      res.statusCode = shape.data.httpStatus;
+      res.end(JSON.stringify(shape));
+    });
+  });
 }

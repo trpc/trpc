@@ -11,7 +11,9 @@ import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 // @trpc/server
 import type { AnyRouter } from '../@trpc/server';
 // @trpc/server
-import { getErrorShape, TRPCError } from '../@trpc/server';
+import { TRPCError } from '../@trpc/server';
+// eslint-disable-next-line no-restricted-imports
+import { getErrorShape } from '../unstable-core-do-not-import';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,

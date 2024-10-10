@@ -190,7 +190,15 @@ test('bad url does not crash server', async () => {
     },
   });
   expect(res.ok).toBe(false);
-  expect(await res.text()).toMatchInlineSnapshot();
+
+  const json: any = await res.json();
+
+  if (json.data.stack) {
+    json.data.stack = '[redacted]';
+  }
+  expect(json).toMatchInlineSnapshot();
+
+  expect(res.status).toBe(400);
 
   expect(await t.client.hello.query()).toMatchInlineSnapshot();
 });
