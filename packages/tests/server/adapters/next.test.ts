@@ -63,7 +63,7 @@ function mockRes() {
       return res;
     }
     const json = JSON.parse(data) as ResponseShape;
-    if (json.error?.data.stack) {
+    if ('error' in json && json.error?.data.stack) {
       json.error.data.stack = '[redacted]';
     }
     waitResponse.resolve(json);
@@ -106,7 +106,9 @@ test('bad setup', async () => {
 
   const json = (await waitResponse)!;
 
-  expect(json.error!.message).toMatchInlineSnapshot(
+  assert('error' in json);
+
+  expect(json.error.message).toMatchInlineSnapshot(
     `"Query "trpc" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?"`,
   );
   expect(json.error?.data?.httpStatus).toMatchInlineSnapshot(`500`);
