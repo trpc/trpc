@@ -1,6 +1,6 @@
 import type * as http from 'http';
-import { toURL } from '@trpc/server/http';
 import { TRPCError } from '../../@trpc/server';
+import { toURL } from '../../http';
 
 export interface IncomingMessageWithBody extends http.IncomingMessage {
   /**
