@@ -196,9 +196,23 @@ test('bad url does not crash server', async () => {
   if (json.data.stack) {
     json.data.stack = '[redacted]';
   }
-  expect(json).toMatchInlineSnapshot();
+  expect(json).toMatchInlineSnapshot(`
+    Object {
+      "code": -32600,
+      "data": Object {
+        "code": "BAD_REQUEST",
+        "httpStatus": 400,
+        "stack": "[redacted]",
+      },
+      "message": "Invalid URL",
+    }
+  `);
 
   expect(res.status).toBe(400);
 
-  expect(await t.client.hello.query()).toMatchInlineSnapshot();
+  expect(await t.client.hello.query()).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello world",
+    }
+  `);
 });
