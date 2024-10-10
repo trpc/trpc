@@ -32,7 +32,7 @@ export type CreateHTTPContextOptions = NodeHTTPCreateContextFnOptions<
 export function createHTTPHandler<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ): http.RequestListener {
-  return async (req, res) => {
+  return (req, res) => {
     let path = '';
     try {
       const url = toURL(req.url!);

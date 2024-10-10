@@ -30,10 +30,13 @@ export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
  */
 export type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 
+type SyncNextApiHandler = (req: NextApiRequest, res: NextApiResponse) => void;
+
 export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
-): NextApiHandler {
+): SyncNextApiHandler {
   let path = '';
+
   return (req, res) => {
     try {
       path = run(() => {

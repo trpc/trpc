@@ -38,11 +38,13 @@ export namespace JSONRPC2 {
 
   export interface ResultResponse<TResult = unknown> extends BaseEnvelope {
     result: TResult;
+    error?: never;
   }
 
   export interface ErrorResponse<TError extends TRPCErrorShape = TRPCErrorShape>
     extends BaseEnvelope {
     error: TError;
+    result?: never;
   }
 }
 

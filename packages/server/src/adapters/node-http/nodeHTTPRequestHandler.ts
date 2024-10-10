@@ -10,7 +10,11 @@
 
 // @trpc/server
 
-import { getTRPCErrorFromUnknown, type AnyRouter } from '../../@trpc/server';
+import {
+  getTRPCErrorFromUnknown,
+  transformTRPCResponse,
+  type AnyRouter,
+} from '../../@trpc/server';
 import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
 import { resolveResponse } from '../../@trpc/server/http';
 // eslint-disable-next-line no-restricted-imports
@@ -52,8 +56,12 @@ export function internal_exceptionHandler<
       ctx: undefined,
     });
 
+    const transformed = transformTRPCResponse(opts.router._def._config, {
+      error: shape,
+    });
+
     res.statusCode = shape.data.httpStatus;
-    res.end(JSON.stringify(shape));
+    res.end(JSON.stringify(transformed));
   };
 }
 
