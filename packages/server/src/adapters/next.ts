@@ -13,7 +13,7 @@ import type { AnyRouter } from '../@trpc/server';
 // @trpc/server
 import { TRPCError } from '../@trpc/server';
 // eslint-disable-next-line no-restricted-imports
-import { getErrorShape, run } from '../unstable-core-do-not-import';
+import { run } from '../unstable-core-do-not-import';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
