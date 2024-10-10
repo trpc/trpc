@@ -33,9 +33,19 @@ v11 is a largely backward-compatible release with v10, but it brings a lot of ne
 
 ### React Query v5 support
 
+When [Tanstack Query v5](https://tanstack.com/blog/announcing-tanstack-query-v5) was released it necessitated some breaking changes within tRPC's react-query integration. This has been available since quite early on in the `@next` tag, but now it's officially release. Many projects have already chosen to upgrade over recent months and been enjoying the benefits of full React Suspense support and [many other improvements](https://tanstack.com/blog/announcing-tanstack-query-v5).
+
 ### Next.js app router
 
-### etc
+{/*  */}
+
+### SSE Based Subscriptions
+
+tRPC v11 introduces a new way to handle subscriptions using [Server-Sent Events (SSE)](/docs/server/subscriptions#websockets-or-server-sent-events). This is a great way to handle real-time updates in your application without the need for more complex WebSockets. The feature is still young and evolving so we're looking for further feedback from the community as it evolves.
+
+## Migrating to v11
+
+If you're currently using tRPC v10, you can follow the [migration guide](https://trpc.io/docs/v11/migrate-from-v10-to-v11) to upgrade to v11. The migration guide covers all the breaking changes and new features in v11.
 
 ## Thank you!
 
