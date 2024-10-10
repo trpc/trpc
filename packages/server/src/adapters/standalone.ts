@@ -26,11 +26,14 @@ export type CreateHTTPContextOptions = NodeHTTPCreateContextFnOptions<
   http.ServerResponse
 >;
 
-export function createHTTPServer<TRouter extends AnyRouter>(
+/**
+ * @internal
+ */
+export function createHTTPHandler<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
-) {
-  let path = '';
-  return http.createServer((req, res) => {
+): http.RequestListener {
+  return async (req, res) => {
+    let path = '';
     try {
       const url = toURL(req.url!);
 
@@ -56,5 +59,11 @@ export function createHTTPServer<TRouter extends AnyRouter>(
         ...opts,
       })(cause);
     }
-  });
+  };
+}
+
+export function createHTTPServer<TRouter extends AnyRouter>(
+  opts: CreateHTTPHandlerOptions<TRouter>,
+) {
+  return http.createServer(createHTTPHandler(opts));
 }
