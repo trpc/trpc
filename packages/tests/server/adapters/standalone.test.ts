@@ -227,3 +227,27 @@ test('force content-type on mutations', async () => {
     `);
   }
 });
+
+test('bad url does not crash server', async () => {
+  const { port, address } = await startServer({
+    router,
+  });
+
+  const res = await fetch(`http://${address}:${port}`, {
+    method: 'GET',
+    headers: {
+      // use faux host header
+      Host: 'hotmail-com.olc.protection.outlook.com%3A25',
+    },
+  });
+  expect(res.ok).toBe(false);
+  expect(await res.text()).toMatchInlineSnapshot();
+
+  const client = createClient(port, address);
+  const result = await client.hello.query({ who: 'test' });
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello test",
+    }
+  `);
+});
