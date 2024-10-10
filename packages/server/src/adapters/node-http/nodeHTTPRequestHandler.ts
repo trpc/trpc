@@ -22,6 +22,41 @@ import type {
   NodeHTTPResponse,
 } from './types';
 
+/**
+ * @internal
+ */
+export function internal_exceptionHandler<
+  TRouter extends AnyRouter,
+  TRequest extends NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse,
+>(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
+  return (cause: unknown) => {
+    const { res, req } = opts;
+    const error = getTRPCErrorFromUnknown(cause);
+
+    const shape = getErrorShape({
+      config: opts.router._def._config,
+      error,
+      type: 'unknown',
+      path: undefined,
+      input: undefined,
+      ctx: undefined,
+    });
+
+    opts.onError?.({
+      req,
+      error,
+      type: 'unknown',
+      path: undefined,
+      input: undefined,
+      ctx: undefined,
+    });
+
+    res.statusCode = shape.data.httpStatus;
+    res.end(JSON.stringify(shape));
+  };
+}
+
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
@@ -102,28 +137,6 @@ export async function nodeHTTPRequestHandler<
         req.signal.removeEventListener('abort', onAbort);
       }
       res.end();
-    }).catch((cause) => {
-      const { res, req } = opts;
-      const error = getTRPCErrorFromUnknown(cause);
-
-      const shape = getErrorShape({
-        config: opts.router._def._config,
-        error,
-        type: 'unknown',
-        path: undefined,
-        input: undefined,
-        ctx: undefined,
-      });
-      opts.onError?.({
-        req,
-        error,
-        type: 'unknown',
-        path: undefined,
-        input: undefined,
-        ctx: undefined,
-      });
-      res.statusCode = shape.data.httpStatus;
-      res.end(JSON.stringify(shape));
-    });
+    }).catch(internal_exceptionHandler(opts));
   });
 }

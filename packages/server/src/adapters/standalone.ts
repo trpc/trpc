@@ -10,15 +10,15 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import http from 'http';
 // @trpc/server
-import { getTRPCErrorFromUnknown, type AnyRouter } from '../@trpc/server';
+import { type AnyRouter } from '../@trpc/server';
 import { toURL } from '../@trpc/server/http';
 // eslint-disable-next-line no-restricted-imports
-import { getErrorShape, run } from '../unstable-core-do-not-import';
+import { run } from '../unstable-core-do-not-import';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
 } from './node-http';
-import { nodeHTTPRequestHandler } from './node-http';
+import { internal_exceptionHandler, nodeHTTPRequestHandler } from './node-http';
 
 export type CreateHTTPHandlerOptions<TRouter extends AnyRouter> =
   NodeHTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
@@ -31,13 +31,14 @@ export type CreateHTTPContextOptions = NodeHTTPCreateContextFnOptions<
 export function createHTTPServer<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
+  let path = '';
   return http.createServer((req, res) => {
     run(async () => {
       const url = toURL(req.url!);
 
       // get procedure path and remove the leading slash
       // /procedure -> procedure
-      const path = url.pathname.slice(1);
+      path = url.pathname.slice(1);
 
       await nodeHTTPRequestHandler({
         ...(opts as any),
@@ -45,27 +46,17 @@ export function createHTTPServer<TRouter extends AnyRouter>(
         res,
         path,
       });
-    }).catch((cause) => {
-      const error = getTRPCErrorFromUnknown(cause);
-
-      const shape = getErrorShape({
-        config: opts.router._def._config,
-        error,
-        type: 'unknown',
-        path: undefined,
-        input: undefined,
-        ctx: undefined,
-      });
-      opts.onError?.({
+    }).catch(
+      internal_exceptionHandler<
+        TRouter,
+        http.IncomingMessage,
+        http.ServerResponse
+      >({
         req,
-        error,
-        type: 'unknown',
-        path: undefined,
-        input: undefined,
-        ctx: undefined,
-      });
-      res.statusCode = shape.data.httpStatus;
-      res.end(JSON.stringify(shape));
-    });
+        res,
+        path,
+        ...opts,
+      }),
+    );
   });
 }
