@@ -20,9 +20,6 @@ export type CreateExpressContextOptions = NodeHTTPCreateContextFnOptions<
   express.Response
 >;
 
-export type CreateExpressMiddlewareOptions<TRouter extends AnyRouter> =
-  NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>;
-
 export function createExpressMiddleware<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>,
 ): express.Handler {
