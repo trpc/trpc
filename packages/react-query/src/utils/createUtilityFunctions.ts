@@ -3,6 +3,7 @@ import type { CreateTRPCClient } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { getClientArgs } from '../internals/getClientArgs';
+import { createTRPCOptionsResult } from '../internals/trpcResult';
 import type { TRPCQueryUtils } from '../shared';
 
 export interface CreateQueryUtilsOptions<TRouter extends AnyRouter> {
@@ -30,13 +31,16 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
 
   return {
-    queryOptions: (queryKey, opts) => {
-      return queryOptions({
-        ...opts,
-        initialData: opts?.initialData as any,
-        queryKey,
-        queryFn: () => untypedClient.query(...getClientArgs(queryKey, opts)),
-      });
+    queryOptions: (path, queryKey, opts) => {
+      return Object.assign(
+        queryOptions({
+          ...opts,
+          initialData: opts?.initialData as any,
+          queryKey,
+          queryFn: () => untypedClient.query(...getClientArgs(queryKey, opts)),
+        }),
+        { trpc: createTRPCOptionsResult({ path }) },
+      );
     },
 
     fetchQuery: (queryKey, opts) => {

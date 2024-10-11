@@ -378,7 +378,7 @@ function createRecursiveUtilsProxy<TRouter extends AnyRouter>(
     const queryKey = getQueryKeyInternal(path, input, queryType);
 
     const contextMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
-      queryOptions: () => context.queryOptions(queryKey, ...args),
+      queryOptions: () => context.queryOptions(path, queryKey, ...args),
       /**
        * DecorateQueryProcedure
        */

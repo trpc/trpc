@@ -24,7 +24,7 @@ import {
   getMutationKeyInternal,
   getQueryKeyInternal,
 } from '../../internals/getQueryKey';
-import { useHookResult } from '../../internals/useHookResult';
+import { useHookResult } from '../../internals/trpcResult';
 import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,

@@ -315,7 +315,8 @@ describe('useQuery()', () => {
   test('using queryOptions', async () => {
     const { client, App } = ctx;
     function MyComponent() {
-      const queryOptions = client.post.byId.useQueryOptions({ id: '1' });
+      const trpc = client.useUtils();
+      const queryOptions = trpc.post.byId.queryOptions({ id: '1' });
       expect(queryOptions.trpc.path).toBe('post.byId');
       const query1 = useQuery(queryOptions);
 

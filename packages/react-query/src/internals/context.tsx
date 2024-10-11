@@ -132,6 +132,7 @@ export interface TRPCContextState<
  */
 export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   queryOptions(
+    path: readonly string[], // <-- look into if needed
     queryKey: TRPCQueryKey,
     opts?: UndefinedTRPCQueryOptionsIn<
       unknown,
@@ -139,6 +140,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
     >,
   ): UndefinedTRPCQueryOptionsOut<unknown, TRPCClientError<AnyClientTypes>>;
   queryOptions(
+    path: readonly string[], // <-- look into if needed
     queryKey: TRPCQueryKey,
     opts?: DefinedTRPCQueryOptionsIn<unknown, TRPCClientError<AnyClientTypes>>,
   ): DefinedTRPCQueryOptionsOut<unknown, TRPCClientError<AnyClientTypes>>;

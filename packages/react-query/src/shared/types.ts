@@ -18,6 +18,12 @@ export interface TRPCQueryBaseOptions {
   trpc?: Record<never, never>;
 }
 
+export interface TRPCQueryOptionsResult {
+  trpc: {
+    path: string;
+  };
+}
+
 export interface UndefinedTRPCQueryOptionsIn<TOutput, TError>
   extends DistributiveOmit<
       UndefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
@@ -26,7 +32,8 @@ export interface UndefinedTRPCQueryOptionsIn<TOutput, TError>
     TRPCQueryBaseOptions {}
 
 export interface UndefinedTRPCQueryOptionsOut<TOutput, TError>
-  extends UndefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey> {
+  extends UndefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
+    TRPCQueryOptionsResult {
   queryKey: DataTag<TRPCQueryKey, TOutput>;
 }
 
@@ -38,7 +45,8 @@ export interface DefinedTRPCQueryOptionsIn<TOutput, TError>
     TRPCQueryBaseOptions {}
 
 export interface DefinedTRPCQueryOptionsOut<TOutput, TError>
-  extends DefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey> {
+  extends DefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
+    TRPCQueryOptionsResult {
   queryKey: DataTag<TRPCQueryKey, TOutput>;
 }
 
