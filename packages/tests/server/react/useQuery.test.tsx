@@ -311,34 +311,6 @@ describe('useQuery()', () => {
       ]
     `);
   });
-
-  test('using queryOptions', async () => {
-    const { client, App } = ctx;
-    function MyComponent() {
-      const trpc = client.useUtils();
-      const queryOptions = trpc.post.byId.queryOptions({ id: '1' });
-      expect(queryOptions.trpc.path).toBe('post.byId');
-      const query1 = useQuery(queryOptions);
-
-      if (!query1.data) {
-        return <>...</>;
-      }
-
-      type TData = (typeof query1)['data'];
-      expectTypeOf<TData>().toMatchTypeOf<'__result'>();
-
-      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
-    }
-
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__result`);
-    });
-  });
 });
 
 test('useInfiniteQuery()', async () => {

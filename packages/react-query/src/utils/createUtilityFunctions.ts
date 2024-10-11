@@ -1,4 +1,8 @@
-import { queryOptions, type QueryClient } from '@tanstack/react-query';
+import {
+  infiniteQueryOptions,
+  queryOptions,
+  type QueryClient,
+} from '@tanstack/react-query';
 import type { CreateTRPCClient } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
@@ -31,6 +35,22 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
 
   return {
+    infiniteQueryOptions: (path, queryKey, opts) => {
+      return Object.assign(
+        infiniteQueryOptions({
+          ...opts,
+          initialData: opts?.initialData as any,
+          queryKey,
+          queryFn: ({ pageParam, direction }) =>
+            untypedClient.query(
+              ...getClientArgs(queryKey, opts, { pageParam, direction }),
+            ),
+          initialPageParam: (opts?.initialCursor as any) ?? null,
+        }),
+        { trpc: createTRPCOptionsResult({ path }) },
+      );
+    },
+
     queryOptions: (path, queryKey, opts) => {
       return Object.assign(
         queryOptions({

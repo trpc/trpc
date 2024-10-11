@@ -28,9 +28,13 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import type {
+  DefinedTRPCInfiniteQueryOptionsIn,
+  DefinedTRPCInfiniteQueryOptionsOut,
   DefinedTRPCQueryOptionsIn,
   DefinedTRPCQueryOptionsOut,
   ExtractCursorType,
+  UndefinedTRPCInfiniteQueryOptionsIn,
+  UndefinedTRPCInfiniteQueryOptionsOut,
   UndefinedTRPCQueryOptionsIn,
   UndefinedTRPCQueryOptionsOut,
 } from '../shared';
@@ -131,6 +135,9 @@ export interface TRPCContextState<
  * @internal
  */
 export interface TRPCQueryUtils<TRouter extends AnyRouter> {
+  /**
+   * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
+   */
   queryOptions(
     path: readonly string[], // <-- look into if needed
     queryKey: TRPCQueryKey,
@@ -144,6 +151,37 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
     queryKey: TRPCQueryKey,
     opts?: DefinedTRPCQueryOptionsIn<unknown, TRPCClientError<AnyClientTypes>>,
   ): DefinedTRPCQueryOptionsOut<unknown, TRPCClientError<AnyClientTypes>>;
+
+  /**
+   * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
+   */
+  infiniteQueryOptions(
+    path: readonly string[], // <-- look into if needed
+    queryKey: TRPCQueryKey,
+    opts: UndefinedTRPCInfiniteQueryOptionsIn<
+      unknown,
+      unknown,
+      TRPCClientError<AnyClientTypes>
+    >,
+  ): UndefinedTRPCInfiniteQueryOptionsOut<
+    unknown,
+    unknown,
+    TRPCClientError<AnyClientTypes>
+  >;
+  infiniteQueryOptions(
+    path: readonly string[], // <-- look into if needed
+    queryKey: TRPCQueryKey,
+    opts: DefinedTRPCInfiniteQueryOptionsIn<
+      unknown,
+      unknown,
+      TRPCClientError<AnyClientTypes>
+    >,
+  ): DefinedTRPCInfiniteQueryOptionsOut<
+    unknown,
+    unknown,
+    TRPCClientError<AnyClientTypes>
+  >;
+
   /**
    * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
    */
