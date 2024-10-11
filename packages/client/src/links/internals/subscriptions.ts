@@ -18,13 +18,7 @@ export interface ConnectionPendingState extends ConnectionStateBase {
   error: null;
 }
 
-export interface ConnectionErrorState<TError> extends ConnectionStateBase {
-  state: 'error';
-  error: TError;
-}
-
 export type TRPCConnectionState<TError> =
   | ConnectionIdleState
   | ConnectionConnectingState<TError>
-  | ConnectionPendingState
-  | ConnectionErrorState<TError>;
+  | ConnectionPendingState;

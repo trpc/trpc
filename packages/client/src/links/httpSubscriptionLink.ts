@@ -179,8 +179,8 @@ export function unstable_httpSubscriptionLink<
           observer.error(TRPCClientError.from(error));
           connectionState.next({
             type: 'state',
-            state: 'error',
-            error: TRPCClientError.from(error),
+            state: 'idle',
+            error: null,
           });
         });
 

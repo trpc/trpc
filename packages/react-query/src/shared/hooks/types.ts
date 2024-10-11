@@ -26,7 +26,6 @@ import type {
 } from '@trpc/client';
 import type {
   ConnectionConnectingState,
-  ConnectionErrorState,
   ConnectionIdleState,
   ConnectionPendingState,
 } from '@trpc/client/unstable-internals';
@@ -203,16 +202,10 @@ export interface UseTRPCSubscriptionConnectionPendingResult<_TError> {
   connectionError: ConnectionPendingState['error'];
 }
 
-export interface UseTRPCSubscriptionConnectionErrorResult<TError> {
-  connectionState: ConnectionErrorState<TError>['state'];
-  connectionError: ConnectionErrorState<TError>['error'];
-}
-
 export type TRPCSubscriptionConnectionState<TError> =
   | UseTRPCSubscriptionConnectionIdleResult<TError>
   | UseTRPCSubscriptionConnectionConnectingResult<TError>
-  | UseTRPCSubscriptionConnectionPendingResult<TError>
-  | UseTRPCSubscriptionConnectionErrorResult<TError>;
+  | UseTRPCSubscriptionConnectionPendingResult<TError>;
 
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'idle' | 'connecting' | 'pending' | 'error';
