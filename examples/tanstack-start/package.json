@@ -14,11 +14,10 @@
   "dependencies": {
     "@tanstack/react-query": "^5.59.9",
     "@tanstack/react-query-devtools": "^5.59.9",
-    "@tanstack/react-router": "^1.45.7",
-    "@tanstack/react-router-with-query": "^1.43.2",
-    "@tanstack/router-devtools": "^1.45.7",
-    "@tanstack/router-plugin": "^1.45.7",
-    "@tanstack/start": "^1.45.7",
+    "@tanstack/react-router": "^1.62.1",
+    "@tanstack/react-router-with-query": "^1.62.1",
+    "@tanstack/router-devtools": "^1.62.1",
+    "@tanstack/start": "^1.62.1",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
@@ -26,7 +25,7 @@
     "react-dom": "^18.3.1",
     "superjson": "^1.12.4",
     "tailwind-merge": "^2.0.0",
-    "vinxi": "0.3.12",
+    "vinxi": "^0.4.3",
     "zod": "^3.0.0"
   },
   "devDependencies": {
@@ -41,7 +40,7 @@
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "tailwindcss": "npm:tailwindcss@4.0.0-alpha.17",
-    "typescript": "^5.5.3",
+    "typescript": "^5.6.2",
     "typescript-eslint": "7.16.1",
     "vite": "^5.3.4",
     "vite-tsconfig-paths": "^4.3.2"
