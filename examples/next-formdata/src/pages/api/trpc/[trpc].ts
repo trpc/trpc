@@ -21,8 +21,8 @@ const handler = trpcNext.createNextApiHandler({
 });
 
 // export API handler
-export default async (req: NextApiRequest, res: NextApiResponse) => {
-  await handler(req, res);
+export default (req: NextApiRequest, res: NextApiResponse) => {
+  handler(req, res);
 };
 
 export const config = {
