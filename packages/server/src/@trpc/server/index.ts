@@ -37,7 +37,13 @@ export {
   type QueryProcedure as TRPCQueryProcedure,
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
   type TRPCBuilder,
+  /**
+   * @deprecated use `tracked(id, data)` instead
+   */
   sse,
+  tracked,
+  type TrackedEnvelope,
+  isTrackedEnvelope,
 } from '../../unstable-core-do-not-import';
 
 export type {

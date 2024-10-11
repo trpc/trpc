@@ -15,10 +15,14 @@ import {
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  isAsyncIterable,
+} from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
+import { zAsyncGenerator } from './zAsyncGenerator';
 
 describe('no transformer', () => {
   const orderedResults: number[] = [];
@@ -67,13 +71,37 @@ describe('no transformer', () => {
             return opts.input.id;
           }),
 
-        iterable: t.procedure.query(async function* () {
-          for (let i = 0; i < 10; i++) {
-            yield yieldSpy(i + 1);
-            await iterableDeferred.promise;
-            iterableDeferred = createDeferred();
-          }
-        }),
+        iterable: t.procedure
+          .input(
+            z
+              .object({
+                badYield: z.boolean(),
+                badReturn: z.boolean(),
+              })
+              .partial()
+              .optional(),
+          )
+          .output(
+            zAsyncGenerator({
+              yield: z.number(),
+              return: z.string(),
+            }),
+          )
+          .query(async function* (opts) {
+            for (let i = 0; i < 10; i++) {
+              yield yieldSpy(i + 1);
+              await iterableDeferred.promise;
+              iterableDeferred = createDeferred();
+            }
+
+            if (opts.input?.badYield) {
+              yield 'ONLY_YIELDS_NUMBERS' as never;
+            }
+            if (opts.input?.badReturn) {
+              return 123 as never;
+            }
+            return 'done';
+          }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -216,6 +244,9 @@ describe('no transformer', () => {
 
     const iterable = await client.iterable.query();
 
+    expectTypeOf(iterable).toEqualTypeOf<
+      AsyncGenerator<number, string, unknown>
+    >();
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
       aggregated.push(value);
@@ -235,6 +266,22 @@ describe('no transformer', () => {
         10,
       ]
     `);
+  });
+
+  test('iterable return', async () => {
+    const { client } = ctx;
+
+    const iterable = await client.iterable.query();
+    const iterator = iterable[Symbol.asyncIterator]();
+
+    const aggregated: unknown[] = [];
+
+    let r;
+    while (!(r = await iterator.next()).done) {
+      aggregated.push(r.value);
+      ctx.nextIterable();
+    }
+    expect(r.value).toBe('done');
   });
 
   test('iterable cancellation', async () => {
@@ -280,6 +327,64 @@ describe('no transformer', () => {
     expect(err.message).toMatchInlineSnapshot(
       `"Invalid response or stream interrupted"`,
     );
+  });
+
+  test('output validation iterable yield error', async () => {
+    const clientError = await waitError(async () => {
+      const iterable = await ctx.client.iterable.query({
+        badYield: true,
+      });
+      for await (const value of iterable) {
+        ctx.nextIterable();
+      }
+    }, TRPCClientError<typeof ctx.router>);
+
+    expect(clientError.data?.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(clientError.message).toMatchInlineSnapshot(`
+      "[
+        {
+          "code": "invalid_type",
+          "expected": "number",
+          "received": "string",
+          "path": [],
+          "message": "Expected number, received string"
+        }
+      ]"
+    `);
+    expect(ctx.onErrorSpy).toHaveBeenCalledOnce();
+
+    const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
+    expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(serverError.message).toMatchInlineSnapshot(`""`);
+  });
+
+  test('output validation iterable return error', async () => {
+    const clientError = await waitError(async () => {
+      const iterable = await ctx.client.iterable.query({
+        badReturn: true,
+      });
+      for await (const value of iterable) {
+        ctx.nextIterable();
+      }
+    }, TRPCClientError<typeof ctx.router>);
+
+    expect(clientError.data?.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(clientError.message).toMatchInlineSnapshot(`
+      "[
+        {
+          "code": "invalid_type",
+          "expected": "string",
+          "received": "number",
+          "path": [],
+          "message": "Expected string, received number"
+        }
+      ]"
+    `);
+    expect(ctx.onErrorSpy).toHaveBeenCalledOnce();
+
+    const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
+    expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
+    expect(serverError.message).toMatchInlineSnapshot(`""`);
   });
 });
 
@@ -327,9 +432,11 @@ describe('with transformer', () => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
         iterable: t.procedure.query(async function* () {
-          yield 1;
+          yield 1 as number;
           yield 2;
           yield 3;
+
+          return 'done';
         }),
         iterableWithError: t.procedure.query(async function* () {
           yield 1;
@@ -438,6 +545,10 @@ describe('with transformer', () => {
 
     const iterable = await client.iterable.query();
 
+    expectTypeOf(iterable).toEqualTypeOf<
+      AsyncGenerator<number, string, unknown>
+    >();
+
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
       aggregated.push(value);
@@ -449,6 +560,28 @@ describe('with transformer', () => {
         3,
       ]
     `);
+  });
+
+  test('iterable return', async () => {
+    const { client } = ctx;
+
+    const iterable = await client.iterable.query();
+    const iterator = iterable[Symbol.asyncIterator]();
+
+    const aggregated: unknown[] = [];
+
+    let r;
+    while (!(r = await iterator.next()).done) {
+      aggregated.push(r.value);
+    }
+    expect(aggregated).toMatchInlineSnapshot(`
+      Array [
+        1,
+        2,
+        3,
+      ]
+    `);
+    expect(r.value).toBe('done');
   });
 
   test('call deferred procedures with httpBatchLink', async () => {

@@ -27,9 +27,11 @@ export interface TRPCRequestOptions {
   signal?: AbortSignal;
 }
 
+type inferAsyncIterableYield<T> = T extends AsyncIterable<infer U> ? U : T;
+
 export interface TRPCSubscriptionObserver<TValue, TError> {
   onStarted: (opts: { context: OperationContext | undefined }) => void;
-  onData: (value: TValue) => void;
+  onData: (value: inferAsyncIterableYield<TValue>) => void;
   onError: (err: TError) => void;
   onStopped: () => void;
   onComplete: () => void;
@@ -133,7 +135,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
       path,
       input,
       context: opts?.context,
-      signal: null,
+      signal: opts.signal,
     });
     return observable$.subscribe({
       next(envelope) {

@@ -3,12 +3,13 @@ import type {
   AnyClientTypes,
   inferClientTypes,
   InferrableClientTypes,
-  SSEMessage,
+  SSEStreamConsumerOptions,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
   sseStreamConsumer,
 } from '@trpc/server/unstable-core-do-not-import';
+import { raceAbortSignals } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
@@ -39,6 +40,10 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * EventSource options or a callback that returns them
    */
   eventSourceOptions?: CallbackOrValue<EventSourceInit>;
+  /**
+   * @see https://trpc.io/docs/client/links/httpSubscriptionLink#updatingConfig
+   */
+  experimental_shouldRecreateOnError?: SSEStreamConsumerOptions['shouldRecreateOnError'];
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -56,59 +61,73 @@ export function unstable_httpSubscriptionLink<
     return ({ op }) => {
       return observable((observer) => {
         const { type, path, input } = op;
+
         /* istanbul ignore if -- @preserve */
         if (type !== 'subscription') {
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
 
-        let eventSource: EventSource | null = null;
-        let unsubscribed = false;
+        const ac = new AbortController();
+        const signal = raceAbortSignals(op.signal, ac.signal);
+        const eventSourceStream = sseStreamConsumer<
+          Partial<{
+            id?: string;
+            data: unknown;
+          }>
+        >({
+          url: async () =>
+            getUrl({
+              transformer,
+              url: await urlWithConnectionParams(opts),
+              input,
+              path,
+              type,
+              signal: null,
+            }),
+          init: () => resultOf(opts.eventSourceOptions),
+          signal,
+          deserialize: transformer.output.deserialize,
+          shouldRecreateOnError: opts.experimental_shouldRecreateOnError,
+        });
 
         run(async () => {
-          const url = getUrl({
-            transformer,
-            url: await urlWithConnectionParams(opts),
-            input,
-            path,
-            type,
-            signal: null,
-          });
+          for await (const chunk of eventSourceStream) {
+            switch (chunk.type) {
+              case 'data':
+                const chunkData = chunk.data;
 
-          const eventSourceOptions = await resultOf(opts.eventSourceOptions);
-          /* istanbul ignore if -- @preserve */
-          if (unsubscribed) {
-            // already unsubscribed - rare race condition
-            return;
-          }
-          eventSource = new EventSource(url, eventSourceOptions);
-          const onStarted = () => {
-            observer.next({
-              result: {
-                type: 'started',
-              },
-              context: {
-                eventSource,
-              },
-            });
+                // if the `tracked()`-helper is used, we always have an `id` field
+                const data = 'id' in chunkData ? chunkData : chunkData.data;
 
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            eventSource!.removeEventListener('open', onStarted);
-          };
-          // console.log('starting', new Date());
-          eventSource.addEventListener('open', onStarted);
-          const iterable = sseStreamConsumer<Partial<SSEMessage>>({
-            from: eventSource,
-            deserialize: transformer.output.deserialize,
-          });
-
-          for await (const chunk of iterable) {
-            // if the `sse({})`-helper is used, we always have an `id` field
-            const data = 'id' in chunk ? chunk : chunk.data;
-            observer.next({
-              result: {
-                data,
-              },
-            });
+                observer.next({
+                  result: {
+                    data,
+                  },
+                  context: {
+                    eventSource: chunk.eventSource,
+                  },
+                });
+                break;
+              case 'opened': {
+                observer.next({
+                  result: {
+                    type: 'started',
+                  },
+                  context: {
+                    eventSource: chunk.eventSource,
+                  },
+                });
+                break;
+              }
+              case 'error': {
+                // TODO: handle in https://github.com/trpc/trpc/issues/5871
+                break;
+              }
+              case 'connecting': {
+                // TODO: handle in https://github.com/trpc/trpc/issues/5871
+                break;
+              }
+            }
           }
 
           observer.next({
@@ -123,8 +142,7 @@ export function unstable_httpSubscriptionLink<
 
         return () => {
           observer.complete();
-          eventSource?.close();
-          unsubscribed = true;
+          ac.abort();
         };
       });
     };

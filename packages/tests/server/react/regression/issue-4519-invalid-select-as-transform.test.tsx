@@ -8,7 +8,7 @@ import * as z from 'zod';
 
 /**
  * For reference,
- * @link https://github.com/trpc/trpc/issues/4519
+ * @see https://github.com/trpc/trpc/issues/4519
  */
 
 const ctx = konn()

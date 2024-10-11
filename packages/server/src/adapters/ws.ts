@@ -21,14 +21,15 @@ import type {
   TRPCConnectionParamsMessage,
   TRPCReconnectNotification,
   TRPCResponseMessage,
+  TRPCResultMessage,
 } from '../@trpc/server/rpc';
 import { parseConnectionParamsFromUnknown } from '../http';
-import { isObservable } from '../observable';
-import { observableToAsyncIterable } from '../observable/observable';
+import { isObservable, observableToAsyncIterable } from '../observable';
 // eslint-disable-next-line no-restricted-imports
 import {
   isAsyncIterable,
   isObject,
+  isTrackedEnvelope,
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
@@ -36,7 +37,7 @@ import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
  * Importing ws causes a build error
- * @link https://github.com/trpc/trpc/pull/5279
+ * @see https://github.com/trpc/trpc/pull/5279
  */
 const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
 
@@ -77,20 +78,26 @@ export type WSSHandlerOptions<TRouter extends AnyRouter> =
       enabled: boolean;
       /**
        * Heartbeat interval in milliseconds
-       * @default 30000
+       * @default 30_000
        */
       pingMs?: number;
       /**
        * Terminate the WebSocket if no pong is received after this many milliseconds
-       * @default 5000
+       * @default 5_000
        */
       pongWaitMs?: number;
     };
+    /**
+     * Disable responding to ping messages from the client
+     * **Not recommended** - this is mainly used for testing
+     * @default false
+     */
+    dangerouslyDisablePong?: boolean;
   };
 
 const unsetContextPromiseSymbol = Symbol('unsetContextPromise');
 export function getWSConnectionHandler<TRouter extends AnyRouter>(
-  opts: WSConnectionHandlerOptions<TRouter>,
+  opts: WSSHandlerOptions<TRouter>,
 ) {
   const { createContext, router } = opts;
   const { transformer } = router._def._config;
@@ -98,6 +105,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   return async (client: ws.WebSocket, req: IncomingMessage) => {
     const clientSubscriptions = new Map<number | string, AbortController>();
     const abortController = new AbortController();
+
+    if (opts.keepAlive?.enabled) {
+      const { pingMs, pongWaitMs } = opts.keepAlive;
+      handleKeepAlive(client, pingMs, pongWaitMs);
+    }
 
     function respond(untransformedJSON: TRPCResponseMessage) {
       client.send(
@@ -171,6 +183,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
     async function handleRequest(msg: TRPCClientOutgoingMessage) {
       const { id, jsonrpc } = msg;
+
       /* istanbul ignore next -- @preserve */
       if (id === null) {
         throw new TRPCError({
@@ -182,20 +195,44 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         clientSubscriptions.get(id)?.abort();
         return;
       }
-      const { path, input } = msg.params;
+      const { path, lastEventId } = msg.params;
+      let { input } = msg.params;
       const type = msg.method;
       try {
+        if (lastEventId !== undefined) {
+          if (isObject(input)) {
+            input = {
+              ...input,
+              lastEventId: lastEventId,
+            };
+          } else {
+            input ??= {
+              lastEventId: lastEventId,
+            };
+          }
+        }
         await ctxPromise; // asserts context has been set
 
+        const abortController = new AbortController();
         const result = await callProcedure({
           procedures: router._def.procedures,
           path,
           getRawInput: async () => input,
           ctx,
           type,
+          signal: abortController.signal,
         });
 
+        const isIterableResult =
+          isAsyncIterable(result) || isObservable(result);
+
         if (type !== 'subscription') {
+          if (isIterableResult) {
+            throw new TRPCError({
+              code: 'UNSUPPORTED_MEDIA_TYPE',
+              message: `Cannot return an async iterable or observable from a ${type} procedure with WebSockets`,
+            });
+          }
           // send the value as data if the method is not a subscription
           respond({
             id,
@@ -208,7 +245,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           return;
         }
 
-        if (!isObservable(result) && !isAsyncIterable(result)) {
+        if (!isIterableResult) {
           throw new TRPCError({
             message: `Subscription ${path} did not return an observable or a AsyncGenerator`,
             code: 'INTERNAL_SERVER_ERROR',
@@ -239,7 +276,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
         const iterator: AsyncIterator<unknown> =
           iterable[Symbol.asyncIterator]();
-        const abortController = new AbortController();
 
         const abortPromise = new Promise<'abort'>((resolve) => {
           abortController.signal.onabort = () => resolve('abort');
@@ -277,13 +313,24 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               break;
             }
 
+            const result: TRPCResultMessage<unknown>['result'] = {
+              type: 'data',
+              data: next.value,
+            };
+
+            if (isTrackedEnvelope(next.value)) {
+              const [id, data] = next.value;
+              result.id = id;
+              result.data = {
+                id,
+                data,
+              };
+            }
+
             respond({
               id,
               jsonrpc,
-              result: {
-                type: 'data',
-                data: next.value,
-              },
+              result,
             });
           }
 
@@ -340,13 +387,23 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
       }
     }
-    client.on('message', async (message) => {
+    client.on('message', async (rawData) => {
+      const msgStr = rawData.toString();
+      if (msgStr === 'PONG') {
+        return;
+      }
+      if (msgStr === 'PING') {
+        if (!opts.dangerouslyDisablePong) {
+          client.send('PONG');
+        }
+        return;
+      }
       if (ctxPromise === unsetContextPromiseSymbol) {
         // If the ctxPromise wasn't created immediately, we're expecting the first message to be a TRPCConnectionParamsMessage
         ctxPromise = createCtxPromise(() => {
           let msg;
           try {
-            msg = JSON.parse(message.toString()) as TRPCConnectionParamsMessage;
+            msg = JSON.parse(msgStr) as TRPCConnectionParamsMessage;
 
             if (!isObject(msg)) {
               throw new Error('Message was not an object');
@@ -366,7 +423,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         return;
       }
       try {
-        const msgJSON: unknown = JSON.parse(message.toString());
+        const msgJSON: unknown = JSON.parse(msgStr);
         const msgs: unknown[] = Array.isArray(msgJSON) ? msgJSON : [msgJSON];
         const promises = msgs
           .map((raw) => parseTRPCMessage(raw, transformer))
@@ -416,8 +473,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     });
 
     if (ctxPromise !== unsetContextPromiseSymbol) {
-      // prevent unhandled promise rejection errors
-      await ctxPromise.catch(() => null);
+      await ctxPromise;
     }
   };
 }
@@ -425,50 +481,69 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 /**
  * Handle WebSocket keep-alive messages
  */
-function handleKeepAlive(
+export function handleKeepAlive(
   client: ws.WebSocket,
-  pingMs = 30000,
-  pongWaitMs = 5000,
+  pingMs = 30_000,
+  pongWaitMs = 5_000,
 ) {
-  let heartbeatTimeout: NodeJS.Timeout | undefined;
-  const heartbeatInterval = setInterval(() => {
-    if (client.readyState !== WEBSOCKET_OPEN) {
-      return;
-    }
-    // First we send a ping message and wait for a pong
-    client.ping();
-    // We set a timeout to close the connection if the pong is not received
-    heartbeatTimeout = setTimeout(() => {
-      client.terminate();
-      clearInterval(heartbeatInterval);
-    }, pongWaitMs);
-  }, pingMs).unref();
-  // When we receive a pong message, we clear the timeout
-  client.on('pong', () => {
-    heartbeatTimeout && clearTimeout(heartbeatTimeout);
-  });
-  // If the connection is closed, we clear the interval
+  let timeout: NodeJS.Timeout | undefined = undefined;
+  let ping: NodeJS.Timeout | undefined = undefined;
+
+  const schedulePing = () => {
+    const scheduleTimeout = () => {
+      timeout = setTimeout(() => {
+        client.terminate();
+      }, pongWaitMs);
+    };
+    ping = setTimeout(() => {
+      client.send('PING');
+
+      scheduleTimeout();
+    }, pingMs);
+  };
+
+  const onMessage = () => {
+    clearTimeout(ping);
+    clearTimeout(timeout);
+
+    schedulePing();
+  };
+
+  client.on('message', onMessage);
+
   client.on('close', () => {
-    clearInterval(heartbeatInterval);
+    clearTimeout(ping);
+    clearTimeout(timeout);
   });
+
+  schedulePing();
 }
 
 export function applyWSSHandler<TRouter extends AnyRouter>(
   opts: WSSHandlerOptions<TRouter>,
 ) {
-  const { wss, prefix, keepAlive } = opts;
-
   const onConnection = getWSConnectionHandler(opts);
-  wss.on('connection', async (client, req) => {
-    if (prefix && !req.url?.startsWith(prefix)) {
+  opts.wss.on('connection', (client, req) => {
+    if (opts.prefix && !req.url?.startsWith(opts.prefix)) {
       return;
     }
 
-    await onConnection(client, req);
-    if (keepAlive?.enabled) {
-      const { pingMs, pongWaitMs } = keepAlive;
-      handleKeepAlive(client, pingMs, pongWaitMs);
-    }
+    onConnection(client, req).catch((cause) => {
+      opts.onError?.({
+        error: new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          cause,
+          message: 'Failed to handle WebSocket connection',
+        }),
+        req: req,
+        path: undefined,
+        type: 'unknown',
+        ctx: undefined,
+        input: undefined,
+      });
+
+      client.close();
+    });
   });
 
   return {
@@ -478,7 +553,7 @@ export function applyWSSHandler<TRouter extends AnyRouter>(
         method: 'reconnect',
       };
       const data = JSON.stringify(response);
-      for (const client of wss.clients) {
+      for (const client of opts.wss.clients) {
         if (client.readyState === WEBSOCKET_OPEN) {
           client.send(data);
         }

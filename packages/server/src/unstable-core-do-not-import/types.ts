@@ -11,7 +11,7 @@ export type Maybe<TType> = TType | null | undefined;
 
 /**
  * @internal
- * @link https://github.com/ianstormtaylor/superstruct/blob/7973400cd04d8ad92bbdc2b6f35acbfb3c934079/src/utils.ts#L323-L325
+ * @see https://github.com/ianstormtaylor/superstruct/blob/7973400cd04d8ad92bbdc2b6f35acbfb3c934079/src/utils.ts#L323-L325
  */
 export type Simplify<TType> = TType extends any[] | Date
   ? TType
@@ -30,6 +30,13 @@ export type MaybePromise<TType> = Promise<TType> | TType;
 export type FilterKeys<TObj extends object, TFilter> = {
   [TKey in keyof TObj]: TObj[TKey] extends TFilter ? TKey : never;
 }[keyof TObj];
+
+/**
+ * @internal
+ */
+export type Result<TType, TErr = unknown> =
+  | { ok: true; value: TType }
+  | { ok: false; error: TErr };
 
 /**
  * @internal
@@ -150,8 +157,9 @@ export type ProtectedIntersection<TType, TWith> = keyof TType &
  */
 export type GetRawInputFn = () => Promise<unknown>;
 
-export const ERROR_SYMBOL = Symbol('TypeError');
+const errorSymbol = Symbol();
+export type ErrorSymbol = typeof errorSymbol;
 export type TypeError<TMessage extends string> = TMessage & {
-  _: typeof ERROR_SYMBOL;
+  _: typeof errorSymbol;
 };
 export type ValueOf<TObj> = TObj[keyof TObj];

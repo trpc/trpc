@@ -80,13 +80,13 @@ const t = initTRPC.context<Context>().meta<Meta>().create({
 export interface RuntimeConfig<TTypes extends RootConfigTypes> {
   /**
    * Use a data transformer
-   * @link https://trpc.io/docs/data-transformers
+   * @see https://trpc.io/docs/data-transformers
    */
   transformer: TTypes['transformer'];
 
   /**
    * Use custom error formatting
-   * @link https://trpc.io/docs/error-formatting
+   * @see https://trpc.io/docs/error-formatting
    */
   errorFormatter: ErrorFormatter<TTypes['ctx'], any>;
 

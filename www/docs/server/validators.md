@@ -120,6 +120,12 @@ export const appRouter = t.router({
 });
 ```
 
+### Output validation of subscriptions
+
+Since subscriptions are async iterators, you can use the same validation techniques as above.
+
+Have a look at the [subscriptions guide](subscriptions.md#output-validation) for more information.
+
 ## The most basic validator: a function
 
 You can define a validator without any 3rd party dependencies, with a function.
@@ -454,6 +460,31 @@ export const appRouter = t.router({
     )
     .query(({ input }) => {
       //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [TypeBox](https://github.com/sinclairzx81/typebox)
+
+```ts
+import { Type } from '@sinclair/typebox';
+import { initTRPC } from '@trpc/server';
+import { wrap } from '@typeschema/typebox';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(wrap(Type.Object({ name: Type.String() })))
+    .output(wrap(Type.Object({ greeting: Type.String() })))
+    .query(({ input }) => {
       return {
         greeting: `hello ${input.name}`,
       };

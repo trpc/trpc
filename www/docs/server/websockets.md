@@ -2,66 +2,14 @@
 id: websockets
 title: WebSockets
 sidebar_label: WebSockets
-slug: /websockets
+slug: /server/websockets
 ---
 
 You can use WebSockets for all or some of the communication with your server, see [wsLink](../client/links/wsLink.md) for how to set it up on the client.
 
-## Using Subscriptions
-
 :::tip
-
-- For a full-stack example have a look at [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
-- For a bare-minimum Node.js example see [/examples/standalone-server](https://github.com/trpc/trpc/tree/next/examples/standalone-server).
-
+The document here outlines the specific details of using WebSockets. For general usage of subscriptions, see [our subscriptions guide](../server/subscriptions.md).
 :::
-
-### Adding a subscription procedure
-
-```tsx title='server/router.ts'
-import { EventEmitter } from 'events';
-import { initTRPC } from '@trpc/server';
-import { observable } from '@trpc/server/observable';
-import { z } from 'zod';
-
-// create a global event emitter (could be replaced by redis, etc)
-const ee = new EventEmitter();
-
-const t = initTRPC.create();
-
-export const appRouter = t.router({
-  onAdd: t.procedure.subscription(() => {
-    // return an `observable` with a callback which is triggered immediately
-    return observable<Post>((emit) => {
-      const onAdd = (data: Post) => {
-        // emit data to client
-        emit.next(data);
-      };
-
-      // trigger `onAdd()` when `add` is triggered in our event emitter
-      ee.on('add', onAdd);
-
-      // unsubscribe function when client disconnects or stops subscribing
-      return () => {
-        ee.off('add', onAdd);
-      };
-    });
-  }),
-  add: t.procedure
-    .input(
-      z.object({
-        id: z.string().uuid().optional(),
-        text: z.string().min(1),
-      }),
-    )
-    .mutation(async (opts) => {
-      const post = { ...opts.input }; /* [..] add to db */
-
-      ee.emit('add', post);
-      return post;
-    }),
-});
-```
 
 ### Creating a WebSocket-server
 
@@ -173,9 +121,52 @@ export const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
-## Using React
+### Automatic tracking of id using `tracked()` (recommended)
 
-See [/examples/next-prisma-starter-websockets](https://github.com/trpc/examples-next-prisma-starter-websockets).
+If you `yield` an event using our `tracked()`-helper and include an `id`, the client will automatically reconnect when it gets disconnected and send the last known ID when reconnecting as part of the `lastEventId`-input.
+
+You can send an initial `lastEventId` when initializing the subscription and it will be automatically updated as the browser receives data.
+
+:::info
+If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+:::
+
+```ts
+import EventEmitter, { on } from 'events';
+import { tracked } from '@trpc/server';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
+
+const ee = new EventEmitter();
+
+export const subRouter = router({
+  onPostAdd: publicProcedure
+    .input(
+      z
+        .object({
+          // lastEventId is the last event id that the client has received
+          // On the first call, it will be whatever was passed in the initial setup
+          // If the client reconnects, it will be the last event id that the client received
+          lastEventId: z.string().nullish(),
+        })
+        .optional(),
+    )
+    .subscription(async function* (opts) {
+      if (opts.input.lastEventId) {
+        // [...] get the posts since the last event id and yield them
+      }
+      // listen for new events
+      for await (const [data] of on(ee, 'add'), {
+        // Passing the AbortSignal from the request automatically cancels the event emitter when the subscription is aborted
+        signal: opts.signal,
+      }) {
+        const post = data as Post;
+        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+        yield tracked(post.id, post);
+      }
+    }),
+});
+```
 
 ## WebSockets RPC Specification
 
@@ -277,7 +268,7 @@ If the connection is initialized with `?connectionParams=1`, the first message h
 
 ## Errors
 
-See <https://www.jsonrpc.org/specification#error_object> or [Error Formatting](../server/error-formatting.md).
+See [https://www.jsonrpc.org/specification#error_object](https://www.jsonrpc.org/specification#error_object) or [Error Formatting](../server/error-formatting.md).
 
 ## Notifications from Server to Client
 

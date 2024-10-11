@@ -24,6 +24,57 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Subscription procedure output type changed to `AsyncGenerator` (non-breaking)
+
+If you've used subscriptions with async generators with the v11, this might be breaking with how you infer your types.
+
+<details>
+<summary>Details</summary>
+
+We changed the inferred output from:
+
+```ts
+SubscriptionProcedure<{
+  input: __INPUT__;
+  output: __OUTPUT__;
+}>;
+```
+
+to
+
+```ts
+SubscriptionProcedure<{
+  input: __INPUT__;
+  output: AsyncGenerator<__OUTPUT__, void, unknown>;
+}>;
+```
+
+If you need to infer the value you can use a helper like the below:
+
+```ts
+type inferAsyncIterableYield<TOutput> = TOutput extends AsyncGenerator<
+  infer $Yield
+>
+  ? $Yield
+  : never;
+```
+
+</details>
+
+This change has been made to ensure the library remains compatible with future updates and allows for the use of the `return` type in subscriptions' `AsyncGenerator`s.
+
+See [subscriptions docs](../server/subscriptions.md#output-validators) for more information.
+
+### Added support for output validators in subscriptions (non-breaking)
+
+See [subscriptions docs](../server/subscriptions.md#output-validators) for more information.
+
+### Deprecation of subscriptions returning `Observable`s (non-breaking)
+
+We now support returning async generator function for subscriptions and we previously added a [`httpSubscriptionLink`](../client/links/httpSubscriptionLink.md).
+
+To see how to use async generator functions for subscriptions see the [subscriptions docs](../server/subscriptions.md).
+
 ### Removal of `AbortControllerEsque`-ponyfill (rarely breaking)
 
 We have removed the `AbortControllerEsque`-ponyfill from tRPC, if you need to support older browsers you can use a polyfill like `abortcontroller-polyfill`.
@@ -132,7 +183,7 @@ See [SSR docs](../client/nextjs/ssr.md)
 
 ### Added support for short-hand router definitions (non-breaking)
 
-See [Merging routers](../server/merging-routers.md#defining-an-inline-sub-router-inline-sub-router)
+See [Merging routers](../server/merging-routers.md#inline-sub-router)
 
 ```ts
 const appRouter = router({

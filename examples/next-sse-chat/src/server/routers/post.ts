@@ -1,9 +1,10 @@
-import { sse } from '@trpc/server';
+import { tracked } from '@trpc/server';
 import { streamToAsyncIterable } from '~/lib/stream-to-async-iterator';
 import { db } from '~/server/db/client';
 import { Post, type PostType } from '~/server/db/schema';
 import { z } from 'zod';
 import { authedProcedure, publicProcedure, router } from '../trpc';
+import type { MyEvents } from './channel';
 import { currentlyTyping, ee } from './channel';
 
 export const postRouter = router({
@@ -23,7 +24,7 @@ export const postRouter = router({
         .values({
           id: opts.input.id,
           text: opts.input.text,
-          author: opts.ctx.user.name,
+          name: opts.ctx.user.name,
           channelId,
         })
         .returning();
@@ -106,7 +107,7 @@ export const postRouter = router({
       // subscription to the ee
       const stream = new ReadableStream<PostType>({
         async start(controller) {
-          const onAdd = (channelId: string, data: PostType) => {
+          const onAdd: MyEvents['add'] = (channelId, data) => {
             if (channelId === opts.input.channelId) {
               controller.enqueue(data);
             }
@@ -136,12 +137,11 @@ export const postRouter = router({
         },
       });
 
-      for await (const post of streamToAsyncIterable(stream)) {
-        yield sse({
-          // yielding the post id ensures the client can reconnect at any time and get the latest events this id
-          id: post.id,
-          data: post,
-        });
+      for await (const post of streamToAsyncIterable(stream, {
+        signal: opts.signal,
+      })) {
+        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+        yield tracked(post.id, post);
       }
     }),
 });

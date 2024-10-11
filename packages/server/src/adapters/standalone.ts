@@ -10,13 +10,13 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import http from 'http';
 // @trpc/server
-import type { AnyRouter } from '../@trpc/server';
+import { type AnyRouter } from '../@trpc/server';
 import { toURL } from '../@trpc/server/http';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
 } from './node-http';
-import { nodeHTTPRequestHandler } from './node-http';
+import { internal_exceptionHandler, nodeHTTPRequestHandler } from './node-http';
 
 export type CreateHTTPHandlerOptions<TRouter extends AnyRouter> =
   NodeHTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
@@ -26,28 +26,44 @@ export type CreateHTTPContextOptions = NodeHTTPCreateContextFnOptions<
   http.ServerResponse
 >;
 
+/**
+ * @internal
+ */
 export function createHTTPHandler<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
-) {
-  return async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    const url = toURL(req.url!);
+): http.RequestListener {
+  return (req, res) => {
+    let path = '';
+    try {
+      const url = toURL(req.url!);
 
-    // get procedure path and remove the leading slash
-    // /procedure -> procedure
-    const path = url.pathname.slice(1);
+      // get procedure path and remove the leading slash
+      // /procedure -> procedure
+      path = url.pathname.slice(1);
 
-    await nodeHTTPRequestHandler({
-      ...(opts as any),
-      req,
-      res,
-      path,
-    });
+      nodeHTTPRequestHandler({
+        ...(opts as any),
+        req,
+        res,
+        path,
+      });
+    } catch (cause) {
+      internal_exceptionHandler<
+        TRouter,
+        http.IncomingMessage,
+        http.ServerResponse
+      >({
+        req,
+        res,
+        path,
+        ...opts,
+      })(cause);
+    }
   };
 }
 
 export function createHTTPServer<TRouter extends AnyRouter>(
   opts: CreateHTTPHandlerOptions<TRouter>,
 ) {
-  const handler = createHTTPHandler(opts);
-  return http.createServer(handler);
+  return http.createServer(createHTTPHandler(opts));
 }

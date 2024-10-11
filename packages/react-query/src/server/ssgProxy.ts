@@ -82,7 +82,7 @@ type DecorateProcedure<
   >;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
+   * @see https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   fetch(
     input: inferProcedureInput<TProcedure>,
@@ -93,7 +93,7 @@ type DecorateProcedure<
   ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
+   * @see https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   fetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -110,7 +110,7 @@ type DecorateProcedure<
   >;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
+   * @see https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   prefetch(
     input: inferProcedureInput<TProcedure>,
@@ -121,7 +121,7 @@ type DecorateProcedure<
   ): Promise<void>;
 
   /**
-   * @link https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
+   * @see https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
    */
   prefetchInfinite(
     input: inferProcedureInput<TProcedure>,
@@ -154,7 +154,7 @@ type AnyDecoratedProcedure = DecorateProcedure<any, any>;
 
 /**
  * Create functions you can use for server-side rendering / static generation
- * @link https://trpc.io/docs/v11/client/nextjs/server-side-helpers
+ * @see https://trpc.io/docs/v11/client/nextjs/server-side-helpers
  */
 export function createServerSideHelpers<TRouter extends AnyRouter>(
   opts: CreateServerSideHelpersOptions<TRouter>,
@@ -179,6 +179,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
             getRawInput: async () => queryOpts.input,
             ctx,
             type: 'query',
+            signal: undefined,
           });
         },
       };

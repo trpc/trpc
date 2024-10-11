@@ -60,11 +60,9 @@ pnpm lint-fix
 
 If you get any cryptic errors you can usually get past them by doing `pnpm clean && pnpm install`; if this doesn't work, feel free to open an issue.
 
-### Documentation
+### Contributing to the documentation
 
-```bash
-cd www/ && pnpm dev
-```
+See [`/www/README.md`](./www/README.md) for the documentation on how to contribute to the website.
 
 ## Project overview
 

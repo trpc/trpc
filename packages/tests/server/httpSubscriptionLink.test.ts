@@ -1,7 +1,7 @@
 import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
-import type { TRPCLink } from '@trpc/client';
+import type { TRPCClientError, TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   splitLink,
@@ -9,12 +9,13 @@ import {
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
-import { initTRPC, sse } from '@trpc/server';
+import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
+import { zAsyncGenerator } from './zAsyncGenerator';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -25,7 +26,7 @@ const ctx = konn()
       vi.fn<(args: { input: { lastEventId?: number } }) => void>();
 
     const ee = new EventEmitter();
-    const eeEmit = (data: number) => {
+    const eeEmit = (data: number | Error) => {
       ee.emit('data', data);
     };
 
@@ -37,12 +38,25 @@ const ctx = konn()
 
     const router = t.router({
       sub: {
-        iterableEvent: t.procedure.subscription(async function* () {
-          for await (const data of on(ee, 'data')) {
-            const num = data[0] as number;
-            yield num;
-          }
-        }),
+        iterableEvent: t.procedure
+          .output(
+            zAsyncGenerator({
+              yield: z.number(),
+              tracked: false,
+            }),
+          )
+          .subscription(async function* (opts) {
+            for await (const data of on(ee, 'data', {
+              signal: opts.signal,
+            })) {
+              const thing = data[0] as number | Error;
+
+              if (thing instanceof Error) {
+                throw thing;
+              }
+              yield thing;
+            }
+          }),
 
         iterableInfinite: t.procedure
           .input(
@@ -50,16 +64,14 @@ const ctx = konn()
               lastEventId: z.coerce.number().min(0).optional(),
             }),
           )
+          .output(zAsyncGenerator({ yield: z.number(), tracked: true }))
           .subscription(async function* (opts) {
             onIterableInfiniteSpy({
               input: opts.input,
             });
             let idx = opts.input.lastEventId ?? 0;
             while (true) {
-              yield sse({
-                id: String(idx),
-                data: idx,
-              });
+              yield tracked(String(idx), idx);
               idx++;
               await sleep();
               infiniteYields();
@@ -120,7 +132,7 @@ const ctx = konn()
   })
   .done();
 
-test('iterable', async () => {
+test('iterable event', async () => {
   const { client } = ctx;
 
   const onStarted = vi.fn<() => void>();
@@ -158,12 +170,101 @@ test('iterable', async () => {
     expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
   });
 
-  ctx.eeEmit(4);
-  ctx.eeEmit(5);
+  expect(ctx.onErrorSpy).not.toHaveBeenCalled();
 
   await waitFor(() => {
     expect(ctx.ee.listenerCount('data')).toBe(0);
   });
+});
+
+test(
+  'iterable event with error',
+  async () => {
+    const { client } = ctx;
+
+    const onStarted =
+      vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
+    const onData = vi.fn<(args: number) => void>();
+    const subscription = client.sub.iterableEvent.subscribe(undefined, {
+      onStarted: onStarted,
+      onData: onData,
+    });
+
+    await waitFor(() => {
+      expect(onStarted).toHaveBeenCalledTimes(1);
+    });
+    ctx.eeEmit(1);
+
+    await waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+
+    const release = suppressLogs();
+    ctx.eeEmit(new Error('test error'));
+    await waitFor(
+      async () => {
+        expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
+      },
+      {
+        timeout: 5_000,
+      },
+    );
+    release();
+
+    ctx.eeEmit(2);
+
+    await waitFor(
+      () => {
+        expect(onData).toHaveBeenCalledTimes(2);
+      },
+      {
+        timeout: 10_000,
+      },
+    );
+
+    subscription.unsubscribe();
+  },
+  {
+    timeout: 60_000,
+  },
+);
+
+test('iterable event with bad yield', async () => {
+  const onStarted = vi.fn<() => void>();
+  const onData = vi.fn<(data: number) => void>();
+  const onError = vi.fn<(err: TRPCClientError<typeof ctx.router>) => void>();
+  const subscription = ctx.client.sub.iterableEvent.subscribe(undefined, {
+    onStarted: onStarted,
+    onData(it) {
+      onData(it);
+    },
+    onError: onError,
+  });
+
+  await waitFor(() => {
+    expect(onStarted).toHaveBeenCalledTimes(1);
+  });
+
+  ctx.eeEmit(1);
+  ctx.eeEmit('NOT_A_NUMBER' as never);
+  await waitFor(() => {
+    expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
+  });
+  const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
+  expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
+  expect(serverError.message).toMatchInlineSnapshot(`
+    "[
+      {
+        "code": "invalid_type",
+        "expected": "number",
+        "received": "string",
+        "path": [],
+        "message": "Expected number, received string"
+      }
+    ]"
+  `);
+
+  subscription.unsubscribe();
 });
 
 test('disconnect and reconnect with an event id', async () => {
@@ -176,7 +277,9 @@ test('disconnect and reconnect with an event id', async () => {
     {},
     {
       onStarted: onStarted,
-      onData,
+      onData(d) {
+        onData(d);
+      },
     },
   );
 
@@ -258,7 +361,9 @@ describe('auth / connectionParams', async () => {
 
       const appRouter = t.router({
         iterableEvent: t.procedure.subscription(async function* (opts) {
-          for await (const data of on(ee, 'data')) {
+          for await (const data of on(ee, 'data', {
+            signal: opts.signal,
+          })) {
             const num = data[0] as number;
             yield {
               user: opts.ctx.user,
@@ -387,13 +492,12 @@ describe('transformers / different serialize-deserialize', async () => {
       };
 
       const appRouter = t.router({
-        iterableEvent: t.procedure.subscription(async function* () {
-          for await (const data of on(ee, 'data')) {
+        iterableEvent: t.procedure.subscription(async function* (opts) {
+          for await (const data of on(ee, 'data', {
+            signal: opts.signal,
+          })) {
             const num = data[0] as number;
-            yield sse({
-              id: num.toString(),
-              data: { num },
-            });
+            yield tracked(String(num), { num });
           }
         }),
       });
@@ -444,3 +548,5 @@ describe('transformers / different serialize-deserialize', async () => {
     });
   });
 });
+
+test;

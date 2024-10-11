@@ -17,7 +17,7 @@ export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
       /**
-       * @link https://trpc.io/docs/v11/client/links
+       * @see https://trpc.io/docs/v11/client/links
        */
       links: [
         httpBatchLink({
@@ -25,7 +25,7 @@ export const trpc = createTRPCNext<AppRouter>({
         }),
       ],
       /**
-       * @link https://trpc.io/docs/v11/data-transformers
+       * @see https://trpc.io/docs/v11/data-transformers
        */
     };
   },

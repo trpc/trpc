@@ -26,18 +26,18 @@ function getBaseUrl() {
 
 /**
  * A set of strongly-typed React hooks from your `AppRouter` type signature with `createReactQueryHooks`.
- * @link https://trpc.io/docs/v11/react#3-create-trpc-hooks
+ * @see https://trpc.io/docs/v11/react#3-create-trpc-hooks
  */
 export const trpc = createTRPCNext<AppRouter>({
   transformer: superjson,
   config() {
     /**
      * If you want to use SSR, you need to use the server's full URL
-     * @link https://trpc.io/docs/v11/ssr
+     * @see https://trpc.io/docs/v11/ssr
      */
     return {
       /**
-       * @link https://trpc.io/docs/v11/client/links
+       * @see https://trpc.io/docs/v11/client/links
        */
       links: [
         // adds pretty logs to your console in development and logs errors in production
@@ -49,19 +49,19 @@ export const trpc = createTRPCNext<AppRouter>({
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
           /**
-           * @link https://trpc.io/docs/v11/data-transformers
+           * @see https://trpc.io/docs/v11/data-transformers
            */
           transformer: superjson,
         }),
       ],
       /**
-       * @link https://tanstack.com/query/v5/docs/reference/QueryClient
+       * @see https://tanstack.com/query/v5/docs/reference/QueryClient
        */
       // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
     };
   },
   /**
-   * @link https://trpc.io/docs/v11/ssr
+   * @see https://trpc.io/docs/v11/ssr
    */
   ssr: false,
 });

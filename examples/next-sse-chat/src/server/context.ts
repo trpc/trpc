@@ -3,7 +3,7 @@ import { auth } from './auth';
 
 /**
  * Creates context for an incoming request
- * @link https://trpc.io/docs/v11/context
+ * @see https://trpc.io/docs/v11/context
  */
 export const createContext = async (opts: FetchCreateContextFnOptions) => {
   const session = await auth();
