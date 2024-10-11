@@ -196,7 +196,7 @@ test(
     const subscription = client.sub.iterableEvent.subscribe(undefined, {
       onStarted: onStarted,
       onData: onData,
-      onStateChange: onStateChange,
+      onConnectionStateChange: onStateChange,
     });
 
     await waitFor(() => {

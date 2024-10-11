@@ -35,7 +35,7 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
   onError: (err: TError) => void;
   onStopped: () => void;
   onComplete: () => void;
-  onStateChange: (state: TRPCConnectionState<TError>) => void;
+  onConnectionStateChange: (state: TRPCConnectionState<TError>) => void;
 }
 
 /** @internal */
@@ -142,7 +142,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
       next(envelope) {
         switch (envelope.result.type) {
           case 'state': {
-            opts.onStateChange?.(envelope.result);
+            opts.onConnectionStateChange?.(envelope.result);
             break;
           }
           case 'started': {

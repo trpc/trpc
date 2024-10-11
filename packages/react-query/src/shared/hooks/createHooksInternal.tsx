@@ -425,7 +425,7 @@ export function createRootHooks<
               }));
             }
           },
-          onStateChange: (result) => {
+          onConnectionStateChange: (result) => {
             opts.onConnectionStateChange?.(result);
 
             const delta = {
