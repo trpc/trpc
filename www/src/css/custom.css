@@ -243,7 +243,8 @@ h5 {
   @apply list-disc pl-8;
 }
 
-.markdown blockquote {
+.markdown blockquote,
+.markdown .shiki {
   margin: 0 0 var(--ifm-spacing-vertical);
 }
 
@@ -435,7 +436,7 @@ details p {
 }
 
 .DocSearch.DocSearch-Button {
-  @apply sm:min-w-[139px] rounded-md bg-zinc-100 dark:bg-zinc-800;
+  @apply rounded-md bg-zinc-100 dark:bg-zinc-800 sm:min-w-[139px];
 }
 
 .DocSearch-Button-Keys {
