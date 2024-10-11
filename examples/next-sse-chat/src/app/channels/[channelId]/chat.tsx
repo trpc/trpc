@@ -217,16 +217,20 @@ function AddMessageForm(props: {
   const [message, setMessage] = React.useState('');
   const [isFocused, setIsFocused] = React.useState(false);
 
-  async function postMessage() {
+  function postMessage() {
     const input = {
       text: message,
       channelId,
     };
-    try {
-      await addPost.mutateAsync(input);
-      setMessage('');
-      props.onMessagePost();
-    } catch {}
+    addPost.mutate(input, {
+      onSuccess() {
+        setMessage('');
+        props.onMessagePost();
+      },
+      onError(error) {
+        alert(error.message);
+      },
+    });
   }
 
   const isTypingMutation = useThrottledIsTypingMutation(channelId);
@@ -239,14 +243,14 @@ function AddMessageForm(props: {
   return (
     <div className="relative">
       <form
-        onSubmit={async (e) => {
+        onSubmit={(e) => {
           e.preventDefault();
           /**
            * In a real app you probably don't want to use this manually
            * Checkout React Hook Form - it works great with tRPC
            * @link https://react-hook-form.com/
            */
-          await postMessage();
+          postMessage();
         }}
       >
         <Textarea
@@ -258,11 +262,12 @@ function AddMessageForm(props: {
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              void postMessage();
+              postMessage();
             }
           }}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          disabled={addPost.isPending}
         />
         <Button
           className="absolute right-2 top-2"
