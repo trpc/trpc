@@ -50,7 +50,6 @@ export const appRouter = t.router({
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  // This can either be a tuple ['login'] or string 'login'
   const mutation = trpc.login.useMutation();
 
   const handleLogin = () => {
