@@ -196,7 +196,7 @@ export function createRootHooks<
                 const queryCache = queryClient.getQueryCache();
 
                 const query = queryCache.build(queryClient, {
-                  queryKey: queryFunctionContext.queryKey,
+                  queryKey,
                 });
 
                 query.setState({
