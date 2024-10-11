@@ -168,12 +168,26 @@ export interface UseTRPCMutationOptions<
     TRPCUseQueryBaseOptions {}
 
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
+  /**
+   * @deprecated
+   * use a `skipToken` from `@tanstack/react-query` instead
+   * this will be removed in v12
+   */
   enabled?: boolean;
+  /**
+   * Called when the subscription is started
+   */
   onStarted?: () => void;
+  /**
+   * Called when new data is received
+   */
   onData?: (data: TOutput) => void;
+  /**
+   * Called when an **unrecoverable error** occurs and the subscription is closed
+   * For recoverable errors, use `onStateChange` or the `connectionStatus / `connectionError` fields on the result
+   */
   onError?: (err: TError) => void;
-  onStateChange?: (state: TRPCConnectionState<TError>) => void;
-  // onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
+  onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
 export interface UseTRPCSubscriptionConnectionIdleResult<_TError> {

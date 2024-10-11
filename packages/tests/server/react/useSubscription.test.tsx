@@ -35,6 +35,9 @@ const getCtx = (protocol: 'http' | 'ws') => {
               yield data + opts.input;
             }
           }),
+        /**
+         * @deprecated delete in v12
+         */
         onEventObservable: t.procedure
           .input(z.number())
           .subscription(({ input }) => {
@@ -166,7 +169,7 @@ describe.each([
       const [enabled, _setEnabled] = useState(true);
       setEnabled = _setEnabled;
 
-      client.onEventObservable.useSubscription(10, {
+      client.onEventIterable.useSubscription(10, {
         enabled: enabled,
         onStarted: () => {
           setIsStarted(true);
@@ -221,8 +224,8 @@ describe.each([
   });
 });
 
-describe('connection state - ws', () => {
-  const ctx = getCtx('ws');
+describe('connection state - http', () => {
+  const ctx = getCtx('http');
 
   test('iterable', async () => {
     const { App, client } = ctx;
@@ -230,16 +233,7 @@ describe('connection state - ws', () => {
     const queryResult: unknown[] = [];
 
     function MyComponent() {
-      const result = client.onEventObservable.useSubscription(10, {
-        onError(err, opts) {
-          // only called when the connection is closed and can't be reconnected
-          if (err == 'UNAUTHORIZED') {
-            opts.reconnect();
-            return null;
-          }
-          return err;
-        },
-      });
+      const result = client.onEventIterable.useSubscription(10);
 
       queryResult.push({
         ...result,
@@ -292,13 +286,137 @@ describe('connection state - ws', () => {
       Array [
         Object {
           "connectionError": null,
-          "connectionState": "idle",
+          "connectionState": "connecting",
           "data": undefined,
           "error": undefined,
           "status": "connecting",
         },
         Object {
+          "connectionState": "pending",
+          "status": "pending",
+        },
+        Object {
+          "data": 30,
+        },
+      ]
+    `);
+    queryResult.length = 0;
+    ctx.destroyConnections();
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('connectionState:connecting');
+    });
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('connectionState:pending');
+      expect(utils.container).toHaveTextContent('status:pending');
+    });
+
+    expect(diff(queryResult)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "connectionError": null,
           "connectionState": "connecting",
+          "data": 30,
+          "error": undefined,
+          "status": "connecting",
+        },
+        Object {
+          "connectionState": "pending",
+          "status": "pending",
+        },
+      ]
+    `);
+
+    queryResult.length = 0;
+    // emit
+    ctx.ee.emit('data', 40);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('data:50');
+    });
+    expect(diff(queryResult)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "connectionError": null,
+          "connectionState": "pending",
+          "data": 50,
+          "error": undefined,
+          "status": "pending",
+        },
+      ]
+    `);
+
+    utils.unmount();
+  });
+});
+
+describe('connection state - ws', () => {
+  const ctx = getCtx('ws');
+
+  test('iterable', async () => {
+    const { App, client } = ctx;
+
+    const queryResult: unknown[] = [];
+
+    function MyComponent() {
+      const result = client.onEventIterable.useSubscription(10);
+
+      queryResult.push({
+        ...result,
+      });
+
+      return (
+        <>
+          <>connectionState:{result.connectionState}</>
+          <>status:{result.status}</>
+          <>data:{result.data}</>
+        </>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    // emit
+    ctx.ee.emit('data', 20);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`data:30`);
+    });
+
+    /**
+     * a function that displays the diff over time in a list of values
+     */
+    function diff(list: any[]) {
+      return list.map((item, index) => {
+        if (index === 0) return item;
+
+        const prev = list[index - 1]!;
+        const diff = {} as any;
+        for (const key in item) {
+          if (item[key] !== prev[key]) {
+            diff[key] = item[key];
+          }
+        }
+        return diff;
+      });
+    }
+
+    expect(diff(queryResult)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "connectionError": null,
+          "connectionState": "connecting",
+          "data": undefined,
+          "error": undefined,
+          "status": "connecting",
         },
         Object {
           "connectionState": "pending",

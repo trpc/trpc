@@ -70,7 +70,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
       onErrorSpy(it);
       return opts?.server?.onError?.(it);
     },
-    createContext(it) {
+    async createContext(it) {
       (createContextSpy as any)(it);
 
       it.req.on('aborted', onReqAborted);

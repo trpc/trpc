@@ -383,7 +383,7 @@ export function createRootHooks<
             error: undefined,
             status: 'connecting',
             connectionError: null,
-            connectionState: 'idle',
+            connectionState: 'connecting',
           }
         : {
             data: undefined,
@@ -458,7 +458,7 @@ export function createRootHooks<
             }
           },
           onStateChange: (result) => {
-            opts.onStateChange?.(result);
+            opts.onConnectionStateChange?.(result);
 
             const delta = {
               connectionState: result.state,

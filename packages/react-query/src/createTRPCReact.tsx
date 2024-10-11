@@ -382,9 +382,14 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
       inferAsyncIterableYield<TDef['output']>,
       TRPCClientErrorLike<TDef>
     >,
-  ): TRPCSubscriptionResult<
-    inferAsyncIterableYield<TDef['output']>,
-    TRPCClientErrorLike<TDef>
+  ): Exclude<
+    TRPCSubscriptionResult<
+      inferAsyncIterableYield<TDef['output']>,
+      TRPCClientErrorLike<TDef>
+    >,
+    {
+      status: 'idle';
+    }
   >;
 
   // With skip token
