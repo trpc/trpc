@@ -5,9 +5,15 @@ sidebar_label: useQuery()
 slug: /client/react/useQuery
 ---
 
+`useQuery` is the primary hook for fetching and subscribing to data in your app.
+
+It works similarly to `@tanstack/react-query`'s `useQuery`, but with some `trpc` specific options and additional features like streaming.
+
 :::note
-The hooks provided by `@trpc/react-query` are a thin wrapper around @tanstack/react-query. For in-depth information about options and usage patterns, refer to their docs on [queries](https://tanstack.com/query/v5/docs/framework/react/guides/queries).
+For in-depth information about options and usage patterns, refer to the Tanstack Query docs on [queries](https://tanstack.com/query/v5/docs/framework/react/guides/queries).
 :::
+
+## Signature
 
 ```tsx
 function useQuery(
@@ -37,7 +43,7 @@ If you need to set any options but don't want to pass any input, you can pass `u
 
 You'll notice that you get autocompletion on the `input` based on what you have set in your `input` schema on your backend.
 
-### Example
+## Example usage
 
 <details>
 <summary>Backend code</summary>
