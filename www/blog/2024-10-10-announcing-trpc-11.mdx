@@ -27,6 +27,10 @@ Since our last major version release in November 2022, the tRPC community has se
 
 For new projects, you can get up and running with an [example application](https://trpc.io/awesome#-starting-points-example-projects-etc) to learn about tRPC v11. For projects still on tRPC v10, [visit the v11 migration guide](https://trpc.io/docs/v11/migrate-from-v10-to-v11).
 
+## Changes in how we release tRPC
+
+tRPC has always followed the [SemVer](https://semver.org/) versioning scheme, but honestly this is hard work with little benefit to the way that tRPC releases work, and our time on the `@next` tag has taught us a way we prefer. Going forward we'll continue to use major version numbers for breaking changes, but we'll only have a single incrementing number after this. This means that patches and enhancements will both be treated equally, allowing us to release with a faster cadence as improvements come ready. For you this means you don't need to consider minor/patch versions, we'll always aim for 0 breaking changes during a major version so you just update to the latest release on your major.
+
 ## Overview of changes
 
 v11 is a largely backward-compatible release with v10, but it brings a lot of new features and improvements. Here are some of the highlights:
@@ -60,6 +64,23 @@ TODO: code example
 We've introduced a new hook called `useSuspenseQueries` which allows you to fetch multiple queries in parallel and suspend until all queries are resolved. When writing `Fetch on Render` style applications, a possible foot-gun is where you need to run several suspense queries at once and you end up with a waterfall. `useSuspenseQueries` is a way to put this problem further off without need to rewrite to `Render as you Fetch` style with prefetching.
 
 TODO: code example
+
+#### Shorthand Router Definitions
+
+We've introduced a new shorthand syntax for defining your router to simplify the process of defining your routes. [Docs](/docs/server/merging-routers#inline-sub-router)
+
+```ts
+const appRouter = router({
+  // Shorthand plain object for creating a sub-router
+  nested1: {
+    proc: publicProcedure.query(() => '...'),
+  },
+  // Equivalent of:
+  nested2: router({
+    proc: publicProcedure.query(() => '...'),
+  }),
+});
+```
 
 ### Improvements to Subscriptions
 
