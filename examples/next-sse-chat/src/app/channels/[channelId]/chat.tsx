@@ -40,7 +40,7 @@ function SubscriptionStatus(props: {
             // treat idle and connecting the same
             return (
               <div>
-                Connecting... {/* Using `isError` for less rerenders */}
+                Connecting...
                 {subscription.connectionError
                   ? '(There are connection problems)'
                   : ''}{' '}
