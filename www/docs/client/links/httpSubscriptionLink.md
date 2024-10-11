@@ -73,8 +73,10 @@ If the client and server are not on the same domain, you can use `withCredential
 // [...]
 unstable_httpSubscriptionLink({
   url: 'https://example.com/api/trpc',
-  eventSourceOptions: {
-    withCredentials: true, // <---
+  eventSourceOptions() {
+    return {
+      withCredentials: true, // <---
+    };
   },
 });
 ```
@@ -112,6 +114,77 @@ const trpc = createTRPCClient<AppRouter>({
               authorization: 'Bearer supersecret',
             },
           }; // you either need to typecast to `EventSourceInit` or use `as any` or override the types by a `declare global` statement
+        },
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000',
+      }),
+    }),
+  ],
+});
+```
+
+### Updating configuration on an active connection {#updatingConfig}
+
+Since `httpSubscriptionLink` is built on SSE via `EventSource`, connections which encounter errors such as network failures or bad response codes will be seamlessly retried. EventSource cannot re-run the `eventSourceOptions()` or `url()` options to update its configuration though, for instance where authentication has expired since the last connection.
+
+We support fully restarting the connection when an error occurs.
+
+:::caution
+Note that this will cause the `EventSource` to be re-created from scratch and any [`tracked()`](../../server/subscriptions.md#tracked)-events to be lost.
+:::
+
+```tsx
+import {
+  createTRPCClient,
+  httpBatchLink,
+  splitLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
+import {
+  EventSourcePolyfill,
+  EventSourcePolyfillInit,
+} from 'event-source-polyfill';
+import type { AppRouter } from '../server/index.js';
+
+// polyfill EventSource
+globalThis.EventSource = EventSourcePolyfill;
+
+// Initialize the tRPC client
+const trpc = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: unstable_httpSubscriptionLink({
+        url: async () => {
+          // calculate the latest URL if needed...
+          return getAuthenticatedUri();
+        },
+        eventSourceOptions: async () => {
+          // ...or maybe renew an access token
+          const token = await auth.getOrRenewToken();
+
+          return {
+            headers: {
+              authorization: 'Bearer ' + token,
+            },
+          } as EventSourcePolyfillInit;
+        },
+
+        // In this example we handle an authentication failure
+        experimental_shouldRecreateOnError(opts) {
+          let willRestart = false;
+          if (opts.type === 'event') {
+            const ev = opts.event;
+            willRestart =
+              'status' in ev &&
+              typeof ev.status === 'number' &&
+              [401, 403].includes(ev.status);
+          }
+          if (willRestart) {
+            console.log('Restarting EventSource due to 401/403 error');
+          }
+          return willRestart;
         },
       }),
       false: httpBatchLink({
@@ -229,5 +302,22 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * @see https://trpc.io/docs/v11/data-transformers
    **/
   transformer?: DataTransformerOptions;
+  /**
+   * For a given error, should we reinitialize the underlying EventSource?
+   *
+   * This is useful where a long running subscription might be interrupted by a recoverable network error,
+   * but the existing authorization in a header or URI has expired in the mean-time
+   */
+  experimental_shouldRecreateOnError?: (
+    opts:
+      | {
+          type: 'event';
+          event: Event;
+        }
+      | {
+          type: 'serialized-error';
+          error: unknown;
+        },
+  ) => boolean | Promise<boolean>;
 };
 ```

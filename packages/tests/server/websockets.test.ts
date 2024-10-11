@@ -110,9 +110,14 @@ function factory(config?: {
             emit.next(data);
           };
           ee.on('server:msg', onMessage);
+          const onError = (error: unknown) => {
+            emit.error(error)
+          }
+          ee.on('observable:error', onError)
           return () => {
             subscriptionEnded();
             ee.off('server:msg', onMessage);
+            ee.off('observable:error', onError);
           };
         });
         ee.emit('subscription:created');
@@ -258,6 +263,74 @@ test('basic subscription test (observable)', async () => {
       Array [
         Object {
           "id": "2",
+        },
+      ],
+    ]
+  `);
+
+  subscription.unsubscribe();
+
+  await waitFor(() => {
+    expect(ee.listenerCount('server:msg')).toBe(0);
+    expect(ee.listenerCount('server:error')).toBe(0);
+  });
+  await close();
+});
+
+test('subscription observable with error', async () => {
+  const { client, close, ee } = factory();
+  ee.once('subscription:created', () => {
+    setTimeout(() => {
+      // two emits to be sure an error is triggered in order 
+      ee.emit('server:msg', {
+        id: '1',
+      });
+      ee.emit('server:msg', {
+        id: '2',
+      });
+      ee.emit('observable:error', new Error("MyError"));
+    });
+  });
+  const onStartedMock = vi.fn();
+  const onDataOrErrorMock = vi.fn();
+  const subscription = client.onMessageObservable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataOrErrorMock({ data });
+    },
+    onError(error) {
+      onDataOrErrorMock({ error });
+    },
+  });
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+    expect(onDataOrErrorMock).toHaveBeenCalledTimes(3);
+  });
+
+  expect(onDataOrErrorMock.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "data": Object {
+            "id": "1",
+          },
+        },
+      ],
+      Array [
+        Object {
+          "data": Object {
+            "id": "2",
+          },
+        },
+      ],
+      Array [
+        Object {
+          "error": [TRPCClientError: MyError],
         },
       ],
     ]

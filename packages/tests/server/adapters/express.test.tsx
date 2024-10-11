@@ -3,11 +3,18 @@ import { waitError } from '../___testHelpers';
 import type { Context } from './__router';
 import { router } from './__router';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
+import type { AnyRouter } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import type { NodeHTTPHandlerOptions } from '@trpc/server/adapters/node-http';
 import express from 'express';
 import fetch from 'node-fetch';
 
-async function startServer(maxBodySize?: number) {
+type CreateExpressContextOptions<TRouter extends AnyRouter> =
+  NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>;
+
+async function startServer(
+  opts?: Partial<CreateExpressContextOptions<typeof router>>,
+) {
   const createContext = (
     _opts: trpcExpress.CreateExpressContextOptions,
   ): Context => {
@@ -30,13 +37,24 @@ async function startServer(maxBodySize?: number) {
   const app = express();
 
   app.use(
-    '/trpc',
+    '/',
     trpcExpress.createExpressMiddleware({
       router,
-      maxBodySize: maxBodySize ?? Infinity,
       createContext,
+      ...opts,
     }),
   );
+  // not found middleware
+  app.use((_req, res, _next) => {
+    res.status(404).send({ error: 'Not found' });
+  });
+  // error middleware
+  // eslint-disable-next-line max-params
+  const errHandler: express.ErrorRequestHandler = (err, _req, res, _next) => {
+    res.status(500).send({ error: err.message });
+  };
+  app.use(errHandler);
+
   const { server, port } = await new Promise<{
     server: http.Server;
     port: number;
@@ -49,10 +67,11 @@ async function startServer(maxBodySize?: number) {
     });
   });
 
+  const url = `http://localhost:${port}`;
   const client = createTRPCClient<typeof router>({
     links: [
       httpBatchLink({
-        url: `http://localhost:${port}/trpc`,
+        url,
         fetch: fetch as any,
       }),
     ],
@@ -65,9 +84,9 @@ async function startServer(maxBodySize?: number) {
           err ? reject(err) : resolve();
         }),
       ),
-    port,
     router,
     client,
+    url,
   };
 }
 
@@ -146,7 +165,9 @@ test('error query', async () => {
 });
 
 test('payload too large', async () => {
-  const t = await startServer(100);
+  const t = await startServer({
+    maxBodySize: 100,
+  });
 
   const err = await waitError(
     () => t.client.exampleMutation.mutate({ payload: 'a'.repeat(101) }),
@@ -159,4 +180,46 @@ test('payload too large', async () => {
   await t.client.exampleMutation.mutate({ payload: 'a'.repeat(75) });
 
   t.close();
+});
+
+test('bad url does not crash server', async () => {
+  const t = await startServer({
+    router,
+  });
+
+  const res = await fetch(`${t.url}`, {
+    method: 'GET',
+    headers: {
+      // use faux host header
+      Host: 'hotmail-com.olc.protection.outlook.com%3A25',
+    },
+  });
+  expect(res.ok).toBe(false);
+
+  const json: any = await res.json();
+
+  if (json.error.data.stack) {
+    json.error.data.stack = '[redacted]';
+  }
+  expect(json).toMatchInlineSnapshot(`
+    Object {
+      "error": Object {
+        "code": -32600,
+        "data": Object {
+          "code": "BAD_REQUEST",
+          "httpStatus": 400,
+          "stack": "[redacted]",
+        },
+        "message": "Invalid URL",
+      },
+    }
+  `);
+
+  expect(res.status).toBe(400);
+
+  expect(await t.client.hello.query()).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello world",
+    }
+  `);
 });

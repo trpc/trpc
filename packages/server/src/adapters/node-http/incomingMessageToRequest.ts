@@ -1,5 +1,6 @@
 import type * as http from 'http';
 import { TRPCError } from '../../@trpc/server';
+import { toURL } from '../../http';
 
 export interface IncomingMessageWithBody extends http.IncomingMessage {
   /**
@@ -67,7 +68,7 @@ export function incomingMessageToRequest(
 ): Request {
   const ac = new AbortController();
   const headers = new Headers(req.headers as any);
-  const url = `http://${headers.get('host')}${req.url}`;
+  const url = toURL(`http://${headers.get('host')}${req.url}`);
   req.once('aborted', () => {
     ac.abort();
   });

@@ -24,8 +24,7 @@ import type {
   TRPCResultMessage,
 } from '../@trpc/server/rpc';
 import { parseConnectionParamsFromUnknown } from '../http';
-import { isObservable } from '../observable';
-import { observableToAsyncIterable } from '../observable/observable';
+import { isObservable, observableToAsyncIterable } from '../observable';
 // eslint-disable-next-line no-restricted-imports
 import {
   isAsyncIterable,

@@ -1,6 +1,9 @@
 import { EventEmitter } from 'events';
 import { initTRPC } from '@trpc/server';
 import * as trpcNext from '@trpc/server/adapters/next';
+import type { TRPCResponse } from '@trpc/server/rpc';
+import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import';
+import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 // @ts-expect-error - no types
 import _request from 'supertest';
 
@@ -50,21 +53,31 @@ function mockReq({
 function mockRes() {
   const res = new EventEmitter() as any;
 
-  const json = vi.fn(() => res);
+  type ResponseShape = TRPCResponse<unknown, DefaultErrorShape>;
+  const waitResponse = createDeferred<ResponseShape | null>();
+
   const setHeader = vi.fn(() => res);
-  const end = vi.fn(() => res);
+  const end = vi.fn((data) => {
+    if (!data) {
+      waitResponse.resolve(null);
+      return res;
+    }
+    const json = JSON.parse(data) as ResponseShape;
+    if ('error' in json && json.error?.data.stack) {
+      json.error.data.stack = '[redacted]';
+    }
+    waitResponse.resolve(json);
+    return res;
+  });
   const write = vi.fn(() => res);
   res.setHeader = setHeader;
   res.end = end;
   res.write = write;
-  res.json = json;
   res.statusCode = 200;
 
   return {
     res,
-    json,
     setHeader,
-    end,
     text: () => {
       return res.write.mock.calls
         .map((args: any) => {
@@ -72,6 +85,7 @@ function mockRes() {
         })
         .join('');
     },
+    waitResponse: waitResponse.promise,
   };
 }
 test('bad setup', async () => {
@@ -86,16 +100,18 @@ test('bad setup', async () => {
   });
 
   const { req } = mockReq({ query: {} });
-  const { res, json } = mockRes();
+  const { res, waitResponse } = mockRes();
 
-  await handler(req, res);
+  handler(req, res);
 
-  const responseJson: any = (json.mock.calls[0] as any)[0];
-  expect(responseJson.ok).toMatchInlineSnapshot(`undefined`);
-  expect(responseJson.error.message).toMatchInlineSnapshot(
+  const json = (await waitResponse)!;
+
+  assert('error' in json);
+
+  expect(json.error.message).toMatchInlineSnapshot(
     `"Query "trpc" not found - is the file named \`[trpc]\`.ts or \`[...trpc].ts\`?"`,
   );
-  expect(responseJson.statusCode).toMatchInlineSnapshot(`undefined`);
+  expect(json.error?.data?.httpStatus).toMatchInlineSnapshot(`500`);
 });
 
 describe('ok request', () => {
@@ -185,9 +201,10 @@ test('HEAD request', async () => {
     },
     method: 'HEAD',
   });
-  const { res } = mockRes();
+  const { res, waitResponse } = mockRes();
 
-  await handler(req, res);
+  handler(req, res);
+  await waitResponse;
 
   expect(res.statusCode).toBe(204);
 });
@@ -209,9 +226,11 @@ test('PUT request (fails)', async () => {
     },
     method: 'PUT',
   });
-  const { res } = mockRes();
+  const { res, waitResponse } = mockRes();
 
-  await handler(req, res);
+  handler(req, res);
+
+  await waitResponse;
 
   expect(res.statusCode).toBe(405);
 });
@@ -238,9 +257,11 @@ test('middleware intercepts request', async () => {
     },
     method: 'PUT',
   });
-  const { res } = mockRes();
+  const { res, waitResponse } = mockRes();
 
-  await handler(req, res);
+  handler(req, res);
+
+  await waitResponse;
 
   expect(res.statusCode).toBe(419);
 });
@@ -265,9 +286,11 @@ test('middleware passes the request', async () => {
     },
     method: 'PUT',
   });
-  const { res } = mockRes();
+  const { res, waitResponse } = mockRes();
 
-  await handler(req, res);
+  handler(req, res);
+
+  await waitResponse;
 
   expect(res.statusCode).toBe(404);
 });
