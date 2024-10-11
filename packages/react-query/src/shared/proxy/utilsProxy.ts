@@ -10,6 +10,7 @@ import type {
   RefetchQueryFilters,
   ResetOptions,
   SetDataOptions,
+  SkipToken,
   Updater,
 } from '@tanstack/react-query';
 import type { TRPCClientError } from '@trpc/client';
@@ -63,7 +64,7 @@ type DecorateQueryProcedure<
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
    */
   queryOptions(
-    input: inferProcedureInput<TProcedure>,
+    input: inferProcedureInput<TProcedure> | SkipToken,
     opts?: UndefinedTRPCQueryOptionsIn<
       inferTransformedProcedureOutput<TRoot, TProcedure>,
       TRPCClientError<TRoot>
@@ -76,7 +77,7 @@ type DecorateQueryProcedure<
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
    */
   queryOptions(
-    input: inferProcedureInput<TProcedure>,
+    input: inferProcedureInput<TProcedure> | SkipToken,
     opts?: DefinedTRPCQueryOptionsIn<
       inferTransformedProcedureOutput<TRoot, TProcedure>,
       TRPCClientError<TRoot>
@@ -90,7 +91,7 @@ type DecorateQueryProcedure<
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
    */
   infiniteQueryOptions(
-    input: inferProcedureInput<TProcedure>,
+    input: inferProcedureInput<TProcedure> | SkipToken,
     opts?: UndefinedTRPCInfiniteQueryOptionsIn<
       inferProcedureInput<TProcedure>,
       inferTransformedProcedureOutput<TRoot, TProcedure>,
@@ -105,7 +106,7 @@ type DecorateQueryProcedure<
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
    */
   infiniteQueryOptions(
-    input: inferProcedureInput<TProcedure>,
+    input: inferProcedureInput<TProcedure> | SkipToken,
     opts?: DefinedTRPCInfiniteQueryOptionsIn<
       inferProcedureInput<TProcedure>,
       inferTransformedProcedureOutput<TRoot, TProcedure>,

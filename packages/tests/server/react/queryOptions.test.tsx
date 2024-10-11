@@ -101,6 +101,28 @@ describe('queryOptions', () => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });
+
+  test('disabling query with skipToken', async () => {
+    const { useTRPC, App } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+      const query1 = useQuery(trpc.post.byId.queryOptions(skipToken));
+
+      type TData = (typeof query1)['data'];
+      expectTypeOf<TData>().toMatchTypeOf<'__result' | undefined>();
+
+      return <pre>{query1.status}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`pending`);
+    });
+  });
 });
 
 describe('infiniteQueryOptions', () => {

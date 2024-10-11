@@ -1,6 +1,7 @@
 import {
   infiniteQueryOptions,
   queryOptions,
+  skipToken,
   type QueryClient,
 } from '@tanstack/react-query';
 import type { CreateTRPCClient } from '@trpc/client';
@@ -36,15 +37,19 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
 
   return {
     infiniteQueryOptions: (path, queryKey, opts) => {
+      const inputIsSkipToken = queryKey[1]?.input === skipToken;
+
       return Object.assign(
         infiniteQueryOptions({
           ...opts,
           initialData: opts?.initialData as any,
           queryKey,
-          queryFn: ({ pageParam, direction }) =>
-            untypedClient.query(
-              ...getClientArgs(queryKey, opts, { pageParam, direction }),
-            ),
+          queryFn: inputIsSkipToken
+            ? skipToken
+            : ({ pageParam, direction }) =>
+                untypedClient.query(
+                  ...getClientArgs(queryKey, opts, { pageParam, direction }),
+                ),
           initialPageParam: (opts?.initialCursor as any) ?? null,
         }),
         { trpc: createTRPCOptionsResult({ path }) },
@@ -52,12 +57,16 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     },
 
     queryOptions: (path, queryKey, opts) => {
+      const inputIsSkipToken = queryKey[1]?.input === skipToken;
+
       return Object.assign(
         queryOptions({
           ...opts,
           initialData: opts?.initialData as any,
           queryKey,
-          queryFn: () => untypedClient.query(...getClientArgs(queryKey, opts)),
+          queryFn: inputIsSkipToken
+            ? skipToken
+            : () => untypedClient.query(...getClientArgs(queryKey, opts)),
         }),
         { trpc: createTRPCOptionsResult({ path }) },
       );
