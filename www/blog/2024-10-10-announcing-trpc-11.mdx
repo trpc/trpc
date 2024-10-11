@@ -4,14 +4,14 @@ title: Announcing tRPC v11
 author: tRPC
 author_title: The tRPC Team
 author_url: https://trpc.io/
-author_image_url: img/logo.svg
+author_image_url: /img/logo.svg
 ---
 
 {/* // TODO: can't make author_image_url work */}
 
 import { GithubSponsorButton } from '@site/src/components/GithubSponsorButton';
 
-Although tRPC v11 has been stable for a long time via the `@next` tag, we've been kinda addicted to adding new features and goodies over the last 12 months in preparation for a big release. Today, we're excited to announce the official release of tRPC v11. This release is the result of months of hard work by [Katt](https://twitter.com/alexdotjs), the core team, and the community. We're excited to share the new features and improvements with you.
+Although tRPC v11 has been stable for a long time via the `@next` tag, we've been kinda addicted to adding new features and goodies over the last 12 months in preparation for a big release. Today, we're excited to announce the official release of tRPC v11! This release is the result of months of hard work by [Katt](https://twitter.com/alexdotjs), the core team, and the community. We're excited to share all the new features and improvements with you.
 
 {/* truncate */}
 
@@ -23,7 +23,7 @@ Since our last major version release in November 2022, the tRPC community has se
 - [100s of contributors](https://github.com/trpc/trpc/graphs/contributors)
 - [An _awesome_ ecosystem of extensions, examples, and content](https://trpc.io/awesome)
 
-**With the launch of tRPC v11**, we're excited to share that v11 is already being used in production by many large TypeScript projects thanks to its stable evolution on `@next`. This official release though marks the end of an exciting development cycle which brings support for react-query v5, nextjs app router, and a lot of other goodies.
+**With the launch of tRPC v11**, we're excited to share that v11 is already being used in production by many large TypeScript projects thanks to its stable evolution on `@next`. This official release though marks the end of an exciting development cycle which brings support for Tanstack Query v5, Next.js App Router, and a lot of other goodies.
 
 For new projects, you can get up and running with an [example application](https://trpc.io/awesome#-starting-points-example-projects-etc) to learn about tRPC v11. For projects still on tRPC v10, [visit the v11 migration guide](https://trpc.io/docs/v11/migrate-from-v10-to-v11).
 
@@ -31,21 +31,59 @@ For new projects, you can get up and running with an [example application](https
 
 v11 is a largely backward-compatible release with v10, but it brings a lot of new features and improvements. Here are some of the highlights:
 
-### React Query v5 support
+### TanStack Query v5 support
 
-When [Tanstack Query v5](https://tanstack.com/blog/announcing-tanstack-query-v5) was released it necessitated some breaking changes within tRPC's react-query integration. This has been available since quite early on via the `@next` tag, but now it's officially released. Many projects have already chosen to upgrade over recent months and are enjoying the benefits of full React Suspense support and [many other improvements](https://tanstack.com/blog/announcing-tanstack-query-v5).
+When [TanStack Query v5](https://tanstack.com/blog/announcing-tanstack-query-v5) was released it necessitated some breaking changes within tRPC's react-query integration. This has been available since quite early on via the `@next` tag, but now it's officially released. Many projects have already chosen to upgrade over recent months and are enjoying the benefits of full React Suspense support and many other improvements, for advice on migrating your tRPC React client code you can follow [TanStack Query's own migration guide](https://tanstack.com/query/v5/docs/react/guides/migrating-to-v5).
+
+TODO: some code example
+
+### Content Types
+
+One of our most requested features is the ability to send and receive more than simply JSON data. With tRPC v11, you can now send and receive data in a variety of content types, including JSON, form data, and blobs.
+
+TODO: code example
+
+### Next.js app router
+
+{/* TODO: @julius input needed here */}
+
+TODO:
+
+### Streaming Responses from Queries and Mutations
+
+We've introduced [httpBatchStreamLink](/docs/client/links/httpBatchStreamLink), which allows you to stream responses from queries. This is helpful when working with large datasets or where you need to process data in real-time and dispatch to the frontend as you go. This is not a replacement for subscriptions, but is another option in your toolbelt.
+
+TODO: code example
+
+#### useSuspenseQueries
+
+We've introduced a new hook called `useSuspenseQueries` which allows you to fetch multiple queries in parallel and suspend until all queries are resolved. When writing `Fetch on Render` style applications, a possible foot-gun is where you need to run several suspense queries at once and you end up with a waterfall. `useSuspenseQueries` is a way to put this problem further off without need to rewrite to `Render as you Fetch` style with prefetching.
+
+TODO: code example
+
+### Improvements to Subscriptions
+
+Subscriptions are a great way to listen for real-time updates in your application. In tRPC v11, we've made several improvements to this feature-set
+
+#### Server-Sent Events based Subscriptions
+
+tRPC v11 introduces a new way to handle subscriptions using [Server-Sent Events (SSE)](/docs/server/subscriptions#websockets-or-server-sent-events). This is a great way to handle real-time updates in your application without the need for more complex WebSockets. The feature is still young and evolving so we're looking for further feedback from the community as it evolves.
+
+#### Generators in Subscriptions
+
+We've added support for JavaScript generators in subscriptions. This allows you to write more complex subscription handlers which can yield multiple values over time, and clean up when finished, in a very JS-native way.
+
+TODO: more details and code example
+
+#### Output Validators
+
+Subscriptions now support Output validators, improving the type-safety of your subscription handlers.
+
+TODO: code example
 
 ### Goodbye v9 `.interop()`-mode
 
 In tRPC v10, we introduced the `.interop()`-mode to provide a smooth migration path for tRPC v9 users. With tRPC v11, we've removed the `.interop()`-mode. If you're still using the `.interop()`-mode, you can use the [v10 migration guide](https://trpc.io/docs/v10/migrate-from-v9-to-v10) to complete your transition to the APIs used by tRPC today.
-
-### Next.js app router
-
-{/*  */}
-
-### SSE Based Subscriptions
-
-tRPC v11 introduces a new way to handle subscriptions using [Server-Sent Events (SSE)](/docs/server/subscriptions#websockets-or-server-sent-events). This is a great way to handle real-time updates in your application without the need for more complex WebSockets. The feature is still young and evolving so we're looking for further feedback from the community as it evolves.
 
 ## Migrating to v11
 
@@ -53,11 +91,7 @@ If you're currently using tRPC v10, you can follow the [migration guide](https:/
 
 ## Thank you!
 
-The core team and I want you to know: we're just getting started. We're already busy experimenting with [React Server Components](https://github.com/reactjs/rfcs/pull/229) and Next.js 13.
-
-I also want to give a huuuge shoutout to [Sachin](https://twitter.com/s4chinraja), [Julius](https://twitter.com/jullerino), [James](https://twitter.com/jlalmes), [Ahmed](https://twitter.com/ixahmedxii), [Chris](https://twitter.com/trashh_dev), [Theo](https://twitter.com/t3dotgg), [Anthony](https://twitter.com/shewDev), and [all the contributors who helped make this release possible](https://github.com/trpc/trpc#all-contributors).
-
-Thanks for using and supporting tRPC.
+From the whole tRPC Core Team, thank you for using and supporting tRPC.
 
 ---
 
