@@ -1,7 +1,8 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, ErrorComponent, Link } from '@tanstack/react-router';
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { NotFound } from '~/components/NotFound';
-import { trpc } from '~/trpc/react';
+import { useTRPC } from '~/trpc/react';
 
 export const Route = createFileRoute('/posts/$postId')({
   loader: async ({ params: { postId }, context }) => {
@@ -25,7 +26,11 @@ export function PostErrorComponent({ error }: ErrorComponentProps) {
 
 function PostComponent() {
   const { postId } = Route.useParams();
-  const [, postQuery] = trpc.post.byId.useSuspenseQuery({ id: postId });
+  const trpc = useTRPC();
+
+  const postQuery = useSuspenseQuery(
+    trpc.post.byId.queryOptions({ id: postId }),
+  );
 
   return (
     <div className="space-y-2">

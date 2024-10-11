@@ -1,5 +1,6 @@
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, Outlet } from '@tanstack/react-router';
-import { trpc } from '~/trpc/react';
+import { useTRPC } from '~/trpc/react';
 
 export const Route = createFileRoute('/posts')({
   loader: async ({ context }) => {
@@ -10,7 +11,8 @@ export const Route = createFileRoute('/posts')({
 });
 
 function PostsComponent() {
-  const [, postsQuery] = trpc.post.list.useSuspenseQuery();
+  const trpc = useTRPC();
+  const postsQuery = useSuspenseQuery(trpc.post.list.queryOptions());
 
   return (
     <div className="flex gap-2 p-2">

@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { trpc } from '~/trpc/react';
+import { useTRPC } from '~/trpc/react';
 import { PostErrorComponent } from './posts.$postId';
 
 export const Route = createFileRoute('/posts/$postId/deep')({
@@ -19,9 +19,10 @@ export const Route = createFileRoute('/posts/$postId/deep')({
 
 function PostDeepComponent() {
   const { postId } = Route.useParams();
+  const trpc = useTRPC();
 
   const postQuery = useSuspenseQuery(
-    trpc.post.byId.useQueryOptions({ id: postId }),
+    trpc.post.byId.queryOptions({ id: postId }),
   );
   postQuery.data;
   //        ^?
