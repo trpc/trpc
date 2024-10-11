@@ -46,7 +46,12 @@ export const publicProcedure = t.procedure.use(
         Math.floor(Math.random() * (max - min + 1)) + min;
 
       const delay = randomNumber(300, 1_000);
-      console.debug('ℹ️ doing artificial delay of', delay, 'ms for', opts.path);
+      console.debug(
+        'ℹ️ doing artificial delay of',
+        delay,
+        'ms before returning',
+        opts.path,
+      );
 
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
