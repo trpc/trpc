@@ -7,7 +7,7 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
-import type { NextApiRequest, NextApiResponse } from 'next';
+import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 // @trpc/server
 import type { AnyRouter } from '../@trpc/server';
 // @trpc/server
@@ -34,10 +34,9 @@ type SyncNextApiHandler = (req: NextApiRequest, res: NextApiResponse) => void;
 
 export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
-): SyncNextApiHandler {
+): NextApiHandler {
   let path = '';
-
-  return (req, res) => {
+  const handler: SyncNextApiHandler = (req, res) => {
     try {
       path = run(() => {
         if (typeof req.query['trpc'] === 'string') {
@@ -68,4 +67,6 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
       })(cause);
     }
   };
+
+  return handler;
 }
