@@ -58,7 +58,6 @@ type ResolverDef = {
   transformer: boolean;
   errorShape: any;
 };
-
 /**
  * @internal
  */
