@@ -328,7 +328,7 @@ describe('connection state - http', () => {
     expect(diff(queryResult)).toMatchInlineSnapshot(`
       Array [
         Object {
-          "connectionError": null,
+          "connectionError": [TRPCClientError: Unknown error],
           "connectionState": "connecting",
           "data": 30,
           "error": undefined,
@@ -336,6 +336,7 @@ describe('connection state - http', () => {
           "status": "connecting",
         },
         Object {
+          "connectionError": null,
           "connectionState": "pending",
           "status": "pending",
         },
