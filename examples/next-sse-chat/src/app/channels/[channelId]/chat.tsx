@@ -38,7 +38,6 @@ function SubscriptionStatus(props: {
           case 'idle':
           case 'connecting':
             // treat idle and connecting the same
-            console.log({ ...subscription });
             return (
               <div>
                 Connecting...
