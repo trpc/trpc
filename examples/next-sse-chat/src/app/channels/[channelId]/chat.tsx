@@ -7,7 +7,7 @@ import { Textarea } from '~/components/input';
 import { trpc } from '~/lib/trpc';
 import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
-import { useSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import * as React from 'react';
 import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
 
@@ -99,6 +99,7 @@ export function Chat(props: Readonly<{ channelId: string }>) {
     channelId,
   });
   const scrollRef = React.useRef<HTMLDivElement>(null);
+
   const session = useSession().data;
 
   return (
@@ -199,17 +200,28 @@ export function Chat(props: Readonly<{ channelId: string }>) {
         </div>
 
         <div className="border-t bg-white p-2 dark:border-gray-800 dark:bg-gray-900">
-          <AddMessageForm
-            signedIn={!!session?.user}
-            channelId={channelId}
-            onMessagePost={() => {
-              scrollRef.current?.scroll({
-                // `top: 0` is actually the bottom of the chat due to `flex-col-reverse`
-                top: 0,
-                behavior: 'smooth',
-              });
-            }}
-          />
+          {session ? (
+            <AddMessageForm
+              channelId={channelId}
+              onMessagePost={() => {
+                scrollRef.current?.scroll({
+                  // `top: 0` is actually the bottom of the chat due to `flex-col-reverse`
+                  top: 0,
+                  behavior: 'smooth',
+                });
+              }}
+            />
+          ) : (
+            <Button
+              className="w-full"
+              variant="ghost"
+              onClick={() => {
+                void signIn();
+              }}
+            >
+              Sign in to post a message
+            </Button>
+          )}
         </div>
       </div>
     </main>
@@ -219,7 +231,6 @@ export function Chat(props: Readonly<{ channelId: string }>) {
 function AddMessageForm(props: {
   onMessagePost: () => void;
   channelId: string;
-  signedIn: boolean;
 }) {
   const { channelId } = props;
   const addPost = trpc.post.add.useMutation();
@@ -261,10 +272,7 @@ function AddMessageForm(props: {
       >
         <Textarea
           className="pr-12"
-          disabled={!props.signedIn}
-          placeholder={
-            props.signedIn ? 'Type your message...' : 'Sign in to post'
-          }
+          placeholder="Type your message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={message.split(/\r|\n/).length}
