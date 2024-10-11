@@ -1,4 +1,8 @@
-import { behaviorSubject, observable } from '@trpc/server/observable';
+import {
+  behaviorSubject,
+  distinctUntilDeepChanged,
+  observable,
+} from '@trpc/server/observable';
 import type { TRPCErrorResponse } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
@@ -100,13 +104,15 @@ export function unstable_httpSubscriptionLink<
           error: null,
         });
 
-        const connectionSub = connectionState.subscribe({
-          next(state) {
-            observer.next({
-              result: state,
-            });
-          },
-        });
+        const connectionSub = connectionState
+          .pipe(distinctUntilDeepChanged())
+          .subscribe({
+            next(state) {
+              observer.next({
+                result: state,
+              });
+            },
+          });
         run(async () => {
           for await (const chunk of eventSourceStream) {
             switch (chunk.type) {
@@ -152,13 +158,18 @@ export function unstable_httpSubscriptionLink<
                 break;
               }
               case 'connecting': {
-                if (connectionState.get().state !== 'connecting') {
-                  connectionState.next({
-                    type: 'state',
-                    state: 'connecting',
-                    error: null,
-                  });
+                const lastState = connectionState.get();
+
+                let error = chunk.event && TRPCClientError.from(chunk.event);
+                if (!error && lastState.state === 'connecting') {
+                  error = lastState.error;
                 }
+
+                connectionState.next({
+                  type: 'state',
+                  state: 'connecting',
+                  error,
+                });
                 break;
               }
             }

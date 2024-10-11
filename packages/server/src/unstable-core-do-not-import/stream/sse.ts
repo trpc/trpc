@@ -204,6 +204,7 @@ interface ConsumerStreamResultOpened extends ConsumerStreamResultBase {
 
 interface ConsumerStreamResultConnecting extends ConsumerStreamResultBase {
   type: 'connecting';
+  event: Event | null;
 }
 
 type ConsumerStreamResult<TData> =
@@ -345,6 +346,7 @@ export function sseStreamConsumer<TData>(
             controller.enqueue({
               type: 'connecting',
               eventSource: es,
+              event,
             });
           }
         });
@@ -376,6 +378,7 @@ export function sseStreamConsumer<TData>(
     stream.controller.enqueue({
       type: 'connecting',
       eventSource,
+      event: null,
     });
   }
 

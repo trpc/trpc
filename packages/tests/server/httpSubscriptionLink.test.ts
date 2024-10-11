@@ -189,14 +189,14 @@ test(
     const onStarted =
       vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
     const onData = vi.fn<(args: number) => void>();
-    const onStateChange =
+    const onConnectionStateChange =
       vi.fn<
         (args: TRPCConnectionState<TRPCClientError<typeof ctx.router>>) => void
       >();
     const subscription = client.sub.iterableEvent.subscribe(undefined, {
       onStarted: onStarted,
       onData: onData,
-      onConnectionStateChange: onStateChange,
+      onConnectionStateChange,
     });
 
     await waitFor(() => {
@@ -233,7 +233,7 @@ test(
 
     subscription.unsubscribe();
 
-    expect(onStateChange.mock.calls).toMatchInlineSnapshot(`
+    expect(onConnectionStateChange.mock.calls).toMatchInlineSnapshot(`
       Array [
         Array [
           Object {
@@ -312,6 +312,11 @@ test('disconnect and reconnect with an event id', async () => {
   const onStarted =
     vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
   const onData = vi.fn<(args: { data: number; id: string }) => void>();
+
+  const onConnectionStateChange =
+    vi.fn<
+      (args: TRPCConnectionState<TRPCClientError<typeof ctx.router>>) => void
+    >();
   const subscription = client.sub.iterableInfinite.subscribe(
     {},
     {
@@ -319,6 +324,7 @@ test('disconnect and reconnect with an event id', async () => {
       onData(d) {
         onData(d);
       },
+      onConnectionStateChange,
     },
   );
 
@@ -347,7 +353,14 @@ test('disconnect and reconnect with an event id', async () => {
   await waitFor(() => {
     expect(es.readyState).toBe(EventSource.CONNECTING);
   });
+
   release();
+
+  const lastState = onConnectionStateChange.mock.calls.at(-1)![0];
+
+  expect(lastState.state).toBe('connecting');
+  expect(lastState.error).not.toBeNull();
+  expect(lastState.error).toMatchInlineSnapshot(`[TRPCClientError: Unknown error]`);
 
   await waitFor(
     () => {
