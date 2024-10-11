@@ -7,12 +7,15 @@ slug: /client/react/useSubscription
 
 The `useSubscription` hook can be used to subscribe to a [subscription](../../server/subscriptions.md) procedure on the server.
 
-## Options
+## Signature
+
+### Options
 
 :::tip
 
 - If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
 - If you pass `skipToken` from `@tanstack/react-query`, the subscription will be paused.
+- Have a look at our [SSE example](https://github.com/trpc/examples-next-sse-chat) for a complete example of how to use subscriptions
 
 :::
 
@@ -33,10 +36,7 @@ interface UseTRPCSubscriptionOptions<TOutput, TError> {
    */
   onData?: (data: TOutput) => void;
   /**
-   * Callback invoked when an **unrecoverable error** occurs
-   * and the subscription is closed.
-   * For recoverable errors, use `onConnectionStateChange`
-   * or the `connectionState`/`connectionError` fields on the result.
+   * Callback invoked when an **unrecoverable error** occurs and the subscription is stopped.
    */
   onError?: (error: TError) => void;
   /**
@@ -52,13 +52,18 @@ interface UseTRPCSubscriptionOptions<TOutput, TError> {
 
 ```
 
-## Return type
+### Return type
 
 ```ts
 type TRPCSubscriptionResult<TOutput, TError> = {
   /**
    * The current status of the subscription.
    * Will be one of: `'idle'`, `'connecting'`, `'pending'`, or `'error'`.
+   *
+   * - `idle`: subscription is disabled
+   * - `connecting`: trying to establish a connection
+   * - `pending`: connected to the server, receiving data
+   * - `error`: an error occurred and the subscription is stopped
    */
   status: 'idle' | 'connecting' | 'pending' | 'error';
   /**
@@ -93,7 +98,7 @@ import { trpc } from '../utils/trpc';
 export function MyComponent() {
   const [numbers, setNumbers] = React.useState<number[]>([]);
 
-  const { data, status } = trpc.onTimer.useSubscription(undefined, {
+  const result = trpc.onNumber.useSubscription(undefined, {
     onData: (num) => {
       setNumbers((prev) => [...prev, num]);
     },
@@ -111,6 +116,12 @@ export function MyComponent() {
           <li key={i}>{num}</li>
         ))}
       </ul>
+
+      {result.error && (
+        <button onClick={() => result.reset()}>
+          Something went wrong - restart the subscription
+        </button>
+      )}
     </div>
   );
 }
