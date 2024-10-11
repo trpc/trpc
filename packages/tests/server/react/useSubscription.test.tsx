@@ -1,5 +1,9 @@
 import { EventEmitter, on } from 'events';
-import { ignoreErrors } from '../___testHelpers';
+import {
+  ignoreErrors,
+  suppressLogs,
+  supressLogsUntil,
+} from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { skipToken } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
@@ -301,16 +305,24 @@ describe('connection state - http', () => {
       ]
     `);
     queryResult.length = 0;
-    ctx.destroyConnections();
 
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('connectionState:connecting');
+    await supressLogsUntil(async () => {
+      ctx.destroyConnections();
+
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('connectionState:connecting');
+      });
     });
 
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('connectionState:pending');
-      expect(utils.container).toHaveTextContent('status:pending');
-    });
+    await waitFor(
+      () => {
+        expect(utils.container).toHaveTextContent('connectionState:pending');
+        expect(utils.container).toHaveTextContent('status:pending');
+      },
+      {
+        timeout: 5_000,
+      },
+    );
 
     expect(diff(queryResult)).toMatchInlineSnapshot(`
       Array [

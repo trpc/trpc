@@ -239,6 +239,19 @@ export const suppressLogs = () => {
     console.error = error;
   };
 };
+
+/**
+ * Pause logging until the promise resolves or throws
+ */
+export const supressLogsUntil = async (fn: () => Promise<void>) => {
+  const release = suppressLogs();
+
+  try {
+    await fn();
+  } finally {
+    release();
+  }
+};
 export const ignoreErrors = async (fn: () => unknown) => {
   /* eslint-enable no-console */
   const release = suppressLogs();
