@@ -37,7 +37,18 @@ export const router = t.router;
  * Create an unprotected procedure
  * @see https://trpc.io/docs/v11/procedures
  **/
-export const publicProcedure = t.procedure;
+export const publicProcedure = t.procedure.use(
+  async function artificialDelayInDevelopment(opts) {
+    const res = opts.next(opts);
+
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('doing artificial delay of 500ms for', opts.path);
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    return res;
+  },
+);
 
 /**
  * @see https://trpc.io/docs/v11/merging-routers
