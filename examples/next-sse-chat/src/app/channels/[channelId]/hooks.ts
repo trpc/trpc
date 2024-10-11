@@ -98,10 +98,10 @@ export function useLivePosts(channelId: string) {
       },
       onError(err) {
         console.error('Subscription error:', err);
-        utils.post.infinite.invalidate();
 
         const lastMessageEventId = messages?.at(-1)?.id;
-        if (lastMessageEventId && lastEventId !== lastMessageEventId) {
+        if (lastMessageEventId) {
+          // We've lost the connection, let's resubscribe from the last message
           setLastEventId(lastMessageEventId);
         }
       },
