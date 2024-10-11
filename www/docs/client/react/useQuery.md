@@ -104,7 +104,8 @@ Since v11 we now support streaming queries when using the [`httpBatchStreamLink`
 When returning an async generators in a query, you will:
 
 - Get the results of the iterator in the `data`-property **as an array** which updates as the response comes in
-- The `status` will remain as `pending` until the full response has been received.
+- The `status` will be `success` as soon as the first chunk is received.
+- The `fetchStatus` property which will be `fetching` until the last chunk is received.
 
 ### Example
 
@@ -127,14 +128,25 @@ export type AppRouter = typeof appRouter;
 import { trpc } from '~/utils';
 
 export function MyComponent() {
-  const query = trpc.iterable.useQuery();
+  const result = trpc.iterable.useQuery();
 
   return (
     <div>
-      {query.data?.map((chunk, index) => (
+      {result.data?.map((chunk, index) => (
         <Fragment key={index}>{chunk}</Fragment>
       ))}
     </div>
   );
 }
 ```
+
+`result` properties while streaming:
+
+| `status`    | `fetchStatus` | `data`      |
+| ----------- | ------------- | ----------- |
+| `'pending'` | `'fetching'`  | `undefined` |
+| `'success'` | `'fetching'`  | `[]`        |
+| `'success'` | `'fetching'`  | `[1]`       |
+| `'success'` | `'fetching'`  | `[1, 2]`    |
+| `'success'` | `'fetching'`  | `[1, 2, 3]` |
+| `'success'` | `'idle'`      | `[1, 2, 3]` |
