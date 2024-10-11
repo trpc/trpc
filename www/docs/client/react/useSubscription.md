@@ -40,10 +40,6 @@ interface UseTRPCSubscriptionOptions<TOutput, TError> {
    */
   onError?: (error: TError) => void;
   /**
-   * Callback invoked when the connection state changes.
-   */
-  onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
-  /**
    * @deprecated Use a `skipToken` from `@tanstack/react-query` instead.
    * This will be removed in a future version.
    */

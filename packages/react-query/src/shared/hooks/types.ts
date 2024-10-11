@@ -29,7 +29,6 @@ import type {
   ConnectionErrorState,
   ConnectionIdleState,
   ConnectionPendingState,
-  TRPCConnectionState,
 } from '@trpc/client/unstable-internals';
 import type {
   AnyRouter,
@@ -187,7 +186,6 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
    * For recoverable errors, use `onStateChange` or the `connectionStatus / `connectionError` fields on the result
    */
   onError?: (err: TError) => void;
-  onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
 export interface UseTRPCSubscriptionConnectionIdleResult<_TError> {

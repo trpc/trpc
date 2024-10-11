@@ -426,8 +426,6 @@ export function createRootHooks<
             }
           },
           onConnectionStateChange: (result) => {
-            opts.onConnectionStateChange?.(result);
-
             const delta = {
               connectionState: result.state,
               connectionError: result.error,
