@@ -35,6 +35,10 @@ v11 is a largely backward-compatible release with v10, but it brings a lot of ne
 
 When [Tanstack Query v5](https://tanstack.com/blog/announcing-tanstack-query-v5) was released it necessitated some breaking changes within tRPC's react-query integration. This has been available since quite early on in the `@next` tag, but now it's officially release. Many projects have already chosen to upgrade over recent months and been enjoying the benefits of full React Suspense support and [many other improvements](https://tanstack.com/blog/announcing-tanstack-query-v5).
 
+### Goodbye v9 `.interop()`-mode
+
+In tRPC v10, we introduced the `.interop()`-mode to provide a smooth migration path for tRPC v9 users. With tRPC v11, we've removed the `.interop()`-mode. If you're still using the `.interop()`-mode, you can use the [v10 migration guide](https://trpc.io/docs/v10/migrate-from-v9-to-v10) to complete your transition to the APIs used by tRPC today.
+
 ### Next.js app router
 
 {/*  */}
