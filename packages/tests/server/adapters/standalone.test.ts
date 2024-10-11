@@ -244,18 +244,20 @@ test('bad url does not crash server', async () => {
 
   const json: any = await res.json();
 
-  if (json.data.stack) {
-    json.data.stack = '[redacted]';
+  if (json.error.data.stack) {
+    json.error.data.stack = '[redacted]';
   }
   expect(json).toMatchInlineSnapshot(`
     Object {
-      "code": -32600,
-      "data": Object {
-        "code": "BAD_REQUEST",
-        "httpStatus": 400,
-        "stack": "[redacted]",
+      "error": Object {
+        "code": -32600,
+        "data": Object {
+          "code": "BAD_REQUEST",
+          "httpStatus": 400,
+          "stack": "[redacted]",
+        },
+        "message": "Invalid URL",
       },
-      "message": "Invalid URL",
     }
   `);
 

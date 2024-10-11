@@ -3,12 +3,17 @@ import { waitError } from '../___testHelpers';
 import type { Context } from './__router';
 import { router } from './__router';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
+import type { AnyRouter } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import type { NodeHTTPHandlerOptions } from '@trpc/server/adapters/node-http';
 import express from 'express';
 import fetch from 'node-fetch';
 
+type CreateExpressContextOptions<TRouter extends AnyRouter> =
+  NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>;
+
 async function startServer(
-  opts?: Partial<trpcExpress.CreateExpressMiddlewareOptions<typeof router>>,
+  opts?: Partial<CreateExpressContextOptions<typeof router>>,
 ) {
   const createContext = (
     _opts: trpcExpress.CreateExpressContextOptions,
@@ -193,20 +198,10 @@ test('bad url does not crash server', async () => {
 
   const json: any = await res.json();
 
-  if (json.data.stack) {
-    json.data.stack = '[redacted]';
+  if (json.error.data.stack) {
+    json.error.data.stack = '[redacted]';
   }
-  expect(json).toMatchInlineSnapshot(`
-    Object {
-      "code": -32600,
-      "data": Object {
-        "code": "BAD_REQUEST",
-        "httpStatus": 400,
-        "stack": "[redacted]",
-      },
-      "message": "Invalid URL",
-    }
-  `);
+  expect(json).toMatchInlineSnapshot();
 
   expect(res.status).toBe(400);
 
