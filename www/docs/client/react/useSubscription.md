@@ -5,67 +5,85 @@ sidebar_label: useSubscription()
 slug: /client/react/useSubscription
 ---
 
-```tsx
-function useSubscription(
-  input: TInput | SkipToken,
-  opts?: UseTRPCSubscriptionOptions
-) => TRPCSubscriptionResult;
-
-interface UseTRPCSubscriptionOptions {
-  enabled?: boolean;
-  onData?: (data: TOutput) => void;
-  onError?: (error: TError) => void;
-  onStarted?: () => void;
-  onStateChange?: (state: TRPCConnectionState<TError>) => void;
-}
-
-type TRPCSubscriptionResult<TOutput, TError> = {
-  status: 'idle' | 'connecting' | 'pending' | 'error';
-  data: TOutput | undefined;
-  error: TError | undefined;
-  connectionState: 'idle' | 'connecting' | 'pending' | 'error';
-  connectionError: TError | null;
-};
-```
-
 The `useSubscription` hook can be used to subscribe to a [subscription](../../server/subscriptions.md) procedure on the server.
 
-### Options
-
-- `input`
-  - The input as defined by the procedure
-- `opts.enabled`
-  - If `false`, the subscription will stay idle
-  - Default: `true`
-- `opts.onData`
-  - Callback when data is received
-- `opts.onError`
-  - Callback when the subscription failed
-- `opts.onStarted`
-  - Callback when the subscription started
-- `opts.onStateChange`
-  - Callback when the connection state changes
+## Options
 
 :::tip
-If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
+
+- If you need to set any options but don't want to pass any input, you can pass `undefined` instead.
+- If you pass `skipToken` from `@tanstack/react-query`, the subscription will be paused.
+
 :::
 
-You'll notice that you get autocompletion on the `input` based on what you have set in your `input` schema on your backend.
+```tsx
+function useSubscription<TOutput, TError>(
+  input: TInput | SkipToken,
+  opts?: UseTRPCSubscriptionOptions<TOutput, TError>
+): TRPCSubscriptionResult<TOutput, TError>;
 
-### Returns
+interface UseTRPCSubscriptionOptions<TOutput, TError> {
+  /**
+   * Callback invoked when the subscription starts.
+   */
+  onStarted?: () => void;
+  /**
+   * Callback invoked when new data is received from the subscription.
+   * @param data - The data received.
+   */
+  onData?: (data: TOutput) => void;
+  /**
+   * Callback invoked when an **unrecoverable error** occurs
+   * and the subscription is closed.
+   * For recoverable errors, use `onConnectionStateChange`
+   * or the `connectionState`/`connectionError` fields on the result.
+   */
+  onError?: (error: TError) => void;
+  /**
+   * Callback invoked when the connection state changes.
+   */
+  onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
+  /**
+   * @deprecated Use a `skipToken` from `@tanstack/react-query` instead.
+   * This will be removed in a future version.
+   */
+  enabled?: boolean;
+}
 
-- `status`
-  - The current state of the subscription
-  - Will be: `'idle'`, `'connecting'`, `'pending'`, or `'error'`
-- `data`
-  - The last data received from the subscription
-- `error`
-  - The error that caused the subscription to stop
-- `connectionState`
-  - The current state of the connection
-  - Will be: `'idle'`, `'connecting'`, `'pending'`, or `'error'`
-- `connectionError`
-  - The error related to the connection, if any
+```
+
+## Return type
+
+```ts
+type TRPCSubscriptionResult<TOutput, TError> = {
+  /**
+   * The current status of the subscription.
+   * Will be one of: `'idle'`, `'connecting'`, `'pending'`, or `'error'`.
+   */
+  status: 'idle' | 'connecting' | 'pending' | 'error';
+  /**
+   * The last data received from the subscription.
+   */
+  data: TOutput | undefined;
+  /**
+   * The error that caused the subscription to stop.
+   */
+  error: TError | undefined;
+  /**
+   * The current state of the connection.
+   * Will be one of: `'idle'`, `'connecting'`, `'pending'`, or `'error'`.
+   */
+  connectionState: 'idle' | 'connecting' | 'pending' | 'error';
+  /**
+   * The error related to the connection, if any.
+   */
+  connectionError: TError | null;
+  /**
+   * Function to reset the subscription.
+   */
+  reset: () => void;
+};
+```
 
 ## Example
 
