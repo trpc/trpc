@@ -10,26 +10,7 @@ import { format, formatDistanceToNow, isToday } from 'date-fns';
 import { signIn, useSession } from 'next-auth/react';
 import * as React from 'react';
 import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
-
-const run = <TResult,>(fn: () => TResult): TResult => fn();
-const assertUnreachable = (_value: never): never => {
-  throw new Error('Unreachable');
-};
-const pluralize = (count: number, singular: string, plural: string) =>
-  count === 1 ? singular : plural;
-
-const listWithAnd = (list: string[]) => {
-  if (list.length === 0) {
-    return '';
-  }
-  if (list.length === 1) {
-    return list[0];
-  }
-  if (list.length === 2) {
-    return `${list[0]} and ${list[1]}`;
-  }
-  return `${list.slice(0, -1).join(', ')}, and ${list.at(-1)}`;
-};
+import { listWithAnd, pluralize, run } from './utils';
 
 function SubscriptionStatus(props: {
   subscription: ReturnType<typeof useLivePosts>['subscription'];
@@ -84,8 +65,6 @@ function SubscriptionStatus(props: {
           case 'pending':
             // we are polling for new messages
             return <div>Connected - awaiting messages</div>;
-          default:
-            assertUnreachable(subscription);
         }
       })}
     </div>
@@ -290,7 +269,6 @@ function AddMessageForm(props: {
           size="icon"
           type="submit"
           variant="ghost"
-          disabled={!props.signedIn}
         >
           <PaperAirplaneIcon className="size-5" />
           <span className="sr-only">Send message</span>
