@@ -5,6 +5,7 @@ import type {
   FetchQueryOptions,
   InfiniteData,
   InfiniteQueryObserverSuccessResult,
+  InitialDataFunction,
   QueryObserverSuccessResult,
   QueryOptions,
   UseBaseQueryOptions,
@@ -81,8 +82,6 @@ export interface UseTRPCPrefetchQueryOptions<TOutput, TData, TError>
     >,
     TRPCUseQueryBaseOptions {}
 
-type NonUndefinedGuard<T> = T extends undefined ? never : T;
-
 /** @internal **/
 export interface DefinedUseTRPCQueryOptions<
   TOutput,
@@ -93,9 +92,7 @@ export interface DefinedUseTRPCQueryOptions<
     UseTRPCQueryOptions<TOutput, TData, TError, TQueryOptsData>,
     'queryKey'
   > {
-  initialData:
-    | NonUndefinedGuard<() => TQueryOptsData>
-    | NonUndefinedGuard<TQueryOptsData>;
+  initialData: InitialDataFunction<TQueryOptsData> | TQueryOptsData;
 }
 
 export interface TRPCQueryOptions<TData, TError>
