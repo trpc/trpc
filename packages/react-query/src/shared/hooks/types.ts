@@ -220,11 +220,16 @@ export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'idle' | 'connecting' | 'pending' | 'error';
   data: undefined | TOutput;
   error: undefined | TError;
+  /**
+   * Reset the subscription
+   */
+  reset: () => void;
 }
 
-export interface TRPCSubscriptionIdleResult<TOutput> {
+export interface TRPCSubscriptionIdleResult<TOutput>
+  extends TRPCSubscriptionBaseResult<TOutput, undefined> {
   status: 'idle';
-  data: TOutput;
+  data: undefined | TOutput;
   error: undefined;
 }
 

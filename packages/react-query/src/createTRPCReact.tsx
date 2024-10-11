@@ -387,9 +387,13 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
       inferAsyncIterableYield<TDef['output']>,
       TRPCClientErrorLike<TDef>
     >,
-    {
-      status: 'idle';
-    }
+    // The idle state is
+    | {
+        status: 'idle';
+      }
+    | {
+        connectionState: 'idle';
+      }
   >;
 
   // With skip token

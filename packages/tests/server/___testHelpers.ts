@@ -243,7 +243,7 @@ export const suppressLogs = () => {
 /**
  * Pause logging until the promise resolves or throws
  */
-export const supressLogsUntil = async (fn: () => Promise<void>) => {
+export const suppressLogsUntil = async (fn: () => Promise<void>) => {
   const release = suppressLogs();
 
   try {

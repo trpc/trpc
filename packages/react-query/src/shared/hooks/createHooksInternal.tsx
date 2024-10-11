@@ -376,51 +376,19 @@ export function createRootHooks<
     const addTrackedProp = React.useCallback((key: keyof $Result) => {
       trackedProps.current.add(key);
     }, []);
-    const resultRef = React.useRef<$Result>(
-      enabled
-        ? {
-            data: undefined,
-            error: undefined,
-            status: 'connecting',
-            connectionError: null,
-            connectionState: 'connecting',
-          }
-        : {
-            data: undefined,
-            error: undefined,
-            status: 'idle',
-            connectionState: 'idle',
-            connectionError: null,
-          },
-    );
 
-    const [state, setState] = React.useState<$Result>(
-      trackResult(resultRef.current, addTrackedProp),
-    );
+    type Unsubscribe = () => void;
+    const currentSubscriptionRef = React.useRef<Unsubscribe>();
 
-    const updateState = React.useCallback(
-      (callback: (prevState: $Result) => $Result) => {
-        const prev = resultRef.current;
-        const next = (resultRef.current = callback(prev));
+    const reset = React.useCallback((): void => {
+      // unsubscribe from the previous subscription
+      currentSubscriptionRef.current?.();
 
-        let shouldUpdate = false;
-        for (const key of trackedProps.current) {
-          if (prev[key] !== next[key]) {
-            shouldUpdate = true;
-            break;
-          }
-        }
-        if (shouldUpdate) {
-          setState(trackResult(next, addTrackedProp));
-        }
-      },
-      [addTrackedProp],
-    );
-
-    React.useEffect(() => {
+      updateState(getInitialState);
       if (!enabled) {
         return;
       }
+
       let isStopped = false;
       const subscription = client.subscription(
         path.join('.'),
@@ -478,18 +446,72 @@ export function createRootHooks<
           },
         },
       );
-      return () => {
+
+      currentSubscriptionRef.current = () => {
         isStopped = true;
         subscription.unsubscribe();
-        updateState((prev) => ({
-          ...prev,
-          status: 'idle',
-          data: undefined,
-          error: undefined,
-        }));
       };
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryKey, enabled]);
+
+    const getInitialState = React.useCallback((): $Result => {
+      return enabled
+        ? {
+            data: undefined,
+            error: undefined,
+            status: 'connecting',
+            connectionError: null,
+            connectionState: 'connecting',
+            reset,
+          }
+        : {
+            data: undefined,
+            error: undefined,
+            status: 'idle',
+            connectionState: 'idle',
+            connectionError: null,
+            reset,
+          };
+    }, [enabled, reset]);
+
+    const resultRef = React.useRef<$Result>(getInitialState());
+
+    const [state, setState] = React.useState<$Result>(
+      trackResult(resultRef.current, addTrackedProp),
+    );
+
+    state.reset = reset;
+
+    const updateState = React.useCallback(
+      (callback: (prevState: $Result) => $Result) => {
+        const prev = resultRef.current;
+        const next = (resultRef.current = callback(prev));
+
+        let shouldUpdate = false;
+        for (const key of trackedProps.current) {
+          if (prev[key] !== next[key]) {
+            shouldUpdate = true;
+            break;
+          }
+        }
+        if (shouldUpdate) {
+          setState(trackResult(next, addTrackedProp));
+        }
+      },
+      [addTrackedProp],
+    );
+
+    React.useEffect(() => {
+      if (!enabled) {
+        return;
+      }
+      reset();
+
+      return () => {
+        currentSubscriptionRef.current?.();
+      };
+    }, [reset, enabled]);
 
     return state;
   }

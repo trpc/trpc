@@ -2,17 +2,35 @@ import { EventEmitter, on } from 'events';
 import {
   ignoreErrors,
   suppressLogs,
-  supressLogsUntil,
+  suppressLogsUntil,
 } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { skipToken } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { fireEvent, render, waitFor } from '@testing-library/react';
+import type { TRPCSubscriptionResult } from '@trpc/react-query/shared';
 import { initTRPC, sse } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
 
+/**
+ * a function that displays the diff over time in a list of values
+ */
+function diff(list: any[]) {
+  return list.map((item, index) => {
+    if (index === 0) return item;
+
+    const prev = list[index - 1]!;
+    const diff = {} as any;
+    for (const key in item) {
+      if (item[key] !== prev[key]) {
+        diff[key] = item[key];
+      }
+    }
+    return diff;
+  });
+}
 const getCtx = (protocol: 'http' | 'ws') => {
   return konn()
     .beforeEach(() => {
@@ -268,24 +286,6 @@ describe('connection state - http', () => {
       expect(utils.container).toHaveTextContent(`data:30`);
     });
 
-    /**
-     * a function that displays the diff over time in a list of values
-     */
-    function diff(list: any[]) {
-      return list.map((item, index) => {
-        if (index === 0) return item;
-
-        const prev = list[index - 1]!;
-        const diff = {} as any;
-        for (const key in item) {
-          if (item[key] !== prev[key]) {
-            diff[key] = item[key];
-          }
-        }
-        return diff;
-      });
-    }
-
     expect(diff(queryResult)).toMatchInlineSnapshot(`
       Array [
         Object {
@@ -293,6 +293,7 @@ describe('connection state - http', () => {
           "connectionState": "connecting",
           "data": undefined,
           "error": undefined,
+          "reset": [Function],
           "status": "connecting",
         },
         Object {
@@ -306,7 +307,7 @@ describe('connection state - http', () => {
     `);
     queryResult.length = 0;
 
-    await supressLogsUntil(async () => {
+    await suppressLogsUntil(async () => {
       ctx.destroyConnections();
 
       await waitFor(() => {
@@ -331,6 +332,7 @@ describe('connection state - http', () => {
           "connectionState": "connecting",
           "data": 30,
           "error": undefined,
+          "reset": [Function],
           "status": "connecting",
         },
         Object {
@@ -354,6 +356,7 @@ describe('connection state - http', () => {
           "connectionState": "pending",
           "data": 50,
           "error": undefined,
+          "reset": [Function],
           "status": "pending",
         },
       ]
@@ -403,24 +406,6 @@ describe('connection state - ws', () => {
       expect(utils.container).toHaveTextContent(`data:30`);
     });
 
-    /**
-     * a function that displays the diff over time in a list of values
-     */
-    function diff(list: any[]) {
-      return list.map((item, index) => {
-        if (index === 0) return item;
-
-        const prev = list[index - 1]!;
-        const diff = {} as any;
-        for (const key in item) {
-          if (item[key] !== prev[key]) {
-            diff[key] = item[key];
-          }
-        }
-        return diff;
-      });
-    }
-
     expect(diff(queryResult)).toMatchInlineSnapshot(`
       Array [
         Object {
@@ -428,6 +413,7 @@ describe('connection state - ws', () => {
           "connectionState": "connecting",
           "data": undefined,
           "error": undefined,
+          "reset": [Function],
           "status": "connecting",
         },
         Object {
@@ -460,6 +446,7 @@ describe('connection state - ws', () => {
           "connectionState": "connecting",
           "data": 30,
           "error": undefined,
+          "reset": [Function],
           "status": "connecting",
         },
         Object {
@@ -486,6 +473,89 @@ describe('connection state - ws', () => {
           "connectionState": "pending",
           "data": 50,
           "error": undefined,
+          "reset": [Function],
+          "status": "pending",
+        },
+      ]
+    `);
+
+    utils.unmount();
+  });
+});
+
+describe('reset - http', () => {
+  const ctx = getCtx('http');
+
+  test('iterable', async () => {
+    const queryResult: TRPCSubscriptionResult<number, unknown>[] = [];
+
+    function MyComponent() {
+      const result = ctx.client.onEventIterable.useSubscription(10);
+
+      queryResult.push({
+        ...result,
+      });
+
+      return (
+        <>
+          <>connectionState:{result.connectionState}</>
+          <>status:{result.status}</>
+          <>data:{result.data}</>
+          {/* reset button */}
+          <button
+            onClick={() => {
+              result.reset();
+            }}
+            data-testid="reset"
+          >
+            reset
+          </button>
+        </>
+      );
+    }
+
+    const utils = render(
+      <ctx.App>
+        <MyComponent />
+      </ctx.App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    // emit
+    ctx.ee.emit('data', 20);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`data:30`);
+    });
+
+    queryResult.length = 0;
+
+    // click reset
+    fireEvent.click(utils.getByTestId('reset'));
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('connectionState:connecting');
+    });
+
+    expect(queryResult[0]?.data).toBeUndefined();
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('connectionState:pending');
+    });
+
+    expect(diff(queryResult)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "connectionError": null,
+          "connectionState": "connecting",
+          "data": undefined,
+          "error": undefined,
+          "reset": [Function],
+          "status": "connecting",
+        },
+        Object {
+          "connectionState": "pending",
           "status": "pending",
         },
       ]
