@@ -42,10 +42,15 @@ export const publicProcedure = t.procedure.use(
     const res = opts.next(opts);
 
     if (process.env.NODE_ENV === 'development') {
-      console.debug('doing artificial delay of 500ms for', opts.path);
+      const randomNumber = (min: number, max: number) =>
+        Math.floor(Math.random() * (max - min + 1)) + min;
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const delay = randomNumber(300, 1_000);
+      console.debug('ℹ️ doing artificial delay of', delay, 'ms for', opts.path);
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
+
     return res;
   },
 );
@@ -58,7 +63,7 @@ export const mergeRouters = t.mergeRouters;
 /**
  * Protected base procedure
  */
-export const authedProcedure = t.procedure.use(function isAuthed(opts) {
+export const authedProcedure = publicProcedure.use(function isAuthed(opts) {
   const user = opts.ctx.session?.user;
 
   if (!user?.name) {

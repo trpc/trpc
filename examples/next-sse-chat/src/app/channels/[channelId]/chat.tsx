@@ -222,13 +222,14 @@ function AddMessageForm(props: {
       text: message,
       channelId,
     };
+    setMessage('');
     addPost.mutate(input, {
       onSuccess() {
-        setMessage('');
         props.onMessagePost();
       },
       onError(error) {
         alert(error.message);
+        setMessage(input.text);
       },
     });
   }
@@ -267,7 +268,7 @@ function AddMessageForm(props: {
           }}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          disabled={addPost.isPending}
+          autoFocus
         />
         <Button
           className="absolute right-2 top-2"
