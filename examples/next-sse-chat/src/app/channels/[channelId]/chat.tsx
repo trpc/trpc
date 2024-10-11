@@ -73,7 +73,7 @@ function SubscriptionStatus(props: {
                 <a
                   href="#"
                   onClick={() => {
-                    // subscription.restart();
+                    subscription.reset();
                   }}
                   className="hover underline"
                 >
