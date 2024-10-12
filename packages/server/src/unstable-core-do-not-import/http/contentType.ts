@@ -262,7 +262,7 @@ function getContentTypeHandler(req: Request): ContentTypeHandler {
     return handler;
   }
 
-  if (!handler && req.method === 'GET') {
+  if (!handler && (req.method === 'GET' || req.method === 'DELETE')) {
     // fallback to JSON for get requests so GET-requests can be opened in browser easily
     return jsonContentTypeHandler;
   }
