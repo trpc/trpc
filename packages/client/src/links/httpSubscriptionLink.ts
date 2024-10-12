@@ -201,12 +201,12 @@ export function unstable_httpSubscriptionLink<
           });
           observer.complete();
         }).catch((error) => {
-          observer.error(TRPCClientError.from(error));
           connectionState.next({
             type: 'state',
             state: 'idle',
             error: null,
           });
+          observer.error(TRPCClientError.from(error));
         });
 
         return () => {
