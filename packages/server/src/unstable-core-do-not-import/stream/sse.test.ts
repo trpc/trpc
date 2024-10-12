@@ -103,7 +103,7 @@ test('e2e, server-sent events (SSE)', async () => {
   for await (const value of iterable) {
     allEvents.push(value);
     es = value.eventSource;
-    if (value.type === 'error') {
+    if (value.type === 'serialized-error') {
       throw value.error;
     }
     if (value.type === 'data') {
@@ -130,7 +130,7 @@ test('e2e, server-sent events (SSE)', async () => {
   for await (const value of iterable) {
     allEvents.push(value);
     es = value.eventSource;
-    if (value.type === 'error') {
+    if (value.type === 'serialized-error') {
       throw value.error;
     }
     if (value.type === 'data') {
@@ -245,7 +245,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
     if (value.type === 'opened') {
       continue;
     }
-    if (value.type === 'error') {
+    if (value.type === 'serialized-error') {
       throw value.error;
     }
     if (value.type === 'data') {

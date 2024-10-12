@@ -4,19 +4,18 @@ interface ConnectionStateBase<TError> {
   error: TError | null;
 }
 
-export interface ConnectionIdleState<TError>
-  extends ConnectionStateBase<TError> {
+interface ConnectionIdleState<TError> extends ConnectionStateBase<TError> {
   state: 'idle';
   error: null;
 }
 
-export interface ConnectionConnectingState<TError>
+interface ConnectionConnectingState<TError>
   extends ConnectionStateBase<TError> {
   state: 'connecting';
   error: TError | null;
 }
 
-export interface ConnectionPendingState extends ConnectionStateBase<never> {
+interface ConnectionPendingState extends ConnectionStateBase<never> {
   state: 'pending';
   error: null;
 }
