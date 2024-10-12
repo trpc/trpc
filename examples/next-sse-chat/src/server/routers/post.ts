@@ -1,3 +1,4 @@
+import { on } from 'events';
 import { tracked } from '@trpc/server';
 import { streamToAsyncIterable } from '~/lib/stream-to-async-iterator';
 import { db } from '~/server/db/client';
@@ -89,6 +90,10 @@ export const postRouter = router({
     )
     .subscription(async function* (opts) {
       let lastMessageCursor: Date | null = null;
+      // We start by subscribing to the ee so that we don't miss any new events while fetching
+      const iterable = ee.toIterable('add', {
+        signal: opts.signal,
+      });
 
       const eventId = opts.input.lastEventId;
       if (eventId) {
@@ -98,50 +103,41 @@ export const postRouter = router({
         lastMessageCursor = itemById?.createdAt ?? null;
       }
 
-      let unsubscribe = () => {
-        //
-      };
-
-      // We use a readable stream here to prevent the client from missing events
-      // created between the fetching & yield'ing of `newItemsSinceCursor` and the
-      // subscription to the ee
-      const stream = new ReadableStream<PostType>({
-        async start(controller) {
-          const onAdd: MyEvents['add'] = (channelId, data) => {
-            if (channelId === opts.input.channelId) {
-              controller.enqueue(data);
-            }
-          };
-          ee.on('add', onAdd);
-          unsubscribe = () => {
-            ee.off('add', onAdd);
-          };
-
-          const newItemsSinceCursor = await db.query.Post.findMany({
-            where: (fields, ops) =>
-              ops.and(
-                ops.eq(fields.channelId, opts.input.channelId),
-                lastMessageCursor
-                  ? ops.gt(fields.createdAt, lastMessageCursor)
-                  : undefined,
-              ),
-            orderBy: (fields, ops) => ops.asc(fields.createdAt),
-          });
-
-          for (const item of newItemsSinceCursor) {
-            controller.enqueue(item);
-          }
-        },
-        cancel() {
-          unsubscribe();
-        },
+      const newItemsSinceCursor = await db.query.Post.findMany({
+        where: (fields, ops) =>
+          ops.and(
+            ops.eq(fields.channelId, opts.input.channelId),
+            lastMessageCursor
+              ? ops.gt(fields.createdAt, lastMessageCursor)
+              : undefined,
+          ),
+        orderBy: (fields, ops) => ops.asc(fields.createdAt),
       });
 
-      for await (const post of streamToAsyncIterable(stream, {
-        signal: opts.signal,
-      })) {
-        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+      function* maybeYield(post: PostType) {
+        if (post.channelId !== opts.input.channelId) {
+          // ignore posts from other channels
+          return;
+        }
+        if (lastMessageCursor && post.createdAt <= lastMessageCursor) {
+          // ignore posts that we've already sent
+          return;
+        }
+
         yield tracked(post.id, post);
+
+        // update the cursor so that we don't send this post again
+        lastMessageCursor = post.createdAt;
+      }
+
+      // yield the posts we fetched from the db
+      for (const post of newItemsSinceCursor) {
+        yield* maybeYield(post);
+      }
+
+      for await (const [channelId, post] of iterable) {
+        if (channelId !== opts.input.channelId) continue;
+        yield* maybeYield(post);
       }
     }),
 });
