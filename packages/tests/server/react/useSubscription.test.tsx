@@ -263,7 +263,6 @@ describe('connection state - http', () => {
 
       return (
         <>
-          <>connectionState:{result.connectionState}</>
           <>status:{result.status}</>
           <>data:{result.data}</>
         </>
@@ -289,15 +288,12 @@ describe('connection state - http', () => {
     expect(diff(queryResult)).toMatchInlineSnapshot(`
       Array [
         Object {
-          "connectionError": null,
-          "connectionState": "connecting",
           "data": undefined,
-          "error": undefined,
+          "error": null,
           "reset": [Function],
           "status": "connecting",
         },
         Object {
-          "connectionState": "pending",
           "status": "pending",
         },
         Object {
@@ -311,13 +307,12 @@ describe('connection state - http', () => {
       ctx.destroyConnections();
 
       await waitFor(() => {
-        expect(utils.container).toHaveTextContent('connectionState:connecting');
+        expect(utils.container).toHaveTextContent('status:connecting');
       });
     });
 
     await waitFor(
       () => {
-        expect(utils.container).toHaveTextContent('connectionState:pending');
         expect(utils.container).toHaveTextContent('status:pending');
       },
       {
@@ -328,16 +323,13 @@ describe('connection state - http', () => {
     expect(diff(queryResult)).toMatchInlineSnapshot(`
       Array [
         Object {
-          "connectionError": [TRPCClientError: Unknown error],
-          "connectionState": "connecting",
           "data": 30,
-          "error": undefined,
+          "error": [TRPCClientError: Unknown error],
           "reset": [Function],
           "status": "connecting",
         },
         Object {
-          "connectionError": null,
-          "connectionState": "pending",
+          "error": null,
           "status": "pending",
         },
       ]
@@ -353,127 +345,8 @@ describe('connection state - http', () => {
     expect(diff(queryResult)).toMatchInlineSnapshot(`
       Array [
         Object {
-          "connectionError": null,
-          "connectionState": "pending",
           "data": 50,
-          "error": undefined,
-          "reset": [Function],
-          "status": "pending",
-        },
-      ]
-    `);
-
-    utils.unmount();
-  });
-});
-
-describe('connection state - ws', () => {
-  const ctx = getCtx('ws');
-
-  test('iterable', async () => {
-    const { App, client } = ctx;
-
-    const queryResult: unknown[] = [];
-
-    function MyComponent() {
-      const result = client.onEventIterable.useSubscription(10);
-
-      queryResult.push({
-        ...result,
-      });
-
-      return (
-        <>
-          <>connectionState:{result.connectionState}</>
-          <>status:{result.status}</>
-          <>data:{result.data}</>
-        </>
-      );
-    }
-
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
-
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`status:pending`);
-    });
-    // emit
-    ctx.ee.emit('data', 20);
-
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`data:30`);
-    });
-
-    expect(diff(queryResult)).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "connectionError": null,
-          "connectionState": "connecting",
-          "data": undefined,
-          "error": undefined,
-          "reset": [Function],
-          "status": "connecting",
-        },
-        Object {
-          "connectionState": "pending",
-        },
-        Object {
-          "status": "pending",
-        },
-        Object {
-          "data": 30,
-        },
-      ]
-    `);
-    queryResult.length = 0;
-    ctx.destroyConnections();
-
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('connectionState:connecting');
-    });
-
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('connectionState:pending');
-      expect(utils.container).toHaveTextContent('status:pending');
-    });
-
-    expect(diff(queryResult)).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "connectionError": [TRPCWebSocketClosedError: WebSocket closed],
-          "connectionState": "connecting",
-          "data": 30,
-          "error": undefined,
-          "reset": [Function],
-          "status": "connecting",
-        },
-        Object {
-          "connectionError": null,
-          "connectionState": "pending",
-        },
-        Object {
-          "status": "pending",
-        },
-      ]
-    `);
-
-    queryResult.length = 0;
-    // emit
-    ctx.ee.emit('data', 40);
-
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('data:50');
-    });
-    expect(diff(queryResult)).toMatchInlineSnapshot(`
-      Array [
-        Object {
-          "connectionError": null,
-          "connectionState": "pending",
-          "data": 50,
-          "error": undefined,
+          "error": null,
           "reset": [Function],
           "status": "pending",
         },
@@ -499,7 +372,6 @@ describe('reset - http', () => {
 
       return (
         <>
-          <>connectionState:{result.connectionState}</>
           <>status:{result.status}</>
           <>data:{result.data}</>
           {/* reset button */}
@@ -536,27 +408,24 @@ describe('reset - http', () => {
     // click reset
     fireEvent.click(utils.getByTestId('reset'));
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent('connectionState:connecting');
+      expect(utils.container).toHaveTextContent('status:connecting');
     });
 
     expect(queryResult[0]?.data).toBeUndefined();
 
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent('connectionState:pending');
+      expect(utils.container).toHaveTextContent('status:pending');
     });
 
     expect(diff(queryResult)).toMatchInlineSnapshot(`
       Array [
         Object {
-          "connectionError": null,
-          "connectionState": "connecting",
           "data": undefined,
-          "error": undefined,
+          "error": null,
           "reset": [Function],
           "status": "connecting",
         },
         Object {
-          "connectionState": "pending",
           "status": "pending",
         },
       ]

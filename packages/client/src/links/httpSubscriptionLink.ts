@@ -1,9 +1,6 @@
-import {
-  behaviorSubject,
-  distinctUntilDeepChanged,
-  observable,
-} from '@trpc/server/observable';
-import type { TRPCErrorResponse } from '@trpc/server/rpc';
+import { behaviorSubject, observable } from '@trpc/server/observable';
+import type { TRPC_ERROR_CODE_NUMBER, TRPCErrorShape } from '@trpc/server/rpc';
+import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
   inferClientTypes,
@@ -54,6 +51,17 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   UrlOptionsWithConnectionParams;
 
 /**
+ * tRPC error codes that are considered retryable
+ * With out of the box SSE, the client will reconnect when these errors are encountered
+ */
+const codes5xx: TRPC_ERROR_CODE_NUMBER[] = [
+  TRPC_ERROR_CODES_BY_KEY.BAD_GATEWAY,
+  TRPC_ERROR_CODES_BY_KEY.SERVICE_UNAVAILABLE,
+  TRPC_ERROR_CODES_BY_KEY.GATEWAY_TIMEOUT,
+  TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
+];
+
+/**
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink
  */
 export function unstable_httpSubscriptionLink<
@@ -79,7 +87,8 @@ export function unstable_httpSubscriptionLink<
           Partial<{
             id?: string;
             data: unknown;
-          }>
+          }>,
+          TRPCErrorShape
         >({
           url: async () =>
             getUrl({
@@ -104,15 +113,13 @@ export function unstable_httpSubscriptionLink<
           error: null,
         });
 
-        const connectionSub = connectionState
-          .pipe(distinctUntilDeepChanged())
-          .subscribe({
-            next(state) {
-              observer.next({
-                result: state,
-              });
-            },
-          });
+        const connectionSub = connectionState.subscribe({
+          next(state) {
+            observer.next({
+              result: state,
+            });
+          },
+        });
         run(async () => {
           for await (const chunk of eventSourceStream) {
             switch (chunk.type) {
@@ -147,22 +154,29 @@ export function unstable_httpSubscriptionLink<
                 });
                 break;
               }
-              case 'error': {
-                connectionState.next({
-                  type: 'state',
-                  state: 'connecting',
-                  error: TRPCClientError.from(
-                    chunk.error as TRPCErrorResponse<any>,
-                  ),
-                });
-                break;
+              case 'serialized-error': {
+                // console.debug('error chunk', chunk.error);
+                const error = TRPCClientError.from({ error: chunk.error });
+
+                if (codes5xx.includes(chunk.error.code)) {
+                  // console.debug('5xx error, reconnecting');
+                  connectionState.next({
+                    type: 'state',
+                    state: 'connecting',
+                    error,
+                  });
+                  break;
+                }
+                // console.debug('non-retryable error, cancelling subscription');
+                // non-retryable error, cancel the subscription
+                throw error;
               }
               case 'connecting': {
                 const lastState = connectionState.get();
 
-                let error = chunk.event && TRPCClientError.from(chunk.event);
+                const error = chunk.event && TRPCClientError.from(chunk.event);
                 if (!error && lastState.state === 'connecting') {
-                  error = lastState.error;
+                  break;
                 }
 
                 connectionState.next({

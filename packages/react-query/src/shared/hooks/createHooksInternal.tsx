@@ -36,7 +36,6 @@ import type {
   CreateClient,
   TRPCProvider,
   TRPCQueryOptions,
-  TRPCSubscriptionConnectionState,
   TRPCSubscriptionResult,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
@@ -400,7 +399,7 @@ export function createRootHooks<
               updateState((prev) => ({
                 ...prev,
                 status: 'pending',
-                error: undefined,
+                error: null,
               }));
             }
           },
@@ -411,7 +410,7 @@ export function createRootHooks<
                 ...prev,
                 status: 'pending',
                 data,
-                error: undefined,
+                error: null,
               }));
             }
           },
@@ -427,20 +426,16 @@ export function createRootHooks<
           },
           onConnectionStateChange: (result) => {
             const delta = {
-              connectionState: result.state,
-              connectionError: result.error,
-            } as TRPCSubscriptionConnectionState<TError>;
-            updateState((prev) => ({
-              ...prev,
-              ...delta,
-              // if the connection is now connecting, we need to update the status to connecting
-              ...(result.state === 'connecting'
-                ? {
-                    status: 'connecting',
-                    error: undefined,
-                  }
-                : ({} as object)),
-            }));
+              status: result.state,
+              error: result.error,
+            } as $Result;
+
+            updateState((prev) => {
+              return {
+                ...prev,
+                ...delta,
+              };
+            });
           },
         },
       );
@@ -457,18 +452,14 @@ export function createRootHooks<
       return enabled
         ? {
             data: undefined,
-            error: undefined,
+            error: null,
             status: 'connecting',
-            connectionError: null,
-            connectionState: 'connecting',
             reset,
           }
         : {
             data: undefined,
-            error: undefined,
+            error: null,
             status: 'idle',
-            connectionState: 'idle',
-            connectionError: null,
             reset,
           };
     }, [enabled, reset]);

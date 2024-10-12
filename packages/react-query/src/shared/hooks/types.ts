@@ -25,11 +25,6 @@ import type {
   TRPCUntypedClient,
 } from '@trpc/client';
 import type {
-  ConnectionConnectingState,
-  ConnectionIdleState,
-  ConnectionPendingState,
-} from '@trpc/client/unstable-internals';
-import type {
   AnyRouter,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -187,30 +182,10 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   onError?: (err: TError) => void;
 }
 
-export interface UseTRPCSubscriptionConnectionIdleResult<_TError> {
-  connectionState: ConnectionIdleState['state'];
-  connectionError: ConnectionIdleState['error'];
-}
-
-export interface UseTRPCSubscriptionConnectionConnectingResult<TError> {
-  connectionState: ConnectionConnectingState<TError>['state'];
-  connectionError: ConnectionConnectingState<TError>['error'];
-}
-
-export interface UseTRPCSubscriptionConnectionPendingResult<_TError> {
-  connectionState: ConnectionPendingState['state'];
-  connectionError: ConnectionPendingState['error'];
-}
-
-export type TRPCSubscriptionConnectionState<TError> =
-  | UseTRPCSubscriptionConnectionIdleResult<TError>
-  | UseTRPCSubscriptionConnectionConnectingResult<TError>
-  | UseTRPCSubscriptionConnectionPendingResult<TError>;
-
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'idle' | 'connecting' | 'pending' | 'error';
   data: undefined | TOutput;
-  error: undefined | TError;
+  error: null | TError;
   /**
    * Reset the subscription
    */
@@ -218,24 +193,24 @@ export interface TRPCSubscriptionBaseResult<TOutput, TError> {
 }
 
 export interface TRPCSubscriptionIdleResult<TOutput>
-  extends TRPCSubscriptionBaseResult<TOutput, undefined> {
+  extends TRPCSubscriptionBaseResult<TOutput, null> {
   status: 'idle';
-  data: undefined | TOutput;
-  error: undefined;
+  data: undefined;
+  error: null;
 }
 
 export interface TRPCSubscriptionConnectingResult<TOutput, TError>
   extends TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'connecting';
   data: undefined | TOutput;
-  error: undefined;
+  error: null;
 }
 
 export interface TRPCSubscriptionPendingResult<TOutput>
   extends TRPCSubscriptionBaseResult<TOutput, undefined> {
   status: 'pending';
   data: TOutput;
-  error: undefined;
+  error: null;
 }
 
 export interface TRPCSubscriptionErrorResult<TOutput, TError>
@@ -245,13 +220,11 @@ export interface TRPCSubscriptionErrorResult<TOutput, TError>
   error: TError;
 }
 
-export type TRPCSubscriptionResult<TOutput, TError> = (
+export type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionIdleResult<TOutput>
   | TRPCSubscriptionConnectingResult<TOutput, TError>
   | TRPCSubscriptionErrorResult<TOutput, TError>
-  | TRPCSubscriptionPendingResult<TOutput>
-) &
-  TRPCSubscriptionConnectionState<TError>;
+  | TRPCSubscriptionPendingResult<TOutput>;
 
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   extends TRPCContextProps<TRouter, TSSRContext> {

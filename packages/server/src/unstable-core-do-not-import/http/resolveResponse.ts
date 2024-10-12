@@ -395,21 +395,21 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               const path = call?.path;
               const type = call?.procedure?._def.type ?? 'unknown';
 
-              const shape = getErrorShape({
-                config,
-                ctx,
-                error,
-                input,
-                path,
-                type,
-              });
-
               opts.onError?.({
                 error,
                 path,
                 input,
                 ctx,
                 req: opts.req,
+                type,
+              });
+
+              const shape = getErrorShape({
+                config,
+                ctx,
+                error,
+                input,
+                path,
                 type,
               });
 
@@ -510,13 +510,27 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         formatError(errorOpts) {
           const call = info?.calls[errorOpts.path[0] as any];
 
+          const error = getTRPCErrorFromUnknown(errorOpts.error);
+          const input = call?.result();
+          const path = call?.path;
+          const type = call?.procedure?._def.type ?? 'unknown';
+
+          opts.onError?.({
+            error,
+            path,
+            input,
+            ctx,
+            req: opts.req,
+            type,
+          });
+
           const shape = getErrorShape({
             config,
             ctx,
-            error: getTRPCErrorFromUnknown(errorOpts.error),
-            input: call?.result(),
-            path: call?.path,
-            type: call?.procedure?._def.type ?? 'unknown',
+            error,
+            input,
+            path,
+            type,
           });
 
           return shape;

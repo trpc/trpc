@@ -1,5 +1,9 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
+import {
+  routerToServerAndClientNew,
+  suppressLogs,
+  suppressLogsUntil,
+} from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, TRPCLink } from '@trpc/client';
 import {
@@ -208,17 +212,18 @@ test(
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
-    const release = suppressLogs();
     ctx.eeEmit(new Error('test error'));
-    await waitFor(
-      async () => {
-        expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
-      },
-      {
-        timeout: 5_000,
-      },
-    );
-    release();
+
+    await suppressLogsUntil(async () => {
+      await waitFor(
+        async () => {
+          expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
+        },
+        {
+          timeout: 5_000,
+        },
+      );
+    });
 
     ctx.eeEmit(2);
 
@@ -252,6 +257,13 @@ test(
         Array [
           Object {
             "error": [TRPCClientError: test error],
+            "state": "connecting",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "error": [TRPCClientError: Unknown error],
             "state": "connecting",
             "type": "state",
           },
@@ -360,7 +372,9 @@ test('disconnect and reconnect with an event id', async () => {
 
   expect(lastState.state).toBe('connecting');
   expect(lastState.error).not.toBeNull();
-  expect(lastState.error).toMatchInlineSnapshot(`[TRPCClientError: Unknown error]`);
+  expect(lastState.error).toMatchInlineSnapshot(
+    `[TRPCClientError: Unknown error]`,
+  );
 
   await waitFor(
     () => {

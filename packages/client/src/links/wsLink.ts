@@ -167,19 +167,20 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
   );
 
-  const initState: TRPCConnectionState<Error> = activeConnection
-    ? {
-        type: 'state',
-        state: 'connecting',
-        error: null,
-      }
-    : {
-        type: 'state',
-        state: 'idle',
-        error: null,
-      };
+  const initState: TRPCConnectionState<TRPCClientError<AnyRouter>> =
+    activeConnection
+      ? {
+          type: 'state',
+          state: 'connecting',
+          error: null,
+        }
+      : {
+          type: 'state',
+          state: 'idle',
+          error: null,
+        };
   const connectionState =
-    behaviorSubject<TRPCConnectionState<Error>>(initState);
+    behaviorSubject<TRPCConnectionState<TRPCClientError<AnyRouter>>>(initState);
 
   /**
    * tries to send the list of messages
@@ -242,7 +243,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       connectionState.next({
         type: 'state',
         state: 'connecting',
-        error: cause,
+        error: cause ? TRPCClientError.from(cause) : null,
       });
     }
   }
@@ -661,22 +662,20 @@ export function wsLink<TRouter extends AnyRouter>(
         const connState =
           type === 'subscription'
             ? client.connectionState.subscribe({
-                next(_state) {
-                  const state = _state as TRPCConnectionState<any>;
-
+                next(result) {
                   observer.next({
-                    result: state,
+                    result,
                     context,
                   });
                 },
               })
             : null;
-        const req = client.request({
+        const unsubscribeRequest = client.request({
           op: { type, path, input, id, context, signal: null },
           callbacks: {
             error(err) {
-              observer.error(err as TRPCClientError<any>);
-              req();
+              observer.error(err);
+              unsubscribeRequest();
             },
             complete() {
               observer.complete();
@@ -695,7 +694,7 @@ export function wsLink<TRouter extends AnyRouter>(
               if (op.type !== 'subscription') {
                 // if it isn't a subscription we don't care about next response
 
-                req();
+                unsubscribeRequest();
                 observer.complete();
               }
             },
@@ -703,7 +702,7 @@ export function wsLink<TRouter extends AnyRouter>(
           lastEventId: undefined,
         });
         return () => {
-          req();
+          unsubscribeRequest();
           connState?.unsubscribe();
         };
       });

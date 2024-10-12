@@ -193,9 +193,9 @@ interface ConsumerStreamResultData<TData> extends ConsumerStreamResultBase {
   data: inferTrackedOutput<TData>;
 }
 
-interface ConsumerStreamResultError extends ConsumerStreamResultBase {
-  type: 'error';
-  error: unknown;
+interface ConsumerStreamResultError<TError> extends ConsumerStreamResultBase {
+  type: 'serialized-error';
+  error: TError;
 }
 
 interface ConsumerStreamResultOpened extends ConsumerStreamResultBase {
@@ -207,9 +207,9 @@ interface ConsumerStreamResultConnecting extends ConsumerStreamResultBase {
   event: Event | null;
 }
 
-type ConsumerStreamResult<TData> =
+type ConsumerStreamResult<TData, TError> =
   | ConsumerStreamResultData<TData>
-  | ConsumerStreamResultError
+  | ConsumerStreamResultError<TError>
   | ConsumerStreamResultOpened
   | ConsumerStreamResultConnecting;
 
@@ -233,9 +233,9 @@ export interface SSEStreamConsumerOptions {
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
-export function sseStreamConsumer<TData>(
+export function sseStreamConsumer<TData, TError>(
   opts: SSEStreamConsumerOptions,
-): AsyncIterable<ConsumerStreamResult<TData>> {
+): AsyncIterable<ConsumerStreamResult<TData, TError>> {
   const { deserialize = (v) => v, shouldRecreateOnError } = opts;
 
   const signal = opts.signal;
@@ -243,7 +243,7 @@ export function sseStreamConsumer<TData>(
   let eventSource: EventSource | null = null;
   let lock: Promise<void> | null = null;
 
-  const stream = createReadableStream<ConsumerStreamResult<TData>>();
+  const stream = createReadableStream<ConsumerStreamResult<TData, TError>>();
 
   function createEventSource(
     ...args: ConstructorParameters<typeof EventSource>
@@ -318,7 +318,7 @@ export function sseStreamConsumer<TData>(
         }
         dispatch((controller) => {
           controller.enqueue({
-            type: 'error',
+            type: 'serialized-error',
             error: deserialize(JSON.parse(msg.data)),
             eventSource: es,
           });
@@ -389,7 +389,7 @@ export function sseStreamConsumer<TData>(
     [Symbol.asyncIterator]() {
       const reader = stream.readable.getReader();
 
-      const iterator: AsyncIterator<ConsumerStreamResult<TData>> = {
+      const iterator: AsyncIterator<ConsumerStreamResult<TData, TError>> = {
         async next() {
           const value = await reader.read();
 
