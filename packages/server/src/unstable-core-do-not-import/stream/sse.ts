@@ -86,82 +86,68 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
       'maxDuration' as const,
     );
 
-    let nextPromise = iterator.next();
+    try {
+      let nextPromise = iterator.next();
 
-    while (true) {
-      const next = await Promise.race([
-        nextPromise.catch((err) => {
-          if (err instanceof Error && err.name === 'AbortError') {
-            // Ensures that aborting the request doesn't throw an error
-            return 'aborted' as const;
-          }
-          return getTRPCErrorFromUnknown(err);
-        }),
-        closedPromise,
-        maxDurationPromise.promise,
-      ]);
+      while (true) {
+        const next = await Promise.race([
+          nextPromise,
+          closedPromise,
+          maxDurationPromise.promise,
+        ]);
 
-      if (next === 'aborted') {
-        break;
-      }
-      if (next === 'closed') {
-        break;
-      }
-      if (next === 'maxDuration') {
-        break;
-      }
+        if (next === 'closed') {
+          break;
+        }
+        if (next === 'maxDuration') {
+          break;
+        }
 
-      if (next instanceof Error) {
-        const data = opts.formatError
-          ? opts.formatError({ error: next })
-          : null;
+        if (next.done) {
+          break;
+        }
+
+        const value = next.value;
+
+        if (value === PING_SYM) {
+          stream.controller.enqueue({ comment: 'ping' });
+          continue;
+        }
+
+        const chunk: SSEvent = isTrackedEnvelope(value)
+          ? { id: value[0], data: value[1] }
+          : { data: value };
+        if ('data' in chunk) {
+          chunk.data = JSON.stringify(serialize(chunk.data));
+        }
+
+        stream.controller.enqueue(chunk);
+
+        if (opts.emitAndEndImmediately) {
+          // end the stream in the next tick so that we can send a few more events from the queue
+          setTimeout(maxDurationPromise.resolve, 1);
+        }
+
+        nextPromise = iterator.next();
+      }
+    } catch (err) {
+      // ignore abort errors, send any other errors
+      if (!(err instanceof Error) || err.name !== 'AbortError') {
+        const error = getTRPCErrorFromUnknown(err);
+        const data = opts.formatError?.({ error }) ?? null;
         stream.controller.enqueue({
           event: SERIALIZED_ERROR_EVENT,
           data: JSON.stringify(serialize(data)),
         });
-        break;
       }
-      if (next.done) {
-        break;
-      }
-
-      const value = next.value;
-
-      if (value === PING_SYM) {
-        stream.controller.enqueue({
-          comment: 'ping',
-        });
-        continue;
-      }
-
-      const chunk: SSEvent = isTrackedEnvelope(value)
-        ? {
-            id: value[0],
-            data: value[1],
-          }
-        : {
-            data: value,
-          };
-      if ('data' in chunk) {
-        chunk.data = JSON.stringify(serialize(chunk.data));
-      }
-
-      stream.controller.enqueue(chunk);
-
-      if (opts.emitAndEndImmediately) {
-        // end the stream in the next tick so that we can send a few more events from the queue
-        setTimeout(maxDurationPromise.resolve, 1);
-      }
-
-      nextPromise = iterator.next();
-    }
-    maxDurationPromise.clear();
-    await iterator.return?.();
-    try {
+    } finally {
+      maxDurationPromise.clear();
+      await iterator.return?.();
       stream.controller.close();
-    } catch {}
-  }).catch((error) => {
-    return stream.controller.error(error);
+    }
+  }).catch((err) => {
+    // should not be reached; just in case...
+    stream.controller.error(err);
   });
 
   return stream.readable.pipeThrough(
