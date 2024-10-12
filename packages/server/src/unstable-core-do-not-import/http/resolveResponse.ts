@@ -515,14 +515,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const path = call?.path;
           const type = call?.procedure?._def.type ?? 'unknown';
 
-          opts.onError?.({
-            error,
-            path,
-            input,
-            ctx,
-            req: opts.req,
-            type,
-          });
+          // no need to call `onError` here as it will be propagated through the stream itself
 
           const shape = getErrorShape({
             config,
