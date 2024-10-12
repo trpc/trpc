@@ -194,11 +194,6 @@ export function unstable_httpSubscriptionLink<
               type: 'stopped',
             },
           });
-          connectionState.next({
-            type: 'state',
-            state: 'idle',
-            error: null,
-          });
           observer.complete();
         }).catch((error) => {
           observer.error(TRPCClientError.from(error));
