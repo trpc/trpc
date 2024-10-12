@@ -102,6 +102,12 @@ const lazyDefaults: LazyOptions = {
   closeMs: 0,
 };
 
+/**
+ * @see https://trpc.io/docs/v11/client/links/wsLink
+ * @deprecated
+ * 🙋‍♂️ **Contributors needed** to continue supporting WebSockets!
+ * See https://github.com/trpc/trpc/issues/6109
+ */
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
     WebSocket: WebSocketImpl = WebSocket,
@@ -624,8 +630,21 @@ export function createWSClient(opts: WebSocketClientOptions) {
     connectionState: connectionState,
   };
 }
+
+/**
+ * @see https://trpc.io/docs/v11/client/links/wsLink
+ * @deprecated
+ * 🙋‍♂️ **Contributors needed** to continue supporting WebSockets!
+ * See https://github.com/trpc/trpc/issues/6109
+ */
 export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 
+/**
+ * @see https://trpc.io/docs/v11/client/links/wsLink
+ * @deprecated
+ * 🙋‍♂️ **Contributors needed** to continue supporting WebSockets!
+ * See https://github.com/trpc/trpc/issues/6109
+ */
 export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   client: TRPCWebSocketClient;
 } & TransformerOptions<inferClientTypes<TRouter>>;
@@ -646,6 +665,9 @@ class TRPCWebSocketClosedError extends Error {
 
 /**
  * @see https://trpc.io/docs/v11/client/links/wsLink
+ * @deprecated
+ * 🙋‍♂️ **Contributors needed** to continue supporting WebSockets!
+ * See https://github.com/trpc/trpc/issues/6109
  */
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions<TRouter>,
