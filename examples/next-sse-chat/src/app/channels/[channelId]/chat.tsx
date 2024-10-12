@@ -38,11 +38,11 @@ function SubscriptionStatus(props: {
           case 'idle':
           case 'connecting':
             // treat idle and connecting the same
+
             return (
               <div>
                 Connecting...
-                {subscription.connectionError &&
-                  ' (There are connection problems)'}
+                {subscription.error && ' (There are connection problems)'}
               </div>
             );
           case 'error':

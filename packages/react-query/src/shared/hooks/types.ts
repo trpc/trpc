@@ -177,7 +177,6 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   onData?: (data: TOutput) => void;
   /**
    * Called when an **unrecoverable error** occurs and the subscription is closed
-   * For recoverable errors, use `onStateChange` or the `connectionStatus / `connectionError` fields on the result
    */
   onError?: (err: TError) => void;
 }
@@ -203,7 +202,7 @@ export interface TRPCSubscriptionConnectingResult<TOutput, TError>
   extends TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'connecting';
   data: undefined | TOutput;
-  error: null;
+  error: TError | null;
 }
 
 export interface TRPCSubscriptionPendingResult<TOutput>

@@ -67,18 +67,11 @@ type TRPCSubscriptionResult<TOutput, TError> = {
    */
   data: TOutput | undefined;
   /**
-   * The error that caused the subscription to stop.
+   * The last error received - will be `null` whenever the status is `'pending'` or `'idle'`
+   * - has a value only when the status is `'error'`
+   * - *may* have a value when the status is `'connecting'`
    */
-  error: TError | undefined;
-  /**
-   * The current state of the connection.
-   * Will be one of: `'idle'`, `'connecting'`, `'pending'`, or `'error'`.
-   */
-  connectionState: 'idle' | 'connecting' | 'pending' | 'error';
-  /**
-   * The error related to the connection, if any.
-   */
-  connectionError: TError | null;
+  error: TRPCClientError | null;
   /**
    * Function to reset the subscription.
    */
@@ -113,7 +106,7 @@ export function MyComponent() {
         ))}
       </ul>
 
-      {result.error && (
+      {result.status === 'error' && (
         <button onClick={() => result.reset()}>
           Something went wrong - restart the subscription
         </button>
