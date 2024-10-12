@@ -201,11 +201,6 @@ export function unstable_httpSubscriptionLink<
           });
           observer.complete();
         }).catch((error) => {
-          connectionState.next({
-            type: 'state',
-            state: 'idle',
-            error: null,
-          });
           observer.error(TRPCClientError.from(error));
         });
 
