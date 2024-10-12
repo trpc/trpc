@@ -89,26 +89,28 @@ export const postRouter = router({
       }),
     )
     .subscription(async function* (opts) {
-      let lastMessageCursor: Date | null = null;
-      // We start by subscribing to the ee so that we don't miss any new events while fetching
+      // We start by subscribing to the event emitter so that we don't miss any new events while fetching
       const iterable = ee.toIterable('add', {
         signal: opts.signal,
       });
 
-      const eventId = opts.input.lastEventId;
-      if (eventId) {
-        const itemById = await db.query.Post.findFirst({
-          where: (fields, ops) => ops.eq(fields.id, eventId),
-        });
-        lastMessageCursor = itemById?.createdAt ?? null;
-      }
+      // Fetch the last message createdAt based on the last event id
+      let lastMessageCreatedAt = await (async () => {
+        const lastEventId = opts.input.lastEventId;
+        if (!lastEventId) return null;
 
-      const newItemsSinceCursor = await db.query.Post.findMany({
+        const itemById = await db.query.Post.findFirst({
+          where: (fields, ops) => ops.eq(fields.id, lastEventId),
+        });
+        return itemById?.createdAt ?? null;
+      })();
+
+      const newPostsSinceLastMessage = await db.query.Post.findMany({
         where: (fields, ops) =>
           ops.and(
             ops.eq(fields.channelId, opts.input.channelId),
-            lastMessageCursor
-              ? ops.gt(fields.createdAt, lastMessageCursor)
+            lastMessageCreatedAt
+              ? ops.gt(fields.createdAt, lastMessageCreatedAt)
               : undefined,
           ),
         orderBy: (fields, ops) => ops.asc(fields.createdAt),
@@ -116,27 +118,27 @@ export const postRouter = router({
 
       function* maybeYield(post: PostType) {
         if (post.channelId !== opts.input.channelId) {
-          // ignore posts from other channels
+          // ignore posts from other channels - the event emitter can emit from other channels
           return;
         }
-        if (lastMessageCursor && post.createdAt <= lastMessageCursor) {
-          // ignore posts that we've already sent
+        if (lastMessageCreatedAt && post.createdAt <= lastMessageCreatedAt) {
+          // ignore posts that we've already sent - happens if there is a race condition between the query and the event emitter
           return;
         }
 
         yield tracked(post.id, post);
 
         // update the cursor so that we don't send this post again
-        lastMessageCursor = post.createdAt;
+        lastMessageCreatedAt = post.createdAt;
       }
 
       // yield the posts we fetched from the db
-      for (const post of newItemsSinceCursor) {
+      for (const post of newPostsSinceLastMessage) {
         yield* maybeYield(post);
       }
 
+      // yield any new posts from the event emitter
       for await (const [channelId, post] of iterable) {
-        if (channelId !== opts.input.channelId) continue;
         yield* maybeYield(post);
       }
     }),
