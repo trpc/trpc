@@ -1,3 +1,5 @@
+import { createPromiseTimer } from './promiseTimer';
+
 export const PING_SYM = Symbol('ping');
 
 const PING_RESULT: IteratorResult<typeof PING_SYM> = {
@@ -5,26 +7,29 @@ const PING_RESULT: IteratorResult<typeof PING_SYM> = {
   done: false,
 };
 
+/**
+ * Derives a new {@link AsyncGenerator} based of {@link iterable}, that yields {@link PING_SYM}
+ * whenever no value has been yielded for {@link pingIntervalMs}.
+ */
 export async function* withPing<TValue>(
   iterable: AsyncIterable<TValue>,
-  pingInterval: number,
+  pingIntervalMs: number,
 ): AsyncGenerator<TValue | typeof PING_SYM> {
-  let timer!: ReturnType<typeof setTimeout>;
+  const timer = createPromiseTimer(pingIntervalMs);
   const iterator = iterable[Symbol.asyncIterator]();
   while (true) {
     const nextPromise = iterator.next();
-    const ping = new Promise<IteratorResult<typeof PING_SYM>>((resolve) => {
-      timer = setTimeout(resolve.bind(null, PING_RESULT), pingInterval);
-    });
+    const pingPromise = timer.start().promise.then(() => PING_RESULT);
     let result: IteratorResult<TValue | typeof PING_SYM>;
     try {
-      result = await Promise.race([ping, nextPromise]);
+      result = await Promise.race([nextPromise, pingPromise]);
     } finally {
-      clearTimeout(timer);
+      timer.clear();
     }
     if (result.done) {
       return result.value;
     }
     yield result.value;
+    timer.reset();
   }
 }
