@@ -5,6 +5,7 @@ import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
 import { createDeferred, createTimeoutPromise } from './utils/createDeferred';
 import { createReadableStream } from './utils/createReadableStream';
+import { PING_SYM, withPing } from './utils/withPing';
 
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
@@ -71,7 +72,13 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
   };
 
   run(async () => {
-    const iterator = opts.data[Symbol.asyncIterator]();
+    let iterable = opts.data;
+
+    if (ping.enabled && ping.intervalMs !== Infinity && ping.intervalMs > 0) {
+      iterable = withPing(iterable, ping.intervalMs);
+    }
+
+    const iterator = iterable[Symbol.asyncIterator]();
 
     const closedPromise = stream.cancelledPromise.then(() => 'closed' as const);
     const maxDurationPromise = createTimeoutPromise(
@@ -82,10 +89,6 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
     let nextPromise = iterator.next();
 
     while (true) {
-      const pingPromise = createTimeoutPromise(
-        ping.enabled ? ping.intervalMs : Infinity,
-        'ping' as const,
-      );
       const next = await Promise.race([
         nextPromise.catch((err) => {
           if (err instanceof Error && err.name === 'AbortError') {
@@ -94,12 +97,10 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
           }
           return getTRPCErrorFromUnknown(err);
         }),
-        pingPromise.promise,
         closedPromise,
         maxDurationPromise.promise,
       ]);
 
-      pingPromise.clear();
       if (next === 'aborted') {
         break;
       }
@@ -108,13 +109,6 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
       }
       if (next === 'maxDuration') {
         break;
-      }
-
-      if (next === 'ping') {
-        stream.controller.enqueue({
-          comment: 'ping',
-        });
-        continue;
       }
 
       if (next instanceof Error) {
@@ -132,6 +126,13 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
       }
 
       const value = next.value;
+
+      if (value === PING_SYM) {
+        stream.controller.enqueue({
+          comment: 'ping',
+        });
+        continue;
+      }
 
       const chunk: SSEvent = isTrackedEnvelope(value)
         ? {
