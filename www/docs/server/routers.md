@@ -26,6 +26,10 @@ export const publicProcedure = t.procedure;
 
 You'll notice we are exporting certain methods of the `t` variable here rather than `t` itself. This is to establish a certain set of procedures that we will use idiomatically in our codebase.
 
+> [!WARNING]  
+> Due to typescript limitations, all imports toward the *trpc.ts* must be relative. You cannot use path aliases as defined within your *tsconfig.json*.
+> Otherwise, type inference in your client code won't work (the routers will resolve to `any`).
+
 ## Defining a router
 
 Next, let's define a router with a procedure to use in our application. We have now created an API "endpoint".
