@@ -1,0 +1,38 @@
+diff --git a/build/modern/types.d.cts b/build/modern/types.d.cts
+index 655f2c09d56d33e8ad08a67d079dac15d60a16b6..1cff51e59e4997759da1e5fcce2f08a0dfeb869c 100644
+--- a/build/modern/types.d.cts
++++ b/build/modern/types.d.cts
+@@ -5,12 +5,12 @@ interface UseBaseQueryOptions<TQueryFnData = unknown, TError = DefaultError, TDa
+ interface UseQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryKey extends QueryKey = QueryKey> extends OmitKeyof<UseBaseQueryOptions<TQueryFnData, TError, TData, TQueryFnData, TQueryKey>, 'suspense'> {
+ }
+ interface UseSuspenseQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryKey extends QueryKey = QueryKey> extends OmitKeyof<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>, 'queryFn' | 'enabled' | 'throwOnError' | 'placeholderData'> {
+-    queryFn: Exclude<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>['queryFn'], SkipToken>;
++    queryFn?: Exclude<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>['queryFn'], SkipToken>;
+ }
+ interface UseInfiniteQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryData = TQueryFnData, TQueryKey extends QueryKey = QueryKey, TPageParam = unknown> extends OmitKeyof<InfiniteQueryObserverOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>, 'suspense'> {
+ }
+ interface UseSuspenseInfiniteQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryData = TQueryFnData, TQueryKey extends QueryKey = QueryKey, TPageParam = unknown> extends OmitKeyof<UseInfiniteQueryOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>, 'queryFn' | 'enabled' | 'throwOnError' | 'placeholderData'> {
+-    queryFn: Exclude<UseInfiniteQueryOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>['queryFn'], SkipToken>;
++    queryFn?: Exclude<UseInfiniteQueryOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>['queryFn'], SkipToken>;
+ }
+ type UseBaseQueryResult<TData = unknown, TError = DefaultError> = QueryObserverResult<TData, TError>;
+ type UseQueryResult<TData = unknown, TError = DefaultError> = UseBaseQueryResult<TData, TError>;
+diff --git a/build/modern/types.d.ts b/build/modern/types.d.ts
+index 655f2c09d56d33e8ad08a67d079dac15d60a16b6..1cff51e59e4997759da1e5fcce2f08a0dfeb869c 100644
+--- a/build/modern/types.d.ts
++++ b/build/modern/types.d.ts
+@@ -5,12 +5,12 @@ interface UseBaseQueryOptions<TQueryFnData = unknown, TError = DefaultError, TDa
+ interface UseQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryKey extends QueryKey = QueryKey> extends OmitKeyof<UseBaseQueryOptions<TQueryFnData, TError, TData, TQueryFnData, TQueryKey>, 'suspense'> {
+ }
+ interface UseSuspenseQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryKey extends QueryKey = QueryKey> extends OmitKeyof<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>, 'queryFn' | 'enabled' | 'throwOnError' | 'placeholderData'> {
+-    queryFn: Exclude<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>['queryFn'], SkipToken>;
++    queryFn?: Exclude<UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>['queryFn'], SkipToken>;
+ }
+ interface UseInfiniteQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryData = TQueryFnData, TQueryKey extends QueryKey = QueryKey, TPageParam = unknown> extends OmitKeyof<InfiniteQueryObserverOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>, 'suspense'> {
+ }
+ interface UseSuspenseInfiniteQueryOptions<TQueryFnData = unknown, TError = DefaultError, TData = TQueryFnData, TQueryData = TQueryFnData, TQueryKey extends QueryKey = QueryKey, TPageParam = unknown> extends OmitKeyof<UseInfiniteQueryOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>, 'queryFn' | 'enabled' | 'throwOnError' | 'placeholderData'> {
+-    queryFn: Exclude<UseInfiniteQueryOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>['queryFn'], SkipToken>;
++    queryFn?: Exclude<UseInfiniteQueryOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>['queryFn'], SkipToken>;
+ }
+ type UseBaseQueryResult<TData = unknown, TError = DefaultError> = QueryObserverResult<TData, TError>;
+ type UseQueryResult<TData = unknown, TError = DefaultError> = UseBaseQueryResult<TData, TError>;
