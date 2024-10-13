@@ -606,6 +606,7 @@ export function createRootHooks<
       {
         queries: queries.map((query) => ({
           ...query,
+          queryFn: query.queryFn as any,
           queryKey: (query as TRPCQueryOptions<any, any>).queryKey,
         })),
       },
