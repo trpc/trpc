@@ -1,0 +1,32 @@
+{
+  "references": [{ "path": "./client" }, { "path": "./server" }],
+
+  "compilerOptions": {
+    "paths": {
+      "@client/*": ["./client/src/*"],
+      "@server/*": ["./server/src/*"]
+    },
+    
+    // Enable latest features
+    "lib": ["ESNext"],
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleDetection": "force",
+
+    // Bundler mode
+    "moduleResolution": "NodeNext",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Best practices
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Some stricter flags
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noPropertyAccessFromIndexSignature": true
+  }
+}

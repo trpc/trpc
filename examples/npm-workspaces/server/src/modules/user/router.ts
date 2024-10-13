@@ -1,6 +1,6 @@
-import { publicProcedure, router } from './trpc.js';
+import { db } from '@server/_skel/db.js';
+import { publicProcedure, router } from '@server/_skel/trpc.ts';
 import { z } from 'zod';
-import { db } from './db.js';
 
 export default router({
   list: publicProcedure.query(async () => {

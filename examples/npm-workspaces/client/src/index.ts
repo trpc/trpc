@@ -2,15 +2,15 @@
  * This is the client-side code that uses the inferred types from the server
  */
 import {
-  createTRPCClient,
-  splitLink,
-  unstable_httpBatchStreamLink,
-  unstable_httpSubscriptionLink,
+    createTRPCClient,
+    splitLink,
+    unstable_httpBatchStreamLink,
+    unstable_httpSubscriptionLink,
 } from '@trpc/client';
 /**
  * We only import the `AppRouter` type from the server - this is not available at runtime
  */
-import type { AppRouter } from '@examples-npm-workspaces/server/src';
+import type { AppRouter } from '@examples-npm-workspaces/server';
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
