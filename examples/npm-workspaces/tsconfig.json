@@ -6,18 +6,16 @@
       "@client/*": ["./client/src/*"],
       "@server/*": ["./server/src/*"]
     },
-    
+
     // Enable latest features
     "lib": ["ESNext"],
     "target": "ESNext",
-    "module": "NodeNext",
+    "module": "ESNext",
     "moduleDetection": "force",
 
     // Bundler mode
-    "moduleResolution": "NodeNext",
-    "allowImportingTsExtensions": true,
+    "moduleResolution": "Bundler",
     "verbatimModuleSyntax": true,
-    "noEmit": true,
 
     // Best practices
     "strict": true,

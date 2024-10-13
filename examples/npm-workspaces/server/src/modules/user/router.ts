@@ -1,5 +1,5 @@
 import { db } from '@server/_skel/db.js';
-import { publicProcedure, router } from '@server/_skel/trpc.ts';
+import { publicProcedure, router } from '@server/_skel/trpc.js';
 import { z } from 'zod';
 
 export default router({

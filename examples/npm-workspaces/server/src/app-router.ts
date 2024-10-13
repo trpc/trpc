@@ -1,4 +1,4 @@
-import { publicProcedure, router } from "./_skel/trpc.ts";
+import { publicProcedure, router } from "./_skel/trpc.js";
 import userRouter from './modules/user/router.js';
 
 const appRouter = router({

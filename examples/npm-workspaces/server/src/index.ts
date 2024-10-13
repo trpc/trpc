@@ -3,9 +3,9 @@
  */
  
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import appRouter from './app-router.ts';
+import appRouter from './app-router.js';
 
-export type { AppRouter } from "./app-router.ts";
+export type { AppRouter } from "./app-router";
 
 const server = createHTTPServer({ router: appRouter });
 
