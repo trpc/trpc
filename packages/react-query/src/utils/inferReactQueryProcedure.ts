@@ -30,7 +30,7 @@ export type InferQueryOptions<
     TRPCClientErrorLike<TRoot>,
     TData
   >,
-  'select'
+  'select' | 'queryFn'
 >;
 
 /**
