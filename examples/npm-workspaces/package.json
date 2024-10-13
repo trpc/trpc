@@ -1,0 +1,8 @@
+{
+  "name": "@examples-npm-workspaces/root",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ]
+}
