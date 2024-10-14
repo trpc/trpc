@@ -18,6 +18,7 @@ Feel free to contribute to this page with improvements or create a new discussio
 - Make sure you have no type errors in your code
 - Make sure you have `"strict": true` in your `tsconfig.json`
 - Make sure your `@trpc/*`-versions match in your `package.json`
+- In case of a monorepo (or otherwise locally linked packages), check [below](#why-doesnt-trpc-work-in-my-monorepo). Misconfigured TypeScript path aliases may result in `any` types in the client code.
 
 ## How do I make a middleware change the type of my `Context`?
 
@@ -36,9 +37,10 @@ Here are some things to check:
 - Make sure you have the same version of all `@trpc/*` across all your project
 - Make sure you have `"strict": true` in all your `tsconfig.json`s
 - Make sure you have no type errors in your app
-- In the case that you have a dedicated server and client `tsconfig.json` files without a bundled server monorepo package, make sure you have `"paths": [...]` in your client `tsconfig.json` like your server `tsconfig.json`,so that the client can find the same file.
+- In the case that you have a dedicated server and client `tsconfig.json` files without a bundled server monorepo package:
+  - Make sure the `"paths": {...}` in your client `tsconfig.json` equal those in your server `tsconfig.json`, so that the client can find the same files. It is recommended to only define path aliases in a single root `tsconfig.json` and extend it in client & server configuration files.
 
-You can also have a look at our [Awesome tRPC](/docs/community/awesome-trpc)-collection to find several open-source projects that are using tRPC in a monorepo.
+You can also have a look at our [Awesome tRPC](/docs/community/awesome-trpc)-collection to find several open-source projects that are using tRPC in a monorepo. For a minimal setup, check out the [npm-workspaces example](https://github.com/trpc/trpc/tree/next/examples/npm-workspaces) as well.
 
 ## Is a monorepo mandatory?
 
