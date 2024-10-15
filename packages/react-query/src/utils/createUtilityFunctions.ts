@@ -10,6 +10,7 @@ import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import/utils';
 import { getClientArgs } from '../internals/getClientArgs';
+import type { TRPCQueryKey } from '../internals/getQueryKey';
 import { createTRPCOptionsResult } from '../internals/trpcResult';
 import { buildQueryFromAsyncIterable, type TRPCQueryUtils } from '../shared';
 
@@ -41,17 +42,35 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     infiniteQueryOptions: (path, queryKey, opts) => {
       const inputIsSkipToken = queryKey[1]?.input === skipToken;
 
+      const queryFn = async (
+        queryFnContext: QueryFunctionContext<TRPCQueryKey, unknown>,
+      ): Promise<unknown> => {
+        const actualOpts = {
+          ...opts,
+          trpc: {
+            ...opts?.trpc,
+            ...(opts?.trpc?.abortOnUnmount
+              ? { signal: queryFnContext.signal }
+              : { signal: null }),
+          },
+        };
+
+        const result = await untypedClient.query(
+          ...getClientArgs(queryKey, actualOpts, {
+            direction: queryFnContext.direction,
+            pageParam: queryFnContext.pageParam,
+          }),
+        );
+
+        return result;
+      };
+
       return Object.assign(
         infiniteQueryOptions({
           ...opts,
           initialData: opts?.initialData as any,
           queryKey,
-          queryFn: inputIsSkipToken
-            ? skipToken
-            : ({ pageParam, direction }) =>
-                untypedClient.query(
-                  ...getClientArgs(queryKey, opts, { pageParam, direction }),
-                ),
+          queryFn: inputIsSkipToken ? skipToken : queryFn,
           initialPageParam: (opts?.initialCursor as any) ?? null,
         }),
         { trpc: createTRPCOptionsResult({ path }) },
@@ -61,13 +80,15 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     queryOptions: (path, queryKey, opts) => {
       const inputIsSkipToken = queryKey[1]?.input === skipToken;
 
-      async function queryFn(args: QueryFunctionContext) {
+      const queryFn = async (
+        queryFnContext: QueryFunctionContext<TRPCQueryKey>,
+      ): Promise<unknown> => {
         const actualOpts = {
           ...opts,
           trpc: {
             ...opts?.trpc,
             ...(opts?.trpc?.abortOnUnmount
-              ? { signal: args.signal }
+              ? { signal: queryFnContext.signal }
               : { signal: null }),
           },
         };
@@ -81,7 +102,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
         }
 
         return result;
-      }
+      };
 
       return Object.assign(
         queryOptions({
