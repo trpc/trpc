@@ -29,9 +29,9 @@ export interface PingOptions {
   intervalMs?: number;
 }
 
-export interface SSEStreamProducerOptions {
+export interface SSEStreamProducerOptions<TValue = unknown> {
   serialize?: Serialize;
-  data: AsyncIterable<unknown>;
+  data: AsyncIterable<TValue>;
   maxDepth?: number;
   ping?: PingOptions;
   /**
@@ -61,7 +61,7 @@ type SSEvent = Partial<{
  *
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
-export function sseStreamProducer(opts: SSEStreamProducerOptions) {
+export function sseStreamProducer<TValue = unknown>(opts: SSEStreamProducerOptions<TValue>) {
   const stream = createReadableStream<SSEvent>();
   stream.controller.enqueue({ comment: 'connected' });
 
@@ -73,7 +73,9 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
   };
 
   run(async () => {
-    let iterable = withCancel(opts.data, stream.cancelledPromise);
+    let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
+    
+    iterable = withCancel(iterable, stream.cancelledPromise);
 
     if (opts.emitAndEndImmediately) {
       iterable = takeWithGrace(iterable, { count: 1, gracePeriodMs: 1 });
