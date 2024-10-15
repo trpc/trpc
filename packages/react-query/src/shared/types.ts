@@ -7,7 +7,6 @@ import type {
   UndefinedInitialDataInfiniteOptions,
   UndefinedInitialDataOptions,
 } from '@tanstack/react-query';
-import type { TRPCRequestOptions } from '@trpc/client';
 import type {
   AnyRouter,
   DistributiveOmit,
@@ -17,20 +16,8 @@ import type { TRPCQueryKey } from '../internals/getQueryKey';
 import type {
   coerceAsyncIterableToArray,
   ExtractCursorType,
+  TRPCReactRequestOptions,
 } from './hooks/types';
-
-export interface TRPCReactRequestOptions
-  // For RQ, we use their internal AbortSignals instead of letting the user pass their own
-  extends Omit<TRPCRequestOptions, 'signal'> {
-  /**
-   * Opt out of SSR for this query by passing `ssr: false`
-   */
-  ssr?: boolean;
-  /**
-   * Opt out or into aborting request on unmount
-   */
-  abortOnUnmount?: boolean;
-}
 
 export interface TRPCQueryBaseOptions {
   /**
