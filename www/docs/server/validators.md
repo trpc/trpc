@@ -407,8 +407,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(v.parser(v.object({ name: v.string() })))
-    .output(v.parser(v.object({ greeting: v.string() })))
+    .input(v.object({ name: v.string() }))
+    .output(v.object({ greeting: v.string() }))
     .query(({ input }) => {
       //      ^?
       return {
