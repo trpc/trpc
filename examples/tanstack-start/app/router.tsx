@@ -56,11 +56,7 @@ export function createRouter() {
     },
   });
 
-  // https://github.com/TanStack/router/pull/2007
-  return routerWithQueryClient(
-    router as never,
-    queryClient,
-  ) as unknown as typeof router;
+  return routerWithQueryClient(router, queryClient);
 }
 
 declare module '@tanstack/react-router' {
