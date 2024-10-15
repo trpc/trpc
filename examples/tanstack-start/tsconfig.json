@@ -12,7 +12,8 @@
     "baseUrl": ".",
     "paths": {
       "~/*": ["./app/*"]
-    }
+    },
+    "types": ["vite/client"]
   },
   "include": ["**/*.ts", "**/*.tsx"]
 }
