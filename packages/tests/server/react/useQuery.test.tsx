@@ -1,6 +1,6 @@
 import { waitMs } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
-import { skipToken, useQuery, type InfiniteData } from '@tanstack/react-query';
+import { skipToken, type InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
