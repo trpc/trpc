@@ -8,7 +8,7 @@ dist/
 .output/
 .eslintcache
 *.tsbuildinfo
-app.config_*
+app.config.timestamp_*
 
 db.sqlite
 
