@@ -24,14 +24,16 @@ import {
   getMutationKeyInternal,
   getQueryKeyInternal,
 } from '../../internals/getQueryKey';
-import { useHookResult } from '../../internals/trpcResult';
+import {
+  buildQueryFromAsyncIterable,
+  useHookResult,
+} from '../../internals/trpcResult';
 import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
 } from '../../internals/useQueries';
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
 import { createUseQueries } from '../proxy/useQueriesProxy';
-import { buildQueryFromAsyncIterable } from '../queryClient';
 import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 import type {
   CreateClient,

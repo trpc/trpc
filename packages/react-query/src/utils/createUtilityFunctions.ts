@@ -8,11 +8,14 @@ import {
 import type { CreateTRPCClient } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
-import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import/utils';
+import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import { getClientArgs } from '../internals/getClientArgs';
 import type { TRPCQueryKey } from '../internals/getQueryKey';
-import { createTRPCOptionsResult } from '../internals/trpcResult';
-import { buildQueryFromAsyncIterable, type TRPCQueryUtils } from '../shared';
+import {
+  buildQueryFromAsyncIterable,
+  createTRPCOptionsResult,
+} from '../internals/trpcResult';
+import { type TRPCQueryUtils } from '../shared';
 
 export interface CreateQueryUtilsOptions<TRouter extends AnyRouter> {
   /**
