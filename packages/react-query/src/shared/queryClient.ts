@@ -20,6 +20,9 @@ export type CreateTRPCReactQueryClientConfig =
 export const getQueryClient = (config: CreateTRPCReactQueryClientConfig) =>
   config.queryClient ?? new QueryClient(config.queryClientConfig);
 
+/**
+ * @internal
+ */
 export async function buildQueryFromAsyncIterable(
   asyncIterable: AsyncIterable<unknown>,
   queryClient: QueryClient,
