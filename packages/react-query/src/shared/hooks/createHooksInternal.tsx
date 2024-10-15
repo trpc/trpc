@@ -31,6 +31,7 @@ import type {
 } from '../../internals/useQueries';
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
 import { createUseQueries } from '../proxy/useQueriesProxy';
+import { buildQueryFromAsyncIterable } from '../queryClient';
 import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 import type {
   CreateClient,
@@ -193,26 +194,11 @@ export function createRootHooks<
               );
 
               if (isAsyncIterable(result)) {
-                const queryCache = queryClient.getQueryCache();
-
-                const query = queryCache.build(queryClient, {
+                return buildQueryFromAsyncIterable(
+                  result,
+                  queryClient,
                   queryKey,
-                });
-
-                query.setState({
-                  data: [],
-                  status: 'success',
-                });
-
-                const aggregate: unknown[] = [];
-                for await (const value of result) {
-                  aggregate.push(value);
-
-                  query.setState({
-                    data: [...aggregate],
-                  });
-                }
-                return aggregate;
+                );
               }
               return result;
             },

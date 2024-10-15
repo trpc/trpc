@@ -7,19 +7,36 @@ import type {
   UndefinedInitialDataInfiniteOptions,
   UndefinedInitialDataOptions,
 } from '@tanstack/react-query';
+import type { TRPCRequestOptions } from '@trpc/client';
 import type {
   AnyRouter,
   DistributiveOmit,
   MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCQueryKey } from '../internals/getQueryKey';
-import type { ExtractCursorType } from './hooks/types';
+import type {
+  coerceAsyncIterableToArray,
+  ExtractCursorType,
+} from './hooks/types';
+
+export interface TRPCReactRequestOptions
+  // For RQ, we use their internal AbortSignals instead of letting the user pass their own
+  extends Omit<TRPCRequestOptions, 'signal'> {
+  /**
+   * Opt out of SSR for this query by passing `ssr: false`
+   */
+  ssr?: boolean;
+  /**
+   * Opt out or into aborting request on unmount
+   */
+  abortOnUnmount?: boolean;
+}
 
 export interface TRPCQueryBaseOptions {
   /**
    * tRPC-related options
    */
-  trpc?: Record<never, never>;
+  trpc?: TRPCReactRequestOptions;
 }
 
 export interface TRPCQueryOptionsResult {
@@ -36,28 +53,48 @@ type TRPCInfiniteOptionOverrides = TRPCOptionOverrides | 'initialPageParam';
  */
 export interface UndefinedTRPCQueryOptionsIn<TOutput, TError>
   extends DistributiveOmit<
-      UndefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
+      UndefinedInitialDataOptions<
+        coerceAsyncIterableToArray<TOutput>,
+        TError,
+        coerceAsyncIterableToArray<TOutput>,
+        TRPCQueryKey
+      >,
       TRPCOptionOverrides
     >,
     TRPCQueryBaseOptions {}
 
 export interface UndefinedTRPCQueryOptionsOut<TOutput, TError>
-  extends UndefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
+  extends UndefinedInitialDataOptions<
+      coerceAsyncIterableToArray<TOutput>,
+      TError,
+      coerceAsyncIterableToArray<TOutput>,
+      TRPCQueryKey
+    >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, TOutput>;
+  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>>;
 }
 
 export interface DefinedTRPCQueryOptionsIn<TOutput, TError>
   extends DistributiveOmit<
-      DefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
+      DefinedInitialDataOptions<
+        coerceAsyncIterableToArray<TOutput>,
+        TError,
+        coerceAsyncIterableToArray<TOutput>,
+        TRPCQueryKey
+      >,
       TRPCOptionOverrides
     >,
     TRPCQueryBaseOptions {}
 
 export interface DefinedTRPCQueryOptionsOut<TOutput, TError>
-  extends DefinedInitialDataOptions<TOutput, TError, TOutput, TRPCQueryKey>,
+  extends DefinedInitialDataOptions<
+      coerceAsyncIterableToArray<TOutput>,
+      TError,
+      coerceAsyncIterableToArray<TOutput>,
+      TRPCQueryKey
+    >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, TOutput>;
+  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>>;
 }
 
 /**

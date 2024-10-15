@@ -1,3 +1,4 @@
+import type { QueryFunctionContext } from '@tanstack/react-query';
 import {
   infiniteQueryOptions,
   queryOptions,
@@ -7,9 +8,10 @@ import {
 import type { CreateTRPCClient } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import/utils';
 import { getClientArgs } from '../internals/getClientArgs';
 import { createTRPCOptionsResult } from '../internals/trpcResult';
-import type { TRPCQueryUtils } from '../shared';
+import { buildQueryFromAsyncIterable, type TRPCQueryUtils } from '../shared';
 
 export interface CreateQueryUtilsOptions<TRouter extends AnyRouter> {
   /**
@@ -59,14 +61,34 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     queryOptions: (path, queryKey, opts) => {
       const inputIsSkipToken = queryKey[1]?.input === skipToken;
 
+      async function queryFn(args: QueryFunctionContext) {
+        const actualOpts = {
+          ...opts,
+          trpc: {
+            ...opts?.trpc,
+            ...(opts?.trpc?.abortOnUnmount
+              ? { signal: args.signal }
+              : { signal: null }),
+          },
+        };
+
+        const result = await untypedClient.query(
+          ...getClientArgs(queryKey, actualOpts),
+        );
+
+        if (isAsyncIterable(result)) {
+          return buildQueryFromAsyncIterable(result, queryClient, queryKey);
+        }
+
+        return result;
+      }
+
       return Object.assign(
         queryOptions({
           ...opts,
           initialData: opts?.initialData as any,
           queryKey,
-          queryFn: inputIsSkipToken
-            ? skipToken
-            : () => untypedClient.query(...getClientArgs(queryKey, opts)),
+          queryFn: inputIsSkipToken ? skipToken : queryFn,
         }),
         { trpc: createTRPCOptionsResult({ path }) },
       );

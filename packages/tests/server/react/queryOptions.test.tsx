@@ -10,6 +10,7 @@ import {
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
+import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
 import { z } from 'zod';
@@ -18,6 +19,11 @@ const fixtureData = ['1', '2', '3', '4'];
 
 const ctx = konn()
   .beforeEach(() => {
+    let iterableDeferred = createDeferred<void>();
+    const nextIterable = () => {
+      iterableDeferred.resolve();
+      iterableDeferred = createDeferred();
+    };
     const t = initTRPC.create({});
 
     const appRouter = t.router({
@@ -54,6 +60,12 @@ const ctx = konn()
                   : input.cursor + 1,
             };
           }),
+        iterable: t.procedure.query(async function* () {
+          for (let i = 0; i < 3; i++) {
+            await iterableDeferred.promise;
+            yield i + 1;
+          }
+        }),
       }),
     });
 
@@ -65,6 +77,7 @@ const ctx = konn()
 
     return {
       ...testHelpers,
+      nextIterable,
       useTRPC,
     };
   })
@@ -123,7 +136,159 @@ describe('queryOptions', () => {
       expect(utils.container).toHaveTextContent(`pending`);
     });
   });
+
+  test('with extra `trpc` context', async () => {
+    const { useTRPC, App } = ctx;
+
+    const context = {
+      __TEST__: true,
+    };
+
+    function MyComponent() {
+      const trpc = useTRPC();
+      const queryOptions = trpc.post.byId.queryOptions(
+        { id: '1' },
+        { trpc: { context } },
+      );
+      expect(queryOptions.trpc.path).toBe('post.byId');
+      const query1 = useQuery(queryOptions);
+
+      if (!query1.data) {
+        return <>...</>;
+      }
+
+      type TData = (typeof query1)['data'];
+      expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+
+      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`__result`);
+    });
+
+    expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
+  });
+
+  test('iterable', async () => {
+    const { useTRPC, App } = ctx;
+    const states: {
+      status: string;
+      data: unknown;
+      fetchStatus: string;
+    }[] = [];
+    const selects: number[][] = [];
+
+    function MyComponent() {
+      const trpc = useTRPC();
+      const opts = trpc.post.iterable.queryOptions(undefined, {
+        select(data) {
+          expectTypeOf<number[]>(data);
+          selects.push(data);
+          return data;
+        },
+        trpc: {
+          context: {
+            stream: 1,
+          },
+        },
+      });
+      const query1 = useQuery(opts);
+      states.push({
+        status: query1.status,
+        data: query1.data,
+        fetchStatus: query1.fetchStatus,
+      });
+      ctx.nextIterable();
+
+      expectTypeOf(query1.data!).toMatchTypeOf<number[]>();
+
+      return (
+        <pre>
+          {query1.status}:{query1.isFetching ? 'fetching' : 'notFetching'}
+        </pre>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`success:notFetching`);
+    });
+
+    expect(selects).toEqual([
+      [],
+      [],
+      [1],
+      [1],
+      [1, 2],
+      [1, 2],
+      [1, 2, 3],
+      [1, 2, 3],
+    ]);
+
+    expect(states.map((s) => [s.status, s.fetchStatus])).toEqual([
+      // initial
+      ['pending', 'fetching'],
+      // waiting 3 values
+      ['success', 'fetching'],
+      ['success', 'fetching'],
+      ['success', 'fetching'],
+      // done iterating
+      ['success', 'idle'],
+    ]);
+    expect(states).toMatchInlineSnapshot(`
+        Array [
+          Object {
+            "data": undefined,
+            "fetchStatus": "fetching",
+            "status": "pending",
+          },
+          Object {
+            "data": Array [],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+            ],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+              2,
+            ],
+            "fetchStatus": "fetching",
+            "status": "success",
+          },
+          Object {
+            "data": Array [
+              1,
+              2,
+              3,
+            ],
+            "fetchStatus": "idle",
+            "status": "success",
+          },
+        ]
+      `);
+  });
 });
+
+//
+// ---
+//
 
 describe('infiniteQueryOptions', () => {
   test('basic', async () => {
