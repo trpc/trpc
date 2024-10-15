@@ -1,10 +1,14 @@
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import type { MaybePromise } from '../types';
-import { run } from '../utils';
+import { identity, run } from '../utils';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
-import { createDeferred, createTimeoutPromise } from './utils/createDeferred';
+import { takeWithGrace, withCancel } from './utils/asyncIterable';
+import { createDeferred } from './utils/createDeferred';
 import { createReadableStream } from './utils/createReadableStream';
+import type { PromiseTimer } from './utils/promiseTimer';
+import { createPromiseTimer } from './utils/promiseTimer';
+import { PING_SYM, withPing } from './utils/withPing';
 
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
@@ -25,9 +29,9 @@ export interface PingOptions {
   intervalMs?: number;
 }
 
-export interface SSEStreamProducerOptions {
+export interface SSEStreamProducerOptions<TValue = unknown> {
   serialize?: Serialize;
-  data: AsyncIterable<unknown>;
+  data: AsyncIterable<TValue>;
   maxDepth?: number;
   ping?: PingOptions;
   /**
@@ -57,13 +61,11 @@ type SSEvent = Partial<{
  *
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
-export function sseStreamProducer(opts: SSEStreamProducerOptions) {
+export function sseStreamProducer<TValue = unknown>(opts: SSEStreamProducerOptions<TValue>) {
   const stream = createReadableStream<SSEvent>();
-  stream.controller.enqueue({
-    comment: 'connected',
-  });
+  stream.controller.enqueue({ comment: 'connected' });
 
-  const { serialize = (v) => v } = opts;
+  const { serialize = identity } = opts;
 
   const ping: Required<PingOptions> = {
     enabled: opts.ping?.enabled ?? false,
@@ -71,96 +73,63 @@ export function sseStreamProducer(opts: SSEStreamProducerOptions) {
   };
 
   run(async () => {
-    const iterator = opts.data[Symbol.asyncIterator]();
+    let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
+    
+    iterable = withCancel(iterable, stream.cancelledPromise);
 
-    const closedPromise = stream.cancelledPromise.then(() => 'closed' as const);
-    const maxDurationPromise = createTimeoutPromise(
-      opts.maxDurationMs ?? Infinity,
-      'maxDuration' as const,
-    );
+    if (opts.emitAndEndImmediately) {
+      iterable = takeWithGrace(iterable, { count: 1, gracePeriodMs: 1 });
+    }
 
-    let nextPromise = iterator.next();
+    let maxDurationTimer: PromiseTimer | null = null;
+    if (
+      opts.maxDurationMs != null &&
+      opts.maxDurationMs > 0 &&
+      opts.maxDurationMs !== Infinity
+    ) {
+      maxDurationTimer = createPromiseTimer(opts.maxDurationMs).start();
+      iterable = withCancel(iterable, maxDurationTimer.promise);
+    }
 
-    while (true) {
-      const pingPromise = createTimeoutPromise(
-        ping.enabled ? ping.intervalMs : Infinity,
-        'ping' as const,
-      );
-      const next = await Promise.race([
-        nextPromise.catch((err) => {
-          if (err instanceof Error && err.name === 'AbortError') {
-            // Ensures that aborting the request doesn't throw an error
-            return 'aborted' as const;
-          }
-          return getTRPCErrorFromUnknown(err);
-        }),
-        pingPromise.promise,
-        closedPromise,
-        maxDurationPromise.promise,
-      ]);
+    if (ping.enabled && ping.intervalMs !== Infinity && ping.intervalMs > 0) {
+      iterable = withPing(iterable, ping.intervalMs);
+    }
 
-      pingPromise.clear();
-      if (next === 'aborted') {
-        break;
+    try {
+      for await (const value of iterable) {
+        if (value === PING_SYM) {
+          stream.controller.enqueue({ comment: 'ping' });
+          continue;
+        }
+
+        const chunk: SSEvent = isTrackedEnvelope(value)
+          ? { id: value[0], data: value[1] }
+          : { data: value };
+        if ('data' in chunk) {
+          chunk.data = JSON.stringify(serialize(chunk.data));
+        }
+
+        stream.controller.enqueue(chunk);
       }
-      if (next === 'closed') {
-        break;
-      }
-      if (next === 'maxDuration') {
-        break;
-      }
-
-      if (next === 'ping') {
-        stream.controller.enqueue({
-          comment: 'ping',
-        });
-        continue;
-      }
-
-      if (next instanceof Error) {
-        const data = opts.formatError
-          ? opts.formatError({ error: next })
-          : null;
+    } catch (err) {
+      // ignore abort errors, send any other errors
+      if (!(err instanceof Error) || err.name !== 'AbortError') {
+        // `err` must be caused by `opts.data`, `JSON.stringify` or `serialize`.
+        // So, a user error in any case.
+        const error = getTRPCErrorFromUnknown(err);
+        const data = opts.formatError?.({ error }) ?? null;
         stream.controller.enqueue({
           event: SERIALIZED_ERROR_EVENT,
           data: JSON.stringify(serialize(data)),
         });
-        break;
       }
-      if (next.done) {
-        break;
-      }
-
-      const value = next.value;
-
-      const chunk: SSEvent = isTrackedEnvelope(value)
-        ? {
-            id: value[0],
-            data: value[1],
-          }
-        : {
-            data: value,
-          };
-      if ('data' in chunk) {
-        chunk.data = JSON.stringify(serialize(chunk.data));
-      }
-
-      stream.controller.enqueue(chunk);
-
-      if (opts.emitAndEndImmediately) {
-        // end the stream in the next tick so that we can send a few more events from the queue
-        setTimeout(maxDurationPromise.resolve, 1);
-      }
-
-      nextPromise = iterator.next();
-    }
-    maxDurationPromise.clear();
-    await iterator.return?.();
-    try {
+    } finally {
+      maxDurationTimer?.clear();
       stream.controller.close();
-    } catch {}
-  }).catch((error) => {
-    return stream.controller.error(error);
+    }
+  }).catch((err) => {
+    // should not be reached; just in case...
+    stream.controller.error(err);
   });
 
   return stream.readable.pipeThrough(
