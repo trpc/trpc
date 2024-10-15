@@ -204,7 +204,7 @@ test('fetch', async () => {
     expect(utils.container).toHaveTextContent('new post');
   });
 
-  expect(ctx.spyLink.mock.calls[0]![0]!.context).toMatchObject(context);
+  expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
 });
 
 test('prefetch', async () => {
@@ -255,7 +255,7 @@ test('prefetch', async () => {
     expect(renderclient).toHaveBeenNthCalledWith<[Post[]]>(1, [defaultPost]);
   });
 
-  expect(ctx.spyLink.mock.calls[0]![0]!.context).toMatchObject(context);
+  expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
 });
 
 test('invalidate', async () => {
