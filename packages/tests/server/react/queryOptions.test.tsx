@@ -552,7 +552,7 @@ describe('infiniteQueryOptions', () => {
     });
 
     await waitFor(() => {
-      expect(utils).toHaveTextContent('__selected');
+      expect(utils.container).toHaveTextContent('__selected');
     });
   });
 });
