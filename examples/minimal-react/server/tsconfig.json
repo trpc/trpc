@@ -1,15 +1,25 @@
 {
-  "extends": "../tsconfig.json",
-
   "include": ["src"],
 
   "compilerOptions": {
-    "lib": ["es2023"],
-    "module": "node16",
-    "target": "es2022",
-
     "esModuleInterop": true,
-    "moduleResolution": "node16",
-    "outDir": "dist"
+    "skipLibCheck": true,
+    "target": "es2022",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "module": "NodeNext",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true,
+    "lib": ["es2022"],
+    "paths": {
+      "~/*": ["./src/*"]
+    }
   }
 }

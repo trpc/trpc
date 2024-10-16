@@ -2,6 +2,12 @@
   "name": "examples-minimal-react-server",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc && tsc-alias",
     "dev": "tsx watch src/index.ts",
