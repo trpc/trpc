@@ -1,6 +1,7 @@
-import { waitMs } from '../___testHelpers';
+import { ignoreErrors, waitMs } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import {
+  infiniteQueryOptions,
   skipToken,
   useInfiniteQuery,
   useQuery,
@@ -149,7 +150,7 @@ describe('queryOptions', () => {
     });
   });
 
-  test('basic', async () => {
+  test('initialData', async () => {
     const { useTRPC, App } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
@@ -435,6 +436,123 @@ describe('infiniteQueryOptions', () => {
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
+    });
+  });
+
+  // TODO:
+  // test('no infinite on non cursor types', () => {
+  //   const { useTRPC } = ctx;
+
+  //   ignoreErrors(() => {
+  //     const trpc = useTRPC();
+
+  //     // @ts-expect-error - not an infinite query
+  //     trpc.post.byId.infiniteQueryOptions({ id: '1' });
+  //   });
+  // });
+
+  test('select', async () => {
+    const { App, useTRPC } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+      const queryClient = useQueryClient();
+
+      infiniteQueryOptions;
+      const queryOptions = trpc.post.list.infiniteQueryOptions(
+        {},
+        {
+          getNextPageParam(lastPage) {
+            return lastPage.next;
+          },
+          select(opts) {
+            return {
+              ...opts,
+              pages: opts.pages.map((page) => {
+                return {
+                  ...page,
+                  items: page.items,
+                  ___selected: true as const,
+                };
+              }),
+            };
+          },
+        },
+      );
+      const query1 = useInfiniteQuery(queryOptions);
+      expect(queryOptions.trpc.path).toBe('post.list');
+      if (!query1.data) {
+        return <>...</>;
+      }
+
+      expectTypeOf<
+        InfiniteData<
+          {
+            items: typeof fixtureData;
+            next?: number | undefined;
+          },
+          number | null
+        >
+      >(query1.data);
+
+      expectTypeOf(query1.data.pages[0]?.___selected).toEqualTypeOf<
+        true | undefined
+      >();
+
+      return (
+        <>
+          <button
+            data-testid="fetchMore"
+            onClick={() => {
+              query1.fetchNextPage();
+            }}
+          >
+            Fetch more
+          </button>
+          <button
+            data-testid="prefetch"
+            onClick={async () => {
+              const fetched = await queryClient.fetchInfiniteQuery(
+                queryOptions,
+              );
+              expectTypeOf<{
+                pages: {
+                  items: typeof fixtureData;
+                  next?: number | undefined;
+                }[];
+                pageParams: (number | null)[];
+              }>(fetched);
+              expect(
+                fetched.pageParams.some((p) => typeof p === 'undefined'),
+              ).toBeFalsy();
+            }}
+          >
+            Fetch
+          </button>
+          <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>
+        </>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`[ "1" ]`);
+      expect(utils.container).toHaveTextContent(`null`);
+      expect(utils.container).not.toHaveTextContent(`undefined`);
+    });
+    await userEvent.click(utils.getByTestId('fetchMore'));
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`[ "1" ]`);
+      expect(utils.container).toHaveTextContent(`[ "2" ]`);
+    });
+
+    await waitFor(() => {
+      expect(utils).toHaveTextContent('__selected');
     });
   });
 });

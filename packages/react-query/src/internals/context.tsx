@@ -143,14 +143,27 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
     queryKey: TRPCQueryKey,
     opts?: UndefinedTRPCQueryOptionsIn<
       unknown,
+      unknown,
       TRPCClientError<AnyClientTypes>
     >,
-  ): UndefinedTRPCQueryOptionsOut<unknown, TRPCClientError<AnyClientTypes>>;
+  ): UndefinedTRPCQueryOptionsOut<
+    unknown,
+    unknown,
+    TRPCClientError<AnyClientTypes>
+  >;
   queryOptions(
     path: readonly string[], // <-- look into if needed
     queryKey: TRPCQueryKey,
-    opts?: DefinedTRPCQueryOptionsIn<unknown, TRPCClientError<AnyClientTypes>>,
-  ): DefinedTRPCQueryOptionsOut<unknown, TRPCClientError<AnyClientTypes>>;
+    opts?: DefinedTRPCQueryOptionsIn<
+      unknown,
+      unknown,
+      TRPCClientError<AnyClientTypes>
+    >,
+  ): DefinedTRPCQueryOptionsOut<
+    unknown,
+    unknown,
+    TRPCClientError<AnyClientTypes>
+  >;
 
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
@@ -161,9 +174,11 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
     opts: UndefinedTRPCInfiniteQueryOptionsIn<
       unknown,
       unknown,
+      unknown,
       TRPCClientError<AnyClientTypes>
     >,
   ): UndefinedTRPCInfiniteQueryOptionsOut<
+    unknown,
     unknown,
     unknown,
     TRPCClientError<AnyClientTypes>
@@ -174,9 +189,11 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
     opts: DefinedTRPCInfiniteQueryOptionsIn<
       unknown,
       unknown,
+      unknown,
       TRPCClientError<AnyClientTypes>
     >,
   ): DefinedTRPCInfiniteQueryOptionsOut<
+    unknown,
     unknown,
     unknown,
     TRPCClientError<AnyClientTypes>

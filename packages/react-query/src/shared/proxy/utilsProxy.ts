@@ -54,6 +54,8 @@ import type {
   UndefinedTRPCInfiniteQueryOptionsOut,
   UndefinedTRPCQueryOptionsIn,
   UndefinedTRPCQueryOptionsOut,
+  UnusedSkipTokenTRPCInfiniteQueryOptionsIn,
+  UnusedSkipTokenTRPCInfiniteQueryOptionsOut,
 } from '../types';
 
 type DecorateQueryProcedure<
@@ -92,31 +94,61 @@ type DecorateQueryProcedure<
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
    */
-  infiniteQueryOptions(
+  infiniteQueryOptions<
+    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TData = TQueryFnData,
+  >(
     input: inferProcedureInput<TProcedure> | SkipToken,
     opts: DefinedTRPCInfiniteQueryOptionsIn<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TQueryFnData,
+      TData,
       TRPCClientError<TRoot>
     >,
   ): DefinedTRPCInfiniteQueryOptionsOut<
     inferProcedureInput<TProcedure>,
-    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TQueryFnData,
+    TData,
     TRPCClientError<TRoot>
   >;
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
    */
-  infiniteQueryOptions(
+  infiniteQueryOptions<
+    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TData = TQueryFnData,
+  >(
+    input: inferProcedureInput<TProcedure>,
+    opts: UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
+      inferProcedureInput<TProcedure>,
+      TQueryFnData,
+      TData,
+      TRPCClientError<TRoot>
+    >,
+  ): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
+    inferProcedureInput<TProcedure>,
+    TQueryFnData,
+    TData,
+    TRPCClientError<TRoot>
+  >;
+  /**
+   * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
+   */
+  infiniteQueryOptions<
+    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TData = TQueryFnData,
+  >(
     input: inferProcedureInput<TProcedure> | SkipToken,
     opts?: UndefinedTRPCInfiniteQueryOptionsIn<
       inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TQueryFnData,
+      TData,
       TRPCClientError<TRoot>
     >,
   ): UndefinedTRPCInfiniteQueryOptionsOut<
     inferProcedureInput<TProcedure>,
-    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TQueryFnData,
+    TData,
     TRPCClientError<TRoot>
   >;
 
