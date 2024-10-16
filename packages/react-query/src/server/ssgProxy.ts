@@ -72,7 +72,7 @@ type DecorateProcedure<
   >;
   queryOptions(
     input: inferProcedureInput<TProcedure>,
-    opts?: DefinedTRPCQueryOptionsIn<
+    opts: DefinedTRPCQueryOptionsIn<
       inferTransformedProcedureOutput<TRoot, TProcedure>,
       TRPCClientError<TRoot>
     >,

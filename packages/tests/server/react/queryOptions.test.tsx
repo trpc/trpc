@@ -149,6 +149,32 @@ describe('queryOptions', () => {
     });
   });
 
+  test('basic', async () => {
+    const { useTRPC, App } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+      const queryOptions = trpc.post.byId.queryOptions(
+        { id: '1' },
+        { initialData: '__result' },
+      );
+      expect(queryOptions.trpc.path).toBe('post.byId');
+      const query1 = useQuery(queryOptions);
+
+      expectTypeOf(query1.data).toEqualTypeOf<'__result'>();
+
+      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`__result`);
+    });
+  });
+
   test('disabling query with skipToken', async () => {
     const { useTRPC, App, client } = ctx;
     function MyComponent() {
