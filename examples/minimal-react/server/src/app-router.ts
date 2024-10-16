@@ -3,7 +3,7 @@
  * While it's not that useful here, it can come in handy when splitting nested routers into multiple
  * files.
  */
-import { publicProcedure, router } from "@server/trpc.js";
+import { publicProcedure, router } from '@server/trpc.js';
 import { z } from 'zod';
 
 // In a bigger app, you might want to use nested routers in different files.
