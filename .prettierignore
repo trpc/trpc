@@ -11,3 +11,6 @@ packages/tests/vendor/
 packages/coverage/
 pnpm-lock.yaml
 www/docs/main/quickstart.mdx
+.turbo
+.vinxi
+.output

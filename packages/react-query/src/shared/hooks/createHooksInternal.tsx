@@ -24,7 +24,10 @@ import {
   getMutationKeyInternal,
   getQueryKeyInternal,
 } from '../../internals/getQueryKey';
-import { useHookResult } from '../../internals/useHookResult';
+import {
+  buildQueryFromAsyncIterable,
+  useHookResult,
+} from '../../internals/trpcResult';
 import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
@@ -193,26 +196,11 @@ export function createRootHooks<
               );
 
               if (isAsyncIterable(result)) {
-                const queryCache = queryClient.getQueryCache();
-
-                const query = queryCache.build(queryClient, {
+                return buildQueryFromAsyncIterable(
+                  result,
+                  queryClient,
                   queryKey,
-                });
-
-                query.setState({
-                  data: [],
-                  status: 'success',
-                });
-
-                const aggregate: unknown[] = [];
-                for await (const value of result) {
-                  aggregate.push(value);
-
-                  query.setState({
-                    data: [...aggregate],
-                  });
-                }
-                return aggregate;
+                );
               }
               return result;
             },
@@ -606,6 +594,7 @@ export function createRootHooks<
       {
         queries: queries.map((query) => ({
           ...query,
+          queryFn: query.queryFn,
           queryKey: (query as TRPCQueryOptions<any, any>).queryKey,
         })),
       },

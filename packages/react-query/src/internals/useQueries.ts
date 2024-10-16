@@ -155,7 +155,7 @@ export type SuspenseQueriesOptions<
   : TQueriesOptions extends [infer Head]
   ? [...TResult, GetSuspenseOptions<Head>]
   : TQueriesOptions extends [infer Head, ...infer Tail]
-  ? QueriesOptions<Tail, [...TResult, GetSuspenseOptions<Head>]>
+  ? SuspenseQueriesOptions<Tail, [...TResult, GetSuspenseOptions<Head>]>
   : unknown[] extends TQueriesOptions
   ? TQueriesOptions
   : TQueriesOptions extends UseQueryOptionsForUseSuspenseQueries<

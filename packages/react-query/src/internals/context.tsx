@@ -22,11 +22,22 @@ import type {
   TRPCUntypedClient,
 } from '@trpc/client';
 import type {
+  AnyClientTypes,
   AnyRouter,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import type { ExtractCursorType } from '../shared';
+import type {
+  DefinedTRPCInfiniteQueryOptionsIn,
+  DefinedTRPCInfiniteQueryOptionsOut,
+  DefinedTRPCQueryOptionsIn,
+  DefinedTRPCQueryOptionsOut,
+  ExtractCursorType,
+  UndefinedTRPCInfiniteQueryOptionsIn,
+  UndefinedTRPCInfiniteQueryOptionsOut,
+  UndefinedTRPCQueryOptionsIn,
+  UndefinedTRPCQueryOptionsOut,
+} from '../shared';
 import type { TRPCMutationKey, TRPCQueryKey } from './getQueryKey';
 
 interface TRPCUseUtilsOptions {
@@ -124,6 +135,70 @@ export interface TRPCContextState<
  * @internal
  */
 export interface TRPCQueryUtils<TRouter extends AnyRouter> {
+  /**
+   * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
+   */
+  queryOptions(
+    path: readonly string[], // <-- look into if needed
+    queryKey: TRPCQueryKey,
+    opts?: UndefinedTRPCQueryOptionsIn<
+      unknown,
+      unknown,
+      TRPCClientError<AnyClientTypes>
+    >,
+  ): UndefinedTRPCQueryOptionsOut<
+    unknown,
+    unknown,
+    TRPCClientError<AnyClientTypes>
+  >;
+  queryOptions(
+    path: readonly string[], // <-- look into if needed
+    queryKey: TRPCQueryKey,
+    opts?: DefinedTRPCQueryOptionsIn<
+      unknown,
+      unknown,
+      TRPCClientError<AnyClientTypes>
+    >,
+  ): DefinedTRPCQueryOptionsOut<
+    unknown,
+    unknown,
+    TRPCClientError<AnyClientTypes>
+  >;
+
+  /**
+   * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
+   */
+  infiniteQueryOptions(
+    path: readonly string[], // <-- look into if needed
+    queryKey: TRPCQueryKey,
+    opts: UndefinedTRPCInfiniteQueryOptionsIn<
+      unknown,
+      unknown,
+      unknown,
+      TRPCClientError<AnyClientTypes>
+    >,
+  ): UndefinedTRPCInfiniteQueryOptionsOut<
+    unknown,
+    unknown,
+    unknown,
+    TRPCClientError<AnyClientTypes>
+  >;
+  infiniteQueryOptions(
+    path: readonly string[], // <-- look into if needed
+    queryKey: TRPCQueryKey,
+    opts: DefinedTRPCInfiniteQueryOptionsIn<
+      unknown,
+      unknown,
+      unknown,
+      TRPCClientError<AnyClientTypes>
+    >,
+  ): DefinedTRPCInfiniteQueryOptionsOut<
+    unknown,
+    unknown,
+    unknown,
+    TRPCClientError<AnyClientTypes>
+  >;
+
   /**
    * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchquery
    */

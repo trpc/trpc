@@ -22,11 +22,11 @@ If you are unsure which one to use, we recommend using SSE for subscriptions as 
 
 ## Reference projects
 
-| Type       | Example Type                         | Link                                                                                                                       |
-| ---------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| SSE        | Bare-minimum Node.js SSE example     | [/examples/standalone-server](https://github.com/trpc/trpc/tree/next/examples/standalone-server)                           |
-| SSE        | Full-stack SSE implementation        | [github.com/trpc/examples-next-sse-chat](https://github.com/trpc/examples-next-sse-chat)                                   |
-| WebSockets | Full-stack WebSockets implementation | [github.com/trpc/examples-next-prisma-websockets-starter](https://github.com/trpc/examples-next-prisma-starter-websockets) |
+| Type       | Example Type                                | Link                                                                                                                       |
+| ---------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| WebSockets | Bare-minimum Node.js WebSockets example     | [/examples/standalone-server](https://github.com/trpc/trpc/tree/next/examples/standalone-server)                           |
+| SSE        | Full-stack SSE implementation               | [github.com/trpc/examples-next-sse-chat](https://github.com/trpc/examples-next-sse-chat)                                   |
+| WebSockets | Full-stack WebSockets implementation        | [github.com/trpc/examples-next-prisma-websockets-starter](https://github.com/trpc/examples-next-prisma-starter-websockets) |
 
 ## Basic example
 
@@ -65,7 +65,7 @@ You can send an initial `lastEventId` when initializing the subscription and it 
 - For WebSockets, our `wsLink` will automatically send the last known ID and update it as the browser receives data.
 
 :::tip
-If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+If you're fetching data based on the `lastEventId`, and capturing all events is critical, make sure you setup the event listener before fetching events from your database as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat), this can prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
 :::
 
 ```ts
@@ -90,8 +90,18 @@ export const subRouter = router({
         .optional(),
     )
     .subscription(async function* (opts) {
+      // We start by subscribing to the ee so that we don't miss any new events while fetching
+      const iterable = ee.toIterable('add', {
+        // Passing the AbortSignal from the request automatically cancels the event emitter when the request is aborted
+        signal: opts.signal,
+      });
+
       if (opts.input.lastEventId) {
         // [...] get the posts since the last event id and yield them
+        // const items = await db.post.findMany({ ... })
+        // for (const item of items) {
+        //   yield tracked(item.id, item);
+        // }
       }
       // listen for new events
       for await (const [data] of on(ee, 'add', {
