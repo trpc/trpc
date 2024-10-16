@@ -1926,8 +1926,8 @@ importers:
         specifier: 1.0.14-alpha
         version: 1.0.14-alpha
       arktype2:
-        specifier: npm:arktype@2.0.0-rc.15
-        version: /arktype@2.0.0-rc.15
+        specifier: npm:arktype@2.0.0-rc.16
+        version: /arktype@2.0.0-rc.16
       dataloader:
         specifier: ^2.2.2
         version: 2.2.2
@@ -2191,11 +2191,11 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typedoc:
-        specifier: 0.26.9
-        version: 0.26.9(typescript@5.1.6)
+        specifier: 0.26.10
+        version: 0.26.10(typescript@5.1.6)
       typedoc-plugin-markdown:
         specifier: 4.2.9
-        version: 4.2.9(typedoc@0.26.9)
+        version: 4.2.9(typedoc@0.26.10)
       typescript:
         specifier: npm:typescript@~5.1.3
         version: 5.1.6
@@ -2478,14 +2478,14 @@ packages:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
 
-  /@ark/schema@0.17.0:
-    resolution: {integrity: sha512-k8HhF35UlUjNfyBrYna4YTMTjufu3Ez2mPQ5CMHpEt5Qi15Zze6g5HHlOC79gDAWJ+u2qcp2QY55L+GYY7CLVQ==}
+  /@ark/schema@0.18.0:
+    resolution: {integrity: sha512-H2Gx2MlTUh8k++mHYPMUB1psehnIHlEJNhWcJXj09qYbKoC1rOD3FHwPfRAg8booEFsMYWOqG41I5GYQ+ZmakA==}
     dependencies:
-      '@ark/util': 0.17.0
+      '@ark/util': 0.18.0
     dev: false
 
-  /@ark/util@0.17.0:
-    resolution: {integrity: sha512-bp17dQitBvkvtiVmb2XeSposr098nZx70h3/tlpfjElbkFeFwkGu6sSUS+jP/FZSIydNby+KBETiKnb235Ua0A==}
+  /@ark/util@0.18.0:
+    resolution: {integrity: sha512-TpHY532LKQwwYHui5NN/eO/6eSiSMvf652YNt1BsV7fya7RzXL27IiU9x4bm7jTFZxLQGYDQTB7nw41TqeuF4g==}
     dev: false
 
   /@auth/core@0.32.0:
@@ -13195,11 +13195,11 @@ packages:
     resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
     requiresBuild: true
 
-  /arktype@2.0.0-rc.15:
-    resolution: {integrity: sha512-jHASe4HqZIzAgwvf7F4u1K9EQE08Ml6m+YGNEkDz4BAkxjSEZxEIev2IBSlMKy3ghN1q6mb8dLUfNaQ4GmgQJg==}
+  /arktype@2.0.0-rc.16:
+    resolution: {integrity: sha512-Jf3YU4elxetMp3Uzf3OJRDrhMGTPbNCHgTL1UN3VM+FPrKa8mIt8jwx4HWsE0yp8KbI9Q994f26A1yOWE+VLxg==}
     dependencies:
-      '@ark/schema': 0.17.0
-      '@ark/util': 0.17.0
+      '@ark/schema': 0.18.0
+      '@ark/util': 0.18.0
     dev: false
 
   /array-buffer-byte-length@1.0.0:
@@ -15794,7 +15794,7 @@ packages:
     peerDependencies:
       typedoc-plugin-markdown: '>=4.0.0'
     dependencies:
-      typedoc-plugin-markdown: 4.2.9(typedoc@0.26.9)
+      typedoc-plugin-markdown: 4.2.9(typedoc@0.26.10)
     dev: true
 
   /docusaurus-preset-shiki-twoslash@1.1.41:
@@ -28085,17 +28085,17 @@ packages:
     resolution: {integrity: sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==}
     dev: false
 
-  /typedoc-plugin-markdown@4.2.9(typedoc@0.26.9):
+  /typedoc-plugin-markdown@4.2.9(typedoc@0.26.10):
     resolution: {integrity: sha512-Wqmx+7ezKFgtTklEq/iUhQ5uFeBDhAT6wiS2na9cFLidIpl9jpDHJy/COYh8jUZXgIRIZVQ/bPNjyrnPFoDwzg==}
     engines: {node: '>= 18'}
     peerDependencies:
       typedoc: 0.26.x
     dependencies:
-      typedoc: 0.26.9(typescript@5.1.6)
+      typedoc: 0.26.10(typescript@5.1.6)
     dev: true
 
-  /typedoc@0.26.9(typescript@5.1.6):
-    resolution: {integrity: sha512-Rc7QpWL7EtmrT8yxV0GmhOR6xHgFnnhphbD9Suti3fz3um7ZOrou6q/g9d6+zC5PssTLZmjaW4Upmzv8T1rCcQ==}
+  /typedoc@0.26.10(typescript@5.1.6):
+    resolution: {integrity: sha512-xLmVKJ8S21t+JeuQLNueebEuTVphx6IrP06CdV7+0WVflUSW3SPmR+h1fnWVdAR/FQePEgsSWCUHXqKKjzuUAw==}
     engines: {node: '>= 18'}
     hasBin: true
     peerDependencies:
