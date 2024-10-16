@@ -7,16 +7,6 @@
       "@server/*": ["./server/src/*"]
     },
 
-    // Enable latest features
-    "lib": ["ESNext"],
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleDetection": "force",
-
-    // Bundler mode
-    "moduleResolution": "Bundler",
-    "verbatimModuleSyntax": true,
-
     // Best practices
     "strict": true,
     "skipLibCheck": true,
@@ -25,6 +15,8 @@
     // Some stricter flags
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noPropertyAccessFromIndexSignature": true
+    "noPropertyAccessFromIndexSignature": true,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": true
   }
 }
