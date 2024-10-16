@@ -1,13 +1,6 @@
-/*
- * Type alias works since it is defined in root tsconfig and thus for client as well
- * While it's not that useful here, it can come in handy when splitting nested routers into multiple
- * files.
- */
 import { publicProcedure, router } from '~/trpc.js';
 import { z } from 'zod';
 
-// In a bigger app, you might want to use nested routers in different files.
-// See https://trpc.io/docs/server/merging-routers#merging-with-child-routers
 const appRouter = router({
   greeting: publicProcedure
     // This is the input schema of your procedure
