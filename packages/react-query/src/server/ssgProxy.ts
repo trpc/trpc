@@ -1,11 +1,10 @@
 import type {
   DehydratedState,
   DehydrateOptions,
-  InfiniteData,
   QueryClient,
 } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
-import type { inferRouterClient, TRPCClientError } from '@trpc/client';
+import type { inferRouterClient } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import {
@@ -13,14 +12,11 @@ import {
   type TransformerOptions,
 } from '@trpc/client/unstable-internals';
 import type {
-  AnyProcedure,
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
   inferClientTypes,
-  inferProcedureInput,
   inferRouterContext,
-  inferTransformedProcedureOutput,
   Maybe,
   ProtectedIntersection,
   RouterRecord,
@@ -33,13 +29,9 @@ import {
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import type {
   CreateTRPCReactQueryClientConfig,
-  DefinedTRPCQueryOptionsIn,
-  DefinedTRPCQueryOptionsOut,
-  ExtractCursorType,
+  DecorateQueryProcedure,
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
-  UndefinedTRPCQueryOptionsIn,
-  UndefinedTRPCQueryOptionsOut,
 } from '../shared';
 import { getQueryClient, getQueryType } from '../shared';
 
@@ -56,82 +48,13 @@ type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
   CreateTRPCReactQueryClientConfig &
     (CreateSSGHelpersExternal<TRouter> | CreateSSGHelpersInternal<TRouter>);
 
-type DecorateProcedure<
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnyProcedure,
-> = {
-  queryOptions(
-    input: inferProcedureInput<TProcedure>,
-    opts?: UndefinedTRPCQueryOptionsIn<
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
-    >,
-  ): UndefinedTRPCQueryOptionsOut<
-    inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TRPCClientError<TRoot>
-  >;
-  queryOptions(
-    input: inferProcedureInput<TProcedure>,
-    opts: DefinedTRPCQueryOptionsIn<
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
-    >,
-  ): DefinedTRPCQueryOptionsOut<
-    inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TRPCClientError<TRoot>
-  >;
-
-  /**
-   * @see https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
-   */
-  fetch(
-    input: inferProcedureInput<TProcedure>,
-    opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
-    >,
-  ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
-
-  /**
-   * @see https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
-   */
-  fetchInfinite(
-    input: inferProcedureInput<TProcedure>,
-    opts?: TRPCFetchInfiniteQueryOptions<
-      inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
-    >,
-  ): Promise<
-    InfiniteData<
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
-      NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
-    >
-  >;
-
-  /**
-   * @see https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
-   */
-  prefetch(
-    input: inferProcedureInput<TProcedure>,
-    opts?: TRPCFetchQueryOptions<
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
-    >,
-  ): Promise<void>;
-
-  /**
-   * @see https://tanstack.com/query/v5/docs/framework/react/guides/prefetching
-   */
-  prefetchInfinite(
-    input: inferProcedureInput<TProcedure>,
-    opts?: TRPCFetchInfiniteQueryOptions<
-      inferProcedureInput<TProcedure>,
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
-    >,
-  ): Promise<void>;
-};
+type SSGFns =
+  | 'queryOptions'
+  | 'infiniteQueryOptions'
+  | 'fetch'
+  | 'fetchInfinite'
+  | 'prefetch'
+  | 'prefetchInfinite';
 
 /**
  * @internal
@@ -145,12 +68,12 @@ type DecoratedProcedureSSGRecord<
       ? DecoratedProcedureSSGRecord<TRoot, $Value>
       : // utils only apply to queries
       $Value extends AnyQueryProcedure
-      ? DecorateProcedure<TRoot, $Value>
+      ? Pick<DecorateQueryProcedure<TRoot, $Value>, SSGFns>
       : never
     : never;
 };
 
-type AnyDecoratedProcedure = DecorateProcedure<any, any>;
+type AnyDecoratedProcedure = Pick<DecorateQueryProcedure<any, any>, SSGFns>;
 
 /**
  * Create functions you can use for server-side rendering / static generation
@@ -236,6 +159,10 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
 
     const helperMap: Record<keyof AnyDecoratedProcedure, () => unknown> = {
       queryOptions: () => {
+        const args1 = args[1] as Maybe<any>;
+        return { ...args1, queryKey, queryFn };
+      },
+      infiniteQueryOptions: () => {
         const args1 = args[1] as Maybe<any>;
         return { ...args1, queryKey, queryFn };
       },

@@ -1,4 +1,3 @@
-import { EventEmitter, on } from 'node:events';
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';

@@ -58,7 +58,7 @@ import type {
   UnusedSkipTokenTRPCInfiniteQueryOptionsOut,
 } from '../types';
 
-type DecorateQueryProcedure<
+export type DecorateQueryProcedure<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyQueryProcedure,
 > = {
