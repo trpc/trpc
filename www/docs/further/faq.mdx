@@ -40,7 +40,7 @@ Here are some things to check:
 - In the case that you have a dedicated server and client `tsconfig.json` files without a bundled server monorepo package:
   - Make sure the `"paths": {...}` in your client `tsconfig.json` equal those in your server `tsconfig.json`, so that the client can find the same files. It is recommended to only define path aliases in a single root `tsconfig.json` and extend it in client & server configuration files.
 
-You can also have a look at our [Awesome tRPC](/docs/community/awesome-trpc)-collection to find several open-source projects that are using tRPC in a monorepo. For a minimal setup, check out the [npm-workspaces example](https://github.com/trpc/trpc/tree/next/examples/npm-workspaces) as well.
+You can also have a look at our [Awesome tRPC](/docs/community/awesome-trpc)-collection to find several open-source projects that are using tRPC in a monorepo. The [minimal react example](https://github.com/trpc/trpc/tree/next/examples/minimal-react) showcases this as well.
 
 ## Is a monorepo mandatory?
 
