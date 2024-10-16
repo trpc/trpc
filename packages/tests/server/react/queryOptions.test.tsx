@@ -95,12 +95,14 @@ describe('queryOptions', () => {
       expect(queryOptions.trpc.path).toBe('post.byId');
       const query1 = useQuery(queryOptions);
 
+      const query2 = useQuery(trpc.post.byId.queryOptions({ id: '1' }));
+      expectTypeOf(query1).toMatchTypeOf(query2);
+
       if (!query1.data) {
         return <>...</>;
       }
 
-      type TData = (typeof query1)['data'];
-      expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+      expectTypeOf(query1.data).toMatchTypeOf<'__result'>();
 
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }
@@ -115,14 +117,50 @@ describe('queryOptions', () => {
     });
   });
 
-  test('disabling query with skipToken', async () => {
+  test('select', async () => {
     const { useTRPC, App } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
-      const query1 = useQuery(trpc.post.byId.queryOptions(skipToken));
+      const queryOptions = trpc.post.byId.queryOptions(
+        { id: '1' },
+        {
+          select: (data) => `mutated${data}` as const,
+        },
+      );
+      expect(queryOptions.trpc.path).toBe('post.byId');
+      const query1 = useQuery(queryOptions);
 
-      type TData = (typeof query1)['data'];
-      expectTypeOf<TData>().toMatchTypeOf<'__result' | undefined>();
+      if (!query1.data) {
+        return <>...</>;
+      }
+
+      expectTypeOf(query1.data).toMatchTypeOf<'mutated__result'>();
+
+      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`mutated__result`);
+    });
+  });
+
+  test('disabling query with skipToken', async () => {
+    const { useTRPC, App, client } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+
+      const options = trpc.post.byId.queryOptions(skipToken);
+      const query1 = useQuery(options);
+
+      const query2 = useQuery(trpc.post.byId.queryOptions(skipToken));
+
+      expectTypeOf(query1.data).toMatchTypeOf<'__result' | undefined>();
+      expectTypeOf(query2.data).toMatchTypeOf<'__result' | undefined>();
 
       return <pre>{query1.status}</pre>;
     }
@@ -157,8 +195,7 @@ describe('queryOptions', () => {
         return <>...</>;
       }
 
-      type TData = (typeof query1)['data'];
-      expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+      expectTypeOf(query1.data).toMatchTypeOf<'__result'>();
 
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }

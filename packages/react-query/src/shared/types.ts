@@ -38,21 +38,21 @@ type TRPCInfiniteOptionOverrides = TRPCOptionOverrides | 'initialPageParam';
 /**
  * QueryOptions API helpers
  */
-export interface UndefinedTRPCQueryOptionsIn<TOutput, TError>
+export interface UndefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
   extends DistributiveOmit<
       UndefinedInitialDataOptions<
-        coerceAsyncIterableToArray<TOutput>,
+        coerceAsyncIterableToArray<TQueryFnData>,
         TError,
-        coerceAsyncIterableToArray<TOutput>,
+        coerceAsyncIterableToArray<TData>,
         TRPCQueryKey
       >,
       TRPCOptionOverrides
     >,
     TRPCQueryBaseOptions {}
 
-export interface UndefinedTRPCQueryOptionsOut<TOutput, TError>
+export interface UndefinedTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
   extends UndefinedInitialDataOptions<
-      coerceAsyncIterableToArray<TOutput>,
+      coerceAsyncIterableToArray<TQueryFnData>,
       TError,
       coerceAsyncIterableToArray<TOutput>,
       TRPCQueryKey
@@ -61,27 +61,27 @@ export interface UndefinedTRPCQueryOptionsOut<TOutput, TError>
   queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>>;
 }
 
-export interface DefinedTRPCQueryOptionsIn<TOutput, TError>
+export interface DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
   extends DistributiveOmit<
       DefinedInitialDataOptions<
-        coerceAsyncIterableToArray<TOutput>,
+        coerceAsyncIterableToArray<TQueryFnData>,
         TError,
-        coerceAsyncIterableToArray<TOutput>,
+        coerceAsyncIterableToArray<TData>,
         TRPCQueryKey
       >,
       TRPCOptionOverrides
     >,
     TRPCQueryBaseOptions {}
 
-export interface DefinedTRPCQueryOptionsOut<TOutput, TError>
+export interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
   extends DefinedInitialDataOptions<
-      coerceAsyncIterableToArray<TOutput>,
+      coerceAsyncIterableToArray<TQueryFnData>,
       TError,
-      coerceAsyncIterableToArray<TOutput>,
+      coerceAsyncIterableToArray<TData>,
       TRPCQueryKey
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>>;
+  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TData>>;
 }
 
 /**

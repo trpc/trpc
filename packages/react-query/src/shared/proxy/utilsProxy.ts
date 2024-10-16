@@ -63,29 +63,31 @@ type DecorateQueryProcedure<
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
    */
-  queryOptions(
+  queryOptions<
+    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TData = TQueryFnData,
+  >(
     input: inferProcedureInput<TProcedure> | SkipToken,
     opts?: UndefinedTRPCQueryOptionsIn<
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TQueryFnData,
+      TData,
       TRPCClientError<TRoot>
     >,
-  ): UndefinedTRPCQueryOptionsOut<
-    inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TRPCClientError<TRoot>
-  >;
+  ): UndefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientError<TRoot>>;
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
    */
-  queryOptions(
+  queryOptions<
+    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TData = TQueryFnData,
+  >(
     input: inferProcedureInput<TProcedure> | SkipToken,
     opts?: DefinedTRPCQueryOptionsIn<
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TQueryFnData,
+      TData,
       TRPCClientError<TRoot>
     >,
-  ): DefinedTRPCQueryOptionsOut<
-    inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TRPCClientError<TRoot>
-  >;
+  ): DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientError<TRoot>>;
 
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
