@@ -1,4 +1,5 @@
 import type { InfiniteData } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -25,10 +26,20 @@ const appRouter = t.router({
 });
 
 test('fetch', async () => {
-  const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
+  const queryClient = new QueryClient();
+  const ssg = createServerSideHelpers({
+    router: appRouter,
+    ctx: {},
+    queryClient,
+  });
 
-  const post = await ssg.post.byId.fetch({ id: '1' });
-  expectTypeOf<'__result'>(post);
+  const post1 = await queryClient.fetchQuery(
+    ssg.post.byId.queryOptions({ id: '1' }),
+  );
+
+  const post2 = await ssg.post.byId.fetch({ id: '1' });
+  expectTypeOf<'__result'>(post2);
+  expectTypeOf(post1).toEqualTypeOf(post2);
 });
 
 test('fetchInfinite', async () => {
@@ -54,4 +65,16 @@ test('prefetchInfinite and dehydrate', async () => {
 
   const data = JSON.stringify(ssg.dehydrate());
   expect(data).toContain('__infResult');
+});
+
+test('using queryOptions', async () => {
+  const ssg = createServerSideHelpers({ router: appRouter, ctx: {} });
+
+  const opts = ssg.post.byId.queryOptions({ id: '1' });
+  //    ^?
+  const post = await ssg.queryClient.fetchQuery(
+    ssg.post.byId.queryOptions({ id: '1' }),
+  );
+  expectTypeOf<'__result'>(post);
+  expect(post).toStrictEqual('__result');
 });
