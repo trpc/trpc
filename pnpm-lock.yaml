@@ -861,6 +861,9 @@ importers:
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
+      tsc-alias:
+        specifier: ^1.8.10
+        version: 1.8.10
       tsx:
         specifier: ^4.0.0
         version: 4.6.2
@@ -10769,7 +10772,7 @@ packages:
       '@serverless/platform-client': 4.3.2(supports-color@8.1.1)
       '@serverless/utils': 6.8.2
       child-process-ext: 2.1.1
-      chokidar: 3.5.3
+      chokidar: 3.6.0
       flat: 5.0.2
       fs-extra: 9.1.0
       js-yaml: 4.1.0
@@ -21972,6 +21975,11 @@ packages:
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dev: false
 
+  /mylas@2.1.13:
+    resolution: {integrity: sha512-+MrqnJRtxdF+xngFfUUkIMQrUUL0KsxbADUkn23Z/4ibGg192Q+z+CQyiYwvWTsYjJygmMR8+w3ZDa98Zh6ESg==}
+    engines: {node: '>=12.0.0'}
+    dev: true
+
   /myzod@1.8.8:
     resolution: {integrity: sha512-DMXQjmnqvHxDPWkWLVz40FXm/3W95PnZMeLJiM5ickVqcFLeWlgOa4CDhV8PJ9rViiC1WvZoQJRCmMF6pzTTPA==}
 
@@ -23622,6 +23630,13 @@ packages:
       playwright-core: 1.28.1
     dev: false
 
+  /plimit-lit@1.6.1:
+    resolution: {integrity: sha512-B7+VDyb8Tl6oMJT9oSO2CW8XC/T4UcJGrwOVoNGwOQsQYhlpfajmrMj5xeejqaASq3V/EqThyOeATEOMuSEXiA==}
+    engines: {node: '>=12'}
+    dependencies:
+      queue-lit: 1.5.2
+    dev: true
+
   /pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
     engines: {node: '>=4'}
@@ -24780,6 +24795,11 @@ packages:
   /querystringify@2.2.0:
     resolution: {integrity: sha512-FIqgj2EUvTa7R50u0rGsyTftzjYmv/a3hO345bZNrqabNqjtgiDMgmo4mkUjd+nzU5oF3dClKqFIPUKybUyqoQ==}
     dev: false
+
+  /queue-lit@1.5.2:
+    resolution: {integrity: sha512-tLc36IOPeMAubu8BkW8YDBV+WyIgKlYU7zUNs0J5Vk9skSZ4JfGlPOqplP0aHdfv7HL0B2Pg6nwiq60Qc6M2Hw==}
+    engines: {node: '>=12'}
+    dev: true
 
   /queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
@@ -27773,6 +27793,18 @@ packages:
       true-myth: 4.1.1
       ts-morph: 13.0.3
     dev: false
+
+  /tsc-alias@1.8.10:
+    resolution: {integrity: sha512-Ibv4KAWfFkFdKJxnWfVtdOmB0Zi1RJVxcbPGiCDsFpCQSsmpWyuzHG3rQyI5YkobWwxFPEyQfu1hdo4qLG2zPw==}
+    hasBin: true
+    dependencies:
+      chokidar: 3.6.0
+      commander: 9.4.1
+      globby: 11.1.0
+      mylas: 2.1.13
+      normalize-path: 3.0.0
+      plimit-lit: 1.6.1
+    dev: true
 
   /tsconfck@3.1.4(typescript@5.6.2):
     resolution: {integrity: sha512-kdqWFGVJqe+KGYvlSO9NIaWn9jT1Ny4oKVzAJsKii5eoE9snzTJzL4+MMVOMn+fikWGFmKEylcXL710V/kIPJQ==}
