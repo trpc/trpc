@@ -26,14 +26,14 @@ TODO
 
 ```bash
 # npm
-npm install @trpc/react-query@next @tanstack/react-query
+npm install @trpc/tanstack-react-query@next @tanstack/react-query
 
 # Yarn
-yarn add @trpc/react-query@next @tanstack/react-query
+yarn add @trpc/tanstack-react-query@next @tanstack/react-query
 
 # pnpm
-pnpm add @trpc/react-query@next @tanstack/react-query
+pnpm add @trpc/tanstack-react-query@next @tanstack/react-query
 
 # Bun
-bun add @trpc/react-query@next @tanstack/react-query
+bun add @trpc/tanstack-react-query@next @tanstack/react-query
 ```
