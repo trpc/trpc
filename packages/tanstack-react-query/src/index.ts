@@ -4,7 +4,12 @@ import {
   TRPCUntypedClient,
   type CreateTRPCClient,
 } from '@trpc/client';
-import type { AnyQueryProcedure, AnyRouter, AnyTRPCRouter } from '@trpc/server';
+import type {
+  AnyMutationProcedure,
+  AnyQueryProcedure,
+  AnyRouter,
+  AnyTRPCRouter,
+} from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import type {
   AnyRootTypes,
@@ -14,6 +19,11 @@ import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
 } from './internals/infiniteQueryOptions';
+import type { MutationOptionsOverride } from './internals/mutationOptions';
+import {
+  trpcMutationOptions,
+  type TRPCMutationOptions,
+} from './internals/mutationOptions';
 import {
   trpcQueryOptions,
   type TRPCQueryOptions,
@@ -29,10 +39,21 @@ export interface DecorateQueryProcedure<
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
    */
   queryOptions: TRPCQueryOptions<TRoot, TProcedure>;
+
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
    */
   infiniteQueryOptions: TRPCInfiniteQueryOptions<TRoot, TProcedure>;
+}
+
+export interface DecorateMutationProcedure<
+  TRoot extends AnyRootTypes,
+  TProcedure extends AnyMutationProcedure,
+> {
+  /**
+   * @see
+   */
+  mutationOptions: TRPCMutationOptions<TRoot, TProcedure>;
 }
 
 /**
@@ -47,10 +68,9 @@ export type DecoratedProcedureUtilsRecord<
       ? DecoratedProcedureUtilsRecord<TRoot, $Value>
       : $Value extends AnyQueryProcedure
       ? DecorateQueryProcedure<TRoot, $Value>
-      : //   : $Value extends AnyMutationProcedure
-        //   ? DecorateMutationProcedure<TRoot, $Value>
-        //   : never
-        never
+      : $Value extends AnyMutationProcedure
+      ? DecorateMutationProcedure<TRoot, $Value>
+      : never
     : never;
 };
 
@@ -69,9 +89,17 @@ export interface CreateQueryUtilsOptions<TRouter extends AnyTRPCRouter> {
    * The `QueryClient` from `react-query`
    */
   queryClient: QueryClient;
+  /**
+   * Overrides
+   */
+  overrides?: {
+    mutations?: MutationOptionsOverride;
+  };
 }
 
-type UtilsMethods = keyof DecorateQueryProcedure<any, any>;
+type UtilsMethods =
+  | keyof DecorateQueryProcedure<any, any>
+  | keyof DecorateMutationProcedure<any, any>;
 
 export function createTRPCQueryUtils<TRouter extends AnyRouter>(
   context: CreateQueryUtilsOptions<TRouter>,
@@ -83,7 +111,7 @@ export function createTRPCQueryUtils<TRouter extends AnyRouter>(
   return createRecursiveProxy<CreateQueryUtils<TRouter>>((opts) => {
     const path = [...opts.path];
     const utilName = path.pop() as UtilsMethods;
-    const [input, userQueryOptions] = opts.args as any[];
+    const [input, userOptions] = opts.args as any[];
 
     const queryType: QueryType =
       utilName === 'infiniteQueryOptions' ? 'infinite' : 'query';
@@ -92,7 +120,7 @@ export function createTRPCQueryUtils<TRouter extends AnyRouter>(
     const contextMap: Record<UtilsMethods, () => unknown> = {
       infiniteQueryOptions: () =>
         trpcInfiniteQueryOptions({
-          opts: userQueryOptions,
+          opts: userOptions,
           path,
           queryClient: context.queryClient,
           queryKey,
@@ -100,11 +128,20 @@ export function createTRPCQueryUtils<TRouter extends AnyRouter>(
         }),
       queryOptions: () => {
         return trpcQueryOptions({
-          opts: userQueryOptions,
+          opts: userOptions,
           path,
           queryClient: context.queryClient,
-          queryKey,
+          queryKey: queryKey,
           untypedClient,
+        });
+      },
+      mutationOptions: () => {
+        return trpcMutationOptions({
+          opts: userOptions,
+          path,
+          queryClient: context.queryClient,
+          untypedClient,
+          overrides: context.overrides?.mutations,
         });
       },
     };

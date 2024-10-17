@@ -1,6 +1,11 @@
 import { skipToken, type QueryClient } from '@tanstack/react-query';
 import { isObject } from '@trpc/server/unstable-core-do-not-import';
-import type { QueryType, TRPCQueryKey, TRPCQueryOptionsResult } from './types';
+import type {
+  QueryType,
+  TRPCMutationKey,
+  TRPCQueryKey,
+  TRPCQueryOptionsResult,
+} from './types';
 
 /**
  * @internal
@@ -119,4 +124,13 @@ export function getQueryKeyInternal(
       ...(type && type !== 'any' && { type: type }),
     },
   ];
+}
+
+export function getMutationKeyInternal(
+  path: readonly string[],
+): TRPCMutationKey {
+  // some parts of the path may be dot-separated, split them up
+  const splitPath = path.flatMap((part) => part.split('.'));
+
+  return splitPath.length ? [splitPath] : ([] as unknown as TRPCMutationKey);
 }

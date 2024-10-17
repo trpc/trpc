@@ -41,7 +41,8 @@
       "no-restricted-imports": [
         "error",
         "@trpc/tanstack-react-query"
-      ]
+      ],
+      "@typescript-eslint/prefer-function-type": "off"
     }
   },
   "dependencies": {},

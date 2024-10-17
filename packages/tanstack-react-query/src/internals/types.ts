@@ -36,3 +36,5 @@ export type TRPCQueryKey = [
   readonly string[],
   { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
 ];
+
+export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]
