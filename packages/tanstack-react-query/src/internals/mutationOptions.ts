@@ -27,14 +27,14 @@ import {
 
 type ReservedOptions = 'mutationKey' | 'mutationFn';
 
-interface UseTRPCMutationOptionsIn<TInput, TError, TOutput, TContext>
+interface TRPCMutationOptionsIn<TInput, TError, TOutput, TContext>
   extends DistributiveOmit<
       UseMutationOptions<TOutput, TError, TInput, TContext>,
       ReservedOptions
     >,
     TRPCQueryBaseOptions {}
 
-interface UseTRPCMutationOptionsOut<TInput, TError, TOutput, TContext>
+interface TRPCMutationOptionsOut<TInput, TError, TOutput, TContext>
   extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCQueryOptionsResult {
   mutationKey: TRPCMutationKey;
@@ -45,13 +45,13 @@ export interface TRPCMutationOptions<
   TProcedure extends AnyMutationProcedure,
 > {
   <TContext = unknown>(
-    opts: UseTRPCMutationOptionsIn<
+    opts: TRPCMutationOptionsIn<
       inferProcedureInput<TProcedure>,
       TRPCClientError<TRoot>,
       inferTransformedProcedureOutput<TRoot, TProcedure>,
       TContext
     >,
-  ): UseTRPCMutationOptionsOut<
+  ): TRPCMutationOptionsOut<
     inferProcedureInput<TProcedure>,
     TRPCClientError<TRoot>,
     inferTransformedProcedureOutput<TRoot, TProcedure>,
@@ -80,9 +80,9 @@ export const trpcMutationOptions = (args: {
   untypedClient: TRPCUntypedClient<AnyTRPCRouter>;
   queryClient: QueryClient;
   path: readonly string[];
-  opts: UseTRPCMutationOptionsIn<unknown, unknown, unknown, unknown>;
+  opts: TRPCMutationOptionsIn<unknown, unknown, unknown, unknown>;
   overrides: MutationOptionsOverride | undefined;
-}): UseTRPCMutationOptionsOut<unknown, unknown, unknown, unknown> => {
+}): TRPCMutationOptionsOut<unknown, unknown, unknown, unknown> => {
   const { untypedClient, queryClient, path, opts, overrides } = args;
 
   const mutationKey = getMutationKeyInternal(path);
@@ -94,27 +94,24 @@ export const trpcMutationOptions = (args: {
   const mutationSuccessOverride: MutationOptionsOverride['onSuccess'] =
     overrides?.onSuccess ?? ((options) => options.originalFn());
 
-  const options: UseTRPCMutationOptionsOut<unknown, unknown, unknown, unknown> =
-    {
-      ...opts,
-      mutationKey: mutationKey,
-      mutationFn: (input) => {
-        return untypedClient.mutation(
-          ...getClientArgs([path, { input }], opts),
-        );
-      },
-      onSuccess(...args) {
-        const originalFn = () =>
-          opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
+  const options: TRPCMutationOptionsOut<unknown, unknown, unknown, unknown> = {
+    ...opts,
+    mutationKey: mutationKey,
+    mutationFn: (input) => {
+      return untypedClient.mutation(...getClientArgs([path, { input }], opts));
+    },
+    onSuccess(...args) {
+      const originalFn = () =>
+        opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
 
-        return mutationSuccessOverride({
-          originalFn,
-          queryClient,
-          meta: opts?.meta ?? defaultOpts?.meta ?? {},
-        });
-      },
-      trpc: createTRPCOptionsResult({ path }),
-    };
+      return mutationSuccessOverride({
+        originalFn,
+        queryClient,
+        meta: opts?.meta ?? defaultOpts?.meta ?? {},
+      });
+    },
+    trpc: createTRPCOptionsResult({ path }),
+  };
 
   return options;
 };
