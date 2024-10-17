@@ -74,7 +74,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
           initialData: opts?.initialData as any,
           queryKey,
           queryFn: inputIsSkipToken ? skipToken : queryFn,
-          initialPageParam: opts?.initialCursor ?? null,
+          initialPageParam: (opts?.initialCursor as any) ?? null,
         }),
         { trpc: createTRPCOptionsResult({ path }) },
       );
