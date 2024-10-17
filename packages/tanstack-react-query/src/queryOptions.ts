@@ -15,6 +15,8 @@ import type {
   DefinedTRPCQueryOptionsOut,
   UndefinedTRPCQueryOptionsIn,
   UndefinedTRPCQueryOptionsOut,
+  UnusedSkipTokenTRPCQueryOptionsIn,
+  UnusedSkipTokenTRPCQueryOptionsOut,
 } from './types';
 import {
   buildQueryFromAsyncIterable,
@@ -26,9 +28,6 @@ export interface TRPCQueryOptions<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyQueryProcedure,
 > {
-  /**
-   * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
-   */
   <
     TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData = TQueryFnData,
@@ -40,9 +39,21 @@ export interface TRPCQueryOptions<
       TRPCClientError<TRoot>
     >,
   ): DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientError<TRoot>>;
-  /**
-   * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
-   */
+  <
+    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TData = TQueryFnData,
+  >(
+    input: inferProcedureInput<TProcedure> | SkipToken,
+    opts?: UnusedSkipTokenTRPCQueryOptionsIn<
+      TQueryFnData,
+      TData,
+      TRPCClientError<TRoot>
+    >,
+  ): UnusedSkipTokenTRPCQueryOptionsOut<
+    TQueryFnData,
+    TData,
+    TRPCClientError<TRoot>
+  >;
   <
     TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData = TQueryFnData,

@@ -6,6 +6,7 @@ import type {
   UndefinedInitialDataInfiniteOptions,
   UndefinedInitialDataOptions,
   UnusedSkipTokenInfiniteOptions,
+  UnusedSkipTokenOptions,
 } from '@tanstack/react-query';
 import type { TRPCRequestOptions } from '@trpc/client';
 import type {
@@ -94,6 +95,32 @@ export interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
     >,
     TRPCQueryOptionsResult {
   queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TData>>;
+}
+
+export interface UnusedSkipTokenTRPCQueryOptionsIn<TQueryFnData, TData, TError>
+  extends DistributiveOmit<
+      UnusedSkipTokenOptions<
+        coerceAsyncIterableToArray<TQueryFnData>,
+        TError,
+        coerceAsyncIterableToArray<TData>,
+        TRPCQueryKey
+      >,
+      TRPCOptionOverrides
+    >,
+    TRPCQueryBaseOptions {}
+
+export interface UnusedSkipTokenTRPCQueryOptionsOut<
+  TQueryFnData,
+  TOutput,
+  TError,
+> extends UnusedSkipTokenOptions<
+      coerceAsyncIterableToArray<TQueryFnData>,
+      TError,
+      coerceAsyncIterableToArray<TOutput>,
+      TRPCQueryKey
+    >,
+    TRPCQueryOptionsResult {
+  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>>;
 }
 
 /**

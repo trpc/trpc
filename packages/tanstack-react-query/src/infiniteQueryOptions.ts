@@ -28,9 +28,6 @@ export interface TRPCInfiniteQueryOptions<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyQueryProcedure,
 > {
-  /**
-   * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
-   */
   <
     TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData = TQueryFnData,
@@ -48,9 +45,6 @@ export interface TRPCInfiniteQueryOptions<
     TData,
     TRPCClientError<TRoot>
   >;
-  /**
-   * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
-   */
   <
     TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData = TQueryFnData,
@@ -68,9 +62,6 @@ export interface TRPCInfiniteQueryOptions<
     TData,
     TRPCClientError<TRoot>
   >;
-  /**
-   * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
-   */
   <
     TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData = TQueryFnData,

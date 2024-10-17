@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { getServerAndReactClient } from './__helpers';
-import { skipToken, useQuery } from '@tanstack/react-query';
+import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
@@ -311,5 +311,27 @@ describe('queryOptions', () => {
           },
         ]
       `);
+  });
+
+  test('useSuspenseQuery', async () => {
+    const { App, trpc } = ctx;
+    function MyComponent() {
+      const { data } = useSuspenseQuery(
+        trpc.post.byId.queryOptions({ id: '1' }),
+      );
+
+      expectTypeOf(data).toMatchTypeOf<'__result'>();
+
+      return <pre>{JSON.stringify(data ?? 'n/a', null, 4)}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`__result`);
+    });
   });
 });

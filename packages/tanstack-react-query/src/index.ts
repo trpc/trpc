@@ -21,7 +21,13 @@ export interface DecorateQueryProcedure<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyQueryProcedure,
 > {
+  /**
+   * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
+   */
   queryOptions: TRPCQueryOptions<TRoot, TProcedure>;
+  /**
+   * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
+   */
   infiniteQueryOptions: TRPCInfiniteQueryOptions<TRoot, TProcedure>;
 }
 
