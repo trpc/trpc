@@ -1,0 +1,49 @@
+---
+slug: announcing-trpc-11
+title: Announcing tRPC v11
+author: Alex / KATT 🐱
+author_title: Creator of tRPC
+author_url: https://twitter.com/alexdotjs
+author_image_url: https://avatars1.githubusercontent.com/u/459267?s=460&v=4
+---
+
+import { GithubSponsorButton } from '@site/src/components/GithubSponsorButton';
+
+Are you ready for the newest and most ~~exciting~~**boring** release of tRPC yet? We're thrilled to announce the release of tRPC version 11, packed with internal improvements and the removal of `@deprecated` functionality.
+
+## What's new in tRPC v11
+
+While tRPC v11 may not come with any new features, we've been working hard behind the scenes to make significant internal improvements that will make using tRPC easier to work with for us, which means can now ship new feature at a higher pace.
+
+```bash
+$ git diff main next --stat -- ':!pnpm-lock.yaml'
+
+[...]
+137 files changed, 459 insertions(+), 13525 deletions(-)
+```
+
+### Goodbye `.interop()`-mode
+
+In tRPC v10, we introduced the `.interop()`-mode to provide a smooth migration path for existing tRPC users. However, maintaining two different routers proved to be a lot of work. That's why, in tRPC v11, we've decided to remove the `.interop()`-mode. Don't worry though, if you're still using the `.interop()`-mode, you can use the [v10 migration guide](#TODO-LINK) to help you make the transition to the new syntax.
+
+### Refactoring for a Better Developer Experience
+
+Removing the `.interop()`-mode has allowed us to remove a significant amount of code from tRPC, making the codebase much more manageable and easier to work with. This is especially true for the `@trpc/react-query` and the `@trpc/client`-packages, which improves our quality of life when working on the codebase.
+
+## Migration path
+
+Upgrading to tRPC v11 is easy, most people can just do `npx npm-check-updates --filter /trpc/ -u` and then `npm install` to get the latest version.
+
+If this, doesn't work, first make sure that you've completely migrated from v9-syntax.
+
+## Thank you!
+
+We want to extend a heartfelt thank you to all of our users who have supported and used tRPC. We couldn't have done this without you and we're excited for you to experience the improvements in tRPC v11.
+
+---
+
+- Follow [@trpcio](https://twitter.com/trpcio) on Twitter.
+- Join our [Discord-community](https://trpc.io/discord)
+- [Try out tRPC in your browser](https://trpc.io/#try-it-out)
+
+<GithubSponsorButton />
