@@ -90,6 +90,7 @@ module.exports = {
             'client/react/useQuery',
             'client/react/useMutation',
             'client/react/useInfiniteQuery',
+            'client/react/useSubscription',
             'client/react/useUtils',
             'client/react/createTRPCQueryUtils',
             'client/react/useQueries',

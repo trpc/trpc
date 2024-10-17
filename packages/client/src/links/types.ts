@@ -7,6 +7,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import type { ResponseEsque } from '../internals/types';
 import type { TRPCClientError } from '../TRPCClientError';
+import type { TRPCConnectionState } from './internals/subscriptions';
 
 export {
   isNonJsonSerializable,
@@ -58,10 +59,11 @@ export interface TRPCClientRuntime {
 /**
  * @internal
  */
-export interface OperationResultEnvelope<TOutput> {
+export interface OperationResultEnvelope<TOutput, TError> {
   result:
     | TRPCResultMessage<TOutput>['result']
-    | TRPCSuccessResponse<TOutput>['result'];
+    | TRPCSuccessResponse<TOutput>['result']
+    | TRPCConnectionState<TError>;
   context?: OperationContext;
 }
 
@@ -71,7 +73,10 @@ export interface OperationResultEnvelope<TOutput> {
 export type OperationResultObservable<
   TInferrable extends InferrableClientTypes,
   TOutput,
-> = Observable<OperationResultEnvelope<TOutput>, TRPCClientError<TInferrable>>;
+> = Observable<
+  OperationResultEnvelope<TOutput, TRPCClientError<TInferrable>>,
+  TRPCClientError<TInferrable>
+>;
 
 /**
  * @internal
@@ -79,7 +84,10 @@ export type OperationResultObservable<
 export type OperationResultObserver<
   TInferrable extends InferrableClientTypes,
   TOutput,
-> = Observer<OperationResultEnvelope<TOutput>, TRPCClientError<TInferrable>>;
+> = Observer<
+  OperationResultEnvelope<TOutput, TRPCClientError<TInferrable>>,
+  TRPCClientError<TInferrable>
+>;
 
 /**
  * @internal

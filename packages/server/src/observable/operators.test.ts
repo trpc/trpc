@@ -1,6 +1,11 @@
 import { EventEmitter } from 'events';
 import { observable } from './observable';
-import { map, share } from './operators';
+import {
+  distinctUntilChanged,
+  distinctUntilDeepChanged,
+  map,
+  share,
+} from './operators';
 
 interface SubscriptionEvents<TOutput> {
   data: (data: TOutput) => void;
@@ -148,4 +153,58 @@ test('share', () => {
     expect(next.mock.calls[0]![0]).toBe(1);
     subscription3.unsubscribe();
   }
+});
+
+test('distinctUntilChanged', () => {
+  const source = observable<number, never>((observer) => {
+    observer.next(1);
+    observer.next(1);
+    observer.next(2);
+    observer.next(2);
+    observer.next(3);
+    observer.next(1);
+  });
+
+  const results: number[] = [];
+  const distinctObs = source.pipe(distinctUntilChanged());
+
+  distinctObs.subscribe({
+    next: (value) => results.push(value),
+  });
+  expect(results).toEqual([1, 2, 3, 1]);
+});
+
+test('distinctUntilDeepChanged', () => {
+  const source = observable<{ a: number; b: { c: string } }, never>(
+    (observer) => {
+      // Emitting the first value with a = 1 and b.c = 'x'
+      observer.next({ a: 1, b: { c: 'x' } });
+      // Emitting the same value again to test distinctUntilDeepChanged
+      observer.next({ a: 1, b: { c: 'x' } });
+      // Emitting a new value with a = 2 and b.c = 'x'
+      observer.next({ a: 2, b: { c: 'x' } });
+      // Emitting a value with a = 2 and b.c = 'y' to test deep change detection
+      observer.next({ a: 2, b: { c: 'y' } });
+      // Emitting the same value again to test distinctUntilDeepChanged
+      observer.next({ a: 2, b: { c: 'y' } });
+      // Emitting the same value with properties in a different order to test deep equality
+      observer.next({ b: { c: 'y' }, a: 2 });
+      // Emitting the first value again to test if it's considered distinct after a deep change
+      observer.next({ a: 1, b: { c: 'x' } });
+    },
+  );
+
+  const results: { a: number; b: { c: string } }[] = [];
+  const distinctObs = source.pipe(distinctUntilDeepChanged());
+
+  distinctObs.subscribe({
+    next: (value) => results.push(value),
+  });
+
+  expect(results).toEqual([
+    { a: 1, b: { c: 'x' } },
+    { a: 2, b: { c: 'x' } },
+    { a: 2, b: { c: 'y' } },
+    { a: 1, b: { c: 'x' } },
+  ]);
 });

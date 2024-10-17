@@ -2,20 +2,6 @@ import { skipToken } from '@tanstack/react-query';
 import { trpc } from '~/lib/trpc';
 import * as React from 'react';
 
-export function useWhoIsTyping(channelId: string) {
-  const [currentlyTyping, setCurrentlyTyping] = React.useState<string[]>([]);
-  trpc.channel.whoIsTyping.useSubscription(
-    { channelId },
-    {
-      onData(list) {
-        setCurrentlyTyping(list);
-      },
-    },
-  );
-
-  return currentlyTyping;
-}
-
 /**
  * Set isTyping with a throttle of 1s
  * Triggers immediately if state changes
@@ -48,7 +34,7 @@ export function useThrottledIsTypingMutation(channelId: string) {
 }
 
 export function useLivePosts(channelId: string) {
-  const [data, query] = trpc.post.infinite.useSuspenseInfiniteQuery(
+  const [, query] = trpc.post.infinite.useSuspenseInfiniteQuery(
     { channelId },
     {
       getNextPageParam: (d) => d.nextCursor,
@@ -104,7 +90,7 @@ export function useLivePosts(channelId: string) {
     // Changing this value will trigger a new subscription
     setLastEventId(messages.at(-1)?.id ?? null);
   }
-  trpc.post.onAdd.useSubscription(
+  const subscription = trpc.post.onAdd.useSubscription(
     lastEventId === false ? skipToken : { channelId, lastEventId },
     {
       onData(event) {
@@ -112,12 +98,18 @@ export function useLivePosts(channelId: string) {
       },
       onError(err) {
         console.error('Subscription error:', err);
-        utils.post.infinite.invalidate();
+
+        const lastMessageEventId = messages?.at(-1)?.id;
+        if (lastMessageEventId) {
+          // We've lost the connection, let's resubscribe from the last message
+          setLastEventId(lastMessageEventId);
+        }
       },
     },
   );
   return {
     query,
     messages,
+    subscription,
   };
 }
