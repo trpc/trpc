@@ -12,7 +12,7 @@ import type {
   inferProcedureInput,
   inferTransformedProcedureOutput,
 } from '@trpc/server';
-import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import/rootConfig';
+import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCQueryKey } from './queryKey';
 import type {
   DefinedTRPCInfiniteQueryOptionsIn,
