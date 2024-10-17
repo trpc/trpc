@@ -19,7 +19,7 @@
     "@fastify/websocket": "^10.0.1",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/server": "npm:@trpc/server@next",
-    "fastify": "^4.16.0",
+    "fastify": "^4.26.0",
     "superjson": "^1.12.4",
     "tslib": "^2.5.0",
     "ws": "^8.0.0",
