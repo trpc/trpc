@@ -20,8 +20,11 @@ import type {
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
-import type { TRPCQueryKey } from './queryKey';
-import type { TRPCQueryBaseOptions, TRPCQueryOptionsResult } from './types';
+import type {
+  TRPCQueryBaseOptions,
+  TRPCQueryKey,
+  TRPCQueryOptionsResult,
+} from './types';
 import {
   buildQueryFromAsyncIterable,
   createTRPCOptionsResult,

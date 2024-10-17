@@ -13,9 +13,13 @@ import type {
 import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
-} from './infiniteQueryOptions';
-import { getQueryKeyInternal, type QueryType } from './queryKey';
-import { trpcQueryOptions, type TRPCQueryOptions } from './queryOptions';
+} from './internals/infiniteQueryOptions';
+import {
+  trpcQueryOptions,
+  type TRPCQueryOptions,
+} from './internals/queryOptions';
+import type { QueryType } from './internals/types';
+import { getQueryKeyInternal } from './internals/utils';
 
 export interface DecorateQueryProcedure<
   TRoot extends AnyRootTypes,

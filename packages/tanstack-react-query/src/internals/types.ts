@@ -29,3 +29,10 @@ export interface TRPCQueryOptionsResult {
     path: string;
   };
 }
+
+export type QueryType = 'any' | 'infinite' | 'query';
+
+export type TRPCQueryKey = [
+  readonly string[],
+  { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
+];

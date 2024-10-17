@@ -1,12 +1,72 @@
-import { skipToken } from '@tanstack/react-query';
+import { skipToken, type QueryClient } from '@tanstack/react-query';
 import { isObject } from '@trpc/server/unstable-core-do-not-import';
+import type { QueryType, TRPCQueryKey, TRPCQueryOptionsResult } from './types';
 
-export type QueryType = 'any' | 'infinite' | 'query';
+/**
+ * @internal
+ */
+export function createTRPCOptionsResult(value: {
+  path: readonly string[];
+}): TRPCQueryOptionsResult['trpc'] {
+  const path = value.path.join('.');
 
-export type TRPCQueryKey = [
-  readonly string[],
-  { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
-];
+  return {
+    path,
+  };
+}
+
+/**
+ * @internal
+ */
+export function getClientArgs<TOptions>(
+  queryKey: TRPCQueryKey,
+  opts: TOptions,
+  infiniteParams?: {
+    pageParam: any;
+    direction: 'forward' | 'backward';
+  },
+) {
+  const path = queryKey[0];
+  let input = queryKey[1]?.input;
+  if (infiniteParams) {
+    input = {
+      ...(input ?? {}),
+      ...(infiniteParams.pageParam ? { cursor: infiniteParams.pageParam } : {}),
+      direction: infiniteParams.direction,
+    };
+  }
+  return [path.join('.'), input, (opts as any)?.trpc] as const;
+}
+
+/**
+ * @internal
+ */
+export async function buildQueryFromAsyncIterable(
+  asyncIterable: AsyncIterable<unknown>,
+  queryClient: QueryClient,
+  queryKey: TRPCQueryKey,
+) {
+  const queryCache = queryClient.getQueryCache();
+
+  const query = queryCache.build(queryClient, {
+    queryKey,
+  });
+
+  query.setState({
+    data: [],
+    status: 'success',
+  });
+
+  const aggregate: unknown[] = [];
+  for await (const value of asyncIterable) {
+    aggregate.push(value);
+
+    query.setState({
+      data: [...aggregate],
+    });
+  }
+  return aggregate;
+}
 
 /**
  * To allow easy interactions with groups of related queries, such as

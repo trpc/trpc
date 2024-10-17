@@ -23,10 +23,10 @@ import type {
   AnyRootTypes,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { TRPCQueryKey } from './queryKey';
 import type {
   ExtractCursorType,
   TRPCQueryBaseOptions,
+  TRPCQueryKey,
   TRPCQueryOptionsResult,
 } from './types';
 import { createTRPCOptionsResult, getClientArgs } from './utils';
