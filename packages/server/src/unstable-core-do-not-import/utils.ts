@@ -68,3 +68,22 @@ export function noop(): void {}
 export function identity<T>(it: T): T {
   return it;
 }
+
+/**
+ * Generic runtime assertion function. Throws, if the condition is not `true`.
+ *
+ * Can be used as a slightly less dangerous variant of type assertions. Code
+ * mistakes would be revealed at runtime then (hopefully during testing).
+ */
+export function assert(
+  condition: boolean,
+  msg = 'no additional info',
+): asserts condition {
+  if (!condition) {
+    throw new Error(`AssertionError: ${msg}`);
+  }
+}
+
+export function sleep(ms = 0): Promise<void> {
+  return new Promise<void>((res) => setTimeout(res, ms));
+}
