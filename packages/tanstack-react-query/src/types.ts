@@ -3,19 +3,33 @@ import type {
   DefinedInitialDataInfiniteOptions,
   DefinedInitialDataOptions,
   InfiniteData,
-  QueryClient,
   UndefinedInitialDataInfiniteOptions,
   UndefinedInitialDataOptions,
   UnusedSkipTokenInfiniteOptions,
 } from '@tanstack/react-query';
+import type { TRPCRequestOptions } from '@trpc/client';
 import type {
-  AnyRouter,
   coerceAsyncIterableToArray,
   DistributiveOmit,
-  MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { TRPCQueryKey } from '../internals/getQueryKey';
-import type { ExtractCursorType, TRPCReactRequestOptions } from './hooks/types';
+import type { TRPCQueryKey } from './queryKey';
+
+export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
+  ? TInput['cursor']
+  : unknown;
+
+export interface TRPCReactRequestOptions
+  // For RQ, we use their internal AbortSignals instead of letting the user pass their own
+  extends Omit<TRPCRequestOptions, 'signal'> {
+  /**
+   * Opt out of SSR for this query by passing `ssr: false`
+   */
+  ssr?: boolean;
+  /**
+   * Opt out or into aborting request on unmount
+   */
+  abortOnUnmount?: boolean;
+}
 
 export interface TRPCQueryBaseOptions {
   /**
@@ -200,45 +214,4 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
     TRPCQueryOptionsResult {
   queryKey: DataTag<TRPCQueryKey, TData>;
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
-}
-
-/**
- * @internal
- */
-export interface UseMutationOverride {
-  onSuccess: (opts: {
-    /**
-     * Calls the original function that was defined in the query's `onSuccess` option
-     */
-    originalFn: () => MaybePromise<unknown>;
-    queryClient: QueryClient;
-    /**
-     * Meta data passed in from the `useMutation()` hook
-     */
-    meta: Record<string, unknown>;
-  }) => MaybePromise<unknown>;
-}
-
-/**
- * @internal
- */
-export interface CreateTRPCReactOptions<_TRouter extends AnyRouter> {
-  /**
-   * Override behaviors of the built-in hooks
-   */
-  overrides?: {
-    useMutation?: Partial<UseMutationOverride>;
-  };
-
-  /**
-   * Abort all queries when unmounting
-   * @default false
-   */
-  abortOnUnmount?: boolean;
-
-  /**
-   * Override the default context provider
-   * @default undefined
-   */
-  context?: React.Context<any>;
 }

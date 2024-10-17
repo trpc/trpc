@@ -26,6 +26,7 @@ import type {
 } from '@trpc/client';
 import type {
   AnyRouter,
+  coerceAsyncIterableToArray,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { JSX, ReactNode } from 'react';
@@ -184,12 +185,6 @@ export type UseDehydratedState<TRouter extends AnyRouter> = (
 export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,
 ) => TRPCUntypedClient<TRouter>;
-
-export type coerceAsyncIterableToArray<TValue> = TValue extends AsyncIterable<
-  infer $Inferred
->
-  ? $Inferred[]
-  : TValue;
 
 /**
  * @internal
