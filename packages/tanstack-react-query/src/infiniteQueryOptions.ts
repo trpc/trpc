@@ -1,3 +1,10 @@
+import type {
+  DataTag,
+  DefinedInitialDataInfiniteOptions,
+  InfiniteData,
+  UndefinedInitialDataInfiniteOptions,
+  UnusedSkipTokenInfiniteOptions,
+} from '@tanstack/react-query';
 import {
   infiniteQueryOptions,
   skipToken,
@@ -12,17 +19,137 @@ import type {
   inferProcedureInput,
   inferTransformedProcedureOutput,
 } from '@trpc/server';
-import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  AnyRootTypes,
+  DistributiveOmit,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCQueryKey } from './queryKey';
 import type {
-  DefinedTRPCInfiniteQueryOptionsIn,
-  DefinedTRPCInfiniteQueryOptionsOut,
-  UndefinedTRPCInfiniteQueryOptionsIn,
-  UndefinedTRPCInfiniteQueryOptionsOut,
-  UnusedSkipTokenTRPCInfiniteQueryOptionsIn,
-  UnusedSkipTokenTRPCInfiniteQueryOptionsOut,
+  ExtractCursorType,
+  TRPCQueryBaseOptions,
+  TRPCQueryOptionsResult,
 } from './types';
 import { createTRPCOptionsResult, getClientArgs } from './utils';
+
+type ReservedOptions =
+  | 'queryKey'
+  | 'queryFn'
+  | 'queryHashFn'
+  | 'queryHash'
+  | 'initialPageParam';
+
+interface UndefinedTRPCInfiniteQueryOptionsIn<
+  TInput,
+  TQueryFnData,
+  TData,
+  TError,
+> extends DistributiveOmit<
+      UndefinedInitialDataInfiniteOptions<
+        TQueryFnData,
+        TError,
+        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCQueryKey,
+        NonNullable<ExtractCursorType<TInput>> | null
+      >,
+      ReservedOptions
+    >,
+    TRPCQueryBaseOptions {
+  initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
+}
+
+interface UndefinedTRPCInfiniteQueryOptionsOut<
+  TInput,
+  TQueryFnData,
+  TData,
+  TError,
+> extends DistributiveOmit<
+      UndefinedInitialDataInfiniteOptions<
+        TQueryFnData,
+        TError,
+        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCQueryKey,
+        NonNullable<ExtractCursorType<TInput>> | null
+      >,
+      'initialPageParam'
+    >,
+    TRPCQueryOptionsResult {
+  queryKey: DataTag<TRPCQueryKey, TData>;
+  initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
+}
+
+interface DefinedTRPCInfiniteQueryOptionsIn<TInput, TQueryFnData, TData, TError>
+  extends DistributiveOmit<
+      DefinedInitialDataInfiniteOptions<
+        TQueryFnData,
+        TError,
+        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCQueryKey,
+        NonNullable<ExtractCursorType<TInput>> | null
+      >,
+      ReservedOptions
+    >,
+    TRPCQueryBaseOptions {
+  initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
+}
+
+interface DefinedTRPCInfiniteQueryOptionsOut<
+  TInput,
+  TQueryFnData,
+  TData,
+  TError,
+> extends DistributiveOmit<
+      DefinedInitialDataInfiniteOptions<
+        TQueryFnData,
+        TError,
+        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCQueryKey,
+        NonNullable<ExtractCursorType<TInput>> | null
+      >,
+      'initialPageParam'
+    >,
+    TRPCQueryOptionsResult {
+  queryKey: DataTag<TRPCQueryKey, TData>;
+  initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
+}
+
+interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
+  TInput,
+  TQueryFnData,
+  TData,
+  TError,
+> extends DistributiveOmit<
+      UnusedSkipTokenInfiniteOptions<
+        TQueryFnData,
+        TError,
+        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCQueryKey,
+        NonNullable<ExtractCursorType<TInput>> | null
+      >,
+      ReservedOptions
+    >,
+    TRPCQueryBaseOptions {
+  initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
+}
+
+interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
+  TInput,
+  TQueryFnData,
+  TData,
+  TError,
+> extends DistributiveOmit<
+      UnusedSkipTokenInfiniteOptions<
+        TQueryFnData,
+        TError,
+        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCQueryKey,
+        NonNullable<ExtractCursorType<TInput>> | null
+      >,
+      'initialPageParam'
+    >,
+    TRPCQueryOptionsResult {
+  queryKey: DataTag<TRPCQueryKey, TData>;
+  initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
+}
 
 export interface TRPCInfiniteQueryOptions<
   TRoot extends AnyRootTypes,
