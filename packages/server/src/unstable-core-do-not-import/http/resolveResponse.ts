@@ -24,6 +24,17 @@ import type {
   TRPCRequestInfo,
 } from './types';
 
+function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
+  return {
+    [Symbol.asyncIterator]: () => {
+      return {
+        next() {
+          throw err;
+        },
+      };
+    },
+  };
+}
 type HTTPMethods =
   | 'GET'
   | 'POST'
@@ -242,16 +253,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     }
   });
 
-  interface ContextWrapper {
+  interface ContextManager {
     valueOrUndefined: () => $Context | undefined;
     value: () => $Context;
-    run: (info: TRPCRequestInfo) => Promise<void>;
+    create: (info: TRPCRequestInfo) => Promise<void>;
   }
-
-  const ctxWrap: ContextWrapper = run(() => {
+  const ctxManager: ContextManager = run(() => {
     let result: ResultTuple<$Context> | undefined = undefined;
     return {
-      valueOrUndefined: () => result![0],
+      valueOrUndefined: () => {
+        if (!result) {
+          return undefined;
+        }
+        return result[0];
+      },
       value: () => {
         const [ctx, err] = result!;
         if (err) {
@@ -259,7 +274,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         }
         return ctx;
       },
-      run: async (info) => {
+      create: async (info) => {
+        if (result) {
+          throw new Error(
+            'This should only be called once - report a bug in tRPC',
+          );
+        }
         try {
           const ctx = await opts.createContext({
             info,
@@ -286,10 +306,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const experimentalSSE =
     router._def._config.experimental?.sseSubscriptions?.enabled ?? true;
   try {
-    if (opts.error) {
-      throw opts.error;
-    }
-
     const [info, infoError] = infoTuple;
     if (infoError) {
       throw infoError;
@@ -307,7 +323,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         code: 'BAD_REQUEST',
       });
     }
-    await ctxWrap.run(info);
+    await ctxManager.create(info);
 
     type RPCResult =
       | [result: null, error: TRPCError]
@@ -315,6 +331,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
       try {
+        if (opts.error) {
+          throw opts.error;
+        }
+
         if (!proc) {
           throw new TRPCError({
             code: 'NOT_FOUND',
@@ -338,7 +358,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
-          ctx: ctxWrap.value(),
+          ctx: ctxManager.value(),
           type: proc._def.type,
           signal: opts.req.signal,
         });
@@ -351,7 +371,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           error,
           path: call.path,
           input,
-          ctx: ctxWrap.valueOrUndefined(),
+          ctx: ctxManager.valueOrUndefined(),
           type: call.procedure?._def.type ?? 'unknown',
           req: opts.req,
         });
@@ -383,7 +403,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             ? {
                 error: getErrorShape({
                   config,
-                  ctx: ctxWrap.valueOrUndefined(),
+                  ctx: ctxManager.valueOrUndefined(),
                   error,
                   input: call!.result(),
                   path: call!.path,
@@ -393,7 +413,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             : { result: { data } };
 
           const headResponse = initResponse({
-            ctx: ctxWrap.valueOrUndefined(),
+            ctx: ctxManager.valueOrUndefined(),
             info,
             responseMeta: opts.responseMeta,
             errors: error ? [error] : [],
@@ -411,32 +431,38 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         case 'subscription': {
           // httpSubscriptionLink
 
-          if (!experimentalSSE) {
-            throw new TRPCError({
-              code: 'METHOD_NOT_SUPPORTED',
-              message: 'Missing experimental flag "sseSubscriptions"',
-            });
-          }
+          const iterable: AsyncIterable<unknown> = run(() => {
+            if (error) {
+              return errorToAsyncIterable(error);
+            }
+            if (!experimentalSSE) {
+              return errorToAsyncIterable(
+                new TRPCError({
+                  code: 'METHOD_NOT_SUPPORTED',
+                  message: 'Missing experimental flag "sseSubscriptions"',
+                }),
+              );
+            }
 
-          if (error) {
-            throw error;
-          }
-
-          if (!isObservable(data) && !isAsyncIterable(data)) {
-            throw new TRPCError({
-              message: `Subscription ${
-                call!.path
-              } did not return an observable or a AsyncGenerator`,
-              code: 'INTERNAL_SERVER_ERROR',
-            });
-          }
-          const dataAsIterable = isObservable(data)
-            ? observableToAsyncIterable(data)
-            : data;
+            if (!isObservable(data) && !isAsyncIterable(data)) {
+              return errorToAsyncIterable(
+                new TRPCError({
+                  message: `Subscription ${
+                    call!.path
+                  } did not return an observable or a AsyncGenerator`,
+                  code: 'INTERNAL_SERVER_ERROR',
+                }),
+              );
+            }
+            const dataAsIterable = isObservable(data)
+              ? observableToAsyncIterable(data)
+              : data;
+            return dataAsIterable;
+          });
 
           const stream = sseStreamProducer({
             ...config.experimental?.sseSubscriptions,
-            data: dataAsIterable,
+            data: iterable,
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {
               const error = getTRPCErrorFromUnknown(errorOpts.error);
@@ -448,14 +474,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 error,
                 path,
                 input,
-                ctx: ctxWrap.valueOrUndefined(),
+                ctx: ctxManager.valueOrUndefined(),
                 req: opts.req,
                 type,
               });
 
               const shape = getErrorShape({
                 config,
-                ctx: ctxWrap.valueOrUndefined(),
+                ctx: ctxManager.valueOrUndefined(),
                 error,
                 input,
                 path,
@@ -470,7 +496,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           }
 
           const headResponse = initResponse({
-            ctx: ctxWrap.valueOrUndefined(),
+            ctx: ctxManager.valueOrUndefined(),
             info,
             responseMeta: opts.responseMeta,
             errors: [],
@@ -492,7 +518,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       headers.set('content-type', 'application/json');
       headers.set('transfer-encoding', 'chunked');
       const headResponse = initResponse({
-        ctx: ctxWrap.valueOrUndefined(),
+        ctx: ctxManager.valueOrUndefined(),
         info,
         responseMeta: opts.responseMeta,
         errors: [],
@@ -518,11 +544,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const [result, error] = await res;
 
           const call = info.calls[0];
+
           if (error) {
             return {
               error: getErrorShape({
                 config,
-                ctx: ctxWrap.valueOrUndefined(),
+                ctx: ctxManager.valueOrUndefined(),
                 error,
                 input: call!.result(),
                 path: call!.path,
@@ -550,7 +577,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             error: getTRPCErrorFromUnknown(cause),
             path: undefined,
             input: undefined,
-            ctx: ctxWrap.valueOrUndefined(),
+            ctx: ctxManager.valueOrUndefined(),
             req: opts.req,
             type: info?.type ?? 'unknown',
           });
@@ -568,7 +595,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           const shape = getErrorShape({
             config,
-            ctx: ctxWrap.valueOrUndefined(),
+            ctx: ctxManager.valueOrUndefined(),
             error,
             input,
             path,
@@ -623,7 +650,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           return {
             error: getErrorShape({
               config,
-              ctx: ctxWrap.valueOrUndefined(),
+              ctx: ctxManager.valueOrUndefined(),
               error,
               input: call.result(),
               path: call.path,
@@ -642,7 +669,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       .filter(Boolean) as TRPCError[];
 
     const headResponse = initResponse({
-      ctx: ctxWrap.valueOrUndefined(),
+      ctx: ctxManager.valueOrUndefined(),
       info,
       responseMeta: opts.responseMeta,
       untransformedJSON: resultAsRPCResponse,
@@ -659,7 +686,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     );
   } catch (cause) {
     const [info] = infoTuple;
-    const ctx = ctxWrap.valueOrUndefined();
+    const ctx = ctxManager.valueOrUndefined();
     // we get here if
     // - batching is called when it's not enabled
     // - `createContext()` throws
@@ -669,7 +696,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // - `errorFormatter` return value is malformed
     const { error, untransformedJSON, body } = caughtErrorToData(cause, {
       opts,
-      ctx,
+      ctx: ctxManager.valueOrUndefined(),
       type: info?.type ?? 'unknown',
     });
 
