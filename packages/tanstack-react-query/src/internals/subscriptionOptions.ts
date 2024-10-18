@@ -1,16 +1,16 @@
 import { hashKey, skipToken, type SkipToken } from '@tanstack/react-query';
-import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
+import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type { Unsubscribable } from '@trpc/server/observable';
 import type {
-  AnyRootTypes,
   AnyRouter,
-  AnySubscriptionProcedure,
   inferAsyncIterableYield,
-  inferProcedureInput,
-  inferTransformedSubscriptionOutput,
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import type { TRPCQueryKey, TRPCQueryOptionsResult } from './types';
+import type {
+  ResolverDef,
+  TRPCQueryKey,
+  TRPCQueryOptionsResult,
+} from './types';
 import { createTRPCOptionsResult } from './utils';
 
 interface BaseTRPCSubscriptionOptionsIn<TOutput, TError> {
@@ -36,30 +36,21 @@ interface TRPCSubscriptionOptionsOut<TOutput, TError>
   ) => Unsubscribable;
 }
 
-export interface TRPCSubscriptionOptions<
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnySubscriptionProcedure,
-> {
+export interface TRPCSubscriptionOptions<TDef extends ResolverDef> {
   (
-    input: inferProcedureInput<TProcedure>,
+    input: TDef['input'],
     opts: UnusedSkipTokenTRPCSubscriptionOptionsIn<
-      inferTransformedSubscriptionOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
+      TDef['output'],
+      TRPCClientErrorLike<TDef>
     >,
-  ): TRPCSubscriptionOptionsOut<
-    inferTransformedSubscriptionOutput<TRoot, TProcedure>,
-    TRPCClientError<TRoot>
-  >;
+  ): TRPCSubscriptionOptionsOut<TDef['output'], TRPCClientErrorLike<TDef>>;
   (
-    input: inferProcedureInput<TProcedure> | SkipToken,
+    input: TDef['input'] | SkipToken,
     opts: BaseTRPCSubscriptionOptionsIn<
-      inferTransformedSubscriptionOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
+      TDef['output'],
+      TRPCClientErrorLike<TDef>
     >,
-  ): TRPCSubscriptionOptionsOut<
-    inferTransformedSubscriptionOutput<TRoot, TProcedure>,
-    TRPCClientError<TRoot>
-  >;
+  ): TRPCSubscriptionOptionsOut<TDef['output'], TRPCClientErrorLike<TDef>>;
 }
 
 export const trpcSubscriptionOptions = (args: {
@@ -72,9 +63,9 @@ export const trpcSubscriptionOptions = (args: {
   const input = queryKey[1]?.input;
   const enabled = opts?.enabled ?? input !== skipToken;
 
-  const subscribe: ReturnType<
-    TRPCSubscriptionOptions<any, any>
-  >['subscribe'] = (innerOpts) => {
+  const subscribe: ReturnType<TRPCSubscriptionOptions<any>>['subscribe'] = (
+    innerOpts,
+  ) => {
     return untypedClient.subscription(
       path.join('.'),
       input ?? undefined,

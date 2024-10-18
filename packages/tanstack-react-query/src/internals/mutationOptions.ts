@@ -3,17 +3,14 @@ import {
   type QueryClient,
   type UseMutationOptions,
 } from '@tanstack/react-query';
-import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
+import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type {
-  AnyMutationProcedure,
-  AnyRootTypes,
   AnyRouter,
   DistributiveOmit,
-  inferProcedureInput,
-  inferTransformedProcedureOutput,
   MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
+  ResolverDef,
   TRPCMutationKey,
   TRPCQueryBaseOptions,
   TRPCQueryOptionsResult,
@@ -39,21 +36,18 @@ interface TRPCMutationOptionsOut<TInput, TError, TOutput, TContext>
   mutationKey: TRPCMutationKey;
 }
 
-export interface TRPCMutationOptions<
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnyMutationProcedure,
-> {
+export interface TRPCMutationOptions<TDef extends ResolverDef> {
   <TContext = unknown>(
     opts: TRPCMutationOptionsIn<
-      inferProcedureInput<TProcedure>,
-      TRPCClientError<TRoot>,
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
+      TDef['input'],
+      TRPCClientErrorLike<TDef>,
+      TDef['output'],
       TContext
     >,
   ): TRPCMutationOptionsOut<
-    inferProcedureInput<TProcedure>,
-    TRPCClientError<TRoot>,
-    inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TDef['input'],
+    TRPCClientErrorLike<TDef>,
+    TDef['output'],
     TContext
   >;
 }

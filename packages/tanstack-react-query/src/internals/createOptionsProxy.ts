@@ -4,13 +4,16 @@ import {
   TRPCUntypedClient,
   type CreateTRPCClient,
 } from '@trpc/client';
+import type {
+  AnyProcedure,
+  inferProcedureInput,
+  inferTransformedProcedureOutput,
+  ProcedureType,
+} from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import type {
-  AnyMutationProcedure,
-  AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
-  AnySubscriptionProcedure,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
@@ -27,43 +30,45 @@ import {
   trpcSubscriptionOptions,
   type TRPCSubscriptionOptions,
 } from './subscriptionOptions';
-import type { QueryType } from './types';
+import type { QueryType, ResolverDef } from './types';
 import { getQueryKeyInternal } from './utils';
 
-export interface DecorateQueryProcedure<
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnyQueryProcedure,
-> {
+export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
    */
-  queryOptions: TRPCQueryOptions<TRoot, TProcedure>;
+  queryOptions: TRPCQueryOptions<TDef>;
 
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
    */
-  infiniteQueryOptions: TRPCInfiniteQueryOptions<TRoot, TProcedure>;
+  infiniteQueryOptions: TRPCInfiniteQueryOptions<TDef>;
 }
 
-export interface DecorateMutationProcedure<
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnyMutationProcedure,
-> {
+export interface DecorateMutationProcedure<TDef extends ResolverDef> {
   /**
    * @see
    */
-  mutationOptions: TRPCMutationOptions<TRoot, TProcedure>;
+  mutationOptions: TRPCMutationOptions<TDef>;
 }
 
-export interface DecorateSubscriptionProcedure<
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnySubscriptionProcedure,
-> {
+export interface DecorateSubscriptionProcedure<TDef extends ResolverDef> {
   /**
    * @see
    */
-  subscriptionOptions: TRPCSubscriptionOptions<TRoot, TProcedure>;
+  subscriptionOptions: TRPCSubscriptionOptions<TDef>;
 }
+
+export type DecorateProcedure<
+  TType extends ProcedureType,
+  TDef extends ResolverDef,
+> = TType extends 'query'
+  ? DecorateQueryProcedure<TDef>
+  : TType extends 'mutation'
+  ? DecorateMutationProcedure<TDef>
+  : TType extends 'subscription'
+  ? DecorateSubscriptionProcedure<TDef>
+  : never;
 
 /**
  * @internal
@@ -75,12 +80,16 @@ export type DecoratedProcedureUtilsRecord<
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
       ? DecoratedProcedureUtilsRecord<TRoot, $Value>
-      : $Value extends AnyQueryProcedure
-      ? DecorateQueryProcedure<TRoot, $Value>
-      : $Value extends AnyMutationProcedure
-      ? DecorateMutationProcedure<TRoot, $Value>
-      : $Value extends AnySubscriptionProcedure
-      ? DecorateSubscriptionProcedure<TRoot, $Value>
+      : $Value extends AnyProcedure
+      ? DecorateProcedure<
+          $Value['_def']['type'],
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<TRoot, $Value>;
+            transformer: TRoot['transformer'];
+            errorShape: TRoot['errorShape'];
+          }
+        >
       : never
     : never;
 };
@@ -109,9 +118,9 @@ export interface TRPCOptionsProxyOptions<TRouter extends AnyRouter> {
 }
 
 type UtilsMethods =
-  | keyof DecorateQueryProcedure<any, any>
-  | keyof DecorateMutationProcedure<any, any>
-  | keyof DecorateSubscriptionProcedure<any, any>;
+  | keyof DecorateQueryProcedure<any>
+  | keyof DecorateMutationProcedure<any>
+  | keyof DecorateSubscriptionProcedure<any>;
 
 function getQueryType(method: UtilsMethods) {
   return {

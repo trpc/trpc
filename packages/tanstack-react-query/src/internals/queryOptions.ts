@@ -7,18 +7,15 @@ import type {
   UnusedSkipTokenOptions,
 } from '@tanstack/react-query';
 import { queryOptions, skipToken, type SkipToken } from '@tanstack/react-query';
-import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
+import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type {
-  AnyQueryProcedure,
-  AnyRootTypes,
   AnyRouter,
   coerceAsyncIterableToArray,
   DistributiveOmit,
-  inferProcedureInput,
-  inferTransformedProcedureOutput,
 } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import type {
+  ResolverDef,
   TRPCQueryBaseOptions,
   TRPCQueryKey,
   TRPCQueryOptionsResult,
@@ -100,47 +97,39 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
   queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>>;
 }
 
-export interface TRPCQueryOptions<
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnyQueryProcedure,
-> {
-  <
-    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TData = TQueryFnData,
-  >(
-    input: inferProcedureInput<TProcedure> | SkipToken,
+export interface TRPCQueryOptions<TDef extends ResolverDef> {
+  <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
+    input: TDef['input'] | SkipToken,
     opts: DefinedTRPCQueryOptionsIn<
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      TRPCClientErrorLike<TDef>
     >,
-  ): DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientError<TRoot>>;
-  <
-    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TData = TQueryFnData,
-  >(
-    input: inferProcedureInput<TProcedure>,
+  ): DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientErrorLike<TDef>>;
+  <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
+    input: TDef['input'],
     opts?: UnusedSkipTokenTRPCQueryOptionsIn<
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      TRPCClientErrorLike<TDef>
     >,
   ): UnusedSkipTokenTRPCQueryOptionsOut<
     TQueryFnData,
     TData,
-    TRPCClientError<TRoot>
+    TRPCClientErrorLike<TDef>
   >;
-  <
-    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TData = TQueryFnData,
-  >(
-    input: inferProcedureInput<TProcedure> | SkipToken,
+  <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
+    input: TDef['input'] | SkipToken,
     opts?: UndefinedTRPCQueryOptionsIn<
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      TRPCClientErrorLike<TDef>
     >,
-  ): UndefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientError<TRoot>>;
+  ): UndefinedTRPCQueryOptionsOut<
+    TQueryFnData,
+    TData,
+    TRPCClientErrorLike<TDef>
+  >;
 }
 
 export function trpcQueryOptions(args: {

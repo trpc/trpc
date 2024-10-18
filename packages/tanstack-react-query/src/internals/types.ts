@@ -1,5 +1,12 @@
 import type { TRPCRequestOptions } from '@trpc/client';
 
+export type ResolverDef = {
+  input: any;
+  output: any;
+  transformer: boolean;
+  errorShape: any;
+};
+
 export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
   ? TInput['cursor']
   : unknown;

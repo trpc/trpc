@@ -12,17 +12,14 @@ import {
   type QueryClient,
   type SkipToken,
 } from '@tanstack/react-query';
-import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
+import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type {
-  AnyQueryProcedure,
-  AnyRootTypes,
   AnyRouter,
   DistributiveOmit,
-  inferProcedureInput,
-  inferTransformedProcedureOutput,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
   ExtractCursorType,
+  ResolverDef,
   TRPCQueryBaseOptions,
   TRPCQueryKey,
   TRPCQueryOptionsResult,
@@ -149,60 +146,48 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
-export interface TRPCInfiniteQueryOptions<
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnyQueryProcedure,
-> {
-  <
-    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TData = TQueryFnData,
-  >(
-    input: inferProcedureInput<TProcedure> | SkipToken,
+export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
+  <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
+    input: TDef['input'] | SkipToken,
     opts: DefinedTRPCInfiniteQueryOptionsIn<
-      inferProcedureInput<TProcedure>,
+      TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      TRPCClientErrorLike<TDef>
     >,
   ): DefinedTRPCInfiniteQueryOptionsOut<
-    inferProcedureInput<TProcedure>,
+    TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientError<TRoot>
+    TRPCClientErrorLike<TDef>
   >;
-  <
-    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TData = TQueryFnData,
-  >(
-    input: inferProcedureInput<TProcedure>,
+  <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
+    input: TDef['input'],
     opts: UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
-      inferProcedureInput<TProcedure>,
+      TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      TRPCClientErrorLike<TDef>
     >,
   ): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
-    inferProcedureInput<TProcedure>,
+    TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientError<TRoot>
+    TRPCClientErrorLike<TDef>
   >;
-  <
-    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
-    TData = TQueryFnData,
-  >(
-    input: inferProcedureInput<TProcedure> | SkipToken,
+  <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
+    input: TDef['input'] | SkipToken,
     opts?: UndefinedTRPCInfiniteQueryOptionsIn<
-      inferProcedureInput<TProcedure>,
+      TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      TRPCClientErrorLike<TDef>
     >,
   ): UndefinedTRPCInfiniteQueryOptionsOut<
-    inferProcedureInput<TProcedure>,
+    TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientError<TRoot>
+    TRPCClientErrorLike<TDef>
   >;
 }
 
