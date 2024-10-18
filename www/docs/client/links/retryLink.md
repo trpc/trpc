@@ -72,7 +72,7 @@ interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
    */
   error: TRPCClientError<TInferrable>;
   /**
-   * The number of attempts that have been made
+   * The number of attempts that have been made (including the first call)
    */
   attempts: number;
 }

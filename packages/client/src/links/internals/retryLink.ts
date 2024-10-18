@@ -23,7 +23,7 @@ interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
    */
   error: TRPCClientError<TInferrable>;
   /**
-   * The number of attempts that have been made
+   * The number of attempts that have been made (including the first call)
    */
   attempts: number;
 }
@@ -41,9 +41,10 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
       // initialized for request
       return observable((observer) => {
         let next$: Unsubscribable;
-        let attempts = 0;
-        attempt();
-        function attempt() {
+
+        attempt(1);
+
+        function attempt(attempts: number) {
           attempts++;
           next$ = next(op).subscribe({
             error(error) {
@@ -52,7 +53,7 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
                 attempts,
                 error,
               });
-              shouldRetry ? attempt() : observer.error(error);
+              shouldRetry ? attempt(attempts + 1) : observer.error(error);
             },
             next(result) {
               observer.next(result);
