@@ -193,6 +193,9 @@ export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   url: () => MaybePromise<string>;
   init: () => MaybePromise<EventSourceInit> | undefined;
   signal: AbortSignal;
+  /**
+   * @deprecated use a `retryLink` instead
+   */
   shouldRecreateOnError?: (
     opts:
       | {
@@ -289,6 +292,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
     es.addEventListener(SERIALIZED_ERROR_EVENT, (_msg) => {
       const msg = _msg as EventSourceLike.MessageEvent;
+
       dispatch(async () => {
         if (shouldRecreateOnError) {
           await pauseDispatch(async () => {

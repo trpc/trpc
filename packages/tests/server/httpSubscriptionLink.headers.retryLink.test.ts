@@ -3,6 +3,7 @@ import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
+  retryLink,
   splitLink,
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
@@ -117,37 +118,40 @@ const ctx = konn()
             linkSpy,
             splitLink({
               condition: (op) => op.type === 'subscription',
-              true: unstable_httpSubscriptionLink({
-                url: opts.httpUrl,
-                transformer: superjson,
-                EventSource: EventSourcePolyfill,
-                eventSourceOptions() {
-                  return {
-                    headers: {
-                      'x-test': String(incrementingTestHeader),
-                    },
-                  };
-                },
-                /**
-                 * @deprecated use a `retryLink` instead
-                 */
-                experimental_shouldRecreateOnError(opts) {
-                  let willRestart = false;
-                  if (opts.type === 'event') {
-                    const ev = opts.event;
+              true: [
+                retryLink({
+                  retry(opts) {
+                    let willRestart = false;
+                    const { cause } = opts.error;
 
-                    willRestart =
-                      'status' in ev &&
-                      typeof ev.status === 'number' &&
-                      [401, 403].includes(ev.status);
-                  }
-                  if (willRestart) {
-                    // eslint-disable-next-line no-console
-                    console.log('Restarting EventSource due to 401/403 error');
-                  }
-                  return willRestart;
-                },
-              }),
+                    if (
+                      cause &&
+                      typeof cause === 'object' &&
+                      'status' in cause &&
+                      typeof cause.status === 'number' &&
+                      [401, 403].includes(cause.status)
+                    ) {
+                      willRestart = true;
+                      // console.log(
+                      //   'Restarting EventSource due to 401/403 error',
+                      // );
+                    }
+                    return willRestart;
+                  },
+                }),
+                unstable_httpSubscriptionLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                  EventSource: EventSourcePolyfill,
+                  eventSourceOptions() {
+                    return {
+                      headers: {
+                        'x-test': String(incrementingTestHeader),
+                      },
+                    };
+                  },
+                }),
+              ],
               false: unstable_httpBatchStreamLink({
                 url: opts.httpUrl,
                 transformer: superjson,

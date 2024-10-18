@@ -2,15 +2,38 @@
 // We're not actually exporting this link
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
-import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
-import type { TRPCLink } from '../types';
+import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import/clientish/inferrable';
+import type { TRPCClientError } from '../../TRPCClientError';
+import type { Operation, TRPCLink } from '../types';
+
+interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
+  /**
+   * The retry function
+   */
+  retry: (opts: RetryFnOptions<TInferrable>) => boolean;
+}
+
+interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
+  /**
+   * The operation that failed
+   */
+  op: Operation;
+  /**
+   * The error that occurred
+   */
+  error: TRPCClientError<TInferrable>;
+  /**
+   * The number of attempts that have been made
+   */
+  attempts: number;
+}
 
 /**
- * @internal used for testing
+ * @see https://trpc.io/docs/v11/client/links/retryLink
  */
-export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
-  attempts: number;
-}): TRPCLink<TRouter> {
+export function retryLink<TInferrable extends InferrableClientTypes>(
+  opts: RetryLinkOptions<TInferrable>,
+): TRPCLink<TInferrable> {
   // initialized config
   return () => {
     // initialized in app
@@ -26,7 +49,12 @@ export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
           next$ = next(op).subscribe({
             error(error) {
               /* istanbul ignore if -- @preserve */
-              if (attempts >= opts.attempts) {
+              const shouldRetry = opts.retry({
+                op,
+                attempts,
+                error,
+              });
+              if (!shouldRetry) {
                 observer.error(error);
                 return;
               }

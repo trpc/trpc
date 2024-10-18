@@ -126,20 +126,21 @@ const trpc = createTRPCClient<AppRouter>({
 
 ### Updating configuration on an active connection {#updatingConfig}
 
-Since `httpSubscriptionLink` is built on SSE via `EventSource`, connections which encounter errors such as network failures or bad response codes will be seamlessly retried. EventSource cannot re-run the `eventSourceOptions()` or `url()` options to update its configuration though, for instance where authentication has expired since the last connection.
+`httpSubscriptionLink` leverages SSE through `EventSource`, ensuring that connections encountering errors like network failures or bad response codes are automatically retried. However, `EventSource` does not allow re-execution of the `eventSourceOptions()` or `url()` options to update its configuration, which is particularly important in scenarios where authentication has expired since the last connection.
 
-We support fully restarting the connection when an error occurs.
+To address this limitation, you can use a [`retryLink`](./retryLink.md) in conjunction with `httpSubscriptionLink`. This approach ensures that the connection is re-established with the latest configuration, including any updated authentication details.
 
 :::caution
-Note that this will cause the `EventSource` to be re-created from scratch and any [`tracked()`](../../server/subscriptions.md#tracked)-events to be lost.
+Please note that restarting the connection will result in the `EventSource` being recreated from scratch, which means any previously tracked events will be lost.
 :::
 
-```tsx
+````tsx
 import {
   createTRPCClient,
   httpBatchLink,
   splitLink,
   unstable_httpSubscriptionLink,
+  retryLink,
 } from '@trpc/client';
 import {
   EventSourcePolyfill,
@@ -153,47 +154,51 @@ const trpc = createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
-      true: unstable_httpSubscriptionLink({
-        url: async () => {
-          // calculate the latest URL if needed...
-          return getAuthenticatedUri();
-        },
-        // ponyfill EventSource
-        EventSource: EventSourcePolyfill
-        eventSourceOptions: async () => {
-          // ...or maybe renew an access token
-          const token = await auth.getOrRenewToken();
+      true: [
+        retryLink({
+          retry: (opts) => {
+            let willRestart = false;
 
-          return {
-            headers: {
-              authorization: 'Bearer ' + token,
-            },
-          };
-        },
+            const { cause } = opts.error;
 
-        // In this example we handle an authentication failure
-        experimental_shouldRecreateOnError(opts) {
-          let willRestart = false;
-          if (opts.type === 'event') {
-            const ev = opts.event;
-            willRestart =
-              'status' in ev &&
-              typeof ev.status === 'number' &&
-              [401, 403].includes(ev.status);
-          }
-          if (willRestart) {
-            console.log('Restarting EventSource due to 401/403 error');
-          }
-          return willRestart;
-        },
-      }),
+            if (
+              cause &&
+              typeof cause === 'object' &&
+              'status' in cause &&
+              typeof cause.status === 'number' &&
+              [401, 403].includes(cause.status)
+            ) {
+              willRestart = true;
+              console.log('Restarting EventSource due to 401/403 error');
+            }
+            return willRestart;
+          },
+        }),
+        unstable_httpSubscriptionLink({
+          url: async () => {
+            // calculate the latest URL if needed...
+            return getAuthenticatedUri();
+          },
+          // ponyfill EventSource
+          EventSource: EventSourcePolyfill,
+          eventSourceOptions: async () => {
+            // ...or maybe renew an access token
+            const token = await auth.getOrRenewToken();
+
+            return {
+              headers: {
+                authorization: `Bearer ${token}`,
+              },
+            };
+          },
+        }),
+      ],
       false: httpBatchLink({
         url: 'http://localhost:3000',
       }),
     }),
   ],
 });
-```
 
 ### Connection params {#connectionParams}
 
@@ -212,7 +217,7 @@ export const createContext = async (opts: CreateHTTPContextOptions) => {
 };
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
-```
+````
 
 ```ts title="client/trpc.ts"
 import {
