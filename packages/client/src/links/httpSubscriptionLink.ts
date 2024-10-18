@@ -54,7 +54,7 @@ type HTTPSubscriptionLinkOptions<
     EventSourceLike.InitDictOf<TEventSource>
   >;
   /**
-   * @see https://trpc.io/docs/client/links/httpSubscriptionLink#updatingConfig
+   * @deprecated
    */
   experimental_shouldRecreateOnError?: SSEStreamConsumerOptions<{
     EventSource: TEventSource;
@@ -80,7 +80,7 @@ const codes5xx: TRPC_ERROR_CODE_NUMBER[] = [
  */
 export function unstable_httpSubscriptionLink<
   TInferrable extends InferrableClientTypes,
-  TEventSource extends EventSourceLike.AnyConstructor = typeof EventSource,
+  TEventSource extends EventSourceLike.AnyConstructor,
 >(
   opts: HTTPSubscriptionLinkOptions<
     inferClientTypes<TInferrable>,
