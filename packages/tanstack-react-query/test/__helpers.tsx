@@ -69,8 +69,15 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
   });
 
   const queryClient = new QueryClient();
-  const trpc = createTRPCOptionsProxy({
+
+  const trpcClient = createTRPCOptionsProxy({
     client: getUntypedClient(ctx.client),
+    queryClient,
+  });
+
+  const trpcServer = createTRPCOptionsProxy({
+    router: appRouter,
+    ctx: {},
     queryClient,
   });
 
@@ -93,7 +100,8 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
     appRouter,
     opts: ctx,
     spyLink,
-    trpc,
     useTRPC,
+    trpcClient,
+    trpcServer,
   };
 }

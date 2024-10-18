@@ -13,10 +13,7 @@ import {
   type SkipToken,
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
-import type {
-  AnyRouter,
-  DistributiveOmit,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import';
 import type {
   ExtractCursorType,
   ResolverDef,
@@ -192,13 +189,13 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
 }
 
 export function trpcInfiniteQueryOptions(args: {
-  untypedClient: TRPCUntypedClient<AnyRouter>;
+  query: typeof TRPCUntypedClient.prototype.query;
   queryClient: QueryClient;
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: UndefinedTRPCInfiniteQueryOptionsIn<unknown, unknown, unknown, unknown>;
 }) {
-  const { untypedClient, path, queryKey, opts } = args;
+  const { query, path, queryKey, opts } = args;
   const inputIsSkipToken = queryKey[1]?.input === skipToken;
 
   const queryFn: QueryFunction<unknown, TRPCQueryKey, unknown> = async (
@@ -214,7 +211,7 @@ export function trpcInfiniteQueryOptions(args: {
       },
     };
 
-    const result = await untypedClient.query(
+    const result = await query(
       ...getClientArgs(queryKey, actualOpts, {
         direction: queryFnContext.direction,
         pageParam: queryFnContext.pageParam,

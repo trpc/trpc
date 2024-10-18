@@ -89,8 +89,9 @@ describe('queryOptions', () => {
   });
 
   test('select', async () => {
-    const { trpc, App } = ctx;
+    const { useTRPC, App } = ctx;
     function MyComponent() {
+      const trpc = useTRPC();
       const queryOptions = trpc.post.byId.queryOptions(
         { id: '1' },
         {
@@ -120,8 +121,9 @@ describe('queryOptions', () => {
   });
 
   test('initialData', async () => {
-    const { trpc, App } = ctx;
+    const { useTRPC, App } = ctx;
     function MyComponent() {
+      const trpc = useTRPC();
       const queryOptions = trpc.post.byId.queryOptions(
         { id: '1' },
         { initialData: '__result' },
@@ -145,8 +147,9 @@ describe('queryOptions', () => {
   });
 
   test('disabling query with skipToken', async () => {
-    const { trpc, App } = ctx;
+    const { useTRPC, App } = ctx;
     function MyComponent() {
+      const trpc = useTRPC();
       const options = trpc.post.byId.queryOptions(skipToken);
       const query1 = useQuery(options);
 
@@ -169,13 +172,14 @@ describe('queryOptions', () => {
   });
 
   test('with extra `trpc` context', async () => {
-    const { trpc, App } = ctx;
+    const { useTRPC, App } = ctx;
 
     const context = {
       __TEST__: true,
     };
 
     function MyComponent() {
+      const trpc = useTRPC();
       const queryOptions = trpc.post.byId.queryOptions(
         { id: '1' },
         { trpc: { context } },
@@ -335,5 +339,18 @@ describe('queryOptions', () => {
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
+  });
+
+  test('does not fetch if called from router directly', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const { trpcServer, queryClient } = ctx;
+
+    const post = await queryClient.fetchQuery(
+      trpcServer.post.byId.queryOptions({ id: '1' }),
+    );
+
+    expect(post).toEqual('__result');
+
+    expect(fetchSpy).toHaveBeenCalledTimes(0);
   });
 });

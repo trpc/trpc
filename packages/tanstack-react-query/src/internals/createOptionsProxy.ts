@@ -3,12 +3,15 @@ import {
   getUntypedClient,
   TRPCUntypedClient,
   type CreateTRPCClient,
+  type TRPCRequestOptions,
 } from '@trpc/client';
-import type {
-  AnyProcedure,
-  inferProcedureInput,
-  inferTransformedProcedureOutput,
-  ProcedureType,
+import {
+  callProcedure,
+  type AnyProcedure,
+  type inferProcedureInput,
+  type inferRouterContext,
+  type inferTransformedProcedureOutput,
+  type ProcedureType,
 } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import type {
@@ -100,22 +103,28 @@ export type TRPCOptionsProxy<TRouter extends AnyRouter> =
     TRouter['_def']['record']
   >;
 
-export interface TRPCOptionsProxyOptions<TRouter extends AnyRouter> {
-  /**
-   * The `TRPCClient`
-   */
-  client: CreateTRPCClient<TRouter> | TRPCUntypedClient<TRouter>;
-  /**
-   * The `QueryClient` from `react-query`
-   */
+export interface TRPCOptionsProxyOptionsBase {
   queryClient: QueryClient;
-  /**
-   * Overrides
-   */
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
 }
+
+export interface TRPCOptionsProxyOptionsInternal<TRouter extends AnyRouter> {
+  router: TRouter;
+  ctx: inferRouterContext<TRouter>;
+}
+
+export interface TRPCOptionsProxyOptionsExternal<TRouter extends AnyRouter> {
+  client: TRPCUntypedClient<TRouter> | CreateTRPCClient<TRouter>;
+}
+
+export type TRPCOptionsProxyOptions<TRouter extends AnyRouter> =
+  TRPCOptionsProxyOptionsBase &
+    (
+      | TRPCOptionsProxyOptionsInternal<TRouter>
+      | TRPCOptionsProxyOptionsExternal<TRouter>
+    );
 
 type UtilsMethods =
   | keyof DecorateQueryProcedure<any>
@@ -132,17 +141,38 @@ function getQueryType(method: UtilsMethods) {
 }
 
 export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
-  context: TRPCOptionsProxyOptions<TRouter>,
+  opts: TRPCOptionsProxyOptions<TRouter>,
 ): TRPCOptionsProxy<TRouter> {
-  const untypedClient =
-    context.client instanceof TRPCUntypedClient
-      ? context.client
-      : getUntypedClient(context.client);
+  const callIt = (type: ProcedureType) => {
+    return (
+      path: string,
+      input: unknown,
+      trpcOpts: TRPCRequestOptions,
+    ): any => {
+      if ('router' in opts) {
+        return callProcedure({
+          procedures: opts.router._def.procedures,
+          path: path,
+          getRawInput: async () => input,
+          ctx: opts.ctx,
+          type: type,
+          signal: undefined,
+        });
+      }
 
-  return createRecursiveProxy((opts) => {
-    const path = [...opts.path];
+      const untypedClient =
+        opts.client instanceof TRPCUntypedClient
+          ? opts.client
+          : getUntypedClient(opts.client);
+
+      return untypedClient[type](path, input, trpcOpts);
+    };
+  };
+
+  return createRecursiveProxy(({ args, path: _path }) => {
+    const path = [..._path];
     const utilName = path.pop() as UtilsMethods;
-    const [input, userOptions] = opts.args as any[];
+    const [input, userOptions] = args as any[];
 
     const queryType = getQueryType(utilName);
     const queryKey = getQueryKeyInternal(path, input, queryType);
@@ -152,26 +182,26 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
         trpcInfiniteQueryOptions({
           opts: userOptions,
           path,
-          queryClient: context.queryClient,
+          queryClient: opts.queryClient,
           queryKey,
-          untypedClient,
+          query: callIt('query'),
         }),
       queryOptions: () => {
         return trpcQueryOptions({
           opts: userOptions,
           path,
-          queryClient: context.queryClient,
+          queryClient: opts.queryClient,
           queryKey: queryKey,
-          untypedClient,
+          query: callIt('query'),
         });
       },
       mutationOptions: () => {
         return trpcMutationOptions({
           opts: userOptions,
           path,
-          queryClient: context.queryClient,
-          untypedClient,
-          overrides: context.overrides?.mutations,
+          queryClient: opts.queryClient,
+          mutate: callIt('mutation'),
+          overrides: opts.overrides?.mutations,
         });
       },
       subscriptionOptions: () => {
@@ -179,7 +209,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
           opts: userOptions,
           path,
           queryKey,
-          untypedClient,
+          subscribe: callIt('subscription'),
         });
       },
     };

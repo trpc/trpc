@@ -9,7 +9,6 @@ import type {
 import { queryOptions, skipToken, type SkipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type {
-  AnyRouter,
   coerceAsyncIterableToArray,
   DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -133,13 +132,13 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
 }
 
 export function trpcQueryOptions(args: {
-  untypedClient: TRPCUntypedClient<AnyRouter>;
+  query: typeof TRPCUntypedClient.prototype.query;
   queryClient: QueryClient;
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown>;
 }) {
-  const { untypedClient, queryClient, path, queryKey, opts } = args;
+  const { query, queryClient, path, queryKey, opts } = args;
 
   const inputIsSkipToken = queryKey[1]?.input === skipToken;
 
@@ -156,9 +155,7 @@ export function trpcQueryOptions(args: {
       },
     };
 
-    const result = await untypedClient.query(
-      ...getClientArgs(queryKey, actualOpts),
-    );
+    const result = await query(...getClientArgs(queryKey, actualOpts));
 
     if (isAsyncIterable(result)) {
       return buildQueryFromAsyncIterable(result, queryClient, queryKey);

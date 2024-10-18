@@ -5,7 +5,6 @@ import {
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type {
-  AnyRouter,
   DistributiveOmit,
   MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -70,13 +69,13 @@ export interface MutationOptionsOverride {
 }
 
 export function trpcMutationOptions(args: {
-  untypedClient: TRPCUntypedClient<AnyRouter>;
+  mutate: typeof TRPCUntypedClient.prototype.mutation;
   queryClient: QueryClient;
   path: readonly string[];
   opts: TRPCMutationOptionsIn<unknown, unknown, unknown, unknown>;
   overrides: MutationOptionsOverride | undefined;
 }): TRPCMutationOptionsOut<unknown, unknown, unknown, unknown> {
-  const { untypedClient, queryClient, path, opts, overrides } = args;
+  const { mutate, queryClient, path, opts, overrides } = args;
 
   const mutationKey = getMutationKeyInternal(path);
 
@@ -88,9 +87,7 @@ export function trpcMutationOptions(args: {
     overrides?.onSuccess ?? ((options) => options.originalFn());
 
   const mutationFn: MutationFunction = async (input) => {
-    const result = await untypedClient.mutation(
-      ...getClientArgs([path, { input }], opts),
-    );
+    const result = await mutate(...getClientArgs([path, { input }], opts));
 
     return result;
   };
