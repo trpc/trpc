@@ -13,26 +13,22 @@ import type {
   AnySubscriptionProcedure,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
-import * as React from 'react';
 import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
-} from './internals/infiniteQueryOptions';
-import type { MutationOptionsOverride } from './internals/mutationOptions';
+} from './infiniteQueryOptions';
+import type { MutationOptionsOverride } from './mutationOptions';
 import {
   trpcMutationOptions,
   type TRPCMutationOptions,
-} from './internals/mutationOptions';
-import {
-  trpcQueryOptions,
-  type TRPCQueryOptions,
-} from './internals/queryOptions';
+} from './mutationOptions';
+import { trpcQueryOptions, type TRPCQueryOptions } from './queryOptions';
 import {
   trpcSubscriptionOptions,
   type TRPCSubscriptionOptions,
-} from './internals/subscriptionOptions';
-import type { QueryType } from './internals/types';
-import { getQueryKeyInternal } from './internals/utils';
+} from './subscriptionOptions';
+import type { QueryType } from './types';
+import { getQueryKeyInternal } from './utils';
 
 export interface DecorateQueryProcedure<
   TRoot extends AnyRootTypes,
@@ -181,44 +177,4 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
 
     return contextMap[utilName]();
   });
-}
-
-export { useSubscription } from './internals/subscriptionOptions';
-
-export function createTRPCContext<TRouter extends AnyRouter>() {
-  const TRPCContext = React.createContext<TRPCOptionsProxy<TRouter> | null>(
-    null,
-  );
-
-  function TRPCProvider(
-    props: Readonly<{
-      children: React.ReactNode;
-      queryClient: QueryClient;
-      trpcClient: CreateTRPCClient<TRouter>;
-    }>,
-  ) {
-    const value = React.useMemo(
-      () =>
-        createTRPCOptionsProxy({
-          client: props.trpcClient,
-          queryClient: props.queryClient,
-        }),
-      [props.trpcClient, props.queryClient],
-    );
-    return (
-      <TRPCContext.Provider value={value}>
-        {props.children}
-      </TRPCContext.Provider>
-    );
-  }
-
-  function useTRPC() {
-    const utils = React.useContext(TRPCContext);
-    if (!utils) {
-      throw new Error('useTRPC() can only be used inside of a <TRPCProvider>');
-    }
-    return utils;
-  }
-
-  return { TRPCProvider, useTRPC };
 }
