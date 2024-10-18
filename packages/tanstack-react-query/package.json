@@ -26,6 +26,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./index": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -33,6 +38,7 @@
     "src",
     "README.md",
     "package.json",
+    "index",
     "!**/*.test.*"
   ],
   "eslintConfig": {

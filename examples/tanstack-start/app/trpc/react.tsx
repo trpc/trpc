@@ -1,8 +1,4 @@
-import { createTRPCReact } from '@trpc/react-query';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { TRPCRouter } from './router';
 
-export const trpc = createTRPCReact<TRPCRouter>();
-
-export const useTRPC = () => {
-  return trpc.useUtils();
-};
+export const { TRPCProvider, useTRPC } = createTRPCContext<TRPCRouter>();

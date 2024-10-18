@@ -13,6 +13,7 @@ import type {
   AnySubscriptionProcedure,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
+import * as React from 'react';
 import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
@@ -183,3 +184,41 @@ export function createTRPCQueryUtils<TRouter extends AnyRouter>(
 }
 
 export { useSubscription } from './internals/subscriptionOptions';
+
+export function createTRPCContext<TRouter extends AnyRouter>() {
+  const TRPCContext = React.createContext<CreateQueryUtils<TRouter> | null>(
+    null,
+  );
+
+  function TRPCProvider(
+    props: Readonly<{
+      children: React.ReactNode;
+      queryClient: QueryClient;
+      trpcClient: CreateTRPCClient<TRouter>;
+    }>,
+  ) {
+    const value = React.useMemo(
+      () =>
+        createTRPCQueryUtils({
+          client: props.trpcClient,
+          queryClient: props.queryClient,
+        }),
+      [props.trpcClient, props.queryClient],
+    );
+    return (
+      <TRPCContext.Provider value={value}>
+        {props.children}
+      </TRPCContext.Provider>
+    );
+  }
+
+  function useTRPC() {
+    const utils = React.useContext(TRPCContext);
+    if (!utils) {
+      throw new Error('useTRPC() can only be used inside of a <TRPCProvider>');
+    }
+    return utils;
+  }
+
+  return { TRPCProvider, useTRPC };
+}
