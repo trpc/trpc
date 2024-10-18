@@ -10,14 +10,12 @@ import { queryOptions, skipToken, type SkipToken } from '@tanstack/react-query';
 import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import type {
   AnyQueryProcedure,
-  AnyTRPCRouter,
-  inferProcedureInput,
-  inferTransformedProcedureOutput,
-} from '@trpc/server';
-import type {
   AnyRootTypes,
+  AnyRouter,
   coerceAsyncIterableToArray,
   DistributiveOmit,
+  inferProcedureInput,
+  inferTransformedProcedureOutput,
 } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import type {
@@ -145,16 +143,13 @@ export interface TRPCQueryOptions<
   ): UndefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientError<TRoot>>;
 }
 
-export const trpcQueryOptions = <
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnyQueryProcedure,
->(args: {
-  untypedClient: TRPCUntypedClient<AnyTRPCRouter>;
+export const trpcQueryOptions = (args: {
+  untypedClient: TRPCUntypedClient<AnyRouter>;
   queryClient: QueryClient;
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown>;
-}): TRPCQueryOptions<TRoot, TProcedure> => {
+}) => {
   const { untypedClient, queryClient, path, queryKey, opts } = args;
 
   const inputIsSkipToken = queryKey[1]?.input === skipToken;
@@ -190,5 +185,5 @@ export const trpcQueryOptions = <
       queryFn: inputIsSkipToken ? skipToken : queryFn,
     }),
     { trpc: createTRPCOptionsResult({ path }) },
-  ) as any;
+  );
 };

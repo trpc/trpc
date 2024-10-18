@@ -15,13 +15,11 @@ import {
 import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import type {
   AnyQueryProcedure,
-  AnyTRPCRouter,
+  AnyRootTypes,
+  AnyRouter,
+  DistributiveOmit,
   inferProcedureInput,
   inferTransformedProcedureOutput,
-} from '@trpc/server';
-import type {
-  AnyRootTypes,
-  DistributiveOmit,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
   ExtractCursorType,
@@ -208,16 +206,13 @@ export interface TRPCInfiniteQueryOptions<
   >;
 }
 
-export const trpcInfiniteQueryOptions = <
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnyQueryProcedure,
->(args: {
-  untypedClient: TRPCUntypedClient<AnyTRPCRouter>;
+export const trpcInfiniteQueryOptions = (args: {
+  untypedClient: TRPCUntypedClient<AnyRouter>;
   queryClient: QueryClient;
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: UndefinedTRPCInfiniteQueryOptionsIn<unknown, unknown, unknown, unknown>;
-}): TRPCInfiniteQueryOptions<TRoot, TProcedure> => {
+}) => {
   const { untypedClient, path, queryKey, opts } = args;
   const inputIsSkipToken = queryKey[1]?.input === skipToken;
 
@@ -252,5 +247,5 @@ export const trpcInfiniteQueryOptions = <
       initialPageParam: opts?.initialCursor ?? null,
     }),
     { trpc: createTRPCOptionsResult({ path }) },
-  ) as any;
+  );
 };

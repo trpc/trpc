@@ -1,9 +1,9 @@
 import { hashKey, skipToken, type SkipToken } from '@tanstack/react-query';
 import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
-import type { AnyTRPCRouter } from '@trpc/server';
 import type { Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyRootTypes,
+  AnyRouter,
   AnySubscriptionProcedure,
   inferAsyncIterableYield,
   inferProcedureInput,
@@ -62,26 +62,23 @@ export interface TRPCSubscriptionOptions<
   >;
 }
 
-export function trpcSubscriptionOptions<
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnySubscriptionProcedure,
->(args: {
-  untypedClient: TRPCUntypedClient<AnyTRPCRouter>;
+export function trpcSubscriptionOptions(args: {
+  untypedClient: TRPCUntypedClient<AnyRouter>;
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: BaseTRPCSubscriptionOptionsIn<unknown, unknown>;
-}): ReturnType<TRPCSubscriptionOptions<TRoot, TProcedure>> {
+}) {
   const { untypedClient, path, queryKey, opts } = args;
   const input = queryKey[1]?.input;
   const enabled = opts?.enabled ?? input !== skipToken;
 
   const subscribe: ReturnType<
-    TRPCSubscriptionOptions<TRoot, TProcedure>
+    TRPCSubscriptionOptions<any, any>
   >['subscribe'] = (innerOpts) => {
     return untypedClient.subscription(
       path.join('.'),
       input ?? undefined,
-      innerOpts as any,
+      innerOpts,
     );
   };
 

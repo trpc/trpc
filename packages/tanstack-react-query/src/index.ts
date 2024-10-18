@@ -4,16 +4,13 @@ import {
   TRPCUntypedClient,
   type CreateTRPCClient,
 } from '@trpc/client';
+import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import type {
   AnyMutationProcedure,
   AnyQueryProcedure,
+  AnyRootTypes,
   AnyRouter,
   AnySubscriptionProcedure,
-  AnyTRPCRouter,
-} from '@trpc/server';
-import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
-import type {
-  AnyRootTypes,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
@@ -97,7 +94,7 @@ export type CreateQueryUtils<TRouter extends AnyRouter> =
     TRouter['_def']['record']
   >;
 
-export interface CreateQueryUtilsOptions<TRouter extends AnyTRPCRouter> {
+export interface CreateQueryUtilsOptions<TRouter extends AnyRouter> {
   /**
    * The `TRPCClient`
    */

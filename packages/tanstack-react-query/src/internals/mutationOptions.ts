@@ -5,13 +5,11 @@ import {
 import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
 import type {
   AnyMutationProcedure,
-  AnyTRPCRouter,
+  AnyRootTypes,
+  AnyRouter,
+  DistributiveOmit,
   inferProcedureInput,
   inferTransformedProcedureOutput,
-} from '@trpc/server';
-import type {
-  AnyRootTypes,
-  DistributiveOmit,
   MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
 import type {
@@ -77,7 +75,7 @@ export interface MutationOptionsOverride {
 }
 
 export const trpcMutationOptions = (args: {
-  untypedClient: TRPCUntypedClient<AnyTRPCRouter>;
+  untypedClient: TRPCUntypedClient<AnyRouter>;
   queryClient: QueryClient;
   path: readonly string[];
   opts: TRPCMutationOptionsIn<unknown, unknown, unknown, unknown>;
@@ -94,7 +92,7 @@ export const trpcMutationOptions = (args: {
   const mutationSuccessOverride: MutationOptionsOverride['onSuccess'] =
     overrides?.onSuccess ?? ((options) => options.originalFn());
 
-  const options: TRPCMutationOptionsOut<unknown, unknown, unknown, unknown> = {
+  return {
     ...opts,
     mutationKey: mutationKey,
     mutationFn: (input) => {
@@ -112,6 +110,4 @@ export const trpcMutationOptions = (args: {
     },
     trpc: createTRPCOptionsResult({ path }),
   };
-
-  return options;
 };
