@@ -45,7 +45,6 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
         attempt(1);
 
         function attempt(attempts: number) {
-          attempts++;
           next$ = next(op).subscribe({
             error(error) {
               const shouldRetry = opts.retry({
