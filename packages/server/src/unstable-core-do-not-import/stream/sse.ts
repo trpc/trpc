@@ -1,7 +1,11 @@
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import type { MaybePromise } from '../types';
 import { identity, run } from '../utils';
-import type { ConstructorOf, EventOf, EventSourceLike } from './sse.types';
+import type {
+  AnyEventSourceConstructorLike,
+  EventOf,
+  EventSourceInitLike,
+} from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
 import { takeWithGrace, withCancel } from './utils/asyncIterable';
@@ -157,7 +161,7 @@ export function sseStreamProducer<TValue = unknown>(
 }
 
 interface ConsumerStreamResultBase<TConfig extends ConsumerConfig> {
-  eventSource: TConfig['EventSource'];
+  eventSource: InstanceType<TConfig['EventSource']>;
 }
 
 interface ConsumerStreamResultData<TConfig extends ConsumerConfig>
@@ -205,14 +209,15 @@ export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
         },
   ) => boolean | Promise<boolean>;
   deserialize?: Deserialize;
-  EventSource: ConstructorOf<TConfig['EventSource']>;
+  EventSource: TConfig['EventSource'];
 }
 
 interface ConsumerConfig {
   data: unknown;
   error: unknown;
-  EventSource: EventSourceLike;
+  EventSource: AnyEventSourceConstructorLike;
 }
+
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
@@ -223,15 +228,15 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
   const signal = opts.signal;
 
-  let eventSource: TConfig['EventSource'] | null = null;
+  let eventSource: InstanceType<TConfig['EventSource']> | null = null;
   let lock: Promise<void> | null = null;
 
   const stream = createReadableStream<ConsumerStreamResult<TConfig>>();
 
-  function createEventSource(
-    ...args: ConstructorParameters<ConstructorOf<TConfig['EventSource']>>
-  ) {
-    const es = new opts.EventSource(...args);
+  function createEventSource(...args: [string, EventSourceInitLike?]) {
+    const es = new opts.EventSource(...args) as InstanceType<
+      TConfig['EventSource']
+    >;
 
     if (signal.aborted) {
       es.close();

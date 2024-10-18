@@ -11,13 +11,11 @@ export interface EventLike {
 
 type EventSourceListenerLike = (event: EventLike) => void;
 
-export interface EventSourceConstructorLike<TInit extends EventSourceInitLike> {
-  prototype: any;
-  new (url: string, eventSourceInitDict?: TInit): EventSourceLike;
-  // readonly CLOSED: number;
-  // readonly CONNECTING: number;
-  // readonly OPEN: number;
-}
+// readonly CLOSED: number;
+// readonly CONNECTING: number;
+// readonly OPEN: number;
+export type EventSourceConstructorLike<TInit extends EventSourceInitLike> =
+  new (url: string, eventSourceInitDict?: TInit) => EventSourceLike;
 export interface EventSourceLike {
   readonly CLOSED: number;
   readonly CONNECTING: number;
@@ -34,12 +32,15 @@ export type ConstructorOf<T extends object = object> = new (
   ...args: any[]
 ) => T;
 
-export type EventSourceConstructorLike2 = ConstructorOf<EventSourceLike>;
-
-export type ListenerOf<T extends EventSourceLike> = Parameters<
-  T['addEventListener']
+export type AnyEventSourceConstructorLike = EventSourceConstructorLike<any>;
+export type ListenerOf<T extends AnyEventSourceConstructorLike> = Parameters<
+  InstanceType<T>['addEventListener']
 >[1];
-export type EventOf<T extends EventSourceLike> = Parameters<ListenerOf<T>>[0];
+export type EventOf<T extends AnyEventSourceConstructorLike> = Parameters<
+  ListenerOf<T>
+>[0];
+export type EventSourceInitDictOf<T extends AnyEventSourceConstructorLike> =
+  ConstructorParameters<T>[1];
 
 // type Test = EventOf<EventSourceLike>
 

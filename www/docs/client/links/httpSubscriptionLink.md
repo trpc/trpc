@@ -85,7 +85,7 @@ unstable_httpSubscriptionLink({
 
 **Recommended for non-web environments**
 
-You can polyfill `EventSource` and use the `eventSourceOptions` -callback to populate headers.
+You can ponyfill `EventSource` and use the `eventSourceOptions` -callback to populate headers.
 
 ```tsx
 import {
@@ -97,8 +97,6 @@ import {
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import type { AppRouter } from '../server/index.js';
 
-// polyfill EventSource
-globalThis.EventSource = EventSourcePolyfill;
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
@@ -107,13 +105,15 @@ const trpc = createTRPCClient<AppRouter>({
       condition: (op) => op.type === 'subscription',
       true: unstable_httpSubscriptionLink({
         url: 'http://localhost:3000',
+        // ponyfill EventSource
+        EventSource: EventSourcePolyfill,
         // options to pass to the EventSourcePolyfill constructor
         eventSourceOptions: async () => {
           return {
             headers: {
               authorization: 'Bearer supersecret',
             },
-          }; // you either need to typecast to `EventSourceInit` or use `as any` or override the types by a `declare global` statement
+          };
         },
       }),
       false: httpBatchLink({
@@ -147,8 +147,6 @@ import {
 } from 'event-source-polyfill';
 import type { AppRouter } from '../server/index.js';
 
-// polyfill EventSource
-globalThis.EventSource = EventSourcePolyfill;
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
@@ -160,6 +158,8 @@ const trpc = createTRPCClient<AppRouter>({
           // calculate the latest URL if needed...
           return getAuthenticatedUri();
         },
+        // ponyfill EventSource
+        EventSource: EventSourcePolyfill
         eventSourceOptions: async () => {
           // ...or maybe renew an access token
           const token = await auth.getOrRenewToken();
@@ -168,7 +168,7 @@ const trpc = createTRPCClient<AppRouter>({
             headers: {
               authorization: 'Bearer ' + token,
             },
-          } as EventSourcePolyfillInit;
+          };
         },
 
         // In this example we handle an authentication failure
@@ -297,6 +297,10 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * EventSource options
    */
   eventSourceOptions?: CallbackOrValue<EventSourceInit>;
+  /**
+   * EventSource ponyfill
+   */
+  EventSource?: EventSourceLike;
   /**
    * Data transformer
    * @see https://trpc.io/docs/v11/data-transformers

@@ -85,7 +85,7 @@ test('e2e, server-sent events (SSE)', async () => {
   const iterable = sseStreamConsumer<{
     data: Data;
     error: unknown;
-    EventSource: EventSource;
+    EventSource: typeof EventSource;
   }>({
     url: () => server.url,
     signal: ac.signal,
@@ -100,6 +100,7 @@ test('e2e, server-sent events (SSE)', async () => {
         expectTypeOf(opts.event).not.toBeAny();
         expectTypeOf(opts.event).toEqualTypeOf<Event>();
       }
+      shouldRecreateOnError.resolve();
       return false;
     },
 
@@ -245,7 +246,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
   const iterable = sseStreamConsumer<{
     data: Data;
     error: unknown;
-    EventSource: EventSource;
+    EventSource: typeof EventSource;
   }>({
     // from: es,
     url: () => server.url,

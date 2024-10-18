@@ -136,6 +136,7 @@ const ctx = konn()
                   let willRestart = false;
                   if (opts.type === 'event') {
                     const ev = opts.event;
+
                     willRestart =
                       'status' in ev &&
                       typeof ev.status === 'number' &&

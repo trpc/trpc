@@ -3,8 +3,8 @@ import type { TRPC_ERROR_CODE_NUMBER, TRPCErrorShape } from '@trpc/server/rpc';
 import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
-  ConstructorOf,
-  EventSourceLike,
+  AnyEventSourceConstructorLike,
+  EventSourceInitDictOf,
   inferClientTypes,
   InferrableClientTypes,
   SSEStreamConsumerOptions,
@@ -42,13 +42,16 @@ async function urlWithConnectionParams(
 
 type HTTPSubscriptionLinkOptions<
   TRoot extends AnyClientTypes,
-  TEventSource extends EventSourceLike,
+  TEventSource extends AnyEventSourceConstructorLike = typeof EventSource,
 > = {
-  EventSource?: ConstructorOf<TEventSource>;
+  /**
+   * EventSource ponyfill
+   */
+  EventSource?: TEventSource;
   /**
    * EventSource options or a callback that returns them
    */
-  eventSourceOptions?: CallbackOrValue<EventSourceInit>;
+  eventSourceOptions?: CallbackOrValue<EventSourceInitDictOf<TEventSource>>;
   /**
    * @see https://trpc.io/docs/client/links/httpSubscriptionLink#updatingConfig
    */
@@ -76,7 +79,7 @@ const codes5xx: TRPC_ERROR_CODE_NUMBER[] = [
  */
 export function unstable_httpSubscriptionLink<
   TInferrable extends InferrableClientTypes,
-  TEventSource extends EventSourceLike,
+  TEventSource extends AnyEventSourceConstructorLike = typeof EventSource,
 >(
   opts: HTTPSubscriptionLinkOptions<
     inferClientTypes<TInferrable>,
@@ -118,7 +121,9 @@ export function unstable_httpSubscriptionLink<
           signal,
           deserialize: transformer.output.deserialize,
           shouldRecreateOnError: opts.experimental_shouldRecreateOnError,
-          EventSource: opts.EventSource ?? (globalThis.EventSource as any),
+          EventSource:
+            opts.EventSource ??
+            (globalThis.EventSource as never as TEventSource),
         });
 
         const connectionState = behaviorSubject<
