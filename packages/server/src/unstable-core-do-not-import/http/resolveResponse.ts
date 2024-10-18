@@ -15,7 +15,7 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import { isAsyncIterable, isObject } from '../utils';
+import { isAsyncIterable, isObject, run } from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -194,6 +194,8 @@ function isDataStream(v: unknown) {
   );
 }
 
+type ResultTuple<T> = [T, undefined] | [undefined, TRPCError];
+
 export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -213,8 +215,62 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
   const allowMethodOverride =
     (opts.allowMethodOverride ?? false) && req.method === 'POST';
-  let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  let info: TRPCRequestInfo | undefined = undefined;
+
+  type $Context = inferRouterContext<TRouter>;
+
+  const infoTuple: ResultTuple<TRPCRequestInfo> = run(() => {
+    try {
+      return [
+        getRequestInfo({
+          req,
+          path: decodeURIComponent(opts.path),
+          router,
+          searchParams: url.searchParams,
+          headers: opts.req.headers,
+        }),
+        undefined,
+      ];
+    } catch (cause) {
+      return [
+        undefined,
+        new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Could not parse request info`,
+          cause,
+        }),
+      ];
+    }
+  });
+
+  interface ContextWrapper {
+    valueOrUndefined: () => $Context | undefined;
+    value: () => $Context;
+    run: (info: TRPCRequestInfo) => Promise<void>;
+  }
+
+  const ctxWrap: ContextWrapper = run(() => {
+    let result: ResultTuple<$Context> | undefined = undefined;
+    return {
+      valueOrUndefined: () => result![0],
+      value: () => {
+        const [ctx, err] = result!;
+        if (err) {
+          throw err;
+        }
+        return ctx;
+      },
+      run: async (info) => {
+        try {
+          const ctx = await opts.createContext({
+            info,
+          });
+          result = [ctx, undefined];
+        } catch (cause) {
+          result = [undefined, getTRPCErrorFromUnknown(cause)];
+        }
+      },
+    };
+  });
 
   const methodMapper = allowMethodOverride
     ? TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE
@@ -230,21 +286,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const experimentalSSE =
     router._def._config.experimental?.sseSubscriptions?.enabled ?? true;
   try {
-    info = getRequestInfo({
-      req,
-      path: decodeURIComponent(opts.path),
-      router,
-      searchParams: url.searchParams,
-      headers: opts.req.headers,
-    });
-
-    // we create context early so that error handlers may access context information
-    ctx = await opts.createContext({
-      info,
-    });
-
     if (opts.error) {
       throw opts.error;
+    }
+
+    const [info, infoError] = infoTuple;
+    if (infoError) {
+      throw infoError;
     }
     if (info.isBatchCall && !allowBatching) {
       throw new TRPCError({
@@ -259,6 +307,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         code: 'BAD_REQUEST',
       });
     }
+    await ctxWrap.run(info);
 
     type RPCResult =
       | [result: null, error: TRPCError]
@@ -280,7 +329,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           });
         }
         /* istanbul ignore if -- @preserve */
-        if (proc._def.type === 'subscription' && info!.isBatchCall) {
+        if (proc._def.type === 'subscription' && info.isBatchCall) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: `Cannot batch subscription calls`,
@@ -289,7 +338,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
-          ctx,
+          ctx: ctxWrap.value(),
           type: proc._def.type,
           signal: opts.req.signal,
         });
@@ -302,7 +351,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           error,
           path: call.path,
           input,
-          ctx,
+          ctx: ctxWrap.valueOrUndefined(),
           type: call.procedure?._def.type ?? 'unknown',
           req: opts.req,
         });
@@ -334,7 +383,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             ? {
                 error: getErrorShape({
                   config,
-                  ctx,
+                  ctx: ctxWrap.valueOrUndefined(),
                   error,
                   input: call!.result(),
                   path: call!.path,
@@ -344,7 +393,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             : { result: { data } };
 
           const headResponse = initResponse({
-            ctx,
+            ctx: ctxWrap.valueOrUndefined(),
             info,
             responseMeta: opts.responseMeta,
             errors: error ? [error] : [],
@@ -399,14 +448,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 error,
                 path,
                 input,
-                ctx,
+                ctx: ctxWrap.valueOrUndefined(),
                 req: opts.req,
                 type,
               });
 
               const shape = getErrorShape({
                 config,
-                ctx,
+                ctx: ctxWrap.valueOrUndefined(),
                 error,
                 input,
                 path,
@@ -421,7 +470,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           }
 
           const headResponse = initResponse({
-            ctx,
+            ctx: ctxWrap.valueOrUndefined(),
             info,
             responseMeta: opts.responseMeta,
             errors: [],
@@ -443,7 +492,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       headers.set('content-type', 'application/json');
       headers.set('transfer-encoding', 'chunked');
       const headResponse = initResponse({
-        ctx,
+        ctx: ctxWrap.valueOrUndefined(),
         info,
         responseMeta: opts.responseMeta,
         errors: [],
@@ -468,12 +517,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         data: rpcCalls.map(async (res) => {
           const [result, error] = await res;
 
-          const call = info!.calls[0];
+          const call = info.calls[0];
           if (error) {
             return {
               error: getErrorShape({
                 config,
-                ctx,
+                ctx: ctxWrap.valueOrUndefined(),
                 error,
                 input: call!.result(),
                 path: call!.path,
@@ -501,7 +550,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             error: getTRPCErrorFromUnknown(cause),
             path: undefined,
             input: undefined,
-            ctx,
+            ctx: ctxWrap.valueOrUndefined(),
             req: opts.req,
             type: info?.type ?? 'unknown',
           });
@@ -519,7 +568,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           const shape = getErrorShape({
             config,
-            ctx,
+            ctx: ctxWrap.valueOrUndefined(),
             error,
             input,
             path,
@@ -569,12 +618,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         [data, error],
         index,
       ): TRPCResponse<unknown, inferRouterError<TRouter>> => {
-        const call = info!.calls[index]!;
+        const call = info.calls[index]!;
         if (error) {
           return {
             error: getErrorShape({
               config,
-              ctx,
+              ctx: ctxWrap.valueOrUndefined(),
               error,
               input: call.result(),
               path: call.path,
@@ -593,7 +642,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       .filter(Boolean) as TRPCError[];
 
     const headResponse = initResponse({
-      ctx,
+      ctx: ctxWrap.valueOrUndefined(),
       info,
       responseMeta: opts.responseMeta,
       untransformedJSON: resultAsRPCResponse,
@@ -609,6 +658,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       },
     );
   } catch (cause) {
+    const [info] = infoTuple;
+    const ctx = ctxWrap.valueOrUndefined();
     // we get here if
     // - batching is called when it's not enabled
     // - `createContext()` throws
