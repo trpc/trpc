@@ -1,6 +1,8 @@
+import { EventEmitter, on } from 'node:events';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
+import { abortSignalsAnyPonyfill, run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
 import { createDeferred } from './utils/createDeferred';
@@ -63,6 +65,7 @@ test('e2e, server-sent events (SSE)', async () => {
     const stream = sseStreamProducer({
       data: data(asNumber),
       serialize: (v) => SuperJSON.serialize(v),
+      abortCtrl: new AbortController(),
     });
     const reader = stream.getReader();
     for (const [key, value] of Object.entries(sseHeaders)) {
@@ -150,19 +153,18 @@ test('e2e, server-sent events (SSE)', async () => {
 });
 
 test('SSE on serverless - emit and disconnect early', async () => {
-  async function* data(lastEventId?: Maybe<number>) {
+  const ee = new EventEmitter();
+
+  async function* data(lastEventId: Maybe<number>, signal: AbortSignal) {
     let i = lastEventId ?? 0;
+
+    for await (const _ of on(ee, 'next', { signal })) {
+      yield* yieldEvent();
+    }
 
     function* yieldEvent() {
       i++;
       yield tracked(String(i), i);
-    }
-    while (true) {
-      // yield 2 events at a time to test if the client will get both without reconnecting in between
-      yield* yieldEvent();
-      yield* yieldEvent();
-
-      await new Promise((resolve) => setTimeout(resolve, 5));
     }
   }
   type inferAsyncIterable<T> = T extends AsyncIterable<infer U> ? U : never;
@@ -205,10 +207,19 @@ test('SSE on serverless - emit and disconnect early', async () => {
 
     const asNumber = stringToNumber(lastEventId);
 
+    const producerAbortCtrl = new AbortController();
+
     const stream = sseStreamProducer({
-      data: data(asNumber),
+      data: data(
+        asNumber,
+        abortSignalsAnyPonyfill([
+          reqAbortCtrl.signal,
+          producerAbortCtrl.signal,
+        ]),
+      ),
       serialize: (v) => SuperJSON.serialize(v),
       emitAndEndImmediately: true,
+      abortCtrl: producerAbortCtrl,
     });
     const reader = stream.getReader();
     for (const [key, value] of Object.entries(sseHeaders)) {
@@ -227,14 +238,23 @@ test('SSE on serverless - emit and disconnect early', async () => {
     res.end();
   });
 
-  const ac = new AbortController();
+  const reqAbortCtrl = new AbortController();
 
   const iterable = sseStreamConsumer<Data>({
     // from: es,
     url: () => server.url,
-    signal: ac.signal,
+    signal: reqAbortCtrl.signal,
     init: () => ({}),
     deserialize: SuperJSON.deserialize,
+  });
+
+  const emitterRun = run(async () => {
+    while (!reqAbortCtrl.signal.aborted) {
+      await sleep(10);
+      // yield 2 events at a time to test if the client will get both without reconnecting in between
+      ee.emit('next');
+      ee.emit('next');
+    }
   });
 
   function range(start: number, end: number) {
@@ -257,6 +277,19 @@ test('SSE on serverless - emit and disconnect early', async () => {
       }
     }
   }
+
+  // Little bit of non-determinism if the producerAbortCtrl.signal has fired
+  // already...
+  // But in no case should it be more than 1 (which would be the case if
+  // producerAbortCtrl would not be triggered properly)
+  expect(ee.listenerCount('next')).toBeLessThanOrEqual(1);
+
+  reqAbortCtrl.abort();
+  expect(ee.listenerCount('next')).toBe(0);
+
+  // make sure for this to have terminated (without errors)
+  await emitterRun;
+
   expect(values).toEqual(range(1, ITERATIONS + 1));
 
   expect(requests).toHaveLength(2);
@@ -312,8 +345,6 @@ test('SSE on serverless - emit and disconnect early', async () => {
       },
     ]
   `);
-
-  ac.abort();
   await server.close();
 });
 

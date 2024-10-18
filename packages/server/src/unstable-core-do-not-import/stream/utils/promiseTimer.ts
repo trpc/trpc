@@ -17,7 +17,7 @@ export function createPromiseTimer(ms: number) {
 
   function start(): PromiseTimer {
     if (timeout != null) {
-      throw new Error("PromiseTimer already started.");
+      throw new Error('PromiseTimer already started.');
     }
     timeout = setTimeout(deferred.resolve, ms);
     return timer;

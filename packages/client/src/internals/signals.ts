@@ -33,6 +33,9 @@ export function allAbortSignals(...signals: Maybe<AbortSignal>[]): AbortSignal {
 
 /**
  * Like `Promise.race` but for abort signals
+ *
+ * Basically, a ponyfill for
+ * [`AbortSignal.any`](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/any_static).
  */
 export function raceAbortSignals(
   ...signals: Maybe<AbortSignal>[]

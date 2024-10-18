@@ -15,7 +15,7 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import { isAsyncIterable, isObject } from '../utils';
+import { abortSignalsAnyPonyfill, assert, isAsyncIterable, isObject } from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -260,9 +260,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       });
     }
 
+    interface RPCResultOk {
+      data: unknown;
+      abortCtrl?: AbortController;
+    }
     type RPCResult =
       | [result: null, error: TRPCError]
-      | [result: unknown, error?: never];
+      | [result: RPCResultOk, error?: never];
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
       try {
@@ -279,21 +283,28 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             message: `Unsupported ${req.method}-request to ${proc._def.type} procedure at path "${call.path}"`,
           });
         }
-        /* istanbul ignore if -- @preserve */
-        if (proc._def.type === 'subscription' && info!.isBatchCall) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: `Cannot batch subscription calls`,
-          });
+        let abortCtrl: AbortController | undefined;
+        if (proc._def.type === 'subscription') {
+          /* istanbul ignore if -- @preserve */
+          if (info!.isBatchCall) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Cannot batch subscription calls`,
+            });
+          }
+          abortCtrl = new AbortController();
         }
+
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
           ctx,
           type: proc._def.type,
-          signal: opts.req.signal,
+          signal: abortCtrl
+            ? abortSignalsAnyPonyfill([opts.req.signal, abortCtrl.signal])
+            : opts.req.signal,
         });
-        return [data];
+        return [{ data, abortCtrl }];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
@@ -314,7 +325,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // ----------- response handlers -----------
     if (!info.isBatchCall) {
       const [call] = info.calls;
-      const [data, error] = await rpcCalls[0]!;
+      const [result, error] = await rpcCalls[0]!;
 
       switch (info.type) {
         case 'unknown':
@@ -323,7 +334,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           // httpLink
           headers.set('content-type', 'application/json');
 
-          if (isDataStream(data)) {
+          if (isDataStream(result?.data)) {
             throw new TRPCError({
               code: 'UNSUPPORTED_MEDIA_TYPE',
               message:
@@ -341,7 +352,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   type: info.type,
                 }),
               }
-            : { result: { data } };
+            : { result: { data: result.data } };
 
           const headResponse = initResponse({
             ctx,
@@ -372,6 +383,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           if (error) {
             throw error;
           }
+          const { data, abortCtrl } = result;
+          assert(
+            abortCtrl !== undefined,
+            'subscription type must have an AbortController',
+          );
 
           if (!isObservable(data) && !isAsyncIterable(data)) {
             throw new TRPCError({
@@ -388,6 +404,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const stream = sseStreamProducer({
             ...config.experimental?.sseSubscriptions,
             data: dataAsIterable,
+            abortCtrl,
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {
               const error = getTRPCErrorFromUnknown(errorOpts.error);
@@ -481,17 +498,18 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               }),
             };
           }
+          const { data } = result;
 
           /**
            * Not very pretty, but we need to wrap nested data in promises
            * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
            */
-          const data = isObservable(result)
-            ? observableToAsyncIterable(result)
-            : Promise.resolve(result);
+          const dataAsPromiseOrIterable = isObservable(data)
+            ? observableToAsyncIterable(data)
+            : Promise.resolve(data);
           return {
             result: Promise.resolve({
-              data,
+              data: dataAsPromiseOrIterable,
             }),
           };
         }),
@@ -539,12 +557,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     headers.set('content-type', 'application/json');
     const results: RPCResult[] = (await Promise.all(rpcCalls)).map(
       (res): RPCResult => {
-        const [data, error] = res;
+        const [result, error] = res;
         if (error) {
           return res;
         }
 
-        if (isDataStream(data)) {
+        if (isDataStream(result.data)) {
           return [
             null,
             new TRPCError({
@@ -559,7 +577,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     );
     const resultAsRPCResponse = results.map(
       (
-        [data, error],
+        [result, error],
         index,
       ): TRPCResponse<unknown, inferRouterError<TRouter>> => {
         const call = info!.calls[index]!;
@@ -576,7 +594,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           };
         }
         return {
-          result: { data },
+          result: { data: result.data },
         };
       },
     );
