@@ -1,11 +1,7 @@
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import type { MaybePromise } from '../types';
 import { identity, run } from '../utils';
-import type {
-  AnyEventSourceConstructorLike,
-  EventOf,
-  EventSourceInitLike,
-} from './sse.types';
+import type { EventSourcePonyfill } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
 import { takeWithGrace, withCancel } from './utils/asyncIterable';
@@ -184,7 +180,7 @@ interface ConsumerStreamResultOpened<TConfig extends ConsumerConfig>
 interface ConsumerStreamResultConnecting<TConfig extends ConsumerConfig>
   extends ConsumerStreamResultBase<TConfig> {
   type: 'connecting';
-  event: EventOf<TConfig['EventSource']> | null;
+  event: EventSourcePonyfill.EventOf<TConfig['EventSource']> | null;
 }
 
 type ConsumerStreamResult<TConfig extends ConsumerConfig> =
@@ -201,7 +197,7 @@ export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
     opts:
       | {
           type: 'event';
-          event: EventOf<TConfig['EventSource']>;
+          event: EventSourcePonyfill.EventOf<TConfig['EventSource']>;
         }
       | {
           type: 'serialized-error';
@@ -215,7 +211,7 @@ export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
 interface ConsumerConfig {
   data: unknown;
   error: unknown;
-  EventSource: AnyEventSourceConstructorLike;
+  EventSource: EventSourcePonyfill.AnyEventSourceConstructorLike;
 }
 
 /**
@@ -233,7 +229,9 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
   const stream = createReadableStream<ConsumerStreamResult<TConfig>>();
 
-  function createEventSource(...args: [string, EventSourceInitLike?]) {
+  function createEventSource(
+    ...args: [string, EventSourcePonyfill.EventSourceInitLike?]
+  ) {
     const es = new opts.EventSource(...args) as InstanceType<
       TConfig['EventSource']
     >;

@@ -3,8 +3,7 @@ import type { TRPC_ERROR_CODE_NUMBER, TRPCErrorShape } from '@trpc/server/rpc';
 import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
-  AnyEventSourceConstructorLike,
-  EventSourceInitDictOf,
+  EventSourcePonyfill,
   inferClientTypes,
   InferrableClientTypes,
   SSEStreamConsumerOptions,
@@ -42,7 +41,7 @@ async function urlWithConnectionParams(
 
 type HTTPSubscriptionLinkOptions<
   TRoot extends AnyClientTypes,
-  TEventSource extends AnyEventSourceConstructorLike = typeof EventSource,
+  TEventSource extends EventSourcePonyfill.AnyEventSourceConstructorLike = typeof EventSource,
 > = {
   /**
    * EventSource ponyfill
@@ -51,7 +50,9 @@ type HTTPSubscriptionLinkOptions<
   /**
    * EventSource options or a callback that returns them
    */
-  eventSourceOptions?: CallbackOrValue<EventSourceInitDictOf<TEventSource>>;
+  eventSourceOptions?: CallbackOrValue<
+    EventSourcePonyfill.EventSourceInitDictOf<TEventSource>
+  >;
   /**
    * @see https://trpc.io/docs/client/links/httpSubscriptionLink#updatingConfig
    */
@@ -79,7 +80,7 @@ const codes5xx: TRPC_ERROR_CODE_NUMBER[] = [
  */
 export function unstable_httpSubscriptionLink<
   TInferrable extends InferrableClientTypes,
-  TEventSource extends AnyEventSourceConstructorLike = typeof EventSource,
+  TEventSource extends EventSourcePonyfill.AnyEventSourceConstructorLike = typeof EventSource,
 >(
   opts: HTTPSubscriptionLinkOptions<
     inferClientTypes<TInferrable>,

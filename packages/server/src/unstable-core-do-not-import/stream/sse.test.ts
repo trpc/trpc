@@ -2,7 +2,6 @@ import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
-import type { ConstructorOf } from './sse.types';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
 import { createDeferred } from './utils/createDeferred';
 import { createServer } from './utils/createServer';

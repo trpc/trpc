@@ -1,5 +1,5 @@
 import type {
-  EventLike,
+  EventSourcePonyfill,
   inferClientTypes,
   InferrableClientTypes,
   Maybe,
@@ -91,7 +91,7 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
   }
 
   public static from<TRouterOrProcedure extends InferrableClientTypes>(
-    _cause: Error | TRPCErrorResponse<any> | EventLike,
+    _cause: Error | TRPCErrorResponse<any> | EventSourcePonyfill.EventLike,
     opts: { meta?: Record<string, unknown> } = {},
   ): TRPCClientError<TRouterOrProcedure> {
     const cause = _cause as unknown;
