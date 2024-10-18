@@ -117,7 +117,7 @@ export { handler as GET, handler as POST };
 
 </details>
 
-### 4. Create a Query Client factory
+### 3. Create a Query Client factory
 
 Create a shared file `trpc/query-client.ts` that exports a function that creates a `QueryClient` instance.
 
@@ -157,7 +157,7 @@ We're setting a few default options here:
 - `serializeData` and `deserializeData` (optional): If you set up a [data transformer](https://trpc.io/docs/server/data-transformers) in the previous step, set this option
   to make sure the data is serialized correctly when hydrating the query client over the server-client boundary.
 
-### 5. Create a tRPC client for Client Components
+### 4. Create a tRPC client for Client Components
 
 The `trpc/client.tsx` is the entrypoint when consuming your tRPC API from client components. In here, import the **type definition** of
 your tRPC router and create typesafe hooks using `createTRPCReact`. We'll also export our context provider from this file.
@@ -228,7 +228,7 @@ export function TRPCProvider(
 
 Mount the provider in the root of your application (e.g. `app/layout.tsx` when using Next.js).
 
-### 6. Create a tRPC caller for Server Components
+### 5. Create a tRPC caller for Server Components
 
 To prefetch queries from server components, we use a tRPC caller. The `@trpc/react-query/rsc` module exports a thin wrapper around
 [`createCaller`](https://trpc.io/docs/server/server-side-calls) that integrates with your React Query client.

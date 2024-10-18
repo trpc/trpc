@@ -56,6 +56,8 @@ import type {
   UndefinedTRPCQueryOptionsOut,
   UnusedSkipTokenTRPCInfiniteQueryOptionsIn,
   UnusedSkipTokenTRPCInfiniteQueryOptionsOut,
+  UnusedSkipTokenTRPCQueryOptionsIn,
+  UnusedSkipTokenTRPCQueryOptionsOut,
 } from '../types';
 
 export type DecorateQueryProcedure<
@@ -76,6 +78,24 @@ export type DecorateQueryProcedure<
       TRPCClientError<TRoot>
     >,
   ): DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientError<TRoot>>;
+  /**
+   * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
+   */
+  queryOptions<
+    TQueryFnData extends inferTransformedProcedureOutput<TRoot, TProcedure>,
+    TData = TQueryFnData,
+  >(
+    input: inferProcedureInput<TProcedure> | SkipToken,
+    opts?: UnusedSkipTokenTRPCQueryOptionsIn<
+      TQueryFnData,
+      TData,
+      TRPCClientError<TRoot>
+    >,
+  ): UnusedSkipTokenTRPCQueryOptionsOut<
+    TQueryFnData,
+    TData,
+    TRPCClientError<TRoot>
+  >;
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
    */
