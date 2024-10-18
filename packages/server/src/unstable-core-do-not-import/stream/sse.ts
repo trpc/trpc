@@ -201,7 +201,7 @@ export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
         }
       | {
           type: 'serialized-error';
-          error: unknown;
+          error: TConfig['error'];
         },
   ) => boolean | Promise<boolean>;
   deserialize?: Deserialize;

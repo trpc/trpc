@@ -59,7 +59,7 @@ type HTTPSubscriptionLinkOptions<
   experimental_shouldRecreateOnError?: SSEStreamConsumerOptions<{
     EventSource: TEventSource;
     data: unknown;
-    error: unknown;
+    error: TRoot['errorShape'];
   }>['shouldRecreateOnError'];
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
