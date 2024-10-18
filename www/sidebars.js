@@ -147,6 +147,7 @@ module.exports = {
             'client/links/wsLink',
             'client/links/splitLink',
             'client/links/loggerLink',
+            'client/links/retryLink',
           ],
         },
         'client/headers',
