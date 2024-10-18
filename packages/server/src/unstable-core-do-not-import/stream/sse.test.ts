@@ -81,7 +81,10 @@ test('e2e, server-sent events (SSE)', async () => {
 
   const shouldRecreateOnError = createDeferred<void>();
   const ac = new AbortController();
-  const iterable = sseStreamConsumer<Data, unknown>({
+  const iterable = sseStreamConsumer<{
+    data: Data;
+    error: unknown;
+  }>({
     url: () => server.url,
     signal: ac.signal,
     init: () => ({}),
@@ -227,7 +230,10 @@ test('SSE on serverless - emit and disconnect early', async () => {
 
   const ac = new AbortController();
 
-  const iterable = sseStreamConsumer<Data, unknown>({
+  const iterable = sseStreamConsumer<{
+    data: Data;
+    error: unknown;
+  }>({
     // from: es,
     url: () => server.url,
     signal: ac.signal,

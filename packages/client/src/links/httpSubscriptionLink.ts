@@ -83,13 +83,13 @@ export function unstable_httpSubscriptionLink<
 
         const ac = new AbortController();
         const signal = raceAbortSignals(op.signal, ac.signal);
-        const eventSourceStream = sseStreamConsumer<
-          Partial<{
+        const eventSourceStream = sseStreamConsumer<{
+          data: Partial<{
             id?: string;
             data: unknown;
-          }>,
-          TRPCErrorShape
-        >({
+          }>;
+          error: TRPCErrorShape;
+        }>({
           url: async () =>
             getUrl({
               transformer,

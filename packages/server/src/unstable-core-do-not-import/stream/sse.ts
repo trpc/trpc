@@ -61,7 +61,9 @@ type SSEvent = Partial<{
  *
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
-export function sseStreamProducer<TValue = unknown>(opts: SSEStreamProducerOptions<TValue>) {
+export function sseStreamProducer<TValue = unknown>(
+  opts: SSEStreamProducerOptions<TValue>,
+) {
   const stream = createReadableStream<SSEvent>();
   stream.controller.enqueue({ comment: 'connected' });
 
@@ -74,7 +76,7 @@ export function sseStreamProducer<TValue = unknown>(opts: SSEStreamProducerOptio
 
   run(async () => {
     let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
-    
+
     iterable = withCancel(iterable, stream.cancelledPromise);
 
     if (opts.emitAndEndImmediately) {
@@ -153,34 +155,38 @@ export function sseStreamProducer<TValue = unknown>(opts: SSEStreamProducerOptio
   );
 }
 
-interface ConsumerStreamResultBase {
+interface ConsumerStreamResultBase<_TConfig extends ConsumerConfig> {
   eventSource: EventSource;
 }
 
-interface ConsumerStreamResultData<TData> extends ConsumerStreamResultBase {
+interface ConsumerStreamResultData<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
   type: 'data';
-  data: inferTrackedOutput<TData>;
+  data: inferTrackedOutput<TConfig['data']>;
 }
 
-interface ConsumerStreamResultError<TError> extends ConsumerStreamResultBase {
+interface ConsumerStreamResultError<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
   type: 'serialized-error';
-  error: TError;
+  error: TConfig['error'];
 }
 
-interface ConsumerStreamResultOpened extends ConsumerStreamResultBase {
+interface ConsumerStreamResultOpened<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
   type: 'opened';
 }
 
-interface ConsumerStreamResultConnecting extends ConsumerStreamResultBase {
+interface ConsumerStreamResultConnecting<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
   type: 'connecting';
   event: Event | null;
 }
 
-type ConsumerStreamResult<TData, TError> =
-  | ConsumerStreamResultData<TData>
-  | ConsumerStreamResultError<TError>
-  | ConsumerStreamResultOpened
-  | ConsumerStreamResultConnecting;
+type ConsumerStreamResult<TConfig extends ConsumerConfig> =
+  | ConsumerStreamResultData<TConfig>
+  | ConsumerStreamResultError<TConfig>
+  | ConsumerStreamResultOpened<TConfig>
+  | ConsumerStreamResultConnecting<TConfig>;
 
 export interface SSEStreamConsumerOptions {
   url: () => MaybePromise<string>;
@@ -199,12 +205,17 @@ export interface SSEStreamConsumerOptions {
   ) => boolean | Promise<boolean>;
   deserialize?: Deserialize;
 }
+
+interface ConsumerConfig {
+  data: unknown;
+  error: unknown;
+}
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
-export function sseStreamConsumer<TData, TError>(
+export function sseStreamConsumer<TConfig extends ConsumerConfig>(
   opts: SSEStreamConsumerOptions,
-): AsyncIterable<ConsumerStreamResult<TData, TError>> {
+): AsyncIterable<ConsumerStreamResult<TConfig>> {
   const { deserialize = (v) => v, shouldRecreateOnError } = opts;
 
   const signal = opts.signal;
@@ -212,7 +223,7 @@ export function sseStreamConsumer<TData, TError>(
   let eventSource: EventSource | null = null;
   let lock: Promise<void> | null = null;
 
-  const stream = createReadableStream<ConsumerStreamResult<TData, TError>>();
+  const stream = createReadableStream<ConsumerStreamResult<TConfig>>();
 
   function createEventSource(
     ...args: ConstructorParameters<typeof EventSource>
@@ -333,7 +344,7 @@ export function sseStreamConsumer<TData, TError>(
         }
         controller.enqueue({
           type: 'data',
-          data: def as inferTrackedOutput<TData>,
+          data: def as inferTrackedOutput<TConfig['data']>,
           eventSource: es,
         });
       });
@@ -358,7 +369,7 @@ export function sseStreamConsumer<TData, TError>(
     [Symbol.asyncIterator]() {
       const reader = stream.readable.getReader();
 
-      const iterator: AsyncIterator<ConsumerStreamResult<TData, TError>> = {
+      const iterator: AsyncIterator<ConsumerStreamResult<TConfig>> = {
         async next() {
           const value = await reader.read();
 
