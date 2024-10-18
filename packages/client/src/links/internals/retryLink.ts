@@ -42,7 +42,6 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
       return observable((observer) => {
         let next$: Unsubscribable | null = null;
         let attempts = 0;
-        let isDone = false;
         function attempt() {
           attempts++;
           next$?.unsubscribe();
@@ -59,15 +58,12 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
               observer.next(result);
             },
             complete() {
-              if (isDone) {
-                observer.complete();
-              }
+              observer.complete();
             },
           });
         }
         attempt();
         return () => {
-          isDone = true;
           next$?.unsubscribe();
         };
       });
