@@ -134,7 +134,7 @@ To address this limitation, you can use a [`retryLink`](./retryLink.md) in conju
 Please note that restarting the connection will result in the `EventSource` being recreated from scratch, which means any previously tracked events will be lost.
 :::
 
-````tsx
+```tsx
 import {
   createTRPCClient,
   httpBatchLink,
@@ -154,22 +154,22 @@ const trpc = createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
+      false: httpBatchLink({
+        url: 'http://localhost:3000',
+      }),
       true: [
         retryLink({
           retry: (opts) => {
             let willRestart = false;
 
-            const { cause } = opts.error;
-
             if (
-              cause &&
-              typeof cause === 'object' &&
-              'status' in cause &&
-              typeof cause.status === 'number' &&
-              [401, 403].includes(cause.status)
+              opts.error.data?.code === 'UNAUTHORIZED' ||
+              opts.error.data?.code === 'FORBIDDEN'
             ) {
               willRestart = true;
-              console.log('Restarting EventSource due to 401/403 error');
+              console.log(
+                'Restarting EventSource due to 401/403 error',
+              );
             }
             return willRestart;
           },
@@ -193,12 +193,10 @@ const trpc = createTRPCClient<AppRouter>({
           },
         }),
       ],
-      false: httpBatchLink({
-        url: 'http://localhost:3000',
-      }),
     }),
   ],
 });
+```
 
 ### Connection params {#connectionParams}
 
@@ -217,7 +215,7 @@ export const createContext = async (opts: CreateHTTPContextOptions) => {
 };
 
 export type Context = Awaited<ReturnType<typeof createContext>>;
-````
+```
 
 ```ts title="client/trpc.ts"
 import {
