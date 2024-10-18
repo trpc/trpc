@@ -1,4 +1,4 @@
-import type { QueryClient } from '@tanstack/react-query';
+import { type QueryClient } from '@tanstack/react-query';
 import {
   getUntypedClient,
   TRPCUntypedClient,
@@ -8,6 +8,7 @@ import type {
   AnyMutationProcedure,
   AnyQueryProcedure,
   AnyRouter,
+  AnySubscriptionProcedure,
   AnyTRPCRouter,
 } from '@trpc/server';
 import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
@@ -28,6 +29,10 @@ import {
   trpcQueryOptions,
   type TRPCQueryOptions,
 } from './internals/queryOptions';
+import {
+  trpcSubscriptionOptions,
+  type TRPCSubscriptionOptions,
+} from './internals/subscriptionOptions';
 import type { QueryType } from './internals/types';
 import { getQueryKeyInternal } from './internals/utils';
 
@@ -56,6 +61,16 @@ export interface DecorateMutationProcedure<
   mutationOptions: TRPCMutationOptions<TRoot, TProcedure>;
 }
 
+export interface DecorateSubscriptionProcedure<
+  TRoot extends AnyRootTypes,
+  TProcedure extends AnySubscriptionProcedure,
+> {
+  /**
+   * @see
+   */
+  subscriptionOptions: TRPCSubscriptionOptions<TRoot, TProcedure>;
+}
+
 /**
  * @internal
  */
@@ -70,6 +85,8 @@ export type DecoratedProcedureUtilsRecord<
       ? DecorateQueryProcedure<TRoot, $Value>
       : $Value extends AnyMutationProcedure
       ? DecorateMutationProcedure<TRoot, $Value>
+      : $Value extends AnySubscriptionProcedure
+      ? DecorateSubscriptionProcedure<TRoot, $Value>
       : never
     : never;
 };
@@ -99,7 +116,17 @@ export interface CreateQueryUtilsOptions<TRouter extends AnyTRPCRouter> {
 
 type UtilsMethods =
   | keyof DecorateQueryProcedure<any, any>
-  | keyof DecorateMutationProcedure<any, any>;
+  | keyof DecorateMutationProcedure<any, any>
+  | keyof DecorateSubscriptionProcedure<any, any>;
+
+function getQueryType(method: UtilsMethods) {
+  return {
+    queryOptions: 'query',
+    infiniteQueryOptions: 'infinite',
+    subscriptionOptions: 'any',
+    mutationOptions: 'any',
+  }[method] as QueryType;
+}
 
 export function createTRPCQueryUtils<TRouter extends AnyRouter>(
   context: CreateQueryUtilsOptions<TRouter>,
@@ -113,8 +140,7 @@ export function createTRPCQueryUtils<TRouter extends AnyRouter>(
     const utilName = path.pop() as UtilsMethods;
     const [input, userOptions] = opts.args as any[];
 
-    const queryType: QueryType =
-      utilName === 'infiniteQueryOptions' ? 'infinite' : 'query';
+    const queryType = getQueryType(utilName);
     const queryKey = getQueryKeyInternal(path, input, queryType);
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
@@ -144,8 +170,18 @@ export function createTRPCQueryUtils<TRouter extends AnyRouter>(
           overrides: context.overrides?.mutations,
         });
       },
+      subscriptionOptions: () => {
+        return trpcSubscriptionOptions({
+          opts: userOptions,
+          path,
+          queryKey,
+          untypedClient,
+        });
+      },
     };
 
     return contextMap[utilName]();
   });
 }
+
+export { useSubscription } from './internals/subscriptionOptions';

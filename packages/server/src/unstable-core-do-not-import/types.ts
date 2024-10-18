@@ -169,3 +169,7 @@ export type coerceAsyncIterableToArray<TValue> = TValue extends AsyncIterable<
 >
   ? $Inferred[]
   : TValue;
+
+export type inferAsyncIterableYield<T> = T extends AsyncIterable<infer U>
+  ? U
+  : T;

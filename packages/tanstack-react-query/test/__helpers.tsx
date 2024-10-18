@@ -15,6 +15,8 @@ import React from 'react';
 import { vi } from 'vitest';
 import { createTRPCQueryUtils } from '../src';
 
+export { ignoreErrors } from '../../tests/server/___testHelpers';
+
 export function getServerAndReactClient<TRouter extends AnyRouter>(
   appRouter: TRouter,
   opts?: {
