@@ -89,13 +89,13 @@ export type DecoratedProcedureUtilsRecord<
     : never;
 };
 
-export type CreateQueryUtils<TRouter extends AnyRouter> =
+export type TRPCOptionsProxy<TRouter extends AnyRouter> =
   DecoratedProcedureUtilsRecord<
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
   >;
 
-export interface CreateQueryUtilsOptions<TRouter extends AnyRouter> {
+export interface TRPCOptionsProxyOptions<TRouter extends AnyRouter> {
   /**
    * The `TRPCClient`
    */
@@ -126,9 +126,9 @@ function getQueryType(method: UtilsMethods) {
   }[method] as QueryType;
 }
 
-export function createTRPCQueryUtils<TRouter extends AnyRouter>(
-  context: CreateQueryUtilsOptions<TRouter>,
-): CreateQueryUtils<TRouter> {
+export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
+  context: TRPCOptionsProxyOptions<TRouter>,
+): TRPCOptionsProxy<TRouter> {
   const untypedClient =
     context.client instanceof TRPCUntypedClient
       ? context.client
@@ -186,7 +186,7 @@ export function createTRPCQueryUtils<TRouter extends AnyRouter>(
 export { useSubscription } from './internals/subscriptionOptions';
 
 export function createTRPCContext<TRouter extends AnyRouter>() {
-  const TRPCContext = React.createContext<CreateQueryUtils<TRouter> | null>(
+  const TRPCContext = React.createContext<TRPCOptionsProxy<TRouter> | null>(
     null,
   );
 
@@ -199,7 +199,7 @@ export function createTRPCContext<TRouter extends AnyRouter>() {
   ) {
     const value = React.useMemo(
       () =>
-        createTRPCQueryUtils({
+        createTRPCOptionsProxy({
           client: props.trpcClient,
           queryClient: props.queryClient,
         }),

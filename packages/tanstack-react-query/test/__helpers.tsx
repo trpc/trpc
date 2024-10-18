@@ -13,7 +13,7 @@ import {
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import { vi } from 'vitest';
-import { createTRPCQueryUtils } from '../src';
+import { createTRPCContext, createTRPCOptionsProxy } from '../src/index';
 
 export { ignoreErrors } from '../../tests/server/___testHelpers';
 
@@ -69,15 +69,19 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
   });
 
   const queryClient = new QueryClient();
-  const trpc = createTRPCQueryUtils({
+  const trpc = createTRPCOptionsProxy({
     client: getUntypedClient(ctx.client),
     queryClient,
   });
 
+  const { TRPCProvider, useTRPC } = createTRPCContext<TRouter>();
+
   function App(props: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        {props.children}
+        <TRPCProvider trpcClient={ctx.client} queryClient={queryClient}>
+          {props.children}
+        </TRPCProvider>
       </QueryClientProvider>
     );
   }
@@ -90,5 +94,6 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
     opts: ctx,
     spyLink,
     trpc,
+    useTRPC,
   };
 }

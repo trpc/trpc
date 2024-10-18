@@ -54,8 +54,9 @@ const ctx = konn()
 
 describe('mutationOptions', () => {
   test('useMutation', async () => {
-    const { App, trpc } = ctx;
+    const { App, useTRPC } = ctx;
     function MyComponent() {
+      const trpc = useTRPC();
       const options = trpc.post.create.mutationOptions({});
       expect(options.trpc.path).toBe('post.create');
 

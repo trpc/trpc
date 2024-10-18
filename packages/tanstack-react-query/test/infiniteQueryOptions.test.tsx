@@ -55,8 +55,9 @@ const ctx = konn()
 
 describe('infiniteQueryOptions', () => {
   test('basic', async () => {
-    const { App, trpc } = ctx;
+    const { App, useTRPC } = ctx;
     function MyComponent() {
+      const trpc = useTRPC();
       const queryClient = useQueryClient();
 
       const queryOptions = trpc.post.list.infiniteQueryOptions(
@@ -150,8 +151,9 @@ describe('infiniteQueryOptions', () => {
   // });
 
   test('select', async () => {
-    const { App, trpc } = ctx;
+    const { App, useTRPC } = ctx;
     function MyComponent() {
+      const trpc = useTRPC();
       const queryClient = useQueryClient();
 
       infiniteQueryOptions;

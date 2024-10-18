@@ -4,7 +4,7 @@ import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
-import * as  React from 'react';
+import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import { useSubscription } from '../src';
@@ -68,7 +68,7 @@ describe.each([
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
-    const { App, trpc } = ctx;
+    const { App, useTRPC } = ctx;
 
     let setEnabled = null as never as (enabled: boolean) => void;
 
@@ -78,6 +78,7 @@ describe.each([
       const [enabled, _setEnabled] = React.useState(true);
       setEnabled = _setEnabled;
 
+      const trpc = useTRPC();
       const options = trpc.onEventIterable.subscriptionOptions(10, {
         enabled,
         onStarted: () => {
@@ -155,7 +156,7 @@ describe.each([
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
-    const { App, trpc } = ctx;
+    const { App, useTRPC } = ctx;
     let setEnabled = null as never as (enabled: boolean) => void;
 
     function MyComponent() {
@@ -164,6 +165,7 @@ describe.each([
       const [enabled, _setEnabled] = React.useState(true);
       setEnabled = _setEnabled;
 
+      const trpc = useTRPC();
       const options = trpc.onEventObservable.subscriptionOptions(10, {
         enabled: enabled,
         onStarted: () => {

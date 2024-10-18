@@ -59,8 +59,9 @@ const ctx = konn()
 
 describe('queryOptions', () => {
   test('basic', async () => {
-    const { App, trpc } = ctx;
+    const { App, useTRPC } = ctx;
     function MyComponent() {
+      const trpc = useTRPC();
       const queryOptions = trpc.post.byId.queryOptions({ id: '1' });
       expect(queryOptions.trpc.path).toBe('post.byId');
       const query1 = useQuery(queryOptions);
@@ -204,7 +205,7 @@ describe('queryOptions', () => {
   });
 
   test('iterable', async () => {
-    const { trpc, App } = ctx;
+    const { useTRPC, App } = ctx;
     const states: {
       status: string;
       data: unknown;
@@ -213,6 +214,7 @@ describe('queryOptions', () => {
     const selects: number[][] = [];
 
     function MyComponent() {
+      const trpc = useTRPC();
       const opts = trpc.post.iterable.queryOptions(undefined, {
         select(data) {
           expectTypeOf<number[]>(data);
@@ -233,7 +235,7 @@ describe('queryOptions', () => {
       });
       ctx.nextIterable();
 
-      expectTypeOf(query1.data).toMatchTypeOf<number[]>();
+      expectTypeOf(query1.data!).toMatchTypeOf<number[]>();
 
       return (
         <pre>
@@ -313,8 +315,9 @@ describe('queryOptions', () => {
   });
 
   test('useSuspenseQuery', async () => {
-    const { App, trpc } = ctx;
+    const { App, useTRPC } = ctx;
     function MyComponent() {
+      const trpc = useTRPC();
       const { data } = useSuspenseQuery(
         trpc.post.byId.queryOptions({ id: '1' }),
       );
