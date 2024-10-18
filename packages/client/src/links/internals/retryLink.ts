@@ -40,11 +40,11 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
     return ({ op, next }) => {
       // initialized for request
       return observable((observer) => {
-        let next$: Unsubscribable | null = null;
+        let next$: Unsubscribable;
         let attempts = 0;
+        attempt();
         function attempt() {
           attempts++;
-          next$?.unsubscribe();
           next$ = next(op).subscribe({
             error(error) {
               const shouldRetry = opts.retry({
@@ -62,9 +62,8 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
             },
           });
         }
-        attempt();
         return () => {
-          next$?.unsubscribe();
+          next$.unsubscribe();
         };
       });
     };
