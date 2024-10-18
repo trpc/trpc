@@ -2,7 +2,7 @@ import type {
   DataTag,
   DefinedInitialDataOptions,
   QueryClient,
-  QueryFunctionContext,
+  QueryFunction,
   UndefinedInitialDataOptions,
   UnusedSkipTokenOptions,
 } from '@tanstack/react-query';
@@ -143,20 +143,20 @@ export interface TRPCQueryOptions<
   ): UndefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientError<TRoot>>;
 }
 
-export const trpcQueryOptions = (args: {
+export function trpcQueryOptions(args: {
   untypedClient: TRPCUntypedClient<AnyRouter>;
   queryClient: QueryClient;
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown>;
-}) => {
+}) {
   const { untypedClient, queryClient, path, queryKey, opts } = args;
 
   const inputIsSkipToken = queryKey[1]?.input === skipToken;
 
-  const queryFn = async (
-    queryFnContext: QueryFunctionContext<TRPCQueryKey>,
-  ): Promise<unknown> => {
+  const queryFn: QueryFunction<unknown, TRPCQueryKey> = async (
+    queryFnContext,
+  ) => {
     const actualOpts = {
       ...opts,
       trpc: {
@@ -186,4 +186,4 @@ export const trpcQueryOptions = (args: {
     }),
     { trpc: createTRPCOptionsResult({ path }) },
   );
-};
+}

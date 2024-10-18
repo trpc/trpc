@@ -1,3 +1,4 @@
+import type { MutationFunction } from '@tanstack/react-query';
 import {
   type QueryClient,
   type UseMutationOptions,
@@ -74,13 +75,13 @@ export interface MutationOptionsOverride {
   }) => MaybePromise<unknown>;
 }
 
-export const trpcMutationOptions = (args: {
+export function trpcMutationOptions(args: {
   untypedClient: TRPCUntypedClient<AnyRouter>;
   queryClient: QueryClient;
   path: readonly string[];
   opts: TRPCMutationOptionsIn<unknown, unknown, unknown, unknown>;
   overrides: MutationOptionsOverride | undefined;
-}): TRPCMutationOptionsOut<unknown, unknown, unknown, unknown> => {
+}): TRPCMutationOptionsOut<unknown, unknown, unknown, unknown> {
   const { untypedClient, queryClient, path, opts, overrides } = args;
 
   const mutationKey = getMutationKeyInternal(path);
@@ -92,12 +93,18 @@ export const trpcMutationOptions = (args: {
   const mutationSuccessOverride: MutationOptionsOverride['onSuccess'] =
     overrides?.onSuccess ?? ((options) => options.originalFn());
 
+  const mutationFn: MutationFunction = async (input) => {
+    const result = await untypedClient.mutation(
+      ...getClientArgs([path, { input }], opts),
+    );
+
+    return result;
+  };
+
   return {
     ...opts,
     mutationKey: mutationKey,
-    mutationFn: (input) => {
-      return untypedClient.mutation(...getClientArgs([path, { input }], opts));
-    },
+    mutationFn,
     onSuccess(...args) {
       const originalFn = () =>
         opts?.onSuccess?.(...args) ?? defaultOpts?.onSuccess?.(...args);
@@ -110,4 +117,4 @@ export const trpcMutationOptions = (args: {
     },
     trpc: createTRPCOptionsResult({ path }),
   };
-};
+}

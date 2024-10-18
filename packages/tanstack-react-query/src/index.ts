@@ -127,12 +127,13 @@ function getQueryType(method: UtilsMethods) {
 
 export function createTRPCQueryUtils<TRouter extends AnyRouter>(
   context: CreateQueryUtilsOptions<TRouter>,
-) {
+): CreateQueryUtils<TRouter> {
   const untypedClient =
     context.client instanceof TRPCUntypedClient
       ? context.client
       : getUntypedClient(context.client);
-  return createRecursiveProxy<CreateQueryUtils<TRouter>>((opts) => {
+
+  return createRecursiveProxy((opts) => {
     const path = [...opts.path];
     const utilName = path.pop() as UtilsMethods;
     const [input, userOptions] = opts.args as any[];
