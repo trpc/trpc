@@ -73,7 +73,7 @@ type Caller<TRouter extends AnyRouter> = ReturnType<
 // ts-prune-ignore-next
 /**
  * @note This requires `@tanstack/react-query@^5.49.0`
- * @note Make sure to have `dehyrate.serializeData` and `hydrate.deserializeData`
+ * @note Make sure to have `dehydrate.serializeData` and `hydrate.deserializeData`
  * set to your data transformer in your `QueryClient` factory.
  * @example
  * ```ts
