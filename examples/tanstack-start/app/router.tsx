@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { createRouter as createTanStackRouter } from '@tanstack/react-router';
 import { routerWithQueryClient } from '@tanstack/react-router-with-query';
 import { createTRPCClient, unstable_httpBatchStreamLink } from '@trpc/client';
-import { createTRPCQueryUtils } from '@trpc/tanstack-react-query';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import superjson from 'superjson';
 import { DefaultCatchBoundary } from './components/DefaultCatchBoundary';
 import { NotFound } from './components/NotFound';
@@ -40,7 +40,7 @@ export function createRouter() {
     ],
   });
 
-  const serverHelpers = createTRPCQueryUtils({
+  const serverHelpers = createTRPCOptionsProxy({
     client: trpcClient,
     queryClient: queryClient,
   });

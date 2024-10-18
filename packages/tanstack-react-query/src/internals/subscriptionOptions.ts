@@ -62,12 +62,12 @@ export interface TRPCSubscriptionOptions<
   >;
 }
 
-export function trpcSubscriptionOptions(args: {
+export const trpcSubscriptionOptions = (args: {
   untypedClient: TRPCUntypedClient<AnyRouter>;
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: BaseTRPCSubscriptionOptionsIn<unknown, unknown>;
-}) {
+}) => {
   const { untypedClient, path, queryKey, opts } = args;
   const input = queryKey[1]?.input;
   const enabled = opts?.enabled ?? input !== skipToken;
@@ -89,7 +89,7 @@ export function trpcSubscriptionOptions(args: {
     queryKey,
     trpc: createTRPCOptionsResult({ path }),
   };
-}
+};
 
 export function useSubscription<TOutput, TError>(
   opts: TRPCSubscriptionOptionsOut<TOutput, TError>,
