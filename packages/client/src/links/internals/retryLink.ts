@@ -48,7 +48,6 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
           next$?.unsubscribe();
           next$ = next(op).subscribe({
             error(error) {
-              /* istanbul ignore if -- @preserve */
               const shouldRetry = opts.retry({
                 op,
                 attempts,
