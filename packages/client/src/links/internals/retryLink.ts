@@ -2,7 +2,7 @@
 // We're not actually exporting this link
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
-import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import/clientish/inferrable';
+import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClientError } from '../../TRPCClientError';
 import type { Operation, TRPCLink } from '../types';
 
