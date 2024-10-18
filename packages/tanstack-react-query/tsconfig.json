@@ -1,4 +1,7 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["src"]
+  "include": ["src", "test", "../tests/server/___testHelpers.ts"],
+  "compilerOptions": {
+    "noErrorTruncation": true
+  }
 }

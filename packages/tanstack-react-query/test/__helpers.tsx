@@ -13,7 +13,7 @@ import {
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import { vi } from 'vitest';
-import { createTRPCContext, createTRPCOptionsProxy } from '../src/index';
+import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
 export { ignoreErrors } from '../../tests/server/___testHelpers';
 

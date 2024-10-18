@@ -18,6 +18,7 @@
     "dev": "pnpm build --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
     "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore src",
+    "test-run:tsc": "tsc --noEmit --pretty",
     "ts-watch": "tsc --watch"
   },
   "exports": {

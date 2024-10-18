@@ -193,7 +193,7 @@ describe('infiniteQueryOptions', () => {
         >
       >(query1.data);
 
-      expectTypeOf(query1.data.pages[0].___selected).toEqualTypeOf<true>();
+      expectTypeOf(query1.data.pages[0]!.___selected).toEqualTypeOf<true>();
 
       return (
         <>
