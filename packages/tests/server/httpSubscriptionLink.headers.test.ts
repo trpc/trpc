@@ -1,5 +1,4 @@
-import { EventEmitter, on } from 'node:events';
-import { scheduler } from 'node:timers/promises';
+import { EventEmitter } from 'node:events';
 import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
@@ -10,8 +9,7 @@ import {
 } from '@trpc/client';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import type { Event, EventSourcePolyfillInit } from 'event-source-polyfill';
-import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
+import { EventSourcePolyfill } from 'event-source-polyfill';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -26,8 +24,6 @@ const ctx = konn()
     // will increment it on each createContext(). If the latest version is
     // always sent then the server will always receive the latest version
     let incrementingTestHeader = 1;
-
-    globalThis.EventSource = EventSourcePolyfill as typeof EventSource;
 
     const onIterableInfiniteSpy =
       vi.fn<(args: { input: { lastEventId?: number } }) => void>();
@@ -168,7 +164,6 @@ const ctx = konn()
   })
   .afterEach(async (opts) => {
     await opts?.close?.();
-    globalThis.EventSource = NativeEventSource as typeof EventSource;
   })
   .done();
 
