@@ -15,7 +15,7 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import { assert, isAsyncIterable, isObject } from '../utils';
+import { abortSignalsAnyPonyfill, assert, isAsyncIterable, isObject } from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -301,7 +301,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           ctx,
           type: proc._def.type,
           signal: abortCtrl
-            ? AbortSignal.any([opts.req.signal, abortCtrl.signal])
+            ? abortSignalsAnyPonyfill([opts.req.signal, abortCtrl.signal])
             : opts.req.signal,
         });
         return [{ data, abortCtrl }];

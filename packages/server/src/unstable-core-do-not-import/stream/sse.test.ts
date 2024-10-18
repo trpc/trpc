@@ -2,7 +2,7 @@ import { EventEmitter, on } from 'node:events';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { Maybe } from '../types';
-import { run, sleep } from '../utils';
+import { abortSignalsAnyPonyfill, run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
 import { createDeferred } from './utils/createDeferred';
@@ -208,17 +208,15 @@ test('SSE on serverless - emit and disconnect early', async () => {
     const asNumber = stringToNumber(lastEventId);
 
     const producerAbortCtrl = new AbortController();
-    // jsdom environment, so AbortSignal.any is not supported yet
-    const combinedAbortCtrl = new AbortController();
-    reqAbortCtrl.signal.addEventListener('abort', () =>
-      combinedAbortCtrl.abort(),
-    );
-    producerAbortCtrl.signal.addEventListener('abort', () =>
-      combinedAbortCtrl.abort(),
-    );
 
     const stream = sseStreamProducer({
-      data: data(asNumber, combinedAbortCtrl.signal),
+      data: data(
+        asNumber,
+        abortSignalsAnyPonyfill([
+          reqAbortCtrl.signal,
+          producerAbortCtrl.signal,
+        ]),
+      ),
       serialize: (v) => SuperJSON.serialize(v),
       emitAndEndImmediately: true,
       abortCtrl: producerAbortCtrl,
