@@ -124,12 +124,13 @@ const ctx = konn()
               true: unstable_httpSubscriptionLink({
                 url: opts.httpUrl,
                 transformer: superjson,
+                EventSource: EventSourcePolyfill,
                 eventSourceOptions() {
                   return {
                     headers: {
                       'x-test': String(incrementingTestHeader),
                     },
-                  } as EventSourcePolyfillInit;
+                  };
                 },
                 experimental_shouldRecreateOnError(opts) {
                   let willRestart = false;

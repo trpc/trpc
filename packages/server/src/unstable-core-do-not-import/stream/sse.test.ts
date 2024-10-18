@@ -2,6 +2,7 @@ import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
+import type { ConstructorOf } from './sse.types';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
 import { createDeferred } from './utils/createDeferred';
 import { createServer } from './utils/createServer';
@@ -84,15 +85,25 @@ test('e2e, server-sent events (SSE)', async () => {
   const iterable = sseStreamConsumer<{
     data: Data;
     error: unknown;
+    EventSource: EventSource;
   }>({
     url: () => server.url,
     signal: ac.signal,
     init: () => ({}),
     deserialize: SuperJSON.deserialize,
-    shouldRecreateOnError: vi.fn(() => {
-      shouldRecreateOnError.resolve();
+    // shouldRecreateOnError: vi.fn(() => {
+    //   shouldRecreateOnError.resolve();
+    //   return false;
+    // }),
+    shouldRecreateOnError: (opts) => {
+      if (opts.type === 'event') {
+        expectTypeOf(opts.event).not.toBeAny();
+        expectTypeOf(opts.event).toEqualTypeOf<Event>();
+      }
       return false;
-    }),
+    },
+
+    EventSource: EventSource,
   });
   let es: EventSource | null = null;
 
@@ -132,6 +143,7 @@ test('e2e, server-sent events (SSE)', async () => {
 
   for await (const value of iterable) {
     allEvents.push(value);
+    value.eventSource;
     es = value.eventSource;
     if (value.type === 'serialized-error') {
       throw value.error;
@@ -233,12 +245,14 @@ test('SSE on serverless - emit and disconnect early', async () => {
   const iterable = sseStreamConsumer<{
     data: Data;
     error: unknown;
+    EventSource: EventSource;
   }>({
     // from: es,
     url: () => server.url,
     signal: ac.signal,
     init: () => ({}),
     deserialize: SuperJSON.deserialize,
+    EventSource: globalThis.EventSource,
   });
 
   function range(start: number, end: number) {

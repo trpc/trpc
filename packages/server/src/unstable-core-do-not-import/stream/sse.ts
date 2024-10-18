@@ -1,6 +1,7 @@
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import type { MaybePromise } from '../types';
 import { identity, run } from '../utils';
+import type { ConstructorOf, EventOf, EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
 import { takeWithGrace, withCancel } from './utils/asyncIterable';
@@ -155,8 +156,8 @@ export function sseStreamProducer<TValue = unknown>(
   );
 }
 
-interface ConsumerStreamResultBase<_TConfig extends ConsumerConfig> {
-  eventSource: EventSource;
+interface ConsumerStreamResultBase<TConfig extends ConsumerConfig> {
+  eventSource: TConfig['EventSource'];
 }
 
 interface ConsumerStreamResultData<TConfig extends ConsumerConfig>
@@ -179,7 +180,7 @@ interface ConsumerStreamResultOpened<TConfig extends ConsumerConfig>
 interface ConsumerStreamResultConnecting<TConfig extends ConsumerConfig>
   extends ConsumerStreamResultBase<TConfig> {
   type: 'connecting';
-  event: Event | null;
+  event: EventOf<TConfig['EventSource']> | null;
 }
 
 type ConsumerStreamResult<TConfig extends ConsumerConfig> =
@@ -188,7 +189,7 @@ type ConsumerStreamResult<TConfig extends ConsumerConfig> =
   | ConsumerStreamResultOpened<TConfig>
   | ConsumerStreamResultConnecting<TConfig>;
 
-export interface SSEStreamConsumerOptions {
+export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   url: () => MaybePromise<string>;
   init: () => MaybePromise<EventSourceInit> | undefined;
   signal: AbortSignal;
@@ -196,7 +197,7 @@ export interface SSEStreamConsumerOptions {
     opts:
       | {
           type: 'event';
-          event: Event;
+          event: EventOf<TConfig['EventSource']>;
         }
       | {
           type: 'serialized-error';
@@ -204,31 +205,33 @@ export interface SSEStreamConsumerOptions {
         },
   ) => boolean | Promise<boolean>;
   deserialize?: Deserialize;
+  EventSource: ConstructorOf<TConfig['EventSource']>;
 }
 
 interface ConsumerConfig {
   data: unknown;
   error: unknown;
+  EventSource: EventSourceLike;
 }
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
 export function sseStreamConsumer<TConfig extends ConsumerConfig>(
-  opts: SSEStreamConsumerOptions,
+  opts: SSEStreamConsumerOptions<TConfig>,
 ): AsyncIterable<ConsumerStreamResult<TConfig>> {
   const { deserialize = (v) => v, shouldRecreateOnError } = opts;
 
   const signal = opts.signal;
 
-  let eventSource: EventSource | null = null;
+  let eventSource: TConfig['EventSource'] | null = null;
   let lock: Promise<void> | null = null;
 
   const stream = createReadableStream<ConsumerStreamResult<TConfig>>();
 
   function createEventSource(
-    ...args: ConstructorParameters<typeof EventSource>
+    ...args: ConstructorParameters<ConstructorOf<TConfig['EventSource']>>
   ) {
-    const es = new EventSource(...args);
+    const es = new opts.EventSource(...args);
 
     if (signal.aborted) {
       es.close();

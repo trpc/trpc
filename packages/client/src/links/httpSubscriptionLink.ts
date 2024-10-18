@@ -3,6 +3,8 @@ import type { TRPC_ERROR_CODE_NUMBER, TRPCErrorShape } from '@trpc/server/rpc';
 import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
+  ConstructorOf,
+  EventSourceLike,
   inferClientTypes,
   InferrableClientTypes,
   SSEStreamConsumerOptions,
@@ -38,7 +40,11 @@ async function urlWithConnectionParams(
   return url;
 }
 
-type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
+type HTTPSubscriptionLinkOptions<
+  TRoot extends AnyClientTypes,
+  TEventSource extends EventSourceLike,
+> = {
+  EventSource?: ConstructorOf<TEventSource>;
   /**
    * EventSource options or a callback that returns them
    */
@@ -46,7 +52,11 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * @see https://trpc.io/docs/client/links/httpSubscriptionLink#updatingConfig
    */
-  experimental_shouldRecreateOnError?: SSEStreamConsumerOptions['shouldRecreateOnError'];
+  experimental_shouldRecreateOnError?: SSEStreamConsumerOptions<{
+    EventSource: TEventSource;
+    data: unknown;
+    error: unknown;
+  }>['shouldRecreateOnError'];
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -66,8 +76,12 @@ const codes5xx: TRPC_ERROR_CODE_NUMBER[] = [
  */
 export function unstable_httpSubscriptionLink<
   TInferrable extends InferrableClientTypes,
+  TEventSource extends EventSourceLike,
 >(
-  opts: HTTPSubscriptionLinkOptions<inferClientTypes<TInferrable>>,
+  opts: HTTPSubscriptionLinkOptions<
+    inferClientTypes<TInferrable>,
+    TEventSource
+  >,
 ): TRPCLink<TInferrable> {
   const transformer = getTransformer(opts.transformer);
 
@@ -84,6 +98,7 @@ export function unstable_httpSubscriptionLink<
         const ac = new AbortController();
         const signal = raceAbortSignals(op.signal, ac.signal);
         const eventSourceStream = sseStreamConsumer<{
+          EventSource: TEventSource;
           data: Partial<{
             id?: string;
             data: unknown;
@@ -103,6 +118,7 @@ export function unstable_httpSubscriptionLink<
           signal,
           deserialize: transformer.output.deserialize,
           shouldRecreateOnError: opts.experimental_shouldRecreateOnError,
+          EventSource: opts.EventSource ?? (globalThis.EventSource as any),
         });
 
         const connectionState = behaviorSubject<
