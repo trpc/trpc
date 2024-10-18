@@ -205,7 +205,7 @@ function isDataStream(v: unknown) {
   );
 }
 
-type ResultTuple<T> = [T, undefined] | [undefined, TRPCError];
+type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
 
 export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
@@ -232,6 +232,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const infoTuple: ResultTuple<TRPCRequestInfo> = run(() => {
     try {
       return [
+        undefined,
         getRequestInfo({
           req,
           path: decodeURIComponent(opts.path),
@@ -239,16 +240,15 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           searchParams: url.searchParams,
           headers: opts.req.headers,
         }),
-        undefined,
       ];
     } catch (cause) {
       return [
-        undefined,
         new TRPCError({
           code: 'BAD_REQUEST',
           message: `Could not parse request info`,
           cause,
         }),
+        undefined,
       ];
     }
   });
@@ -265,10 +265,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         if (!result) {
           return undefined;
         }
-        return result[0];
+        return result[1];
       },
       value: () => {
-        const [ctx, err] = result!;
+        const [err, ctx] = result!;
         if (err) {
           throw err;
         }
@@ -284,9 +284,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           const ctx = await opts.createContext({
             info,
           });
-          result = [ctx, undefined];
+          result = [undefined, ctx];
         } catch (cause) {
-          result = [undefined, getTRPCErrorFromUnknown(cause)];
+          result = [getTRPCErrorFromUnknown(cause), undefined];
         }
       },
     };
@@ -306,7 +306,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const experimentalSSE =
     router._def._config.experimental?.sseSubscriptions?.enabled ?? true;
   try {
-    const [info, infoError] = infoTuple;
+    const [infoError, info] = infoTuple;
     if (infoError) {
       throw infoError;
     }
@@ -685,7 +685,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       },
     );
   } catch (cause) {
-    const [info] = infoTuple;
+    const [_infoError, info] = infoTuple;
     const ctx = ctxManager.valueOrUndefined();
     // we get here if
     // - batching is called when it's not enabled
