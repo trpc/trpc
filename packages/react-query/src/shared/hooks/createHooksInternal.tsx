@@ -39,6 +39,7 @@ import type {
   CreateClient,
   TRPCProvider,
   TRPCQueryOptions,
+  TRPCSubscriptionResult,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
   UseTRPCMutationOptions,
@@ -53,6 +54,20 @@ import type {
   UseTRPCSuspenseQueryOptions,
   UseTRPCSuspenseQueryResult,
 } from './types';
+
+const trackResult = <T extends object>(
+  result: T,
+  onTrackResult: (key: keyof T) => void,
+): T => {
+  const trackedResult = new Proxy(result, {
+    get(target, prop) {
+      onTrackResult(prop as keyof T);
+      return target[prop as keyof T];
+    },
+  });
+
+  return trackedResult;
+};
 
 /**
  * @internal
@@ -341,10 +356,26 @@ export function createRootHooks<
     const optsRef = React.useRef<typeof opts>(opts);
     optsRef.current = opts;
 
-    React.useEffect(() => {
+    type $Result = TRPCSubscriptionResult<unknown, TError>;
+
+    const trackedProps = React.useRef(new Set<keyof $Result>([]));
+
+    const addTrackedProp = React.useCallback((key: keyof $Result) => {
+      trackedProps.current.add(key);
+    }, []);
+
+    type Unsubscribe = () => void;
+    const currentSubscriptionRef = React.useRef<Unsubscribe>();
+
+    const reset = React.useCallback((): void => {
+      // unsubscribe from the previous subscription
+      currentSubscriptionRef.current?.();
+
+      updateState(getInitialState);
       if (!enabled) {
         return;
       }
+
       let isStopped = false;
       const subscription = client.subscription(
         path.join('.'),
@@ -353,26 +384,113 @@ export function createRootHooks<
           onStarted: () => {
             if (!isStopped) {
               optsRef.current.onStarted?.();
+              updateState((prev) => ({
+                ...prev,
+                status: 'pending',
+                error: null,
+              }));
             }
           },
           onData: (data) => {
             if (!isStopped) {
-              optsRef.current.onData(data);
+              optsRef.current.onData?.(data);
+              updateState((prev) => ({
+                ...prev,
+                status: 'pending',
+                data,
+                error: null,
+              }));
             }
           },
-          onError: (err) => {
+          onError: (error) => {
             if (!isStopped) {
-              optsRef.current.onError?.(err);
+              optsRef.current.onError?.(error);
+              updateState((prev) => ({
+                ...prev,
+                status: 'error',
+                error,
+              }));
             }
+          },
+          onConnectionStateChange: (result) => {
+            const delta = {
+              status: result.state,
+              error: result.error,
+            } as $Result;
+
+            updateState((prev) => {
+              return {
+                ...prev,
+                ...delta,
+              };
+            });
           },
         },
       );
-      return () => {
+
+      currentSubscriptionRef.current = () => {
         isStopped = true;
         subscription.unsubscribe();
       };
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryKey, enabled]);
+
+    const getInitialState = React.useCallback((): $Result => {
+      return enabled
+        ? {
+            data: undefined,
+            error: null,
+            status: 'connecting',
+            reset,
+          }
+        : {
+            data: undefined,
+            error: null,
+            status: 'idle',
+            reset,
+          };
+    }, [enabled, reset]);
+
+    const resultRef = React.useRef<$Result>(getInitialState());
+
+    const [state, setState] = React.useState<$Result>(
+      trackResult(resultRef.current, addTrackedProp),
+    );
+
+    state.reset = reset;
+
+    const updateState = React.useCallback(
+      (callback: (prevState: $Result) => $Result) => {
+        const prev = resultRef.current;
+        const next = (resultRef.current = callback(prev));
+
+        let shouldUpdate = false;
+        for (const key of trackedProps.current) {
+          if (prev[key] !== next[key]) {
+            shouldUpdate = true;
+            break;
+          }
+        }
+        if (shouldUpdate) {
+          setState(trackResult(next, addTrackedProp));
+        }
+      },
+      [addTrackedProp],
+    );
+
+    React.useEffect(() => {
+      if (!enabled) {
+        return;
+      }
+      reset();
+
+      return () => {
+        currentSubscriptionRef.current?.();
+      };
+    }, [reset, enabled]);
+
+    return state;
   }
 
   function useInfiniteQuery(

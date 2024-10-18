@@ -2,50 +2,68 @@
 // We're not actually exporting this link
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
-import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
-import type { TRPCLink } from '../types';
+import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCClientError } from '../../TRPCClientError';
+import type { Operation, TRPCLink } from '../types';
+
+interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
+  /**
+   * The retry function
+   */
+  retry: (opts: RetryFnOptions<TInferrable>) => boolean;
+}
+
+interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
+  /**
+   * The operation that failed
+   */
+  op: Operation;
+  /**
+   * The error that occurred
+   */
+  error: TRPCClientError<TInferrable>;
+  /**
+   * The number of attempts that have been made (including the first call)
+   */
+  attempts: number;
+}
 
 /**
- * @internal used for testing
+ * @see https://trpc.io/docs/v11/client/links/retryLink
  */
-export function retryLink<TRouter extends AnyRouter = AnyRouter>(opts: {
-  attempts: number;
-}): TRPCLink<TRouter> {
+export function retryLink<TInferrable extends InferrableClientTypes>(
+  opts: RetryLinkOptions<TInferrable>,
+): TRPCLink<TInferrable> {
   // initialized config
   return () => {
     // initialized in app
     return ({ op, next }) => {
       // initialized for request
       return observable((observer) => {
-        let next$: Unsubscribable | null = null;
-        let attempts = 0;
-        let isDone = false;
-        function attempt() {
-          attempts++;
-          next$?.unsubscribe();
+        let next$: Unsubscribable;
+
+        attempt(1);
+
+        function attempt(attempts: number) {
           next$ = next(op).subscribe({
             error(error) {
-              /* istanbul ignore if -- @preserve */
-              if (attempts >= opts.attempts) {
-                observer.error(error);
-                return;
-              }
-              attempt();
+              const shouldRetry = opts.retry({
+                op,
+                attempts,
+                error,
+              });
+              shouldRetry ? attempt(attempts + 1) : observer.error(error);
             },
             next(result) {
               observer.next(result);
             },
             complete() {
-              if (isDone) {
-                observer.complete();
-              }
+              observer.complete();
             },
           });
         }
-        attempt();
         return () => {
-          isDone = true;
-          next$?.unsubscribe();
+          next$.unsubscribe();
         };
       });
     };

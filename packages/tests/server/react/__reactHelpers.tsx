@@ -103,7 +103,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
   }
 
   return {
-    close: ctx.close,
+    ...ctx,
     queryClient,
     client: proxy,
     App,

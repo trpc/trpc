@@ -15,6 +15,7 @@ import type {
   AnyProcedure,
   AnyRootTypes,
   AnyRouter,
+  inferAsyncIterableYield,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProcedureType,
@@ -42,6 +43,7 @@ import type {
   DefinedUseTRPCQueryResult,
   TRPCHookResult,
   TRPCProvider,
+  TRPCSubscriptionResult,
   TRPCUseQueryBaseOptions,
   UseTRPCMutationOptions,
   UseTRPCMutationResult,
@@ -376,17 +378,38 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
   // Without skip token
   (
     input: TDef['input'],
-    opts: UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
-  ): void;
+    opts?: UseTRPCSubscriptionOptions<
+      inferAsyncIterableYield<TDef['output']>,
+      TRPCClientErrorLike<TDef>
+    >,
+  ): Exclude<
+    TRPCSubscriptionResult<
+      inferAsyncIterableYield<TDef['output']>,
+      TRPCClientErrorLike<TDef>
+    >,
+    // The idle state is
+    | {
+        status: 'idle';
+      }
+    | {
+        connectionState: 'idle';
+      }
+  >;
 
   // With skip token
   (
     input: TDef['input'] | SkipToken,
-    opts: Omit<
-      UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
+    opts?: Omit<
+      UseTRPCSubscriptionOptions<
+        inferAsyncIterableYield<TDef['output']>,
+        TRPCClientErrorLike<TDef>
+      >,
       'enabled'
     >,
-  ): void;
+  ): TRPCSubscriptionResult<
+    inferAsyncIterableYield<TDef['output']>,
+    TRPCClientErrorLike<TDef>
+  >;
 }
 /**
  * @internal

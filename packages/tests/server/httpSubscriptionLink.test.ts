@@ -1,5 +1,9 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
+import {
+  routerToServerAndClientNew,
+  suppressLogs,
+  suppressLogsUntil,
+} from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, TRPCLink } from '@trpc/client';
 import {
@@ -8,6 +12,7 @@ import {
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
+import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -179,15 +184,23 @@ test('iterable event', async () => {
 
 test(
   'iterable event with error',
+  {
+    timeout: 60_000,
+  },
   async () => {
     const { client } = ctx;
 
     const onStarted =
       vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
     const onData = vi.fn<(args: number) => void>();
+    const onConnectionStateChange =
+      vi.fn<
+        (args: TRPCConnectionState<TRPCClientError<typeof ctx.router>>) => void
+      >();
     const subscription = client.sub.iterableEvent.subscribe(undefined, {
       onStarted: onStarted,
       onData: onData,
+      onConnectionStateChange,
     });
 
     await waitFor(() => {
@@ -199,17 +212,18 @@ test(
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
-    const release = suppressLogs();
     ctx.eeEmit(new Error('test error'));
-    await waitFor(
-      async () => {
-        expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
-      },
-      {
-        timeout: 5_000,
-      },
-    );
-    release();
+
+    await suppressLogsUntil(async () => {
+      await waitFor(
+        async () => {
+          expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
+        },
+        {
+          timeout: 5_000,
+        },
+      );
+    });
 
     ctx.eeEmit(2);
 
@@ -223,9 +237,46 @@ test(
     );
 
     subscription.unsubscribe();
-  },
-  {
-    timeout: 60_000,
+
+    expect(onConnectionStateChange.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "error": null,
+            "state": "connecting",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "error": null,
+            "state": "pending",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "error": [TRPCClientError: test error],
+            "state": "connecting",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "error": [TRPCClientError: Unknown error],
+            "state": "connecting",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "error": null,
+            "state": "pending",
+            "type": "state",
+          },
+        ],
+      ]
+    `);
   },
 );
 
@@ -273,6 +324,11 @@ test('disconnect and reconnect with an event id', async () => {
   const onStarted =
     vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
   const onData = vi.fn<(args: { data: number; id: string }) => void>();
+
+  const onConnectionStateChange =
+    vi.fn<
+      (args: TRPCConnectionState<TRPCClientError<typeof ctx.router>>) => void
+    >();
   const subscription = client.sub.iterableInfinite.subscribe(
     {},
     {
@@ -280,6 +336,7 @@ test('disconnect and reconnect with an event id', async () => {
       onData(d) {
         onData(d);
       },
+      onConnectionStateChange,
     },
   );
 
@@ -308,7 +365,16 @@ test('disconnect and reconnect with an event id', async () => {
   await waitFor(() => {
     expect(es.readyState).toBe(EventSource.CONNECTING);
   });
+
   release();
+
+  const lastState = onConnectionStateChange.mock.calls.at(-1)![0];
+
+  expect(lastState.state).toBe('connecting');
+  expect(lastState.error).not.toBeNull();
+  expect(lastState.error).toMatchInlineSnapshot(
+    `[TRPCClientError: Unknown error]`,
+  );
 
   await waitFor(
     () => {
