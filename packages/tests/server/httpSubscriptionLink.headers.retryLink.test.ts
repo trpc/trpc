@@ -1,5 +1,9 @@
 import { EventEmitter } from 'node:events';
-import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
+import {
+  routerToServerAndClientNew,
+  suppressLogs,
+  suppressLogsUntil,
+} from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
@@ -121,18 +125,19 @@ const ctx = konn()
               true: [
                 retryLink({
                   retry(opts) {
-                    let willRestart = false;
+                    const { error } = opts;
+                    const code = error.data?.code;
+                    if (!code) {
+                      return false;
+                    }
 
-                    if (
-                      opts.error.data?.code === 'UNAUTHORIZED' ||
-                      opts.error.data?.code === 'FORBIDDEN'
-                    ) {
-                      willRestart = true;
+                    if (code === 'UNAUTHORIZED' || code === 'FORBIDDEN') {
                       // console.log(
                       //   'Restarting EventSource due to 401/403 error',
                       // );
+                      return true;
                     }
-                    return willRestart;
+                    return false;
                   },
                 }),
                 unstable_httpSubscriptionLink({
@@ -189,10 +194,11 @@ test('disconnect and reconnect with updated headers', async () => {
   });
 
   function getES() {
-    const lastCall = onStarted.mock.calls.length - 1;
+    const lastCall = onStarted.mock.calls.at(-1)!;
     // @ts-expect-error lint makes this accessing annoying
-    const es = onStarted.mock.calls[lastCall]![0].context?.eventSource;
+    const es = lastCall[0].context?.eventSource;
     assert(es instanceof EventSource);
+
     return es;
   }
 
@@ -207,11 +213,10 @@ test('disconnect and reconnect with updated headers', async () => {
 
   expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(1);
 
+  expect(onStarted).toHaveBeenCalledTimes(1);
   expect(getES().readyState).toBe(EventSource.OPEN);
 
-  {
-    // restart server
-    const release = suppressLogs();
+  await suppressLogsUntil(async () => {
     ctx.destroyConnections();
     await waitFor(
       () => {
@@ -230,8 +235,7 @@ test('disconnect and reconnect with updated headers', async () => {
         timeout: 3_000,
       },
     );
-    release();
-  }
+  });
 
   subscription.unsubscribe();
   expect(getES().readyState).toBe(EventSource.CLOSED);

@@ -5,7 +5,6 @@ import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
 import { takeWithGrace, withCancel } from './utils/asyncIterable';
-import { createDeferred } from './utils/createDeferred';
 import { createReadableStream } from './utils/createReadableStream';
 import type { PromiseTimer } from './utils/promiseTimer';
 import { createPromiseTimer } from './utils/promiseTimer';
@@ -191,22 +190,10 @@ type ConsumerStreamResult<TConfig extends ConsumerConfig> =
 
 export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   url: () => MaybePromise<string>;
-  init: () => MaybePromise<EventSourceInit> | undefined;
+  init: () =>
+    | MaybePromise<EventSourceLike.InitDictOf<TConfig['EventSource']>>
+    | undefined;
   signal: AbortSignal;
-  /**
-   * @deprecated use a `retryLink` instead
-   */
-  shouldRecreateOnError?: (
-    opts:
-      | {
-          type: 'event';
-          event: EventSourceLike.EventOf<TConfig['EventSource']>;
-        }
-      | {
-          type: 'serialized-error';
-          error: TConfig['error'];
-        },
-  ) => boolean | Promise<boolean>;
   deserialize?: Deserialize;
   EventSource: TConfig['EventSource'];
 }
@@ -223,127 +210,55 @@ interface ConsumerConfig {
 export function sseStreamConsumer<TConfig extends ConsumerConfig>(
   opts: SSEStreamConsumerOptions<TConfig>,
 ): AsyncIterable<ConsumerStreamResult<TConfig>> {
-  const { deserialize = (v) => v, shouldRecreateOnError } = opts;
+  const { deserialize = (v) => v } = opts;
 
   const signal = opts.signal;
 
-  let eventSource: InstanceType<TConfig['EventSource']> | null = null;
-  let lock: Promise<void> | null = null;
+  let _es: InstanceType<TConfig['EventSource']> | null = null;
 
-  const stream = createReadableStream<ConsumerStreamResult<TConfig>>();
+  const stream = new ReadableStream<ConsumerStreamResult<TConfig>>({
+    async start(controller) {
+      const [url, init] = await Promise.all([opts.url(), opts.init()]);
+      const eventSource = (_es = new opts.EventSource(
+        url,
+        init,
+      ) as InstanceType<TConfig['EventSource']>);
 
-  function createEventSource(...args: [string, EventSourceLike.InitDict?]) {
-    const es = new opts.EventSource(...args) as InstanceType<
-      TConfig['EventSource']
-    >;
-
-    if (signal.aborted) {
-      es.close();
-    } else {
-      signal.addEventListener('abort', () => es.close());
-    }
-
-    /**
-     * Dispatch an event to the stream controller
-     *
-     * Will be a no-op if the event source has been replaced
-     */
-    const dispatch = (
-      fn: (controller: typeof stream.controller) => void | Promise<void>,
-    ): void => {
-      run(async () => {
-        while (lock) {
-          await lock;
-        }
-        if (es === eventSource) {
-          await fn(stream.controller);
-        }
-      }).catch((error) => {
-        stream.controller.error(error);
+      controller.enqueue({
+        type: 'connecting',
+        eventSource: _es,
+        event: null,
       });
-    };
-
-    const pauseDispatch = async (fn: () => Promise<void>): Promise<void> => {
-      while (lock) {
-        await lock;
-      }
-      if (es !== eventSource) {
-        return;
-      }
-
-      const deferred = createDeferred<void>();
-      lock = deferred.promise;
-      try {
-        await fn();
-      } finally {
-        lock = null;
-        deferred.resolve();
-      }
-    };
-
-    es.addEventListener('open', () => {
-      dispatch((controller) => {
+      eventSource.addEventListener('open', () => {
         controller.enqueue({
           type: 'opened',
-          eventSource: es,
+          eventSource,
         });
       });
-    });
 
-    es.addEventListener(SERIALIZED_ERROR_EVENT, (_msg) => {
-      const msg = _msg as EventSourceLike.MessageEvent;
+      eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (_msg) => {
+        const msg = _msg as EventSourceLike.MessageEvent;
 
-      dispatch(async () => {
-        if (shouldRecreateOnError) {
-          await pauseDispatch(async () => {
-            const recreate = await shouldRecreateOnError({
-              type: SERIALIZED_ERROR_EVENT,
-              error: deserialize(JSON.parse(msg.data)),
-            });
-            if (recreate) {
-              await recreateEventSource();
-            }
-          });
-        }
-        dispatch((controller) => {
+        controller.enqueue({
+          type: 'serialized-error',
+          error: deserialize(JSON.parse(msg.data)),
+          eventSource,
+        });
+      });
+      eventSource.addEventListener('error', (event) => {
+        if (eventSource.readyState === EventSource.CLOSED) {
+          controller.error(event);
+        } else {
           controller.enqueue({
-            type: 'serialized-error',
-            error: deserialize(JSON.parse(msg.data)),
-            eventSource: es,
-          });
-        });
-      });
-    });
-    es.addEventListener('error', (event) => {
-      dispatch(async () => {
-        if (shouldRecreateOnError) {
-          await pauseDispatch(async () => {
-            const recreate = await shouldRecreateOnError({
-              type: 'event',
-              event,
-            });
-            if (recreate) {
-              await recreateEventSource();
-            }
+            type: 'connecting',
+            eventSource,
+            event,
           });
         }
-
-        dispatch((controller) => {
-          if (es.readyState === EventSource.CLOSED) {
-            controller.error(event);
-          } else {
-            controller.enqueue({
-              type: 'connecting',
-              eventSource: es,
-              event,
-            });
-          }
-        });
       });
-    });
-    es.addEventListener('message', (_msg) => {
-      const msg = _msg as EventSourceLike.MessageEvent;
-      dispatch((controller) => {
+      eventSource.addEventListener('message', (_msg) => {
+        const msg = _msg as EventSourceLike.MessageEvent;
+
         const chunk = deserialize(JSON.parse(msg.data));
 
         const def: SSEvent = {
@@ -355,29 +270,27 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
         controller.enqueue({
           type: 'data',
           data: def as inferTrackedOutput<TConfig['data']>,
-          eventSource: es,
+          eventSource,
         });
       });
-    });
-    return es;
-  }
-  async function recreateEventSource() {
-    eventSource?.close();
-    const [url, init] = await Promise.all([opts.url(), opts.init()]);
-    eventSource = createEventSource(url, init);
-    stream.controller.enqueue({
-      type: 'connecting',
-      eventSource,
-      event: null,
-    });
-  }
 
-  recreateEventSource().catch(() => {
-    // prevent unhandled promise rejection
+      const onAbort = () => {
+        controller.close();
+        eventSource.close();
+      };
+      if (signal.aborted) {
+        onAbort();
+      } else {
+        signal.addEventListener('abort', onAbort);
+      }
+    },
+    cancel() {
+      _es?.close();
+    },
   });
   return {
     [Symbol.asyncIterator]() {
-      const reader = stream.readable.getReader();
+      const reader = stream.getReader();
 
       const iterator: AsyncIterator<ConsumerStreamResult<TConfig>> = {
         async next() {

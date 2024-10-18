@@ -6,7 +6,6 @@ import type {
   EventSourceLike,
   inferClientTypes,
   InferrableClientTypes,
-  SSEStreamConsumerOptions,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   run,
@@ -53,14 +52,6 @@ type HTTPSubscriptionLinkOptions<
   eventSourceOptions?: CallbackOrValue<
     EventSourceLike.InitDictOf<TEventSource>
   >;
-  /**
-   * @deprecated
-   */
-  experimental_shouldRecreateOnError?: SSEStreamConsumerOptions<{
-    EventSource: TEventSource;
-    data: unknown;
-    error: TRoot['errorShape'];
-  }>['shouldRecreateOnError'];
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -121,7 +112,6 @@ export function unstable_httpSubscriptionLink<
           init: () => resultOf(opts.eventSourceOptions),
           signal,
           deserialize: transformer.output.deserialize,
-          shouldRecreateOnError: opts.experimental_shouldRecreateOnError,
           EventSource:
             opts.EventSource ??
             (globalThis.EventSource as never as TEventSource),
@@ -177,11 +167,10 @@ export function unstable_httpSubscriptionLink<
                 break;
               }
               case 'serialized-error': {
-                // console.debug('error chunk', chunk.error);
                 const error = TRPCClientError.from({ error: chunk.error });
 
                 if (codes5xx.includes(chunk.error.code)) {
-                  // console.debug('5xx error, reconnecting');
+                  //
                   connectionState.next({
                     type: 'state',
                     state: 'connecting',
@@ -189,7 +178,7 @@ export function unstable_httpSubscriptionLink<
                   });
                   break;
                 }
-                // console.debug('non-retryable error, cancelling subscription');
+                //
                 // non-retryable error, cancel the subscription
                 throw error;
               }

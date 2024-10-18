@@ -303,22 +303,5 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
    * @see https://trpc.io/docs/v11/data-transformers
    **/
   transformer?: DataTransformerOptions;
-  /**
-   * For a given error, should we reinitialize the underlying EventSource?
-   *
-   * This is useful where a long running subscription might be interrupted by a recoverable network error,
-   * but the existing authorization in a header or URI has expired in the mean-time
-   */
-  experimental_shouldRecreateOnError?: (
-    opts:
-      | {
-          type: 'event';
-          event: Event;
-        }
-      | {
-          type: 'serialized-error';
-          error: unknown;
-        },
-  ) => boolean | Promise<boolean>;
 };
 ```

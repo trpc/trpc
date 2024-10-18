@@ -3,7 +3,6 @@ import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
-import { createDeferred } from './utils/createDeferred';
 import { createServer } from './utils/createServer';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
@@ -79,7 +78,6 @@ test('e2e, server-sent events (SSE)', async () => {
     res.end();
   });
 
-  const shouldRecreateOnError = createDeferred<void>();
   const ac = new AbortController();
   const iterable = sseStreamConsumer<{
     data: Data;
@@ -90,19 +88,6 @@ test('e2e, server-sent events (SSE)', async () => {
     signal: ac.signal,
     init: () => ({}),
     deserialize: SuperJSON.deserialize,
-    // shouldRecreateOnError: vi.fn(() => {
-    //   shouldRecreateOnError.resolve();
-    //   return false;
-    // }),
-    shouldRecreateOnError: (opts) => {
-      if (opts.type === 'event') {
-        expectTypeOf(opts.event).not.toBeAny();
-        expectTypeOf(opts.event).toEqualTypeOf<Event>();
-      }
-      shouldRecreateOnError.resolve();
-      return false;
-    },
-
     EventSource: EventSource,
   });
   let es: EventSource | null = null;
