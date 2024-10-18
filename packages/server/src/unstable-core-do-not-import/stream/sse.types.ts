@@ -3,22 +3,25 @@
 /**
  * @internal
  */
-export namespace EventSourcePonyfill {
-  export interface EventSourceInitLike {
+export namespace EventSourceLike {
+  export interface InitDict {
     withCredentials?: boolean;
   }
 
-  export type EventLike = {
-    data?: any;
+  export interface MessageEvent extends Event {
+    data: any;
     lastEventId?: string;
-  };
+  }
+  export interface Event {}
 
-  type EventSourceListenerLike = (event: EventLike) => void;
+  type EventSourceListenerLike = (event: Event) => void;
 
-  export type EventSourceConstructorLike<TInit extends EventSourceInitLike> =
-    new (url: string, eventSourceInitDict?: TInit) => EventSourceLike;
+  export type AnyConstructorLike<TInit extends InitDict> = new (
+    url: string,
+    eventSourceInitDict?: TInit,
+  ) => Instance;
 
-  export interface EventSourceLike {
+  export interface Instance {
     readonly CLOSED: number;
     readonly CONNECTING: number;
     readonly OPEN: number;
@@ -30,13 +33,12 @@ export namespace EventSourcePonyfill {
     readyState: number;
   }
 
-  export type AnyEventSourceConstructorLike = EventSourceConstructorLike<any>;
-  export type ListenerOf<T extends AnyEventSourceConstructorLike> = Parameters<
+  export type AnyConstructor = AnyConstructorLike<any>;
+
+  export type ListenerOf<T extends AnyConstructor> = Parameters<
     InstanceType<T>['addEventListener']
   >[1];
-  export type EventOf<T extends AnyEventSourceConstructorLike> = Parameters<
-    ListenerOf<T>
-  >[0];
-  export type EventSourceInitDictOf<T extends AnyEventSourceConstructorLike> =
+  export type EventOf<T extends AnyConstructor> = Parameters<ListenerOf<T>>[0];
+  export type InitDictOf<T extends AnyConstructor> =
     ConstructorParameters<T>[1];
 }

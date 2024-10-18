@@ -1,7 +1,7 @@
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import type { MaybePromise } from '../types';
 import { identity, run } from '../utils';
-import type { EventSourcePonyfill } from './sse.types';
+import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
 import { takeWithGrace, withCancel } from './utils/asyncIterable';
@@ -180,7 +180,7 @@ interface ConsumerStreamResultOpened<TConfig extends ConsumerConfig>
 interface ConsumerStreamResultConnecting<TConfig extends ConsumerConfig>
   extends ConsumerStreamResultBase<TConfig> {
   type: 'connecting';
-  event: EventSourcePonyfill.EventOf<TConfig['EventSource']> | null;
+  event: EventSourceLike.EventOf<TConfig['EventSource']> | null;
 }
 
 type ConsumerStreamResult<TConfig extends ConsumerConfig> =
@@ -197,7 +197,7 @@ export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
     opts:
       | {
           type: 'event';
-          event: EventSourcePonyfill.EventOf<TConfig['EventSource']>;
+          event: EventSourceLike.EventOf<TConfig['EventSource']>;
         }
       | {
           type: 'serialized-error';
@@ -211,7 +211,7 @@ export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
 interface ConsumerConfig {
   data: unknown;
   error: unknown;
-  EventSource: EventSourcePonyfill.AnyEventSourceConstructorLike;
+  EventSource: EventSourceLike.AnyConstructor;
 }
 
 /**
@@ -229,9 +229,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
   const stream = createReadableStream<ConsumerStreamResult<TConfig>>();
 
-  function createEventSource(
-    ...args: [string, EventSourcePonyfill.EventSourceInitLike?]
-  ) {
+  function createEventSource(...args: [string, EventSourceLike.InitDict?]) {
     const es = new opts.EventSource(...args) as InstanceType<
       TConfig['EventSource']
     >;
@@ -289,7 +287,8 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
       });
     });
 
-    es.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
+    es.addEventListener(SERIALIZED_ERROR_EVENT, (_msg) => {
+      const msg = _msg as EventSourceLike.MessageEvent;
       dispatch(async () => {
         if (shouldRecreateOnError) {
           await pauseDispatch(async () => {
@@ -338,7 +337,8 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
         });
       });
     });
-    es.addEventListener('message', (msg) => {
+    es.addEventListener('message', (_msg) => {
+      const msg = _msg as EventSourceLike.MessageEvent;
       dispatch((controller) => {
         const chunk = deserialize(JSON.parse(msg.data));
 
