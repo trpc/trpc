@@ -81,7 +81,7 @@ unstable_httpSubscriptionLink({
 });
 ```
 
-### Custom headers through polyfill {#authorization-by-polyfilling-eventsource}
+### Custom headers through ponyfill
 
 **Recommended for non-web environments**
 
@@ -247,11 +247,11 @@ const trpc = createTRPCClient<AppRouter>({
 
 ## Compatibility (React Native) {#compatibility-react-native}
 
-The `httpSubscriptionLink` makes use of the `EventSource` API, Streams API, and `AsyncIterator`s, these are not natively supported by React Native and will have to be polyfilled.
+The `httpSubscriptionLink` makes use of the `EventSource` API, Streams API, and `AsyncIterator`s, these are not natively supported by React Native and will have to be ponyfilled.
 
-To polyfill `EventSource` we recommend to use a polyfill that utilizes the networking library exposed by React Native, over using a polyfill that using the `XMLHttpRequest` API. Libraries that polyfill `EventSource` using `XMLHttpRequest` fail to reconnect after the app has been in the background. Consider using the [rn-eventsource-reborn](https://www.npmjs.com/package/rn-eventsource-reborn) package.
+To ponyfill `EventSource` we recommend to use a polyfill that utilizes the networking library exposed by React Native, over using a polyfill that using the `XMLHttpRequest` API. Libraries that polyfill `EventSource` using `XMLHttpRequest` fail to reconnect after the app has been in the background. Consider using the [rn-eventsource-reborn](https://www.npmjs.com/package/rn-eventsource-reborn) package.
 
-The Streams API can be polyfilled using the [web-streams-polyfill](https://www.npmjs.com/package/web-streams-polyfill) package.
+The Streams API can be ponyfilled using the [web-streams-polyfill](https://www.npmjs.com/package/web-streams-polyfill) package.
 
 `AsyncIterator`s can be polyfilled using the [@azure/core-asynciterator-polyfill](https://www.npmjs.com/package/@azure/core-asynciterator-polyfill) package.
 
@@ -270,17 +270,11 @@ import '@azure/core-asynciterator-polyfill';
 import { RNEventSource } from 'rn-eventsource-reborn';
 import { ReadableStream, TransformStream } from 'web-streams-polyfill';
 
-// RNEventSource extends EventSource's functionality, you can add this to make the typing reflect this but it's not a requirement
-declare global {
-  interface EventSource extends RNEventSource {}
-}
-globalThis.EventSource = globalThis.EventSource || RNEventSource;
-
 globalThis.ReadableStream = globalThis.ReadableStream || ReadableStream;
 globalThis.TransformStream = globalThis.TransformStream || TransformStream;
 ```
 
-Once the polyfills are added, you can continue setting up the `httpSubscriptionLink` as described in the [setup](#setup) section.
+Once the ponyfills are added, you can continue setting up the `httpSubscriptionLink` as described in the [setup](#setup) section.
 
 ## `httpSubscriptionLink` Options
 
@@ -296,11 +290,11 @@ type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
   /**
    * EventSource options
    */
-  eventSourceOptions?: CallbackOrValue<EventSourceInit>;
+  eventSourceOptions?: CallbackOrValue<EventSourceInitLike>;
   /**
    * EventSource ponyfill
    */
-  EventSource?: EventSourceLike;
+  EventSource?: EventSourceConstructorLike;
   /**
    * Data transformer
    * @see https://trpc.io/docs/v11/data-transformers
