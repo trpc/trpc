@@ -1,10 +1,10 @@
-import { EventEmitter, on } from 'events';
+import { EventEmitter, on } from 'node:events';
 import { getServerAndReactClient, ignoreErrors } from './__helpers';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
-import React, { useState } from 'react';
+import * as  React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import { useSubscription } from '../src';
@@ -73,9 +73,9 @@ describe.each([
     let setEnabled = null as never as (enabled: boolean) => void;
 
     function MyComponent() {
-      const [isStarted, setIsStarted] = useState(false);
-      const [data, setData] = useState<number>();
-      const [enabled, _setEnabled] = useState(true);
+      const [isStarted, setIsStarted] = React.useState(false);
+      const [data, setData] = React.useState<number>();
+      const [enabled, _setEnabled] = React.useState(true);
       setEnabled = _setEnabled;
 
       const options = trpc.onEventIterable.subscriptionOptions(10, {
@@ -159,9 +159,9 @@ describe.each([
     let setEnabled = null as never as (enabled: boolean) => void;
 
     function MyComponent() {
-      const [isStarted, setIsStarted] = useState(false);
-      const [data, setData] = useState<number>();
-      const [enabled, _setEnabled] = useState(true);
+      const [isStarted, setIsStarted] = React.useState(false);
+      const [data, setData] = React.useState<number>();
+      const [enabled, _setEnabled] = React.useState(true);
       setEnabled = _setEnabled;
 
       const options = trpc.onEventObservable.subscriptionOptions(10, {

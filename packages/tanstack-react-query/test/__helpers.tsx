@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom/vitest';
 import { routerToServerAndClientNew } from '../../tests/server/___testHelpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Operation } from '@trpc/client';
@@ -9,15 +10,14 @@ import {
   unstable_httpSubscriptionLink,
   wsLink,
 } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
-import type { ReactNode } from 'react';
-import React from 'react';
+import type { AnyTRPCRouter } from '@trpc/server';
+import * as React from 'react';
 import { vi } from 'vitest';
 import { createTRPCQueryUtils } from '../src';
 
 export { ignoreErrors } from '../../tests/server/___testHelpers';
 
-export function getServerAndReactClient<TRouter extends AnyRouter>(
+export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,
   opts?: {
     subscriptions?: 'ws' | 'http';
@@ -74,7 +74,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
     queryClient,
   });
 
-  function App(props: { children: ReactNode }) {
+  function App(props: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
         {props.children}

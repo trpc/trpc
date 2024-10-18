@@ -9,7 +9,7 @@ import type {
   inferProcedureInput,
   inferTransformedSubscriptionOutput,
 } from '@trpc/server/unstable-core-do-not-import';
-import { useEffect, useRef } from 'react';
+import * as React from 'react';
 import type { TRPCQueryKey, TRPCQueryOptionsResult } from './types';
 import { createTRPCOptionsResult } from './utils';
 
@@ -94,10 +94,10 @@ export function trpcSubscriptionOptions(args: {
 export function useSubscription<TOutput, TError>(
   opts: TRPCSubscriptionOptionsOut<TOutput, TError>,
 ): void {
-  const optsRef = useRef(opts);
+  const optsRef = React.useRef(opts);
   optsRef.current = opts;
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (opts.enabled === false) {
       return;
     }

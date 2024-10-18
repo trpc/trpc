@@ -1,4 +1,3 @@
-import '@testing-library/jest-dom/vitest';
 import { getServerAndReactClient } from './__helpers';
 import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
