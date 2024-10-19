@@ -77,6 +77,9 @@ export async function nodeHTTPRequestHandler<
     const handleViaMiddleware =
       opts.middleware ?? ((_req, _res, next) => next());
 
+    opts.res.once('finish', () => {
+      resolve();
+    });
     return handleViaMiddleware(opts.req, opts.res, (err: unknown) => {
       run(async () => {
         const req = incomingMessageToRequest(opts.req, {
@@ -150,9 +153,7 @@ export async function nodeHTTPRequestHandler<
           req.signal.removeEventListener('abort', onAbort);
         }
         res.end();
-      })
-        .catch(internal_exceptionHandler(opts))
-        .finally(resolve);
+      }).catch(internal_exceptionHandler(opts));
     });
   });
 }
