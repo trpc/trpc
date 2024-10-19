@@ -242,7 +242,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         }),
       ];
     } catch (cause) {
-      return [cause as TRPCError, undefined];
+      return [getTRPCErrorFromUnknown(cause), undefined];
     }
   });
 
