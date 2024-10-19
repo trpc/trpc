@@ -9,11 +9,13 @@
  */
 import type * as express from 'express';
 import type { AnyRouter } from '../@trpc/server';
+// eslint-disable-next-line no-restricted-imports
+import { run } from '../unstable-core-do-not-import';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
 } from './node-http';
-import { nodeHTTPRequestHandler } from './node-http';
+import { internal_exceptionHandler, nodeHTTPRequestHandler } from './node-http';
 
 export type CreateExpressContextOptions = NodeHTTPCreateContextFnOptions<
   express.Request,
@@ -24,13 +26,23 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>,
 ): express.Handler {
   return (req, res) => {
-    const path = req.path.slice(1);
+    let path = '';
+    void run(async () => {
+      path = req.path.slice(1);
 
-    nodeHTTPRequestHandler({
-      ...(opts as any),
-      req,
-      res,
-      path,
-    });
+      await nodeHTTPRequestHandler({
+        ...(opts as any),
+        req,
+        res,
+        path,
+      });
+    }).catch(
+      internal_exceptionHandler({
+        req,
+        res,
+        path,
+        ...opts,
+      }),
+    );
   };
 }
