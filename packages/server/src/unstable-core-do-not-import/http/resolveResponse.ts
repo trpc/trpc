@@ -318,9 +318,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     }
     await ctxManager.create(info);
 
-    type RPCResult =
-      | [result: null, error: TRPCError]
-      | [result: unknown, error?: never];
+    type RPCResult = ResultTuple<unknown>;
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
       try {
@@ -355,7 +353,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           type: proc._def.type,
           signal: opts.req.signal,
         });
-        return [data];
+        return [undefined, data];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
@@ -369,14 +367,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           req: opts.req,
         });
 
-        return [null, error];
+        return [error, undefined];
       }
     });
 
     // ----------- response handlers -----------
     if (!info.isBatchCall) {
       const [call] = info.calls;
-      const [data, error] = await rpcCalls[0]!;
+      const [error, data] = await rpcCalls[0]!;
 
       switch (info.type) {
         case 'unknown':
@@ -534,7 +532,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
          */
         maxDepth: experimentalIterablesAndDeferreds ? 4 : 3,
         data: rpcCalls.map(async (res) => {
-          const [result, error] = await res;
+          const [error, data] = await res;
 
           const call = info.calls[0];
 
@@ -555,12 +553,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
            * Not very pretty, but we need to wrap nested data in promises
            * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
            */
-          const data = isObservable(result)
-            ? observableToAsyncIterable(result)
-            : Promise.resolve(result);
+          const iterable = isObservable(data)
+            ? observableToAsyncIterable(data)
+            : Promise.resolve(data);
           return {
             result: Promise.resolve({
-              data,
+              data: iterable,
             }),
           };
         }),
@@ -615,19 +613,19 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     headers.set('content-type', 'application/json');
     const results: RPCResult[] = (await Promise.all(rpcCalls)).map(
       (res): RPCResult => {
-        const [data, error] = res;
+        const [error, data] = res;
         if (error) {
           return res;
         }
 
         if (isDataStream(data)) {
           return [
-            null,
             new TRPCError({
               code: 'UNSUPPORTED_MEDIA_TYPE',
               message:
                 'Cannot use stream-like response in non-streaming request - use httpBatchStreamLink',
             }),
+            undefined,
           ];
         }
         return res;
@@ -635,7 +633,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     );
     const resultAsRPCResponse = results.map(
       (
-        [data, error],
+        [error, data],
         index,
       ): TRPCResponse<unknown, inferRouterError<TRouter>> => {
         const call = info.calls[index]!;
