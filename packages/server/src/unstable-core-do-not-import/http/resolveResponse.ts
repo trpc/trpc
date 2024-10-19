@@ -242,14 +242,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         }),
       ];
     } catch (cause) {
-      return [
-        new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Could not parse request info`,
-          cause,
-        }),
-        undefined,
-      ];
+      return [cause as TRPCError, undefined];
     }
   });
 
