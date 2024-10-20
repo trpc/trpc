@@ -591,7 +591,7 @@ importers:
         specifier: npm:@trpc/server@next
         version: link:../../packages/server
       fastify:
-        specifier: ^4.16.0
+        specifier: ^4.26.0
         version: 4.26.2
       superjson:
         specifier: ^1.12.4
@@ -1815,7 +1815,7 @@ importers:
         specifier: ^4.17.1
         version: 4.20.0
       fastify:
-        specifier: ^4.16.0
+        specifier: ^4.26.0
         version: 4.26.2
       fastify-plugin:
         specifier: ^5.0.0
@@ -1938,7 +1938,7 @@ importers:
         specifier: ^8.57.0
         version: 8.57.0
       fastify:
-        specifier: ^4.16.0
+        specifier: ^4.26.0
         version: 4.26.2
       fastify-plugin:
         specifier: ^5.0.0
@@ -17574,7 +17574,7 @@ packages:
       proxy-addr: 2.0.7
       rfdc: 1.3.0
       secure-json-parse: 2.7.0
-      semver: 7.5.4
+      semver: 7.6.3
       toad-cache: 3.7.0
     transitivePeerDependencies:
       - supports-color
@@ -26047,6 +26047,7 @@ packages:
     hasBin: true
     dependencies:
       lru-cache: 6.0.0
+    dev: false
 
   /semver@7.6.2:
     resolution: {integrity: sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==}
