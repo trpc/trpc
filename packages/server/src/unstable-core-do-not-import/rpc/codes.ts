@@ -1,4 +1,4 @@
-import type { ValueOf } from '../types';
+import type { InvertKeyValue, ValueOf } from '../types';
 
 // reference: https://www.jsonrpc.org/specification
 
@@ -41,16 +41,8 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   CLIENT_CLOSED_REQUEST: -32099, // 499
 } as const;
 
-type KeyFromValue<TValue, TType extends Record<PropertyKey, PropertyKey>> = {
-  [K in keyof TType]: TValue extends TType[K] ? K : never;
-}[keyof TType];
-
-type Invert<TType extends Record<PropertyKey, PropertyKey>> = {
-  [TValue in TType[keyof TType]]: KeyFromValue<TValue, TType>;
-};
-
 // pure
-export const TRPC_ERROR_CODES_BY_NUMBER: Invert<
+export const TRPC_ERROR_CODES_BY_NUMBER: InvertKeyValue<
   typeof TRPC_ERROR_CODES_BY_KEY
 > = {
   [-32700]: 'PARSE_ERROR',

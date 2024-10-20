@@ -131,6 +131,17 @@ export type PickFirstDefined<TType, TPick> = undefined extends TType
     : TPick
   : TType;
 
+export type KeyFromValue<
+  TValue,
+  TType extends Record<PropertyKey, PropertyKey>,
+> = {
+  [K in keyof TType]: TValue extends TType[K] ? K : never;
+}[keyof TType];
+
+export type InvertKeyValue<TType extends Record<PropertyKey, PropertyKey>> = {
+  [TValue in TType[keyof TType]]: KeyFromValue<TValue, TType>;
+};
+
 /**
  * ================================
  * tRPC specific types
