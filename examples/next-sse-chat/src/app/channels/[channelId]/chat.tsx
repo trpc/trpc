@@ -248,7 +248,7 @@ function AddMessageForm(props: {
           /**
            * In a real app you probably don't want to use this manually
            * Checkout React Hook Form - it works great with tRPC
-           * @link https://react-hook-form.com/
+           * @see https://react-hook-form.com/
            */
           postMessage();
         }}
