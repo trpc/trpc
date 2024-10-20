@@ -30,14 +30,13 @@ export type CreateNextContextOptions = NodeHTTPCreateContextFnOptions<
  */
 export type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
 
-type SyncNextApiHandler = (req: NextApiRequest, res: NextApiResponse) => void;
-
 export function createNextApiHandler<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, NextApiRequest, NextApiResponse>,
 ): NextApiHandler {
-  let path = '';
-  const handler: SyncNextApiHandler = (req, res) => {
-    try {
+  return async (req, res) => {
+    let path = '';
+
+    await run(async () => {
       path = run(() => {
         if (typeof req.query['trpc'] === 'string') {
           return req.query['trpc'];
@@ -52,21 +51,19 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
         });
       });
 
-      nodeHTTPRequestHandler({
+      await nodeHTTPRequestHandler({
         ...(opts as any),
         req,
         res,
         path,
       });
-    } catch (cause) {
+    }).catch(
       internal_exceptionHandler({
         req,
         res,
         path,
         ...opts,
-      })(cause);
-    }
+      }),
+    );
   };
-
-  return handler;
 }
