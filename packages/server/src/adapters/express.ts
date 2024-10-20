@@ -27,7 +27,7 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
 ): express.Handler {
   return (req, res) => {
     let path = '';
-    void run(async () => {
+    run(async () => {
       path = req.path.slice(1);
 
       await nodeHTTPRequestHandler({

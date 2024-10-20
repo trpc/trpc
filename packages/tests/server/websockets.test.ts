@@ -1720,7 +1720,7 @@ describe('subscriptions with createCaller', () => {
     const onDone = vi.fn();
     const onError = vi.fn();
 
-    void run(async () => {
+    run(async () => {
       for await (const msg of result) {
         msgs.push(msg);
       }
