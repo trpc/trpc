@@ -164,7 +164,8 @@ const trpc = createTRPCClient<AppRouter>({
             //       ^? will always be 'subscription' since we're in a splitLink
             const code = opts.error.data?.code;
             if (!code) {
-              console.error('No error code found', opts.error);
+              // This shouldn't happen as our httpSubscriptionLink will automatically retry within when there's a non-parsable response
+              console.error('No error code found, retrying', opts);
               return true;
             }
             if (
