@@ -1,20 +1,24 @@
 {
+  "include": ["src", "vite.config.ts"],
+
   "compilerOptions": {
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "allowJs": false,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "esModuleInterop": false,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
-    "moduleResolution": "Node",
+    "target": "es2022",
+    "allowJs": true,
     "resolveJsonModule": true,
+    "moduleDetection": "force",
     "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "module": "preserve",
     "noEmit": true,
-    "jsx": "react-jsx"
-  },
-  "include": ["src", "vite.config.ts"]
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "jsx": "preserve",
+    "paths": {
+      "~/*": ["./src/*"]
+    }
+  }
 }
