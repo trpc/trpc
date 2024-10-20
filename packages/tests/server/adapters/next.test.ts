@@ -227,7 +227,7 @@ test('middleware intercepts request', async () => {
 
   const server = createHttpServer({
     handler: trpcNext.createNextApiHandler({
-      middleware: (req, res) => {
+      middleware: (_req, res) => {
         res.statusCode = 419;
         res.end();
         return;
