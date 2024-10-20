@@ -102,9 +102,9 @@ export function abortSignalsAnyPonyfill(signals: AbortSignal[]): AbortSignal {
   for (const signal of signals) {
     if (signal.aborted) {
       trigger();
-    } else if (!ac.signal.aborted) {
-      signal.addEventListener('abort', trigger, { once: true });
+      break;
     }
+    signal.addEventListener('abort', trigger, { once: true });
   }
 
   return ac.signal;
