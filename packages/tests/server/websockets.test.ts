@@ -111,9 +111,9 @@ function factory(config?: {
           };
           ee.on('server:msg', onMessage);
           const onError = (error: unknown) => {
-            emit.error(error)
-          }
-          ee.on('observable:error', onError)
+            emit.error(error);
+          };
+          ee.on('observable:error', onError);
           return () => {
             subscriptionEnded();
             ee.off('server:msg', onMessage);
@@ -281,14 +281,14 @@ test('subscription observable with error', async () => {
   const { client, close, ee } = factory();
   ee.once('subscription:created', () => {
     setTimeout(() => {
-      // two emits to be sure an error is triggered in order 
+      // two emits to be sure an error is triggered in order
       ee.emit('server:msg', {
         id: '1',
       });
       ee.emit('server:msg', {
         id: '2',
       });
-      ee.emit('observable:error', new Error("MyError"));
+      ee.emit('observable:error', new Error('MyError'));
     });
   });
   const onStartedMock = vi.fn();
@@ -1720,7 +1720,7 @@ describe('subscriptions with createCaller', () => {
     const onDone = vi.fn();
     const onError = vi.fn();
 
-    void run(async () => {
+    run(async () => {
       for await (const msg of result) {
         msgs.push(msg);
       }
