@@ -160,18 +160,23 @@ const trpc = createTRPCClient<AppRouter>({
       true: [
         retryLink({
           retry: (opts) => {
-            let willRestart = false;
-
-            if (
-              opts.error.data?.code === 'UNAUTHORIZED' ||
-              opts.error.data?.code === 'FORBIDDEN'
-            ) {
-              willRestart = true;
-              console.log(
-                'Restarting EventSource due to 401/403 error',
-              );
+            opts.op.type;
+            //       ^? will always be 'subscription' since we're in a splitLink
+            const code = opts.error.data?.code;
+            if (!code) {
+              console.error('No error code found', opts.error);
+              return true;
             }
-            return willRestart;
+            if (
+              code === 'UNAUTHORIZED' ||
+              code === 'FORBIDDEN'
+            ) {
+              console.log(
+                'Retrying due to 401/403 error',
+              );
+              return true;
+            }
+            return false;
           },
         }),
         unstable_httpSubscriptionLink({
