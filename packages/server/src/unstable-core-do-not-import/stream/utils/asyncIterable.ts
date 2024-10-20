@@ -27,6 +27,7 @@ export async function* withCancel<T>(
 interface TakeWithGraceOptions {
   count: number;
   gracePeriodMs: number;
+  onCancel: () => void;
 }
 
 /**
@@ -36,7 +37,7 @@ interface TakeWithGraceOptions {
  */
 export async function* takeWithGrace<T>(
   iterable: AsyncIterable<T>,
-  { count, gracePeriodMs }: TakeWithGraceOptions,
+  { count, gracePeriodMs, onCancel }: TakeWithGraceOptions,
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
   const timer = createPromiseTimer(gracePeriodMs);
@@ -53,7 +54,7 @@ export async function* takeWithGrace<T>(
       }
       yield result.value;
       if (--count === 0) {
-        timer.start();
+        timer.start().promise.then(onCancel, noop);
       }
     }
   } finally {

@@ -15,7 +15,12 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import { isAsyncIterable, isObject, run } from '../utils';
+import {
+  abortSignalsAnyPonyfill,
+  isAsyncIterable,
+  isObject,
+  run,
+} from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -318,7 +323,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     }
     await ctxManager.create(info);
 
-    type RPCResult = ResultTuple<unknown>;
+    interface RPCResultOk {
+      data: unknown;
+      abortCtrl: AbortController;
+    }
+    type RPCResult = ResultTuple<RPCResultOk>;
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
       try {
@@ -339,21 +348,25 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             message: `Unsupported ${req.method}-request to ${proc._def.type} procedure at path "${call.path}"`,
           });
         }
-        /* istanbul ignore if -- @preserve */
-        if (proc._def.type === 'subscription' && info.isBatchCall) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: `Cannot batch subscription calls`,
-          });
+
+        if (proc._def.type === 'subscription') {
+          /* istanbul ignore if -- @preserve */
+          if (info.isBatchCall) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Cannot batch subscription calls`,
+            });
+          }
         }
+        const abortCtrl = new AbortController();
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
           ctx: ctxManager.value(),
           type: proc._def.type,
-          signal: opts.req.signal,
+          signal: abortSignalsAnyPonyfill([opts.req.signal, abortCtrl.signal]),
         });
-        return [undefined, data];
+        return [undefined, { data, abortCtrl }];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
@@ -374,7 +387,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // ----------- response handlers -----------
     if (!info.isBatchCall) {
       const [call] = info.calls;
-      const [error, data] = await rpcCalls[0]!;
+      const [error, result] = await rpcCalls[0]!;
 
       switch (info.type) {
         case 'unknown':
@@ -383,7 +396,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           // httpLink
           headers.set('content-type', 'application/json');
 
-          if (isDataStream(data)) {
+          if (isDataStream(result?.data)) {
             throw new TRPCError({
               code: 'UNSUPPORTED_MEDIA_TYPE',
               message:
@@ -401,7 +414,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   type: info.type,
                 }),
               }
-            : { result: { data } };
+            : { result: { data: result.data } };
 
           const headResponse = initResponse({
             ctx: ctxManager.valueOrUndefined(),
@@ -435,7 +448,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               );
             }
 
-            if (!isObservable(data) && !isAsyncIterable(data)) {
+            if (!isObservable(result.data) && !isAsyncIterable(result.data)) {
               return errorToAsyncIterable(
                 new TRPCError({
                   message: `Subscription ${
@@ -445,15 +458,16 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 }),
               );
             }
-            const dataAsIterable = isObservable(data)
-              ? observableToAsyncIterable(data)
-              : data;
+            const dataAsIterable = isObservable(result.data)
+              ? observableToAsyncIterable(result.data)
+              : result.data;
             return dataAsIterable;
           });
 
           const stream = sseStreamProducer({
             ...config.experimental?.sseSubscriptions,
             data: iterable,
+            abortCtrl: result?.abortCtrl ?? new AbortController(),
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {
               const error = getTRPCErrorFromUnknown(errorOpts.error);
@@ -656,7 +670,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     );
 
     const errors = results
-      .map(([_, error]) => error)
+      .map(([error]) => error)
       .filter(Boolean) as TRPCError[];
 
     const headResponse = initResponse({
