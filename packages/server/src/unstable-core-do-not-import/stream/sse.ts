@@ -32,6 +32,7 @@ export interface PingOptions {
 export interface SSEStreamProducerOptions<TValue = unknown> {
   serialize?: Serialize;
   data: AsyncIterable<TValue>;
+  abortCtrl: AbortController;
   maxDepth?: number;
   ping?: PingOptions;
   /**
@@ -61,7 +62,9 @@ type SSEvent = Partial<{
  *
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
-export function sseStreamProducer<TValue = unknown>(opts: SSEStreamProducerOptions<TValue>) {
+export function sseStreamProducer<TValue = unknown>(
+  opts: SSEStreamProducerOptions<TValue>,
+) {
   const stream = createReadableStream<SSEvent>();
   stream.controller.enqueue({ comment: 'connected' });
 
@@ -74,11 +77,15 @@ export function sseStreamProducer<TValue = unknown>(opts: SSEStreamProducerOptio
 
   run(async () => {
     let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
-    
+
     iterable = withCancel(iterable, stream.cancelledPromise);
 
     if (opts.emitAndEndImmediately) {
-      iterable = takeWithGrace(iterable, { count: 1, gracePeriodMs: 1 });
+      iterable = takeWithGrace(iterable, {
+        count: 1,
+        gracePeriodMs: 1,
+        onCancel: () => opts.abortCtrl.abort(),
+      });
     }
 
     let maxDurationTimer: PromiseTimer | null = null;
@@ -88,7 +95,10 @@ export function sseStreamProducer<TValue = unknown>(opts: SSEStreamProducerOptio
       opts.maxDurationMs !== Infinity
     ) {
       maxDurationTimer = createPromiseTimer(opts.maxDurationMs).start();
-      iterable = withCancel(iterable, maxDurationTimer.promise);
+      iterable = withCancel(
+        iterable,
+        maxDurationTimer.promise.then(() => opts.abortCtrl.abort()),
+      );
     }
 
     if (ping.enabled && ping.intervalMs !== Infinity && ping.intervalMs > 0) {
