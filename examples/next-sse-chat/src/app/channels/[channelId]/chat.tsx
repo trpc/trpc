@@ -7,40 +7,89 @@ import { Textarea } from '~/components/input';
 import { trpc } from '~/lib/trpc';
 import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
-import { useSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import * as React from 'react';
-import {
-  useLivePosts,
-  useThrottledIsTypingMutation,
-  useWhoIsTyping,
-} from './hooks';
+import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
+import { listWithAnd, pluralize, run } from './utils';
 
-const pluralize = (count: number, singular: string, plural: string) =>
-  count === 1 ? singular : plural;
+function SubscriptionStatus(props: {
+  subscription: ReturnType<typeof useLivePosts>['subscription'];
+}) {
+  const { subscription } = props;
+  return (
+    <div
+      className={cx(
+        'rounded-full p-2 text-sm transition-colors',
+        run(() => {
+          switch (subscription.status) {
+            case 'idle':
+            case 'connecting':
+              return 'bg-white text-gray-500 dark:bg-gray-900 dark:text-gray-400';
+            case 'error':
+              return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+            case 'pending':
+              return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200';
+          }
+        }),
+      )}
+    >
+      {run(() => {
+        switch (subscription.status) {
+          case 'idle':
+          case 'connecting':
+            // treat idle and connecting the same
 
-const listWithAnd = (list: string[]) => {
-  if (list.length === 0) {
-    return '';
-  }
-  if (list.length === 1) {
-    return list[0];
-  }
-  if (list.length === 2) {
-    return `${list[0]} and ${list[1]}`;
-  }
-  return `${list.slice(0, -1).join(', ')}, and ${list.at(-1)}`;
-};
+            return (
+              <div>
+                Connecting...
+                {subscription.error && ' (There are connection problems)'}
+              </div>
+            );
+          case 'error':
+            // something went wrong
+            return (
+              <div>
+                Error - <em>{subscription.error.message}</em>
+                <a
+                  href="#"
+                  onClick={() => {
+                    subscription.reset();
+                  }}
+                  className="hover underline"
+                >
+                  Try Again
+                </a>
+              </div>
+            );
+          case 'pending':
+            // we are polling for new messages
+            return <div>Connected - awaiting messages</div>;
+        }
+      })}
+    </div>
+  );
+}
 
 export function Chat(props: Readonly<{ channelId: string }>) {
   const { channelId } = props;
   const livePosts = useLivePosts(channelId);
-  const currentlyTyping = useWhoIsTyping(channelId);
+  const currentlyTyping = trpc.channel.whoIsTyping.useSubscription({
+    channelId,
+  });
   const scrollRef = React.useRef<HTMLDivElement>(null);
+
   const session = useSession().data;
 
   return (
     <main className="flex-1 overflow-hidden">
       <div className="flex h-full flex-col">
+        {/* connection status indicator */}
+        <div className="relative flex items-center justify-center gap-2 p-4 sm:p-6 lg:p-8">
+          {/* connection status indicator - centered */}
+          <div className="absolute right-0 top-0 flex items-center justify-center gap-2 rounded-full p-2 text-sm">
+            <SubscriptionStatus subscription={livePosts.subscription} />
+          </div>
+        </div>
         <div
           className="flex flex-1 flex-col-reverse overflow-y-scroll p-4 sm:p-6 lg:p-8"
           ref={scrollRef}
@@ -115,9 +164,9 @@ export function Chat(props: Readonly<{ channelId: string }>) {
               })}
             </div>
             <p className="text-sm italic text-gray-400">
-              {currentlyTyping.length ? (
-                `${listWithAnd(currentlyTyping)} ${pluralize(
-                  currentlyTyping.length,
+              {currentlyTyping.data?.length ? (
+                `${listWithAnd(currentlyTyping.data)} ${pluralize(
+                  currentlyTyping.data.length,
                   'is',
                   'are',
                 )} typing...`
@@ -127,18 +176,30 @@ export function Chat(props: Readonly<{ channelId: string }>) {
             </p>
           </div>
         </div>
+
         <div className="border-t bg-white p-2 dark:border-gray-800 dark:bg-gray-900">
-          <AddMessageForm
-            signedIn={!!session?.user}
-            channelId={channelId}
-            onMessagePost={() => {
-              scrollRef.current?.scroll({
-                // `top: 0` is actually the bottom of the chat due to `flex-col-reverse`
-                top: 0,
-                behavior: 'smooth',
-              });
-            }}
-          />
+          {session ? (
+            <AddMessageForm
+              channelId={channelId}
+              onMessagePost={() => {
+                scrollRef.current?.scroll({
+                  // `top: 0` is actually the bottom of the chat due to `flex-col-reverse`
+                  top: 0,
+                  behavior: 'smooth',
+                });
+              }}
+            />
+          ) : (
+            <Button
+              className="w-full"
+              variant="ghost"
+              onClick={() => {
+                void signIn();
+              }}
+            >
+              Sign in to post a message
+            </Button>
+          )}
         </div>
       </div>
     </main>
@@ -148,7 +209,6 @@ export function Chat(props: Readonly<{ channelId: string }>) {
 function AddMessageForm(props: {
   onMessagePost: () => void;
   channelId: string;
-  signedIn: boolean;
 }) {
   const { channelId } = props;
   const addPost = trpc.post.add.useMutation();
@@ -156,16 +216,21 @@ function AddMessageForm(props: {
   const [message, setMessage] = React.useState('');
   const [isFocused, setIsFocused] = React.useState(false);
 
-  async function postMessage() {
+  function postMessage() {
     const input = {
       text: message,
       channelId,
     };
-    try {
-      await addPost.mutateAsync(input);
-      setMessage('');
-      props.onMessagePost();
-    } catch {}
+    setMessage('');
+    addPost.mutate(input, {
+      onSuccess() {
+        props.onMessagePost();
+      },
+      onError(error) {
+        alert(error.message);
+        setMessage(input.text);
+      },
+    });
   }
 
   const isTypingMutation = useThrottledIsTypingMutation(channelId);
@@ -178,40 +243,37 @@ function AddMessageForm(props: {
   return (
     <div className="relative">
       <form
-        onSubmit={async (e) => {
+        onSubmit={(e) => {
           e.preventDefault();
           /**
            * In a real app you probably don't want to use this manually
            * Checkout React Hook Form - it works great with tRPC
            * @see https://react-hook-form.com/
            */
-          await postMessage();
+          postMessage();
         }}
       >
         <Textarea
           className="pr-12"
-          disabled={!props.signedIn}
-          placeholder={
-            props.signedIn ? 'Type your message...' : 'Sign in to post'
-          }
+          placeholder="Type your message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           rows={message.split(/\r|\n/).length}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && e.metaKey) {
+            if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              void postMessage();
+              postMessage();
             }
           }}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
+          autoFocus
         />
         <Button
           className="absolute right-2 top-2"
           size="icon"
           type="submit"
           variant="ghost"
-          disabled={!props.signedIn}
         >
           <PaperAirplaneIcon className="size-5" />
           <span className="sr-only">Send message</span>

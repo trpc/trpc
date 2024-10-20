@@ -15,7 +15,12 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import { abortSignalsAnyPonyfill, assert, isAsyncIterable, isObject } from '../utils';
+import {
+  abortSignalsAnyPonyfill,
+  isAsyncIterable,
+  isObject,
+  run,
+} from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -24,6 +29,17 @@ import type {
   TRPCRequestInfo,
 } from './types';
 
+function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
+  return {
+    [Symbol.asyncIterator]: () => {
+      return {
+        next() {
+          throw err;
+        },
+      };
+    },
+  };
+}
 type HTTPMethods =
   | 'GET'
   | 'POST'
@@ -194,6 +210,8 @@ function isDataStream(v: unknown) {
   );
 }
 
+type ResultTuple<T> = [undefined, T] | [TRPCError, undefined];
+
 export async function resolveResponse<TRouter extends AnyRouter>(
   opts: ResolveHTTPRequestOptions<TRouter>,
 ): Promise<Response> {
@@ -213,8 +231,64 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const allowBatching = opts.allowBatching ?? opts.batching?.enabled ?? true;
   const allowMethodOverride =
     (opts.allowMethodOverride ?? false) && req.method === 'POST';
-  let ctx: inferRouterContext<TRouter> | undefined = undefined;
-  let info: TRPCRequestInfo | undefined = undefined;
+
+  type $Context = inferRouterContext<TRouter>;
+
+  const infoTuple: ResultTuple<TRPCRequestInfo> = run(() => {
+    try {
+      return [
+        undefined,
+        getRequestInfo({
+          req,
+          path: decodeURIComponent(opts.path),
+          router,
+          searchParams: url.searchParams,
+          headers: opts.req.headers,
+        }),
+      ];
+    } catch (cause) {
+      return [getTRPCErrorFromUnknown(cause), undefined];
+    }
+  });
+
+  interface ContextManager {
+    valueOrUndefined: () => $Context | undefined;
+    value: () => $Context;
+    create: (info: TRPCRequestInfo) => Promise<void>;
+  }
+  const ctxManager: ContextManager = run(() => {
+    let result: ResultTuple<$Context> | undefined = undefined;
+    return {
+      valueOrUndefined: () => {
+        if (!result) {
+          return undefined;
+        }
+        return result[1];
+      },
+      value: () => {
+        const [err, ctx] = result!;
+        if (err) {
+          throw err;
+        }
+        return ctx;
+      },
+      create: async (info) => {
+        if (result) {
+          throw new Error(
+            'This should only be called once - report a bug in tRPC',
+          );
+        }
+        try {
+          const ctx = await opts.createContext({
+            info,
+          });
+          result = [undefined, ctx];
+        } catch (cause) {
+          result = [getTRPCErrorFromUnknown(cause), undefined];
+        }
+      },
+    };
+  });
 
   const methodMapper = allowMethodOverride
     ? TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE
@@ -230,21 +304,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const experimentalSSE =
     router._def._config.experimental?.sseSubscriptions?.enabled ?? true;
   try {
-    info = getRequestInfo({
-      req,
-      path: decodeURIComponent(opts.path),
-      router,
-      searchParams: url.searchParams,
-      headers: opts.req.headers,
-    });
-
-    // we create context early so that error handlers may access context information
-    ctx = await opts.createContext({
-      info,
-    });
-
-    if (opts.error) {
-      throw opts.error;
+    const [infoError, info] = infoTuple;
+    if (infoError) {
+      throw infoError;
     }
     if (info.isBatchCall && !allowBatching) {
       throw new TRPCError({
@@ -259,17 +321,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         code: 'BAD_REQUEST',
       });
     }
+    await ctxManager.create(info);
 
     interface RPCResultOk {
       data: unknown;
-      abortCtrl?: AbortController;
+      abortCtrl: AbortController;
     }
-    type RPCResult =
-      | [result: null, error: TRPCError]
-      | [result: RPCResultOk, error?: never];
+    type RPCResult = ResultTuple<RPCResultOk>;
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
       try {
+        if (opts.error) {
+          throw opts.error;
+        }
+
         if (!proc) {
           throw new TRPCError({
             code: 'NOT_FOUND',
@@ -283,28 +348,25 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             message: `Unsupported ${req.method}-request to ${proc._def.type} procedure at path "${call.path}"`,
           });
         }
-        let abortCtrl: AbortController | undefined;
+
         if (proc._def.type === 'subscription') {
           /* istanbul ignore if -- @preserve */
-          if (info!.isBatchCall) {
+          if (info.isBatchCall) {
             throw new TRPCError({
               code: 'BAD_REQUEST',
               message: `Cannot batch subscription calls`,
             });
           }
-          abortCtrl = new AbortController();
         }
-
+        const abortCtrl = new AbortController();
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
-          ctx,
+          ctx: ctxManager.value(),
           type: proc._def.type,
-          signal: abortCtrl
-            ? abortSignalsAnyPonyfill([opts.req.signal, abortCtrl.signal])
-            : opts.req.signal,
+          signal: abortSignalsAnyPonyfill([opts.req.signal, abortCtrl.signal]),
         });
-        return [{ data, abortCtrl }];
+        return [undefined, { data, abortCtrl }];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
@@ -313,19 +375,19 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           error,
           path: call.path,
           input,
-          ctx,
+          ctx: ctxManager.valueOrUndefined(),
           type: call.procedure?._def.type ?? 'unknown',
           req: opts.req,
         });
 
-        return [null, error];
+        return [error, undefined];
       }
     });
 
     // ----------- response handlers -----------
     if (!info.isBatchCall) {
       const [call] = info.calls;
-      const [result, error] = await rpcCalls[0]!;
+      const [error, result] = await rpcCalls[0]!;
 
       switch (info.type) {
         case 'unknown':
@@ -345,7 +407,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             ? {
                 error: getErrorShape({
                   config,
-                  ctx,
+                  ctx: ctxManager.valueOrUndefined(),
                   error,
                   input: call!.result(),
                   path: call!.path,
@@ -355,7 +417,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             : { result: { data: result.data } };
 
           const headResponse = initResponse({
-            ctx,
+            ctx: ctxManager.valueOrUndefined(),
             info,
             responseMeta: opts.responseMeta,
             errors: error ? [error] : [],
@@ -373,38 +435,39 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         case 'subscription': {
           // httpSubscriptionLink
 
-          if (!experimentalSSE) {
-            throw new TRPCError({
-              code: 'METHOD_NOT_SUPPORTED',
-              message: 'Missing experimental flag "sseSubscriptions"',
-            });
-          }
+          const iterable: AsyncIterable<unknown> = run(() => {
+            if (error) {
+              return errorToAsyncIterable(error);
+            }
+            if (!experimentalSSE) {
+              return errorToAsyncIterable(
+                new TRPCError({
+                  code: 'METHOD_NOT_SUPPORTED',
+                  message: 'Missing experimental flag "sseSubscriptions"',
+                }),
+              );
+            }
 
-          if (error) {
-            throw error;
-          }
-          const { data, abortCtrl } = result;
-          assert(
-            abortCtrl !== undefined,
-            'subscription type must have an AbortController',
-          );
-
-          if (!isObservable(data) && !isAsyncIterable(data)) {
-            throw new TRPCError({
-              message: `Subscription ${
-                call!.path
-              } did not return an observable or a AsyncGenerator`,
-              code: 'INTERNAL_SERVER_ERROR',
-            });
-          }
-          const dataAsIterable = isObservable(data)
-            ? observableToAsyncIterable(data)
-            : data;
+            if (!isObservable(result.data) && !isAsyncIterable(result.data)) {
+              return errorToAsyncIterable(
+                new TRPCError({
+                  message: `Subscription ${
+                    call!.path
+                  } did not return an observable or a AsyncGenerator`,
+                  code: 'INTERNAL_SERVER_ERROR',
+                }),
+              );
+            }
+            const dataAsIterable = isObservable(result.data)
+              ? observableToAsyncIterable(result.data)
+              : result.data;
+            return dataAsIterable;
+          });
 
           const stream = sseStreamProducer({
             ...config.experimental?.sseSubscriptions,
-            data: dataAsIterable,
-            abortCtrl,
+            data: iterable,
+            abortCtrl: result?.abortCtrl ?? new AbortController(),
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {
               const error = getTRPCErrorFromUnknown(errorOpts.error);
@@ -412,21 +475,21 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               const path = call?.path;
               const type = call?.procedure?._def.type ?? 'unknown';
 
-              const shape = getErrorShape({
-                config,
-                ctx,
-                error,
-                input,
-                path,
-                type,
-              });
-
               opts.onError?.({
                 error,
                 path,
                 input,
-                ctx,
+                ctx: ctxManager.valueOrUndefined(),
                 req: opts.req,
+                type,
+              });
+
+              const shape = getErrorShape({
+                config,
+                ctx: ctxManager.valueOrUndefined(),
+                error,
+                input,
+                path,
                 type,
               });
 
@@ -438,7 +501,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           }
 
           const headResponse = initResponse({
-            ctx,
+            ctx: ctxManager.valueOrUndefined(),
             info,
             responseMeta: opts.responseMeta,
             errors: [],
@@ -460,7 +523,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       headers.set('content-type', 'application/json');
       headers.set('transfer-encoding', 'chunked');
       const headResponse = initResponse({
-        ctx,
+        ctx: ctxManager.valueOrUndefined(),
         info,
         responseMeta: opts.responseMeta,
         errors: [],
@@ -483,14 +546,15 @@ export async function resolveResponse<TRouter extends AnyRouter>(
          */
         maxDepth: experimentalIterablesAndDeferreds ? 4 : 3,
         data: rpcCalls.map(async (res) => {
-          const [result, error] = await res;
+          const [error, result] = await res;
 
-          const call = info!.calls[0];
+          const call = info.calls[0];
+
           if (error) {
             return {
               error: getErrorShape({
                 config,
-                ctx,
+                ctx: ctxManager.valueOrUndefined(),
                 error,
                 input: call!.result(),
                 path: call!.path,
@@ -498,18 +562,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               }),
             };
           }
-          const { data } = result;
 
           /**
            * Not very pretty, but we need to wrap nested data in promises
            * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
            */
-          const dataAsPromiseOrIterable = isObservable(data)
-            ? observableToAsyncIterable(data)
-            : Promise.resolve(data);
+          const iterable = isObservable(result.data)
+            ? observableToAsyncIterable(result.data)
+            : Promise.resolve(result.data);
           return {
             result: Promise.resolve({
-              data: dataAsPromiseOrIterable,
+              data: iterable,
             }),
           };
         }),
@@ -519,7 +582,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             error: getTRPCErrorFromUnknown(cause),
             path: undefined,
             input: undefined,
-            ctx,
+            ctx: ctxManager.valueOrUndefined(),
             req: opts.req,
             type: info?.type ?? 'unknown',
           });
@@ -528,13 +591,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         formatError(errorOpts) {
           const call = info?.calls[errorOpts.path[0] as any];
 
+          const error = getTRPCErrorFromUnknown(errorOpts.error);
+          const input = call?.result();
+          const path = call?.path;
+          const type = call?.procedure?._def.type ?? 'unknown';
+
+          // no need to call `onError` here as it will be propagated through the stream itself
+
           const shape = getErrorShape({
             config,
-            ctx,
-            error: getTRPCErrorFromUnknown(errorOpts.error),
-            input: call?.result(),
-            path: call?.path,
-            type: call?.procedure?._def.type ?? 'unknown',
+            ctx: ctxManager.valueOrUndefined(),
+            error,
+            input,
+            path,
+            type,
           });
 
           return shape;
@@ -557,19 +627,19 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     headers.set('content-type', 'application/json');
     const results: RPCResult[] = (await Promise.all(rpcCalls)).map(
       (res): RPCResult => {
-        const [result, error] = res;
+        const [error, result] = res;
         if (error) {
           return res;
         }
 
         if (isDataStream(result.data)) {
           return [
-            null,
             new TRPCError({
               code: 'UNSUPPORTED_MEDIA_TYPE',
               message:
                 'Cannot use stream-like response in non-streaming request - use httpBatchStreamLink',
             }),
+            undefined,
           ];
         }
         return res;
@@ -577,15 +647,15 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     );
     const resultAsRPCResponse = results.map(
       (
-        [result, error],
+        [error, result],
         index,
       ): TRPCResponse<unknown, inferRouterError<TRouter>> => {
-        const call = info!.calls[index]!;
+        const call = info.calls[index]!;
         if (error) {
           return {
             error: getErrorShape({
               config,
-              ctx,
+              ctx: ctxManager.valueOrUndefined(),
               error,
               input: call.result(),
               path: call.path,
@@ -600,11 +670,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     );
 
     const errors = results
-      .map(([_, error]) => error)
+      .map(([error]) => error)
       .filter(Boolean) as TRPCError[];
 
     const headResponse = initResponse({
-      ctx,
+      ctx: ctxManager.valueOrUndefined(),
       info,
       responseMeta: opts.responseMeta,
       untransformedJSON: resultAsRPCResponse,
@@ -620,6 +690,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       },
     );
   } catch (cause) {
+    const [_infoError, info] = infoTuple;
+    const ctx = ctxManager.valueOrUndefined();
     // we get here if
     // - batching is called when it's not enabled
     // - `createContext()` throws
@@ -629,7 +701,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // - `errorFormatter` return value is malformed
     const { error, untransformedJSON, body } = caughtErrorToData(cause, {
       opts,
-      ctx,
+      ctx: ctxManager.valueOrUndefined(),
       type: info?.type ?? 'unknown',
     });
 

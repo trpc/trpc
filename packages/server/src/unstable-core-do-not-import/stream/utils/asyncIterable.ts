@@ -27,7 +27,7 @@ export async function* withCancel<T>(
 interface TakeWithGraceOptions {
   count: number;
   gracePeriodMs: number;
-  onCancel?: () => void;
+  onCancel: () => void;
 }
 
 /**

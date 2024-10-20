@@ -1,11 +1,10 @@
 import { EventEmitter, on } from 'node:events';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
-import type { Maybe } from '../types';
+import type { inferAsyncIterableYield, Maybe } from '../types';
 import { abortSignalsAnyPonyfill, run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
-import { createDeferred } from './utils/createDeferred';
 import { createServer } from './utils/createServer';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
@@ -32,8 +31,7 @@ test('e2e, server-sent events (SSE)', async () => {
       await new Promise((resolve) => setTimeout(resolve, 5));
     }
   }
-  type inferAsyncIterable<T> = T extends AsyncIterable<infer U> ? U : never;
-  type Data = inferAsyncIterable<ReturnType<typeof data>>;
+  type Data = inferAsyncIterableYield<ReturnType<typeof data>>;
 
   const written: string[] = [];
   const server = createServer(async (req, res) => {
@@ -83,17 +81,17 @@ test('e2e, server-sent events (SSE)', async () => {
     res.end();
   });
 
-  const shouldRecreateOnError = createDeferred<void>();
   const ac = new AbortController();
-  const iterable = sseStreamConsumer<Data>({
+  const iterable = sseStreamConsumer<{
+    data: Data;
+    error: unknown;
+    EventSource: typeof EventSource;
+  }>({
     url: () => server.url,
     signal: ac.signal,
     init: () => ({}),
     deserialize: SuperJSON.deserialize,
-    shouldRecreateOnError: vi.fn(() => {
-      shouldRecreateOnError.resolve();
-      return false;
-    }),
+    EventSource: EventSource,
   });
   let es: EventSource | null = null;
 
@@ -103,11 +101,11 @@ test('e2e, server-sent events (SSE)', async () => {
 
   const ITERATIONS = 10;
   const values: number[] = [];
-  const allEvents: inferAsyncIterable<typeof iterable>[] = [];
+  const allEvents: inferAsyncIterableYield<typeof iterable>[] = [];
   for await (const value of iterable) {
     allEvents.push(value);
     es = value.eventSource;
-    if (value.type === 'error') {
+    if (value.type === 'serialized-error') {
       throw value.error;
     }
     if (value.type === 'data') {
@@ -133,8 +131,9 @@ test('e2e, server-sent events (SSE)', async () => {
 
   for await (const value of iterable) {
     allEvents.push(value);
+    value.eventSource;
     es = value.eventSource;
-    if (value.type === 'error') {
+    if (value.type === 'serialized-error') {
       throw value.error;
     }
     if (value.type === 'data') {
@@ -167,8 +166,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
       yield tracked(String(i), i);
     }
   }
-  type inferAsyncIterable<T> = T extends AsyncIterable<infer U> ? U : never;
-  type Data = inferAsyncIterable<ReturnType<typeof data>>;
+  type Data = inferAsyncIterableYield<ReturnType<typeof data>>;
 
   type RequestTrace = {
     lastEventId: string | null;
@@ -240,12 +238,17 @@ test('SSE on serverless - emit and disconnect early', async () => {
 
   const reqAbortCtrl = new AbortController();
 
-  const iterable = sseStreamConsumer<Data>({
+  const iterable = sseStreamConsumer<{
+    data: Data;
+    error: unknown;
+    EventSource: typeof EventSource;
+  }>({
     // from: es,
     url: () => server.url,
     signal: reqAbortCtrl.signal,
     init: () => ({}),
     deserialize: SuperJSON.deserialize,
+    EventSource: globalThis.EventSource,
   });
 
   const emitterRun = run(async () => {
@@ -267,7 +270,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
     if (value.type === 'opened') {
       continue;
     }
-    if (value.type === 'error') {
+    if (value.type === 'serialized-error') {
       throw value.error;
     }
     if (value.type === 'data') {
