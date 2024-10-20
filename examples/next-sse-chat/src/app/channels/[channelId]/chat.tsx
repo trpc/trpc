@@ -116,6 +116,7 @@ export function Chat(props: Readonly<{ channelId: string }>) {
               </div>
 
               {livePosts.messages?.map((item) => {
+                console.log({ item });
                 const isMe = item.name === session?.user?.name;
 
                 return (

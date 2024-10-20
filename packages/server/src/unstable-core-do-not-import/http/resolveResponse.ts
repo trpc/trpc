@@ -546,7 +546,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
          */
         maxDepth: experimentalIterablesAndDeferreds ? 4 : 3,
         data: rpcCalls.map(async (res) => {
-          const [error, data] = await res;
+          const [error, result] = await res;
 
           const call = info.calls[0];
 
@@ -567,9 +567,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
            * Not very pretty, but we need to wrap nested data in promises
            * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
            */
-          const iterable = isObservable(data)
-            ? observableToAsyncIterable(data)
-            : Promise.resolve(data);
+          const iterable = isObservable(result.data)
+            ? observableToAsyncIterable(result.data)
+            : Promise.resolve(result.data);
           return {
             result: Promise.resolve({
               data: iterable,
@@ -627,12 +627,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     headers.set('content-type', 'application/json');
     const results: RPCResult[] = (await Promise.all(rpcCalls)).map(
       (res): RPCResult => {
-        const [error, data] = res;
+        const [error, result] = res;
         if (error) {
           return res;
         }
 
-        if (isDataStream(data)) {
+        if (isDataStream(result.data)) {
           return [
             new TRPCError({
               code: 'UNSUPPORTED_MEDIA_TYPE',
@@ -647,7 +647,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     );
     const resultAsRPCResponse = results.map(
       (
-        [error, data],
+        [error, result],
         index,
       ): TRPCResponse<unknown, inferRouterError<TRouter>> => {
         const call = info.calls[index]!;
@@ -664,7 +664,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           };
         }
         return {
-          result: { data },
+          result: { data: result.data },
         };
       },
     );
