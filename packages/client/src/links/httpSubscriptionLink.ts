@@ -16,12 +16,11 @@ import { TRPCClientError } from '../TRPCClientError';
 import type { TRPCConnectionState } from '../unstable-internals';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
-import type { CallbackOrValue } from './internals/urlWithConnectionParams';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
 } from './internals/urlWithConnectionParams';
-import type { TRPCLink } from './types';
+import type { Operation, TRPCLink } from './types';
 
 async function urlWithConnectionParams(
   opts: UrlOptionsWithConnectionParams,
@@ -49,9 +48,13 @@ type HTTPSubscriptionLinkOptions<
   /**
    * EventSource options or a callback that returns them
    */
-  eventSourceOptions?: CallbackOrValue<
-    EventSourceLike.InitDictOf<TEventSource>
-  >;
+  eventSourceOptions?:
+    | EventSourceLike.InitDictOf<TEventSource>
+    | ((opts: {
+        op: Operation;
+      }) =>
+        | EventSourceLike.InitDictOf<TEventSource>
+        | Promise<EventSourceLike.InitDictOf<TEventSource>>);
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -109,7 +112,7 @@ export function unstable_httpSubscriptionLink<
               type,
               signal: null,
             }),
-          init: () => resultOf(opts.eventSourceOptions),
+          init: () => resultOf(opts.eventSourceOptions, { op }),
           signal,
           deserialize: transformer.output.deserialize,
           EventSource:
