@@ -12,12 +12,8 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "module": "NodeNext",
-    "outDir": "dist",
-    "rootDir": "src",
-    "customConditions": ["dev"],
-    "declaration": true,
-    "declarationMap": true,
+    "customConditions": ["typescript"],
     "lib": ["es2022"]
   },
-  "include": ["src"]
+  "include": ["**/*.ts"]
 }

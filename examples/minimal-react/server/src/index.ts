@@ -1,5 +1,5 @@
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import appRouter from '#router.js';
+import { appRouter } from '#router.js';
 import cors from 'cors';
 
 export type { AppRouter } from '#router.js';

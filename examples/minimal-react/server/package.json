@@ -10,14 +10,15 @@
   "imports": {
     "#*": {
       "default": "./dist/*",
-      "dev": "./src/*"
+      "typescript": "./src/*"
     }
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx watch -C typescript src/index.ts",
     "lint": "eslint --cache --ext \".js,.ts,.tsx\" src",
-    "start": "node dist/index.js"
+    "start": "node dist/src/index.js",
+    "test": "vitest run"
   },
   "dependencies": {
     "@trpc/server": "npm:@trpc/server@next",
@@ -29,6 +30,7 @@
     "@types/node": "^20.10.0",
     "eslint": "^8.57.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "vitest": "^2.0.4"
   }
 }

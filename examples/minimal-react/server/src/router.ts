@@ -1,7 +1,7 @@
 import { publicProcedure, router } from '#trpc.js';
 import { z } from 'zod';
 
-const appRouter = router({
+export const appRouter = router({
   greeting: publicProcedure
     // This is the input schema of your procedure
     // 💡 Tip: Try changing this and see type errors on the client straight away
@@ -20,8 +20,6 @@ const appRouter = router({
       };
     }),
 });
-
-export default appRouter;
 
 // Export router type signature, this is used by the client.
 export type AppRouter = typeof appRouter;
