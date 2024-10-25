@@ -1,6 +1,4 @@
 {
-  "include": ["src"],
-
   "compilerOptions": {
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -14,12 +12,11 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "module": "NodeNext",
+    "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "lib": ["es2022"],
-    "paths": {
-      "~/*": ["./src/*"]
-    }
-  }
+    "lib": ["es2022"]
+  },
+  "include": ["src"]
 }
