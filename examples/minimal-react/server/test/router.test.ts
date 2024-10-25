@@ -1,10 +1,12 @@
 import { appRouter } from '#router.js';
-import { createCaller } from '#trpc.js';
+import { createCallerFactory } from '#trpc.js';
 import { expect, it } from 'vitest';
 
-it('should return hello world', async () => {
+const createCaller = createCallerFactory(appRouter);
+
+it('should greet the user', async () => {
   const context = {};
-  const caller = createCaller(appRouter)(context);
+  const caller = createCaller(context);
 
   const res = await caller.greeting({
     name: 'tRPC user',
