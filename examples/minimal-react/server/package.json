@@ -9,8 +9,8 @@
   },
   "imports": {
     "#*": {
-      "default": "./dist/*",
-      "typescript": "./src/*"
+      "typescript": "./src/*",
+      "default": "./dist/*"
     }
   },
   "scripts": {
