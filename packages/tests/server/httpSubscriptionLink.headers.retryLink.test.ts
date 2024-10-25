@@ -1,17 +1,20 @@
-import { EventEmitter, on } from 'node:events';
-import { scheduler } from 'node:timers/promises';
-import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
+import { EventEmitter } from 'node:events';
+import {
+  routerToServerAndClientNew,
+  suppressLogs,
+  suppressLogsUntil,
+} from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
+  retryLink,
   splitLink,
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import type { Event, EventSourcePolyfillInit } from 'event-source-polyfill';
-import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
+import { EventSourcePolyfill } from 'event-source-polyfill';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
@@ -26,8 +29,6 @@ const ctx = konn()
     // will increment it on each createContext(). If the latest version is
     // always sent then the server will always receive the latest version
     let incrementingTestHeader = 1;
-
-    globalThis.EventSource = EventSourcePolyfill as typeof EventSource;
 
     const onIterableInfiniteSpy =
       vi.fn<(args: { input: { lastEventId?: number } }) => void>();
@@ -121,32 +122,37 @@ const ctx = konn()
             linkSpy,
             splitLink({
               condition: (op) => op.type === 'subscription',
-              true: unstable_httpSubscriptionLink({
-                url: opts.httpUrl,
-                transformer: superjson,
-                eventSourceOptions() {
-                  return {
-                    headers: {
-                      'x-test': String(incrementingTestHeader),
-                    },
-                  } as EventSourcePolyfillInit;
-                },
-                experimental_shouldRecreateOnError(opts) {
-                  let willRestart = false;
-                  if (opts.type === 'event') {
-                    const ev = opts.event;
-                    willRestart =
-                      'status' in ev &&
-                      typeof ev.status === 'number' &&
-                      [401, 403].includes(ev.status);
-                  }
-                  if (willRestart) {
-                    // eslint-disable-next-line no-console
-                    console.log('Restarting EventSource due to 401/403 error');
-                  }
-                  return willRestart;
-                },
-              }),
+              true: [
+                retryLink({
+                  retry(opts) {
+                    const { error } = opts;
+                    const code = error.data?.code;
+                    if (!code) {
+                      return false;
+                    }
+
+                    if (code === 'UNAUTHORIZED' || code === 'FORBIDDEN') {
+                      // console.log(
+                      //   'Restarting EventSource due to 401/403 error',
+                      // );
+                      return true;
+                    }
+                    return false;
+                  },
+                }),
+                unstable_httpSubscriptionLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                  EventSource: EventSourcePolyfill,
+                  eventSourceOptions() {
+                    return {
+                      headers: {
+                        'x-test': String(incrementingTestHeader),
+                      },
+                    };
+                  },
+                }),
+              ],
               false: unstable_httpBatchStreamLink({
                 url: opts.httpUrl,
                 transformer: superjson,
@@ -166,7 +172,6 @@ const ctx = konn()
   })
   .afterEach(async (opts) => {
     await opts?.close?.();
-    globalThis.EventSource = NativeEventSource as typeof EventSource;
   })
   .done();
 
@@ -189,10 +194,11 @@ test('disconnect and reconnect with updated headers', async () => {
   });
 
   function getES() {
-    const lastCall = onStarted.mock.calls.length - 1;
+    const lastCall = onStarted.mock.calls.at(-1)!;
     // @ts-expect-error lint makes this accessing annoying
-    const es = onStarted.mock.calls[lastCall]![0].context?.eventSource;
+    const es = lastCall[0].context?.eventSource;
     assert(es instanceof EventSource);
+
     return es;
   }
 
@@ -207,15 +213,14 @@ test('disconnect and reconnect with updated headers', async () => {
 
   expect(ctx.onIterableInfiniteSpy).toHaveBeenCalledTimes(1);
 
+  expect(onStarted).toHaveBeenCalledTimes(1);
   expect(getES().readyState).toBe(EventSource.OPEN);
 
-  {
-    // restart server
-    const release = suppressLogs();
+  await suppressLogsUntil(async () => {
     ctx.destroyConnections();
     await waitFor(
       () => {
-        expect(onStarted).toHaveBeenCalledTimes(2);
+        expect(onStarted).toHaveBeenCalledTimes(3);
       },
       {
         timeout: 3_000,
@@ -230,8 +235,7 @@ test('disconnect and reconnect with updated headers', async () => {
         timeout: 3_000,
       },
     );
-    release();
-  }
+  });
 
   subscription.unsubscribe();
   expect(getES().readyState).toBe(EventSource.CLOSED);

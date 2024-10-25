@@ -1,5 +1,5 @@
 import type { Observer, UnsubscribeFn } from '@trpc/server/observable';
-import { observable } from '@trpc/server/observable';
+import { behaviorSubject, observable } from '@trpc/server/observable';
 import type { TRPCConnectionParamsMessage } from '@trpc/server/rpc';
 import type {
   AnyRouter,
@@ -16,6 +16,7 @@ import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
 import type { TransformerOptions } from '../unstable-internals';
 import { getTransformer } from '../unstable-internals';
+import type { TRPCConnectionState } from './internals/subscriptions';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
@@ -100,6 +101,13 @@ const lazyDefaults: LazyOptions = {
   enabled: false,
   closeMs: 0,
 };
+
+/**
+ * @see https://trpc.io/docs/v11/client/links/wsLink
+ * @deprecated
+ * 🙋‍♂️ **Contributors needed** to continue supporting WebSockets!
+ * See https://github.com/trpc/trpc/issues/6109
+ */
 export function createWSClient(opts: WebSocketClientOptions) {
   const {
     WebSocket: WebSocketImpl = WebSocket,
@@ -165,12 +173,27 @@ export function createWSClient(opts: WebSocketClientOptions) {
       }
   );
 
+  const initState: TRPCConnectionState<TRPCClientError<AnyRouter>> =
+    activeConnection
+      ? {
+          type: 'state',
+          state: 'connecting',
+          error: null,
+        }
+      : {
+          type: 'state',
+          state: 'idle',
+          error: null,
+        };
+  const connectionState =
+    behaviorSubject<TRPCConnectionState<TRPCClientError<AnyRouter>>>(initState);
+
   /**
    * tries to send the list of messages
    */
   function dispatch() {
     if (!activeConnection) {
-      activeConnection = createConnection();
+      reconnect(null);
       return;
     }
     // using a timeout to batch messages
@@ -196,12 +219,13 @@ export function createWSClient(opts: WebSocketClientOptions) {
       startLazyDisconnectTimer();
     });
   }
-  function tryReconnect() {
+  function tryReconnect(cause: Error | null) {
     if (!!connectTimer) {
       return;
     }
+
     const timeout = retryDelayFn(connectAttempt++);
-    reconnectInMs(timeout);
+    reconnectInMs(timeout, cause);
   }
   function hasPendingRequests(conn?: Connection) {
     const requests = Object.values(pendingRequests);
@@ -211,20 +235,31 @@ export function createWSClient(opts: WebSocketClientOptions) {
     return requests.some((req) => req.connection === conn);
   }
 
-  function reconnect() {
+  function reconnect(cause: Error | null) {
     if (lazyOpts.enabled && !hasPendingRequests()) {
-      // Skip reconnecting if there are pending requests and we're in lazy mode
+      // Skip reconnecting if there aren't pending requests and we're in lazy mode
       return;
     }
     const oldConnection = activeConnection;
     activeConnection = createConnection();
     oldConnection && closeIfNoPending(oldConnection);
+
+    const currentState = connectionState.get();
+    if (currentState.state !== 'connecting') {
+      connectionState.next({
+        type: 'state',
+        state: 'connecting',
+        error: cause ? TRPCClientError.from(cause) : null,
+      });
+    }
   }
-  function reconnectInMs(ms: number) {
+  function reconnectInMs(ms: number, cause: Error | null) {
     if (connectTimer) {
       return;
     }
-    connectTimer = setTimeout(reconnect, ms);
+    connectTimer = setTimeout(() => {
+      reconnect(cause);
+    }, ms);
   }
 
   function closeIfNoPending(conn: Connection) {
@@ -255,9 +290,14 @@ export function createWSClient(opts: WebSocketClientOptions) {
         return;
       }
 
-      if (!hasPendingRequests(activeConnection)) {
+      if (!hasPendingRequests()) {
         activeConnection.ws?.close();
         activeConnection = null;
+        connectionState.next({
+          type: 'state',
+          state: 'idle',
+          error: null,
+        });
       }
     }, lazyOpts.closeMs);
   };
@@ -272,18 +312,31 @@ export function createWSClient(opts: WebSocketClientOptions) {
 
     clearTimeout(lazyDisconnectTimer);
 
-    const onCloseOrError = () => {
+    function destroy() {
+      const noop = () => {
+        // no-op
+      };
+      const { ws } = self;
+      if (ws) {
+        ws.onclose = noop;
+        ws.onerror = noop;
+        ws.onmessage = noop;
+        ws.onopen = noop;
+
+        ws.close();
+      }
+
+      self.state = 'closed';
+    }
+
+    const onCloseOrError = (cause: Error | null) => {
       clearTimeout(pingTimeout);
       clearTimeout(pongTimeout);
 
-      if (self.state === 'closed') {
-        return;
-      }
-
-      (self as Connection).state = 'closed';
+      self.state = 'closed';
       if (activeConnection === self) {
         // connection might have been replaced already
-        tryReconnect();
+        tryReconnect(cause);
       }
 
       for (const [key, req] of Object.entries(pendingRequests)) {
@@ -299,29 +352,18 @@ export function createWSClient(opts: WebSocketClientOptions) {
           // Queries and mutations will error if interrupted
           delete pendingRequests[key];
           req.callbacks.error?.(
-            TRPCClientError.from(
-              new TRPCWebSocketClosedError('WebSocket closed prematurely'),
-            ),
+            TRPCClientError.from(cause ?? new TRPCWebSocketClosedError()),
           );
         }
       }
     };
 
-    const onClose = (code: number) => {
-      const wasOpen = self.state === 'open';
-      onCloseOrError();
-
-      if (wasOpen) {
-        opts.onClose?.({ code });
-      }
-    };
-
     const onError = (evt?: Event) => {
-      onCloseOrError();
+      onCloseOrError(new TRPCWebSocketClosedError({ cause: evt }));
       opts.onError?.(evt);
     };
-    run(async () => {
-      let url = await resultOf(opts.url);
+
+    function connect(url: string) {
       if (opts.connectionParams) {
         // append `?connectionParams=1` when connection params are used
         const prefix = url.includes('?') ? '&' : '?';
@@ -334,7 +376,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       clearTimeout(connectTimer);
       connectTimer = undefined;
 
-      ws.addEventListener('open', () => {
+      ws.onopen = () => {
         async function sendConnectionParams() {
           if (!opts.connectionParams) {
             return;
@@ -356,8 +398,11 @@ export function createWSClient(opts: WebSocketClientOptions) {
           const schedulePing = () => {
             const schedulePongTimeout = () => {
               pongTimeout = setTimeout(() => {
-                ws.close(3001);
-                onClose(3001);
+                const wasOpen = self.state === 'open';
+                destroy();
+                if (wasOpen) {
+                  opts.onClose?.();
+                }
               }, pongTimeoutMs);
             };
             pingTimeout = setTimeout(() => {
@@ -385,25 +430,40 @@ export function createWSClient(opts: WebSocketClientOptions) {
           connectAttempt = 0;
           self.state = 'open';
 
+          // Update connection state
+          connectionState.next({
+            type: 'state',
+            state: 'pending',
+            error: null,
+          });
+
           opts.onOpen?.();
           dispatch();
-        }).catch((cause) => {
+        }).catch((cause: unknown) => {
           ws.close(
             // "Status codes in the range 3000-3999 are reserved for use by libraries, frameworks, and applications"
             3000,
-            cause,
           );
-          onError();
+          onCloseOrError(
+            new TRPCWebSocketClosedError({
+              message: 'Initialization error',
+              cause,
+            }),
+          );
         });
-      });
-      ws.addEventListener('error', onError);
+      };
+      ws.onerror = onError;
       const handleIncomingRequest = (req: TRPCClientIncomingRequest) => {
         if (self !== activeConnection) {
           return;
         }
 
         if (req.method === 'reconnect') {
-          reconnect();
+          reconnect(
+            new TRPCWebSocketClosedError({
+              message: 'Server requested reconnect',
+            }),
+          );
           // notify subscribers
           for (const pendingReq of Object.values(pendingRequests)) {
             if (pendingReq.type === 'subscription') {
@@ -445,7 +505,8 @@ export function createWSClient(opts: WebSocketClientOptions) {
         }
       };
 
-      ws.addEventListener('message', ({ data }) => {
+      ws.onmessage = (event) => {
+        const { data } = event;
         if (data === 'PONG') {
           return;
         }
@@ -466,18 +527,25 @@ export function createWSClient(opts: WebSocketClientOptions) {
           // when receiving a message, we close old connection that has no pending requests
           closeIfNoPending(self);
         }
-      });
+      };
 
-      ws.addEventListener('close', ({ code }) => {
+      ws.onclose = (event) => {
         const wasOpen = self.state === 'open';
 
-        onCloseOrError();
+        destroy();
+        onCloseOrError(new TRPCWebSocketClosedError({ cause: event }));
 
         if (wasOpen) {
-          opts.onClose?.({ code });
+          opts.onClose?.(event);
         }
+      };
+    }
+
+    Promise.resolve(resultOf(opts.url))
+      .then(connect)
+      .catch(() => {
+        onCloseOrError(new Error('Failed to resolve url'));
       });
-    }).catch(onError);
     return self;
   }
 
@@ -527,6 +595,7 @@ export function createWSClient(opts: WebSocketClientOptions) {
       startLazyDisconnectTimer();
     };
   }
+
   return {
     close: () => {
       connectAttempt = 0;
@@ -538,7 +607,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
           // close pending requests that aren't attached to a connection yet
           req.callbacks.error(
             TRPCClientError.from(
-              new Error('Closed before connection was established'),
+              new TRPCWebSocketClosedError({
+                message: 'Closed before connection was established',
+              }),
             ),
           );
         }
@@ -556,16 +627,37 @@ export function createWSClient(opts: WebSocketClientOptions) {
      * Reconnect to the WebSocket server
      */
     reconnect,
+    connectionState: connectionState,
   };
 }
+
+/**
+ * @see https://trpc.io/docs/v11/client/links/wsLink
+ * @deprecated
+ * 🙋‍♂️ **Contributors needed** to continue supporting WebSockets!
+ * See https://github.com/trpc/trpc/issues/6109
+ */
 export type TRPCWebSocketClient = ReturnType<typeof createWSClient>;
 
+/**
+ * @see https://trpc.io/docs/v11/client/links/wsLink
+ * @deprecated
+ * 🙋‍♂️ **Contributors needed** to continue supporting WebSockets!
+ * See https://github.com/trpc/trpc/issues/6109
+ */
 export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   client: TRPCWebSocketClient;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 class TRPCWebSocketClosedError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(opts?: { cause?: unknown; message?: string }) {
+    super(
+      opts?.message ?? 'WebSocket closed',
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore https://github.com/tc39/proposal-error-cause
+      {
+        cause: opts?.cause,
+      },
+    );
     this.name = 'TRPCWebSocketClosedError';
     Object.setPrototypeOf(this, TRPCWebSocketClosedError.prototype);
   }
@@ -573,6 +665,9 @@ class TRPCWebSocketClosedError extends Error {
 
 /**
  * @see https://trpc.io/docs/v11/client/links/wsLink
+ * @deprecated
+ * 🙋‍♂️ **Contributors needed** to continue supporting WebSockets!
+ * See https://github.com/trpc/trpc/issues/6109
  */
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions<TRouter>,
@@ -586,18 +681,29 @@ export function wsLink<TRouter extends AnyRouter>(
 
         const input = transformer.input.serialize(op.input);
 
-        const unsub = client.request({
+        const connState =
+          type === 'subscription'
+            ? client.connectionState.subscribe({
+                next(result) {
+                  observer.next({
+                    result,
+                    context,
+                  });
+                },
+              })
+            : null;
+        const unsubscribeRequest = client.request({
           op: { type, path, input, id, context, signal: null },
           callbacks: {
             error(err) {
-              observer.error(err as TRPCClientError<any>);
-              unsub();
+              observer.error(err);
+              unsubscribeRequest();
             },
             complete() {
               observer.complete();
             },
-            next(message) {
-              const transformed = transformResult(message, transformer.output);
+            next(event) {
+              const transformed = transformResult(event, transformer.output);
 
               if (!transformed.ok) {
                 observer.error(TRPCClientError.from(transformed.error));
@@ -610,7 +716,7 @@ export function wsLink<TRouter extends AnyRouter>(
               if (op.type !== 'subscription') {
                 // if it isn't a subscription we don't care about next response
 
-                unsub();
+                unsubscribeRequest();
                 observer.complete();
               }
             },
@@ -618,7 +724,8 @@ export function wsLink<TRouter extends AnyRouter>(
           lastEventId: undefined,
         });
         return () => {
-          unsub();
+          unsubscribeRequest();
+          connState?.unsubscribe();
         };
       });
     };

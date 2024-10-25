@@ -6,6 +6,7 @@ import {
   useInfiniteQuery,
   useQuery,
   useQueryClient,
+  useSuspenseQuery,
   type InfiniteData,
 } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
@@ -13,7 +14,7 @@ import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { konn } from 'konn';
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
@@ -347,6 +348,29 @@ describe('queryOptions', () => {
           },
         ]
       `);
+  });
+
+  test('useSuspenseQuery', async () => {
+    const { App, useTRPC } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+      const { data } = useSuspenseQuery(
+        trpc.post.byId.queryOptions({ id: '1' }),
+      );
+
+      expectTypeOf(data).toMatchTypeOf<'__result'>();
+
+      return <pre>{JSON.stringify(data ?? 'n/a', null, 4)}</pre>;
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`__result`);
+    });
   });
 });
 
