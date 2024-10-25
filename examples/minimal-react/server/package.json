@@ -8,7 +8,10 @@
     }
   },
   "imports": {
-    "#*": "./src/*"
+    "#*": {
+      "default": "./dist/*",
+      "dev": "./src/*"
+    }
   },
   "scripts": {
     "build": "tsc",

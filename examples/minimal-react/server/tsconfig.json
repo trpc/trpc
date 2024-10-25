@@ -12,8 +12,9 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "module": "NodeNext",
-    "rootDir": "src",
     "outDir": "dist",
+    "rootDir": "src",
+    "customConditions": ["dev"],
     "declaration": true,
     "declarationMap": true,
     "lib": ["es2022"]
