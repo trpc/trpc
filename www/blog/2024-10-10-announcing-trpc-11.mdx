@@ -19,33 +19,61 @@ Since our last major version release in November 2022, the tRPC community has se
 
 - We now have nearly [35,000 stars on GitHub](https://github.com/trpc/trpc)
 - [A Discord community](https://trpc.io/discord) with over 5,000 members
-- [650k+ weekly npm downloads](https://www.npmjs.com/package/@trpc/server)
+- [700k+ weekly npm downloads](https://www.npmjs.com/package/@trpc/server)
 - [100s of contributors](https://github.com/trpc/trpc/graphs/contributors)
 - [An _awesome_ ecosystem of extensions, examples, and content](https://trpc.io/awesome)
 
-**With the launch of tRPC v11**, we're excited to share that v11 is already being used in production by many large TypeScript projects thanks to its stable evolution on `@next`. This official release though marks the end of an exciting development cycle which brings support for Tanstack Query v5, Next.js App Router, and a lot of other goodies.
+**With the launch of tRPC v11**, we're excited to share that v11 is already being used in production by many large TypeScript projects thanks to its stable evolution on our `@next` channel. This official release marks the end of an exciting development cycle which brings support for Tanstack Query v5, Next.js App Router, SSE-based subscriptions, and plenty of other goodies.
 
 For new projects, you can get up and running with an [example application](https://trpc.io/awesome#-starting-points-example-projects-etc) to learn about tRPC v11. For projects still on tRPC v10, [visit the v11 migration guide](https://trpc.io/docs/v11/migrate-from-v10-to-v11).
 
 ## Changes in how we release tRPC
 
-tRPC has always followed the [SemVer](https://semver.org/) versioning scheme, but honestly this is hard work with little benefit to the way that tRPC releases work, and our time on the `@next` tag has taught us a way we prefer. Going forward we'll continue to use major version numbers for breaking changes, but we'll only have a single incrementing number after this. This means that patches and enhancements will both be treated equally, allowing us to release with a faster cadence as improvements come ready. For you this means you don't need to consider minor/patch versions, we'll always aim for 0 breaking changes during a major version so you just update to the latest release on your major.
+With tRPC v11 we're going to change how we do versioning going forward.
+
+tRPC has always followed the [SemVer](https://semver.org/) versioning scheme, but honestly this is hard work with little benefit to the way that tRPC releases work, and our time on the `@next` tag has taught us a way we prefer. Going forward we'll continue to use major version numbers for breaking changes, but we'll have a single incrementing minor version. This means that patches and enhancements will both be treated equally, allowing us to release with a faster cadence as improvements are ready. For you this means you don't need to consider minor/patch versions, and we'll always aim for 0 breaking changes during a major version so you can always upgrade with confidence.
 
 ## Overview of changes
 
-v11 is a largely backward-compatible release with v10, but it brings a lot of new features and improvements. Here are some of the highlights:
+v11 is a largely backward-compatible release with v10, but it brings a lot of new features and improvements. Here are the highlights:
 
 ### TanStack Query v5 support
 
-When [TanStack Query v5](https://tanstack.com/blog/announcing-tanstack-query-v5) was released it necessitated some breaking changes within tRPC's react-query integration. This has been available since quite early on via the `@next` tag, but now it's officially released. Many projects have already chosen to upgrade over recent months and are enjoying the benefits of full React Suspense support and many other improvements, for advice on migrating your tRPC React client code you can follow [TanStack Query's own migration guide](https://tanstack.com/query/v5/docs/react/guides/migrating-to-v5).
-
-TODO: some code example
+When [TanStack Query v5](https://tanstack.com/blog/announcing-tanstack-query-v5) was released it necessitated some breaking changes within tRPC's react-query integration. This has been available since quite early on via the `@next` tag, but now it's officially released. Many projects have already chosen to upgrade and are enjoying the benefits of full React Suspense support and many other improvements, for advice on migrating your tRPC React client code you can follow [TanStack Query's own migration guide](https://tanstack.com/query/v5/docs/react/guides/migrating-to-v5).
 
 ### Content Types
 
-One of our most requested features is the ability to send and receive more than simply JSON data. With tRPC v11, you can now send and receive data in a variety of content types, including JSON, form data, and blobs.
+One of our most requested features is the ability to send and receive more than simply JSON data. With tRPC v11, you can now send and receive data in a variety of content types, including JSON, `FormData`, `Blob`, `File` and `Uint8Array`. You can find an example of how to use these content types [here](https://github.com/trpc/trpc/tree/next/examples/minimal-content-types)
 
-TODO: code example
+TODO: docs for this API
+
+```ts twoslash
+// @target: esnext
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+const router = t.router;
+
+// ---cut---
+import { octetInputParser } from '@trpc/server/http';
+import { z } from 'zod';
+
+const appRouter = router({
+  formData: publicProcedure
+    .input(z.instanceof(FormData))
+    .mutation(async ({ input }) => {
+      //                ^?
+    }),
+  file: publicProcedure
+    .input(octetInputParser)
+    .mutation(async ({ input }) => {
+      //                ^?
+    }),
+});
+```
 
 ### Next.js app router
 
@@ -57,19 +85,69 @@ TODO:
 
 We've introduced [httpBatchStreamLink](/docs/client/links/httpBatchStreamLink), which allows you to stream responses from queries. This is helpful when working with large datasets or where you need to process data in real-time and dispatch to the frontend as you go. This is not a replacement for subscriptions, but is another option in your toolbelt.
 
+```ts twoslash
+// @target: esnext
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create({});
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+// ---cut---
+// @filename: server.ts
+import { publicProcedure, router } from './trpc';
+
+const appRouter = router({
+  examples: {
+    iterable: publicProcedure.query(async function* () {
+      for (let i = 0; i < 3; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        yield i;
+      }
+    }),
+  },
+});
+
+export type AppRouter = typeof appRouter;
+
+
+// @filename: client.ts
+import { createTRPCClient, unstable_httpBatchStreamLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const trpc = createTRPCClient<AppRouter>({
+  links: [
+    unstable_httpBatchStreamLink({
+      url: 'http://localhost:3000',
+    }),
+  ],
+});
+const iterable = await trpc.examples.iterable.query();
+//      ^?
+
+for await (const value of iterable) {
+  console.log('Iterable:', value);
+  //                         ^?
+}
+```
+
+
+### useSuspenseQueries
+
+We've introduced a new hook `useSuspenseQueries` which allows you to fetch multiple queries in parallel and suspend until all queries are resolved. When writing `Fetch on Render` style applications, a possible foot-gun is where you need to run several suspense queries at once and you end up with a "waterfall". `useSuspenseQueries` is a way to put this problem further off without need to rewrite to `Render as you Fetch` style with prefetching.
+
+TODO: docs for this API
+
 TODO: code example
 
-#### useSuspenseQueries
 
-We've introduced a new hook called `useSuspenseQueries` which allows you to fetch multiple queries in parallel and suspend until all queries are resolved. When writing `Fetch on Render` style applications, a possible foot-gun is where you need to run several suspense queries at once and you end up with a waterfall. `useSuspenseQueries` is a way to put this problem further off without need to rewrite to `Render as you Fetch` style with prefetching.
-
-TODO: code example
-
-#### Shorthand Router Definitions
+### Shorthand Router Definitions
 
 We've introduced a new shorthand syntax for defining your router to simplify the process of defining your routes. [Docs](/docs/server/merging-routers#inline-sub-router)
 
-```ts
+```ts twosloash
 const appRouter = router({
   // Shorthand plain object for creating a sub-router
   nested1: {
@@ -82,25 +160,13 @@ const appRouter = router({
 });
 ```
 
-### Improvements to Subscriptions
+### Subscriptions: Server-Sent Events and other Improvements
 
-Subscriptions are a great way to listen for real-time updates in your application. In tRPC v11, we've made several improvements to this feature-set
+* tRPC v11 introduces a new way to handle subscriptions using [Server-Sent Events (SSE)](/docs/server/subscriptions#websockets-or-server-sent-events). This is a great way to handle real-time updates in your application without the need for more complex WebSockets. We recommend using this in the first instance going forward.
+* We've added support for JavaScript generators in subscriptions. This allows you to write more complex subscription handlers which can yield multiple values over time, and clean up when finished, in a very JS-native way.
+* Subscriptions now support Output validators, improving the type-safety of your subscription handlers.
 
-#### Server-Sent Events based Subscriptions
-
-tRPC v11 introduces a new way to handle subscriptions using [Server-Sent Events (SSE)](/docs/server/subscriptions#websockets-or-server-sent-events). This is a great way to handle real-time updates in your application without the need for more complex WebSockets. The feature is still young and evolving so we're looking for further feedback from the community as it evolves.
-
-#### Generators in Subscriptions
-
-We've added support for JavaScript generators in subscriptions. This allows you to write more complex subscription handlers which can yield multiple values over time, and clean up when finished, in a very JS-native way.
-
-TODO: more details and code example
-
-#### Output Validators
-
-Subscriptions now support Output validators, improving the type-safety of your subscription handlers.
-
-TODO: code example
+TODO: client docs and code example
 
 ### Goodbye v9 `.interop()`-mode
 
