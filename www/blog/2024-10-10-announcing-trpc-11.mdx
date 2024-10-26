@@ -39,11 +39,9 @@ v11 is a largely backward-compatible release with v10, but it brings a lot of ne
 
 When [TanStack Query v5](https://tanstack.com/blog/announcing-tanstack-query-v5) was released it necessitated some breaking changes within tRPC's react-query integration. This has been available since quite early on via the `@next` tag, but now it's officially released. Many projects have already chosen to upgrade and are enjoying the benefits of full React Suspense support and many other improvements, for advice on migrating your tRPC React client code you can follow [TanStack Query's own migration guide](https://tanstack.com/query/v5/docs/react/guides/migrating-to-v5).
 
-### Content Types
+### Non-JSON Content Types
 
-One of our most requested features is the ability to send and receive more than simply JSON data. With tRPC v11, you can now send and receive data in a variety of content types, including JSON, `FormData`, `Blob`, `File` and `Uint8Array`. You can find an example of how to use these content types [here](https://github.com/trpc/trpc/tree/next/examples/minimal-content-types)
-
-TODO: docs for this API
+One of our most requested features is the ability to send and receive more than simply JSON data. With tRPC v11, you can now send and receive data in a variety of [non-json content types](/docs/server/validators#non-json-content-types), `FormData`, and binary types such as `Blob`, `File` and `Uint8Array`. You can find an example of how to use these content types [here](https://github.com/trpc/trpc/tree/next/examples/minimal-content-types)
 
 ```ts twoslash
 // @target: esnext
