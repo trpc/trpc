@@ -164,10 +164,8 @@ const appRouter = router({
 ### Subscriptions: Server-Sent Events and other Improvements
 
 * tRPC v11 introduces a new way to handle subscriptions using [Server-Sent Events (SSE)](/docs/server/subscriptions#websockets-or-server-sent-events). This is a great way to handle real-time updates in your application without the need for more complex WebSockets. We recommend using this in the first instance going forward.
-* We've added support for JavaScript generators in subscriptions. This allows you to write more complex subscription handlers which can yield multiple values over time, and clean up when finished, in a very JS-native way.
-* Subscriptions now support Output validators, improving the type-safety of your subscription handlers.
-
-TODO: client docs and code example
+* We've added support for JavaScript [generators in subscriptions](/docs/server/subscriptions#cleanup-of-side-effects). This allows you to write more complex subscription handlers which can yield multiple values over time, and clean up when finished, in a very JS-native way.
+* Subscriptions now support [Output validators](/docs/server/subscriptions#output-validation), improving the type-safety of your subscription handlers.
 
 ### Goodbye v9 `.interop()`-mode
 
