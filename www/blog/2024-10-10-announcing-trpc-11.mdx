@@ -132,12 +132,17 @@ for await (const value of iterable) {
 
 ### useSuspenseQueries
 
-We've introduced a new hook `useSuspenseQueries` which allows you to fetch multiple queries in parallel and suspend until all queries are resolved. When writing `Fetch on Render` style applications, a possible foot-gun is where you need to run several suspense queries at once and you end up with a "waterfall". `useSuspenseQueries` is a way to put this problem further off without need to rewrite to `Render as you Fetch` style with prefetching.
+We've introduced a new hook [useSuspenseQueries](/docs/client/react/suspense#usesuspensequeries) which allows you to fetch multiple queries in parallel and suspend until all queries are resolved. When writing `Fetch on Render` style applications, a possible foot-gun is where you need to run several suspense queries at once and you end up with a "waterfall". `useSuspenseQueries` is a way to put this problem further off without need to rewrite to `Render as you Fetch` style with prefetching.
 
-TODO: docs for this API
+```tsx
+const Component = (props: { postIds: string[] }) => {
+  const [posts, postQueries] = trpc.useSuspenseQueries((t) =>
+    props.postIds.map((id) => t.post.byId({ id })),
+  );
 
-TODO: code example
-
+  return <>{/* [...] */}</>;
+};
+```
 
 ### Shorthand Router Definitions
 
