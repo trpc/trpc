@@ -76,6 +76,7 @@ const appRouter = router({
 While you have been able to use tRPC with Next.js App Router from day 1, either:
 - using a server-centric approach using async/await with either [`createCaller`](/docs/server/server-side-calls) or [`createTRPCClient`](/docs/client/vanilla),
 - or a client-centric approach using the [React Query integration](/docs/client/react) and client-side hooks,
+
 the bridge in between has been a bit rough around the edges. Revalidation patterns are mixed when having to maintain different data fetching patterns resulting in a less than ideal developer experience that does not live up to tRPC's standards.
 
 To fix this, we've improved support for React Server Components (RSC) and added prefetch helpers to make it easier to utilize the powers of RSCs running exclusively on the server, in combination with the highly dynamic client-side cache of React Query.
