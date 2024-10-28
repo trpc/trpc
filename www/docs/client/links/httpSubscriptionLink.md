@@ -108,10 +108,14 @@ const trpc = createTRPCClient<AppRouter>({
         // ponyfill EventSource
         EventSource: EventSourcePolyfill,
         // options to pass to the EventSourcePolyfill constructor
-        eventSourceOptions: async () => {
+        eventSourceOptions: async ({ op }) => {
+          //                          ^ Includes the operation that's being executed
+          // you can use this to generate a signature for the operation
+          const signature = await getSignature(op);
           return {
             headers: {
               authorization: 'Bearer supersecret',
+              'x-signature': signature,
             },
           };
         },
@@ -288,26 +292,23 @@ Once the ponyfills are added, you can continue setting up the `httpSubscriptionL
 ## `httpSubscriptionLink` Options
 
 ```ts
-type MaybePromise<TValue> = TValue | Promise<TValue>;
-type CallbackOrValue<TValue> = TValue | (() => MaybePromise<TValue>);
-
-type HTTPSubscriptionLinkOptions<TRoot extends AnyClientTypes> = {
-  /**
-   * The URL to connect to (can be a function that returns a URL)
-   */
-  url: CallbackOrValue<string>;
-  /**
-   * EventSource options
-   */
-  eventSourceOptions?: CallbackOrValue<EventSourceInitLike>;
+type HTTPSubscriptionLinkOptions<
+  TRoot extends AnyClientTypes,
+  TEventSource extends EventSourceLike.AnyConstructor = typeof EventSource,
+> = {
   /**
    * EventSource ponyfill
    */
-  EventSource?: EventSourceConstructorLike;
+  EventSource?: TEventSource;
   /**
-   * Data transformer
-   * @see https://trpc.io/docs/v11/data-transformers
-   **/
-  transformer?: DataTransformerOptions;
+   * EventSource options or a callback that returns them
+   */
+  eventSourceOptions?:
+    | EventSourceLike.InitDictOf<TEventSource>
+    | ((opts: {
+        op: Operation;
+      }) =>
+        | EventSourceLike.InitDictOf<TEventSource>
+        | Promise<EventSourceLike.InitDictOf<TEventSource>>);
 };
 ```
