@@ -29,6 +29,7 @@ const sections: Def = {
     //
     'hidrb',
     'flylance-apps',
+    'ryanmagoon',
   ],
 };
 
