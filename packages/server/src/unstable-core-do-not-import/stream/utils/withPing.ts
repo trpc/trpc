@@ -1,3 +1,4 @@
+import { Unpromise } from '../../../vendor/unpromise';
 import { createPromiseTimer } from './promiseTimer';
 
 export const PING_SYM = Symbol('ping');
@@ -22,7 +23,7 @@ export async function* withPing<TValue>(
     const pingPromise = timer.start().promise.then(() => PING_RESULT);
     let result: IteratorResult<TValue | typeof PING_SYM>;
     try {
-      result = await Promise.race([nextPromise, pingPromise]);
+      result = await Unpromise.race([nextPromise, pingPromise]);
     } finally {
       timer.clear();
     }

@@ -1,3 +1,4 @@
+import { Unpromise } from '../../../vendor/unpromise';
 import { noop } from '../../utils';
 import { createPromiseTimer } from './promiseTimer';
 
@@ -12,7 +13,7 @@ export async function* withCancel<T>(
   const cancelPromise = cancel.then(noop);
   const iterator = iterable[Symbol.asyncIterator]();
   while (true) {
-    const result = await Promise.race([iterator.next(), cancelPromise]);
+    const result = await Unpromise.race([iterator.next(), cancelPromise]);
     if (result == null) {
       await iterator.return?.();
       break;
@@ -43,7 +44,7 @@ export async function* takeWithGrace<T>(
   const timer = createPromiseTimer(gracePeriodMs);
   try {
     while (true) {
-      const result = await Promise.race([iterator.next(), timer.promise]);
+      const result = await Unpromise.race([iterator.next(), timer.promise]);
       if (result == null) {
         // cancelled
         await iterator.return?.();

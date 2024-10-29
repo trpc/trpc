@@ -33,6 +33,7 @@ import {
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
+import { Unpromise } from '../vendor/unpromise';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
@@ -283,7 +284,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
         run(async () => {
           while (true) {
-            const next = await Promise.race([
+            const next = await Unpromise.race([
               iterator.next().catch(getTRPCErrorFromUnknown),
               abortPromise,
             ]);

@@ -1,3 +1,4 @@
+import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import type { Deferred } from './utils/createDeferred';
@@ -148,7 +149,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
 
-    Promise.race([promise, stream.cancelledPromise])
+    Unpromise.race([promise, stream.cancelledPromise])
       .then((it) => {
         if (isCancelledStreamResult(it)) {
           return;
@@ -191,7 +192,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
       const iterator = iterable[Symbol.asyncIterator]();
 
       while (true) {
-        const next = await Promise.race([
+        const next = await Unpromise.race([
           iterator.next().catch(getTRPCErrorFromUnknown),
           stream.cancelledPromise,
         ]);
