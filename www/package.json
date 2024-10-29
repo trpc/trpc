@@ -85,7 +85,7 @@
     "docusaurus-plugin-typedoc": "1.0.5",
     "dotenv": "^16.0.1",
     "eslint": "^8.57.0",
-    "next": "^14.2.5",
+    "next": "^15.0.0",
     "next-auth": "^4.22.1",
     "npm-run-all2": "^7.0.0",
     "oauth": "^0.10.0",
