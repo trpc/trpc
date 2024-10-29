@@ -9,7 +9,6 @@ const config = {
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
   ],
-  ignorePatterns: ["packages/server/src/vendor/**/*"],
   reportUnusedDisableDirectives: true,
   parserOptions: {
     ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
