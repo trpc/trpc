@@ -42,8 +42,8 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
+        specifier: ^22.0.0
+        version: 22.8.2
       '@types/prettier':
         specifier: ^2.7.2
         version: 2.7.2
@@ -142,10 +142,10 @@ importers:
         version: 5.6.2
       vite:
         specifier: ^5.3.4
-        version: 5.3.6(@types/node@20.10.4)
+        version: 5.3.6(@types/node@22.8.2)
       vitest:
         specifier: ^2.0.4
-        version: 2.0.4(@types/node@20.10.4)(@vitest/ui@2.0.4)
+        version: 2.0.4(@types/node@22.8.2)(@vitest/ui@2.0.4)
       vitest-environment-miniflare:
         specifier: ^2.14.1
         version: 2.14.2(vitest@2.0.4)
@@ -755,7 +755,7 @@ importers:
         version: 5.6.2
       vite:
         specifier: ^5.3.4
-        version: 5.3.6(@types/node@20.10.4)
+        version: 5.3.6(@types/node@22.8.2)
 
   examples/minimal-content-types/server:
     dependencies:
@@ -838,7 +838,7 @@ importers:
         version: 5.6.2
       vite:
         specifier: ^5.3.4
-        version: 5.3.6(@types/node@20.10.4)
+        version: 5.3.6(@types/node@22.8.2)
 
   examples/minimal-react/server:
     dependencies:
@@ -1653,8 +1653,8 @@ importers:
         specifier: ^0.0.39
         version: 0.0.39
       '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
+        specifier: ^22.0.0
+        version: 22.8.2
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
@@ -1695,8 +1695,8 @@ importers:
         specifier: ^4.17.17
         version: 4.17.17
       '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
+        specifier: ^22.0.0
+        version: 22.8.2
       '@types/react':
         specifier: ^18.3.1
         version: 18.3.1
@@ -1743,8 +1743,8 @@ importers:
         specifier: ^4.17.17
         version: 4.17.17
       '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
+        specifier: ^22.0.0
+        version: 22.8.2
       '@types/react':
         specifier: ^18.3.1
         version: 18.3.1
@@ -1794,8 +1794,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
+        specifier: ^22.0.0
+        version: 22.8.2
       '@types/react':
         specifier: ^18.3.1
         version: 18.3.1
@@ -1917,8 +1917,8 @@ importers:
         specifier: ^10.45.1
         version: link:../server
       '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
+        specifier: ^22.0.0
+        version: 22.8.2
       abort-controller:
         specifier: ^3.0.0
         version: 3.0.0
@@ -2128,8 +2128,8 @@ importers:
         specifier: ^15.0.0
         version: 15.0.0
       '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
+        specifier: ^22.0.0
+        version: 22.8.2
       '@types/oauth':
         specifier: ^0.9.1
         version: 0.9.1
@@ -2225,8 +2225,8 @@ importers:
         version: 3.23.8
     devDependencies:
       '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
+        specifier: ^22.0.0
+        version: 22.8.2
       '@types/react':
         specifier: ^18.3.1
         version: 18.3.1
@@ -8691,7 +8691,7 @@ packages:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.4
       '@types/istanbul-reports': 3.0.1
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
       '@types/yargs': 17.0.14
       chalk: 4.1.2
     dev: false
@@ -11688,7 +11688,7 @@ packages:
       dom-accessibility-api: 0.5.14
       lodash: 4.17.21
       redent: 3.0.0
-      vitest: 2.0.4(@types/node@20.10.4)(@vitest/ui@2.0.4)
+      vitest: 2.0.4(@types/node@22.8.2)(@vitest/ui@2.0.4)
     dev: false
 
   /@testing-library/react@16.0.0(@testing-library/dom@10.0.0)(react-dom@18.3.1)(react@18.3.1):
@@ -11824,7 +11824,7 @@ packages:
   /@types/better-sqlite3@7.6.2:
     resolution: {integrity: sha512-RgmaapusqTq6IMAr4McMyAsC6RshYTCjXCnzwVV59WctUxC8bNPyUfT9t5F81lKcU41lLurhjqjoMHfauzfqGg==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
 
   /@types/body-parser@1.19.2:
     resolution: {integrity: sha512-ALYone6pm6QmwZoAgeyNksccT9Q4AWZQ6PvfwR37GT6r6FWUPguq6sUmNGSMV2Wr761oQoBxwGGa6DR5o1DC9g==}
@@ -11835,7 +11835,7 @@ packages:
   /@types/bonjour@3.5.10:
     resolution: {integrity: sha512-p7ienRMiS41Nu2/igbJxxLDWrSZ0WxM8UQgCeO9KhoVF7cOVFkrKsiDr1EsJIla8vV3oEEjGcz11jc5yimhzZw==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
     dev: false
 
   /@types/braces@3.0.4:
@@ -11855,7 +11855,7 @@ packages:
     resolution: {integrity: sha512-h8QJa8xSb1WD4fpKBDcATDNGXghFj6/3GRWG6dhmRcu0RX1Ubasur2Uvx5aeEwlf0MwblEC2bMzzMQntxnw/Cw==}
     dependencies:
       '@types/express-serve-static-core': 4.17.34
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
     dev: false
 
   /@types/connect@3.4.35:
@@ -11920,7 +11920,7 @@ packages:
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
     dependencies:
       '@types/minimatch': 5.1.2
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
     dev: false
 
   /@types/gtag.js@0.0.12:
@@ -11963,7 +11963,7 @@ packages:
   /@types/http-proxy@1.17.9:
     resolution: {integrity: sha512-QsbSjA/fSk7xB+UXlCT3wHBy5ai9wOcNDWwZAtud+jXhwOM3l+EYZh8Lng4+/6n8uar0J7xILzqftJdJ/Wdfkw==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
     dev: false
 
   /@types/isomorphic-fetch@0.0.39:
@@ -12049,6 +12049,11 @@ packages:
     dependencies:
       undici-types: 5.26.5
 
+  /@types/node@22.8.2:
+    resolution: {integrity: sha512-NzaRNFV+FZkvK/KLCsNdTvID0SThyrs5SHB6tsD/lajr22FGC73N2QeDPM2wHtVde8mgcXuSsHQkH5cX1pbPLw==}
+    dependencies:
+      undici-types: 6.19.8
+
   /@types/normalize-package-data@2.4.1:
     resolution: {integrity: sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==}
     dev: false
@@ -12056,7 +12061,7 @@ packages:
   /@types/oauth@0.9.1:
     resolution: {integrity: sha512-a1iY62/a3yhZ7qH7cNUsxoI3U/0Fe9+RnuFrpTKr+0WVOzbKlSLojShCKe20aOD1Sppv+i8Zlq0pLDuTJnwS4A==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
     dev: true
 
   /@types/parse-json@4.0.0:
@@ -12135,7 +12140,7 @@ packages:
   /@types/sax@1.2.4:
     resolution: {integrity: sha512-pSAff4IAxJjfAXUG6tFkO7dsSbTmf8CtUpfhhZ5VhkRpC4628tJhh3+V6H1E+/Gs9piSzYKT5yzHO5M4GG9jkw==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
     dev: false
 
   /@types/send@0.17.1:
@@ -12159,7 +12164,7 @@ packages:
   /@types/sockjs@0.3.33:
     resolution: {integrity: sha512-f0KEEe05NvUnat+boPTZ0dgaLZ4SfSouXUgv5noUiefG2ajgKjmETo9ZJyuqsl7dfl2aHlLJUiki6B4ZYldiiw==}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
     dev: false
 
   /@types/stack-trace@0.0.29:
@@ -12592,7 +12597,7 @@ packages:
       '@babel/plugin-transform-react-jsx-source': 7.24.7(@babel/core@7.24.7)
       '@types/babel__core': 7.20.5
       react-refresh: 0.14.2
-      vite: 5.3.6(@types/node@20.10.4)
+      vite: 5.3.6(@types/node@22.8.2)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -12612,7 +12617,7 @@ packages:
       magicast: 0.3.4
       test-exclude: 7.0.1
       tinyrainbow: 1.2.0
-      vitest: 2.0.4(@types/node@20.10.4)(@vitest/ui@2.0.4)
+      vitest: 2.0.4(@types/node@22.8.2)(@vitest/ui@2.0.4)
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -12660,7 +12665,7 @@ packages:
       pathe: 1.1.2
       sirv: 2.0.4
       tinyrainbow: 1.2.0
-      vitest: 2.0.4(@types/node@20.10.4)(@vitest/ui@2.0.4)
+      vitest: 2.0.4(@types/node@22.8.2)(@vitest/ui@2.0.4)
 
   /@vitest/utils@2.0.4:
     resolution: {integrity: sha512-Zc75QuuoJhOBnlo99ZVUkJIuq4Oj0zAkrQ2VzCqNCx6wAwViHEh5Fnp4fiJTE9rA+sAoXRf00Z9xGgfEzV6fzQ==}
@@ -17237,7 +17242,7 @@ packages:
     resolution: {integrity: sha512-EzV94NYKoO09GLXGjXj9JIlXijVck4ONSr5wiCWDvhsvj5jxSrzTmRU/9C1DyB6uToszLs8aifA6NQ7lEQdvFw==}
     engines: {node: '>= 0.8'}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
       require-like: 0.1.2
     dev: false
 
@@ -19956,7 +19961,7 @@ packages:
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
       chalk: 4.1.2
       ci-info: 3.8.0
       graceful-fs: 4.2.11
@@ -19967,7 +19972,7 @@ packages:
     resolution: {integrity: sha512-7vuh85V5cdDofPyxn58nrPjBktZo0u9x1g8WtjQol+jZDaE+fhN+cIvTj11GndBnMnyfrUOG1sZQxCdjKh+DKg==}
     engines: {node: '>= 10.13.0'}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
       merge-stream: 2.0.0
       supports-color: 8.1.1
     dev: false
@@ -19976,7 +19981,7 @@ packages:
     resolution: {integrity: sha512-eIz2msL/EzL9UFTFFx7jBTkeZfku0yUAyZZZmJ93H2TYEiroIx2PQjEXcwYtYl8zXCxb+PAmA2hLIt/6ZEkPHw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
-      '@types/node': 20.10.4
+      '@types/node': 22.8.2
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
@@ -28141,6 +28146,9 @@ packages:
   /undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
 
+  /undici-types@6.19.8:
+    resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
+
   /undici@5.28.2:
     resolution: {integrity: sha512-wh1pHJHnUeQV5Xa8/kyQhO7WFa8M34l026L5P/+2TYiakvGy5Rdc8jWZVyG7ieht/0WgJLEd3kcU5gKx+6GC8w==}
     engines: {node: '>=14.0'}
@@ -28775,6 +28783,27 @@ packages:
       - sugarss
       - supports-color
       - terser
+    dev: true
+
+  /vite-node@2.0.4(@types/node@22.8.2):
+    resolution: {integrity: sha512-ZpJVkxcakYtig5iakNeL7N3trufe3M6vGuzYAr4GsbCTwobDeyPJpE4cjDhhPluv8OvQCFzu2LWp6GkoKRITXA==}
+    engines: {node: ^18.0.0 || >=20.0.0}
+    hasBin: true
+    dependencies:
+      cac: 6.7.14
+      debug: 4.3.7(supports-color@8.1.1)
+      pathe: 1.1.2
+      tinyrainbow: 1.2.0
+      vite: 5.3.6(@types/node@22.8.2)
+    transitivePeerDependencies:
+      - '@types/node'
+      - less
+      - lightningcss
+      - sass
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
 
   /vite-tsconfig-paths@4.3.2(typescript@5.6.2)(vite@5.3.6):
     resolution: {integrity: sha512-0Vd/a6po6Q+86rPlntHye7F31zA2URZMbH8M3saAZ/xR9QoGN/L21bxEGfXdWmFdNkqPpRdxFT7nmNe12e9/uA==}
@@ -28828,6 +28857,41 @@ packages:
     optionalDependencies:
       fsevents: 2.3.3
 
+  /vite@5.3.6(@types/node@22.8.2):
+    resolution: {integrity: sha512-es78AlrylO8mTVBygC0gTC0FENv0C6T496vvd33ydbjF/mIi9q3XQ9A3NWo5qLGFKywvz10J26813OkLvcQleA==}
+    engines: {node: ^18.0.0 || >=20.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^18.0.0 || >=20.0.0
+      less: '*'
+      lightningcss: ^1.21.0
+      sass: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.4.0
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+    dependencies:
+      '@types/node': 22.8.2
+      esbuild: 0.21.5
+      postcss: 8.4.47
+      rollup: 4.21.3
+    optionalDependencies:
+      fsevents: 2.3.3
+
   /vitest-environment-miniflare@2.14.2(vitest@2.0.4):
     resolution: {integrity: sha512-9bVoJ59m8RtW+KxXoQBTm+2ljZDTuN/yxth3VlIJV4oOpjLo7ambK+exWJmoU+2lcSf0WAC/610a3gJuAJJDTg==}
     engines: {node: '>=16.13'}
@@ -28839,7 +28903,7 @@ packages:
       '@miniflare/shared': 2.14.2
       '@miniflare/shared-test-environment': 2.14.2
       undici: 5.28.2
-      vitest: 2.0.4(@types/node@20.10.4)(@vitest/ui@2.0.4)
+      vitest: 2.0.4(@types/node@22.8.2)(@vitest/ui@2.0.4)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -28890,6 +28954,62 @@ packages:
       tinyrainbow: 1.2.0
       vite: 5.3.6(@types/node@20.10.4)
       vite-node: 2.0.4(@types/node@20.10.4)
+      why-is-node-running: 2.3.0
+    transitivePeerDependencies:
+      - less
+      - lightningcss
+      - sass
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+    dev: true
+
+  /vitest@2.0.4(@types/node@22.8.2)(@vitest/ui@2.0.4):
+    resolution: {integrity: sha512-luNLDpfsnxw5QSW4bISPe6tkxVvv5wn2BBs/PuDRkhXZ319doZyLOBr1sjfB5yCEpTiU7xCAdViM8TNVGPwoog==}
+    engines: {node: ^18.0.0 || >=20.0.0}
+    hasBin: true
+    peerDependencies:
+      '@edge-runtime/vm': '*'
+      '@types/node': ^18.0.0 || >=20.0.0
+      '@vitest/browser': 2.0.4
+      '@vitest/ui': 2.0.4
+      happy-dom: '*'
+      jsdom: '*'
+    peerDependenciesMeta:
+      '@edge-runtime/vm':
+        optional: true
+      '@types/node':
+        optional: true
+      '@vitest/browser':
+        optional: true
+      '@vitest/ui':
+        optional: true
+      happy-dom:
+        optional: true
+      jsdom:
+        optional: true
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      '@types/node': 22.8.2
+      '@vitest/expect': 2.0.4
+      '@vitest/pretty-format': 2.0.4
+      '@vitest/runner': 2.0.4
+      '@vitest/snapshot': 2.0.4
+      '@vitest/spy': 2.0.4
+      '@vitest/ui': 2.0.4(vitest@2.0.4)
+      '@vitest/utils': 2.0.4
+      chai: 5.1.1
+      debug: 4.3.5
+      execa: 8.0.1
+      magic-string: 0.30.10
+      pathe: 1.1.2
+      std-env: 3.7.0
+      tinybench: 2.8.0
+      tinypool: 1.0.0
+      tinyrainbow: 1.2.0
+      vite: 5.3.6(@types/node@22.8.2)
+      vite-node: 2.0.4(@types/node@22.8.2)
       why-is-node-running: 2.3.0
     transitivePeerDependencies:
       - less
