@@ -35,7 +35,6 @@ test('should be able to create synthetic cause from string', () => {
   const trpcError = new TRPCError({ code: 'FORBIDDEN', cause: 'rick' });
   expect(trpcError.cause).toBeInstanceOf(Error);
   expect(trpcError.cause!.message).toBe('rick');
-  // @ts-expect-error -- until the target is updated to es2022+
   expect(trpcError.cause!.cause).toBe(undefined);
 });
 
@@ -43,7 +42,6 @@ test('should be able to create synthetic cause from object', () => {
   const cause = { foo: 'bar' };
   const trpcError = new TRPCError({ code: 'FORBIDDEN', cause });
   expect(trpcError.cause).toBeInstanceOf(Error);
-  // @ts-expect-error -- until the target is updated to es2022+
   expect(trpcError.cause.foo).toBe('bar');
 });
 
@@ -64,7 +62,6 @@ describe('getTRPCErrorFromUnknown', () => {
     const trpcError = getTRPCErrorFromUnknown(originalError);
     expect(trpcError).toBeInstanceOf(TRPCError);
     expect(trpcError.message).toEqual('rick');
-    // @ts-expect-error -- until the target is updated to es2022+
     expect(trpcError.cause!.cause).toBe(undefined);
   });
 
