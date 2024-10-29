@@ -52,4 +52,4 @@ export interface PromiseWithResolvers<T> {
 }
 
 /** Given an array, this is the union of its members' types. */
-export type MemberOf<Arr extends readonly unknown[]> = Arr[number];
+// export type MemberOf<Arr extends readonly unknown[]> = Arr[number];
