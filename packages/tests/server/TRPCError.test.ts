@@ -42,7 +42,7 @@ test('should be able to create synthetic cause from object', () => {
   const cause = { foo: 'bar' };
   const trpcError = new TRPCError({ code: 'FORBIDDEN', cause });
   expect(trpcError.cause).toBeInstanceOf(Error);
-  expect(trpcError.cause.foo).toBe('bar');
+  expect((trpcError.cause! as Error & typeof cause).foo).toBe('bar');
 });
 
 test('should skip creating the cause if one is not provided', () => {
