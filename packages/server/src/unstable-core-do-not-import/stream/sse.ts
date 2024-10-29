@@ -76,6 +76,8 @@ export function sseStreamProducer<TValue = unknown>(
   };
 
   run(async () => {
+    type TIteratorValue = Awaited<TValue> | typeof PING_SYM;
+
     let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
 
     iterable = withCancel(iterable, stream.cancelledPromise);
@@ -106,13 +108,18 @@ export function sseStreamProducer<TValue = unknown>(
     }
 
     try {
-      for await (const value of iterable) {
+      // We need those declarations outside the loop for garbage collection reasons. If they were
+      // declared inside, they would not be freed until the next value is present.
+      let value: null | TIteratorValue;
+      let chunk: null | SSEvent;
+      
+      for await (value of iterable) {
         if (value === PING_SYM) {
           stream.controller.enqueue({ comment: 'ping' });
           continue;
         }
 
-        const chunk: SSEvent = isTrackedEnvelope(value)
+        chunk = isTrackedEnvelope(value)
           ? { id: value[0], data: value[1] }
           : { data: value };
         if ('data' in chunk) {
@@ -120,6 +127,10 @@ export function sseStreamProducer<TValue = unknown>(
         }
 
         stream.controller.enqueue(chunk);
+        
+        // free up references for garbage collection
+        value = null;
+        chunk = null;
       }
     } catch (err) {
       // ignore abort errors, send any other errors

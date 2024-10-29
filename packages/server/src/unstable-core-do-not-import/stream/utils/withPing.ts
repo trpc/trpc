@@ -18,10 +18,11 @@ export async function* withPing<TValue>(
 ): AsyncGenerator<TValue | typeof PING_SYM> {
   const timer = createPromiseTimer(pingIntervalMs);
   const iterator = iterable[Symbol.asyncIterator]();
+  // declaration outside the loop for garbage collection reasons
+  let result: null | IteratorResult<TValue | typeof PING_SYM>;
   while (true) {
     const nextPromise = iterator.next();
     const pingPromise = timer.start().promise.then(() => PING_RESULT);
-    let result: IteratorResult<TValue | typeof PING_SYM>;
     try {
       result = await Unpromise.race([nextPromise, pingPromise]);
     } finally {
@@ -32,5 +33,7 @@ export async function* withPing<TValue>(
     }
     yield result.value;
     timer.reset();
+    // free up reference for garbage collection
+    result = null;
   }
 }

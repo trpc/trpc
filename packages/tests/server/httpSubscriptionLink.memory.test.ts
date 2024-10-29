@@ -1,35 +1,46 @@
 import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew } from './___testHelpers';
-import { wsLink } from '@trpc/client';
+import { unstable_httpSubscriptionLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { sleep } from '@trpc/server/unstable-core-do-not-import';
+import { konn } from 'konn';
 
-function factory() {
-  const ee = new EventEmitter();
-  const t = initTRPC.create();
+const ctx = konn()
+  .beforeEach(() => {
+    const ee = new EventEmitter();
+    const t = initTRPC.create({
+      experimental: {
+        sseSubscriptions: {
+          maxDurationMs: 1000,
+          ping: { enabled: true, intervalMs: 200 },
+        },
+      },
+    });
 
-  const appRouter = t.router({
-    onData: t.procedure.subscription(({ signal }) =>
-      on(ee as any, 'data', { signal }),
-    ),
-  });
+    const router = t.router({
+      onData: t.procedure.subscription(({ signal }) =>
+        on(ee as any, 'data', { signal }),
+      ),
+    });
 
-  const opts = routerToServerAndClientNew(appRouter, {
-    wsClient: { retryDelayMs: () => 10 },
-    client({ wsClient }) {
-      return { links: [wsLink({ client: wsClient })] };
-    },
-    server: {},
-    wssServer: { router: appRouter },
-  });
+    const opts = routerToServerAndClientNew(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [unstable_httpSubscriptionLink({ url: opts.httpUrl })],
+        };
+      },
+    });
 
-  return { ...opts, ee };
-}
+    return { ...opts, ee };
+  })
+  .afterEach(async (opts) => {
+    await opts.close?.();
+  })
+  .done();
 
-describe('ws subscription memory', () => {
+describe('http subscription memory', () => {
   it('should free data after each iteration (#6156)', async () => {
-    const ctx = factory();
-
     const onStartedMock = vi.fn();
     const onDataLengthMock = vi.fn();
     const subscription = ctx.client.onData.subscribe(undefined, {
@@ -59,8 +70,6 @@ describe('ws subscription memory', () => {
     expect(refs[1]!.deref()).toBeUndefined();
     
     subscription.unsubscribe();
-
-    await ctx.close();
 
     function emitData(): WeakRef<never[]> {
       const data: never[] = [];
