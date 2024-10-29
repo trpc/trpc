@@ -58,6 +58,9 @@ export default defineConfig({
       threads: {
         useAtomics: !!process.env['CI'],
       },
+      forks: {
+        execArgv: ['--expose-gc'],
+      },
     },
   },
   resolve: {

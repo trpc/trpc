@@ -33,6 +33,7 @@ import {
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
+import { Unpromise } from '../vendor/unpromise';
 import type { NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
@@ -282,8 +283,18 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
 
         run(async () => {
+          // We need those declarations outside the loop for garbage collection reasons. If they
+          // were declared inside, they would not be freed until the next value is present.
+          let next:
+            | null
+            | TRPCError
+            | Awaited<
+                typeof abortPromise | ReturnType<(typeof iterator)['next']>
+              >;
+          let result: null | TRPCResultMessage<unknown>['result'];
+          
           while (true) {
-            const next = await Promise.race([
+            next = await Unpromise.race([
               iterator.next().catch(getTRPCErrorFromUnknown),
               abortPromise,
             ]);
@@ -313,7 +324,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               break;
             }
 
-            const result: TRPCResultMessage<unknown>['result'] = {
+            result = {
               type: 'data',
               data: next.value,
             };
@@ -332,6 +343,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               jsonrpc,
               result,
             });
+
+            // free up references for garbage collection
+            next = null;
+            result = null;
           }
 
           await iterator.return?.();
