@@ -94,7 +94,7 @@
     "@trpc/client": "10.45.1",
     "@trpc/react-query": "10.45.1",
     "@trpc/server": "^10.45.1",
-    "@types/express": "^4.17.17",
+    "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",

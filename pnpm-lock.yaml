@@ -1692,8 +1692,8 @@ importers:
         specifier: ^10.45.1
         version: link:../server
       '@types/express':
-        specifier: ^4.17.17
-        version: 4.17.17
+        specifier: ^5.0.0
+        version: 5.0.0
       '@types/node':
         specifier: ^22.0.0
         version: 22.8.2
@@ -1740,8 +1740,8 @@ importers:
         specifier: ^10.45.1
         version: link:../server
       '@types/express':
-        specifier: ^4.17.17
-        version: 4.17.17
+        specifier: ^5.0.0
+        version: 5.0.0
       '@types/node':
         specifier: ^22.0.0
         version: 22.8.2
@@ -1788,8 +1788,8 @@ importers:
         specifier: ^8.10.137
         version: 8.10.137
       '@types/express':
-        specifier: ^4.17.17
-        version: 4.17.17
+        specifier: ^5.0.0
+        version: 5.0.0
       '@types/hash-sum':
         specifier: ^1.0.0
         version: 1.0.0
@@ -11908,6 +11908,15 @@ packages:
       '@types/range-parser': 1.2.4
       '@types/send': 0.17.1
 
+  /@types/express-serve-static-core@5.0.1:
+    resolution: {integrity: sha512-CRICJIl0N5cXDONAdlTv5ShATZ4HEwk6kDDIW2/w9qOWKg+NU/5F8wYRWCrONad0/UKkloNSmmyN/wX4rtpbVA==}
+    dependencies:
+      '@types/node': 22.8.2
+      '@types/qs': 6.9.7
+      '@types/range-parser': 1.2.4
+      '@types/send': 0.17.1
+    dev: true
+
   /@types/express@4.17.17:
     resolution: {integrity: sha512-Q4FmmuLGBG58btUnfS1c1r/NQdlp3DMfGDGig8WhfpA2YRUtEkxAjkZb0yvplJGYdF1fsQ81iMDcH24sSCNC/Q==}
     dependencies:
@@ -11915,6 +11924,15 @@ packages:
       '@types/express-serve-static-core': 4.17.34
       '@types/qs': 6.9.7
       '@types/serve-static': 1.15.0
+
+  /@types/express@5.0.0:
+    resolution: {integrity: sha512-DvZriSMehGHL1ZNLzi6MidnsDhUZM/x2pRdDIKdwbUNqqwHxMlRdkxtn6/EPKyqKpHqTl/4nRZsRNLpZxZRpPQ==}
+    dependencies:
+      '@types/body-parser': 1.19.2
+      '@types/express-serve-static-core': 5.0.1
+      '@types/qs': 6.9.7
+      '@types/serve-static': 1.15.0
+    dev: true
 
   /@types/glob@7.2.0:
     resolution: {integrity: sha512-ZUxbzKl0IfJILTS6t7ip5fQQM/J3TJYubDm3nMbgubNNYS62eXeUpoLUC8/7fJNiFYHTrGPQn7hspDUzIHX3UA==}
