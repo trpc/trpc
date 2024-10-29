@@ -8,6 +8,7 @@ dist/
 examples/next-big-router/src/server/routers/*.ts
 examples/.diagnostics/**/*
 packages/tests/vendor/
+packages/server/src/vendor/
 packages/coverage/
 pnpm-lock.yaml
 www/docs/main/quickstart.mdx
