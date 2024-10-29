@@ -58,14 +58,14 @@ type DecorateProcedure<
       query: Resolver<TDef>;
     }
   : TType extends 'mutation'
-  ? {
-      mutate: Resolver<TDef>;
-    }
-  : TType extends 'subscription'
-  ? {
-      subscribe: SubscriptionResolver<TDef>;
-    }
-  : never;
+    ? {
+        mutate: Resolver<TDef>;
+      }
+    : TType extends 'subscription'
+      ? {
+          subscribe: SubscriptionResolver<TDef>;
+        }
+      : never;
 
 /**
  * @internal
@@ -78,19 +78,19 @@ type DecoratedProcedureRecord<
     ? $Value extends RouterRecord
       ? DecoratedProcedureRecord<TRouter, $Value>
       : $Value extends AnyProcedure
-      ? DecorateProcedure<
-          $Value['_def']['type'],
-          {
-            input: inferProcedureInput<$Value>;
-            output: inferTransformedProcedureOutput<
-              inferClientTypes<TRouter>,
-              $Value
-            >;
-            errorShape: inferClientTypes<TRouter>['errorShape'];
-            transformer: inferClientTypes<TRouter>['transformer'];
-          }
-        >
-      : never
+        ? DecorateProcedure<
+            $Value['_def']['type'],
+            {
+              input: inferProcedureInput<$Value>;
+              output: inferTransformedProcedureOutput<
+                inferClientTypes<TRouter>,
+                $Value
+              >;
+              errorShape: inferClientTypes<TRouter>['errorShape'];
+              transformer: inferClientTypes<TRouter>['transformer'];
+            }
+          >
+        : never
     : never;
 };
 

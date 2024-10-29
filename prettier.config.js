@@ -3,7 +3,7 @@
 /** @typedef  {{ tailwindConfig: string }} TailwindConfig*/
 
 /** @type { PrettierConfig | SortImportsConfig | TailwindConfig } */
-const config = {
+export default {
   printWidth: 80,
   trailingComma: 'all',
   endOfLine: 'auto',
@@ -11,12 +11,10 @@ const config = {
   importOrder: ['___', '__', '<THIRD_PARTY_MODULES>', '^[./]'],
   tailwindConfig: './www/tailwind.config.ts',
   plugins: [
-    require.resolve('@ianvs/prettier-plugin-sort-imports'),
+    '@ianvs/prettier-plugin-sort-imports',
     /**
      * Tailwind plugin must come last!
      */
-    require.resolve('prettier-plugin-tailwindcss'),
+    'prettier-plugin-tailwindcss',
   ],
 };
-
-module.exports = config;

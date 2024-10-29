@@ -221,7 +221,7 @@ export default function TodosPage(props: PageProps) {
 
           <input
             className="new-todo"
-            placeholder={t('what_needs_to_be_done') as string}
+            placeholder={t('what_needs_to_be_done')}
             autoFocus
             onKeyDown={(e) => {
               const text = e.currentTarget.value.trim();
@@ -250,12 +250,10 @@ export default function TodosPage(props: PageProps) {
                 props.filter === 'completed'
                   ? completed
                   : props.filter === 'active'
-                  ? !completed
-                  : true,
+                    ? !completed
+                    : true,
               )
-              .map((task) => (
-                <ListItem key={task.id} task={task} />
-              ))}
+              .map((task) => <ListItem key={task.id} task={task} />)}
           </ul>
         </section>
 

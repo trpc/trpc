@@ -330,14 +330,17 @@ describe('no transformer', () => {
   });
 
   test('output validation iterable yield error', async () => {
-    const clientError = await waitError(async () => {
-      const iterable = await ctx.client.iterable.query({
-        badYield: true,
-      });
-      for await (const value of iterable) {
-        ctx.nextIterable();
-      }
-    }, TRPCClientError<typeof ctx.router>);
+    const clientError = await waitError(
+      async () => {
+        const iterable = await ctx.client.iterable.query({
+          badYield: true,
+        });
+        for await (const value of iterable) {
+          ctx.nextIterable();
+        }
+      },
+      TRPCClientError<typeof ctx.router>,
+    );
 
     expect(clientError.data?.code).toBe('INTERNAL_SERVER_ERROR');
     expect(clientError.message).toMatchInlineSnapshot(`
@@ -359,14 +362,17 @@ describe('no transformer', () => {
   });
 
   test('output validation iterable return error', async () => {
-    const clientError = await waitError(async () => {
-      const iterable = await ctx.client.iterable.query({
-        badReturn: true,
-      });
-      for await (const value of iterable) {
-        ctx.nextIterable();
-      }
-    }, TRPCClientError<typeof ctx.router>);
+    const clientError = await waitError(
+      async () => {
+        const iterable = await ctx.client.iterable.query({
+          badReturn: true,
+        });
+        for await (const value of iterable) {
+          ctx.nextIterable();
+        }
+      },
+      TRPCClientError<typeof ctx.router>,
+    );
 
     expect(clientError.data?.code).toBe('INTERNAL_SERVER_ERROR');
     expect(clientError.message).toMatchInlineSnapshot(`
@@ -637,11 +643,14 @@ describe('with transformer', () => {
     const iterable = await client.iterableWithError.query();
 
     const aggregated: unknown[] = [];
-    const error = await waitError(async () => {
-      for await (const value of iterable) {
-        aggregated.push(value);
-      }
-    }, TRPCClientError<typeof router>);
+    const error = await waitError(
+      async () => {
+        for await (const value of iterable) {
+          aggregated.push(value);
+        }
+      },
+      TRPCClientError<typeof router>,
+    );
 
     error.data!.stack = '[redacted]';
     expect(error.data).toMatchInlineSnapshot(`

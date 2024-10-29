@@ -76,7 +76,8 @@ export function experimental_createTRPCNextAppDirServer<
 const throwNextErrors = (error: TRPCError) => {
   const { cause } = error;
   if (isRedirectError(cause) || isNotFoundError(cause)) {
-    throw error.cause;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    throw error.cause!;
   }
 };
 /**
@@ -179,7 +180,9 @@ export function experimental_createServerActionHandler<
           type: proc._def.type,
         });
 
-        rethrowNextErrors && throwNextErrors(error);
+        if (rethrowNextErrors) {
+          throwNextErrors(error);
+        }
 
         const shape = getErrorShape({
           config,

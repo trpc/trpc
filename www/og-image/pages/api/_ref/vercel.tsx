@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 import { ImageResponse } from '@vercel/og';
 import { type NextRequest } from 'next/server';
 

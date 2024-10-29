@@ -14,7 +14,11 @@ import type { AnyRouter } from '../../@trpc/server';
 // @trpc/server/http
 import type { NodeHTTPCreateContextFnOptions } from '../node-http';
 // @trpc/server/ws
-import { getWSConnectionHandler, handleKeepAlive, type WSSHandlerOptions } from '../ws';
+import {
+  getWSConnectionHandler,
+  handleKeepAlive,
+  type WSSHandlerOptions,
+} from '../ws';
 import type { FastifyHandlerOptions } from './fastifyRequestHandler';
 import { fastifyRequestHandler } from './fastifyRequestHandler';
 
@@ -57,8 +61,9 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   });
 
   if (opts.useWSS) {
-    const trpcOptions = opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>;
-    
+    const trpcOptions =
+      opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>;
+
     const onConnection = getWSConnectionHandler<TRouter>({
       ...trpcOptions,
     });

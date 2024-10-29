@@ -112,7 +112,7 @@ export function sseStreamProducer<TValue = unknown>(
       // declared inside, they would not be freed until the next value is present.
       let value: null | TIteratorValue;
       let chunk: null | SSEvent;
-      
+
       for await (value of iterable) {
         if (value === PING_SYM) {
           stream.controller.enqueue({ comment: 'ping' });
@@ -127,7 +127,7 @@ export function sseStreamProducer<TValue = unknown>(
         }
 
         stream.controller.enqueue(chunk);
-        
+
         // free up references for garbage collection
         value = null;
         chunk = null;

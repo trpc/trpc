@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 import type { Config } from 'tailwindcss';
 import plugin from 'tailwindcss/plugin';
 

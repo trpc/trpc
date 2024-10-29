@@ -61,11 +61,8 @@ SubscriptionProcedure<{
 If you need to infer the value you can use a helper like the below:
 
 ```ts
-type inferAsyncIterableYield<TOutput> = TOutput extends AsyncGenerator<
-  infer $Yield
->
-  ? $Yield
-  : never;
+type inferAsyncIterableYield<TOutput> =
+  TOutput extends AsyncGenerator<infer $Yield> ? $Yield : never;
 ```
 
 </details>

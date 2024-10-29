@@ -167,13 +167,13 @@ module.exports = {
   plugins: [
     // Sidebar order is decided by the position in the array below
     ...(env.TYPEDOC
-        ? generateTypedocDocusaurusPlugins([
+      ? generateTypedocDocusaurusPlugins([
           'server',
           'client',
           'react-query',
           'next',
         ])
-        : []),
+      : []),
     async function myPlugin() {
       return {
         name: 'docusaurus-tailwindcss',
@@ -227,18 +227,24 @@ module.exports = {
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
           remarkPlugins: [
-            [require("remark-shiki-twoslash").default, require("./shikiTwoslash.config")],
-            require("./mdxToJsx"), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
-          ]
+            [
+              require('remark-shiki-twoslash').default,
+              require('./shikiTwoslash.config'),
+            ],
+            require('./mdxToJsx'), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
+          ],
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
           remarkPlugins: [
-            [require("remark-shiki-twoslash").default, require("./shikiTwoslash.config")],
-            require("./mdxToJsx"), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
-          ]
+            [
+              require('remark-shiki-twoslash').default,
+              require('./shikiTwoslash.config'),
+            ],
+            require('./mdxToJsx'), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
+          ],
         },
         theme: {
           customCss: ['./src/css/custom.css'],

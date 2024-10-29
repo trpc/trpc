@@ -40,10 +40,10 @@ export type GetInferenceHelpers<
     ? $Value extends RouterRecord
       ? GetInferenceHelpers<TType, TRoot, $Value>
       : $Value extends AnyProcedure
-      ? TType extends 'input'
-        ? inferProcedureInput<$Value>
-        : inferTransformedProcedureOutput<TRoot, $Value>
-      : never
+        ? TType extends 'input'
+          ? inferProcedureInput<$Value>
+          : inferTransformedProcedureOutput<TRoot, $Value>
+        : never
     : never;
 };
 

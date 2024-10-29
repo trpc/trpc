@@ -9,12 +9,8 @@ import type {
 } from './types';
 
 /** @public */
-export type inferObservableValue<TObservable> = TObservable extends Observable<
-  infer TValue,
-  unknown
->
-  ? TValue
-  : never;
+export type inferObservableValue<TObservable> =
+  TObservable extends Observable<infer TValue, unknown> ? TValue : never;
 
 /** @public */
 export function isObservable(x: unknown): x is Observable<unknown, unknown> {

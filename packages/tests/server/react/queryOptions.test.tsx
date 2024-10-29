@@ -422,9 +422,8 @@ describe('infiniteQueryOptions', () => {
           <button
             data-testid="prefetch"
             onClick={async () => {
-              const fetched = await queryClient.fetchInfiniteQuery(
-                queryOptions,
-              );
+              const fetched =
+                await queryClient.fetchInfiniteQuery(queryOptions);
               expectTypeOf<{
                 pages: {
                   items: typeof fixtureData;
@@ -535,9 +534,8 @@ describe('infiniteQueryOptions', () => {
           <button
             data-testid="prefetch"
             onClick={async () => {
-              const fetched = await queryClient.fetchInfiniteQuery(
-                queryOptions,
-              );
+              const fetched =
+                await queryClient.fetchInfiniteQuery(queryOptions);
               expectTypeOf<{
                 pages: {
                   items: typeof fixtureData;

@@ -43,6 +43,7 @@ test('experimental caller', async () => {
             signal: undefined,
           });
         }
+        case 'subscription':
         default: {
           throw new TRPCError({
             code: 'NOT_IMPLEMENTED',
