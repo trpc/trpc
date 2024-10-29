@@ -61,7 +61,7 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-no-only-tests": "^3.1.0",
     "eslint-plugin-react": "^7.35.0",
-    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-turbo": "^2.0.9",
     "eslint-plugin-unicorn": "56.0.0",
     "event-source-polyfill": "^1.0.31",
