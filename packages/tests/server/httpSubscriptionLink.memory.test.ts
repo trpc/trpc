@@ -48,7 +48,7 @@ describe('http subscription memory', () => {
         onStartedMock();
       },
       onData(data) {
-        expectTypeOf(data).toBeArray();
+        expect(Array.isArray(data)).toBe(true);
         onDataLengthMock(data.length);
       },
     });
