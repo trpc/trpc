@@ -56,8 +56,11 @@ function createRouter(routerName: string) {
 }
 
 const TEST_DIR =
-  import.meta.dir + '/../packages/tests/server/__generated__/bigBoi';
+  // @ts-ignore
+  import.meta.dirname + '/../packages/tests/server/__generated__/bigBoi';
 fs.mkdirSync(TEST_DIR, { recursive: true });
+
+console.log('Generating routers...', TEST_DIR);
 
 const indexBuf: string[] = [];
 for (let i = 0; i < NUM_ROUTERS; i++) {
