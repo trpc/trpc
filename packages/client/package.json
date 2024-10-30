@@ -25,7 +25,7 @@
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore src",
+    "lint": "eslint --cache src",
     "ts-watch": "tsc --watch"
   },
   "exports": {
@@ -82,8 +82,8 @@
   "devDependencies": {
     "@trpc/server": "^10.45.1",
     "@types/isomorphic-fetch": "^0.0.39",
-    "@types/node": "^22.0.0",
-    "eslint": "^8.57.0",
+    "@types/node": "^20.10.0",
+    "eslint": "^9.13.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
     "rollup": "^4.9.5",

@@ -4,21 +4,21 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "lint": "eslint --ext \".js,.ts,.tsx\" src",
+    "lint": "eslint src",
     "start": "next start"
   },
   "dependencies": {
     "@hookform/error-message": "^2.0.1",
-    "@hookform/resolvers": "^2.9.11",
+    "@hookform/resolvers": "^3.9.1",
     "@tanstack/react-query": "^5.59.15",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
-    "next": "^14.2.5",
+    "next": "^15.0.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-hook-form": "^7.43.3",
+    "react-hook-form": "^7.53.1",
     "zod": "^3.0.0",
     "zod-form-data": "^2.0.1"
   },
@@ -26,7 +26,7 @@
     "@types/node": "^20.10.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
-    "eslint": "^8.57.0",
+    "eslint": "^9.13.0",
     "typescript": "^5.6.2"
   }
 }

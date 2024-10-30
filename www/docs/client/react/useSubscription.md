@@ -22,7 +22,7 @@ The `useSubscription` hook can be used to subscribe to a [subscription](../../se
 ```tsx
 function useSubscription<TOutput, TError>(
   input: TInput | SkipToken,
-  opts?: UseTRPCSubscriptionOptions<TOutput, TError>
+  opts?: UseTRPCSubscriptionOptions<TOutput, TError>,
 ): TRPCSubscriptionResult<TOutput, TError>;
 
 interface UseTRPCSubscriptionOptions<TOutput, TError> {
@@ -45,7 +45,6 @@ interface UseTRPCSubscriptionOptions<TOutput, TError> {
    */
   enabled?: boolean;
 }
-
 ```
 
 ### Return type

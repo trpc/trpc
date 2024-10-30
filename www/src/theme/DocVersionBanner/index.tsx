@@ -57,7 +57,8 @@ function useTypedVersion() {
       .filter((it) => it.path !== '/docs')
       .find((it) => location.pathname.startsWith(it.path)) ??
     versions.find((it) => it.isLast) ??
-    versions[0];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    versions[0]!;
 
   return {
     currentVersion,
@@ -107,6 +108,8 @@ export default function DocVersionBannerWrapper(
       );
     }
 
+    case '10.x':
+    case '9.x':
     default: {
       return <DocVersionBanner {...props} />;
     }

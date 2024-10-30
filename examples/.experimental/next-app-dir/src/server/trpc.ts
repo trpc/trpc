@@ -52,7 +52,7 @@ export const createAction = experimental_createServerActionHandler(t, {
       session,
       headers: {
         // Pass the cookie header to the API
-        cookies: headers().get('cookie') ?? '',
+        cookies: (await headers()).get('cookie') ?? '',
       },
     };
   },

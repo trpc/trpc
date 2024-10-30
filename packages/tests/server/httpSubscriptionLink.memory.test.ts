@@ -68,7 +68,7 @@ describe('http subscription memory', () => {
 
     expect(refs[0]!.deref()).toBeUndefined();
     expect(refs[1]!.deref()).toBeUndefined();
-    
+
     subscription.unsubscribe();
 
     function emitData(): WeakRef<never[]> {

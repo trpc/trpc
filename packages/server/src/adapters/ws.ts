@@ -292,7 +292,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
                 typeof abortPromise | ReturnType<(typeof iterator)['next']>
               >;
           let result: null | TRPCResultMessage<unknown>['result'];
-          
+
           while (true) {
             next = await Unpromise.race([
               iterator.next().catch(getTRPCErrorFromUnknown),
@@ -403,6 +403,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       }
     }
     client.on('message', async (rawData) => {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       const msgStr = rawData.toString();
       if (msgStr === 'PONG') {
         return;

@@ -4,7 +4,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch index.ts",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" index.ts",
+    "lint": "eslint --cache index.ts",
     "start": "node dist/index.js"
   },
   "dependencies": {
@@ -15,7 +15,7 @@
   "devDependencies": {
     "@types/cors": "^2.8.13",
     "@types/node": "^20.10.0",
-    "eslint": "^8.57.0",
+    "eslint": "^9.13.0",
     "tsx": "^4.0.0",
     "typescript": "^5.6.2"
   }

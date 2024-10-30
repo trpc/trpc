@@ -227,11 +227,12 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
     return ({ op, next }) => {
       return observable((observer) => {
         // ->
-        enabled({ ...op, direction: 'up' }) &&
+        if (enabled({ ...op, direction: 'up' })) {
           logger({
             ...op,
             direction: 'up',
           });
+        }
         const requestStartTime = Date.now();
         function logResult(
           result:
@@ -240,13 +241,14 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
         ) {
           const elapsedMs = Date.now() - requestStartTime;
 
-          enabled({ ...op, direction: 'down', result }) &&
+          if (enabled({ ...op, direction: 'down', result })) {
             logger({
               ...op,
               direction: 'down',
               elapsedMs,
               result,
             });
+          }
         }
         return next(op)
           .pipe(

@@ -2,9 +2,9 @@ import { Suspense } from 'react';
 import { Chat } from './chat';
 
 export default async function Home(
-  props: Readonly<{ params: { channelId: string } }>,
+  props: Readonly<{ params: Promise<{ channelId: string }> }>,
 ) {
-  const channelId = props.params.channelId;
+  const { channelId } = await props.params;
 
   return (
     <Suspense

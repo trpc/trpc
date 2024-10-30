@@ -74,22 +74,14 @@ export function SponsorBubbles() {
                         >
                           <div
                             key={`circle-${i}`}
-                            className={`absolute left-1/2 top-1/2 h-[95%] w-[95%]
-                                    -translate-x-1/2 -translate-y-1/2 rounded-full bg-contain
-                                    bg-center bg-no-repeat dark:h-[100.5%] dark:w-[100.5%]
-                                    `}
+                            className={`absolute left-1/2 top-1/2 h-[95%] w-[95%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-contain bg-center bg-no-repeat dark:h-[100.5%] dark:w-[100.5%]`}
                             style={{
                               backgroundImage: `url(${circle.data.imgSrc})`,
                             }}
                           />
                           <div
                             className={twMerge(
-                              `spon-tooltip pointer-events-none absolute
-                              flex transform flex-col items-center
-                              rounded-lg bg-gray-800
-                              p-2 text-sm
-                              text-white opacity-0 shadow-xl
-                            `,
+                              `spon-tooltip pointer-events-none absolute flex transform flex-col items-center rounded-lg bg-gray-800 p-2 text-sm text-white opacity-0 shadow-xl`,
 
                               tooltipX == 'left'
                                 ? `left-1/4 -translate-x-full`

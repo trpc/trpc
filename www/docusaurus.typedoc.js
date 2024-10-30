@@ -77,11 +77,11 @@ function generateTypedocDocusaurusPlugins(directories) {
         excludePrivate: true,
         excludeProtected: true,
 
-        parametersFormat: "table",
+        parametersFormat: 'table',
         sidebar: {
           autoConfiguration: true,
-          pretty: true
-        }
+          pretty: true,
+        },
 
         //Possible not needed code:
         // docusaurus-plugin-typedoc options
