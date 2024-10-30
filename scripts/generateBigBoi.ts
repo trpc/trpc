@@ -56,7 +56,6 @@ function createRouter(routerName: string) {
 }
 
 const TEST_DIR =
-  // @ts-expect-error - FIXME
   import.meta.dirname + '/../packages/tests/server/__generated__/bigBoi';
 fs.mkdirSync(TEST_DIR, { recursive: true });
 
