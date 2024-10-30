@@ -90,7 +90,6 @@ function lib({ input, packageDir }: Options): RollupOptions {
               useBuiltins: true,
             },
           },
-          externalHelpers: true,
         },
       }),
       !isWatchMode && analyzeSizeChange(packageDir),
