@@ -86,7 +86,7 @@
     "dotenv": "^16.0.1",
     "eslint": "^9.13.0",
     "next": "^15.0.2",
-    "next-auth": "^4.22.1",
+    "next-auth": "5.0.0-beta.25",
     "npm-run-all2": "^7.0.0",
     "oauth": "^0.10.0",
     "postcss": "^8.4.39",

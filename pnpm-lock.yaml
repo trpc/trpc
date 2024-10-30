@@ -186,8 +186,8 @@ importers:
         specifier: ^15.0.2
         version: 15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-auth:
-        specifier: ^4.22.1
-        version: 4.24.5(next@15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 5.0.0-beta.25
+        version: 5.0.0-beta.25(next@15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1270,8 +1270,8 @@ importers:
         specifier: ^15.0.2
         version: 15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-auth:
-        specifier: ^4.22.1
-        version: 4.24.5(next@15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: npm:next-auth@4.22.1
+        version: 4.22.1(next@15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1388,8 +1388,8 @@ importers:
         specifier: ^15.0.2
         version: 15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-auth:
-        specifier: npm:next-auth@5.0.0-beta.19
-        version: 5.0.0-beta.19(next@15.0.2(@babel/core@7.25.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+        specifier: 5.0.0-beta.25
+        version: 5.0.0-beta.25(next@15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       postgres:
         specifier: ^3.4.4
         version: 3.4.4
@@ -2146,8 +2146,8 @@ importers:
         specifier: ^15.0.2
         version: 15.0.2(@babel/core@7.23.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-auth:
-        specifier: ^4.22.1
-        version: 4.24.5(next@15.0.2(@babel/core@7.23.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 5.0.0-beta.25
+        version: 5.0.0-beta.25(next@15.0.2(@babel/core@7.23.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       npm-run-all2:
         specifier: ^7.0.0
         version: 7.0.0
@@ -2348,8 +2348,8 @@ packages:
   '@ark/util@0.21.0':
     resolution: {integrity: sha512-VeE8OJncWZ1+oKAXp+rNY7IE2AibN/GRWK/ImCqKMC6Z0IHH9LDS/5dtR4C3RvNJw1O9Sur23S93a5HLFkaU1A==}
 
-  '@auth/core@0.32.0':
-    resolution: {integrity: sha512-3+ssTScBd+1fd0/fscAyQN1tSygXzuhysuVVzB942ggU4mdfiTbv36P0ccVnExKWYJKvu3E2r3/zxXCCAmTOrg==}
+  '@auth/core@0.37.2':
+    resolution: {integrity: sha512-kUvzyvkcd6h1vpeMAojK2y7+PAV5H+0Cc9+ZlKYDFhDY31AlvsB+GW5vNO4qE3Y07KeQgvNO9U0QUx/fN62kBw==}
     peerDependencies:
       '@simplewebauthn/browser': ^9.0.1
       '@simplewebauthn/server': ^9.0.2
@@ -5552,8 +5552,8 @@ packages:
   '@octokit/types@9.2.3':
     resolution: {integrity: sha512-MMeLdHyFIALioycq+LFcA71v0S2xpQUX2cw6pPbHQjaibcHYwLnmK/kMZaWuGfGfjBJZ3wRUq+dOaWsvrPJVvA==}
 
-  '@panva/hkdf@1.1.1':
-    resolution: {integrity: sha512-dhPeilub1NuIG0X5Kvhh9lH4iW3ZsHlnzwgwbOlgwQ2wG1IqFzsgHqmKPk3WzsdWAeaxKJxgM0+W433RmN45GA==}
+  '@panva/hkdf@1.2.1':
+    resolution: {integrity: sha512-6oclG6Y3PiDFcoyk8srjLfVKyMfVCKJ27JwNPViuXziFpmdz+MZnZN/aKY0JGXgYuO/VghU0jcOAZgWXZ1Dmrw==}
 
   '@parcel/watcher-android-arm64@2.4.1':
     resolution: {integrity: sha512-LOi/WTbbh3aTn2RYddrO8pnapixAziFl6SMxHM69r3tvdSm94JtCenaKgk1GRg5FJ5wpMCpHeW+7yqPlvZv7kg==}
@@ -8080,6 +8080,10 @@ packages:
 
   cookie@0.6.0:
     resolution: {integrity: sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw==}
+    engines: {node: '>= 0.6'}
+
+  cookie@0.7.1:
+    resolution: {integrity: sha512-6DnInpx7SJ2AK3+CTUE/ZM0vWTUboZCegxhC2xiIydHR9jNuTAASBrfEpHhiGOZw/nX51bHt6YQl8jsGo4y/0w==}
     engines: {node: '>= 0.6'}
 
   cookiejar@2.1.3:
@@ -10848,11 +10852,11 @@ packages:
   jose@4.12.0:
     resolution: {integrity: sha512-wW1u3cK81b+SFcHjGC8zw87yuyUweEFe0UJirrXEw1NasW00eF7sZjeG3SLBGz001ozxQ46Y9sofDvhBmWFtXQ==}
 
-  jose@4.15.5:
-    resolution: {integrity: sha512-jc7BFxgKPKi94uOvEmzlSWFFe2+vASyXaKUpdQKatWAESU2MWjDfFf0fdfc83CDKcA5QecabZeNLyfhe3yKNkg==}
+  jose@4.15.9:
+    resolution: {integrity: sha512-1vUQX+IdDMVPj4k8kOxgUqlcK518yluMuGZwqlr44FS1ppZB/5GWh4rZG89erpOBOJjU/OBsnCVFfapsRz6nEA==}
 
-  jose@5.4.1:
-    resolution: {integrity: sha512-U6QajmpV/nhL9SyfAewo000fkiRQ+Yd2H0lBxJJ9apjpOgkOcBQJWOrMo917lxLptdS/n/o/xPzMkXhF46K8hQ==}
+  jose@5.9.6:
+    resolution: {integrity: sha512-AMlnetc9+CV9asI19zHmrgS/WYsWUwCn2R7RzlbJWD7F9eWYUTGyBmU9o6PxngtLGOiDGPRu+Uc4fhKzbpteZQ==}
 
   js-string-escape@1.0.1:
     resolution: {integrity: sha512-Smw4xcfIQ5LVjAOuJCvN/zIodzA/BBSsluuoSykP+lUvScIi4U6RJLfwHet5cxFnCswUjISV8oAXaqaJDY3chg==}
@@ -11787,10 +11791,10 @@ packages:
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
 
-  next-auth@4.24.5:
-    resolution: {integrity: sha512-3RafV3XbfIKk6rF6GlLE4/KxjTcuMCifqrmD+98ejFq73SRoj2rmzoca8u764977lH/Q7jo6Xu6yM+Re1Mz/Og==}
+  next-auth@4.22.1:
+    resolution: {integrity: sha512-NTR3f6W7/AWXKw8GSsgSyQcDW6jkslZLH8AiZa5PQ09w1kR8uHtR9rez/E9gAq/o17+p0JYHE8QjF3RoniiObA==}
     peerDependencies:
-      next: ^12.2.5 || ^13 || ^14
+      next: ^12.2.5 || ^13
       nodemailer: ^6.6.5
       react: ^17.0.2 || ^18
       react-dom: ^17.0.2 || ^18
@@ -11798,12 +11802,12 @@ packages:
       nodemailer:
         optional: true
 
-  next-auth@5.0.0-beta.19:
-    resolution: {integrity: sha512-YHu1igcAxZPh8ZB7GIM93dqgY6gcAzq66FOhQFheAdOx1raxNcApt05nNyNCSB6NegSiyJ4XOPsaNow4pfDmsg==}
+  next-auth@5.0.0-beta.25:
+    resolution: {integrity: sha512-2dJJw1sHQl2qxCrRk+KTQbeH+izFbGFPuJj5eGgBZFYyiYYtvlrBeUw1E/OJJxTRjuxbSYGnCTkUIRsIIW0bog==}
     peerDependencies:
       '@simplewebauthn/browser': ^9.0.1
       '@simplewebauthn/server': ^9.0.2
-      next: ^14 || ^15.0.0-0
+      next: ^14.0.0-0 || ^15.0.0-0
       nodemailer: ^6.6.5
       react: ^18.2.0 || ^19.0.0-0
     peerDependenciesMeta:
@@ -12084,8 +12088,8 @@ packages:
     engines: {node: ^14.16.0 || >=16.10.0}
     hasBin: true
 
-  oauth4webapi@2.11.1:
-    resolution: {integrity: sha512-aNzOnL98bL6izG97zgnZs1PFEyO4WDVRhz2Pd066NPak44w5ESLRCYmJIyey8avSBPOMtBjhF3ZDDm7bIb7UOg==}
+  oauth4webapi@3.1.2:
+    resolution: {integrity: sha512-KQZkNU+xn02lWrFu5Vjqg9E81yPtDSxUZorRHlLWVoojD+H/0GFbH59kcnz5Thdjj7c4/mYMBPj/mhvGe/kKXA==}
 
   oauth@0.10.0:
     resolution: {integrity: sha512-1orQ9MT1vHFGQxhuy7E/0gECD3fd2fCC+PIX+/jgmU/gI3EpRocXtmtvxCO5x3WZ443FLTLFWNDjl5MPJf9u+Q==}
@@ -12201,8 +12205,8 @@ packages:
     resolution: {integrity: sha512-ur5UIdyw5Y7yEj9wLzhqXiy6GZ3Mwx0yGI+5sMn2r0N0v3cKJvUmFH5yPP+WXh9e0xfyzyJX95D8l088DNFj7A==}
     hasBin: true
 
-  openid-client@5.6.5:
-    resolution: {integrity: sha512-5P4qO9nGJzB5PI0LFlhj4Dzg3m4odt0qsJTfyEtZyOlkgpILwEioOhVVJOrS1iVH494S4Ee5OCjjg6Bf5WOj3w==}
+  openid-client@5.7.0:
+    resolution: {integrity: sha512-4GCCGZt1i2kTHpwvaC/sCpTpQqDnBzDzuJcJMbH+y1Q5qI8U8RBvoSh28svarXszZHR5BAMXbJPX1PGPRE3VOA==}
 
   optionator@0.9.3:
     resolution: {integrity: sha512-JjCoypp+jKn1ttEFExxhetCKeJt9zhAgAve5FXHixTvFDW/5aEktX9bufBKLRRMdU7bNtpLfcGu94B3cdEJgjg==}
@@ -13024,16 +13028,8 @@ packages:
     peerDependencies:
       preact: '>=10'
 
-  preact-render-to-string@5.2.6:
-    resolution: {integrity: sha512-JyhErpYOvBV1hEPwIxc/fHWXPfnEGdRKxc8gFdAZ7XV4tlzyzG847XAyEZqoDnynP88akM4eaHcSOzNcLWFguw==}
-    peerDependencies:
-      preact: '>=10'
-
   preact@10.11.3:
     resolution: {integrity: sha512-eY93IVpod/zG3uMF22Unl8h9KkrcKIRs2EGar8hwLZZDU1lkjph303V9HZBwufh2s736U6VXuhD109LYqPoffg==}
-
-  preact@10.22.0:
-    resolution: {integrity: sha512-RRurnSjJPj4rp5K6XoP45Ui33ncb7e4H7WiOHVpjbkvqvA3U+N8Z6Qbo0AE6leGYBV66n8EhEaFixvIu3SkxFw==}
 
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
@@ -15900,13 +15896,13 @@ snapshots:
 
   '@ark/util@0.21.0': {}
 
-  '@auth/core@0.32.0':
+  '@auth/core@0.37.2':
     dependencies:
-      '@panva/hkdf': 1.1.1
+      '@panva/hkdf': 1.2.1
       '@types/cookie': 0.6.0
-      cookie: 0.6.0
-      jose: 5.4.1
-      oauth4webapi: 2.11.1
+      cookie: 0.7.1
+      jose: 5.9.6
+      oauth4webapi: 3.1.2
       preact: 10.11.3
       preact-render-to-string: 5.2.3(preact@10.11.3)
 
@@ -21314,7 +21310,7 @@ snapshots:
     dependencies:
       '@octokit/openapi-types': 17.2.0
 
-  '@panva/hkdf@1.1.1': {}
+  '@panva/hkdf@1.2.1': {}
 
   '@parcel/watcher-android-arm64@2.4.1':
     optional: true
@@ -24364,6 +24360,8 @@ snapshots:
   cookie@0.5.0: {}
 
   cookie@0.6.0: {}
+
+  cookie@0.7.1: {}
 
   cookiejar@2.1.3: {}
 
@@ -27718,9 +27716,9 @@ snapshots:
 
   jose@4.12.0: {}
 
-  jose@4.15.5: {}
+  jose@4.15.9: {}
 
-  jose@5.4.1: {}
+  jose@5.9.6: {}
 
   js-string-escape@1.0.1: {}
 
@@ -29094,39 +29092,30 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next-auth@4.24.5(next@15.0.2(@babel/core@7.23.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  next-auth@4.22.1(next@15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.24.7
-      '@panva/hkdf': 1.1.1
+      '@panva/hkdf': 1.2.1
       cookie: 0.5.0
-      jose: 4.15.5
-      next: 15.0.2(@babel/core@7.23.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      oauth: 0.9.15
-      openid-client: 5.6.5
-      preact: 10.22.0
-      preact-render-to-string: 5.2.6(preact@10.22.0)
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      uuid: 8.3.2
-
-  next-auth@4.24.5(next@15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
-    dependencies:
-      '@babel/runtime': 7.24.7
-      '@panva/hkdf': 1.1.1
-      cookie: 0.5.0
-      jose: 4.15.5
+      jose: 4.12.0
       next: 15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       oauth: 0.9.15
-      openid-client: 5.6.5
-      preact: 10.22.0
-      preact-render-to-string: 5.2.6(preact@10.22.0)
+      openid-client: 5.7.0
+      preact: 10.11.3
+      preact-render-to-string: 5.2.3(preact@10.11.3)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       uuid: 8.3.2
 
-  next-auth@5.0.0-beta.19(next@15.0.2(@babel/core@7.25.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1):
+  next-auth@5.0.0-beta.25(next@15.0.2(@babel/core@7.23.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1):
     dependencies:
-      '@auth/core': 0.32.0
+      '@auth/core': 0.37.2
+      next: 15.0.2(@babel/core@7.23.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+
+  next-auth@5.0.0-beta.25(next@15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@auth/core': 0.37.2
       next: 15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
 
@@ -29640,7 +29629,7 @@ snapshots:
       pkg-types: 1.2.1
       ufo: 1.5.4
 
-  oauth4webapi@2.11.1: {}
+  oauth4webapi@3.1.2: {}
 
   oauth@0.10.0: {}
 
@@ -29764,9 +29753,9 @@ snapshots:
 
   opener@1.5.2: {}
 
-  openid-client@5.6.5:
+  openid-client@5.7.0:
     dependencies:
-      jose: 4.15.5
+      jose: 4.15.9
       lru-cache: 6.0.0
       object-hash: 2.2.0
       oidc-token-hash: 5.0.3
@@ -30581,14 +30570,7 @@ snapshots:
       preact: 10.11.3
       pretty-format: 3.8.0
 
-  preact-render-to-string@5.2.6(preact@10.22.0):
-    dependencies:
-      preact: 10.22.0
-      pretty-format: 3.8.0
-
   preact@10.11.3: {}
-
-  preact@10.22.0: {}
 
   prelude-ls@1.2.1: {}
 
