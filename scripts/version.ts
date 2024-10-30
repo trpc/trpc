@@ -3,7 +3,7 @@ import path from 'path';
 
 console.log('ℹ️ Running custom script to pin versions to each other');
 
-// @ts-ignore
+// @ts-expect-error - FIXME
 const __dirname: string = import.meta.dirname;
 
 const packages = fs
