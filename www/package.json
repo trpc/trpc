@@ -76,7 +76,7 @@
     "@docusaurus/tsconfig": "^3.5.2",
     "@octokit/graphql": "^8.1.1",
     "@octokit/graphql-schema": "^15.0.0",
-    "@types/node": "^20.10.0",
+    "@types/node": "^22.0.0",
     "@types/oauth": "^0.9.1",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
