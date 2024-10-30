@@ -86,7 +86,7 @@
     "eslint": "^9.13.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
-    "rollup": "^4.9.5",
+    "rollup": "^4.24.3",
     "tslib": "^2.5.0",
     "tsx": "^4.0.0",
     "undici": "^6.0.1"

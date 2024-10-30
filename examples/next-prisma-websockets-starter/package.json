@@ -52,7 +52,7 @@
     "react-dom": "^18.3.1",
     "superjson": "^1.12.4",
     "tsx": "^4.0.0",
-    "ws": "^8.0.0",
+    "ws": "^8.18.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
@@ -60,7 +60,7 @@
     "@tanstack/react-query-devtools": "^5.59.15",
     "@types/node": "^20.17.3",
     "@types/react": "^18.3.1",
-    "@types/ws": "^8.2.0",
+    "@types/ws": "^8.5.12",
     "autoprefixer": "^10.4.7",
     "cross-env": "^7.0.3",
     "eslint": "^9.13.0",
