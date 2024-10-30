@@ -27,7 +27,7 @@ class MyEventEmitter extends EventEmitter {
     event: TEv,
     opts: NonNullable<Parameters<typeof on>[2]>,
   ): AsyncIterable<Parameters<MyEvents[TEv]>> {
-    return on(this, event, opts);
+    return on(this, event, opts) as any;
   }
 }
 
