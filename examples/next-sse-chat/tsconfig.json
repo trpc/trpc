@@ -10,6 +10,7 @@
     /* Strictness */
     "strict": true,
     "checkJs": true,
+    "noUncheckedIndexedAccess": true,
     "allowImportingTsExtensions": true,
 
     /* Bundled projects */
