@@ -17,7 +17,7 @@ export function useZodForm<TInput extends FieldValues>(
   const form = useForm<TInput>({
     ...props,
     resolver: zodResolver(props.schema, undefined, {
-      rawValues: true,
+      raw: true,
     }),
   });
 

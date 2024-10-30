@@ -21,7 +21,7 @@ function useZodFormData<TSchema extends z.ZodType>(
 ) {
   const formRef = useRef<HTMLFormElement>(null);
   const _resolver = zodResolver(props.schema, undefined, {
-    rawValues: true,
+    raw: true,
   });
 
   const form = useForm<GetInput<TSchema>>({

@@ -36,6 +36,8 @@ import type {
 import { generateCacheTag, isFormData } from './shared';
 import type { NextAppDirDecorateRouterRecord } from './types';
 
+export type { ActionHandlerDef };
+
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
   TRouter extends AnyRouter,
