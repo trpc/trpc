@@ -19,7 +19,7 @@
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
-    "@types/node": "^20.10.0",
+    "@types/node": "^20.17.3",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "next": "^15.0.2",
