@@ -45,8 +45,5 @@ export function tracked<TData>(
   return [id as TrackedId, data, trackedSymbol];
 }
 
-export type inferTrackedOutput<TData> = TData extends TrackedEnvelope<
-  infer $Data
->
-  ? TrackedData<$Data>
-  : TData;
+export type inferTrackedOutput<TData> =
+  TData extends TrackedEnvelope<infer $Data> ? TrackedData<$Data> : TData;

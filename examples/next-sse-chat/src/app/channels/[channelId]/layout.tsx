@@ -8,9 +8,12 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 
 export default async function Home(
-  props: Readonly<{ params: { channelId: string }; children: React.ReactNode }>,
+  props: Readonly<{
+    params: Promise<{ channelId: string }>;
+    children: React.ReactNode;
+  }>,
 ) {
-  const channelId = props.params.channelId;
+  const { channelId } = await props.params;
   const session = await auth();
   const channels = await caller.channel.list();
 

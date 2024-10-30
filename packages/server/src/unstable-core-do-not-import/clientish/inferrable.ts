@@ -41,9 +41,9 @@ export type inferClientTypes<TInferrable extends InferrableClientTypes> =
   TInferrable extends AnyClientTypes
     ? TInferrable
     : TInferrable extends RootConfigLike
-    ? TInferrable['$types']
-    : TInferrable extends InitLike
-    ? TInferrable['_config']['$types']
-    : TInferrable extends RouterLike
-    ? TInferrable['_def']['_config']['$types']
-    : never;
+      ? TInferrable['$types']
+      : TInferrable extends InitLike
+        ? TInferrable['_config']['$types']
+        : TInferrable extends RouterLike
+          ? TInferrable['_def']['_config']['$types']
+          : never;

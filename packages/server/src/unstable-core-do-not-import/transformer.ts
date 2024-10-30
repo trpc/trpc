@@ -175,7 +175,7 @@ export function transformResult<TRouter extends AnyRouter, TOutput>(
   try {
     // Use the data transformers on the JSON-response
     result = transformResultInner(response, transformer);
-  } catch (err) {
+  } catch {
     throw new TransformResultError();
   }
 

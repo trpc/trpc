@@ -23,10 +23,10 @@ export type RouterLikeInner<
     ? $Value extends RouterRecord
       ? RouterLikeInner<TRoot, $Value>
       : $Value extends AnyQueryProcedure
-      ? QueryLike<TRoot, $Value>
-      : $Value extends AnyMutationProcedure
-      ? MutationLike<TRoot, $Value>
-      : never
+        ? QueryLike<TRoot, $Value>
+        : $Value extends AnyMutationProcedure
+          ? MutationLike<TRoot, $Value>
+          : never
     : never;
 };
 

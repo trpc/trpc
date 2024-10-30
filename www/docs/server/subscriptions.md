@@ -22,11 +22,11 @@ If you are unsure which one to use, we recommend using SSE for subscriptions as 
 
 ## Reference projects
 
-| Type       | Example Type                                | Link                                                                                                                       |
-| ---------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| WebSockets | Bare-minimum Node.js WebSockets example     | [/examples/standalone-server](https://github.com/trpc/trpc/tree/next/examples/standalone-server)                           |
-| SSE        | Full-stack SSE implementation               | [github.com/trpc/examples-next-sse-chat](https://github.com/trpc/examples-next-sse-chat)                                   |
-| WebSockets | Full-stack WebSockets implementation        | [github.com/trpc/examples-next-prisma-websockets-starter](https://github.com/trpc/examples-next-prisma-starter-websockets) |
+| Type       | Example Type                            | Link                                                                                                                       |
+| ---------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| WebSockets | Bare-minimum Node.js WebSockets example | [/examples/standalone-server](https://github.com/trpc/trpc/tree/next/examples/standalone-server)                           |
+| SSE        | Full-stack SSE implementation           | [github.com/trpc/examples-next-sse-chat](https://github.com/trpc/examples-next-sse-chat)                                   |
+| WebSockets | Full-stack WebSockets implementation    | [github.com/trpc/examples-next-prisma-websockets-starter](https://github.com/trpc/examples-next-prisma-starter-websockets) |
 
 ## Basic example
 

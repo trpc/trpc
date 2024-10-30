@@ -120,7 +120,7 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.funding = ['https://trpc.io/sponsor'];
 
   // write package.json
-  const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {
+  const formattedPkgJson = await prettier.format(JSON.stringify(pkgJson), {
     parser: 'json-stringify',
     ...(await prettier.resolveConfig(pkgJsonPath)),
   });
@@ -129,7 +129,7 @@ export async function generateEntrypoints(rawInputs: string[]) {
   const turboPath = path.resolve('turbo.json');
   const turboJson = JSON.parse(fs.readFileSync(turboPath, 'utf8'));
   turboJson.tasks['codegen-entrypoints'].outputs = [...scriptOutputs];
-  const formattedTurboJson = prettier.format(JSON.stringify(turboJson), {
+  const formattedTurboJson = await prettier.format(JSON.stringify(turboJson), {
     parser: 'json',
     ...(await prettier.resolveConfig(turboPath)),
   });

@@ -18,22 +18,22 @@ export interface ProxyPromise<T> extends Promise<T> {
     onfulfilled?:
       | ((value: T) => TResult1 | PromiseLike<TResult1>)
       | null
-      | undefined,
+       ,
     onrejected?:
       | ((reason: any) => TResult2 | PromiseLike<TResult2>)
       | null
-      | undefined
+       
   ) => SubscribedPromise<TResult1 | TResult2>;
 
   catch: <TResult = never>(
     onrejected?:
       | ((reason: any) => TResult | PromiseLike<TResult>)
       | null
-      | undefined
+       
   ) => SubscribedPromise<T | TResult>;
 
   finally: (
-    onfinally?: (() => void) | null | undefined
+    onfinally?: (() => void) | null  
   ) => SubscribedPromise<T>;
 }
 

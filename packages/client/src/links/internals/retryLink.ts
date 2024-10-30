@@ -52,7 +52,11 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
                 attempts,
                 error,
               });
-              shouldRetry ? attempt(attempts + 1) : observer.error(error);
+              if (shouldRetry) {
+                attempt(attempts + 1);
+              } else {
+                observer.error(error);
+              }
             },
             next(result) {
               observer.next(result);

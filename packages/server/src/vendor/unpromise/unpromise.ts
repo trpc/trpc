@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-/* eslint-disable @typescript-eslint/return-await */
-/* eslint-disable @typescript-eslint/promise-function-async */
+ 
+ 
 
 import type {
   PromiseExecutor,
@@ -20,7 +20,9 @@ const subscribableCache = new WeakMap<
 /** A NOOP function allowing a consistent interface for settled
  * SubscribedPromises (settled promises are not subscribed - they resolve
  * immediately). */
-const NOOP = () => {};
+const NOOP = () => {
+  // noop
+};
 
 /**
  * Every `Promise<T>` can be shadowed by a single `ProxyPromise<T>`. It is
@@ -181,11 +183,11 @@ export class Unpromise<T> implements ProxyPromise<T> {
     onfulfilled?:
       | ((value: T) => TResult1 | PromiseLike<TResult1>)
       | null
-      | undefined,
+       ,
     onrejected?:
       | ((reason: any) => TResult2 | PromiseLike<TResult2>)
       | null
-      | undefined
+       
   ): SubscribedPromise<TResult1 | TResult2> {
     const subscribed = this.subscribe();
     const { unsubscribe } = subscribed;
@@ -198,7 +200,7 @@ export class Unpromise<T> implements ProxyPromise<T> {
     onrejected?:
       | ((reason: any) => TResult | PromiseLike<TResult>)
       | null
-      | undefined
+       
   ): SubscribedPromise<T | TResult> {
     const subscribed = this.subscribe();
     const { unsubscribe } = subscribed;
@@ -207,7 +209,7 @@ export class Unpromise<T> implements ProxyPromise<T> {
     });
   }
 
-  finally(onfinally?: (() => void) | null | undefined): SubscribedPromise<T> {
+  finally(onfinally?: (() => void) | null  ): SubscribedPromise<T> {
     const subscribed = this.subscribe();
     const { unsubscribe } = subscribed;
     return Object.assign(subscribed.finally(onfinally), {
@@ -312,8 +314,8 @@ export class Unpromise<T> implements ProxyPromise<T> {
    * }
    * ```
    * */
-  static async raceReferences<P extends Promise<unknown>>(
-    promises: readonly P[]
+  static async raceReferences<TPromise extends Promise<unknown>>(
+    promises: readonly TPromise[]
   ) {
     // map each promise to an eventual 1-tuple containing itself
     const selfPromises = promises.map(resolveSelfTuple);
@@ -336,9 +338,9 @@ export class Unpromise<T> implements ProxyPromise<T> {
  * may be ambiguous and therefore hard to identify as the winner of a race).
  * You can call unsubscribe on the Promise to mitigate memory leaks.
  * */
-export function resolveSelfTuple<P extends Promise<unknown>>(
-  promise: P
-): SubscribedPromise<readonly [P]> {
+export function resolveSelfTuple<TPromise extends Promise<unknown>>(
+  promise: TPromise
+): SubscribedPromise<readonly [TPromise]> {
   return Unpromise.proxy(promise).then(() => [promise] as const);
 }
 

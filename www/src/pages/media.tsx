@@ -60,7 +60,7 @@ const PressContent = () => {
             title="Primary"
             value="#398ccb"
           />
-          <InfoCard className="bg-black " title="Font" value="Inter" />
+          <InfoCard className="bg-black" title="Font" value="Inter" />
         </div>
 
         <div className="my-4 grid grid-cols-3 gap-4 sm:mt-0 sm:w-2/3 lg:w-3/4">

@@ -1,11 +1,10 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import { NextConfig } from 'next';
+
+export default {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  experimental: {
-    serverComponentsExternalPackages: ['@trpc/server'],
-  },
+  serverExternalPackages: ['@trpc/server'],
   webpack: (config) => {
     // This is only intended to pass CI and should be skiped in your app
     if (config.name === 'server')
@@ -13,6 +12,4 @@ const nextConfig = {
 
     return config;
   },
-};
-
-module.exports = nextConfig;
+} satisfies NextConfig;

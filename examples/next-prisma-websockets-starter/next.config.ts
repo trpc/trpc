@@ -1,9 +1,9 @@
+import { NextConfig } from 'next';
+
 /**
  * @see https://nextjs.org/docs/api-reference/next.config.js/introduction
  */
-
-/** @type {import("next").NextConfig} */
-const config = {
+export default {
   serverRuntimeConfig: {
     // Will only be available on the server side
   },
@@ -14,6 +14,4 @@ const config = {
   },
   /** We run eslint as a separate task in CI */
   eslint: { ignoreDuringBuilds: !!process.env.CI },
-};
-
-module.exports = config;
+} satisfies NextConfig;

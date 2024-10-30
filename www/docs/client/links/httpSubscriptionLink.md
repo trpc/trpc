@@ -97,7 +97,6 @@ import {
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import type { AppRouter } from '../server/index.js';
 
-
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
   links: [
@@ -142,16 +141,15 @@ Please note that restarting the connection will result in the `EventSource` bein
 import {
   createTRPCClient,
   httpBatchLink,
+  retryLink,
   splitLink,
   unstable_httpSubscriptionLink,
-  retryLink,
 } from '@trpc/client';
 import {
   EventSourcePolyfill,
   EventSourcePolyfillInit,
 } from 'event-source-polyfill';
 import type { AppRouter } from '../server/index.js';
-
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
@@ -172,13 +170,8 @@ const trpc = createTRPCClient<AppRouter>({
               console.error('No error code found, retrying', opts);
               return true;
             }
-            if (
-              code === 'UNAUTHORIZED' ||
-              code === 'FORBIDDEN'
-            ) {
-              console.log(
-                'Retrying due to 401/403 error',
-              );
+            if (code === 'UNAUTHORIZED' || code === 'FORBIDDEN') {
+              console.log('Retrying due to 401/403 error');
               return true;
             }
             return false;

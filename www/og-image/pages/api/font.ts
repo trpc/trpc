@@ -35,11 +35,9 @@ export default async (req: NextRequest) => {
     })
   ).text();
 
-  const resource = css.match(
-    /src: url\((.+)\) format\('(opentype|truetype)'\)/,
-  );
+  const resource = /src: url\((.+)\) format\('(opentype|truetype)'\)/.exec(css);
 
-  if (!resource || !resource[1]) return;
+  if (!resource?.[1]) return;
 
   const res = await fetch(resource[1]);
 
