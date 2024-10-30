@@ -55,7 +55,8 @@ function createRouter(routerName: string) {
   })`.trim();
 }
 
-const TEST_DIR = __dirname + '/../packages/tests/server/__generated__/bigBoi';
+const TEST_DIR =
+  import.meta.dir + '/../packages/tests/server/__generated__/bigBoi';
 fs.mkdirSync(TEST_DIR, { recursive: true });
 
 const indexBuf: string[] = [];
