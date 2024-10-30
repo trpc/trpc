@@ -3,6 +3,9 @@ import path from 'path';
 
 console.log('ℹ️ Running custom script to pin versions to each other');
 
+// @ts-ignore
+const __dirname: string = import.meta.dirname;
+
 const packages = fs
   .readdirSync(path.join(__dirname, '..', 'packages'), { withFileTypes: true })
   .filter((file) => file.isDirectory())
