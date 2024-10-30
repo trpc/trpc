@@ -19,7 +19,13 @@
     "moduleResolution": "bundler",
     "jsx": "preserve",
     "plugins": [{ "name": "next" }],
-    "incremental": true
+    "incremental": true,
+
+    /* Path aliases */
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["src/*"]
+    }
   },
   "include": [
     "next-env.d.ts",
