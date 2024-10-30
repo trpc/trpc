@@ -1,11 +1,12 @@
 import { postById } from '../_data';
 
 export default async function Page(props: {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }) {
-  const post = await postById(props.params);
+  const { id } = await props.params;
+  const post = await postById({ id });
 
   return (
     <div>
