@@ -2,7 +2,6 @@ import type { NextAuthConfig, Session } from 'next-auth';
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GithubProvider from 'next-auth/providers/github';
-import { cache } from 'react';
 import { z } from 'zod';
 
 const authOptions: NextAuthConfig = {
@@ -67,7 +66,7 @@ export const {
 } = NextAuth(authOptions);
 
 
-export const auth = cache(uncachedAuth);
+export const auth = (uncachedAuth);
 
 export async function SignedIn(props: {
   children:
