@@ -977,10 +977,7 @@ describe('regression test - slow createContext', () => {
         },
       ]
     `);
-
-    await waitFor(() => {
-      expect(createContext).toHaveBeenCalledTimes(1);
-    });
+    expect(createContext).toHaveBeenCalledTimes(1);
 
     await t.close();
   });
