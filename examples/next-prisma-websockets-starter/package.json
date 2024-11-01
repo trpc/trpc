@@ -4,6 +4,7 @@
   "engines": {
     "node": ">=18.15.0"
   },
+  "packageManager": "pnpm@9.12.2",
   "scripts": {
     "prebuild": "prisma generate && prisma migrate deploy",
     "build:1-next": "cross-env NODE_ENV=production next build",
@@ -11,7 +12,7 @@
     "build": "run-s build:*",
     "dev:wss": "cross-env PORT=3001 tsx watch src/server/wssDevServer.ts --tsconfig tsconfig.server.json ",
     "dev:next": "next dev",
-    "dev": "pnpm migrate-dev && run-p dev:*",
+    "dev": "run-s migrate-dev && run-p dev:*",
     "db-up": "docker-compose up -d",
     "db-seed": "prisma db seed",
     "db-migrate-dev": "prisma migrate dev",
@@ -24,7 +25,7 @@
     "start": "cross-env NODE_ENV=production node dist/server/prodServer.js",
     "studio": "prisma studio",
     "lint": "eslint --cache src",
-    "lint-fix": "pnpm lint --fix",
+    "lint-fix": "lint --fix",
     "test-dev": "cross-env APP_ENV=test start-server-and-test dev 3000 test",
     "test-start": "cross-env APP_ENV=test WS_URL=ws://localhost:3000 start-server-and-test start 3000 test",
     "test": "playwright test",
