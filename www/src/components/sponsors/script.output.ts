@@ -27,20 +27,20 @@ export const topSponsors = [
     "createdAt": 1671157456000
   },
   {
+    "name": "KeenEthics",
+    "imgSrc": "https://github.com/keenethics.png",
+    "weight": 17,
+    "login": "keenethics",
+    "link": "https://keenethics.com",
+    "createdAt": 1727395200000
+  },
+  {
     "name": "Vercel",
     "imgSrc": "https://avatars.githubusercontent.com/u/14985020?v=4",
     "weight": 15,
     "login": "vercel",
     "link": "https://vercel.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1729736200000
-  },
-  {
-    "name": "Dr. B",
-    "imgSrc": "https://avatars.githubusercontent.com/u/77294655?v=4",
-    "weight": 14,
-    "login": "hidrb",
-    "link": "https://github.com/hidrb",
-    "createdAt": 1633034677000
   }
 ] as const;
 
@@ -193,7 +193,7 @@ export const allSponsors = [
   {
     "name": "Proxidize",
     "imgSrc": "https://avatars.githubusercontent.com/u/70805857?v=4",
-    "weight": 4,
+    "weight": 5,
     "login": "proxidize",
     "link": "https://proxidize.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1707060132000
@@ -247,11 +247,11 @@ export const allSponsors = [
     "createdAt": 1720565283000
   },
   {
-    "name": "克里の小跟班",
+    "name": "塞尔吉斯",
     "imgSrc": "https://avatars.githubusercontent.com/u/5610115?u=be201750effeb8826a788dea206e594008cfe3f2&v=4",
     "weight": 1,
-    "login": "criejs",
-    "link": "https://github.com/criejs",
+    "login": "cerjs",
+    "link": "https://github.com/cerjs",
     "createdAt": 1721703779000
   },
   {
@@ -281,34 +281,10 @@ export const allSponsors = [
   {
     "name": "KeenEthics",
     "imgSrc": "https://github.com/keenethics.png",
-    "weight": 9,
+    "weight": 17,
     "login": "keenethics",
     "link": "https://keenethics.com",
     "createdAt": 1727395200000
-  },
-  {
-    "name": "Gadi Cohen",
-    "imgSrc": "https://avatars.githubusercontent.com/u/381978?v=4",
-    "weight": 2,
-    "login": "gadicc",
-    "link": "https://github.com/gadicc",
-    "createdAt": 1727433891000
-  },
-  {
-    "name": "david",
-    "imgSrc": "https://avatars.githubusercontent.com/u/54673427?u=e80a3448b384f0a7f648f8beb4d5b706ee3092be&v=4",
-    "weight": 2,
-    "login": "davidtjones02",
-    "link": "https://github.com/davidtjones02",
-    "createdAt": 1727647889000
-  },
-  {
-    "name": "Patrick",
-    "imgSrc": "https://avatars.githubusercontent.com/u/84919884?u=012072504948ad8f8f162e7b58ec6ad739308185&v=4",
-    "weight": 2,
-    "login": "lanternlogic",
-    "link": "http://tripeak.com.au/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1727649492000
   },
   {
     "name": "Vercel",
