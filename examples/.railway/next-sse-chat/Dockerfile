@@ -5,10 +5,6 @@ RUN corepack enable
 
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
-ARG RAILWAY_ENVIRONMENT_NAME
-ENV RAILWAY_ENVIRONMENT_NAME=$RAILWAY_ENVIRONMENT_NAME
-
-RUN echo $RAILWAY_ENVIRONMENT_NAME
 
 FROM base AS build
 COPY . /app
@@ -23,8 +19,6 @@ FROM base as installer
 WORKDIR /app
 COPY --from=build /app/out/full/ .
 COPY --from=build /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-
-ENV RAILWAY_ENVIRONMENT_NAME=$RAILWAY_ENVIRONMENT_NAME
 
 # Some other stuff we need to build trpc packages
 COPY --from=build /app/tsconfig.json ./tsconfig.json
