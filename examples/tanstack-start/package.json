@@ -12,17 +12,17 @@
     "test-start": "playwright test --project=prod"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.59.15",
-    "@tanstack/react-query-devtools": "^5.59.15",
-    "@tanstack/react-router": "^1.69.1",
-    "@tanstack/react-router-with-query": "^1.69.1",
-    "@tanstack/router-devtools": "^1.69.1",
-    "@tanstack/start": "^1.69.1",
+    "@tanstack/react-query": "^5.59.16",
+    "@tanstack/react-query-devtools": "^5.59.16",
+    "@tanstack/react-router": "^1.78.0",
+    "@tanstack/react-router-with-query": "^1.78.0",
+    "@tanstack/router-devtools": "^1.78.0",
+    "@tanstack/start": "^1.78.1",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/server": "npm:@trpc/server@next",
     "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query@next",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "rc",
+    "react-dom": "rc",
     "superjson": "^1.12.4",
     "tailwind-merge": "^2.0.0",
     "vinxi": "^0.4.3",
@@ -32,8 +32,8 @@
     "@eslint/js": "^8.57.0",
     "@playwright/test": "^1.26.1",
     "@types/node": "^20.10.0",
-    "@types/react": "^18.3.1",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "npm:types-react@rc",
+    "@types/react-dom": "npm:types-react-dom@rc",
     "@vitejs/plugin-react": "^4.3.1",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.35.0",
@@ -44,5 +44,9 @@
     "typescript-eslint": "7.16.1",
     "vite": "^5.3.4",
     "vite-tsconfig-paths": "^4.3.2"
+  },
+  "overrides": {
+    "@types/react": "npm:types-react@rc",
+    "@types/react-dom": "npm:types-react-dom@rc"
   }
 }

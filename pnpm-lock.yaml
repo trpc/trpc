@@ -12668,7 +12668,7 @@ packages:
     peerDependencies:
       vinxi: ^0.4.3
     dependencies:
-      '@babel/parser': 7.25.8
+      '@babel/parser': 7.26.2
       acorn: 8.12.1
       acorn-jsx: 5.3.2(acorn@8.12.1)
       acorn-loose: 8.4.0
@@ -20946,8 +20946,8 @@ packages:
   /magicast@0.2.11:
     resolution: {integrity: sha512-6saXbRDA1HMkqbsvHOU6HBjCVgZT460qheRkLhJQHWAbhXoWESI3Kn/dGGXyKs15FFKR85jsUqFx2sMK0wy/5g==}
     dependencies:
-      '@babel/parser': 7.25.8
-      '@babel/types': 7.25.8
+      '@babel/parser': 7.26.2
+      '@babel/types': 7.26.0
       recast: 0.23.9
     dev: false
 
