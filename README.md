@@ -128,7 +128,7 @@ bunx create-next-app --example https://github.com/trpc/trpc --example-path examp
 
 ### Special shout-outs
 
-> People who have made great contributions to tRPC in a code _(or non-code)_ way
+> Individuals who have made exceptional contributions to tRPC through code, documentation, community building, and other valuable efforts
 
 <table>
   <tbody>
