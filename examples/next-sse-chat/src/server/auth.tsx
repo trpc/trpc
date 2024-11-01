@@ -4,14 +4,13 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GithubProvider from 'next-auth/providers/github';
 import { cache } from 'react';
 import { z } from 'zod';
+import { railwayPrNumber } from './railwayPrNumber';
 
 const authOptions: NextAuthConfig = {
   providers: [],
 };
 
-let useMockProvider =
-  process.env.NODE_ENV === 'test' ||
-  process.env.RAILWAY_ENVIRONMENT_NAME?.includes('-pr-'); // example: 'trpc-pr-5821'
+let useMockProvider = process.env.NODE_ENV === 'test' || !!railwayPrNumber;
 
 const { AUTH_GITHUB_ID, AUTH_GITHUB_SECRET, NODE_ENV, APP_ENV } = process.env;
 if (
