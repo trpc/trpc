@@ -6,7 +6,7 @@
     "build:1-generate": "drizzle-kit generate",
     "build:2-migrate": "pnpm migrate",
     "build:3-next": "cross-env NODE_ENV=production next build",
-    "build": "run-s build:3-next",
+    "build": "run-s build:*",
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
