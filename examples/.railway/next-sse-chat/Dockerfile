@@ -3,9 +3,6 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
-ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
-
 FROM base AS build
 COPY . /app
 WORKDIR /app
