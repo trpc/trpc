@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "runtime": "V2",
+    "runtime": "LEGACY",
     "numReplicas": 1,
     "healthcheckPath": "/api/trpc/healthcheck",
     "healthcheckTimeout": 100,
