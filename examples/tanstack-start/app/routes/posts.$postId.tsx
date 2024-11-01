@@ -1,8 +1,9 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, ErrorComponent, Link } from '@tanstack/react-router';
 import type { ErrorComponentProps } from '@tanstack/react-router';
 import { NotFound } from '~/components/NotFound';
 import { useTRPC } from '~/trpc/react';
+import React from 'react';
 
 export const Route = createFileRoute('/posts/$postId')({
   loader: async ({ params: { postId }, context }) => {
@@ -28,18 +29,18 @@ function PostComponent() {
   const { postId } = Route.useParams();
   const trpc = useTRPC();
 
-  const postQuery = useSuspenseQuery(
-    trpc.post.byId.queryOptions({ id: postId }),
-  );
+  const postQuery = useQuery(trpc.post.byId.queryOptions({ id: postId }));
+
+  const post = React.use(postQuery.promise);
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xl font-bold underline">{postQuery.data.title}</h4>
-      <div className="text-sm">{postQuery.data.body}</div>
+      <h4 className="text-xl font-bold underline">{post.title}</h4>
+      <div className="text-sm">{post.body}</div>
       <Link
         to="/posts/$postId/deep"
         params={{
-          postId: postQuery.data.id,
+          postId: post.id,
         }}
         activeProps={{ className: 'text-black font-bold' }}
         className="block py-1 text-blue-800 hover:text-blue-600"
