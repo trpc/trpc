@@ -1,15 +1,8 @@
 import type { InferSelectModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
 import { pgTableCreator, text, timestamp } from 'drizzle-orm/pg-core';
-import { railwayPrNumber } from '../railwayPrNumber';
 
-const prPrefix = railwayPrNumber ? `__pr-${railwayPrNumber}_` : '';
-
-if (prPrefix) {
-  console.log('pull request prefix', prPrefix);
-}
-
-const pgTable = pgTableCreator((name) => `${prPrefix}sse-chat_${name}`);
+const pgTable = pgTableCreator((name) => `sse-chat_${name}`);
 
 export const Post = pgTable('post', {
   id: text('id')
