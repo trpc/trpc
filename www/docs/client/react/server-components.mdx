@@ -342,7 +342,7 @@ import { trpc } from '~/trpc/server';
 
 export default async function Home() {
   // Use the caller directly without using `.prefetch()`
-  const greeting = await trpc.hello.query();
+  const greeting = await trpc.hello();
   //    ^? { greeting: string }
 
   return <div>{greeting.greeting}</div>;
