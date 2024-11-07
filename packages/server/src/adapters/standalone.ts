@@ -12,6 +12,8 @@ import http from 'http';
 // @trpc/server
 import { type AnyRouter } from '../@trpc/server';
 import { toURL } from '../@trpc/server/http';
+// eslint-disable-next-line no-restricted-imports
+import { run } from '../unstable-core-do-not-import';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
@@ -34,31 +36,27 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
 ): http.RequestListener {
   return (req, res) => {
     let path = '';
-    try {
+    run(async () => {
       const url = toURL(req.url!);
 
       // get procedure path and remove the leading slash
       // /procedure -> procedure
       path = url.pathname.slice(1);
 
-      nodeHTTPRequestHandler({
+      await nodeHTTPRequestHandler({
         ...(opts as any),
         req,
         res,
         path,
       });
-    } catch (cause) {
-      internal_exceptionHandler<
-        TRouter,
-        http.IncomingMessage,
-        http.ServerResponse
-      >({
+    }).catch(
+      internal_exceptionHandler({
         req,
         res,
         path,
         ...opts,
-      })(cause);
-    }
+      }),
+    );
   };
 }
 

@@ -31,17 +31,17 @@
   "devDependencies": {
     "@eslint/js": "^8.57.0",
     "@playwright/test": "^1.26.1",
-    "@types/node": "^20.10.0",
+    "@types/node": "^20.17.3",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react": "^7.35.0",
-    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint": "^9.13.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.6.2",
-    "typescript-eslint": "7.16.1",
+    "typescript-eslint": "^8.12.2",
     "vite": "^5.3.4",
     "vite-tsconfig-paths": "^4.3.2"
   }

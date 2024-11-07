@@ -1,22 +1,40 @@
 import { EventEmitter, on } from 'events';
-import { ignoreErrors } from '../___testHelpers';
+import {
+  ignoreErrors,
+  suppressLogs,
+  suppressLogsUntil,
+} from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
-import { render, waitFor } from '@testing-library/react';
+import { skipToken } from '@tanstack/react-query';
+import { fireEvent, render, waitFor } from '@testing-library/react';
+import type { TRPCSubscriptionResult } from '@trpc/react-query/shared';
 import { initTRPC, sse } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
 
-describe.each([
-  //
-  'http',
-  'ws',
-] as const)('useSubscription - %s', (protocol) => {
-  const ee = new EventEmitter();
+/**
+ * a function that displays the diff over time in a list of values
+ */
+function diff(list: any[]) {
+  return list.map((item, index) => {
+    if (index === 0) return item;
 
-  const ctx = konn()
+    const prev = list[index - 1]!;
+    const diff = {} as any;
+    for (const key in item) {
+      if (item[key] !== prev[key]) {
+        diff[key] = item[key];
+      }
+    }
+    return diff;
+  });
+}
+const getCtx = (protocol: 'http' | 'ws') => {
+  return konn()
     .beforeEach(() => {
+      const ee = new EventEmitter();
       const t = initTRPC.create({
         errorFormatter({ shape }) {
           return {
@@ -39,6 +57,9 @@ describe.each([
               yield data + opts.input;
             }
           }),
+        /**
+         * @deprecated delete in v12
+         */
         onEventObservable: t.procedure
           .input(z.number())
           .subscription(({ input }) => {
@@ -54,16 +75,26 @@ describe.each([
           }),
       });
 
-      return getServerAndReactClient(appRouter, {
-        subscriptions: protocol,
-      });
+      return {
+        ...getServerAndReactClient(appRouter, {
+          subscriptions: protocol,
+        }),
+        ee,
+      };
     })
     .afterEach(async (ctx) => {
       await ctx?.close?.();
     })
     .done();
+};
+describe.each([
+  //
+  'http',
+  'ws',
+] as const)('useSubscription - %s', (protocol) => {
+  const ctx = getCtx(protocol);
 
-  test('useSubscription - iterable', async () => {
+  test('iterable', async () => {
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
@@ -114,7 +145,7 @@ describe.each([
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__connected`);
     });
-    ee.emit('data', 20);
+    ctx.ee.emit('data', 20);
 
     await waitFor(() => {
       expect(onDataMock).toHaveBeenCalledTimes(1);
@@ -139,15 +170,15 @@ describe.each([
     });
 
     // we need to emit data to trigger unsubscribe
-    ee.emit('data', 40);
+    ctx.ee.emit('data', 40);
 
     await waitFor(() => {
       // no event listeners
-      expect(ee.listenerCount('data')).toBe(0);
+      expect(ctx.ee.listenerCount('data')).toBe(0);
     });
   });
 
-  test('useSubscription - observable()', async () => {
+  test('observable()', async () => {
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
@@ -160,7 +191,7 @@ describe.each([
       const [enabled, _setEnabled] = useState(true);
       setEnabled = _setEnabled;
 
-      client.onEventObservable.useSubscription(10, {
+      client.onEventIterable.useSubscription(10, {
         enabled: enabled,
         onStarted: () => {
           setIsStarted(true);
@@ -197,7 +228,7 @@ describe.each([
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__connected`);
     });
-    ee.emit('data', 20);
+    ctx.ee.emit('data', 20);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__data:30`);
     });
@@ -210,7 +241,196 @@ describe.each([
 
     await waitFor(() => {
       // no event listeners
-      expect(ee.listenerCount('data')).toBe(0);
+      expect(ctx.ee.listenerCount('data')).toBe(0);
     });
+  });
+});
+
+describe('connection state - http', () => {
+  const ctx = getCtx('http');
+
+  test('iterable', async () => {
+    const { App, client } = ctx;
+
+    const queryResult: unknown[] = [];
+
+    function MyComponent() {
+      const result = client.onEventIterable.useSubscription(10);
+
+      queryResult.push({
+        ...result,
+      });
+
+      return (
+        <>
+          <>status:{result.status}</>
+          <>data:{result.data}</>
+        </>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    // emit
+    ctx.ee.emit('data', 20);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`data:30`);
+    });
+
+    expect(diff(queryResult)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "data": undefined,
+          "error": null,
+          "reset": [Function],
+          "status": "connecting",
+        },
+        Object {
+          "status": "pending",
+        },
+        Object {
+          "data": 30,
+        },
+      ]
+    `);
+    queryResult.length = 0;
+
+    await suppressLogsUntil(async () => {
+      ctx.destroyConnections();
+
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('status:connecting');
+      });
+    });
+
+    await waitFor(
+      () => {
+        expect(utils.container).toHaveTextContent('status:pending');
+      },
+      {
+        timeout: 5_000,
+      },
+    );
+
+    expect(diff(queryResult)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "data": 30,
+          "error": [TRPCClientError: Unknown error],
+          "reset": [Function],
+          "status": "connecting",
+        },
+        Object {
+          "error": null,
+          "status": "pending",
+        },
+      ]
+    `);
+
+    queryResult.length = 0;
+    // emit
+    ctx.ee.emit('data', 40);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('data:50');
+    });
+    expect(diff(queryResult)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "data": 50,
+          "error": null,
+          "reset": [Function],
+          "status": "pending",
+        },
+      ]
+    `);
+
+    utils.unmount();
+  });
+});
+
+describe('reset - http', () => {
+  const ctx = getCtx('http');
+
+  test('iterable', async () => {
+    const queryResult: TRPCSubscriptionResult<number, unknown>[] = [];
+
+    function MyComponent() {
+      const result = ctx.client.onEventIterable.useSubscription(10);
+
+      queryResult.push({
+        ...result,
+      });
+
+      return (
+        <>
+          <>status:{result.status}</>
+          <>data:{result.data}</>
+          {/* reset button */}
+          <button
+            onClick={() => {
+              result.reset();
+            }}
+            data-testid="reset"
+          >
+            reset
+          </button>
+        </>
+      );
+    }
+
+    const utils = render(
+      <ctx.App>
+        <MyComponent />
+      </ctx.App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    // emit
+    ctx.ee.emit('data', 20);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`data:30`);
+    });
+
+    queryResult.length = 0;
+
+    // click reset
+    fireEvent.click(utils.getByTestId('reset'));
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('status:connecting');
+    });
+
+    expect(queryResult[0]?.data).toBeUndefined();
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('status:pending');
+    });
+
+    expect(diff(queryResult)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "data": undefined,
+          "error": null,
+          "reset": [Function],
+          "status": "connecting",
+        },
+        Object {
+          "status": "pending",
+        },
+      ]
+    `);
+
+    utils.unmount();
   });
 });

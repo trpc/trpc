@@ -171,12 +171,7 @@ export default function IndexPage() {
     },
   });
 
-  const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
-  trpc.post.whoIsTyping.useSubscription(undefined, {
-    onData(data) {
-      setCurrentlyTyping(data);
-    },
-  });
+  const whoIsTypingResult = trpc.post.whoIsTyping.useSubscription();
 
   return (
     <>
@@ -255,8 +250,8 @@ export default function IndexPage() {
                 {isFetchingNextPage
                   ? 'Loading more...'
                   : hasNextPage
-                  ? 'Load More'
-                  : 'Nothing more to load'}
+                    ? 'Load More'
+                    : 'Nothing more to load'}
               </button>
               <div className="space-y-4">
                 {messages?.map((item) => (
@@ -293,8 +288,8 @@ export default function IndexPage() {
             <div className="w-full">
               <AddMessageForm onMessagePost={() => scrollToBottomOfList()} />
               <p className="h-2 italic text-gray-400">
-                {currentlyTyping.length
-                  ? `${currentlyTyping.join(', ')} typing...`
+                {whoIsTypingResult.data?.length
+                  ? `${whoIsTypingResult.data.join(', ')} typing...`
                   : ''}
               </p>
             </div>

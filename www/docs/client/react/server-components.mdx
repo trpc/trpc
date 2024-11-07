@@ -163,8 +163,9 @@ The `trpc/client.tsx` is the entrypoint when consuming your tRPC API from client
 your tRPC router and create typesafe hooks using `createTRPCReact`. We'll also export our context provider from this file.
 
 ```tsx title='trpc/client.tsx'
-'use client'; // <-- to make sure we can mount the Provider from a server component
+'use client';
 
+// ^-- to make sure we can mount the Provider from a server component
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink } from '@trpc/client';
@@ -242,8 +243,8 @@ import { createCallerFactory, createTRPCContext } from './init';
 import { makeQueryClient } from './query-client';
 import { appRouter } from './routers/_app';
 
- // IMPORTANT: Create a stable getter for the query client that
- //            will return the same client during the same request.
+// IMPORTANT: Create a stable getter for the query client that
+//            will return the same client during the same request.
 export const getQueryClient = cache(makeQueryClient);
 const caller = createCallerFactory(appRouter)(createTRPCContext);
 
@@ -253,7 +254,7 @@ export const { trpc, HydrateClient } = createHydrationHelpers<typeof appRouter>(
 );
 ```
 
-## Utilizing your API
+## Using your API
 
 Now you can use your tRPC API in your app. While you can use the React Query hooks in client components just like you would in any other React app,
 we can take advantage of the RSC capabilities by prefetching queries in a server component high up the tree. You may be familiar with this
@@ -278,8 +279,9 @@ export default async function Home() {
 ```
 
 ```tsx title='app/client-greeting.tsx'
-'use client'; // <-- hooks can only be used in client components
+'use client';
 
+// <-- hooks can only be used in client components
 import { trpc } from '~/trpc/client';
 
 export function ClientGreeting() {
@@ -340,7 +342,7 @@ import { trpc } from '~/trpc/server';
 
 export default async function Home() {
   // Use the caller directly without using `.prefetch()`
-  const greeting = await trpc.hello.query();
+  const greeting = await trpc.hello();
   //    ^? { greeting: string }
 
   return <div>{greeting.greeting}</div>;

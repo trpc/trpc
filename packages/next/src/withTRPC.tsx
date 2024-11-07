@@ -170,7 +170,7 @@ export function withTRPC<
           appOrPageCtx as any,
         );
         const originalPageProps = isApp
-          ? originalProps.pageProps ?? {}
+          ? (originalProps.pageProps ?? {})
           : originalProps;
 
         pageProps = {

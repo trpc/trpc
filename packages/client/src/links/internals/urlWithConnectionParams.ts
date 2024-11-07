@@ -2,9 +2,15 @@ import { type TRPCRequestInfo } from '@trpc/server/http';
 
 /**
  * Get the result of a value or function that returns a value
+ * It also optionally accepts typesafe arguments for the function
  */
-export const resultOf = <T>(value: T | (() => T)): T => {
-  return typeof value === 'function' ? (value as () => T)() : value;
+export const resultOf = <T, TArgs extends any[]>(
+  value: T | ((...args: TArgs) => T),
+  ...args: TArgs
+): T => {
+  return typeof value === 'function'
+    ? (value as (...args: TArgs) => T)(...args)
+    : value;
 };
 
 /**

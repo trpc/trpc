@@ -35,7 +35,7 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 USER nextjs
 
-COPY --from=installer /app/examples/next-sse-chat/next.config.js .
+COPY --from=installer /app/examples/next-sse-chat/next.config.ts .
 COPY --from=installer /app/examples/next-sse-chat/package.json .
 
 COPY --from=installer --chown=nextjs:nodejs /app/examples/next-sse-chat/.next/standalone ./

@@ -15,11 +15,14 @@ const appRouter = router({
 // None of the actual implementation is exposed to the client
 export type AppRouter = typeof appRouter;
 
-// export API handler
-export default trpcNext.createNextApiHandler({
+const handler = trpcNext.createNextApiHandler({
   router: appRouter,
   createContext,
 });
+// export API handler
+export default async (req: NextApiRequest, res: NextApiResponse) => {
+  await handler(req, res);
+};
 
 export const config = {
   api: {

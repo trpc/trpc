@@ -400,10 +400,10 @@ export type DecoratedProcedureUtilsRecord<
     ? $Value extends RouterRecord
       ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateRouter
       : $Value extends AnyQueryProcedure
-      ? DecorateQueryProcedure<TRoot, $Value>
-      : $Value extends AnyMutationProcedure
-      ? DecorateMutationProcedure<TRoot, $Value>
-      : never
+        ? DecorateQueryProcedure<TRoot, $Value>
+        : $Value extends AnyMutationProcedure
+          ? DecorateMutationProcedure<TRoot, $Value>
+          : never
     : never;
 }; // Add functions that should be available at utils root
 

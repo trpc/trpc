@@ -28,13 +28,13 @@ export type UseProcedureRecord<
     ? $Value extends RouterRecord
       ? UseProcedureRecord<TRoot, $Value>
       : $Value extends AnyQueryProcedure
-      ? Resolver<{
-          input: inferProcedureInput<$Value>;
-          output: inferTransformedProcedureOutput<TRoot, $Value>;
-          errorShape: TRoot['errorShape'];
-          transformer: TRoot['transformer'];
-        }>
-      : never
+        ? Resolver<{
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<TRoot, $Value>;
+            errorShape: TRoot['errorShape'];
+            transformer: TRoot['transformer'];
+          }>
+        : never
     : never;
 };
 

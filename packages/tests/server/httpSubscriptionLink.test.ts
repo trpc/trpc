@@ -1,5 +1,9 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew, suppressLogs } from './___testHelpers';
+import {
+  routerToServerAndClientNew,
+  suppressLogs,
+  suppressLogsUntil,
+} from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, TRPCLink } from '@trpc/client';
 import {
@@ -8,6 +12,7 @@ import {
   unstable_httpBatchStreamLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
+import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -179,15 +184,23 @@ test('iterable event', async () => {
 
 test(
   'iterable event with error',
+  {
+    timeout: 60_000,
+  },
   async () => {
     const { client } = ctx;
 
     const onStarted =
       vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
     const onData = vi.fn<(args: number) => void>();
+    const onConnectionStateChange =
+      vi.fn<
+        (args: TRPCConnectionState<TRPCClientError<typeof ctx.router>>) => void
+      >();
     const subscription = client.sub.iterableEvent.subscribe(undefined, {
       onStarted: onStarted,
       onData: onData,
+      onConnectionStateChange,
     });
 
     await waitFor(() => {
@@ -199,17 +212,18 @@ test(
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
-    const release = suppressLogs();
     ctx.eeEmit(new Error('test error'));
-    await waitFor(
-      async () => {
-        expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
-      },
-      {
-        timeout: 5_000,
-      },
-    );
-    release();
+
+    await suppressLogsUntil(async () => {
+      await waitFor(
+        async () => {
+          expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
+        },
+        {
+          timeout: 5_000,
+        },
+      );
+    });
 
     ctx.eeEmit(2);
 
@@ -223,9 +237,46 @@ test(
     );
 
     subscription.unsubscribe();
-  },
-  {
-    timeout: 60_000,
+
+    expect(onConnectionStateChange.mock.calls).toMatchInlineSnapshot(`
+      Array [
+        Array [
+          Object {
+            "error": null,
+            "state": "connecting",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "error": null,
+            "state": "pending",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "error": [TRPCClientError: test error],
+            "state": "connecting",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "error": [TRPCClientError: Unknown error],
+            "state": "connecting",
+            "type": "state",
+          },
+        ],
+        Array [
+          Object {
+            "error": null,
+            "state": "pending",
+            "type": "state",
+          },
+        ],
+      ]
+    `);
   },
 );
 
@@ -273,6 +324,11 @@ test('disconnect and reconnect with an event id', async () => {
   const onStarted =
     vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
   const onData = vi.fn<(args: { data: number; id: string }) => void>();
+
+  const onConnectionStateChange =
+    vi.fn<
+      (args: TRPCConnectionState<TRPCClientError<typeof ctx.router>>) => void
+    >();
   const subscription = client.sub.iterableInfinite.subscribe(
     {},
     {
@@ -280,6 +336,7 @@ test('disconnect and reconnect with an event id', async () => {
       onData(d) {
         onData(d);
       },
+      onConnectionStateChange,
     },
   );
 
@@ -308,7 +365,16 @@ test('disconnect and reconnect with an event id', async () => {
   await waitFor(() => {
     expect(es.readyState).toBe(EventSource.CONNECTING);
   });
+
   release();
+
+  const lastState = onConnectionStateChange.mock.calls.at(-1)![0];
+
+  expect(lastState.state).toBe('connecting');
+  expect(lastState.error).not.toBeNull();
+  expect(lastState.error).toMatchInlineSnapshot(
+    `[TRPCClientError: Unknown error]`,
+  );
 
   await waitFor(
     () => {
@@ -467,6 +533,160 @@ describe('auth / connectionParams', async () => {
 
     expect(onData.mock.calls[0]![0]).toEqual({
       user: USER_MOCK,
+      num: 1,
+    });
+  });
+});
+
+describe('headers / eventSourceOptions', async () => {
+  const USER_TOKEN = 'supersecret';
+  type User = {
+    id: string;
+    username: string;
+  };
+  const USER_MOCK = {
+    id: '123',
+    username: 'KATT',
+  } as const satisfies User;
+  const t = initTRPC
+    .context<{
+      user: User | null;
+      op?: { type: string; path: string };
+    }>()
+    .create();
+
+  const ctx = konn()
+    .beforeEach(() => {
+      const ee = new EventEmitter();
+      const eeEmit = (data: number) => {
+        ee.emit('data', data);
+      };
+
+      const appRouter = t.router({
+        iterableEvent: t.procedure.subscription(async function* (opts) {
+          for await (const data of on(ee, 'data', {
+            signal: opts.signal,
+          })) {
+            const num = data[0] as number;
+            yield {
+              user: opts.ctx.user,
+              op: opts.ctx.op,
+              num,
+            };
+          }
+        }),
+      });
+
+      const opts = routerToServerAndClientNew(appRouter, {
+        server: {
+          async createContext(opts) {
+            let user: User | null = null;
+            const token = opts.req?.headers?.['token'];
+            if (token === USER_TOKEN) {
+              user = USER_MOCK;
+            }
+
+            const type = opts.req?.headers?.['op-type'];
+            const path = opts.req?.headers?.['op-path'];
+
+            let op: { type: string; path: string } | undefined;
+            if (typeof type === 'string' && typeof path === 'string') {
+              op = { type, path };
+            }
+
+            return {
+              user,
+              op,
+            };
+          },
+        },
+      });
+
+      return { ...opts, eeEmit };
+    })
+    .afterEach((ctx) => {
+      return ctx.close?.();
+    })
+    .done();
+  type AppRouter = typeof ctx.router;
+  test('do a call without auth', async () => {
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        unstable_httpSubscriptionLink({
+          url: ctx.httpUrl,
+        }),
+      ],
+    });
+
+    // sub
+    const onStarted = vi.fn<() => void>();
+    const onData = vi.fn<(args: { user: User | null; num: number }) => void>();
+    const subscription = client.iterableEvent.subscribe(undefined, {
+      onStarted: onStarted,
+      onData: onData,
+    });
+
+    await waitFor(() => {
+      expect(onStarted).toHaveBeenCalledTimes(1);
+    });
+
+    ctx.eeEmit(1);
+
+    await waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+
+    subscription.unsubscribe();
+
+    expect(onData.mock.calls[0]![0]).toEqual({
+      user: null,
+      op: undefined,
+      num: 1,
+    });
+  });
+
+  test('with auth', async () => {
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        unstable_httpSubscriptionLink({
+          url: ctx.httpUrl,
+
+          eventSourceOptions: async ({ op }) => {
+            return {
+              headers: {
+                token: USER_TOKEN,
+                'op-type': op.type,
+                'op-path': op.path,
+              },
+            };
+          },
+        }),
+      ],
+    });
+
+    // sub
+    const onStarted = vi.fn<() => void>();
+    const onData = vi.fn<(args: { user: User | null; num: number }) => void>();
+    const subscription = client.iterableEvent.subscribe(undefined, {
+      onStarted: onStarted,
+      onData: onData,
+    });
+
+    await waitFor(() => {
+      expect(onStarted).toHaveBeenCalledTimes(1);
+    });
+
+    ctx.eeEmit(1);
+
+    await waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(1);
+    });
+
+    subscription.unsubscribe();
+
+    expect(onData.mock.calls[0]![0]).toEqual({
+      user: USER_MOCK,
+      op: { type: 'subscription', path: 'iterableEvent' },
       num: 1,
     });
   });

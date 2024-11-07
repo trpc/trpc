@@ -161,13 +161,71 @@ export interface UseTRPCMutationOptions<
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCUseQueryBaseOptions {}
 
-type inferAsyncIterableYield<T> = T extends AsyncIterable<infer U> ? U : T;
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
+  /**
+   * @deprecated
+   * use a `skipToken` from `@tanstack/react-query` instead
+   * this will be removed in v12
+   */
   enabled?: boolean;
+  /**
+   * Called when the subscription is started
+   */
   onStarted?: () => void;
-  onData: (data: inferAsyncIterableYield<TOutput>) => void;
+  /**
+   * Called when new data is received
+   */
+  onData?: (data: TOutput) => void;
+  /**
+   * Called when an **unrecoverable error** occurs and the subscription is closed
+   */
   onError?: (err: TError) => void;
 }
+
+export interface TRPCSubscriptionBaseResult<TOutput, TError> {
+  status: 'idle' | 'connecting' | 'pending' | 'error';
+  data: undefined | TOutput;
+  error: null | TError;
+  /**
+   * Reset the subscription
+   */
+  reset: () => void;
+}
+
+export interface TRPCSubscriptionIdleResult<TOutput>
+  extends TRPCSubscriptionBaseResult<TOutput, null> {
+  status: 'idle';
+  data: undefined;
+  error: null;
+}
+
+export interface TRPCSubscriptionConnectingResult<TOutput, TError>
+  extends TRPCSubscriptionBaseResult<TOutput, TError> {
+  status: 'connecting';
+  data: undefined | TOutput;
+  error: TError | null;
+}
+
+export interface TRPCSubscriptionPendingResult<TOutput>
+  extends TRPCSubscriptionBaseResult<TOutput, undefined> {
+  status: 'pending';
+  data: TOutput;
+  error: null;
+}
+
+export interface TRPCSubscriptionErrorResult<TOutput, TError>
+  extends TRPCSubscriptionBaseResult<TOutput, TError> {
+  status: 'error';
+  data: TOutput | undefined;
+  error: TError;
+}
+
+export type TRPCSubscriptionResult<TOutput, TError> =
+  | TRPCSubscriptionIdleResult<TOutput>
+  | TRPCSubscriptionConnectingResult<TOutput, TError>
+  | TRPCSubscriptionErrorResult<TOutput, TError>
+  | TRPCSubscriptionPendingResult<TOutput>;
+
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   extends TRPCContextProps<TRouter, TSSRContext> {
   children: ReactNode;

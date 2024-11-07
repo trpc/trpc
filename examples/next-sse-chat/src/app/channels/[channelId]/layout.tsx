@@ -8,9 +8,12 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 
 export default async function Home(
-  props: Readonly<{ params: { channelId: string }; children: React.ReactNode }>,
+  props: Readonly<{
+    params: Promise<{ channelId: string }>;
+    children: React.ReactNode;
+  }>,
 ) {
-  const channelId = props.params.channelId;
+  const { channelId } = await props.params;
   const session = await auth();
   const channels = await caller.channel.list();
 
@@ -28,7 +31,7 @@ export default async function Home(
             </SignedIn>
           </Suspense>
         </div>
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
           {channels.map((channel) => (
             <Link
               key={channel.id}
@@ -43,39 +46,39 @@ export default async function Home(
               {channel.name}
             </Link>
           ))}
-          <div className="mt-auto">
-            <div className="flex items-center justify-between">
-              <Suspense>
-                <SignedIn>
-                  <span className="text-sm font-medium">
-                    Hello, {session?.user?.name} 👋
-                  </span>
-                  <form
-                    action={async () => {
-                      'use server';
-                      await signOut();
-                    }}
-                  >
-                    <Button type="submit" size="sm">
-                      Sign Out
-                    </Button>
-                  </form>
-                </SignedIn>
-                <SignedOut>
-                  <form
-                    className="w-full"
-                    action={async () => {
-                      'use server';
-                      await signIn();
-                    }}
-                  >
-                    <Button type="submit" size="sm" className="w-full">
-                      Sign In
-                    </Button>
-                  </form>
-                </SignedOut>
-              </Suspense>
-            </div>
+        </div>
+        <div className="mt-auto">
+          <div className="flex items-center justify-between">
+            <Suspense>
+              <SignedIn>
+                <span className="text-sm font-medium">
+                  Hello, {session?.user?.name} 👋
+                </span>
+                <form
+                  action={async () => {
+                    'use server';
+                    await signOut();
+                  }}
+                >
+                  <Button type="submit" size="sm">
+                    Sign Out
+                  </Button>
+                </form>
+              </SignedIn>
+              <SignedOut>
+                <form
+                  className="w-full"
+                  action={async () => {
+                    'use server';
+                    await signIn();
+                  }}
+                >
+                  <Button type="submit" size="sm" className="w-full">
+                    Sign In
+                  </Button>
+                </form>
+              </SignedOut>
+            </Suspense>
           </div>
         </div>
       </nav>

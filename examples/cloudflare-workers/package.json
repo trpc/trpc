@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" src",
+    "lint": "eslint --cache src",
     "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'tsx src/client.ts'"
   },
   "dependencies": {
@@ -14,8 +14,8 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "@types/node": "^20.10.0",
-    "eslint": "^8.57.0",
+    "@types/node": "^20.17.3",
+    "eslint": "^9.13.0",
     "start-server-and-test": "^1.12.0",
     "tsx": "^4.0.0",
     "typescript": "^5.6.2",

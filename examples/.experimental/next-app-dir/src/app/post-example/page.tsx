@@ -1,4 +1,4 @@
-import { api } from '~/trpc/server-http';
+import { api } from '~/trpc/server-invoker';
 
 export const dynamic = 'force-dynamic';
 

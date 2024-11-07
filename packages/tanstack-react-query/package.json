@@ -17,7 +17,7 @@
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" --ignore-path ../../.gitignore src",
+    "lint": "eslint --cache src",
     "test-run:tsc": "tsc --noEmit --pretty",
     "ts-watch": "tsc --watch"
   },

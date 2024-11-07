@@ -36,7 +36,7 @@ test('chainer', async () => {
 
   const chain = createChain({
     links: [
-      retryLink({ attempts: 3 })(mockRuntime),
+      retryLink({ retry: (opts) => opts.attempts <= 3 })(mockRuntime),
       httpLink({
         url: `http://localhost:${httpPort}`,
       })(mockRuntime),
@@ -435,7 +435,7 @@ test('create client with links', async () => {
   const client = createTRPCClient<typeof router>({
     ...trpcClientOptions,
     links: [
-      retryLink({ attempts: 3 }),
+      retryLink({ retry: (opts) => opts.attempts < 3 }),
       httpLink({
         url: `http://localhost:${httpPort}`,
         headers: {},

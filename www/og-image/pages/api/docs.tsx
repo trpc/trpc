@@ -1,4 +1,3 @@
-/* eslint-disable react/no-unknown-property */
 import { ImageResponse } from '@vercel/og';
 import { docsParams } from 'utils/zodParams';
 import { fetchFont } from '../../utils/fetchFont';

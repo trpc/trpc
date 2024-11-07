@@ -36,8 +36,8 @@ export type DecorateRouterRecord<TRecord extends RouterRecord> = {
   [TKey in keyof TRecord]: TRecord[TKey] extends AnyProcedure
     ? DecorateProcedure<TRecord[TKey]>
     : TRecord[TKey] extends RouterRecord
-    ? DecorateRouterRecord<TRecord[TKey]>
-    : never;
+      ? DecorateRouterRecord<TRecord[TKey]>
+      : never;
 };
 
 /**
@@ -146,10 +146,10 @@ export type DecorateCreateRouterOptions<
     ? $Value extends AnyProcedure
       ? $Value
       : $Value extends Router<any, infer TRecord>
-      ? TRecord
-      : $Value extends CreateRouterOptions
-      ? DecorateCreateRouterOptions<$Value>
-      : never
+        ? TRecord
+        : $Value extends CreateRouterOptions
+          ? DecorateCreateRouterOptions<$Value>
+          : never
     : never;
 };
 
@@ -318,7 +318,6 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
 type MergeRouters<
   TRouters extends AnyRouter[],
   TRoot extends AnyRootTypes = TRouters[0]['_def']['_config']['$types'],
-  // eslint-disable-next-line @typescript-eslint/ban-types
   TRecord extends RouterRecord = {},
 > = TRouters extends [
   infer Head extends AnyRouter,

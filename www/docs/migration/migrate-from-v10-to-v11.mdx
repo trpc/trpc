@@ -24,6 +24,15 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Introduction of `retryLink` (non-breaking)
+
+See [retryLink](../client/links/retryLink.md) - allows you to retry failed operations
+
+### `useSubscription` improvements (non-breaking)
+
+- When subscribing to procedures using the [useSubscription](../client/react/useSubscription.md) hook it will now return information about the status of the subscription and the connection.
+- Ability to have a ponyfill when using [`httpSubscriptionLink`](../client/links/httpSubscriptionLink.md)
+
 ### Subscription procedure output type changed to `AsyncGenerator` (non-breaking)
 
 If you've used subscriptions with async generators with the v11, this might be breaking with how you infer your types.
@@ -52,11 +61,8 @@ SubscriptionProcedure<{
 If you need to infer the value you can use a helper like the below:
 
 ```ts
-type inferAsyncIterableYield<TOutput> = TOutput extends AsyncGenerator<
-  infer $Yield
->
-  ? $Yield
-  : never;
+type inferAsyncIterableYield<TOutput> =
+  TOutput extends AsyncGenerator<infer $Yield> ? $Yield : never;
 ```
 
 </details>

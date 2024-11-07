@@ -1,3 +1,4 @@
+import { Unpromise } from '../../../vendor/unpromise';
 import { noop } from '../../utils';
 import { createPromiseTimer } from './promiseTimer';
 
@@ -11,8 +12,10 @@ export async function* withCancel<T>(
 ): AsyncGenerator<T> {
   const cancelPromise = cancel.then(noop);
   const iterator = iterable[Symbol.asyncIterator]();
+  // declaration outside the loop for garbage collection reasons
+  let result: null | IteratorResult<T> | void;
   while (true) {
-    const result = await Promise.race([iterator.next(), cancelPromise]);
+    result = await Unpromise.race([iterator.next(), cancelPromise]);
     if (result == null) {
       await iterator.return?.();
       break;
@@ -21,12 +24,15 @@ export async function* withCancel<T>(
       break;
     }
     yield result.value;
+    // free up reference for garbage collection
+    result = null;
   }
 }
 
 interface TakeWithGraceOptions {
   count: number;
   gracePeriodMs: number;
+  onCancel: () => void;
 }
 
 /**
@@ -36,13 +42,15 @@ interface TakeWithGraceOptions {
  */
 export async function* takeWithGrace<T>(
   iterable: AsyncIterable<T>,
-  { count, gracePeriodMs }: TakeWithGraceOptions,
+  { count, gracePeriodMs, onCancel }: TakeWithGraceOptions,
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
   const timer = createPromiseTimer(gracePeriodMs);
   try {
+    // declaration outside the loop for garbage collection reasons
+    let result: null | IteratorResult<T> | void;
     while (true) {
-      const result = await Promise.race([iterator.next(), timer.promise]);
+      result = await Unpromise.race([iterator.next(), timer.promise]);
       if (result == null) {
         // cancelled
         await iterator.return?.();
@@ -53,8 +61,10 @@ export async function* takeWithGrace<T>(
       }
       yield result.value;
       if (--count === 0) {
-        timer.start();
+        timer.start().promise.then(onCancel, noop);
       }
+      // free up reference for garbage collection
+      result = null;
     }
   } finally {
     timer.clear();

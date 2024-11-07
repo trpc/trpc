@@ -1,6 +1,7 @@
-import type { DefaultSession, NextAuthOptions } from 'next-auth';
-import { getServerSession } from 'next-auth/next';
+import type { DefaultSession } from 'next-auth';
+import NextAuth from 'next-auth';
 import GitHub from 'next-auth/providers/github';
+import { cache } from 'react';
 
 declare module 'next-auth' {
   interface Session {
@@ -10,7 +11,7 @@ declare module 'next-auth' {
   }
 }
 
-export const options = {
+export const { auth: uncachedAuth, handlers } = NextAuth({
   providers: [
     GitHub({
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -31,8 +32,6 @@ export const options = {
     //   return !!auth?.user
     // }
   },
-} satisfies NextAuthOptions;
+});
 
-export function auth() {
-  return getServerSession(options);
-}
+export const auth = cache(uncachedAuth);

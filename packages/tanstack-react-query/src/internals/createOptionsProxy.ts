@@ -68,10 +68,10 @@ export type DecorateProcedure<
 > = TType extends 'query'
   ? DecorateQueryProcedure<TDef>
   : TType extends 'mutation'
-  ? DecorateMutationProcedure<TDef>
-  : TType extends 'subscription'
-  ? DecorateSubscriptionProcedure<TDef>
-  : never;
+    ? DecorateMutationProcedure<TDef>
+    : TType extends 'subscription'
+      ? DecorateSubscriptionProcedure<TDef>
+      : never;
 
 /**
  * @internal
@@ -84,16 +84,16 @@ export type DecoratedProcedureUtilsRecord<
     ? $Value extends RouterRecord
       ? DecoratedProcedureUtilsRecord<TRoot, $Value>
       : $Value extends AnyProcedure
-      ? DecorateProcedure<
-          $Value['_def']['type'],
-          {
-            input: inferProcedureInput<$Value>;
-            output: inferTransformedProcedureOutput<TRoot, $Value>;
-            transformer: TRoot['transformer'];
-            errorShape: TRoot['errorShape'];
-          }
-        >
-      : never
+        ? DecorateProcedure<
+            $Value['_def']['type'],
+            {
+              input: inferProcedureInput<$Value>;
+              output: inferTransformedProcedureOutput<TRoot, $Value>;
+              transformer: TRoot['transformer'];
+              errorShape: TRoot['errorShape'];
+            }
+          >
+        : never
     : never;
 };
 

@@ -80,7 +80,6 @@ describe('standalone middleware', () => {
   test('without ctx', () => {
     const addBarToCtxMiddleware = experimental_trpcMiddleware().create(
       (opts) => {
-        // eslint-disable-next-line @typescript-eslint/ban-types
         expectTypeOf(opts.ctx).toEqualTypeOf<object | {}>();
         return opts.next({
           ctx: {

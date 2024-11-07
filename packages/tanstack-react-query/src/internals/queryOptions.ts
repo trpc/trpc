@@ -104,13 +104,17 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
       TData,
       TRPCClientErrorLike<{
         transformer: TDef['transformer'];
-        errorShape: TDef['errorShape']
+        errorShape: TDef['errorShape'];
       }>
     >,
-  ): DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientErrorLike<{
-    transformer: TDef['transformer'];
-    errorShape: TDef['errorShape']
-  }>>;
+  ): DefinedTRPCQueryOptionsOut<
+    TQueryFnData,
+    TData,
+    TRPCClientErrorLike<{
+      transformer: TDef['transformer'];
+      errorShape: TDef['errorShape'];
+    }>
+  >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'],
     opts?: UnusedSkipTokenTRPCQueryOptionsIn<
@@ -118,7 +122,7 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
       TData,
       TRPCClientErrorLike<{
         transformer: TDef['transformer'];
-        errorShape: TDef['errorShape']
+        errorShape: TDef['errorShape'];
       }>
     >,
   ): UnusedSkipTokenTRPCQueryOptionsOut<
@@ -126,7 +130,7 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
     TData,
     TRPCClientErrorLike<{
       transformer: TDef['transformer'];
-      errorShape: TDef['errorShape']
+      errorShape: TDef['errorShape'];
     }>
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
@@ -136,7 +140,7 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
       TData,
       TRPCClientErrorLike<{
         transformer: TDef['transformer'];
-        errorShape: TDef['errorShape']
+        errorShape: TDef['errorShape'];
       }>
     >,
   ): UndefinedTRPCQueryOptionsOut<
@@ -144,7 +148,7 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
     TData,
     TRPCClientErrorLike<{
       transformer: TDef['transformer'];
-      errorShape: TDef['errorShape']
+      errorShape: TDef['errorShape'];
     }>
   >;
 }

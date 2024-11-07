@@ -35,9 +35,9 @@ type DecorateProcedure<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = {
-  (input: inferProcedureInput<TProcedure>): Promise<
-    inferProcedureOutput<TProcedure>
-  >;
+  (
+    input: inferProcedureInput<TProcedure>,
+  ): Promise<inferProcedureOutput<TProcedure>>;
   prefetch: (
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
@@ -62,8 +62,8 @@ type DecorateRouterRecord<
   [TKey in keyof TRecord]: TRecord[TKey] extends AnyProcedure
     ? DecorateProcedure<TRoot, TRecord[TKey]>
     : TRecord[TKey] extends RouterRecord
-    ? DecorateRouterRecord<TRoot, TRecord[TKey]>
-    : never;
+      ? DecorateRouterRecord<TRoot, TRecord[TKey]>
+      : never;
 };
 
 type Caller<TRouter extends AnyRouter> = ReturnType<
