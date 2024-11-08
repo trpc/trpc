@@ -161,3 +161,31 @@ test('retains url and search params', async () => {
 
   await server.close();
 });
+
+test('handles http2 pseudo-headers', async () => {
+  const mockReq = {
+    headers: {
+      ':method': 'GET',
+      ':path': '/test',
+      ':authority': 'example.com',
+      ':scheme': 'https',
+      accept: 'application/json',
+    },
+    url: '/test',
+    once: vi.fn(),
+  } as unknown as http.IncomingMessage;
+
+  const request = incomingMessageToRequest(mockReq, { maxBodySize: null });
+
+  // Verify HTTP/2 pseudo-headers were filtered out
+  expect(request.headers.has(':method')).toBe(false);
+  expect(request.headers.has(':path')).toBe(false);
+  expect(request.headers.has(':authority')).toBe(false);
+  expect(request.headers.has(':scheme')).toBe(false);
+
+  // Verify regular headers were preserved
+  expect(request.headers.get('accept')).toBe('application/json');
+
+  // Verify URL was constructed correctly using :authority as fallback
+  expect(request.url).toBe('http://example.com/test');
+});

@@ -67,8 +67,22 @@ export function incomingMessageToRequest(
   },
 ): Request {
   const ac = new AbortController();
-  const headers = new Headers(req.headers as any);
-  const url = toURL(`http://${headers.get('host')}${req.url}`);
+
+  // Filter out HTTP/2 pseudo-headers before creating Headers object
+  const filteredHeaders = Object.fromEntries(
+    Object.entries(req.headers).filter(([key]) => !key.startsWith(':')),
+  );
+  const headers = new Headers(
+    Object.entries(filteredHeaders).map(([key, value]) => [
+      key,
+      Array.isArray(value) ? value.join(', ') : (value ?? ''),
+    ]),
+  );
+
+  // Get host from either regular header or HTTP/2 pseudo-header
+  const host = headers.get('host') ?? (req.headers[':authority'] as string);
+  const url = toURL(`http://${host}${req.url}`);
+
   req.once('aborted', () => {
     ac.abort();
   });
