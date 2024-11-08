@@ -32,6 +32,9 @@ importers:
       '@swc/core':
         specifier: 1.9.1
         version: 1.9.1(@swc/helpers@0.5.13)
+      '@swc/helpers':
+        specifier: ^0.5.13
+        version: 0.5.13
       '@testing-library/dom':
         specifier: ^10.0.0
         version: 10.0.0
@@ -26749,7 +26752,7 @@ snapshots:
   graphql-tag@2.12.6(graphql@16.6.0):
     dependencies:
       graphql: 16.6.0
-      tslib: 2.6.2
+      tslib: 2.7.0
 
   graphql@15.8.0: {}
 
