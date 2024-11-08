@@ -200,11 +200,19 @@ test('http2 - filters out pseudo-headers', async () => {
     maxBodySize: null,
   });
 
-  expect(request.headers.has(':method')).toBe(false);
-  expect(request.headers.has(':path')).toBe(false);
+  const allHeaders = Array.from(request.headers.keys());
+  expect(allHeaders).not.toContain(':method');
+  expect(allHeaders).not.toContain(':path');
 
   expect(request.headers.get('accept')).toBe('application/json');
   expect(request.url).toBe('http://example.com/test');
+
+  expect(allHeaders).toMatchInlineSnapshot(`
+    Array [
+      "accept",
+      "host",
+    ]
+  `);
 });
 
 test('http2 - falls back to localhost when no host/authority', async () => {
