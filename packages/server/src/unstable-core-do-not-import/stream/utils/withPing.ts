@@ -20,13 +20,16 @@ export async function* withPing<TValue>(
   const iterator = iterable[Symbol.asyncIterator]();
   // declaration outside the loop for garbage collection reasons
   let result: null | IteratorResult<TValue | typeof PING_SYM>;
+  let nextPromise = iterator.next();
   while (true) {
-    const nextPromise = iterator.next();
     const pingPromise = timer.start().promise.then(() => PING_RESULT);
     try {
       result = await Unpromise.race([nextPromise, pingPromise]);
     } finally {
       timer.clear();
+    }
+    if (result !== PING_RESULT) {
+      nextPromise = iterator.next();
     }
     if (result.done) {
       return result.value;
