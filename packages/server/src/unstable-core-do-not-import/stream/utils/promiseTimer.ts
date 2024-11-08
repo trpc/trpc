@@ -5,7 +5,7 @@ export function createPromiseTimer(ms: number) {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
   const timer = {
-    get promise() {
+    promise() {
       return deferred.promise;
     },
 
@@ -36,5 +36,21 @@ export function createPromiseTimer(ms: number) {
     }
     return timer;
   }
+}
+
+export function disposablePromiseTimer(ms: number) {
+  let timer: ReturnType<typeof setTimeout>;
+
+  const promise = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, ms);
+  });
+
+  return {
+    promise,
+    [Symbol.dispose]: () => {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      clearTimeout(timer!);
+    },
+  };
 }
 export type PromiseTimer = ReturnType<typeof createPromiseTimer>;

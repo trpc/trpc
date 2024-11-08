@@ -89,6 +89,9 @@ importers:
       hash-sum:
         specifier: ^2.0.0
         version: 2.0.0
+      konn:
+        specifier: ^0.7.0
+        version: 0.7.0
       lerna:
         specifier: ^8.1.2
         version: 8.1.2(@swc/core@1.3.3)(encoding@0.1.13)
@@ -1937,9 +1940,6 @@ importers:
       jsdom:
         specifier: ^24.0.0
         version: 24.0.0
-      konn:
-        specifier: ^0.7.0
-        version: 0.7.0
       miniflare:
         specifier: ^2.4.0
         version: 2.11.0(cron-schedule@3.0.6)
@@ -27861,7 +27861,7 @@ snapshots:
       graphql: 15.8.0
       lodash: 4.17.21
       playwright: 1.28.1
-      tslib: 2.6.2
+      tslib: 2.7.0
 
   ky@1.7.2: {}
 

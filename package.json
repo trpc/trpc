@@ -66,6 +66,7 @@
     "express": "^4.17.1",
     "fast-glob": "^3.2.12",
     "hash-sum": "^2.0.0",
+    "konn": "^0.7.0",
     "lerna": "^8.1.2",
     "npm-run-all2": "^7.0.0",
     "prettier": "^3.3.3",

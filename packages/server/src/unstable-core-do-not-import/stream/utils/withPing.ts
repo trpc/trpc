@@ -1,5 +1,5 @@
 import { Unpromise } from '../../../vendor/unpromise';
-import { createPromiseTimer } from './promiseTimer';
+import { disposablePromiseTimer } from './promiseTimer';
 
 export const PING_SYM = Symbol('ping');
 
@@ -16,18 +16,21 @@ export async function* withPing<TValue>(
   iterable: AsyncIterable<TValue>,
   pingIntervalMs: number,
 ): AsyncGenerator<TValue | typeof PING_SYM> {
-  const timer = createPromiseTimer(pingIntervalMs);
   const iterator = iterable[Symbol.asyncIterator]();
   // declaration outside the loop for garbage collection reasons
   let result: null | IteratorResult<TValue | typeof PING_SYM>;
+  
   let nextPromise = iterator.next();
   while (true) {
-    const pingPromise = timer.start().promise.then(() => PING_RESULT);
-    try {
-      result = await Unpromise.race([nextPromise, pingPromise]);
-    } finally {
-      timer.clear();
-    }
+    using pingPromise = disposablePromiseTimer(pingIntervalMs);
+    
+    result = await Unpromise.race([
+      nextPromise, 
+      pingPromise.promise.then(() => {
+        return PING_RESULT;
+      }),
+    ]);
+    
     if (result !== PING_RESULT) {
       nextPromise = iterator.next();
     }
@@ -35,7 +38,7 @@ export async function* withPing<TValue>(
       return result.value;
     }
     yield result.value;
-    timer.reset();
+    
     // free up reference for garbage collection
     result = null;
   }
