@@ -4,6 +4,14 @@ This example showcases the use of `httpSubscriptionLink` to facilitate `.useSubs
 
 Try demo http://sse.trpc.io/
 
+## Features
+
+- 🧙‍♂️ E2E type safety with [tRPC](https://trpc.io)
+- ⚡ Full-stack React with Next.js
+- ⚡ Server-Sent-Events / Subscription support
+- ⚡ Database with [Drizzle](https://orm.drizzle.team/)
+- 🔐 Authorization using [next-auth](https://next-auth.js.org/)
+
 ## Code
 
 This project includes 2 examples of the subscription pattern:
@@ -23,11 +31,3 @@ pnpm i
 cp .env.example .env
 pnpm dev
 ```
-
-## Features
-
-- 🧙‍♂️ E2E type safety with [tRPC](https://trpc.io)
-- ⚡ Full-stack React with Next.js
-- ⚡ Server-Sent-Events / Subscription support
-- ⚡ Database with [Drizzle](https://orm.drizzle.team/)
-- 🔐 Authorization using [next-auth](https://next-auth.js.org/)
