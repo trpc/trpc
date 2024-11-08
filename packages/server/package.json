@@ -135,7 +135,7 @@
     "next": "^15.0.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "rollup": "^4.9.5",
+    "rollup": "^4.24.4",
     "superjson": "^1.12.4",
     "superstruct": "^2.0.0",
     "tslib": "^2.5.0",
@@ -148,5 +148,12 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ]
+  ],
+  "optionalDependencies": {
+    "next": "*",
+    "ws": "*",
+    "fastify": "*",
+    "express": "*",
+    "@types/aws-lambda": "*"
+  }
 }
