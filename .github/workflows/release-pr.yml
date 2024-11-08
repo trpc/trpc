@@ -1,0 +1,21 @@
+name: Publish Approved Pull Requests
+on:
+  pull_request:
+    types: [synchronize, opened, reopened]
+  pull_request_review:
+    types: [submitted]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/setup
+
+      - run: pnpx pkg-pr-new publish
