@@ -1774,13 +1774,26 @@ importers:
         version: 3.23.8
 
   packages/server:
-    dependencies:
+    optionalDependencies:
+      '@types/aws-lambda':
+        specifier: '*'
+        version: 8.10.137
+      express:
+        specifier: '*'
+        version: 4.21.0
+      fastify:
+        specifier: '*'
+        version: 4.26.2
+      next:
+        specifier: '*'
+        version: 15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      ws:
+        specifier: '*'
+        version: 8.17.1
+    devDependencies:
       '@fastify/websocket':
         specifier: ^10.0.1
         version: 10.0.1
-      '@swc/helpers':
-        specifier: ^0.5.3
-        version: 0.5.13
       '@tanstack/react-query':
         specifier: ^5.59.15
         version: 5.59.15(react@18.3.1)
@@ -1850,22 +1863,6 @@ importers:
       zod:
         specifier: ^3.0.0
         version: 3.23.8
-    optionalDependencies:
-      '@types/aws-lambda':
-        specifier: '*'
-        version: 8.10.137
-      express:
-        specifier: '*'
-        version: 4.21.0
-      fastify:
-        specifier: '*'
-        version: 4.26.2
-      next:
-        specifier: '*'
-        version: 15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      ws:
-        specifier: '*'
-        version: 8.17.1
 
   packages/tests:
     dependencies:

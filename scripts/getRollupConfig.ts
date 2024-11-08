@@ -1,5 +1,6 @@
 import path from 'path';
 import nodeResolve from '@rollup/plugin-node-resolve';
+import type { JscTarget } from '@swc/core';
 import type { RollupOptions } from 'rollup';
 import del from 'rollup-plugin-delete';
 import externals from 'rollup-plugin-node-externals';
@@ -13,13 +14,16 @@ const extensions = ['.ts', '.tsx'];
 type Options = {
   input: string[];
   packageDir: string;
+  target?: JscTarget;
 };
 
-export function buildConfig({ input, packageDir }: Options): RollupOptions[] {
-  const resolvedInput = input.map((file) => path.resolve(packageDir, file));
+export function buildConfig(opts: Options): RollupOptions[] {
+  const resolvedInput = opts.input.map((file) =>
+    path.resolve(opts.packageDir, file),
+  );
   const options: Options = {
+    ...opts,
     input: resolvedInput,
-    packageDir,
   };
 
   return [types(options), lib(options)];
@@ -53,9 +57,10 @@ function types({ input, packageDir }: Options): RollupOptions {
   };
 }
 
-function lib({ input, packageDir }: Options): RollupOptions {
+function lib(opts: Options): RollupOptions {
+  const { packageDir } = opts;
   return {
-    input,
+    input: opts.input,
     output: [
       {
         dir: `${packageDir}/dist`,
@@ -79,20 +84,18 @@ function lib({ input, packageDir }: Options): RollupOptions {
         packagePath: path.resolve(packageDir, 'package.json'),
       }),
       nodeResolve({
-        preferBuiltins: true,
         extensions,
-        resolveOnly: [/@swc\/helpers/],
       }),
       swc({
         tsconfig: false,
         jsc: {
-          target: 'es2020',
+          target: opts.target ?? 'es2020',
           transform: {
             react: {
               useBuiltins: true,
             },
           },
-          externalHelpers: true,
+          externalHelpers: false,
         },
       }),
       !isWatchMode && analyzeSizeChange(packageDir),
