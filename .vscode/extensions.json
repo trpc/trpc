@@ -4,7 +4,8 @@
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
     "orta.vscode-twoslash-queries",
-    "yoavbls.pretty-ts-errors"
+    "yoavbls.pretty-ts-errors",
+    "tamasfe.even-better-toml"
   ],
   "unwantedRecommendations": ["bungcip.better-toml", "biomejs.biome"]
 }
