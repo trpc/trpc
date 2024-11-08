@@ -25,6 +25,8 @@ export function buildConfig({ input, packageDir }: Options): RollupOptions[] {
   return [types(options), lib(options)];
 }
 
+const nextjsExternal = /^next($|\/)/;
+
 function types({ input, packageDir }: Options): RollupOptions {
   return {
     input,
@@ -33,6 +35,7 @@ function types({ input, packageDir }: Options): RollupOptions {
       preserveModules: true,
       preserveModulesRoot: 'src',
     },
+    external: [nextjsExternal],
     plugins: [
       !isWatchMode &&
         del({
@@ -74,6 +77,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
         preserveModulesRoot: 'src',
       },
     ],
+    external: [nextjsExternal],
     plugins: [
       externals({
         packagePath: path.resolve(packageDir, 'package.json'),
