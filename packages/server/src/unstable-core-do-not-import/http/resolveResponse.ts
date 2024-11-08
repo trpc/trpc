@@ -692,7 +692,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   } catch (cause) {
     const [_infoError, info] = infoTuple;
     const ctx = ctxManager.valueOrUndefined();
-    // we get here if
+    // we get here if:
     // - batching is called when it's not enabled
     // - `createContext()` throws
     // - `router._def._config.transformer.output.serialize()` throws

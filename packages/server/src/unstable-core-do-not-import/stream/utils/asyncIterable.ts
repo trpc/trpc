@@ -1,39 +1,43 @@
 import { Unpromise } from '../../../vendor/unpromise';
 import { disposablePromiseTimer } from './promiseTimer';
 
-
 /**
  * Derives a new {@link AsyncGenerator} based on {@link iterable}, that automatically stops after the specified duration.
  */
 export async function* withMaxDuration<T>(
   iterable: AsyncIterable<T>,
-  opts: { maxDurationMs: number; abortCtrl: AbortController }
+  opts: { maxDurationMs: number; abortCtrl: AbortController },
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
-  
-  using timer = disposablePromiseTimer(opts.maxDurationMs);
-  const timerPromise = timer.start().then(() => null)
 
-  // declaration outside the loop for garbage collection reasons
-  let result: IteratorResult<T> | Awaited<typeof timerPromise>;
+  const timer = disposablePromiseTimer(opts.maxDurationMs);
+  try {
+    const timerPromise = timer.start().then(() => null);
 
-  while (true) {
-    result = await Unpromise.race([iterator.next(), timerPromise]);
-    if (result == null) {
-      // cancelled due to timeout
-      opts.abortCtrl.abort();
-      const res = await iterator.return?.();
-      return res?.value;
+    // declaration outside the loop for garbage collection reasons
+    let result: IteratorResult<T> | Awaited<typeof timerPromise>;
+
+    while (true) {
+      result = await Unpromise.race([iterator.next(), timerPromise]);
+      if (result == null) {
+        // cancelled due to timeout
+        opts.abortCtrl.abort();
+        const res = await iterator.return?.();
+        return res?.value;
+      }
+      if (result.done) {
+        return result;
+      }
+      yield result.value;
+      // free up reference for garbage collection
+      result = null;
     }
-    if (result.done) {
-      return result;
-    }
-    yield result.value;
-    // free up reference for garbage collection
-    result = null;
+  } finally {
+    // dispose timer
+    // Shouldn't be needed, but build breaks with `using` keyword
+    timer[Symbol.dispose]();
   }
 }
-
 
 /**
  * Derives a new {@link AsyncGenerator} based of {@link iterable}, that yields its first
@@ -46,37 +50,45 @@ export async function* takeWithGrace<T>(
     count: number;
     gracePeriodMs: number;
     abortCtrl: AbortController;
-  }
+  },
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
 
   // declaration outside the loop for garbage collection reasons
-  let result: null | IteratorResult<T>
-  
-  using timer = disposablePromiseTimer(opts.gracePeriodMs);
+  let result: null | IteratorResult<T>;
 
-  let count = opts.count;
+  const timer = disposablePromiseTimer(opts.gracePeriodMs);
 
-  let timerPromise = new Promise<void>(() => {
-    // never resolves
-  });
-  while (true) {
-    result = await Unpromise.race([iterator.next(), timerPromise.then(() => null)]);
-    if (result === null) {
-      // cancelled
-      const res = await iterator.return?.();
-      return res?.value;
+  try {
+    let count = opts.count;
+
+    let timerPromise = new Promise<void>(() => {
+      // never resolves
+    });
+
+    while (true) {
+      result = await Unpromise.race([
+        iterator.next(),
+        timerPromise.then(() => null),
+      ]);
+      if (result === null) {
+        // cancelled
+        const res = await iterator.return?.();
+        return res?.value;
+      }
+      if (result.done) {
+        return result;
+      }
+      yield result.value;
+      if (--count === 0) {
+        timerPromise = timer.start();
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        timerPromise.then(() => opts.abortCtrl.abort());
+      }
+      // free up reference for garbage collection
+      result = null;
     }
-    if (result.done) {
-      return result;
-    }
-    yield result.value;
-    if (--count === 0) {
-      timerPromise = timer.start()
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      timerPromise.then(() => opts.abortCtrl.abort())
-    }
-    // free up reference for garbage collection
-    result = null;
+  } finally {
+    timer[Symbol.dispose]();
   }
 }
