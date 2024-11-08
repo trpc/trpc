@@ -79,7 +79,9 @@ function lib({ input, packageDir }: Options): RollupOptions {
         packagePath: path.resolve(packageDir, 'package.json'),
       }),
       nodeResolve({
+        preferBuiltins: true,
         extensions,
+        resolveOnly: [/@swc\/helpers/],
       }),
       swc({
         tsconfig: false,

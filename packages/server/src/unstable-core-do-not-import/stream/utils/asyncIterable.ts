@@ -1,43 +1,39 @@
 import { Unpromise } from '../../../vendor/unpromise';
 import { disposablePromiseTimer } from './promiseTimer';
 
+
 /**
  * Derives a new {@link AsyncGenerator} based on {@link iterable}, that automatically stops after the specified duration.
  */
 export async function* withMaxDuration<T>(
   iterable: AsyncIterable<T>,
-  opts: { maxDurationMs: number; abortCtrl: AbortController },
+  opts: { maxDurationMs: number; abortCtrl: AbortController }
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
+  
+  using timer = disposablePromiseTimer(opts.maxDurationMs);
+  const timerPromise = timer.start().then(() => null)
 
-  const timer = disposablePromiseTimer(opts.maxDurationMs);
-  try {
-    const timerPromise = timer.start().then(() => null);
+  // declaration outside the loop for garbage collection reasons
+  let result: IteratorResult<T> | Awaited<typeof timerPromise>;
 
-    // declaration outside the loop for garbage collection reasons
-    let result: IteratorResult<T> | Awaited<typeof timerPromise>;
-
-    while (true) {
-      result = await Unpromise.race([iterator.next(), timerPromise]);
-      if (result == null) {
-        // cancelled due to timeout
-        opts.abortCtrl.abort();
-        const res = await iterator.return?.();
-        return res?.value;
-      }
-      if (result.done) {
-        return result;
-      }
-      yield result.value;
-      // free up reference for garbage collection
-      result = null;
+  while (true) {
+    result = await Unpromise.race([iterator.next(), timerPromise]);
+    if (result == null) {
+      // cancelled due to timeout
+      opts.abortCtrl.abort();
+      const res = await iterator.return?.();
+      return res?.value;
     }
-  } finally {
-    // dispose timer
-    // Shouldn't be needed, but build breaks with `using` keyword
-    timer[Symbol.dispose]();
+    if (result.done) {
+      return result;
+    }
+    yield result.value;
+    // free up reference for garbage collection
+    result = null;
   }
 }
+
 
 /**
  * Derives a new {@link AsyncGenerator} based of {@link iterable}, that yields its first
@@ -50,45 +46,37 @@ export async function* takeWithGrace<T>(
     count: number;
     gracePeriodMs: number;
     abortCtrl: AbortController;
-  },
+  }
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
 
   // declaration outside the loop for garbage collection reasons
-  let result: null | IteratorResult<T>;
+  let result: null | IteratorResult<T>
+  
+  using timer = disposablePromiseTimer(opts.gracePeriodMs);
 
-  const timer = disposablePromiseTimer(opts.gracePeriodMs);
+  let count = opts.count;
 
-  try {
-    let count = opts.count;
-
-    let timerPromise = new Promise<void>(() => {
-      // never resolves
-    });
-
-    while (true) {
-      result = await Unpromise.race([
-        iterator.next(),
-        timerPromise.then(() => null),
-      ]);
-      if (result === null) {
-        // cancelled
-        const res = await iterator.return?.();
-        return res?.value;
-      }
-      if (result.done) {
-        return result;
-      }
-      yield result.value;
-      if (--count === 0) {
-        timerPromise = timer.start();
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        timerPromise.then(() => opts.abortCtrl.abort());
-      }
-      // free up reference for garbage collection
-      result = null;
+  let timerPromise = new Promise<void>(() => {
+    // never resolves
+  });
+  while (true) {
+    result = await Unpromise.race([iterator.next(), timerPromise.then(() => null)]);
+    if (result === null) {
+      // cancelled
+      const res = await iterator.return?.();
+      return res?.value;
     }
-  } finally {
-    timer[Symbol.dispose]();
+    if (result.done) {
+      return result;
+    }
+    yield result.value;
+    if (--count === 0) {
+      timerPromise = timer.start()
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      timerPromise.then(() => opts.abortCtrl.abort())
+    }
+    // free up reference for garbage collection
+    result = null;
   }
 }

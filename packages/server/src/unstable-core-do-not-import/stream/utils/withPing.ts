@@ -19,31 +19,27 @@ export async function* withPing<TValue>(
   const iterator = iterable[Symbol.asyncIterator]();
   // declaration outside the loop for garbage collection reasons
   let result: null | IteratorResult<TValue | typeof PING_SYM>;
-
+  
   let nextPromise = iterator.next();
   while (true) {
-    const pingPromise = disposablePromiseTimer(pingIntervalMs);
-
-    try {
-      result = await Unpromise.race([
-        nextPromise,
-        pingPromise.start().then(() => {
-          return PING_RESULT;
-        }),
-      ]);
-
-      if (result !== PING_RESULT) {
-        nextPromise = iterator.next();
-      }
-      if (result.done) {
-        return result.value;
-      }
-      yield result.value;
-
-      // free up reference for garbage collection
-      result = null;
-    } finally {
-      pingPromise[Symbol.dispose]();
+    using pingPromise = disposablePromiseTimer(pingIntervalMs)
+    
+    result = await Unpromise.race([
+      nextPromise, 
+      pingPromise.start().then(() => {
+        return PING_RESULT;
+      }),
+    ]);
+    
+    if (result !== PING_RESULT) {
+      nextPromise = iterator.next();
     }
+    if (result.done) {
+      return result.value;
+    }
+    yield result.value;
+    
+    // free up reference for garbage collection
+    result = null;
   }
 }
