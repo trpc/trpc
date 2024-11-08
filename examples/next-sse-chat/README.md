@@ -15,6 +15,15 @@ This project includes 2 examples of the subscription pattern:
 - The `EventEmitter` & `whoIsTyping` subscription route can be found in [`/src/server/routers/channel.ts`](examples/next-sse-chat/src/server/routers/channel.ts)
 - The more complex `post` subscription route can be found in [`/src/server/routers/post.ts:79`](examples/next-sse-chat/src/server/routers/post.ts)
 
+## Setup
+
+```sh
+git clone git@github.com:trpc/examples-next-sse-chat.git
+pnpm i
+cp .env.example .env
+pnpm dev
+```
+
 ## Features
 
 - 🧙‍♂️ E2E type safety with [tRPC](https://trpc.io)
