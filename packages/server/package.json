@@ -154,6 +154,6 @@
     "ws": "*",
     "fastify": "*",
     "express": "*",
-    "aws-lambda": "*"
+    "@types/aws-lambda": "*"
   }
 }
