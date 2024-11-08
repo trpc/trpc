@@ -177,11 +177,17 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   ) {
     const error = checkMaxDepth(path);
     if (error) {
-      iterable = {
-        [Symbol.asyncIterator]() {
-          throw error;
-        },
-      };
+      const idx = counter++ as ChunkIndex;
+      pending.add(idx);
+      opts.onError?.({ error, path });
+      stream.controller.enqueue([
+        idx,
+        ASYNC_ITERABLE_STATUS_ERROR,
+        opts.formatError?.({ error, path }),
+      ]);
+      pending.delete(idx);
+      maybeClose();
+      return idx;
     }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
