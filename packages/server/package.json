@@ -153,6 +153,7 @@
     "next": "*",
     "ws": "*",
     "fastify": "*",
-    "express": "*"
+    "express": "*",
+    "aws-lambda": "*"
   }
 }
