@@ -238,7 +238,7 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
   # https://pkg.pr.new
-  release:
+  release-tmp:
     name: Release using pkg.pr.new
     needs: [build]
     runs-on: ubuntu-latest
