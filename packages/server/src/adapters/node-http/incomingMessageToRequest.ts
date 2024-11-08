@@ -58,7 +58,6 @@ function createBody(
     },
   });
 }
-
 export function createURL(req: http.IncomingMessage): URL {
   try {
     const protocol =
