@@ -290,6 +290,7 @@ test('adapter with pre-parsed body - undefined', async () => {
   expect(body).toBe('');
 });
 
+// regression test for https://github.com/trpc/trpc/issues/6193
 test('aborts request when socket closes', async () => {
   const mockReq = createMockReq({
     method: 'POST',
