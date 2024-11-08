@@ -1,4 +1,5 @@
-name: Publish Approved Pull Requests
+# https://pkg.pr.new
+name: Publish PR
 on:
   pull_request:
     types: [synchronize, opened, reopened]
@@ -21,4 +22,5 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
+      - run: pnpm turbo --filter "@trpc/*" build
       - run: pnpx pkg-pr-new publish
