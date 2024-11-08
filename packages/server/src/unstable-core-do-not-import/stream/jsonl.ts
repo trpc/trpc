@@ -1,12 +1,8 @@
-import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-import {
-  createReadableStream,
-  isCancelledStreamResult,
-} from './utils/createReadableStream';
+import { createReadableStream } from './utils/createReadableStream';
 
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
@@ -129,11 +125,17 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   const stream = createReadableStream<ChunkData>();
   const pending = new Set<ChunkIndex>();
 
+  const maybeEnqueue = (chunk: ChunkData) => {
+    if (!stream.cancelled()) {
+      stream.controller.enqueue(chunk);
+    }
+  };
   function maybeClose() {
     if (pending.size === 0 && !stream.cancelled()) {
       stream.controller.close();
     }
   }
+
   function encodePromise(promise: Promise<unknown>, path: (string | number)[]) {
     //
     const error = checkMaxDepth(path);
@@ -146,20 +148,13 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
 
-    Unpromise.race([promise, stream.cancelledPromise])
+    promise
       .then((it) => {
-        if (isCancelledStreamResult(it)) {
-          return;
-        }
-        stream.controller.enqueue([
-          idx,
-          PROMISE_STATUS_FULFILLED,
-          encode(it, path),
-        ]);
+        maybeEnqueue([idx, PROMISE_STATUS_FULFILLED, encode(it, path)]);
       })
       .catch((cause) => {
         opts.onError?.({ error: cause, path });
-        stream.controller.enqueue([
+        maybeEnqueue([
           idx,
           PROMISE_STATUS_REJECTED,
           opts.formatError?.({ error: cause, path }),
@@ -195,34 +190,32 @@ function createBatchStreamProducer(opts: ProducerOptions) {
       const iterator = iterable[Symbol.asyncIterator]();
 
       while (true) {
-        const next = await Unpromise.race([
-          iterator.next().catch(getTRPCErrorFromUnknown),
-          stream.cancelledPromise,
-        ]);
+        if (stream.cancelled()) {
+          const res = await iterator.return?.();
+          return res?.value;
+        }
+        const next = await iterator.next().catch(getTRPCErrorFromUnknown);
 
         if (next instanceof Error) {
           opts.onError?.({ error: next, path });
 
-          stream.controller.enqueue([
+          maybeEnqueue([
             idx,
             ASYNC_ITERABLE_STATUS_ERROR,
             opts.formatError?.({ error: next, path }),
           ]);
           return;
         }
-        if (isCancelledStreamResult(next)) {
-          await iterator.return?.();
-          break;
-        }
+
         if (next.done) {
-          stream.controller.enqueue([
+          maybeEnqueue([
             idx,
             ASYNC_ITERABLE_STATUS_RETURN,
             encode(next.value, path),
           ]);
           break;
         }
-        stream.controller.enqueue([
+        maybeEnqueue([
           idx,
           ASYNC_ITERABLE_STATUS_VALUE,
           encode(next.value, path),

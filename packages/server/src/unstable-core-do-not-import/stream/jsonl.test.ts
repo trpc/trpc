@@ -1,7 +1,10 @@
 import { waitFor } from '@testing-library/react';
+import { konn } from 'konn';
 import SuperJSON from 'superjson';
+import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
+import { createDeferred } from './utils/createDeferred';
 import { createServer } from './utils/createServer';
 
 test('encode/decode with superjson', async () => {
@@ -199,6 +202,11 @@ function createServerForStream(
     }
 
     const reader = stream.getReader();
+    abortSignal.signal.addEventListener('abort', () => {
+      reader.cancel().catch(() => {
+        // noop
+      });
+    });
     while (true) {
       const { done, value } = await reader.read();
       if (done) {
@@ -495,4 +503,63 @@ test('e2e, encode/decode - maxDepth', async () => {
   `);
 
   await server.close();
+});
+
+test('should work to throw after stream is closed', async () => {
+  const deferred = createDeferred<unknown>();
+  const data = {
+    0: Promise.resolve({
+      deferred: deferred.promise,
+    }),
+  } as const;
+
+  const onError = vi.fn<(...args: Parameters<ProducerOnError>) => void>();
+
+  const ac = new AbortController();
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+    onError,
+  });
+
+  const server = createServerForStream(stream, ac);
+  const res = await fetch(server.url, {
+    signal: ac.signal,
+  });
+
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: res.body!,
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: null,
+  });
+
+  const head0 = await head[0]; // consume the stream
+
+  ac.abort();
+
+  await expect(head0.deferred).rejects.toMatchInlineSnapshot(
+    `[Error: Invalid response or stream interrupted]`,
+  );
+
+  deferred.resolve({
+    p: Promise.resolve({
+      child: Promise.reject(new Error('throws')),
+    }),
+  });
+
+  await waitFor(() => {
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  expect(onError.mock.calls[0]![0]).toMatchInlineSnapshot(`
+    Object {
+      "error": [Error: throws],
+      "path": Array [
+        "0",
+        "deferred",
+        "p",
+        "child",
+      ],
+    }
+  `);
 });
