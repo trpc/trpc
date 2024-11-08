@@ -16,7 +16,20 @@ function createBody(
      */
     maxBodySize: number | null;
   },
-): ReadableStream<Uint8Array> {
+): RequestInit['body'] {
+  // Some adapters will pre-parse the body and add it to the request object
+  if ('body' in req) {
+    // If the body is already a string, return it directly
+    if (typeof req.body === 'string') {
+      return req.body;
+    }
+    // If body exists but isn't a string, stringify it as JSON
+    else if (req.body !== undefined) {
+      return JSON.stringify(req.body);
+    }
+    // If body property exists but is undefined, return undefined
+    return undefined;
+  }
   let size = 0;
   let hasClosed = false;
 
