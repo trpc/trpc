@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import * as http from 'http';
 import { expect } from 'vitest';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
@@ -43,6 +44,18 @@ function createServer(opts: Parameters<typeof incomingMessageToRequest>[1]) {
       await promise;
     },
   };
+}
+
+function createMockReq(opts: Partial<http.IncomingMessage> = {}) {
+  const mockSocket = new EventEmitter();
+  const req = Object.assign(new EventEmitter(), {
+    headers: {},
+    url: '/test',
+    method: 'GET',
+    socket: mockSocket,
+    ...opts,
+  });
+  return req as http.IncomingMessage;
 }
 
 test('basic GET', async () => {
@@ -163,18 +176,18 @@ test('retains url and search params', async () => {
 });
 
 test('uses https scheme when socket is encrypted', async () => {
-  const mockReq: Partial<http.IncomingMessage> = {
+  const mockReq = createMockReq({
     headers: {
       host: 'example.com',
     },
     url: '/test',
     method: 'GET',
-    once: vi.fn(),
-    on: vi.fn(),
-    socket: { encrypted: true } as any,
-  };
+  });
 
-  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+  // @ts-expect-error - test
+  mockReq.socket.encrypted = true;
+
+  const request = incomingMessageToRequest(mockReq, {
     maxBodySize: null,
   });
 
@@ -182,7 +195,7 @@ test('uses https scheme when socket is encrypted', async () => {
 });
 
 test('http2 - filters out pseudo-headers', async () => {
-  const mockReq: Partial<http.IncomingMessage> = {
+  const mockReq = createMockReq({
     headers: {
       ':method': 'GET',
       ':path': '/test',
@@ -191,12 +204,9 @@ test('http2 - filters out pseudo-headers', async () => {
     },
     url: '/test',
     method: 'GET',
-    once: vi.fn(),
-    on: vi.fn(),
-    socket: {} as any,
-  };
+  });
 
-  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+  const request = incomingMessageToRequest(mockReq, {
     maxBodySize: null,
   });
 
@@ -216,16 +226,13 @@ test('http2 - filters out pseudo-headers', async () => {
 });
 
 test('http2 - falls back to localhost when no host/authority', async () => {
-  const mockReq: Partial<http.IncomingMessage> = {
+  const mockReq = createMockReq({
     headers: {},
     url: '/test',
     method: 'GET',
-    once: vi.fn(),
-    on: vi.fn(),
-    socket: {} as any,
-  };
+  });
 
-  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+  const request = incomingMessageToRequest(mockReq, {
     maxBodySize: null,
   });
 
@@ -233,18 +240,15 @@ test('http2 - falls back to localhost when no host/authority', async () => {
 });
 
 test('adapter with pre-parsed body - string', async () => {
-  const mockReq: Partial<http.IncomingMessage> = {
+  const mockReq = createMockReq({
     headers: {},
     url: '/test',
     method: 'POST',
-    once: vi.fn(),
-    on: vi.fn(),
-    socket: {} as any,
     // @ts-expect-error - test
     body: 'hello world',
-  };
+  });
 
-  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+  const request = incomingMessageToRequest(mockReq, {
     maxBodySize: null,
   });
 
@@ -253,18 +257,15 @@ test('adapter with pre-parsed body - string', async () => {
 });
 
 test('adapter with pre-parsed body - object', async () => {
-  const mockReq: Partial<http.IncomingMessage> = {
+  const mockReq = createMockReq({
     headers: {},
     url: '/test',
     method: 'POST',
-    once: vi.fn(),
-    on: vi.fn(),
-    socket: {} as any,
     // @ts-expect-error - test
     body: { hello: 'world' },
-  };
+  });
 
-  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+  const request = incomingMessageToRequest(mockReq, {
     maxBodySize: null,
   });
 
@@ -273,21 +274,33 @@ test('adapter with pre-parsed body - object', async () => {
 });
 
 test('adapter with pre-parsed body - undefined', async () => {
-  const mockReq: Partial<http.IncomingMessage> = {
+  const mockReq = createMockReq({
     headers: {},
     url: '/test',
     method: 'POST',
-    once: vi.fn(),
-    on: vi.fn(),
-    socket: {} as any,
     // @ts-expect-error - test
     body: undefined,
-  };
+  });
 
-  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+  const request = incomingMessageToRequest(mockReq, {
     maxBodySize: null,
   });
 
   const body = await request.text();
   expect(body).toBe('');
+});
+
+test('aborts request when socket closes', async () => {
+  const mockReq = createMockReq({
+    method: 'POST',
+  });
+
+  const request = incomingMessageToRequest(mockReq, {
+    maxBodySize: null,
+  });
+
+  expect(request.signal.aborted).toBe(false);
+  mockReq.socket.emit('close');
+
+  expect(request.signal.aborted).toBe(true);
 });
