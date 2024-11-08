@@ -23,4 +23,4 @@ jobs:
       - uses: ./.github/setup
 
       - run: pnpm turbo --filter "@trpc/*" build
-      - run: pnpx pkg-pr-new publish './packages/*'`
+      - run: pnpx pkg-pr-new publish './packages/*'
