@@ -83,7 +83,7 @@ function createHeaders(incoming: http.IncomingHttpHeaders): Headers {
 
   for (const key in incoming) {
     const value = incoming[key];
-    if (key.startsWith(':')) {
+    if (typeof key === 'string' && key.startsWith(':')) {
       // Skip HTTP/2 pseudo-headers
       continue;
     }
