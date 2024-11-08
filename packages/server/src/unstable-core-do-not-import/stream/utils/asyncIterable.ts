@@ -12,15 +12,15 @@ export async function* withCancel<T>(
   const cancelPromise = cancel.then((() => null));
   const iterator = iterable[Symbol.asyncIterator]();
   // declaration outside the loop for garbage collection reasons
-  let result: Awaited<typeof cancelPromise> | IteratorResult<T>;
+  let result: null | IteratorResult<T>;
   while (true) {
     result = await Unpromise.race([iterator.next(), cancelPromise]);
     if (result == null) {
-      await iterator.return?.();
-      break;
+      const result = await iterator.return?.();
+      return result?.value;
     }
     if (result.done) {
-      break;
+      return result.value;
     }
     yield result.value;
     // free up reference for garbage collection
@@ -48,11 +48,11 @@ export async function* withMaxDuration<T>(
     if (result == null) {
       // cancelled due to timeout
       opts.abortCtrl.abort();
-      await iterator.return?.();
-      break;
+      const res = await iterator.return?.();
+      return res?.value;
     }
     if (result.done) {
-      break;
+      return result;
     }
     yield result.value;
     // free up reference for garbage collection
@@ -79,7 +79,7 @@ export async function* takeWithGrace<T>(
   const iterator = iterable[Symbol.asyncIterator]();
 
   // declaration outside the loop for garbage collection reasons
-  let result: null | IteratorResult<T> | void;
+  let result: null | IteratorResult<T>
   
   using timer = disposablePromiseTimer(gracePeriodMs);
 
@@ -87,14 +87,14 @@ export async function* takeWithGrace<T>(
     // never resolves
   });
   while (true) {
-    result = await Unpromise.race([iterator.next(), timerPromise]);
-    if (result == null) {
+    result = await Unpromise.race([iterator.next(), timerPromise.then(() => null)]);
+    if (result === null) {
       // cancelled
-      await iterator.return?.();
-      break;
+      const res = await iterator.return?.();
+      return res?.value;
     }
     if (result.done) {
-      break;
+      return result;
     }
     yield result.value;
     if (--count === 0) {
