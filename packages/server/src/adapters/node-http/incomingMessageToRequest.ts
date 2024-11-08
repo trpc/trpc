@@ -1,6 +1,5 @@
 import type * as http from 'http';
 import { TRPCError } from '../../@trpc/server';
-import { toURL } from '../../http';
 
 export interface IncomingMessageWithBody extends http.IncomingMessage {
   /**
@@ -8,52 +7,98 @@ export interface IncomingMessageWithBody extends http.IncomingMessage {
    */
   body?: unknown;
 }
-/**
- * Convert an incoming message to a body stream with a max size
- */
-function incomingMessageToBodyStream(
-  req: IncomingMessageWithBody,
-  opts: { maxBodySize: number | null },
-) {
-  type Value = Buffer | Uint8Array | string | null;
+
+function createBody(
+  req: http.IncomingMessage,
+  opts: {
+    /**
+     * Max body size in bytes. If the body is larger than this, the request will be aborted
+     */
+    maxBodySize: number | null;
+  },
+): ReadableStream<Uint8Array> {
   let size = 0;
-  const maxBodySize = opts.maxBodySize;
   let hasClosed = false;
 
-  const stream = new ReadableStream<Value>({
+  return new ReadableStream({
     start(controller) {
-      req.on('data', (chunk) => {
+      const onData = (chunk: Buffer) => {
         size += chunk.length;
-        if (maxBodySize != null && size > maxBodySize) {
-          controller.error(
-            new TRPCError({
-              code: 'PAYLOAD_TOO_LARGE',
-            }),
+        if (!opts.maxBodySize || size <= opts.maxBodySize) {
+          controller.enqueue(
+            new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength),
           );
-          // an error is thrown if we try to close the controller after
-          // erroring, so track the closure
-          hasClosed = true;
           return;
         }
-        controller.enqueue(chunk);
-      });
-      req.once('end', () => {
+        controller.error(
+          new TRPCError({
+            code: 'PAYLOAD_TOO_LARGE',
+          }),
+        );
+        hasClosed = true;
+        req.off('data', onData);
+        req.off('end', onEnd);
+      };
+
+      const onEnd = () => {
         if (hasClosed) {
           return;
         }
         hasClosed = true;
+        req.off('data', onData);
+        req.off('end', onEnd);
         controller.close();
-      });
+      };
+
+      req.on('data', onData);
+      req.on('end', onEnd);
     },
     cancel() {
       req.destroy();
     },
   });
-
-  return stream;
 }
 
-const bodyMethods = ['POST', 'PUT', 'PATCH'];
+export function createURL(req: http.IncomingMessage): URL {
+  try {
+    const protocol =
+      'encrypted' in req.socket && req.socket.encrypted ? 'https:' : 'http:';
+
+    const host = req.headers[':authority'] ?? req.headers.host ?? 'localhost';
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return new URL(req.url!, `${protocol}//${host}`);
+  } catch (cause) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Invalid URL',
+      cause,
+    });
+  }
+}
+
+function createHeaders(incoming: http.IncomingHttpHeaders): Headers {
+  const headers = new Headers();
+
+  for (const key in incoming) {
+    const value = incoming[key];
+    if (key.startsWith(':')) {
+      // Skip HTTP/2 pseudo-headers
+      continue;
+    }
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        headers.append(key, item);
+      }
+    } else if (value != null) {
+      headers.append(key, value);
+    }
+  }
+
+  return headers;
+}
+
 /**
  * Convert an [`IncomingMessage`](https://nodejs.org/api/http.html#class-httpincomingmessage) to a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)
  */
@@ -67,43 +112,30 @@ export function incomingMessageToRequest(
   },
 ): Request {
   const ac = new AbortController();
-
-  // Filter out HTTP/2 pseudo-headers before creating Headers object
-  const filteredHeaders = Object.fromEntries(
-    Object.entries(req.headers).filter(([key]) => !key.startsWith(':')),
-  );
-  const headers = new Headers(
-    Object.entries(filteredHeaders).map(([key, value]) => [
-      key,
-      Array.isArray(value) ? value.join(', ') : (value ?? ''),
-    ]),
-  );
-
-  // Get host from either regular header or HTTP/2 pseudo-header
-  const host = headers.get('host') ?? (req.headers[':authority'] as string);
-  const url = toURL(`http://${host}${req.url}`);
-
   req.once('aborted', () => {
     ac.abort();
   });
 
+  // Get host from either regular header or HTTP/2 pseudo-header
+  const url = createURL(req);
+
   const init: RequestInit = {
-    headers,
+    headers: createHeaders(req.headers),
     method: req.method,
     signal: ac.signal,
-    // @ts-expect-error this is fine
-    duplex: 'half',
   };
 
-  if (req.method && bodyMethods.includes(req.method)) {
-    if (!('body' in req)) {
-      init.body = incomingMessageToBodyStream(req, opts);
-    } else if (typeof req.body === 'string') {
-      init.body = req.body;
-    } else if (req.body !== undefined) {
-      init.body = JSON.stringify(req.body);
-    }
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    init.body = createBody(req, opts);
+
+    // init.duplex = 'half' must be set when body is a ReadableStream, and Node follows the spec.
+    // However, this property is not defined in the TypeScript types for RequestInit, so we have
+    // to cast it here in order to set it without a type error.
+    // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex
+    // @ts-expect-error this is fine
+    init.duplex = 'half';
   }
+
   const request = new Request(url, init);
 
   return request;

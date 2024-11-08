@@ -162,8 +162,27 @@ test('retains url and search params', async () => {
   await server.close();
 });
 
-test('handles http2 pseudo-headers', async () => {
-  const mockReq = {
+test('uses https scheme when socket is encrypted', async () => {
+  const mockReq: Partial<http.IncomingMessage> = {
+    headers: {
+      host: 'example.com',
+    },
+    url: '/test',
+    method: 'GET',
+    once: vi.fn(),
+    on: vi.fn(),
+    socket: { encrypted: true } as any,
+  };
+
+  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+    maxBodySize: null,
+  });
+
+  expect(request.url).toBe('https://example.com/test');
+});
+
+test('http2 - filters out pseudo-headers', async () => {
+  const mockReq: Partial<http.IncomingMessage> = {
     headers: {
       ':method': 'GET',
       ':path': '/test',
@@ -172,20 +191,37 @@ test('handles http2 pseudo-headers', async () => {
       accept: 'application/json',
     },
     url: '/test',
+    method: 'GET',
     once: vi.fn(),
-  } as unknown as http.IncomingMessage;
+    on: vi.fn(),
+    socket: {} as any,
+  };
 
-  const request = incomingMessageToRequest(mockReq, { maxBodySize: null });
+  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+    maxBodySize: null,
+  });
 
-  // Verify HTTP/2 pseudo-headers were filtered out
   expect(request.headers.has(':method')).toBe(false);
   expect(request.headers.has(':path')).toBe(false);
   expect(request.headers.has(':authority')).toBe(false);
   expect(request.headers.has(':scheme')).toBe(false);
-
-  // Verify regular headers were preserved
   expect(request.headers.get('accept')).toBe('application/json');
-
-  // Verify URL was constructed correctly using :authority as fallback
   expect(request.url).toBe('http://example.com/test');
+});
+
+test('http2 - falls back to localhost when no host/authority', async () => {
+  const mockReq: Partial<http.IncomingMessage> = {
+    headers: {},
+    url: '/test',
+    method: 'GET',
+    once: vi.fn(),
+    on: vi.fn(),
+    socket: {} as any,
+  };
+
+  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+    maxBodySize: null,
+  });
+
+  expect(request.url).toBe('http://localhost/test');
 });
