@@ -62,9 +62,11 @@ function createBody(
 export function createURL(req: http.IncomingMessage): URL {
   try {
     const protocol =
-      'encrypted' in req.socket && req.socket.encrypted ? 'https:' : 'http:';
+      req.socket && 'encrypted' in req.socket && req.socket.encrypted
+        ? 'https:'
+        : 'http:';
 
-    const host = req.headers[':authority'] ?? req.headers.host ?? 'localhost';
+    const host = req.headers.host ?? 'localhost';
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return new URL(req.url!, `${protocol}//${host}`);

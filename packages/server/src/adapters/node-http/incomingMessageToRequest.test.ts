@@ -186,9 +186,8 @@ test('http2 - filters out pseudo-headers', async () => {
     headers: {
       ':method': 'GET',
       ':path': '/test',
-      ':authority': 'example.com',
-      ':scheme': 'https',
       accept: 'application/json',
+      host: 'example.com',
     },
     url: '/test',
     method: 'GET',
@@ -203,8 +202,7 @@ test('http2 - filters out pseudo-headers', async () => {
 
   expect(request.headers.has(':method')).toBe(false);
   expect(request.headers.has(':path')).toBe(false);
-  expect(request.headers.has(':authority')).toBe(false);
-  expect(request.headers.has(':scheme')).toBe(false);
+
   expect(request.headers.get('accept')).toBe('application/json');
   expect(request.url).toBe('http://example.com/test');
 });
