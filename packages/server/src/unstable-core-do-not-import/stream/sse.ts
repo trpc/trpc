@@ -4,11 +4,7 @@ import { identity, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
-import {
-  takeWithGrace,
-  withCancel,
-  withMaxDuration,
-} from './utils/asyncIterable';
+import { takeWithGrace, withMaxDuration } from './utils/asyncIterable';
 import { createReadableStream } from './utils/createReadableStream';
 import { PING_SYM, withPing } from './utils/withPing';
 
@@ -82,13 +78,11 @@ export function sseStreamProducer<TValue = unknown>(
 
     let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
 
-    iterable = withCancel(iterable, stream.cancelledPromise);
-
     if (opts.emitAndEndImmediately) {
       iterable = takeWithGrace(iterable, {
         count: 1,
         gracePeriodMs: 1,
-        onCancel: () => opts.abortCtrl.abort(),
+        abortCtrl: opts.abortCtrl,
       });
     }
 
