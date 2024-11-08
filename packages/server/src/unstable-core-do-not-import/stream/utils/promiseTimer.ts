@@ -22,4 +22,3 @@ export function disposablePromiseTimer(ms: number) {
     },
   };
 }
-export type PromiseTimer = ReturnType<typeof disposablePromiseTimer>;
