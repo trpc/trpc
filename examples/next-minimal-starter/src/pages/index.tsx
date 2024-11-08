@@ -1,6 +1,7 @@
 /**
  * This is a Next.js page.
  */
+import React from 'react';
 import { trpc } from '../utils/trpc';
 
 function QueryExample() {
@@ -54,13 +55,26 @@ function SubscriptionExample() {
   );
 }
 
+let hasEverMounted = false;
+
+function NoSSR(props: { children: React.ReactNode }) {
+  const [hasMounted, setHasMounted] = React.useState(hasEverMounted);
+  React.useEffect(() => {
+    hasEverMounted = true;
+    setHasMounted(true);
+  }, []);
+  return hasMounted ? <>{props.children}</> : null;
+}
+
 export default function IndexPage() {
   return (
     <div>
       <h2>Query</h2>
       <QueryExample />
       <h2>Subscription</h2>
-      <SubscriptionExample />
+      <NoSSR>
+        <SubscriptionExample />
+      </NoSSR>
     </div>
   );
 }
