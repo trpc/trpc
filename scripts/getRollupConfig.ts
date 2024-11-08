@@ -1,6 +1,5 @@
 import path from 'path';
 import nodeResolve from '@rollup/plugin-node-resolve';
-import type { JscTarget } from '@swc/core';
 import type { RollupOptions } from 'rollup';
 import del from 'rollup-plugin-delete';
 import externals from 'rollup-plugin-node-externals';
@@ -14,7 +13,6 @@ const extensions = ['.ts', '.tsx'];
 type Options = {
   input: string[];
   packageDir: string;
-  target?: JscTarget;
 };
 
 export function buildConfig(opts: Options): RollupOptions[] {
@@ -87,16 +85,8 @@ function lib(opts: Options): RollupOptions {
         extensions,
       }),
       swc({
-        tsconfig: false,
-        jsc: {
-          target: opts.target ?? 'es2020',
-          transform: {
-            react: {
-              useBuiltins: true,
-            },
-          },
-          externalHelpers: false,
-        },
+        // Use the same tsconfig as typescript plugin
+        tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
       }),
       !isWatchMode && analyzeSizeChange(packageDir),
     ],
