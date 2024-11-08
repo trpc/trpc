@@ -58,31 +58,31 @@ type ChunkDefinition = [
   type: ChunkValueType,
   chunkId: ChunkIndex,
 ];
-type DehydratedValue = [
+type EncodedValue = [
   // data
   [unknown] | [],
   // chunk descriptions
   ...ChunkDefinition[],
 ];
 
-type Head = Record<string, DehydratedValue>;
+type Head = Record<string, EncodedValue>;
 type PromiseChunk =
   | [
       chunkIndex: ChunkIndex,
       status: PROMISE_STATUS_FULFILLED,
-      value: DehydratedValue,
+      value: EncodedValue,
     ]
   | [chunkIndex: ChunkIndex, status: PROMISE_STATUS_REJECTED, error: unknown];
 type IterableChunk =
   | [
       chunkIndex: ChunkIndex,
       status: ASYNC_ITERABLE_STATUS_RETURN,
-      value: DehydratedValue,
+      value: EncodedValue,
     ]
   | [
       chunkIndex: ChunkIndex,
       status: ASYNC_ITERABLE_STATUS_VALUE,
-      value: DehydratedValue,
+      value: EncodedValue,
     ]
   | [
       chunkIndex: ChunkIndex,
@@ -134,10 +134,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
       stream.controller.close();
     }
   }
-  function dehydratePromise(
-    promise: Promise<unknown>,
-    path: (string | number)[],
-  ) {
+  function encodePromise(promise: Promise<unknown>, path: (string | number)[]) {
     //
     const error = checkMaxDepth(path);
     if (error) {
@@ -157,7 +154,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
         stream.controller.enqueue([
           idx,
           PROMISE_STATUS_FULFILLED,
-          dehydrate(it, path),
+          encode(it, path),
         ]);
       })
       .catch((cause) => {
@@ -174,7 +171,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
       });
     return idx;
   }
-  function dehydrateAsyncIterable(
+  function encodeAsyncIterable(
     iterable: AsyncIterable<unknown>,
     path: (string | number)[],
   ) {
@@ -215,14 +212,14 @@ function createBatchStreamProducer(opts: ProducerOptions) {
           stream.controller.enqueue([
             idx,
             ASYNC_ITERABLE_STATUS_RETURN,
-            dehydrate(next.value, path),
+            encode(next.value, path),
           ]);
           break;
         }
         stream.controller.enqueue([
           idx,
           ASYNC_ITERABLE_STATUS_VALUE,
-          dehydrate(next.value, path),
+          encode(next.value, path),
         ]);
       }
 
@@ -250,12 +247,12 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     }
     return null;
   }
-  function dehydrateAsync(
+  function encodeAsync(
     value: unknown,
     path: (string | number)[],
   ): null | [type: ChunkValueType, chunkId: ChunkIndex] {
     if (isPromise(value)) {
-      return [CHUNK_VALUE_TYPE_PROMISE, dehydratePromise(value, path)];
+      return [CHUNK_VALUE_TYPE_PROMISE, encodePromise(value, path)];
     }
     if (isAsyncIterable(value)) {
       if (opts.maxDepth && path.length >= opts.maxDepth) {
@@ -263,29 +260,26 @@ function createBatchStreamProducer(opts: ProducerOptions) {
       }
       return [
         CHUNK_VALUE_TYPE_ASYNC_ITERABLE,
-        dehydrateAsyncIterable(value, path),
+        encodeAsyncIterable(value, path),
       ];
     }
     return null;
   }
-  function dehydrate(
-    value: unknown,
-    path: (string | number)[],
-  ): DehydratedValue {
+  function encode(value: unknown, path: (string | number)[]): EncodedValue {
     if (value === undefined) {
       return [[]];
     }
     if (!isObject(value)) {
       return [[value]];
     }
-    const reg = dehydrateAsync(value, path);
+    const reg = encodeAsync(value, path);
     if (reg) {
       return [[placeholder], [null, ...reg]];
     }
     const newObj = {} as Record<string, unknown>;
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
-      const transformed = dehydrateAsync(item, [...path, key]);
+      const transformed = encodeAsync(item, [...path, key]);
       if (!transformed) {
         newObj[key] = item;
         continue;
@@ -298,7 +292,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
 
   const newHead: Head = {};
   for (const [key, item] of Object.entries(data)) {
-    newHead[key] = dehydrate(item, [key]);
+    newHead[key] = encode(item, [key]);
   }
 
   return [newHead, stream.readable] as const;
@@ -475,7 +469,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
     }
   };
 
-  function hydrateChunkDefinition(value: ChunkDefinition) {
+  function decodeChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
     const { readable, controller } = createReadableStream<ChunkData>();
@@ -513,7 +507,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               const [_chunkId, status, data] = value as PromiseChunk;
               switch (status) {
                 case PROMISE_STATUS_FULFILLED:
-                  resolve(hydrate(data));
+                  resolve(decode(data));
 
                   break;
                 case PROMISE_STATUS_REJECTED:
@@ -557,14 +551,14 @@ export async function jsonlStreamConsumer<THead>(opts: {
                   case ASYNC_ITERABLE_STATUS_VALUE:
                     return {
                       done: false,
-                      value: hydrate(data),
+                      value: decode(data),
                     };
                   case ASYNC_ITERABLE_STATUS_RETURN:
                     controllers.delete(chunkId);
                     maybeAbort();
                     return {
                       done: true,
-                      value: hydrate(data),
+                      value: decode(data),
                     };
                   case ASYNC_ITERABLE_STATUS_ERROR:
                     controllers.delete(chunkId);
@@ -591,18 +585,18 @@ export async function jsonlStreamConsumer<THead>(opts: {
     }
   }
 
-  function hydrate(value: DehydratedValue): unknown {
+  function decode(value: EncodedValue): unknown {
     const [[data], ...asyncProps] = value;
 
     for (const value of asyncProps) {
       const [key] = value;
-      const hydrated = hydrateChunkDefinition(value);
+      const decoded = decodeChunkDefinition(value);
 
       if (key === null) {
-        return hydrated;
+        return decoded;
       }
 
-      (data as any)[key] = hydrated;
+      (data as any)[key] = decoded;
     }
     return data;
   }
@@ -629,7 +623,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
             const head = chunkOrHead as Record<number | string, unknown>;
 
             for (const [key, value] of Object.entries(chunkOrHead)) {
-              const parsed = hydrate(value as any);
+              const parsed = decode(value as any);
               head[key] = parsed;
             }
             headDeferred.resolve(head as THead);
