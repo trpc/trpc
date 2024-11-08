@@ -13,7 +13,7 @@ import {
   TRPCError,
 } from '../@trpc/server';
 import type { TRPCRequestInfo } from '../@trpc/server/http';
-import { toURL, type BaseHandlerOptions } from '../@trpc/server/http';
+import { type BaseHandlerOptions } from '../@trpc/server/http';
 import { parseTRPCMessage } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
@@ -34,7 +34,7 @@ import {
   type MaybePromise,
 } from '../unstable-core-do-not-import';
 import { Unpromise } from '../vendor/unpromise';
-import type { NodeHTTPCreateContextFnOptions } from './node-http';
+import { createURL, type NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
  * Importing ws causes a build error
@@ -178,7 +178,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
      * - if connection params are expected, they will be created once received
      */
     let ctxPromise =
-      toURL(req.url ?? '').searchParams.get('connectionParams') === '1'
+      createURL(req).searchParams.get('connectionParams') === '1'
         ? unsetContextPromiseSymbol
         : createCtxPromise(() => null);
 

@@ -22,7 +22,6 @@ export * from './unstable-core-do-not-import/http/formDataToObject';
 export * from './unstable-core-do-not-import/http/getHTTPStatusCode';
 export * from './unstable-core-do-not-import/http/parseConnectionParams';
 export * from './unstable-core-do-not-import/http/resolveResponse';
-export * from './unstable-core-do-not-import/http/toURL';
 export * from './unstable-core-do-not-import/http/types';
 export * from './unstable-core-do-not-import/initTRPC';
 export * from './unstable-core-do-not-import/middleware';

@@ -11,7 +11,7 @@
 
 import type { AnyRouter } from '../../@trpc/server';
 import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
-import { resolveResponse, toURL } from '../../@trpc/server/http';
+import { resolveResponse } from '../../@trpc/server/http';
 import type { FetchHandlerRequestOptions } from './types';
 
 const trimSlashes = (path: string): string => {
@@ -32,7 +32,7 @@ export async function fetchRequestHandler<TRouter extends AnyRouter>(
     return opts.createContext?.({ req: opts.req, resHeaders, ...innerOpts });
   };
 
-  const url = toURL(opts.req.url);
+  const url = new URL(opts.req.url);
 
   const pathname = trimSlashes(url.pathname);
   const endpoint = trimSlashes(opts.endpoint);

@@ -161,3 +161,133 @@ test('retains url and search params', async () => {
 
   await server.close();
 });
+
+test('uses https scheme when socket is encrypted', async () => {
+  const mockReq: Partial<http.IncomingMessage> = {
+    headers: {
+      host: 'example.com',
+    },
+    url: '/test',
+    method: 'GET',
+    once: vi.fn(),
+    on: vi.fn(),
+    socket: { encrypted: true } as any,
+  };
+
+  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+    maxBodySize: null,
+  });
+
+  expect(request.url).toBe('https://example.com/test');
+});
+
+test('http2 - filters out pseudo-headers', async () => {
+  const mockReq: Partial<http.IncomingMessage> = {
+    headers: {
+      ':method': 'GET',
+      ':path': '/test',
+      accept: 'application/json',
+      host: 'example.com',
+    },
+    url: '/test',
+    method: 'GET',
+    once: vi.fn(),
+    on: vi.fn(),
+    socket: {} as any,
+  };
+
+  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+    maxBodySize: null,
+  });
+
+  const allHeaders = Array.from(request.headers.keys());
+  expect(allHeaders).not.toContain(':method');
+  expect(allHeaders).not.toContain(':path');
+
+  expect(request.headers.get('accept')).toBe('application/json');
+  expect(request.url).toBe('http://example.com/test');
+
+  expect(allHeaders).toMatchInlineSnapshot(`
+    Array [
+      "accept",
+      "host",
+    ]
+  `);
+});
+
+test('http2 - falls back to localhost when no host/authority', async () => {
+  const mockReq: Partial<http.IncomingMessage> = {
+    headers: {},
+    url: '/test',
+    method: 'GET',
+    once: vi.fn(),
+    on: vi.fn(),
+    socket: {} as any,
+  };
+
+  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+    maxBodySize: null,
+  });
+
+  expect(request.url).toBe('http://localhost/test');
+});
+
+test('adapter with pre-parsed body - string', async () => {
+  const mockReq: Partial<http.IncomingMessage> = {
+    headers: {},
+    url: '/test',
+    method: 'POST',
+    once: vi.fn(),
+    on: vi.fn(),
+    socket: {} as any,
+    // @ts-expect-error - test
+    body: 'hello world',
+  };
+
+  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+    maxBodySize: null,
+  });
+
+  const body = await request.text();
+  expect(body).toBe('hello world');
+});
+
+test('adapter with pre-parsed body - object', async () => {
+  const mockReq: Partial<http.IncomingMessage> = {
+    headers: {},
+    url: '/test',
+    method: 'POST',
+    once: vi.fn(),
+    on: vi.fn(),
+    socket: {} as any,
+    // @ts-expect-error - test
+    body: { hello: 'world' },
+  };
+
+  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+    maxBodySize: null,
+  });
+
+  const body = await request.text();
+  expect(body).toBe('{"hello":"world"}');
+});
+
+test('adapter with pre-parsed body - undefined', async () => {
+  const mockReq: Partial<http.IncomingMessage> = {
+    headers: {},
+    url: '/test',
+    method: 'POST',
+    once: vi.fn(),
+    on: vi.fn(),
+    socket: {} as any,
+    // @ts-expect-error - test
+    body: undefined,
+  };
+
+  const request = incomingMessageToRequest(mockReq as http.IncomingMessage, {
+    maxBodySize: null,
+  });
+
+  const body = await request.text();
+  expect(body).toBe('');
+});
