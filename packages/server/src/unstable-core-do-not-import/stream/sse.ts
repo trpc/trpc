@@ -4,10 +4,12 @@ import { identity, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
-import { takeWithGrace, withCancel } from './utils/asyncIterable';
+import {
+  takeWithGrace,
+  withCancel,
+  withMaxDuration,
+} from './utils/asyncIterable';
 import { createReadableStream } from './utils/createReadableStream';
-import type { PromiseTimer } from './utils/promiseTimer';
-import { createPromiseTimer } from './utils/promiseTimer';
 import { PING_SYM, withPing } from './utils/withPing';
 
 type Serialize = (value: any) => any;
@@ -90,17 +92,15 @@ export function sseStreamProducer<TValue = unknown>(
       });
     }
 
-    let maxDurationTimer: PromiseTimer | null = null;
     if (
-      opts.maxDurationMs != null &&
+      opts.maxDurationMs &&
       opts.maxDurationMs > 0 &&
       opts.maxDurationMs !== Infinity
     ) {
-      maxDurationTimer = createPromiseTimer(opts.maxDurationMs).start();
-      iterable = withCancel(
-        iterable,
-        maxDurationTimer.promise.then(() => opts.abortCtrl.abort()),
-      );
+      iterable = withMaxDuration(iterable, {
+        maxDurationMs: opts.maxDurationMs,
+        abortCtrl: opts.abortCtrl,
+      });
     }
 
     if (ping.enabled && ping.intervalMs !== Infinity && ping.intervalMs > 0) {
@@ -145,7 +145,6 @@ export function sseStreamProducer<TValue = unknown>(
         });
       }
     } finally {
-      maxDurationTimer?.clear();
       stream.controller.close();
     }
   }).catch((err) => {

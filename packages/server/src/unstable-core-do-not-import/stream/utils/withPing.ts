@@ -22,11 +22,11 @@ export async function* withPing<TValue>(
   
   let nextPromise = iterator.next();
   while (true) {
-    using pingPromise = disposablePromiseTimer(pingIntervalMs);
+    using pingPromise = disposablePromiseTimer(pingIntervalMs)
     
     result = await Unpromise.race([
       nextPromise, 
-      pingPromise.promise.then(() => {
+      pingPromise.start().then(() => {
         return PING_RESULT;
       }),
     ]);
