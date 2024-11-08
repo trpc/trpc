@@ -13,7 +13,7 @@ This project includes 2 examples of the subscription pattern:
 
 - Hooks for both cases (using `trpc.{x}.useSubscription`) can be found in [`/src/app/channels/[channelId]/hooks.ts`](./src/app/channels/[channelId]/hooks.ts)
 - The `EventEmitter` & `whoIsTyping` subscription route can be found in [`/src/server/routers/channel.ts`](./src/server/routers/channel.ts)
-- The more complex `post` subscription route can be found in [`/src/server/routers/post.ts:79`](./src/server/routers/post.ts)
+- The more complex `post` subscription route can be found in [`/src/server/routers/post.ts`](./src/server/routers/post.ts)
 
 ## Setup
 
