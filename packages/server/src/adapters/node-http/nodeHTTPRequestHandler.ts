@@ -85,7 +85,7 @@ export async function nodeHTTPRequestHandler<
     });
     return handleViaMiddleware(opts.req, opts.res, (err: unknown) => {
       run(async () => {
-        const request = incomingMessageToRequest(opts.req, {
+        const request = incomingMessageToRequest(opts.req, opts.res, {
           maxBodySize: opts.maxBodySize ?? null,
         });
 
