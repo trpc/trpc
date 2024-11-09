@@ -45,11 +45,7 @@ export function withRefCount(
           if (drained) {
             throw new Error('RefCountSet is drained');
           }
-          try {
-            return set.add(value);
-          } finally {
-            checkDrain();
-          }
+          return set.add(value);
         };
       }
 
