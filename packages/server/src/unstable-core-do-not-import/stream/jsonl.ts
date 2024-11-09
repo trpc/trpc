@@ -1,4 +1,4 @@
-import { getTRPCErrorFromUnknown } from '../error/TRPCError';
+import { Unpromise } from '../../vendor/unpromise';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
@@ -137,12 +137,13 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   }
 
   function encodePromise(promise: Promise<unknown>, path: (string | number)[]) {
-    //
     const error = checkMaxDepth(path);
     if (error) {
-      promise.catch(() => {
-        // ignore
+      // Catch any errors from the original promise to ensure they're reported
+      promise.catch((cause) => {
+        opts.onError?.({ error: cause, path });
       });
+      // Replace the promise with a rejected one containing the max depth error
       promise = Promise.reject(error);
     }
     const idx = counter++ as ChunkIndex;
@@ -170,23 +171,13 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     iterable: AsyncIterable<unknown>,
     path: (string | number)[],
   ) {
-    const error = checkMaxDepth(path);
-    if (error) {
-      const idx = counter++ as ChunkIndex;
-      pending.add(idx);
-      opts.onError?.({ error, path });
-      stream.controller.enqueue([
-        idx,
-        ASYNC_ITERABLE_STATUS_ERROR,
-        opts.formatError?.({ error, path }),
-      ]);
-      pending.delete(idx);
-      maybeClose();
-      return idx;
-    }
     const idx = counter++ as ChunkIndex;
     pending.add(idx);
     run(async () => {
+      const error = checkMaxDepth(path);
+      if (error) {
+        throw error;
+      }
       const iterator = iterable[Symbol.asyncIterator]();
 
       while (true) {
@@ -194,18 +185,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
           const res = await iterator.return?.();
           return res?.value;
         }
-        const next = await iterator.next().catch(getTRPCErrorFromUnknown);
-
-        if (next instanceof Error) {
-          opts.onError?.({ error: next, path });
-
-          maybeEnqueue([
-            idx,
-            ASYNC_ITERABLE_STATUS_ERROR,
-            opts.formatError?.({ error: next, path }),
-          ]);
-          return;
-        }
+        const next = await iterator.next();
 
         if (next.done) {
           maybeEnqueue([
@@ -223,18 +203,12 @@ function createBatchStreamProducer(opts: ProducerOptions) {
       }
     })
       .catch((cause) => {
-        // this shouldn't happen, but node crashes if we don't catch it
-        opts.onError?.({
-          error: new Error(
-            'You found a bug - please report it on https://github.com/trpc/trpc',
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore https://github.com/tc39/proposal-error-cause
-            {
-              cause,
-            },
-          ),
-          path,
-        });
+        opts.onError?.({ error: cause, path });
+        stream.controller.enqueue([
+          idx,
+          ASYNC_ITERABLE_STATUS_ERROR,
+          opts.formatError?.({ error: cause, path }),
+        ]);
       })
       .finally(() => {
         pending.delete(idx);
