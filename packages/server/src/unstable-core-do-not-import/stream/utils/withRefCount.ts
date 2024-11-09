@@ -1,13 +1,20 @@
+// Callback function type that is called when a collection is drained
 type OnDrain = () => void;
+
+// Interface for objects that can be activated
 export interface RefCount {
   activate(): void;
 }
+
+// Map type that includes ref counting capabilities
 export interface RefCountMap<TKey, TValue>
   extends Map<TKey, TValue>,
     RefCount {}
 
+// Set type that includes ref counting capabilities
 export interface RefCountSet<TValue> extends Set<TValue>, RefCount {}
 
+// Function overloads for wrapping Maps and Sets with ref counting
 export function withRefCount<TKey, TValue>(
   map: Map<TKey, TValue>,
   onDrain: OnDrain,
@@ -17,22 +24,27 @@ export function withRefCount<TValue>(
   onDrain: OnDrain,
 ): RefCountSet<TValue>;
 export function withRefCount(
-  obj: Set<any> | Map<any, any>,
+  _obj: Set<any> | Map<any, any>,
   onDrain: OnDrain,
 ): RefCountMap<any, any> & RefCountSet<any> {
-  const map = obj as Map<any, any>;
-  const set = obj as Set<any>;
+  const obj = _obj as any;
 
+  // Track whether the collection has been drained
   const drained = false;
+  // Track whether the collection has been activated
   let active = false;
 
+  // Check if collection should be drained (empty and active)
   const checkDrain = () => {
     if (!drained && active && obj.size === 0) {
       onDrain();
     }
   };
+
+  // Create proxy to intercept collection operations
   return new Proxy(obj, {
-    get(target, prop) {
+    get(_, prop) {
+      // Handle activation
       if (prop === 'activate') {
         return () => {
           active = true;
@@ -40,35 +52,37 @@ export function withRefCount(
         };
       }
 
-      if (prop === 'add') {
-        return (value: any) => {
+      // Handle adding items - prevent if already drained
+      if (prop === 'set' || prop === 'add') {
+        return (...args: any[]) => {
           if (drained) {
-            throw new Error('RefCountSet is drained');
+            throw new Error('Already drained');
           }
-          return set.add(value);
+
+          return obj[prop](...args);
         };
       }
 
-      if (prop === 'set') {
-        return (key: any, value: any) => {
-          if (drained) {
-            throw new Error('RefCountMap is drained');
-          }
-          return map.set(key, value);
-        };
-      }
-
+      // Handle removing items - check if should drain after
       if (prop === 'delete' || prop === 'clear') {
         return (...args: any[]) => {
           try {
-            return (target as any)[prop](...args);
+            return obj[prop](...args);
           } finally {
             checkDrain();
           }
         };
       }
+      // Pass through other method calls
+      const target = obj[prop];
+      if (typeof target === 'function') {
+        return (...args: any[]) => {
+          return obj[prop](...args);
+        };
+      }
 
-      return (target as any)[prop];
+      // Pass through property access
+      return target;
     },
   }) as never as RefCountMap<any, any> & RefCountSet<any>;
 }

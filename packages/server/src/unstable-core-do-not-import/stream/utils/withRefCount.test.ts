@@ -11,6 +11,10 @@ test('Map', () => {
   map.activate();
   expect(onDrain).not.toHaveBeenCalled();
 
+  expect(map.size).toBe(1);
+  expect(map.get('key')).toBe(1);
+  expect(Array.from(map.keys())).toEqual(['key']);
+
   map.delete('key');
   expect(onDrain).toHaveBeenCalledTimes(1);
 });

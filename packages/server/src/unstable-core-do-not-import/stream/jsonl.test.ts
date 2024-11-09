@@ -1,5 +1,6 @@
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
+import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
 import { createDeferred } from './utils/createDeferred';
@@ -28,8 +29,47 @@ test('encode/decode with superjson', async () => {
     serialize: (v) => SuperJSON.serialize(v),
   });
 
+  const [stream1, stream2] = stream.tee();
+
+  const streamEnd = run(async () => {
+    const reader = stream2.pipeThrough(new TextDecoderStream()).getReader();
+    const aggregated: string[] = [];
+    while (true) {
+      const res = await reader.read();
+
+      if (res.value) {
+        aggregated.push(res.value);
+      }
+      if (res.done) {
+        break;
+      }
+    }
+    return aggregated;
+  });
+
+  expect(await streamEnd).toMatchInlineSnapshot(`
+    Array [
+      "{"json":{"0":[[0],[null,0,0]],"1":[[0],[null,0,1]]}}
+    ",
+      "{"json":[0,0,[[{"foo":{"bar":{"baz":"qux"}},"deferred":0}],["deferred",0,2]]]}
+    ",
+      "{"json":[1,0,[[0],[null,1,3]]]}
+    ",
+      "{"json":[2,0,[[42]]]}
+    ",
+      "{"json":[3,1,[[1]]]}
+    ",
+      "{"json":[3,1,[[2]]]}
+    ",
+      "{"json":[3,1,[[3]]]}
+    ",
+      "{"json":[3,0,[[]]]}
+    ",
+    ]
+  `);
+
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
-    from: stream,
+    from: stream1,
     deserialize: (v) => SuperJSON.deserialize(v),
     abortController: null,
   });
