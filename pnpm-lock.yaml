@@ -1773,19 +1773,19 @@ importers:
   packages/server:
     optionalDependencies:
       '@types/aws-lambda':
-        specifier: '*'
+        specifier: ^8.10.137
         version: 8.10.137
       express:
-        specifier: '*'
+        specifier: ^4.17.1
         version: 4.21.0
       fastify:
-        specifier: '*'
+        specifier: ^4.16.0
         version: 4.26.2
       next:
-        specifier: '*'
+        specifier: ^15.0.2
         version: 15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       ws:
-        specifier: '*'
+        specifier: ^8.0.0
         version: 8.17.1
     devDependencies:
       '@fastify/websocket':
