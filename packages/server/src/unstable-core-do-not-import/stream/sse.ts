@@ -1,4 +1,5 @@
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
+import { isAbortError } from '../http/isAbortError';
 import type { MaybePromise } from '../types';
 import { identity, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
@@ -127,19 +128,24 @@ export function sseStreamProducer<TValue = unknown>(
         chunk = null;
       }
     } catch (err) {
-      // ignore abort errors, send any other errors
-      if (!(err instanceof Error) || err.name !== 'AbortError') {
-        // `err` must be caused by `opts.data`, `JSON.stringify` or `serialize`.
-        // So, a user error in any case.
-        const error = getTRPCErrorFromUnknown(err);
-        const data = opts.formatError?.({ error }) ?? null;
-        stream.controller.enqueue({
-          event: SERIALIZED_ERROR_EVENT,
-          data: JSON.stringify(serialize(data)),
-        });
+      if (isAbortError(err)) {
+        // ignore abort errors, send any other errors
+        return;
       }
+      // `err` must be caused by `opts.data`, `JSON.stringify` or `serialize`.
+      // So, a user error in any case.
+      const error = getTRPCErrorFromUnknown(err);
+      const data = opts.formatError?.({ error }) ?? null;
+      stream.controller.enqueue({
+        event: SERIALIZED_ERROR_EVENT,
+        data: JSON.stringify(serialize(data)),
+      });
     } finally {
-      stream.controller.close();
+      try {
+        stream.controller.close();
+      } catch {
+        // ignore
+      }
     }
   }).catch((err) => {
     // should not be reached; just in case...

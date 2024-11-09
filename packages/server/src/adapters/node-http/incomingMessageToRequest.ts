@@ -1,5 +1,7 @@
 import type * as http from 'http';
 import { TRPCError } from '../../@trpc/server';
+// eslint-disable-next-line no-restricted-imports
+import { isAbortError } from '../../unstable-core-do-not-import/http/isAbortError';
 import type { NodeHTTPResponse } from './types';
 
 export interface IncomingMessageWithBody extends http.IncomingMessage {
@@ -130,17 +132,15 @@ export function incomingMessageToRequest(
   const ac = new AbortController();
 
   const onAbort = () => {
-    // cleanup listeners
-    req.removeListener('close', onAbort);
-    res.removeListener('close', onAbort);
-    req.socket.removeListener('end', onAbort);
+    res.off('close', onAbort);
+    req.socket.off('close', onAbort);
 
     // abort the request
     ac.abort();
   };
-  req.once('close', onAbort);
+
   res.once('close', onAbort);
-  req.socket.once('end', onAbort);
+  req.socket.once('close', onAbort);
 
   // Get host from either regular header or HTTP/2 pseudo-header
   const url = createURL(req);
@@ -215,6 +215,9 @@ export async function writeBody(opts: {
       signal: opts.signal,
     });
   } catch (err) {
+    if (isAbortError(err)) {
+      return;
+    }
     throw err;
   }
 }
