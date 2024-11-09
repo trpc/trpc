@@ -92,5 +92,10 @@
     "overrides": {
       "@types/node": "20.17.6"
     }
+  },
+  "manypkg": {
+    "ignoredRules": [
+      "EXTERNAL_MISMATCH"
+    ]
   }
 }

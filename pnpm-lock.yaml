@@ -193,7 +193,7 @@ importers:
         version: 15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-auth:
         specifier: 5.0.0-beta.25
-        version: 5.0.0-beta.25(next@15.0.2(@babel/core@7.25.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+        version: 5.0.0-beta.25(next@15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -1395,7 +1395,7 @@ importers:
         version: 15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       next-auth:
         specifier: 5.0.0-beta.25
-        version: 5.0.0-beta.25(next@15.0.2(@babel/core@7.25.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+        version: 5.0.0-beta.25(next@15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       postgres:
         specifier: ^3.4.4
         version: 3.4.4
@@ -29322,7 +29322,7 @@ snapshots:
       next: 15.0.2(@babel/core@7.23.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
 
-  next-auth@5.0.0-beta.25(next@15.0.2(@babel/core@7.25.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1):
+  next-auth@5.0.0-beta.25(next@15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1):
     dependencies:
       '@auth/core': 0.37.2
       next: 15.0.2(@babel/core@7.25.8)(@playwright/test@1.28.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
