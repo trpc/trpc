@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import * as http from 'http';
 import { expect } from 'vitest';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
@@ -43,6 +44,18 @@ function createServer(opts: Parameters<typeof incomingMessageToRequest>[1]) {
       await promise;
     },
   };
+}
+
+function createMockReq(opts: Partial<http.IncomingMessage> = {}) {
+  const mockSocket = new EventEmitter();
+  const req = Object.assign(new EventEmitter(), {
+    headers: {},
+    url: '/test',
+    method: 'GET',
+    socket: mockSocket,
+    ...opts,
+  });
+  return req as http.IncomingMessage;
 }
 
 test('basic GET', async () => {
@@ -160,4 +173,135 @@ test('retains url and search params', async () => {
   );
 
   await server.close();
+});
+
+test('uses https scheme when socket is encrypted', async () => {
+  const mockReq = createMockReq({
+    headers: {
+      host: 'example.com',
+    },
+    url: '/test',
+    method: 'GET',
+  });
+
+  // @ts-expect-error - test
+  mockReq.socket.encrypted = true;
+
+  const request = incomingMessageToRequest(mockReq, {
+    maxBodySize: null,
+  });
+
+  expect(request.url).toBe('https://example.com/test');
+});
+
+test('http2 - filters out pseudo-headers', async () => {
+  const mockReq = createMockReq({
+    headers: {
+      ':method': 'GET',
+      ':path': '/test',
+      accept: 'application/json',
+      host: 'example.com',
+    },
+    url: '/test',
+    method: 'GET',
+  });
+
+  const request = incomingMessageToRequest(mockReq, {
+    maxBodySize: null,
+  });
+
+  const allHeaders = Array.from(request.headers.keys());
+  expect(allHeaders).not.toContain(':method');
+  expect(allHeaders).not.toContain(':path');
+
+  expect(request.headers.get('accept')).toBe('application/json');
+  expect(request.url).toBe('http://example.com/test');
+
+  expect(allHeaders).toMatchInlineSnapshot(`
+    Array [
+      "accept",
+      "host",
+    ]
+  `);
+});
+
+test('http2 - falls back to localhost when no host/authority', async () => {
+  const mockReq = createMockReq({
+    headers: {},
+    url: '/test',
+    method: 'GET',
+  });
+
+  const request = incomingMessageToRequest(mockReq, {
+    maxBodySize: null,
+  });
+
+  expect(request.url).toBe('http://localhost/test');
+});
+
+test('adapter with pre-parsed body - string', async () => {
+  const mockReq = createMockReq({
+    headers: {},
+    url: '/test',
+    method: 'POST',
+    // @ts-expect-error - test
+    body: 'hello world',
+  });
+
+  const request = incomingMessageToRequest(mockReq, {
+    maxBodySize: null,
+  });
+
+  const body = await request.text();
+  expect(body).toBe('hello world');
+});
+
+test('adapter with pre-parsed body - object', async () => {
+  const mockReq = createMockReq({
+    headers: {},
+    url: '/test',
+    method: 'POST',
+    // @ts-expect-error - test
+    body: { hello: 'world' },
+  });
+
+  const request = incomingMessageToRequest(mockReq, {
+    maxBodySize: null,
+  });
+
+  const body = await request.text();
+  expect(body).toBe('{"hello":"world"}');
+});
+
+test('adapter with pre-parsed body - undefined', async () => {
+  const mockReq = createMockReq({
+    headers: {},
+    url: '/test',
+    method: 'POST',
+    // @ts-expect-error - test
+    body: undefined,
+  });
+
+  const request = incomingMessageToRequest(mockReq, {
+    maxBodySize: null,
+  });
+
+  const body = await request.text();
+  expect(body).toBe('');
+});
+
+// regression test for https://github.com/trpc/trpc/issues/6193
+test('aborts request when socket closes', async () => {
+  const mockReq = createMockReq({
+    method: 'POST',
+  });
+
+  const request = incomingMessageToRequest(mockReq, {
+    maxBodySize: null,
+  });
+
+  expect(request.signal.aborted).toBe(false);
+  mockReq.socket.emit('close');
+
+  expect(request.signal.aborted).toBe(true);
 });

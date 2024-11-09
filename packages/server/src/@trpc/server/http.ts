@@ -22,5 +22,4 @@ export {
   octetInputParser,
   parseConnectionParamsFromUnknown,
   parseConnectionParamsFromString,
-  toURL,
 } from '../../unstable-core-do-not-import';
