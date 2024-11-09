@@ -36,7 +36,7 @@ jobs:
       # </autofixing>
 
       # commit autofixes
-      - uses: autofix-ci/action
+      - uses: autofix-ci/action@ff86a557419858bb967097bfc916833f5647fa8c
         if: ${{ failure() || success() }}
         with:
           commit-message: 'chore: apply lint and formatting fixes'
