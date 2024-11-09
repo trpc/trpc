@@ -2,6 +2,7 @@ import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
 import { createReadableStream } from './utils/createReadableStream';
+import { withRefCount } from './utils/withRefCount';
 
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
@@ -122,18 +123,17 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   const placeholder = 0 as PlaceholderValue;
 
   const stream = createReadableStream<ChunkData>();
-  const pending = new Set<ChunkIndex>();
+  const pending = withRefCount(new Set<ChunkIndex>(), () => {
+    if (!stream.cancelled()) {
+      stream.controller.close();
+    }
+  });
 
   const maybeEnqueue = (chunk: ChunkData) => {
     if (!stream.cancelled()) {
       stream.controller.enqueue(chunk);
     }
   };
-  function maybeClose() {
-    if (pending.size === 0 && !stream.cancelled()) {
-      stream.controller.close();
-    }
-  }
 
   function encodePromise(promise: Promise<unknown>, path: (string | number)[]) {
     const error = checkMaxDepth(path);
@@ -162,7 +162,6 @@ function createBatchStreamProducer(opts: ProducerOptions) {
       })
       .finally(() => {
         pending.delete(idx);
-        maybeClose();
       });
     return idx;
   }
@@ -211,7 +210,6 @@ function createBatchStreamProducer(opts: ProducerOptions) {
       })
       .finally(() => {
         pending.delete(idx);
-        maybeClose();
       });
     return idx;
   }
@@ -268,6 +266,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   for (const [key, item] of Object.entries(data)) {
     newHead[key] = encode(item, [key]);
   }
+  pending.activate();
 
   return [newHead, stream.readable] as const;
 }
@@ -426,46 +425,26 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
   type ControllerChunk = ChunkData | StreamInterruptedError;
   type ChunkController = ReadableStreamDefaultController<ControllerChunk>;
-  type ControllerWrapper = {
-    controller: ChunkController;
-    returned: boolean;
-  };
-  const chunkDeferred = new Map<ChunkIndex, Deferred<ControllerWrapper>>();
-  const controllers = new Map<ChunkIndex, ControllerWrapper>();
 
-  const maybeAbort = () => {
-    if (
-      chunkDeferred.size === 0 &&
-      Array.from(controllers.values()).every((it) => it.returned)
-    ) {
-      // nothing is listening to the stream anymore
+  const controllers = withRefCount(
+    new Map<ChunkIndex, ChunkController>(),
+    () => {
       opts.abortController?.abort();
-    }
-  };
+    },
+  );
 
   function decodeChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const { readable, controller } = createReadableStream<ChunkData>();
+    const stream = createReadableStream<ChunkData>();
 
-    const wrapper: ControllerWrapper = {
-      controller,
-      returned: false,
-    };
-    controllers.set(chunkId, wrapper);
-
-    // resolve chunk deferred if it exists
-    const deferred = chunkDeferred.get(chunkId);
-    if (deferred) {
-      deferred.resolve(wrapper);
-      chunkDeferred.delete(chunkId);
-    }
+    controllers.set(chunkId, stream.controller);
 
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
         return new Promise((resolve, reject) => {
           // listen for next value in the stream
-          const reader = readable.getReader();
+          const reader = stream.readable.getReader();
           reader
             .read()
             .then((it) => {
@@ -493,17 +472,14 @@ export async function jsonlStreamConsumer<THead>(opts: {
             })
             .catch(reject)
             .finally(() => {
-              // reader.releaseLock();
               controllers.delete(chunkId);
-
-              maybeAbort();
             });
         });
       }
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
         return {
           [Symbol.asyncIterator]: () => {
-            const reader = readable.getReader();
+            const reader = stream.readable.getReader();
             const iterator: AsyncIterator<unknown> = {
               next: async () => {
                 const { done, value } = await reader.read();
@@ -512,7 +488,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
                 }
                 if (done) {
                   controllers.delete(chunkId);
-                  maybeAbort();
                   return {
                     done: true,
                     value: undefined,
@@ -529,14 +504,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
                     };
                   case ASYNC_ITERABLE_STATUS_RETURN:
                     controllers.delete(chunkId);
-                    maybeAbort();
                     return {
                       done: true,
                       value: decode(data),
                     };
                   case ASYNC_ITERABLE_STATUS_ERROR:
                     controllers.delete(chunkId);
-                    maybeAbort();
                     throw (
                       opts.formatError?.({ error: data }) ??
                       new AsyncError(data)
@@ -544,8 +517,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
                 }
               },
               return: async () => {
-                wrapper.returned = true;
-                maybeAbort();
+                controllers.delete(chunkId);
                 return {
                   done: true,
                   value: undefined,
@@ -579,11 +551,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
     const error = new StreamInterruptedError(reason);
 
     headDeferred?.reject(error);
-    for (const deferred of chunkDeferred.values()) {
-      deferred.reject(error);
-    }
-    chunkDeferred.clear();
-    for (const { controller } of controllers.values()) {
+    for (const controller of controllers.values()) {
       controller.enqueue(error);
       controller.close();
     }
@@ -602,21 +570,16 @@ export async function jsonlStreamConsumer<THead>(opts: {
             }
             headDeferred.resolve(head as THead);
             headDeferred = null;
+
+            controllers.activate();
             return;
           }
           const chunk = chunkOrHead as ChunkData;
           const [idx] = chunk;
-          let wrapper = controllers.get(idx);
-          if (!wrapper) {
-            let deferred = chunkDeferred.get(idx);
-            if (!deferred) {
-              deferred = createDeferred();
-              chunkDeferred.set(idx, deferred);
-            }
 
-            wrapper = await deferred.promise;
-          }
-          wrapper.controller.enqueue(chunk);
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const controller = controllers.get(idx)!;
+          controller.enqueue(chunk);
         },
         close: closeOrAbort,
         abort: closeOrAbort,

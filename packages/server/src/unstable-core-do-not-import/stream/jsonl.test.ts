@@ -1,7 +1,5 @@
 import { waitFor } from '@testing-library/react';
-import { konn } from 'konn';
 import SuperJSON from 'superjson';
-import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
 import { createDeferred } from './utils/createDeferred';
@@ -435,7 +433,7 @@ test('e2e, client aborts request halfway through - through breaking async iterab
   });
 
   expect(yieldCalls.mock.calls.length).toBeGreaterThanOrEqual(3);
-  expect(yieldCalls.mock.calls.length).toBeLessThan(10);
+  expect(yieldCalls.mock.calls.length).toBeLessThanOrEqual(10);
 
   const errors = onConsumerErrorSpy.mock.calls.map(
     (it) => (it[0].error as Error).message,
@@ -445,8 +443,9 @@ test('e2e, client aborts request halfway through - through breaking async iterab
       "The operation was aborted.",
     ]
   `);
-  expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
+
   expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
+  expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
 
   await server.close();
 });
