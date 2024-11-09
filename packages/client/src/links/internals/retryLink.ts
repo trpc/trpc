@@ -3,6 +3,7 @@
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
+import { inputWithTrackedEventId } from '../../internals/inputWithTrackedEventId';
 import type { TRPCClientError } from '../../TRPCClientError';
 import type { Operation, TRPCLink } from '../types';
 
@@ -51,16 +52,10 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
           if (!lastEventId) {
             return op;
           }
-          if (op.input != null && typeof op.input !== 'object') {
-            return op;
-          }
 
           return {
             ...op,
-            input: {
-              ...(op.input ?? {}),
-              lastEventId,
-            },
+            input: inputWithTrackedEventId(op.input, lastEventId),
           };
         }
 
