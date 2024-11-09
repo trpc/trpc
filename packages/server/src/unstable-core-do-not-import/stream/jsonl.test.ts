@@ -72,7 +72,7 @@ test('encode/decode with superjson', async () => {
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: stream1,
     deserialize: (v) => SuperJSON.deserialize(v),
-    abortController: null,
+    abortController: new AbortController(),
   });
 
   {
@@ -137,7 +137,7 @@ test('encode/decode - error', async () => {
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
     onError: onConsumerErrorSpy,
-    abortController: null,
+    abortController: new AbortController(),
   });
 
   {
@@ -217,7 +217,7 @@ test('decode - bad data', async () => {
     await jsonlStreamConsumer({
       from: textEncoder.readable,
       deserialize: (v) => SuperJSON.deserialize(v),
-      abortController: null,
+      abortController: new AbortController(),
     });
     expect(true).toBe(false);
   } catch (err) {
@@ -295,7 +295,7 @@ test('e2e, create server', async () => {
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     deserialize: (v) => SuperJSON.deserialize(v),
-    abortController: null,
+    abortController: new AbortController(),
   });
 
   {
@@ -573,7 +573,7 @@ test('should work to throw after stream is closed', async () => {
   const [head] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     deserialize: (v) => SuperJSON.deserialize(v),
-    abortController: null,
+    abortController: new AbortController(),
   });
 
   const head0 = await head[0]; // consume the stream

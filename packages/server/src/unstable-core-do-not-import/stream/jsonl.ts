@@ -407,7 +407,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   /**
    * This `AbortController` will be triggered when there are no more listeners to the stream.
    */
-  abortController: AbortController | null;
+  abortController: AbortController;
 }) {
   const { deserialize = (v) => v } = opts;
 
