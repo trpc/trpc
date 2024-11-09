@@ -1,3 +1,6 @@
+// @ts-expect-error polyfill
+Symbol.dispose ??= Symbol();
+
 export function disposablePromiseTimer(ms: number) {
   let timer: ReturnType<typeof setTimeout> | null = null;
 
