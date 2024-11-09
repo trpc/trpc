@@ -15,13 +15,11 @@ type Options = {
   packageDir: string;
 };
 
-export function buildConfig(opts: Options): RollupOptions[] {
-  const resolvedInput = opts.input.map((file) =>
-    path.resolve(opts.packageDir, file),
-  );
+export function buildConfig({ input, packageDir }: Options): RollupOptions[] {
+  const resolvedInput = input.map((file) => path.resolve(packageDir, file));
   const options: Options = {
-    ...opts,
     input: resolvedInput,
+    packageDir,
   };
 
   return [types(options), lib(options)];
@@ -55,10 +53,9 @@ function types({ input, packageDir }: Options): RollupOptions {
   };
 }
 
-function lib(opts: Options): RollupOptions {
-  const { packageDir } = opts;
+function lib({ input, packageDir }: Options): RollupOptions {
   return {
-    input: opts.input,
+    input,
     output: [
       {
         dir: `${packageDir}/dist`,
@@ -85,8 +82,16 @@ function lib(opts: Options): RollupOptions {
         extensions,
       }),
       swc({
-        // Use the same tsconfig as typescript plugin
-        tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
+        tsconfig: false,
+        jsc: {
+          target: 'es2020',
+          transform: {
+            react: {
+              useBuiltins: true,
+            },
+          },
+          externalHelpers: true,
+        },
       }),
       !isWatchMode && analyzeSizeChange(packageDir),
     ],
