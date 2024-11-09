@@ -247,10 +247,12 @@ export async function writeResponseToNodeHTTPResponse(opts: {
         body: response.body,
       });
     }
-  } finally {
+  } catch (err) {
     if (!res.headersSent) {
       res.statusCode = 500;
     }
+    throw err;
+  } finally {
     res.end();
   }
 }
