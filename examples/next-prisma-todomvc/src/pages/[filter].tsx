@@ -221,7 +221,7 @@ export default function TodosPage(props: PageProps) {
 
           <input
             className="new-todo"
-            placeholder={t('what_needs_to_be_done') as string}
+            placeholder={t('what_needs_to_be_done') ?? ''}
             autoFocus
             onKeyDown={(e) => {
               const text = e.currentTarget.value.trim();
