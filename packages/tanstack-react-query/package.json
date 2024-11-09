@@ -66,8 +66,8 @@
     "react-dom": "^18.3.1",
     "rollup": "^4.9.5",
     "tsx": "^4.0.0",
-    "zod": "^3.0.0",
-    "vitest": "^2.0.4"
+    "vitest": "^2.0.4",
+    "zod": "^3.0.0"
   },
   "publishConfig": {
     "access": "public"
