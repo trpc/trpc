@@ -146,6 +146,7 @@ export function unstable_httpSubscriptionLink<
 
                 observer.next({
                   result: {
+                    id: chunkData.id,
                     data,
                   },
                   context: {
