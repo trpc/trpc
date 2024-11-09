@@ -3,9 +3,8 @@
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
-import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
-import type { TRPCClientError } from '../TRPCClientError';
-import type { Operation, TRPCLink } from './types';
+import type { TRPCClientError } from '../../TRPCClientError';
+import type { Operation, TRPCLink } from '../types';
 
 interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
   /**
@@ -38,31 +37,15 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
   // initialized config
   return () => {
     // initialized in app
-    return (callOpts) => {
+    return ({ op, next }) => {
       // initialized for request
       return observable((observer) => {
         let next$: Unsubscribable;
 
-        let lastEventId: string | undefined = undefined;
-
         attempt(1);
 
-        function opWithLastEventId(): typeof callOpts.op {
-          const op = callOpts.op;
-          if (!lastEventId) {
-            return op;
-          }
-
-          return {
-            ...op,
-            input: inputWithTrackedEventId(op.input, lastEventId),
-          };
-        }
-
         function attempt(attempts: number) {
-          const op = opWithLastEventId();
-
-          next$ = callOpts.next(op).subscribe({
+          next$ = next(op).subscribe({
             error(error) {
               const shouldRetry = opts.retry({
                 op,
@@ -75,17 +58,8 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
                 observer.error(error);
               }
             },
-            next(envelope) {
-              //
-              if (
-                (!envelope.result.type || envelope.result.type === 'data') &&
-                envelope.result.id
-              ) {
-                //
-                lastEventId = envelope.result.id;
-              }
-
-              observer.next(envelope);
+            next(result) {
+              observer.next(result);
             },
             complete() {
               observer.complete();
