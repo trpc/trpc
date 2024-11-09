@@ -240,11 +240,15 @@ function createServerForStream(
     }
 
     const reader = stream.getReader();
-    abortSignal.signal.addEventListener('abort', () => {
-      reader.cancel().catch(() => {
-        // noop
-      });
-    });
+    abortSignal.signal.addEventListener(
+      'abort',
+      () => {
+        reader.cancel().catch(() => {
+          // noop
+        });
+      },
+      { once: true },
+    );
     while (true) {
       const { done, value } = await reader.read();
       if (done) {

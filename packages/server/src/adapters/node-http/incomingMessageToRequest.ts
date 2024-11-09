@@ -1,5 +1,6 @@
 import type * as http from 'http';
 import { TRPCError } from '../../@trpc/server';
+import type { NodeHTTPResponse } from './types';
 
 export interface IncomingMessageWithBody extends http.IncomingMessage {
   /**
@@ -158,4 +159,96 @@ export function incomingMessageToRequest(
   const request = new Request(url, init);
 
   return request;
+}
+
+async function writeChunk(res: NodeHTTPResponse, chunk: Uint8Array) {
+  if (res.write(chunk) === false) {
+    await new Promise<void>((resolve, reject) => {
+      const onError = (err: unknown) => {
+        reject(err);
+        cleanup();
+      };
+      const onDrain = () => {
+        resolve();
+        cleanup();
+      };
+      const cleanup = () => {
+        res.off('error', onError);
+        res.off('drain', onDrain);
+      };
+      res.once('error', onError);
+      res.once('drain', onDrain);
+    });
+  }
+}
+
+interface WriteResponseOpts {
+  request: Request;
+  response: Response;
+  res: NodeHTTPResponse;
+}
+
+async function writeBody(
+  opts: WriteResponseOpts,
+  body: NonNullable<Response['body']>,
+) {
+  const { request, res } = opts;
+
+  const reader = body.getReader();
+  let streamEnded = false;
+  const onAbort = () => {
+    if (streamEnded) {
+      return;
+    }
+    streamEnded = true;
+    reader.cancel().catch(() => {
+      // todo: add error callback - this shouldn't happen
+    });
+  };
+
+  try {
+    request.signal.addEventListener('abort', onAbort, { once: true });
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done || !res.writable) {
+        break;
+      }
+
+      await writeChunk(res, value);
+      res.flush?.();
+    }
+    streamEnded = true;
+  } catch (err) {
+    // Set error status if not already sent
+    if (!res.headersSent) {
+      res.statusCode = 500;
+    }
+    res.end();
+    throw err;
+  } finally {
+    onAbort();
+    request.signal.removeEventListener('abort', onAbort);
+  }
+}
+
+export async function writeResponseToNodeHTTPResponse(opts: {
+  request: Request;
+  response: Response;
+  res: NodeHTTPResponse;
+}) {
+  const { response, res } = opts;
+  if (res.statusCode === 200) {
+    res.statusCode = response.status;
+  }
+  for (const [key, value] of response.headers) {
+    res.setHeader(key, value);
+  }
+
+  if (response.body) {
+    await writeBody(opts, response.body);
+  }
+
+  res.end();
 }
