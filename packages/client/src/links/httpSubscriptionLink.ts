@@ -55,6 +55,10 @@ type HTTPSubscriptionLinkOptions<
       }) =>
         | EventSourceLike.InitDictOf<TEventSource>
         | Promise<EventSourceLike.InitDictOf<TEventSource>>);
+  /**
+   * Timeout after inactivity in milliseconds
+   */
+  timeoutAfterInactivityMs?: number;
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 

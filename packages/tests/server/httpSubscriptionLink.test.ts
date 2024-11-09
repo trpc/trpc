@@ -16,6 +16,8 @@ import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import type { Deferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
+import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
@@ -765,6 +767,120 @@ describe('transformers / different serialize-deserialize', async () => {
     expect(onData.mock.calls[0]![0]).toEqual({
       id: '1',
       data: { num: 1 },
+    });
+  });
+});
+
+describe.only('timeouts', async () => {
+  interface CtxOpts {
+    reconnectAfterInactivityMs: number;
+  }
+  const getCtx = (opts: CtxOpts) => {
+    return konn()
+      .beforeEach(() => {
+        const results: number[] = [];
+        vi.useFakeTimers();
+
+        const onConnection = vi.fn<() => void>();
+
+        const t = initTRPC.create({
+          transformer: superjson,
+        });
+
+        let deferred: Deferred<void> = createDeferred();
+
+        const router = t.router({
+          infinite: t.procedure
+            .input(
+              z
+                .object({
+                  lastEventId: z.coerce.number().min(0).optional(),
+                })
+                .optional(),
+            )
+            .subscription(async function* (opts) {
+              onConnection();
+              let idx = opts.input?.lastEventId ?? 1;
+              while (true) {
+                await deferred.promise;
+                deferred = createDeferred();
+                yield tracked(String(idx), idx);
+                idx++;
+              }
+            }),
+        });
+
+        const linkSpy: TRPCLink<typeof router> = () => {
+          // here we just got initialized in the app - this happens once per app
+          // useful for storing cache for instance
+          return ({ next, op }) => {
+            // this is when passing the result to the next link
+            // each link needs to return an observable which propagates results
+            return observable((observer) => {
+              const unsubscribe = next(op).subscribe({
+                next(value) {
+                  if (!value.result.type || value.result.type === 'data') {
+                    results.push(value.result.data as number);
+                  }
+                  observer.next(value);
+                },
+                error: observer.error,
+              });
+              return unsubscribe;
+            });
+          };
+        };
+        const opts = routerToServerAndClientNew(router, {
+          server: {},
+          client(opts) {
+            return {
+              links: [
+                linkSpy,
+                unstable_httpSubscriptionLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                  reconnectAfterInactivityMs: opts.reconnectAfterInactivityMs,
+                }),
+              ],
+            };
+          },
+        });
+        return {
+          ...opts,
+          deferred: () => deferred,
+          results: () => results,
+          onConnection,
+        };
+      })
+      .afterEach(async (opts) => {
+        vi.useRealTimers();
+        await opts?.close?.();
+      })
+      .done();
+  };
+
+  describe('timeout after activity', async () => {
+    const opts = {
+      reconnectAfterInactivityMs: 1_000,
+    } as const satisfies CtxOpts;
+
+    const ctx = getCtx(opts);
+    test('works', async () => {
+      const sub = ctx.client.infinite.subscribe(undefined, {});
+
+      ctx.deferred().resolve();
+
+      await vi.waitFor(async () => {
+        expect(ctx.results()).toHaveLength(1);
+      });
+
+      await vi.advanceTimersByTimeAsync(opts.reconnectAfterInactivityMs + 100);
+
+      await vi.waitFor(async () => {
+        expect(ctx.onConnection).toHaveBeenCalledTimes(2);
+      });
+
+      sub.unsubscribe();
     });
   });
 });
