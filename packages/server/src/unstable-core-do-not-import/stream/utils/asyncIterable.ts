@@ -1,18 +1,17 @@
 import { Unpromise } from '../../../vendor/unpromise';
 import { disposablePromiseTimer } from './promiseTimer';
 
-
 /**
  * Derives a new {@link AsyncGenerator} based on {@link iterable}, that automatically stops after the specified duration.
  */
 export async function* withMaxDuration<T>(
   iterable: AsyncIterable<T>,
-  opts: { maxDurationMs: number; abortCtrl: AbortController }
+  opts: { maxDurationMs: number; abortCtrl: AbortController },
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
-  
+
   using timer = disposablePromiseTimer(opts.maxDurationMs);
-  const timerPromise = timer.start().then(() => null)
+  const timerPromise = timer.start().then(() => null);
 
   // declaration outside the loop for garbage collection reasons
   let result: IteratorResult<T> | Awaited<typeof timerPromise>;
@@ -34,7 +33,6 @@ export async function* withMaxDuration<T>(
   }
 }
 
-
 /**
  * Derives a new {@link AsyncGenerator} based of {@link iterable}, that yields its first
  * {@link count} values. Then, a grace period of {@link gracePeriodMs} is started in which further
@@ -46,13 +44,13 @@ export async function* takeWithGrace<T>(
     count: number;
     gracePeriodMs: number;
     abortCtrl: AbortController;
-  }
+  },
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
 
   // declaration outside the loop for garbage collection reasons
-  let result: null | IteratorResult<T>
-  
+  let result: null | IteratorResult<T>;
+
   using timer = disposablePromiseTimer(opts.gracePeriodMs);
 
   let count = opts.count;
@@ -61,7 +59,10 @@ export async function* takeWithGrace<T>(
     // never resolves
   });
   while (true) {
-    result = await Unpromise.race([iterator.next(), timerPromise.then(() => null)]);
+    result = await Unpromise.race([
+      iterator.next(),
+      timerPromise.then(() => null),
+    ]);
     if (result === null) {
       // cancelled
       const res = await iterator.return?.();
@@ -72,9 +73,9 @@ export async function* takeWithGrace<T>(
     }
     yield result.value;
     if (--count === 0) {
-      timerPromise = timer.start()
+      timerPromise = timer.start();
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      timerPromise.then(() => opts.abortCtrl.abort())
+      timerPromise.then(() => opts.abortCtrl.abort());
     }
     // free up reference for garbage collection
     result = null;
