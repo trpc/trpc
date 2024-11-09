@@ -24,6 +24,5 @@ export default function rollup(): RollupOptions[] {
   return buildConfig({
     input,
     packageDir: fileURLToPath(new URL('.', import.meta.url)),
-    target: 'es2022', // node 18
   });
 }
