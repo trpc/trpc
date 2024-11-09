@@ -202,7 +202,7 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     })
       .catch((cause) => {
         opts.onError?.({ error: cause, path });
-        stream.controller.enqueue([
+        maybeEnqueue([
           idx,
           ASYNC_ITERABLE_STATUS_ERROR,
           opts.formatError?.({ error: cause, path }),
