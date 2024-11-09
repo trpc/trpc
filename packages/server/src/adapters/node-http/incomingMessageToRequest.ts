@@ -182,73 +182,66 @@ async function writeChunk(res: NodeHTTPResponse, chunk: Uint8Array) {
   }
 }
 
-interface WriteResponseOpts {
-  request: Request;
-  response: Response;
+/**
+ * @internal
+ */
+export async function writeBody(opts: {
   res: NodeHTTPResponse;
-}
-
-async function writeBody(
-  opts: WriteResponseOpts,
-  body: NonNullable<Response['body']>,
-) {
-  const { request, res } = opts;
-
-  const reader = body.getReader();
-  let streamEnded = false;
-  const onAbort = () => {
-    if (streamEnded) {
-      return;
-    }
-    streamEnded = true;
-    reader.cancel().catch(() => {
-      // todo: add error callback - this shouldn't happen
-    });
-  };
+  signal: AbortSignal;
+  body: NonNullable<Response['body']>;
+}) {
+  const { res } = opts;
 
   try {
-    request.signal.addEventListener('abort', onAbort, { once: true });
+    const writableStream = new WritableStream({
+      async write(chunk) {
+        await writeChunk(res, chunk);
+        res.flush?.();
+      },
+      abort() {
+        if (!res.headersSent) {
+          res.statusCode = 500;
+        }
+      },
+    });
 
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done || !res.writable) {
-        break;
-      }
-
-      await writeChunk(res, value);
-      res.flush?.();
-    }
-    streamEnded = true;
+    await opts.body.pipeTo(writableStream, {
+      signal: opts.signal,
+    });
   } catch (err) {
-    // Set error status if not already sent
-    if (!res.headersSent) {
-      res.statusCode = 500;
-    }
-    res.end();
     throw err;
-  } finally {
-    onAbort();
-    request.signal.removeEventListener('abort', onAbort);
   }
 }
 
+/**
+ * @internal
+ */
 export async function writeResponseToNodeHTTPResponse(opts: {
   request: Request;
   response: Response;
   res: NodeHTTPResponse;
 }) {
   const { response, res } = opts;
+
+  // Only override status code if it hasn't been explicitly set in a procedure etc
   if (res.statusCode === 200) {
     res.statusCode = response.status;
   }
   for (const [key, value] of response.headers) {
     res.setHeader(key, value);
   }
-
-  if (response.body) {
-    await writeBody(opts, response.body);
+  try {
+    if (response.body) {
+      await writeBody({
+        res,
+        signal: opts.request.signal,
+        body: response.body,
+      });
+    }
+  } finally {
+    if (!res.headersSent) {
+      res.statusCode = 500;
+    }
+    res.end();
   }
-
-  res.end();
 }

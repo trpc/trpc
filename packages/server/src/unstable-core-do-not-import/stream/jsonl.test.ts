@@ -1,5 +1,6 @@
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
+import { writeBody } from '../../adapters/node-http';
 import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
@@ -228,36 +229,35 @@ test('decode - bad data', async () => {
 
 function createServerForStream(
   stream: ReadableStream,
-  abortSignal: AbortController,
+  abortCtrl: AbortController,
   headers: Record<string, string> = {},
 ) {
   return createServer(async (req, res) => {
     req.once('aborted', () => {
-      abortSignal.abort();
+      abortCtrl.abort();
     });
     for (const [key, value] of Object.entries(headers)) {
       res.setHeader(key, value);
     }
 
-    const reader = stream.getReader();
-    abortSignal.signal.addEventListener(
-      'abort',
-      () => {
-        reader.cancel().catch(() => {
-          // noop
-        });
-      },
-      { once: true },
-    );
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
+    try {
+      await writeBody({
+        res,
+        signal: abortCtrl.signal,
+        body: stream,
+      });
+    } catch (err) {
+      if ((err as any).name === 'AbortError') {
+        return;
       }
 
-      res.write(value);
+      throw err;
+    } finally {
+      if (!res.headersSent) {
+        res.statusCode = 500;
+      }
+      res.end();
     }
-    res.end();
   });
 }
 test('e2e, create server', async () => {
