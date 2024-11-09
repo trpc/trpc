@@ -76,7 +76,7 @@ export async function* takeWithGrace<T>(
         return res?.value;
       }
       if (result.done) {
-        return result;
+        return result.value;
       }
       yield result.value;
       if (--count === 0) {
