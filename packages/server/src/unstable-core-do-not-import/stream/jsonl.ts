@@ -1,4 +1,3 @@
-import { Unpromise } from '../../vendor/unpromise';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
