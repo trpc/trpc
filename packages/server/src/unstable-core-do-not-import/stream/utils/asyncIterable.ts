@@ -15,11 +15,11 @@ export async function* withMaxDuration<T>(
     const timerPromise = timer.start().then(() => null);
 
     // declaration outside the loop for garbage collection reasons
-    let result: IteratorResult<T> | Awaited<typeof timerPromise>;
+    let result: null | IteratorResult<T>;
 
     while (true) {
       result = await Unpromise.race([iterator.next(), timerPromise]);
-      if (result == null) {
+      if (result === null) {
         // cancelled due to timeout
         opts.abortCtrl.abort();
         const res = await iterator.return?.();
@@ -56,44 +56,12 @@ export async function* takeWithGrace<T>(
 
   // declaration outside the loop for garbage collection reasons
   let result: null | IteratorResult<T>;
-<<<<<<< HEAD
-
-  using timer = disposablePromiseTimer(opts.gracePeriodMs);
-=======
->>>>>>> parent of 34587fb6f (use using)
 
   const timer = disposablePromiseTimer(opts.gracePeriodMs);
-
-<<<<<<< HEAD
-  let timerPromise = new Promise<void>(() => {
-    // never resolves
-  });
-  while (true) {
-    result = await Unpromise.race([
-      iterator.next(),
-      timerPromise.then(() => null),
-    ]);
-    if (result === null) {
-      // cancelled
-      const res = await iterator.return?.();
-      return res?.value;
-    }
-    if (result.done) {
-      return result;
-    }
-    yield result.value;
-    if (--count === 0) {
-      timerPromise = timer.start();
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      timerPromise.then(() => opts.abortCtrl.abort());
-    }
-    // free up reference for garbage collection
-    result = null;
-=======
   try {
     let count = opts.count;
 
-    let timerPromise = new Promise<void>(() => {
+    let timerPromise = new Promise<null>(() => {
       // never resolves
     });
 
@@ -112,7 +80,7 @@ export async function* takeWithGrace<T>(
       }
       yield result.value;
       if (--count === 0) {
-        timerPromise = timer.start();
+        timerPromise = timer.start().then(() => null);
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         timerPromise.then(() => opts.abortCtrl.abort());
       }
@@ -121,6 +89,5 @@ export async function* takeWithGrace<T>(
     }
   } finally {
     timer[Symbol.dispose]();
->>>>>>> parent of 34587fb6f (use using)
   }
 }
