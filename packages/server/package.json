@@ -150,10 +150,10 @@
     "https://trpc.io/sponsor"
   ],
   "optionalDependencies": {
-    "next": "*",
-    "ws": "*",
-    "fastify": "*",
-    "express": "*",
-    "@types/aws-lambda": "*"
+    "next": "npm:*",
+    "ws": "npm:*",
+    "fastify": "npm:*",
+    "express": "npm:*",
+    "@types/aws-lambda": "npm:*"
   }
 }
