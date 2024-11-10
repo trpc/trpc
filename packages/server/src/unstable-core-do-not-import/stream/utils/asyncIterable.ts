@@ -1,5 +1,8 @@
 import { Unpromise } from '../../../vendor/unpromise';
-import { disposablePromiseTimer } from './promiseTimer';
+import {
+  disposablePromiseTimer,
+  disposablePromiseTimerResult,
+} from './disposablePromiseTimer';
 
 /**
  * Derives a new {@link AsyncGenerator} based on {@link iterable}, that automatically stops after the specified duration.
@@ -12,14 +15,14 @@ export async function* withMaxDuration<T>(
 
   const timer = disposablePromiseTimer(opts.maxDurationMs);
   try {
-    const timerPromise = timer.start().then(() => null);
+    const timerPromise = timer.start();
 
     // declaration outside the loop for garbage collection reasons
-    let result: null | IteratorResult<T>;
+    let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
 
     while (true) {
       result = await Unpromise.race([iterator.next(), timerPromise]);
-      if (result === null) {
+      if (result === disposablePromiseTimerResult) {
         // cancelled due to timeout
         opts.abortCtrl.abort();
         const res = await iterator.return?.();
@@ -55,22 +58,19 @@ export async function* takeWithGrace<T>(
   const iterator = iterable[Symbol.asyncIterator]();
 
   // declaration outside the loop for garbage collection reasons
-  let result: null | IteratorResult<T>;
+  let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
 
   const timer = disposablePromiseTimer(opts.gracePeriodMs);
   try {
     let count = opts.count;
 
-    let timerPromise = new Promise<null>(() => {
+    let timerPromise = new Promise<typeof disposablePromiseTimerResult>(() => {
       // never resolves
     });
 
     while (true) {
-      result = await Unpromise.race([
-        iterator.next(),
-        timerPromise.then(() => null),
-      ]);
-      if (result === null) {
+      result = await Unpromise.race([iterator.next(), timerPromise]);
+      if (result === disposablePromiseTimerResult) {
         // cancelled
         const res = await iterator.return?.();
         return res?.value;
@@ -80,7 +80,7 @@ export async function* takeWithGrace<T>(
       }
       yield result.value;
       if (--count === 0) {
-        timerPromise = timer.start().then(() => null);
+        timerPromise = timer.start();
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         timerPromise.then(() => opts.abortCtrl.abort());
       }

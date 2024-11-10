@@ -1,6 +1,7 @@
 // @ts-expect-error polyfill
 Symbol.dispose ??= Symbol();
 
+export const disposablePromiseTimerResult = Symbol();
 export function disposablePromiseTimer(ms: number) {
   let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -10,9 +11,11 @@ export function disposablePromiseTimer(ms: number) {
         throw new Error('Timer already started');
       }
 
-      const promise = new Promise<void>((resolve) => {
-        timer = setTimeout(resolve, ms);
-      });
+      const promise = new Promise<typeof disposablePromiseTimerResult>(
+        (resolve) => {
+          timer = setTimeout(() => resolve(disposablePromiseTimerResult), ms);
+        },
+      );
       return promise;
     },
     [Symbol.dispose]: () => {
