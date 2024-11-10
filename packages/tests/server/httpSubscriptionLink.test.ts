@@ -780,145 +780,141 @@ describe('timeouts', async () => {
     reconnectAfterInactivityMs: number;
   }
   const getCtx = (ctxOpts: CtxOpts) => {
-    return konn()
-      .beforeEach(() => {
-        const results: number[] = [];
+    const results: number[] = [];
 
-        vi.useFakeTimers();
+    vi.useFakeTimers();
 
-        const onConnection = vi.fn<() => void>();
+    const onConnection = vi.fn<() => void>();
 
-        const t = initTRPC.create({
-          transformer: superjson,
-        });
+    const t = initTRPC.create({
+      transformer: superjson,
+    });
 
-        let deferred: Deferred<void> = createDeferred();
+    let deferred: Deferred<void> = createDeferred();
 
-        const router = t.router({
-          infinite: t.procedure
-            .input(
-              z
-                .object({
-                  lastEventId: z.coerce.number().min(0).optional(),
-                })
-                .optional(),
-            )
-            .subscription(async function* (opts) {
-              onConnection();
-              let idx = opts.input?.lastEventId ?? 0;
-              while (true) {
-                idx++;
-                await deferred.promise;
-                deferred = createDeferred();
-                yield tracked(String(idx), idx);
+    const router = t.router({
+      infinite: t.procedure
+        .input(
+          z
+            .object({
+              lastEventId: z.coerce.number().min(0).optional(),
+            })
+            .optional(),
+        )
+        .subscription(async function* (opts) {
+          onConnection();
+          let idx = opts.input?.lastEventId ?? 0;
+          while (true) {
+            idx++;
+            await deferred.promise;
+            deferred = createDeferred();
+            yield tracked(String(idx), idx);
+          }
+        }),
+    });
+
+    const operations: OperationResultEnvelope<
+      unknown,
+      TRPCClientError<typeof router>
+    >[] = [];
+
+    const linkSpy: TRPCLink<typeof router> = () => {
+      // here we just got initialized in the app - this happens once per app
+      // useful for storing cache for instance
+      return ({ next, op }) => {
+        // this is when passing the result to the next link
+        // each link needs to return an observable which propagates results
+        return observable((observer) => {
+          const unsubscribe = next(op).subscribe({
+            next(envelope) {
+              if (
+                !envelope.result.type ||
+                envelope.result.type === 'data'
+              ) {
+                results.push(envelope.result.data as number);
               }
-            }),
+
+              const op = { ...envelope };
+              if (op.context?.['eventSource']) {
+                op.context['eventSource'] = '[redacted]';
+              }
+              operations.push(envelope);
+              observer.next(envelope);
+            },
+            error: observer.error,
+          });
+          return unsubscribe;
         });
-
-        const operations: OperationResultEnvelope<
-          unknown,
-          TRPCClientError<typeof router>
-        >[] = [];
-
-        const linkSpy: TRPCLink<typeof router> = () => {
-          // here we just got initialized in the app - this happens once per app
-          // useful for storing cache for instance
-          return ({ next, op }) => {
-            // this is when passing the result to the next link
-            // each link needs to return an observable which propagates results
-            return observable((observer) => {
-              const unsubscribe = next(op).subscribe({
-                next(envelope) {
-                  if (
-                    !envelope.result.type ||
-                    envelope.result.type === 'data'
-                  ) {
-                    results.push(envelope.result.data as number);
-                  }
-
-                  const op = { ...envelope };
-                  if (op.context?.['eventSource']) {
-                    op.context['eventSource'] = '[redacted]';
-                  }
-                  operations.push(envelope);
-                  observer.next(envelope);
-                },
-                error: observer.error,
-              });
-              return unsubscribe;
-            });
-          };
-        };
-        const opts = routerToServerAndClientNew(router, {
-          server: {},
-          client(opts) {
-            return {
-              links: [
-                linkSpy,
-                unstable_httpSubscriptionLink({
-                  url: opts.httpUrl,
-                  transformer: superjson,
-                  reconnectAfterInactivityMs:
-                    ctxOpts.reconnectAfterInactivityMs,
-                }),
-              ],
-            };
-          },
-        });
+      };
+    };
+    const opts = routerToServerAndClientNew(router, {
+      server: {},
+      client(opts) {
         return {
-          ...opts,
-          deferred: () => deferred,
-          results: () => results,
-          operations: () => operations,
-          onConnection,
+          links: [
+            linkSpy,
+            unstable_httpSubscriptionLink({
+              url: opts.httpUrl,
+              transformer: superjson,
+              reconnectAfterInactivityMs:
+                ctxOpts.reconnectAfterInactivityMs,
+            }),
+          ],
         };
-      })
-      .afterEach(async (opts) => {
+      },
+    });
+    return {
+      ...opts,
+      deferred: () => deferred,
+      results: () => results,
+      operations: () => operations,
+      onConnection,
+      [Symbol.asyncDispose]: async () => {
         vi.useRealTimers();
-        await opts?.close?.();
-      })
-      .done();
+        await opts.close?.();
+
+      }
+    }
   };
 
-  describe.only('timeout after activity', async () => {
+  test('works', async () => {
+
     const opts = {
       reconnectAfterInactivityMs: 1_000,
     } as const satisfies CtxOpts;
 
-    const ctx = getCtx(opts);
-    test('works', async () => {
-      const sub = ctx.client.infinite.subscribe(undefined, {});
+    await using ctx = getCtx(opts);
+    const sub = ctx.client.infinite.subscribe(undefined, {});
 
-      ctx.deferred().resolve();
+    ctx.deferred().resolve();
 
-      await vi.waitFor(async () => {
-        expect(ctx.results()).toHaveLength(1);
-      });
-
-      await vi.advanceTimersByTimeAsync(opts.reconnectAfterInactivityMs + 100);
-
-      await vi.waitFor(async () => {
-        expect(ctx.onConnection).toHaveBeenCalledTimes(2);
-      });
-
-      ctx.deferred().resolve();
-
-      await vi.waitFor(async () => {
-        expect(ctx.results()).toEqual([1, 2]);
-      });
-
-      const connectedOpts = ctx
-        .operations()
-        .map((op) => op.result)
-        .filter((op) => op.type === 'state' && op.state === 'connecting');
-
-      expect(connectedOpts).toHaveLength(2);
-
-      const last = connectedOpts.at(-1)!;
-      expect(last.error).not.toBeFalsy();
-      expect(last.error).toMatchInlineSnapshot(`[TRPCClientError: Timeout of 1000ms reached while waiting for a response]`);
-
-      sub.unsubscribe();
+    await vi.waitFor(async () => {
+      expect(ctx.results()).toHaveLength(1);
     });
+
+    await vi.advanceTimersByTimeAsync(opts.reconnectAfterInactivityMs + 100);
+
+    await vi.waitFor(async () => {
+      expect(ctx.onConnection).toHaveBeenCalledTimes(2);
+    });
+
+    ctx.deferred().resolve();
+
+    await vi.waitFor(async () => {
+      expect(ctx.results()).toEqual([1, 2]);
+    });
+
+    const connectedOpts = ctx
+      .operations()
+      .map((op) => op.result)
+      .filter((op) => op.type === 'state' && op.state === 'connecting');
+
+    expect(connectedOpts).toHaveLength(2);
+
+    const last = connectedOpts.at(-1)!;
+    expect(last.error).not.toBeFalsy();
+    expect(last.error).toMatchInlineSnapshot(`[TRPCClientError: Timeout of 1000ms reached while waiting for a response]`);
+
+    sub.unsubscribe();
   });
 });
