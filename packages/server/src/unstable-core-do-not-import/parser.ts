@@ -123,11 +123,20 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     return async (value) => {
       const result = await parser['~standard'].validate(value);
       if (result.issues) {
-        throw new Error('Schema Error:', { cause: result.issues });
+        throw new SchemaError(result.issues);
       }
       return result.value;
     };
   }
 
   throw new Error('Could not find a validator fn');
+}
+
+class SchemaError extends Error {
+  public readonly issues: ReadonlyArray<v1.StandardIssue>;
+  constructor(issues: ReadonlyArray<v1.StandardIssue>) {
+    super(issues[0]?.message);
+    this.name = 'SchemaError';
+    this.issues = issues;
+  }
 }
