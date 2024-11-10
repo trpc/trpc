@@ -916,7 +916,9 @@ describe('timeouts', async () => {
 
       const last = connectedOpts.at(-1)!;
       expect(last.error).not.toBeFalsy();
-      expect(last.error).toMatchInlineSnapshot(`[TRPCClientError: Timeout of 1000ms reached while waiting for a response]`);
+      expect(last.error).toMatchInlineSnapshot(
+        `[TRPCClientError: Timeout of 1000ms reached while waiting for a response]`,
+      );
 
       sub.unsubscribe();
     });
