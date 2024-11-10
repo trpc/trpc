@@ -14,7 +14,11 @@ export interface RefCountMap<TKey, TValue>
 // Set type that includes ref counting capabilities
 export interface RefCountSet<TValue> extends Set<TValue>, RefCount {}
 
-// Function overloads for wrapping Maps and Sets with ref counting
+/**
+ * Adds reference counting capabilities to a Map or Set collection.
+ * The collection can be activated, after which it will trigger a drain callback when emptied.
+ * Once drained, the collection cannot be modified further.
+ */
 export function withRefCount<TKey, TValue>(
   map: Map<TKey, TValue>,
   onDrain: OnDrain,
@@ -30,7 +34,7 @@ export function withRefCount(
   const obj = _obj as any;
 
   // Track whether the collection has been drained
-  const drained = false;
+  let drained = false;
   // Track whether the collection has been activated
   let active = false;
 
@@ -38,6 +42,7 @@ export function withRefCount(
   const checkDrain = () => {
     if (!drained && active && obj.size === 0) {
       onDrain();
+      drained = true;
     }
   };
 
