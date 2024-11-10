@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": "^20.10.0",
+    "node": "^22.11.0",
     "pnpm": "^9.6.0"
   },
   "packageManager": "pnpm@9.12.2",
