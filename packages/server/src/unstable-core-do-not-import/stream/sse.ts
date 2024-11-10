@@ -215,6 +215,10 @@ export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   signal: AbortSignal;
   deserialize?: Deserialize;
   EventSource: TConfig['EventSource'];
+  /**
+   * Reconnect after inactivity in milliseconds
+   */
+  reconnectAfterInactivityMs?: number;
 }
 
 interface ConsumerConfig {

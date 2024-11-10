@@ -771,11 +771,11 @@ describe('transformers / different serialize-deserialize', async () => {
   });
 });
 
-describe.only('timeouts', async () => {
+describe('timeouts', async () => {
   interface CtxOpts {
     reconnectAfterInactivityMs: number;
   }
-  const getCtx = (opts: CtxOpts) => {
+  const getCtx = (ctxOpts: CtxOpts) => {
     return konn()
       .beforeEach(() => {
         const results: number[] = [];
@@ -839,7 +839,8 @@ describe.only('timeouts', async () => {
                 unstable_httpSubscriptionLink({
                   url: opts.httpUrl,
                   transformer: superjson,
-                  reconnectAfterInactivityMs: opts.reconnectAfterInactivityMs,
+                  reconnectAfterInactivityMs:
+                    ctxOpts.reconnectAfterInactivityMs,
                 }),
               ],
             };
@@ -859,7 +860,7 @@ describe.only('timeouts', async () => {
       .done();
   };
 
-  describe('timeout after activity', async () => {
+  describe.only('timeout after activity', async () => {
     const opts = {
       reconnectAfterInactivityMs: 1_000,
     } as const satisfies CtxOpts;
@@ -878,6 +879,12 @@ describe.only('timeouts', async () => {
 
       await vi.waitFor(async () => {
         expect(ctx.onConnection).toHaveBeenCalledTimes(2);
+      });
+
+      ctx.deferred().resolve();
+
+      await vi.waitFor(async () => {
+        expect(ctx.results()).toEqual([1, 2]);
       });
 
       sub.unsubscribe();
