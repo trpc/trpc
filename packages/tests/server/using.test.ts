@@ -10,7 +10,7 @@ test('should handle async disposable resources', async () => {
     value: 42,
   };
 
-  await using value = resource;
-  expect(disposed).toBe(true);
-  expect(value).toBe(42);
+  await using thing = resource;
+  expect(disposed).toBe(false);
+  expect(thing.value).toBe(42);
 });
