@@ -477,7 +477,7 @@ test('e2e, client aborts request halfway through - through breaking async iterab
   });
 
   expect(yieldCalls.mock.calls.length).toBeGreaterThanOrEqual(3);
-  expect(yieldCalls.mock.calls.length).toBeLessThanOrEqual(10);
+  expect(yieldCalls.mock.calls.length).toBeLessThan(10);
 
   const errors = onConsumerErrorSpy.mock.calls.map(
     (it) => (it[0].error as Error).message,
