@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^8.57.0",
-    "@playwright/test": "^1.26.1",
+    "@playwright/test": "^1.48.2",
     "@types/node": "^22.9.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
