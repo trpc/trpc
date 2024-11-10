@@ -308,16 +308,14 @@ The server can be configured to send periodic ping messages to keep the connecti
 import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create({
-  experimental: {
-    sseSubscriptions: {
-      // Maximum duration of a single SSE connection in milliseconds
-      maxDurationMs: 1000,
-      ping: {
-        // Enable periodic ping messages to keep connection alive
-        enabled: true,
-        // Send ping message every 200ms
-        intervalMs: 200,
-      },
+  sse: {
+    // Maximum duration of a single SSE connection in milliseconds
+    maxDurationMs: 1000,
+    ping: {
+      // Enable periodic ping messages to keep connection alive
+      enabled: true,
+      // Send ping message every 200ms
+      intervalMs: 200,
     },
   },
 });

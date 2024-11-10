@@ -779,8 +779,8 @@ describe('timeouts', async () => {
   interface CtxOpts {
     reconnectAfterInactivityMs: number;
     subscriptionOptions?: NonNullable<
-      RootConfig<any>['experimental']
-    >['sseSubscriptions'];
+      RootConfig<any>['sse']
+    >
   }
   const getCtx = (ctxOpts: CtxOpts) => {
     const results: number[] = [];
@@ -791,9 +791,7 @@ describe('timeouts', async () => {
 
     const t = initTRPC.create({
       transformer: superjson,
-      experimental: {
-        sseSubscriptions: ctxOpts.subscriptionOptions,
-      },
+      sse: ctxOpts.subscriptionOptions,
     });
 
     let deferred: Deferred<void> = createDeferred();

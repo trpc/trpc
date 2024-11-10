@@ -24,7 +24,7 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
-#### Client-side timeout configuration
+#### HTTP Subscription Link improvements (non-breaking)
 
 Added support for detecting and recovering from stale connections:
 
@@ -33,6 +33,20 @@ unstable_httpSubscriptionLink({
   url: '/api/trpc',
   // Reconnect if no messages or pings are received for 30 seconds
   reconnectAfterInactivityMs: 30_000,
+});
+```
+
+On the server, you can configure a ping interval to keep the connection alive:
+
+```ts
+export const t = initTRPC.create({
+  // ...
+  sse: {
+    ping: {
+      enabled: true,
+      intervalMs: 15_000,
+    },
+  },
 });
 ```
 
