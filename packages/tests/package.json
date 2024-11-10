@@ -25,7 +25,7 @@
     "@trpc/next": "10.45.1",
     "@trpc/react-query": "10.45.1",
     "@trpc/server": "^10.45.1",
-    "@types/node": "^20.17.3",
+    "@types/node": "22.11.0",
     "abort-controller": "^3.0.0",
     "arktype": "1.0.14-alpha",
     "arktype2": "npm:arktype@2.0.0-rc.23",
