@@ -34,8 +34,13 @@ test('e2e, server-sent events (SSE)', async () => {
   type Data = inferAsyncIterableYield<ReturnType<typeof data>>;
 
   const written: string[] = [];
+
+  const onSocketClose = vi.fn();
   const server = createServer(async (req, res) => {
     const url = new URL(`http://${req.headers.host}${req.url}`);
+    req.socket.on('close', () => {
+      onSocketClose();
+    });
 
     const stringOrNull = (v: unknown) => {
       if (typeof v === 'string') {
@@ -92,53 +97,59 @@ test('e2e, server-sent events (SSE)', async () => {
   const ITERATIONS = 10;
   const values: number[] = [];
   const allEvents: inferAsyncIterableYield<typeof iterable>[] = [];
+  // Iterate through the SSE events from the server
   for await (const value of iterable) {
+    // Keep track of all events received
     allEvents.push(value);
+    // Store reference to current EventSource instance
     es = value.eventSource;
+
+    // If we receive a serialized error, throw it
     if (value.type === 'serialized-error') {
       throw value.error;
     }
+
+    // Handle data events
     if (value.type === 'data') {
+      // Store the actual data value
       values.push(value.data.data);
+
+      // After receiving ITERATIONS number of values...
       if (values.length === ITERATIONS) {
-        break;
+        // Simulate the server crashed
+        const release = suppressLogs();
+
+        await Promise.all([
+          // Restart the server
+          await server.restart(),
+          // Wait for the EventSource to detect the error and reconnect
+          await new Promise<void>((resolve) => {
+            es!.addEventListener(
+              'error',
+              () => {
+                resolve();
+              },
+              { once: true },
+            );
+          }),
+        ]);
+
+        // Restore console logs
+        release();
       }
-    }
-  }
-  expect(values).toEqual(range(1, ITERATIONS + 1));
 
-  const release = suppressLogs();
-  await Promise.all([
-    await server.restart(),
-    // wait for an error, the EventSource will reconnect
-    await new Promise<void>((resolve) => {
-      es!.addEventListener('error', () => {
-        resolve();
-      });
-    }),
-  ]);
-  release();
-
-  for await (const value of iterable) {
-    allEvents.push(value);
-    value.eventSource;
-    es = value.eventSource;
-    if (value.type === 'serialized-error') {
-      throw value.error;
-    }
-    if (value.type === 'data') {
-      values.push(value.data.data);
+      // Break after receiving double the ITERATIONS
       if (values.length === ITERATIONS * 2) {
         break;
       }
     }
   }
 
-  ac.abort();
-  await server.close();
-
-  // console.debug('written', written.join(''));
   expect(values).toEqual(range(1, ITERATIONS * 2 + 1));
+
+  await vi.waitFor(() => expect(onSocketClose).toHaveBeenCalledTimes(2));
+
+  await server.close();
 
   expect(allEvents.filter((it) => it.type === 'connecting')).toHaveLength(2);
 });

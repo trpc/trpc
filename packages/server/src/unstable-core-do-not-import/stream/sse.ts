@@ -277,7 +277,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
   let _es: InstanceType<TConfig['EventSource']> | null = null;
 
-  const getStream = () =>
+  const createStream = () =>
     new ReadableStream<ConsumerStreamResult<TConfig>>({
       async start(controller) {
         const [url, init] = await Promise.all([opts.url(), opts.init()]);
@@ -356,23 +356,37 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
         _es?.close();
       },
     });
-  const stream = getStream();
+
+  const getNewStreamAndReader = () => {
+    const stream = createStream();
+    const reader = stream.getReader();
+
+    return {
+      reader,
+      cancel: () => {
+        reader.releaseLock();
+        return stream.cancel();
+      },
+    };
+  };
   return {
     [Symbol.asyncIterator]() {
-      let reader = stream.getReader();
+      let stream = getNewStreamAndReader();
+
       const iterator: AsyncIterator<ConsumerStreamResult<TConfig>> = {
         async next() {
-          let promise = reader.read();
+          let promise = stream.reader.read();
 
           if (opts.reconnectAfterInactivityMs) {
             promise = withTimeout({
               promise,
               timeoutMs: opts.reconnectAfterInactivityMs,
               onTimeout: async () => {
-                // Clean up old reader and create new one
-                await reader.cancel();
-                reader.releaseLock();
-                reader = getStream().getReader();
+                // Close and release old reader
+                await stream.cancel();
+
+                // Create new reader
+                stream = getNewStreamAndReader();
 
                 return {
                   value: {
@@ -388,6 +402,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
           const result = await promise;
 
+          // console.debug('result', result, 'done', result.done);
           if (result.done) {
             return {
               value: result.value,
@@ -400,7 +415,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
           };
         },
         async return() {
-          reader.releaseLock();
+          await stream.cancel();
           return {
             value: undefined,
             done: true,
