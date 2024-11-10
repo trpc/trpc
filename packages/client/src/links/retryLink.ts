@@ -3,9 +3,9 @@
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
-import { inputWithTrackedEventId } from '../../internals/inputWithTrackedEventId';
-import type { TRPCClientError } from '../../TRPCClientError';
-import type { Operation, TRPCLink } from '../types';
+import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
+import type { TRPCClientError } from '../TRPCClientError';
+import type { Operation, TRPCLink } from './types';
 
 interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
   /**
