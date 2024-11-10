@@ -28,7 +28,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 20.x
+          node-version: 22.x
           cache: 'pnpm' # You can active this cache when your repo has a lockfile
 
       - name: Install deps (with cache)
@@ -87,7 +87,7 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 20.x
+          node-version: 22.x
           cache: 'pnpm' # You can active this cache when your repo has a lockfile
 
       - name: Install deps (with cache)
