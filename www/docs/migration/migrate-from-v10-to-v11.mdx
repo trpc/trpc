@@ -24,6 +24,20 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+#### Client-side timeout configuration
+
+Added support for detecting and recovering from stale connections:
+
+```ts
+unstable_httpSubscriptionLink({
+  url: '/api/trpc',
+  // Reconnect if no messages or pings are received for 30 seconds
+  reconnectAfterInactivityMs: 30_000,
+});
+```
+
+See the [httpSubscriptionLink docs](../client/links/httpSubscriptionLink.md#timeout) for more details on these features.
+
 ### Introduction of `retryLink` (non-breaking)
 
 See [retryLink](../client/links/retryLink.md) - allows you to retry failed operations
@@ -260,3 +274,7 @@ The proxy names were due to v9 using the `AbcXyz` names, these have been removed
 ### `interop`-mode has been removed (rarely breaking)
 
 We have removed the `interop`-mode from tRPC. This was a mode that allowed you to have an easy transition period from v9 to v10. This mode was never meant to be supported long-term and we have now removed it.
+
+### HTTP Subscription Link improvements (non-breaking)
+
+The `httpSubscriptionLink` now includes several new features for better connection management:
