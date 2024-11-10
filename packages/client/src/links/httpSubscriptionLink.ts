@@ -220,6 +220,15 @@ export function unstable_httpSubscriptionLink<
                 });
                 break;
               }
+              case 'timeout': {
+                connectionState.next({
+                  type: 'state',
+                  state: 'connecting',
+                  error: new TRPCClientError(
+                    `Timeout of ${opts.reconnectAfterInactivityMs}ms reached while waiting for a response`,
+                  ),
+                });
+              }
             }
           }
 

@@ -5,7 +5,11 @@ import {
   suppressLogsUntil,
 } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
-import type { TRPCClientError, TRPCLink } from '@trpc/client';
+import type {
+  OperationResultEnvelope,
+  TRPCClientError,
+  TRPCLink,
+} from '@trpc/client';
 import {
   createTRPCClient,
   splitLink,
@@ -779,6 +783,7 @@ describe('timeouts', async () => {
     return konn()
       .beforeEach(() => {
         const results: number[] = [];
+
         vi.useFakeTimers();
 
         const onConnection = vi.fn<() => void>();
@@ -800,15 +805,20 @@ describe('timeouts', async () => {
             )
             .subscription(async function* (opts) {
               onConnection();
-              let idx = opts.input?.lastEventId ?? 1;
+              let idx = opts.input?.lastEventId ?? 0;
               while (true) {
+                idx++;
                 await deferred.promise;
                 deferred = createDeferred();
                 yield tracked(String(idx), idx);
-                idx++;
               }
             }),
         });
+
+        const operations: OperationResultEnvelope<
+          unknown,
+          TRPCClientError<typeof router>
+        >[] = [];
 
         const linkSpy: TRPCLink<typeof router> = () => {
           // here we just got initialized in the app - this happens once per app
@@ -818,11 +828,20 @@ describe('timeouts', async () => {
             // each link needs to return an observable which propagates results
             return observable((observer) => {
               const unsubscribe = next(op).subscribe({
-                next(value) {
-                  if (!value.result.type || value.result.type === 'data') {
-                    results.push(value.result.data as number);
+                next(envelope) {
+                  if (
+                    !envelope.result.type ||
+                    envelope.result.type === 'data'
+                  ) {
+                    results.push(envelope.result.data as number);
                   }
-                  observer.next(value);
+
+                  const op = { ...envelope };
+                  if (op.context?.['eventSource']) {
+                    op.context['eventSource'] = '[redacted]';
+                  }
+                  operations.push(envelope);
+                  observer.next(envelope);
                 },
                 error: observer.error,
               });
@@ -850,6 +869,7 @@ describe('timeouts', async () => {
           ...opts,
           deferred: () => deferred,
           results: () => results,
+          operations: () => operations,
           onConnection,
         };
       })
@@ -886,6 +906,17 @@ describe('timeouts', async () => {
       await vi.waitFor(async () => {
         expect(ctx.results()).toEqual([1, 2]);
       });
+
+      const connectedOpts = ctx
+        .operations()
+        .map((op) => op.result)
+        .filter((op) => op.type === 'state' && op.state === 'connecting');
+
+      expect(connectedOpts).toHaveLength(2);
+
+      const last = connectedOpts.at(-1)!;
+      expect(last.error).not.toBeFalsy();
+      expect(last.error).toMatchInlineSnapshot(`[TRPCClientError: Timeout of 1000ms reached while waiting for a response]`);
 
       sub.unsubscribe();
     });

@@ -1,3 +1,4 @@
+import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import type { MaybePromise } from '../types';
 import { identity, run } from '../utils';
@@ -201,11 +202,17 @@ interface ConsumerStreamResultConnecting<TConfig extends ConsumerConfig>
   event: EventSourceLike.EventOf<TConfig['EventSource']> | null;
 }
 
+interface ConsumerStreamResultTimeout<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
+  type: 'timeout';
+}
+
 type ConsumerStreamResult<TConfig extends ConsumerConfig> =
   | ConsumerStreamResultData<TConfig>
   | ConsumerStreamResultError<TConfig>
   | ConsumerStreamResultOpened<TConfig>
-  | ConsumerStreamResultConnecting<TConfig>;
+  | ConsumerStreamResultConnecting<TConfig>
+  | ConsumerStreamResultTimeout<TConfig>;
 
 export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   url: () => MaybePromise<string>;
@@ -239,94 +246,140 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
   let _es: InstanceType<TConfig['EventSource']> | null = null;
 
-  const stream = new ReadableStream<ConsumerStreamResult<TConfig>>({
-    async start(controller) {
-      const [url, init] = await Promise.all([opts.url(), opts.init()]);
-      const eventSource = (_es = new opts.EventSource(
-        url,
-        init,
-      ) as InstanceType<TConfig['EventSource']>);
-
-      controller.enqueue({
-        type: 'connecting',
-        eventSource: _es,
-        event: null,
-      });
-      eventSource.addEventListener('open', () => {
-        controller.enqueue({
-          type: 'opened',
-          eventSource,
-        });
-      });
-
-      eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (_msg) => {
-        const msg = _msg as EventSourceLike.MessageEvent;
+  const stream = () =>
+    new ReadableStream<ConsumerStreamResult<TConfig>>({
+      async start(controller) {
+        const [url, init] = await Promise.all([opts.url(), opts.init()]);
+        const eventSource = (_es = new opts.EventSource(
+          url,
+          init,
+        ) as InstanceType<TConfig['EventSource']>);
 
         controller.enqueue({
-          type: 'serialized-error',
-          error: deserialize(JSON.parse(msg.data)),
-          eventSource,
+          type: 'connecting',
+          eventSource: _es,
+          event: null,
         });
-      });
-      eventSource.addEventListener('error', (event) => {
-        if (eventSource.readyState === EventSource.CLOSED) {
-          controller.error(event);
-        } else {
+        eventSource.addEventListener('open', () => {
           controller.enqueue({
-            type: 'connecting',
+            type: 'opened',
             eventSource,
-            event,
           });
-        }
-      });
-      eventSource.addEventListener('message', (_msg) => {
-        const msg = _msg as EventSourceLike.MessageEvent;
-
-        const chunk = deserialize(JSON.parse(msg.data));
-
-        const def: SSEvent = {
-          data: chunk,
-        };
-        if (msg.lastEventId) {
-          def.id = msg.lastEventId;
-        }
-        controller.enqueue({
-          type: 'data',
-          data: def as inferTrackedOutput<TConfig['data']>,
-          eventSource,
         });
-      });
 
-      const onAbort = () => {
-        controller.close();
-        eventSource.close();
-      };
-      if (signal.aborted) {
-        onAbort();
-      } else {
-        signal.addEventListener('abort', onAbort);
-      }
-    },
-    cancel() {
-      _es?.close();
-    },
-  });
+        eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (_msg) => {
+          const msg = _msg as EventSourceLike.MessageEvent;
+
+          controller.enqueue({
+            type: 'serialized-error',
+            error: deserialize(JSON.parse(msg.data)),
+            eventSource,
+          });
+        });
+        eventSource.addEventListener('error', (event) => {
+          if (eventSource.readyState === EventSource.CLOSED) {
+            controller.error(event);
+          } else {
+            controller.enqueue({
+              type: 'connecting',
+              eventSource,
+              event,
+            });
+          }
+        });
+        eventSource.addEventListener('message', (_msg) => {
+          const msg = _msg as EventSourceLike.MessageEvent;
+
+          const chunk = deserialize(JSON.parse(msg.data));
+
+          const def: SSEvent = {
+            data: chunk,
+          };
+          if (msg.lastEventId) {
+            def.id = msg.lastEventId;
+          }
+          controller.enqueue({
+            type: 'data',
+            data: def as inferTrackedOutput<TConfig['data']>,
+            eventSource,
+          });
+        });
+
+        const onAbort = () => {
+          controller.close();
+          eventSource.close();
+        };
+        if (signal.aborted) {
+          onAbort();
+        } else {
+          signal.addEventListener('abort', onAbort);
+        }
+      },
+      cancel() {
+        _es?.close();
+      },
+    });
   return {
     [Symbol.asyncIterator]() {
-      const reader = stream.getReader();
+      let reader = stream().getReader();
 
       const iterator: AsyncIterator<ConsumerStreamResult<TConfig>> = {
         async next() {
-          const value = await reader.read();
+          let result: ReadableStreamReadResult<ConsumerStreamResult<TConfig>>;
+          if (opts.reconnectAfterInactivityMs) {
+            // Track timeout for inactivity check
+            let timeout: ReturnType<typeof setTimeout>;
 
-          if (value.done) {
+            // Create a promise that resolves after the inactivity timeout
+            const timeoutPromise = new Promise<null>((resolve) => {
+              timeout = setTimeout(() => {
+                resolve(null);
+              }, opts.reconnectAfterInactivityMs);
+            });
+
+            try {
+              // Race between reading the next chunk and timing out
+              const timeoutCheck = await Unpromise.race([
+                reader.read(),
+                timeoutPromise,
+              ]);
+
+              if (timeoutCheck !== null) {
+                // Got data before timeout, use it
+                result = timeoutCheck;
+              } else {
+                // Timed out waiting for data, trigger reconnect
+                result = {
+                  done: false,
+                  value: {
+                    type: 'timeout',
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    eventSource: _es!,
+                  },
+                };
+
+                // Clean up old reader and create new one
+                await reader.cancel();
+                reader.releaseLock();
+                reader = stream().getReader();
+              }
+            } finally {
+              // Always clean up timeout
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              clearTimeout(timeout!);
+            }
+          } else {
+            result = await reader.read();
+          }
+
+          if (result.done) {
             return {
-              value: undefined,
+              value: result.value,
               done: true,
             };
           }
           return {
-            value: value.value,
+            value: result.value,
             done: false,
           };
         },
