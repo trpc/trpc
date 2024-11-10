@@ -66,31 +66,31 @@ export async function writeResponseBody(opts: {
 export async function writeResponse(opts: {
   request: Request;
   response: Response;
-  res: NodeHTTPResponse;
+  rawResponse: NodeHTTPResponse;
 }) {
-  const { response, res } = opts;
+  const { response, rawResponse } = opts;
 
   // Only override status code if it hasn't been explicitly set in a procedure etc
-  if (res.statusCode === 200) {
-    res.statusCode = response.status;
+  if (rawResponse.statusCode === 200) {
+    rawResponse.statusCode = response.status;
   }
   for (const [key, value] of response.headers) {
-    res.setHeader(key, value);
+    rawResponse.setHeader(key, value);
   }
   try {
     if (response.body) {
       await writeResponseBody({
-        res,
+        res: rawResponse,
         signal: opts.request.signal,
         body: response.body,
       });
     }
   } catch (err) {
-    if (!res.headersSent) {
-      res.statusCode = 500;
+    if (!rawResponse.headersSent) {
+      rawResponse.statusCode = 500;
     }
     throw err;
   } finally {
-    res.end();
+    rawResponse.end();
   }
 }

@@ -113,7 +113,7 @@ export async function nodeHTTPRequestHandler<
         await writeResponse({
           request,
           response,
-          res: opts.res,
+          rawResponse: opts.res,
         });
       }).catch(internal_exceptionHandler(opts));
     });
