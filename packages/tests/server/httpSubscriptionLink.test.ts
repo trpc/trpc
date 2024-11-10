@@ -778,9 +778,7 @@ describe('transformers / different serialize-deserialize', async () => {
 describe('timeouts', async () => {
   interface CtxOpts {
     reconnectAfterInactivityMs: number;
-    subscriptionOptions?: NonNullable<
-      RootConfig<any>['sse']
-    >
+    serverOptions?: RootConfig<any>['sse']
   }
   const getCtx = (ctxOpts: CtxOpts) => {
     const results: number[] = [];
@@ -791,7 +789,7 @@ describe('timeouts', async () => {
 
     const t = initTRPC.create({
       transformer: superjson,
-      sse: ctxOpts.subscriptionOptions,
+      sse: ctxOpts.serverOptions,
     });
 
     let deferred: Deferred<void> = createDeferred();
@@ -920,7 +918,7 @@ describe('timeouts', async () => {
   test('does not timeout if ping is enabled', async () => {
     const opts = {
       reconnectAfterInactivityMs: 10_000,
-      subscriptionOptions: {
+      serverOptions: {
         ping: {
           enabled: true,
           intervalMs: 1_000,
