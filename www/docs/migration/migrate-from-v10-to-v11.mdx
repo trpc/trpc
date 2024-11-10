@@ -24,6 +24,10 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+#### Moves `experimental.sseSubscriptions` -> `sse` (non-breaking)
+
+The `experimental.sseSubscriptions` option has been moved to just `sse` in the `initTRPC.create()`-function.
+
 #### HTTP Subscription Link improvements (non-breaking)
 
 Added support for detecting and recovering from stale connections:
@@ -50,7 +54,9 @@ export const t = initTRPC.create({
 });
 ```
 
-See the [httpSubscriptionLink docs](../client/links/httpSubscriptionLink.md#timeout) for more details on these features.
+We will likely add a default ping interval and timeout configuration in the future, but this is not yet decided. Feedback is welcome in the [🎏-rfc-streaming](https://trpc.io/discord) channel on Discord.
+
+See the [`httpSubscriptionLink` docs](../client/links/httpSubscriptionLink.md#timeout) for more details on these features.
 
 ### Introduction of `retryLink` (non-breaking)
 
