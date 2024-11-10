@@ -1,3 +1,5 @@
+import type { v1 } from '@standard-schema/spec';
+
 // zod / typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
   _input: TInput;
@@ -18,12 +20,10 @@ export type ParserArkTypeEsque<TInput, TParsedInput> = {
   infer: TParsedInput;
 };
 
-export type ParserStandardSchemaEsque<TInput, TParsedInput> = {
-  '~types'?: {
-    input: TInput;
-    output: TParsedInput;
-  };
-};
+export type ParserStandardSchemaEsque<TInput, TParsedInput> = v1.StandardSchema<
+  TInput,
+  TParsedInput
+>;
 
 export type ParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
@@ -121,7 +121,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   if ('~standard' in parser) {
     // StandardSchemaEsque
     return async (value) => {
-      const result = await parser['~validate']({ value });
+      const result = await parser['~standard'].validate(value);
       if (result.issues) {
         throw new Error('Schema Error:', { cause: result.issues });
       }

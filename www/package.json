@@ -100,7 +100,7 @@
     "typedoc": "0.26.7",
     "typedoc-plugin-markdown": "4.2.9",
     "typescript": "npm:typescript@~5.1.3",
-    "valibot": "1.0.0-beta.0",
+    "valibot": "^1.0.0-beta.5",
     "yup": "^1.0.0"
   }
 }

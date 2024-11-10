@@ -1688,8 +1688,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1
       '@standard-schema/spec':
-        specifier: ^1.0.0-beta.0
-        version: 1.0.0-beta.0
+        specifier: ^1.0.0-beta.3
+        version: 1.0.0-beta.3
       '@tanstack/react-query':
         specifier: ^5.54.1
         version: 5.55.0(react@18.3.1)
@@ -1763,8 +1763,8 @@ importers:
         specifier: ^5.6.2
         version: 5.6.2
       valibot:
-        specifier: ^1.0.0-beta.0
-        version: 1.0.0-beta.0(typescript@5.6.2)
+        specifier: ^1.0.0-beta.5
+        version: 1.0.0-beta.5(typescript@5.6.2)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -1901,8 +1901,8 @@ importers:
         specifier: npm:valibot@^0.42.0
         version: /valibot@0.42.0(typescript@5.6.2)
       valibot1:
-        specifier: npm:valibot@^1.0.0-beta.0
-        version: /valibot@1.0.0-beta.0(typescript@5.6.2)
+        specifier: npm:valibot@^1.0.0-beta.5
+        version: /valibot@1.0.0-beta.5(typescript@5.6.2)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -2112,8 +2112,8 @@ importers:
         specifier: npm:typescript@~5.1.3
         version: 5.1.6
       valibot:
-        specifier: 1.0.0-beta.0
-        version: 1.0.0-beta.0(typescript@5.1.6)
+        specifier: ^1.0.0-beta.5
+        version: 1.0.0-beta.5(typescript@5.1.6)
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -10013,8 +10013,8 @@ packages:
       micromark-util-symbol: 1.1.0
     dev: false
 
-  /@standard-schema/spec@1.0.0-beta.0:
-    resolution: {integrity: sha512-//opTrDGFcAaG8BNc0btA5wwU1V573X/UezT5jgfwucdZEbzukpKCsFUJVskH6aJ3KNVOXdSbhS4YWFfnyLVbA==}
+  /@standard-schema/spec@1.0.0-beta.3:
+    resolution: {integrity: sha512-0ifF3BjA1E8SY9C+nUew8RefNOIq0cDlYALPty4rhUm8Rrl6tCM8hBT4bhGhx7I7iXD0uAgt50lgo8dD73ACMw==}
     dev: true
 
   /@svgr/babel-plugin-add-jsx-attribute@8.0.0(@babel/core@7.24.7):
@@ -26102,8 +26102,8 @@ packages:
       typescript: 5.6.2
     dev: false
 
-  /valibot@1.0.0-beta.0(typescript@5.1.6):
-    resolution: {integrity: sha512-Q/oine+NPMXdIy3vwluw0vidHLk0mTPUQBRHc+EHZXnEWF3KzLx1YLsVHPVrgHaMGRfV58P9eGOgxJvi0a059w==}
+  /valibot@1.0.0-beta.5(typescript@5.1.6):
+    resolution: {integrity: sha512-YrU03cSLH8+UIMMAOnYCpD9+c6k/VDlxu13aVDokt/YwtROICC6kkbQeRbamcEuh/+CbFa4pbqOptiNNbHFSog==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -26113,8 +26113,8 @@ packages:
       typescript: 5.1.6
     dev: true
 
-  /valibot@1.0.0-beta.0(typescript@5.6.2):
-    resolution: {integrity: sha512-Q/oine+NPMXdIy3vwluw0vidHLk0mTPUQBRHc+EHZXnEWF3KzLx1YLsVHPVrgHaMGRfV58P9eGOgxJvi0a059w==}
+  /valibot@1.0.0-beta.5(typescript@5.6.2):
+    resolution: {integrity: sha512-YrU03cSLH8+UIMMAOnYCpD9+c6k/VDlxu13aVDokt/YwtROICC6kkbQeRbamcEuh/+CbFa4pbqOptiNNbHFSog==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
