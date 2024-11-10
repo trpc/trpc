@@ -4,7 +4,6 @@ import {
   suppressLogs,
   suppressLogsUntil,
 } from './___testHelpers';
-
 import type {
   OperationResultEnvelope,
   TRPCClientError,
@@ -20,6 +19,7 @@ import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import type { RootConfig } from '@trpc/server/unstable-core-do-not-import/rootConfig';
 import type { Deferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { uneval } from 'devalue';
@@ -27,7 +27,6 @@ import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 import { zAsyncGenerator } from './zAsyncGenerator';
-import type { RootConfig } from '@trpc/server/unstable-core-do-not-import/rootConfig';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -220,7 +219,7 @@ test(
     });
 
     ctx.eeEmit(new Error('test error'));
-    
+
     await suppressLogsUntil(async () => {
       await vi.waitFor(
         async () => {
@@ -779,8 +778,9 @@ describe('transformers / different serialize-deserialize', async () => {
 describe('timeouts', async () => {
   interface CtxOpts {
     reconnectAfterInactivityMs: number;
-    subscriptionOptions?: NonNullable<RootConfig<any>['experimental']>['sseSubscriptions']
-    
+    subscriptionOptions?: NonNullable<
+      RootConfig<any>['experimental']
+    >['sseSubscriptions'];
   }
   const getCtx = (ctxOpts: CtxOpts) => {
     const results: number[] = [];
@@ -792,8 +792,8 @@ describe('timeouts', async () => {
     const t = initTRPC.create({
       transformer: superjson,
       experimental: {
-        sseSubscriptions: ctxOpts.subscriptionOptions
-      }
+        sseSubscriptions: ctxOpts.subscriptionOptions,
+      },
     });
 
     let deferred: Deferred<void> = createDeferred();
@@ -833,10 +833,7 @@ describe('timeouts', async () => {
         return observable((observer) => {
           const unsubscribe = next(op).subscribe({
             next(envelope) {
-              if (
-                !envelope.result.type ||
-                envelope.result.type === 'data'
-              ) {
+              if (!envelope.result.type || envelope.result.type === 'data') {
                 results.push((envelope.result.data as any).data);
               }
 
@@ -862,8 +859,7 @@ describe('timeouts', async () => {
             unstable_httpSubscriptionLink({
               url: opts.httpUrl,
               transformer: superjson,
-              reconnectAfterInactivityMs:
-                ctxOpts.reconnectAfterInactivityMs,
+              reconnectAfterInactivityMs: ctxOpts.reconnectAfterInactivityMs,
             }),
           ],
         };
@@ -873,17 +869,16 @@ describe('timeouts', async () => {
       ...opts,
       deferred: () => deferred,
       results: results,
-      operations:  operations,
+      operations: operations,
       onConnection,
       [Symbol.asyncDispose]: async () => {
         vi.useRealTimers();
         await opts.close?.();
-      }
-    }
+      },
+    };
   };
 
   test('works', async () => {
-
     const opts = {
       reconnectAfterInactivityMs: 1_000,
     } as const satisfies CtxOpts;
@@ -909,8 +904,7 @@ describe('timeouts', async () => {
       expect(ctx.results).toEqual([1, 2]);
     });
 
-    const connectedOpts = ctx
-      .operations
+    const connectedOpts = ctx.operations
       .map((op) => op.result)
       .filter((op) => op.type === 'state' && op.state === 'connecting');
 
@@ -918,11 +912,12 @@ describe('timeouts', async () => {
 
     const last = connectedOpts.at(-1)!;
     expect(last.error).not.toBeFalsy();
-    expect(last.error).toMatchInlineSnapshot(`[TRPCClientError: Timeout of 1000ms reached while waiting for a response]`);
+    expect(last.error).toMatchInlineSnapshot(
+      `[TRPCClientError: Timeout of 1000ms reached while waiting for a response]`,
+    );
 
     sub.unsubscribe();
   });
-
 
   test('does not timeout if ping is enabled', async () => {
     const opts = {
@@ -930,9 +925,9 @@ describe('timeouts', async () => {
       subscriptionOptions: {
         ping: {
           enabled: true,
-          intervalMs: 1_000
-        }
-      }
+          intervalMs: 1_000,
+        },
+      },
     } as const satisfies CtxOpts;
 
     await using ctx = getCtx(opts);
@@ -954,8 +949,7 @@ describe('timeouts', async () => {
       expect(ctx.results).toEqual([1, 2]);
     });
 
-    const connectedOpts = ctx
-      .operations
+    const connectedOpts = ctx.operations
       .map((op) => op.result)
       .filter((op) => op.type === 'state' && op.state === 'connecting');
 

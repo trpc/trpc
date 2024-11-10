@@ -9,6 +9,7 @@ export default {
   endOfLine: 'auto',
   singleQuote: true,
   importOrder: ['___', '__', '<THIRD_PARTY_MODULES>', '^[./]'],
+  importOrderParserPlugins: ['typescript', 'jsx', 'explicitResourceManagement'],
   tailwindConfig: './www/tailwind.config.ts',
   plugins: [
     '@ianvs/prettier-plugin-sort-imports',
