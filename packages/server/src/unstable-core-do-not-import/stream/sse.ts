@@ -51,6 +51,7 @@ export interface SSEStreamProducerOptions<TValue = unknown> {
   formatError?: (opts: { error: unknown }) => unknown;
 }
 
+const PING_EVENT = 'ping';
 const SERIALIZED_ERROR_EVENT = 'serialized-error';
 
 type SSEvent = Partial<{
@@ -116,7 +117,7 @@ export function sseStreamProducer<TValue = unknown>(
 
       for await (value of iterable) {
         if (value === PING_SYM) {
-          stream.controller.enqueue({ comment: 'ping' });
+          stream.controller.enqueue({ event: PING_EVENT, data: '' });
           continue;
         }
 
@@ -201,10 +202,14 @@ interface ConsumerStreamResultConnecting<TConfig extends ConsumerConfig>
   type: 'connecting';
   event: EventSourceLike.EventOf<TConfig['EventSource']> | null;
 }
-
 interface ConsumerStreamResultTimeout<TConfig extends ConsumerConfig>
   extends ConsumerStreamResultBase<TConfig> {
   type: 'timeout';
+}
+
+interface ConsumerStreamResultPing<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
+  type: 'ping';
 }
 
 type ConsumerStreamResult<TConfig extends ConsumerConfig> =
@@ -212,7 +217,8 @@ type ConsumerStreamResult<TConfig extends ConsumerConfig> =
   | ConsumerStreamResultError<TConfig>
   | ConsumerStreamResultOpened<TConfig>
   | ConsumerStreamResultConnecting<TConfig>
-  | ConsumerStreamResultTimeout<TConfig>;
+  | ConsumerStreamResultTimeout<TConfig>
+  | ConsumerStreamResultPing<TConfig>;
 
 export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   url: () => MaybePromise<string>;
@@ -273,6 +279,12 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
           controller.enqueue({
             type: 'serialized-error',
             error: deserialize(JSON.parse(msg.data)),
+            eventSource,
+          });
+        });
+        eventSource.addEventListener(PING_EVENT, () => {
+          controller.enqueue({
+            type: 'ping',
             eventSource,
           });
         });

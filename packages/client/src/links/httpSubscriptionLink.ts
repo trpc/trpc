@@ -149,6 +149,9 @@ export function unstable_httpSubscriptionLink<
         run(async () => {
           for await (const chunk of eventSourceStream) {
             switch (chunk.type) {
+              case 'ping':
+                // do nothing
+                break;
               case 'data':
                 const chunkData = chunk.data;
 
@@ -158,7 +161,7 @@ export function unstable_httpSubscriptionLink<
                   lastEventId = chunkData.id;
                   result = {
                     id: chunkData.id,
-                    data: chunkData.data,
+                    data: chunkData,
                   };
                 } else {
                   result = {

@@ -4,7 +4,7 @@ import {
   suppressLogs,
   suppressLogsUntil,
 } from './___testHelpers';
-import { waitFor } from '@testing-library/react';
+
 import type {
   OperationResultEnvelope,
   TRPCClientError,
@@ -27,6 +27,7 @@ import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 import { zAsyncGenerator } from './zAsyncGenerator';
+import type { RootConfig } from '@trpc/server/unstable-core-do-not-import/rootConfig';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -155,7 +156,7 @@ test('iterable event', async () => {
     },
   });
 
-  await waitFor(
+  await vi.waitFor(
     () => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     },
@@ -167,7 +168,7 @@ test('iterable event', async () => {
   ctx.eeEmit(1);
   ctx.eeEmit(2);
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onData).toHaveBeenCalledTimes(2);
   });
   const onDataCalls = onData.mock.calls.map((call) => call[0]);
@@ -177,13 +178,13 @@ test('iterable event', async () => {
 
   subscription.unsubscribe();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
   });
 
   expect(ctx.onErrorSpy).not.toHaveBeenCalled();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ctx.ee.listenerCount('data')).toBe(0);
   });
 });
@@ -209,19 +210,19 @@ test(
       onConnectionStateChange,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(new Error('test error'));
-
+    
     await suppressLogsUntil(async () => {
-      await waitFor(
+      await vi.waitFor(
         async () => {
           expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
         },
@@ -233,7 +234,7 @@ test(
 
     ctx.eeEmit(2);
 
-    await waitFor(
+    await vi.waitFor(
       () => {
         expect(onData).toHaveBeenCalledTimes(2);
       },
@@ -298,13 +299,13 @@ test('iterable event with bad yield', async () => {
     onError: onError,
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
   ctx.eeEmit(1);
   ctx.eeEmit('NOT_A_NUMBER' as never);
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
   });
   const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
@@ -346,7 +347,7 @@ test('disconnect and reconnect with an event id', async () => {
     },
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
@@ -354,7 +355,7 @@ test('disconnect and reconnect with an event id', async () => {
   const es = onStarted.mock.calls[0]![0].context?.eventSource;
   assert(es instanceof EventSource);
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onData.mock.calls.length).toBeGreaterThan(5);
   });
 
@@ -368,7 +369,7 @@ test('disconnect and reconnect with an event id', async () => {
   expect(es.readyState).toBe(EventSource.OPEN);
   const release = suppressLogs();
   ctx.destroyConnections();
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(es.readyState).toBe(EventSource.CONNECTING);
   });
 
@@ -382,7 +383,7 @@ test('disconnect and reconnect with an event id', async () => {
     `[TRPCClientError: Unknown error]`,
   );
 
-  await waitFor(
+  await vi.waitFor(
     () => {
       expect(es.readyState).toBe(EventSource.OPEN);
     },
@@ -399,7 +400,7 @@ test('disconnect and reconnect with an event id', async () => {
   expect(es.readyState).toBe(EventSource.CLOSED);
 
   // const lastEventId = onData.mock.calls.at(-1)[0]![0]!
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
   });
   await sleep(50);
@@ -484,13 +485,13 @@ describe('auth / connectionParams', async () => {
       onData: onData,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
@@ -525,13 +526,13 @@ describe('auth / connectionParams', async () => {
       onData: onData,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
@@ -632,13 +633,13 @@ describe('headers / eventSourceOptions', async () => {
       onData: onData,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
@@ -678,13 +679,13 @@ describe('headers / eventSourceOptions', async () => {
       onData: onData,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
@@ -756,13 +757,13 @@ describe('transformers / different serialize-deserialize', async () => {
       onData: onData,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
@@ -778,6 +779,8 @@ describe('transformers / different serialize-deserialize', async () => {
 describe('timeouts', async () => {
   interface CtxOpts {
     reconnectAfterInactivityMs: number;
+    subscriptionOptions?: NonNullable<RootConfig<any>['experimental']>['sseSubscriptions']
+    
   }
   const getCtx = (ctxOpts: CtxOpts) => {
     const results: number[] = [];
@@ -788,6 +791,9 @@ describe('timeouts', async () => {
 
     const t = initTRPC.create({
       transformer: superjson,
+      experimental: {
+        sseSubscriptions: ctxOpts.subscriptionOptions
+      }
     });
 
     let deferred: Deferred<void> = createDeferred();
@@ -831,7 +837,7 @@ describe('timeouts', async () => {
                 !envelope.result.type ||
                 envelope.result.type === 'data'
               ) {
-                results.push(envelope.result.data as number);
+                results.push((envelope.result.data as any).data);
               }
 
               const op = { ...envelope };
@@ -866,13 +872,12 @@ describe('timeouts', async () => {
     return {
       ...opts,
       deferred: () => deferred,
-      results: () => results,
-      operations: () => operations,
+      results: results,
+      operations:  operations,
       onConnection,
       [Symbol.asyncDispose]: async () => {
         vi.useRealTimers();
         await opts.close?.();
-
       }
     }
   };
@@ -889,7 +894,7 @@ describe('timeouts', async () => {
     ctx.deferred().resolve();
 
     await vi.waitFor(async () => {
-      expect(ctx.results()).toHaveLength(1);
+      expect(ctx.results).toHaveLength(1);
     });
 
     await vi.advanceTimersByTimeAsync(opts.reconnectAfterInactivityMs + 100);
@@ -901,11 +906,11 @@ describe('timeouts', async () => {
     ctx.deferred().resolve();
 
     await vi.waitFor(async () => {
-      expect(ctx.results()).toEqual([1, 2]);
+      expect(ctx.results).toEqual([1, 2]);
     });
 
     const connectedOpts = ctx
-      .operations()
+      .operations
       .map((op) => op.result)
       .filter((op) => op.type === 'state' && op.state === 'connecting');
 
@@ -914,6 +919,47 @@ describe('timeouts', async () => {
     const last = connectedOpts.at(-1)!;
     expect(last.error).not.toBeFalsy();
     expect(last.error).toMatchInlineSnapshot(`[TRPCClientError: Timeout of 1000ms reached while waiting for a response]`);
+
+    sub.unsubscribe();
+  });
+
+
+  test('does not timeout if ping is enabled', async () => {
+    const opts = {
+      reconnectAfterInactivityMs: 10_000,
+      subscriptionOptions: {
+        ping: {
+          enabled: true,
+          intervalMs: 1_000
+        }
+      }
+    } as const satisfies CtxOpts;
+
+    await using ctx = getCtx(opts);
+    const sub = ctx.client.infinite.subscribe(undefined, {});
+
+    ctx.deferred().resolve();
+
+    await vi.waitFor(async () => {
+      expect(ctx.results).toHaveLength(1);
+    });
+
+    await vi.advanceTimersByTimeAsync(opts.reconnectAfterInactivityMs * 10);
+
+    expect(ctx.onConnection).toHaveBeenCalledTimes(1);
+
+    ctx.deferred().resolve();
+
+    await vi.waitFor(async () => {
+      expect(ctx.results).toEqual([1, 2]);
+    });
+
+    const connectedOpts = ctx
+      .operations
+      .map((op) => op.result)
+      .filter((op) => op.type === 'state' && op.state === 'connecting');
+
+    expect(connectedOpts).toHaveLength(1);
 
     sub.unsubscribe();
   });
