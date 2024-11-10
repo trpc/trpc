@@ -19,15 +19,13 @@ import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http
 import { resolveResponse } from '../../@trpc/server/http';
 // eslint-disable-next-line no-restricted-imports
 import { getErrorShape, run } from '../../unstable-core-do-not-import';
-import {
-  incomingMessageToRequest,
-  writeResponseToNodeHTTPResponse,
-} from './incomingMessageToRequest';
+import { incomingMessageToRequest } from './incomingMessageToRequest';
 import type {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
 } from './types';
+import { writeResponse } from './writeResponse';
 
 /**
  * @internal
@@ -112,7 +110,7 @@ export async function nodeHTTPRequestHandler<
           },
         });
 
-        await writeResponseToNodeHTTPResponse({
+        await writeResponse({
           request,
           response,
           res: opts.res,

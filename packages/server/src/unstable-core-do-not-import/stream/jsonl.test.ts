@@ -1,6 +1,6 @@
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
-import { writeBody } from '../../adapters/node-http';
+import { writeResponseBody } from '../../adapters/node-http/writeResponse';
 import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
@@ -241,7 +241,7 @@ function createServerForStream(
     }
 
     try {
-      await writeBody({
+      await writeResponseBody({
         res,
         signal: abortCtrl.signal,
         body: stream,
