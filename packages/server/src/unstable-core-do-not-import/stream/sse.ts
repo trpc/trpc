@@ -277,7 +277,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
   let _es: InstanceType<TConfig['EventSource']> | null = null;
 
-  const stream = () =>
+  const getStream = () =>
     new ReadableStream<ConsumerStreamResult<TConfig>>({
       async start(controller) {
         const [url, init] = await Promise.all([opts.url(), opts.init()]);
@@ -356,10 +356,10 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
         _es?.close();
       },
     });
+  const stream = getStream();
   return {
     [Symbol.asyncIterator]() {
-      let reader = stream().getReader();
-
+      let reader = stream.getReader();
       const iterator: AsyncIterator<ConsumerStreamResult<TConfig>> = {
         async next() {
           let promise = reader.read();
@@ -372,7 +372,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
                 // Clean up old reader and create new one
                 await reader.cancel();
                 reader.releaseLock();
-                reader = stream().getReader();
+                reader = getStream().getReader();
 
                 return {
                   value: {

@@ -22,8 +22,8 @@ export const suppressLogs = () => {
   };
 };
 test('e2e, server-sent events (SSE)', async () => {
-  async function* data(lastEventId?: Maybe<number>) {
-    let i = lastEventId ?? 0;
+  async function* data(lastEventId: string | undefined) {
+    let i = lastEventId ? Number(lastEventId) : 0;
     while (true) {
       i++;
       yield tracked(String(i), i);
@@ -43,25 +43,13 @@ test('e2e, server-sent events (SSE)', async () => {
       }
       return null;
     };
-    const stringToNumber = (v: string | null) => {
-      if (v === null) {
-        return null;
-      }
-      const num = Number(v);
-      if (Number.isNaN(num)) {
-        return null;
-      }
-      return num;
-    };
     const lastEventId: string | null =
       stringOrNull(req.headers['last-event-id']) ??
       url.searchParams.get('lastEventId') ??
       url.searchParams.get('Last-Event-Id');
 
-    const asNumber = stringToNumber(lastEventId);
-
     const stream = sseStreamProducer({
-      data: data(asNumber),
+      data: data(lastEventId ?? undefined),
       serialize: (v) => SuperJSON.serialize(v),
       abortCtrl: new AbortController(),
     });
@@ -85,13 +73,15 @@ test('e2e, server-sent events (SSE)', async () => {
   const iterable = sseStreamConsumer<{
     data: Data;
     error: unknown;
-    EventSource: typeof EventSource;
+    EventSource: typeof EventSourcePolyfill;
   }>({
     url: () => server.url,
     signal: ac.signal,
-    init: () => ({}),
+    init: () => ({
+      lastEventIdQueryParameterName: 'lastEventId',
+    }),
     deserialize: SuperJSON.deserialize,
-    EventSource: EventSource,
+    EventSource: EventSourcePolyfill,
   });
   let es: EventSource | null = null;
 
@@ -146,6 +136,8 @@ test('e2e, server-sent events (SSE)', async () => {
 
   ac.abort();
   await server.close();
+
+  // console.debug('written', written.join(''));
   expect(values).toEqual(range(1, ITERATIONS * 2 + 1));
 
   expect(allEvents.filter((it) => it.type === 'connecting')).toHaveLength(2);
