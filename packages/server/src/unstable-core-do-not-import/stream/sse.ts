@@ -240,6 +240,31 @@ interface ConsumerConfig {
   EventSource: EventSourceLike.AnyConstructor;
 }
 
+async function withTimeout<T>(opts: {
+  promise: Promise<T>;
+  timeoutMs: number;
+  onTimeout: () => Promise<NoInfer<T>>;
+}): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout>;
+
+  const timeoutPromise = new Promise<null>((resolve) => {
+    timeoutId = setTimeout(() => {
+      resolve(null);
+    }, opts.timeoutMs);
+  });
+  let res;
+  try {
+    res = await Unpromise.race([opts.promise, timeoutPromise]);
+  } finally {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    clearTimeout(timeoutId!);
+  }
+  if (res === null) {
+    return await opts.onTimeout();
+  }
+  return res;
+}
+
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
@@ -337,52 +362,31 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
       const iterator: AsyncIterator<ConsumerStreamResult<TConfig>> = {
         async next() {
-          let result: ReadableStreamReadResult<ConsumerStreamResult<TConfig>>;
+          let promise = reader.read();
+
           if (opts.reconnectAfterInactivityMs) {
-            // Track timeout for inactivity check
-            let timeout: ReturnType<typeof setTimeout>;
+            promise = withTimeout({
+              promise,
+              timeoutMs: opts.reconnectAfterInactivityMs,
+              onTimeout: async () => {
+                // Clean up old reader and create new one
+                await reader.cancel();
+                reader.releaseLock();
+                reader = stream().getReader();
 
-            // Create a promise that resolves after the inactivity timeout
-            const timeoutPromise = new Promise<null>((resolve) => {
-              timeout = setTimeout(() => {
-                resolve(null);
-              }, opts.reconnectAfterInactivityMs);
-            });
-
-            try {
-              // Race between reading the next chunk and timing out
-              const timeoutCheck = await Unpromise.race([
-                reader.read(),
-                timeoutPromise,
-              ]);
-
-              if (timeoutCheck !== null) {
-                // Got data before timeout, use it
-                result = timeoutCheck;
-              } else {
-                // Timed out waiting for data, trigger reconnect
-                result = {
-                  done: false,
+                return {
                   value: {
                     type: 'timeout',
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     eventSource: _es!,
                   },
+                  done: false,
                 };
-
-                // Clean up old reader and create new one
-                await reader.cancel();
-                reader.releaseLock();
-                reader = stream().getReader();
-              }
-            } finally {
-              // Always clean up timeout
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              clearTimeout(timeout!);
-            }
-          } else {
-            result = await reader.read();
+              },
+            });
           }
+
+          const result = await promise;
 
           if (result.done) {
             return {

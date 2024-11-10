@@ -145,7 +145,7 @@ export async function nodeHTTPRequestHandler<
             }
 
             // useful for debugging chunked responses:
-            // console.log('wrote', Buffer.from(value).toString());
+            // console.debug('wrote', Buffer.from(value).toString());
 
             // IMPORTANT - flush the response buffer, otherwise the client will not receive the data until `.end()`
             res.flush?.();
