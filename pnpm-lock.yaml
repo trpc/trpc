@@ -1921,8 +1921,8 @@ importers:
         specifier: 1.0.14-alpha
         version: 1.0.14-alpha
       arktype2:
-        specifier: npm:arktype@2.0.0-rc.22
-        version: arktype@2.0.0-rc.22
+        specifier: npm:arktype@2.0.0-rc.23
+        version: arktype@2.0.0-rc.23
       dataloader:
         specifier: ^2.2.2
         version: 2.2.2
@@ -2349,11 +2349,11 @@ packages:
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
     engines: {node: '>=6.0.0'}
 
-  '@ark/schema@0.22.0':
-    resolution: {integrity: sha512-d6jkChLfxRWeZz/WrWFOhhyKFNzlPGd4INt6ylZt2HdB5d+S7FYDLjTHg7neT5dqJFRToy+onJRfVN0+uqqeXw==}
+  '@ark/schema@0.23.0':
+    resolution: {integrity: sha512-406Zx0te3ICd7PkGise4XIxOfmjFzK64tEuiN5rmJDg14AqhySXygMk8QcHqHORDJ7VXhel7J41iduw8eyiFPg==}
 
-  '@ark/util@0.22.0':
-    resolution: {integrity: sha512-+zkFBk77+M0LpXobN9yt/Dw1Z1/7ClOcqWpAS5wvHw8fyggCYGdxkWXeSuOxrTS3RDpT6vMCjPYsS/Lr/ypbeg==}
+  '@ark/util@0.23.0':
+    resolution: {integrity: sha512-2mb24N2leQENRh+zPqnlRJzFFf8Xr7BT+/4MJN46/G8C45davpqFfcqvOw0ZlXrjQpBi8H+ZqDQsi95lN/9oVg==}
 
   '@auth/core@0.37.2':
     resolution: {integrity: sha512-kUvzyvkcd6h1vpeMAojK2y7+PAV5H+0Cc9+ZlKYDFhDY31AlvsB+GW5vNO4qE3Y07KeQgvNO9U0QUx/fN62kBw==}
@@ -7248,8 +7248,8 @@ packages:
   arktype@1.0.14-alpha:
     resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
 
-  arktype@2.0.0-rc.22:
-    resolution: {integrity: sha512-iciINVNXEuTG1lYhVUOgnWC315zrnAT48n2Y7PbbYMFa2844vdakTJxugxal7RkxZGI5YveyIHH2gPATsFRlnQ==}
+  arktype@2.0.0-rc.23:
+    resolution: {integrity: sha512-P0e40t3J4rc3xRHzPjzyOK1CgdgKswQJOFBgFLuehSiGcjAuRx6p/9lDVPzXZ62m7q5yRUqFiX8ovN5FjWQjMQ==}
 
   array-buffer-byte-length@1.0.0:
     resolution: {integrity: sha512-LPuwb2P+NrQw3XhxGc36+XSvuBPopovXYTR9Ew++Du9Yb/bx5AzBfrIsBoj0EZUifjQU+sHL21sseZ3jerWO/A==}
@@ -15887,11 +15887,11 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
 
-  '@ark/schema@0.22.0':
+  '@ark/schema@0.23.0':
     dependencies:
-      '@ark/util': 0.22.0
+      '@ark/util': 0.23.0
 
-  '@ark/util@0.22.0': {}
+  '@ark/util@0.23.0': {}
 
   '@auth/core@0.37.2':
     dependencies:
@@ -23280,10 +23280,10 @@ snapshots:
 
   arktype@1.0.14-alpha: {}
 
-  arktype@2.0.0-rc.22:
+  arktype@2.0.0-rc.23:
     dependencies:
-      '@ark/schema': 0.22.0
-      '@ark/util': 0.22.0
+      '@ark/schema': 0.23.0
+      '@ark/util': 0.23.0
 
   array-buffer-byte-length@1.0.0:
     dependencies:
