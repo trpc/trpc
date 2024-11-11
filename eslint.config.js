@@ -1,20 +1,12 @@
-import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { includeIgnoreFile } from '@eslint/compat';
 import reactPlugin from 'eslint-plugin-react';
 import hooksPlugin from 'eslint-plugin-react-hooks';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
 
-const root = path.dirname(fileURLToPath(import.meta.url));
-const cwd = process.cwd();
-
 export default tseslint.config(
-  includeIgnoreFile(path.join(root, '.gitignore')),
-  fs.existsSync(path.join(cwd, '.gitignore'))
-    ? includeIgnoreFile(path.join(cwd, '.gitignore'))
-    : {},
+  includeIgnoreFile(path.join(import.meta.dirname, '.gitignore')),
   { ignores: ['**/vendor/**'] },
   {
     files: ['**/*.ts', '**/*.tsx'],
@@ -184,7 +176,7 @@ export default tseslint.config(
       sourceType: 'module',
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: cwd,
+        tsconfigRootDir: import.meta.dirname,
       },
     },
   },
