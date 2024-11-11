@@ -82,11 +82,11 @@
   "devDependencies": {
     "@trpc/server": "^10.45.1",
     "@types/isomorphic-fetch": "^0.0.39",
-    "@types/node": "^20.17.3",
+    "@types/node": "^22.9.0",
     "eslint": "^9.13.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
-    "rollup": "^4.9.5",
+    "rollup": "^4.24.4",
     "tslib": "^2.5.0",
     "tsx": "^4.0.0",
     "undici": "^6.0.1"

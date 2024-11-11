@@ -768,5 +768,3 @@ describe('transformers / different serialize-deserialize', async () => {
     });
   });
 });
-
-test;

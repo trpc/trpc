@@ -1,4 +1,8 @@
-import { httpBatchLink } from '@trpc/client';
+import {
+  httpBatchLink,
+  splitLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
@@ -21,10 +25,17 @@ function getBaseUrl() {
 
 export const trpc = createTRPCNext<AppRouter>({
   config() {
+    const url = getBaseUrl() + '/api/trpc';
     return {
       links: [
-        httpBatchLink({
-          url: getBaseUrl() + '/api/trpc',
+        splitLink({
+          condition: (op) => op.type === 'subscription',
+          true: unstable_httpSubscriptionLink({
+            url,
+          }),
+          false: httpBatchLink({
+            url,
+          }),
         }),
       ],
     };

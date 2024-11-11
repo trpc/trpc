@@ -7,18 +7,21 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 import http from 'http';
 // @trpc/server
 import { type AnyRouter } from '../@trpc/server';
-import { toURL } from '../@trpc/server/http';
 // eslint-disable-next-line no-restricted-imports
 import { run } from '../unstable-core-do-not-import';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
 } from './node-http';
-import { internal_exceptionHandler, nodeHTTPRequestHandler } from './node-http';
+import {
+  createURL,
+  internal_exceptionHandler,
+  nodeHTTPRequestHandler,
+} from './node-http';
 
 export type CreateHTTPHandlerOptions<TRouter extends AnyRouter> =
   NodeHTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
@@ -37,7 +40,7 @@ export function createHTTPHandler<TRouter extends AnyRouter>(
   return (req, res) => {
     let path = '';
     run(async () => {
-      const url = toURL(req.url!);
+      const url = createURL(req);
 
       // get procedure path and remove the leading slash
       // /procedure -> procedure
