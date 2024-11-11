@@ -466,7 +466,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           const stream = sseStreamProducer({
             ...config.experimental?.sseSubscriptions,
-            data: iterable,
+            iterable,
             abortCtrl: result?.abortCtrl ?? new AbortController(),
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {

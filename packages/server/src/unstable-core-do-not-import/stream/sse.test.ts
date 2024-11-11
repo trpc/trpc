@@ -61,7 +61,7 @@ test('e2e, server-sent events (SSE)', async () => {
     const asNumber = stringToNumber(lastEventId);
 
     const stream = sseStreamProducer({
-      data: data(asNumber),
+      iterable: data(asNumber),
       serialize: (v) => SuperJSON.serialize(v),
       abortCtrl: new AbortController(),
     });
@@ -208,7 +208,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
     const producerAbortCtrl = new AbortController();
 
     const stream = sseStreamProducer({
-      data: data(
+      iterable: data(
         asNumber,
         abortSignalsAnyPonyfill([
           reqAbortCtrl.signal,

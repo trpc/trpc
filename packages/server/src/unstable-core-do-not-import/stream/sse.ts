@@ -5,9 +5,13 @@ import { identity, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
-import { takeWithGrace, withMaxDuration } from './utils/asyncIterable';
+import {
+  PING_SYM,
+  takeWithGrace,
+  withMaxDuration,
+  withPing,
+} from './utils/asyncIterable';
 import { createReadableStream } from './utils/createReadableStream';
-import { PING_SYM, withPing } from './utils/withPing';
 
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
@@ -30,7 +34,7 @@ export interface PingOptions {
 
 export interface SSEStreamProducerOptions<TValue = unknown> {
   serialize?: Serialize;
-  data: AsyncIterable<TValue>;
+  iterable: AsyncIterable<TValue>;
   abortCtrl: AbortController;
   maxDepth?: number;
   ping?: PingOptions;
@@ -77,7 +81,7 @@ export function sseStreamProducer<TValue = unknown>(
   run(async () => {
     type TIteratorValue = Awaited<TValue> | typeof PING_SYM;
 
-    let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
+    let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.iterable;
 
     if (opts.emitAndEndImmediately) {
       iterable = takeWithGrace(iterable, {

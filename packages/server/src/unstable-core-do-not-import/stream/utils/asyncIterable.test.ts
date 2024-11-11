@@ -2,7 +2,7 @@ import EventEmitter, { on } from 'events';
 import { konn } from 'konn';
 import { expect, vi } from 'vitest';
 import { run } from '../../utils';
-import { withPing } from './withPing';
+import { withPing } from './asyncIterable';
 
 export interface MyEvents {
   message: (str: string) => void;
@@ -41,7 +41,7 @@ const ctx = konn()
   })
   .done();
 
-test('yield values from source iterable', async () => {
+test('withPing yields values from source iterable', async () => {
   const { ee } = ctx;
   const pingIntervalMs = 1_000;
   const offsetMs = 100;
