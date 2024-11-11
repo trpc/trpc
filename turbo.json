@@ -10,7 +10,12 @@
     "AUTH_GITHUB_SECRET"
   ],
   "tasks": {
-    "codegen-entrypoints": {},
+    "//#codegen:tsconfigs": {
+      "outputs": ["packages/*/tsconfig.json"]
+    },
+    "codegen-entrypoints": {
+      "dependsOn": ["//#codegen:tsconfigs"]
+    },
     "codegen-tests": {
       "outputs": ["server/__generated__/bigBoi/**"]
     },

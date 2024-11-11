@@ -2,7 +2,11 @@
   "extends": "../../tsconfig.build.json",
   "compilerOptions": {
     "declarationDir": "dist",
-    "types": ["node"]
+    "types": ["node"],
+    // https://github.com/tsconfig/bases/blob/main/bases/node18.json
+    "lib": ["es2023", "DOM", "DOM.Iterable"],
+    "module": "ES2020", // <-- this is different from the base
+    "target": "es2022"
   },
   "include": ["src"]
 }

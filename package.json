@@ -24,6 +24,7 @@
     "format-fix": "pnpm format --write --list-different",
     "lint-prune": "! ts-prune | grep -v \"used in module\" | grep -v rpc | grep -v observable | grep -v http",
     "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -o -name __generated__ -type d -prune | xargs rm -rf",
+    "codegen:tsconfigs": "tsx scripts/tsconfigs.ts",
     "codegen:tests": "turbo codegen-tests",
     "codegen:entrypoints": "turbo codegen-entrypoints",
     "codegen": "run-p codegen:*",
