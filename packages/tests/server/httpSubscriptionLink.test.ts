@@ -778,7 +778,7 @@ describe('transformers / different serialize-deserialize', async () => {
 describe('timeouts', async () => {
   interface CtxOpts {
     reconnectAfterInactivityMs: number;
-    serverOptions?: RootConfig<any>['sse']
+    serverOptions?: RootConfig<any>['sse'];
   }
   const getCtx = (ctxOpts: CtxOpts) => {
     const results: number[] = [];
