@@ -310,7 +310,7 @@ import { initTRPC } from '@trpc/server';
 export const t = initTRPC.create({
   sse: {
     // Maximum duration of a single SSE connection in milliseconds
-    maxDurationMs: 1000,
+    // maxDurationMs: 60_00,
     ping: {
       // Enable periodic ping messages to keep connection alive
       enabled: true,
