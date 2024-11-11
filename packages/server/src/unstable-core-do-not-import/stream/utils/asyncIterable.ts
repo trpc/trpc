@@ -13,32 +13,27 @@ export async function* withMaxDuration<T>(
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
 
-  const timer = disposablePromiseTimer(opts.maxDurationMs);
-  try {
-    const timerPromise = timer.start();
+  using timer = disposablePromiseTimer(opts.maxDurationMs);
 
-    // declaration outside the loop for garbage collection reasons
-    let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
+  const timerPromise = timer.start();
 
-    while (true) {
-      result = await Unpromise.race([iterator.next(), timerPromise]);
-      if (result === disposablePromiseTimerResult) {
-        // cancelled due to timeout
-        opts.abortCtrl.abort();
-        const res = await iterator.return?.();
-        return res?.value;
-      }
-      if (result.done) {
-        return result;
-      }
-      yield result.value;
-      // free up reference for garbage collection
-      result = null;
+  // declaration outside the loop for garbage collection reasons
+  let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
+
+  while (true) {
+    result = await Unpromise.race([iterator.next(), timerPromise]);
+    if (result === disposablePromiseTimerResult) {
+      // cancelled due to timeout
+      opts.abortCtrl.abort();
+      const res = await iterator.return?.();
+      return res?.value;
     }
-  } finally {
-    // dispose timer
-    // Shouldn't be needed, but build breaks with `using` keyword
-    timer[Symbol.dispose]();
+    if (result.done) {
+      return result;
+    }
+    yield result.value;
+    // free up reference for garbage collection
+    result = null;
   }
 }
 
@@ -60,34 +55,31 @@ export async function* takeWithGrace<T>(
   // declaration outside the loop for garbage collection reasons
   let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
 
-  const timer = disposablePromiseTimer(opts.gracePeriodMs);
-  try {
-    let count = opts.count;
+  using timer = disposablePromiseTimer(opts.gracePeriodMs);
 
-    let timerPromise = new Promise<typeof disposablePromiseTimerResult>(() => {
-      // never resolves
-    });
+  let count = opts.count;
 
-    while (true) {
-      result = await Unpromise.race([iterator.next(), timerPromise]);
-      if (result === disposablePromiseTimerResult) {
-        // cancelled
-        const res = await iterator.return?.();
-        return res?.value;
-      }
-      if (result.done) {
-        return result.value;
-      }
-      yield result.value;
-      if (--count === 0) {
-        timerPromise = timer.start();
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        timerPromise.then(() => opts.abortCtrl.abort());
-      }
-      // free up reference for garbage collection
-      result = null;
+  let timerPromise = new Promise<typeof disposablePromiseTimerResult>(() => {
+    // never resolves
+  });
+
+  while (true) {
+    result = await Unpromise.race([iterator.next(), timerPromise]);
+    if (result === disposablePromiseTimerResult) {
+      // cancelled
+      const res = await iterator.return?.();
+      return res?.value;
     }
-  } finally {
-    timer[Symbol.dispose]();
+    if (result.done) {
+      return result.value;
+    }
+    yield result.value;
+    if (--count === 0) {
+      timerPromise = timer.start();
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      timerPromise.then(() => opts.abortCtrl.abort());
+    }
+    // free up reference for garbage collection
+    result = null;
   }
 }
