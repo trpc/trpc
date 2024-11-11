@@ -1,6 +1,6 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  "globalDependencies": [".eslintrc.js", "tsconfig.json", "scripts/**"],
+  "globalDependencies": [".eslintrc.config.js", "tsconfig.json", "scripts/**"],
   "globalEnv": [
     "CI",
     "NODE_ENV",
