@@ -1,7 +1,10 @@
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
+import { writeResponseBody } from '../../adapters/node-http/writeResponse';
+import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
+import { createDeferred } from './utils/createDeferred';
 import { createServer } from './utils/createServer';
 
 test('encode/decode with superjson', async () => {
@@ -27,10 +30,49 @@ test('encode/decode with superjson', async () => {
     serialize: (v) => SuperJSON.serialize(v),
   });
 
+  const [stream1, stream2] = stream.tee();
+
+  const streamEnd = run(async () => {
+    const reader = stream2.pipeThrough(new TextDecoderStream()).getReader();
+    const aggregated: string[] = [];
+    while (true) {
+      const res = await reader.read();
+
+      if (res.value) {
+        aggregated.push(res.value);
+      }
+      if (res.done) {
+        break;
+      }
+    }
+    return aggregated;
+  });
+
+  expect(await streamEnd).toMatchInlineSnapshot(`
+    Array [
+      "{"json":{"0":[[0],[null,0,0]],"1":[[0],[null,0,1]]}}
+    ",
+      "{"json":[0,0,[[{"foo":{"bar":{"baz":"qux"}},"deferred":0}],["deferred",0,2]]]}
+    ",
+      "{"json":[1,0,[[0],[null,1,3]]]}
+    ",
+      "{"json":[2,0,[[42]]]}
+    ",
+      "{"json":[3,1,[[1]]]}
+    ",
+      "{"json":[3,1,[[2]]]}
+    ",
+      "{"json":[3,1,[[3]]]}
+    ",
+      "{"json":[3,0,[[]]]}
+    ",
+    ]
+  `);
+
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
-    from: stream,
+    from: stream1,
     deserialize: (v) => SuperJSON.deserialize(v),
-    abortController: null,
+    abortController: new AbortController(),
   });
 
   {
@@ -95,7 +137,7 @@ test('encode/decode - error', async () => {
     from: stream,
     deserialize: (v) => SuperJSON.deserialize(v),
     onError: onConsumerErrorSpy,
-    abortController: null,
+    abortController: new AbortController(),
   });
 
   {
@@ -143,7 +185,7 @@ test('encode/decode - error', async () => {
       ],
       Array [
         Object {
-          "error": [TRPCError: iterable],
+          "error": [Error: iterable],
           "path": Array [
             "1",
           ],
@@ -175,7 +217,7 @@ test('decode - bad data', async () => {
     await jsonlStreamConsumer({
       from: textEncoder.readable,
       deserialize: (v) => SuperJSON.deserialize(v),
-      abortController: null,
+      abortController: new AbortController(),
     });
     expect(true).toBe(false);
   } catch (err) {
@@ -187,27 +229,35 @@ test('decode - bad data', async () => {
 
 function createServerForStream(
   stream: ReadableStream,
-  abortSignal: AbortController,
+  abortCtrl: AbortController,
   headers: Record<string, string> = {},
 ) {
   return createServer(async (req, res) => {
     req.once('aborted', () => {
-      abortSignal.abort();
+      abortCtrl.abort();
     });
     for (const [key, value] of Object.entries(headers)) {
       res.setHeader(key, value);
     }
 
-    const reader = stream.getReader();
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
+    try {
+      await writeResponseBody({
+        res,
+        signal: abortCtrl.signal,
+        body: stream,
+      });
+    } catch (err) {
+      if ((err as any).name === 'AbortError') {
+        return;
       }
 
-      res.write(value);
+      throw err;
+    } finally {
+      if (!res.headersSent) {
+        res.statusCode = 500;
+      }
+      res.end();
     }
-    res.end();
   });
 }
 test('e2e, create server', async () => {
@@ -245,7 +295,7 @@ test('e2e, create server', async () => {
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: res.body!,
     deserialize: (v) => SuperJSON.deserialize(v),
-    abortController: null,
+    abortController: new AbortController(),
   });
 
   {
@@ -437,8 +487,9 @@ test('e2e, client aborts request halfway through - through breaking async iterab
       "The operation was aborted.",
     ]
   `);
-  expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
+
   expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
+  expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
 
   await server.close();
 });
@@ -495,4 +546,63 @@ test('e2e, encode/decode - maxDepth', async () => {
   `);
 
   await server.close();
+});
+
+test('should work to throw after stream is closed', async () => {
+  const deferred = createDeferred<unknown>();
+  const data = {
+    0: Promise.resolve({
+      deferred: deferred.promise,
+    }),
+  } as const;
+
+  const onError = vi.fn<(...args: Parameters<ProducerOnError>) => void>();
+
+  const ac = new AbortController();
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+    onError,
+  });
+
+  const server = createServerForStream(stream, ac);
+  const res = await fetch(server.url, {
+    signal: ac.signal,
+  });
+
+  const [head] = await jsonlStreamConsumer<typeof data>({
+    from: res.body!,
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: new AbortController(),
+  });
+
+  const head0 = await head[0]; // consume the stream
+
+  ac.abort();
+
+  await expect(head0.deferred).rejects.toMatchInlineSnapshot(
+    `[Error: Invalid response or stream interrupted]`,
+  );
+
+  deferred.resolve({
+    p: Promise.resolve({
+      child: Promise.reject(new Error('throws')),
+    }),
+  });
+
+  await waitFor(() => {
+    expect(onError).toHaveBeenCalledTimes(1);
+  });
+
+  expect(onError.mock.calls[0]![0]).toMatchInlineSnapshot(`
+    Object {
+      "error": [Error: throws],
+      "path": Array [
+        "0",
+        "deferred",
+        "p",
+        "child",
+      ],
+    }
+  `);
 });
