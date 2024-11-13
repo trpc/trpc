@@ -118,6 +118,7 @@ function createHeaders(incoming: http.IncomingHttpHeaders): Headers {
  */
 export function incomingMessageToRequest(
   req: http.IncomingMessage,
+  res: http.ServerResponse,
   opts: {
     /**
      * Max body size in bytes. If the body is larger than this, the request will be aborted
@@ -128,12 +129,15 @@ export function incomingMessageToRequest(
   const ac = new AbortController();
 
   const onAbort = () => {
+    res.off('close', onAbort);
+    req.socket.off('end', onAbort);
+
+    // abort the request
     ac.abort();
-    req.off('aborted', onAbort);
-    req.off('close', onAbort);
   };
-  req.once('aborted', onAbort);
-  req.socket?.once('close', onAbort);
+
+  res.once('close', onAbort);
+  req.socket.once('end', onAbort);
 
   // Get host from either regular header or HTTP/2 pseudo-header
   const url = createURL(req);
