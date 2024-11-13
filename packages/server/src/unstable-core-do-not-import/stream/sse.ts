@@ -1,14 +1,13 @@
 import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
+import { isAbortError } from '../http/isAbortError';
 import type { MaybePromise } from '../types';
 import { identity, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
-import { takeWithGrace, withCancel } from './utils/asyncIterable';
+import { takeWithGrace, withMaxDuration } from './utils/asyncIterable';
 import { createReadableStream } from './utils/createReadableStream';
-import type { PromiseTimer } from './utils/promiseTimer';
-import { createPromiseTimer } from './utils/promiseTimer';
 import { PING_SYM, withPing } from './utils/withPing';
 
 type Serialize = (value: any) => any;
@@ -82,27 +81,23 @@ export function sseStreamProducer<TValue = unknown>(
 
     let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
 
-    iterable = withCancel(iterable, stream.cancelledPromise);
-
     if (opts.emitAndEndImmediately) {
       iterable = takeWithGrace(iterable, {
         count: 1,
         gracePeriodMs: 1,
-        onCancel: () => opts.abortCtrl.abort(),
+        abortCtrl: opts.abortCtrl,
       });
     }
 
-    let maxDurationTimer: PromiseTimer | null = null;
     if (
-      opts.maxDurationMs != null &&
+      opts.maxDurationMs &&
       opts.maxDurationMs > 0 &&
       opts.maxDurationMs !== Infinity
     ) {
-      maxDurationTimer = createPromiseTimer(opts.maxDurationMs).start();
-      iterable = withCancel(
-        iterable,
-        maxDurationTimer.promise.then(() => opts.abortCtrl.abort()),
-      );
+      iterable = withMaxDuration(iterable, {
+        maxDurationMs: opts.maxDurationMs,
+        abortCtrl: opts.abortCtrl,
+      });
     }
 
     if (ping.enabled && ping.intervalMs !== Infinity && ping.intervalMs > 0) {
@@ -135,20 +130,24 @@ export function sseStreamProducer<TValue = unknown>(
         chunk = null;
       }
     } catch (err) {
-      // ignore abort errors, send any other errors
-      if (!(err instanceof Error) || err.name !== 'AbortError') {
-        // `err` must be caused by `opts.data`, `JSON.stringify` or `serialize`.
-        // So, a user error in any case.
-        const error = getTRPCErrorFromUnknown(err);
-        const data = opts.formatError?.({ error }) ?? null;
-        stream.controller.enqueue({
-          event: SERIALIZED_ERROR_EVENT,
-          data: JSON.stringify(serialize(data)),
-        });
+      if (isAbortError(err)) {
+        // ignore abort errors, send any other errors
+        return;
       }
+      // `err` must be caused by `opts.data`, `JSON.stringify` or `serialize`.
+      // So, a user error in any case.
+      const error = getTRPCErrorFromUnknown(err);
+      const data = opts.formatError?.({ error }) ?? null;
+      stream.controller.enqueue({
+        event: SERIALIZED_ERROR_EVENT,
+        data: JSON.stringify(serialize(data)),
+      });
     } finally {
-      maxDurationTimer?.clear();
-      stream.controller.close();
+      try {
+        stream.controller.close();
+      } catch {
+        // ignore
+      }
     }
   }).catch((err) => {
     // should not be reached; just in case...
