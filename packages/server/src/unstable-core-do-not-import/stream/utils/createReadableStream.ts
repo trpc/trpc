@@ -6,7 +6,9 @@ const cancelledStreamSymbol = Symbol();
 /**
  * One-off readable stream
  */
-export function createReadableStream<TValue = unknown>(abortController?: AbortController) {
+export function createReadableStream<TValue = unknown>(
+  abortController?: AbortController,
+) {
   let controller: ReadableStreamDefaultController<TValue> =
     null as unknown as ReadableStreamDefaultController<TValue>;
 
