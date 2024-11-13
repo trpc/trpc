@@ -665,7 +665,7 @@ describe('with transformer', () => {
     expect(error.message).toBe('foo');
   });
 
-  test("AsyncGenerator methods present", async () => {
+  test('AsyncGenerator methods present', async () => {
     const { client, router } = ctx;
 
     const iterable = await client.iterable.query();
@@ -674,5 +674,5 @@ describe('with transformer', () => {
 
     // This passes type checker but will throw if next is not present
     iterable.next();
-  })
+  });
 });
