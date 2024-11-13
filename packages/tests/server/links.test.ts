@@ -5,11 +5,11 @@ import {
   httpBatchLink,
   httpLink,
   loggerLink,
+  retryLink,
   TRPCClientError,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { createChain } from '@trpc/client/links/internals/createChain';
-import { retryLink } from '@trpc/client/links/internals/retryLink';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { observable, observableToPromise } from '@trpc/server/observable';
