@@ -56,10 +56,10 @@ const ctx = konn()
             onIterableInfiniteSpy({
               input: opts.input,
             });
-            let idx = opts.input.lastEventId ?? 0;
+            let idx = opts.input.lastEventId ?? -1;
             while (true) {
-              yield tracked(String(idx), idx);
               idx++;
+              yield tracked(String(idx), idx);
               await sleep();
               infiniteYields();
             }
@@ -180,7 +180,13 @@ test('disconnect and reconnect with updated headers', async () => {
 
   const onStarted =
     vi.fn<(args: { context: Record<string, unknown> | undefined }) => void>();
-  const onData = vi.fn<(args: { data: number; id: string }) => void>();
+
+  const aggregate: number[] = [];
+  const onData = vi.fn<(args: { data: number; id: string }) => void>(
+    ({ data }) => {
+      aggregate.push(data);
+    },
+  );
   const subscription = client.sub.iterableInfinite.subscribe(
     {},
     {
@@ -248,4 +254,12 @@ test('disconnect and reconnect with updated headers', async () => {
   ctx.infiniteYields.mockClear();
   await sleep(50);
   expect(ctx.infiniteYields).toHaveBeenCalledTimes(0);
+
+  // Find numbers that appear more than once in the data
+  const numbers = onData.mock.calls.map((call) => call[0].data);
+  const duplicates = numbers.filter(
+    (num, index) => numbers.indexOf(num) !== index,
+  );
+  const uniqueDuplicates = [...new Set(duplicates)];
+  expect(uniqueDuplicates).toEqual([]);
 });

@@ -1,3 +1,4 @@
+import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAbortError } from '../http/isAbortError';
 import type { MaybePromise } from '../types';
@@ -49,6 +50,7 @@ export interface SSEStreamProducerOptions<TValue = unknown> {
   formatError?: (opts: { error: unknown }) => unknown;
 }
 
+const PING_EVENT = 'ping';
 const SERIALIZED_ERROR_EVENT = 'serialized-error';
 
 type SSEvent = Partial<{
@@ -110,7 +112,7 @@ export function sseStreamProducer<TValue = unknown>(
 
       for await (value of iterable) {
         if (value === PING_SYM) {
-          stream.controller.enqueue({ comment: 'ping' });
+          stream.controller.enqueue({ event: PING_EVENT, data: '' });
           continue;
         }
 
@@ -199,12 +201,23 @@ interface ConsumerStreamResultConnecting<TConfig extends ConsumerConfig>
   type: 'connecting';
   event: EventSourceLike.EventOf<TConfig['EventSource']> | null;
 }
+interface ConsumerStreamResultTimeout<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
+  type: 'timeout';
+}
+
+interface ConsumerStreamResultPing<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
+  type: 'ping';
+}
 
 type ConsumerStreamResult<TConfig extends ConsumerConfig> =
   | ConsumerStreamResultData<TConfig>
   | ConsumerStreamResultError<TConfig>
   | ConsumerStreamResultOpened<TConfig>
-  | ConsumerStreamResultConnecting<TConfig>;
+  | ConsumerStreamResultConnecting<TConfig>
+  | ConsumerStreamResultTimeout<TConfig>
+  | ConsumerStreamResultPing<TConfig>;
 
 export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   url: () => MaybePromise<string>;
@@ -214,12 +227,41 @@ export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   signal: AbortSignal;
   deserialize?: Deserialize;
   EventSource: TConfig['EventSource'];
+  /**
+   * Reconnect after inactivity in milliseconds
+   */
+  reconnectAfterInactivityMs?: number;
 }
 
 interface ConsumerConfig {
   data: unknown;
   error: unknown;
   EventSource: EventSourceLike.AnyConstructor;
+}
+
+async function withTimeout<T>(opts: {
+  promise: Promise<T>;
+  timeoutMs: number;
+  onTimeout: () => Promise<NoInfer<T>>;
+}): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout>;
+
+  const timeoutPromise = new Promise<null>((resolve) => {
+    timeoutId = setTimeout(() => {
+      resolve(null);
+    }, opts.timeoutMs);
+  });
+  let res;
+  try {
+    res = await Unpromise.race([opts.promise, timeoutPromise]);
+  } finally {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    clearTimeout(timeoutId!);
+  }
+  if (res === null) {
+    return await opts.onTimeout();
+  }
+  return res;
 }
 
 /**
@@ -234,99 +276,145 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
   let _es: InstanceType<TConfig['EventSource']> | null = null;
 
-  const stream = new ReadableStream<ConsumerStreamResult<TConfig>>({
-    async start(controller) {
-      const [url, init] = await Promise.all([opts.url(), opts.init()]);
-      const eventSource = (_es = new opts.EventSource(
-        url,
-        init,
-      ) as InstanceType<TConfig['EventSource']>);
-
-      controller.enqueue({
-        type: 'connecting',
-        eventSource: _es,
-        event: null,
-      });
-      eventSource.addEventListener('open', () => {
-        controller.enqueue({
-          type: 'opened',
-          eventSource,
-        });
-      });
-
-      eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (_msg) => {
-        const msg = _msg as EventSourceLike.MessageEvent;
+  const createStream = () =>
+    new ReadableStream<ConsumerStreamResult<TConfig>>({
+      async start(controller) {
+        const [url, init] = await Promise.all([opts.url(), opts.init()]);
+        const eventSource = (_es = new opts.EventSource(
+          url,
+          init,
+        ) as InstanceType<TConfig['EventSource']>);
 
         controller.enqueue({
-          type: 'serialized-error',
-          error: deserialize(JSON.parse(msg.data)),
-          eventSource,
+          type: 'connecting',
+          eventSource: _es,
+          event: null,
         });
-      });
-      eventSource.addEventListener('error', (event) => {
-        if (eventSource.readyState === EventSource.CLOSED) {
-          controller.error(event);
-        } else {
+        eventSource.addEventListener('open', () => {
           controller.enqueue({
-            type: 'connecting',
+            type: 'opened',
             eventSource,
-            event,
           });
-        }
-      });
-      eventSource.addEventListener('message', (_msg) => {
-        const msg = _msg as EventSourceLike.MessageEvent;
-
-        const chunk = deserialize(JSON.parse(msg.data));
-
-        const def: SSEvent = {
-          data: chunk,
-        };
-        if (msg.lastEventId) {
-          def.id = msg.lastEventId;
-        }
-        controller.enqueue({
-          type: 'data',
-          data: def as inferTrackedOutput<TConfig['data']>,
-          eventSource,
         });
-      });
 
-      const onAbort = () => {
-        controller.close();
-        eventSource.close();
-      };
-      if (signal.aborted) {
-        onAbort();
-      } else {
-        signal.addEventListener('abort', onAbort);
-      }
-    },
-    cancel() {
-      _es?.close();
-    },
-  });
+        eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (_msg) => {
+          const msg = _msg as EventSourceLike.MessageEvent;
+
+          controller.enqueue({
+            type: 'serialized-error',
+            error: deserialize(JSON.parse(msg.data)),
+            eventSource,
+          });
+        });
+        eventSource.addEventListener(PING_EVENT, () => {
+          controller.enqueue({
+            type: 'ping',
+            eventSource,
+          });
+        });
+        eventSource.addEventListener('error', (event) => {
+          if (eventSource.readyState === EventSource.CLOSED) {
+            controller.error(event);
+          } else {
+            controller.enqueue({
+              type: 'connecting',
+              eventSource,
+              event,
+            });
+          }
+        });
+        eventSource.addEventListener('message', (_msg) => {
+          const msg = _msg as EventSourceLike.MessageEvent;
+
+          const chunk = deserialize(JSON.parse(msg.data));
+
+          const def: SSEvent = {
+            data: chunk,
+          };
+          if (msg.lastEventId) {
+            def.id = msg.lastEventId;
+          }
+          controller.enqueue({
+            type: 'data',
+            data: def as inferTrackedOutput<TConfig['data']>,
+            eventSource,
+          });
+        });
+
+        const onAbort = () => {
+          controller.close();
+          eventSource.close();
+        };
+        if (signal.aborted) {
+          onAbort();
+        } else {
+          signal.addEventListener('abort', onAbort);
+        }
+      },
+      cancel() {
+        _es?.close();
+      },
+    });
+
+  const getNewStreamAndReader = () => {
+    const stream = createStream();
+    const reader = stream.getReader();
+
+    return {
+      reader,
+      cancel: () => {
+        reader.releaseLock();
+        return stream.cancel();
+      },
+    };
+  };
   return {
     [Symbol.asyncIterator]() {
-      const reader = stream.getReader();
+      let stream = getNewStreamAndReader();
 
       const iterator: AsyncIterator<ConsumerStreamResult<TConfig>> = {
         async next() {
-          const value = await reader.read();
+          let promise = stream.reader.read();
 
-          if (value.done) {
+          if (opts.reconnectAfterInactivityMs) {
+            promise = withTimeout({
+              promise,
+              timeoutMs: opts.reconnectAfterInactivityMs,
+              onTimeout: async () => {
+                // Close and release old reader
+                await stream.cancel();
+
+                // Create new reader
+                stream = getNewStreamAndReader();
+
+                return {
+                  value: {
+                    type: 'timeout',
+                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                    eventSource: _es!,
+                  },
+                  done: false,
+                };
+              },
+            });
+          }
+
+          const result = await promise;
+
+          // console.debug('result', result, 'done', result.done);
+          if (result.done) {
             return {
-              value: undefined,
+              value: result.value,
               done: true,
             };
           }
           return {
-            value: value.value,
+            value: result.value,
             done: false,
           };
         },
         async return() {
-          reader.releaseLock();
+          await stream.cancel();
           return {
             value: undefined,
             done: true,

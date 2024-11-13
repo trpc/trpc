@@ -44,7 +44,7 @@ export type Resolver<TDef extends ResolverDef> = (
 
 type SubscriptionResolver<TDef extends ResolverDef> = (
   input: TDef['input'],
-  opts?: Partial<
+  opts: Partial<
     TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
   > &
     ProcedureOptions,

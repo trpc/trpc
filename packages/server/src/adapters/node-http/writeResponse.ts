@@ -42,11 +42,6 @@ export async function writeResponseBody(opts: {
         await writeResponseBodyChunk(res, chunk);
         res.flush?.();
       },
-      abort() {
-        if (!res.headersSent) {
-          res.statusCode = 500;
-        }
-      },
     });
 
     await opts.body.pipeTo(writableStream, {
