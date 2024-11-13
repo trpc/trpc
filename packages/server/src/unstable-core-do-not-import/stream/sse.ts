@@ -65,7 +65,7 @@ type SSEvent = Partial<{
 export function sseStreamProducer<TValue = unknown>(
   opts: SSEStreamProducerOptions<TValue>,
 ) {
-  const stream = createReadableStream<SSEvent>();
+  const stream = createReadableStream<SSEvent>(opts.abortCtrl);
   stream.controller.enqueue({ comment: 'connected' });
 
   const { serialize = identity } = opts;

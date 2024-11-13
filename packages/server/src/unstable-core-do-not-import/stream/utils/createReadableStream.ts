@@ -6,7 +6,7 @@ const cancelledStreamSymbol = Symbol();
 /**
  * One-off readable stream
  */
-export function createReadableStream<TValue = unknown>() {
+export function createReadableStream<TValue = unknown>(abortController?: AbortController) {
   let controller: ReadableStreamDefaultController<TValue> =
     null as unknown as ReadableStreamDefaultController<TValue>;
 
@@ -19,6 +19,7 @@ export function createReadableStream<TValue = unknown>() {
     cancel() {
       deferred.resolve(cancelledStreamSymbol);
       cancelled = true;
+      abortController?.abort();
     },
   });
 
