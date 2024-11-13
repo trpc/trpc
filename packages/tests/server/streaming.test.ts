@@ -664,4 +664,15 @@ describe('with transformer', () => {
     expect(aggregated).toEqual([1, 2]);
     expect(error.message).toBe('foo');
   });
+
+  test("AsyncGenerator methods present", async () => {
+    const { client, router } = ctx;
+
+    const iterable = await client.iterable.query();
+
+    expect(iterable).toHaveProperty('next');
+
+    // This passes type checker but will throw if next is not present
+    iterable.next();
+  })
 });
