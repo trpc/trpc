@@ -211,8 +211,6 @@ describe('polymorphism', () => {
             client.invalidateQueries({ queryKey: trpc.github.getQueryKey() }),
         });
 
-        console.log('STUFF', currentExport);
-
         return (
           <>
             <StartExportButton
@@ -427,34 +425,9 @@ function StartExportButton(props: {
 }) {
   const client = useQueryClient();
 
-  console.log(
-    'MUTATION OPTS',
-    props.route.start.mutationOptions({
-      onMutate(variables) {
-        console.log('EXPORT MUTATE', variables);
-      },
-      onSettled(data, error, vars) {
-        console.log('EXPORT SETTLED', data, error, vars);
-      },
-      async onSuccess(data) {
-        console.log('EXPORT STARTED');
-        props.onExportStarted(data.id);
-
-        await client.invalidateQueries({ queryKey: props.route.getQueryKey() });
-      },
-    }),
-  );
-
   const exportStarter = useMutation(
     props.route.start.mutationOptions({
-      onMutate(variables) {
-        console.log('EXPORT MUTATE', variables);
-      },
-      onSettled(data, error, vars) {
-        console.log('EXPORT SETTLED', data, error, vars);
-      },
       async onSuccess(data) {
-        console.log('EXPORT STARTED');
         props.onExportStarted(data.id);
 
         await client.invalidateQueries({ queryKey: props.route.getQueryKey() });
@@ -466,7 +439,6 @@ function StartExportButton(props: {
     <button
       data-testid="startExportBtn"
       onClick={() => {
-        console.log('STARTING EXPORT');
         exportStarter.mutate({
           filter: 'polymorphism react',
           name: 'Search for Polymorphism React',

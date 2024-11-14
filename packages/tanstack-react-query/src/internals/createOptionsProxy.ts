@@ -201,10 +201,10 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
   return createRecursiveProxy(({ args, path: _path }) => {
     const path = [..._path];
     const utilName = path.pop() as UtilsMethods;
-    const [input, userOptions] = args as any[];
+    const [arg1, arg2] = args as any[];
 
     const queryType = getQueryType(utilName);
-    const queryKey = getQueryKeyInternal(path, input, queryType ?? 'any');
+    const queryKey = getQueryKeyInternal(path, arg1, queryType ?? 'any');
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
       _input: null as any,
@@ -212,7 +212,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       getQueryKey: () => queryKey,
       infiniteQueryOptions: () =>
         trpcInfiniteQueryOptions({
-          opts: userOptions,
+          opts: arg2,
           path,
           queryClient: opts.queryClient,
           queryKey: queryKey as any as TRPCQueryKey,
@@ -220,7 +220,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
         }),
       queryOptions: () => {
         return trpcQueryOptions({
-          opts: userOptions,
+          opts: arg2,
           path,
           queryClient: opts.queryClient,
           queryKey: queryKey as any as TRPCQueryKey,
@@ -229,7 +229,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       },
       mutationOptions: () => {
         return trpcMutationOptions({
-          opts: userOptions,
+          opts: arg1,
           path,
           queryClient: opts.queryClient,
           mutate: callIt('mutation'),
@@ -238,7 +238,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       },
       subscriptionOptions: () => {
         return trpcSubscriptionOptions({
-          opts: userOptions,
+          opts: arg2,
           path,
           queryKey: queryKey as any as TRPCQueryKey,
           subscribe: callIt('subscription'),
