@@ -154,9 +154,8 @@ describe('polymorphism', () => {
             ],
           ]
         `);
-        expect(
-          trpc.github.issues.export.status.getQueryKey(),
-        ).toMatchInlineSnapshot(`
+        expect(trpc.github.issues.export.status.getQueryKey())
+          .toMatchInlineSnapshot(`
           Array [
             Array [
               "github",
@@ -166,9 +165,8 @@ describe('polymorphism', () => {
             ],
           ]
         `);
-        expect(
-          trpc.github.issues.export.status.getQueryKey({ id: 1 }),
-        ).toMatchInlineSnapshot(`
+        expect(trpc.github.issues.export.status.getQueryKey({ id: 1 }))
+          .toMatchInlineSnapshot(`
           Array [
             Array [
               "github",
@@ -212,6 +210,9 @@ describe('polymorphism', () => {
           mutationFn: () =>
             client.invalidateQueries({ queryKey: trpc.github.getQueryKey() }),
         });
+
+        console.log('STUFF', currentExport);
+
         return (
           <>
             <StartExportButton
@@ -426,12 +427,37 @@ function StartExportButton(props: {
 }) {
   const client = useQueryClient();
 
-  const exportStarter = useMutation(
+  console.log(
+    'MUTATION OPTS',
     props.route.start.mutationOptions({
+      onMutate(variables) {
+        console.log('EXPORT MUTATE', variables);
+      },
+      onSettled(data, error, vars) {
+        console.log('EXPORT SETTLED', data, error, vars);
+      },
       async onSuccess(data) {
+        console.log('EXPORT STARTED');
         props.onExportStarted(data.id);
 
-        client.invalidateQueries({ queryKey: props.route.getQueryKey() });
+        await client.invalidateQueries({ queryKey: props.route.getQueryKey() });
+      },
+    }),
+  );
+
+  const exportStarter = useMutation(
+    props.route.start.mutationOptions({
+      onMutate(variables) {
+        console.log('EXPORT MUTATE', variables);
+      },
+      onSettled(data, error, vars) {
+        console.log('EXPORT SETTLED', data, error, vars);
+      },
+      async onSuccess(data) {
+        console.log('EXPORT STARTED');
+        props.onExportStarted(data.id);
+
+        await client.invalidateQueries({ queryKey: props.route.getQueryKey() });
       },
     }),
   );
@@ -440,7 +466,8 @@ function StartExportButton(props: {
     <button
       data-testid="startExportBtn"
       onClick={() => {
-        exportStarter.mutateAsync({
+        console.log('STARTING EXPORT');
+        exportStarter.mutate({
           filter: 'polymorphism react',
           name: 'Search for Polymorphism React',
         });
@@ -492,10 +519,10 @@ function SubTypedStartExportButton(props: SubTypedStartExportButtonProps) {
 
   const exportStarter = useMutation(
     props.route.start.mutationOptions({
-      onSuccess(data) {
+      async onSuccess(data) {
         props.onExportStarted(data.id);
 
-        client.invalidateQueries({
+        await client.invalidateQueries({
           queryKey: props.route.getQueryKey(),
         });
       },
