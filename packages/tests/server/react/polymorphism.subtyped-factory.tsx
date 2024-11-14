@@ -2,16 +2,19 @@
 // This file extends polymorphism.factory.tsx into a sub-typed router,
 //  which can be used with existing components, but has extra data for other use cases
 //
-import type { RouterLike, UtilsLike } from '@trpc/react-query/shared';
 import { TRPCError } from '@trpc/server';
 import type {
   AnyRootTypes,
   createBuilder,
   createRouterFactory,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import z from 'zod';
 import { t } from './polymorphism.common';
-import { FileExportRequest, FileExportStatus } from './polymorphism.factory';
+import {
+  FileExportRequest,
+  FileExportStatus,
+} from './polymorphism.legacy.factory';
 
 //
 // DTO Subtypes
@@ -121,6 +124,4 @@ export function createSubTypedExportRoute<
 
 type SubTypedExportRouteType = ReturnType<typeof createSubTypedExportRoute>;
 
-export type ExportSubTypedRouteLike = RouterLike<SubTypedExportRouteType>;
-
-export type ExportSubTypesUtilsLike = UtilsLike<SubTypedExportRouteType>;
+export type ExportSubTypedRouteLike = TRPCOptionsProxy<SubTypedExportRouteType>;
