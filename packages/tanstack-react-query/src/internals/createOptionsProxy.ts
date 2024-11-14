@@ -37,7 +37,7 @@ import type { QueryType, ResolverDef } from './types';
 import { getQueryKeyInternal } from './utils';
 
 export interface DecorateQueryProcedure<TDef extends ResolverDef> {
-  _input: TDef['output'];
+  _input: TDef['input'];
   _output: TDef['output'];
 
   /**
@@ -52,7 +52,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
 }
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
-  _input: TDef['output'];
+  _input: TDef['input'];
   _output: TDef['output'];
 
   /**
