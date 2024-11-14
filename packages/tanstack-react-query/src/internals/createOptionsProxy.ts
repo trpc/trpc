@@ -33,7 +33,7 @@ import {
   trpcSubscriptionOptions,
   type TRPCSubscriptionOptions,
 } from './subscriptionOptions';
-import type { QueryType, ResolverDef } from './types';
+import type { QueryType, ResolverDef, TRPCQueryKey } from './types';
 import { getQueryKeyInternal } from './utils';
 
 export interface DecorateQueryProcedure<TDef extends ResolverDef> {
@@ -49,6 +49,13 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
    */
   infiniteQueryOptions: TRPCInfiniteQueryOptions<TDef>;
+
+  /**
+   * Useful for query invalidation
+   *
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
+   */
+  getQueryKey: (input?: TDef['input']) => TRPCQueryKey;
 }
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
@@ -88,7 +95,14 @@ export type DecoratedProcedureUtilsRecord<
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
-      ? DecoratedProcedureUtilsRecord<TRoot, $Value>
+      ? DecoratedProcedureUtilsRecord<TRoot, $Value> & {
+          /**
+           * Useful for query invalidation
+           *
+           * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
+           */
+          getQueryKey: () => TRPCQueryKey;
+        }
       : $Value extends AnyProcedure
       ? DecorateProcedure<
           $Value['_def']['type'],
@@ -107,7 +121,14 @@ export type TRPCOptionsProxy<TRouter extends AnyRouter> =
   DecoratedProcedureUtilsRecord<
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
-  >;
+  > & {
+    /**
+     * Useful for query invalidation
+     *
+     * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
+     */
+    getQueryKey: () => TRPCQueryKey;
+  };
 
 export interface TRPCOptionsProxyOptionsBase {
   queryClient: QueryClient;
@@ -138,12 +159,14 @@ type UtilsMethods =
   | keyof DecorateSubscriptionProcedure<any>;
 
 function getQueryType(method: UtilsMethods) {
-  return {
+  const map: Partial<Record<UtilsMethods, QueryType>> = {
     queryOptions: 'query',
     infiniteQueryOptions: 'infinite',
     subscriptionOptions: 'any',
     mutationOptions: 'any',
-  }[method] as QueryType;
+  };
+
+  return map[method];
 }
 
 export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
@@ -181,15 +204,20 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
     const [input, userOptions] = args as any[];
 
     const queryType = getQueryType(utilName);
-    const queryKey = getQueryKeyInternal(path, input, queryType);
+    const queryKey = queryType
+      ? getQueryKeyInternal(path, input, queryType)
+      : null;
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
+      _input: null as any,
+      _output: null as any,
+      getQueryKey: () => queryKey,
       infiniteQueryOptions: () =>
         trpcInfiniteQueryOptions({
           opts: userOptions,
           path,
           queryClient: opts.queryClient,
-          queryKey,
+          queryKey: queryKey as any as TRPCQueryKey,
           query: callIt('query'),
         }),
       queryOptions: () => {
@@ -197,7 +225,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
           opts: userOptions,
           path,
           queryClient: opts.queryClient,
-          queryKey: queryKey,
+          queryKey: queryKey as any as TRPCQueryKey,
           query: callIt('query'),
         });
       },
@@ -214,7 +242,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
         return trpcSubscriptionOptions({
           opts: userOptions,
           path,
-          queryKey,
+          queryKey: queryKey as any as TRPCQueryKey,
           subscribe: callIt('subscription'),
         });
       },

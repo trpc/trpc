@@ -14,6 +14,7 @@ import {
   QueryClientProvider,
   useMutation,
   useQuery,
+  useQueryClient,
 } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -148,18 +149,17 @@ describe('polymorphism', () => {
        */
       function IssuesExportPage() {
         const trpc = useTRPC();
-        // const utils = trpc.useUtils();
+        const client = useQueryClient();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
-
         const invalidate = useMutation({
-          // mutationFn: () => utils.invalidate(),
+          mutationFn: () =>
+            client.invalidateQueries({ queryKey: trpc.github.getQueryKey() }),
         });
         return (
           <>
             <StartExportButton
               route={trpc.github.issues.export}
-              // utils={utils.github.issues.export}
               onExportStarted={setCurrentExport}
             />
 
@@ -210,18 +210,20 @@ describe('polymorphism', () => {
 
       function DiscussionsExportPage() {
         const trpc = useTRPC();
-        // const utils = trpc.useUtils();
+        const client = useQueryClient();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
         const invalidate = useMutation({
-          // mutationFn: () => utils.invalidate(),
+          mutationFn: () =>
+            client.invalidateQueries({
+              queryKey: trpc.github.getQueryKey(),
+            }),
         });
 
         return (
           <>
             <StartExportButton
               route={trpc.github.discussions.export}
-              // utils={utils.github.discussions.export}
               onExportStarted={setCurrentExport}
             />
 
@@ -278,11 +280,14 @@ describe('polymorphism', () => {
   //      */
   //     function PullRequestsExportPage() {
   //       const trpc = useTRPC();
-  //       // const utils = trpc.useUtils();
+  //       const client = useQueryClient();
 
   //       const [currentExport, setCurrentExport] = useState<number | null>(null);
   //       const invalidate = useMutation({
-  //         // mutationFn: () => utils.invalidate(),
+  //         mutationFn: () =>
+  //           client.invalidateQueries({
+  //             queryKey: trpc.getQueryKey(),
+  //           }),
   //       });
 
   //       return (
@@ -290,7 +295,6 @@ describe('polymorphism', () => {
   //           {/* Some components may still need to be bespoke... */}
   //           <SubTypedStartExportButton
   //             route={trpc.github.pullRequests.export}
-  //             // utils={utils.github.pullRequests.export}
   //             onExportStarted={setCurrentExport}
   //           />
 
@@ -301,7 +305,11 @@ describe('polymorphism', () => {
 
   //           <RemoveExportButton
   //             remove={trpc.github.pullRequests.export.delete}
-  //             // utils={utils.github.pullRequests.export}
+  //             invalidateQueries={() =>
+  //               client.invalidateQueries({
+  //                 queryKey: trpc.getQueryKey(),
+  //               })
+  //             }
   //             exportId={currentExport}
   //           />
 
@@ -358,15 +366,16 @@ describe('polymorphism', () => {
 
 function StartExportButton(props: {
   route: Factory.ExportRouteLike;
-  // utils: Factory.ExportUtilsLike;
   onExportStarted: (id: number) => void;
 }) {
+  const client = useQueryClient();
+
   const exportStarter = useMutation(
     props.route.start.mutationOptions({
       async onSuccess(data) {
         props.onExportStarted(data.id);
 
-        // await props.utils.invalidate();
+        client.invalidateQueries({ queryKey: props.route.getQueryKey() });
       },
     }),
   );
@@ -389,12 +398,12 @@ function StartExportButton(props: {
 function RemoveExportButton(props: {
   exportId: number | null;
   remove: SubTypedFactory.ExportSubTypedRouteLike['delete'];
-  // utils: SubTypedFactory.ExportSubTypesUtilsLike;
+  invalidateQueries(): Promise<void>;
 }) {
   const exportDeleter = useMutation(
     props.remove.mutationOptions({
       async onSuccess() {
-        // await props.utils.invalidate();
+        props.invalidateQueries();
       },
     }),
   );
@@ -420,16 +429,19 @@ function RemoveExportButton(props: {
 
 type SubTypedStartExportButtonProps = {
   route: SubTypedFactory.ExportSubTypedRouteLike;
-  // utils: SubTypedFactory.ExportSubTypesUtilsLike;
   onExportStarted: (id: number) => void;
 };
 function SubTypedStartExportButton(props: SubTypedStartExportButtonProps) {
+  const client = useQueryClient();
+
   const exportStarter = useMutation(
     props.route.start.mutationOptions({
       onSuccess(data) {
         props.onExportStarted(data.id);
 
-        // props.utils.invalidate();
+        client.invalidateQueries({
+          queryKey: props.route.getQueryKey(),
+        });
       },
     }),
   );
