@@ -37,6 +37,9 @@ import type { QueryType, ResolverDef } from './types';
 import { getQueryKeyInternal } from './utils';
 
 export interface DecorateQueryProcedure<TDef extends ResolverDef> {
+  _input: TDef['output'];
+  _output: TDef['output'];
+
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
    */
@@ -49,6 +52,9 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
 }
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
+  _input: TDef['output'];
+  _output: TDef['output'];
+
   /**
    * @see
    */
