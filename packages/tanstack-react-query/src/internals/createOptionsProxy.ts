@@ -204,9 +204,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
     const [input, userOptions] = args as any[];
 
     const queryType = getQueryType(utilName);
-    const queryKey = queryType
-      ? getQueryKeyInternal(path, input, queryType)
-      : null;
+    const queryKey = getQueryKeyInternal(path, input, queryType ?? 'any');
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
       _input: null as any,
