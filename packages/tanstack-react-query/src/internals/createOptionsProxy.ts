@@ -36,7 +36,24 @@ import {
 import type { QueryType, ResolverDef, TRPCQueryKey } from './types';
 import { getQueryKeyInternal } from './utils';
 
-export interface DecorateQueryProcedure<TDef extends ResolverDef> {
+interface QueryKeyStuff {
+  /**
+   * Useful for query invalidation
+   *
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
+   */
+  getQueryKey: () => TRPCQueryKey;
+
+  /**
+   * Simple utility to invalidate a query or router
+   *
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
+   */
+  invalidate: () => Promise<void>;
+}
+
+export interface DecorateQueryProcedure<TDef extends ResolverDef>
+  extends Omit<QueryKeyStuff, 'getQueryKey'> {
   _input: TDef['input'];
   _output: TDef['output'];
 
@@ -95,14 +112,7 @@ export type DecoratedProcedureUtilsRecord<
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
-      ? DecoratedProcedureUtilsRecord<TRoot, $Value> & {
-          /**
-           * Useful for query invalidation
-           *
-           * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
-           */
-          getQueryKey: () => TRPCQueryKey;
-        }
+      ? DecoratedProcedureUtilsRecord<TRoot, $Value> & QueryKeyStuff
       : $Value extends AnyProcedure
       ? DecorateProcedure<
           $Value['_def']['type'],
@@ -121,14 +131,8 @@ export type TRPCOptionsProxy<TRouter extends AnyRouter> =
   DecoratedProcedureUtilsRecord<
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
-  > & {
-    /**
-     * Useful for query invalidation
-     *
-     * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
-     */
-    getQueryKey: () => TRPCQueryKey;
-  };
+  > &
+    QueryKeyStuff;
 
 export interface TRPCOptionsProxyOptionsBase {
   queryClient: QueryClient;
@@ -210,6 +214,11 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       _input: null as any,
       _output: null as any,
       getQueryKey: () => queryKey,
+      invalidate: async () => {
+        await opts.queryClient.invalidateQueries({
+          queryKey: queryKey,
+        });
+      },
       infiniteQueryOptions: () =>
         trpcInfiniteQueryOptions({
           opts: arg2,

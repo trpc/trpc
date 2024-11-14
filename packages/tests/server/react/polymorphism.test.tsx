@@ -203,12 +203,10 @@ describe('polymorphism', () => {
        */
       function IssuesExportPage() {
         const trpc = useTRPC();
-        const client = useQueryClient();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
         const invalidate = useMutation({
-          mutationFn: () =>
-            client.invalidateQueries({ queryKey: trpc.github.getQueryKey() }),
+          mutationFn: () => trpc.github.invalidate(),
         });
 
         return (
@@ -265,14 +263,10 @@ describe('polymorphism', () => {
 
       function DiscussionsExportPage() {
         const trpc = useTRPC();
-        const client = useQueryClient();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
         const invalidate = useMutation({
-          mutationFn: () =>
-            client.invalidateQueries({
-              queryKey: trpc.github.getQueryKey(),
-            }),
+          mutationFn: () => trpc.github.invalidate(),
         });
 
         return (
@@ -335,14 +329,10 @@ describe('polymorphism', () => {
   //      */
   //     function PullRequestsExportPage() {
   //       const trpc = useTRPC();
-  //       const client = useQueryClient();
 
   //       const [currentExport, setCurrentExport] = useState<number | null>(null);
   //       const invalidate = useMutation({
-  //         mutationFn: () =>
-  //           client.invalidateQueries({
-  //             queryKey: trpc.getQueryKey(),
-  //           }),
+  //         mutationFn: () => trpc.invalidate(),
   //       });
 
   //       return (
@@ -360,11 +350,7 @@ describe('polymorphism', () => {
 
   //           <RemoveExportButton
   //             remove={trpc.github.pullRequests.export.delete}
-  //             invalidateQueries={() =>
-  //               client.invalidateQueries({
-  //                 queryKey: trpc.getQueryKey(),
-  //               })
-  //             }
+  //             invalidateQueries={() => trpc.invalidate()}
   //             exportId={currentExport}
   //           />
 
@@ -423,14 +409,12 @@ function StartExportButton(props: {
   route: Factory.ExportRouteLike;
   onExportStarted: (id: number) => void;
 }) {
-  const client = useQueryClient();
-
   const exportStarter = useMutation(
     props.route.start.mutationOptions({
       async onSuccess(data) {
         props.onExportStarted(data.id);
 
-        await client.invalidateQueries({ queryKey: props.route.getQueryKey() });
+        await props.route.invalidate();
       },
     }),
   );
@@ -487,16 +471,12 @@ type SubTypedStartExportButtonProps = {
   onExportStarted: (id: number) => void;
 };
 function SubTypedStartExportButton(props: SubTypedStartExportButtonProps) {
-  const client = useQueryClient();
-
   const exportStarter = useMutation(
     props.route.start.mutationOptions({
       async onSuccess(data) {
         props.onExportStarted(data.id);
 
-        await client.invalidateQueries({
-          queryKey: props.route.getQueryKey(),
-        });
+        await props.route.invalidate();
       },
     }),
   );
