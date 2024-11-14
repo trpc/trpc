@@ -441,7 +441,7 @@ function SubTypedStartExportButton(props: SubTypedStartExportButtonProps) {
         exportStarter.mutateAsync({
           filter: 'polymorphism react',
           name: 'Search for Polymorphism React',
-          description: 'This field is unique to the sub-typed router',
+          details: 'This field is unique to the sub-typed router',
         });
       }}
     >
@@ -492,7 +492,9 @@ function ExportStatus<
   );
 }
 
-function ExportsList(props: { list: Factory.ExportRouteLike['list'] }) {
+function ExportsList(props: {
+  list: Omit<Factory.ExportRouteLike['list'], 'nothing'>;
+}) {
   const exportsList = useQuery(props.list.queryOptions());
 
   return (

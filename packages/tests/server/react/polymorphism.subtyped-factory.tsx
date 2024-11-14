@@ -21,11 +21,11 @@ import {
 //
 
 const SubTypedFileExportRequest = FileExportRequest.extend({
-  description: z.string().min(0),
+  details: z.string().min(0),
 });
 
 export const SubTypedFileExportStatus = FileExportStatus.extend({
-  description: z.string().min(0),
+  details: z.string().min(0),
 });
 export type SubTypedFileExportStatusType = z.infer<
   typeof SubTypedFileExportStatus
@@ -62,7 +62,7 @@ export function createSubTypedExportRoute<
         const exportInstance: SubTypedFileExportStatusType = {
           id: COUNTER++,
           name: opts.input.name,
-          description: opts.input.description,
+          details: opts.input.details,
           createdAt: new Date(),
           downloadUri: undefined,
         };
