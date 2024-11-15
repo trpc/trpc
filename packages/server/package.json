@@ -110,7 +110,8 @@
     "rpc",
     "shared",
     "unstable-core-do-not-import",
-    "!**/*.test.*"
+    "!**/*.test.*",
+    "!**/__tests__"
   ],
   "publishConfig": {
     "access": "public"

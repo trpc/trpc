@@ -73,7 +73,8 @@
     "package.json",
     "links",
     "unstable-internals",
-    "!**/*.test.*"
+    "!**/*.test.*",
+    "!**/__tests__"
   ],
   "dependencies": {},
   "peerDependencies": {

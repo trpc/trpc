@@ -425,13 +425,20 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
   type ControllerChunk = ChunkData | StreamInterruptedError;
   type ChunkController = ReadableStreamDefaultController<ControllerChunk>;
+  /**
+   * This is needed as new values can come in before the controller has read the chunk
+   * Not pretty, could likely be refactored and omitted somehow
+   */
+  const chunkDeferred = new Map<ChunkIndex, Deferred<ChunkController>>();
 
-  const controllers = withRefCount(
-    new Map<ChunkIndex, ChunkController>(),
-    () => {
+  const controllers = new Map<ChunkIndex, ChunkController>();
+
+  const maybeAbort = () => {
+    if (chunkDeferred.size === 0 && controllers.size === 0) {
+      // nothing is listening to the stream anymore
       opts.abortController?.abort();
-    },
-  );
+    }
+  };
 
   function decodeChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
@@ -439,6 +446,13 @@ export async function jsonlStreamConsumer<THead>(opts: {
     const stream = createReadableStream<ChunkData>();
 
     controllers.set(chunkId, stream.controller);
+
+    // resolve chunk deferred if it exists
+    const deferred = chunkDeferred.get(chunkId);
+    if (deferred) {
+      deferred.resolve(stream.controller);
+      chunkDeferred.delete(chunkId);
+    }
 
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
@@ -473,59 +487,65 @@ export async function jsonlStreamConsumer<THead>(opts: {
             .catch(reject)
             .finally(() => {
               controllers.delete(chunkId);
+              maybeAbort();
             });
         });
       }
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
-        return {
-          [Symbol.asyncIterator]: () => {
-            const reader = stream.readable.getReader();
-            const iterator: AsyncIterator<unknown> = {
-              next: async () => {
-                const { done, value } = await reader.read();
-                if (value instanceof StreamInterruptedError) {
-                  throw value;
-                }
-                if (done) {
-                  controllers.delete(chunkId);
-                  return {
-                    done: true,
-                    value: undefined,
-                  };
-                }
+        const reader = stream.readable.getReader();
+        const iterator: AsyncIterator<unknown> = {
+          next: async () => {
+            const { done, value } = await reader.read();
+            if (value instanceof StreamInterruptedError) {
+              throw value;
+            }
+            if (done) {
+              controllers.delete(chunkId);
+              maybeAbort();
 
-                const [_chunkId, status, data] = value as IterableChunk;
+              return {
+                done: true,
+                value: undefined,
+              };
+            }
 
-                switch (status) {
-                  case ASYNC_ITERABLE_STATUS_VALUE:
-                    return {
-                      done: false,
-                      value: decode(data),
-                    };
-                  case ASYNC_ITERABLE_STATUS_RETURN:
-                    controllers.delete(chunkId);
-                    return {
-                      done: true,
-                      value: decode(data),
-                    };
-                  case ASYNC_ITERABLE_STATUS_ERROR:
-                    controllers.delete(chunkId);
-                    throw (
-                      opts.formatError?.({ error: data }) ??
-                      new AsyncError(data)
-                    );
-                }
-              },
-              return: async () => {
+            const [_chunkId, status, data] = value as IterableChunk;
+
+            switch (status) {
+              case ASYNC_ITERABLE_STATUS_VALUE:
+                return {
+                  done: false,
+                  value: decode(data),
+                };
+              case ASYNC_ITERABLE_STATUS_RETURN:
                 controllers.delete(chunkId);
+                maybeAbort();
+
                 return {
                   done: true,
-                  value: undefined,
+                  value: decode(data),
                 };
-              },
-            };
-            return iterator;
+              case ASYNC_ITERABLE_STATUS_ERROR:
+                controllers.delete(chunkId);
+                maybeAbort();
+
+                throw (
+                  opts.formatError?.({ error: data }) ?? new AsyncError(data)
+                );
+            }
           },
+          return: async () => {
+            controllers.delete(chunkId);
+            maybeAbort();
+
+            return {
+              done: true,
+              value: undefined,
+            };
+          },
+        };
+        return {
+          [Symbol.asyncIterator]: () => iterator,
         };
       }
     }
@@ -571,19 +591,29 @@ export async function jsonlStreamConsumer<THead>(opts: {
             headDeferred.resolve(head as THead);
             headDeferred = null;
 
-            controllers.activate();
             return;
           }
           const chunk = chunkOrHead as ChunkData;
           const [idx] = chunk;
 
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const controller = controllers.get(idx)!;
-          controller.enqueue(chunk);
+          let readController = controllers.get(idx)!;
+          if (!readController) {
+            let deferred = chunkDeferred.get(idx);
+            if (!deferred) {
+              deferred = createDeferred();
+              chunkDeferred.set(idx, deferred);
+            }
+            readController = await deferred.promise;
+          }
+          readController.enqueue(chunk);
         },
         close: closeOrAbort,
         abort: closeOrAbort,
       }),
+      {
+        signal: opts.abortController.signal,
+      },
     )
     .catch((error) => {
       opts.onError?.({ error });

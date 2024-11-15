@@ -1,8 +1,5 @@
 import { Unpromise } from '../../../vendor/unpromise';
-import {
-  disposablePromiseTimer,
-  disposablePromiseTimerResult,
-} from './disposablePromiseTimer';
+import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
 export const PING_SYM = Symbol('ping');
 
@@ -23,7 +20,7 @@ export async function* withPing<TValue>(
 
   let nextPromise = iterator.next();
   while (true) {
-    const pingPromise = disposablePromiseTimer(pingIntervalMs);
+    const pingPromise = timerResource(pingIntervalMs);
 
     try {
       result = await Unpromise.race([nextPromise, pingPromise.start()]);

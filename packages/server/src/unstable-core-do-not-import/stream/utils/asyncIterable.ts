@@ -1,19 +1,16 @@
 import { Unpromise } from '../../../vendor/unpromise';
-import {
-  disposablePromiseTimer,
-  disposablePromiseTimerResult,
-} from './disposablePromiseTimer';
+import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
 /**
  * Derives a new {@link AsyncGenerator} based on {@link iterable}, that automatically stops after the specified duration.
  */
 export async function* withMaxDuration<T>(
   iterable: AsyncIterable<T>,
-  opts: { maxDurationMs: number; abortCtrl: AbortController },
+  opts: { maxDurationMs: number },
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
 
-  const timer = disposablePromiseTimer(opts.maxDurationMs);
+  const timer = timerResource(opts.maxDurationMs);
   try {
     const timerPromise = timer.start();
 
@@ -24,7 +21,7 @@ export async function* withMaxDuration<T>(
       result = await Unpromise.race([iterator.next(), timerPromise]);
       if (result === disposablePromiseTimerResult) {
         // cancelled due to timeout
-        opts.abortCtrl.abort();
+
         const res = await iterator.return?.();
         return res?.value;
       }
@@ -52,7 +49,6 @@ export async function* takeWithGrace<T>(
   opts: {
     count: number;
     gracePeriodMs: number;
-    abortCtrl: AbortController;
   },
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
@@ -60,7 +56,7 @@ export async function* takeWithGrace<T>(
   // declaration outside the loop for garbage collection reasons
   let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
 
-  const timer = disposablePromiseTimer(opts.gracePeriodMs);
+  const timer = timerResource(opts.gracePeriodMs);
   try {
     let count = opts.count;
 
@@ -81,8 +77,6 @@ export async function* takeWithGrace<T>(
       yield result.value;
       if (--count === 0) {
         timerPromise = timer.start();
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        timerPromise.then(() => opts.abortCtrl.abort());
       }
       // free up reference for garbage collection
       result = null;

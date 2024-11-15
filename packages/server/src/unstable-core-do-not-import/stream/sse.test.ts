@@ -1,11 +1,11 @@
 import { EventEmitter, on } from 'node:events';
+import { serverResource } from './utils/__tests__/serverResource';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';
-import { abortSignalsAnyPonyfill, run, sleep } from '../utils';
+import { run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
-import { createServer } from './utils/createServer';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 
@@ -35,43 +35,31 @@ test('e2e, server-sent events (SSE)', async () => {
 
   const written: string[] = [];
 
-  const onSocketClose = vi.fn();
-  const server = createServer(async (req, res) => {
-    const url = new URL(`http://${req.headers.host}${req.url}`);
-    req.socket.on('close', () => {
-      onSocketClose();
-    });
+  await using server = serverResource(async (request) => {
+    const url = new URL(request.url);
 
-    const stringOrNull = (v: unknown) => {
-      if (typeof v === 'string') {
-        return v;
-      }
-      return null;
-    };
     const lastEventId: string | null =
-      stringOrNull(req.headers['last-event-id']) ??
+      request.headers.get('last-event-id') ??
       url.searchParams.get('lastEventId') ??
       url.searchParams.get('Last-Event-Id');
 
     const stream = sseStreamProducer({
       data: data(lastEventId ?? undefined),
       serialize: (v) => SuperJSON.serialize(v),
-      abortCtrl: new AbortController(),
-    });
-    const reader = stream.getReader();
-    for (const [key, value] of Object.entries(sseHeaders)) {
-      res.setHeader(key, value);
-    }
+    }).pipeThrough(
+      // debug stream
+      new TransformStream({
+        transform: (chunk, controller) => {
+          // console.debug('debug', chunk);
+          written.push(chunk);
+          controller.enqueue(chunk);
+        },
+      }),
+    );
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-      res.write(value);
-      written.push(value);
-    }
-    res.end();
+    return new Response(stream, {
+      headers: sseHeaders,
+    });
   });
 
   const ac = new AbortController();
@@ -147,11 +135,11 @@ test('e2e, server-sent events (SSE)', async () => {
 
   expect(values).toEqual(range(1, ITERATIONS * 2 + 1));
 
-  expect(onSocketClose).toHaveBeenCalledTimes(1);
+  expect(server.abortCount).toBe(1);
   // The break after double the ITERATIONS will trigger a second socket close
-  await vi.waitFor(() => expect(onSocketClose).toHaveBeenCalledTimes(2));
-
-  await server.close();
+  await vi.waitFor(() => expect(server.abortCount).toBe(2), {
+    timeout: 1000,
+  });
 
   expect(allEvents.filter((it) => it.type === 'connecting')).toHaveLength(2);
 });
@@ -178,15 +166,9 @@ test('SSE on serverless - emit and disconnect early', async () => {
     written: string[];
   };
   const requests: RequestTrace[] = [];
-  const server = createServer(async (req, res) => {
-    const url = new URL(`http://${req.headers.host}${req.url}`);
+  await using server = serverResource(async (request) => {
+    const url = new URL(request.url);
 
-    const stringOrNull = (v: unknown) => {
-      if (typeof v === 'string') {
-        return v;
-      }
-      return null;
-    };
     const stringToNumber = (v: string | null) => {
       if (v === null) {
         return null;
@@ -198,7 +180,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
       return num;
     };
     const lastEventId: string | null =
-      stringOrNull(req.headers['last-event-id']) ??
+      request.headers.get('last-event-id') ??
       url.searchParams.get('lastEventId') ??
       url.searchParams.get('Last-Event-Id');
 
@@ -210,35 +192,22 @@ test('SSE on serverless - emit and disconnect early', async () => {
 
     const asNumber = stringToNumber(lastEventId);
 
-    const producerAbortCtrl = new AbortController();
-
     const stream = sseStreamProducer({
-      data: data(
-        asNumber,
-        abortSignalsAnyPonyfill([
-          reqAbortCtrl.signal,
-          producerAbortCtrl.signal,
-        ]),
-      ),
+      data: data(asNumber, reqAbortCtrl.signal),
       serialize: (v) => SuperJSON.serialize(v),
       emitAndEndImmediately: true,
-      abortCtrl: producerAbortCtrl,
+    }).pipeThrough(
+      new TransformStream({
+        transform(chunk, controller) {
+          requestTrace.written.push(chunk);
+          controller.enqueue(chunk);
+        },
+      }),
+    );
+
+    return new Response(stream, {
+      headers: sseHeaders,
     });
-    const reader = stream.getReader();
-    for (const [key, value] of Object.entries(sseHeaders)) {
-      res.setHeader(key, value);
-    }
-
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) {
-        break;
-      }
-      res.write(value);
-      requestTrace.written.push(value);
-    }
-    res.end();
   });
 
   const reqAbortCtrl = new AbortController();
@@ -353,7 +322,6 @@ test('SSE on serverless - emit and disconnect early', async () => {
       },
     ]
   `);
-  await server.close();
 });
 
 test('sse()', () => {

@@ -51,7 +51,8 @@
     "rsc",
     "server",
     "shared",
-    "!**/*.test.*"
+    "!**/*.test.*",
+    "!**/__tests__"
   ],
   "eslintConfig": {
     "rules": {

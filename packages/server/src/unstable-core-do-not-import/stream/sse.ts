@@ -32,7 +32,7 @@ export interface PingOptions {
 export interface SSEStreamProducerOptions<TValue = unknown> {
   serialize?: Serialize;
   data: AsyncIterable<TValue>;
-  abortCtrl: AbortController;
+
   maxDepth?: number;
   ping?: PingOptions;
   /**
@@ -85,7 +85,6 @@ export function sseStreamProducer<TValue = unknown>(
       iterable = takeWithGrace(iterable, {
         count: 1,
         gracePeriodMs: 1,
-        abortCtrl: opts.abortCtrl,
       });
     }
 
@@ -96,7 +95,6 @@ export function sseStreamProducer<TValue = unknown>(
     ) {
       iterable = withMaxDuration(iterable, {
         maxDurationMs: opts.maxDurationMs,
-        abortCtrl: opts.abortCtrl,
       });
     }
 
