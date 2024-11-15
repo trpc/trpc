@@ -501,6 +501,8 @@ export async function jsonlStreamConsumer<THead>(opts: {
             }
             if (done) {
               controllers.delete(chunkId);
+              maybeAbort();
+
               return {
                 done: true,
                 value: undefined,
@@ -517,8 +519,8 @@ export async function jsonlStreamConsumer<THead>(opts: {
                 };
               case ASYNC_ITERABLE_STATUS_RETURN:
                 controllers.delete(chunkId);
-
                 maybeAbort();
+
                 return {
                   done: true,
                   value: decode(data),
@@ -526,6 +528,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               case ASYNC_ITERABLE_STATUS_ERROR:
                 controllers.delete(chunkId);
                 maybeAbort();
+
                 throw (
                   opts.formatError?.({ error: data }) ?? new AsyncError(data)
                 );
