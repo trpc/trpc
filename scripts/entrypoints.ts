@@ -116,6 +116,7 @@ export async function generateEntrypoints(rawInputs: string[]) {
 
   // Exclude test files in builds
   pkgJson.files.push('!**/*.test.*');
+  pkgJson.files.push('!**/__tests__');
   // Add `funding` in all packages
   pkgJson.funding = ['https://trpc.io/sponsor'];
 

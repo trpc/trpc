@@ -69,7 +69,8 @@
     "package.json",
     "app-dir",
     "ssrPrepass",
-    "!**/*.test.*"
+    "!**/*.test.*",
+    "!**/__tests__"
   ],
   "dependencies": {},
   "peerDependencies": {
