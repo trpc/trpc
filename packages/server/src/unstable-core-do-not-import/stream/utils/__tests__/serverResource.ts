@@ -44,7 +44,10 @@ export function serverResource(handler: Handler) {
 
   const url = `http://localhost:${port}`;
 
-  async function close() {
+  async function forceClose() {
+    for (const conn of connections.values()) {
+      conn.destroy();
+    }
     await new Promise<void>((resolve, reject) => {
       server.close((err) => {
         if (err) {
@@ -62,18 +65,12 @@ export function serverResource(handler: Handler) {
       return abortCount;
     },
     restart: async () => {
-      for (const conn of connections.values()) {
-        conn.destroy();
-      }
-      await close();
+      await forceClose();
 
       server.listen(port);
     },
     [Symbol.asyncDispose]: async () => {
-      for (const conn of connections.values()) {
-        conn.destroy();
-      }
-      await close();
+      await forceClose();
     },
   };
 }
