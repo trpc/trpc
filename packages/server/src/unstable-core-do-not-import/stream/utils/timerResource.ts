@@ -2,7 +2,7 @@
 Symbol.dispose ??= Symbol();
 
 export const disposablePromiseTimerResult = Symbol();
-export function disposablePromiseTimer(ms: number) {
+export function timerResource(ms: number) {
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   return {

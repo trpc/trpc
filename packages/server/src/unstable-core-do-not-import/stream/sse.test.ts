@@ -5,7 +5,7 @@ import type { inferAsyncIterableYield, Maybe } from '../types';
 import { abortSignalsAnyPonyfill, run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
-import { createServer } from './utils/createServer';
+import { serverResource } from './utils/createServer';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 
@@ -21,7 +21,7 @@ export const suppressLogs = () => {
     console.error = error;
   };
 };
-test('e2e, server-sent events (SSE)', async () => {
+test.only('e2e, server-sent events (SSE)', async () => {
   async function* data(lastEventId: string | undefined) {
     let i = lastEventId ? Number(lastEventId) : 0;
     while (true) {
@@ -36,7 +36,7 @@ test('e2e, server-sent events (SSE)', async () => {
   const written: string[] = [];
 
   const onSocketClose = vi.fn();
-  const server = createServer(async (req, res) => {
+  await using server = serverResource(async (req, res) => {
     const url = new URL(`http://${req.headers.host}${req.url}`);
     req.socket.on('close', () => {
       onSocketClose();
@@ -151,8 +151,6 @@ test('e2e, server-sent events (SSE)', async () => {
   // The break after double the ITERATIONS will trigger a second socket close
   await vi.waitFor(() => expect(onSocketClose).toHaveBeenCalledTimes(2));
 
-  await server.close();
-
   expect(allEvents.filter((it) => it.type === 'connecting')).toHaveLength(2);
 });
 
@@ -178,7 +176,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
     written: string[];
   };
   const requests: RequestTrace[] = [];
-  const server = createServer(async (req, res) => {
+  await using server = serverResource(async (req, res) => {
     const url = new URL(`http://${req.headers.host}${req.url}`);
 
     const stringOrNull = (v: unknown) => {
@@ -353,7 +351,6 @@ test('SSE on serverless - emit and disconnect early', async () => {
       },
     ]
   `);
-  await server.close();
 });
 
 test('sse()', () => {

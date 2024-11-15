@@ -5,7 +5,7 @@ import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
 import { createDeferred } from './utils/createDeferred';
-import { createServer } from './utils/createServer';
+import { serverResource } from './utils/createServer';
 
 test('encode/decode with superjson', async () => {
   const data = {
@@ -227,12 +227,12 @@ test('decode - bad data', async () => {
   }
 });
 
-function createServerForStream(
+function serverResourceForStream(
   stream: ReadableStream,
   abortCtrl: AbortController,
   headers: Record<string, string> = {},
 ) {
-  return createServer(async (req, res) => {
+  return serverResource(async (req, res) => {
     req.once('aborted', () => {
       abortCtrl.abort();
     });
@@ -288,7 +288,7 @@ test('e2e, create server', async () => {
     serialize: (v) => SuperJSON.serialize(v),
   });
 
-  const server = createServerForStream(stream, new AbortController());
+  await using server = serverResourceForStream(stream, new AbortController());
 
   const res = await fetch(server.url);
 
@@ -329,8 +329,6 @@ test('e2e, create server', async () => {
   }
   // await meta.reader.closed;
   expect(meta.controllers.size).toBe(0);
-
-  await server.close();
 });
 
 test('e2e, client aborts request halfway through', async () => {
@@ -366,7 +364,7 @@ test('e2e, client aborts request halfway through', async () => {
     data,
     onError: onProducerErrorSpy,
   });
-  const server = createServerForStream(stream, serverAbort);
+  await using server = serverResourceForStream(stream, serverAbort);
 
   const res = await fetch(server.url, {
     signal: clientAbort.signal,
@@ -409,8 +407,6 @@ test('e2e, client aborts request halfway through', async () => {
   `);
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
   expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
-
-  await server.close();
 });
 
 test('e2e, client aborts request halfway through - through breaking async iterable', async () => {
@@ -445,7 +441,7 @@ test('e2e, client aborts request halfway through - through breaking async iterab
     data,
     onError: onProducerErrorSpy,
   });
-  const server = createServerForStream(stream, serverAbort);
+  await using server = serverResourceForStream(stream, serverAbort);
 
   const res = await fetch(server.url, {
     signal: clientAbort.signal,
@@ -490,8 +486,6 @@ test('e2e, client aborts request halfway through - through breaking async iterab
 
   expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
-
-  await server.close();
 });
 
 test('e2e, encode/decode - maxDepth', async () => {
@@ -509,7 +503,7 @@ test('e2e, encode/decode - maxDepth', async () => {
     maxDepth: 1,
   });
 
-  const server = createServerForStream(stream, new AbortController());
+  await using server = serverResourceForStream(stream, new AbortController());
 
   const ac = new AbortController();
   const res = await fetch(server.url, {
@@ -544,8 +538,6 @@ test('e2e, encode/decode - maxDepth', async () => {
       ],
     ]
   `);
-
-  await server.close();
 });
 
 test('should work to throw after stream is closed', async () => {
@@ -565,7 +557,7 @@ test('should work to throw after stream is closed', async () => {
     onError,
   });
 
-  const server = createServerForStream(stream, ac);
+  await using server = serverResourceForStream(stream, ac);
   const res = await fetch(server.url, {
     signal: ac.signal,
   });

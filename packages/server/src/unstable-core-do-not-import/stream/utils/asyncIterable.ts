@@ -1,8 +1,5 @@
 import { Unpromise } from '../../../vendor/unpromise';
-import {
-  disposablePromiseTimer,
-  disposablePromiseTimerResult,
-} from './disposablePromiseTimer';
+import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
 /**
  * Derives a new {@link AsyncGenerator} based on {@link iterable}, that automatically stops after the specified duration.
@@ -13,7 +10,7 @@ export async function* withMaxDuration<T>(
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
 
-  const timer = disposablePromiseTimer(opts.maxDurationMs);
+  const timer = timerResource(opts.maxDurationMs);
   try {
     const timerPromise = timer.start();
 
@@ -60,7 +57,7 @@ export async function* takeWithGrace<T>(
   // declaration outside the loop for garbage collection reasons
   let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
 
-  const timer = disposablePromiseTimer(opts.gracePeriodMs);
+  const timer = timerResource(opts.gracePeriodMs);
   try {
     let count = opts.count;
 
