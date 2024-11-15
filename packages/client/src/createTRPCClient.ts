@@ -36,11 +36,16 @@ type ResolverDef = {
   errorShape: any;
 };
 
+type coerceAsyncGeneratorToIterable<T> =
+  T extends AsyncGenerator<infer $T, infer $Return, infer $Next>
+    ? AsyncIterable<$T, $Return, $Next>
+    : T;
+
 /** @internal */
 export type Resolver<TDef extends ResolverDef> = (
   input: TDef['input'],
   opts?: ProcedureOptions,
-) => Promise<TDef['output']>;
+) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
 
 type SubscriptionResolver<TDef extends ResolverDef> = (
   input: TDef['input'],

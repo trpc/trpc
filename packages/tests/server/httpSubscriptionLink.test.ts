@@ -26,7 +26,7 @@ import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
-import { zAsyncGenerator } from './zAsyncGenerator';
+import { zAsyncIterable } from './zAsyncIterable';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -51,7 +51,7 @@ const ctx = konn()
       sub: {
         iterableEvent: t.procedure
           .output(
-            zAsyncGenerator({
+            zAsyncIterable({
               yield: z.number(),
               tracked: false,
             }),
@@ -75,7 +75,7 @@ const ctx = konn()
               lastEventId: z.coerce.number().min(0).optional(),
             }),
           )
-          .output(zAsyncGenerator({ yield: z.number(), tracked: true }))
+          .output(zAsyncIterable({ yield: z.number(), tracked: true }))
           .subscription(async function* (opts) {
             onIterableInfiniteSpy({
               input: opts.input,
