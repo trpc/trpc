@@ -1,6 +1,5 @@
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
-import { writeResponseBody } from '../../adapters/node-http/writeResponse';
 import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
