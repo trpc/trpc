@@ -1,3 +1,4 @@
+import type { QueryFilters } from '@tanstack/react-query';
 import { type QueryClient } from '@tanstack/react-query';
 import {
   getUntypedClient,
@@ -36,7 +37,7 @@ import {
 import type { QueryType, ResolverDef, TRPCQueryKey } from './types';
 import { getQueryKeyInternal } from './utils';
 
-interface DecorateQueryKeyable {
+export interface DecorateQueryKeyable {
   /**
    * Useful for query invalidation
    *
@@ -50,10 +51,18 @@ interface DecorateQueryKeyable {
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
    */
   invalidate: () => Promise<void>;
+
+  /**
+   * Used for invalidate, cancellation, refatching
+   */
+  getQueryFilter: () => QueryFilters;
 }
 
-export interface DecorateQueryProcedure<TDef extends ResolverDef>
-  extends Omit<DecorateQueryKeyable, 'getQueryKey'> {
+export interface DecorateQueryClient {
+  queryClient: QueryClient;
+}
+
+export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   _input: TDef['input'];
   _output: TDef['output'];
 
@@ -73,6 +82,18 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
    */
   getQueryKey: (input?: TDef['input']) => TRPCQueryKey;
+
+  /**
+   * Simple utility to invalidate a query or router
+   *
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
+   */
+  invalidate: (input?: TDef['input']) => Promise<void>;
+
+  /**
+   * Used for invalidate, cancellation, refatching
+   */
+  getQueryFilter: (input?: TDef['input']) => QueryFilters;
 }
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
@@ -132,6 +153,14 @@ export type TRPCOptionsProxy<TRouter extends AnyRouter> =
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
   > &
+    DecorateQueryKeyable &
+    DecorateQueryClient;
+
+export type RouterLike<TRouter extends AnyRouter> =
+  DecoratedProcedureUtilsRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  > &
     DecorateQueryKeyable;
 
 export interface TRPCOptionsProxyOptionsBase {
@@ -160,7 +189,8 @@ export type TRPCOptionsProxyOptions<TRouter extends AnyRouter> =
 type UtilsMethods =
   | keyof DecorateQueryProcedure<any>
   | keyof DecorateMutationProcedure<any>
-  | keyof DecorateSubscriptionProcedure<any>;
+  | keyof DecorateSubscriptionProcedure<any>
+  | keyof DecorateQueryClient;
 
 function getQueryType(method: UtilsMethods) {
   const map: Partial<Record<UtilsMethods, QueryType>> = {
@@ -214,6 +244,12 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       _input: null as any,
       _output: null as any,
       getQueryKey: () => queryKey,
+      queryClient: opts.queryClient as any,
+      getQueryFilter: (): QueryFilters => {
+        return {
+          queryKey: queryKey,
+        };
+      },
       invalidate: async () => {
         await opts.queryClient.invalidateQueries({
           queryKey: queryKey,

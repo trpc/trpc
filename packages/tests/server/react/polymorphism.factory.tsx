@@ -8,7 +8,7 @@ import type {
   AnyRootTypes,
   createBuilder,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { TRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import type { RouterLike } from '@trpc/tanstack-react-query';
 import z from 'zod';
 import type { $RootTypes } from './polymorphism.common';
 import { t } from './polymorphism.common';
@@ -102,4 +102,4 @@ export function createExportRoute<
 
 type ExportRouteType = ReturnType<typeof createExportRoute>;
 
-export type ExportRouteLike = TRPCOptionsProxy<ExportRouteType>;
+export type ExportRouteLike = RouterLike<ExportRouteType>;

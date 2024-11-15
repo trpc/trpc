@@ -265,7 +265,20 @@ describe('polymorphism', () => {
         const trpc = useTRPC();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
+
+        // TODO: clean this back up
         const invalidate = useMutation({
+          // Option A: fully explicit
+          // mutationFn: () =>
+          //   trpc.queryClient.invalidateQueries({
+          //     queryKey: trpc.github.getQueryKey(),
+          //   }),
+
+          // Option B: QueryFilter factory, re-usable in multiple places
+          // mutationFn: () =>
+          //   trpc.queryClient.invalidateQueries(trpc.github.getQueryFilter()),
+
+          // // Option C: invalidate method, simple, but cancellation, refetches etc would need their own
           mutationFn: () => trpc.github.invalidate(),
         });
 
