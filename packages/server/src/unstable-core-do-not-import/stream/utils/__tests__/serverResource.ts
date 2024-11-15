@@ -1,6 +1,5 @@
 import http from 'http';
 import type { Socket } from 'net';
-import { vi } from 'vitest';
 import { incomingMessageToRequest } from '../../../../adapters/node-http/incomingMessageToRequest';
 import { writeResponse } from '../../../../adapters/node-http/writeResponse';
 import { run } from '../../../utils';
@@ -10,9 +9,7 @@ type Handler = (request: Request) => Response | Promise<Response>;
 export function serverResource(handler: Handler) {
   const connections = new Map<typeof requestId, Socket>();
 
-  const onRequestEnd = vi.fn(() => {
-    // noop
-  });
+  let abortCount = 0;
   const server = http.createServer((req, res) => {
     run(async () => {
       const request = incomingMessageToRequest(req, res, {
@@ -20,7 +17,7 @@ export function serverResource(handler: Handler) {
       });
 
       request.signal.addEventListener('abort', () => {
-        onRequestEnd();
+        abortCount++;
       });
 
       const response = await handler(request);
@@ -61,7 +58,9 @@ export function serverResource(handler: Handler) {
 
   return {
     url,
-    onRequestEnd,
+    get abortCount() {
+      return abortCount;
+    },
     restart: async () => {
       for (const conn of connections.values()) {
         conn.destroy();

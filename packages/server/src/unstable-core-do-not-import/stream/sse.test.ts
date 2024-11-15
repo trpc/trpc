@@ -135,9 +135,9 @@ test('e2e, server-sent events (SSE)', async () => {
 
   expect(values).toEqual(range(1, ITERATIONS * 2 + 1));
 
-  expect(server.onRequestEnd).toHaveBeenCalledTimes(1);
+  expect(server.abortCount).toBe(1);
   // The break after double the ITERATIONS will trigger a second socket close
-  await vi.waitFor(() => expect(server.onRequestEnd).toHaveBeenCalledTimes(2), {
+  await vi.waitFor(() => expect(server.abortCount).toBe(2), {
     timeout: 1000,
   });
 
