@@ -425,6 +425,10 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
   type ControllerChunk = ChunkData | StreamInterruptedError;
   type ChunkController = ReadableStreamDefaultController<ControllerChunk>;
+  /**
+   * This is needed as new values can come in before the controller has read the chunk
+   * Not pretty, could likely be refactored and omitted somehow
+   */
   const chunkDeferred = new Map<ChunkIndex, Deferred<ChunkController>>();
 
   const controllers = new Map<ChunkIndex, ChunkController>();
