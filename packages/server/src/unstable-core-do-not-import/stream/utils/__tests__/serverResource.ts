@@ -1,8 +1,9 @@
 import http from 'http';
 import type { Socket } from 'net';
-import { incomingMessageToRequest } from '../../../adapters/node-http/incomingMessageToRequest';
-import { writeResponse } from '../../../adapters/node-http/writeResponse';
-import { run } from '../../utils';
+import { vi } from 'vitest';
+import { incomingMessageToRequest } from '../../../../adapters/node-http/incomingMessageToRequest';
+import { writeResponse } from '../../../../adapters/node-http/writeResponse';
+import { run } from '../../../utils';
 
 type Handler = (request: Request) => Response | Promise<Response>;
 

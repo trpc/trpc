@@ -1,11 +1,11 @@
 import { EventEmitter, on } from 'node:events';
+import { serverResource } from './utils/__tests__/serverResource';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';
 import { run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
-import { serverResource } from './utils/createServer';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 

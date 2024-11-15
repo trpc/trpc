@@ -1,10 +1,10 @@
+import { serverResource } from './utils/__tests__/serverResource';
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
 import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
 import { createDeferred } from './utils/createDeferred';
-import { serverResource } from './utils/createServer';
 
 test('encode/decode with superjson', async () => {
   const data = {
