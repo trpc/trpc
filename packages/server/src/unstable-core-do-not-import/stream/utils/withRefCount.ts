@@ -1,5 +1,8 @@
-// Callback function type that is called when a collection is drained
-type OnDrain = () => void;
+/**
+ * Callback function that is called when a collection is drained.
+ * @returns {boolean} `true` if the collection should be locked, `false` otherwise
+ */
+type ShouldLockCallback = () => boolean;
 
 // Interface for objects that can be activated
 export interface RefCount {
@@ -21,15 +24,15 @@ export interface RefCountSet<TValue> extends Set<TValue>, RefCount {}
  */
 export function withRefCount<TKey, TValue>(
   map: Map<TKey, TValue>,
-  onDrain: OnDrain,
+  onDrain: ShouldLockCallback,
 ): RefCountMap<TKey, TValue>;
 export function withRefCount<TValue>(
   set: Set<TValue>,
-  onDrain: OnDrain,
+  onDrain: ShouldLockCallback,
 ): RefCountSet<TValue>;
 export function withRefCount(
   _obj: Set<any> | Map<any, any>,
-  onDrain: OnDrain,
+  onDrain: ShouldLockCallback,
 ): RefCountMap<any, any> & RefCountSet<any> {
   const obj = _obj as any;
 
@@ -41,8 +44,10 @@ export function withRefCount(
   // Check if collection should be drained (empty and active)
   const checkDrain = () => {
     if (!drained && active && obj.size === 0) {
-      onDrain();
-      drained = true;
+      const check = onDrain();
+      if (check) {
+        drained = true;
+      }
     }
   };
 

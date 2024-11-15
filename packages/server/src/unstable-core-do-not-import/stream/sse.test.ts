@@ -2,7 +2,7 @@ import { EventEmitter, on } from 'node:events';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';
-import { abortSignalsAnyPonyfill, run, sleep } from '../utils';
+import { run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
 import { serverResource } from './utils/createServer';
@@ -35,16 +35,8 @@ test('e2e, server-sent events (SSE)', async () => {
 
   const written: string[] = [];
 
-  const onRequestEnd = vi.fn();
   await using server = serverResource(async (request) => {
     const url = new URL(request.url);
-    request.signal.addEventListener(
-      'abort',
-      () => {
-        onRequestEnd();
-      },
-      { once: true },
-    );
 
     const lastEventId: string | null =
       request.headers.get('last-event-id') ??
@@ -143,9 +135,9 @@ test('e2e, server-sent events (SSE)', async () => {
 
   expect(values).toEqual(range(1, ITERATIONS * 2 + 1));
 
-  expect(onRequestEnd).toHaveBeenCalledTimes(1);
+  expect(server.onRequestEnd).toHaveBeenCalledTimes(1);
   // The break after double the ITERATIONS will trigger a second socket close
-  await vi.waitFor(() => expect(onRequestEnd).toHaveBeenCalledTimes(2), {
+  await vi.waitFor(() => expect(server.onRequestEnd).toHaveBeenCalledTimes(2), {
     timeout: 1000,
   });
 

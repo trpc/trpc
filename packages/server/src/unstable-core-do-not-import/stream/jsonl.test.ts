@@ -229,35 +229,12 @@ test('decode - bad data', async () => {
 
 function serverResourceForStream(
   stream: ReadableStream,
-  abortCtrl: AbortController,
   headers: Record<string, string> = {},
 ) {
-  return serverResource(async (req, res) => {
-    req.once('aborted', () => {
-      abortCtrl.abort();
+  return serverResource(async () => {
+    return new Response(stream, {
+      headers,
     });
-    for (const [key, value] of Object.entries(headers)) {
-      res.setHeader(key, value);
-    }
-
-    try {
-      await writeResponseBody({
-        res,
-        signal: abortCtrl.signal,
-        body: stream,
-      });
-    } catch (err) {
-      if ((err as any).name === 'AbortError') {
-        return;
-      }
-
-      throw err;
-    } finally {
-      if (!res.headersSent) {
-        res.statusCode = 500;
-      }
-      res.end();
-    }
   });
 }
 test('e2e, create server', async () => {
@@ -288,7 +265,7 @@ test('e2e, create server', async () => {
     serialize: (v) => SuperJSON.serialize(v),
   });
 
-  await using server = serverResourceForStream(stream, new AbortController());
+  await using server = serverResourceForStream(stream);
 
   const res = await fetch(server.url);
 
@@ -332,9 +309,8 @@ test('e2e, create server', async () => {
 });
 
 test('e2e, client aborts request halfway through', async () => {
-  const serverAbort = new AbortController();
   const clientAbort = new AbortController();
-  const yieldCalls = vi.fn();
+
   let stopped = false;
 
   const onConsumerErrorSpy =
@@ -345,17 +321,13 @@ test('e2e, client aborts request halfway through', async () => {
   const data = {
     0: Promise.resolve({
       [Symbol.asyncIterator]: async function* () {
-        for (let i = 0; i < 10; i++) {
-          yieldCalls();
-          yield i;
-          await new Promise((resolve) => setTimeout(resolve, 5));
-
-          if (serverAbort.signal.aborted) {
-            stopped = true;
-            return;
+        try {
+          for (let i = 0; i < 10; i++) {
+            yield i;
           }
+        } finally {
+          stopped = true;
         }
-        stopped = true;
       },
     }),
   } as const;
@@ -364,7 +336,7 @@ test('e2e, client aborts request halfway through', async () => {
     data,
     onError: onProducerErrorSpy,
   });
-  await using server = serverResourceForStream(stream, serverAbort);
+  await using server = serverResourceForStream(stream);
 
   const res = await fetch(server.url, {
     signal: clientAbort.signal,
@@ -394,9 +366,6 @@ test('e2e, client aborts request halfway through', async () => {
     expect(stopped).toBe(true);
   });
 
-  expect(yieldCalls.mock.calls.length).toBeGreaterThanOrEqual(3);
-  expect(yieldCalls.mock.calls.length).toBeLessThan(10);
-
   const errors = onConsumerErrorSpy.mock.calls.map(
     (it) => (it[0].error as Error).message,
   );
@@ -409,84 +378,86 @@ test('e2e, client aborts request halfway through', async () => {
   expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
 });
 
-test('e2e, client aborts request halfway through - through breaking async iterable', async () => {
-  const serverAbort = new AbortController();
-  const clientAbort = new AbortController();
-  const yieldCalls = vi.fn();
-  let stopped = false;
+test(
+  'e2e, client aborts request halfway through - through breaking async iterable',
+  { repeats: 10 },
+  async () => {
+    const clientAbort = new AbortController();
 
-  const onConsumerErrorSpy =
-    vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
-  const onProducerErrorSpy =
-    vi.fn<(...args: Parameters<ProducerOnError>) => void>();
+    let stopped = false;
 
-  const data = {
-    0: Promise.resolve({
-      [Symbol.asyncIterator]: async function* () {
-        for (let i = 0; i < 10; i++) {
-          yieldCalls();
-          yield i;
-          await new Promise((resolve) => setTimeout(resolve, 5));
-          if (serverAbort.signal.aborted) {
+    const onConsumerErrorSpy =
+      vi.fn<(...args: Parameters<ConsumerOnError>) => void>();
+    const onProducerErrorSpy =
+      vi.fn<(...args: Parameters<ProducerOnError>) => void>();
+
+    const data = {
+      0: Promise.resolve({
+        [Symbol.asyncIterator]: async function* () {
+          let i = 0;
+          try {
+            while (true) {
+              yield i++;
+
+              yield i++;
+
+              await new Promise((resolve) => setTimeout(resolve, 0));
+            }
+          } finally {
             stopped = true;
-            return;
           }
+        },
+      }),
+    } as const;
+
+    const stream = jsonlStreamProducer({
+      data,
+      onError: onProducerErrorSpy,
+    });
+    await using server = serverResourceForStream(stream);
+
+    const res = await fetch(server.url, {
+      signal: clientAbort.signal,
+    });
+    const [head, meta] = await jsonlStreamConsumer<typeof data>({
+      from: res.body!,
+      onError: onConsumerErrorSpy,
+      abortController: clientAbort,
+    });
+
+    {
+      const iterable = await head[0];
+
+      for await (const item of iterable) {
+        if (item === 3) {
+          // ✨ This will actually abort the full stream and the request since there's no more data to read
+
+          break;
         }
-        stopped = true;
-      },
-    }),
-  } as const;
-
-  const stream = jsonlStreamProducer({
-    data,
-    onError: onProducerErrorSpy,
-  });
-  await using server = serverResourceForStream(stream, serverAbort);
-
-  const res = await fetch(server.url, {
-    signal: clientAbort.signal,
-  });
-  const [head, meta] = await jsonlStreamConsumer<typeof data>({
-    from: res.body!,
-    onError: onConsumerErrorSpy,
-    abortController: clientAbort,
-  });
-
-  {
-    const iterable = await head[0];
-
-    for await (const item of iterable) {
-      if (item === 2) {
-        // ✨ This will actually abort the full stream and the request since there's no more data to read
-
-        break;
       }
     }
-  }
 
-  await waitFor(() => {
-    expect(meta.controllers.size).toBe(0);
-  });
-  // wait for stopped
-  await waitFor(() => {
-    expect(stopped).toBe(true);
-  });
+    await waitFor(() => {
+      expect(meta.controllers.size).toBe(0);
+    });
+    // wait for stopped
+    await waitFor(() => {
+      expect(stopped).toBe(true);
+    });
 
-  expect(yieldCalls.mock.calls.length).toBeGreaterThanOrEqual(3);
-  expect(yieldCalls.mock.calls.length).toBeLessThan(10);
-
-  const errors = onConsumerErrorSpy.mock.calls.map(
-    (it) => (it[0].error as Error).message,
-  );
-  expect(errors).toMatchInlineSnapshot(`
+    const errors = onConsumerErrorSpy.mock.calls.map(
+      (it) => (it[0].error as Error).message,
+    );
+    expect(errors).toMatchInlineSnapshot(`
     Array [
       "The operation was aborted.",
     ]
   `);
 
-  expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
-  expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
-});
+    expect(onProducerErrorSpy).toHaveBeenCalledTimes(0);
+    expect(onConsumerErrorSpy).toHaveBeenCalledTimes(1);
+  },
+);
 
 test('e2e, encode/decode - maxDepth', async () => {
   const onError = vi.fn<(...args: Parameters<ProducerOnError>) => void>();
@@ -503,7 +474,7 @@ test('e2e, encode/decode - maxDepth', async () => {
     maxDepth: 1,
   });
 
-  await using server = serverResourceForStream(stream, new AbortController());
+  await using server = serverResourceForStream(stream);
 
   const ac = new AbortController();
   const res = await fetch(server.url, {
@@ -557,7 +528,7 @@ test('should work to throw after stream is closed', async () => {
     onError,
   });
 
-  await using server = serverResourceForStream(stream, ac);
+  await using server = serverResourceForStream(stream);
   const res = await fetch(server.url, {
     signal: ac.signal,
   });

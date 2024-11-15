@@ -8,11 +8,20 @@ type Handler = (request: Request) => Response | Promise<Response>;
 
 export function serverResource(handler: Handler) {
   const connections = new Map<typeof requestId, Socket>();
+
+  const onRequestEnd = vi.fn(() => {
+    // noop
+  });
   const server = http.createServer((req, res) => {
     run(async () => {
       const request = incomingMessageToRequest(req, res, {
         maxBodySize: null,
       });
+
+      request.signal.addEventListener('abort', () => {
+        onRequestEnd();
+      });
+
       const response = await handler(request);
       await writeResponse({
         request,
@@ -51,6 +60,7 @@ export function serverResource(handler: Handler) {
 
   return {
     url,
+    onRequestEnd,
     restart: async () => {
       for (const conn of connections.values()) {
         conn.destroy();
