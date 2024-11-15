@@ -36,7 +36,7 @@ import {
 import type { QueryType, ResolverDef, TRPCQueryKey } from './types';
 import { getQueryKeyInternal } from './utils';
 
-interface QueryKeyStuff {
+interface DecorateQueryKeyable {
   /**
    * Useful for query invalidation
    *
@@ -53,7 +53,7 @@ interface QueryKeyStuff {
 }
 
 export interface DecorateQueryProcedure<TDef extends ResolverDef>
-  extends Omit<QueryKeyStuff, 'getQueryKey'> {
+  extends Omit<DecorateQueryKeyable, 'getQueryKey'> {
   _input: TDef['input'];
   _output: TDef['output'];
 
@@ -112,7 +112,7 @@ export type DecoratedProcedureUtilsRecord<
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
-      ? DecoratedProcedureUtilsRecord<TRoot, $Value> & QueryKeyStuff
+      ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateQueryKeyable
       : $Value extends AnyProcedure
       ? DecorateProcedure<
           $Value['_def']['type'],
@@ -132,7 +132,7 @@ export type TRPCOptionsProxy<TRouter extends AnyRouter> =
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
   > &
-    QueryKeyStuff;
+    DecorateQueryKeyable;
 
 export interface TRPCOptionsProxyOptionsBase {
   queryClient: QueryClient;
