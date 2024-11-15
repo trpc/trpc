@@ -127,7 +127,6 @@ function createBatchStreamProducer(opts: ProducerOptions) {
     if (!stream.cancelled()) {
       stream.controller.close();
     }
-    return true;
   });
 
   const maybeEnqueue = (chunk: ChunkData) => {
@@ -513,6 +512,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
                     };
                   case ASYNC_ITERABLE_STATUS_ERROR:
                     controllers.delete(chunkId);
+                    maybeAbort();
                     throw (
                       opts.formatError?.({ error: data }) ??
                       new AsyncError(data)
@@ -521,7 +521,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               },
               return: async () => {
                 controllers.delete(chunkId);
-                maybeAbort();
+
                 return {
                   done: true,
                   value: undefined,
@@ -582,6 +582,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const readController = controllers.get(idx)!;
+
+          if (!readController) {
+            throw new Error(
+              `No controller found for chunk ${idx} - this is a bug, please report it`,
+            );
+          }
           readController.enqueue(chunk);
         },
         close: closeOrAbort,
