@@ -1,20 +1,36 @@
 import http from 'http';
 import type { Socket } from 'net';
+import { incomingMessageToRequest } from '../../../adapters/node-http/incomingMessageToRequest';
+import { writeResponse } from '../../../adapters/node-http/writeResponse';
+import { run } from '../../utils';
 
-export function serverResource(
-  handler: (req: http.IncomingMessage, res: http.ServerResponse) => void,
-) {
-  const server = http.createServer(async (req, res) => {
-    handler(req, res);
+type Handler = (request: Request) => Response | Promise<Response>;
+
+export function serverResource(handler: Handler) {
+  const connections = new Map<typeof requestId, Socket>();
+  const server = http.createServer((req, res) => {
+    run(async () => {
+      const request = incomingMessageToRequest(req, res, {
+        maxBodySize: null,
+      });
+      const response = await handler(request);
+      await writeResponse({
+        request,
+        response,
+        rawResponse: res,
+      });
+    }).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error(`Uncaught error in request handler`, err);
+      throw err;
+    });
   });
   server.listen(0);
 
-  const connections = new Set<Socket>();
+  let requestId = 0;
   server.on('connection', (conn) => {
-    connections.add(conn);
-    conn.once('close', () => {
-      connections.delete(conn);
-    });
+    const idx = ++requestId;
+    connections.set(idx, conn);
   });
 
   const port = (server.address() as any).port;
@@ -22,15 +38,21 @@ export function serverResource(
   const url = `http://localhost:${port}`;
 
   async function close() {
-    await new Promise((resolve) => {
-      server.close(resolve);
+    await new Promise<void>((resolve, reject) => {
+      server.close((err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
     });
   }
 
   return {
     url,
     restart: async () => {
-      for (const conn of connections) {
+      for (const conn of connections.values()) {
         conn.destroy();
       }
       await close();
@@ -38,6 +60,9 @@ export function serverResource(
       server.listen(port);
     },
     [Symbol.asyncDispose]: async () => {
+      for (const conn of connections.values()) {
+        conn.destroy();
+      }
       await close();
     },
   };

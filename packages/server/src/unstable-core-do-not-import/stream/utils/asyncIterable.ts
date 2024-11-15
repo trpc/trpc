@@ -6,7 +6,7 @@ import { disposablePromiseTimerResult, timerResource } from './timerResource';
  */
 export async function* withMaxDuration<T>(
   iterable: AsyncIterable<T>,
-  opts: { maxDurationMs: number; abortCtrl: AbortController },
+  opts: { maxDurationMs: number },
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
 
@@ -21,7 +21,7 @@ export async function* withMaxDuration<T>(
       result = await Unpromise.race([iterator.next(), timerPromise]);
       if (result === disposablePromiseTimerResult) {
         // cancelled due to timeout
-        opts.abortCtrl.abort();
+
         const res = await iterator.return?.();
         return res?.value;
       }
@@ -49,7 +49,6 @@ export async function* takeWithGrace<T>(
   opts: {
     count: number;
     gracePeriodMs: number;
-    abortCtrl: AbortController;
   },
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
@@ -78,8 +77,6 @@ export async function* takeWithGrace<T>(
       yield result.value;
       if (--count === 0) {
         timerPromise = timer.start();
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        timerPromise.then(() => opts.abortCtrl.abort());
       }
       // free up reference for garbage collection
       result = null;
