@@ -224,7 +224,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: queryKey as any as TRPCQueryKey,
+          queryKey: queryKey,
           query: callIt('query'),
         }),
       queryOptions: () => {
@@ -232,7 +232,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: queryKey as any as TRPCQueryKey,
+          queryKey: queryKey,
           query: callIt('query'),
         });
       },
@@ -249,7 +249,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
         return trpcSubscriptionOptions({
           opts: arg2,
           path,
-          queryKey: queryKey as any as TRPCQueryKey,
+          queryKey: queryKey,
           subscribe: callIt('subscription'),
         });
       },
