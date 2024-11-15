@@ -156,7 +156,7 @@ export const subRouter = router({
         // [...] get the posts since the last event id and yield them
       }
       // listen for new events
-      for await (const [data] of on(ee, 'add',  {
+      for await (const [data] of on(ee, 'add', {
         // Passing the AbortSignal from the request automatically cancels the event emitter when the subscription is aborted
         signal: opts.signal,
       })) {
