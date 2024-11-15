@@ -426,12 +426,11 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
   type ControllerChunk = ChunkData | StreamInterruptedError;
   type ChunkController = ReadableStreamDefaultController<ControllerChunk>;
-  const chunkDeferred = new Map<ChunkIndex, Deferred<ChunkController>>();
 
   const controllers = new Map<ChunkIndex, ChunkController>();
 
   const maybeAbort = () => {
-    if (chunkDeferred.size === 0 && controllers.size === 0) {
+    if (controllers.size === 0) {
       // nothing is listening to the stream anymore
       opts.abortController?.abort();
     }
@@ -443,13 +442,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
     const stream = createReadableStream<ChunkData>();
 
     controllers.set(chunkId, stream.controller);
-
-    // resolve chunk deferred if it exists
-    const deferred = chunkDeferred.get(chunkId);
-    if (deferred) {
-      deferred.resolve(stream.controller);
-      chunkDeferred.delete(chunkId);
-    }
 
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
@@ -572,12 +564,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
   source
     .pipeTo(
       new WritableStream({
-        start(writeController) {
-          if (opts.abortController.signal.aborted) {
-            writeController.error(new StreamInterruptedError());
-            return;
-          }
-        },
         async write(chunkOrHead) {
           if (headDeferred) {
             const head = chunkOrHead as Record<number | string, unknown>;
@@ -595,15 +581,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const [idx] = chunk;
 
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          let readController = controllers.get(idx)!;
-          if (!readController) {
-            let deferred = chunkDeferred.get(idx);
-            if (!deferred) {
-              deferred = createDeferred();
-              chunkDeferred.set(idx, deferred);
-            }
-            readController = await deferred.promise;
-          }
+          const readController = controllers.get(idx)!;
           readController.enqueue(chunk);
         },
         close: closeOrAbort,
