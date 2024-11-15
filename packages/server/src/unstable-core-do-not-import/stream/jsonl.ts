@@ -577,12 +577,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
   source
     .pipeTo(
       new WritableStream({
-        start(writeController) {
-          if (opts.abortController.signal.aborted) {
-            writeController.error(new StreamInterruptedError());
-            return;
-          }
-        },
         async write(chunkOrHead) {
           if (headDeferred) {
             const head = chunkOrHead as Record<number | string, unknown>;
