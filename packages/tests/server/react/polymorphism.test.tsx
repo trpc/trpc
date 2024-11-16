@@ -19,6 +19,7 @@ import {
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
+import type { InferInput, InferOutput } from '@trpc/tanstack-react-query';
 import {
   createTRPCContext,
   TRPCOptionsProxy,
@@ -469,7 +470,7 @@ function ExportStatus<
   TStatus extends Factory.ExportRouteLike['status'],
 >(props: {
   status: TStatus;
-  renderAdditionalFields?: (data: TStatus['_output']) => ReactNode;
+  renderAdditionalFields?: (data: InferOutput<TStatus>) => ReactNode;
   currentExport: number | null;
 }) {
   const exportStatus = useQuery(
