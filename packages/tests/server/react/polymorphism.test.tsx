@@ -146,15 +146,15 @@ describe('polymorphism', () => {
       function Heck() {
         const trpc = useTRPC();
 
-        expect(trpc.getQueryKey()).toMatchInlineSnapshot(`Array []`);
-        expect(trpc.github.getQueryKey()).toMatchInlineSnapshot(`
+        expect(trpc.queryKey()).toMatchInlineSnapshot(`Array []`);
+        expect(trpc.github.queryKey()).toMatchInlineSnapshot(`
           Array [
             Array [
               "github",
             ],
           ]
         `);
-        expect(trpc.github.issues.export.status.getQueryKey())
+        expect(trpc.github.issues.export.status.queryKey())
           .toMatchInlineSnapshot(`
           Array [
             Array [
@@ -165,7 +165,7 @@ describe('polymorphism', () => {
             ],
           ]
         `);
-        expect(trpc.github.issues.export.status.getQueryKey({ id: 1 }))
+        expect(trpc.github.issues.export.status.queryKey({ id: 1 }))
           .toMatchInlineSnapshot(`
           Array [
             Array [
@@ -203,10 +203,11 @@ describe('polymorphism', () => {
        */
       function IssuesExportPage() {
         const trpc = useTRPC();
+        const client = useQueryClient();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
         const invalidate = useMutation({
-          mutationFn: () => trpc.github.invalidate(),
+          mutationFn: () => client.invalidateQueries(trpc.github.queryFilter()),
         });
 
         return (
@@ -263,23 +264,12 @@ describe('polymorphism', () => {
 
       function DiscussionsExportPage() {
         const trpc = useTRPC();
+        const client = useQueryClient();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
 
-        // TODO: clean this back up
         const invalidate = useMutation({
-          // Option A: fully explicit
-          // mutationFn: () =>
-          //   trpc.queryClient.invalidateQueries({
-          //     queryKey: trpc.github.getQueryKey(),
-          //   }),
-
-          // Option B: QueryFilter factory, re-usable in multiple places
-          // mutationFn: () =>
-          //   trpc.queryClient.invalidateQueries(trpc.github.getQueryFilter()),
-
-          // // Option C: invalidate method, simple, but cancellation, refetches etc would need their own
-          mutationFn: () => trpc.github.invalidate(),
+          mutationFn: () => client.invalidateQueries(trpc.github.queryFilter()),
         });
 
         return (
@@ -422,12 +412,14 @@ function StartExportButton(props: {
   route: Factory.ExportRouteLike;
   onExportStarted: (id: number) => void;
 }) {
+  const client = useQueryClient();
+
   const exportStarter = useMutation(
     props.route.start.mutationOptions({
       async onSuccess(data) {
         props.onExportStarted(data.id);
 
-        await props.route.invalidate();
+        await client.invalidateQueries(props.route.queryFilter());
       },
     }),
   );
@@ -484,12 +476,14 @@ type SubTypedStartExportButtonProps = {
   onExportStarted: (id: number) => void;
 };
 function SubTypedStartExportButton(props: SubTypedStartExportButtonProps) {
+  const client = useQueryClient();
+
   const exportStarter = useMutation(
     props.route.start.mutationOptions({
       async onSuccess(data) {
         props.onExportStarted(data.id);
 
-        await props.route.invalidate();
+        await client.invalidateQueries(props.route.queryFilter());
       },
     }),
   );
