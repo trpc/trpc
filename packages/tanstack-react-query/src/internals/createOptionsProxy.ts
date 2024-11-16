@@ -38,16 +38,16 @@ import { getQueryKeyInternal } from './utils';
 
 export interface DecorateQueryKeyable {
   /**
-   * Useful for query invalidation
+   * Calculate the Tanstack Query Key for a Route
    *
-   * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
    */
   queryKey: () => TRPCQueryKey;
 
   /**
-   * Useful for invalidate, cancellation, refatching
+   * Calculate a Tanstack Query Filter for a Route
    *
-   * https://tanstack.com/query/latest/docs/framework/react/guides/filters
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    */
   queryFilter: () => QueryFilters;
 }
@@ -86,14 +86,16 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   infiniteQueryOptions: TRPCInfiniteQueryOptions<TDef>;
 
   /**
-   * Useful for query invalidation
+   * Calculate the Tanstack Query Key for a Query Procedure
    *
-   * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
    */
   queryKey: (input?: TDef['input']) => TRPCQueryKey;
 
   /**
-   * Used for invalidate, cancellation, refatching
+   * Calculate a Tanstack Query Filter for a Query Procedure
+   *
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    */
   queryFilter: (input?: TDef['input']) => QueryFilters;
 }
