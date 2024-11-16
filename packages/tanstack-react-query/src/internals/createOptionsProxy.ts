@@ -165,13 +165,6 @@ export type TRPCOptionsProxy<TRouter extends AnyRouter> =
   > &
     DecorateQueryKeyable;
 
-export type RouterLike<TRouter extends AnyRouter> =
-  DecoratedProcedureUtilsRecord<
-    TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record']
-  > &
-    DecorateQueryKeyable;
-
 export interface TRPCOptionsProxyOptionsBase {
   queryClient: QueryClient;
   overrides?: {

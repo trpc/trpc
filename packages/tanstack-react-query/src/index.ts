@@ -1,7 +1,6 @@
 export { createTRPCContext } from './internals/Context';
 export type {
   TRPCOptionsProxy,
-  RouterLike,
   InferInput,
   InferOutput,
 } from './internals/createOptionsProxy';

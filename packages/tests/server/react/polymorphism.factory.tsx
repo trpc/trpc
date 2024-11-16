@@ -2,13 +2,12 @@
 // This file contains a useful pattern in tRPC,
 //  building factories which can produce common functionality over a homologous data source.
 //
-// import type { RouterLike } from '@trpc/tanstack-react-query';
 import { TRPCError } from '@trpc/server';
 import type {
   AnyRootTypes,
   createBuilder,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { RouterLike } from '@trpc/tanstack-react-query';
+import type { TRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import z from 'zod';
 import type { $RootTypes } from './polymorphism.common';
 import { t } from './polymorphism.common';
@@ -102,4 +101,4 @@ export function createExportRoute<
 
 type ExportRouteType = ReturnType<typeof createExportRoute>;
 
-export type ExportRouteLike = RouterLike<ExportRouteType>;
+export type ExportRouteLike = TRPCOptionsProxy<ExportRouteType>;
