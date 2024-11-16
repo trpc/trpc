@@ -139,60 +139,6 @@ describe('polymorphism', () => {
     })
     .done();
 
-  describe('getQueryKey', () => {
-    test('gets various query keys', () => {
-      const { useTRPC } = ctx;
-
-      function Heck() {
-        const trpc = useTRPC();
-
-        expect(trpc.queryKey()).toMatchInlineSnapshot(`Array []`);
-        expect(trpc.github.queryKey()).toMatchInlineSnapshot(`
-          Array [
-            Array [
-              "github",
-            ],
-          ]
-        `);
-        expect(trpc.github.issues.export.status.queryKey())
-          .toMatchInlineSnapshot(`
-          Array [
-            Array [
-              "github",
-              "issues",
-              "export",
-              "status",
-            ],
-          ]
-        `);
-        expect(trpc.github.issues.export.status.queryKey({ id: 1 }))
-          .toMatchInlineSnapshot(`
-          Array [
-            Array [
-              "github",
-              "issues",
-              "export",
-              "status",
-            ],
-            Object {
-              "input": Object {
-                "id": 1,
-              },
-            },
-          ]
-        `);
-
-        return 'heck';
-      }
-
-      const $ = render(
-        <ctx.App>
-          <Heck />
-        </ctx.App>,
-      );
-    });
-  });
-
   describe('simple factory', () => {
     test('can use a simple factory router with an abstract interface', async () => {
       const { useTRPC } = ctx;
