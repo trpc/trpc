@@ -1,5 +1,4 @@
-import type { QueryFilters } from '@tanstack/react-query';
-import { type QueryClient } from '@tanstack/react-query';
+import { type QueryClient, type QueryFilters } from '@tanstack/react-query';
 import {
   getUntypedClient,
   TRPCUntypedClient,
