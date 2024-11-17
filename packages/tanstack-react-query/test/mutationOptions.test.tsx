@@ -55,9 +55,26 @@ const ctx = konn()
 describe('mutationOptions', () => {
   test('useMutation', async () => {
     const { App, useTRPC } = ctx;
+
+    const calls: string[] = [];
+
     function MyComponent() {
       const trpc = useTRPC();
-      const options = trpc.post.create.mutationOptions({});
+
+      const options = trpc.post.create.mutationOptions({
+        onMutate(variables) {
+          calls.push('onMutate');
+        },
+        onSettled(variables) {
+          calls.push('onSettled');
+        },
+        onError(variables) {
+          calls.push('onError');
+        },
+        onSuccess(variables) {
+          calls.push('onSuccess');
+        },
+      });
       expect(options.trpc.path).toBe('post.create');
 
       const mutation = useMutation(options);
@@ -86,5 +103,7 @@ describe('mutationOptions', () => {
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__mutationResult`);
     });
+
+    expect(calls).toEqual(['onMutate', 'onSuccess', 'onSettled']);
   });
 });

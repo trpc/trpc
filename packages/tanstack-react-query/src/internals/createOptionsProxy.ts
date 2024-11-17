@@ -1,4 +1,4 @@
-import { type QueryClient } from '@tanstack/react-query';
+import { type QueryClient, type QueryFilters } from '@tanstack/react-query';
 import {
   getUntypedClient,
   TRPCUntypedClient,
@@ -33,10 +33,48 @@ import {
   trpcSubscriptionOptions,
   type TRPCSubscriptionOptions,
 } from './subscriptionOptions';
-import type { QueryType, ResolverDef } from './types';
+import type { QueryType, ResolverDef, TRPCQueryKey } from './types';
 import { getQueryKeyInternal } from './utils';
 
+export interface DecorateQueryKeyable {
+  /**
+   * Calculate the Tanstack Query Key for a Route
+   *
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
+   */
+  queryKey: () => TRPCQueryKey;
+
+  /**
+   * Calculate a Tanstack Query Filter for a Route
+   *
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
+   */
+  queryFilter: () => QueryFilters;
+}
+
+export type InferInput<
+  TProcedure extends
+    | DecorateQueryProcedure<any>
+    | DecorateMutationProcedure<any>,
+> = TProcedure['~input'];
+
+export type InferOutput<
+  TProcedure extends
+    | DecorateQueryProcedure<any>
+    | DecorateMutationProcedure<any>,
+> = TProcedure['~output'];
+
 export interface DecorateQueryProcedure<TDef extends ResolverDef> {
+  /**
+   * @internal prefer using InferInput to access input type
+   */
+  '~input': TDef['input'];
+
+  /**
+   * @internal prefer using InferOutput to access input type
+   */
+  '~output': TDef['output'];
+
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
    */
@@ -46,9 +84,33 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
    */
   infiniteQueryOptions: TRPCInfiniteQueryOptions<TDef>;
+
+  /**
+   * Calculate the Tanstack Query Key for a Query Procedure
+   *
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
+   */
+  queryKey: (input?: TDef['input']) => TRPCQueryKey;
+
+  /**
+   * Calculate a Tanstack Query Filter for a Query Procedure
+   *
+   * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
+   */
+  queryFilter: (input?: TDef['input']) => QueryFilters;
 }
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
+  /**
+   * @internal prefer using InferInput to access input type
+   */
+  '~input': TDef['input'];
+
+  /**
+   * @internal prefer using InferOutput to access input type
+   */
+  '~output': TDef['output'];
+
   /**
    * @see
    */
@@ -82,7 +144,7 @@ export type DecoratedProcedureUtilsRecord<
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
-      ? DecoratedProcedureUtilsRecord<TRoot, $Value>
+      ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateQueryKeyable
       : $Value extends AnyProcedure
         ? DecorateProcedure<
             $Value['_def']['type'],
@@ -101,7 +163,8 @@ export type TRPCOptionsProxy<TRouter extends AnyRouter> =
   DecoratedProcedureUtilsRecord<
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
-  >;
+  > &
+    DecorateQueryKeyable;
 
 export interface TRPCOptionsProxyOptionsBase {
   queryClient: QueryClient;
@@ -132,12 +195,14 @@ type UtilsMethods =
   | keyof DecorateSubscriptionProcedure<any>;
 
 function getQueryType(method: UtilsMethods) {
-  return {
+  const map: Partial<Record<UtilsMethods, QueryType>> = {
     queryOptions: 'query',
     infiniteQueryOptions: 'infinite',
     subscriptionOptions: 'any',
     mutationOptions: 'any',
-  }[method] as QueryType;
+  };
+
+  return map[method];
 }
 
 export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
@@ -172,23 +237,32 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
   return createRecursiveProxy(({ args, path: _path }) => {
     const path = [..._path];
     const utilName = path.pop() as UtilsMethods;
-    const [input, userOptions] = args as any[];
+    const [arg1, arg2] = args as any[];
 
     const queryType = getQueryType(utilName);
-    const queryKey = getQueryKeyInternal(path, input, queryType);
+    const queryKey = getQueryKeyInternal(path, arg1, queryType ?? 'any');
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
-      infiniteQueryOptions: () =>
-        trpcInfiniteQueryOptions({
-          opts: userOptions,
+      '~input': undefined as any,
+      '~output': undefined as any,
+      queryKey: () => queryKey,
+      queryFilter: (): QueryFilters => {
+        return {
+          queryKey: queryKey,
+        };
+      },
+      infiniteQueryOptions: () => {
+        return trpcInfiniteQueryOptions({
+          opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey,
+          queryKey: queryKey,
           query: callIt('query'),
-        }),
+        });
+      },
       queryOptions: () => {
         return trpcQueryOptions({
-          opts: userOptions,
+          opts: arg2,
           path,
           queryClient: opts.queryClient,
           queryKey: queryKey,
@@ -197,7 +271,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       },
       mutationOptions: () => {
         return trpcMutationOptions({
-          opts: userOptions,
+          opts: arg1,
           path,
           queryClient: opts.queryClient,
           mutate: callIt('mutation'),
@@ -206,9 +280,9 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       },
       subscriptionOptions: () => {
         return trpcSubscriptionOptions({
-          opts: userOptions,
+          opts: arg2,
           path,
-          queryKey,
+          queryKey: queryKey,
           subscribe: callIt('subscription'),
         });
       },
