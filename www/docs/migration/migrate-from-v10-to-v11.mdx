@@ -35,8 +35,6 @@ Added support for detecting and recovering from stale connections:
 ```ts
 unstable_httpSubscriptionLink({
   url: '/api/trpc',
-  // Reconnect if no messages or pings are received for 30 seconds
-  reconnectAfterInactivityMs: 30_000,
 });
 ```
 
@@ -50,7 +48,12 @@ export const t = initTRPC.create({
       enabled: true,
       intervalMs: 15_000,
     },
+    client: {
+      // Reconnect if no messages or pings are received for 30 seconds
+      reconnectAfterInactivityMs: 30_000,
+    },
   },
+
 });
 ```
 
