@@ -153,7 +153,7 @@ function factory(config?: {
 
   const opts = routerToServerAndClientNew(appRouter, {
     wsClient: {
-      retryDelayMs: () => 10,
+      retryDelayMs: () => 50,
       onOpen: onOpenMock,
       onError: onErrorMock,
       onClose: onCloseMock,
@@ -1348,6 +1348,8 @@ describe('lazy mode', () => {
     const sub = client.onMessageObservable.subscribe(undefined, {
       onData: onDataMock,
     });
+    await Promise.resolve();
+    await Promise.resolve();
     expect(wsClient.connection).not.toBe(null);
 
     expect(ctx.onOpenMock).toHaveBeenCalledTimes(0);
@@ -1656,7 +1658,10 @@ describe('keep alive from the client', () => {
 
     expect(pong).toBe(false);
 
-    expect(onClose).toHaveBeenCalledTimes(1);
+    await vi.useRealTimers();
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
 
     await ctx.close();
   });

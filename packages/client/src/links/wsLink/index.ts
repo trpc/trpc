@@ -8,22 +8,16 @@ import { TRPCClientError } from '../../TRPCClientError';
 import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
 import type { TRPCLink } from '../types';
-import {
-  createWSClient,
+import type {
   TRPCWebSocketClient,
   WebSocketClientOptions,
 } from './createWSClient';
+import { createWSClient } from './createWSClient';
 
 export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   client: TRPCWebSocketClient;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
-/**
- * @see https://trpc.io/docs/v11/client/links/wsLink
- * @deprecated
- * 🙋‍♂️ **Contributors needed** to continue supporting WebSockets!
- * See https://github.com/trpc/trpc/issues/6109
- */
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
