@@ -34,7 +34,8 @@
     "src",
     "README.md",
     "package.json",
-    "!**/*.test.*"
+    "!**/*.test.*",
+    "!**/__tests__"
   ],
   "eslintConfig": {
     "rules": {
