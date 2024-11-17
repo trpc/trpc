@@ -92,7 +92,7 @@ function createAppRouter() {
 
 type AppRouter = ReturnType<typeof createAppRouter>;
 
-async function startServer(endpoint = '') {
+async function serverResource(endpoint = '') {
   const router = createAppRouter();
 
   const mf = new Miniflare({
@@ -129,27 +129,20 @@ async function startServer(endpoint = '') {
 
   return {
     url,
-    close: () =>
+    router,
+    client,
+    [Symbol.asyncDispose]: () =>
       new Promise<void>((resolve, reject) =>
         server.close((err) => {
           err ? reject(err) : resolve();
         }),
       ),
-    router,
-    client,
   };
 }
 
 describe('with default server', () => {
-  let t: Awaited<ReturnType<typeof startServer>>;
-  beforeAll(async () => {
-    t = await startServer();
-  });
-  afterAll(async () => {
-    await t.close();
-  });
-
   test('simple query', async () => {
+    await using t = await serverResource();
     expect(
       await t.client.hello.query({
         who: 'test',
@@ -168,6 +161,7 @@ describe('with default server', () => {
   });
 
   test('streaming', async () => {
+    await using t = await serverResource();
     const orderedResults: number[] = [];
     const linkSpy: TRPCLink<AppRouter> = () => {
       // here we just got initialized in the app - this happens once per app
@@ -209,6 +203,7 @@ describe('with default server', () => {
   });
 
   test('query with headers', async () => {
+    await using t = await serverResource();
     const client = createTRPCProxyClient<AppRouter>({
       links: [
         httpBatchLink({
@@ -227,6 +222,7 @@ describe('with default server', () => {
   });
 
   test('response with headers', async () => {
+    await using t = await serverResource();
     const customLink: TRPCLink<AppRouter> = () => {
       return ({ next, op }) => {
         return next(op).pipe(
@@ -264,33 +260,29 @@ test.each([
   '/trpc/',
   '/x/y/z',
 ])('with "%s" endpoint', async (endpoint) => {
-  const custom = await startServer(endpoint);
+  await using t = await serverResource(endpoint);
   expect(
-    await custom.client.hello.query({
+    await t.client.hello.query({
       who: 'test',
     }),
   ).toEqual({
     text: 'hello test',
   });
-
-  await custom.close();
 });
 
 // https://github.com/trpc/trpc/issues/5659
 test('mutation', async () => {
-  const t = await startServer();
+  await using t = await serverResource();
 
   const res = await Promise.all([
     t.client.helloMutation.mutate('world'),
     t.client.helloMutation.mutate('KATT'),
   ]);
   expect(res).toEqual(['hello world', 'hello KATT']);
-
-  await t.close();
 });
 
 test('batching', async () => {
-  const t = await startServer();
+  await using t = await serverResource();
 
   const normalResult = await (
     await fetch(`${t.url}/hello,foo?batch=1&input={}`)
