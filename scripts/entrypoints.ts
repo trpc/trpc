@@ -124,10 +124,6 @@ export async function generateEntrypoints(rawInputs: string[]) {
   // Add `peerDependencies` in all packages
   pkgJson.peerDependencies ??= {};
   pkgJson.peerDependencies['typescript'] = '>=5.6.2';
-  // sort peer dependencies
-  pkgJson.peerDependencies = Object.fromEntries(
-    Object.entries(pkgJson.peerDependencies).sort(),
-  );
 
   // write package.json
   const formattedPkgJson = await prettier.format(JSON.stringify(pkgJson), {
