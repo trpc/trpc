@@ -255,7 +255,7 @@ const trpc = createTRPCClient<AppRouter>({
 
 The `httpSubscriptionLink` supports configuring a timeout for inactivity through the `reconnectAfterInactivityMs` option. If no messages (including ping messages) are received within the specified timeout period, the connection will be marked as "connecting" and automatically attempt to reconnect.
 
-The timeout configuration is now set on the server side when initializing tRPC:
+The timeout configuration is set on the server side when initializing tRPC:
 
 ```ts title="server/trpc.ts"
 import { initTRPC } from '@trpc/server';
@@ -292,18 +292,6 @@ export const t = initTRPC.create({
   },
 });
 ```
-
-When configuring both client timeout and server ping, ensure that:
-
-1. The server's `experimental_streamingPingInterval` is less than the client's `reconnectAfterInactivityMs`
-2. Allow some buffer time for network latency
-
-For example:
-
-- Server: `experimental_streamingPingInterval: 15_000` (15 seconds)
-- Client: `reconnectAfterInactivityMs: 30_000` (30 seconds)
-
-This gives a 15-second buffer for network delays or missed pings before triggering a reconnection.
 
 ## Compatibility (React Native) {#compatibility-react-native}
 
