@@ -24,6 +24,23 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### TypeScript version >= 5.6.2 is now required (non-breaking)
+
+tRPC now requires TypeScript version 5.6.2 or higher. This change was made in response to [a bug report](https://github.com/trpc/trpc/issues/6243) where we decided to take a forward-looking approach.
+
+If you try to install tRPC with an unsupported TypeScript version, you'll receive a peer dependency error during installation.
+
+If you notice your editor showing `any` types, it's likely because your editor isn't using the correct TypeScript version. To fix this, you'll need to configure your editor to use the TypeScript version installed in your project's `package.json`.
+
+For VSCode users, add these settings to your `.vscode/settings.json`:
+
+```json title=".vscode/settings.json"
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
+```
+
 ### Moves `experimental.sseSubscriptions` -> `sse` (non-breaking)
 
 The `experimental.sseSubscriptions` option has been moved to just `sse` in the `initTRPC.create()`-function.
