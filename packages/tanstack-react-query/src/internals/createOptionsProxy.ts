@@ -251,7 +251,15 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
           queryKey: queryKey,
         };
       },
-      infiniteQueryOptions: () =>
+      infiniteQueryOptions: () => {
+        return trpcInfiniteQueryOptions({
+          opts: arg2,
+          path,
+          queryClient: opts.queryClient,
+          queryKey: queryKey,
+          query: callIt('query'),
+        });
+      },
         trpcInfiniteQueryOptions({
           opts: arg2,
           path,
