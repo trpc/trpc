@@ -56,24 +56,22 @@ export type InferInput<
   TProcedure extends
     | DecorateQueryProcedure<any>
     | DecorateMutationProcedure<any>,
-> = TProcedure['~input'];
+> = TProcedure['~types']['input'];
 
 export type InferOutput<
   TProcedure extends
     | DecorateQueryProcedure<any>
     | DecorateMutationProcedure<any>,
-> = TProcedure['~output'];
+> = TProcedure['~types']['output'];
 
 export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   /**
-   * @internal prefer using InferInput to access input type
+   * @internal prefer using InferInput and InferOutput to access types
    */
-  '~input': TDef['input'];
-
-  /**
-   * @internal prefer using InferOutput to access input type
-   */
-  '~output': TDef['output'];
+  '~types': {
+    input: TDef['input'];
+    output: TDef['output'];
+  };
 
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
@@ -102,14 +100,12 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
   /**
-   * @internal prefer using InferInput to access input type
+   * @internal prefer using InferInput and InferOutput to access types
    */
-  '~input': TDef['input'];
-
-  /**
-   * @internal prefer using InferOutput to access input type
-   */
-  '~output': TDef['output'];
+  '~types': {
+    input: TDef['input'];
+    output: TDef['output'];
+  };
 
   /**
    * @see
@@ -243,8 +239,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
     const queryKey = getQueryKeyInternal(path, arg1, queryType ?? 'any');
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
-      '~input': undefined as any,
-      '~output': undefined as any,
+      '~types': undefined as any,
       queryKey: () => queryKey,
       queryFilter: (): QueryFilters => {
         return {
