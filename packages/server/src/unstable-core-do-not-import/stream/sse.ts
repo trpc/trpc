@@ -45,7 +45,6 @@ export interface SSEStreamProducerOptions<TValue = unknown> {
   ping?: SSEPingOptions;
   /**
    * Maximum duration in milliseconds for the request before ending the stream
-   * Only useful for serverless runtimes
    * @default undefined
    */
   maxDurationMs?: number;

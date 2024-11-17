@@ -24,6 +24,7 @@ const t = initTRPC.context<Context>().create({
     return shape;
   },
   sse: {
+    maxDurationMs: 5 * 60 * 1_000, // 5 minutes
     ping: {
       enabled: true,
       intervalMs: 3_000,
