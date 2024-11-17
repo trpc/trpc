@@ -23,6 +23,15 @@ const t = initTRPC.context<Context>().create({
   errorFormatter({ shape }) {
     return shape;
   },
+  sse: {
+    ping: {
+      enabled: true,
+      intervalMs: 3_000,
+    },
+    client: {
+      reconnectAfterInactivityMs: 5_000,
+    },
+  },
 });
 
 export const createCallerFactory = t.createCallerFactory;
