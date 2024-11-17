@@ -11,10 +11,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import z from 'zod';
 import { t } from './polymorphism.common';
-import {
-  FileExportRequest,
-  FileExportStatus,
-} from './polymorphism.legacy.factory';
+import { FileExportRequest, FileExportStatus } from './polymorphism.factory';
 
 //
 // DTO Subtypes

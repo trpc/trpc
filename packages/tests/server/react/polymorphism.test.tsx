@@ -13,13 +13,12 @@ import {
   QueryClient,
   QueryClientProvider,
   useMutation,
-  useQuery,
-  useQueryClient,
 } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { InferOutput } from '@trpc/tanstack-react-query';
-import { createTRPCContext } from '@trpc/tanstack-react-query';
+import { getUntypedClient } from '@trpc/client';
+import { createTRPCReact } from '@trpc/react-query';
+import type { InferQueryLikeData } from '@trpc/react-query/shared';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
 import React, { useState } from 'react';
@@ -32,6 +31,10 @@ import { t } from './polymorphism.common';
  * interfaces which concrete router instances are compatible with
  */
 import * as Factory from './polymorphism.factory';
+/**
+ * We also define a factory which extends from the basic Factory with an entity sub-type and extra procedure
+ */
+import * as SubTypedFactory from './polymorphism.subtyped-factory';
 
 /**
  * The tRPC backend is defined here
@@ -45,6 +48,8 @@ function createTRPCApi() {
    */
   const IssueExportsProvider: Factory.FileExportStatusType[] = [];
   const DiscussionExportsProvider: Factory.FileExportStatusType[] = [];
+  const PullRequestExportsProvider: SubTypedFactory.SubTypedFileExportStatusType[] =
+    [];
 
   /**
    * Create an AppRouter instance, with multiple routes using the data export interface
@@ -69,6 +74,12 @@ function createTRPCApi() {
           }),
         ),
       }),
+      pullRequests: t.router({
+        export: SubTypedFactory.createSubTypedExportRoute(
+          t.procedure,
+          PullRequestExportsProvider,
+        ),
+      }),
     }),
   });
 
@@ -77,6 +88,7 @@ function createTRPCApi() {
     appRouter,
     IssueExportsProvider,
     DiscussionExportsProvider,
+    PullRequestExportsProvider,
   };
 }
 
@@ -86,30 +98,36 @@ describe('polymorphism', () => {
    */
   const ctx = konn()
     .beforeEach(() => {
-      const { appRouter, IssueExportsProvider, DiscussionExportsProvider } =
-        createTRPCApi();
+      const {
+        appRouter,
+        IssueExportsProvider,
+        DiscussionExportsProvider,
+        PullRequestExportsProvider,
+      } = createTRPCApi();
 
       const opts = routerToServerAndClientNew(appRouter);
-
-      const { TRPCProvider, useTRPC } = createTRPCContext<typeof appRouter>();
+      const trpc = createTRPCReact<typeof appRouter>();
 
       const queryClient = new QueryClient();
 
       function App(props: { children: ReactNode }) {
         return (
-          <TRPCProvider queryClient={queryClient} trpcClient={opts.client}>
+          <trpc.Provider
+            {...{ queryClient, client: getUntypedClient(opts.client) }}
+          >
             <QueryClientProvider client={queryClient}>
               {props.children}
             </QueryClientProvider>
-          </TRPCProvider>
+          </trpc.Provider>
         );
       }
       return {
         ...opts,
         App,
-        useTRPC,
+        trpc,
         IssueExportsProvider,
         DiscussionExportsProvider,
+        PullRequestExportsProvider,
       };
     })
     .afterEach(async (opts) => {
@@ -119,25 +137,25 @@ describe('polymorphism', () => {
 
   describe('simple factory', () => {
     test('can use a simple factory router with an abstract interface', async () => {
-      const { useTRPC } = ctx;
+      const { trpc } = ctx;
 
       /**
        * Can now define page components which re-use functionality from components,
        * and pass the specific backend functionality which is needed need
        */
       function IssuesExportPage() {
-        const trpc = useTRPC();
-        const client = useQueryClient();
+        const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
-        const invalidate = useMutation({
-          mutationFn: () => client.invalidateQueries(trpc.github.queryFilter()),
-        });
 
+        const invalidate = useMutation({
+          mutationFn: () => utils.invalidate(),
+        });
         return (
           <>
             <StartExportButton
               route={trpc.github.issues.export}
+              utils={utils.github.issues.export}
               onExportStarted={setCurrentExport}
             />
 
@@ -184,22 +202,21 @@ describe('polymorphism', () => {
     });
 
     test('can use the abstract interface with a factory instance which has been merged with some extra procedures', async () => {
-      const { useTRPC } = ctx;
+      const { trpc } = ctx;
 
       function DiscussionsExportPage() {
-        const trpc = useTRPC();
-        const client = useQueryClient();
+        const utils = trpc.useUtils();
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
-
         const invalidate = useMutation({
-          mutationFn: () => client.invalidateQueries(trpc.github.queryFilter()),
+          mutationFn: () => utils.invalidate(),
         });
 
         return (
           <>
             <StartExportButton
               route={trpc.github.discussions.export}
+              utils={utils.github.discussions.export}
               onExportStarted={setCurrentExport}
             />
 
@@ -245,6 +262,86 @@ describe('polymorphism', () => {
       });
     });
   });
+
+  describe('sub-typed factory', () => {
+    test('can use a sub-typed factory router with the interfaces from the supertype', async () => {
+      const { trpc } = ctx;
+
+      /**
+       * Can define page components which operate over interfaces generated by a super-typed router,
+       * but also extend types and functionality
+       */
+      function PullRequestsExportPage() {
+        const utils = trpc.useUtils();
+
+        const [currentExport, setCurrentExport] = useState<number | null>(null);
+        const invalidate = useMutation({
+          mutationFn: () => utils.invalidate(),
+        });
+
+        return (
+          <>
+            {/* Some components may still need to be bespoke... */}
+            <SubTypedStartExportButton
+              route={trpc.github.pullRequests.export}
+              utils={utils.github.pullRequests.export}
+              onExportStarted={setCurrentExport}
+            />
+
+            <RefreshExportsListButton
+              mutate={invalidate.mutate}
+              isPending={invalidate.isPending}
+            />
+
+            <RemoveExportButton
+              remove={trpc.github.pullRequests.export.delete}
+              utils={utils.github.pullRequests.export}
+              exportId={currentExport}
+            />
+
+            {/* ... or you can adapt them to support sub-types */}
+            <ExportStatus
+              status={trpc.github.pullRequests.export.status}
+              //                                       ^?
+              currentExport={currentExport}
+              renderAdditionalFields={(data) => {
+                expectTypeOf(data.description).toEqualTypeOf<string>();
+                return `Description: "${data?.description}"`;
+              }}
+            />
+
+            <ExportsList list={trpc.github.pullRequests.export.list} />
+          </>
+        );
+      }
+
+      /**
+       * Test Act & Assertions
+       */
+
+      const $ = render(
+        <ctx.App>
+          <PullRequestsExportPage />
+        </ctx.App>,
+      );
+
+      await userEvent.click($.getByTestId('startExportBtn'));
+
+      await waitFor(() => {
+        expect($.container).toHaveTextContent(
+          'Last Export: `Search for Polymorphism React` (Working)',
+        );
+      });
+
+      await userEvent.click($.getByTestId('refreshBtn'));
+
+      await waitFor(() => {
+        expect($.container).toHaveTextContent(
+          'Last Export: `Search for Polymorphism React` (Ready!)',
+        );
+      });
+    });
+  });
 });
 
 /**
@@ -255,27 +352,84 @@ describe('polymorphism', () => {
 
 function StartExportButton(props: {
   route: Factory.ExportRouteLike;
+  utils: Factory.ExportUtilsLike;
   onExportStarted: (id: number) => void;
 }) {
-  const client = useQueryClient();
+  const exportStarter = props.route.start.useMutation({
+    async onSuccess(data) {
+      props.onExportStarted(data.id);
 
-  const exportStarter = useMutation(
-    props.route.start.mutationOptions({
-      async onSuccess(data) {
-        props.onExportStarted(data.id);
-
-        await client.invalidateQueries(props.route.queryFilter());
-      },
-    }),
-  );
+      await props.utils.invalidate();
+    },
+  });
 
   return (
     <button
       data-testid="startExportBtn"
       onClick={() => {
-        exportStarter.mutate({
+        exportStarter.mutateAsync({
           filter: 'polymorphism react',
           name: 'Search for Polymorphism React',
+        });
+      }}
+    >
+      Start Export
+    </button>
+  );
+}
+
+function RemoveExportButton(props: {
+  exportId: number | null;
+  remove: SubTypedFactory.ExportSubTypedRouteLike['delete'];
+  utils: SubTypedFactory.ExportSubTypesUtilsLike;
+}) {
+  const exportDeleter = props.remove.useMutation({
+    async onSuccess() {
+      await props.utils.invalidate();
+    },
+  });
+
+  const id = props.exportId;
+  if (!id) {
+    return null;
+  }
+
+  return (
+    <button
+      data-testid="removeExportBtn"
+      onClick={() => {
+        exportDeleter.mutateAsync({
+          id,
+        });
+      }}
+    >
+      Remove Export
+    </button>
+  );
+}
+
+type SubTypedStartExportButtonProps = {
+  route: SubTypedFactory.ExportSubTypedRouteLike;
+  utils: SubTypedFactory.ExportSubTypesUtilsLike;
+  onExportStarted: (id: number) => void;
+};
+function SubTypedStartExportButton(props: SubTypedStartExportButtonProps) {
+  const exportStarter = props.route.start.useMutation({
+    onSuccess(data) {
+      props.onExportStarted(data.id);
+
+      props.utils.invalidate();
+    },
+  });
+
+  return (
+    <button
+      data-testid="startExportBtn"
+      onClick={() => {
+        exportStarter.mutateAsync({
+          filter: 'polymorphism react',
+          name: 'Search for Polymorphism React',
+          description: 'This field is unique to the sub-typed router',
         });
       }}
     >
@@ -303,14 +457,12 @@ function ExportStatus<
   TStatus extends Factory.ExportRouteLike['status'],
 >(props: {
   status: TStatus;
-  renderAdditionalFields?: (data: InferOutput<TStatus>) => ReactNode;
+  renderAdditionalFields?: (data: InferQueryLikeData<TStatus>) => ReactNode;
   currentExport: number | null;
 }) {
-  const exportStatus = useQuery(
-    props.status.queryOptions(
-      { id: props.currentExport ?? -1 },
-      { enabled: props.currentExport !== null },
-    ),
+  const exportStatus = props.status.useQuery(
+    { id: props.currentExport ?? -1 },
+    { enabled: props.currentExport !== null },
   );
 
   if (!exportStatus.data) {
@@ -321,15 +473,13 @@ function ExportStatus<
     <p>
       Last Export: `{exportStatus.data?.name}` (
       {exportStatus.data.downloadUri ? 'Ready!' : 'Working'})
-      {props.renderAdditionalFields?.(exportStatus.data)}
+      {props.renderAdditionalFields?.(exportStatus.data as unknown as any)}
     </p>
   );
 }
 
-function ExportsList(props: {
-  list: Omit<Factory.ExportRouteLike['list'], 'nothing'>;
-}) {
-  const exportsList = useQuery(props.list.queryOptions());
+function ExportsList(props: { list: Factory.ExportRouteLike['list'] }) {
+  const exportsList = props.list.useQuery();
 
   return (
     <>
