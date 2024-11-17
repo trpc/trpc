@@ -82,7 +82,7 @@ export interface RootConfig<TTypes extends RootTypes> {
     enabled?: boolean;
   } & Pick<
     SSEStreamProducerOptions,
-    'ping' | 'emitAndEndImmediately' | 'maxDurationMs'
+    'ping' | 'emitAndEndImmediately' | 'maxDurationMs' | 'client'
   >;
   experimental?: {};
 }

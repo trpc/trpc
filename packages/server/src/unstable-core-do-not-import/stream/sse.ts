@@ -16,7 +16,7 @@ type Deserialize = (value: any) => any;
 /**
  * @internal
  */
-export interface PingOptions {
+export interface SSEPingOptions {
   /**
    * Enable ping comments sent from the server
    * @default false
@@ -29,12 +29,19 @@ export interface PingOptions {
   intervalMs?: number;
 }
 
+export interface SSEClientOptions {
+  /**
+   * Timeout and reconnect after inactivity in milliseconds
+   */
+  reconnectAfterInactivityMs?: number;
+}
+
 export interface SSEStreamProducerOptions<TValue = unknown> {
   serialize?: Serialize;
   data: AsyncIterable<TValue>;
 
   maxDepth?: number;
-  ping?: PingOptions;
+  ping?: SSEPingOptions;
   /**
    * Maximum duration in milliseconds for the request before ending the stream
    * Only useful for serverless runtimes
@@ -48,10 +55,22 @@ export interface SSEStreamProducerOptions<TValue = unknown> {
    */
   emitAndEndImmediately?: boolean;
   formatError?: (opts: { error: unknown }) => unknown;
+  /**
+   * Client-specific options - these will be sent to the client as part of the first message
+   * @default {}
+   */
+  client?: {
+    /**
+     * Timeout after inactivity in milliseconds
+     * @default undefined
+     */
+    reconnectAfterInactivityMs?: number;
+  };
 }
 
 const PING_EVENT = 'ping';
 const SERIALIZED_ERROR_EVENT = 'serialized-error';
+const CONNECTED_EVENT = 'connected';
 
 type SSEvent = Partial<{
   id: string;
@@ -67,14 +86,28 @@ export function sseStreamProducer<TValue = unknown>(
   opts: SSEStreamProducerOptions<TValue>,
 ) {
   const stream = createReadableStream<SSEvent>();
-  stream.controller.enqueue({ comment: 'connected' });
 
   const { serialize = identity } = opts;
 
-  const ping: Required<PingOptions> = {
+  const ping: Required<SSEPingOptions> = {
     enabled: opts.ping?.enabled ?? false,
     intervalMs: opts.ping?.intervalMs ?? 1000,
   };
+  const client: SSEClientOptions = opts.client ?? {};
+
+  stream.controller.enqueue({
+    event: CONNECTED_EVENT,
+    data: JSON.stringify(client),
+  });
+  if (
+    ping.enabled &&
+    client.reconnectAfterInactivityMs &&
+    ping.intervalMs > client.reconnectAfterInactivityMs
+  ) {
+    throw new Error(
+      `Ping interval must be less than client reconnect interval to prevent unnecessary reconnection - ping.intervalMs: ${ping.intervalMs} client.reconnectAfterInactivityMs: ${client.reconnectAfterInactivityMs}`,
+    );
+  }
 
   run(async () => {
     type TIteratorValue = Awaited<TValue> | typeof PING_SYM;
@@ -202,11 +235,17 @@ interface ConsumerStreamResultConnecting<TConfig extends ConsumerConfig>
 interface ConsumerStreamResultTimeout<TConfig extends ConsumerConfig>
   extends ConsumerStreamResultBase<TConfig> {
   type: 'timeout';
+  ms: number;
 }
-
 interface ConsumerStreamResultPing<TConfig extends ConsumerConfig>
   extends ConsumerStreamResultBase<TConfig> {
   type: 'ping';
+}
+
+interface ConsumerStreamResultConnected<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
+  type: 'connected';
+  options: SSEClientOptions;
 }
 
 type ConsumerStreamResult<TConfig extends ConsumerConfig> =
@@ -215,7 +254,8 @@ type ConsumerStreamResult<TConfig extends ConsumerConfig> =
   | ConsumerStreamResultOpened<TConfig>
   | ConsumerStreamResultConnecting<TConfig>
   | ConsumerStreamResultTimeout<TConfig>
-  | ConsumerStreamResultPing<TConfig>;
+  | ConsumerStreamResultPing<TConfig>
+  | ConsumerStreamResultConnected<TConfig>;
 
 export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   url: () => MaybePromise<string>;
@@ -225,10 +265,6 @@ export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   signal: AbortSignal;
   deserialize?: Deserialize;
   EventSource: TConfig['EventSource'];
-  /**
-   * Reconnect after inactivity in milliseconds
-   */
-  reconnectAfterInactivityMs?: number;
 }
 
 interface ConsumerConfig {
@@ -270,6 +306,8 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 ): AsyncIterable<ConsumerStreamResult<TConfig>> {
   const { deserialize = (v) => v } = opts;
 
+  let clientOptions: SSEClientOptions = {};
+
   const signal = opts.signal;
 
   let _es: InstanceType<TConfig['EventSource']> | null = null;
@@ -291,6 +329,18 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
         eventSource.addEventListener('open', () => {
           controller.enqueue({
             type: 'opened',
+            eventSource,
+          });
+        });
+
+        eventSource.addEventListener(CONNECTED_EVENT, (_msg) => {
+          const msg = _msg as EventSourceLike.MessageEvent;
+          const options: SSEClientOptions = JSON.parse(msg.data);
+
+          clientOptions = options;
+          controller.enqueue({
+            type: 'connected',
+            options,
             eventSource,
           });
         });
@@ -374,10 +424,11 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
         async next() {
           let promise = stream.reader.read();
 
-          if (opts.reconnectAfterInactivityMs) {
+          const timeoutMs = clientOptions.reconnectAfterInactivityMs;
+          if (timeoutMs) {
             promise = withTimeout({
               promise,
-              timeoutMs: opts.reconnectAfterInactivityMs,
+              timeoutMs,
               onTimeout: async () => {
                 // Close and release old reader
                 await stream.cancel();
@@ -388,6 +439,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
                 return {
                   value: {
                     type: 'timeout',
+                    ms: timeoutMs,
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                     eventSource: _es!,
                   },
