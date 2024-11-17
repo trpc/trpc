@@ -22,13 +22,18 @@ export const suppressLogs = () => {
   };
 };
 test('e2e, server-sent events (SSE)', async () => {
+  let stoppedCount = 0;
   async function* data(lastEventId: string | undefined) {
     let i = lastEventId ? Number(lastEventId) : 0;
-    while (true) {
-      i++;
-      yield tracked(String(i), i);
+    try {
+      while (true) {
+        i++;
+        yield tracked(String(i), i);
 
-      await new Promise((resolve) => setTimeout(resolve, 5));
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+    } finally {
+      stoppedCount++;
     }
   }
   type Data = inferAsyncIterableYield<ReturnType<typeof data>>;
@@ -124,6 +129,8 @@ test('e2e, server-sent events (SSE)', async () => {
 
         // Restore console logs
         release();
+
+        await vi.waitFor(() => expect(stoppedCount).toBe(1));
       }
 
       // Break after receiving double the ITERATIONS
@@ -137,9 +144,8 @@ test('e2e, server-sent events (SSE)', async () => {
 
   expect(server.abortCount).toBe(1);
   // The break after double the ITERATIONS will trigger a second socket close
-  await vi.waitFor(() => expect(server.abortCount).toBe(2), {
-    timeout: 1000,
-  });
+  await vi.waitFor(() => expect(server.abortCount).toBe(2));
+  await vi.waitFor(() => expect(stoppedCount).toBe(2));
 
   expect(allEvents.filter((it) => it.type === 'connecting')).toHaveLength(2);
 });

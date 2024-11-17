@@ -11,11 +11,14 @@ import {
 import { Response as MiniflareResponse } from '@miniflare/core';
 import type { TRPCLink } from '@trpc/client';
 import {
+  createTRPCClient,
   createTRPCProxyClient,
   httpBatchLink,
+  splitLink,
   unstable_httpBatchStreamLink,
+  unstable_httpSubscriptionLink,
 } from '@trpc/client';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, tracked } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { observable, tap } from '@trpc/server/observable';
@@ -54,6 +57,8 @@ function createAppRouter() {
   const router = t.router;
   const publicProcedure = t.procedure;
 
+  let stoppedCount = 0;
+
   const appRouter = router({
     hello: publicProcedure
       .input(
@@ -85,15 +90,33 @@ function createAppRouter() {
     helloMutation: publicProcedure.input(z.string()).mutation((opts) => {
       return `hello ${opts.input}`;
     }),
+    sub: publicProcedure.subscription(async function* () {
+      let i = 0;
+      try {
+        while (true) {
+          i++;
+          yield tracked(String(i), i);
+
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+      } finally {
+        stoppedCount++;
+      }
+    }),
   });
 
-  return appRouter;
+  return {
+    router: appRouter,
+    get stoppedCount() {
+      return stoppedCount;
+    },
+  };
 }
 
-type AppRouter = ReturnType<typeof createAppRouter>;
+type AppRouter = ReturnType<typeof createAppRouter>['router'];
 
 async function serverResource(endpoint = '') {
-  const router = createAppRouter();
+  const ctx = createAppRouter();
 
   const mf = new Miniflare({
     script: '//',
@@ -106,7 +129,7 @@ async function serverResource(endpoint = '') {
     const response = fetchRequestHandler({
       endpoint,
       req: event.request,
-      router,
+      router: ctx.router,
       createContext,
     });
     event.respondWith(response);
@@ -123,13 +146,23 @@ async function serverResource(endpoint = '') {
   const path = trimSlashes(endpoint);
   const url = `http://localhost:${port}${path && `/${path}`}`;
 
-  const client = createTRPCProxyClient<typeof router>({
-    links: [httpBatchLink({ url, fetch: fetch as any })],
+  const client = createTRPCClient<typeof ctx.router>({
+    links: [
+      splitLink({
+        condition: (op) => op.type === 'subscription',
+        true: unstable_httpSubscriptionLink({
+          url,
+        }),
+        false: unstable_httpBatchStreamLink({
+          url,
+        }),
+      }),
+    ],
   });
 
   return {
+    ...ctx,
     url,
-    router,
     client,
     [Symbol.asyncDispose]: () =>
       new Promise<void>((resolve, reject) =>
@@ -293,4 +326,21 @@ test('batching', async () => {
   ).json();
 
   expect(normalResult).toEqual(urlEncodedResult);
+});
+
+test('sse', async () => {
+  await using t = await serverResource();
+
+  const aggregate: number[] = [];
+  const sub = t.client.sub.subscribe(undefined, {
+    onData(data) {
+      aggregate.push(data.data);
+    },
+  });
+
+  await vi.waitFor(() => aggregate.length === 10);
+
+  sub.unsubscribe();
+
+  await vi.waitFor(() => t.stoppedCount === 1);
 });
