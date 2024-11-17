@@ -345,12 +345,46 @@ type HTTPSubscriptionLinkOptions<
       }) =>
         | EventSourceLike.InitDictOf<TEventSource>
         | Promise<EventSourceLike.InitDictOf<TEventSource>>);
-
-  /**
-   * Timeout after inactivity in milliseconds.
-   * If no messages (including pings) are received within this period,
-   * the connection will be marked as "connecting" and attempt to reconnect.
-   */
-  reconnectAfterInactivityMs?: number;
 };
+```
+
+## SSE Options on the server
+
+```ts
+export interface SSEStreamProducerOptions<TValue = unknown> {
+  ping?: {
+    /**
+     * Enable ping comments sent from the server
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Interval in milliseconds
+     * @default 1000
+     */
+    intervalMs?: number;
+  };
+  /**
+   * Maximum duration in milliseconds for the request before ending the stream
+   * @default undefined
+   */
+  maxDurationMs?: number;
+  /**
+   * End the request immediately after data is sent
+   * Only useful for serverless runtimes that do not support streaming responses
+   * @default false
+   */
+  emitAndEndImmediately?: boolean;
+  /**
+   * Client-specific options - these will be sent to the client as part of the first message
+   * @default {}
+   */
+  client?: {
+    /**
+     * Timeout and reconnect after inactivity in milliseconds
+     * @default undefined
+     */
+    reconnectAfterInactivityMs?: number;
+  };
+}
 ```
