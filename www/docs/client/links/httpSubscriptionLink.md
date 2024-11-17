@@ -255,50 +255,19 @@ const trpc = createTRPCClient<AppRouter>({
 
 The `httpSubscriptionLink` supports configuring a timeout for inactivity through the `reconnectAfterInactivityMs` option. If no messages (including ping messages) are received within the specified timeout period, the connection will be marked as "connecting" and automatically attempt to reconnect.
 
-```ts
-import {
-  createTRPCClient,
-  httpBatchLink,
-  splitLink,
-  unstable_httpSubscriptionLink,
-} from '@trpc/client';
+The timeout configuration is now set on the server side when initializing tRPC:
 
-const trpc = createTRPCClient<AppRouter>({
-  links: [
-    splitLink({
-      condition: (op) => op.type === 'subscription',
-      true: unstable_httpSubscriptionLink({
-        url: '/api/trpc',
-        // Reconnect if no messages received for 30 seconds
-        reconnectAfterInactivityMs: 30_000,
-      }),
-      false: httpBatchLink({
-        url: '/api/trpc',
-      }),
-    }),
-  ],
+```ts title="server/trpc.ts"
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create({
+  sse: {
+    client: {
+      reconnectAfterInactivityMs: 3_000
+    }
+  },
 });
 ```
-
-When a timeout occurs:
-
-1. The connection state will change to "connecting"
-2. The client will automatically attempt to reconnect
-3. Any tracked event IDs will be preserved and sent with the new connection to resume from the last received message
-
-This is useful for:
-
-- Detecting stale connections that may have silently failed
-- Automatically recovering from network interruptions
-- Ensuring your subscriptions stay active even during periods of inactivity
-
-:::tip
-The timeout includes ping messages sent by the server. If you're experiencing timeouts during normal operation, you may want to:
-
-1. Increase the `reconnectAfterInactivityMs` value
-2. Adjust your server's ping interval to be more frequent
-
-:::
 
 ## Server Ping Configuration {#server-ping}
 
@@ -314,9 +283,12 @@ export const t = initTRPC.create({
     ping: {
       // Enable periodic ping messages to keep connection alive
       enabled: true,
-      // Send ping message every 200ms
-      intervalMs: 200,
+      // Send ping message every 2s
+      intervalMs: 2_000,
     },
+    // client: {
+    //   reconnectAfterInactivityMs: 3_000
+    // }
   },
 });
 ```
