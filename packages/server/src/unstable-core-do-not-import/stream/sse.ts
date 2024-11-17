@@ -32,6 +32,7 @@ export interface SSEPingOptions {
 export interface SSEClientOptions {
   /**
    * Timeout and reconnect after inactivity in milliseconds
+   * @default undefined
    */
   reconnectAfterInactivityMs?: number;
 }
@@ -59,13 +60,7 @@ export interface SSEStreamProducerOptions<TValue = unknown> {
    * Client-specific options - these will be sent to the client as part of the first message
    * @default {}
    */
-  client?: {
-    /**
-     * Timeout after inactivity in milliseconds
-     * @default undefined
-     */
-    reconnectAfterInactivityMs?: number;
-  };
+  client?: SSEClientOptions;
 }
 
 const PING_EVENT = 'ping';
