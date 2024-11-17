@@ -144,7 +144,6 @@ export function unstable_httpSubscriptionLink<
         run(async () => {
           for await (const chunk of eventSourceStream) {
             switch (chunk.type) {
-              case 'connected':
               case 'ping':
                 // do nothing
                 break;
@@ -172,7 +171,7 @@ export function unstable_httpSubscriptionLink<
                   },
                 });
                 break;
-              case 'opened': {
+              case 'connected': {
                 observer.next({
                   result: {
                     type: 'started',

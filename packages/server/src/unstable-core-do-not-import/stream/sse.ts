@@ -222,11 +222,6 @@ interface ConsumerStreamResultError<TConfig extends ConsumerConfig>
   error: TConfig['error'];
 }
 
-interface ConsumerStreamResultOpened<TConfig extends ConsumerConfig>
-  extends ConsumerStreamResultBase<TConfig> {
-  type: 'opened';
-}
-
 interface ConsumerStreamResultConnecting<TConfig extends ConsumerConfig>
   extends ConsumerStreamResultBase<TConfig> {
   type: 'connecting';
@@ -251,7 +246,6 @@ interface ConsumerStreamResultConnected<TConfig extends ConsumerConfig>
 type ConsumerStreamResult<TConfig extends ConsumerConfig> =
   | ConsumerStreamResultData<TConfig>
   | ConsumerStreamResultError<TConfig>
-  | ConsumerStreamResultOpened<TConfig>
   | ConsumerStreamResultConnecting<TConfig>
   | ConsumerStreamResultTimeout<TConfig>
   | ConsumerStreamResultPing<TConfig>
@@ -325,12 +319,6 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
           type: 'connecting',
           eventSource: _es,
           event: null,
-        });
-        eventSource.addEventListener('open', () => {
-          controller.enqueue({
-            type: 'opened',
-            eventSource,
-          });
         });
 
         eventSource.addEventListener(CONNECTED_EVENT, (_msg) => {
