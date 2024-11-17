@@ -80,7 +80,8 @@
     "@trpc/server": "^10.45.1",
     "next": "15.0.3",
     "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
+    "react-dom": ">=16.8.0",
+    "typescript": ">=5.6.2"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-query": {
