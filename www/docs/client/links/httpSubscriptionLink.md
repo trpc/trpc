@@ -263,8 +263,8 @@ import { initTRPC } from '@trpc/server';
 export const t = initTRPC.create({
   sse: {
     client: {
-      reconnectAfterInactivityMs: 3_000
-    }
+      reconnectAfterInactivityMs: 3_000,
+    },
   },
 });
 ```
