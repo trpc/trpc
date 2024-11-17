@@ -271,7 +271,7 @@ export const t = initTRPC.create({
 
 ## Server Ping Configuration {#server-ping}
 
-The server can be configured to send periodic ping messages to keep the connection alive and prevent timeout disconnections. This is particularly useful when combined with the `reconnectAfterInactivityMs` option on the client.
+The server can be configured to send periodic ping messages to keep the connection alive and prevent timeout disconnections. This is particularly useful when combined with the `reconnectAfterInactivityMs`-option.
 
 ```ts title="server/trpc.ts"
 import { initTRPC } from '@trpc/server';
