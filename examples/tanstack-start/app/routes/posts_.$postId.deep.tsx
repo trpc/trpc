@@ -3,12 +3,20 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTRPC } from '~/trpc/react';
 import { PostErrorComponent } from './posts.$postId';
 
+declare module '@trpc/tanstack-react-query' {
+  interface DecorateQueryKeyable {
+    xxx: () => string;
+  }
+}
+
 export const Route = createFileRoute('/posts/$postId/deep')({
   loader: async ({ params: { postId }, context }) => {
     const data = await context.queryClient.ensureQueryData(
       //  ^?
       context.trpc.post.byId.queryOptions({ id: postId }),
     );
+
+    context.trpc.post.xxx();
 
     return { title: data.title };
   },

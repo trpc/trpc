@@ -1874,6 +1874,10 @@ importers:
         version: 3.23.8
 
   packages/tanstack-react-query:
+    dependencies:
+      typescript:
+        specifier: '>=5.6.2'
+        version: 5.6.2
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.59.15

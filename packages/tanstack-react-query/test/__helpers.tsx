@@ -21,6 +21,7 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,
   opts?: {
     subscriptions?: 'ws' | 'http';
+    methods?: Record<string, (...args: unknown[]) => unknown>;
   },
 ) {
   const spyLink = vi.fn((_op: Operation<unknown>) => {
@@ -73,12 +74,14 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
   const trpcClient = createTRPCOptionsProxy({
     client: getUntypedClient(ctx.client),
     queryClient,
+    methods: opts?.methods,
   });
 
   const trpcServer = createTRPCOptionsProxy({
     router: appRouter,
     ctx: {},
     queryClient,
+    methods: opts?.methods,
   });
 
   const { TRPCProvider, useTRPC } = createTRPCContext<TRouter>();
@@ -86,7 +89,11 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
   function App(props: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <TRPCProvider trpcClient={ctx.client} queryClient={queryClient}>
+        <TRPCProvider
+          trpcClient={ctx.client}
+          methods={opts?.methods}
+          queryClient={queryClient}
+        >
           {props.children}
         </TRPCProvider>
       </QueryClientProvider>

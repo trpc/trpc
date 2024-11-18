@@ -167,6 +167,7 @@ export interface TRPCOptionsProxyOptionsBase {
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
+  methods?: Record<string, (...args: unknown[]) => unknown>;
 }
 
 export interface TRPCOptionsProxyOptionsInternal<TRouter extends AnyRouter> {
@@ -283,6 +284,21 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       },
     };
 
-    return contextMap[utilName]();
+    const method =
+      contextMap[utilName] ??
+      (() => {
+        const customMethod = opts.methods?.[utilName];
+        if (!customMethod) {
+          throw new Error(`No method defined for '${utilName}'`);
+        }
+        return customMethod(
+          {
+            queryKey,
+          },
+          ...args,
+        );
+      });
+
+    return method();
   });
 }
