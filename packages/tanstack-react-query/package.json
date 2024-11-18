@@ -34,7 +34,8 @@
     "src",
     "README.md",
     "package.json",
-    "!**/*.test.*"
+    "!**/*.test.*",
+    "!**/__tests__"
   ],
   "eslintConfig": {
     "rules": {
@@ -52,7 +53,8 @@
     "@trpc/client": "10.45.1",
     "@trpc/server": "^10.45.1",
     "react": ">=18.2.0",
-    "react-dom": ">=18.2.0"
+    "react-dom": ">=18.2.0",
+    "typescript": ">=5.6.2"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.59.15",
@@ -66,6 +68,7 @@
     "react-dom": "^18.3.1",
     "rollup": "^4.9.5",
     "tsx": "^4.0.0",
+    "typescript": "^5.6.2",
     "vitest": "^2.0.4",
     "zod": "^3.0.0"
   },
