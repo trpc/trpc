@@ -44,7 +44,7 @@ jobs:
       - run: pnpm build
       - run: pnpm test-ci
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           # only use token if not a fork PR
@@ -213,7 +213,7 @@ jobs:
             next-prisma-websockets-starter,
             next-prisma-todomvc,
           ]
-        node-start: ['18.x']
+        node-start: ['18.x', '20.x']
     steps:
       - uses: actions/checkout@v4
         with:

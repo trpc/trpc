@@ -4,8 +4,11 @@ import {
   suppressLogs,
   suppressLogsUntil,
 } from './___testHelpers';
-import { waitFor } from '@testing-library/react';
-import type { TRPCClientError, TRPCLink } from '@trpc/client';
+import type {
+  OperationResultEnvelope,
+  TRPCClientError,
+  TRPCLink,
+} from '@trpc/client';
 import {
   createTRPCClient,
   splitLink,
@@ -16,11 +19,14 @@ import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import type { RootConfig } from '@trpc/server/unstable-core-do-not-import/rootConfig';
+import type { Deferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
+import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
-import { zAsyncGenerator } from './zAsyncGenerator';
+import { zAsyncIterable } from './zAsyncIterable';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -45,7 +51,7 @@ const ctx = konn()
       sub: {
         iterableEvent: t.procedure
           .output(
-            zAsyncGenerator({
+            zAsyncIterable({
               yield: z.number(),
               tracked: false,
             }),
@@ -69,7 +75,7 @@ const ctx = konn()
               lastEventId: z.coerce.number().min(0).optional(),
             }),
           )
-          .output(zAsyncGenerator({ yield: z.number(), tracked: true }))
+          .output(zAsyncIterable({ yield: z.number(), tracked: true }))
           .subscription(async function* (opts) {
             onIterableInfiniteSpy({
               input: opts.input,
@@ -149,7 +155,7 @@ test('iterable event', async () => {
     },
   });
 
-  await waitFor(
+  await vi.waitFor(
     () => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     },
@@ -161,7 +167,7 @@ test('iterable event', async () => {
   ctx.eeEmit(1);
   ctx.eeEmit(2);
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onData).toHaveBeenCalledTimes(2);
   });
   const onDataCalls = onData.mock.calls.map((call) => call[0]);
@@ -171,13 +177,13 @@ test('iterable event', async () => {
 
   subscription.unsubscribe();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
   });
 
   expect(ctx.onErrorSpy).not.toHaveBeenCalled();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ctx.ee.listenerCount('data')).toBe(0);
   });
 });
@@ -203,19 +209,19 @@ test(
       onConnectionStateChange,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(new Error('test error'));
 
     await suppressLogsUntil(async () => {
-      await waitFor(
+      await vi.waitFor(
         async () => {
           expect(ctx.createContextSpy).toHaveBeenCalledTimes(2);
         },
@@ -227,7 +233,7 @@ test(
 
     ctx.eeEmit(2);
 
-    await waitFor(
+    await vi.waitFor(
       () => {
         expect(onData).toHaveBeenCalledTimes(2);
       },
@@ -292,13 +298,13 @@ test('iterable event with bad yield', async () => {
     onError: onError,
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
   ctx.eeEmit(1);
   ctx.eeEmit('NOT_A_NUMBER' as never);
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
   });
   const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
@@ -340,7 +346,7 @@ test('disconnect and reconnect with an event id', async () => {
     },
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
@@ -348,7 +354,7 @@ test('disconnect and reconnect with an event id', async () => {
   const es = onStarted.mock.calls[0]![0].context?.eventSource;
   assert(es instanceof EventSource);
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onData.mock.calls.length).toBeGreaterThan(5);
   });
 
@@ -362,7 +368,7 @@ test('disconnect and reconnect with an event id', async () => {
   expect(es.readyState).toBe(EventSource.OPEN);
   const release = suppressLogs();
   ctx.destroyConnections();
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(es.readyState).toBe(EventSource.CONNECTING);
   });
 
@@ -376,7 +382,7 @@ test('disconnect and reconnect with an event id', async () => {
     `[TRPCClientError: Unknown error]`,
   );
 
-  await waitFor(
+  await vi.waitFor(
     () => {
       expect(es.readyState).toBe(EventSource.OPEN);
     },
@@ -393,7 +399,7 @@ test('disconnect and reconnect with an event id', async () => {
   expect(es.readyState).toBe(EventSource.CLOSED);
 
   // const lastEventId = onData.mock.calls.at(-1)[0]![0]!
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
   });
   await sleep(50);
@@ -478,13 +484,13 @@ describe('auth / connectionParams', async () => {
       onData: onData,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
@@ -519,13 +525,13 @@ describe('auth / connectionParams', async () => {
       onData: onData,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
@@ -626,13 +632,13 @@ describe('headers / eventSourceOptions', async () => {
       onData: onData,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
@@ -672,13 +678,13 @@ describe('headers / eventSourceOptions', async () => {
       onData: onData,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
@@ -750,13 +756,13 @@ describe('transformers / different serialize-deserialize', async () => {
       onData: onData,
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
 
     ctx.eeEmit(1);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
@@ -766,5 +772,185 @@ describe('transformers / different serialize-deserialize', async () => {
       id: '1',
       data: { num: 1 },
     });
+  });
+});
+
+describe('timeouts', async () => {
+  interface CtxOpts {
+    reconnectAfterInactivityMs: number;
+    serverOptions?: RootConfig<any>['sse'];
+  }
+  const getCtx = (ctxOpts: CtxOpts) => {
+    const results: number[] = [];
+
+    vi.useFakeTimers();
+
+    const onConnection = vi.fn<() => void>();
+
+    const t = initTRPC.create({
+      transformer: superjson,
+      sse: ctxOpts.serverOptions,
+    });
+
+    let deferred: Deferred<void> = createDeferred();
+
+    const router = t.router({
+      infinite: t.procedure
+        .input(
+          z
+            .object({
+              lastEventId: z.coerce.number().min(0).optional(),
+            })
+            .optional(),
+        )
+        .subscription(async function* (opts) {
+          onConnection();
+          let idx = opts.input?.lastEventId ?? 0;
+          while (true) {
+            idx++;
+            await deferred.promise;
+            deferred = createDeferred();
+            yield tracked(String(idx), idx);
+          }
+        }),
+    });
+
+    const operations: OperationResultEnvelope<
+      unknown,
+      TRPCClientError<typeof router>
+    >[] = [];
+
+    const linkSpy: TRPCLink<typeof router> = () => {
+      // here we just got initialized in the app - this happens once per app
+      // useful for storing cache for instance
+      return ({ next, op }) => {
+        // this is when passing the result to the next link
+        // each link needs to return an observable which propagates results
+        return observable((observer) => {
+          const unsubscribe = next(op).subscribe({
+            next(envelope) {
+              if (!envelope.result.type || envelope.result.type === 'data') {
+                results.push((envelope.result.data as any).data);
+              }
+
+              const op = { ...envelope };
+              if (op.context?.['eventSource']) {
+                op.context['eventSource'] = '[redacted]';
+              }
+              operations.push(envelope);
+              observer.next(envelope);
+            },
+            error: observer.error,
+          });
+          return unsubscribe;
+        });
+      };
+    };
+    const opts = routerToServerAndClientNew(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            unstable_httpSubscriptionLink({
+              url: opts.httpUrl,
+              transformer: superjson,
+              reconnectAfterInactivityMs: ctxOpts.reconnectAfterInactivityMs,
+            }),
+          ],
+        };
+      },
+    });
+    return {
+      ...opts,
+      deferred: () => deferred,
+      results: results,
+      operations: operations,
+      onConnection,
+      [Symbol.asyncDispose]: async () => {
+        vi.useRealTimers();
+        await opts.close?.();
+      },
+    };
+  };
+
+  test('works', async () => {
+    const opts = {
+      reconnectAfterInactivityMs: 1_000,
+    } as const satisfies CtxOpts;
+
+    await using ctx = getCtx(opts);
+    const sub = ctx.client.infinite.subscribe(undefined, {});
+
+    ctx.deferred().resolve();
+
+    await vi.waitFor(async () => {
+      expect(ctx.results).toHaveLength(1);
+    });
+
+    await vi.advanceTimersByTimeAsync(opts.reconnectAfterInactivityMs + 100);
+
+    await vi.waitFor(async () => {
+      expect(ctx.onConnection).toHaveBeenCalledTimes(2);
+    });
+
+    ctx.deferred().resolve();
+
+    await vi.waitFor(async () => {
+      expect(ctx.results).toEqual([1, 2]);
+    });
+
+    const connectedOpts = ctx.operations
+      .map((op) => op.result)
+      .filter((op) => op.type === 'state' && op.state === 'connecting');
+
+    expect(connectedOpts).toHaveLength(2);
+
+    const last = connectedOpts.at(-1)!;
+    expect(last.error).not.toBeFalsy();
+    expect(last.error).toMatchInlineSnapshot(
+      `[TRPCClientError: Timeout of 1000ms reached while waiting for a response]`,
+    );
+
+    sub.unsubscribe();
+  });
+
+  test('does not timeout if ping is enabled', async () => {
+    const opts = {
+      reconnectAfterInactivityMs: 10_000,
+      serverOptions: {
+        ping: {
+          enabled: true,
+          intervalMs: 1_000,
+        },
+      },
+    } as const satisfies CtxOpts;
+
+    await using ctx = getCtx(opts);
+    const sub = ctx.client.infinite.subscribe(undefined, {});
+
+    ctx.deferred().resolve();
+
+    await vi.waitFor(async () => {
+      expect(ctx.results).toHaveLength(1);
+    });
+
+    await vi.advanceTimersByTimeAsync(opts.reconnectAfterInactivityMs * 10);
+
+    expect(ctx.onConnection).toHaveBeenCalledTimes(1);
+
+    ctx.deferred().resolve();
+
+    await vi.waitFor(async () => {
+      expect(ctx.results).toEqual([1, 2]);
+    });
+
+    const connectedOpts = ctx.operations
+      .map((op) => op.result)
+      .filter((op) => op.type === 'state' && op.state === 'connecting');
+
+    expect(connectedOpts).toHaveLength(1);
+
+    sub.unsubscribe();
   });
 });

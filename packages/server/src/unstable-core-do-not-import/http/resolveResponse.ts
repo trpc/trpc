@@ -300,9 +300,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
 
   const experimentalIterablesAndDeferreds =
-    router._def._config.experimental?.iterablesAndDeferreds ?? true;
-  const experimentalSSE =
-    router._def._config.experimental?.sseSubscriptions?.enabled ?? true;
+    config.iterablesAndDeferreds ?? true;
+  const experimentalSSE = config.sse?.enabled ?? true;
   try {
     const [infoError, info] = infoTuple;
     if (infoError) {
@@ -465,9 +464,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           });
 
           const stream = sseStreamProducer({
-            ...config.experimental?.sseSubscriptions,
+            ...config.sse,
             data: iterable,
-            abortCtrl: result?.abortCtrl ?? new AbortController(),
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {
               const error = getTRPCErrorFromUnknown(errorOpts.error);

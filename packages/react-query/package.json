@@ -51,7 +51,8 @@
     "rsc",
     "server",
     "shared",
-    "!**/*.test.*"
+    "!**/*.test.*",
+    "!**/__tests__"
   ],
   "eslintConfig": {
     "rules": {
@@ -68,14 +69,15 @@
     "@trpc/client": "10.45.1",
     "@trpc/server": "^10.45.1",
     "react": ">=18.2.0",
-    "react-dom": ">=18.2.0"
+    "react-dom": ">=18.2.0",
+    "typescript": ">=5.6.2"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.59.15",
     "@trpc/client": "10.45.1",
     "@trpc/server": "^10.45.1",
     "@types/express": "^4.17.17",
-    "@types/node": "^20.17.3",
+    "@types/node": "^22.9.0",
     "@types/react": "^18.3.1",
     "eslint": "^9.13.0",
     "express": "^4.17.1",
@@ -83,8 +85,9 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "rollup": "^4.24.4",
-    "tslib": "^2.5.0",
+    "tslib": "^2.8.1",
     "tsx": "^4.0.0",
+    "typescript": "^5.6.2",
     "zod": "^3.0.0"
   },
   "publishConfig": {

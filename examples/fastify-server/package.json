@@ -21,12 +21,12 @@
     "@trpc/server": "npm:@trpc/server@next",
     "fastify": "^4.16.0",
     "superjson": "^1.12.4",
-    "tslib": "^2.5.0",
+    "tslib": "^2.8.1",
     "ws": "^8.0.0",
     "zod": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.17.3",
+    "@types/node": "^22.9.0",
     "@types/ws": "^8.2.0",
     "esbuild": "^0.17.10",
     "eslint": "^9.13.0",

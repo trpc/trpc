@@ -11,12 +11,12 @@ const trackedEnvelopeSchema =
   z.custom<TrackedEnvelope<unknown>>(isTrackedEnvelope);
 
 /**
- * A Zod schema helper designed specifically for validating async generators. This schema ensures that:
+ * A Zod schema helper designed specifically for validating async iterables. This schema ensures that:
  * 1. The value being validated is an async iterable.
  * 2. Each item yielded by the async iterable conforms to a specified type.
  * 3. The return value of the async iterable, if any, also conforms to a specified type.
  */
-export function zAsyncGenerator<
+export function zAsyncIterable<
   TYieldIn,
   TYieldOut,
   TReturnIn = void,
@@ -40,7 +40,7 @@ export function zAsyncGenerator<
 }) {
   return z
     .custom<
-      AsyncGenerator<
+      AsyncIterable<
         Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
         TReturnIn
       >
@@ -61,13 +61,13 @@ export function zAsyncGenerator<
       }
       return;
     }) as z.ZodType<
-    AsyncGenerator<
+    AsyncIterable<
       Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
       TReturnIn,
       unknown
     >,
     any,
-    AsyncGenerator<
+    AsyncIterable<
       Tracked extends true ? TrackedEnvelope<TYieldOut> : TYieldOut,
       TReturnOut,
       unknown

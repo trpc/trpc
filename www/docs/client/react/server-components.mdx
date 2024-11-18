@@ -66,6 +66,7 @@ const t = initTRPC.create({
 
 // Base router and procedure helpers
 export const createTRPCRouter = t.router;
+export const createCallerFactory = t.createCallerFactory;
 export const baseProcedure = t.procedure;
 ```
 
@@ -172,9 +173,9 @@ import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { useState } from 'react';
 import { makeQueryClient } from './query-client';
-import type { TRPCRouter } from './routers/_app';
+import type { AppRouter } from './routers/_app';
 
-export const trpc = createTRPCReact<TRPCRouter>();
+export const trpc = createTRPCReact<AppRouter>();
 
 let clientQueryClientSingleton: QueryClient;
 function getQueryClient() {

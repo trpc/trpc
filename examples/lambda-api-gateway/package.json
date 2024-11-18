@@ -18,7 +18,7 @@
     "zod": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.17.3",
+    "@types/node": "^22.9.0",
     "esbuild": "^0.17.10",
     "eslint": "^9.13.0",
     "serverless": "^3.18.1",

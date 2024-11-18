@@ -110,7 +110,8 @@
     "rpc",
     "shared",
     "unstable-core-do-not-import",
-    "!**/*.test.*"
+    "!**/*.test.*",
+    "!**/__tests__"
   ],
   "publishConfig": {
     "access": "public"
@@ -121,7 +122,7 @@
     "@types/aws-lambda": "^8.10.137",
     "@types/express": "^4.17.17",
     "@types/hash-sum": "^1.0.0",
-    "@types/node": "^20.17.3",
+    "@types/node": "^22.9.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.0",
     "@types/ws": "^8.2.0",
@@ -138,7 +139,7 @@
     "rollup": "^4.24.4",
     "superjson": "^1.12.4",
     "superstruct": "^2.0.0",
-    "tslib": "^2.5.0",
+    "tslib": "^2.8.1",
     "tsx": "^4.0.0",
     "typescript": "^5.6.2",
     "valibot": "^0.42.0",
@@ -155,5 +156,8 @@
     "fastify": "*",
     "next": "*",
     "ws": "*"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.6.2"
   }
 }

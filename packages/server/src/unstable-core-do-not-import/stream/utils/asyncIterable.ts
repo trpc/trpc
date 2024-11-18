@@ -1,38 +1,42 @@
 import { Unpromise } from '../../../vendor/unpromise';
-import { noop } from '../../utils';
-import { createPromiseTimer } from './promiseTimer';
+import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
 /**
- * Derives a new {@link AsyncGenerator} based of {@link iterable}, that automatically stops with the
- * passed {@link cancel} promise.
+ * Derives a new {@link AsyncGenerator} based on {@link iterable}, that automatically stops after the specified duration.
  */
-export async function* withCancel<T>(
+export async function* withMaxDuration<T>(
   iterable: AsyncIterable<T>,
-  cancel: Promise<unknown>,
+  opts: { maxDurationMs: number },
 ): AsyncGenerator<T> {
-  const cancelPromise = cancel.then(noop);
   const iterator = iterable[Symbol.asyncIterator]();
-  // declaration outside the loop for garbage collection reasons
-  let result: null | IteratorResult<T> | void;
-  while (true) {
-    result = await Unpromise.race([iterator.next(), cancelPromise]);
-    if (result == null) {
-      await iterator.return?.();
-      break;
-    }
-    if (result.done) {
-      break;
-    }
-    yield result.value;
-    // free up reference for garbage collection
-    result = null;
-  }
-}
 
-interface TakeWithGraceOptions {
-  count: number;
-  gracePeriodMs: number;
-  onCancel: () => void;
+  const timer = timerResource(opts.maxDurationMs);
+  try {
+    const timerPromise = timer.start();
+
+    // declaration outside the loop for garbage collection reasons
+    let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
+
+    while (true) {
+      result = await Unpromise.race([iterator.next(), timerPromise]);
+      if (result === disposablePromiseTimerResult) {
+        // cancelled due to timeout
+
+        const res = await iterator.return?.();
+        return res?.value;
+      }
+      if (result.done) {
+        return result;
+      }
+      yield result.value;
+      // free up reference for garbage collection
+      result = null;
+    }
+  } finally {
+    // dispose timer
+    // Shouldn't be needed, but build breaks with `using` keyword
+    timer[Symbol.dispose]();
+  }
 }
 
 /**
@@ -42,31 +46,42 @@ interface TakeWithGraceOptions {
  */
 export async function* takeWithGrace<T>(
   iterable: AsyncIterable<T>,
-  { count, gracePeriodMs, onCancel }: TakeWithGraceOptions,
+  opts: {
+    count: number;
+    gracePeriodMs: number;
+  },
 ): AsyncGenerator<T> {
   const iterator = iterable[Symbol.asyncIterator]();
-  const timer = createPromiseTimer(gracePeriodMs);
+
+  // declaration outside the loop for garbage collection reasons
+  let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
+
+  const timer = timerResource(opts.gracePeriodMs);
   try {
-    // declaration outside the loop for garbage collection reasons
-    let result: null | IteratorResult<T> | void;
+    let count = opts.count;
+
+    let timerPromise = new Promise<typeof disposablePromiseTimerResult>(() => {
+      // never resolves
+    });
+
     while (true) {
-      result = await Unpromise.race([iterator.next(), timer.promise]);
-      if (result == null) {
+      result = await Unpromise.race([iterator.next(), timerPromise]);
+      if (result === disposablePromiseTimerResult) {
         // cancelled
-        await iterator.return?.();
-        break;
+        const res = await iterator.return?.();
+        return res?.value;
       }
       if (result.done) {
-        break;
+        return result.value;
       }
       yield result.value;
       if (--count === 0) {
-        timer.start().promise.then(onCancel, noop);
+        timerPromise = timer.start();
       }
       // free up reference for garbage collection
       result = null;
     }
   } finally {
-    timer.clear();
+    timer[Symbol.dispose]();
   }
 }

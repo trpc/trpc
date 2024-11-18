@@ -157,7 +157,7 @@ Since subscriptions are async iterators, you have to go through the iterator to 
 
 ### Example with zod
 
-```ts title="zAsyncGenerator.ts"
+```ts title="zAsyncIterable.ts"
 import type { TrackedEnvelope } from '@trpc/server';
 import { isTrackedEnvelope, tracked } from '@trpc/server';
 import { z } from 'zod';
@@ -171,12 +171,12 @@ const trackedEnvelopeSchema =
   z.custom<TrackedEnvelope<unknown>>(isTrackedEnvelope);
 
 /**
- * A Zod schema helper designed specifically for validating async generators. This schema ensures that:
+ * A Zod schema helper designed specifically for validating async iterables. This schema ensures that:
  * 1. The value being validated is an async iterable.
  * 2. Each item yielded by the async iterable conforms to a specified type.
  * 3. The return value of the async iterable, if any, also conforms to a specified type.
  */
-export function zAsyncGenerator<
+export function zAsyncIterable<
   TYieldIn,
   TYieldOut,
   TReturnIn = void,
@@ -200,7 +200,7 @@ export function zAsyncGenerator<
 }) {
   return z
     .custom<
-      AsyncGenerator<
+      AsyncIterable<
         Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
         TReturnIn
       >
@@ -221,13 +221,13 @@ export function zAsyncGenerator<
       }
       return;
     }) as z.ZodType<
-    AsyncGenerator<
+    AsyncIterable<
       Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
       TReturnIn,
       unknown
     >,
     any,
-    AsyncGenerator<
+    AsyncIterable<
       Tracked extends true ? TrackedEnvelope<TYieldOut> : TYieldOut,
       TReturnOut,
       unknown
@@ -240,7 +240,7 @@ Now you can use this helper to validate the output of your subscription procedur
 
 ```ts title="_app.ts"
 import { publicProcedure, router } from '../trpc';
-import { zAsyncGenerator } from './zAsyncGenerator';
+import { zAsyncIterable } from './zAsyncIterable';
 
 export const appRouter = router({
   mySubscription: publicProcedure
@@ -250,7 +250,7 @@ export const appRouter = router({
       }),
     )
     .output(
-      zAsyncGenerator({
+      zAsyncIterable({
         yield: z.object({
           count: z.number(),
         }),
