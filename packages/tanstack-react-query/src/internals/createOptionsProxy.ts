@@ -250,11 +250,12 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
       '~types': undefined as any,
-      queryKey: () => {
-        return queryKey;
-      },
+
       mutationKey: () => {
         return getMutationKeyInternal(path);
+      },
+      queryKey: () => {
+        return queryKey;
       },
       queryFilter: (): QueryFilters => {
         return {
