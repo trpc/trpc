@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { routerToServerAndClientNew } from '../../tests/server/___testHelpers';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render } from '@testing-library/react';
 import type { Operation } from '@trpc/client';
 import {
   getUntypedClient,
@@ -83,25 +84,27 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
 
   const { TRPCProvider, useTRPC } = createTRPCContext<TRouter>();
 
-  function App(props: { children: React.ReactNode }) {
-    return (
+  function renderApp(ui: React.ReactNode) {
+    return render(
       <QueryClientProvider client={queryClient}>
         <TRPCProvider trpcClient={ctx.client} queryClient={queryClient}>
-          {props.children}
+          {ui}
         </TRPCProvider>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
   }
 
   return {
-    close: ctx.close,
     queryClient,
-    App,
+    renderApp,
     appRouter,
     opts: ctx,
     spyLink,
     useTRPC,
     trpcClient,
     trpcServer,
+    [Symbol.asyncDispose]: async () => {
+      await ctx.close();
+    },
   };
 }

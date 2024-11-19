@@ -10,9 +10,8 @@
 */
 import { getServerAndReactClient } from './__helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { konn } from 'konn';
 import type { ReactNode } from 'react';
 import React, { useState } from 'react';
 import { describe, expect, test } from 'vitest';
@@ -78,25 +77,19 @@ describe('polymorphism', () => {
   /**
    * Test setup
    */
-  const ctx = konn()
-    .beforeEach(() => {
-      const { appRouter, IssueExportsProvider, DiscussionExportsProvider } =
-        createTRPCApi();
-      const opts = getServerAndReactClient(appRouter);
+  const testContext = () => {
+    const { appRouter, IssueExportsProvider, DiscussionExportsProvider } =
+      createTRPCApi();
 
-      return {
-        ...opts,
-        IssueExportsProvider,
-        DiscussionExportsProvider,
-      };
-    })
-    .afterEach(async (opts) => {
-      await opts?.close?.();
-    })
-    .done();
+    return Object.assign(getServerAndReactClient(appRouter), {
+      IssueExportsProvider,
+      DiscussionExportsProvider,
+    });
+  };
 
   describe('simple factory', () => {
     test('can use a simple factory router with an abstract interface', async () => {
+      await using ctx = testContext();
       const { useTRPC } = ctx;
 
       /**
@@ -138,11 +131,7 @@ describe('polymorphism', () => {
        * Test Act & Assertions
        */
 
-      const $ = render(
-        <ctx.App>
-          <IssuesExportPage />
-        </ctx.App>,
-      );
+      const $ = ctx.renderApp(<IssuesExportPage />);
 
       await userEvent.click($.getByTestId('startExportBtn'));
 
@@ -162,6 +151,7 @@ describe('polymorphism', () => {
     });
 
     test('can use the abstract interface with a factory instance which has been merged with some extra procedures', async () => {
+      await using ctx = testContext();
       const { useTRPC } = ctx;
 
       function DiscussionsExportPage() {
@@ -200,11 +190,7 @@ describe('polymorphism', () => {
        * Test Act & Assertions
        */
 
-      const $ = render(
-        <ctx.App>
-          <DiscussionsExportPage />
-        </ctx.App>,
-      );
+      const $ = ctx.renderApp(<DiscussionsExportPage />);
 
       await userEvent.click($.getByTestId('startExportBtn'));
 

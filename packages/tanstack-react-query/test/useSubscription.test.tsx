@@ -1,9 +1,8 @@
 import { EventEmitter, on } from 'node:events';
 import { getServerAndReactClient, ignoreErrors } from './__helpers';
-import { render, waitFor } from '@testing-library/react';
+import { waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { konn } from 'konn';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
@@ -16,59 +15,55 @@ describe.each([
 ] as const)('useSubscription - %s', (protocol) => {
   const ee = new EventEmitter();
 
-  const ctx = konn()
-    .beforeEach(() => {
-      const t = initTRPC.create({
-        errorFormatter({ shape }) {
-          return {
-            ...shape,
-            data: {
-              ...shape.data,
-              foo: 'bar' as const,
-            },
-          };
-        },
-      });
-      const appRouter = t.router({
-        onEventIterable: t.procedure
-          .input(z.number())
-          .subscription(async function* (opts) {
-            for await (const event of on(ee, 'data', {
-              signal: opts.signal,
-            })) {
-              const data = event[0] as number;
-              yield data + opts.input;
-            }
-          }),
-        onEventObservable: t.procedure
-          .input(z.number())
-          .subscription(({ input }) => {
-            return observable<number>((emit) => {
-              const onData = (data: number) => {
-                emit.next(data + input);
-              };
-              ee.on('data', onData);
-              return () => {
-                ee.off('data', onData);
-              };
-            });
-          }),
-      });
+  const testContext = () => {
+    const t = initTRPC.create({
+      errorFormatter({ shape }) {
+        return {
+          ...shape,
+          data: {
+            ...shape.data,
+            foo: 'bar' as const,
+          },
+        };
+      },
+    });
+    const appRouter = t.router({
+      onEventIterable: t.procedure
+        .input(z.number())
+        .subscription(async function* (opts) {
+          for await (const event of on(ee, 'data', {
+            signal: opts.signal,
+          })) {
+            const data = event[0] as number;
+            yield data + opts.input;
+          }
+        }),
+      onEventObservable: t.procedure
+        .input(z.number())
+        .subscription(({ input }) => {
+          return observable<number>((emit) => {
+            const onData = (data: number) => {
+              emit.next(data + input);
+            };
+            ee.on('data', onData);
+            return () => {
+              ee.off('data', onData);
+            };
+          });
+        }),
+    });
 
-      return getServerAndReactClient(appRouter, {
-        subscriptions: protocol,
-      });
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
+    return getServerAndReactClient(appRouter, {
+      subscriptions: protocol,
+    });
+  };
 
   test('useSubscription - iterable', async () => {
+    await using ctx = testContext();
+    const { useTRPC } = ctx;
+
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
-
-    const { App, useTRPC } = ctx;
 
     let setEnabled = null as never as (enabled: boolean) => void;
 
@@ -106,11 +101,7 @@ describe.each([
       return <pre>{`__data:${data}`}</pre>;
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__connecting`);
@@ -153,10 +144,12 @@ describe.each([
   });
 
   test('useSubscription - observable()', async () => {
+    await using ctx = testContext();
+    const { useTRPC } = ctx;
+
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
-    const { App, useTRPC } = ctx;
     let setEnabled = null as never as (enabled: boolean) => void;
 
     function MyComponent() {
@@ -192,11 +185,7 @@ describe.each([
       return <pre>{`__data:${data}`}</pre>;
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__connecting`);

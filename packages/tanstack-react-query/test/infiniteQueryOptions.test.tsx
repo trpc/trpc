@@ -5,57 +5,53 @@ import {
   useQueryClient,
   type InfiniteData,
 } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
 
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create({});
+const testContext = () => {
+  const t = initTRPC.create({});
 
-    const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => '__result' as const),
-        list: t.procedure
-          .input(
-            z.object({
-              cursor: z.number().default(0),
-            }),
-          )
-          .query(({ input }) => {
-            return {
-              items: fixtureData.slice(input.cursor, input.cursor + 1),
-              next:
-                input.cursor + 1 > fixtureData.length
-                  ? undefined
-                  : input.cursor + 1,
-            };
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.string(),
           }),
-      }),
-    });
+        )
+        .query(() => '__result' as const),
+      list: t.procedure
+        .input(
+          z.object({
+            cursor: z.number().default(0),
+          }),
+        )
+        .query(({ input }) => {
+          return {
+            items: fixtureData.slice(input.cursor, input.cursor + 1),
+            next:
+              input.cursor + 1 > fixtureData.length
+                ? undefined
+                : input.cursor + 1,
+          };
+        }),
+    }),
+  });
 
-    return getServerAndReactClient(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return getServerAndReactClient(appRouter);
+};
 
 describe('infiniteQueryOptions', () => {
   test('basic', async () => {
-    const { App, useTRPC } = ctx;
+    await using ctx = testContext();
+    const { useTRPC } = ctx;
+
     function MyComponent() {
       const trpc = useTRPC();
       const queryClient = useQueryClient();
@@ -118,11 +114,7 @@ describe('infiniteQueryOptions', () => {
       );
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
@@ -150,7 +142,9 @@ describe('infiniteQueryOptions', () => {
   // });
 
   test('select', async () => {
-    const { App, useTRPC } = ctx;
+    await using ctx = testContext();
+    const { useTRPC } = ctx;
+
     function MyComponent() {
       const trpc = useTRPC();
       const queryClient = useQueryClient();
@@ -228,11 +222,7 @@ describe('infiniteQueryOptions', () => {
       );
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);

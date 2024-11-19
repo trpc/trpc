@@ -1,60 +1,50 @@
 import { getServerAndReactClient } from './__helpers';
 import { useMutation } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
-import { konn } from 'konn';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
 
-const ctx = konn()
-  .beforeEach(() => {
-    let iterableDeferred = createDeferred<void>();
-    const nextIterable = () => {
-      iterableDeferred.resolve();
-      iterableDeferred = createDeferred();
-    };
-    const t = initTRPC.create({});
+const testContext = () => {
+  let iterableDeferred = createDeferred<void>();
+  const nextIterable = () => {
+    iterableDeferred.resolve();
+    iterableDeferred = createDeferred();
+  };
+  const t = initTRPC.create({});
 
-    const appRouter = t.router({
-      post: t.router({
-        create: t.procedure
-          .input(
-            z.object({
-              text: z.string(),
-            }),
-          )
-          .mutation(() => '__mutationResult' as const),
-        createWithSerializable: t.procedure
-          .input(
-            z.object({
-              text: z.string(),
-            }),
-          )
-          .mutation(({ input }) => ({
-            id: 1,
-            text: input.text,
-            date: new Date(),
-          })),
-      }),
-    });
+  const appRouter = t.router({
+    post: t.router({
+      create: t.procedure
+        .input(
+          z.object({
+            text: z.string(),
+          }),
+        )
+        .mutation(() => '__mutationResult' as const),
+      createWithSerializable: t.procedure
+        .input(
+          z.object({
+            text: z.string(),
+          }),
+        )
+        .mutation(({ input }) => ({
+          id: 1,
+          text: input.text,
+          date: new Date(),
+        })),
+    }),
+  });
 
-    const testHelpers = getServerAndReactClient(appRouter);
-
-    return {
-      ...testHelpers,
-      nextIterable,
-    };
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return Object.assign(getServerAndReactClient(appRouter), { nextIterable });
+};
 
 describe('mutationOptions', () => {
   test('useMutation', async () => {
-    const { App, useTRPC } = ctx;
+    await using ctx = testContext();
+    const { useTRPC } = ctx;
 
     const calls: string[] = [];
 
@@ -63,15 +53,18 @@ describe('mutationOptions', () => {
 
       const options = trpc.post.create.mutationOptions({
         onMutate(variables) {
+          expectTypeOf<{ text: string }>(variables);
           calls.push('onMutate');
         },
-        onSettled(variables) {
+        onSettled(data) {
+          expectTypeOf<'__mutationResult' | undefined>(data);
           calls.push('onSettled');
         },
-        onError(variables) {
+        onError(_error) {
           calls.push('onError');
         },
-        onSuccess(variables) {
+        onSuccess(data) {
+          expectTypeOf<'__mutationResult'>(data);
           calls.push('onSuccess');
         },
       });
@@ -95,11 +88,7 @@ describe('mutationOptions', () => {
       return <pre>{JSON.stringify(mutation.data ?? 'n/a', null, 4)}</pre>;
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__mutationResult`);
     });

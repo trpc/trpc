@@ -1,65 +1,56 @@
 import { getServerAndReactClient } from './__helpers';
 import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
-import { konn } from 'konn';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 
-const ctx = konn()
-  .beforeEach(() => {
-    let iterableDeferred = createDeferred<void>();
-    const nextIterable = () => {
-      iterableDeferred.resolve();
-      iterableDeferred = createDeferred();
-    };
-    const t = initTRPC.create({});
+const testContext = () => {
+  let iterableDeferred = createDeferred<void>();
+  const nextIterable = () => {
+    iterableDeferred.resolve();
+    iterableDeferred = createDeferred();
+  };
+  const t = initTRPC.create({});
 
-    const appRouter = t.router({
-      post: t.router({
-        byId: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => '__result' as const),
-        byIdWithSerializable: t.procedure
-          .input(
-            z.object({
-              id: z.string(),
-            }),
-          )
-          .query(() => ({
-            id: 1,
-            date: new Date(),
-          })),
-        iterable: t.procedure.query(async function* () {
-          for (let i = 0; i < 3; i++) {
-            await iterableDeferred.promise;
-            yield i + 1;
-          }
-        }),
+  const appRouter = t.router({
+    post: t.router({
+      byId: t.procedure
+        .input(
+          z.object({
+            id: z.string(),
+          }),
+        )
+        .query(() => '__result' as const),
+      byIdWithSerializable: t.procedure
+        .input(
+          z.object({
+            id: z.string(),
+          }),
+        )
+        .query(() => ({
+          id: 1,
+          date: new Date(),
+        })),
+      iterable: t.procedure.query(async function* () {
+        for (let i = 0; i < 3; i++) {
+          await iterableDeferred.promise;
+          yield i + 1;
+        }
       }),
-    });
+    }),
+  });
 
-    const testHelpers = getServerAndReactClient(appRouter);
-
-    return {
-      ...testHelpers,
-      nextIterable,
-    };
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return Object.assign(getServerAndReactClient(appRouter), { nextIterable });
+};
 
 describe('queryOptions', () => {
   test('basic', async () => {
-    const { App, useTRPC } = ctx;
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
       const queryOptions = trpc.post.byId.queryOptions({ id: '1' });
@@ -78,18 +69,16 @@ describe('queryOptions', () => {
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });
 
   test('select', async () => {
-    const { useTRPC, App } = ctx;
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
       const queryOptions = trpc.post.byId.queryOptions(
@@ -110,18 +99,16 @@ describe('queryOptions', () => {
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`mutated__result`);
     });
   });
 
   test('initialData', async () => {
-    const { useTRPC, App } = ctx;
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
       const queryOptions = trpc.post.byId.queryOptions(
@@ -136,18 +123,16 @@ describe('queryOptions', () => {
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });
 
   test('disabling query with skipToken', async () => {
-    const { useTRPC, App } = ctx;
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
       const options = trpc.post.byId.queryOptions(skipToken);
@@ -161,23 +146,20 @@ describe('queryOptions', () => {
       return <pre>{query1.status}</pre>;
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`pending`);
     });
   });
 
   test('with extra `trpc` context', async () => {
-    const { useTRPC, App } = ctx;
+    await using ctx = testContext();
 
     const context = {
       __TEST__: true,
     };
 
+    const { useTRPC } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
       const queryOptions = trpc.post.byId.queryOptions(
@@ -196,11 +178,7 @@ describe('queryOptions', () => {
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
@@ -209,7 +187,9 @@ describe('queryOptions', () => {
   });
 
   test('iterable', async () => {
-    const { useTRPC, App } = ctx;
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
     const states: {
       status: string;
       data: unknown;
@@ -248,11 +228,7 @@ describe('queryOptions', () => {
       );
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`success:notFetching`);
     });
@@ -319,7 +295,9 @@ describe('queryOptions', () => {
   });
 
   test('useSuspenseQuery', async () => {
-    const { App, useTRPC } = ctx;
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
     function MyComponent() {
       const trpc = useTRPC();
       const { data } = useSuspenseQuery(
@@ -331,11 +309,7 @@ describe('queryOptions', () => {
       return <pre>{JSON.stringify(data ?? 'n/a', null, 4)}</pre>;
     }
 
-    const utils = render(
-      <App>
-        <MyComponent />
-      </App>,
-    );
+    const utils = ctx.renderApp(<MyComponent />);
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
@@ -343,10 +317,10 @@ describe('queryOptions', () => {
 
   test('does not fetch if called from router directly', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
-    const { trpcServer, queryClient } = ctx;
+    await using ctx = testContext();
 
-    const post = await queryClient.fetchQuery(
-      trpcServer.post.byId.queryOptions({ id: '1' }),
+    const post = await ctx.queryClient.fetchQuery(
+      ctx.trpcServer.post.byId.queryOptions({ id: '1' }),
     );
 
     expect(post).toEqual('__result');

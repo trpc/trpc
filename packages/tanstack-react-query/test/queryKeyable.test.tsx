@@ -1,50 +1,40 @@
 import { getServerAndReactClient } from './__helpers';
-import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
-import { konn } from 'konn';
 import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
-const ctx = konn()
-  .beforeEach(() => {
-    let iterableDeferred = createDeferred<void>();
-    const nextIterable = () => {
-      iterableDeferred.resolve();
-      iterableDeferred = createDeferred();
-    };
-    const t = initTRPC.create({});
+const testContext = () => {
+  let iterableDeferred = createDeferred<void>();
+  const nextIterable = () => {
+    iterableDeferred.resolve();
+    iterableDeferred = createDeferred();
+  };
+  const t = initTRPC.create({});
 
-    const appRouter = t.router({
-      bluesky: {
-        post: t.router({
-          byId: t.procedure
-            .input(
-              z.object({
-                id: z.string(),
-              }),
-            )
-            .query(() => '__result' as const),
-          create: t.procedure.mutation(() => '__mutationResult' as const),
-        }),
-      },
-    });
+  const appRouter = t.router({
+    bluesky: {
+      post: t.router({
+        byId: t.procedure
+          .input(
+            z.object({
+              id: z.string(),
+            }),
+          )
+          .query(() => '__result' as const),
+        create: t.procedure.mutation(() => '__mutationResult' as const),
+      }),
+    },
+  });
 
-    const testHelpers = getServerAndReactClient(appRouter);
-
-    return {
-      ...testHelpers,
-      nextIterable,
-    };
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
+  return Object.assign(getServerAndReactClient(appRouter), { nextIterable });
+};
 
 describe('get queryFilter', () => {
-  test('gets various query filters', () => {
+  test('gets various query filters', async () => {
+    await using ctx = testContext();
+
     const { useTRPC } = ctx;
 
     function Heck() {
@@ -95,16 +85,14 @@ describe('get queryFilter', () => {
       return 'heck';
     }
 
-    render(
-      <ctx.App>
-        <Heck />
-      </ctx.App>,
-    );
+    ctx.renderApp(<Heck />);
   });
 });
 
 describe('get queryKey', () => {
-  test('gets various query keys', () => {
+  test('gets various query keys', async () => {
+    await using ctx = testContext();
+
     const { useTRPC } = ctx;
 
     function Heck() {
@@ -145,16 +133,14 @@ describe('get queryKey', () => {
       return 'heck';
     }
 
-    render(
-      <ctx.App>
-        <Heck />
-      </ctx.App>,
-    );
+    ctx.renderApp(<Heck />);
   });
 });
 
 describe('get mutationKey', () => {
-  test('gets various mutation keys', () => {
+  test('gets various mutation keys', async () => {
+    await using ctx = testContext();
+
     const { useTRPC } = ctx;
 
     function Heck() {
@@ -178,10 +164,6 @@ describe('get mutationKey', () => {
       return 'heck';
     }
 
-    render(
-      <ctx.App>
-        <Heck />
-      </ctx.App>,
-    );
+    ctx.renderApp(<Heck />);
   });
 });
