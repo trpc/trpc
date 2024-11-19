@@ -95,10 +95,9 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
   }
 
   return {
+    opts: ctx,
     queryClient,
     renderApp,
-    appRouter,
-    opts: ctx,
     spyLink,
     useTRPC,
     trpcClient,
