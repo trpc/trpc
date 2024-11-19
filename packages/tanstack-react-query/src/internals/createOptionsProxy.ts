@@ -33,8 +33,13 @@ import {
   trpcSubscriptionOptions,
   type TRPCSubscriptionOptions,
 } from './subscriptionOptions';
-import type { QueryType, ResolverDef, TRPCQueryKey } from './types';
-import { getQueryKeyInternal } from './utils';
+import type {
+  QueryType,
+  ResolverDef,
+  TRPCMutationKey,
+  TRPCQueryKey,
+} from './types';
+import { getMutationKeyInternal, getQueryKeyInternal } from './utils';
 
 export interface DecorateQueryKeyable {
   /**
@@ -111,6 +116,11 @@ export interface DecorateMutationProcedure<TDef extends ResolverDef> {
    * @see
    */
   mutationOptions: TRPCMutationOptions<TDef>;
+
+  /**
+   * Calculate the Tanstack Mutation Key for a Mutation Procedure
+   */
+  mutationKey: () => TRPCMutationKey;
 }
 
 export interface DecorateSubscriptionProcedure<TDef extends ResolverDef> {
@@ -240,7 +250,12 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
       '~types': undefined as any,
-      queryKey: () => queryKey,
+      queryKey: () => {
+        return queryKey;
+      },
+      mutationKey: () => {
+        return getMutationKeyInternal(path);
+      },
       queryFilter: (): QueryFilters => {
         return {
           queryKey: queryKey,

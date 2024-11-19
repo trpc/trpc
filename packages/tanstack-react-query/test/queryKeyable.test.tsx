@@ -1,11 +1,10 @@
 import { getServerAndReactClient } from './__helpers';
-import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import * as React from 'react';
-import { describe, expect, expectTypeOf, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
 const ctx = konn()
@@ -27,6 +26,7 @@ const ctx = konn()
               }),
             )
             .query(() => '__result' as const),
+          create: t.procedure.mutation(() => '__mutationResult' as const),
         }),
       },
     });
@@ -95,7 +95,90 @@ describe('get queryFilter', () => {
       return 'heck';
     }
 
-    const $ = render(
+    render(
+      <ctx.App>
+        <Heck />
+      </ctx.App>,
+    );
+  });
+});
+
+describe('get queryKey', () => {
+  test('gets various query keys', () => {
+    const { useTRPC } = ctx;
+
+    function Heck() {
+      const trpc = useTRPC();
+
+      expect(trpc.queryKey()).toMatchInlineSnapshot(`Array []`);
+      expect(trpc.bluesky.queryKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "bluesky",
+          ],
+        ]
+      `);
+      expect(trpc.bluesky.post.queryKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "bluesky",
+            "post",
+          ],
+        ]
+      `);
+      expect(trpc.bluesky.post.byId.queryKey({ id: '1' }))
+        .toMatchInlineSnapshot(`
+          Array [
+            Array [
+              "bluesky",
+              "post",
+              "byId",
+            ],
+            Object {
+              "input": Object {
+                "id": "1",
+              },
+            },
+          ]
+        `);
+
+      return 'heck';
+    }
+
+    render(
+      <ctx.App>
+        <Heck />
+      </ctx.App>,
+    );
+  });
+});
+
+describe('get mutationKey', () => {
+  test('gets various mutation keys', () => {
+    const { useTRPC } = ctx;
+
+    function Heck() {
+      const trpc = useTRPC();
+
+      // @ts-expect-error - not a mutation
+      trpc.bluesky.post.byId.mutationKey;
+      // @ts-expect-error - not a mutation
+      trpc.bluesky.mutationKey;
+
+      expect(trpc.bluesky.post.create.mutationKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "bluesky",
+            "post",
+            "create",
+          ],
+        ]
+      `);
+
+      return 'heck';
+    }
+
+    render(
       <ctx.App>
         <Heck />
       </ctx.App>,
