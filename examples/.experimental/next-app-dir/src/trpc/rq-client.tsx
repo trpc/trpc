@@ -9,9 +9,9 @@ import {
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '~/server/routers/_app';
 import { useState } from 'react';
 import { createQueryClient, getUrl, transformer } from './shared';
-import type { AppRouter } from '~/server/routers/_app';
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
