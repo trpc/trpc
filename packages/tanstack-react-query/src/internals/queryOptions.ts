@@ -23,6 +23,7 @@ import {
   buildQueryFromAsyncIterable,
   createTRPCOptionsResult,
   getClientArgs,
+  unwrapLazyArg,
 } from './utils';
 
 type ReservedOptions = 'queryKey' | 'queryFn' | 'queryHashFn' | 'queryHash';
@@ -155,12 +156,13 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
 
 export function trpcQueryOptions(args: {
   query: typeof TRPCUntypedClient.prototype.query;
-  queryClient: QueryClient;
+  queryClient: QueryClient | (() => QueryClient);
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown>;
 }) {
-  const { query, queryClient, path, queryKey, opts } = args;
+  const { query, path, queryKey, opts } = args;
+  const queryClient = unwrapLazyArg(args.queryClient);
 
   const inputIsSkipToken = queryKey[1]?.input === skipToken;
 

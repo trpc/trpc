@@ -17,6 +17,7 @@ import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import type {
   AnyRootTypes,
   AnyRouter,
+  MaybePromise,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
@@ -39,7 +40,11 @@ import type {
   TRPCMutationKey,
   TRPCQueryKey,
 } from './types';
-import { getMutationKeyInternal, getQueryKeyInternal } from './utils';
+import {
+  getMutationKeyInternal,
+  getQueryKeyInternal,
+  unwrapLazyArg,
+} from './utils';
 
 export interface DecorateQueryKeyable {
   /**
@@ -173,7 +178,7 @@ export type TRPCOptionsProxy<TRouter extends AnyRouter> =
     DecorateQueryKeyable;
 
 export interface TRPCOptionsProxyOptionsBase {
-  queryClient: QueryClient;
+  queryClient: QueryClient | (() => QueryClient);
   overrides?: {
     mutations?: MutationOptionsOverride;
   };
@@ -181,7 +186,9 @@ export interface TRPCOptionsProxyOptionsBase {
 
 export interface TRPCOptionsProxyOptionsInternal<TRouter extends AnyRouter> {
   router: TRouter;
-  ctx: inferRouterContext<TRouter>;
+  ctx:
+    | inferRouterContext<TRouter>
+    | (() => MaybePromise<inferRouterContext<TRouter>>);
 }
 
 export interface TRPCOptionsProxyOptionsExternal<TRouter extends AnyRouter> {
@@ -214,21 +221,19 @@ function getQueryType(method: UtilsMethods) {
 export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
   opts: TRPCOptionsProxyOptions<TRouter>,
 ): TRPCOptionsProxy<TRouter> {
-  const callIt = (type: ProcedureType) => {
-    return (
-      path: string,
-      input: unknown,
-      trpcOpts: TRPCRequestOptions,
-    ): any => {
+  const callIt = (type: ProcedureType): any => {
+    return (path: string, input: unknown, trpcOpts: TRPCRequestOptions) => {
       if ('router' in opts) {
-        return callProcedure({
-          procedures: opts.router._def.procedures,
-          path: path,
-          getRawInput: async () => input,
-          ctx: opts.ctx,
-          type: type,
-          signal: undefined,
-        });
+        return Promise.resolve(unwrapLazyArg(opts.ctx)).then((ctx) =>
+          callProcedure({
+            procedures: opts.router._def.procedures,
+            path: path,
+            getRawInput: async () => input,
+            ctx: ctx,
+            type: type,
+            signal: undefined,
+          }),
+        );
       }
 
       const untypedClient =

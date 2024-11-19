@@ -190,7 +190,7 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
 
 export function trpcInfiniteQueryOptions(args: {
   query: typeof TRPCUntypedClient.prototype.query;
-  queryClient: QueryClient;
+  queryClient: QueryClient | (() => QueryClient);
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: UndefinedTRPCInfiniteQueryOptionsIn<unknown, unknown, unknown, unknown>;

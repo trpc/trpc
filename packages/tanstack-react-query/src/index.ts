@@ -3,6 +3,15 @@ export type {
   TRPCOptionsProxy,
   InferInput,
   InferOutput,
+  DecorateMutationProcedure,
+  DecorateProcedure,
+  DecorateQueryKeyable,
+  DecorateQueryProcedure,
+  DecorateSubscriptionProcedure,
 } from './internals/createOptionsProxy';
+export type { TRPCQueryOptions } from './internals/queryOptions';
+export type { TRPCInfiniteQueryOptions } from './internals/infiniteQueryOptions';
+export type { TRPCMutationOptions } from './internals/mutationOptions';
+export type { TRPCSubscriptionOptions } from './internals/subscriptionOptions';
 export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
 export { useSubscription } from './internals/subscriptionOptions';

@@ -18,6 +18,7 @@ import {
   createTRPCOptionsResult,
   getClientArgs,
   getMutationKeyInternal,
+  unwrapLazyArg,
 } from './utils';
 
 type ReservedOptions = 'mutationKey' | 'mutationFn';
@@ -70,12 +71,13 @@ export interface MutationOptionsOverride {
 
 export function trpcMutationOptions(args: {
   mutate: typeof TRPCUntypedClient.prototype.mutation;
-  queryClient: QueryClient;
+  queryClient: QueryClient | (() => QueryClient);
   path: readonly string[];
   opts: TRPCMutationOptionsIn<unknown, unknown, unknown, unknown>;
   overrides: MutationOptionsOverride | undefined;
 }): TRPCMutationOptionsOut<unknown, unknown, unknown, unknown> {
-  const { mutate, queryClient, path, opts, overrides } = args;
+  const { mutate, path, opts, overrides } = args;
+  const queryClient = unwrapLazyArg(args.queryClient);
 
   const mutationKey = getMutationKeyInternal(path);
 

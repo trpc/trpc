@@ -1,5 +1,5 @@
 import { skipToken, type QueryClient } from '@tanstack/react-query';
-import { isObject } from '@trpc/server/unstable-core-do-not-import';
+import { isFunction, isObject } from '@trpc/server/unstable-core-do-not-import';
 import type {
   QueryType,
   TRPCMutationKey,
@@ -133,4 +133,8 @@ export function getMutationKeyInternal(
   const splitPath = path.flatMap((part) => part.split('.'));
 
   return splitPath.length ? [splitPath] : ([] as unknown as TRPCMutationKey);
+}
+
+export function unwrapLazyArg<T>(valueOrLazy: T | (() => T)): T {
+  return (isFunction(valueOrLazy) ? valueOrLazy() : valueOrLazy) as T;
 }

@@ -182,6 +182,9 @@ importers:
       '@trpc/server':
         specifier: npm:@trpc/server@next
         version: link:../../../packages/server
+      '@trpc/tanstack-react-query':
+        specifier: npm:@trpc/tanstack-react-query@next
+        version: link:../../../packages/tanstack-react-query
       '@types/node':
         specifier: 20.17.6
         version: 20.17.6
