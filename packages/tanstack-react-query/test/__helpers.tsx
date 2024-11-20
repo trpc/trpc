@@ -16,7 +16,11 @@ import * as React from 'react';
 import { vi } from 'vitest';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
-export { ignoreErrors } from '../../tests/server/___testHelpers';
+export {
+  ignoreErrors,
+  suppressLogs,
+  suppressLogsUntil,
+} from '../../tests/server/___testHelpers';
 
 export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,
@@ -102,6 +106,8 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
     useTRPC,
     trpcClient,
     trpcServer,
+    /** @deprecated use resource manager instead */
+    close: ctx.close,
     [Symbol.asyncDispose]: async () => {
       await ctx.close();
     },

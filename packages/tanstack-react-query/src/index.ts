@@ -12,6 +12,14 @@ export type {
 export type { TRPCQueryOptions } from './internals/queryOptions';
 export type { TRPCInfiniteQueryOptions } from './internals/infiniteQueryOptions';
 export type { TRPCMutationOptions } from './internals/mutationOptions';
-export type { TRPCSubscriptionOptions } from './internals/subscriptionOptions';
+export type {
+  TRPCSubscriptionOptions,
+  TRPCSubscriptionStatus,
+  TRPCSubscriptionConnectingResult,
+  TRPCSubscriptionErrorResult,
+  TRPCSubscriptionIdleResult,
+  TRPCSubscriptionPendingResult,
+  TRPCSubscriptionResult,
+} from './internals/subscriptionOptions';
 export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
 export { useSubscription } from './internals/subscriptionOptions';
