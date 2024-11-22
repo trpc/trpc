@@ -2,7 +2,7 @@ import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAbortError } from '../http/isAbortError';
 import type { MaybePromise } from '../types';
-import { identity, run } from '../utils';
+import { identity } from '../utils';
 import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
@@ -96,80 +96,80 @@ export function sseStreamProducer<TValue = unknown>(
       `Ping interval must be less than client reconnect interval to prevent unnecessary reconnection - ping.intervalMs: ${ping.intervalMs} client.reconnectAfterInactivityMs: ${client.reconnectAfterInactivityMs}`,
     );
   }
-  const stream = readableStreamFrom(
-    run(async function* (): AsyncIterable<SSEvent, void> {
+
+  async function* generator(): AsyncIterable<SSEvent, void> {
+    yield {
+      event: CONNECTED_EVENT,
+      data: JSON.stringify(client),
+    };
+
+    type TIteratorValue = Awaited<TValue> | typeof PING_SYM;
+
+    let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
+
+    if (opts.emitAndEndImmediately) {
+      iterable = takeWithGrace(iterable, {
+        count: 1,
+        gracePeriodMs: 1,
+      });
+    }
+
+    if (
+      opts.maxDurationMs &&
+      opts.maxDurationMs > 0 &&
+      opts.maxDurationMs !== Infinity
+    ) {
+      iterable = withMaxDuration(iterable, {
+        maxDurationMs: opts.maxDurationMs,
+      });
+    }
+
+    if (ping.enabled && ping.intervalMs !== Infinity && ping.intervalMs > 0) {
+      iterable = withPing(iterable, ping.intervalMs);
+    }
+
+    // We need those declarations outside the loop for garbage collection reasons. If they were
+    // declared inside, they would not be freed until the next value is present.
+    let value: null | TIteratorValue;
+    let chunk: null | SSEvent;
+
+    try {
+      for await (value of iterable) {
+        if (value === PING_SYM) {
+          yield { event: PING_EVENT, data: '' };
+          continue;
+        }
+
+        chunk = isTrackedEnvelope(value)
+          ? { id: value[0], data: value[1] }
+          : { data: value };
+
+        if ('data' in chunk) {
+          chunk.data = JSON.stringify(serialize(chunk.data));
+        }
+
+        yield chunk;
+
+        // free up references for garbage collection
+        value = null;
+        chunk = null;
+      }
+    } catch (cause) {
+      if (isAbortError(cause)) {
+        // ignore abort errors, send any other errors
+        return;
+      }
+      // `err` must be caused by `opts.data`, `JSON.stringify` or `serialize`.
+      // So, a user error in any case.
+      const error = getTRPCErrorFromUnknown(cause);
+      const data = opts.formatError?.({ error }) ?? null;
       yield {
-        event: CONNECTED_EVENT,
-        data: JSON.stringify(client),
+        event: SERIALIZED_ERROR_EVENT,
+        data: JSON.stringify(serialize(data)),
       };
-
-      type TIteratorValue = Awaited<TValue> | typeof PING_SYM;
-
-      let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
-
-      if (opts.emitAndEndImmediately) {
-        iterable = takeWithGrace(iterable, {
-          count: 1,
-          gracePeriodMs: 1,
-        });
-      }
-
-      if (
-        opts.maxDurationMs &&
-        opts.maxDurationMs > 0 &&
-        opts.maxDurationMs !== Infinity
-      ) {
-        iterable = withMaxDuration(iterable, {
-          maxDurationMs: opts.maxDurationMs,
-        });
-      }
-
-      if (ping.enabled && ping.intervalMs !== Infinity && ping.intervalMs > 0) {
-        iterable = withPing(iterable, ping.intervalMs);
-      }
-
-      // We need those declarations outside the loop for garbage collection reasons. If they were
-      // declared inside, they would not be freed until the next value is present.
-      let value: null | TIteratorValue;
-      let chunk: null | SSEvent;
-
-      try {
-        for await (value of iterable) {
-          if (value === PING_SYM) {
-            yield { event: PING_EVENT, data: '' };
-            continue;
-          }
-
-          chunk = isTrackedEnvelope(value)
-            ? { id: value[0], data: value[1] }
-            : { data: value };
-
-          if ('data' in chunk) {
-            chunk.data = JSON.stringify(serialize(chunk.data));
-          }
-
-          yield chunk;
-
-          // free up references for garbage collection
-          value = null;
-          chunk = null;
-        }
-      } catch (cause) {
-        if (isAbortError(cause)) {
-          // ignore abort errors, send any other errors
-          return;
-        }
-        // `err` must be caused by `opts.data`, `JSON.stringify` or `serialize`.
-        // So, a user error in any case.
-        const error = getTRPCErrorFromUnknown(cause);
-        const data = opts.formatError?.({ error }) ?? null;
-        yield {
-          event: SERIALIZED_ERROR_EVENT,
-          data: JSON.stringify(serialize(data)),
-        };
-      }
-    }),
-  );
+    }
+  }
+  const stream = readableStreamFrom(generator());
 
   return stream.pipeThrough(
     new TransformStream({
