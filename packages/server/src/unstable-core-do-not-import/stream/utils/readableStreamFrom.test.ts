@@ -48,29 +48,3 @@ test('calls return on iterator when stream is cancelled', async () => {
 
   expect(returnMock).toHaveBeenCalled();
 });
-
-test('handles cleanup error gracefully', async () => {
-  let ended = false;
-  async function* generator() {
-    try {
-      while (true) {
-        yield 1;
-      }
-    } finally {
-      ended = true;
-      throw new Error('Cleanup error');
-    }
-  }
-
-  const stream = readableStreamFrom(generator());
-  const reader = stream.getReader();
-
-  // Read one value to start the stream
-  const result = await reader.read();
-  expect(result.value).toEqual(1);
-
-  // Cancel the stream
-  await reader.cancel();
-
-  expect(ended).toBe(true);
-});

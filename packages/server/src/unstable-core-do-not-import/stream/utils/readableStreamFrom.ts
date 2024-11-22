@@ -11,11 +11,7 @@ export function readableStreamFrom<TYield>(
 
   return new ReadableStream({
     async cancel() {
-      try {
-        await iterator.return?.();
-      } catch {
-        // Ignore cleanup errors
-      }
+      await iterator.return?.();
     },
 
     async pull(controller) {
