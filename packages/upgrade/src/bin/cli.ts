@@ -94,17 +94,13 @@ const prompts = CLICommand.prompt(
     choices: [
       {
         title: 'Migrate Hooks to xxxOptions API',
-        value: import.meta.resolve(
+        value: require.resolve(
           transformPath('../transforms/hooks-to-options.ts'),
-          import.meta.filename,
         ),
       },
       {
         title: 'Migrate context provider setup',
-        value: import.meta.resolve(
-          transformPath('../transforms/provider.ts'),
-          import.meta.filename,
-        ),
+        value: require.resolve(transformPath('../transforms/provider.ts')),
       },
     ],
   }),
