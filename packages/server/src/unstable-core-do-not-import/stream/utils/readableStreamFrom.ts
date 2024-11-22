@@ -1,36 +1,24 @@
 /**
- * Creates a ReadableStream from an AsyncIterable
- * Handles proper cleanup and cancellation of the underlying iterator
+ * Creates a ReadableStream from an AsyncIterable.
  *
- * @param iterable - The AsyncIterable to convert into a ReadableStream
- * @returns A ReadableStream that emits the values from the AsyncIterable
+ * @param iterable - The source AsyncIterable to stream from
+ * @returns A ReadableStream that yields values from the AsyncIterable
  */
 export function readableStreamFrom<TYield>(
   iterable: AsyncIterable<TYield, void>,
-) {
-  // Get the iterator from the iterable
+): ReadableStream<TYield> {
   const iterator = iterable[Symbol.asyncIterator]();
 
-  return new ReadableStream<TYield>({
-    /**
-     * Called when the stream is cancelled
-     * Attempts to properly clean up the iterator by calling its return method
-     */
+  return new ReadableStream({
     async cancel() {
       try {
         await iterator.return?.();
       } catch {
-        // Silently handle any errors during cleanup
-        // console.error('Error cleaning up iterator:', err);
+        // Ignore cleanup errors
       }
     },
 
-    /**
-     * Called when the stream needs to pull more data
-     * Gets the next value from the iterator and enqueues it to the stream
-     */
     async pull(controller) {
-      // Get the next value from the iterator
       const result = await iterator.next();
 
       if (result.done) {
@@ -38,7 +26,6 @@ export function readableStreamFrom<TYield>(
         return;
       }
 
-      // Enqueue the yielded value
       controller.enqueue(result.value);
     },
   });
