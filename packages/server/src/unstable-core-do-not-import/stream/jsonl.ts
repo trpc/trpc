@@ -1,4 +1,4 @@
-import { Unpromise } from '@trpc/server/vendor/unpromise';
+import { Unpromise } from '../../vendor/unpromise';
 import { isAsyncIterable, isFunction, isObject } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
@@ -503,7 +503,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
       deferred.resolve(stream.controller);
       chunkDeferred.delete(chunkId);
     }
-
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
         return new Promise((resolve, reject) => {
