@@ -427,7 +427,7 @@ interface ChunkControllerEsque {
 /**
  * Creates a handler for managing stream controllers and their lifecycle
  */
-function createControllerHandler(abortController: AbortController) {
+function createStreamManager(abortController: AbortController) {
   const deferredMap = new Map<ChunkIndex, Deferred<ChunkControllerEsque>>();
   const controllerEsqueMap = new Map<ChunkIndex, ChunkControllerEsque>();
 
@@ -445,9 +445,7 @@ function createControllerHandler(abortController: AbortController) {
     /**
      * Gets or creates a controller for a chunk ID
      */
-    getController: (
-      chunkId: ChunkIndex,
-    ): ChunkControllerEsque | Promise<ChunkControllerEsque> => {
+    async getController(chunkId: ChunkIndex): Promise<ChunkControllerEsque> {
       const c = controllerEsqueMap.get(chunkId);
 
       if (c) {
@@ -456,7 +454,6 @@ function createControllerHandler(abortController: AbortController) {
 
       const deferred = createDeferred<ChunkControllerEsque>();
       deferredMap.set(chunkId, deferred);
-
       return deferred.promise;
     },
 
@@ -559,12 +556,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
   }
   let headDeferred: null | Deferred<THead> = createDeferred();
 
-  const controllerHandler = createControllerHandler(opts.abortController);
+  const streamManager = createStreamManager(opts.abortController);
 
   function decodeChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const [reader, onDone] = controllerHandler.createReader(chunkId);
+    const [reader, onDone] = streamManager.createReader(chunkId);
 
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
@@ -640,12 +637,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
     const error = new StreamInterruptedError(reason);
 
     headDeferred?.reject(error);
-    controllerHandler.cancelAll(error);
+    streamManager.cancelAll(error);
   };
   source
     .pipeTo(
       new WritableStream({
-        async write(chunkOrHead) {
+        write(chunkOrHead) {
           if (headDeferred) {
             const head = chunkOrHead as Record<number | string, unknown>;
 
@@ -661,8 +658,14 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const chunk = chunkOrHead as ChunkData;
           const [idx] = chunk;
 
-          const controller = await controllerHandler.getController(idx);
-          controller.enqueue(chunk);
+          streamManager
+            .getController(idx)
+            .then((controller) => {
+              controller.enqueue(chunk);
+            })
+            .catch((error) => {
+              streamManager.cancelAll(error);
+            });
         },
         close: closeOrAbort,
         abort: closeOrAbort,
@@ -676,5 +679,5 @@ export async function jsonlStreamConsumer<THead>(opts: {
       closeOrAbort(error);
     });
 
-  return [await headDeferred.promise, controllerHandler] as const;
+  return [await headDeferred.promise, streamManager] as const;
 }
