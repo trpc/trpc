@@ -296,9 +296,7 @@ async function* createBatchStreamProducer(
       // Race all pending promises to get the next value from any iterator
       // Returns [iterator entry, iterator result] for the first completed promise
       const [entry, res] = await Unpromise.race(
-        Array.from(set.values()).map(
-          async (it) => [it, await it.nextPromise] as const,
-        ),
+        Array.from(set).map(async (it) => [it, await it.nextPromise] as const),
       );
 
       // Emit the value from whichever iterator completed first
@@ -315,9 +313,7 @@ async function* createBatchStreamProducer(
   } finally {
     // Properly clean up any remaining iterators by calling return()
     // Ensures resources are released if the loop exits early (e.g. due to error)
-    await Promise.all(
-      Array.from(set.values()).map((it) => it.iterator.return?.()),
-    );
+    await Promise.all(Array.from(set).map((it) => it.iterator.return?.()));
     set.clear();
   }
 }
