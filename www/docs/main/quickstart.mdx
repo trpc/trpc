@@ -129,7 +129,7 @@ export const publicProcedure = t.procedure;
 
 Next, we'll initialize our main router instance, commonly referred to as `appRouter`, in which we'll later add procedures to. Lastly, we need to export the type of the router which we'll later use on the client side.
 
-```ts twoslash title='server/index.ts'
+```ts twoslash title='server.ts'
 // @filename: trpc.ts
 // @include: trpc
 // @filename: server.ts
@@ -151,7 +151,7 @@ Use `publicProcedure.query()` to add a query procedure to the router.
 
 The following creates a query procedure called `userList` that returns a list of users from our database:
 
-```ts twoslash title='server/index.ts'
+```ts twoslash title='server.ts'
 // @filename: trpc.ts
 // @include: trpc
 // @filename: db.ts
@@ -185,7 +185,7 @@ You define your input parser on `publicProcedure.input()`, which can then be acc
 <br />
 <br />
 
-```ts twoslash title='server/index.ts'
+```ts twoslash title='server.ts'
 // @filename: trpc.ts
 // @include: trpc
 // @filename: db.ts
@@ -364,7 +364,7 @@ const appRouter = router({
 
 Now that we have defined our router, we can serve it. tRPC has many [adapters](/docs/server/adapters) so you can use any backend framework of your choice. To keep it simple, we'll use the [`standalone`](/docs/server/adapters/standalone) adapter.
 
-```ts twoslash title='server/index.ts'
+```ts twoslash title='server.ts'
 // @filename: trpc.ts
 // @include: trpc
 // @filename: server.ts
@@ -398,7 +398,7 @@ server.listen(3000);
 
 <br/>
 
-```ts twoslash title='server/index.ts'
+```ts twoslash title='server.ts'
 // @filename: db.ts
 // @include: db
 // @filename: trpc.ts
@@ -416,7 +416,7 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 
 ### 1. Setup the tRPC Client
 
-```ts twoslash title="client/index.ts"
+```ts twoslash title="client.ts"
 // @target: esnext
 // @filename: db.ts
 // @include: db
@@ -427,7 +427,7 @@ Let's now move to the client-side code and embrace the power of end-to-end types
 // @filename: client.ts
 // ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../server';
+import type { AppRouter } from './server';
 //     👆 **type-only** import
 
 // Pass AppRouter as generic here. 👇 This lets the `trpc` object know
@@ -447,7 +447,7 @@ Links in tRPC are similar to links in GraphQL, they let us control the data flow
 
 You now have access to your API procedures on the `trpc` object. Try it out!
 
-```ts twoslash title="client/index.ts"
+```ts twoslash title="client.ts"
 // @target: esnext
 // @filename: db.ts
 // @include: db
@@ -457,7 +457,7 @@ You now have access to your API procedures on the `trpc` object. Try it out!
 // @include: server
 // @filename: client.ts
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../server';
+import type { AppRouter } from './server';
 
 const trpc = createTRPCClient<AppRouter>({
   links: [
@@ -480,7 +480,7 @@ const createdUser = await trpc.userCreate.mutate({ name: 'sachinraja' });
 
 You can open up your Intellisense to explore your API on your frontend. You'll find all of your procedure routes waiting for you along with the methods for calling them.
 
-```ts twoslash title="client/index.ts"
+```ts twoslash title="client.ts"
 // @target: esnext
 // @filename: db.ts
 // @include: db
@@ -490,7 +490,7 @@ You can open up your Intellisense to explore your API on your frontend. You'll f
 // @include: server
 // @filename: client.ts
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '../server';
+import type { AppRouter } from './server';
 
 const trpc = createTRPCClient<AppRouter>({
   links: [
@@ -525,8 +525,8 @@ import clsx from 'clsx';
         embed: '1',
         file: [
           // Opens these side-by-side
-          'src/client/index.ts',
-          'src/server/index.ts',
+          'src/client.ts',
+          'src/server.ts',
         ],
         hideNavigation: '1',
         terminalHeight: '1',
