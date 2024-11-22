@@ -2,10 +2,9 @@
  * This a minimal tRPC server
  */
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
-import { db } from './db.js';
-import { publicProcedure, router } from './trpc.js';
+import { db } from './server/db.js';
+import { publicProcedure, router } from './server/trpc.js';
 
 const appRouter = router({
   user: {
