@@ -289,31 +289,32 @@ async function* createBatchStreamProducer(
   }
 
   yield newHead;
-
-  // Process all async iterables concurrently by racing their next values
+  // Process all async iterables in parallel by racing their next values
   try {
-    // Continue processing while there are still active iterators
+    // Keep processing while there are active iterators in the set
     while (set.size > 0) {
-      // Race all pending promises to get the next available value
-      // Returns tuple of [iteratorIndex, iteratorResult]
+      // Race all pending promises to get the next value from any iterator
+      // Returns [iterator entry, iterator result] for the first completed promise
       const [entry, res] = await Unpromise.race(
         Array.from(set.values()).map(
           async (it) => [it, await it.nextPromise] as const,
         ),
       );
 
-      // Yield the value from the winning iterator
+      // Emit the value from whichever iterator completed first
       yield res.value;
 
       if (res.done) {
+        // Remove completed iterators from the set
         set.delete(entry);
       } else {
+        // Queue up the next value from this iterator
         entry.nextPromise = entry.iterator.next();
       }
     }
   } finally {
-    // Clean up by calling return() on any remaining iterators
-    // This allows iterators to release resources even if loop was interrupted
+    // Properly clean up any remaining iterators by calling return()
+    // Ensures resources are released if the loop exits early (e.g. due to error)
     for (const it of set.values()) {
       await it.iterator.return?.();
     }
