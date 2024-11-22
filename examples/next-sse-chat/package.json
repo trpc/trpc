@@ -21,6 +21,7 @@
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
+    "@trpc/upgrade": "^0.0.0-alpha.0",
     "class-variance-authority": "^0.7.0",
     "date-fns": "^3.6.0",
     "drizzle-orm": "^0.31.2",

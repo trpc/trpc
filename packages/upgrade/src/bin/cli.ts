@@ -13,7 +13,6 @@ import {
   String,
 } from 'effect';
 import ignore from 'ignore';
-import { run } from 'jscodeshift/src/Runner';
 import type { SourceFile } from 'typescript';
 import {
   createProgram,
@@ -133,14 +132,15 @@ const prompts = CLICommand.prompt(
         return pipe(
           Effect.log('Running transform', transform),
           Effect.flatMap(() =>
-            Effect.tryPromise(
-              async () =>
-                await run(transform.replace('file://', ''), commitedFiles, {
+            Effect.tryPromise(async () =>
+              import('jscodeshift/src/Runner.js').then(({ run }) =>
+                run(transform.replace('file://', ''), commitedFiles, {
                   appRouterImportFile,
                   appRouterImportName,
                   trpcFile,
                   trpcImportName,
                 }),
+              ),
             ),
           ),
           Effect.map((res) => Effect.log('Transform result', res)),

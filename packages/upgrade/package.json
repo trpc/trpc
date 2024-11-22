@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "bin": {
-    ".": "./dist/cli.js"
+    "trpc-migrate": "./dist/cli.js"
   },
   "exports": {
     "./transforms/hooks-to-options": {
@@ -15,7 +15,7 @@
     }
   },
   "scripts": {
-    "build": "bunchee --no-external",
+    "build": "bunchee",
     "run": "tsx src/cli.ts"
   },
   "dependencies": {
