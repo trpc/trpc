@@ -458,7 +458,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               );
             }
             const dataAsIterable = isObservable(result.data)
-              ? observableToAsyncIterable(result.data)
+              ? observableToAsyncIterable(result.data, opts.req.signal)
               : result.data;
             return dataAsIterable;
           });
@@ -566,7 +566,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
            * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
            */
           const iterable = isObservable(result.data)
-            ? observableToAsyncIterable(result.data)
+            ? observableToAsyncIterable(result.data, opts.req.signal)
             : Promise.resolve(result.data);
           return {
             result: Promise.resolve({
