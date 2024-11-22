@@ -493,6 +493,9 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
               return shape;
             },
+            onCompleted: () => {
+              result?.abortCtrl.abort();
+            },
           });
           for (const [key, value] of Object.entries(sseHeaders)) {
             headers.set(key, value);
