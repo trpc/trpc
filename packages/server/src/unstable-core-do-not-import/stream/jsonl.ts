@@ -1,8 +1,34 @@
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-import { createReadableStream } from './utils/createReadableStream';
 import { withRefCount } from './utils/withRefCount';
+
+/**
+ * One-off readable stream
+ *
+ */
+function createReadableStream<TValue = unknown>() {
+  let controller: ReadableStreamDefaultController<TValue> =
+    null as unknown as ReadableStreamDefaultController<TValue>;
+
+  let cancelled = false;
+  const readable = new ReadableStream<TValue>({
+    start(c) {
+      controller = c;
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+
+  return {
+    readable,
+    controller,
+    cancelled() {
+      return cancelled;
+    },
+  } as const;
+}
 
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
