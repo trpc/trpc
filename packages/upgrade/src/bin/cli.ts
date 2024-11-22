@@ -86,7 +86,7 @@ const Program = Effect.succeed(
 );
 
 const transformPath = (path: string) =>
-  !process.env.DEV ? path.replace('../', './') : path;
+  process.env.DEV ? path : path.replace('../', './').replace('.ts', '.js');
 
 const prompts = CLICommand.prompt(
   'transforms',
