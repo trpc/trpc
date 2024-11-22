@@ -4,15 +4,13 @@
   "private": true,
   "type": "module",
   "bin": {
-    "cli": "./dist/cli.js"
+    "cli": "./dist/cli.cjs"
   },
   "exports": {
     "./transforms/hooks-to-options": {
-      "import": "./dist/transforms/hooks-to-options.mjs",
       "require": "./dist/transforms/hooks-to-options.cjs"
     },
     "./transforms/provider": {
-      "import": "./dist/transforms/provider.mjs",
       "require": "./dist/transforms/provider.cjs"
     }
   },
