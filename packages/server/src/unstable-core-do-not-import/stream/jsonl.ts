@@ -1,7 +1,9 @@
-import { isAsyncIterable, isFunction, isObject, run } from '../utils';
+import { Unpromise } from '@trpc/server/vendor/unpromise';
+import { isAsyncIterable, isFunction, isObject } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-import { withRefCount } from './utils/withRefCount';
+import type { IterableToReadableStreamValue } from './utils/readableStreamFrom';
+import { readableStreamFrom } from './utils/readableStreamFrom';
 
 /**
  * One-off readable stream
@@ -143,101 +145,85 @@ class MaxDepthError extends Error {
   }
 }
 
-function createBatchStreamProducer(opts: ProducerOptions) {
+async function* createBatchStreamProducer(
+  opts: ProducerOptions,
+): AsyncIterable<Head | ChunkData, void> {
   const { data } = opts;
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const stream = createReadableStream<ChunkData>();
-  const pending = withRefCount(new Set<ChunkIndex>(), () => {
-    if (!stream.cancelled()) {
-      stream.controller.close();
-    }
-  });
+  const iterators = new Map<ChunkIndex, AsyncIterator<ChunkData, ChunkData>>();
 
-  const maybeEnqueue = (chunk: ChunkData) => {
-    if (!stream.cancelled()) {
-      stream.controller.enqueue(chunk);
-    }
-  };
+  function registerAsync(
+    callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, ChunkData>,
+  ) {
+    const idx = counter++ as ChunkIndex;
+
+    const iterator = callback(idx)[Symbol.asyncIterator]();
+
+    iterators.set(idx, iterator);
+
+    return idx;
+  }
 
   function encodePromise(promise: Promise<unknown>, path: (string | number)[]) {
-    const error = checkMaxDepth(path);
-    if (error) {
-      // Catch any errors from the original promise to ensure they're reported
-      promise.catch((cause) => {
+    return registerAsync(async function* (idx) {
+      const error = checkMaxDepth(path);
+      if (error) {
+        // Catch any errors from the original promise to ensure they're reported
+        promise.catch((cause) => {
+          opts.onError?.({ error: cause, path });
+        });
+        // Replace the promise with a rejected one containing the max depth error
+        promise = Promise.reject(error);
+      }
+      try {
+        const next = await promise;
+        return [idx, PROMISE_STATUS_FULFILLED, encode(next, path)];
+      } catch (cause) {
         opts.onError?.({ error: cause, path });
-      });
-      // Replace the promise with a rejected one containing the max depth error
-      promise = Promise.reject(error);
-    }
-    const idx = counter++ as ChunkIndex;
-    pending.add(idx);
-
-    promise
-      .then((it) => {
-        maybeEnqueue([idx, PROMISE_STATUS_FULFILLED, encode(it, path)]);
-      })
-      .catch((cause) => {
-        opts.onError?.({ error: cause, path });
-        maybeEnqueue([
+        return [
           idx,
           PROMISE_STATUS_REJECTED,
           opts.formatError?.({ error: cause, path }),
-        ]);
-      })
-      .finally(() => {
-        pending.delete(idx);
-      });
-    return idx;
+        ];
+      }
+    });
   }
   function encodeAsyncIterable(
     iterable: AsyncIterable<unknown>,
     path: (string | number)[],
   ) {
-    const idx = counter++ as ChunkIndex;
-    pending.add(idx);
-    run(async () => {
+    return registerAsync(async function* (idx) {
       const error = checkMaxDepth(path);
       if (error) {
         throw error;
       }
       const iterator = iterable[Symbol.asyncIterator]();
 
-      while (true) {
-        if (stream.cancelled()) {
-          const res = await iterator.return?.();
-          return res?.value;
+      try {
+        while (true) {
+          const next = await iterator.next();
+          if (next.done) {
+            return [
+              idx,
+              ASYNC_ITERABLE_STATUS_RETURN,
+              encode(next.value, path),
+            ];
+          }
+          yield [idx, ASYNC_ITERABLE_STATUS_VALUE, encode(next.value, path)];
         }
-        const next = await iterator.next();
-
-        if (next.done) {
-          maybeEnqueue([
-            idx,
-            ASYNC_ITERABLE_STATUS_RETURN,
-            encode(next.value, path),
-          ]);
-          break;
-        }
-        maybeEnqueue([
-          idx,
-          ASYNC_ITERABLE_STATUS_VALUE,
-          encode(next.value, path),
-        ]);
-      }
-    })
-      .catch((cause) => {
+      } catch (cause) {
         opts.onError?.({ error: cause, path });
-        maybeEnqueue([
+        return [
           idx,
           ASYNC_ITERABLE_STATUS_ERROR,
           opts.formatError?.({ error: cause, path }),
-        ]);
-      })
-      .finally(() => {
-        pending.delete(idx);
-      });
-    return idx;
+        ];
+      } finally {
+        await iterator.return?.();
+      }
+    });
   }
   function checkMaxDepth(path: (string | number)[]) {
     if (opts.maxDepth && path.length > opts.maxDepth) {
@@ -292,20 +278,73 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   for (const [key, item] of Object.entries(data)) {
     newHead[key] = encode(item, [key]);
   }
-  pending.activate();
 
-  return [newHead, stream.readable] as const;
+  yield newHead;
+
+  // Process all async iterables concurrently by racing their next values
+  try {
+    // Track pending promises for the next value of each iterator
+    const nextPromises = new Map<
+      ChunkIndex,
+      Promise<IteratorResult<ChunkData, ChunkData>>
+    >();
+
+    // Continue processing while there are still active iterators
+    while (iterators.size > 0) {
+      // Ensure we have a pending promise for each iterator's next value
+      for (const [idx, it] of iterators.entries()) {
+        if (!nextPromises.has(idx)) {
+          nextPromises.set(idx, it.next());
+        }
+      }
+
+      // Race all pending promises to get the next available value
+      // Returns tuple of [iteratorIndex, iteratorResult]
+      const [idx, res] = await Unpromise.race(
+        Array.from(nextPromises.entries()).map(
+          async ([idx, promise]) => [idx, await promise] as const,
+        ),
+      );
+
+      // Remove the completed promise from tracking
+      nextPromises.delete(idx);
+
+      // Yield the value from the winning iterator
+      yield res.value;
+
+      // If iterator is done, remove it from active set
+      if (res.done) {
+        iterators.delete(idx);
+      }
+    }
+  } finally {
+    // Clean up by calling return() on any remaining iterators
+    // This allows iterators to release resources even if loop was interrupted
+    for (const it of iterators.values()) {
+      await it.return?.();
+    }
+  }
 }
 /**
  * JSON Lines stream producer
  * @see https://jsonlines.org/
  */
 export function jsonlStreamProducer(opts: ProducerOptions) {
-  let [head, stream] = createBatchStreamProducer(opts);
+  let stream = readableStreamFrom(createBatchStreamProducer(opts)).pipeThrough(
+    new TransformStream<
+      IterableToReadableStreamValue<ChunkData | Head, void>,
+      ChunkData | Head
+    >({
+      transform(chunk, controller) {
+        if (chunk.type === 'yield') {
+          controller.enqueue(chunk.value);
+        }
+      },
+    }),
+  );
 
   const { serialize } = opts;
   if (serialize) {
-    head = serialize(head);
     stream = stream.pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
@@ -318,9 +357,6 @@ export function jsonlStreamProducer(opts: ProducerOptions) {
   return stream
     .pipeThrough(
       new TransformStream({
-        start(controller) {
-          controller.enqueue(JSON.stringify(head) + '\n');
-        },
         transform(chunk, controller) {
           controller.enqueue(JSON.stringify(chunk) + '\n');
         },
