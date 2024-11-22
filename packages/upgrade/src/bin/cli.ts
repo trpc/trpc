@@ -55,9 +55,17 @@ const filterIgnored = (files: readonly SourceFile[]) =>
         Effect.map((content) => content.split('\n')),
         Effect.map((patterns) => ignore().add(patterns)),
       );
-    const relativeFilePaths = files.map((file) =>
-      path.relative(process.cwd(), file.fileName),
-    );
+
+    // Ignore "common files"
+    const relativeFilePaths = files
+      .filter(
+        (source) =>
+          !source.fileName.includes('node_modules') &&
+          !source.fileName.includes('packages/'),
+      )
+      .map((file) => path.relative(process.cwd(), file.fileName));
+
+    // As well as gitignored?
     return ignores.filter(relativeFilePaths);
   });
 
