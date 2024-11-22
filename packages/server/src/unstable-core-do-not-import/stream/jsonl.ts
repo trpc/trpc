@@ -151,8 +151,10 @@ async function* createBatchStreamProducer(
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const iterators = new Map<ChunkIndex, AsyncIterator<ChunkData, ChunkData>>();
-
+  const set = new Set<{
+    iterator: AsyncIterator<ChunkData, ChunkData>;
+    nextPromise: Promise<IteratorResult<ChunkData, ChunkData>>;
+  }>();
   function registerAsync(
     callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, ChunkData>,
   ) {
@@ -160,7 +162,15 @@ async function* createBatchStreamProducer(
 
     const iterator = callback(idx)[Symbol.asyncIterator]();
 
-    iterators.set(idx, iterator);
+    const nextPromise = iterator.next();
+
+    nextPromise.catch(() => {
+      // prevent unhandled promise rejection
+    });
+    set.add({
+      iterator,
+      nextPromise,
+    });
 
     return idx;
   }
@@ -282,45 +292,30 @@ async function* createBatchStreamProducer(
 
   // Process all async iterables concurrently by racing their next values
   try {
-    // Track pending promises for the next value of each iterator
-    const nextPromises = new Map<
-      ChunkIndex,
-      Promise<IteratorResult<ChunkData, ChunkData>>
-    >();
-
     // Continue processing while there are still active iterators
-    while (iterators.size > 0) {
-      // Ensure we have a pending promise for each iterator's next value
-      for (const [idx, it] of iterators.entries()) {
-        if (!nextPromises.has(idx)) {
-          nextPromises.set(idx, it.next());
-        }
-      }
-
+    while (set.size > 0) {
       // Race all pending promises to get the next available value
       // Returns tuple of [iteratorIndex, iteratorResult]
-      const [idx, res] = await Unpromise.race(
-        Array.from(nextPromises.entries()).map(
-          async ([idx, promise]) => [idx, await promise] as const,
+      const [entry, res] = await Unpromise.race(
+        Array.from(set.values()).map(
+          async (it) => [it, await it.nextPromise] as const,
         ),
       );
-
-      // Remove the completed promise from tracking
-      nextPromises.delete(idx);
 
       // Yield the value from the winning iterator
       yield res.value;
 
-      // If iterator is done, remove it from active set
       if (res.done) {
-        iterators.delete(idx);
+        set.delete(entry);
+      } else {
+        entry.nextPromise = entry.iterator.next();
       }
     }
   } finally {
     // Clean up by calling return() on any remaining iterators
     // This allows iterators to release resources even if loop was interrupted
-    for (const it of iterators.values()) {
-      await it.return?.();
+    for (const it of set.values()) {
+      await it.iterator.return?.();
     }
   }
 }
