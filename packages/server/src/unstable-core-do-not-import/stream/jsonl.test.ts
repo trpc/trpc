@@ -96,7 +96,7 @@ test('encode/decode with superjson', async () => {
     expect(aggregated).toEqual([1, 2, 3]);
   }
 
-  expect(meta.controllers.size).toBe(0);
+  expect(meta.isEmpty()).toBe(true);
 });
 
 test('encode/decode - error', async () => {
@@ -194,7 +194,7 @@ test('encode/decode - error', async () => {
   `);
 
   // await meta.reader.closed;
-  expect(meta.controllers.size).toBe(0);
+  expect(meta.isEmpty()).toBe(true);
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(0);
 });
 
@@ -304,7 +304,7 @@ test('e2e, create server', async () => {
     );
   }
   // await meta.reader.closed;
-  expect(meta.controllers.size).toBe(0);
+  expect(meta.isEmpty()).toBe(true);
 });
 
 test(
@@ -364,7 +364,7 @@ test(
     }
 
     await waitFor(() => {
-      expect(meta.controllers.size).toBe(0);
+      expect(meta.isEmpty()).toBe(true);
     });
     // wait for stopped
     await waitFor(() => {
@@ -446,7 +446,7 @@ test(
     }
 
     await waitFor(() => {
-      expect(meta.controllers.size).toBe(0);
+      expect(meta.isEmpty()).toBe(true);
     });
     // wait for stopped
     await waitFor(() => {

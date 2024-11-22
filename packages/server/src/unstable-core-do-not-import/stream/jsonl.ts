@@ -437,6 +437,121 @@ function createConsumerStream<THead>(
     }),
   );
 }
+/**
+ * Represents a chunk of data or stream interruption error that can be enqueued to a controller
+ */
+type ControllerChunk = ChunkData | StreamInterruptedError;
+
+/**
+ * Interface for a controller that can enqueue chunks and be closed
+ */
+interface ChunkControllerEsque {
+  enqueue: (chunk: ControllerChunk) => void;
+  close: () => void;
+  closed: boolean;
+}
+
+/**
+ * Creates a handler for managing stream controllers and their lifecycle
+ */
+function createControllerHandler(abortController: AbortController) {
+  const deferredMap = new Map<ChunkIndex, Deferred<ChunkControllerEsque>>();
+  const controllerMap = new Map<ChunkIndex, ChunkControllerEsque>();
+
+  /**
+   * Checks if there are no pending controllers or deferred promises
+   */
+  function isEmpty() {
+    return (
+      deferredMap.size === 0 &&
+      Array.from(controllerMap.values()).every((c) => c.closed)
+    );
+  }
+
+  return {
+    /**
+     * Gets or creates a controller for a chunk ID
+     */
+    controller: (
+      chunkId: ChunkIndex,
+    ): ChunkControllerEsque | Promise<ChunkControllerEsque> => {
+      const c = controllerMap.get(chunkId);
+
+      if (c) {
+        return c;
+      }
+
+      const deferred = createDeferred<ChunkControllerEsque>();
+      deferredMap.set(chunkId, deferred);
+
+      return deferred.promise;
+    },
+
+    /**
+     * Creates a reader and controller pair for a chunk ID
+     */
+    reader: (chunkId: ChunkIndex) => {
+      const stream = createReadableStream<ChunkData>();
+
+      const controller: ChunkControllerEsque = {
+        enqueue: (v) => stream.controller.enqueue(v as ChunkData),
+        close: () => {
+          stream.controller.close();
+
+          // mark as closed and remove methods
+          controller.closed = true;
+          controller.close = () => {
+            // noop
+          };
+          controller.enqueue = () => {
+            // noop
+          };
+        },
+        closed: false,
+      };
+      controllerMap.set(chunkId, controller);
+
+      const deferred = deferredMap.get(chunkId);
+      if (deferred) {
+        deferred.resolve(controller);
+        deferredMap.delete(chunkId);
+      }
+
+      const reader = stream.readable.getReader();
+
+      const onDone = async () => {
+        if (controller.closed) {
+          return;
+        }
+        controller.close();
+
+        if (isEmpty()) {
+          abortController.abort();
+        }
+      };
+      return [reader, onDone] as const;
+    },
+
+    /**
+     * Check if there are no pending controllers
+     **/
+    isEmpty,
+
+    /**
+     * Cancels all pending controllers and rejects deferred promises
+     */
+    cancelAll: (reason: unknown) => {
+      const error = new StreamInterruptedError(reason);
+      for (const deferred of deferredMap.values()) {
+        deferred.reject(error);
+      }
+      for (const controller of controllerMap.values()) {
+        controller.enqueue(error);
+        controller.close();
+      }
+    },
+  };
+}
 
 /**
  * JSON Lines stream consumer
@@ -466,41 +581,16 @@ export async function jsonlStreamConsumer<THead>(opts: {
   }
   let headDeferred: null | Deferred<THead> = createDeferred();
 
-  type ControllerChunk = ChunkData | StreamInterruptedError;
-  type ChunkController = ReadableStreamDefaultController<ControllerChunk>;
-  /**
-   * This is needed as new values can come in before the controller has read the chunk
-   * Not pretty, could likely be refactored and omitted somehow
-   */
-  const chunkDeferred = new Map<ChunkIndex, Deferred<ChunkController>>();
-
-  const controllers = new Map<ChunkIndex, ChunkController>();
-
-  const maybeAbort = () => {
-    if (chunkDeferred.size === 0 && controllers.size === 0) {
-      // nothing is listening to the stream anymore
-      opts.abortController?.abort();
-    }
-  };
+  const controllerHandler = createControllerHandler(opts.abortController);
 
   function decodeChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const stream = createReadableStream<ChunkData>();
+    const [reader, onDone] = controllerHandler.reader(chunkId);
 
-    controllers.set(chunkId, stream.controller);
-
-    // resolve chunk deferred if it exists
-    const deferred = chunkDeferred.get(chunkId);
-    if (deferred) {
-      deferred.resolve(stream.controller);
-      chunkDeferred.delete(chunkId);
-    }
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
         return run(async () => {
-          const reader = stream.readable.getReader();
-
           try {
             const { value } = await reader.read();
             if (value instanceof StreamInterruptedError) {
@@ -516,15 +606,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
                 );
             }
           } finally {
-            await reader.cancel();
-            controllers.delete(chunkId);
-            maybeAbort();
+            await onDone();
           }
         });
       }
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
         async function* generator() {
-          const reader = stream.readable.getReader();
           try {
             while (true) {
               const { value } = await reader.read();
@@ -547,9 +634,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               }
             }
           } finally {
-            await reader.cancel();
-            controllers.delete(chunkId);
-            maybeAbort();
+            await onDone();
           }
         }
         return generator();
@@ -577,11 +662,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
     const error = new StreamInterruptedError(reason);
 
     headDeferred?.reject(error);
-    for (const controller of controllers.values()) {
-      controller.enqueue(error);
-      controller.close();
-    }
-    controllers.clear();
+    controllerHandler.cancelAll(error);
   };
   source
     .pipeTo(
@@ -602,17 +683,8 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const chunk = chunkOrHead as ChunkData;
           const [idx] = chunk;
 
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          let readController = controllers.get(idx)!;
-          if (!readController) {
-            let deferred = chunkDeferred.get(idx);
-            if (!deferred) {
-              deferred = createDeferred();
-              chunkDeferred.set(idx, deferred);
-            }
-            readController = await deferred.promise;
-          }
-          readController.enqueue(chunk);
+          const controller = await controllerHandler.controller(idx);
+          controller.enqueue(chunk);
         },
         close: closeOrAbort,
         abort: closeOrAbort,
@@ -626,10 +698,5 @@ export async function jsonlStreamConsumer<THead>(opts: {
       closeOrAbort(error);
     });
 
-  return [
-    await headDeferred.promise,
-    {
-      controllers,
-    },
-  ] as const;
+  return [await headDeferred.promise, controllerHandler] as const;
 }
