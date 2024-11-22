@@ -457,7 +457,7 @@ You now have access to your API procedures on the `trpc` object. Try it out!
 // @include: server
 // @filename: client.ts
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from './server';
+import type { AppRouter } from '../server';
 
 const trpc = createTRPCClient<AppRouter>({
   links: [
@@ -490,7 +490,7 @@ You can open up your Intellisense to explore your API on your frontend. You'll f
 // @include: server
 // @filename: client.ts
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from './server';
+import type { AppRouter } from '../server';
 
 const trpc = createTRPCClient<AppRouter>({
   links: [
