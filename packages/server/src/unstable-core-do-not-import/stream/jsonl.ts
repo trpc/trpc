@@ -5,33 +5,6 @@ import { createDeferred } from './utils/createDeferred';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 
 /**
- * One-off readable stream
- *
- */
-function createReadableStream<TValue = unknown>() {
-  let controller: ReadableStreamDefaultController<TValue> =
-    null as unknown as ReadableStreamDefaultController<TValue>;
-
-  let cancelled = false;
-  const readable = new ReadableStream<TValue>({
-    start(c) {
-      controller = c;
-    },
-    cancel() {
-      cancelled = true;
-    },
-  });
-
-  return {
-    readable,
-    controller,
-    cancelled() {
-      return cancelled;
-    },
-  } as const;
-}
-
-/**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
  * @see ReadableStream from lib.dom.d.ts
  */
@@ -456,7 +429,7 @@ interface ChunkControllerEsque {
  */
 function createControllerHandler(abortController: AbortController) {
   const deferredMap = new Map<ChunkIndex, Deferred<ChunkControllerEsque>>();
-  const controllerMap = new Map<ChunkIndex, ChunkControllerEsque>();
+  const controllerEsqueMap = new Map<ChunkIndex, ChunkControllerEsque>();
 
   /**
    * Checks if there are no pending controllers or deferred promises
@@ -464,7 +437,7 @@ function createControllerHandler(abortController: AbortController) {
   function isEmpty() {
     return (
       deferredMap.size === 0 &&
-      Array.from(controllerMap.values()).every((c) => c.closed)
+      Array.from(controllerEsqueMap.values()).every((c) => c.closed)
     );
   }
 
@@ -472,10 +445,10 @@ function createControllerHandler(abortController: AbortController) {
     /**
      * Gets or creates a controller for a chunk ID
      */
-    controller: (
+    getController: (
       chunkId: ChunkIndex,
     ): ChunkControllerEsque | Promise<ChunkControllerEsque> => {
-      const c = controllerMap.get(chunkId);
+      const c = controllerEsqueMap.get(chunkId);
 
       if (c) {
         return c;
@@ -490,40 +463,45 @@ function createControllerHandler(abortController: AbortController) {
     /**
      * Creates a reader and controller pair for a chunk ID
      */
-    reader: (chunkId: ChunkIndex) => {
-      const stream = createReadableStream<ChunkData>();
+    createReader: (chunkId: ChunkIndex) => {
+      let originalController: ReadableStreamDefaultController<ControllerChunk>;
+      const stream = new ReadableStream<ControllerChunk>({
+        start(controller) {
+          originalController = controller;
+        },
+      });
 
-      const controller: ChunkControllerEsque = {
-        enqueue: (v) => stream.controller.enqueue(v as ChunkData),
+      const controllerEsque: ChunkControllerEsque = {
+        enqueue: (v) => originalController.enqueue(v as ChunkData),
         close: () => {
-          stream.controller.close();
+          originalController.close();
 
           // mark as closed and remove methods
-          controller.closed = true;
-          controller.close = () => {
+          controllerEsque.closed = true;
+          controllerEsque.close = () => {
             // noop
           };
-          controller.enqueue = () => {
+          controllerEsque.enqueue = () => {
             // noop
           };
         },
         closed: false,
       };
-      controllerMap.set(chunkId, controller);
+      controllerEsqueMap.set(chunkId, controllerEsque);
 
       const deferred = deferredMap.get(chunkId);
       if (deferred) {
-        deferred.resolve(controller);
+        deferred.resolve(controllerEsque);
         deferredMap.delete(chunkId);
       }
 
-      const reader = stream.readable.getReader();
+      const reader = stream.getReader();
 
       const onDone = async () => {
-        if (controller.closed) {
+        if (controllerEsque.closed) {
           return;
         }
-        controller.close();
+        controllerEsque.close();
 
         if (isEmpty()) {
           abortController.abort();
@@ -545,7 +523,7 @@ function createControllerHandler(abortController: AbortController) {
       for (const deferred of deferredMap.values()) {
         deferred.reject(error);
       }
-      for (const controller of controllerMap.values()) {
+      for (const controller of controllerEsqueMap.values()) {
         controller.enqueue(error);
         controller.close();
       }
@@ -586,7 +564,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   function decodeChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const [reader, onDone] = controllerHandler.reader(chunkId);
+    const [reader, onDone] = controllerHandler.createReader(chunkId);
 
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
@@ -683,7 +661,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const chunk = chunkOrHead as ChunkData;
           const [idx] = chunk;
 
-          const controller = await controllerHandler.controller(idx);
+          const controller = await controllerHandler.getController(idx);
           controller.enqueue(chunk);
         },
         close: closeOrAbort,
