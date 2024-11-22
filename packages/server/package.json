@@ -151,31 +151,6 @@
     "https://trpc.io/sponsor"
   ],
   "peerDependencies": {
-    "@types/aws-lambda": "*",
-    "express": "*",
-    "fastify": "*",
-    "next": "*",
-    "typescript": ">=5.6.2",
-    "ws": "*"
-  },
-  "peerDependenciesMeta": {
-    "@types/aws-lambda": {
-      "optional": true
-    },
-    "express": {
-      "optional": true
-    },
-    "fastify": {
-      "optional": true
-    },
-    "next": {
-      "optional": true
-    },
-    "ws": {
-      "optional": true
-    },
-    "typescript": {
-      "optional": false
-    }
+    "typescript": ">=5.6.2"
   }
 }
