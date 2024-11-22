@@ -20194,7 +20194,7 @@ snapshots:
 
   '@docusaurus/react-loadable@6.0.0(react@18.3.1)':
     dependencies:
-      '@types/react': 18.3.1
+      '@types/react': 18.3.12
       react: 18.3.1
 
   '@docusaurus/theme-classic@3.5.2(@swc/core@1.9.1(@swc/helpers@0.5.13))(@types/react@18.3.1)(eslint@9.13.0(jiti@2.3.3))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.1.6)':
