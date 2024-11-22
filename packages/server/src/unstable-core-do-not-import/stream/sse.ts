@@ -7,7 +7,7 @@ import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
 import { takeWithGrace, withMaxDuration } from './utils/asyncIterable';
-import { createReadableStream } from './utils/createReadableStream';
+import { readableStreamFrom } from './utils/readableStreamFrom';
 import { PING_SYM, withPing } from './utils/withPing';
 
 type Serialize = (value: any) => any;
@@ -66,12 +66,12 @@ const PING_EVENT = 'ping';
 const SERIALIZED_ERROR_EVENT = 'serialized-error';
 const CONNECTED_EVENT = 'connected';
 
-type SSEvent = Partial<{
-  id: string;
+interface SSEvent {
+  id?: string;
   data: unknown;
-  comment: string;
-  event: string;
-}>;
+  comment?: string;
+  event?: string;
+}
 /**
  *
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
@@ -79,8 +79,6 @@ type SSEvent = Partial<{
 export function sseStreamProducer<TValue = unknown>(
   opts: SSEStreamProducerOptions<TValue>,
 ) {
-  const stream = createReadableStream<SSEvent>();
-
   const { serialize = identity } = opts;
 
   const ping: Required<SSEPingOptions> = {
@@ -89,10 +87,6 @@ export function sseStreamProducer<TValue = unknown>(
   };
   const client: SSEClientOptions = opts.client ?? {};
 
-  stream.controller.enqueue({
-    event: CONNECTED_EVENT,
-    data: JSON.stringify(client),
-  });
   if (
     ping.enabled &&
     client.reconnectAfterInactivityMs &&
@@ -102,97 +96,99 @@ export function sseStreamProducer<TValue = unknown>(
       `Ping interval must be less than client reconnect interval to prevent unnecessary reconnection - ping.intervalMs: ${ping.intervalMs} client.reconnectAfterInactivityMs: ${client.reconnectAfterInactivityMs}`,
     );
   }
+  const stream = readableStreamFrom(
+    run(async function* (): AsyncIterable<SSEvent, void> {
+      yield {
+        event: CONNECTED_EVENT,
+        data: JSON.stringify(client),
+      };
 
-  run(async () => {
-    type TIteratorValue = Awaited<TValue> | typeof PING_SYM;
+      type TIteratorValue = Awaited<TValue> | typeof PING_SYM;
 
-    let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
+      let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
 
-    if (opts.emitAndEndImmediately) {
-      iterable = takeWithGrace(iterable, {
-        count: 1,
-        gracePeriodMs: 1,
-      });
-    }
+      if (opts.emitAndEndImmediately) {
+        iterable = takeWithGrace(iterable, {
+          count: 1,
+          gracePeriodMs: 1,
+        });
+      }
 
-    if (
-      opts.maxDurationMs &&
-      opts.maxDurationMs > 0 &&
-      opts.maxDurationMs !== Infinity
-    ) {
-      iterable = withMaxDuration(iterable, {
-        maxDurationMs: opts.maxDurationMs,
-      });
-    }
+      if (
+        opts.maxDurationMs &&
+        opts.maxDurationMs > 0 &&
+        opts.maxDurationMs !== Infinity
+      ) {
+        iterable = withMaxDuration(iterable, {
+          maxDurationMs: opts.maxDurationMs,
+        });
+      }
 
-    if (ping.enabled && ping.intervalMs !== Infinity && ping.intervalMs > 0) {
-      iterable = withPing(iterable, ping.intervalMs);
-    }
+      if (ping.enabled && ping.intervalMs !== Infinity && ping.intervalMs > 0) {
+        iterable = withPing(iterable, ping.intervalMs);
+      }
 
-    try {
       // We need those declarations outside the loop for garbage collection reasons. If they were
       // declared inside, they would not be freed until the next value is present.
       let value: null | TIteratorValue;
       let chunk: null | SSEvent;
 
-      for await (value of iterable) {
-        if (value === PING_SYM) {
-          stream.controller.enqueue({ event: PING_EVENT, data: '' });
-          continue;
-        }
-
-        chunk = isTrackedEnvelope(value)
-          ? { id: value[0], data: value[1] }
-          : { data: value };
-        if ('data' in chunk) {
-          chunk.data = JSON.stringify(serialize(chunk.data));
-        }
-
-        stream.controller.enqueue(chunk);
-
-        // free up references for garbage collection
-        value = null;
-        chunk = null;
-      }
-    } catch (err) {
-      if (isAbortError(err)) {
-        // ignore abort errors, send any other errors
-        return;
-      }
-      // `err` must be caused by `opts.data`, `JSON.stringify` or `serialize`.
-      // So, a user error in any case.
-      const error = getTRPCErrorFromUnknown(err);
-      const data = opts.formatError?.({ error }) ?? null;
-      stream.controller.enqueue({
-        event: SERIALIZED_ERROR_EVENT,
-        data: JSON.stringify(serialize(data)),
-      });
-    } finally {
       try {
-        stream.controller.close();
-      } catch {
-        // ignore
-      }
-    }
-  }).catch((err) => {
-    // should not be reached; just in case...
-    stream.controller.error(err);
-  });
+        for await (value of iterable) {
+          if (value === PING_SYM) {
+            yield { event: PING_EVENT, data: '' };
+            continue;
+          }
 
-  return stream.readable.pipeThrough(
-    new TransformStream<SSEvent, string>({
-      transform(chunk, controller) {
-        if ('event' in chunk) {
-          controller.enqueue(`event: ${chunk.event}\n`);
+          chunk = isTrackedEnvelope(value)
+            ? { id: value[0], data: value[1] }
+            : { data: value };
+
+          if ('data' in chunk) {
+            chunk.data = JSON.stringify(serialize(chunk.data));
+          }
+
+          yield chunk;
+
+          // free up references for garbage collection
+          value = null;
+          chunk = null;
         }
-        if ('data' in chunk) {
-          controller.enqueue(`data: ${chunk.data}\n`);
+      } catch (cause) {
+        if (isAbortError(cause)) {
+          // ignore abort errors, send any other errors
+          return;
         }
-        if ('id' in chunk) {
-          controller.enqueue(`id: ${chunk.id}\n`);
+        // `err` must be caused by `opts.data`, `JSON.stringify` or `serialize`.
+        // So, a user error in any case.
+        const error = getTRPCErrorFromUnknown(cause);
+        const data = opts.formatError?.({ error }) ?? null;
+        yield {
+          event: SERIALIZED_ERROR_EVENT,
+          data: JSON.stringify(serialize(data)),
+        };
+      }
+    }),
+  );
+
+  return stream.pipeThrough(
+    new TransformStream({
+      transform(chunk, controller: TransformStreamDefaultController<string>) {
+        if (chunk.type !== 'yield') {
+          return;
         }
-        if ('comment' in chunk) {
-          controller.enqueue(`: ${chunk.comment}\n`);
+        const { value } = chunk;
+        if ('event' in value) {
+          controller.enqueue(`event: ${value.event}\n`);
+        }
+        if ('data' in value) {
+          controller.enqueue(`data: ${value.data}\n`);
+        }
+        if ('id' in value) {
+          controller.enqueue(`id: ${value.id}\n`);
+        }
+        if ('comment' in value) {
+          controller.enqueue(`: ${value.comment}\n`);
         }
         controller.enqueue('\n\n');
       },
@@ -317,6 +313,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
         eventSource.addEventListener(CONNECTED_EVENT, (_msg) => {
           const msg = _msg as EventSourceLike.MessageEvent;
+
           const options: SSEClientOptions = JSON.parse(msg.data);
 
           clientOptions = options;
