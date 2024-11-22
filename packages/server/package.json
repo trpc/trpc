@@ -150,14 +150,32 @@
   "funding": [
     "https://trpc.io/sponsor"
   ],
-  "optionalDependencies": {
+  "peerDependencies": {
+    "typescript": ">=5.6.2",
     "@types/aws-lambda": "*",
     "express": "*",
     "fastify": "*",
     "next": "*",
     "ws": "*"
   },
-  "peerDependencies": {
-    "typescript": ">=5.6.2"
+  "peerDependenciesMeta": {
+    "@types/aws-lambda": {
+      "optional": true
+    },
+    "express": {
+      "optional": true
+    },
+    "fastify": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    },
+    "ws": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": false
+    }
   }
 }
