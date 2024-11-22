@@ -1,0 +1,85 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`basic.ts 1`] = `
+"import { useQuery } from '@tanstack/react-query';
+import { trpc } from './trpc';
+
+export function Component() {
+  useQuery(trpc.post.list.queryOptions());
+  useQuery(trpc.post.queryOptions());
+  useQuery(trpc.a.b.c.d.queryOptions());
+
+  useQuery(trpc.post.byId.queryOptions({ id: 1 }));
+  useQuery(trpc.num.queryOptions(1));
+
+  useQuery(trpc.post.list.queryOptions(undefined, { staleTime: 1000 }));
+  useQuery(trpc.post.byId.queryOptions({ id: 1 }, { staleTime: 1000 }));
+}
+"
+`;
+
+exports[`existing-rq.ts 1`] = `""`;
+
+exports[`existing-rq-mix.ts 1`] = `
+"import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import { trpc } from './trpc';
+
+export function Component() {
+  useQuery({ queryKey: ['a'], queryFn: () => 1 });
+  useMutation({ mutationFn: () => 1 });
+
+  useQuery(trpc.post.byId.queryOptions({ id: 1 }));
+  useQuery(trpc.num.queryOptions(1));
+  useInfiniteQuery(trpc.post.list.infiniteQueryOptions());
+}
+"
+`;
+
+exports[`hooks-basic-query.ts 1`] = `
+"import { useQuery } from '@tanstack/react-query';
+import { trpc } from './trpc';
+
+export function Component() {
+  useQuery(trpc.post.list.queryOptions());
+  useQuery(trpc.post.queryOptions());
+  useQuery(trpc.a.b.c.d.queryOptions());
+
+  useQuery(trpc.post.byId.queryOptions({ id: 1 }));
+  useQuery(trpc.num.queryOptions(1));
+
+  useQuery(trpc.post.list.queryOptions(undefined, { staleTime: 1000 }));
+  useQuery(trpc.post.byId.queryOptions({ id: 1 }, { staleTime: 1000 }));
+}
+"
+`;
+
+exports[`suspense-destructuring.ts 1`] = `
+"import { useSuspenseQuery } from '@tanstack/react-query';
+import { trpc } from './trpc';
+
+export function Component() {
+  const query = useSuspenseQuery(trpc.post.list.queryOptions());
+
+  const data = query.data;
+
+  const [a, b] = [1, 2];
+}
+"
+`;
+
+exports[`with-invalidate.ts 1`] = `
+"import { useMutation, useQuery } from '@tanstack/react-query';
+import { trpc } from './trpc';
+
+export function Component() {
+  const { data } = useQuery(trpc.post.list.queryOptions());
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation(
+    trpc.post.create.mutationOptions({
+      onSettled: () => queryClient.invalidateQueries(trpc.post.queryFilter()),
+    }),
+  );
+}
+"
+`;

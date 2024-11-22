@@ -1,4 +1,5 @@
-import { readFile } from 'node:fs/promises';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { applyTransform } from 'jscodeshift/src/testUtils';
 import { format, resolveConfig } from 'prettier';
 import { expect, it } from 'vitest';
@@ -13,19 +14,19 @@ const formatFile = async (path: string, source: string) => {
 };
 
 const testFixture = async (file: string) => {
-  const fixturePath = new URL(file, import.meta.url).pathname;
-
-  const source = await readFile(fixturePath, 'utf-8');
+  const source = readFileSync(file, 'utf-8');
 
   const transformed = applyTransform(transform, {}, { source });
-  const formatted = await formatFile(fixturePath, transformed);
+  const formatted = await formatFile(file, transformed);
 
-  const output = await readFile(fixturePath.replace('.in', '.out'), 'utf-8');
-
-  expect(formatted).toEqual(output);
+  expect(formatted).toMatchSnapshot();
 };
 
-it.each([
-  'fixtures/hooks-basic-query.in.ts',
-  'fixtures/suspense-destructuring.in.ts',
-])('%s', async (file) => await testFixture(file));
+const literal = './fixtures';
+const fixturesDir = new URL(literal, import.meta.url).pathname;
+
+const fixtures = readdirSync(fixturesDir);
+it.each(fixtures)(
+  '%s',
+  async (file) => await testFixture(join(fixturesDir, file)),
+);

@@ -135,11 +135,12 @@ export default function transform(
       .find(j.CallExpression, {
         callee: {
           property: { name: hook },
-          object: { object: { object: { name: 'trpc' } } },
+          // object: { object: { object: { name: 'trpc' } } },
         },
       })
       .forEach((path) => {
         const memberExpr = path.node.callee;
+        console.log(memberExpr);
         memberExpr.property.name = fn;
 
         const useQueryFunction = j.callExpression(j.identifier(hook), [
@@ -161,7 +162,8 @@ export default function transform(
     if (
       !j.CallExpression.check(declarator?.init) ||
       !j.Identifier.check(declarator.init.callee) ||
-      declarator.init.callee.name !== 'useSuspenseQuery'
+      (declarator.init.callee.name !== 'useSuspenseQuery' &&
+        declarator.init.callee.name !== 'useSuspenseInfiniteQuery')
     ) {
       return;
     }
@@ -186,6 +188,15 @@ export default function transform(
       );
     }
   });
+
+  // Migrate trpc.useUtils() to useQueryClient()
+  // root
+  //   .find(j.CallExpression, {
+  //     callee: { name: 'useUtils' },
+  //   })
+  //   .forEach((path) => {
+  //     path.node.callee.name = 'useQueryClient';
+  //   });
 
   return dirtyFlag ? root.toSource() : undefined;
 }
