@@ -1,6 +1,5 @@
 /**
  * One-off readable stream
- * @deprecated
  */
 export function createReadableStream<TValue = unknown>() {
   let controller: ReadableStreamDefaultController<TValue> =
@@ -13,7 +12,6 @@ export function createReadableStream<TValue = unknown>() {
     },
     cancel() {
       cancelled = true;
-      console.log('cancel', Date.now());
     },
   });
 
