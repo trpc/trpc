@@ -13,6 +13,7 @@ const extensions = ['.ts', '.tsx'];
 type Options = {
   input: string[];
   packageDir: string;
+  externalPackages?: (string | RegExp)[];
 };
 
 export function buildConfig({ input, packageDir }: Options): RollupOptions[] {
@@ -25,7 +26,11 @@ export function buildConfig({ input, packageDir }: Options): RollupOptions[] {
   return [types(options), lib(options)];
 }
 
-function types({ input, packageDir }: Options): RollupOptions {
+function types({
+  input,
+  packageDir,
+  externalPackages,
+}: Options): RollupOptions {
   return {
     input,
     output: {
@@ -33,6 +38,7 @@ function types({ input, packageDir }: Options): RollupOptions {
       preserveModules: true,
       preserveModulesRoot: 'src',
     },
+    external: externalPackages,
     plugins: [
       !isWatchMode &&
         del({
@@ -53,7 +59,7 @@ function types({ input, packageDir }: Options): RollupOptions {
   };
 }
 
-function lib({ input, packageDir }: Options): RollupOptions {
+function lib({ input, packageDir, externalPackages }: Options): RollupOptions {
   return {
     input,
     output: [
@@ -74,6 +80,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
         preserveModulesRoot: 'src',
       },
     ],
+    external: externalPackages,
     plugins: [
       externals({
         packagePath: path.resolve(packageDir, 'package.json'),

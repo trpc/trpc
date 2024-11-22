@@ -777,8 +777,7 @@ describe('transformers / different serialize-deserialize', async () => {
 
 describe('timeouts', async () => {
   interface CtxOpts {
-    reconnectAfterInactivityMs: number;
-    serverOptions?: RootConfig<any>['sse'];
+    sse?: RootConfig<any>['sse'];
   }
   const getCtx = (ctxOpts: CtxOpts) => {
     const results: number[] = [];
@@ -789,7 +788,7 @@ describe('timeouts', async () => {
 
     const t = initTRPC.create({
       transformer: superjson,
-      sse: ctxOpts.serverOptions,
+      sse: ctxOpts.sse,
     });
 
     let deferred: Deferred<void> = createDeferred();
@@ -855,7 +854,6 @@ describe('timeouts', async () => {
             unstable_httpSubscriptionLink({
               url: opts.httpUrl,
               transformer: superjson,
-              reconnectAfterInactivityMs: ctxOpts.reconnectAfterInactivityMs,
             }),
           ],
         };
@@ -876,7 +874,11 @@ describe('timeouts', async () => {
 
   test('works', async () => {
     const opts = {
-      reconnectAfterInactivityMs: 1_000,
+      sse: {
+        client: {
+          reconnectAfterInactivityMs: 1_000,
+        },
+      },
     } as const satisfies CtxOpts;
 
     await using ctx = getCtx(opts);
@@ -888,7 +890,9 @@ describe('timeouts', async () => {
       expect(ctx.results).toHaveLength(1);
     });
 
-    await vi.advanceTimersByTimeAsync(opts.reconnectAfterInactivityMs + 100);
+    await vi.advanceTimersByTimeAsync(
+      opts.sse.client.reconnectAfterInactivityMs + 100,
+    );
 
     await vi.waitFor(async () => {
       expect(ctx.onConnection).toHaveBeenCalledTimes(2);
@@ -917,11 +921,13 @@ describe('timeouts', async () => {
 
   test('does not timeout if ping is enabled', async () => {
     const opts = {
-      reconnectAfterInactivityMs: 10_000,
-      serverOptions: {
+      sse: {
         ping: {
           enabled: true,
           intervalMs: 1_000,
+        },
+        client: {
+          reconnectAfterInactivityMs: 10_000,
         },
       },
     } as const satisfies CtxOpts;
@@ -935,7 +941,9 @@ describe('timeouts', async () => {
       expect(ctx.results).toHaveLength(1);
     });
 
-    await vi.advanceTimersByTimeAsync(opts.reconnectAfterInactivityMs * 10);
+    await vi.advanceTimersByTimeAsync(
+      opts.sse.client.reconnectAfterInactivityMs * 10,
+    );
 
     expect(ctx.onConnection).toHaveBeenCalledTimes(1);
 

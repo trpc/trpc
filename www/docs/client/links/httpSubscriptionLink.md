@@ -255,54 +255,23 @@ const trpc = createTRPCClient<AppRouter>({
 
 The `httpSubscriptionLink` supports configuring a timeout for inactivity through the `reconnectAfterInactivityMs` option. If no messages (including ping messages) are received within the specified timeout period, the connection will be marked as "connecting" and automatically attempt to reconnect.
 
-```ts
-import {
-  createTRPCClient,
-  httpBatchLink,
-  splitLink,
-  unstable_httpSubscriptionLink,
-} from '@trpc/client';
+The timeout configuration is set on the server side when initializing tRPC:
 
-const trpc = createTRPCClient<AppRouter>({
-  links: [
-    splitLink({
-      condition: (op) => op.type === 'subscription',
-      true: unstable_httpSubscriptionLink({
-        url: '/api/trpc',
-        // Reconnect if no messages received for 30 seconds
-        reconnectAfterInactivityMs: 30_000,
-      }),
-      false: httpBatchLink({
-        url: '/api/trpc',
-      }),
-    }),
-  ],
+```ts title="server/trpc.ts"
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create({
+  sse: {
+    client: {
+      reconnectAfterInactivityMs: 3_000,
+    },
+  },
 });
 ```
 
-When a timeout occurs:
-
-1. The connection state will change to "connecting"
-2. The client will automatically attempt to reconnect
-3. Any tracked event IDs will be preserved and sent with the new connection to resume from the last received message
-
-This is useful for:
-
-- Detecting stale connections that may have silently failed
-- Automatically recovering from network interruptions
-- Ensuring your subscriptions stay active even during periods of inactivity
-
-:::tip
-The timeout includes ping messages sent by the server. If you're experiencing timeouts during normal operation, you may want to:
-
-1. Increase the `reconnectAfterInactivityMs` value
-2. Adjust your server's ping interval to be more frequent
-
-:::
-
 ## Server Ping Configuration {#server-ping}
 
-The server can be configured to send periodic ping messages to keep the connection alive and prevent timeout disconnections. This is particularly useful when combined with the `reconnectAfterInactivityMs` option on the client.
+The server can be configured to send periodic ping messages to keep the connection alive and prevent timeout disconnections. This is particularly useful when combined with the `reconnectAfterInactivityMs`-option.
 
 ```ts title="server/trpc.ts"
 import { initTRPC } from '@trpc/server';
@@ -314,24 +283,15 @@ export const t = initTRPC.create({
     ping: {
       // Enable periodic ping messages to keep connection alive
       enabled: true,
-      // Send ping message every 200ms
-      intervalMs: 200,
+      // Send ping message every 2s
+      intervalMs: 2_000,
     },
+    // client: {
+    //   reconnectAfterInactivityMs: 3_000
+    // }
   },
 });
 ```
-
-When configuring both client timeout and server ping, ensure that:
-
-1. The server's `experimental_streamingPingInterval` is less than the client's `reconnectAfterInactivityMs`
-2. Allow some buffer time for network latency
-
-For example:
-
-- Server: `experimental_streamingPingInterval: 15_000` (15 seconds)
-- Client: `reconnectAfterInactivityMs: 30_000` (30 seconds)
-
-This gives a 15-second buffer for network delays or missed pings before triggering a reconnection.
 
 ## Compatibility (React Native) {#compatibility-react-native}
 
@@ -385,12 +345,46 @@ type HTTPSubscriptionLinkOptions<
       }) =>
         | EventSourceLike.InitDictOf<TEventSource>
         | Promise<EventSourceLike.InitDictOf<TEventSource>>);
-
-  /**
-   * Timeout after inactivity in milliseconds.
-   * If no messages (including pings) are received within this period,
-   * the connection will be marked as "connecting" and attempt to reconnect.
-   */
-  reconnectAfterInactivityMs?: number;
 };
+```
+
+## SSE Options on the server
+
+```ts
+export interface SSEStreamProducerOptions<TValue = unknown> {
+  ping?: {
+    /**
+     * Enable ping comments sent from the server
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Interval in milliseconds
+     * @default 1000
+     */
+    intervalMs?: number;
+  };
+  /**
+   * Maximum duration in milliseconds for the request before ending the stream
+   * @default undefined
+   */
+  maxDurationMs?: number;
+  /**
+   * End the request immediately after data is sent
+   * Only useful for serverless runtimes that do not support streaming responses
+   * @default false
+   */
+  emitAndEndImmediately?: boolean;
+  /**
+   * Client-specific options - these will be sent to the client as part of the first message
+   * @default {}
+   */
+  client?: {
+    /**
+     * Timeout and reconnect after inactivity in milliseconds
+     * @default undefined
+     */
+    reconnectAfterInactivityMs?: number;
+  };
+}
 ```
