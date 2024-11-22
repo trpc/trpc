@@ -360,17 +360,20 @@ export type ConsumerOnError = (opts: { error: unknown }) => void;
 const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
   return {
     getReader() {
-      const { readable, controller } = createReadableStream<Uint8Array>();
-      source.on('data', (chunk) => {
-        controller.enqueue(chunk);
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          source.on('data', (chunk) => {
+            controller.enqueue(chunk);
+          });
+          source.on('end', () => {
+            controller.close();
+          });
+          source.on('error', (error) => {
+            controller.error(error);
+          });
+        },
       });
-      source.on('end', () => {
-        controller.close();
-      });
-      source.on('error', (error) => {
-        controller.error(error);
-      });
-      return readable.getReader();
+      return stream.getReader();
     },
   };
 };
