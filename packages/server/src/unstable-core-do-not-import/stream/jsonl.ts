@@ -1,5 +1,5 @@
 import { Unpromise } from '../../vendor/unpromise';
-import { isAsyncIterable, isFunction, isObject } from '../utils';
+import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
 import { readableStreamFrom } from './utils/readableStreamFrom';
@@ -495,88 +495,61 @@ export async function jsonlStreamConsumer<THead>(opts: {
     }
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
-        return new Promise((resolve, reject) => {
-          // listen for next value in the stream
+        return run(async () => {
           const reader = stream.readable.getReader();
-          reader
-            .read()
-            .then((it) => {
-              if (it.done) {
-                reject(new Error('Promise chunk ended without value'));
-                return;
-              }
-              if (it.value instanceof StreamInterruptedError) {
-                reject(it.value);
-                return;
-              }
-              const value = it.value;
-              const [_chunkId, status, data] = value as PromiseChunk;
-              switch (status) {
-                case PROMISE_STATUS_FULFILLED:
-                  resolve(decode(data));
 
-                  break;
-                case PROMISE_STATUS_REJECTED:
-                  reject(
-                    opts.formatError?.({ error: data }) ?? new AsyncError(data),
-                  );
-                  break;
-              }
-            })
-            .catch(reject)
-            .finally(() => {
-              controllers.delete(chunkId);
-              maybeAbort();
-            });
-        });
-      }
-      case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
-        const reader = stream.readable.getReader();
-        const iterator: AsyncIterator<unknown> = {
-          next: async () => {
+          try {
             const { value } = await reader.read();
             if (value instanceof StreamInterruptedError) {
               throw value;
             }
-
-            const [_chunkId, status, data] = value as IterableChunk;
-
+            const [_chunkId, status, data] = value as PromiseChunk;
             switch (status) {
-              case ASYNC_ITERABLE_STATUS_VALUE:
-                return {
-                  done: false,
-                  value: decode(data),
-                };
-              case ASYNC_ITERABLE_STATUS_RETURN:
-                controllers.delete(chunkId);
-                maybeAbort();
-
-                return {
-                  done: true,
-                  value: decode(data),
-                };
-              case ASYNC_ITERABLE_STATUS_ERROR:
-                controllers.delete(chunkId);
-                maybeAbort();
-
+              case PROMISE_STATUS_FULFILLED:
+                return decode(data);
+              case PROMISE_STATUS_REJECTED:
                 throw (
                   opts.formatError?.({ error: data }) ?? new AsyncError(data)
                 );
             }
-          },
-          return: async () => {
+          } finally {
+            await reader.cancel();
             controllers.delete(chunkId);
             maybeAbort();
+          }
+        });
+      }
+      case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
+        async function* generator() {
+          const reader = stream.readable.getReader();
+          try {
+            while (true) {
+              const { value } = await reader.read();
+              if (value instanceof StreamInterruptedError) {
+                throw value;
+              }
 
-            return {
-              done: true,
-              value: undefined,
-            };
-          },
-        };
-        return {
-          [Symbol.asyncIterator]: () => iterator,
-        };
+              const [_chunkId, status, data] = value as IterableChunk;
+
+              switch (status) {
+                case ASYNC_ITERABLE_STATUS_VALUE:
+                  yield decode(data);
+                  break;
+                case ASYNC_ITERABLE_STATUS_RETURN:
+                  return decode(data);
+                case ASYNC_ITERABLE_STATUS_ERROR:
+                  throw (
+                    opts.formatError?.({ error: data }) ?? new AsyncError(data)
+                  );
+              }
+            }
+          } finally {
+            await reader.cancel();
+            controllers.delete(chunkId);
+            maybeAbort();
+          }
+        }
+        return generator();
       }
     }
   }
