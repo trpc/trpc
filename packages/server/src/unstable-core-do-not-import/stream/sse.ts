@@ -180,21 +180,17 @@ export function sseStreamProducer<TValue = unknown>(
   return stream.pipeThrough(
     new TransformStream({
       transform(chunk, controller: TransformStreamDefaultController<string>) {
-        if (chunk.type !== 'yield') {
-          return;
+        if ('event' in chunk) {
+          controller.enqueue(`event: ${chunk.event}\n`);
         }
-        const { value } = chunk;
-        if ('event' in value) {
-          controller.enqueue(`event: ${value.event}\n`);
+        if ('data' in chunk) {
+          controller.enqueue(`data: ${chunk.data}\n`);
         }
-        if ('data' in value) {
-          controller.enqueue(`data: ${value.data}\n`);
+        if ('id' in chunk) {
+          controller.enqueue(`id: ${chunk.id}\n`);
         }
-        if ('id' in value) {
-          controller.enqueue(`id: ${value.id}\n`);
-        }
-        if ('comment' in value) {
-          controller.enqueue(`: ${value.comment}\n`);
+        if ('comment' in chunk) {
+          controller.enqueue(`: ${chunk.comment}\n`);
         }
         controller.enqueue('\n\n');
       },

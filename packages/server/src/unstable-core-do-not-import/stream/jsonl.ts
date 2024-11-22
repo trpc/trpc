@@ -2,7 +2,6 @@ import { Unpromise } from '@trpc/server/vendor/unpromise';
 import { isAsyncIterable, isFunction, isObject } from '../utils';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-import type { IterableToReadableStreamValue } from './utils/readableStreamFrom';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 
 /**
@@ -330,18 +329,7 @@ async function* createBatchStreamProducer(
  * @see https://jsonlines.org/
  */
 export function jsonlStreamProducer(opts: ProducerOptions) {
-  let stream = readableStreamFrom(createBatchStreamProducer(opts)).pipeThrough(
-    new TransformStream<
-      IterableToReadableStreamValue<ChunkData | Head, void>,
-      ChunkData | Head
-    >({
-      transform(chunk, controller) {
-        if (chunk.type === 'yield') {
-          controller.enqueue(chunk.value);
-        }
-      },
-    }),
-  );
+  let stream = readableStreamFrom(createBatchStreamProducer(opts));
 
   const { serialize } = opts;
   if (serialize) {

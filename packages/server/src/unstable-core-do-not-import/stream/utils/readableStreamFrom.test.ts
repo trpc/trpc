@@ -1,5 +1,4 @@
 import { expect, test, vi } from 'vitest';
-import type { IterableToReadableStreamValue } from './readableStreamFrom';
 import { readableStreamFrom } from './readableStreamFrom';
 
 test('creates readable stream from async iterable', async () => {
@@ -8,34 +7,21 @@ test('creates readable stream from async iterable', async () => {
     for (const value of values) {
       yield value;
     }
-    return 'done';
   }
 
   const stream = readableStreamFrom(generator());
 
-  expectTypeOf(stream).toEqualTypeOf<
-    ReadableStream<IterableToReadableStreamValue<number, string>>
-  >();
+  expectTypeOf(stream).toEqualTypeOf<ReadableStream<number>>();
   const reader = stream.getReader();
   for (const expected of values) {
     const result = await reader.read();
     expect(result.done).toBe(false);
-    expect(result.value).toEqual({
-      type: 'yield',
-      value: expected,
-    });
+    expect(result.value).toEqual(expected);
   }
 
   const result = await reader.read();
-  expect(result.value).toEqual({
-    type: 'return',
-    value: 'done',
-  });
-  expect(result.done).toBe(false);
-
-  const finalResult = await reader.read();
-  expect(finalResult.value).toBeUndefined();
-  expect(finalResult.done).toBe(true);
+  expect(result.value).toBeUndefined();
+  expect(result.done).toBe(true);
 });
 
 test('calls return on iterator when stream is cancelled', async () => {
@@ -47,7 +33,6 @@ test('calls return on iterator when stream is cancelled', async () => {
       }
     } finally {
       returnMock();
-      return 'cancelled';
     }
   }
 
@@ -56,10 +41,7 @@ test('calls return on iterator when stream is cancelled', async () => {
 
   // Read one value to start the stream
   const result = await reader.read();
-  expect(result.value).toEqual({
-    type: 'yield',
-    value: 1,
-  });
+  expect(result.value).toEqual(1);
 
   // Cancel the stream
   await reader.cancel();
@@ -85,10 +67,7 @@ test('handles cleanup error gracefully', async () => {
 
   // Read one value to start the stream
   const result = await reader.read();
-  expect(result.value).toEqual({
-    type: 'yield',
-    value: 1,
-  });
+  expect(result.value).toEqual(1);
 
   // Cancel the stream
   await reader.cancel();
