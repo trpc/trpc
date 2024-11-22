@@ -1,0 +1,34 @@
+{
+  "name": "@trpc/upgrade",
+  "version": "0.0.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    ".": "./dist/cli.js"
+  },
+  "exports": {
+    "./transforms/*": {
+      "import": "./dist/transforms/*.js"
+    }
+  },
+  "scripts": {
+    "build": "bunchee --no-external",
+    "run": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "@effect/cli": "0.48.25",
+    "@effect/platform": "0.69.25",
+    "@effect/platform-node": "0.64.27",
+    "effect": "3.10.16",
+    "ignore": "^6.0.2",
+    "jscodeshift": "17.1.1",
+    "typescript": "^5.6.2"
+  },
+  "devDependencies": {
+    "@types/jscodeshift": "0.12.0",
+    "@types/node": "^22.9.0",
+    "bunchee": "5.6.1",
+    "esbuild": "0.19.2",
+    "tsx": "^4.0.0"
+  }
+}

@@ -38,7 +38,7 @@ interface TRPCSubscriptionOptionsOut<TOutput, TError>
 export interface TRPCSubscriptionOptions<TDef extends ResolverDef> {
   (
     input: TDef['input'],
-    opts: UnusedSkipTokenTRPCSubscriptionOptionsIn<
+    opts?: UnusedSkipTokenTRPCSubscriptionOptionsIn<
       inferAsyncIterableYield<TDef['output']>,
       TRPCClientErrorLike<TDef>
     >,
@@ -48,7 +48,7 @@ export interface TRPCSubscriptionOptions<TDef extends ResolverDef> {
   >;
   (
     input: TDef['input'] | SkipToken,
-    opts: BaseTRPCSubscriptionOptionsIn<
+    opts?: BaseTRPCSubscriptionOptionsIn<
       inferAsyncIterableYield<TDef['output']>,
       TRPCClientErrorLike<TDef>
     >,
@@ -111,7 +111,7 @@ export const trpcSubscriptionOptions = (args: {
   subscribe: typeof TRPCUntypedClient.prototype.subscription;
   path: readonly string[];
   queryKey: TRPCQueryKey;
-  opts: BaseTRPCSubscriptionOptionsIn<unknown, unknown>;
+  opts: BaseTRPCSubscriptionOptionsIn<unknown, unknown> | undefined;
 }) => {
   const { subscribe, path, queryKey, opts } = args;
   const input = queryKey[1]?.input;

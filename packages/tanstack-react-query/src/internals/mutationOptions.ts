@@ -38,7 +38,7 @@ interface TRPCMutationOptionsOut<TInput, TError, TOutput, TContext>
 
 export interface TRPCMutationOptions<TDef extends ResolverDef> {
   <TContext = unknown>(
-    opts: TRPCMutationOptionsIn<
+    opts?: TRPCMutationOptionsIn<
       TDef['input'],
       TRPCClientErrorLike<TDef>,
       TDef['output'],
@@ -73,7 +73,7 @@ export function trpcMutationOptions(args: {
   mutate: typeof TRPCUntypedClient.prototype.mutation;
   queryClient: QueryClient | (() => QueryClient);
   path: readonly string[];
-  opts: TRPCMutationOptionsIn<unknown, unknown, unknown, unknown>;
+  opts: TRPCMutationOptionsIn<unknown, unknown, unknown, unknown> | undefined;
   overrides: MutationOptionsOverride | undefined;
 }): TRPCMutationOptionsOut<unknown, unknown, unknown, unknown> {
   const { mutate, path, opts, overrides } = args;
