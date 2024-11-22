@@ -1,11 +1,8 @@
 {
-  "name": "@trpc/upgrade",
+  "name": "trpc-upgrade",
   "version": "0.0.0-alpha.0",
   "private": true,
-  "type": "module",
-  "bin": {
-    "cli": "./dist/cli.cjs"
-  },
+  "bin": "./dist/cli.cjs",
   "exports": {
     "./transforms/hooks-to-options": {
       "require": "./dist/transforms/hooks-to-options.cjs"
