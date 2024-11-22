@@ -7,8 +7,11 @@
     ".": "./dist/cli.js"
   },
   "exports": {
-    "./transforms/*": {
-      "import": "./dist/transforms/*.js"
+    "./transforms/hooks-to-options": {
+      "import": "./dist/transforms/hooks-to-options.js"
+    },
+    "./transforms/provider": {
+      "import": "./dist/transforms/provider.js"
     }
   },
   "scripts": {
