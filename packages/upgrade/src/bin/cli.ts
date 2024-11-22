@@ -26,7 +26,7 @@ import { version } from '../../package.json';
 
 const assertCleanGitTree = Command.string(Command.make('git', 'status')).pipe(
   Effect.filterOrFail(
-    (status) => status === 'clean',
+    (status) => status.includes('nothing to commit'),
     () =>
       'Git tree is not clean, please commit your changes before running the migrator',
   ),
@@ -49,10 +49,12 @@ const installPackage = (packageName: string) => {
 const filterIgnored = (files: readonly SourceFile[]) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const ignores = yield* fs.readFileString(process.cwd(), '.gitignore').pipe(
-      Effect.map((content) => content.split('\n')),
-      Effect.map((patterns) => ignore().add(patterns)),
-    );
+    const ignores = yield* fs
+      .readFileString(path.join(process.cwd(), '.gitignore'))
+      .pipe(
+        Effect.map((content) => content.split('\n')),
+        Effect.map((patterns) => ignore().add(patterns)),
+      );
     const relativeFilePaths = files.map((file) =>
       path.relative(process.cwd(), file.fileName),
     );
