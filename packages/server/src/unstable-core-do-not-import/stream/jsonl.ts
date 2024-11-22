@@ -318,6 +318,7 @@ async function* createBatchStreamProducer(
     await Promise.all(
       Array.from(set.values()).map((it) => it.iterator.return?.()),
     );
+    set.clear();
   }
 }
 /**
