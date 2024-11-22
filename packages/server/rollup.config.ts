@@ -24,6 +24,6 @@ export default function rollup(): RollupOptions[] {
   return buildConfig({
     input,
     packageDir: fileURLToPath(new URL('.', import.meta.url)),
-    externalPackages: [/^lodash/],
+    externalPackages: [/^next/],
   });
 }
