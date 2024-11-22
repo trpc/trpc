@@ -60,10 +60,6 @@ type HTTPSubscriptionLinkOptions<
       }) =>
         | EventSourceLike.InitDictOf<TEventSource>
         | Promise<EventSourceLike.InitDictOf<TEventSource>>);
-  /**
-   * Timeout after inactivity in milliseconds
-   */
-  reconnectAfterInactivityMs?: number;
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -128,7 +124,6 @@ export function unstable_httpSubscriptionLink<
           EventSource:
             opts.EventSource ??
             (globalThis.EventSource as never as TEventSource),
-          reconnectAfterInactivityMs: opts.reconnectAfterInactivityMs,
         });
 
         const connectionState = behaviorSubject<
@@ -176,7 +171,7 @@ export function unstable_httpSubscriptionLink<
                   },
                 });
                 break;
-              case 'opened': {
+              case 'connected': {
                 observer.next({
                   result: {
                     type: 'started',
@@ -228,7 +223,7 @@ export function unstable_httpSubscriptionLink<
                   type: 'state',
                   state: 'connecting',
                   error: new TRPCClientError(
-                    `Timeout of ${opts.reconnectAfterInactivityMs}ms reached while waiting for a response`,
+                    `Timeout of ${chunk.ms}ms reached while waiting for a response`,
                   ),
                 });
               }
