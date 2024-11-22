@@ -134,6 +134,7 @@ function observableToReadableStream<TValue>(
   const onAbort = () => {
     unsub?.unsubscribe();
     unsub = null;
+    signal.removeEventListener('abort', onAbort);
   };
 
   return new ReadableStream<Result<TValue>>({
