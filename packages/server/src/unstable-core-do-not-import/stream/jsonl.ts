@@ -315,9 +315,9 @@ async function* createBatchStreamProducer(
   } finally {
     // Properly clean up any remaining iterators by calling return()
     // Ensures resources are released if the loop exits early (e.g. due to error)
-    for (const it of set.values()) {
-      await it.iterator.return?.();
-    }
+    await Promise.all(
+      Array.from(set.values()).map((it) => it.iterator.return?.()),
+    );
   }
 }
 /**
