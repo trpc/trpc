@@ -534,18 +534,9 @@ export async function jsonlStreamConsumer<THead>(opts: {
         const reader = stream.readable.getReader();
         const iterator: AsyncIterator<unknown> = {
           next: async () => {
-            const { done, value } = await reader.read();
+            const { value } = await reader.read();
             if (value instanceof StreamInterruptedError) {
               throw value;
-            }
-            if (done) {
-              controllers.delete(chunkId);
-              maybeAbort();
-
-              return {
-                done: true,
-                value: undefined,
-              };
             }
 
             const [_chunkId, status, data] = value as IterableChunk;
