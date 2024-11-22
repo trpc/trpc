@@ -4,14 +4,16 @@
   "private": true,
   "type": "module",
   "bin": {
-    "trpc-migrate": "./dist/cli.js"
+    "trpc-migrate": "./dist/cli.mjs"
   },
   "exports": {
     "./transforms/hooks-to-options": {
-      "import": "./dist/transforms/hooks-to-options.js"
+      "import": "./dist/transforms/hooks-to-options.mjs",
+      "require": "./dist/transforms/hooks-to-options.cjs"
     },
     "./transforms/provider": {
-      "import": "./dist/transforms/provider.js"
+      "import": "./dist/transforms/provider.mjs",
+      "require": "./dist/transforms/provider.cjs"
     }
   },
   "scripts": {
