@@ -203,7 +203,7 @@ export function sseStreamProducer<TValue = unknown>(
 }
 
 interface ConsumerStreamResultBase<TConfig extends ConsumerConfig> {
-  eventSource: InstanceType<TConfig['EventSource']>;
+  eventSource: InstanceType<TConfig['EventSource']> | null;
 }
 
 interface ConsumerStreamResultData<TConfig extends ConsumerConfig>
@@ -415,21 +415,21 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
               promise,
               timeoutMs,
               onTimeout: async () => {
+                const res: Awaited<typeof promise> = {
+                  value: {
+                    type: 'timeout',
+                    ms: timeoutMs,
+                    eventSource: _es,
+                  },
+                  done: false,
+                };
                 // Close and release old reader
                 await stream.cancel();
 
                 // Create new reader
                 stream = getNewStreamAndReader();
 
-                return {
-                  value: {
-                    type: 'timeout',
-                    ms: timeoutMs,
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    eventSource: _es!,
-                  },
-                  done: false,
-                };
+                return res;
               },
             });
           }
