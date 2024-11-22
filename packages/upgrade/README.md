@@ -8,7 +8,8 @@ or compiled
 
 ```sh
 cd packages/upgrade
-pnpm build
+pnpm build && pnpm link .
 
-node path/to/dist/cli.js
+# in an app somewhere
+pnpm link @trpc/upgrade && pnpm trpc-upgrade
 ```
