@@ -106,7 +106,7 @@ const prompts = CLICommand.prompt(
   }),
   (_) =>
     Effect.gen(function* () {
-      yield* assertCleanGitTree;
+      // yield* assertCleanGitTree;
       const program = yield* Program;
       const sourceFiles = program.getSourceFiles();
 

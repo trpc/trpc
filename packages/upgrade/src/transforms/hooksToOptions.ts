@@ -278,11 +278,14 @@ export default function transform(
         if (
           !j.CallExpression.check(declarator?.init) ||
           !j.Identifier.check(declarator.init.callee) ||
-          (declarator.init.callee.name !== 'useSuspenseQuery' &&
-            declarator.init.callee.name !== 'useSuspenseInfiniteQuery')
+          !['useSuspenseQuery', 'useSuspenseInfiniteQuery'].includes(
+            declarator.init.callee.name,
+          )
         ) {
           return;
         }
+
+        console.log(declarator.init.callee.name);
 
         const tuple = j.ArrayPattern.check(declarator?.id)
           ? declarator.id
@@ -294,20 +297,20 @@ export default function transform(
           ? tuple.elements[1].name
           : null;
 
-        if (declarator && dataName && queryName) {
+        if (declarator && queryName) {
           declarator.id = j.identifier(queryName);
-          j(path).insertAfter(
-            j.variableDeclaration('const', [
-              j.variableDeclarator(
-                j.identifier(dataName),
-                j.memberExpression(
-                  j.identifier(queryName),
-                  j.identifier('data'),
-                ),
-              ),
-            ]),
-          );
           dirtyFlag = true;
+
+          if (dataName) {
+            j(path).insertAfter(
+              j.variableDeclaration('const', [
+                j.variableDeclarator(
+                  j.identifier(dataName),
+                  j.memberExpression(declarator.id, j.identifier('data')),
+                ),
+              ]),
+            );
+          }
         }
       });
   }

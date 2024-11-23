@@ -37,36 +37,43 @@ export function Component() {
 "
 `;
 
-exports[`hooks-basic-query.ts 1`] = `
-"import { useQuery } from '@tanstack/react-query';
-import { useTRPC } from './trpc';
-
-export function Component() {
-  const trpc = useTRPC();
-  useQuery(trpc.post.list.queryOptions());
-  useQuery(trpc.post.queryOptions());
-  useQuery(trpc.a.b.c.d.queryOptions());
-
-  useQuery(trpc.post.byId.queryOptions({ id: 1 }));
-  useQuery(trpc.num.queryOptions(1));
-
-  useQuery(trpc.post.list.queryOptions(undefined, { staleTime: 1000 }));
-  useQuery(trpc.post.byId.queryOptions({ id: 1 }, { staleTime: 1000 }));
-}
-"
-`;
-
 exports[`suspense-destructuring.ts 1`] = `
-"import { useSuspenseQuery } from '@tanstack/react-query';
+"import {
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { useTRPC } from './trpc';
 
-export function Component() {
+export function Component(channelId: string) {
   const trpc = useTRPC();
   const query = useSuspenseQuery(trpc.post.list.queryOptions());
 
   const data = query.data;
 
   const [a, b] = [1, 2];
+
+  const query2 = useSuspenseInfiniteQuery(
+    trpc.post.infinite.infiniteQueryOptions(
+      { channelId },
+      {
+        getNextPageParam: (d) => d.nextCursor,
+        // No need to refetch as we have a subscription
+        refetchOnReconnect: false,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+      },
+    ),
+  );
+
+  const query3 = useSuspenseInfiniteQuery(
+    trpc.post.infinite.infiniteQueryOptions(
+      { channelId },
+      {
+        getNextPageParam: (d) => d.nextCursor,
+      },
+    ),
+  );
+  const data3 = query3.data;
 }
 "
 `;
