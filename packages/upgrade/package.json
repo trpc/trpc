@@ -4,8 +4,8 @@
   "private": true,
   "bin": "./dist/cli.cjs",
   "exports": {
-    "./transforms/hooks-to-options": {
-      "require": "./dist/transforms/hooks-to-options.cjs"
+    "./transforms/hooksToOptions": {
+      "require": "./dist/transforms/hooksToOptions.cjs"
     },
     "./transforms/provider": {
       "require": "./dist/transforms/provider.cjs"
