@@ -25,13 +25,12 @@ type CHUNK_VALUE_TYPE_PROMISE = typeof CHUNK_VALUE_TYPE_PROMISE;
 const CHUNK_VALUE_TYPE_ASYNC_ITERABLE = 1;
 type CHUNK_VALUE_TYPE_ASYNC_ITERABLE = typeof CHUNK_VALUE_TYPE_ASYNC_ITERABLE;
 
-const PROMISE_STATUS_REJECTED = 0;
-type PROMISE_STATUS_REJECTED = typeof PROMISE_STATUS_REJECTED;
+const ASYNC_ERROR = 0;
+type ASYNC_ERROR = typeof ASYNC_ERROR;
+
 const PROMISE_STATUS_FULFILLED = 1;
 type PROMISE_STATUS_FULFILLED = typeof PROMISE_STATUS_FULFILLED;
 
-const ASYNC_ITERABLE_STATUS_ERROR = 0;
-type ASYNC_ITERABLE_STATUS_ERROR = typeof ASYNC_ITERABLE_STATUS_ERROR;
 const ASYNC_ITERABLE_STATUS_YIELD = 1;
 type ASYNC_ITERABLE_STATUS_YIELD = typeof ASYNC_ITERABLE_STATUS_YIELD;
 const ASYNC_ITERABLE_STATUS_RETURN = 2;
@@ -68,7 +67,7 @@ type PromiseChunk =
       status: PROMISE_STATUS_FULFILLED,
       value: EncodedValue,
     ]
-  | [chunkIndex: ChunkIndex, status: PROMISE_STATUS_REJECTED, error: unknown];
+  | [chunkIndex: ChunkIndex, status: ASYNC_ERROR, error: unknown];
 type IterableChunk =
   | [
       chunkIndex: ChunkIndex,
@@ -80,11 +79,7 @@ type IterableChunk =
       status: ASYNC_ITERABLE_STATUS_YIELD,
       value: EncodedValue,
     ]
-  | [
-      chunkIndex: ChunkIndex,
-      status: ASYNC_ITERABLE_STATUS_ERROR,
-      error: unknown,
-    ];
+  | [chunkIndex: ChunkIndex, status: ASYNC_ERROR, error: unknown];
 type ChunkData = PromiseChunk | IterableChunk;
 type PlaceholderValue = 0 & { __placeholder: true };
 export function isPromise(value: unknown): value is Promise<unknown> {
@@ -164,11 +159,7 @@ async function* createBatchStreamProducer(
         return [idx, PROMISE_STATUS_FULFILLED, encode(next, path)];
       } catch (cause) {
         opts.onError?.({ error: cause, path });
-        return [
-          idx,
-          PROMISE_STATUS_REJECTED,
-          opts.formatError?.({ error: cause, path }),
-        ];
+        return [idx, ASYNC_ERROR, opts.formatError?.({ error: cause, path })];
       }
     });
   }
@@ -197,11 +188,7 @@ async function* createBatchStreamProducer(
         }
       } catch (cause) {
         opts.onError?.({ error: cause, path });
-        return [
-          idx,
-          ASYNC_ITERABLE_STATUS_ERROR,
-          opts.formatError?.({ error: cause, path }),
-        ];
+        return [idx, ASYNC_ERROR, opts.formatError?.({ error: cause, path })];
       } finally {
         await iterator.return?.();
       }
@@ -581,7 +568,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
             switch (status) {
               case PROMISE_STATUS_FULFILLED:
                 return decode(data);
-              case PROMISE_STATUS_REJECTED:
+              case ASYNC_ERROR:
                 throw (
                   opts.formatError?.({ error: data }) ?? new AsyncError(data)
                 );
@@ -610,7 +597,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
                   break;
                 case ASYNC_ITERABLE_STATUS_RETURN:
                   return decode(data);
-                case ASYNC_ITERABLE_STATUS_ERROR:
+                case ASYNC_ERROR:
                   throw (
                     opts.formatError?.({ error: data }) ?? new AsyncError(data)
                   );
