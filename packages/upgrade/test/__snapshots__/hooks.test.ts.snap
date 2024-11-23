@@ -2,9 +2,10 @@
 
 exports[`basic.ts 1`] = `
 "import { useQuery } from '@tanstack/react-query';
-import { trpc } from './trpc';
+import { useTRPC } from './trpc';
 
 export function Component() {
+  const trpc = useTRPC();
   useQuery(trpc.post.list.queryOptions());
   useQuery(trpc.post.queryOptions());
   useQuery(trpc.a.b.c.d.queryOptions());
@@ -22,9 +23,10 @@ exports[`existing-rq.ts 1`] = `""`;
 
 exports[`existing-rq-mix.ts 1`] = `
 "import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
-import { trpc } from './trpc';
+import { useTRPC } from './trpc';
 
 export function Component() {
+  const trpc = useTRPC();
   useQuery({ queryKey: ['a'], queryFn: () => 1 });
   useMutation({ mutationFn: () => 1 });
 
@@ -37,9 +39,10 @@ export function Component() {
 
 exports[`hooks-basic-query.ts 1`] = `
 "import { useQuery } from '@tanstack/react-query';
-import { trpc } from './trpc';
+import { useTRPC } from './trpc';
 
 export function Component() {
+  const trpc = useTRPC();
   useQuery(trpc.post.list.queryOptions());
   useQuery(trpc.post.queryOptions());
   useQuery(trpc.a.b.c.d.queryOptions());
@@ -55,9 +58,10 @@ export function Component() {
 
 exports[`suspense-destructuring.ts 1`] = `
 "import { useSuspenseQuery } from '@tanstack/react-query';
-import { trpc } from './trpc';
+import { useTRPC } from './trpc';
 
 export function Component() {
+  const trpc = useTRPC();
   const query = useSuspenseQuery(trpc.post.list.queryOptions());
 
   const data = query.data;
@@ -68,11 +72,11 @@ export function Component() {
 `;
 
 exports[`with-invalidate.ts 1`] = `
-"import { useMutation, useQuery } from '@tanstack/react-query';
-import { trpc } from './trpc';
+"import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
 
 export function Component() {
-  const { data } = useQuery(trpc.post.list.queryOptions());
+  const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const mutation = useMutation(

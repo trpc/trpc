@@ -16,16 +16,23 @@ const formatFile = async (path: string, source: string) => {
 const testFixture = async (file: string) => {
   const source = readFileSync(file, 'utf-8');
 
-  const transformed = applyTransform(transform, {}, { source });
+  const transformed = applyTransform(
+    transform,
+    { trpcFile: './trpc', trpcImportName: 'trpc' },
+    { source },
+    {},
+  );
   const formatted = await formatFile(file, transformed);
 
   expect(formatted).toMatchSnapshot();
 };
 
-const literal = './fixtures';
+const literal = './fixtures'; // idk why but Vite seems to do some shit when the string is in-lined to URL
 const fixturesDir = new URL(literal, import.meta.url).pathname;
 
-const fixtures = readdirSync(fixturesDir);
+const ONLY_RUN: string[] = [];
+
+const fixtures = ONLY_RUN.length ? ONLY_RUN : readdirSync(fixturesDir);
 it.each(fixtures)(
   '%s',
   async (file) => await testFixture(join(fixturesDir, file)),
