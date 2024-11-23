@@ -551,11 +551,11 @@ export async function jsonlStreamConsumer<THead>(opts: {
     const [_path, type, chunkId] = value;
 
     const controller = streamManager.getOrCreate(chunkId);
-    const reader = controller.getReader();
 
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
         return run(async () => {
+          const reader = controller.getReader();
           try {
             const { value } = await reader.read();
             if (value instanceof StreamInterruptedError) {
@@ -571,12 +571,14 @@ export async function jsonlStreamConsumer<THead>(opts: {
                 );
             }
           } finally {
+            reader.releaseLock();
             controller.close();
           }
         });
       }
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
         async function* generator() {
+          const reader = controller.getReader();
           try {
             while (true) {
               const { value } = await reader.read();
@@ -599,6 +601,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               }
             }
           } finally {
+            reader.releaseLock();
             controller.close();
           }
         }
