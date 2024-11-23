@@ -448,17 +448,13 @@ interface StreamController {
  * Creates a handler for managing stream controllers and their lifecycle
  */
 function createStreamManager(abortController: AbortController) {
-  const deferredMap = new Map<ChunkIndex, Deferred<StreamController>>();
   const controllerEsqueMap = new Map<ChunkIndex, StreamController>();
 
   /**
    * Checks if there are no pending controllers or deferred promises
    */
   function isEmpty() {
-    return (
-      deferredMap.size === 0 &&
-      Array.from(controllerEsqueMap.values()).every((c) => c.closed)
-    );
+    return Array.from(controllerEsqueMap.values()).every((c) => c.closed);
   }
 
   return {
