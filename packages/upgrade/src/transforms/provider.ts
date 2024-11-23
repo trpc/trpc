@@ -1,7 +1,6 @@
 import type { API, FileInfo, Options } from 'jscodeshift';
 
 interface TransformOptions extends Options {
-  trpcFile?: string;
   trpcImportName?: string;
 }
 
@@ -10,31 +9,12 @@ export default function transform(
   api: API,
   options: TransformOptions,
 ) {
-  const { trpcFile, trpcImportName, appRouterImportFile, appRouterImportName } =
-    options;
+  const { trpcImportName } = options;
+  let routerName: string | undefined = undefined;
 
   const j = api.jscodeshift;
   const root = j(file.source);
   let dirtyFlag = false;
-
-  function upsertAppRouterImport() {
-    if (
-      root
-        .find(j.ImportDeclaration, { source: { value: appRouterImportFile } })
-        .size() === 0
-    ) {
-      root
-        .find(j.ImportDeclaration)
-        .at(-1)
-        .insertAfter(
-          j.importDeclaration(
-            [j.importSpecifier(j.identifier(appRouterImportName))],
-            j.literal(appRouterImportFile),
-            'type',
-          ),
-        );
-    }
-  }
 
   // Find the variable declaration for `trpc`
   root.find(j.VariableDeclaration).forEach((path) => {
@@ -48,6 +28,11 @@ export default function transform(
         j.Identifier.check(declaration.init.callee) &&
         declaration.init.callee.name === 'createTRPCReact'
       ) {
+        // Get router name ( TODO : should probably get this from the TS compiler along with the import path)
+        routerName =
+          declaration.init.original?.typeParameters?.params?.[0]?.typeName
+            ?.name;
+
         // Replace the `createTRPCReact` call with `createTRPCContext`
         declaration.init.callee.name = 'createTRPCContext';
 
@@ -89,7 +74,7 @@ export default function transform(
       });
   }
 
-  // Replace trpc.createClient with createTRPCClient
+  // Replace trpc.createClient with createTRPCClient<TRouter>
   root
     .find(j.CallExpression, {
       callee: {
@@ -99,12 +84,13 @@ export default function transform(
     })
     .forEach((path) => {
       path.node.callee = j.identifier('createTRPCClient');
-      // Add the type parameter `<AppRouter>`
-      path.node.typeParameters = j.tsTypeParameterInstantiation([
-        j.tsTypeReference(j.identifier(appRouterImportName)),
-      ]);
-      upsertAppRouterImport();
       dirtyFlag = true;
+
+      if (routerName) {
+        (path.node as any).typeParameters = j.tsTypeParameterInstantiation([
+          j.tsTypeReference(j.identifier(routerName)),
+        ]);
+      }
     });
 
   // Replace <trpc.Provider client={...} with <TRPCProvider trpcClient={...}
@@ -146,13 +132,11 @@ export default function transform(
 
     // Replace trpc import with TRPCProvider
     root
-      .find(j.ImportDeclaration, {
-        source: { value: trpcFile },
+      .find(j.ImportSpecifier, {
+        imported: { name: trpcImportName },
       })
       .forEach((path) => {
-        path.node.specifiers = [
-          j.importSpecifier(j.identifier('TRPCProvider')),
-        ];
+        path.node.name = j.identifier('TRPCProvider');
       });
   }
 

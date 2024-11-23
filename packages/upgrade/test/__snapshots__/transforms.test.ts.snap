@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`basic.ts 1`] = `
+exports[`hooks basic.ts 1`] = `
 "import { useQuery } from '@tanstack/react-query';
 import { useTRPC } from './trpc';
 
@@ -19,9 +19,9 @@ export function Component() {
 "
 `;
 
-exports[`existing-rq.ts 1`] = `""`;
+exports[`hooks existing-rq.ts 1`] = `""`;
 
-exports[`existing-rq-mix.ts 1`] = `
+exports[`hooks existing-rq-mix.ts 1`] = `
 "import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
 import { useTRPC } from './trpc';
 
@@ -37,7 +37,27 @@ export function Component() {
 "
 `;
 
-exports[`suspense-destructuring.ts 1`] = `
+exports[`hooks multiple-functions.ts 1`] = `
+"import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+export function Component1() {
+  const trpc = useTRPC();
+  useQuery(trpc.post.list.queryOptions());
+  useQuery(trpc.post.queryOptions());
+  useQuery(trpc.a.b.c.d.queryOptions());
+}
+
+export function Component2() {
+  const trpc = useTRPC();
+  useQuery(trpc.post.list.queryOptions());
+  useQuery(trpc.post.queryOptions());
+  useQuery(trpc.a.b.c.d.queryOptions());
+}
+"
+`;
+
+exports[`hooks suspense-destructuring.ts 1`] = `
 "import {
   useSuspenseInfiniteQuery,
   useSuspenseQuery,
@@ -73,12 +93,22 @@ export function Component(channelId: string) {
       },
     ),
   );
+
   const data3 = query3.data;
+
+  const { data: data4 } = useSuspenseInfiniteQuery(
+    trpc.post.infinite.infiniteQueryOptions(
+      { channelId },
+      {
+        getNextPageParam: (d) => d.nextCursor,
+      },
+    ),
+  );
 }
 "
 `;
 
-exports[`with-invalidate.ts 1`] = `
+exports[`hooks with-invalidate.ts 1`] = `
 "import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from './trpc';
 
@@ -92,5 +122,15 @@ export function Component() {
     }),
   );
 }
+"
+`;
+
+exports[`provider basic.ts 1`] = `
+"'use client';
+
+import type { AppRouter } from '@acme/api';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 "
 `;

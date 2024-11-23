@@ -1,18 +1,19 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import path from 'path';
-import { Command as CLICommand, Prompt } from '@effect/cli';
-import { Command, FileSystem } from '@effect/platform';
+import { Command as CLICommand, Options, Prompt } from '@effect/cli';
+import { Command } from '@effect/platform';
 import { NodeContext, NodeRuntime } from '@effect/platform-node';
 import {
+  Array,
   Console,
   Effect,
   Match,
+  Order,
   pipe,
   Predicate,
   Stream,
   String,
 } from 'effect';
-import ignore from 'ignore';
 import type { SourceFile } from 'typescript';
 import {
   createProgram,
@@ -25,9 +26,9 @@ import { version } from '../../package.json';
 
 const assertCleanGitTree = Command.string(Command.make('git', 'status')).pipe(
   Effect.filterOrFail(
-    (status) => status.includes('nothing to commit'),
+    String.includes('nothing to commit'),
     () =>
-      'Git tree is not clean, please commit your changes before running the migrator',
+      'Git tree is not clean, please commit your changes and try again, or run with `--force`',
   ),
 );
 
@@ -47,28 +48,32 @@ const installPackage = (packageName: string) => {
 
 const filterIgnored = (files: readonly SourceFile[]) =>
   Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
-    const ignores = yield* fs
-      .readFileString(path.join(process.cwd(), '.gitignore'))
-      .pipe(
-        Effect.map((content) => content.split('\n')),
-        Effect.map((patterns) => ignore().add(patterns)),
-      );
+    const ignores = yield* Command.string(
+      Command.make('git', 'check-ignore', '**/*'),
+    ).pipe(Effect.map((_) => _.split('\n')));
+
+    yield* Effect.log(
+      'All files in program:',
+      files.map((_) => _.fileName),
+    );
+    yield* Effect.log('Ignored files:', ignores);
 
     // Ignore "common files"
-    const relativeFilePaths = files
+    const filteredSourcePaths = files
       .filter(
         (source) =>
-          !source.fileName.includes('node_modules') &&
-          !source.fileName.includes('packages/'),
+          source.fileName.startsWith(path.resolve()) && // only look ahead of current directory
+          !source.fileName.includes('/trpc/packages/') && // relative paths when running codemod locally
+          !ignores.includes(source.fileName), // ignored files
       )
-      .map((file) => path.relative(process.cwd(), file.fileName));
+      .map((source) => source.fileName);
 
-    // As well as gitignored?
-    return ignores.filter(relativeFilePaths);
+    yield* Effect.log('Filtered files:', filteredSourcePaths);
+
+    return filteredSourcePaths;
   });
 
-const Program = Effect.succeed(
+const TSProgram = Effect.succeed(
   findConfigFile(process.cwd(), sys.fileExists),
 ).pipe(
   Effect.filterOrFail(Predicate.isNotNullable, () => 'No tsconfig found'),
@@ -84,73 +89,90 @@ const Program = Effect.succeed(
   ),
 );
 
+// FIXME :: hacky
 const transformPath = (path: string) =>
   process.env.DEV ? path : path.replace('../', './').replace('.ts', '.cjs');
 
-const prompts = CLICommand.prompt(
-  'transforms',
-  Prompt.multiSelect({
-    message: 'Select transforms to run',
-    choices: [
-      {
-        title: 'Migrate Hooks to xxxOptions API',
-        value: require.resolve(
-          transformPath('../transforms/hooksToOptions.ts'),
-        ),
-      },
-      {
-        title: 'Migrate context provider setup',
-        value: require.resolve(transformPath('../transforms/provider.ts')),
-      },
-    ],
-  }),
-  (_) =>
-    Effect.gen(function* () {
-      // yield* assertCleanGitTree;
-      const program = yield* Program;
-      const sourceFiles = program.getSourceFiles();
+const force = Options.boolean('force').pipe(
+  Options.withAlias('f'),
+  Options.withDefault(false),
+  Options.withDescription('Skip git status check, use with caution'),
+);
 
-      // Make sure provider transform runs first if it's selected
-      _.sort((a, b) =>
-        a.includes('provider.ts') ? -1 : b.includes('provider.ts') ? 1 : 0,
+/**
+ * TODO: Instead of default values these should be detected automatically from the TS program
+ */
+const trpcFile = Options.text('trpcFile').pipe(
+  Options.withAlias('f'),
+  Options.withDefault('~/trpc'),
+  Options.withDescription('Path to the trpc import file'),
+);
+
+const trpcImportName = Options.text('trpcImportName').pipe(
+  Options.withAlias('i'),
+  Options.withDefault('trpc'),
+  Options.withDescription('Name of the trpc import'),
+);
+
+const rootComamnd = CLICommand.make(
+  'upgrade',
+  {
+    force,
+    trpcFile,
+    trpcImportName,
+  },
+  (args) =>
+    Effect.gen(function* () {
+      if (!args.force) {
+        yield* assertCleanGitTree;
+      }
+
+      const transforms = yield* Effect.map(
+        Prompt.multiSelect({
+          message: 'Select transforms to run',
+          choices: [
+            {
+              title: 'Migrate Hooks to xxxOptions API',
+              value: require.resolve(
+                transformPath('../transforms/hooksToOptions.ts'),
+              ),
+            },
+            {
+              title: 'Migrate context provider setup',
+              value: require.resolve(
+                transformPath('../transforms/provider.ts'),
+              ),
+            },
+          ],
+        }),
+        // Make sure provider transform runs first if it's selected
+        Array.sortWith((a) => !a.includes('provider.ts'), Order.boolean),
       );
 
-      /**
-       * TODO: Detect these automatically
-       */
-      const appRouterImportFile = '~/server/routers/_app';
-      const appRouterImportName = 'AppRouter';
-      const trpcFile = '~/lib/trpc';
-      const trpcImportName = 'trpc';
+      const program = yield* TSProgram;
+      const sourceFiles = program.getSourceFiles();
 
       const commitedFiles = yield* filterIgnored(sourceFiles);
-      yield* Effect.forEach(_, (transform) => {
+      yield* Effect.forEach(transforms, (transform) => {
         return pipe(
           Effect.log('Running transform', transform),
           Effect.flatMap(() =>
             Effect.tryPromise(async () =>
               import('jscodeshift/src/Runner.js').then(({ run }) =>
-                run(transform.replace('file://', ''), commitedFiles, {
-                  appRouterImportFile,
-                  appRouterImportName,
-                  trpcFile,
-                  trpcImportName,
-                }),
+                run(transform, commitedFiles, args),
               ),
             ),
           ),
-          Effect.map((res) => Effect.log('Transform result', res)),
+          Effect.map((_) => Effect.log('Transform result', _)),
         );
       });
 
       yield* Effect.log('Installing @trpc/tanstack-react-query');
       yield* installPackage('@trpc/tanstack-react-query');
-
-      // TODO: Format project
     }),
 );
 
-const cli = CLICommand.run(prompts, {
+const cli = CLICommand.run(rootComamnd, {
   name: 'tRPC Upgrade CLI',
   version: `v${version}`,
 });

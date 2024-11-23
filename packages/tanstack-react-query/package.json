@@ -1,6 +1,6 @@
 {
   "name": "@trpc/tanstack-react-query",
-  "version": "10.45.1",
+  "version": "0.0.0-alpha.2",
   "description": "Tanstack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",

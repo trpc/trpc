@@ -22,4 +22,11 @@ export function Component(channelId: string) {
       getNextPageParam: (d) => d.nextCursor,
     },
   );
+
+  const [data4] = trpc.post.infinite.useSuspenseInfiniteQuery(
+    { channelId },
+    {
+      getNextPageParam: (d) => d.nextCursor,
+    },
+  );
 }

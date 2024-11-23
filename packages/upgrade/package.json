@@ -1,8 +1,16 @@
 {
-  "name": "trpc-upgrade",
-  "version": "0.0.0-alpha.0",
-  "private": true,
+  "name": "@trpc/upgrade",
+  "version": "0.0.0-alpha.3",
+  "description": "Upgrade scripts for tRPC",
+  "author": "juliusmarminge",
+  "license": "MIT",
   "bin": "./dist/cli.cjs",
+  "homepage": "https://trpc.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/upgrade"
+  },
   "exports": {
     "./transforms/hooksToOptions": {
       "require": "./dist/transforms/hooksToOptions.cjs"
@@ -15,12 +23,19 @@
     "build": "bunchee",
     "run": "tsx src/cli.ts"
   },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "package.json",
+    "!**/*.test.*",
+    "!**/__tests__"
+  ],
   "dependencies": {
     "@effect/cli": "0.48.25",
     "@effect/platform": "0.69.25",
     "@effect/platform-node": "0.64.27",
     "effect": "3.10.16",
-    "ignore": "^6.0.2",
     "jscodeshift": "17.1.1",
     "typescript": "^5.6.2"
   },
@@ -30,5 +45,11 @@
     "bunchee": "5.6.1",
     "esbuild": "0.19.2",
     "tsx": "^4.0.0"
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
 }

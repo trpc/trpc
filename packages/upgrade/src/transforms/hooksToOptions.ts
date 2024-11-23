@@ -13,7 +13,6 @@ import type {
 } from 'jscodeshift';
 
 interface TransformOptions extends Options {
-  trpcFile?: string;
   trpcImportName?: string;
 }
 
@@ -61,9 +60,9 @@ export default function transform(
   api: API,
   options: TransformOptions,
 ) {
-  const { trpcFile, trpcImportName } = options;
-  if (!trpcFile || !trpcImportName) {
-    throw new Error('trpcFile and trpcImportName are required');
+  const { trpcImportName } = options;
+  if (!trpcImportName) {
+    throw new Error('trpcImportName is required');
   }
 
   const j = api.jscodeshift;
@@ -72,44 +71,27 @@ export default function transform(
 
   // Traverse all functions, and _do stuff_
   root.find(j.FunctionDeclaration).forEach((path) => {
-    if (j(path).find(j.Identifier, { name: trpcImportName }).size() > 0) {
-      updateTRPCImport(path);
-    }
-
     replaceHooksWithOptions(path);
     removeSuspenseDestructuring(path);
     migrateUseUtils(path);
   });
   root.find(j.ArrowFunctionExpression).forEach((path) => {
-    if (j(path).find(j.Identifier, { name: trpcImportName }).size() > 0) {
-      updateTRPCImport(path);
-    }
-
     replaceHooksWithOptions(path);
     removeSuspenseDestructuring(path);
     migrateUseUtils(path);
   });
 
+  if (dirtyFlag) {
+    updateTRPCImport();
+  }
+
   /**
    * === HELPER FUNCTIONS BELOW ===
    */
 
-  function updateTRPCImport(
+  function ensureUseTRPCCall(
     path: ASTPath<FunctionDeclaration | ArrowFunctionExpression>,
   ) {
-    const specifier = root
-      .find(j.ImportDeclaration, {
-        source: { value: trpcFile },
-      })
-      .find(j.ImportSpecifier, { imported: { name: trpcImportName } });
-
-    if (specifier.size() === 0) {
-      return;
-    }
-
-    specifier.replaceWith(j.importSpecifier(j.identifier('useTRPC')));
-    dirtyFlag = true;
-
     const variableDeclaration = j.variableDeclaration('const', [
       j.variableDeclarator(
         j.identifier(trpcImportName!),
@@ -118,10 +100,21 @@ export default function transform(
     ]);
 
     if (j.FunctionDeclaration.check(path.node)) {
-      const body = path.node.body.body;
-      body.unshift(variableDeclaration);
+      path.node.body.body.unshift(variableDeclaration);
+      dirtyFlag = true;
     } else if (j.BlockStatement.check(path.node.body)) {
       path.node.body.body.unshift(variableDeclaration);
+      dirtyFlag = true;
+    }
+  }
+
+  function updateTRPCImport() {
+    const specifier = root.find(j.ImportSpecifier, {
+      imported: { name: trpcImportName },
+    });
+    if (specifier.size() > 0) {
+      specifier.replaceWith(j.importSpecifier(j.identifier('useTRPC')));
+      dirtyFlag = true;
     }
   }
 
@@ -148,11 +141,12 @@ export default function transform(
   }
 
   function replaceHooksWithOptions(
-    path: ASTPath<FunctionDeclaration | ArrowFunctionExpression>,
+    fnPath: ASTPath<FunctionDeclaration | ArrowFunctionExpression>,
   ) {
     // REplace proxy-hooks with useX(options())
+    let hasInserted = false;
     for (const [hook, { fn, lib }] of Object.entries(hookToOptions)) {
-      j(path)
+      j(fnPath)
         .find(j.CallExpression, {
           callee: {
             property: { name: hook },
@@ -170,6 +164,11 @@ export default function transform(
 
           // Rename the hook to the options function
           memberExpr.property.name = fn;
+
+          if (!hasInserted) {
+            ensureUseTRPCCall(fnPath);
+            hasInserted = true;
+          }
 
           // Wrap it in the hook call
           j(path).replaceWith(
@@ -237,7 +236,7 @@ export default function transform(
 
                 // Replace util.PATH.proxyMethod() with trpc.PATH.queryFilter()
                 const proxyMethod = memberExpr.property.name as ProxyMethod;
-                memberExpr.object.object = j.identifier('trpc');
+                memberExpr.object.object = j.identifier(trpcImportName!);
                 memberExpr.property = j.identifier('queryFilter');
 
                 // Wrap it in queryClient.utilMethod()
@@ -285,8 +284,6 @@ export default function transform(
           return;
         }
 
-        console.log(declarator.init.callee.name);
-
         const tuple = j.ArrayPattern.check(declarator?.id)
           ? declarator.id
           : null;
@@ -297,7 +294,7 @@ export default function transform(
           ? tuple.elements[1].name
           : null;
 
-        if (declarator && queryName) {
+        if (queryName) {
           declarator.id = j.identifier(queryName);
           dirtyFlag = true;
 
@@ -311,6 +308,12 @@ export default function transform(
               ]),
             );
           }
+        } else if (dataName) {
+          // const [dataName] = ... => const { data: dataName } = ...
+          declarator.id = j.objectPattern([
+            j.property('init', j.identifier('data'), j.identifier(dataName)),
+          ]);
+          dirtyFlag = true;
         }
       });
   }
@@ -319,5 +322,3 @@ export default function transform(
 }
 
 export const parser = 'tsx';
-
-// https://go.codemod.com/ddX54TM

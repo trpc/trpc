@@ -2067,9 +2067,6 @@ importers:
       effect:
         specifier: 3.10.16
         version: 3.10.16
-      ignore:
-        specifier: ^6.0.2
-        version: 6.0.2
       jscodeshift:
         specifier: 17.1.1
         version: 17.1.1(@babel/preset-env@7.23.2(@babel/core@7.25.8))
@@ -10919,10 +10916,6 @@ packages:
 
   ignore@5.3.1:
     resolution: {integrity: sha512-5Fytz/IraMjqpwfd34ke28PTVMjZjJG2MPn5t7OE4eUCUNf8BAa7b5WUS9/Qvr6mwOQS7Mk6vdsMno5he+T8Xw==}
-    engines: {node: '>= 4'}
-
-  ignore@6.0.2:
-    resolution: {integrity: sha512-InwqeHHN2XpumIkMvpl/DCJVrAHgCsG5+cn1XlnLWGwtZBm8QJfSusItfrwx81CTp5agNZqpKU2J/ccC5nGT4A==}
     engines: {node: '>= 4'}
 
   image-size@1.0.2:
@@ -28654,8 +28647,6 @@ snapshots:
       minimatch: 9.0.5
 
   ignore@5.3.1: {}
-
-  ignore@6.0.2: {}
 
   image-size@1.0.2:
     dependencies:
