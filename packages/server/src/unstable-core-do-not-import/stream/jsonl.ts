@@ -307,7 +307,7 @@ export function jsonlStreamProducer(opts: ProducerOptions) {
           isFirst = false;
         },
         flush(controller) {
-          controller.enqueue('\n]');
+          controller.enqueue(']');
         },
       }),
     )
