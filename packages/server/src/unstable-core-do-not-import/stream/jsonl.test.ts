@@ -47,24 +47,40 @@ test('encode/decode with superjson', async () => {
     return aggregated;
   });
 
-  expect(await streamEnd).toMatchInlineSnapshot(`
+  const aggregated = await streamEnd;
+
+  // assert that the JSON is valid
+  JSON.parse(aggregated.join('\n'));
+
+  expect(aggregated).toMatchInlineSnapshot(`
     Array [
+      "[
+    ",
       "{"json":{"0":[[0],[null,0,0]],"1":[[0],[null,0,1]]}}
     ",
+      ",",
       "{"json":[0,0,[[{"foo":{"bar":{"baz":"qux"}},"deferred":0}],["deferred",0,2]]]}
     ",
+      ",",
       "{"json":[1,0,[[0],[null,1,3]]]}
     ",
+      ",",
       "{"json":[2,0,[[42]]]}
     ",
+      ",",
       "{"json":[3,1,[[1]]]}
     ",
+      ",",
       "{"json":[3,1,[[2]]]}
     ",
+      ",",
       "{"json":[3,1,[[3]]]}
     ",
+      ",",
       "{"json":[3,0,[[]]]}
     ",
+      "
+    ]",
     ]
   `);
 

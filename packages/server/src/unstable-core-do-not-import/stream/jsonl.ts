@@ -305,11 +305,22 @@ export function jsonlStreamProducer(opts: ProducerOptions) {
     );
   }
 
+  let isFirst = true;
   return stream
     .pipeThrough(
       new TransformStream({
+        start(controller) {
+          controller.enqueue('[\n');
+        },
         transform(chunk, controller) {
+          if (!isFirst) {
+            controller.enqueue(',');
+          }
           controller.enqueue(JSON.stringify(chunk) + '\n');
+          isFirst = false;
+        },
+        flush(controller) {
+          controller.enqueue('\n]');
         },
       }),
     )
@@ -398,11 +409,16 @@ function createConsumerStream<THead>(
   return stream.pipeThrough(
     new TransformStream<string, ChunkData | THead>({
       transform(line, controller) {
+        if (line === '[' || line === ']') {
+          return;
+        }
+
         if (!sentHead) {
           const head = JSON.parse(line);
           controller.enqueue(head as THead);
           sentHead = true;
         } else {
+          line = line.slice(1);
           const chunk: ChunkData = JSON.parse(line);
           controller.enqueue(chunk);
         }
