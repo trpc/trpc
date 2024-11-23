@@ -137,27 +137,31 @@ export function sseStreamProducer<TValue = unknown>(
     let value: null | TIteratorValue;
     let chunk: null | SSEvent;
 
-    try {
-      for await (value of iterable) {
-        if (value === PING_SYM) {
-          yield { event: PING_EVENT, data: '' };
-          continue;
-        }
-
-        chunk = isTrackedEnvelope(value)
-          ? { id: value[0], data: value[1] }
-          : { data: value };
-
-        if ('data' in chunk) {
-          chunk.data = JSON.stringify(serialize(chunk.data));
-        }
-
-        yield chunk;
-
-        // free up references for garbage collection
-        value = null;
-        chunk = null;
+    for await (value of iterable) {
+      if (value === PING_SYM) {
+        yield { event: PING_EVENT, data: '' };
+        continue;
       }
+
+      chunk = isTrackedEnvelope(value)
+        ? { id: value[0], data: value[1] }
+        : { data: value };
+
+      if ('data' in chunk) {
+        chunk.data = JSON.stringify(serialize(chunk.data));
+      }
+
+      yield chunk;
+
+      // free up references for garbage collection
+      value = null;
+      chunk = null;
+    }
+  }
+
+  async function* generatorWithErrorHandling(): AsyncIterable<SSEvent, void> {
+    try {
+      yield* generator();
     } catch (cause) {
       if (isAbortError(cause)) {
         // ignore abort errors, send any other errors
@@ -175,7 +179,7 @@ export function sseStreamProducer<TValue = unknown>(
       opts.onCompleted();
     }
   }
-  const stream = readableStreamFrom(generator());
+  const stream = readableStreamFrom(generatorWithErrorHandling());
 
   return stream.pipeThrough(
     new TransformStream({
