@@ -61,7 +61,7 @@ export interface DecorateQueryKeyable {
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    */
-  queryFilter: (filters?: TRPCQueryFilters) => QueryFilters;
+  queryFilter: (input?: undefined, filters?: TRPCQueryFilters) => QueryFilters;
 }
 
 export type InferInput<
@@ -257,10 +257,9 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
     const utilName = path.pop() as UtilsMethods;
     const [arg1, arg2] = args as any[];
 
-    const queryType = getQueryType(utilName);
-
     function getQueryKey() {
-      // TODO: could be arg1 might not always be an input, need to know if we're on a leaf node or not to decide
+      const queryType = getQueryType(utilName);
+
       return getQueryKeyInternal(path, arg1, queryType ?? 'any');
     }
 
@@ -275,7 +274,6 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       },
       queryFilter: (): QueryFilters => {
         return {
-          // TODO: could be arg1 or arg2, need to know if we're on a leaf node or not to decide
           ...arg2,
           queryKey: getQueryKey(),
         };
