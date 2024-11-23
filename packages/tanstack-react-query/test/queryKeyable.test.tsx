@@ -88,6 +88,35 @@ describe('get queryFilter', () => {
 
     ctx.renderApp(<Component />);
   });
+
+  test('type inference for query filters', async () => {
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+      const query = useQueryClient();
+
+      const a = trpc.bluesky.post.byId.queryFilter(
+        { id: '1' },
+        {
+          predicate(query) {
+            const data = query.setData('__result');
+            assertType<'__result' | undefined>(data);
+
+            return true;
+          },
+        },
+      );
+      const b = query.getQueryData(a.queryKey!);
+      assertType<'__result' | undefined>(b);
+
+      return 'some text';
+    }
+
+    ctx.renderApp(<Component />);
+  });
 });
 
 describe('get queryKey', () => {
@@ -100,9 +129,6 @@ describe('get queryKey', () => {
       const trpc = useTRPC();
       const query = useQueryClient();
 
-      const a = query.getQueryData(
-        trpc.bluesky.post.byId.queryKey({ id: '1' }),
-      );
       query.setQueryData(
         trpc.bluesky.post.byId.queryKey({ id: '1' }),
         '__result',
