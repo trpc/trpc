@@ -260,6 +260,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
     const queryType = getQueryType(utilName);
 
     function getQueryKey() {
+      // TODO: could be arg1 might not always be an input, need to know if we're on a leaf node or not to decide
       return getQueryKeyInternal(path, arg1, queryType ?? 'any');
     }
 
