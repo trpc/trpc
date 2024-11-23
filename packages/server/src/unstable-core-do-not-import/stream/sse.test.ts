@@ -46,9 +46,6 @@ test('e2e, server-sent events (SSE)', async () => {
     const stream = sseStreamProducer({
       data: data(lastEventId ?? undefined),
       serialize: (v) => SuperJSON.serialize(v),
-      onCompleted: () => {
-        //
-      },
     }).pipeThrough(
       // debug stream
       new TransformStream({
@@ -199,9 +196,6 @@ test('SSE on serverless - emit and disconnect early', async () => {
       data: data(asNumber, reqAbortCtrl.signal),
       serialize: (v) => SuperJSON.serialize(v),
       emitAndEndImmediately: true,
-      onCompleted: () => {
-        //
-      },
     }).pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
