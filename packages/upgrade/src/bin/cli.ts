@@ -95,7 +95,7 @@ const prompts = CLICommand.prompt(
       {
         title: 'Migrate Hooks to xxxOptions API',
         value: require.resolve(
-          transformPath('../transforms/hooks-to-options.ts'),
+          transformPath('../transforms/hooksToOptions.ts'),
         ),
       },
       {

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { applyTransform } from 'jscodeshift/src/testUtils';
 import { format, resolveConfig } from 'prettier';
 import { expect, it } from 'vitest';
-import * as transform from '../src/transforms/hooks-to-options';
+import * as transform from '../src/transforms/hooksToOptions';
 
 const formatFile = async (path: string, source: string) => {
   const prettierConfig = await resolveConfig(path);

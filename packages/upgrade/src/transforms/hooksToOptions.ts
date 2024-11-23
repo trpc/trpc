@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-console */
 import type {
   API,
@@ -111,7 +112,7 @@ export default function transform(
 
     const variableDeclaration = j.variableDeclaration('const', [
       j.variableDeclarator(
-        j.identifier(trpcImportName),
+        j.identifier(trpcImportName!),
         j.callExpression(j.identifier('useTRPC'), []),
       ),
     ]);
@@ -158,15 +159,24 @@ export default function transform(
           },
         })
         .forEach((path) => {
-          const memberExpr = path.node.callee;
+          const memberExpr = path.node.callee as MemberExpression;
+          if (
+            !j.MemberExpression.check(memberExpr) ||
+            !j.Identifier.check(memberExpr.property)
+          ) {
+            console.warn('Failed to identify hook call expression', path.node);
+            return;
+          }
+
+          // Rename the hook to the options function
           memberExpr.property.name = fn;
 
-          const useQueryFunction = j.callExpression(j.identifier(hook), [
-            path.node,
-          ]);
-          j(path).replaceWith(useQueryFunction);
-
+          // Wrap it in the hook call
+          j(path).replaceWith(
+            j.callExpression(j.identifier(hook), [path.node]),
+          );
           ensureImported(lib, hook);
+
           dirtyFlag = true;
         });
     }
