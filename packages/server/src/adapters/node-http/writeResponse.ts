@@ -6,6 +6,9 @@ async function writeResponseBodyChunk(
   res: NodeHTTPResponse,
   chunk: Uint8Array,
 ) {
+  // useful for debugging 🙃
+  // console.debug('writing', new TextDecoder().decode(chunk));
+
   if (res.write(chunk) === false) {
     await new Promise<void>((resolve, reject) => {
       const onError = (err: unknown) => {
