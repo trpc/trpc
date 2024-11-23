@@ -60,10 +60,6 @@ export interface SSEStreamProducerOptions<TValue = unknown> {
    * @default {}
    */
   client?: SSEClientOptions;
-  /**
-   * Callback function that is called when the stream ends
-   */
-  onCompleted: () => void;
 }
 
 const PING_EVENT = 'ping';
@@ -176,7 +172,8 @@ export function sseStreamProducer<TValue = unknown>(
         data: JSON.stringify(serialize(data)),
       };
     } finally {
-      opts.onCompleted();
+      // maybe later.
+      // opts.onCompleted();
     }
   }
   const stream = readableStreamFrom(generatorWithErrorHandling());
