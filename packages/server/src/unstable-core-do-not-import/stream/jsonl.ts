@@ -448,18 +448,18 @@ interface StreamController {
  * Creates a handler for managing stream controllers and their lifecycle
  */
 function createStreamManager(abortController: AbortController) {
-  const controllerEsqueMap = new Map<ChunkIndex, StreamController>();
+  const controllerMap = new Map<ChunkIndex, StreamController>();
 
   /**
    * Checks if there are no pending controllers or deferred promises
    */
   function isEmpty() {
-    return Array.from(controllerEsqueMap.values()).every((c) => c.closed);
+    return Array.from(controllerMap.values()).every((c) => c.closed);
   }
 
   return {
-    getOrCreateStreamController(chunkId: ChunkIndex): StreamController {
-      const c = controllerEsqueMap.get(chunkId);
+    getOrCreate(chunkId: ChunkIndex): StreamController {
+      const c = controllerMap.get(chunkId);
       if (c) {
         return c;
       }
@@ -494,13 +494,7 @@ function createStreamManager(abortController: AbortController) {
         closed: false,
         getReader: () => stream.getReader(),
       };
-      controllerEsqueMap.set(chunkId, controllerEsque);
-
-      const deferred = deferredMap.get(chunkId);
-      if (deferred) {
-        deferred.resolve(controllerEsque);
-        deferredMap.delete(chunkId);
-      }
+      controllerMap.set(chunkId, controllerEsque);
 
       return controllerEsque;
     },
@@ -515,10 +509,7 @@ function createStreamManager(abortController: AbortController) {
      */
     cancelAll(reason: unknown) {
       const error = new StreamInterruptedError(reason);
-      for (const deferred of deferredMap.values()) {
-        deferred.reject(error);
-      }
-      for (const controller of controllerEsqueMap.values()) {
+      for (const controller of controllerMap.values()) {
         controller.enqueue(error);
         controller.close();
       }
@@ -559,7 +550,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   function decodeChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const controller = streamManager.getOrCreateStreamController(chunkId);
+    const controller = streamManager.getOrCreate(chunkId);
     const reader = controller.getReader();
 
     switch (type) {
@@ -657,7 +648,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const chunk = chunkOrHead as ChunkData;
           const [idx] = chunk;
 
-          const controller = streamManager.getOrCreateStreamController(idx);
+          const controller = streamManager.getOrCreate(idx);
           controller.enqueue(chunk);
         },
         close: closeOrAbort,
