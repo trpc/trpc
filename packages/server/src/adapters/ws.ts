@@ -272,7 +272,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
 
         const iterable = isObservable(result)
-          ? observableToAsyncIterable(result)
+          ? observableToAsyncIterable(result, abortController.signal)
           : result;
 
         const iterator: AsyncIterator<unknown> =
