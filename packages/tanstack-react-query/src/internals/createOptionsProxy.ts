@@ -39,6 +39,7 @@ import type {
   QueryType,
   ResolverDef,
   TRPCMutationKey,
+  TRPCQueryFilters,
   TRPCQueryKey,
 } from './types';
 import {
@@ -108,7 +109,10 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    */
-  queryFilter: (input?: TDef['input']) => QueryFilters;
+  queryFilter: (
+    input?: TDef['input'],
+    filters?: Partial<TRPCQueryFilters<TDef['output'], TDef['errorShape']>>,
+  ) => TRPCQueryFilters<TDef['output'], TDef['errorShape']>;
 }
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
@@ -254,7 +258,10 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
     const [arg1, arg2] = args as any[];
 
     const queryType = getQueryType(utilName);
-    const queryKey = getQueryKeyInternal(path, arg1, queryType ?? 'any');
+
+    function getQueryKey() {
+      return getQueryKeyInternal(path, arg1, queryType ?? 'any');
+    }
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
       '~types': undefined as any,
@@ -263,11 +270,12 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
         return getMutationKeyInternal(path);
       },
       queryKey: () => {
-        return queryKey;
+        return getQueryKey();
       },
       queryFilter: (): QueryFilters => {
         return {
-          queryKey: queryKey,
+          ...arg2,
+          queryKey: getQueryKey(),
         };
       },
       infiniteQueryOptions: () => {
@@ -275,7 +283,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: queryKey,
+          queryKey: getQueryKey(),
           query: callIt('query'),
         });
       },
@@ -284,7 +292,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: queryKey,
+          queryKey: getQueryKey(),
           query: callIt('query'),
         });
       },
@@ -301,7 +309,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
         return trpcSubscriptionOptions({
           opts: arg2,
           path,
-          queryKey: queryKey,
+          queryKey: getQueryKey(),
           subscribe: callIt('subscription'),
         });
       },
