@@ -1,3 +1,4 @@
+import type { DataTag } from '@tanstack/react-query';
 import { type QueryClient, type QueryFilters } from '@tanstack/react-query';
 import {
   getUntypedClient,
@@ -98,7 +99,9 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
    */
-  queryKey: (input?: TDef['input']) => TRPCQueryKey;
+  queryKey: (
+    input?: TDef['input'],
+  ) => TRPCQueryKey & DataTag<unknown, TDef['output']>;
 
   /**
    * Calculate a Tanstack Query Filter for a Query Procedure

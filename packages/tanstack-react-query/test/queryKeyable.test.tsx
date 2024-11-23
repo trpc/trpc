@@ -1,8 +1,9 @@
 import { getServerAndReactClient } from './__helpers';
+import { useQueryClient } from '@tanstack/react-query';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import { describe, expect, test } from 'vitest';
+import { AssertType, describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
 const testContext = () => {
@@ -37,7 +38,7 @@ describe('get queryFilter', () => {
 
     const { useTRPC } = ctx;
 
-    function Heck() {
+    function Component() {
       const trpc = useTRPC();
 
       expect(trpc.queryFilter()).toMatchInlineSnapshot(`
@@ -82,10 +83,10 @@ describe('get queryFilter', () => {
           }
         `);
 
-      return 'heck';
+      return 'some text';
     }
 
-    ctx.renderApp(<Heck />);
+    ctx.renderApp(<Component />);
   });
 });
 
@@ -95,8 +96,17 @@ describe('get queryKey', () => {
 
     const { useTRPC } = ctx;
 
-    function Heck() {
+    function Component() {
       const trpc = useTRPC();
+      const query = useQueryClient();
+
+      const a = query.getQueryData(
+        trpc.bluesky.post.byId.queryKey({ id: '1' }),
+      );
+      query.setQueryData(
+        trpc.bluesky.post.byId.queryKey({ id: '1' }),
+        '__result',
+      );
 
       expect(trpc.queryKey()).toMatchInlineSnapshot(`Array []`);
       expect(trpc.bluesky.queryKey()).toMatchInlineSnapshot(`
@@ -130,10 +140,36 @@ describe('get queryKey', () => {
           ]
         `);
 
-      return 'heck';
+      return 'some text';
     }
 
-    ctx.renderApp(<Heck />);
+    ctx.renderApp(<Component />);
+  });
+
+  test('type inference for query keys', async () => {
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+      const query = useQueryClient();
+
+      const a = query.getQueryData(
+        trpc.bluesky.post.byId.queryKey({ id: '1' }),
+      );
+      assertType<'__result' | undefined>(a);
+
+      const b = query.setQueryData(
+        trpc.bluesky.post.byId.queryKey({ id: '1' }),
+        '__result',
+      );
+      assertType<'__result' | undefined>(b);
+
+      return 'some text';
+    }
+
+    ctx.renderApp(<Component />);
   });
 });
 
@@ -143,7 +179,7 @@ describe('get mutationKey', () => {
 
     const { useTRPC } = ctx;
 
-    function Heck() {
+    function Component() {
       const trpc = useTRPC();
 
       // @ts-expect-error - not a mutation
@@ -161,9 +197,9 @@ describe('get mutationKey', () => {
         ]
       `);
 
-      return 'heck';
+      return 'some text';
     }
 
-    ctx.renderApp(<Heck />);
+    ctx.renderApp(<Component />);
   });
 });
