@@ -25,17 +25,17 @@ type CHUNK_VALUE_TYPE_PROMISE = typeof CHUNK_VALUE_TYPE_PROMISE;
 const CHUNK_VALUE_TYPE_ASYNC_ITERABLE = 1;
 type CHUNK_VALUE_TYPE_ASYNC_ITERABLE = typeof CHUNK_VALUE_TYPE_ASYNC_ITERABLE;
 
-const PROMISE_STATUS_FULFILLED = 0;
-type PROMISE_STATUS_FULFILLED = typeof PROMISE_STATUS_FULFILLED;
-const PROMISE_STATUS_REJECTED = 1;
+const PROMISE_STATUS_REJECTED = 0;
 type PROMISE_STATUS_REJECTED = typeof PROMISE_STATUS_REJECTED;
+const PROMISE_STATUS_FULFILLED = 1;
+type PROMISE_STATUS_FULFILLED = typeof PROMISE_STATUS_FULFILLED;
 
-const ASYNC_ITERABLE_STATUS_RETURN = 0;
-type ASYNC_ITERABLE_STATUS_RETURN = typeof ASYNC_ITERABLE_STATUS_RETURN;
-const ASYNC_ITERABLE_STATUS_VALUE = 1;
-type ASYNC_ITERABLE_STATUS_VALUE = typeof ASYNC_ITERABLE_STATUS_VALUE;
-const ASYNC_ITERABLE_STATUS_ERROR = 2;
+const ASYNC_ITERABLE_STATUS_ERROR = 0;
 type ASYNC_ITERABLE_STATUS_ERROR = typeof ASYNC_ITERABLE_STATUS_ERROR;
+const ASYNC_ITERABLE_STATUS_YIELD = 1;
+type ASYNC_ITERABLE_STATUS_YIELD = typeof ASYNC_ITERABLE_STATUS_YIELD;
+const ASYNC_ITERABLE_STATUS_RETURN = 2;
+type ASYNC_ITERABLE_STATUS_RETURN = typeof ASYNC_ITERABLE_STATUS_RETURN;
 
 type ChunkDefinitionKey =
   // root should be replaced
@@ -77,7 +77,7 @@ type IterableChunk =
     ]
   | [
       chunkIndex: ChunkIndex,
-      status: ASYNC_ITERABLE_STATUS_VALUE,
+      status: ASYNC_ITERABLE_STATUS_YIELD,
       value: EncodedValue,
     ]
   | [
@@ -193,7 +193,7 @@ async function* createBatchStreamProducer(
               encode(next.value, path),
             ];
           }
-          yield [idx, ASYNC_ITERABLE_STATUS_VALUE, encode(next.value, path)];
+          yield [idx, ASYNC_ITERABLE_STATUS_YIELD, encode(next.value, path)];
         }
       } catch (cause) {
         opts.onError?.({ error: cause, path });
@@ -605,7 +605,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
               const [_chunkId, status, data] = value as IterableChunk;
 
               switch (status) {
-                case ASYNC_ITERABLE_STATUS_VALUE:
+                case ASYNC_ITERABLE_STATUS_YIELD:
                   yield decode(data);
                   break;
                 case ASYNC_ITERABLE_STATUS_RETURN:

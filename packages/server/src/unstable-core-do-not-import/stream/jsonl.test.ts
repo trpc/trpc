@@ -52,6 +52,8 @@ test('encode/decode with superjson', async () => {
   // assert that the JSON is valid
   JSON.parse(aggregated.join('\n'));
 
+  expect(JSON.parse(aggregated.join('\n'))).toMatchSnapshot();
+
   expect(aggregated).toMatchInlineSnapshot(`
     Array [
       "[
@@ -59,13 +61,13 @@ test('encode/decode with superjson', async () => {
       "{"json":{"0":[[0],[null,0,0]],"1":[[0],[null,0,1]]}}
     ",
       ",",
-      "{"json":[0,0,[[{"foo":{"bar":{"baz":"qux"}},"deferred":0}],["deferred",0,2]]]}
+      "{"json":[0,1,[[{"foo":{"bar":{"baz":"qux"}},"deferred":0}],["deferred",0,2]]]}
     ",
       ",",
-      "{"json":[1,0,[[0],[null,1,3]]]}
+      "{"json":[1,1,[[0],[null,1,3]]]}
     ",
       ",",
-      "{"json":[2,0,[[42]]]}
+      "{"json":[2,1,[[42]]]}
     ",
       ",",
       "{"json":[3,1,[[1]]]}
@@ -77,7 +79,7 @@ test('encode/decode with superjson', async () => {
       "{"json":[3,1,[[3]]]}
     ",
       ",",
-      "{"json":[3,0,[[]]]}
+      "{"json":[3,2,[[]]]}
     ",
       "
     ]",
