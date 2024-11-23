@@ -20,7 +20,7 @@ const testFixture = async (file: string, transform: any) => {
 
   const transformed = applyTransform(
     transform,
-    { trpcFile: './trpc', trpcImportName: 'trpc' },
+    { trpcImportName: 'trpc' },
     { source },
     {},
   );
@@ -30,7 +30,7 @@ const testFixture = async (file: string, transform: any) => {
 };
 
 describe('hooks', () => {
-  const literal = './hooks-fixtures'; // idk why but Vite seems to do some shit when the string is in-lined to URL
+  const literal = './fixtures/hooks'; // idk why but Vite seems to do some shit when the string is in-lined to URL
   const fixturesDir = new URL(literal, import.meta.url).pathname;
 
   const ONLY_RUN: string[] = [];
@@ -43,7 +43,7 @@ describe('hooks', () => {
 });
 
 describe('provider', () => {
-  const literal = './provider-fixtures'; // idk why but Vite seems to do some shit when the string is in-lined to URL
+  const literal = './fixtures/provider'; // idk why but Vite seems to do some shit when the string is in-lined to URL
   const fixturesDir = new URL(literal, import.meta.url).pathname;
 
   const ONLY_RUN: string[] = [];

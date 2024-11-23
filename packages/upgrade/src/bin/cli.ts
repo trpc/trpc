@@ -52,11 +52,11 @@ const filterIgnored = (files: readonly SourceFile[]) =>
       Command.make('git', 'check-ignore', '**/*'),
     ).pipe(Effect.map((_) => _.split('\n')));
 
-    yield* Effect.log(
+    yield* Effect.logDebug(
       'All files in program:',
       files.map((_) => _.fileName),
     );
-    yield* Effect.log('Ignored files:', ignores);
+    yield* Effect.logDebug('Ignored files:', ignores);
 
     // Ignore "common files"
     const filteredSourcePaths = files
@@ -68,7 +68,7 @@ const filterIgnored = (files: readonly SourceFile[]) =>
       )
       .map((source) => source.fileName);
 
-    yield* Effect.log('Filtered files:', filteredSourcePaths);
+    yield* Effect.logDebug('Filtered files:', filteredSourcePaths);
 
     return filteredSourcePaths;
   });
