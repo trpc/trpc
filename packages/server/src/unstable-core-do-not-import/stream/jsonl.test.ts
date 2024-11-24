@@ -49,22 +49,16 @@ test('encode/decode with superjson', async () => {
 
   const aggregated = await streamEnd;
 
-  // assert that the JSON is valid
-  JSON.parse(aggregated.join('\n'));
-
-  expect(JSON.parse(aggregated.join('\n'))).toMatchSnapshot();
-
   expect(aggregated.join('')).toMatchInlineSnapshot(`
-    "[
-    {"json":{"0":[[0],[null,0,0]],"1":[[0],[null,0,1]]}}
-    ,{"json":[0,1,[[{"foo":{"bar":{"baz":"qux"}},"deferred":0}],["deferred",0,2]]]}
-    ,{"json":[1,1,[[0],[null,1,3]]]}
-    ,{"json":[2,1,[[42]]]}
-    ,{"json":[3,1,[[1]]]}
-    ,{"json":[3,1,[[2]]]}
-    ,{"json":[3,1,[[3]]]}
-    ,{"json":[3,2,[[]]]}
-    ]"
+    "{"json":{"0":[[0],[null,0,0]],"1":[[0],[null,0,1]]}}
+    {"json":[0,1,[[{"foo":{"bar":{"baz":"qux"}},"deferred":0}],["deferred",0,2]]]}
+    {"json":[1,1,[[0],[null,1,3]]]}
+    {"json":[2,1,[[42]]]}
+    {"json":[3,1,[[1]]]}
+    {"json":[3,1,[[2]]]}
+    {"json":[3,1,[[3]]]}
+    {"json":[3,2,[[]]]}
+    "
   `);
 
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
