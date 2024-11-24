@@ -119,7 +119,7 @@ async function* createBatchStreamProducer(
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const set = new Set<{
+  const queue = new Set<{
     iterator: AsyncIterator<ChunkData, ChunkData>;
     nextPromise: Promise<IteratorResult<ChunkData, ChunkData>>;
   }>();
@@ -135,7 +135,7 @@ async function* createBatchStreamProducer(
     nextPromise.catch(() => {
       // prevent unhandled promise rejection
     });
-    set.add({
+    queue.add({
       iterator,
       nextPromise,
     });
@@ -252,26 +252,28 @@ async function* createBatchStreamProducer(
   // Process all async iterables in parallel by racing their next values
   try {
     // Process while there are active iterators
-    while (set.size > 0) {
+    while (queue.size > 0) {
       // Race all iterators to get the next value from any of them
       const [entry, res] = await Unpromise.race(
-        Array.from(set).map(async (it) => [it, await it.nextPromise] as const),
+        Array.from(queue).map(
+          async (it) => [it, await it.nextPromise] as const,
+        ),
       );
 
       yield res.value;
 
       // Remove current iterator and re-add if not done
-      set.delete(entry);
+      queue.delete(entry);
       if (!res.done) {
         entry.nextPromise = entry.iterator.next();
-        set.add(entry);
+        queue.add(entry);
       }
     }
   } finally {
     // Properly clean up any remaining iterators by calling return()
     // Ensures resources are released if the loop exits early (e.g. due to error)
-    await Promise.all(Array.from(set).map((it) => it.iterator.return?.()));
-    set.clear();
+    await Promise.all(Array.from(queue).map((it) => it.iterator.return?.()));
+    queue.clear();
   }
 }
 /**
