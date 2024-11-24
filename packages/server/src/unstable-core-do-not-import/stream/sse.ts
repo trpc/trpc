@@ -143,9 +143,7 @@ export function sseStreamProducer<TValue = unknown>(
         ? { id: value[0], data: value[1] }
         : { data: value };
 
-      if ('data' in chunk) {
-        chunk.data = JSON.stringify(serialize(chunk.data));
-      }
+      chunk.data = JSON.stringify(serialize(chunk.data));
 
       yield chunk;
 
