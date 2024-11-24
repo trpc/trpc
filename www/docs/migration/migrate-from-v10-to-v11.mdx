@@ -24,12 +24,6 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
-### Minor updates to `unstable_httpBatchStreamLink` response format (semi-breaking)
-
-No changes on actual usage, but the response format has been updated to return valid JSON-values (in `11.0.0-rc.644`)
-
-If you use this link and have a lot of users actively using your application, you might want to do a change where you first change to use `httpBatchLink` and deploy, then change to use `unstable_httpBatchStreamLink` while you upgrade you app and then deploy again.
-
 ### Moved `reconnectAfterInactivityMs` to `sse.client` (non-breaking)
 
 Updated [HTTP Subscription Link improvements](#http-subscription-link-improvements)-section and related docs.
