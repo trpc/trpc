@@ -451,7 +451,7 @@ interface StreamController {
 /**
  * Creates a handler for managing stream controllers and their lifecycle
  */
-function createStreamManager(abortController: AbortController) {
+function createStreamsManager(abortController: AbortController) {
   const controllerMap = new Map<ChunkIndex, StreamController>();
 
   /**
@@ -549,7 +549,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   }
   let headDeferred: null | Deferred<THead> = createDeferred();
 
-  const streamManager = createStreamManager(opts.abortController);
+  const streamManager = createStreamsManager(opts.abortController);
 
   function decodeChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
