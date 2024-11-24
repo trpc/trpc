@@ -169,9 +169,6 @@ export function sseStreamProducer<TValue = unknown>(
         event: SERIALIZED_ERROR_EVENT,
         data: JSON.stringify(serialize(data)),
       };
-    } finally {
-      // maybe later.
-      // opts.onCompleted();
     }
   }
   const stream = readableStreamFrom(generatorWithErrorHandling());
