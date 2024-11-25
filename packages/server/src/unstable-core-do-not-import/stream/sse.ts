@@ -2,12 +2,12 @@ import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAbortError } from '../http/isAbortError';
 import type { MaybePromise } from '../types';
-import { identity, run } from '../utils';
+import { identity } from '../utils';
 import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
 import { takeWithGrace, withMaxDuration } from './utils/asyncIterable';
-import { createReadableStream } from './utils/createReadableStream';
+import { readableStreamFrom } from './utils/readableStreamFrom';
 import { PING_SYM, withPing } from './utils/withPing';
 
 type Serialize = (value: any) => any;
@@ -66,12 +66,12 @@ const PING_EVENT = 'ping';
 const SERIALIZED_ERROR_EVENT = 'serialized-error';
 const CONNECTED_EVENT = 'connected';
 
-type SSEvent = Partial<{
-  id: string;
+interface SSEvent {
+  id?: string;
   data: unknown;
-  comment: string;
-  event: string;
-}>;
+  comment?: string;
+  event?: string;
+}
 /**
  *
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
@@ -79,8 +79,6 @@ type SSEvent = Partial<{
 export function sseStreamProducer<TValue = unknown>(
   opts: SSEStreamProducerOptions<TValue>,
 ) {
-  const stream = createReadableStream<SSEvent>();
-
   const { serialize = identity } = opts;
 
   const ping: Required<SSEPingOptions> = {
@@ -89,10 +87,6 @@ export function sseStreamProducer<TValue = unknown>(
   };
   const client: SSEClientOptions = opts.client ?? {};
 
-  stream.controller.enqueue({
-    event: CONNECTED_EVENT,
-    data: JSON.stringify(client),
-  });
   if (
     ping.enabled &&
     client.reconnectAfterInactivityMs &&
@@ -103,7 +97,12 @@ export function sseStreamProducer<TValue = unknown>(
     );
   }
 
-  run(async () => {
+  async function* generator(): AsyncIterable<SSEvent, void> {
+    yield {
+      event: CONNECTED_EVENT,
+      data: JSON.stringify(client),
+    };
+
     type TIteratorValue = Awaited<TValue> | typeof PING_SYM;
 
     let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
@@ -129,59 +128,54 @@ export function sseStreamProducer<TValue = unknown>(
       iterable = withPing(iterable, ping.intervalMs);
     }
 
-    try {
-      // We need those declarations outside the loop for garbage collection reasons. If they were
-      // declared inside, they would not be freed until the next value is present.
-      let value: null | TIteratorValue;
-      let chunk: null | SSEvent;
+    // We need those declarations outside the loop for garbage collection reasons. If they were
+    // declared inside, they would not be freed until the next value is present.
+    let value: null | TIteratorValue;
+    let chunk: null | SSEvent;
 
-      for await (value of iterable) {
-        if (value === PING_SYM) {
-          stream.controller.enqueue({ event: PING_EVENT, data: '' });
-          continue;
-        }
-
-        chunk = isTrackedEnvelope(value)
-          ? { id: value[0], data: value[1] }
-          : { data: value };
-        if ('data' in chunk) {
-          chunk.data = JSON.stringify(serialize(chunk.data));
-        }
-
-        stream.controller.enqueue(chunk);
-
-        // free up references for garbage collection
-        value = null;
-        chunk = null;
+    for await (value of iterable) {
+      if (value === PING_SYM) {
+        yield { event: PING_EVENT, data: '' };
+        continue;
       }
-    } catch (err) {
-      if (isAbortError(err)) {
+
+      chunk = isTrackedEnvelope(value)
+        ? { id: value[0], data: value[1] }
+        : { data: value };
+
+      chunk.data = JSON.stringify(serialize(chunk.data));
+
+      yield chunk;
+
+      // free up references for garbage collection
+      value = null;
+      chunk = null;
+    }
+  }
+
+  async function* generatorWithErrorHandling(): AsyncIterable<SSEvent, void> {
+    try {
+      yield* generator();
+    } catch (cause) {
+      if (isAbortError(cause)) {
         // ignore abort errors, send any other errors
         return;
       }
       // `err` must be caused by `opts.data`, `JSON.stringify` or `serialize`.
       // So, a user error in any case.
-      const error = getTRPCErrorFromUnknown(err);
+      const error = getTRPCErrorFromUnknown(cause);
       const data = opts.formatError?.({ error }) ?? null;
-      stream.controller.enqueue({
+      yield {
         event: SERIALIZED_ERROR_EVENT,
         data: JSON.stringify(serialize(data)),
-      });
-    } finally {
-      try {
-        stream.controller.close();
-      } catch {
-        // ignore
-      }
+      };
     }
-  }).catch((err) => {
-    // should not be reached; just in case...
-    stream.controller.error(err);
-  });
+  }
+  const stream = readableStreamFrom(generatorWithErrorHandling());
 
-  return stream.readable.pipeThrough(
-    new TransformStream<SSEvent, string>({
-      transform(chunk, controller) {
+  return stream.pipeThrough(
+    new TransformStream({
+      transform(chunk, controller: TransformStreamDefaultController<string>) {
         if ('event' in chunk) {
           controller.enqueue(`event: ${chunk.event}\n`);
         }
@@ -201,7 +195,7 @@ export function sseStreamProducer<TValue = unknown>(
 }
 
 interface ConsumerStreamResultBase<TConfig extends ConsumerConfig> {
-  eventSource: InstanceType<TConfig['EventSource']>;
+  eventSource: InstanceType<TConfig['EventSource']> | null;
 }
 
 interface ConsumerStreamResultData<TConfig extends ConsumerConfig>
@@ -317,6 +311,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
 
         eventSource.addEventListener(CONNECTED_EVENT, (_msg) => {
           const msg = _msg as EventSourceLike.MessageEvent;
+
           const options: SSEClientOptions = JSON.parse(msg.data);
 
           clientOptions = options;
@@ -412,21 +407,21 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
               promise,
               timeoutMs,
               onTimeout: async () => {
+                const res: Awaited<typeof promise> = {
+                  value: {
+                    type: 'timeout',
+                    ms: timeoutMs,
+                    eventSource: _es,
+                  },
+                  done: false,
+                };
                 // Close and release old reader
                 await stream.cancel();
 
                 // Create new reader
                 stream = getNewStreamAndReader();
 
-                return {
-                  value: {
-                    type: 'timeout',
-                    ms: timeoutMs,
-                    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    eventSource: _es!,
-                  },
-                  done: false,
-                };
+                return res;
               },
             });
           }

@@ -241,9 +241,6 @@ test('SSE on serverless - emit and disconnect early', async () => {
   const ITERATIONS = 3;
   const values: number[] = [];
   for await (const value of iterable) {
-    if (value.type === 'opened') {
-      continue;
-    }
     if (value.type === 'serialized-error') {
       throw value.error;
     }
