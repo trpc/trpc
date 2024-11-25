@@ -395,60 +395,50 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
   };
   return {
     [Symbol.asyncIterator]() {
-      let stream = getNewStreamAndReader();
+      async function* generator() {
+        let stream = getNewStreamAndReader();
 
-      const iterator: AsyncIterator<ConsumerStreamResult<TConfig>> = {
-        async next() {
-          let promise = stream.reader.read();
+        try {
+          while (true) {
+            let promise = stream.reader.read();
 
-          const timeoutMs = clientOptions.reconnectAfterInactivityMs;
-          if (timeoutMs) {
-            promise = withTimeout({
-              promise,
-              timeoutMs,
-              onTimeout: async () => {
-                const res: Awaited<typeof promise> = {
-                  value: {
-                    type: 'timeout',
-                    ms: timeoutMs,
-                    eventSource: _es,
-                  },
-                  done: false,
-                };
-                // Close and release old reader
-                await stream.cancel();
+            const timeoutMs = clientOptions.reconnectAfterInactivityMs;
+            if (timeoutMs) {
+              promise = withTimeout({
+                promise,
+                timeoutMs,
+                onTimeout: async () => {
+                  const res: Awaited<typeof promise> = {
+                    value: {
+                      type: 'timeout',
+                      ms: timeoutMs,
+                      eventSource: _es,
+                    },
+                    done: false,
+                  };
+                  // Close and release old reader
+                  await stream.cancel();
 
-                // Create new reader
-                stream = getNewStreamAndReader();
+                  // Create new reader
+                  stream = getNewStreamAndReader();
 
-                return res;
-              },
-            });
+                  return res;
+                },
+              });
+            }
+
+            const result = await promise;
+
+            if (result.done) {
+              return result.value;
+            }
+            yield result.value;
           }
-
-          const result = await promise;
-
-          // console.debug('result', result, 'done', result.done);
-          if (result.done) {
-            return {
-              value: result.value,
-              done: true,
-            };
-          }
-          return {
-            value: result.value,
-            done: false,
-          };
-        },
-        async return() {
+        } finally {
           await stream.cancel();
-          return {
-            value: undefined,
-            done: true,
-          };
-        },
-      };
-      return iterator;
+        }
+      }
+      return generator();
     },
   };
 }
