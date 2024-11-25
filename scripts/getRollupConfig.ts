@@ -88,7 +88,16 @@ function lib({ input, packageDir, externalPackages }: Options): RollupOptions {
         extensions,
       }),
       swc({
-        tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
+        tsconfig: false,
+        jsc: {
+          target: 'es2020',
+          transform: {
+            react: {
+              useBuiltins: true,
+            },
+          },
+          externalHelpers: true,
+        },
       }),
       !isWatchMode && analyzeSizeChange(packageDir),
     ],
