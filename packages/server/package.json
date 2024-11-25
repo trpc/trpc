@@ -117,7 +117,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@swc/helpers": "^0.5.13"
+    "@swc/helpers": "^0.5.15"
   },
   "devDependencies": {
     "@fastify/websocket": "^10.0.1",
