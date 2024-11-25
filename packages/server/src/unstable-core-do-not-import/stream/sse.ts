@@ -7,6 +7,7 @@ import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
 import { takeWithGrace, withMaxDuration } from './utils/asyncIterable';
+import { makeAsyncResource } from './utils/disposable';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 import { PING_SYM, withPing } from './utils/withPing';
 
@@ -381,66 +382,68 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
       },
     });
 
-  const getNewStreamAndReader = () => {
-    const stream = createStream();
-    const reader = stream.getReader();
+  const getStreamResource = () => {
+    let stream = createStream();
+    let reader = stream.getReader();
 
-    return {
-      reader,
-      cancel: () => {
-        reader.releaseLock();
-        return stream.cancel();
+    async function dispose() {
+      await reader.cancel();
+      _es = null;
+    }
+
+    return makeAsyncResource(
+      {
+        read() {
+          return reader.read();
+        },
+        async recreate() {
+          await dispose();
+
+          stream = createStream();
+          reader = stream.getReader();
+        },
       },
-    };
+      dispose,
+    );
   };
-  return {
-    [Symbol.asyncIterator]() {
-      async function* generator() {
-        let stream = getNewStreamAndReader();
 
-        try {
-          while (true) {
-            let promise = stream.reader.read();
+  async function* generator() {
+    await using stream = getStreamResource();
 
-            const timeoutMs = clientOptions.reconnectAfterInactivityMs;
-            if (timeoutMs) {
-              promise = withTimeout({
-                promise,
-                timeoutMs,
-                onTimeout: async () => {
-                  const res: Awaited<typeof promise> = {
-                    value: {
-                      type: 'timeout',
-                      ms: timeoutMs,
-                      eventSource: _es,
-                    },
-                    done: false,
-                  };
-                  // Close and release old reader
-                  await stream.cancel();
+    while (true) {
+      let promise = stream.read();
 
-                  // Create new reader
-                  stream = getNewStreamAndReader();
+      const timeoutMs = clientOptions.reconnectAfterInactivityMs;
+      if (timeoutMs) {
+        promise = withTimeout({
+          promise,
+          timeoutMs,
+          onTimeout: async () => {
+            const res: Awaited<typeof promise> = {
+              value: {
+                type: 'timeout',
+                ms: timeoutMs,
+                eventSource: _es,
+              },
+              done: false,
+            };
+            // Close and release old reader
+            await stream.recreate();
 
-                  return res;
-                },
-              });
-            }
-
-            const result = await promise;
-
-            if (result.done) {
-              return result.value;
-            }
-            yield result.value;
-          }
-        } finally {
-          await stream.cancel();
-        }
+            return res;
+          },
+        });
       }
-      return generator();
-    },
-  };
+
+      const result = await promise;
+
+      if (result.done) {
+        return result.value;
+      }
+      yield result.value;
+    }
+  }
+  return generator();
 }
 
 export const sseHeaders = {
