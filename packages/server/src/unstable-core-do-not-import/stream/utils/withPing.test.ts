@@ -2,6 +2,7 @@ import EventEmitter, { on } from 'events';
 import { konn } from 'konn';
 import { expect, vi } from 'vitest';
 import { run } from '../../utils';
+import { makeResource } from './disposable';
 import { timerResource } from './timerResource';
 import { withPing } from './withPing';
 
@@ -30,12 +31,14 @@ class MyEventEmitter extends EventEmitter {
 function fakeTimersResource() {
   vi.useFakeTimers();
 
-  return {
-    advanceTimersByTimeAsync: vi.advanceTimersByTimeAsync,
-    [Symbol.dispose]: () => {
+  return makeResource(
+    {
+      advanceTimersByTimeAsync: vi.advanceTimersByTimeAsync,
+    },
+    () => {
       vi.useRealTimers();
     },
-  };
+  );
 }
 
 test('yield values from source iterable', async () => {
