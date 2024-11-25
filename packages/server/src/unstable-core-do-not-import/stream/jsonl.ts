@@ -258,15 +258,15 @@ async function* createBatchStreamProducer(
     return [[newObj], ...asyncValues];
   }
 
-  const newHead: Head = {};
-  for (const [key, item] of Object.entries(data)) {
-    newHead[key] = encode(item, [key]);
-  }
-
-  yield newHead;
-  // Process all async iterables in parallel by racing their next values
   try {
-    // Process while there are active iterators
+    const newHead: Head = {};
+    for (const [key, item] of Object.entries(data)) {
+      newHead[key] = encode(item, [key]);
+    }
+
+    yield newHead;
+
+    // Process all async iterables in parallel by racing their next values
     while (queue.size > 0) {
       // Race all iterators to get the next value from any of them
       const [entry, res] = await Unpromise.race(
