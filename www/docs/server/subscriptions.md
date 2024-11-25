@@ -239,7 +239,6 @@ export function zAsyncIterable<
     >
   >;
 }
-
 ```
 
 Now you can use this helper to validate the output of your subscription procedures:
