@@ -3,6 +3,7 @@ import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
+import { makeAsyncResource } from './utils/disposable';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 
 /**
@@ -127,10 +128,15 @@ async function* createBatchStreamProducer(
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const queue = new Set<{
-    iterator: AsyncIterator<ChunkData, ChunkData>;
-    nextPromise: Promise<IteratorResult<ChunkData, ChunkData>>;
-  }>();
+  await using queue = makeAsyncResource(
+    new Set<{
+      iterator: AsyncIterator<ChunkData, ChunkData>;
+      nextPromise: Promise<IteratorResult<ChunkData, ChunkData>>;
+    }>(),
+    async () => {
+      await Promise.all(Array.from(queue).map((it) => it.iterator.return?.()));
+    },
+  );
   function registerAsync(
     callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, ChunkData>,
   ) {
@@ -257,37 +263,28 @@ async function* createBatchStreamProducer(
     return [[newObj], ...asyncValues];
   }
 
-  try {
-    const newHead: Head = {};
-    for (const [key, item] of Object.entries(data)) {
-      newHead[key] = encode(item, [key]);
+  const newHead: Head = {};
+  for (const [key, item] of Object.entries(data)) {
+    newHead[key] = encode(item, [key]);
+  }
+
+  yield newHead;
+
+  // Process all async iterables in parallel by racing their next values
+  while (queue.size > 0) {
+    // Race all iterators to get the next value from any of them
+    const [entry, res] = await Unpromise.race(
+      Array.from(queue).map(async (it) => [it, await it.nextPromise] as const),
+    );
+
+    yield res.value;
+
+    // Remove current iterator and re-add if not done
+    queue.delete(entry);
+    if (!res.done) {
+      entry.nextPromise = entry.iterator.next();
+      queue.add(entry);
     }
-
-    yield newHead;
-
-    // Process all async iterables in parallel by racing their next values
-    while (queue.size > 0) {
-      // Race all iterators to get the next value from any of them
-      const [entry, res] = await Unpromise.race(
-        Array.from(queue).map(
-          async (it) => [it, await it.nextPromise] as const,
-        ),
-      );
-
-      yield res.value;
-
-      // Remove current iterator and re-add if not done
-      queue.delete(entry);
-      if (!res.done) {
-        entry.nextPromise = entry.iterator.next();
-        queue.add(entry);
-      }
-    }
-  } finally {
-    // Properly clean up any remaining iterators by calling return()
-    // Ensures resources are released if the loop exits early (e.g. due to error)
-    await Promise.all(Array.from(queue).map((it) => it.iterator.return?.()));
-    queue.clear();
   }
 }
 /**
