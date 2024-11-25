@@ -47,7 +47,9 @@ test('encode/decode with superjson', async () => {
     return aggregated;
   });
 
-  expect(await streamEnd).toMatchInlineSnapshot(`
+  const aggregated = await streamEnd;
+
+  expect(aggregated).toMatchInlineSnapshot(`
     Array [
       "{"json":{"0":[[0],[null,0,0]],"1":[[0],[null,0,1]]}}
     ",
@@ -96,7 +98,7 @@ test('encode/decode with superjson', async () => {
     expect(aggregated).toEqual([1, 2, 3]);
   }
 
-  expect(meta.controllers.size).toBe(0);
+  expect(meta.isEmpty()).toBe(true);
 });
 
 test('encode/decode - error', async () => {
@@ -194,7 +196,7 @@ test('encode/decode - error', async () => {
   `);
 
   // await meta.reader.closed;
-  expect(meta.controllers.size).toBe(0);
+  expect(meta.isEmpty()).toBe(true);
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(0);
 });
 
@@ -304,7 +306,7 @@ test('e2e, create server', async () => {
     );
   }
   // await meta.reader.closed;
-  expect(meta.controllers.size).toBe(0);
+  expect(meta.isEmpty()).toBe(true);
 });
 
 test(
@@ -364,7 +366,7 @@ test(
     }
 
     await waitFor(() => {
-      expect(meta.controllers.size).toBe(0);
+      expect(meta.isEmpty()).toBe(true);
     });
     // wait for stopped
     await waitFor(() => {
@@ -446,7 +448,7 @@ test(
     }
 
     await waitFor(() => {
-      expect(meta.controllers.size).toBe(0);
+      expect(meta.isEmpty()).toBe(true);
     });
     // wait for stopped
     await waitFor(() => {
