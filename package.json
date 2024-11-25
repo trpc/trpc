@@ -91,7 +91,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/node": "20.17.7"
+      "@types/node": "20.17.8"
     }
   },
   "manypkg": {
