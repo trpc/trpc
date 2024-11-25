@@ -1,10 +1,10 @@
 import path from 'path';
 import nodeResolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
 import type { RollupOptions } from 'rollup';
 import del from 'rollup-plugin-delete';
 import externals from 'rollup-plugin-node-externals';
 import { swc } from 'rollup-plugin-swc3';
-import typescript from 'rollup-plugin-typescript2';
 import analyzeSizeChange from './analyzeSizeChange';
 
 const isWatchMode = process.argv.includes('--watch');
@@ -52,8 +52,7 @@ function types({
       }),
       typescript({
         tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
-        tsconfigOverride: { emitDeclarationOnly: true },
-        abortOnError: !isWatchMode,
+        outDir: path.resolve(packageDir, 'dist'),
       }),
     ],
   };
@@ -89,16 +88,7 @@ function lib({ input, packageDir, externalPackages }: Options): RollupOptions {
         extensions,
       }),
       swc({
-        tsconfig: false,
-        jsc: {
-          target: 'es2020',
-          transform: {
-            react: {
-              useBuiltins: true,
-            },
-          },
-          externalHelpers: true,
-        },
+        tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
       }),
       !isWatchMode && analyzeSizeChange(packageDir),
     ],
