@@ -117,7 +117,7 @@
     "access": "public"
   },
   "dependencies": {
-    "tslib": "^2.8.1"
+    "@swc/helpers": "^0.5.13"
   },
   "devDependencies": {
     "@fastify/websocket": "^10.0.1",
