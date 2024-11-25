@@ -580,7 +580,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
         });
       }
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
-        async function* generator() {
+        return run(async function* () {
           const reader = controller.getReader();
           try {
             while (true) {
@@ -607,8 +607,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
             reader.releaseLock();
             controller.close();
           }
-        }
-        return generator();
+        });
       }
     }
   }

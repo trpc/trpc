@@ -2,7 +2,7 @@ import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
 import { isAbortError } from '../http/isAbortError';
 import type { MaybePromise } from '../types';
-import { identity } from '../utils';
+import { identity, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
@@ -407,7 +407,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
     );
   };
 
-  async function* generator() {
+  return run(async function* () {
     await using stream = getStreamResource();
 
     while (true) {
@@ -442,8 +442,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
       }
       yield result.value;
     }
-  }
-  return generator();
+  });
 }
 
 export const sseHeaders = {
