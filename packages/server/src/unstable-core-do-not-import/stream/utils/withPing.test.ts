@@ -2,6 +2,7 @@ import EventEmitter, { on } from 'events';
 import { konn } from 'konn';
 import { expect, vi } from 'vitest';
 import { run } from '../../utils';
+import { timerResource } from './timerResource';
 import { withPing } from './withPing';
 
 export interface MyEvents {
@@ -26,23 +27,20 @@ class MyEventEmitter extends EventEmitter {
   }
 }
 
-const ctx = konn()
-  .beforeEach(() => {
-    const ee = new MyEventEmitter();
+function fakeTimersResource() {
+  vi.useFakeTimers();
 
-    vi.useFakeTimers();
-
-    return {
-      ee,
-    };
-  })
-  .afterEach(() => {
-    vi.useRealTimers();
-  })
-  .done();
+  return {
+    advanceTimersByTimeAsync: vi.advanceTimersByTimeAsync,
+    [Symbol.dispose]: () => {
+      vi.useRealTimers();
+    },
+  };
+}
 
 test('yield values from source iterable', async () => {
-  const { ee } = ctx;
+  const ee = new MyEventEmitter();
+  using fakeTimers = fakeTimersResource();
   const pingIntervalMs = 1_000;
   const offsetMs = 100;
 
@@ -69,18 +67,18 @@ test('yield values from source iterable', async () => {
   });
 
   // Advance timer before ping interval
-  await vi.advanceTimersByTimeAsync(pingIntervalMs - offsetMs);
+  await fakeTimers.advanceTimersByTimeAsync(pingIntervalMs - offsetMs);
 
   ee.emit('message', '1');
 
   // Advance timer to after ping interval (won't yield anything)
-  await vi.advanceTimersByTimeAsync(offsetMs * 2);
+  await fakeTimers.advanceTimersByTimeAsync(offsetMs * 2);
 
   // yield another value
   ee.emit('message', '2');
 
-  await vi.advanceTimersByTimeAsync(pingIntervalMs + offsetMs);
-  await vi.advanceTimersByTimeAsync(pingIntervalMs + offsetMs);
+  await fakeTimers.advanceTimersByTimeAsync(pingIntervalMs + offsetMs);
+  await fakeTimers.advanceTimersByTimeAsync(pingIntervalMs + offsetMs);
 
   ee.emit('message', '3');
 
@@ -103,4 +101,31 @@ test('yield values from source iterable', async () => {
       ],
     ]
   `);
+});
+
+test('respects return()', async () => {
+  let stopped = false;
+  async function* gen() {
+    let i = 0;
+    try {
+      while (true) {
+        yield i++;
+
+        // wait a tick
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    } finally {
+      stopped = true;
+    }
+  }
+
+  const iterable = withPing(gen(), 50);
+
+  for await (const i of iterable) {
+    if (i === 10) break;
+  }
+
+  await vi.waitFor(() => {
+    expect(stopped).toBe(true);
+  });
 });

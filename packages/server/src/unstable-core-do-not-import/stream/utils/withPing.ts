@@ -1,4 +1,5 @@
 import { Unpromise } from '../../../vendor/unpromise';
+import { iteratorResource as getIteratorResource } from './asyncIterable';
 import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
 export const PING_SYM = Symbol('ping');
@@ -11,7 +12,8 @@ export async function* withPing<TValue>(
   iterable: AsyncIterable<TValue>,
   pingIntervalMs: number,
 ): AsyncGenerator<TValue | typeof PING_SYM> {
-  const iterator = iterable[Symbol.asyncIterator]();
+  await using iterator = getIteratorResource(iterable);
+
   // declaration outside the loop for garbage collection reasons
   let result:
     | null
@@ -19,30 +21,27 @@ export async function* withPing<TValue>(
     | typeof disposablePromiseTimerResult;
 
   let nextPromise = iterator.next();
+
   while (true) {
-    const pingPromise = timerResource(pingIntervalMs);
+    using pingPromise = timerResource(pingIntervalMs);
 
-    try {
-      result = await Unpromise.race([nextPromise, pingPromise.start()]);
+    result = await Unpromise.race([nextPromise, pingPromise.start()]);
 
-      if (result === disposablePromiseTimerResult) {
-        // cancelled
+    if (result === disposablePromiseTimerResult) {
+      // cancelled
 
-        yield PING_SYM;
-        continue;
-      }
-
-      if (result.done) {
-        return result.value;
-      }
-
-      nextPromise = iterator.next();
-      yield result.value;
-
-      // free up reference for garbage collection
-      result = null;
-    } finally {
-      pingPromise[Symbol.dispose]();
+      yield PING_SYM;
+      continue;
     }
+
+    if (result.done) {
+      return result.value;
+    }
+
+    nextPromise = iterator.next();
+    yield result.value;
+
+    // free up reference for garbage collection
+    result = null;
   }
 }
