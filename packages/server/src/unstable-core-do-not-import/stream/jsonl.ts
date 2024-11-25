@@ -1,5 +1,6 @@
 import { Unpromise } from '../../vendor/unpromise';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
+import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
 import { readableStreamFrom } from './utils/readableStreamFrom';
@@ -183,7 +184,7 @@ async function* createBatchStreamProducer(
       if (error) {
         throw error;
       }
-      const iterator = iterable[Symbol.asyncIterator]();
+      await using iterator = iteratorResource(iterable);
 
       try {
         while (true) {
@@ -204,8 +205,6 @@ async function* createBatchStreamProducer(
           ASYNC_ITERABLE_STATUS_ERROR,
           opts.formatError?.({ error: cause, path }),
         ];
-      } finally {
-        await iterator.return?.();
       }
     });
   }

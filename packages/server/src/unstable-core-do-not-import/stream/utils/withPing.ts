@@ -1,5 +1,5 @@
 import { Unpromise } from '../../../vendor/unpromise';
-import { iteratorResource as getIteratorResource } from './asyncIterable';
+import { iteratorResource } from './asyncIterable';
 import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
 export const PING_SYM = Symbol('ping');
@@ -12,7 +12,7 @@ export async function* withPing<TValue>(
   iterable: AsyncIterable<TValue>,
   pingIntervalMs: number,
 ): AsyncGenerator<TValue | typeof PING_SYM> {
-  await using iterator = getIteratorResource(iterable);
+  await using iterator = iteratorResource(iterable);
 
   // declaration outside the loop for garbage collection reasons
   let result:
