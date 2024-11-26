@@ -3,6 +3,7 @@ import type { Socket } from 'net';
 import { incomingMessageToRequest } from '../../../../adapters/node-http/incomingMessageToRequest';
 import { writeResponse } from '../../../../adapters/node-http/writeResponse';
 import { run } from '../../../utils';
+import { makeAsyncResource } from '../disposable';
 
 type Handler = (request: Request) => Response | Promise<Response>;
 
@@ -59,18 +60,20 @@ export function serverResource(handler: Handler) {
     });
   }
 
-  return {
-    url,
-    get abortCount() {
-      return abortCount;
-    },
-    restart: async () => {
-      await forceClose();
+  return makeAsyncResource(
+    {
+      url,
+      get abortCount() {
+        return abortCount;
+      },
+      restart: async () => {
+        await forceClose();
 
-      server.listen(port);
+        server.listen(port);
+      },
     },
-    [Symbol.asyncDispose]: async () => {
+    async () => {
       await forceClose();
     },
-  };
+  );
 }

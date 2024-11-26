@@ -1,7 +1,9 @@
 import { Unpromise } from '../../vendor/unpromise';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
+import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
+import { makeAsyncResource, makeResource } from './utils/disposable';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 
 /**
@@ -126,10 +128,15 @@ async function* createBatchStreamProducer(
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const queue = new Set<{
-    iterator: AsyncIterator<ChunkData, ChunkData>;
-    nextPromise: Promise<IteratorResult<ChunkData, ChunkData>>;
-  }>();
+  await using queue = makeAsyncResource(
+    new Set<{
+      iterator: AsyncIterator<ChunkData, ChunkData>;
+      nextPromise: Promise<IteratorResult<ChunkData, ChunkData>>;
+    }>(),
+    async () => {
+      await Promise.all(Array.from(queue).map((it) => it.iterator.return?.()));
+    },
+  );
   function registerAsync(
     callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, ChunkData>,
   ) {
@@ -183,7 +190,7 @@ async function* createBatchStreamProducer(
       if (error) {
         throw error;
       }
-      const iterator = iterable[Symbol.asyncIterator]();
+      await using iterator = iteratorResource(iterable);
 
       try {
         while (true) {
@@ -204,8 +211,6 @@ async function* createBatchStreamProducer(
           ASYNC_ITERABLE_STATUS_ERROR,
           opts.formatError?.({ error: cause, path }),
         ];
-      } finally {
-        await iterator.return?.();
       }
     });
   }
@@ -258,37 +263,28 @@ async function* createBatchStreamProducer(
     return [[newObj], ...asyncValues];
   }
 
-  try {
-    const newHead: Head = {};
-    for (const [key, item] of Object.entries(data)) {
-      newHead[key] = encode(item, [key]);
+  const newHead: Head = {};
+  for (const [key, item] of Object.entries(data)) {
+    newHead[key] = encode(item, [key]);
+  }
+
+  yield newHead;
+
+  // Process all async iterables in parallel by racing their next values
+  while (queue.size > 0) {
+    // Race all iterators to get the next value from any of them
+    const [entry, res] = await Unpromise.race(
+      Array.from(queue).map(async (it) => [it, await it.nextPromise] as const),
+    );
+
+    yield res.value;
+
+    // Remove current iterator and re-add if not done
+    queue.delete(entry);
+    if (!res.done) {
+      entry.nextPromise = entry.iterator.next();
+      queue.add(entry);
     }
-
-    yield newHead;
-
-    // Process all async iterables in parallel by racing their next values
-    while (queue.size > 0) {
-      // Race all iterators to get the next value from any of them
-      const [entry, res] = await Unpromise.race(
-        Array.from(queue).map(
-          async (it) => [it, await it.nextPromise] as const,
-        ),
-      );
-
-      yield res.value;
-
-      // Remove current iterator and re-add if not done
-      queue.delete(entry);
-      if (!res.done) {
-        entry.nextPromise = entry.iterator.next();
-        queue.add(entry);
-      }
-    }
-  } finally {
-    // Properly clean up any remaining iterators by calling return()
-    // Ensures resources are released if the loop exits early (e.g. due to error)
-    await Promise.all(Array.from(queue).map((it) => it.iterator.return?.()));
-    queue.clear();
   }
 }
 /**
@@ -420,39 +416,13 @@ function createConsumerStream<THead>(
 type ControllerChunk = ChunkData | StreamInterruptedError;
 
 /**
- * Interface for a controller that can enqueue chunks and be closed
- */
-/**
- * Interface for controlling a stream's lifecycle and data flow
- */
-interface StreamController {
-  /**
-   * Enqueues a chunk of data or error into the stream
-   * @param chunk The data chunk or error to enqueue
-   */
-  enqueue: (chunk: ControllerChunk) => void;
-
-  /**
-   * Closes the stream and prevents further data from being enqueued
-   */
-  close: () => void;
-
-  /**
-   * Whether the stream has been closed
-   */
-  closed: boolean;
-
-  /**
-   * Gets a reader for consuming the stream's data
-   */
-  getReader: () => ReadableStreamDefaultReader<ControllerChunk>;
-}
-
-/**
  * Creates a handler for managing stream controllers and their lifecycle
  */
 function createStreamsManager(abortController: AbortController) {
-  const controllerMap = new Map<ChunkIndex, StreamController>();
+  const controllerMap = new Map<
+    ChunkIndex,
+    ReturnType<typeof createStreamController>
+  >();
 
   /**
    * Checks if there are no pending controllers or deferred promises
@@ -461,63 +431,79 @@ function createStreamsManager(abortController: AbortController) {
     return Array.from(controllerMap.values()).every((c) => c.closed);
   }
 
+  /**
+   * Creates a stream controller
+   */
+  function createStreamController() {
+    let originalController: ReadableStreamDefaultController<ControllerChunk>;
+    const stream = new ReadableStream<ControllerChunk>({
+      start(controller) {
+        originalController = controller;
+      },
+    });
+
+    const streamController = {
+      enqueue: (v: ControllerChunk) => originalController.enqueue(v),
+      close: () => {
+        originalController.close();
+
+        // mark as closed and remove methods
+        Object.assign(streamController, {
+          closed: true,
+          close: () => {
+            // noop
+          },
+          enqueue: () => {
+            // noop
+          },
+          getReaderResource: null,
+        });
+
+        if (isEmpty()) {
+          abortController.abort();
+        }
+      },
+      closed: false,
+      getReaderResource: () => {
+        const reader = stream.getReader();
+
+        return makeResource(reader, () => {
+          reader.releaseLock();
+          streamController.close();
+        });
+      },
+    };
+
+    return streamController;
+  }
+
+  /**
+   * Gets or creates a stream controller
+   */
+  function getOrCreate(chunkId: ChunkIndex) {
+    let c = controllerMap.get(chunkId);
+    if (!c) {
+      c = createStreamController();
+      controllerMap.set(chunkId, c);
+    }
+    return c;
+  }
+
+  /**
+   * Cancels all pending controllers and rejects deferred promises
+   */
+  function cancelAll(reason: unknown) {
+    const error = new StreamInterruptedError(reason);
+    for (const controller of controllerMap.values()) {
+      controller.enqueue(error);
+      controller.close();
+    }
+  }
+
   return {
-    getOrCreate(chunkId: ChunkIndex): StreamController {
-      const c = controllerMap.get(chunkId);
-      if (c) {
-        return c;
-      }
-
-      let originalController: ReadableStreamDefaultController<ControllerChunk>;
-      const stream = new ReadableStream<ControllerChunk>({
-        start(controller) {
-          originalController = controller;
-        },
-      });
-
-      const controllerEsque: StreamController = {
-        enqueue: (v) => originalController.enqueue(v as ChunkData),
-        close: () => {
-          originalController.close();
-
-          // mark as closed and remove methods
-          Object.assign(controllerEsque, {
-            closed: true,
-            close: () => {
-              // noop
-            },
-            enqueue: () => {
-              // noop
-            },
-          });
-
-          if (isEmpty()) {
-            abortController.abort();
-          }
-        },
-        closed: false,
-        getReader: () => stream.getReader(),
-      };
-      controllerMap.set(chunkId, controllerEsque);
-
-      return controllerEsque;
-    },
-
-    /**
-     * Check if there are no pending controllers
-     **/
+    getOrCreate,
     isEmpty,
-
-    /**
-     * Cancels all pending controllers and rejects deferred promises
-     */
-    cancelAll(reason: unknown) {
-      const error = new StreamInterruptedError(reason);
-      for (const controller of controllerMap.values()) {
-        controller.enqueue(error);
-        controller.close();
-      }
-    },
+    cancelAll,
   };
 }
 
@@ -559,57 +545,46 @@ export async function jsonlStreamConsumer<THead>(opts: {
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
         return run(async () => {
-          const reader = controller.getReader();
-          try {
-            const { value } = await reader.read();
-            if (value instanceof StreamInterruptedError) {
-              throw value;
-            }
-            const [_chunkId, status, data] = value as PromiseChunk;
-            switch (status) {
-              case PROMISE_STATUS_FULFILLED:
-                return decode(data);
-              case PROMISE_STATUS_REJECTED:
-                throw (
-                  opts.formatError?.({ error: data }) ?? new AsyncError(data)
-                );
-            }
-          } finally {
-            reader.releaseLock();
-            controller.close();
+          using reader = controller.getReaderResource();
+
+          const { value } = await reader.read();
+          if (value instanceof StreamInterruptedError) {
+            throw value;
+          }
+          const [_chunkId, status, data] = value as PromiseChunk;
+          switch (status) {
+            case PROMISE_STATUS_FULFILLED:
+              return decode(data);
+            case PROMISE_STATUS_REJECTED:
+              throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
           }
         });
       }
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
-        async function* generator() {
-          const reader = controller.getReader();
-          try {
-            while (true) {
-              const { value } = await reader.read();
-              if (value instanceof StreamInterruptedError) {
-                throw value;
-              }
+        return run(async function* () {
+          using reader = controller.getReaderResource();
 
-              const [_chunkId, status, data] = value as IterableChunk;
-
-              switch (status) {
-                case ASYNC_ITERABLE_STATUS_YIELD:
-                  yield decode(data);
-                  break;
-                case ASYNC_ITERABLE_STATUS_RETURN:
-                  return decode(data);
-                case ASYNC_ITERABLE_STATUS_ERROR:
-                  throw (
-                    opts.formatError?.({ error: data }) ?? new AsyncError(data)
-                  );
-              }
+          while (true) {
+            const { value } = await reader.read();
+            if (value instanceof StreamInterruptedError) {
+              throw value;
             }
-          } finally {
-            reader.releaseLock();
-            controller.close();
+
+            const [_chunkId, status, data] = value as IterableChunk;
+
+            switch (status) {
+              case ASYNC_ITERABLE_STATUS_YIELD:
+                yield decode(data);
+                break;
+              case ASYNC_ITERABLE_STATUS_RETURN:
+                return decode(data);
+              case ASYNC_ITERABLE_STATUS_ERROR:
+                throw (
+                  opts.formatError?.({ error: data }) ?? new AsyncError(data)
+                );
+            }
           }
-        }
-        return generator();
+        });
       }
     }
   }

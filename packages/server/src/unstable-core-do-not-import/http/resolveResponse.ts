@@ -25,15 +25,9 @@ import type {
 } from './types';
 
 function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
-  return {
-    [Symbol.asyncIterator]: () => {
-      return {
-        next() {
-          throw err;
-        },
-      };
-    },
-  };
+  return run(async function* () {
+    throw err;
+  });
 }
 type HTTPMethods =
   | 'GET'
