@@ -456,7 +456,7 @@ function createStreamsManager(abortController: AbortController) {
           enqueue: () => {
             // noop
           },
-          stream: null,
+          getReaderResource: null,
         });
 
         if (isEmpty()) {
