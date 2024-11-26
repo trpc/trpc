@@ -19,6 +19,7 @@ import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import type { RootConfig } from '@trpc/server/unstable-core-do-not-import/rootConfig';
 import type { Deferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
@@ -859,17 +860,19 @@ describe('timeouts', async () => {
         };
       },
     });
-    return {
-      ...opts,
-      deferred: () => deferred,
-      results: results,
-      operations: operations,
-      onConnection,
-      [Symbol.asyncDispose]: async () => {
+    return makeAsyncResource(
+      {
+        ...opts,
+        deferred: () => deferred,
+        results: results,
+        operations: operations,
+        onConnection,
+      },
+      async () => {
         vi.useRealTimers();
         await opts.close?.();
       },
-    };
+    );
   };
 
   test('works', async () => {
