@@ -431,6 +431,9 @@ function createStreamsManager(abortController: AbortController) {
     return Array.from(controllerMap.values()).every((c) => c.closed);
   }
 
+  /**
+   * Creates a stream controller
+   */
   function createStreamController() {
     let originalController: ReadableStreamDefaultController<ControllerChunk>;
     const stream = new ReadableStream<ControllerChunk>({
@@ -474,6 +477,9 @@ function createStreamsManager(abortController: AbortController) {
     return streamController;
   }
 
+  /**
+   * Gets or creates a stream controller
+   */
   function getOrCreate(chunkId: ChunkIndex) {
     let c = controllerMap.get(chunkId);
     if (!c) {
@@ -483,24 +489,21 @@ function createStreamsManager(abortController: AbortController) {
     return c;
   }
 
+  /**
+   * Cancels all pending controllers and rejects deferred promises
+   */
+  function cancelAll(reason: unknown) {
+    const error = new StreamInterruptedError(reason);
+    for (const controller of controllerMap.values()) {
+      controller.enqueue(error);
+      controller.close();
+    }
+  }
+
   return {
     getOrCreate,
-
-    /**
-     * Check if there are no pending controllers
-     **/
     isEmpty,
-
-    /**
-     * Cancels all pending controllers and rejects deferred promises
-     */
-    cancelAll(reason: unknown) {
-      const error = new StreamInterruptedError(reason);
-      for (const controller of controllerMap.values()) {
-        controller.enqueue(error);
-        controller.close();
-      }
-    },
+    cancelAll,
   };
 }
 
