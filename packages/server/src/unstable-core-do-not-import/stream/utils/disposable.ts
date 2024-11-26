@@ -1,8 +1,9 @@
-/* eslint-disable no-restricted-syntax */
 // @ts-expect-error - polyfilling symbol
+// eslint-disable-next-line no-restricted-syntax
 Symbol.dispose ??= Symbol('Symbol.dispose');
 
 // @ts-expect-error - polyfilling symbol
+// eslint-disable-next-line no-restricted-syntax
 Symbol.asyncDispose ??= Symbol('Symbol.asyncDispose');
 
 /**
@@ -15,10 +16,12 @@ Symbol.asyncDispose ??= Symbol('Symbol.asyncDispose');
 export function makeResource<T>(thing: T, dispose: () => void): T & Disposable {
   const it = thing as T & Disposable;
 
+  // eslint-disable-next-line no-restricted-syntax
   if (it[Symbol.dispose]) {
     throw new Error('Symbol.dispose already exists');
   }
 
+  // eslint-disable-next-line no-restricted-syntax
   it[Symbol.dispose] = dispose;
 
   return it;
@@ -37,10 +40,12 @@ export function makeAsyncResource<T>(
 ): T & AsyncDisposable {
   const it = thing as T & AsyncDisposable;
 
+  // eslint-disable-next-line no-restricted-syntax
   if (it[Symbol.asyncDispose]) {
     throw new Error('Symbol.asyncDispose already exists');
   }
 
+  // eslint-disable-next-line no-restricted-syntax
   it[Symbol.asyncDispose] = dispose;
 
   return it;
