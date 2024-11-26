@@ -131,6 +131,9 @@ importers:
       ts-prune:
         specifier: ^0.10.3
         version: 0.10.3
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
       tsx:
         specifier: ^4.0.0
         version: 4.6.2
@@ -1557,6 +1560,9 @@ importers:
       tailwind-merge:
         specifier: ^2.0.0
         version: 2.0.0
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
       vinxi:
         specifier: ^0.4.3
         version: 0.4.3(@types/node@20.17.8)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(terser@5.34.0)(webpack-sources@3.2.3)
@@ -1783,6 +1789,10 @@ importers:
         version: 3.23.8
 
   packages/server:
+    dependencies:
+      tslib:
+        specifier: ^2.8.1
+        version: 2.8.1
     devDependencies:
       '@fastify/websocket':
         specifier: ^10.0.1
@@ -15086,9 +15096,6 @@ packages:
   tslib@2.1.0:
     resolution: {integrity: sha512-hcVC3wYEziELGGmEEXue7D75zbwIIVUMWAVbHItGPx0ziyXxrOMQx4rQEVEV45Ut/1IotuEvwqPopzIOkDMf0A==}
 
-  tslib@2.6.2:
-    resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
-
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
@@ -20879,7 +20886,7 @@ snapshots:
   '@js-temporal/polyfill@0.4.4':
     dependencies:
       jsbi: 4.3.0
-      tslib: 2.6.2
+      tslib: 2.8.1
 
   '@jsdevtools/ono@7.1.3': {}
 
@@ -33312,8 +33319,6 @@ snapshots:
   tslib@1.14.1: {}
 
   tslib@2.1.0: {}
-
-  tslib@2.6.2: {}
 
   tslib@2.8.1: {}
 
