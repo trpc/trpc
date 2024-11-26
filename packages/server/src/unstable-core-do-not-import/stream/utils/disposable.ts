@@ -1,10 +1,10 @@
 // @ts-expect-error - polyfilling symbol
 // eslint-disable-next-line no-restricted-syntax
-Symbol.dispose ??= Symbol('Symbol.dispose');
+Symbol.dispose ??= Symbol();
 
 // @ts-expect-error - polyfilling symbol
 // eslint-disable-next-line no-restricted-syntax
-Symbol.asyncDispose ??= Symbol('Symbol.asyncDispose');
+Symbol.asyncDispose ??= Symbol();
 
 /**
  * Takes a value and a dispose function and returns a new object that implements the Disposable interface.
