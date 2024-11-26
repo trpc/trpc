@@ -80,6 +80,7 @@
     "rollup-plugin-swc3": "^0.12.1",
     "superjson": "^1.12.4",
     "ts-prune": "^0.10.3",
+    "tslib": "^2.8.1",
     "tsx": "^4.0.0",
     "turbo": "^2.0.9",
     "typescript": "^5.6.2",
