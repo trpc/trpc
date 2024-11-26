@@ -29,8 +29,4 @@ for (const packagePath of packagePaths) {
   // Write the tsconfig file
   const tsconfigPath = path.resolve(packageDir, 'tsconfig.json');
   fs.writeFileSync(tsconfigPath, baseConfig);
-
-  console.log(`Generated tsconfig for ${packageDir}`);
 }
-
-console.log('Finished generating tsconfig files');
