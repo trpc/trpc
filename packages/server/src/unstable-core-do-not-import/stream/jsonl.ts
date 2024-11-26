@@ -453,6 +453,7 @@ function createStreamsManager(abortController: AbortController) {
           enqueue: () => {
             // noop
           },
+          stream: null,
         });
 
         if (isEmpty()) {
@@ -473,16 +474,17 @@ function createStreamsManager(abortController: AbortController) {
     return streamController;
   }
 
-  return {
-    getOrCreate(chunkId: ChunkIndex) {
-      let c = controllerMap.get(chunkId);
-      if (!c) {
-        c = createStreamController();
-        controllerMap.set(chunkId, c);
-      }
+  function getOrCreate(chunkId: ChunkIndex) {
+    let c = controllerMap.get(chunkId);
+    if (!c) {
+      c = createStreamController();
+      controllerMap.set(chunkId, c);
+    }
+    return c;
+  }
 
-      return c;
-    },
+  return {
+    getOrCreate,
 
     /**
      * Check if there are no pending controllers
