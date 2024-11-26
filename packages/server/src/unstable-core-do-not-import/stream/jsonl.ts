@@ -416,40 +416,13 @@ function createConsumerStream<THead>(
 type ControllerChunk = ChunkData | StreamInterruptedError;
 
 /**
- * Interface for a controller that can enqueue chunks and be closed
- */
-/**
- * Interface for controlling a stream's lifecycle and data flow
- */
-interface StreamController {
-  /**
-   * Enqueues a chunk of data or error into the stream
-   * @param chunk The data chunk or error to enqueue
-   */
-  enqueue: (chunk: ControllerChunk) => void;
-
-  /**
-   * Closes the stream and prevents further data from being enqueued
-   */
-  close: () => void;
-
-  /**
-   * Whether the stream has been closed
-   */
-  closed: boolean;
-
-  /**
-   * Gets a reader for consuming the stream's data
-   */
-  getReaderResource: () => ReadableStreamDefaultReader<ControllerChunk> &
-    Disposable;
-}
-
-/**
  * Creates a handler for managing stream controllers and their lifecycle
  */
 function createStreamsManager(abortController: AbortController) {
-  const controllerMap = new Map<ChunkIndex, StreamController>();
+  const controllerMap = new Map<
+    ChunkIndex,
+    ReturnType<typeof createStreamController>
+  >();
 
   /**
    * Checks if there are no pending controllers or deferred promises
@@ -458,53 +431,57 @@ function createStreamsManager(abortController: AbortController) {
     return Array.from(controllerMap.values()).every((c) => c.closed);
   }
 
+  function createStreamController() {
+    let originalController: ReadableStreamDefaultController<ControllerChunk>;
+    const stream = new ReadableStream<ControllerChunk>({
+      start(controller) {
+        originalController = controller;
+      },
+    });
+
+    const streamController = {
+      enqueue: (v: ControllerChunk) => originalController.enqueue(v),
+      close: () => {
+        originalController.close();
+
+        // mark as closed and remove methods
+        Object.assign(streamController, {
+          closed: true,
+          close: () => {
+            // noop
+          },
+          enqueue: () => {
+            // noop
+          },
+        });
+
+        if (isEmpty()) {
+          abortController.abort();
+        }
+      },
+      closed: false,
+      getReaderResource: () => {
+        const reader = stream.getReader();
+
+        return makeResource(reader, () => {
+          reader.releaseLock();
+          streamController.close();
+        });
+      },
+    };
+
+    return streamController;
+  }
+
   return {
-    getOrCreate(chunkId: ChunkIndex): StreamController {
-      const c = controllerMap.get(chunkId);
-      if (c) {
-        return c;
+    getOrCreate(chunkId: ChunkIndex) {
+      let c = controllerMap.get(chunkId);
+      if (!c) {
+        c = createStreamController();
+        controllerMap.set(chunkId, c);
       }
 
-      let originalController: ReadableStreamDefaultController<ControllerChunk>;
-      const stream = new ReadableStream<ControllerChunk>({
-        start(controller) {
-          originalController = controller;
-        },
-      });
-
-      const controllerLike: StreamController = {
-        enqueue: (v) => originalController.enqueue(v as ChunkData),
-        close: () => {
-          originalController.close();
-
-          // mark as closed and remove methods
-          Object.assign(controllerLike, {
-            closed: true,
-            close: () => {
-              // noop
-            },
-            enqueue: () => {
-              // noop
-            },
-          });
-
-          if (isEmpty()) {
-            abortController.abort();
-          }
-        },
-        closed: false,
-        getReaderResource: () => {
-          const reader = stream.getReader();
-
-          return makeResource(reader, () => {
-            reader.releaseLock();
-            controllerLike.close();
-          });
-        },
-      };
-      controllerMap.set(chunkId, controllerLike);
-
-      return controllerLike;
+      return c;
     },
 
     /**
