@@ -25,6 +25,7 @@
     "react-dom": "^18.3.1",
     "superjson": "^1.12.4",
     "tailwind-merge": "^2.0.0",
+    "tslib": "^2.8.1",
     "vinxi": "^0.4.3",
     "zod": "^3.0.0"
   },
