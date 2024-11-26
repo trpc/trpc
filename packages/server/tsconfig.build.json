@@ -4,7 +4,7 @@
     "declarationDir": "dist",
     "types": ["node"],
     // https://github.com/tsconfig/bases/blob/main/bases/node18.json
-    "lib": ["es2023", "DOM"],
+    "lib": ["es2023", "DOM", "DOM.Iterable"],
     "module": "node16",
     "moduleResolution": "node16",
     "target": "es2022"
