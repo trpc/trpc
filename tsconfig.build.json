@@ -23,7 +23,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noPropertyAccessFromIndexSignature": true,
-    "noImplicitOverride": true
+    "noImplicitOverride": true,
+    "importHelpers": true
   },
   "exclude": ["test", "**/*.test.ts", "**/*.test.tsx", "__tests__"]
 }
