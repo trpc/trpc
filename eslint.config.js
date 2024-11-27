@@ -115,6 +115,9 @@ export default tseslint.config(
       '@typescript-eslint/require-await': 'off',
       '@typescript-eslint/restrict-plus-operands': 'off',
       '@typescript-eslint/restrict-template-expressions': 'off',
+
+      // Seems to be a bug in the rule as when it has an issue and when fixed TSC complains
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
     },
   },
   {
