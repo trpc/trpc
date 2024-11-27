@@ -1,9 +1,3 @@
-import type {
-  DataTag,
-  FetchStatus,
-  Query,
-  QueryKey,
-} from '@tanstack/react-query';
 import type { TRPCRequestOptions } from '@trpc/client';
 
 export type ResolverDef = {
@@ -51,41 +45,3 @@ export type TRPCQueryKey = [
 ];
 
 export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]
-
-/**
- * May be temporary if this can merge:
- * @see https://github.com/TanStack/query/pull/8332
- */
-export interface TRPCQueryFilters<
-  TQueryFnData = unknown,
-  TError = Error,
-  TData = TQueryFnData,
-  TQueryKey extends QueryKey = QueryKey,
-> {
-  /**
-   * Filter to active queries, inactive queries or all queries
-   */
-  type?: 'all' | 'active' | 'inactive';
-  /**
-   * Match query key exactly
-   */
-  exact?: boolean;
-  /**
-   * Include queries matching this predicate function
-   */
-  predicate?: (query: Query<TQueryFnData, TError, TData, TQueryKey>) => boolean;
-  /**
-   * Include queries matching this query key
-   */
-  queryKey?: unknown extends TQueryFnData
-    ? QueryKey
-    : QueryKey & DataTag<unknown, TQueryFnData>;
-  /**
-   * Include or exclude stale queries
-   */
-  stale?: boolean;
-  /**
-   * Include queries matching their fetchStatus
-   */
-  fetchStatus?: FetchStatus;
-}

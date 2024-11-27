@@ -39,7 +39,6 @@ import type {
   QueryType,
   ResolverDef,
   TRPCMutationKey,
-  TRPCQueryFilters,
   TRPCQueryKey,
 } from './types';
 import {
@@ -61,7 +60,7 @@ export interface DecorateQueryKeyable {
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    */
-  queryFilter: (input?: undefined, filters?: TRPCQueryFilters) => QueryFilters;
+  queryFilter: (input?: undefined, filters?: QueryFilters) => QueryFilters;
 }
 
 export type InferInput<
@@ -111,8 +110,8 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
    */
   queryFilter: (
     input?: TDef['input'],
-    filters?: TRPCQueryFilters<TDef['output'], TDef['errorShape']>,
-  ) => TRPCQueryFilters<TDef['output'], TDef['errorShape']>;
+    filters?: QueryFilters<TDef['output'], TDef['errorShape']>,
+  ) => QueryFilters<TDef['output'], TDef['errorShape']>;
 }
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
