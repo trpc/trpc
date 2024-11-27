@@ -2,6 +2,7 @@ import { getServerAndReactClient } from './__helpers';
 import { useQueryClient } from '@tanstack/react-query';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import/error/formatter';
 import * as React from 'react';
 import { AssertType, describe, expect, test } from 'vitest';
 import { z } from 'zod';
@@ -12,7 +13,41 @@ const testContext = () => {
     iterableDeferred.resolve();
     iterableDeferred = createDeferred();
   };
-  const t = initTRPC.create({});
+  const t = initTRPC.create({
+    errorFormatter(opts) {
+      return { foo: 1, ...opts.shape };
+    },
+  });
+
+  const appRouter = t.router({
+    bluesky: {
+      post: t.router({
+        byId: t.procedure
+          .input(
+            z.object({
+              id: z.string(),
+            }),
+          )
+          .query(() => '__result' as const),
+        create: t.procedure.mutation(() => '__mutationResult' as const),
+      }),
+    },
+  });
+
+  return Object.assign(getServerAndReactClient(appRouter), { nextIterable });
+};
+
+const testContextWithErrorShape = () => {
+  let iterableDeferred = createDeferred<void>();
+  const nextIterable = () => {
+    iterableDeferred.resolve();
+    iterableDeferred = createDeferred();
+  };
+  const t = initTRPC.create({
+    errorFormatter(opts) {
+      return { foo: 1, ...opts.shape };
+    },
+  });
 
   const appRouter = t.router({
     bluesky: {
@@ -109,6 +144,8 @@ describe('get queryFilter', () => {
           },
         },
       );
+
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       const b = query.getQueryData(a.queryKey!);
       assertType<'__result' | undefined>(b);
 
@@ -185,6 +222,62 @@ describe('get queryKey', () => {
         trpc.bluesky.post.byId.queryKey({ id: '1' }),
       );
       assertType<'__result' | undefined>(a);
+
+      const b = query.setQueryData(
+        trpc.bluesky.post.byId.queryKey({ id: '1' }),
+        '__result',
+      );
+      assertType<'__result' | undefined>(b);
+
+      return 'some text';
+    }
+
+    ctx.renderApp(<Component />);
+  });
+
+  test('type inference for getQueryState', async () => {
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+      const query = useQueryClient();
+
+      const a = query.getQueryState(
+        trpc.bluesky.post.byId.queryKey({ id: '1' }),
+      );
+      assertType<'__result' | undefined>(a?.data);
+      assertType<DefaultErrorShape | null | undefined>(a?.error);
+
+      const b = query.setQueryData(
+        trpc.bluesky.post.byId.queryKey({ id: '1' }),
+        '__result',
+      );
+      assertType<'__result' | undefined>(b);
+
+      return 'some text';
+    }
+
+    ctx.renderApp(<Component />);
+  });
+
+  test('type inference for getQueryState with defined error shape', async () => {
+    await using ctx = testContextWithErrorShape();
+
+    const { useTRPC } = ctx;
+
+    function Component() {
+      const trpc = useTRPC();
+      const query = useQueryClient();
+
+      const a = query.getQueryState(
+        trpc.bluesky.post.byId.queryKey({ id: '1' }),
+      );
+      assertType<'__result' | undefined>(a?.data);
+      assertType<(DefaultErrorShape & { foo: number }) | null | undefined>(
+        a?.error,
+      );
 
       const b = query.setQueryData(
         trpc.bluesky.post.byId.queryKey({ id: '1' }),

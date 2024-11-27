@@ -48,7 +48,7 @@ interface UndefinedTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
       TRPCQueryKey
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>>;
+  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>, TError>;
 }
 
 interface DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
@@ -71,7 +71,7 @@ interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
       TRPCQueryKey
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TData>>;
+  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TData>, TError>;
 }
 
 interface UnusedSkipTokenTRPCQueryOptionsIn<TQueryFnData, TData, TError>
@@ -94,7 +94,7 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
       TRPCQueryKey
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>>;
+  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>, TError>;
 }
 
 export interface TRPCQueryOptions<TDef extends ResolverDef> {

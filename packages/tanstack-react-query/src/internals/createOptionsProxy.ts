@@ -82,6 +82,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   '~types': {
     input: TDef['input'];
     output: TDef['output'];
+    errorShape: TDef['errorShape'];
   };
 
   /**
@@ -101,7 +102,9 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
    */
   queryKey: (
     input?: TDef['input'],
-  ) => TRPCQueryKey & DataTag<unknown, TDef['output']>;
+    // tslint seems to be wrong here, the type is correct
+    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+  ) => TRPCQueryKey & DataTag<unknown, TDef['output'], TDef['errorShape']>;
 
   /**
    * Calculate a Tanstack Query Filter for a Query Procedure
