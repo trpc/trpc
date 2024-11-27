@@ -107,7 +107,7 @@
     "react-dom": "^18.3.1",
     "rollup": "^4.24.4",
     "tsx": "^4.0.0",
-    "typescript": "^5.6.2",
+    "typescript": "^5.7.0",
     "zod": "^3.0.0"
   },
   "publishConfig": {
