@@ -33,6 +33,8 @@ import {
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
+// eslint-disable-next-line no-restricted-imports
+import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
 import { Unpromise } from '../vendor/unpromise';
 import { createURL, type NodeHTTPCreateContextFnOptions } from './node-http';
 
@@ -272,17 +274,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
 
         const iterable = isObservable(result)
-          ? observableToAsyncIterable(result)
+          ? observableToAsyncIterable(result, abortController.signal)
           : result;
 
-        const iterator: AsyncIterator<unknown> =
-          iterable[Symbol.asyncIterator]();
-
-        const abortPromise = new Promise<'abort'>((resolve) => {
-          abortController.signal.onabort = () => resolve('abort');
-        });
-
         run(async () => {
+          await using iterator = iteratorResource(iterable);
+
+          const abortPromise = new Promise<'abort'>((resolve) => {
+            abortController.signal.onabort = () => resolve('abort');
+          });
           // We need those declarations outside the loop for garbage collection reasons. If they
           // were declared inside, they would not be freed until the next value is present.
           let next:
@@ -349,7 +349,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             result = null;
           }
 
-          await iterator.return?.();
           respond({
             id,
             jsonrpc,

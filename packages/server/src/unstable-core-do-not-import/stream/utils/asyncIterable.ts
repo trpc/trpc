@@ -1,6 +1,16 @@
 import { Unpromise } from '../../../vendor/unpromise';
+import { makeAsyncResource } from './disposable';
 import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
+export function iteratorResource<TYield, TReturn, TNext>(
+  iterable: AsyncIterable<TYield, TReturn, TNext>,
+): AsyncIterator<TYield, TReturn, TNext> & AsyncDisposable {
+  const iterator = iterable[Symbol.asyncIterator]();
+
+  return makeAsyncResource(iterator, async () => {
+    await iterator.return?.();
+  });
+}
 /**
  * Derives a new {@link AsyncGenerator} based on {@link iterable}, that automatically stops after the specified duration.
  */
@@ -8,34 +18,29 @@ export async function* withMaxDuration<T>(
   iterable: AsyncIterable<T>,
   opts: { maxDurationMs: number },
 ): AsyncGenerator<T> {
-  const iterator = iterable[Symbol.asyncIterator]();
+  await using iterator = iteratorResource(iterable);
 
-  const timer = timerResource(opts.maxDurationMs);
-  try {
-    const timerPromise = timer.start();
+  using timer = timerResource(opts.maxDurationMs);
 
-    // declaration outside the loop for garbage collection reasons
-    let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
+  const timerPromise = timer.start();
 
-    while (true) {
-      result = await Unpromise.race([iterator.next(), timerPromise]);
-      if (result === disposablePromiseTimerResult) {
-        // cancelled due to timeout
+  // declaration outside the loop for garbage collection reasons
+  let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
 
-        const res = await iterator.return?.();
-        return res?.value;
-      }
-      if (result.done) {
-        return result;
-      }
-      yield result.value;
-      // free up reference for garbage collection
-      result = null;
+  while (true) {
+    result = await Unpromise.race([iterator.next(), timerPromise]);
+    if (result === disposablePromiseTimerResult) {
+      // cancelled due to timeout
+
+      const res = await iterator.return?.();
+      return res?.value;
     }
-  } finally {
-    // dispose timer
-    // Shouldn't be needed, but build breaks with `using` keyword
-    timer[Symbol.dispose]();
+    if (result.done) {
+      return result;
+    }
+    yield result.value;
+    // free up reference for garbage collection
+    result = null;
   }
 }
 
@@ -51,37 +56,34 @@ export async function* takeWithGrace<T>(
     gracePeriodMs: number;
   },
 ): AsyncGenerator<T> {
-  const iterator = iterable[Symbol.asyncIterator]();
+  await using iterator = iteratorResource(iterable);
 
   // declaration outside the loop for garbage collection reasons
   let result: null | IteratorResult<T> | typeof disposablePromiseTimerResult;
 
-  const timer = timerResource(opts.gracePeriodMs);
-  try {
-    let count = opts.count;
+  using timer = timerResource(opts.gracePeriodMs);
 
-    let timerPromise = new Promise<typeof disposablePromiseTimerResult>(() => {
-      // never resolves
-    });
+  let count = opts.count;
 
-    while (true) {
-      result = await Unpromise.race([iterator.next(), timerPromise]);
-      if (result === disposablePromiseTimerResult) {
-        // cancelled
-        const res = await iterator.return?.();
-        return res?.value;
-      }
-      if (result.done) {
-        return result.value;
-      }
-      yield result.value;
-      if (--count === 0) {
-        timerPromise = timer.start();
-      }
-      // free up reference for garbage collection
-      result = null;
+  let timerPromise = new Promise<typeof disposablePromiseTimerResult>(() => {
+    // never resolves
+  });
+
+  while (true) {
+    result = await Unpromise.race([iterator.next(), timerPromise]);
+    if (result === disposablePromiseTimerResult) {
+      // cancelled
+      const res = await iterator.return?.();
+      return res?.value;
     }
-  } finally {
-    timer[Symbol.dispose]();
+    if (result.done) {
+      return result.value;
+    }
+    yield result.value;
+    if (--count === 0) {
+      timerPromise = timer.start();
+    }
+    // free up reference for garbage collection
+    result = null;
   }
 }

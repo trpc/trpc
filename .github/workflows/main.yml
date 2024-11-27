@@ -41,7 +41,6 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm build
       - run: pnpm test-ci
 
       - uses: codecov/codecov-action@v5

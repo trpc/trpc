@@ -47,19 +47,24 @@ export function zAsyncIterable<
     >((val) => isAsyncIterable(val))
     .transform(async function* (iter) {
       const iterator = iter[Symbol.asyncIterator]();
-      let next;
-      while ((next = await iterator.next()) && !next.done) {
-        if (opts.tracked) {
-          const [id, data] = trackedEnvelopeSchema.parse(next.value);
-          yield tracked(id, await opts.yield.parseAsync(data));
-          continue;
+
+      try {
+        let next;
+        while ((next = await iterator.next()) && !next.done) {
+          if (opts.tracked) {
+            const [id, data] = trackedEnvelopeSchema.parse(next.value);
+            yield tracked(id, await opts.yield.parseAsync(data));
+            continue;
+          }
+          yield opts.yield.parseAsync(next.value);
         }
-        yield opts.yield.parseAsync(next.value);
+        if (opts.return) {
+          return await opts.return.parseAsync(next.value);
+        }
+        return;
+      } finally {
+        await iterator.return?.();
       }
-      if (opts.return) {
-        return await opts.return.parseAsync(next.value);
-      }
-      return;
     }) as z.ZodType<
     AsyncIterable<
       Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,

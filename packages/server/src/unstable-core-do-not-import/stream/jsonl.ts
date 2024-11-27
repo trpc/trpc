@@ -1,8 +1,10 @@
+import { Unpromise } from '../../vendor/unpromise';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
+import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-import { createReadableStream } from './utils/createReadableStream';
-import { withRefCount } from './utils/withRefCount';
+import { makeAsyncResource, makeResource } from './utils/disposable';
+import { readableStreamFrom } from './utils/readableStreamFrom';
 
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
@@ -20,6 +22,8 @@ export type NodeJSReadableStreamEsque = {
 };
 
 // ---------- types
+
+// ---------- types
 const CHUNK_VALUE_TYPE_PROMISE = 0;
 type CHUNK_VALUE_TYPE_PROMISE = typeof CHUNK_VALUE_TYPE_PROMISE;
 const CHUNK_VALUE_TYPE_ASYNC_ITERABLE = 1;
@@ -32,8 +36,8 @@ type PROMISE_STATUS_REJECTED = typeof PROMISE_STATUS_REJECTED;
 
 const ASYNC_ITERABLE_STATUS_RETURN = 0;
 type ASYNC_ITERABLE_STATUS_RETURN = typeof ASYNC_ITERABLE_STATUS_RETURN;
-const ASYNC_ITERABLE_STATUS_VALUE = 1;
-type ASYNC_ITERABLE_STATUS_VALUE = typeof ASYNC_ITERABLE_STATUS_VALUE;
+const ASYNC_ITERABLE_STATUS_YIELD = 1;
+type ASYNC_ITERABLE_STATUS_YIELD = typeof ASYNC_ITERABLE_STATUS_YIELD;
 const ASYNC_ITERABLE_STATUS_ERROR = 2;
 type ASYNC_ITERABLE_STATUS_ERROR = typeof ASYNC_ITERABLE_STATUS_ERROR;
 
@@ -77,7 +81,7 @@ type IterableChunk =
     ]
   | [
       chunkIndex: ChunkIndex,
-      status: ASYNC_ITERABLE_STATUS_VALUE,
+      status: ASYNC_ITERABLE_STATUS_YIELD,
       value: EncodedValue,
     ]
   | [
@@ -117,101 +121,98 @@ class MaxDepthError extends Error {
   }
 }
 
-function createBatchStreamProducer(opts: ProducerOptions) {
+async function* createBatchStreamProducer(
+  opts: ProducerOptions,
+): AsyncIterable<Head | ChunkData, void> {
   const { data } = opts;
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const stream = createReadableStream<ChunkData>();
-  const pending = withRefCount(new Set<ChunkIndex>(), () => {
-    if (!stream.cancelled()) {
-      stream.controller.close();
-    }
-  });
+  await using queue = makeAsyncResource(
+    new Set<{
+      iterator: AsyncIterator<ChunkData, ChunkData>;
+      nextPromise: Promise<IteratorResult<ChunkData, ChunkData>>;
+    }>(),
+    async () => {
+      await Promise.all(Array.from(queue).map((it) => it.iterator.return?.()));
+    },
+  );
+  function registerAsync(
+    callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, ChunkData>,
+  ) {
+    const idx = counter++ as ChunkIndex;
 
-  const maybeEnqueue = (chunk: ChunkData) => {
-    if (!stream.cancelled()) {
-      stream.controller.enqueue(chunk);
-    }
-  };
+    const iterator = callback(idx)[Symbol.asyncIterator]();
+
+    const nextPromise = iterator.next();
+
+    nextPromise.catch(() => {
+      // prevent unhandled promise rejection
+    });
+    queue.add({
+      iterator,
+      nextPromise,
+    });
+
+    return idx;
+  }
 
   function encodePromise(promise: Promise<unknown>, path: (string | number)[]) {
-    const error = checkMaxDepth(path);
-    if (error) {
-      // Catch any errors from the original promise to ensure they're reported
-      promise.catch((cause) => {
+    return registerAsync(async function* (idx) {
+      const error = checkMaxDepth(path);
+      if (error) {
+        // Catch any errors from the original promise to ensure they're reported
+        promise.catch((cause) => {
+          opts.onError?.({ error: cause, path });
+        });
+        // Replace the promise with a rejected one containing the max depth error
+        promise = Promise.reject(error);
+      }
+      try {
+        const next = await promise;
+        return [idx, PROMISE_STATUS_FULFILLED, encode(next, path)];
+      } catch (cause) {
         opts.onError?.({ error: cause, path });
-      });
-      // Replace the promise with a rejected one containing the max depth error
-      promise = Promise.reject(error);
-    }
-    const idx = counter++ as ChunkIndex;
-    pending.add(idx);
-
-    promise
-      .then((it) => {
-        maybeEnqueue([idx, PROMISE_STATUS_FULFILLED, encode(it, path)]);
-      })
-      .catch((cause) => {
-        opts.onError?.({ error: cause, path });
-        maybeEnqueue([
+        return [
           idx,
           PROMISE_STATUS_REJECTED,
           opts.formatError?.({ error: cause, path }),
-        ]);
-      })
-      .finally(() => {
-        pending.delete(idx);
-      });
-    return idx;
+        ];
+      }
+    });
   }
   function encodeAsyncIterable(
     iterable: AsyncIterable<unknown>,
     path: (string | number)[],
   ) {
-    const idx = counter++ as ChunkIndex;
-    pending.add(idx);
-    run(async () => {
+    return registerAsync(async function* (idx) {
       const error = checkMaxDepth(path);
       if (error) {
         throw error;
       }
-      const iterator = iterable[Symbol.asyncIterator]();
+      await using iterator = iteratorResource(iterable);
 
-      while (true) {
-        if (stream.cancelled()) {
-          const res = await iterator.return?.();
-          return res?.value;
+      try {
+        while (true) {
+          const next = await iterator.next();
+          if (next.done) {
+            return [
+              idx,
+              ASYNC_ITERABLE_STATUS_RETURN,
+              encode(next.value, path),
+            ];
+          }
+          yield [idx, ASYNC_ITERABLE_STATUS_YIELD, encode(next.value, path)];
         }
-        const next = await iterator.next();
-
-        if (next.done) {
-          maybeEnqueue([
-            idx,
-            ASYNC_ITERABLE_STATUS_RETURN,
-            encode(next.value, path),
-          ]);
-          break;
-        }
-        maybeEnqueue([
-          idx,
-          ASYNC_ITERABLE_STATUS_VALUE,
-          encode(next.value, path),
-        ]);
-      }
-    })
-      .catch((cause) => {
+      } catch (cause) {
         opts.onError?.({ error: cause, path });
-        maybeEnqueue([
+        return [
           idx,
           ASYNC_ITERABLE_STATUS_ERROR,
           opts.formatError?.({ error: cause, path }),
-        ]);
-      })
-      .finally(() => {
-        pending.delete(idx);
-      });
-    return idx;
+        ];
+      }
+    });
   }
   function checkMaxDepth(path: (string | number)[]) {
     if (opts.maxDepth && path.length > opts.maxDepth) {
@@ -266,20 +267,35 @@ function createBatchStreamProducer(opts: ProducerOptions) {
   for (const [key, item] of Object.entries(data)) {
     newHead[key] = encode(item, [key]);
   }
-  pending.activate();
 
-  return [newHead, stream.readable] as const;
+  yield newHead;
+
+  // Process all async iterables in parallel by racing their next values
+  while (queue.size > 0) {
+    // Race all iterators to get the next value from any of them
+    const [entry, res] = await Unpromise.race(
+      Array.from(queue).map(async (it) => [it, await it.nextPromise] as const),
+    );
+
+    yield res.value;
+
+    // Remove current iterator and re-add if not done
+    queue.delete(entry);
+    if (!res.done) {
+      entry.nextPromise = entry.iterator.next();
+      queue.add(entry);
+    }
+  }
 }
 /**
  * JSON Lines stream producer
  * @see https://jsonlines.org/
  */
 export function jsonlStreamProducer(opts: ProducerOptions) {
-  let [head, stream] = createBatchStreamProducer(opts);
+  let stream = readableStreamFrom(createBatchStreamProducer(opts));
 
   const { serialize } = opts;
   if (serialize) {
-    head = serialize(head);
     stream = stream.pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
@@ -292,9 +308,6 @@ export function jsonlStreamProducer(opts: ProducerOptions) {
   return stream
     .pipeThrough(
       new TransformStream({
-        start(controller) {
-          controller.enqueue(JSON.stringify(head) + '\n');
-        },
         transform(chunk, controller) {
           controller.enqueue(JSON.stringify(chunk) + '\n');
         },
@@ -320,17 +333,20 @@ export type ConsumerOnError = (opts: { error: unknown }) => void;
 const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
   return {
     getReader() {
-      const { readable, controller } = createReadableStream<Uint8Array>();
-      source.on('data', (chunk) => {
-        controller.enqueue(chunk);
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          source.on('data', (chunk) => {
+            controller.enqueue(chunk);
+          });
+          source.on('end', () => {
+            controller.close();
+          });
+          source.on('error', (error) => {
+            controller.error(error);
+          });
+        },
       });
-      source.on('end', () => {
-        controller.close();
-      });
-      source.on('error', (error) => {
-        controller.error(error);
-      });
-      return readable.getReader();
+      return stream.getReader();
     },
   };
 };
@@ -394,6 +410,102 @@ function createConsumerStream<THead>(
     }),
   );
 }
+/**
+ * Represents a chunk of data or stream interruption error that can be enqueued to a controller
+ */
+type ControllerChunk = ChunkData | StreamInterruptedError;
+
+/**
+ * Creates a handler for managing stream controllers and their lifecycle
+ */
+function createStreamsManager(abortController: AbortController) {
+  const controllerMap = new Map<
+    ChunkIndex,
+    ReturnType<typeof createStreamController>
+  >();
+
+  /**
+   * Checks if there are no pending controllers or deferred promises
+   */
+  function isEmpty() {
+    return Array.from(controllerMap.values()).every((c) => c.closed);
+  }
+
+  /**
+   * Creates a stream controller
+   */
+  function createStreamController() {
+    let originalController: ReadableStreamDefaultController<ControllerChunk>;
+    const stream = new ReadableStream<ControllerChunk>({
+      start(controller) {
+        originalController = controller;
+      },
+    });
+
+    const streamController = {
+      enqueue: (v: ControllerChunk) => originalController.enqueue(v),
+      close: () => {
+        originalController.close();
+
+        // mark as closed and remove methods
+        Object.assign(streamController, {
+          closed: true,
+          close: () => {
+            // noop
+          },
+          enqueue: () => {
+            // noop
+          },
+          getReaderResource: null,
+        });
+
+        if (isEmpty()) {
+          abortController.abort();
+        }
+      },
+      closed: false,
+      getReaderResource: () => {
+        const reader = stream.getReader();
+
+        return makeResource(reader, () => {
+          reader.releaseLock();
+          streamController.close();
+        });
+      },
+    };
+
+    return streamController;
+  }
+
+  /**
+   * Gets or creates a stream controller
+   */
+  function getOrCreate(chunkId: ChunkIndex) {
+    let c = controllerMap.get(chunkId);
+    if (!c) {
+      c = createStreamController();
+      controllerMap.set(chunkId, c);
+    }
+    return c;
+  }
+
+  /**
+   * Cancels all pending controllers and rejects deferred promises
+   */
+  function cancelAll(reason: unknown) {
+    const error = new StreamInterruptedError(reason);
+    for (const controller of controllerMap.values()) {
+      controller.enqueue(error);
+      controller.close();
+    }
+  }
+
+  return {
+    getOrCreate,
+    isEmpty,
+    cancelAll,
+  };
+}
 
 /**
  * JSON Lines stream consumer
@@ -423,130 +535,56 @@ export async function jsonlStreamConsumer<THead>(opts: {
   }
   let headDeferred: null | Deferred<THead> = createDeferred();
 
-  type ControllerChunk = ChunkData | StreamInterruptedError;
-  type ChunkController = ReadableStreamDefaultController<ControllerChunk>;
-  /**
-   * This is needed as new values can come in before the controller has read the chunk
-   * Not pretty, could likely be refactored and omitted somehow
-   */
-  const chunkDeferred = new Map<ChunkIndex, Deferred<ChunkController>>();
-
-  const controllers = new Map<ChunkIndex, ChunkController>();
-
-  const maybeAbort = () => {
-    if (chunkDeferred.size === 0 && controllers.size === 0) {
-      // nothing is listening to the stream anymore
-      opts.abortController?.abort();
-    }
-  };
+  const streamManager = createStreamsManager(opts.abortController);
 
   function decodeChunkDefinition(value: ChunkDefinition) {
     const [_path, type, chunkId] = value;
 
-    const stream = createReadableStream<ChunkData>();
-
-    controllers.set(chunkId, stream.controller);
-
-    // resolve chunk deferred if it exists
-    const deferred = chunkDeferred.get(chunkId);
-    if (deferred) {
-      deferred.resolve(stream.controller);
-      chunkDeferred.delete(chunkId);
-    }
+    const controller = streamManager.getOrCreate(chunkId);
 
     switch (type) {
       case CHUNK_VALUE_TYPE_PROMISE: {
-        return new Promise((resolve, reject) => {
-          // listen for next value in the stream
-          const reader = stream.readable.getReader();
-          reader
-            .read()
-            .then((it) => {
-              if (it.done) {
-                reject(new Error('Promise chunk ended without value'));
-                return;
-              }
-              if (it.value instanceof StreamInterruptedError) {
-                reject(it.value);
-                return;
-              }
-              const value = it.value;
-              const [_chunkId, status, data] = value as PromiseChunk;
-              switch (status) {
-                case PROMISE_STATUS_FULFILLED:
-                  resolve(decode(data));
+        return run(async () => {
+          using reader = controller.getReaderResource();
 
-                  break;
-                case PROMISE_STATUS_REJECTED:
-                  reject(
-                    opts.formatError?.({ error: data }) ?? new AsyncError(data),
-                  );
-                  break;
-              }
-            })
-            .catch(reject)
-            .finally(() => {
-              controllers.delete(chunkId);
-              maybeAbort();
-            });
+          const { value } = await reader.read();
+          if (value instanceof StreamInterruptedError) {
+            throw value;
+          }
+          const [_chunkId, status, data] = value as PromiseChunk;
+          switch (status) {
+            case PROMISE_STATUS_FULFILLED:
+              return decode(data);
+            case PROMISE_STATUS_REJECTED:
+              throw opts.formatError?.({ error: data }) ?? new AsyncError(data);
+          }
         });
       }
       case CHUNK_VALUE_TYPE_ASYNC_ITERABLE: {
-        const reader = stream.readable.getReader();
-        const iterator: AsyncIterator<unknown> = {
-          next: async () => {
-            const { done, value } = await reader.read();
+        return run(async function* () {
+          using reader = controller.getReaderResource();
+
+          while (true) {
+            const { value } = await reader.read();
             if (value instanceof StreamInterruptedError) {
               throw value;
-            }
-            if (done) {
-              controllers.delete(chunkId);
-              maybeAbort();
-
-              return {
-                done: true,
-                value: undefined,
-              };
             }
 
             const [_chunkId, status, data] = value as IterableChunk;
 
             switch (status) {
-              case ASYNC_ITERABLE_STATUS_VALUE:
-                return {
-                  done: false,
-                  value: decode(data),
-                };
+              case ASYNC_ITERABLE_STATUS_YIELD:
+                yield decode(data);
+                break;
               case ASYNC_ITERABLE_STATUS_RETURN:
-                controllers.delete(chunkId);
-                maybeAbort();
-
-                return {
-                  done: true,
-                  value: decode(data),
-                };
+                return decode(data);
               case ASYNC_ITERABLE_STATUS_ERROR:
-                controllers.delete(chunkId);
-                maybeAbort();
-
                 throw (
                   opts.formatError?.({ error: data }) ?? new AsyncError(data)
                 );
             }
-          },
-          return: async () => {
-            controllers.delete(chunkId);
-            maybeAbort();
-
-            return {
-              done: true,
-              value: undefined,
-            };
-          },
-        };
-        return {
-          [Symbol.asyncIterator]: () => iterator,
-        };
+          }
+        });
       }
     }
   }
@@ -571,16 +609,12 @@ export async function jsonlStreamConsumer<THead>(opts: {
     const error = new StreamInterruptedError(reason);
 
     headDeferred?.reject(error);
-    for (const controller of controllers.values()) {
-      controller.enqueue(error);
-      controller.close();
-    }
-    controllers.clear();
+    streamManager.cancelAll(error);
   };
   source
     .pipeTo(
       new WritableStream({
-        async write(chunkOrHead) {
+        write(chunkOrHead) {
           if (headDeferred) {
             const head = chunkOrHead as Record<number | string, unknown>;
 
@@ -596,17 +630,8 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const chunk = chunkOrHead as ChunkData;
           const [idx] = chunk;
 
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          let readController = controllers.get(idx)!;
-          if (!readController) {
-            let deferred = chunkDeferred.get(idx);
-            if (!deferred) {
-              deferred = createDeferred();
-              chunkDeferred.set(idx, deferred);
-            }
-            readController = await deferred.promise;
-          }
-          readController.enqueue(chunk);
+          const controller = streamManager.getOrCreate(idx);
+          controller.enqueue(chunk);
         },
         close: closeOrAbort,
         abort: closeOrAbort,
@@ -620,10 +645,5 @@ export async function jsonlStreamConsumer<THead>(opts: {
       closeOrAbort(error);
     });
 
-  return [
-    await headDeferred.promise,
-    {
-      controllers,
-    },
-  ] as const;
+  return [await headDeferred.promise, streamManager] as const;
 }
