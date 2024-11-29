@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
@@ -8,8 +9,8 @@ import type {
 import { TRPCError } from '../..';
 import type { AnyRouter, inferRouterContext } from '../../core';
 import type { HTTPRequest } from '../../http';
-import { resolveHTTPResponse } from '../../http';
-import type { HTTPResponse } from '../../http/internals/types';
+import { resolveHTTPResponse, getBatchStreamFormatter } from '../../http';
+import type { HTTPResponse, ResponseChunk } from '../../http/internals/types';
 import type {
   APIGatewayEvent,
   APIGatewayResult,
@@ -118,5 +119,84 @@ export function awsLambdaRequestHandler<
     });
 
     return tRPCOutputToAPIGatewayOutput<TEvent, TResult>(event, response);
+  };
+}
+
+export function awsLambdaStreamingRequestHandler<
+  TRouter extends AnyRouter,
+  TEvent extends APIGatewayEvent,
+>(
+  opts: AWSLambdaOptions<TRouter, TEvent>,
+): (event: TEvent, responseStream: awslambda.ResponseStream, context: APIGWContext) => Promise<void> {
+  return async (event, responseStream, context) => {
+    const req = lambdaEventToHTTPRequest(event);
+    const path = getPath(event);
+    const createContext = async function _createContext(): Promise<
+      inferRouterContext<TRouter>
+    > {
+      return await opts.createContext?.({ event, context });
+    };
+
+    let isStream = false;
+    let formatter: ReturnType<typeof getBatchStreamFormatter>;
+
+    const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
+      const metadata = {
+        statusCode: 200,
+        headers: {} as APIGatewayResult['headers'],
+      }
+
+      const headers = transformHeaders(head.headers ?? {});
+      if (!headers) throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to transform headers',
+      });
+
+      if (isStreaming) {
+        headers['Transfer-Encoding'] = 'chunked';
+        const vary = headers.Vary;
+        headers.Vary = vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode';
+        isStream = true;
+        formatter = getBatchStreamFormatter();;
+        responseStream = awslambda.HttpResponseStream.from(responseStream, metadata);
+      }
+    };
+
+    const unstable_onChunk = ([index, string]: ResponseChunk) => {
+      if (index === -1) {
+        /**
+         * Full response, no streaming. This can happen
+         * - if the response is an error
+         * - if response is empty (HEAD request)
+         */
+        responseStream.end(string);
+      } else {
+        responseStream.write(formatter(index, string));
+      }
+    };
+
+    await resolveHTTPResponse({
+      router: opts.router,
+      batching: opts.batching,
+      responseMeta: opts?.responseMeta,
+      createContext,
+      req,
+      path,
+      error: null,
+      onError(o) {
+        opts?.onError?.({
+          ...o,
+          req: event,
+        });
+      },
+      unstable_onHead,
+      unstable_onChunk,
+    });
+
+    if (isStream) {
+      responseStream.write(formatter!.end());
+      responseStream.end();
+      return;
+    }
   };
 }
