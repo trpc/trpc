@@ -114,15 +114,32 @@ const trpcImportName = Options.text('trpcImportName').pipe(
   Options.withDescription('Name of the trpc import'),
 );
 
+const skipTanstackQuery = Options.boolean('skipTanstackQuery').pipe(
+  Options.withAlias('q'),
+  Options.withDefault(false),
+  Options.withDescription('Skip installing @trpc/tanstack-react-query package'),
+);
+
+const verbose = Options.boolean('verbose').pipe(
+  Options.withAlias('v'),
+  Options.withDefault(false),
+  Options.withDescription('Enable verbose logging'),
+);
+
 const rootComamnd = CLICommand.make(
   'upgrade',
   {
     force,
     trpcFile,
     trpcImportName,
+    skipTanstackQuery,
+    verbose,
   },
   (args) =>
     Effect.gen(function* () {
+      if (args.verbose) {
+        yield* Effect.log('Running upgrade with args:', args);
+      }
       if (!args.force) {
         yield* assertCleanGitTree;
       }
@@ -167,8 +184,10 @@ const rootComamnd = CLICommand.make(
         );
       });
 
-      yield* Effect.log('Installing @trpc/tanstack-react-query');
-      yield* installPackage('@trpc/tanstack-react-query');
+      if (!args.skipTanstackQuery) {
+        yield* Effect.log('Installing @trpc/tanstack-react-query');
+        yield* installPackage('@trpc/tanstack-react-query');
+      }
     }),
 );
 
