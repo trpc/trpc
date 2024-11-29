@@ -15,12 +15,7 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import {
-  abortSignalsAnyPonyfill,
-  isAsyncIterable,
-  isObject,
-  run,
-} from '../utils';
+import { isAsyncIterable, isObject, run } from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -30,15 +25,9 @@ import type {
 } from './types';
 
 function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
-  return {
-    [Symbol.asyncIterator]: () => {
-      return {
-        next() {
-          throw err;
-        },
-      };
-    },
-  };
+  return run(async function* () {
+    throw err;
+  });
 }
 type HTTPMethods =
   | 'GET'
@@ -324,7 +313,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     interface RPCResultOk {
       data: unknown;
-      abortCtrl: AbortController;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
@@ -357,15 +345,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
         }
-        const abortCtrl = new AbortController();
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
           ctx: ctxManager.value(),
           type: proc._def.type,
-          signal: abortSignalsAnyPonyfill([opts.req.signal, abortCtrl.signal]),
+          signal: opts.req.signal,
         });
-        return [undefined, { data, abortCtrl }];
+        return [undefined, { data }];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();

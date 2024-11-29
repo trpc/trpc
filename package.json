@@ -46,8 +46,9 @@
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
     "@manypkg/cli": "^0.22.0",
     "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-typescript": "^12.1.1",
     "@swc/core": "1.9.1",
-    "@swc/helpers": "^0.5.13",
+    "@swc/helpers": "^0.5.15",
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.0.0",
@@ -72,26 +73,25 @@
     "npm-run-all2": "^7.0.0",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.8",
-    "rollup": "^4.24.4",
+    "rollup": "^4.27.4",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-delete": "^2.1.0",
     "rollup-plugin-node-externals": "^7.1.3",
     "rollup-plugin-swc3": "^0.12.1",
-    "rollup-plugin-typescript2": "^0.36.0",
     "superjson": "^1.12.4",
     "ts-prune": "^0.10.3",
     "tsx": "^4.0.0",
     "turbo": "^2.0.9",
-    "typescript": "^5.6.2",
+    "typescript": "^5.7.0",
     "typescript-eslint": "^8.13.0",
-    "vite": "^5.3.4",
+    "vite": "^6.0.0",
     "vitest": "^2.0.4",
     "vitest-environment-miniflare": "^2.14.1",
     "zod": "^3.0.0"
   },
   "pnpm": {
     "overrides": {
-      "@types/node": "20.17.6"
+      "@types/node": "20.17.9"
     }
   },
   "manypkg": {
