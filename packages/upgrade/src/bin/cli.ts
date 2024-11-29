@@ -31,18 +31,26 @@ const assertCleanGitTree = Command.string(Command.make('git', 'status')).pipe(
       'Git tree is not clean, please commit your changes and try again, or run with `--force`',
   ),
 );
-
-const installPackage = (packageName: string) => {
-  const packageManager = Match.value(
-    process.env.npm_config_user_agent ?? 'npm',
-  ).pipe(
+const getPackageManager = () =>
+  Match.value(process.env.npm_config_user_agent ?? 'npm').pipe(
     Match.when(String.startsWith('pnpm'), () => 'pnpm'),
     Match.when(String.startsWith('yarn'), () => 'yarn'),
     Match.when(String.startsWith('bun'), () => 'bun'),
     Match.orElse(() => 'npm'),
   );
+
+const installPackage = (packageName: string) => {
+  const packageManager = getPackageManager();
   return Command.streamLines(
     Command.make(packageManager, 'install', packageName),
+  ).pipe(Stream.mapEffect(Console.log), Stream.runDrain);
+};
+
+const uninstallPackage = (packageName: string) => {
+  const packageManager = getPackageManager();
+  const uninstallCmd = packageManager === 'yarn' ? 'remove' : 'uninstall';
+  return Command.streamLines(
+    Command.make(packageManager, uninstallCmd, packageName),
   ).pipe(Stream.mapEffect(Console.log), Stream.runDrain);
 };
 
@@ -187,6 +195,9 @@ const rootComamnd = CLICommand.make(
       if (!args.skipTanstackQuery) {
         yield* Effect.log('Installing @trpc/tanstack-react-query');
         yield* installPackage('@trpc/tanstack-react-query');
+
+        yield* Effect.log('Uninstalling @trpc/react-query');
+        yield* uninstallPackage('@trpc/react-query');
       }
     }),
 );
