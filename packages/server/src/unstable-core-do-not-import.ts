@@ -36,6 +36,7 @@ export * from './unstable-core-do-not-import/stream/sse.types';
 export * from './unstable-core-do-not-import/stream/sse';
 export * from './unstable-core-do-not-import/stream/tracked';
 export * from './unstable-core-do-not-import/stream/utils/createDeferred';
+export * from './unstable-core-do-not-import/stream/utils/disposable';
 export * from './unstable-core-do-not-import/transformer';
 export * from './unstable-core-do-not-import/types';
 export * from './unstable-core-do-not-import/utils';

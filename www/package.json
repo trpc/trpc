@@ -82,7 +82,7 @@
     "@types/react-dom": "^18.3.0",
     "arktype": "1.0.14-alpha",
     "autoprefixer": "^10.4.7",
-    "docusaurus-plugin-typedoc": "1.0.5",
+    "docusaurus-plugin-typedoc": "1.1.0",
     "dotenv": "^16.0.1",
     "eslint": "^9.13.0",
     "next": "^15.0.2",
