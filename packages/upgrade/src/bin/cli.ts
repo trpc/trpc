@@ -151,8 +151,7 @@ const rootComamnd = CLICommand.make(
       if (!args.force) {
         yield* assertCleanGitTree;
       }
-
-      const transforms = yield* Effect.map(
+      const transforms = yield* pipe(
         Prompt.multiSelect({
           message: 'Select transforms to run',
           choices: [
@@ -170,8 +169,18 @@ const rootComamnd = CLICommand.make(
             },
           ],
         }),
-        // Make sure provider transform runs first if it's selected
-        Array.sortWith((a) => !a.includes('provider.ts'), Order.boolean),
+        Effect.flatMap((selected) => {
+          if (selected.length === 0) {
+            return Effect.fail(
+              new Error('Please select at least one transform to run'),
+            );
+          }
+          return Effect.succeed(selected);
+        }),
+        Effect.map(
+          // Make sure provider transform runs first if it's selected
+          Array.sortWith((a) => !a.includes('provider.ts'), Order.boolean),
+        ),
       );
 
       const program = yield* TSProgram;
