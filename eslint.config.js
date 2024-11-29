@@ -98,6 +98,21 @@ export default tseslint.config(
           ],
         },
       ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'MemberExpression[object.name="Symbol"][property.name="asyncDispose"]',
+          message:
+            'Usage of Symbol.asyncDispose is not allowed - use `makeAsyncResource()`',
+        },
+        {
+          selector:
+            'MemberExpression[object.name="Symbol"][property.name="dispose"]',
+          message:
+            'Usage of Symbol.dispose is not allowed - use `makeResource()`',
+        },
+      ],
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
     },
   },
