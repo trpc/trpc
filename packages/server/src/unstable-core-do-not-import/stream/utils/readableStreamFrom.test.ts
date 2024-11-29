@@ -65,8 +65,11 @@ function streamWithEndCallback<T>(
       controller.enqueue(result.value);
     },
     async cancel() {
-      await reader.cancel();
-      onEnd();
+      try {
+        await reader.cancel();
+      } finally {
+        onEnd();
+      }
     },
   });
 }
