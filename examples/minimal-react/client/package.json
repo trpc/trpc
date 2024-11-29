@@ -13,6 +13,7 @@
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
+    "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query@next",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
