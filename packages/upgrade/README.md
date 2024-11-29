@@ -4,7 +4,7 @@ run locally with source files
 DEV=1 pnpx tsx path/to/cli.ts
 
 # example
-cd examples/minimal-react/client &&  DEV=1 pnpx tsx ../../../packages/upgrade/src/bin/cli.ts --force --skipTanstackQuery --verbose
+cd examples/minimal-react/client && DEV=1 pnpx tsx ../../../packages/upgrade/src/bin/cli.ts --force --skipTanstackQuery --verbose
 ```
 
 or compiled
