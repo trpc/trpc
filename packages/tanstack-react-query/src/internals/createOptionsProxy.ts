@@ -103,7 +103,6 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   queryKey: (
     input?: TDef['input'],
     // tslint seems to be wrong here, the type is correct
-    // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
   ) => TRPCQueryKey & DataTag<unknown, TDef['output'], TDef['errorShape']>;
 
   /**
