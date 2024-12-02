@@ -1903,13 +1903,13 @@ importers:
         version: 18.3.1(react@18.3.1)
       rollup:
         specifier: ^4.9.5
-        version: 4.24.4
+        version: 4.27.4
       tsx:
         specifier: ^4.0.0
         version: 4.19.1
       typescript:
         specifier: ^5.6.2
-        version: 5.6.2
+        version: 5.7.2
       vitest:
         specifier: ^2.0.4
         version: 2.0.4(@edge-runtime/vm@2.0.2)(@types/node@20.17.9)(@vitest/ui@2.0.4)(jsdom@24.0.0)(terser@5.34.0)
@@ -23448,8 +23448,8 @@ snapshots:
     dependencies:
       '@mapbox/node-pre-gyp': 1.0.11(encoding@0.1.13)
       '@rollup/pluginutils': 4.2.1
-      acorn: 8.12.1
-      acorn-import-attributes: 1.9.5(acorn@8.12.1)
+      acorn: 8.14.0
+      acorn-import-attributes: 1.9.5(acorn@8.14.0)
       async-sema: 3.1.1
       bindings: 1.5.0
       estree-walker: 2.0.2
@@ -23493,10 +23493,10 @@ snapshots:
   '@vinxi/plugin-directives@0.4.3(vinxi@0.4.3(@types/node@20.17.9)(encoding@0.1.13)(ioredis@5.4.1)(magicast@0.3.4)(terser@5.34.0)(webpack-sources@3.2.3))':
     dependencies:
       '@babel/parser': 7.26.2
-      acorn: 8.12.1
-      acorn-jsx: 5.3.2(acorn@8.12.1)
+      acorn: 8.14.0
+      acorn-jsx: 5.3.2(acorn@8.14.0)
       acorn-loose: 8.4.0
-      acorn-typescript: 1.4.13(acorn@8.12.1)
+      acorn-typescript: 1.4.13(acorn@8.14.0)
       astring: 1.9.0
       magicast: 0.2.11
       recast: 0.23.9
@@ -23745,6 +23745,10 @@ snapshots:
     dependencies:
       acorn: 8.12.1
 
+  acorn-import-attributes@1.9.5(acorn@8.14.0):
+    dependencies:
+      acorn: 8.14.0
+
   acorn-jsx@5.3.2(acorn@8.12.1):
     dependencies:
       acorn: 8.12.1
@@ -23760,6 +23764,10 @@ snapshots:
   acorn-typescript@1.4.13(acorn@8.12.1):
     dependencies:
       acorn: 8.12.1
+
+  acorn-typescript@1.4.13(acorn@8.14.0):
+    dependencies:
+      acorn: 8.14.0
 
   acorn-walk@8.2.0: {}
 
@@ -29840,7 +29848,7 @@ snapshots:
 
   mlly@1.7.2:
     dependencies:
-      acorn: 8.12.1
+      acorn: 8.14.0
       pathe: 1.1.2
       pkg-types: 1.2.1
       ufo: 1.5.4
@@ -33351,7 +33359,7 @@ snapshots:
   terser@5.34.0:
     dependencies:
       '@jridgewell/source-map': 0.3.6
-      acorn: 8.12.1
+      acorn: 8.14.0
       commander: 2.20.3
       source-map-support: 0.5.21
 
@@ -33813,7 +33821,7 @@ snapshots:
   unimport@3.13.1(rollup@4.27.4)(webpack-sources@3.2.3):
     dependencies:
       '@rollup/pluginutils': 5.1.2(rollup@4.27.4)
-      acorn: 8.12.1
+      acorn: 8.14.0
       escape-string-regexp: 5.0.0
       estree-walker: 3.0.3
       fast-glob: 3.3.2
@@ -33893,7 +33901,7 @@ snapshots:
 
   unplugin@1.14.1(webpack-sources@3.2.3):
     dependencies:
-      acorn: 8.12.1
+      acorn: 8.14.0
       webpack-virtual-modules: 0.6.2
     optionalDependencies:
       webpack-sources: 3.2.3
