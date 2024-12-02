@@ -4,6 +4,10 @@
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
 
+function getRandomArbitrary(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
+
 export const appRouter = router({
   greeting: publicProcedure
     .input(
@@ -11,12 +15,14 @@ export const appRouter = router({
         name: z.string(),
       }),
     )
-    .query(({ input }) => {
+    .query(async (opts) => {
+      await new Promise((resolve) => setTimeout(resolve, getRandomArbitrary(100, 1000)));
+
       return {
-        text: `hello ${input.name}`,
-        date: new Date('2022Z'),
+        text: `hello ${opts.input.name}`,
+        date: new Date().toLocaleTimeString(),
       };
-    }),
+    })
 });
 
 export type AppRouter = typeof appRouter;
