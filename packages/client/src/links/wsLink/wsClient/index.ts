@@ -1,44 +1,52 @@
-import type {AnyTRPCRouter} from '@trpc/server';
-import type {BehaviorSubject} from '@trpc/server/observable';
-import { behaviorSubject} from '@trpc/server/observable';
+import type { AnyTRPCRouter } from '@trpc/server';
+import type { BehaviorSubject } from '@trpc/server/observable';
+import { behaviorSubject } from '@trpc/server/observable';
 import type {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
   TRPCClientOutgoingMessage,
-  TRPCResponseMessage} from '@trpc/server/unstable-core-do-not-import';
-import {
-  run,
-  sleep
+  TRPCResponseMessage,
 } from '@trpc/server/unstable-core-do-not-import';
-import {TRPCClientError} from '../../../TRPCClientError';
-import type {TRPCConnectionState} from '../../internals/subscriptions';
-import type {Operation} from '../../types';
-import {ReconnectManager, TRPCWebSocketReconnectFatal,} from './reconnectManager';
-import type { TCallbacks} from './requestManager';
-import {RequestManager} from './requestManager';
-import {buildConnectionMessage, prepareUrl, ResettableTimeout, TRPCWebSocketClosedError} from './utils';
-import {backwardCompatibility, WsConnection} from './wsConnection';
-import type {WebSocketClientOptions} from './options';
-import {exponentialBackoff, keepAliveDefaults, lazyDefaults} from './options';
+import { run, sleep } from '@trpc/server/unstable-core-do-not-import';
+import { TRPCClientError } from '../../../TRPCClientError';
+import type { TRPCConnectionState } from '../../internals/subscriptions';
+import type { Operation } from '../../types';
+import type { WebSocketClientOptions } from './options';
+import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
+import {
+  ReconnectManager,
+  TRPCWebSocketReconnectFatal,
+} from './reconnectManager';
+import type { TCallbacks } from './requestManager';
+import { RequestManager } from './requestManager';
+import {
+  buildConnectionMessage,
+  prepareUrl,
+  ResettableTimeout,
+  TRPCWebSocketClosedError,
+} from './utils';
+import { backwardCompatibility, WsConnection } from './wsConnection';
 
 /**
  * A WebSocket client for managing TRPC operations, supporting lazy initialization,
  * reconnection, keep-alive, and request management.
  */
 export class WsClient {
-
   /**
    * Observable tracking the current connection state, including errors.
    */
   public readonly connectionState: BehaviorSubject<
-      TRPCConnectionState<TRPCClientError<AnyTRPCRouter>>
+    TRPCConnectionState<TRPCClientError<AnyTRPCRouter>>
   >;
 
   private requestManager = new RequestManager();
   private readonly activeConnection: WsConnection;
   private inactivityTimeout: ResettableTimeout;
   private readonly reconnectManager: ReconnectManager;
-  private readonly callbacks: Pick<WebSocketClientOptions, 'onOpen' | 'onClose' | 'onError'>;
+  private readonly callbacks: Pick<
+    WebSocketClientOptions,
+    'onOpen' | 'onClose' | 'onError'
+  >;
   private readonly connectionParams: WebSocketClientOptions['connectionParams'];
   private readonly lazyEnabled: boolean;
 
@@ -54,7 +62,7 @@ export class WsClient {
     const lazyOptions = {
       ...lazyDefaults,
       ...opts.lazy,
-    }
+    };
     this.lazyEnabled = lazyOptions.enabled;
 
     // Set up inactivity timeout for lazy connections.
@@ -71,22 +79,22 @@ export class WsClient {
     }, lazyOptions.closeMs);
 
     // Initialize the WebSocket connection.
-    this.activeConnection = new WsConnection(
-        {
-          WebSocketPonyfill: opts.WebSocket,
-          promiseUrl: prepareUrl(opts.url, !!opts.connectionParams).catch(error => {
-            throw new TRPCWebSocketReconnectFatal({
-              message:
-                  'Error when building url. Ensure provided url(): Promise<string> does not throws.',
-              cause: error,
-            });
-          }),
-          keepAlive: {
-            ...keepAliveDefaults,
-            ...opts.keepAlive,
-          }
-        }
-    );
+    this.activeConnection = new WsConnection({
+      WebSocketPonyfill: opts.WebSocket,
+      promiseUrl: prepareUrl(opts.url, !!opts.connectionParams).catch(
+        (error) => {
+          throw new TRPCWebSocketReconnectFatal({
+            message:
+              'Error when building url. Ensure provided url(): Promise<string> does not throws.',
+            cause: error,
+          });
+        },
+      ),
+      keepAlive: {
+        ...keepAliveDefaults,
+        ...opts.keepAlive,
+      },
+    });
     this.activeConnection.wsObservable.subscribe({
       next: (ws) => {
         if (!ws) return;
@@ -112,7 +120,7 @@ export class WsClient {
     }
 
     this.connectionState = behaviorSubject<
-        TRPCConnectionState<TRPCClientError<AnyTRPCRouter>>
+      TRPCConnectionState<TRPCClientError<AnyTRPCRouter>>
     >({
       type: 'state',
       state: lazyOptions.enabled ? 'idle' : 'connecting',
@@ -147,10 +155,10 @@ export class WsClient {
         type: 'state',
         state: 'connecting',
         error: TRPCClientError.from(
-            new TRPCWebSocketClosedError({
-              message: 'Initialization error',
-              cause: error,
-            }),
+          new TRPCWebSocketClosedError({
+            message: 'Initialization error',
+            cause: error,
+          }),
         ),
       });
 
@@ -177,11 +185,11 @@ export class WsClient {
         callbacks.complete();
       } else if (state === 'pending') {
         callbacks.error(
-            TRPCClientError.from(
-                new TRPCWebSocketClosedError({
-                  message: 'Closed before connection was established',
-                }),
-            ),
+          TRPCClientError.from(
+            new TRPCWebSocketClosedError({
+              message: 'Closed before connection was established',
+            }),
+          ),
         );
       } else {
         requestsToAwait.push(end);
@@ -213,16 +221,16 @@ export class WsClient {
     const { type, input, path, id } = op;
 
     const abort = this.batchSend(
-        {
-          id,
-          method: type,
-          params: {
-            input,
-            path,
-            lastEventId,
-          },
+      {
+        id,
+        method: type,
+        params: {
+          input,
+          path,
+          lastEventId,
         },
-        callbacks,
+      },
+      callbacks,
     );
 
     return () => {
@@ -351,18 +359,18 @@ export class WsClient {
    * Sends a message or batch of messages directly to the server.
    */
   private send(
-      messageOrMessages: TRPCClientOutgoingMessage | TRPCClientOutgoingMessage[],
+    messageOrMessages: TRPCClientOutgoingMessage | TRPCClientOutgoingMessage[],
   ) {
     if (!this.activeConnection.isOpen()) {
       throw new Error('Active connection is not open');
     }
 
     const messages =
-        messageOrMessages instanceof Array
-            ? messageOrMessages
-            : [messageOrMessages];
+      messageOrMessages instanceof Array
+        ? messageOrMessages
+        : [messageOrMessages];
     this.activeConnection.ws.send(
-        JSON.stringify(messages.length === 1 ? messages[0] : messages),
+      JSON.stringify(messages.length === 1 ? messages[0] : messages),
     );
   }
 

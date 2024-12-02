@@ -1,14 +1,14 @@
-import {behaviorSubject} from '@trpc/server/observable';
-import {createWebSocketConnection} from './createWebSocketConnection';
-import type {PingPongOptions} from './pingPong';
-import {setupPingInterval, setupPingListener} from './pingPong';
+import { behaviorSubject } from '@trpc/server/observable';
+import { createWebSocketConnection } from './createWebSocketConnection';
+import type { PingPongOptions } from './pingPong';
+import { setupPingInterval, setupPingListener } from './pingPong';
 
 export interface WebSocketConnectionOptions {
   WebSocketPonyfill?: typeof WebSocket;
   promiseUrl: Promise<string>;
   keepAlive: PingPongOptions & {
     enabled: boolean;
-  }
+  };
 }
 
 /**
@@ -28,7 +28,7 @@ export class WsConnection {
     this.WebSocketPonyfill = opts.WebSocketPonyfill ?? WebSocket;
     if (!this.WebSocketPonyfill) {
       throw new Error(
-          "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
+        "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
       );
     }
 

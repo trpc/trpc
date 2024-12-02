@@ -1,17 +1,20 @@
-import type { TRPCConnectionParamsMessage, TRPCRequestInfo} from '@trpc/server/unstable-core-do-not-import';
-import {run} from '@trpc/server/unstable-core-do-not-import';
-import type {CallbackOrValue} from '../../internals/urlWithConnectionParams';
-import { resultOf,} from '../../internals/urlWithConnectionParams';
-import {TRPCWebSocketReconnectFatal,} from './reconnectManager';
+import type {
+  TRPCConnectionParamsMessage,
+  TRPCRequestInfo,
+} from '@trpc/server/unstable-core-do-not-import';
+import { run } from '@trpc/server/unstable-core-do-not-import';
+import type { CallbackOrValue } from '../../internals/urlWithConnectionParams';
+import { resultOf } from '../../internals/urlWithConnectionParams';
+import { TRPCWebSocketReconnectFatal } from './reconnectManager';
 
 export class TRPCWebSocketClosedError extends Error {
-    constructor(opts: { message: string; cause?: unknown }) {
-        super(opts.message, {
-            cause: opts.cause,
-        });
-        this.name = 'TRPCWebSocketClosedError';
-        Object.setPrototypeOf(this, TRPCWebSocketClosedError.prototype);
-    }
+  constructor(opts: { message: string; cause?: unknown }) {
+    super(opts.message, {
+      cause: opts.cause,
+    });
+    this.name = 'TRPCWebSocketClosedError';
+    Object.setPrototypeOf(this, TRPCWebSocketClosedError.prototype);
+  }
 }
 
 /**
@@ -19,48 +22,47 @@ export class TRPCWebSocketClosedError extends Error {
  * Useful for scenarios where the timeout duration is reset dynamically based on events.
  */
 export class ResettableTimeout {
-    private timeout: ReturnType<typeof setTimeout> | undefined;
+  private timeout: ReturnType<typeof setTimeout> | undefined;
 
-    constructor(
-        private readonly onTimeout: () => void,
-        private readonly timeoutMs: number,
-    ) {}
+  constructor(
+    private readonly onTimeout: () => void,
+    private readonly timeoutMs: number,
+  ) {}
 
-    /**
-     * Resets the current timeout, restarting it with the same duration.
-     * Does nothing if no timeout is active.
-     */
-    public reset() {
-        if (!this.timeout) return;
+  /**
+   * Resets the current timeout, restarting it with the same duration.
+   * Does nothing if no timeout is active.
+   */
+  public reset() {
+    if (!this.timeout) return;
 
-        clearTimeout(this.timeout);
-        this.timeout = setTimeout(this.onTimeout, this.timeoutMs);
-    }
+    clearTimeout(this.timeout);
+    this.timeout = setTimeout(this.onTimeout, this.timeoutMs);
+  }
 
-    public start() {
-        clearTimeout(this.timeout);
-        this.timeout = setTimeout(this.onTimeout, this.timeoutMs);
-    }
+  public start() {
+    clearTimeout(this.timeout);
+    this.timeout = setTimeout(this.onTimeout, this.timeoutMs);
+  }
 
-    public stop() {
-        clearTimeout(this.timeout);
-        this.timeout = undefined;
-    }
+  public stop() {
+    clearTimeout(this.timeout);
+    this.timeout = undefined;
+  }
 }
 
 // Ponyfill for Promise.withResolvers https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/withResolvers
 export function withResolvers<T>() {
-    let resolve: (value: T | PromiseLike<T>) => void;
-    let reject: (reason?: any) => void;
-    const promise = new Promise<T>((res, rej) => {
-        resolve = res;
-        reject = rej;
-    });
+  let resolve: (value: T | PromiseLike<T>) => void;
+  let reject: (reason?: any) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return { promise, resolve: resolve!, reject: reject! };
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return { promise, resolve: resolve!, reject: reject! };
 }
-
 
 /**
  * Resolves a WebSocket URL and optionally appends connection parameters.
@@ -68,37 +70,37 @@ export function withResolvers<T>() {
  * If `withConnectionParams` is true, appends `connectionParams=1` query parameter.
  */
 export async function prepareUrl(
-    urlCallbackOrValue: CallbackOrValue<string>,
-    withConnectionParams: boolean,
+  urlCallbackOrValue: CallbackOrValue<string>,
+  withConnectionParams: boolean,
 ) {
-    const url = await run(async () => {
-        try {
-            return await resultOf(urlCallbackOrValue);
-        } catch(error) {
-            throw new TRPCWebSocketReconnectFatal({
-                message:
-                    'Error when building url. Ensure provided url(): Promise<string> does not throw.',
-                cause: error,
-            });
-        }
-    });
+  const url = await run(async () => {
+    try {
+      return await resultOf(urlCallbackOrValue);
+    } catch (error) {
+      throw new TRPCWebSocketReconnectFatal({
+        message:
+          'Error when building url. Ensure provided url(): Promise<string> does not throw.',
+        cause: error,
+      });
+    }
+  });
 
-    if (!withConnectionParams) return url;
+  if (!withConnectionParams) return url;
 
-    // append `?connectionParams=1` when connection params are used
-    const prefix = url.includes('?') ? '&' : '?';
-    const connectionParams = `${prefix}connectionParams=1`;
+  // append `?connectionParams=1` when connection params are used
+  const prefix = url.includes('?') ? '&' : '?';
+  const connectionParams = `${prefix}connectionParams=1`;
 
-    return url + connectionParams;
+  return url + connectionParams;
 }
 
 export async function buildConnectionMessage(
-    connectionParams: CallbackOrValue<TRPCRequestInfo['connectionParams']>,
+  connectionParams: CallbackOrValue<TRPCRequestInfo['connectionParams']>,
 ) {
-    const message: TRPCConnectionParamsMessage = {
-        method: 'connectionParams',
-        data: await resultOf(connectionParams),
-    };
+  const message: TRPCConnectionParamsMessage = {
+    method: 'connectionParams',
+    data: await resultOf(connectionParams),
+  };
 
-    return JSON.stringify(message);
+  return JSON.stringify(message);
 }
