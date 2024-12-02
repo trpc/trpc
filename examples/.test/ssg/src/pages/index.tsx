@@ -1,5 +1,6 @@
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import { ReactNode, Suspense, useLayoutEffect, useState } from 'react';
+import type { ReactNode} from 'react';
+import { Suspense, useLayoutEffect, useState } from 'react';
 import superjson from 'superjson';
 import { appRouter } from '~/server/routers/_app';
 import { trpc } from '~/utils/trpc';
