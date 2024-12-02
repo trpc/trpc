@@ -26,6 +26,12 @@ export class WsConnection {
 
   constructor(opts: WebSocketConnectionOptions) {
     this.WebSocketPonyfill = opts.WebSocketPonyfill ?? WebSocket;
+    if (!this.WebSocketPonyfill) {
+      throw new Error(
+          "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
+      );
+    }
+
     this.promiseUrl = opts.promiseUrl;
     this.keepAliveOpts = opts.keepAlive;
   }

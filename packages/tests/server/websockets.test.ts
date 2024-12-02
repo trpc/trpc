@@ -640,7 +640,7 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
 
   await waitFor(() => {
-    expect(conn.ws!.readyState).toBe(WebSocket.CLOSED);
+    expect(conn.ws.readyState).toBe(WebSocket.CLOSED);
   });
   await close();
 });
@@ -659,7 +659,7 @@ test('requests get aborted if called before connection is established and reques
   );
   await close();
   await waitFor(() => {
-    expect(conn!.ws!.readyState).toBe(WebSocket.CLOSED);
+    expect(conn!.ws.readyState).toBe(WebSocket.CLOSED);
   });
   await close();
 });
@@ -1348,14 +1348,12 @@ describe('lazy mode', () => {
     const sub = client.onMessageObservable.subscribe(undefined, {
       onData: onDataMock,
     });
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(wsClient.connection).not.toBe(null);
 
     expect(ctx.onOpenMock).toHaveBeenCalledTimes(0);
     await waitFor(() => {
-      expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
+      expect(wsClient.connection).not.toBe(null);
     });
+    expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
 
     // emit a message, check that we receive it
     ctx.ee.emit('server:msg', {
@@ -1596,11 +1594,11 @@ describe('keep alive from the client', () => {
 
     await vi.advanceTimersByTimeAsync(1);
     await new Promise((resolve) => {
-      ctx.wsClient.connection!.ws!.addEventListener('open', resolve);
+      ctx.wsClient.connection!.ws.addEventListener('open', resolve);
     });
 
     let pong = false;
-    ctx.wsClient.connection!.ws!.addEventListener('message', (msg) => {
+    ctx.wsClient.connection!.ws.addEventListener('message', (msg) => {
       if (msg.data == 'PONG') {
         pong = true;
       }
@@ -1642,11 +1640,11 @@ describe('keep alive from the client', () => {
 
     await vi.advanceTimersByTimeAsync(1);
     await new Promise((resolve) => {
-      ctx.wsClient.connection!.ws!.addEventListener('open', resolve);
+      ctx.wsClient.connection!.ws.addEventListener('open', resolve);
     });
 
     let pong = false;
-    ctx.wsClient.connection!.ws!.addEventListener('message', (msg) => {
+    ctx.wsClient.connection!.ws.addEventListener('message', (msg) => {
       if (msg.data === 'PONG') {
         pong = true;
       }
@@ -1658,7 +1656,7 @@ describe('keep alive from the client', () => {
 
     expect(pong).toBe(false);
 
-    await vi.useRealTimers();
+    vi.useRealTimers();
     await waitFor(() => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });

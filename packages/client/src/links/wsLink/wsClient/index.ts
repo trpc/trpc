@@ -1,18 +1,21 @@
 import type {AnyTRPCRouter} from '@trpc/server';
-import {BehaviorSubject, behaviorSubject} from '@trpc/server/observable';
-import {
-  run,
-  sleep,
+import type {BehaviorSubject} from '@trpc/server/observable';
+import { behaviorSubject} from '@trpc/server/observable';
+import type {
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
   TRPCClientOutgoingMessage,
-  TRPCResponseMessage,
+  TRPCResponseMessage} from '@trpc/server/unstable-core-do-not-import';
+import {
+  run,
+  sleep
 } from '@trpc/server/unstable-core-do-not-import';
 import {TRPCClientError} from '../../../TRPCClientError';
 import type {TRPCConnectionState} from '../../internals/subscriptions';
 import type {Operation} from '../../types';
-import {ReconnectManager, TRPCWebSocketReconnectFatal,} from './ReconnectManager';
-import {RequestManager, TCallbacks} from './RequestManager';
+import {ReconnectManager, TRPCWebSocketReconnectFatal,} from './reconnectManager';
+import type { TCallbacks} from './requestManager';
+import {RequestManager} from './requestManager';
 import {buildConnectionMessage, prepareUrl, ResettableTimeout, TRPCWebSocketClosedError} from './utils';
 import {backwardCompatibility, WsConnection} from './wsConnection';
 import type {WebSocketClientOptions} from './options';
@@ -40,12 +43,6 @@ export class WsClient {
   private readonly lazyEnabled: boolean;
 
   constructor(opts: WebSocketClientOptions) {
-    if (!opts.WebSocket) {
-      throw new Error(
-          "No WebSocket implementation found - you probably don't want to use this on the server, but if you do you need to pass a `WebSocket`-ponyfill",
-      );
-    }
-
     // Initialize callbacks, connection parameters, and options.
     this.callbacks = {
       onOpen: opts.onOpen,
@@ -70,7 +67,7 @@ export class WsClient {
         return;
       }
 
-      this.close();
+      void this.close();
     }, lazyOptions.closeMs);
 
     // Initialize the WebSocket connection.
@@ -114,11 +111,6 @@ export class WsClient {
       this.reconnectManager.attach(this.activeConnection);
     }
 
-    // Automatically open the connection if lazy mode is disabled.
-    if (!lazyOptions.enabled) {
-      this.open();
-    }
-
     this.connectionState = behaviorSubject<
         TRPCConnectionState<TRPCClientError<AnyTRPCRouter>>
     >({
@@ -126,6 +118,11 @@ export class WsClient {
       state: lazyOptions.enabled ? 'idle' : 'connecting',
       error: null,
     });
+
+    // Automatically open the connection if lazy mode is disabled.
+    if (!lazyOptions.enabled) {
+      void this.open();
+    }
   }
 
   /**
@@ -193,7 +190,7 @@ export class WsClient {
 
     await Promise.all(requestsToAwait);
 
-    this.activeConnection.close();
+    await this.activeConnection.close();
     this.connectionState.next({
       type: 'state',
       state: 'idle',
@@ -377,7 +374,7 @@ export class WsClient {
   private batchSend(message: TRPCClientOutgoingMessage, callbacks: TCallbacks) {
     this.inactivityTimeout.reset();
 
-    run(async () => {
+    void run(async () => {
       if (!this.activeConnection.isOpen()) {
         await this.open();
       }

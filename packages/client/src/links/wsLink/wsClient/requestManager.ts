@@ -1,10 +1,10 @@
 import type { AnyTRPCRouter, inferRouterError } from '@trpc/server';
 import type { Observer } from '@trpc/server/observable';
-import {
+import type {
   TRPCClientOutgoingMessage,
   TRPCResponseMessage,
 } from '@trpc/server/unstable-core-do-not-import';
-import { TRPCClientError } from '../../../TRPCClientError';
+import type { TRPCClientError } from '../../../TRPCClientError';
 import { withResolvers } from './utils';
 
 type WSCallbackResult<

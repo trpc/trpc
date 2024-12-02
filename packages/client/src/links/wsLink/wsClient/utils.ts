@@ -1,6 +1,8 @@
-import {run, TRPCConnectionParamsMessage, TRPCRequestInfo,} from '@trpc/server/unstable-core-do-not-import';
-import {CallbackOrValue, resultOf,} from '../../internals/urlWithConnectionParams';
-import {TRPCWebSocketReconnectFatal,} from './ReconnectManager';
+import type { TRPCConnectionParamsMessage, TRPCRequestInfo} from '@trpc/server/unstable-core-do-not-import';
+import {run} from '@trpc/server/unstable-core-do-not-import';
+import type {CallbackOrValue} from '../../internals/urlWithConnectionParams';
+import { resultOf,} from '../../internals/urlWithConnectionParams';
+import {TRPCWebSocketReconnectFatal,} from './reconnectManager';
 
 export class TRPCWebSocketClosedError extends Error {
     constructor(opts: { message: string; cause?: unknown }) {
@@ -55,6 +57,7 @@ export function withResolvers<T>() {
         reject = rej;
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return { promise, resolve: resolve!, reject: reject! };
 }
 

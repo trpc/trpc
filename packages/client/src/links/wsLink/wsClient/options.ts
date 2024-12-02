@@ -1,4 +1,4 @@
-import {UrlOptionsWithConnectionParams,} from '../../internals/urlWithConnectionParams';
+import type {UrlOptionsWithConnectionParams,} from '../../internals/urlWithConnectionParams';
 
 export interface WebSocketClientOptions extends UrlOptionsWithConnectionParams {
     /**

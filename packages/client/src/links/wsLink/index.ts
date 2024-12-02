@@ -11,8 +11,8 @@ import type { TRPCLink } from '../types';
 import type {
   TRPCWebSocketClient,
   WebSocketClientOptions,
-} from './createWSClient';
-import { createWSClient } from './createWSClient';
+} from './createWsClient';
+import { createWSClient } from './createWsClient';
 
 export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   client: TRPCWebSocketClient;

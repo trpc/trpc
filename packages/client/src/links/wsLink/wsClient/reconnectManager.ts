@@ -1,6 +1,6 @@
 import { sleep } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCWebSocketClosedError } from './utils';
-import { WsConnection } from './wsConnection';
+import type { WsConnection } from './wsConnection';
 
 /**
  * Represents a fatal WebSocket error that prevents reconnection attempts.
@@ -45,7 +45,7 @@ export class ReconnectManager {
                 cause: event,
               }),
             );
-            this.reconnect();
+            void this.reconnect();
           });
           ws.addEventListener('error', (event) => {
             this.callbacks.onError(
@@ -54,7 +54,7 @@ export class ReconnectManager {
                 cause: event,
               }),
             );
-            this.reconnect();
+            void this.reconnect();
           });
         });
       },

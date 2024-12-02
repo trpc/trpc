@@ -1,4 +1,4 @@
-import type { WebSocketClientOptions } from './wsClient';
+import type { WebSocketClientOptions } from './wsClient/options';
 import { WsClient } from './wsClient';
 
 export function createWSClient(opts: WebSocketClientOptions) {
