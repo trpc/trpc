@@ -80,6 +80,9 @@ pnpm create next-app --example https://github.com/trpc/trpc --example-path examp
 
 # bun
 bunx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+
+# deno
+deno init --npm next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
 
 **👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
