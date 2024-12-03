@@ -1,3 +1,4 @@
+import type { DataTag } from '@tanstack/react-query';
 import { type QueryClient, type QueryFilters } from '@tanstack/react-query';
 import {
   getUntypedClient,
@@ -59,7 +60,7 @@ export interface DecorateQueryKeyable {
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    */
-  queryFilter: () => QueryFilters;
+  queryFilter: (input?: undefined, filters?: QueryFilters) => QueryFilters;
 }
 
 export type InferInput<
@@ -81,6 +82,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   '~types': {
     input: TDef['input'];
     output: TDef['output'];
+    errorShape: TDef['errorShape'];
   };
 
   /**
@@ -98,14 +100,20 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
    */
-  queryKey: (input?: TDef['input']) => TRPCQueryKey;
+  queryKey: (
+    input?: TDef['input'],
+    // tslint seems to be wrong here, the type is correct
+  ) => TRPCQueryKey & DataTag<unknown, TDef['output'], TDef['errorShape']>;
 
   /**
    * Calculate a Tanstack Query Filter for a Query Procedure
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    */
-  queryFilter: (input?: TDef['input']) => QueryFilters;
+  queryFilter: (
+    input?: TDef['input'],
+    filters?: QueryFilters<TDef['output'], TDef['errorShape']>,
+  ) => QueryFilters<TDef['output'], TDef['errorShape']>;
 }
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
@@ -250,8 +258,11 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
     const utilName = path.pop() as UtilsMethods;
     const [arg1, arg2] = args as any[];
 
-    const queryType = getQueryType(utilName);
-    const queryKey = getQueryKeyInternal(path, arg1, queryType ?? 'any');
+    function getQueryKey() {
+      const queryType = getQueryType(utilName);
+
+      return getQueryKeyInternal(path, arg1, queryType ?? 'any');
+    }
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
       '~types': undefined as any,
@@ -260,11 +271,12 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
         return getMutationKeyInternal(path);
       },
       queryKey: () => {
-        return queryKey;
+        return getQueryKey();
       },
       queryFilter: (): QueryFilters => {
         return {
-          queryKey: queryKey,
+          ...arg2,
+          queryKey: getQueryKey(),
         };
       },
       infiniteQueryOptions: () => {
@@ -272,7 +284,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: queryKey,
+          queryKey: getQueryKey(),
           query: callIt('query'),
         });
       },
@@ -281,7 +293,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
           opts: arg2,
           path,
           queryClient: opts.queryClient,
-          queryKey: queryKey,
+          queryKey: getQueryKey(),
           query: callIt('query'),
         });
       },
@@ -298,7 +310,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
         return trpcSubscriptionOptions({
           opts: arg2,
           path,
-          queryKey: queryKey,
+          queryKey: getQueryKey(),
           subscribe: callIt('subscription'),
         });
       },
