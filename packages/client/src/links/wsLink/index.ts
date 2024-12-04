@@ -1,38 +1,46 @@
-import { observable } from '@trpc/server/observable';
-import type {
-  AnyRouter,
-  inferClientTypes,
-} from '@trpc/server/unstable-core-do-not-import';
-import { transformResult } from '@trpc/server/unstable-core-do-not-import';
-import { TRPCClientError } from '../../TRPCClientError';
-import type { TransformerOptions } from '../../unstable-internals';
-import { getTransformer } from '../../unstable-internals';
-import type { TRPCLink } from '../types';
-import type {
-  TRPCWebSocketClient,
-  WebSocketClientOptions,
-} from './createWsClient';
-import { createWSClient } from './createWsClient';
+import {observable} from '@trpc/server/observable';
+import type {AnyRouter, inferClientTypes,} from '@trpc/server/unstable-core-do-not-import';
+import {transformResult} from '@trpc/server/unstable-core-do-not-import';
+import {TRPCClientError} from '../../TRPCClientError';
+import type {TransformerOptions} from '../../unstable-internals';
+import {getTransformer} from '../../unstable-internals';
+import type {TRPCLink} from '../types';
+import type {TRPCWebSocketClient, WebSocketClientOptions,} from './createWsClient';
+import {createWSClient} from './createWsClient';
 
 export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   client: TRPCWebSocketClient;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
+/**
+ * Creates a tRPC link that transforms operation requests into WebSocket messages.
+ *
+ * This link connects a tRPC client to a WebSocket transport by:
+ * - Serializing inputs using the provided transformer
+ * - Converting tRPC operations into WebSocket requests
+ * - Deserializing and validating responses
+ * - Setting up cleanup for aborted requests
+ *
+ * @param opts - Link configuration
+ * @param opts.client - WebSocket client to handle the actual transport
+ * @param opts.transformer - Data transformer for serializing requests and deserializing responses
+ *
+ * @returns A tRPC link that uses WebSocket transport
+ */
 export function wsLink<TRouter extends AnyRouter>(
   opts: WebSocketLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
+  const { client } = opts;
   const transformer = getTransformer(opts.transformer);
   return () => {
-    const { client } = opts;
-    return ({ op }) => {
-      return observable((observer) => {
-        const { type, path, id, context } = op;
+    return ({ op: { id, type, path, context, signal, input } }) => {
+      const transformedInput = transformer.input.serialize(input);
 
-        const input = transformer.input.serialize(op.input);
+      return observable((observer) => {
 
         const connState =
           type === 'subscription'
-            ? client.connectionState.subscribe({
+            ? opts.client.connectionState.subscribe({
                 next(result) {
                   observer.next({
                     result,
@@ -41,16 +49,11 @@ export function wsLink<TRouter extends AnyRouter>(
                 },
               })
             : null;
-        const unsubscribeRequest = client.request({
-          op: { type, path, input, id, context, signal: null },
+
+        const abortRequest = client.request({
+          op: { id, type, path, input: transformedInput },
           callbacks: {
-            error(err) {
-              observer.error(err);
-              unsubscribeRequest();
-            },
-            complete() {
-              observer.complete();
-            },
+            ...observer,
             next(event) {
               const transformed = transformResult(event, transformer.output);
 
@@ -58,22 +61,18 @@ export function wsLink<TRouter extends AnyRouter>(
                 observer.error(TRPCClientError.from(transformed.error));
                 return;
               }
+
               observer.next({
                 result: transformed.result,
               });
-
-              if (op.type !== 'subscription') {
-                // if it isn't a subscription we don't care about next response
-
-                unsubscribeRequest();
-                observer.complete();
-              }
             },
           },
-          lastEventId: undefined,
         });
+        signal?.addEventListener('abort', abortRequest);
+
         return () => {
-          unsubscribeRequest();
+          abortRequest();
+          signal?.removeEventListener('abort', abortRequest);
           connState?.unsubscribe();
         };
       });

@@ -212,14 +212,11 @@ export class WsClient {
    *
    * @returns A function to abort the request.
    */
-  public request(opts: {
-    op: Operation;
+  public request({ op: { id, type, input, path }, callbacks, lastEventId }: {
+    op: Pick<Operation, 'id' | 'type' | 'path' | 'input'>;
     callbacks: TCallbacks;
-    lastEventId: string | undefined;
+    lastEventId?: string;
   }) {
-    const { op, callbacks, lastEventId } = opts;
-    const { type, input, path, id } = op;
-
     const abort = this.batchSend(
       {
         id,
@@ -234,7 +231,7 @@ export class WsClient {
     );
 
     return () => {
-      if (op.type === 'subscription' && this.activeConnection.isOpen()) {
+      if (type === 'subscription' && this.activeConnection.isOpen()) {
         this.send({
           id,
           method: 'subscription.stop',
@@ -319,22 +316,21 @@ export class WsClient {
     const request = this.requestManager.getActiveRequest(message.id);
     if (!request) return;
 
-    request.callbacks?.next(message);
+    request.callbacks.next(message);
 
-    let keepOpen = false;
+    let completed = true;
     if ('result' in message && request.message.method === 'subscription') {
       if (message.result.type === 'data') {
         request.message.params.lastEventId = message.result.id;
       }
 
-      if (message.result.type === 'stopped') {
-        request.callbacks?.complete();
-      } else {
-        keepOpen = true;
+      if (message.result.type !== 'stopped') {
+        completed = false;
       }
     }
 
-    if (!keepOpen) {
+    if (completed) {
+      request.callbacks.complete();
       this.requestManager.delete(message.id);
     }
   }

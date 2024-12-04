@@ -1,23 +1,13 @@
-import type { AnyTRPCRouter, inferRouterError } from '@trpc/server';
-import type { Observer } from '@trpc/server/observable';
-import type {
-  TRPCClientOutgoingMessage,
-  TRPCResponseMessage,
-} from '@trpc/server/unstable-core-do-not-import';
-import type { TRPCClientError } from '../../../TRPCClientError';
-import { withResolvers } from './utils';
+import type {AnyTRPCRouter, inferRouterError} from '@trpc/server';
+import type {Observer} from '@trpc/server/observable';
+import type {TRPCClientOutgoingMessage, TRPCResponseMessage,} from '@trpc/server/unstable-core-do-not-import';
+import type {TRPCClientError} from '../../../TRPCClientError';
+import {withResolvers} from './utils';
 
-type WSCallbackResult<
-  TRouter extends AnyTRPCRouter,
-  TOutput,
-> = TRPCResponseMessage<TOutput, inferRouterError<TRouter>>;
-
-type WSCallbackObserver<TRouter extends AnyTRPCRouter, TOutput> = Observer<
-  WSCallbackResult<TRouter, TOutput>,
-  TRPCClientError<TRouter>
+export type TCallbacks = Observer<
+    TRPCResponseMessage<unknown, inferRouterError<AnyTRPCRouter>>,
+    TRPCClientError<AnyTRPCRouter>
 >;
-
-export type TCallbacks = WSCallbackObserver<AnyTRPCRouter, unknown>;
 
 type MessageId = string;
 type MessageIdLike = string | number | null;
