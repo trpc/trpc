@@ -1,12 +1,15 @@
-import type {AnyTRPCRouter, inferRouterError} from '@trpc/server';
-import type {Observer} from '@trpc/server/observable';
-import type {TRPCClientOutgoingMessage, TRPCResponseMessage,} from '@trpc/server/unstable-core-do-not-import';
-import type {TRPCClientError} from '../../../TRPCClientError';
-import {withResolvers} from './utils';
+import type { AnyTRPCRouter, inferRouterError } from '@trpc/server';
+import type { Observer } from '@trpc/server/observable';
+import type {
+  TRPCClientOutgoingMessage,
+  TRPCResponseMessage,
+} from '@trpc/server/unstable-core-do-not-import';
+import type { TRPCClientError } from '../../../TRPCClientError';
+import { withResolvers } from './utils';
 
 export type TCallbacks = Observer<
-    TRPCResponseMessage<unknown, inferRouterError<AnyTRPCRouter>>,
-    TRPCClientError<AnyTRPCRouter>
+  TRPCResponseMessage<unknown, inferRouterError<AnyTRPCRouter>>,
+  TRPCClientError<AnyTRPCRouter>
 >;
 
 type MessageId = string;

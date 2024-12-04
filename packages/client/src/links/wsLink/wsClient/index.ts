@@ -212,7 +212,11 @@ export class WsClient {
    *
    * @returns A function to abort the request.
    */
-  public request({ op: { id, type, input, path }, callbacks, lastEventId }: {
+  public request({
+    op: { id, type, input, path },
+    callbacks,
+    lastEventId,
+  }: {
     op: Pick<Operation, 'id' | 'type' | 'path' | 'input'>;
     callbacks: TCallbacks;
     lastEventId?: string;

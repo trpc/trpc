@@ -1,12 +1,18 @@
-import {observable} from '@trpc/server/observable';
-import type {AnyRouter, inferClientTypes,} from '@trpc/server/unstable-core-do-not-import';
-import {transformResult} from '@trpc/server/unstable-core-do-not-import';
-import {TRPCClientError} from '../../TRPCClientError';
-import type {TransformerOptions} from '../../unstable-internals';
-import {getTransformer} from '../../unstable-internals';
-import type {TRPCLink} from '../types';
-import type {TRPCWebSocketClient, WebSocketClientOptions,} from './createWsClient';
-import {createWSClient} from './createWsClient';
+import { observable } from '@trpc/server/observable';
+import type {
+  AnyRouter,
+  inferClientTypes,
+} from '@trpc/server/unstable-core-do-not-import';
+import { transformResult } from '@trpc/server/unstable-core-do-not-import';
+import { TRPCClientError } from '../../TRPCClientError';
+import type { TransformerOptions } from '../../unstable-internals';
+import { getTransformer } from '../../unstable-internals';
+import type { TRPCLink } from '../types';
+import type {
+  TRPCWebSocketClient,
+  WebSocketClientOptions,
+} from './createWsClient';
+import { createWSClient } from './createWsClient';
 
 export type WebSocketLinkOptions<TRouter extends AnyRouter> = {
   client: TRPCWebSocketClient;
@@ -37,7 +43,6 @@ export function wsLink<TRouter extends AnyRouter>(
       const transformedInput = transformer.input.serialize(input);
 
       return observable((observer) => {
-
         const connState =
           type === 'subscription'
             ? opts.client.connectionState.subscribe({
