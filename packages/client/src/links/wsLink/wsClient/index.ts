@@ -1,16 +1,21 @@
 import type { AnyTRPCRouter } from '@trpc/server';
 import type { BehaviorSubject } from '@trpc/server/observable';
-import { behaviorSubject } from '@trpc/server/observable';
+import { behaviorSubject, observable } from '@trpc/server/observable';
 import type {
+  CombinedDataTransformer,
   TRPCClientIncomingMessage,
   TRPCClientIncomingRequest,
   TRPCClientOutgoingMessage,
   TRPCResponseMessage,
 } from '@trpc/server/unstable-core-do-not-import';
-import { run, sleep } from '@trpc/server/unstable-core-do-not-import';
+import {
+  run,
+  sleep,
+  transformResult,
+} from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../../../TRPCClientError';
 import type { TRPCConnectionState } from '../../internals/subscriptions';
-import type { Operation } from '../../types';
+import type { Operation, OperationResultEnvelope } from '../../types';
 import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import {
@@ -208,42 +213,67 @@ export class WsClient {
 
   /**
    * Method to request the server.
-   * Handles batching of requests and provides a mechanism to abort the request.
+   * Handles data transformation, batching of requests, and subscription lifecycle.
    *
-   * @returns A function to abort the request.
+   * @param op - The operation details including id, type, path, input and signal
+   * @param transformer - Data transformer for serializing requests and deserializing responses
+   * @param lastEventId - Optional ID of the last received event for subscriptions
+   *
+   * @returns An observable that emits operation results and handles cleanup
    */
   public request({
-    op: { id, type, input, path },
-    callbacks,
+    op: { id, type, path, input, signal },
+    transformer,
     lastEventId,
   }: {
-    op: Pick<Operation, 'id' | 'type' | 'path' | 'input'>;
-    callbacks: TCallbacks;
+    op: Pick<Operation, 'id' | 'type' | 'path' | 'input' | 'signal'>;
+    transformer: CombinedDataTransformer;
     lastEventId?: string;
   }) {
-    const abort = this.batchSend(
-      {
-        id,
-        method: type,
-        params: {
-          input,
-          path,
-          lastEventId,
-        },
-      },
-      callbacks,
-    );
-
-    return () => {
-      if (type === 'subscription' && this.activeConnection.isOpen()) {
-        this.send({
+    return observable<
+      OperationResultEnvelope<unknown, TRPCClientError<AnyTRPCRouter>>,
+      TRPCClientError<AnyTRPCRouter>
+    >((observer) => {
+      const abort = this.batchSend(
+        {
           id,
-          method: 'subscription.stop',
-        });
-      }
+          method: type,
+          params: {
+            input: transformer.input.serialize(input),
+            path,
+            lastEventId,
+          },
+        },
+        {
+          ...observer,
+          next(event) {
+            const transformed = transformResult(event, transformer.output);
 
-      abort();
-    };
+            if (!transformed.ok) {
+              observer.error(TRPCClientError.from(transformed.error));
+              return;
+            }
+
+            observer.next({
+              result: transformed.result,
+            });
+          },
+        },
+      );
+
+      return () => {
+        abort();
+
+        if (type === 'subscription' && this.activeConnection.isOpen()) {
+          this.send({
+            id,
+            method: 'subscription.stop',
+          });
+        }
+
+        signal?.removeEventListener('abort', abort);
+      };
+    });
   }
 
   public get connection() {
