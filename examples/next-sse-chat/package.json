@@ -24,7 +24,7 @@
     "class-variance-authority": "^0.7.0",
     "date-fns": "^3.6.0",
     "drizzle-orm": "^0.31.2",
-    "next": "^15.0.2",
+    "next": "^15.0.4",
     "next-auth": "5.0.0-beta.25",
     "postgres": "^3.4.4",
     "react": "^18.3.1",
