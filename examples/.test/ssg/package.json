@@ -16,7 +16,7 @@
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
-    "next": "^15.0.2",
+    "next": "^15.0.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "superjson": "^1.12.4",
