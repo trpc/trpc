@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client@next",
-    "@trpc/react-query": "workspace:^",
+    "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
     "express": "^4.17.1",
     "zod": "^3.0.0"

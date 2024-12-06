@@ -19,7 +19,7 @@
     "@tanstack/router-devtools": "^1.69.1",
     "@tanstack/start": "^1.69.1",
     "@trpc/client": "npm:@trpc/client@next",
-    "@trpc/react-query": "workspace:^",
+    "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

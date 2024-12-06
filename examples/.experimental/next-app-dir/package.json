@@ -17,7 +17,7 @@
     "@tanstack/react-query-devtools": "^5.62.2",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
-    "@trpc/react-query": "workspace:^",
+    "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
     "@types/node": "^22.9.0",
     "@types/react": "^19.0.0",
