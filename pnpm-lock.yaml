@@ -1683,7 +1683,7 @@ importers:
         specifier: ^5.62.2
         version: 5.62.2(react@19.0.0)
       '@trpc/client':
-        specifier: 10.45.1
+        specifier: workspace:*
         version: link:../client
       '@trpc/react-query':
         specifier: workspace:*
@@ -1737,7 +1737,7 @@ importers:
         specifier: ^5.62.2
         version: 5.62.2(react@19.0.0)
       '@trpc/client':
-        specifier: 10.45.1
+        specifier: workspace:*
         version: link:../client
       '@trpc/server':
         specifier: ^10.45.1
@@ -1908,10 +1908,10 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@10.0.0)
       '@trpc/client':
-        specifier: 10.45.1
+        specifier: workspace:*
         version: link:../client
       '@trpc/next':
-        specifier: 10.45.1
+        specifier: workspace:*
         version: link:../next
       '@trpc/react-query':
         specifier: workspace:*
@@ -2040,16 +2040,16 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0(@types/react@19.0.0)(react@19.0.0)
       '@trpc/client':
-        specifier: ^10.45.1
+        specifier: workspace:*
         version: link:../packages/client
       '@trpc/next':
-        specifier: ^10.45.1
+        specifier: workspace:*
         version: link:../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
+        specifier: workspace:*
         version: link:../packages/react-query
       '@trpc/server':
-        specifier: ^10.45.1
+        specifier: workspace:*
         version: link:../packages/server
       '@unkey/ratelimit':
         specifier: ^0.4.0
