@@ -15,7 +15,7 @@
   "dependencies": {
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
-    "@trpc/react-query": "npm:@trpc/react-query@next",
+    "@trpc/react-query": "workspace:^",
     "@trpc/server": "npm:@trpc/server@next",
     "next": "^15.0.2"
   }
