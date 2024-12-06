@@ -368,7 +368,7 @@ export function createRootHooks<
     }, []);
 
     type Unsubscribe = () => void;
-    const currentSubscriptionRef = React.useRef<Unsubscribe>();
+    const currentSubscriptionRef = React.useRef<Unsubscribe | null>(null);
 
     const reset = React.useCallback((): void => {
       // unsubscribe from the previous subscription
