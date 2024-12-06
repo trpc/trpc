@@ -72,7 +72,6 @@
     "!**/*.test.*",
     "!**/__tests__"
   ],
-  "dependencies": {},
   "peerDependencies": {
     "@tanstack/react-query": "^5.59.15",
     "@trpc/client": "10.45.1",
@@ -102,7 +101,7 @@
     "@types/react-dom": "^18.3.0",
     "eslint": "^9.13.0",
     "express": "^4.17.1",
-    "next": "^15.0.2",
+    "next": "^15.0.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "rollup": "^4.24.4",
