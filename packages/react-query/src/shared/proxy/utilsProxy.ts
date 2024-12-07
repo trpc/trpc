@@ -22,6 +22,7 @@ import type {
   AnyRouter,
   DeepPartial,
   inferProcedureInput,
+  inferProcedureOutput,
   inferTransformedProcedureOutput,
   ProtectedIntersection,
   RouterRecord,
@@ -242,7 +243,7 @@ export type DecorateQueryProcedure<
     filters?: Omit<InvalidateQueryFilters, 'predicate'> & {
       predicate?: (
         query: Query<
-          inferProcedureInput<TProcedure>,
+          inferProcedureOutput<TProcedure>,
           TRPCClientError<TRoot>,
           inferTransformedProcedureOutput<TRoot, TProcedure>,
           QueryKeyKnown<
