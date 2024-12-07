@@ -103,7 +103,7 @@ type DecorateProcedure<TProcedure extends AnyQueryProcedure> = {
         query: Query<
           inferProcedureInput<TProcedure>,
           TRPCClientError<TProcedure>,
-          inferProcedureInput<TProcedure>,
+          inferTransformedProcedureOutput<TRoot, TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,
             inferProcedureInput<TProcedure> extends { cursor?: any } | void
