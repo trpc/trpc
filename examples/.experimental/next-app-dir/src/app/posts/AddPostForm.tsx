@@ -24,7 +24,8 @@ export function AddPostForm() {
           .promise(promise, {
             loading: 'Adding post...',
             success: 'Post added!',
-            error: (error) => 'Failed to add post: ' + error.message,
+            error: (error: unknown) =>
+              'Failed to add post: ' + (error as Error).message,
           })
           .catch((error) => {
             console.warn('Failed to add post', error);
