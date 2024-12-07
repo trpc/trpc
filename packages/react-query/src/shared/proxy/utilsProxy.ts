@@ -244,7 +244,7 @@ export type DecorateQueryProcedure<
         query: Query<
           inferProcedureInput<TProcedure>,
           TRPCClientError<TRoot>,
-          inferProcedureInput<TProcedure>,
+          inferTransformedProcedureOutput<TRoot, TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,
             inferProcedureInput<TProcedure> extends { cursor?: any } | void
