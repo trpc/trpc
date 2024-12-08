@@ -32,6 +32,10 @@ export class ReconnectManager {
   ) {}
 
   public attach(connection: NonNullable<typeof this.connection>) {
+    if(this.connection && !this.connection.isClosed()) {
+      throw new Error('Connection already exists and is active. Close the current connection or create a new ReconnectManager instance.');
+    }
+
     this.connection = connection;
     this.connection.wsObservable.subscribe({
       next: (ws) => {
