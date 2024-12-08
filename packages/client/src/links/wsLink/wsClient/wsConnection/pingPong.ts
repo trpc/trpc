@@ -62,16 +62,3 @@ export function setupPingInterval(
     clearTimeout(pongTimeout);
   });
 }
-
-/**
- * Sets up a listener on the WebSocket to respond to incoming "PING" messages with "PONG".
- *
- * @param ws - The WebSocket instance to set up the listener on.
- */
-export function setupPingListener(ws: WebSocket) {
-  ws.addEventListener('message', ({ data }) => {
-    if (data === 'PING') {
-      ws.send('PONG');
-    }
-  });
-}

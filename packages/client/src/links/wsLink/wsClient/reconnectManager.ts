@@ -1,6 +1,6 @@
-import { sleep } from '@trpc/server/unstable-core-do-not-import';
-import { TRPCWebSocketClosedError } from './utils';
-import type { WsConnection } from './wsConnection';
+import {sleep} from '@trpc/server/unstable-core-do-not-import';
+import {TRPCWebSocketClosedError} from './utils';
+import type {WsConnection} from './wsConnection';
 
 /**
  * Represents a fatal WebSocket error that prevents reconnection attempts.
@@ -42,23 +42,23 @@ export class ReconnectManager {
         if (!ws) return;
 
         ws.addEventListener('open', () => {
-          ws.addEventListener('close', (event) => {
+          ws.addEventListener('close', async (event) => {
             this.callbacks.onError(
               new TRPCWebSocketClosedError({
                 message: 'WebSocket closed',
                 cause: event,
               }),
             );
-            void this.reconnect();
+            await this.reconnect();
           });
-          ws.addEventListener('error', (event) => {
+          ws.addEventListener('error', async (event) => {
             this.callbacks.onError(
               new TRPCWebSocketClosedError({
                 message: 'WebSocket closed',
                 cause: event,
               }),
             );
-            void this.reconnect();
+            await this.reconnect();
           });
         });
       },

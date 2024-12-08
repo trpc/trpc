@@ -86,15 +86,7 @@ export class WsClient {
     // Initialize the WebSocket connection.
     this.activeConnection = new WsConnection({
       WebSocketPonyfill: opts.WebSocket,
-      promiseUrl: prepareUrl(opts.url, !!opts.connectionParams).catch(
-        (error) => {
-          throw new TRPCWebSocketReconnectFatal({
-            message:
-              'Error when building url. Ensure provided url(): Promise<string> does not throws.',
-            cause: error,
-          });
-        },
-      ),
+      promiseUrl: prepareUrl(opts.url, !!opts.connectionParams),
       keepAlive: {
         ...keepAliveDefaults,
         ...opts.keepAlive,
@@ -180,16 +172,11 @@ export class WsClient {
     this.reconnectManager.stop();
 
     const requestsToAwait: Promise<void>[] = [];
-    for (const {
-      state,
-      message,
-      end,
-      callbacks,
-    } of this.requestManager.getRequests()) {
-      if (message.method === 'subscription') {
-        callbacks.complete();
-      } else if (state === 'pending') {
-        callbacks.error(
+    for (const request of this.requestManager.getRequests()) {
+      if (request.message.method === 'subscription') {
+        request.callbacks.complete();
+      } else if (request.state === 'pending') {
+        request.callbacks.error(
           TRPCClientError.from(
             new TRPCWebSocketClosedError({
               message: 'Closed before connection was established',
@@ -197,7 +184,7 @@ export class WsClient {
           ),
         );
       } else {
-        requestsToAwait.push(end);
+        requestsToAwait.push(request.end);
       }
     }
 
@@ -306,15 +293,18 @@ export class WsClient {
       }
     });
 
-    ws.addEventListener('message', ({ data }) => {
+    ws.addEventListener('message', async ({ data }) => {
+      this.inactivityTimeout.reset();
+
       if (typeof data !== 'string' || ['PING', 'PONG'].includes(data)) return;
 
       const incomingMessage = JSON.parse(data) as TRPCClientIncomingMessage;
       if ('method' in incomingMessage) {
-        return this.handleIncomingRequest(incomingMessage);
+        await this.handleIncomingRequest(incomingMessage);
+        return;
       }
 
-      return this.handleResponseMessage(incomingMessage);
+      await this.handleResponseMessage(incomingMessage);
     });
 
     const handleCloseOrError = (cause: unknown) => {
