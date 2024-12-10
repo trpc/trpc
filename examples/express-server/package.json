@@ -17,7 +17,7 @@
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
-    "express": "^4.17.1",
+    "express": "^5.0.0",
     "zod": "^3.0.0"
   },
   "alias": {
