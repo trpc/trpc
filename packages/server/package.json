@@ -128,7 +128,7 @@
     "@types/ws": "^8.2.0",
     "devalue": "^5.0.0",
     "eslint": "^9.13.0",
-    "express": "^4.17.1",
+    "express": "^5.0.0",
     "fastify": "^4.16.0",
     "fastify-plugin": "^5.0.0",
     "hash-sum": "^2.0.0",

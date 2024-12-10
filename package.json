@@ -65,7 +65,7 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-unicorn": "56.0.1",
     "event-source-polyfill": "^1.0.31",
-    "express": "^4.17.1",
+    "express": "^5.0.0",
     "fast-glob": "^3.2.12",
     "hash-sum": "^2.0.0",
     "konn": "^0.7.0",
