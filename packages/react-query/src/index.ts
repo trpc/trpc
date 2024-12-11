@@ -7,4 +7,5 @@ export {
   type CreateTRPCReactBase,
 } from './createTRPCReact';
 export type { inferReactQueryProcedureOptions } from './utils/inferReactQueryProcedure';
+export { replaceEqualDeep } from './utils/structuralSharing';
 export { createTRPCQueryUtils } from './createTRPCQueryUtils';
