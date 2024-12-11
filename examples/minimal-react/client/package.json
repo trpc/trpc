@@ -9,7 +9,7 @@
     "start": "vite preview"
   },
   "dependencies": {
-    "@tanstack/react-query": "https://pkg.pr.new/@tanstack/react-query@1f7d0b2",
+    "@tanstack/react-query": "https://pkg.pr.new/@tanstack/react-query@e464740",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
