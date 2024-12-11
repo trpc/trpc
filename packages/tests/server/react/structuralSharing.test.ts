@@ -17,15 +17,23 @@ test('different plain objects', async () => {
 });
 
 test('nested plain objects - fully identical', async () => {
-  const oldResult = parse(stringify({ a: 1, b: { c: 2 } }));
-  const newResult = parse(stringify({ a: 1, b: { c: 2 } }));
+  const oldResult = parse<{ a: number; b: { c: number } }>(
+    stringify({ a: 1, b: { c: 2 } }),
+  );
+  const newResult = parse<{ a: number; b: { c: number } }>(
+    stringify({ a: 1, b: { c: 2 } }),
+  );
 
   expect(replaceEqualDeep(oldResult, newResult)).toBe(oldResult);
 });
 
 test('nested plain objects - same nested object', async () => {
-  const oldResult = parse(stringify({ a: 1, b: { c: 3 } }));
-  const newResult = parse(stringify({ a: 2, b: { c: 3 } }));
+  const oldResult = parse<{ a: number; b: { c: number } }>(
+    stringify({ a: 1, b: { c: 3 } }),
+  );
+  const newResult = parse<{ a: number; b: { c: number } }>(
+    stringify({ a: 2, b: { c: 3 } }),
+  );
 
   expect(replaceEqualDeep(oldResult, newResult)).not.toBe(oldResult);
   expect(replaceEqualDeep(oldResult, newResult).b).toBe(oldResult.b);
@@ -41,10 +49,10 @@ test('stable for dates - identical', async () => {
 
 test('stable for dates - different', async () => {
   const unchangedObj = { nested: { value: 42 } };
-  const oldResult = parse(
+  const oldResult = parse<{ a: Date; b: { nested: { value: number } } }>(
     stringify({ a: new Date('2024-04-01'), b: unchangedObj }),
   );
-  const newResult = parse(
+  const newResult = parse<{ a: Date; b: { nested: { value: number } } }>(
     stringify({ a: new Date('2024-04-02'), b: unchangedObj }),
   );
 
@@ -83,12 +91,14 @@ test('stable for maps - different order is still equal', async () => {
 
 test('stable for maps - different keys are not equal', async () => {
   const unchangedObj = { nested: { value: 42 } };
-  const oldResult = parse(
-    stringify({ a: new Map([['a', 1]]), b: unchangedObj }),
-  );
-  const newResult = parse(
-    stringify({ a: new Map([['b', 1]]), b: unchangedObj }),
-  );
+  const oldResult = parse<{
+    a: Map<string, number>;
+    b: { nested: { value: number } };
+  }>(stringify({ a: new Map([['a', 1]]), b: unchangedObj }));
+  const newResult = parse<{
+    a: Map<string, number>;
+    b: { nested: { value: number } };
+  }>(stringify({ a: new Map([['b', 1]]), b: unchangedObj }));
 
   expect(replaceEqualDeep(oldResult, newResult)).not.toBe(oldResult);
   expect(replaceEqualDeep(oldResult, newResult).b).toBe(oldResult.b);
@@ -112,8 +122,12 @@ test('stable for sets - different order is still equal', async () => {
 
 test('stable for sets - different values are not equal', async () => {
   const unchangedObj = { nested: { value: 42 } };
-  const oldResult = parse(stringify({ a: new Set([1]), b: unchangedObj }));
-  const newResult = parse(stringify({ a: new Set([2]), b: unchangedObj }));
+  const oldResult = parse<{ a: Set<number>; b: { nested: { value: number } } }>(
+    stringify({ a: new Set([1]), b: unchangedObj }),
+  );
+  const newResult = parse<{ a: Set<number>; b: { nested: { value: number } } }>(
+    stringify({ a: new Set([2]), b: unchangedObj }),
+  );
 
   expect(replaceEqualDeep(oldResult, newResult)).not.toBe(oldResult);
   expect(replaceEqualDeep(oldResult, newResult).b).toBe(oldResult.b);
@@ -128,8 +142,12 @@ test('stable for BigInts - identical', async () => {
 
 test('stable for BigInts - different values are not equal', async () => {
   const unchangedObj = { nested: { value: 42 } };
-  const oldResult = parse(stringify({ a: BigInt(1), b: unchangedObj }));
-  const newResult = parse(stringify({ a: BigInt(2), b: unchangedObj }));
+  const oldResult = parse<{ a: bigint; b: { nested: { value: number } } }>(
+    stringify({ a: BigInt(1), b: unchangedObj }),
+  );
+  const newResult = parse<{ a: bigint; b: { nested: { value: number } } }>(
+    stringify({ a: BigInt(2), b: unchangedObj }),
+  );
 
   expect(replaceEqualDeep(oldResult, newResult)).not.toBe(oldResult);
   expect(replaceEqualDeep(oldResult, newResult).b).toBe(oldResult.b);
