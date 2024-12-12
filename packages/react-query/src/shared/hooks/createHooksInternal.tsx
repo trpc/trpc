@@ -13,7 +13,6 @@ import {
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { createTRPCUntypedClient } from '@trpc/client';
-import { replaceEqualDeep } from '@trpc/react-query/utils/structuralSharing';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
@@ -183,7 +182,6 @@ export function createRootHooks<
       void prefetchQuery(queryKey, opts as any);
     }
     const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, {
-      structuralSharing: replaceEqualDeep,
       ...defaultOpts,
       ...opts,
     });
