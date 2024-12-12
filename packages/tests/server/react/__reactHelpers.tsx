@@ -68,6 +68,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
         }),
       ],
     }),
+    transformer: appRouter._def._config.transformer,
   });
 
   const queryClient = createQueryClient();
