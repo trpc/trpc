@@ -50,7 +50,7 @@ import type { AppRouter } from '../server/router';
 export const trpc = createTRPCReact<AppRouter>();
 ```
 
-### 4. Add tRPC providers
+### 4. Add tRPC providers {#add-trpc-providers}
 
 Create a tRPC client, and wrap your application in the tRPC Provider, as below. You will also need to set up and connect React Query, which [they document in more depth](https://tanstack.com/query/latest/docs/framework/react/quick-start).
 
@@ -95,6 +95,25 @@ export function App() {
 
 :::note
 The reason for using `useState` in the creation of the `queryClient` and the `TRPCClient`, as opposed to declaring them outside of the component, is to ensure that each request gets a unique client when using SSR. If you use client side rendering then you can move them if you wish.
+:::
+
+:::tip
+If you're using a transformer like `superjson`, you probably want React Query to be able to use [structural sharing](https://tanstack.com/query/latest/docs/framework/react/guides/render-optimizations#structural-sharing) for non-JSON types like Date, Set and Map. You can do this by setting the `structuralSharing` option to `replaceEqualDeep` in the `queryClient` options.
+
+```tsx
+import { replaceEqualDeep } from '@trpc/react-query';
+
+...
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      structuralSharing: replaceEqualDeep,
+    },
+  },
+});
+```
+
 :::
 
 #### 5. Fetch data

@@ -7,6 +7,10 @@ slug: /server/data-transformers
 
 You are able to serialize the response data & input args. The transformers need to be added both to the server and the client.
 
+:::note
+If you use a transformer and React Query, you probably want to use a custom function for structural sharing. TRPC [provides one](../client/react/setup.mdx#add-trpc-providers) for the most common cases.
+:::
+
 ## Using [superjson](https://github.com/blitz-js/superjson)
 
 SuperJSON allows us to transparently use, e.g., standard `Date`/`Map`/`Set`s over the wire between the server and client. That is, you can return any of these types from your API-resolver and use them in the client without having to recreate the objects from JSON.
