@@ -1,5 +1,5 @@
 /**
- * Taken from @tanstack/query-core utils.ts
+ * Inspired by @tanstack/query-core utils.ts
  * Modified to support Date, Map, Set and NaN comparisons
  *
  * This function returns `a` if `b` is deeply equal.
