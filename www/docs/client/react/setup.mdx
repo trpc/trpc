@@ -98,7 +98,9 @@ The reason for using `useState` in the creation of the `queryClient` and the `TR
 :::
 
 :::tip
-If you're using a transformer like `superjson`, you probably want React Query to be able to use [structural sharing](https://tanstack.com/query/latest/docs/framework/react/guides/render-optimizations#structural-sharing) for non-JSON types like Date, Set and Map. You can do this by setting the `structuralSharing` option to `replaceEqualDeep` in the `queryClient` options.
+React Query uses a technique called [structural sharing](https://tanstack.com/query/latest/docs/framework/react/guides/render-optimizations#structural-sharing) to ensure that as many references as possible will be kept intact between re-renders.
+
+If you're using a [transformer](../../server/data-transformers.md) like `superjson`, you probably want this to work for non-JSON types like Date, Set and Map. You can do this by setting the `structuralSharing` option to `replaceEqualDeep` in the `queryClient` options.
 
 ```tsx
 import { replaceEqualDeep } from '@trpc/react-query';
