@@ -1,7 +1,7 @@
-import {behaviorSubject} from '@trpc/server/observable';
-import {asyncWsOpen} from './asyncWsOpen';
-import type {PingPongOptions} from './pingPong';
-import {setupPingInterval} from './pingPong';
+import { behaviorSubject } from '@trpc/server/observable';
+import { asyncWsOpen } from './asyncWsOpen';
+import type { PingPongOptions } from './pingPong';
+import { setupPingInterval } from './pingPong';
 
 export interface WebSocketConnectionOptions {
   WebSocketPonyfill?: typeof WebSocket;
@@ -76,7 +76,9 @@ export class WsConnection {
     if (this.openPromise) return this.openPromise;
 
     this.id = ++WsConnection.connectCount;
-    const wsPromise = this.promiseUrl.then((url) => new this.WebSocketPonyfill(url));
+    const wsPromise = this.promiseUrl.then(
+      (url) => new this.WebSocketPonyfill(url),
+    );
     this.openPromise = wsPromise.then(asyncWsOpen);
     this.ws = await wsPromise;
 

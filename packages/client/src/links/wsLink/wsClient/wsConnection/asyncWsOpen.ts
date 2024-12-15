@@ -1,4 +1,4 @@
-import {withResolvers} from '../utils';
+import { withResolvers } from '../utils';
 
 /**
  * Opens a WebSocket connection asynchronously and returns a promise
