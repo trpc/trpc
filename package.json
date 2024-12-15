@@ -76,7 +76,7 @@
     "rollup": "^4.27.4",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-delete": "^2.1.0",
-    "rollup-plugin-node-externals": "^7.1.3",
+    "rollup-plugin-node-externals": "^8.0.0",
     "rollup-plugin-swc3": "^0.12.1",
     "superjson": "^1.12.4",
     "ts-prune": "^0.10.3",
