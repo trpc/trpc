@@ -5,44 +5,95 @@
  * This function returns `a` if `b` is deeply equal.
  * If not, it will replace any deeply equal children of `b` with those of `a`.
  */
-export function replaceEqualDeep(a: any, b: any): any {
-  if (fastDeepEqual(a, b)) {
-    return a;
-  }
+export function createStructuralSharingFunction(
+  equalityFn: (a: any, b: any) => boolean,
+) {
+  const structuralSharingFunction = (a: any, b: any): any => {
+    if (equalityFn(a, b)) {
+      return a;
+    }
 
-  const array = isPlainArray(a) && isPlainArray(b);
+    const array = isPlainArray(a) && isPlainArray(b);
+    const plainObject = isPlainObject(a) && isPlainObject(b);
+    const map = a instanceof Map && b instanceof Map;
+    const set = a instanceof Set && b instanceof Set;
 
-  if (array || (isPlainObject(a) && isPlainObject(b))) {
-    const aItems = array ? a : Object.keys(a);
-    const aSize = aItems.length;
-    const bItems = array ? b : Object.keys(b);
-    const bSize = bItems.length;
-    const copy: any = array ? [] : {};
+    if (array || plainObject || map) {
+      const aItems = array
+        ? a
+        : plainObject
+          ? Object.keys(a)
+          : Array.from(a.keys());
+      const aSize = aItems.length;
+      const bItems = array
+        ? b
+        : plainObject
+          ? Object.keys(b)
+          : Array.from(b.keys());
+      const bSize = bItems.length;
+      const copy: any = array ? [] : plainObject ? {} : new Map();
 
-    let equalItems = 0;
+      let equalItems = 0;
 
-    for (let i = 0; i < bSize; i++) {
-      const key = array ? i : bItems[i];
-      if (
-        !array &&
-        a[key] === undefined &&
-        b[key] === undefined &&
-        aItems.includes(key)
-      ) {
-        copy[key] = undefined;
-        equalItems++;
-      } else {
-        copy[key] = replaceEqualDeep(a[key], b[key]);
-        if (copy[key] === a[key] && a[key] !== undefined) {
+      for (let i = 0; i < bSize; i++) {
+        const key = array ? i : bItems[i];
+        if (
+          !array &&
+          a[key] === undefined &&
+          b[key] === undefined &&
+          aItems.includes(key)
+        ) {
+          copy[key] = undefined;
+          equalItems++;
+        } else {
+          copy[key] = structuralSharingFunction(a[key], b[key]);
+          if (copy[key] === a[key] && a[key] !== undefined) {
+            equalItems++;
+          }
+        }
+      }
+
+      return aSize === bSize && equalItems === aSize ? a : copy;
+    }
+
+    if (set) {
+      const copy: any = new Set();
+      let equalItems = 0;
+      if (a.size !== b.size) return false;
+      const aItems = Array.from(a.values());
+      for (const bItem of b.values()) {
+        // We're doing a shallow comparison here, not a deep one.
+        const aItem = aItems.find((aItem) => equalityFn(aItem, bItem));
+        if (!aItem) {
+          copy.add(bItem);
+        } else {
+          copy.add(aItem);
           equalItems++;
         }
       }
+      return a.size === b.size && equalItems === a.size ? a : copy;
     }
 
-    return aSize === bSize && equalItems === aSize ? a : copy;
-  }
+    return b;
+  };
 
-  return b;
+  return structuralSharingFunction;
+}
+
+export const defaultStructuralSharingFunction =
+  createStructuralSharingFunction(isEqual);
+
+function isEqual(a: any, b: any) {
+  if (a === b) return true;
+  if (Object.is(a, b)) return true;
+  if (a.constructor !== b.constructor) return false;
+  if (a.constructor === RegExp)
+    return a.source === b.source && a.flags === b.flags;
+  if (a.valueOf !== Object.prototype.valueOf)
+    return a.valueOf() === b.valueOf();
+  if (a.toString !== Object.prototype.toString)
+    return a.toString() === b.toString();
+  return false;
 }
 
 function isPlainArray(value: unknown) {
@@ -79,76 +130,3 @@ function isPlainObject(o: any): o is object {
 function hasObjectPrototype(o: any): boolean {
   return Object.prototype.toString.call(o) === '[object Object]';
 }
-
-/**
- * Performs a deep comparison between two values to determine if they are equivalent.
- * Taken from fast-deep-equal
- */
-const fastDeepEqual = (a: any, b: any) => {
-  if (a === b) return true;
-
-  if (a && b && typeof a == 'object' && typeof b == 'object') {
-    if (a.constructor !== b.constructor) return false;
-
-    let length, i, keys;
-    if (Array.isArray(a)) {
-      length = a.length;
-      if (length != b.length) return false;
-      for (i = length; i-- !== 0; )
-        if (!fastDeepEqual(a[i], b[i])) return false;
-      return true;
-    }
-
-    if (a instanceof Map && b instanceof Map) {
-      if (a.size !== b.size) return false;
-      for (i of a.entries()) if (!b.has(i[0])) return false;
-      for (i of a.entries())
-        if (!fastDeepEqual(i[1], b.get(i[0]))) return false;
-      return true;
-    }
-
-    if (a instanceof Set && b instanceof Set) {
-      if (a.size !== b.size) return false;
-      for (i of a.entries()) if (!b.has(i[0])) return false;
-      return true;
-    }
-
-    if (ArrayBuffer.isView(a) && ArrayBuffer.isView(b)) {
-      //@ts-expect-error taken straight from fast-deep-equal
-      length = a.length;
-      //@ts-expect-error taken straight from fast-deep-equal
-      if (length != b.length) return false;
-      //@ts-expect-error taken straight from fast-deep-equal
-      for (i = length; i-- !== 0; ) if (a[i] !== b[i]) return false;
-      return true;
-    }
-
-    if (a.constructor === RegExp)
-      return a.source === b.source && a.flags === b.flags;
-    if (a.valueOf !== Object.prototype.valueOf)
-      return a.valueOf() === b.valueOf();
-    if (a.toString !== Object.prototype.toString)
-      return a.toString() === b.toString();
-
-    // eslint-disable-next-line prefer-const
-    keys = Object.keys(a);
-    length = keys.length;
-    if (length !== Object.keys(b).length) return false;
-
-    for (i = length; i-- !== 0; )
-      //@ts-expect-error taken straight from fast-deep-equal
-      if (!Object.prototype.hasOwnProperty.call(b, keys[i])) return false;
-
-    for (i = length; i-- !== 0; ) {
-      const key = keys[i];
-
-      //@ts-expect-error taken straight from fast-deep-equal
-      if (!fastDeepEqual(a[key], b[key])) return false;
-    }
-
-    return true;
-  }
-
-  // true if both NaN, false otherwise
-  return a !== a && b !== b;
-};

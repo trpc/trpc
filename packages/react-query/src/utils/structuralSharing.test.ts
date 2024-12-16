@@ -1,19 +1,23 @@
-import { replaceEqualDeep } from '@trpc/react-query';
 import { parse, stringify } from 'superjson';
+import { defaultStructuralSharingFunction } from './structuralSharing';
 
 test('identical plain object', async () => {
   const data = { a: 1, b: 2 };
   const oldResult = parse(stringify(data));
   const newResult = parse(stringify(data));
 
-  expect(replaceEqualDeep(oldResult, newResult)).toBe(oldResult);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).toBe(
+    oldResult,
+  );
 });
 
 test('different plain objects', async () => {
   const oldResult = parse(stringify({ a: 1, b: 2 }));
   const newResult = parse(stringify({ a: 1, b: 'a' }));
 
-  expect(replaceEqualDeep(oldResult, newResult)).not.toBe(oldResult);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).not.toBe(
+    oldResult,
+  );
 });
 
 test('nested plain objects - fully identical', async () => {
@@ -24,7 +28,9 @@ test('nested plain objects - fully identical', async () => {
     stringify({ a: 1, b: { c: 2 } }),
   );
 
-  expect(replaceEqualDeep(oldResult, newResult)).toBe(oldResult);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).toBe(
+    oldResult,
+  );
 });
 
 test('nested plain objects - same nested object', async () => {
@@ -35,8 +41,12 @@ test('nested plain objects - same nested object', async () => {
     stringify({ a: 2, b: { c: 3 } }),
   );
 
-  expect(replaceEqualDeep(oldResult, newResult)).not.toBe(oldResult);
-  expect(replaceEqualDeep(oldResult, newResult).b).toBe(oldResult.b);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).not.toBe(
+    oldResult,
+  );
+  expect(defaultStructuralSharingFunction(oldResult, newResult).b).toBe(
+    oldResult.b,
+  );
 });
 
 test('stable for dates - identical', async () => {
@@ -44,7 +54,9 @@ test('stable for dates - identical', async () => {
   const oldResult = parse(stringify({ a: date }));
   const newResult = parse(stringify({ a: date }));
 
-  expect(replaceEqualDeep(oldResult, newResult)).toBe(oldResult);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).toBe(
+    oldResult,
+  );
 });
 
 test('stable for dates - different', async () => {
@@ -56,8 +68,12 @@ test('stable for dates - different', async () => {
     stringify({ a: new Date('2024-04-02'), b: unchangedObj }),
   );
 
-  expect(replaceEqualDeep(oldResult, newResult)).not.toBe(oldResult);
-  expect(replaceEqualDeep(oldResult, newResult).b).toBe(oldResult.b);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).not.toBe(
+    oldResult,
+  );
+  expect(defaultStructuralSharingFunction(oldResult, newResult).b).toBe(
+    oldResult.b,
+  );
 });
 
 test('stable for maps - identical', async () => {
@@ -68,7 +84,9 @@ test('stable for maps - identical', async () => {
   const oldResult = parse(stringify({ a: map }));
   const newResult = parse(stringify({ a: map }));
 
-  expect(replaceEqualDeep(oldResult, newResult)).toBe(oldResult);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).toBe(
+    oldResult,
+  );
 });
 
 test('stable for maps - different order is still equal', async () => {
@@ -86,7 +104,9 @@ test('stable for maps - different order is still equal', async () => {
     }),
   );
 
-  expect(replaceEqualDeep(oldResult, newResult)).toBe(oldResult);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).toBe(
+    oldResult,
+  );
 });
 
 test('stable for maps - different keys are not equal', async () => {
@@ -100,8 +120,12 @@ test('stable for maps - different keys are not equal', async () => {
     b: { nested: { value: number } };
   }>(stringify({ a: new Map([['b', 1]]), b: unchangedObj }));
 
-  expect(replaceEqualDeep(oldResult, newResult)).not.toBe(oldResult);
-  expect(replaceEqualDeep(oldResult, newResult).b).toBe(oldResult.b);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).not.toBe(
+    oldResult,
+  );
+  expect(defaultStructuralSharingFunction(oldResult, newResult).b).toBe(
+    oldResult.b,
+  );
 });
 
 test('stable for sets - identical', async () => {
@@ -109,7 +133,9 @@ test('stable for sets - identical', async () => {
   const oldResult = parse(stringify({ a: set }));
   const newResult = parse(stringify({ a: set }));
 
-  expect(replaceEqualDeep(oldResult, newResult)).toBe(oldResult);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).toBe(
+    oldResult,
+  );
 });
 
 test('stable for sets - different order is still equal', async () => {
@@ -117,7 +143,9 @@ test('stable for sets - different order is still equal', async () => {
   const oldResult = parse(stringify({ a: set }));
   const newResult = parse(stringify({ a: new Set([3, 2, 1]) }));
 
-  expect(replaceEqualDeep(oldResult, newResult)).toBe(oldResult);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).toBe(
+    oldResult,
+  );
 });
 
 test('stable for sets - different values are not equal', async () => {
@@ -129,15 +157,21 @@ test('stable for sets - different values are not equal', async () => {
     stringify({ a: new Set([2]), b: unchangedObj }),
   );
 
-  expect(replaceEqualDeep(oldResult, newResult)).not.toBe(oldResult);
-  expect(replaceEqualDeep(oldResult, newResult).b).toBe(oldResult.b);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).not.toBe(
+    oldResult,
+  );
+  expect(defaultStructuralSharingFunction(oldResult, newResult).b).toBe(
+    oldResult.b,
+  );
 });
 
 test('stable for BigInts - identical', async () => {
   const oldResult = parse(stringify({ a: BigInt(1) }));
   const newResult = parse(stringify({ a: BigInt(1) }));
 
-  expect(replaceEqualDeep(oldResult, newResult)).toBe(oldResult);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).toBe(
+    oldResult,
+  );
 });
 
 test('stable for BigInts - different values are not equal', async () => {
@@ -149,6 +183,10 @@ test('stable for BigInts - different values are not equal', async () => {
     stringify({ a: BigInt(2), b: unchangedObj }),
   );
 
-  expect(replaceEqualDeep(oldResult, newResult)).not.toBe(oldResult);
-  expect(replaceEqualDeep(oldResult, newResult).b).toBe(oldResult.b);
+  expect(defaultStructuralSharingFunction(oldResult, newResult)).not.toBe(
+    oldResult,
+  );
+  expect(defaultStructuralSharingFunction(oldResult, newResult).b).toBe(
+    oldResult.b,
+  );
 });

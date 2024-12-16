@@ -2,7 +2,7 @@ import { getServerAndReactClient } from './__reactHelpers';
 import { skipToken, type InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { replaceEqualDeep } from '@trpc/react-query';
+import { defaultStructuralSharingFunction } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
@@ -319,7 +319,7 @@ describe('useQuery()', () => {
       ...queryClient.getDefaultOptions(),
       queries: {
         ...queryClient.getDefaultOptions().queries,
-        structuralSharing: replaceEqualDeep,
+        structuralSharing: defaultStructuralSharingFunction,
       },
     });
     const results: unknown[] = [];
