@@ -83,7 +83,7 @@ export function createStructuralSharingFunction(
 export const defaultStructuralSharingFunction =
   createStructuralSharingFunction(isEqual);
 
-function isEqual(a: unknown, b: unknown) {
+export function isEqual(a: unknown, b: unknown) {
   if (a === b) return true;
   if (Object.is(a, b)) return true;
   if (a === undefined || b === undefined || a === null || b === null)
