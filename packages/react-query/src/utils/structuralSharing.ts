@@ -6,7 +6,7 @@
  * If not, it will replace any deeply equal children of `b` with those of `a`.
  */
 export function createStructuralSharingFunction(
-  equalityFn: (a: any, b: any) => boolean,
+  equalityFn: (a: unknown, b: unknown) => boolean,
 ) {
   const structuralSharingFunction = (a: any, b: any): any => {
     if (equalityFn(a, b)) {
@@ -83,16 +83,19 @@ export function createStructuralSharingFunction(
 export const defaultStructuralSharingFunction =
   createStructuralSharingFunction(isEqual);
 
-function isEqual(a: any, b: any) {
+function isEqual(a: unknown, b: unknown) {
   if (a === b) return true;
   if (Object.is(a, b)) return true;
-  if (a === undefined || b === undefined) return false;
+  if (a === undefined || b === undefined || a === null || b === null)
+    return false;
   if (a.constructor !== b.constructor) return false;
   if (a.constructor === RegExp)
+    // @ts-expect-error typescript does not infer type from constructor comparison
     return a.source === b.source && a.flags === b.flags;
   if (a.valueOf !== Object.prototype.valueOf)
     return a.valueOf() === b.valueOf();
   if (a.toString !== Object.prototype.toString)
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return a.toString() === b.toString();
   return false;
 }
