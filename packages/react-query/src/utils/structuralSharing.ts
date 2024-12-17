@@ -86,6 +86,7 @@ export const defaultStructuralSharingFunction =
 function isEqual(a: any, b: any) {
   if (a === b) return true;
   if (Object.is(a, b)) return true;
+  if (a === undefined || b === undefined) return false;
   if (a.constructor !== b.constructor) return false;
   if (a.constructor === RegExp)
     return a.source === b.source && a.flags === b.flags;

@@ -328,10 +328,11 @@ describe('useQuery()', () => {
         id: '1',
       });
       useEffect(() => {
-        if (query1.fetchStatus === 'idle' && query1.data) {
-          results.push(query1.data);
+        if (query1.fetchStatus === 'idle') {
+          results.push(query1.data ?? query1.error);
+          console.log(query1.data, query1.error);
         }
-      }, [query1.fetchStatus, query1.data]);
+      }, [query1.fetchStatus, query1.data, query1.error]);
 
       const utils = client.useUtils();
 

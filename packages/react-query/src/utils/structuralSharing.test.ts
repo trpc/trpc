@@ -190,3 +190,12 @@ test('stable for BigInts - different values are not equal', async () => {
     oldResult.b,
   );
 });
+
+test('does not throw when one of the values is undefined', async () => {
+  const oldResult = parse(stringify({ a: undefined }));
+  const newResult = parse(stringify({ a: 1 }));
+
+  expect(() =>
+    defaultStructuralSharingFunction(oldResult, newResult),
+  ).not.toThrow();
+});
