@@ -91,7 +91,7 @@
     }
   },
   "devDependencies": {
-    "@tanstack/react-query": "https://pkg.pr.new/@tanstack/react-query@e464740",
+    "@tanstack/react-query": "^5.62.8",
     "@trpc/client": "10.45.1",
     "@trpc/react-query": "10.45.1",
     "@trpc/server": "^10.45.1",
