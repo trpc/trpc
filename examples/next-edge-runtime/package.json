@@ -8,7 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.59.15",
+    "@tanstack/react-query": "^5.62.8",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
