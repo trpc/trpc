@@ -37,7 +37,7 @@
     "@trpc/next": "workspace:*",
     "@trpc/react-query": "workspace:*",
     "@trpc/server": "workspace:*",
-    "@unkey/ratelimit": "^0.4.0",
+    "@unkey/ratelimit": "^0.5.0",
     "@visx/hierarchy": "^3.0.0",
     "@visx/responsive": "^3.0.0",
     "clsx": "^2.0.0",
