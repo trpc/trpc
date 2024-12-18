@@ -1867,7 +1867,7 @@ importers:
     devDependencies:
       '@tanstack/react-query':
         specifier: ^5.62.8
-        version: 5.62.8(react@18.3.1)
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: 10.45.1
         version: link:../client
@@ -1887,11 +1887,11 @@ importers:
         specifier: ^0.7.0
         version: 0.7.0
       react:
-        specifier: ^18.3.1
-        version: 18.3.1
+        specifier: ^19.0.0
+        version: 19.0.0
       react-dom:
         specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
+        version: 18.3.1(react@19.0.0)
       rollup:
         specifier: ^4.9.5
         version: 4.27.4
@@ -13893,10 +13893,6 @@ packages:
       react: '>= 18.0.0'
       react-dom: '>= 18.0.0'
 
-  react@18.3.1:
-    resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
-    engines: {node: '>=0.10.0'}
-
   react@19.0.0:
     resolution: {integrity: sha512-V8AVnmPIICiWpGfm6GLzCR/W5FXLchHop40W4nXBmdlEceh16rCN8O8LNWm5bh5XUX91fh7KpA+W0TgMKmgTpQ==}
     engines: {node: '>=0.10.0'}
@@ -22789,11 +22785,6 @@ snapshots:
       '@tanstack/query-persist-client-core': 5.59.13
       '@tanstack/react-query': 5.62.8(react@19.0.0)
       react: 19.0.0
-
-  '@tanstack/react-query@5.62.8(react@18.3.1)':
-    dependencies:
-      '@tanstack/query-core': 5.62.8
-      react: 18.3.1
 
   '@tanstack/react-query@5.62.8(react@19.0.0)':
     dependencies:
@@ -31974,10 +31965,10 @@ snapshots:
       - supports-color
       - vue-template-compiler
 
-  react-dom@18.3.1(react@18.3.1):
+  react-dom@18.3.1(react@19.0.0):
     dependencies:
       loose-envify: 1.4.0
-      react: 18.3.1
+      react: 19.0.0
       scheduler: 0.23.2
 
   react-dom@19.0.0(react@19.0.0):
@@ -32075,10 +32066,6 @@ snapshots:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
       swr: 2.2.5(react@19.0.0)
-
-  react@18.3.1:
-    dependencies:
-      loose-envify: 1.4.0
 
   react@19.0.0: {}
 
