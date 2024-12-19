@@ -165,11 +165,11 @@ importers:
         specifier: ^0.4.4
         version: 0.4.4
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@tanstack/react-query-devtools':
         specifier: ^5.59.15
-        version: 5.59.15(@tanstack/react-query@5.59.15(react@19.0.0))(react@19.0.0)
+        version: 5.59.15(@tanstack/react-query@5.62.8(react@19.0.0))(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -238,8 +238,8 @@ importers:
   examples/.test/diagnostics-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -321,8 +321,8 @@ importers:
   examples/.test/ssg:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -376,8 +376,8 @@ importers:
   examples/.test/ssg-infinite-serialization:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: ^10.35.0
         version: link:../../../packages/client
@@ -723,8 +723,8 @@ importers:
   examples/minimal-content-types/client:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -806,8 +806,8 @@ importers:
   examples/minimal-react/client:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
@@ -874,8 +874,8 @@ importers:
   examples/next-big-router:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -923,8 +923,8 @@ importers:
   examples/next-edge-runtime:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -975,8 +975,8 @@ importers:
         specifier: ^3.9.1
         version: 3.9.1(react-hook-form@7.53.2(react@19.0.0))
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1027,8 +1027,8 @@ importers:
   examples/next-minimal-starter:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1076,8 +1076,8 @@ importers:
         specifier: ^5.12.1
         version: 5.12.1(prisma@5.12.1)
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1176,8 +1176,8 @@ importers:
         specifier: ^5.12.1
         version: 5.12.1(prisma@5.12.1)
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1220,7 +1220,7 @@ importers:
         version: 1.28.1
       '@tanstack/react-query-devtools':
         specifier: ^5.59.15
-        version: 5.59.15(@tanstack/react-query@5.59.15(react@19.0.0))(react@19.0.0)
+        version: 5.59.15(@tanstack/react-query@5.62.8(react@19.0.0))(react@19.0.0)
       '@types/node':
         specifier: 20.17.10
         version: 20.17.10
@@ -1249,8 +1249,8 @@ importers:
         specifier: ^5.12.1
         version: 5.12.1(prisma@5.12.1)
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1296,7 +1296,7 @@ importers:
         version: 1.28.1
       '@tanstack/react-query-devtools':
         specifier: ^5.59.15
-        version: 5.59.15(@tanstack/react-query@5.59.15(react@19.0.0))(react@19.0.0)
+        version: 5.59.15(@tanstack/react-query@5.62.8(react@19.0.0))(react@19.0.0)
       '@types/node':
         specifier: 20.17.10
         version: 20.17.10
@@ -1361,11 +1361,11 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0(@types/react@19.0.0)(react@19.0.0)
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@tanstack/react-query-devtools':
         specifier: ^5.59.15
-        version: 5.59.15(@tanstack/react-query@5.59.15(react@19.0.0))(react@19.0.0)
+        version: 5.59.15(@tanstack/react-query@5.62.8(react@19.0.0))(react@19.0.0)
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../packages/client
@@ -1510,17 +1510,17 @@ importers:
   examples/tanstack-start:
     dependencies:
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@tanstack/react-query-devtools':
         specifier: ^5.59.15
-        version: 5.59.15(@tanstack/react-query@5.59.15(react@19.0.0))(react@19.0.0)
+        version: 5.59.15(@tanstack/react-query@5.62.8(react@19.0.0))(react@19.0.0)
       '@tanstack/react-router':
         specifier: ^1.85.10
         version: 1.86.0(@tanstack/router-generator@1.69.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@tanstack/react-router-with-query':
         specifier: ^1.85.10
-        version: 1.86.0(@tanstack/react-query@5.59.15(react@19.0.0))(@tanstack/react-router@1.86.0(@tanstack/router-generator@1.69.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 1.86.0(@tanstack/react-query@5.62.8(react@19.0.0))(@tanstack/react-router@1.86.0(@tanstack/router-generator@1.69.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@tanstack/router-devtools':
         specifier: ^1.69.1
         version: 1.69.1(@tanstack/react-router@1.86.0(@tanstack/router-generator@1.69.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(csstype@3.1.3)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1671,8 +1671,8 @@ importers:
   packages/next:
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: workspace:*
         version: link:../client
@@ -1725,8 +1725,8 @@ importers:
   packages/react-query:
     devDependencies:
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@trpc/client':
         specifier: workspace:*
         version: link:../client
@@ -1779,8 +1779,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@types/aws-lambda':
         specifier: ^8.10.137
         version: 8.10.145
@@ -1881,11 +1881,11 @@ importers:
         specifier: ^5.59.13
         version: 5.59.13
       '@tanstack/react-query':
-        specifier: ^5.59.15
-        version: 5.59.15(react@19.0.0)
+        specifier: ^5.62.8
+        version: 5.62.8(react@19.0.0)
       '@tanstack/react-query-persist-client':
         specifier: ^5.59.15
-        version: 5.59.15(@tanstack/react-query@5.59.15(react@19.0.0))(react@19.0.0)
+        version: 5.59.15(@tanstack/react-query@5.62.8(react@19.0.0))(react@19.0.0)
       '@testing-library/dom':
         specifier: ^10.0.0
         version: 10.0.0
@@ -1920,8 +1920,8 @@ importers:
         specifier: 1.0.14-alpha
         version: 1.0.14-alpha
       arktype2:
-        specifier: npm:arktype@2.0.0-rc.26
-        version: arktype@2.0.0-rc.26
+        specifier: npm:arktype@2.0.0-rc.27
+        version: arktype@2.0.0-rc.27
       dataloader:
         specifier: ^2.2.2
         version: 2.2.2
@@ -2043,8 +2043,8 @@ importers:
         specifier: workspace:*
         version: link:../packages/server
       '@unkey/ratelimit':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.5.0
+        version: 0.5.0
       '@visx/hierarchy':
         specifier: ^3.0.0
         version: 3.0.0(react@19.0.0)
@@ -2345,11 +2345,11 @@ packages:
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
     engines: {node: '>=6.0.0'}
 
-  '@ark/schema@0.26.0':
-    resolution: {integrity: sha512-b6hk1+M0U4jgZK7ZOGsWKSXgjhfPAqqSCczViM/gQ0Hu0awKLx9SpZYsFhl0j67j3hwlY2+mVZQPKy6GlYDCbQ==}
+  '@ark/schema@0.27.0':
+    resolution: {integrity: sha512-02GRzna3NqiBGivxhc98Qze+wk8eG+Hy8T4MQzSk/qg5Hle1hLGhEyMPflNdvp9TcRCFS7ntrcYmISD24TNUOQ==}
 
-  '@ark/util@0.26.0':
-    resolution: {integrity: sha512-6FSqj6xl3jQ9bD9EU25ThMVcsvaeq6c3gecONgPQ+wDYOUEqBBIAkpjA+LEZMiY0AxVhSF3UF6BlVFspXmef2Q==}
+  '@ark/util@0.27.0':
+    resolution: {integrity: sha512-uBtFa32KSEqayoFMwRRcgOvyOBvQgKvziQyZRXz5KURRa3E4HVnN13hdk5A4JTk0dThl3FOKcqXMjMmW2yLJaA==}
 
   '@auth/core@0.37.2':
     resolution: {integrity: sha512-kUvzyvkcd6h1vpeMAojK2y7+PAV5H+0Cc9+ZlKYDFhDY31AlvsB+GW5vNO4qE3Y07KeQgvNO9U0QUx/fN62kBw==}
@@ -6560,6 +6560,9 @@ packages:
   '@tanstack/query-core@5.59.13':
     resolution: {integrity: sha512-Oou0bBu/P8+oYjXsJQ11j+gcpLAMpqW42UlokQYEz4dE7+hOtVO9rVuolJKgEccqzvyFzqX4/zZWY+R/v1wVsQ==}
 
+  '@tanstack/query-core@5.62.8':
+    resolution: {integrity: sha512-4fV31vDsUyvNGrKIOUNPrZztoyL187bThnoQOvAXEVlZbSiuPONpfx53634MKKdvsDir5NyOGm80ShFaoHS/mw==}
+
   '@tanstack/query-devtools@5.58.0':
     resolution: {integrity: sha512-iFdQEFXaYYxqgrv63ots+65FGI+tNp5ZS5PdMU1DWisxk3fez5HG3FyVlbUva+RdYS5hSLbxZ9aw3yEs97GNTw==}
 
@@ -6587,8 +6590,8 @@ packages:
       '@tanstack/react-query': ^5.59.15
       react: ^18 || ^19
 
-  '@tanstack/react-query@5.59.15':
-    resolution: {integrity: sha512-QbVlAkTI78wB4Mqgf2RDmgC0AOiJqer2c5k9STOOSXGv1S6ZkY37r/6UpE8DbQ2Du0ohsdoXgFNEyv+4eDoPEw==}
+  '@tanstack/react-query@5.62.8':
+    resolution: {integrity: sha512-8TUstKxF/fysHonZsWg/hnlDVgasTdHx6Q+f1/s/oPKJBJbKUWPZEHwLTMOZgrZuroLMiqYKJ9w69Abm8mWP0Q==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -7173,14 +7176,14 @@ packages:
   '@ungap/structured-clone@1.2.0':
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
 
-  '@unkey/api@0.23.0':
-    resolution: {integrity: sha512-N4mFiIQdzBaqDGtBZ70y8d7rNeRgi2iEWac7BgTsiflx12BfMHWd4oMglmUJ4uqHNmNqm3yNVSih7BY24H5K8g==}
+  '@unkey/api@0.29.0':
+    resolution: {integrity: sha512-RxvPtj82AgAvFTug2ujRRZkOfi8tMTPvSsqcMcBMgcyHO/tpTEjUtIPYlDzESBKqRc4K3F3a7s3aBVTuLIgoWw==}
 
   '@unkey/error@0.2.0':
     resolution: {integrity: sha512-DFGb4A7SrusZPP0FYuRIF0CO+Gi4etLUAEJ6EKc+TKYmscL0nEJ2Pr38FyX9MvjI4Wx5l35Wc9KsBjMm9Ybh7w==}
 
-  '@unkey/ratelimit@0.4.0':
-    resolution: {integrity: sha512-JmcdVax6jIAe7OtBl7HWRSQr6TYs4K+k2AwPPfqK1WgqSaf83zU6VYwp32lisEtBeaZvfIDcOmPUoOwh433EWg==}
+  '@unkey/ratelimit@0.5.0':
+    resolution: {integrity: sha512-6F//mlJjDyZW9mtsgbLRUun+IchWr9FOCmhTxrRZFVvvGJEYFP4JxEld8r5RjPD/ePJJp2DD7EeGCt3dYi7QXA==}
 
   '@unkey/rbac@0.3.1':
     resolution: {integrity: sha512-Hj+52XRIlBBl3/qOUq9K71Fwy3PWExBQOpOClVYHdrcmbgqNL6L4EdW/BzliLhqPCdwZTPVSJTnZ3Hw4ZYixsQ==}
@@ -7567,8 +7570,8 @@ packages:
   arktype@1.0.14-alpha:
     resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
 
-  arktype@2.0.0-rc.26:
-    resolution: {integrity: sha512-OdV40SQNY0CFJH+anT0N7Go9Tl+av+hxzMGPccv47sPHdekZuEPd61MfNmwn1J5H2SIrycdwGPD8jYBZSkhKjQ==}
+  arktype@2.0.0-rc.27:
+    resolution: {integrity: sha512-DIisyCM5x9hOVEHZ4kzmrXR5HuDWC6QlhIqaV6Fo+oaNy0N04P+5TCcKcE+Zy6RHwkaOiLzRUAM3G/RLjVEMow==}
 
   array-buffer-byte-length@1.0.0:
     resolution: {integrity: sha512-LPuwb2P+NrQw3XhxGc36+XSvuBPopovXYTR9Ew++Du9Yb/bx5AzBfrIsBoj0EZUifjQU+sHL21sseZ3jerWO/A==}
@@ -16304,11 +16307,11 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
 
-  '@ark/schema@0.26.0':
+  '@ark/schema@0.27.0':
     dependencies:
-      '@ark/util': 0.26.0
+      '@ark/util': 0.27.0
 
-  '@ark/util@0.26.0': {}
+  '@ark/util@0.27.0': {}
 
   '@auth/core@0.37.2':
     dependencies:
@@ -22611,6 +22614,8 @@ snapshots:
 
   '@tanstack/query-core@5.59.13': {}
 
+  '@tanstack/query-core@5.62.8': {}
+
   '@tanstack/query-devtools@5.58.0': {}
 
   '@tanstack/query-persist-client-core@5.59.13':
@@ -22627,26 +22632,26 @@ snapshots:
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
 
-  '@tanstack/react-query-devtools@5.59.15(@tanstack/react-query@5.59.15(react@19.0.0))(react@19.0.0)':
+  '@tanstack/react-query-devtools@5.59.15(@tanstack/react-query@5.62.8(react@19.0.0))(react@19.0.0)':
     dependencies:
       '@tanstack/query-devtools': 5.58.0
-      '@tanstack/react-query': 5.59.15(react@19.0.0)
+      '@tanstack/react-query': 5.62.8(react@19.0.0)
       react: 19.0.0
 
-  '@tanstack/react-query-persist-client@5.59.15(@tanstack/react-query@5.59.15(react@19.0.0))(react@19.0.0)':
+  '@tanstack/react-query-persist-client@5.59.15(@tanstack/react-query@5.62.8(react@19.0.0))(react@19.0.0)':
     dependencies:
       '@tanstack/query-persist-client-core': 5.59.13
-      '@tanstack/react-query': 5.59.15(react@19.0.0)
+      '@tanstack/react-query': 5.62.8(react@19.0.0)
       react: 19.0.0
 
-  '@tanstack/react-query@5.59.15(react@19.0.0)':
+  '@tanstack/react-query@5.62.8(react@19.0.0)':
     dependencies:
-      '@tanstack/query-core': 5.59.13
+      '@tanstack/query-core': 5.62.8
       react: 19.0.0
 
-  '@tanstack/react-router-with-query@1.86.0(@tanstack/react-query@5.59.15(react@19.0.0))(@tanstack/react-router@1.86.0(@tanstack/router-generator@1.69.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+  '@tanstack/react-router-with-query@1.86.0(@tanstack/react-query@5.62.8(react@19.0.0))(@tanstack/react-router@1.86.0(@tanstack/router-generator@1.69.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
-      '@tanstack/react-query': 5.59.15(react@19.0.0)
+      '@tanstack/react-query': 5.62.8(react@19.0.0)
       '@tanstack/react-router': 1.86.0(@tanstack/router-generator@1.69.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
@@ -23396,7 +23401,7 @@ snapshots:
 
   '@ungap/structured-clone@1.2.0': {}
 
-  '@unkey/api@0.23.0':
+  '@unkey/api@0.29.0':
     dependencies:
       '@unkey/rbac': 0.3.1
 
@@ -23404,9 +23409,9 @@ snapshots:
     dependencies:
       zod: 3.23.8
 
-  '@unkey/ratelimit@0.4.0':
+  '@unkey/ratelimit@0.5.0':
     dependencies:
-      '@unkey/api': 0.23.0
+      '@unkey/api': 0.29.0
 
   '@unkey/rbac@0.3.1':
     dependencies:
@@ -23942,10 +23947,10 @@ snapshots:
 
   arktype@1.0.14-alpha: {}
 
-  arktype@2.0.0-rc.26:
+  arktype@2.0.0-rc.27:
     dependencies:
-      '@ark/schema': 0.26.0
-      '@ark/util': 0.26.0
+      '@ark/schema': 0.27.0
+      '@ark/util': 0.27.0
 
   array-buffer-byte-length@1.0.0:
     dependencies:
@@ -26294,7 +26299,7 @@ snapshots:
       '@typescript-eslint/parser': 7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2)
       eslint: 9.13.0(jiti@2.3.3)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0)(eslint@9.13.0(jiti@2.3.3))
+      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-react: 7.37.2(eslint@9.13.0(jiti@2.3.3))
@@ -26317,7 +26322,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0)(eslint@9.13.0(jiti@2.3.3)):
+  eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)):
     dependencies:
       debug: 4.3.7(supports-color@8.1.1)
       enhanced-resolve: 5.17.1
@@ -26331,14 +26336,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2)
       eslint: 9.13.0(jiti@2.3.3)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0)(eslint@9.13.0(jiti@2.3.3))
+      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
     transitivePeerDependencies:
       - supports-color
 
@@ -26353,7 +26358,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.13.0(jiti@2.3.3)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3
