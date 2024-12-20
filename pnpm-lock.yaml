@@ -138,7 +138,7 @@ importers:
         specifier: ^2.0.9
         version: 2.0.9
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       typescript-eslint:
         specifier: ^8.13.0
@@ -219,7 +219,7 @@ importers:
         specifier: link:./src/trpc
         version: link:src/trpc
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       zod:
         specifier: ^3.0.0
@@ -478,7 +478,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       wrangler:
         specifier: ^2.0.17
@@ -576,7 +576,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       wait-port:
         specifier: ^1.0.1
@@ -671,7 +671,7 @@ importers:
         specifier: ^12.0.4
         version: 12.0.4(encoding@0.1.13)(serverless@3.25.0(encoding@0.1.13))
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
 
   examples/minimal:
@@ -699,7 +699,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       wait-port:
         specifier: ^1.0.1
@@ -754,7 +754,7 @@ importers:
         specifier: ^9.13.0
         version: 9.13.0(jiti@2.3.3)
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       vite:
         specifier: ^5.3.4
@@ -785,7 +785,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
 
   examples/minimal-react:
@@ -837,7 +837,7 @@ importers:
         specifier: ^9.13.0
         version: 9.13.0(jiti@2.3.3)
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       vite:
         specifier: ^5.3.4
@@ -917,7 +917,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
 
   examples/next-edge-runtime:
@@ -1067,7 +1067,7 @@ importers:
         specifier: ^9.13.0
         version: 9.13.0(jiti@2.3.3)
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
 
   examples/next-prisma-starter:
@@ -1158,7 +1158,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       typescript-eslint:
         specifier: ^8.12.2
@@ -1240,7 +1240,7 @@ importers:
         specifier: ^1.12.0
         version: 1.14.0
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
 
   examples/next-prisma-websockets-starter:
@@ -1455,7 +1455,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       wait-port:
         specifier: ^1.0.1
@@ -1501,7 +1501,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       wait-port:
         specifier: ^1.0.1
@@ -1589,7 +1589,7 @@ importers:
         specifier: ^3.4.6
         version: 3.4.14
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       typescript-eslint:
         specifier: ^8.12.2
@@ -1662,7 +1662,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       undici:
         specifier: ^7.0.0
@@ -1716,7 +1716,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       zod:
         specifier: ^3.0.0
@@ -1767,7 +1767,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       zod:
         specifier: ^3.0.0
@@ -1845,7 +1845,7 @@ importers:
         specifier: ^4.0.0
         version: 4.6.2
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       valibot:
         specifier: ^0.42.0
@@ -1977,7 +1977,7 @@ importers:
         specifier: 0.23.1
         version: 0.23.1
       typescript:
-        specifier: ^5.7.0
+        specifier: ^5.7.2
         version: 5.7.2
       valibot:
         specifier: ^0.42.0

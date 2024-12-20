@@ -80,7 +80,7 @@
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
-    "typescript": ">=5.7.0"
+    "typescript": ">=5.7.2"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-query": {
@@ -106,7 +106,7 @@
     "react-dom": "^19.0.0",
     "rollup": "^4.24.4",
     "tsx": "^4.0.0",
-    "typescript": "^5.7.0",
+    "typescript": "^5.7.2",
     "zod": "^3.0.0"
   },
   "publishConfig": {
