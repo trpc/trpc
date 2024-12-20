@@ -80,7 +80,7 @@
     "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
-    "typescript": ">=5.6.2"
+    "typescript": ">=5.7.0"
   },
   "peerDependenciesMeta": {
     "@tanstack/react-query": {
