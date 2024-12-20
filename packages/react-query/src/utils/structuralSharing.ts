@@ -1,9 +1,17 @@
 /**
  * Inspired by @tanstack/query-core utils.ts
- * Modified to support Date, Map, Set and NaN comparisons
+ * Modified to support `Date`, `Map`, `Set` and `NaN` comparisons
  *
  * This function returns `a` if `b` is deeply equal.
  * If not, it will replace any deeply equal children of `b` with those of `a`.
+ *
+ * @example
+ * const structuralSharing = createStructuralSharingFunction((prev, next) => {
+ *   if (prev instanceof Temporal.PlainDate && next instanceof Temporal.PlainDate) {
+ *     return prev.equals(next);
+ *   }
+ *   return false
+ * });
  */
 export function createStructuralSharingFunction(
   equalityFn: (a: unknown, b: unknown) => boolean,
