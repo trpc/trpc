@@ -10,7 +10,7 @@
     "@tsconfig/node-lts": "^18.12.2",
     "@tsconfig/strictest": "^2.0.1",
     "@types/node": "^22.9.0",
-    "typescript": "^5.6.2"
+    "typescript": "^5.7.2"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client@next",
