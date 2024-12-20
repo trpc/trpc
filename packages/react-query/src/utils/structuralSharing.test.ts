@@ -165,6 +165,13 @@ test('stable for sets - different values are not equal', async () => {
   );
 });
 
+test('sets - different sizes are not equal', async () => {
+  const prev = new Set([1]);
+  const next = new Set([1, 2]);
+
+  expect(defaultStructuralSharingFunction(prev, next)).toEqual(next);
+});
+
 test('stable for BigInts - identical', async () => {
   const oldResult = parse(stringify({ a: BigInt(1) }));
   const newResult = parse(stringify({ a: BigInt(1) }));

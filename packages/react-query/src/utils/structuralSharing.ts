@@ -30,29 +30,29 @@ export function createStructuralSharingFunction(
     const set = prev instanceof Set && next instanceof Set;
 
     if (array || plainObject || map) {
-      const aItems = array
+      const prevItems = array
         ? prev
         : plainObject
           ? Object.keys(prev)
           : Array.from(prev.keys());
-      const aSize = aItems.length;
-      const bItems = array
+      const aSize = prevItems.length;
+      const nextItems = array
         ? next
         : plainObject
           ? Object.keys(next)
           : Array.from(next.keys());
-      const bSize = bItems.length;
+      const bSize = nextItems.length;
       const copy: any = array ? [] : plainObject ? {} : new Map();
 
       let equalItems = 0;
 
       for (let i = 0; i < bSize; i++) {
-        const key = array ? i : bItems[i];
+        const key = array ? i : nextItems[i];
         if (
           !array &&
           prev[key] === undefined &&
           next[key] === undefined &&
-          aItems.includes(key)
+          prevItems.includes(key)
         ) {
           copy[key] = undefined;
           equalItems++;
@@ -70,13 +70,13 @@ export function createStructuralSharingFunction(
     if (set) {
       const copy: any = new Set();
       let equalItems = 0;
-      if (prev.size !== next.size) return false;
-      const aItems = Array.from(prev.values());
-      for (const bItem of next.values()) {
+      if (prev.size !== next.size) return next;
+      const prevItems = Array.from(prev.values());
+      for (const nextItem of next.values()) {
         // We're doing a shallow comparison here, not a deep one.
-        const aItem = aItems.find((aItem) => equalCheck(aItem, bItem));
+        const aItem = prevItems.find((aItem) => equalCheck(aItem, nextItem));
         if (!aItem) {
-          copy.add(bItem);
+          copy.add(nextItem);
         } else {
           copy.add(aItem);
           equalItems++;
