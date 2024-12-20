@@ -8,28 +8,28 @@
 export function createStructuralSharingFunction(
   equalityFn: (a: unknown, b: unknown) => boolean,
 ) {
-  const structuralSharingFunction = (a: any, b: any): any => {
-    if (equalityFn(a, b)) {
-      return a;
+  const structuralSharingFunction = (prev: any, next: any): any => {
+    if (equalityFn(prev, next)) {
+      return prev;
     }
 
-    const array = isPlainArray(a) && isPlainArray(b);
-    const plainObject = isPlainObject(a) && isPlainObject(b);
-    const map = a instanceof Map && b instanceof Map;
-    const set = a instanceof Set && b instanceof Set;
+    const array = isPlainArray(prev) && isPlainArray(next);
+    const plainObject = isPlainObject(prev) && isPlainObject(next);
+    const map = prev instanceof Map && next instanceof Map;
+    const set = prev instanceof Set && next instanceof Set;
 
     if (array || plainObject || map) {
       const aItems = array
-        ? a
+        ? prev
         : plainObject
-          ? Object.keys(a)
-          : Array.from(a.keys());
+          ? Object.keys(prev)
+          : Array.from(prev.keys());
       const aSize = aItems.length;
       const bItems = array
-        ? b
+        ? next
         : plainObject
-          ? Object.keys(b)
-          : Array.from(b.keys());
+          ? Object.keys(next)
+          : Array.from(next.keys());
       const bSize = bItems.length;
       const copy: any = array ? [] : plainObject ? {} : new Map();
 
@@ -39,29 +39,29 @@ export function createStructuralSharingFunction(
         const key = array ? i : bItems[i];
         if (
           !array &&
-          a[key] === undefined &&
-          b[key] === undefined &&
+          prev[key] === undefined &&
+          next[key] === undefined &&
           aItems.includes(key)
         ) {
           copy[key] = undefined;
           equalItems++;
         } else {
-          copy[key] = structuralSharingFunction(a[key], b[key]);
-          if (copy[key] === a[key] && a[key] !== undefined) {
+          copy[key] = structuralSharingFunction(prev[key], next[key]);
+          if (copy[key] === prev[key] && prev[key] !== undefined) {
             equalItems++;
           }
         }
       }
 
-      return aSize === bSize && equalItems === aSize ? a : copy;
+      return aSize === bSize && equalItems === aSize ? prev : copy;
     }
 
     if (set) {
       const copy: any = new Set();
       let equalItems = 0;
-      if (a.size !== b.size) return false;
-      const aItems = Array.from(a.values());
-      for (const bItem of b.values()) {
+      if (prev.size !== next.size) return false;
+      const aItems = Array.from(prev.values());
+      for (const bItem of next.values()) {
         // We're doing a shallow comparison here, not a deep one.
         const aItem = aItems.find((aItem) => equalityFn(aItem, bItem));
         if (!aItem) {
@@ -71,10 +71,10 @@ export function createStructuralSharingFunction(
           equalItems++;
         }
       }
-      return a.size === b.size && equalItems === a.size ? a : copy;
+      return prev.size === next.size && equalItems === prev.size ? prev : copy;
     }
 
-    return b;
+    return next;
   };
 
   return structuralSharingFunction;
