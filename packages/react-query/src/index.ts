@@ -10,6 +10,5 @@ export type { inferReactQueryProcedureOptions } from './utils/inferReactQueryPro
 export {
   createStructuralSharingFunction,
   defaultStructuralSharingFunction,
-  isEqual,
 } from './utils/structuralSharing';
 export { createTRPCQueryUtils } from './createTRPCQueryUtils';

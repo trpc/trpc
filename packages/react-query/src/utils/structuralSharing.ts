@@ -14,10 +14,13 @@
  * });
  */
 export function createStructuralSharingFunction(
-  equalityFn: (a: unknown, b: unknown) => boolean,
+  customEqualityFunction: (a: unknown, b: unknown) => boolean,
 ) {
+  const equalCheck = (a: unknown, b: unknown) => {
+    return customEqualityFunction(a, b) || isEqual(a, b);
+  };
   const structuralSharingFunction = (prev: any, next: any): any => {
-    if (equalityFn(prev, next)) {
+    if (equalCheck(prev, next)) {
       return prev;
     }
 
@@ -71,7 +74,7 @@ export function createStructuralSharingFunction(
       const aItems = Array.from(prev.values());
       for (const bItem of next.values()) {
         // We're doing a shallow comparison here, not a deep one.
-        const aItem = aItems.find((aItem) => equalityFn(aItem, bItem));
+        const aItem = aItems.find((aItem) => equalCheck(aItem, bItem));
         if (!aItem) {
           copy.add(bItem);
         } else {
@@ -88,10 +91,11 @@ export function createStructuralSharingFunction(
   return structuralSharingFunction;
 }
 
-export const defaultStructuralSharingFunction =
-  createStructuralSharingFunction(isEqual);
+export const defaultStructuralSharingFunction = createStructuralSharingFunction(
+  () => false,
+);
 
-export function isEqual(a: unknown, b: unknown) {
+function isEqual(a: unknown, b: unknown) {
   if (a === b) return true;
   if (Object.is(a, b)) return true;
   if (a === undefined || b === undefined || a === null || b === null)
