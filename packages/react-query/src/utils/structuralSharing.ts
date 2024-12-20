@@ -17,7 +17,7 @@ export function createStructuralSharingFunction(
   customEqualityFunction: (a: unknown, b: unknown) => boolean,
 ) {
   const equalCheck = (a: unknown, b: unknown) => {
-    return customEqualityFunction(a, b) || isEqual(a, b);
+    return customEqualityFunction(a, b) || defaultIsEqual(a, b);
   };
   const structuralSharingFunction = (prev: any, next: any): any => {
     if (equalCheck(prev, next)) {
@@ -95,7 +95,7 @@ export const defaultStructuralSharingFunction = createStructuralSharingFunction(
   () => false,
 );
 
-function isEqual(a: unknown, b: unknown) {
+function defaultIsEqual(a: unknown, b: unknown) {
   if (a === b) return true;
   if (Object.is(a, b)) return true;
   if (a === undefined || b === undefined || a === null || b === null)
