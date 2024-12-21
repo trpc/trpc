@@ -6,7 +6,15 @@ import type {
   UndefinedInitialDataOptions,
   UnusedSkipTokenOptions,
 } from '@tanstack/react-query';
-import { queryOptions, skipToken, type SkipToken } from '@tanstack/react-query';
+import {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  dataTagErrorSymbol,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  dataTagSymbol,
+  queryOptions,
+  skipToken,
+  type SkipToken,
+} from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type {
   coerceAsyncIterableToArray,

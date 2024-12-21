@@ -7,6 +7,10 @@ import type {
   UnusedSkipTokenInfiniteOptions,
 } from '@tanstack/react-query';
 import {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  dataTagErrorSymbol,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  dataTagSymbol,
   infiniteQueryOptions,
   skipToken,
   type QueryClient,

@@ -1,9 +1,5 @@
 import { EventEmitter, on } from 'node:events';
-import {
-  getServerAndReactClient,
-  ignoreErrors,
-  suppressLogsUntil,
-} from './__helpers';
+import { getServerAndReactClient } from './__helpers';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -156,9 +152,8 @@ describe.each([
     });
     expect(onDataMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(0);
-    ignoreErrors(() => {
-      setEnabled(false);
-    });
+
+    setEnabled(false);
 
     await waitFor(() => {
       if (protocol === 'http') {
@@ -234,9 +229,7 @@ describe.each([
     expect(onDataMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(0);
 
-    ignoreErrors(() => {
-      setEnabled(false);
-    });
+    setEnabled(false);
 
     await waitFor(() => {
       // no event listeners
@@ -305,12 +298,10 @@ describe('connection state - http', () => {
     `);
     queryResult.length = 0;
 
-    await suppressLogsUntil(async () => {
-      ctx.opts.destroyConnections();
+    ctx.opts.destroyConnections();
 
-      await waitFor(() => {
-        expect(utils.container).toHaveTextContent('status:connecting');
-      });
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent('status:connecting');
     });
 
     await waitFor(
