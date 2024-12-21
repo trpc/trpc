@@ -26,7 +26,8 @@ export function getCauseFromUnknown(cause: unknown): Error | undefined {
       err[key] = cause[key];
     }
     // last ditch effort - if no discernable message, at least show something to the user
-    if (!err.message) {
+    // eslint-disable-next-line @typescript-eslint/dot-notation
+    if (globalThis.process?.env['NODE_ENV'] !== 'production' && !err.message) {
       err.message = JSON.stringify(cause);
     }
     return err;
