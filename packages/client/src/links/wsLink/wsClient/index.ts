@@ -18,9 +18,7 @@ import type { TRPCConnectionState } from '../../internals/subscriptions';
 import type { Operation, OperationResultEnvelope } from '../../types';
 import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
-import {
-  ReconnectManager,
-} from './reconnectManager';
+import { ReconnectManager } from './reconnectManager';
 import type { TCallbacks } from './requestManager';
 import { RequestManager } from './requestManager';
 import {

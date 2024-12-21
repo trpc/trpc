@@ -71,7 +71,7 @@ export async function prepareUrl(
   urlCallbackOrValue: CallbackOrValue<string>,
   withConnectionParams: boolean,
 ) {
-  const url = await resultOf(urlCallbackOrValue)
+  const url = await resultOf(urlCallbackOrValue);
 
   if (!withConnectionParams) return url;
 
