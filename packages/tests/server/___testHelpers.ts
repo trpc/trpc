@@ -21,6 +21,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
+import type { Mock } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
@@ -56,7 +57,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   const serverOverrides: Partial<CreateHTTPHandlerOptions<TRouter>> =
     opts?.server ?? {};
 
-  const onReqAborted = vitest.fn();
+  const onReqAborted = vitest.fn() satisfies Mock;
   const handler = createHTTPHandler({
     router,
     ...serverOverrides,
