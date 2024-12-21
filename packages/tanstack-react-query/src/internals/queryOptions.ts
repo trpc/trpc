@@ -6,15 +6,7 @@ import type {
   UndefinedInitialDataOptions,
   UnusedSkipTokenOptions,
 } from '@tanstack/react-query';
-import {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  dataTagErrorSymbol,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  dataTagSymbol,
-  queryOptions,
-  skipToken,
-  type SkipToken,
-} from '@tanstack/react-query';
+import { queryOptions, skipToken, type SkipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type {
   coerceAsyncIterableToArray,
@@ -168,7 +160,8 @@ export function trpcQueryOptions(args: {
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown>;
-}) {
+}): ReturnType<typeof queryOptions<unknown, unknown, unknown, TRPCQueryKey>> &
+  TRPCQueryOptionsResult {
   const { query, path, queryKey, opts } = args;
   const queryClient = unwrapLazyArg(args.queryClient);
 

@@ -4,7 +4,7 @@ import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import/error/formatter';
 import * as React from 'react';
-import { AssertType, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
 const testContext = () => {

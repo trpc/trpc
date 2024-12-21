@@ -7,10 +7,6 @@ import type {
   UnusedSkipTokenInfiniteOptions,
 } from '@tanstack/react-query';
 import {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  dataTagErrorSymbol,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  dataTagSymbol,
   infiniteQueryOptions,
   skipToken,
   type QueryClient,
@@ -198,7 +194,16 @@ export function trpcInfiniteQueryOptions(args: {
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: UndefinedTRPCInfiniteQueryOptionsIn<unknown, unknown, unknown, unknown>;
-}) {
+}): ReturnType<
+  typeof infiniteQueryOptions<
+    unknown,
+    unknown,
+    unknown,
+    TRPCQueryKey,
+    {} | null
+  >
+> &
+  TRPCQueryOptionsResult {
   const { query, path, queryKey, opts } = args;
   const inputIsSkipToken = queryKey[1]?.input === skipToken;
 
