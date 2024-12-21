@@ -2,10 +2,8 @@ import type {
   TRPCConnectionParamsMessage,
   TRPCRequestInfo,
 } from '@trpc/server/unstable-core-do-not-import';
-import { run } from '@trpc/server/unstable-core-do-not-import';
 import type { CallbackOrValue } from '../../internals/urlWithConnectionParams';
 import { resultOf } from '../../internals/urlWithConnectionParams';
-import { TRPCWebSocketReconnectFatal } from './reconnectManager';
 
 export class TRPCWebSocketClosedError extends Error {
   constructor(opts: { message: string; cause?: unknown }) {
@@ -73,17 +71,7 @@ export async function prepareUrl(
   urlCallbackOrValue: CallbackOrValue<string>,
   withConnectionParams: boolean,
 ) {
-  const url = await run(async () => {
-    try {
-      return await resultOf(urlCallbackOrValue);
-    } catch (error) {
-      throw new TRPCWebSocketReconnectFatal({
-        message:
-          'Error when building url. Ensure provided url(): Promise<string> does not throw.',
-        cause: error,
-      });
-    }
-  });
+  const url = await resultOf(urlCallbackOrValue)
 
   if (!withConnectionParams) return url;
 

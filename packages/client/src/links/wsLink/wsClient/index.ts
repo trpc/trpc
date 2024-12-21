@@ -20,7 +20,6 @@ import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import {
   ReconnectManager,
-  TRPCWebSocketReconnectFatal,
 } from './reconnectManager';
 import type { TCallbacks } from './requestManager';
 import { RequestManager } from './requestManager';
@@ -80,7 +79,7 @@ export class WsClient {
         return;
       }
 
-      void this.close();
+      this.close().catch(() => null);
     }, lazyOptions.closeMs);
 
     // Initialize the WebSocket connection.
@@ -126,7 +125,7 @@ export class WsClient {
 
     // Automatically open the connection if lazy mode is disabled.
     if (!lazyOptions.enabled) {
-      void this.open();
+      this.open().catch(() => null);
     }
   }
 
@@ -146,8 +145,6 @@ export class WsClient {
     try {
       await this.activeConnection.open();
     } catch (error) {
-      if (error instanceof TRPCWebSocketReconnectFatal) throw error;
-
       this.connectionState.next({
         type: 'state',
         state: 'connecting',
@@ -159,7 +156,7 @@ export class WsClient {
         ),
       });
 
-      await this.reconnectManager.reconnect();
+      this.reconnectManager.reconnect();
     }
   }
 
@@ -188,9 +185,9 @@ export class WsClient {
       }
     }
 
-    await Promise.all(requestsToAwait);
+    await Promise.all(requestsToAwait).catch(() => null);
+    await this.activeConnection.close().catch(() => null);
 
-    await this.activeConnection.close();
     this.connectionState.next({
       type: 'state',
       state: 'idle',
@@ -274,6 +271,7 @@ export class WsClient {
       }
 
       if (this.connectionParams) {
+        // Todo What if buildConnectionMessage throws ?
         ws.send(await buildConnectionMessage(this.connectionParams));
       }
 
@@ -293,18 +291,18 @@ export class WsClient {
       }
     });
 
-    ws.addEventListener('message', async ({ data }) => {
+    ws.addEventListener('message', ({ data }) => {
       this.inactivityTimeout.reset();
 
       if (typeof data !== 'string' || ['PING', 'PONG'].includes(data)) return;
 
       const incomingMessage = JSON.parse(data) as TRPCClientIncomingMessage;
       if ('method' in incomingMessage) {
-        await this.handleIncomingRequest(incomingMessage);
+        this.handleIncomingRequest(incomingMessage);
         return;
       }
 
-      await this.handleResponseMessage(incomingMessage);
+      this.handleResponseMessage(incomingMessage);
     });
 
     const handleCloseOrError = (cause: unknown) => {
@@ -336,7 +334,7 @@ export class WsClient {
     });
   }
 
-  private async handleResponseMessage(message: TRPCResponseMessage) {
+  private handleResponseMessage(message: TRPCResponseMessage) {
     const request = this.requestManager.getActiveRequest(message.id);
     if (!request) return;
 
@@ -359,7 +357,7 @@ export class WsClient {
     }
   }
 
-  private async handleIncomingRequest(message: TRPCClientIncomingRequest) {
+  private handleIncomingRequest(message: TRPCClientIncomingRequest) {
     if (message.method === 'reconnect') {
       this.connectionState.next({
         type: 'state',
@@ -371,7 +369,7 @@ export class WsClient {
         ),
       });
 
-      await this.reconnectManager.reconnect();
+      this.reconnectManager.reconnect();
     }
   }
 

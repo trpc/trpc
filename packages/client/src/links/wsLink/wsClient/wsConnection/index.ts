@@ -109,8 +109,11 @@ export class WsConnection {
    * Waits for any ongoing open operation to complete before closing.
    */
   public async close() {
-    await this.openPromise;
-    this.ws?.close();
+    try {
+      await this.openPromise;
+    } finally {
+      this.ws?.close();
+    }
   }
 }
 
