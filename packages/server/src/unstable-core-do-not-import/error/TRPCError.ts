@@ -25,6 +25,10 @@ export function getCauseFromUnknown(cause: unknown): Error | undefined {
     for (const key in cause) {
       err[key] = cause[key];
     }
+    // last ditch effort - if no discernable message, at least show something to the user
+    if (!err.message) {
+      err.message = JSON.stringify(cause);
+    }
     return err;
   }
 
