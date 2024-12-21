@@ -103,7 +103,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   queryKey: (
     input?: TDef['input'],
     // tslint seems to be wrong here, the type is correct
-  ) => TRPCQueryKey & DataTag<unknown, TDef['output'], TDef['errorShape']>;
+  ) => DataTag<TRPCQueryKey, TDef['output'], TDef['errorShape']>;
 
   /**
    * Calculate a Tanstack Query Filter for a Query Procedure
@@ -113,7 +113,12 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   queryFilter: (
     input?: TDef['input'],
     filters?: QueryFilters<TDef['output'], TDef['errorShape']>,
-  ) => QueryFilters<TDef['output'], TDef['errorShape']>;
+  ) => QueryFilters<
+    TDef['output'],
+    TDef['errorShape'],
+    TDef['output'],
+    DataTag<TRPCQueryKey, TDef['output'], TDef['errorShape']>
+  >;
 }
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
