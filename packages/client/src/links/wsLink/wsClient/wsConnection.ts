@@ -1,7 +1,87 @@
 import { behaviorSubject } from '@trpc/server/observable';
-import { asyncWsOpen } from './asyncWsOpen';
-import type { PingPongOptions } from './pingPong';
-import { setupPingInterval } from './pingPong';
+import { withResolvers } from './utils';
+
+/**
+ * Opens a WebSocket connection asynchronously and returns a promise
+ * that resolves when the connection is successfully established.
+ * The promise rejects if an error occurs during the connection attempt.
+ */
+function asyncWsOpen(ws: WebSocket) {
+  const { promise, resolve, reject } = withResolvers<void>();
+
+  ws.addEventListener('open', () => {
+    ws.removeEventListener('error', reject);
+    resolve();
+  });
+  ws.addEventListener('error', reject);
+
+  return promise;
+}
+
+interface PingPongOptions {
+  /**
+   * The interval (in milliseconds) between "PING" messages.
+   */
+  intervalMs: number;
+
+  /**
+   * The timeout (in milliseconds) to wait for a "PONG" response before closing the connection.
+   */
+  pongTimeoutMs: number;
+}
+
+/**
+ * Sets up a periodic ping-pong mechanism to keep the WebSocket connection alive.
+ *
+ * - Sends "PING" messages at regular intervals defined by `intervalMs`.
+ * - If a "PONG" response is not received within the `pongTimeoutMs`, the WebSocket is closed.
+ * - The ping timer resets upon receiving any message to maintain activity.
+ * - Automatically starts the ping process when the WebSocket connection is opened.
+ * - Cleans up timers when the WebSocket is closed.
+ *
+ * @param ws - The WebSocket instance to manage.
+ * @param options - Configuration options for ping-pong intervals and timeouts.
+ */
+function setupPingInterval(
+  ws: WebSocket,
+  { intervalMs, pongTimeoutMs }: PingPongOptions,
+) {
+  let pingTimeout: ReturnType<typeof setTimeout> | undefined;
+  let pongTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  function start() {
+    pingTimeout = setTimeout(() => {
+      ws.send('PING');
+      pongTimeout = setTimeout(() => {
+        ws.close();
+      }, pongTimeoutMs);
+    }, intervalMs);
+  }
+
+  function reset() {
+    clearTimeout(pingTimeout);
+    start();
+  }
+
+  function pong() {
+    clearTimeout(pongTimeout);
+    reset();
+  }
+
+  ws.addEventListener('open', start);
+  ws.addEventListener('message', ({ data }) => {
+    clearTimeout(pingTimeout);
+    start();
+
+    if (data === 'PONG') {
+      pong();
+    }
+  });
+  ws.addEventListener('close', () => {
+    clearTimeout(pingTimeout);
+    clearTimeout(pongTimeout);
+  });
+}
 
 export interface WebSocketConnectionOptions {
   WebSocketPonyfill?: typeof WebSocket;
