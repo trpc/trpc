@@ -7,22 +7,15 @@ import type { WsConnection } from './wsConnection';
  * Handles the lifecycle of a WebSocket connection, including error handling and retries.
  */
 export class ReconnectManager {
-  private connection: WsConnection | undefined;
+  private connection: WsConnection | null;
 
   constructor(
+    connection: WsConnection,
     private readonly retryDelayMs: (attemptIndex: number) => number,
     private readonly callbacks: {
       onError: (error: TRPCWebSocketClosedError) => void;
     },
-  ) {}
-
-  public attach(connection: NonNullable<typeof this.connection>) {
-    if (this.connection && !this.connection.isClosed()) {
-      throw new Error(
-        'Connection already exists and is active. Close the current connection or create a new ReconnectManager instance.',
-      );
-    }
-
+  ) {
     this.connection = connection;
     this.connection.wsObservable.subscribe({
       next: (ws) => {
@@ -78,6 +71,6 @@ export class ReconnectManager {
   }
 
   public stop() {
-    this.connection = undefined;
+    this.connection = null;
   }
 }

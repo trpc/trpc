@@ -44,13 +44,14 @@ export class WsClient {
   private requestManager = new RequestManager();
   private readonly activeConnection: WsConnection;
   private inactivityTimeout: ResettableTimeout;
-  private readonly reconnectManager: ReconnectManager;
   private readonly callbacks: Pick<
     WebSocketClientOptions,
     'onOpen' | 'onClose' | 'onError'
   >;
   private readonly connectionParams: WebSocketClientOptions['connectionParams'];
-  private readonly lazyEnabled: boolean;
+  private readonly lazyMode:
+    | { enabled: true }
+    | { enabled: false; reconnectManager: ReconnectManager };
 
   constructor(opts: WebSocketClientOptions) {
     // Initialize callbacks, connection parameters, and options.
@@ -65,7 +66,6 @@ export class WsClient {
       ...lazyDefaults,
       ...opts.lazy,
     };
-    this.lazyEnabled = lazyOptions.enabled;
 
     // Set up inactivity timeout for lazy connections.
     this.inactivityTimeout = new ResettableTimeout(() => {
@@ -96,22 +96,26 @@ export class WsClient {
       },
     });
 
-    // Initialize the reconnection manager.
-    this.reconnectManager = new ReconnectManager(
-      opts.retryDelayMs ?? exponentialBackoff,
-      {
-        onError: (error) => {
-          this.connectionState.next({
-            type: 'state',
-            state: 'connecting',
-            error: TRPCClientError.from(error),
-          });
-        },
-      },
-    );
-    if (!lazyOptions.enabled) {
-      this.reconnectManager.attach(this.activeConnection);
-    }
+    this.lazyMode = lazyOptions.enabled
+      ? {
+          enabled: true,
+        }
+      : {
+          enabled: false,
+          reconnectManager: new ReconnectManager(
+            this.activeConnection,
+            opts.retryDelayMs ?? exponentialBackoff,
+            {
+              onError: (error) => {
+                this.connectionState.next({
+                  type: 'state',
+                  state: 'connecting',
+                  error: TRPCClientError.from(error),
+                });
+              },
+            },
+          ),
+        };
 
     this.connectionState = behaviorSubject<
       TRPCConnectionState<TRPCClientError<AnyTRPCRouter>>
@@ -154,7 +158,9 @@ export class WsClient {
         ),
       });
 
-      this.reconnectManager.reconnect();
+      if (!this.lazyMode.enabled) {
+        this.lazyMode.reconnectManager.reconnect();
+      }
     }
   }
 
@@ -164,7 +170,9 @@ export class WsClient {
    */
   public async close() {
     this.inactivityTimeout.stop();
-    this.reconnectManager.stop();
+    if (!this.lazyMode.enabled) {
+      this.lazyMode.reconnectManager.stop();
+    }
 
     const requestsToAwait: Promise<void>[] = [];
     for (const request of this.requestManager.getRequests()) {
@@ -263,14 +271,37 @@ export class WsClient {
   }
 
   private setupWebSocketListeners(ws: WebSocket) {
+    const handleCloseOrError = (cause: unknown) => {
+      const reqs = this.requestManager.getActiveRequests();
+      for (const { message, callbacks } of reqs) {
+        if (message.method === 'subscription') continue;
+
+        callbacks.error(
+          TRPCClientError.from(
+            cause ??
+              new TRPCWebSocketClosedError({
+                message: 'WebSocket closed',
+                cause,
+              }),
+          ),
+        );
+        this.requestManager.delete(message.id);
+      }
+    };
+
     ws.addEventListener('open', async () => {
-      if (this.lazyEnabled) {
+      if (this.lazyMode.enabled) {
         this.inactivityTimeout.start();
       }
 
       if (this.connectionParams) {
-        // Todo What if buildConnectionMessage throws ?
-        ws.send(await buildConnectionMessage(this.connectionParams));
+        try {
+          ws.send(await buildConnectionMessage(this.connectionParams));
+        } catch (error) {
+          ws.close(3000);
+          handleCloseOrError(error);
+          return;
+        }
       }
 
       this.callbacks.onOpen?.();
@@ -302,24 +333,6 @@ export class WsClient {
 
       this.handleResponseMessage(incomingMessage);
     });
-
-    const handleCloseOrError = (cause: unknown) => {
-      const reqs = this.requestManager.getActiveRequests();
-      for (const { message, callbacks } of reqs) {
-        if (message.method === 'subscription') continue;
-
-        callbacks.error(
-          TRPCClientError.from(
-            cause ??
-              new TRPCWebSocketClosedError({
-                message: 'WebSocket closed',
-                cause,
-              }),
-          ),
-        );
-        this.requestManager.delete(message.id);
-      }
-    };
 
     ws.addEventListener('close', (event) => {
       handleCloseOrError(event);
@@ -367,7 +380,9 @@ export class WsClient {
         ),
       });
 
-      this.reconnectManager.reconnect();
+      if (!this.lazyMode.enabled) {
+        this.lazyMode.reconnectManager.reconnect();
+      }
     }
   }
 
