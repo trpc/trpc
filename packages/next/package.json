@@ -91,7 +91,7 @@
     }
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.62.8",
+    "@tanstack/react-query": "^5.62.9",
     "@trpc/client": "workspace:*",
     "@trpc/react-query": "workspace:*",
     "@trpc/server": "^10.45.1",
