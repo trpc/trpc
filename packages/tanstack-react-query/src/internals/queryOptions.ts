@@ -160,8 +160,7 @@ export function trpcQueryOptions(args: {
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown>;
-}): ReturnType<typeof queryOptions<unknown, unknown, unknown, TRPCQueryKey>> &
-  TRPCQueryOptionsResult {
+}) {
   const { query, path, queryKey, opts } = args;
   const queryClient = unwrapLazyArg(args.queryClient);
 
