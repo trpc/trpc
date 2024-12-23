@@ -12,7 +12,7 @@
     "test-start": "playwright test --project=prod"
   },
   "dependencies": {
-    "@tanstack/react-query": "https://pkg.pr.new/@tanstack/react-query@bee0026",
+    "@tanstack/react-query": "https://pkg.pr.new/@tanstack/react-query@9469b86",
     "@tanstack/react-query-devtools": "^5.59.15",
     "@tanstack/react-router": "^1.85.10",
     "@tanstack/react-router-with-query": "^1.85.10",
