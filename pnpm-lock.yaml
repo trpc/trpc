@@ -1920,8 +1920,8 @@ importers:
         specifier: 1.0.14-alpha
         version: 1.0.14-alpha
       arktype2:
-        specifier: npm:arktype@2.0.0-rc.29
-        version: arktype@2.0.0-rc.29
+        specifier: npm:arktype@2.0.0-rc.30
+        version: arktype@2.0.0-rc.30
       dataloader:
         specifier: ^2.2.2
         version: 2.2.2
@@ -2345,11 +2345,11 @@ packages:
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
     engines: {node: '>=6.0.0'}
 
-  '@ark/schema@0.29.0':
-    resolution: {integrity: sha512-JzIBw52+kf6o74jdvvATEHnocH2L1KnvYD128e8fO/jK6r12VbEOB/94zHwo5Ip975BNIKg97h/FbkgL1eLhPw==}
+  '@ark/schema@0.30.0':
+    resolution: {integrity: sha512-g6JqrAqsIXtVRfeE9vanQMSAZv+eh6Qv2y4PLc2bpWPVd4b2fdZThctbnYer3V2ZnuZNuX6UKQwV3EOqZZgQsQ==}
 
-  '@ark/util@0.29.0':
-    resolution: {integrity: sha512-zsyEJ5B7XWV2KKGqqX81XNRtcRaq+ubyr0KwBZFu5f0llFjjXqyDwXgZL1t6Ii2Rw7qbMk3so0Bo378l7Eo5jg==}
+  '@ark/util@0.30.0':
+    resolution: {integrity: sha512-mc6r0WlN+BAd8xhw6XnihkrHovekJb1fkUahtrFnlhb1sRnMl9hdFeJSEvJfcTM235eEin3lnq0TQYD+VCLXTw==}
 
   '@auth/core@0.37.2':
     resolution: {integrity: sha512-kUvzyvkcd6h1vpeMAojK2y7+PAV5H+0Cc9+ZlKYDFhDY31AlvsB+GW5vNO4qE3Y07KeQgvNO9U0QUx/fN62kBw==}
@@ -7570,8 +7570,8 @@ packages:
   arktype@1.0.14-alpha:
     resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
 
-  arktype@2.0.0-rc.29:
-    resolution: {integrity: sha512-q4ElRYL4w5DhRzwzANNrgO26RyCuGqY/YRCfFLiYWUnsmJh6LvupUeLeHFj/P2pkl5oz/nWFDBHGGzy/CiEOEA==}
+  arktype@2.0.0-rc.30:
+    resolution: {integrity: sha512-6xZU4tbimwDZSfJTPuf+AaohtnJa2bQqMEdcfobjSZQIwFHCAFlC+u/SdiuL/AKdq/Tpj6j7OBMMitL3mDJ0hQ==}
 
   array-buffer-byte-length@1.0.0:
     resolution: {integrity: sha512-LPuwb2P+NrQw3XhxGc36+XSvuBPopovXYTR9Ew++Du9Yb/bx5AzBfrIsBoj0EZUifjQU+sHL21sseZ3jerWO/A==}
@@ -16302,11 +16302,11 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
 
-  '@ark/schema@0.29.0':
+  '@ark/schema@0.30.0':
     dependencies:
-      '@ark/util': 0.29.0
+      '@ark/util': 0.30.0
 
-  '@ark/util@0.29.0': {}
+  '@ark/util@0.30.0': {}
 
   '@auth/core@0.37.2':
     dependencies:
@@ -23942,10 +23942,10 @@ snapshots:
 
   arktype@1.0.14-alpha: {}
 
-  arktype@2.0.0-rc.29:
+  arktype@2.0.0-rc.30:
     dependencies:
-      '@ark/schema': 0.29.0
-      '@ark/util': 0.29.0
+      '@ark/schema': 0.30.0
+      '@ark/util': 0.30.0
 
   array-buffer-byte-length@1.0.0:
     dependencies:
@@ -26295,7 +26295,7 @@ snapshots:
       eslint: 9.13.0(jiti@2.3.3)
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-react: 7.37.2(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-react-hooks: 5.1.0(eslint@9.13.0(jiti@2.3.3))
@@ -26322,7 +26322,7 @@ snapshots:
       debug: 4.3.7(supports-color@8.1.1)
       enhanced-resolve: 5.17.1
       eslint: 9.13.0(jiti@2.3.3)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
       get-tsconfig: 4.8.1
       globby: 13.1.3
       is-core-module: 2.13.1
@@ -26342,7 +26342,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
