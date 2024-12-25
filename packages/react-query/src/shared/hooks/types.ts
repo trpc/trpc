@@ -280,7 +280,7 @@ export type UseTRPCSuspenseQueryResult<TData, TError> = [
  */
 export type UseTRPCInfiniteQueryResult<TData, TError, TInput> = TRPCHookResult &
   UseInfiniteQueryResult<
-    InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+    InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null | undefined>,
     TError
   >;
 
