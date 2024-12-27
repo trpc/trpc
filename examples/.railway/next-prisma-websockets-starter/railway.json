@@ -7,6 +7,7 @@
     "runtime": "V2",
     "numReplicas": 1,
     "healthcheckPath": "/api/trpc/healthcheck",
+    "healthcheckTimeout": 100,
     "sleepApplication": true,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10

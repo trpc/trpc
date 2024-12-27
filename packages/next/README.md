@@ -92,3 +92,7 @@ export function Hello() {
   return <div>{data && <p>{data.greeting}</p>}</div>;
 }
 ```
+
+## Server components
+
+See https://trpc.io/docs/client/react/server-components

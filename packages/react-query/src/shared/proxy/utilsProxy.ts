@@ -22,6 +22,7 @@ import type {
   AnyRouter,
   DeepPartial,
   inferProcedureInput,
+  inferProcedureOutput,
   inferTransformedProcedureOutput,
   ProtectedIntersection,
   RouterRecord,
@@ -242,9 +243,9 @@ export type DecorateQueryProcedure<
     filters?: Omit<InvalidateQueryFilters, 'predicate'> & {
       predicate?: (
         query: Query<
-          inferProcedureInput<TProcedure>,
+          inferProcedureOutput<TProcedure>,
           TRPCClientError<TRoot>,
-          inferProcedureInput<TProcedure>,
+          inferTransformedProcedureOutput<TRoot, TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,
             inferProcedureInput<TProcedure> extends { cursor?: any } | void
@@ -400,10 +401,10 @@ export type DecoratedProcedureUtilsRecord<
     ? $Value extends RouterRecord
       ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateRouter
       : $Value extends AnyQueryProcedure
-      ? DecorateQueryProcedure<TRoot, $Value>
-      : $Value extends AnyMutationProcedure
-      ? DecorateMutationProcedure<TRoot, $Value>
-      : never
+        ? DecorateQueryProcedure<TRoot, $Value>
+        : $Value extends AnyMutationProcedure
+          ? DecorateMutationProcedure<TRoot, $Value>
+          : never
     : never;
 }; // Add functions that should be available at utils root
 

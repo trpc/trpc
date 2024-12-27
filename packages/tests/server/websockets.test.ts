@@ -977,10 +977,7 @@ describe('regression test - slow createContext', () => {
         },
       ]
     `);
-
-    await waitFor(() => {
-      expect(createContext).toHaveBeenCalledTimes(1);
-    });
+    expect(createContext).toHaveBeenCalledTimes(1);
 
     await t.close();
   });
@@ -1507,6 +1504,7 @@ describe('keep alive on the server', () => {
 
     wss.on('connection', (ws) => {
       ws.on('message', (raw) => {
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         if (raw.toString() === 'PONG') {
           onPong();
         }
@@ -1762,7 +1760,7 @@ describe('subscriptions with createCaller', () => {
     expectTypeOf(ctx.router.onMessageIterable).toEqualTypeOf<
       SubscriptionProcedure<{
         input: string | null | undefined;
-        output: AsyncGenerator<Message, void, any>;
+        output: AsyncIterable<Message, void, any>;
       }>
     >();
     const abortController = new AbortController();

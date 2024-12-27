@@ -37,21 +37,19 @@ export type QueryLike<
 /**
  * Use to unwrap a QueryLike's input
  */
-export type InferQueryLikeInput<TQueryLike> = TQueryLike extends DecoratedQuery<
-  infer $Def
->
-  ? $Def['input']
-  : TQueryLike extends QueryLike<any, infer TProcedure>
-  ? inferProcedureInput<TProcedure>
-  : never;
+export type InferQueryLikeInput<TQueryLike> =
+  TQueryLike extends DecoratedQuery<infer $Def>
+    ? $Def['input']
+    : TQueryLike extends QueryLike<any, infer TProcedure>
+      ? inferProcedureInput<TProcedure>
+      : never;
 
 /**
  * Use to unwrap a QueryLike's data output
  */
-export type InferQueryLikeData<TQueryLike> = TQueryLike extends DecoratedQuery<
-  infer $Def
->
-  ? $Def['output']
-  : TQueryLike extends QueryLike<infer TRoot, infer TProcedure>
-  ? inferTransformedProcedureOutput<TRoot, TProcedure>
-  : never;
+export type InferQueryLikeData<TQueryLike> =
+  TQueryLike extends DecoratedQuery<infer $Def>
+    ? $Def['output']
+    : TQueryLike extends QueryLike<infer TRoot, infer TProcedure>
+      ? inferTransformedProcedureOutput<TRoot, TProcedure>
+      : never;

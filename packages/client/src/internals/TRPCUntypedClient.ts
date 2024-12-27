@@ -135,7 +135,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
       type: 'subscription',
       path,
       input,
-      context: opts?.context,
+      context: opts.context,
       signal: opts.signal,
     });
     return observable$.subscribe({

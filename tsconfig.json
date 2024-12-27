@@ -1,13 +1,6 @@
 {
   "extends": "./tsconfig.build.json",
-  "include": [
-    "packages",
-    "types",
-    "scripts",
-    "examples",
-    ".eslintrc.js",
-    "*.ts"
-  ],
+  "include": ["packages", "types", "scripts", "examples"],
   "exclude": [],
   "compilerOptions": {
     "allowJs": false,

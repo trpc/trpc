@@ -15,12 +15,7 @@ import type { TRPCResponse } from '../rpc';
 import { isPromise, jsonlStreamProducer } from '../stream/jsonl';
 import { sseHeaders, sseStreamProducer } from '../stream/sse';
 import { transformTRPCResponse } from '../transformer';
-import {
-  abortSignalsAnyPonyfill,
-  isAsyncIterable,
-  isObject,
-  run,
-} from '../utils';
+import { isAsyncIterable, isObject, run } from '../utils';
 import { getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
@@ -30,15 +25,9 @@ import type {
 } from './types';
 
 function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
-  return {
-    [Symbol.asyncIterator]: () => {
-      return {
-        next() {
-          throw err;
-        },
-      };
-    },
-  };
+  return run(async function* () {
+    throw err;
+  });
 }
 type HTTPMethods =
   | 'GET'
@@ -101,8 +90,8 @@ function initResponse<TRouter extends AnyRouter, TRequest>(initOpts: {
   const data = eagerGeneration
     ? []
     : Array.isArray(untransformedJSON)
-    ? untransformedJSON
-    : [untransformedJSON];
+      ? untransformedJSON
+      : [untransformedJSON];
 
   const meta =
     responseMeta?.({
@@ -300,9 +289,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
   const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
 
   const experimentalIterablesAndDeferreds =
-    router._def._config.experimental?.iterablesAndDeferreds ?? true;
-  const experimentalSSE =
-    router._def._config.experimental?.sseSubscriptions?.enabled ?? true;
+    config.iterablesAndDeferreds ?? true;
+  const experimentalSSE = config.sse?.enabled ?? true;
   try {
     const [infoError, info] = infoTuple;
     if (infoError) {
@@ -325,7 +313,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     interface RPCResultOk {
       data: unknown;
-      abortCtrl: AbortController;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
@@ -358,15 +345,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             });
           }
         }
-        const abortCtrl = new AbortController();
         const data: unknown = await proc({
           path: call.path,
           getRawInput: call.getRawInput,
           ctx: ctxManager.value(),
           type: proc._def.type,
-          signal: abortSignalsAnyPonyfill([opts.req.signal, abortCtrl.signal]),
+          signal: opts.req.signal,
         });
-        return [undefined, { data, abortCtrl }];
+        return [undefined, { data }];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
@@ -459,15 +445,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               );
             }
             const dataAsIterable = isObservable(result.data)
-              ? observableToAsyncIterable(result.data)
+              ? observableToAsyncIterable(result.data, opts.req.signal)
               : result.data;
             return dataAsIterable;
           });
 
           const stream = sseStreamProducer({
-            ...config.experimental?.sseSubscriptions,
+            ...config.sse,
             data: iterable,
-            abortCtrl: result?.abortCtrl ?? new AbortController(),
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {
               const error = getTRPCErrorFromUnknown(errorOpts.error);
@@ -568,7 +553,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
            * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
            */
           const iterable = isObservable(result.data)
-            ? observableToAsyncIterable(result.data)
+            ? observableToAsyncIterable(result.data, opts.req.signal)
             : Promise.resolve(result.data);
           return {
             result: Promise.resolve({

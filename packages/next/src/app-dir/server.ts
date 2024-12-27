@@ -36,6 +36,8 @@ import type {
 import { generateCacheTag, isFormData } from './shared';
 import type { NextAppDirDecorateRouterRecord } from './types';
 
+export type { ActionHandlerDef };
+
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
   TRouter extends AnyRouter,
@@ -76,7 +78,8 @@ export function experimental_createTRPCNextAppDirServer<
 const throwNextErrors = (error: TRPCError) => {
   const { cause } = error;
   if (isRedirectError(cause) || isNotFoundError(cause)) {
-    throw error.cause;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    throw error.cause!;
   }
 };
 /**
@@ -179,7 +182,9 @@ export function experimental_createServerActionHandler<
           type: proc._def.type,
         });
 
-        rethrowNextErrors && throwNextErrors(error);
+        if (rethrowNextErrors) {
+          throwNextErrors(error);
+        }
 
         const shape = getErrorShape({
           config,

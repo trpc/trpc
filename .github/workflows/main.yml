@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm build
   test:
     timeout-minutes: 10
     env:
@@ -41,10 +41,9 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
       - run: pnpm test-ci
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
           # only use token if not a fork PR
@@ -100,7 +99,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm build
 
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
@@ -138,7 +137,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm build
 
       - uses: denoland/setup-deno@v1
         with:
@@ -173,7 +172,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm build
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -213,14 +212,14 @@ jobs:
             next-prisma-websockets-starter,
             next-prisma-todomvc,
           ]
-        node-start: ['18.x']
+        node-start: ['18.x', '20.x']
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm build
 
       - uses: actions/setup-node@v4
         with:
@@ -237,3 +236,20 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+  # https://pkg.pr.new
+  release-tmp:
+    name: Release using pkg.pr.new
+    needs: [build]
+    runs-on: ubuntu-latest
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/setup
+
+      - run: pnpm build
+      - run: pnpx pkg-pr-new publish './packages/*'

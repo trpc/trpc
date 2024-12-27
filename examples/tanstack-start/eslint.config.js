@@ -16,6 +16,7 @@ export default tseslint.config(
       ...reactPlugin.configs.recommended.rules,
       ...hooksPlugin.configs.recommended.rules,
       'react/prop-types': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
     },
     settings: {
       react: { version: 'detect' },

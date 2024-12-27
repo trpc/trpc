@@ -44,8 +44,8 @@ export type UseQueriesProcedureRecord<
     ? $Value extends RouterRecord
       ? UseQueriesProcedureRecord<TRoot, $Value>
       : $Value extends AnyQueryProcedure
-      ? GetQueryOptions<TRoot, $Value>
-      : never
+        ? GetQueryOptions<TRoot, $Value>
+        : never
     : never;
 };
 
@@ -76,8 +76,8 @@ export type UseSuspenseQueriesProcedureRecord<
     ? $Value extends RouterRecord
       ? UseSuspenseQueriesProcedureRecord<TRoot, $Value>
       : $Value extends AnyQueryProcedure
-      ? GetSuspenseQueryOptions<TRoot, $Value>
-      : never
+        ? GetSuspenseQueryOptions<TRoot, $Value>
+        : never
     : never;
 };
 

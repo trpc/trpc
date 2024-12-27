@@ -28,14 +28,14 @@ export type DecorateProcedureServer<
       >;
     }
   : TType extends 'mutation'
-  ? {
-      mutate: Resolver<TDef>;
-    }
-  : TType extends 'subscription'
-  ? {
-      subscribe: Resolver<TDef>;
-    }
-  : never;
+    ? {
+        mutate: Resolver<TDef>;
+      }
+    : TType extends 'subscription'
+      ? {
+          subscribe: Resolver<TDef>;
+        }
+      : never;
 
 export type NextAppDirDecorateRouterRecord<
   TRoot extends AnyRootTypes,
@@ -45,15 +45,15 @@ export type NextAppDirDecorateRouterRecord<
     ? $Value extends RouterRecord
       ? NextAppDirDecorateRouterRecord<TRoot, $Value>
       : $Value extends AnyProcedure
-      ? DecorateProcedureServer<
-          $Value['_def']['type'],
-          {
-            input: inferProcedureInput<$Value>;
-            output: inferTransformedProcedureOutput<TRoot, $Value>;
-            errorShape: TRoot['errorShape'];
-            transformer: TRoot['transformer'];
-          }
-        >
-      : never
+        ? DecorateProcedureServer<
+            $Value['_def']['type'],
+            {
+              input: inferProcedureInput<$Value>;
+              output: inferTransformedProcedureOutput<TRoot, $Value>;
+              errorShape: TRoot['errorShape'];
+              transformer: TRoot['transformer'];
+            }
+          >
+        : never
     : never;
 };

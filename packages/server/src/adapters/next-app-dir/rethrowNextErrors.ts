@@ -1,4 +1,4 @@
-import * as nextNavigation from 'next/navigation.js';
+import * as nextNavigation from 'next/navigation';
 import type { TRPCError } from '../../@trpc/server';
 import { TRPCRedirectError } from './redirect';
 
@@ -62,6 +62,7 @@ export const rethrowNextErrors = (error: TRPCError) => {
 
   // Before Next.js 15, we have to check and rethrow the error manually.
   if (isRedirectError(cause) || isNotFoundError(cause)) {
-    throw error.cause;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    throw cause!;
   }
 };

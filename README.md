@@ -80,6 +80,9 @@ pnpm create next-app --example https://github.com/trpc/trpc --example-path examp
 
 # bun
 bunx create-next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
+
+# deno
+deno init --npm next-app --example https://github.com/trpc/trpc --example-path examples/next-prisma-starter trpc-prisma-starter
 ```
 
 **👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
@@ -120,22 +123,21 @@ bunx create-next-app --example https://github.com/trpc/trpc --example-path examp
   <tbody>
     <tr>
       <td align="center"><a href="https://github.com/Nick-Lucas"><img src="https://avatars.githubusercontent.com/u/8896153?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Nick Lucas</b></sub></a></td>
-      <td align="center"><a href="https://github.com/Sheraff"><img src="https://github.com/Sheraff.png?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Flo</b></sub></a></td>
-      <td align="center"><a href="https://twitter.com/s4chinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a></td>
+      <td align="center"><a href="https://github.com/oleasteo"><img src="https://github.com/oleasteo.png?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Ole Asteo</b></sub></a></td>
+      <td align="center"><a href="https://elsakaan.dev"><img src="https://avatars.githubusercontent.com/u/20271968?v=4&s=100" width="100" alt="Ahmed%20Elsakaan"/><br /><sub><b>Ahmed Elsakaan</b></sub></a></td>
     </tr>
   </tbody>
 </table>
 
 ### Special shout-outs
 
+> Individuals who have made exceptional contributions to tRPC through code, documentation, community building, and other valuable efforts
+
 <table>
   <tbody>
     <tr>
-      <td align="center"><a href="https://twitter.com/trashh_dev"><img src="https://avatars.githubusercontent.com/u/3660667?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Chris Bautista</b></sub></a></td>
       <td align="center"><a href="http://t3.gg"><img src="https://avatars.githubusercontent.com/u/6751787?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Theo Browne</b></sub></a></td>
-      <td align="center"><a href="https://elsakaan.dev"><img src="https://avatars.githubusercontent.com/u/20271968?v=4&s=100" width="100" alt="Ahmed%20Elsakaan"/><br /><sub><b>Ahmed Elsakaan</b></sub></a></td>
-      <td align="center"><a href="https://twitter.com/jlalmes"><img src="https://avatars.githubusercontent.com/u/69924001?v=4?s=100" width="100px;" alt=""/><br /><sub><b>James Berry</b></sub></a></td>
-      <td align="center"><a href="https://github.com/kamilogorek"><img src="https://avatars.githubusercontent.com/u/1523305?v=4&s=100" width="100px;" alt=""/><br /><sub><b>Kamil Ogórek</b></sub></a></td>
+      <td align="center"><a href="https://twitter.com/s4chinraja"><img src="https://avatars.githubusercontent.com/u/58836760?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Sachin Raja</b></sub></a></td>
     </tr>
   </tbody>
 </table>
@@ -183,13 +185,13 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
    <td align="center"><a href="https://vercel.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/14985020?v=4&s=100" width="100" alt="Vercel"/><br />Vercel</a></td>
    <td align="center"><a href="https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/138932600?v=4&s=100" width="100" alt="Unkey"/><br />Unkey</a></td>
    <td align="center"><a href="http://ballingt.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4&s=100" width="100" alt="Tom%20Ballinger"/><br />Tom Ballinger</a></td>
+   <td align="center"><a href="https://proxidize.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/70805857?v=4&s=100" width="100" alt="Proxidize"/><br />Proxidize</a></td>
    <td align="center"><a href="http://brooke.me/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/8385528?u=20b286bf09fb44fe9648781fa768fd9558748845&v=4&s=100" width="100" alt="Brooke"/><br />Brooke</a></td>
-   <td align="center"><a href="https://maxgreenwald.me/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/2615374?u=4c1402dd1e4e8ff7514f2e300adfe9b75ae76e85&v=4&s=100" width="100" alt="Max%20Greenwald"/><br />Max Greenwald</a></td>
   </tr>
   <tr>
+   <td align="center"><a href="https://maxgreenwald.me/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/2615374?u=4c1402dd1e4e8ff7514f2e300adfe9b75ae76e85&v=4&s=100" width="100" alt="Max%20Greenwald"/><br />Max Greenwald</a></td>
    <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?u=8ae662ac99e91917062164de0d9404002b99cf2e&v=4&s=100" width="100" alt="Dmitry%20Maykov"/><br />Dmitry Maykov</a></td>
    <td align="center"><a href="https://chrisbradley.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&v=4&s=100" width="100" alt="Chris%20Bradley"/><br />Chris Bradley</a></td>
-   <td align="center"><a href="https://proxidize.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/70805857?v=4&s=100" width="100" alt="Proxidize"/><br />Proxidize</a></td>
    <td align="center"><a href="https://www.illarionvk.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/5012724?u=7cfa13652f7ac5fb3c56d880e3eb3fbe40c3ea34&v=4&s=100" width="100" alt="Illarion%20Koperski"/><br />Illarion Koperski</a></td>
    <td align="center"><a href="https://iamkhan.io/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/6490268?v=4&s=100" width="100" alt="SchlagerKhan"/><br />SchlagerKhan</a></td>
    <td align="center"><a href="http://jwyce.gg/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/16946573?u=a67088146d57205cf6201bee1add2e24cd811229&v=4&s=100" width="100" alt="Jared%20Wyce"/><br />Jared Wyce</a></td>
@@ -212,10 +214,7 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
   </tr>
   <tr>
    <td align="center"><a href="https://github.com/val-town"><img src="https://avatars.githubusercontent.com/u/114268765?v=4&s=100" width="100" alt="Val%20Town"/><br />Val Town</a></td>
-   <td align="center"><a href="https://github.com/gadicc"><img src="https://avatars.githubusercontent.com/u/381978?v=4&s=100" width="100" alt="Gadi%20Cohen"/><br />Gadi Cohen</a></td>
-   <td align="center"><a href="https://github.com/davidtjones02"><img src="https://avatars.githubusercontent.com/u/54673427?u=e80a3448b384f0a7f648f8beb4d5b706ee3092be&v=4&s=100" width="100" alt="david"/><br />david</a></td>
-   <td align="center"><a href="http://tripeak.com.au/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/84919884?u=012072504948ad8f8f162e7b58ec6ad739308185&v=4&s=100" width="100" alt="Patrick"/><br />Patrick</a></td>
-   <td align="center"><a href="https://github.com/criejs"><img src="https://avatars.githubusercontent.com/u/5610115?u=be201750effeb8826a788dea206e594008cfe3f2&v=4&s=100" width="100" alt="%E5%85%8B%E9%87%8C%E3%81%AE%E5%B0%8F%E8%B7%9F%E7%8F%AD"/><br />克里の小跟班</a></td>
+   <td align="center"><a href="https://github.com/cerjs"><img src="https://avatars.githubusercontent.com/u/5610115?u=be201750effeb8826a788dea206e594008cfe3f2&v=4&s=100" width="100" alt="%E5%A1%9E%E5%B0%94%E5%90%89%E6%96%AF"/><br />塞尔吉斯</a></td>
   </tr>
 </table>
 

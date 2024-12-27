@@ -8,7 +8,7 @@
     "dev": "run-p dev:* --print-label",
     "start": "pnpm dev",
     "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" src",
+    "lint": "eslint --cache src",
     "type-check": "tsc",
     "test-dev": "start-server-and-test 'tsx src/server' 2022 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
@@ -24,14 +24,14 @@
     "scheduler/tracing": "../../node_modules/scheduler/tracing-profiling"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
+    "@types/node": "^22.9.0",
     "@types/ws": "^8.2.0",
     "esbuild": "^0.17.10",
-    "eslint": "^8.57.0",
+    "eslint": "^9.13.0",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.6.2",
+    "typescript": "^5.7.2",
     "wait-port": "^1.0.1"
   },
   "publishConfig": {

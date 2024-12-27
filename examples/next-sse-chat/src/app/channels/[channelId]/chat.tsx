@@ -104,14 +104,14 @@ export function Chat(props: Readonly<{ channelId: string }>) {
                     livePosts.query.isFetchingNextPage
                   }
                   onClick={() => {
-                    livePosts.query.fetchNextPage();
+                    void livePosts.query.fetchNextPage();
                   }}
                 >
                   {livePosts.query.isFetchingNextPage
                     ? 'Loading...'
                     : !livePosts.query.hasNextPage
-                    ? 'Fetched everything!'
-                    : 'Load more'}
+                      ? 'Fetched everything!'
+                      : 'Load more'}
                 </Button>
               </div>
 
@@ -136,7 +136,7 @@ export function Chat(props: Readonly<{ channelId: string }>) {
                     <div className="flex flex-col gap-1">
                       <div
                         className={cx(
-                          'rounded-lg bg-gray-100 p-3 text-sm ',
+                          'rounded-lg bg-gray-100 p-3 text-sm',
                           isMe
                             ? 'bg-gray-300 dark:bg-gray-800'
                             : 'bg-gray-200 dark:bg-gray-700',

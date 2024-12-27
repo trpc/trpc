@@ -242,7 +242,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
     }
     const oldConnection = activeConnection;
     activeConnection = createConnection();
-    oldConnection && closeIfNoPending(oldConnection);
+    if (oldConnection) {
+      closeIfNoPending(oldConnection);
+    }
 
     const currentState = connectionState.get();
     if (currentState.state !== 'connecting') {
@@ -614,7 +616,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
           );
         }
       }
-      activeConnection && closeIfNoPending(activeConnection);
+      if (activeConnection) {
+        closeIfNoPending(activeConnection);
+      }
       clearTimeout(connectTimer);
       connectTimer = undefined;
       activeConnection = null;

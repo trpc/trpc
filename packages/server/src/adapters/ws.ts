@@ -13,7 +13,7 @@ import {
   TRPCError,
 } from '../@trpc/server';
 import type { TRPCRequestInfo } from '../@trpc/server/http';
-import { toURL, type BaseHandlerOptions } from '../@trpc/server/http';
+import { type BaseHandlerOptions } from '../@trpc/server/http';
 import { parseTRPCMessage } from '../@trpc/server/rpc';
 // @trpc/server/rpc
 import type {
@@ -33,7 +33,10 @@ import {
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
-import type { NodeHTTPCreateContextFnOptions } from './node-http';
+// eslint-disable-next-line no-restricted-imports
+import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
+import { Unpromise } from '../vendor/unpromise';
+import { createURL, type NodeHTTPCreateContextFnOptions } from './node-http';
 
 /**
  * Importing ws causes a build error
@@ -177,7 +180,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
      * - if connection params are expected, they will be created once received
      */
     let ctxPromise =
-      toURL(req.url ?? '').searchParams.get('connectionParams') === '1'
+      createURL(req).searchParams.get('connectionParams') === '1'
         ? unsetContextPromiseSymbol
         : createCtxPromise(() => null);
 
@@ -271,19 +274,27 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
 
         const iterable = isObservable(result)
-          ? observableToAsyncIterable(result)
+          ? observableToAsyncIterable(result, abortController.signal)
           : result;
 
-        const iterator: AsyncIterator<unknown> =
-          iterable[Symbol.asyncIterator]();
-
-        const abortPromise = new Promise<'abort'>((resolve) => {
-          abortController.signal.onabort = () => resolve('abort');
-        });
-
         run(async () => {
+          await using iterator = iteratorResource(iterable);
+
+          const abortPromise = new Promise<'abort'>((resolve) => {
+            abortController.signal.onabort = () => resolve('abort');
+          });
+          // We need those declarations outside the loop for garbage collection reasons. If they
+          // were declared inside, they would not be freed until the next value is present.
+          let next:
+            | null
+            | TRPCError
+            | Awaited<
+                typeof abortPromise | ReturnType<(typeof iterator)['next']>
+              >;
+          let result: null | TRPCResultMessage<unknown>['result'];
+
           while (true) {
-            const next = await Promise.race([
+            next = await Unpromise.race([
               iterator.next().catch(getTRPCErrorFromUnknown),
               abortPromise,
             ]);
@@ -313,7 +324,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               break;
             }
 
-            const result: TRPCResultMessage<unknown>['result'] = {
+            result = {
               type: 'data',
               data: next.value,
             };
@@ -332,9 +343,12 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               jsonrpc,
               result,
             });
+
+            // free up references for garbage collection
+            next = null;
+            result = null;
           }
 
-          await iterator.return?.();
           respond({
             id,
             jsonrpc,
@@ -388,6 +402,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       }
     }
     client.on('message', async (rawData) => {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
       const msgStr = rawData.toString();
       if (msgStr === 'PONG') {
         return;

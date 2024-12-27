@@ -9,12 +9,8 @@ import type {
 } from './types';
 
 /** @public */
-export type inferObservableValue<TObservable> = TObservable extends Observable<
-  infer TValue,
-  unknown
->
-  ? TValue
-  : never;
+export type inferObservableValue<TObservable> =
+  TObservable extends Observable<infer TValue, unknown> ? TValue : never;
 
 /** @public */
 export function isObservable(x: unknown): x is Observable<unknown, unknown> {
@@ -131,8 +127,16 @@ export function observableToPromise<TValue>(
  */
 function observableToReadableStream<TValue>(
   observable: Observable<TValue, unknown>,
+  signal: AbortSignal,
 ): ReadableStream<Result<TValue>> {
   let unsub: Unsubscribable | null = null;
+
+  const onAbort = () => {
+    unsub?.unsubscribe();
+    unsub = null;
+    signal.removeEventListener('abort', onAbort);
+  };
+
   return new ReadableStream<Result<TValue>>({
     start(controller) {
       unsub = observable.subscribe({
@@ -147,9 +151,15 @@ function observableToReadableStream<TValue>(
           controller.close();
         },
       });
+
+      if (signal.aborted) {
+        onAbort();
+      } else {
+        signal.addEventListener('abort', onAbort, { once: true });
+      }
     },
     cancel() {
-      unsub?.unsubscribe();
+      onAbort();
     },
   });
 }
@@ -157,8 +167,9 @@ function observableToReadableStream<TValue>(
 /** @internal */
 export function observableToAsyncIterable<TValue>(
   observable: Observable<TValue, unknown>,
+  signal: AbortSignal,
 ): AsyncIterable<TValue> {
-  const stream = observableToReadableStream(observable);
+  const stream = observableToReadableStream(observable, signal);
 
   const reader = stream.getReader();
   const iterator: AsyncIterator<TValue> = {

@@ -8,7 +8,7 @@ slug: /client/links/retryLink
 `retryLink` is a link that allows you to retry failed operations in your tRPC client. It provides a customizable way to handle transient errors, such as network failures or server errors, by automatically retrying the failed requests based on specified conditions.
 
 :::tip
-If you use `@trpc/react-query` you will generally need this as it's built into the `useQuery()` and the `useMutation()` hooks from `@tanstack/react-query`.
+If you use `@trpc/react-query` you will generally **not** need this link as it's built into the `useQuery()` and the `useMutation()` hooks from `@tanstack/react-query`.
 :::
 
 ## Usage
@@ -77,3 +77,9 @@ interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
   attempts: number;
 }
 ```
+
+## Handling tracked() events
+
+When using `retryLink` with subscriptions that use [`tracked()`](../../server/subscriptions.md#tracked), the link will automatically include the last known event ID when retrying. This ensures that when a subscription reconnects, it can resume from where it left off without missing any events.
+
+For example, if you're using Server-sent Events (SSE) with `httpSubscriptionLink`, the `retryLink` will automatically handle reconnecting with the last event ID when errors like `401 Unauthorized` occur.

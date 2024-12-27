@@ -60,7 +60,7 @@ export default function Page() {
           />
         </div>
       </main>
-      {/* eslint-disable-next-line react/no-unknown-property */}
+      {}
       <style jsx>{`
         img {
           max-width: 100%;

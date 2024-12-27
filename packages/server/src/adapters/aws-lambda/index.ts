@@ -33,12 +33,11 @@ export type CreateAWSLambdaContextOptions<TEvent extends LambdaEvent> = {
 export type AWSLambdaOptions<
   TRouter extends AnyRouter,
   TEvent extends LambdaEvent,
-> =
-  | HTTPBaseHandlerOptions<TRouter, TEvent> &
-      CreateContextCallback<
-        inferRouterContext<AnyRouter>,
-        AWSLambdaCreateContextFn<TRouter, TEvent>
-      >;
+> = HTTPBaseHandlerOptions<TRouter, TEvent> &
+  CreateContextCallback<
+    inferRouterContext<AnyRouter>,
+    AWSLambdaCreateContextFn<TRouter, TEvent>
+  >;
 
 export type AWSLambdaCreateContextFn<
   TRouter extends AnyRouter,

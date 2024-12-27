@@ -1,5 +1,9 @@
 import { behaviorSubject, observable } from '@trpc/server/observable';
-import type { TRPC_ERROR_CODE_NUMBER, TRPCErrorShape } from '@trpc/server/rpc';
+import type {
+  TRPC_ERROR_CODE_NUMBER,
+  TRPCErrorShape,
+  TRPCResult,
+} from '@trpc/server/rpc';
 import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
@@ -11,17 +15,17 @@ import {
   run,
   sseStreamConsumer,
 } from '@trpc/server/unstable-core-do-not-import';
+import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
 import { raceAbortSignals } from '../internals/signals';
 import { TRPCClientError } from '../TRPCClientError';
 import type { TRPCConnectionState } from '../unstable-internals';
 import { getTransformer, type TransformerOptions } from '../unstable-internals';
 import { getUrl } from './internals/httpUtils';
-import type { CallbackOrValue } from './internals/urlWithConnectionParams';
 import {
   resultOf,
   type UrlOptionsWithConnectionParams,
 } from './internals/urlWithConnectionParams';
-import type { TRPCLink } from './types';
+import type { Operation, TRPCLink } from './types';
 
 async function urlWithConnectionParams(
   opts: UrlOptionsWithConnectionParams,
@@ -49,9 +53,13 @@ type HTTPSubscriptionLinkOptions<
   /**
    * EventSource options or a callback that returns them
    */
-  eventSourceOptions?: CallbackOrValue<
-    EventSourceLike.InitDictOf<TEventSource>
-  >;
+  eventSourceOptions?:
+    | EventSourceLike.InitDictOf<TEventSource>
+    | ((opts: {
+        op: Operation;
+      }) =>
+        | EventSourceLike.InitDictOf<TEventSource>
+        | Promise<EventSourceLike.InitDictOf<TEventSource>>);
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
 
@@ -90,6 +98,7 @@ export function unstable_httpSubscriptionLink<
           throw new Error('httpSubscriptionLink only supports subscriptions');
         }
 
+        let lastEventId: string | undefined = undefined;
         const ac = new AbortController();
         const signal = raceAbortSignals(op.signal, ac.signal);
         const eventSourceStream = sseStreamConsumer<{
@@ -104,12 +113,12 @@ export function unstable_httpSubscriptionLink<
             getUrl({
               transformer,
               url: await urlWithConnectionParams(opts),
-              input,
+              input: inputWithTrackedEventId(input, lastEventId),
               path,
               type,
               signal: null,
             }),
-          init: () => resultOf(opts.eventSourceOptions),
+          init: () => resultOf(opts.eventSourceOptions, { op }),
           signal,
           deserialize: transformer.output.deserialize,
           EventSource:
@@ -135,22 +144,34 @@ export function unstable_httpSubscriptionLink<
         run(async () => {
           for await (const chunk of eventSourceStream) {
             switch (chunk.type) {
+              case 'ping':
+                // do nothing
+                break;
               case 'data':
                 const chunkData = chunk.data;
 
-                // if the `tracked()`-helper is used, we always have an `id` field
-                const data = 'id' in chunkData ? chunkData : chunkData.data;
+                let result: TRPCResult<unknown>;
+                if (chunkData.id) {
+                  // if the `tracked()`-helper is used, we always have an `id` field
+                  lastEventId = chunkData.id;
+                  result = {
+                    id: chunkData.id,
+                    data: chunkData,
+                  };
+                } else {
+                  result = {
+                    data: chunkData.data,
+                  };
+                }
 
                 observer.next({
-                  result: {
-                    data,
-                  },
+                  result,
                   context: {
                     eventSource: chunk.eventSource,
                   },
                 });
                 break;
-              case 'opened': {
+              case 'connected': {
                 observer.next({
                   result: {
                     type: 'started',
@@ -196,6 +217,15 @@ export function unstable_httpSubscriptionLink<
                   error,
                 });
                 break;
+              }
+              case 'timeout': {
+                connectionState.next({
+                  type: 'state',
+                  state: 'connecting',
+                  error: new TRPCClientError(
+                    `Timeout of ${chunk.ms}ms reached while waiting for a response`,
+                  ),
+                });
               }
             }
           }

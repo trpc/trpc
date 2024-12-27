@@ -253,6 +253,7 @@ export function createRootHooks<
         : (queryFunctionContext) => {
             const actualOpts = {
               trpc: {
+                ...opts?.trpc,
                 ...(shouldAbortOnUnmount
                   ? { signal: queryFunctionContext.signal }
                   : {}),
@@ -283,7 +284,9 @@ export function createRootHooks<
         queryKey: queryKey as any,
         queryFn: (queryFunctionContext) => {
           const actualOpts = {
+            ...opts,
             trpc: {
+              ...opts?.trpc,
               ...(shouldAbortOnUnmount
                 ? { signal: queryFunctionContext.signal }
                 : { signal: null }),
@@ -365,7 +368,7 @@ export function createRootHooks<
     }, []);
 
     type Unsubscribe = () => void;
-    const currentSubscriptionRef = React.useRef<Unsubscribe>();
+    const currentSubscriptionRef = React.useRef<Unsubscribe | null>(null);
 
     const reset = React.useCallback((): void => {
       // unsubscribe from the previous subscription

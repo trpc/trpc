@@ -121,6 +121,7 @@ export function nextAppDirCaller<TContext, TMeta>(
           })
           .catch(handleError);
       }
+      case 'subscription':
       default: {
         throw new TRPCError({
           code: 'NOT_IMPLEMENTED',
