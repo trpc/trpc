@@ -169,3 +169,14 @@ export function getUntypedClient<TRouter extends AnyRouter>(
 ): TRPCUntypedClient<TRouter> {
   return (client as any).__untypedClient;
 }
+
+/**
+ * Get a typed client from an untyped client
+ * @public
+ */
+export function getTypedClient<TRouter extends AnyRouter>(
+  client: TRPCUntypedClient<TRouter>,
+): inferRouterClient<TRouter> {
+  const proxy = createTRPCClientProxy<TRouter>(client);
+  return proxy;
+}
