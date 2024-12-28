@@ -12,7 +12,11 @@ import {
   skipToken,
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
-import { createTRPCUntypedClient } from '@trpc/client';
+import {
+  createTRPCUntypedClient,
+  getUntypedClient,
+  TRPCUntypedClient,
+} from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
@@ -92,10 +96,15 @@ export function createRootHooks<
   };
 
   const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
-    const { abortOnUnmount = false, client, queryClient, ssrContext } = props;
+    const { abortOnUnmount = false, queryClient, ssrContext } = props;
     const [ssrState, setSSRState] = React.useState<SSRState>(
       props.ssrState ?? false,
     );
+
+    const client: TRPCUntypedClient<TRouter> =
+      props.client instanceof TRPCUntypedClient
+        ? props.client
+        : getUntypedClient(props.client);
 
     const fns = React.useMemo(
       () =>
