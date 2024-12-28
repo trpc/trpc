@@ -13,7 +13,7 @@ import {
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import {
-  createTRPCUntypedClient,
+  createTRPCClient,
   getUntypedClient,
   TRPCUntypedClient,
 } from '@trpc/client';
@@ -40,7 +40,6 @@ import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
 import { createUseQueries } from '../proxy/useQueriesProxy';
 import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 import type {
-  CreateClient,
   TRPCProvider,
   TRPCQueryOptions,
   TRPCSubscriptionResult,
@@ -91,9 +90,7 @@ export function createRootHooks<
   const Context = (config?.context ??
     TRPCContext) as React.Context<ProviderContext>;
 
-  const createClient: CreateClient<TRouter> = (opts) => {
-    return createTRPCUntypedClient(opts);
-  };
+  const createClient = createTRPCClient<TRouter>;
 
   const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
     const { abortOnUnmount = false, queryClient, ssrContext } = props;
