@@ -1,6 +1,5 @@
 import type {
   DefinedUseQueryResult,
-  DehydratedState,
   FetchInfiniteQueryOptions,
   FetchQueryOptions,
   InfiniteData,
@@ -235,11 +234,6 @@ export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
 export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
   props: TRPCProviderProps<TRouter, TSSRContext>,
 ) => JSX.Element;
-
-export type UseDehydratedState<TRouter extends AnyRouter> = (
-  client: TRPCUntypedClient<TRouter>,
-  trpcState: DehydratedState | undefined,
-) => DehydratedState | undefined;
 
 export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,

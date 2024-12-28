@@ -4,7 +4,11 @@
  */
 import type { DehydratedState, QueryClient } from '@tanstack/react-query';
 import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
-import type { CreateTRPCClientOptions, TRPCUntypedClient } from '@trpc/client';
+import type {
+  CreateTRPCClientOptions,
+  inferRouterClient,
+  TRPCUntypedClient,
+} from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import {
   getTransformer,
@@ -78,7 +82,7 @@ export type TRPCPrepassProps<
 > = {
   config: WithTRPCConfig<TRouter>;
   queryClient: QueryClient;
-  trpcClient: TRPCUntypedClient<TRouter>;
+  trpcClient: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter>;
   ssrState: 'prepass';
   ssrContext: TSSRContext;
 };

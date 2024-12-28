@@ -1,5 +1,10 @@
 import type { QueryOptions } from '@tanstack/react-query';
-import type { TRPCClientError, TRPCUntypedClient } from '@trpc/client';
+import {
+  getUntypedClient,
+  TRPCUntypedClient,
+  type inferRouterClient,
+  type TRPCClientError,
+} from '@trpc/client';
 import type {
   AnyProcedure,
   AnyQueryProcedure,
@@ -86,8 +91,11 @@ export type UseSuspenseQueriesProcedureRecord<
  * @internal
  */
 export function createUseQueries<TRouter extends AnyRouter>(
-  client: TRPCUntypedClient<TRouter>,
+  client: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter>,
 ) {
+  const untypedClient: TRPCUntypedClient<TRouter> =
+    client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
+
   return createRecursiveProxy<
     UseQueriesProcedureRecord<
       TRouter['_def']['_config']['$types'],
@@ -104,7 +112,7 @@ export function createUseQueries<TRouter extends AnyRouter>(
     const options: QueryOptions = {
       queryKey: getQueryKeyInternal(arrayPath, input, 'query'),
       queryFn: () => {
-        return client.query(dotPath, input, _opts?.trpc);
+        return untypedClient.query(dotPath, input, _opts?.trpc);
       },
       ..._opts,
     };
