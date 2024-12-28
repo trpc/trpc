@@ -137,22 +137,27 @@ FormData is natively supported, and for more advanced usage you could also combi
 ```ts twoslash
 // @target: esnext
 import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create();
+const publicProcedure = t.procedure;
+
 // ---cut---
 
 // Our examples use Zod by default, but usage with other libraries is identical
 import { z } from 'zod';
 
-export const t = initTRPC.create();
-const publicProcedure = t.procedure;
-
 export const appRouter = t.router({
-  hello: publicProcedure.input(z.instanceof(FormData)).query((opts) => {
-    const data = opts.input;
-    //    ^?
-    return {
-      greeting: `Hello ${data.get('name')}`,
-    };
-  }),
+  hello: publicProcedure
+    .input(
+      z.instanceof(FormData),
+    )
+    .query((opts) => {
+      const data = opts.input;
+      //    ^?
+      return {
+        greeting: `Hello ${data.get("name")}`,
+      };
+    }),
 });
 ```
 
@@ -163,21 +168,24 @@ tRPC converts many octet content types to a `ReadableStream` which can be consum
 ```ts twoslash
 // @target: esnext
 import { initTRPC } from '@trpc/server';
-// ---cut---
-
-import { octetInputParser } from '@trpc/server/http';
 
 export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
+// ---cut---
+
+import { octetInputParser } from '@trpc/server/http';
+
 export const appRouter = t.router({
-  upload: publicProcedure.input(octetInputParser).query((opts) => {
-    const data = opts.input;
-    //    ^?
-    return {
-      valid: true,
-    };
-  }),
+  upload: publicProcedure
+    .input(octetInputParser)
+    .query((opts) => {
+      const data = opts.input;
+      //    ^?
+      return {
+        valid: true
+      };
+    }),
 });
 ```
 
