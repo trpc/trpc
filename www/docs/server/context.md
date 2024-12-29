@@ -31,14 +31,14 @@ export const createContext = async (opts: CreateNextContextOptions) => {
 };
 
 const t1 = initTRPC.context<typeof createContext>().create();
-// @noErrors
-t1.procedure.use(({ ctx }) => { ... });
+
+t1.procedure.use(({ ctx }) => { /* ... */ });
 //                  ^?
 
 type Context = Awaited<ReturnType<typeof createContext>>;
 const t2 = initTRPC.context<Context>().create();
-// @noErrors
-t2.procedure.use(({ ctx }) => { ... });
+
+t2.procedure.use(({ ctx }) => { /* ... */ });
 //                  ^?
 ```
 
