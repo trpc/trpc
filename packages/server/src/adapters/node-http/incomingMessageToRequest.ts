@@ -1,15 +1,21 @@
 import type * as http from 'http';
 import { TRPCError } from '../../@trpc/server';
 
-export interface IncomingMessageWithBody extends http.IncomingMessage {
+export interface UniversalIncomingMessage
+  extends Omit<http.IncomingMessage, 'socket'> {
   /**
    * Many adapters will add a `body` property to the incoming message and pre-parse the body
    */
   body?: unknown;
+  /**
+   * Socket is not always available in all deployments, so we need to make it optional
+   * @see https://github.com/trpc/trpc/issues/6341
+   */
+  socket?: http.IncomingMessage['socket'];
 }
 
 function createBody(
-  req: http.IncomingMessage,
+  req: UniversalIncomingMessage,
   opts: {
     /**
      * Max body size in bytes. If the body is larger than this, the request will be aborted
@@ -19,16 +25,16 @@ function createBody(
 ): RequestInit['body'] {
   // Some adapters will pre-parse the body and add it to the request object
   if ('body' in req) {
+    if (req.body === undefined) {
+      // If body property exists but is undefined, return undefined
+      return undefined;
+    }
     // If the body is already a string, return it directly
     if (typeof req.body === 'string') {
       return req.body;
     }
     // If body exists but isn't a string, stringify it as JSON
-    else if (req.body !== undefined) {
-      return JSON.stringify(req.body);
-    }
-    // If body property exists but is undefined, return undefined
-    return undefined;
+    return JSON.stringify(req.body);
   }
   let size = 0;
   let hasClosed = false;
@@ -71,7 +77,7 @@ function createBody(
     },
   });
 }
-export function createURL(req: http.IncomingMessage): URL {
+export function createURL(req: UniversalIncomingMessage): URL {
   try {
     const protocol =
       req.socket && 'encrypted' in req.socket && req.socket.encrypted
@@ -117,7 +123,7 @@ function createHeaders(incoming: http.IncomingHttpHeaders): Headers {
  * Convert an [`IncomingMessage`](https://nodejs.org/api/http.html#class-httpincomingmessage) to a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)
  */
 export function incomingMessageToRequest(
-  req: http.IncomingMessage,
+  req: UniversalIncomingMessage,
   res: http.ServerResponse,
   opts: {
     /**
@@ -130,14 +136,14 @@ export function incomingMessageToRequest(
 
   const onAbort = () => {
     res.off('close', onAbort);
-    req.socket.off('end', onAbort);
+    req.socket?.off('end', onAbort);
 
     // abort the request
     ac.abort();
   };
 
   res.once('close', onAbort);
-  req.socket.once('end', onAbort);
+  req.socket?.once('end', onAbort);
 
   // Get host from either regular header or HTTP/2 pseudo-header
   const url = createURL(req);
