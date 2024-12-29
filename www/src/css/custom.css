@@ -296,6 +296,10 @@ h5 {
   @apply border-zinc-700;
 }
 
+[data-theme='dark'] .shiki.min-light {
+  display: none;
+}
+
 [data-theme='light'] .shiki.min-light-with-diff .popover {
   @apply border-[1px] border-zinc-300 bg-zinc-100;
 }
