@@ -28,7 +28,7 @@ const sandboxes = [
     id: 'minimal',
     title: 'Node.js',
     description: 'This is a minimal Node.js application using tRPC.',
-    files: ['src/client/index.ts', 'src/server/index.ts'],
+    files: ['src/client.ts', 'src/server.ts'],
   },
   {
     id: 'next-minimal-starter',

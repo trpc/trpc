@@ -10,7 +10,7 @@ import {
 /**
  * We only import the `AppRouter` type from the server - this is not available at runtime
  */
-import type { AppRouter } from '../server/index.js';
+import type { AppRouter } from './server.js';
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
