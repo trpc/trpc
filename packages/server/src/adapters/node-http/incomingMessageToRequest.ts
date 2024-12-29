@@ -25,16 +25,16 @@ function createBody(
 ): RequestInit['body'] {
   // Some adapters will pre-parse the body and add it to the request object
   if ('body' in req) {
+    if (req.body === undefined) {
+      // If body property exists but is undefined, return undefined
+      return undefined;
+    }
     // If the body is already a string, return it directly
     if (typeof req.body === 'string') {
       return req.body;
     }
     // If body exists but isn't a string, stringify it as JSON
-    else if (req.body !== undefined) {
-      return JSON.stringify(req.body);
-    }
-    // If body property exists but is undefined, return undefined
-    return undefined;
+    return JSON.stringify(req.body);
   }
   let size = 0;
   let hasClosed = false;
