@@ -19,8 +19,8 @@ import {
 // @trpc/server/node-http
 import {
   incomingMessageToRequest,
-  type IncomingMessageWithBody,
   type NodeHTTPCreateContextOption,
+  type UniversalIncomingMessage,
 } from '../node-http';
 
 export type FastifyHandlerOptions<
@@ -54,7 +54,7 @@ export async function fastifyRequestHandler<
     });
   };
 
-  const incomingMessage = opts.req.raw as IncomingMessageWithBody;
+  const incomingMessage: UniversalIncomingMessage = opts.req.raw;
 
   // monkey-path body to the IncomingMessage
   if ('body' in opts.req) {
