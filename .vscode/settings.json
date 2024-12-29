@@ -10,7 +10,7 @@
     { "pattern": "./www/*" }
   ],
   "search.exclude": {
-    "/www/versioned_docs": true,
+    "/www/versioned_docs": false,
     "/www/.docusaurus": true,
     "/www/build": true,
     "**/dist": true

@@ -23,6 +23,7 @@
   "dependencies": {
     "@algolia/client-search": "^5.0.0",
     "@docusaurus/core": "^3.6.3",
+    "@docusaurus/faster": "^3.6.3",
     "@docusaurus/module-type-aliases": "^3.6.3",
     "@docusaurus/plugin-content-blog": "^3.6.3",
     "@docusaurus/plugin-content-docs": "^3.6.3",
