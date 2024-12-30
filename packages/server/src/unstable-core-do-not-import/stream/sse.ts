@@ -361,8 +361,12 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
         });
 
         const onAbort = () => {
-          controller.close();
-          eventSource.close();
+          try {
+            eventSource.close();
+            controller.close();
+          } catch {
+            // ignore errors in case the controller is already closed
+          }
         };
         if (signal.aborted) {
           onAbort();
