@@ -149,10 +149,7 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
           .filter((r) => r.status === 'rejected')
           .map((r) => r.reason);
         if (errors.length > 0) {
-          throw new AggregateError(
-            errors,
-            'Errors during cleanup of iterators',
-          );
+          throw new AggregateError(errors);
         }
       });
 
