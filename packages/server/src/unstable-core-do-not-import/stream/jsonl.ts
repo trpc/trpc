@@ -2,7 +2,7 @@ import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-import { makeAsyncResource, makeResource } from './utils/disposable';
+import { makeResource } from './utils/disposable';
 import { raceAsyncIterables } from './utils/raceAsyncIterables';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 
@@ -129,15 +129,6 @@ async function* createBatchStreamProducer(
   const placeholder = 0 as PlaceholderValue;
 
   const racer = raceAsyncIterables<ChunkData>();
-  await using queue = makeAsyncResource(
-    new Set<{
-      iterator: AsyncIterator<ChunkData, ChunkData>;
-      nextPromise: Promise<IteratorResult<ChunkData, ChunkData>>;
-    }>(),
-    async () => {
-      await Promise.all(Array.from(queue).map((it) => it.iterator.return?.()));
-    },
-  );
   function registerAsync(
     callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, void>,
   ) {
