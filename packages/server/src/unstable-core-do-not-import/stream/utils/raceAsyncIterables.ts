@@ -1,66 +1,65 @@
 import { createDeferred } from './createDeferred';
 import { makeAsyncResource } from './disposable';
 
-type Brand<T, TKey> = T & { _brand: TKey };
+type IteratorRaceResult<TYield, TReturn> =
+  | { status: 'yield'; value: TYield }
+  | { status: 'return'; value: TReturn }
+  | { status: 'error'; error: unknown };
 
-type ActiveStatePending = Brand<0, 'Pending'>;
-const ActiveStatePending = 0 as ActiveStatePending;
-type ActiveStateIdle = Brand<1, 'Idle'>;
-const ActiveStateIdle = 1 as ActiveStateIdle;
-type State = ActiveStatePending | ActiveStateIdle;
-
-type ResultTuple<T> =
-  | [status: 0, value: T]
-  | [status: 1, cause: unknown]
-  | [status: 2, done: true];
-
-function createIterator<T>(
-  iterable: AsyncIterable<T>,
-  callback: (result: ResultTuple<T>) => void,
+function createManagedIterator<TYield, TReturn>(
+  iterable: AsyncIterable<TYield, TReturn>,
+  onResult: (result: IteratorRaceResult<TYield, TReturn>) => void,
 ) {
   const iterator = iterable[Symbol.asyncIterator]();
-  let activeState: State = ActiveStateIdle;
+  let state: 'idle' | 'pending' | 'done' = 'idle';
 
-  function unlink() {
-    callback = () => {
+  function cleanup() {
+    onResult = () => {
       // noop
     };
   }
 
   function pull() {
-    if (activeState !== ActiveStateIdle) {
-      throw new Error('Iterator is not idle');
+    if (state !== 'idle') {
+      // Already pulling
+      return;
     }
-    activeState = ActiveStatePending;
+    state = 'pending';
 
     const next = iterator.next();
     next
       .then((result) => {
-        activeState = ActiveStateIdle;
         if (result.done) {
-          callback([2, true]);
-          unlink();
-        } else {
-          callback([0, result.value]);
+          state = 'done';
+          onResult({ status: 'return', value: result.value });
+          cleanup();
+          return;
         }
+        state = 'idle';
+        onResult({ status: 'yield', value: result.value });
       })
       .catch((cause) => {
-        activeState = ActiveStateIdle;
-        callback([1, cause]);
-        unlink();
+        state = 'done';
+        onResult({ status: 'error', error: cause });
+        cleanup();
       });
   }
-  pull();
 
   return {
     pull,
     destroy: async () => {
-      unlink();
+      cleanup();
       await iterator.return?.();
     },
   };
 }
-type RacedIterator<T> = ReturnType<typeof createIterator<T>>;
+type ManagedIterator<TYield, TReturn> = ReturnType<
+  typeof createManagedIterator<TYield, TReturn>
+>;
+
+interface RaceAsyncIterables<TYield> extends AsyncIterable<TYield> {
+  add(iterable: AsyncIterable<TYield>): void;
+}
 
 /**
  * Creates a new async iterable that merges multiple async iterables into a single stream.
@@ -73,100 +72,111 @@ type RacedIterator<T> = ReturnType<typeof createIterator<T>>;
  *
  * @template TYield The type of values yielded by the input iterables
  */
-export function raceAsyncIterables<TYield>(): AsyncIterable<
-  TYield,
-  void,
-  unknown
-> & {
-  add(iterable: AsyncIterable<TYield, void, unknown>): void;
-} {
+export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
   const pendingIterables: AsyncIterable<TYield, void, unknown>[] = [];
-
-  const activeIterators = new Set<ReturnType<typeof createIterator<TYield>>>();
-  let running = false;
-  let frozen = false;
+  const activeIterators = new Set<ManagedIterator<TYield, void>>();
   const buffer: Array<
-    [iterator: RacedIterator<TYield>, result: ResultTuple<TYield>]
+    [
+      iterator: ManagedIterator<TYield, void>,
+      result: Exclude<IteratorRaceResult<TYield, void>, { status: 'return' }>,
+    ]
   > = [];
 
-  let flush = createDeferred<void>();
+  let raceState: 'idle' | 'pending' | 'done' = 'idle';
+  let flushSignal = createDeferred<void>();
 
   function initIterable(iterable: AsyncIterable<TYield, void, unknown>) {
-    const iterator = createIterator(iterable, (result) => {
-      const [status] = result;
-
-      switch (status) {
-        case 0:
+    if (raceState !== 'pending') {
+      // shouldn't happen
+      return;
+    }
+    const iterator = createManagedIterator(iterable, (result) => {
+      if (raceState !== 'pending') {
+        // shouldn't happen
+        return;
+      }
+      switch (result.status) {
+        case 'yield':
           buffer.push([iterator, result]);
           break;
-        case 1:
-          buffer.push([iterator, result]);
+        case 'return':
           activeIterators.delete(iterator);
           break;
-        case 2:
+        case 'error':
+          buffer.push([iterator, result]);
           activeIterators.delete(iterator);
           break;
       }
-      flush.resolve();
+      flushSignal.resolve();
     });
     activeIterators.add(iterator);
+    iterator.pull();
   }
 
   return {
     add(iterable: AsyncIterable<TYield, void, unknown>) {
-      if (frozen) {
-        throw new Error('Cannot add iterable after iteration ended');
+      switch (raceState) {
+        case 'idle':
+          pendingIterables.push(iterable);
+          break;
+        case 'pending':
+          initIterable(iterable);
+          break;
+        case 'done': {
+          // shouldn't happen
+          break;
+        }
       }
-      if (!running) {
-        pendingIterables.push(iterable);
-        return;
-      }
-      initIterable(iterable);
     },
-
     async *[Symbol.asyncIterator]() {
-      if (frozen || running) {
+      if (raceState !== 'idle') {
         throw new Error('Cannot iterate twice');
       }
-      running = true;
+      raceState = 'pending';
 
       await using _finally = makeAsyncResource({}, async () => {
-        frozen = true;
-        flush.resolve();
-        await Promise.all(
+        raceState = 'done';
+
+        const results = await Promise.allSettled(
           Array.from(activeIterators.values()).map((it) => it.destroy()),
         );
-        activeIterators.clear();
         buffer.length = 0;
-        running = false;
+        activeIterators.clear();
+        flushSignal.resolve();
+
+        const errors = results
+          .filter((r) => r.status === 'rejected')
+          .map((r) => r.reason);
+        if (errors.length > 0) {
+          throw new AggregateError(
+            errors,
+            'Errors during cleanup of iterators',
+          );
+        }
       });
 
-      let iterable;
-      while ((iterable = pendingIterables.shift())) {
-        initIterable(iterable);
+      while (pendingIterables.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        initIterable(pendingIterables.shift()!);
       }
 
       while (activeIterators.size > 0) {
-        await flush.promise;
+        await flushSignal.promise;
 
-        let chunk;
-        while ((chunk = buffer.shift())) {
-          const [iterator, result] = chunk;
-          const [status, value] = result;
+        while (buffer.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const [iterator, result] = buffer.shift()!;
 
-          switch (status) {
-            case 0:
-              yield value;
+          switch (result.status) {
+            case 'yield':
+              yield result.value;
               iterator.pull();
               break;
-            case 1:
-              throw value;
-            case 2:
-              // ignore
-              break;
+            case 'error':
+              throw result.error;
           }
         }
-        flush = createDeferred();
+        flushSignal = createDeferred();
       }
     },
   };
