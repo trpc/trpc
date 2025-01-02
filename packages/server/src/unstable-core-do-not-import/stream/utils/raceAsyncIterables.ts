@@ -1,14 +1,13 @@
 import { createDeferred } from './createDeferred';
 import { makeAsyncResource } from './disposable';
 
-type IteratorRaceResult<TYield, TReturn> =
+type ManagedIteratorResult<TYield, TReturn> =
   | { status: 'yield'; value: TYield }
   | { status: 'return'; value: TReturn }
   | { status: 'error'; error: unknown };
-
 function createManagedIterator<TYield, TReturn>(
   iterable: AsyncIterable<TYield, TReturn>,
-  onResult: (result: IteratorRaceResult<TYield, TReturn>) => void,
+  onResult: (result: ManagedIteratorResult<TYield, TReturn>) => void,
 ) {
   const iterator = iterable[Symbol.asyncIterator]();
   let state: 'idle' | 'pending' | 'done' = 'idle';
@@ -79,7 +78,10 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
   const buffer: Array<
     [
       iterator: ManagedIterator<TYield, void>,
-      result: Exclude<IteratorRaceResult<TYield, void>, { status: 'return' }>,
+      result: Exclude<
+        ManagedIteratorResult<TYield, void>,
+        { status: 'return' }
+      >,
     ]
   > = [];
 
