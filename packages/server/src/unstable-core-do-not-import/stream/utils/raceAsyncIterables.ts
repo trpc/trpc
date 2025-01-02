@@ -82,16 +82,16 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
     ]
   > = [];
 
-  let raceState: 'idle' | 'pending' | 'done' = 'idle';
+  let state: 'idle' | 'pending' | 'done' = 'idle';
   let flushSignal = createDeferred<void>();
 
   function initIterable(iterable: AsyncIterable<TYield, void, unknown>) {
-    if (raceState !== 'pending') {
+    if (state !== 'pending') {
       // shouldn't happen
       return;
     }
     const iterator = createManagedIterator(iterable, (result) => {
-      if (raceState !== 'pending') {
+      if (state !== 'pending') {
         // shouldn't happen
         return;
       }
@@ -115,7 +115,7 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
 
   return {
     add(iterable: AsyncIterable<TYield, void, unknown>) {
-      switch (raceState) {
+      switch (state) {
         case 'idle':
           pendingIterables.push(iterable);
           break;
@@ -129,13 +129,13 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
       }
     },
     async *[Symbol.asyncIterator]() {
-      if (raceState !== 'idle') {
+      if (state !== 'idle') {
         throw new Error('Cannot iterate twice');
       }
-      raceState = 'pending';
+      state = 'pending';
 
       await using _finally = makeAsyncResource({}, async () => {
-        raceState = 'done';
+        state = 'done';
 
         const results = await Promise.allSettled(
           Array.from(activeIterators.values()).map((it) => it.destroy()),
