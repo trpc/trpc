@@ -1,17 +1,26 @@
 import { createDeferred } from './createDeferred';
 import { makeAsyncResource } from './disposable';
 
-type ActiveStatePending = 0 & { _brand: 'Pending' };
+type Brand<T, TKey> = T & { _brand: TKey };
+
+type ActiveStatePending = Brand<0, 'Pending'>;
 const ActiveStatePending = 0 as ActiveStatePending;
-type ActiveStateIdle = 1 & { _brand: 'Idle' };
+type ActiveStateIdle = Brand<1, 'Idle'>;
 const ActiveStateIdle = 1 as ActiveStateIdle;
 type State = ActiveStatePending | ActiveStateIdle;
 
 type ResultTuple<T> = [status: 0, value: T] | [status: 1, cause: unknown];
 
 /**
-/**
- * Merges multiple async iterables into a single async iterable that yields values in the order they resolve
+ * Creates a new async iterable that merges multiple async iterables into a single stream.
+ * Values from the input iterables are yielded in the order they resolve, similar to Promise.race().
+ *
+ * New iterables can be added dynamically using the returned `add()` method, even after iteration has started.
+ *
+ * If any of the input iterables throws an error, that error will be propagated through the merged stream.
+ * Other iterables will not continue to be processed.
+ *
+ * @template TYield The type of values yielded by the input iterables
  */
 export function raceAsyncIterables<TYield>(): AsyncIterable<
   TYield,
@@ -35,7 +44,7 @@ export function raceAsyncIterables<TYield>(): AsyncIterable<
     ]
   > = [];
 
-  let drain = createDeferred<void>();
+  let flush = createDeferred<void>();
 
   function pull(iterator: AsyncIterator<TYield>) {
     const next = iterator.next();
@@ -55,7 +64,7 @@ export function raceAsyncIterables<TYield>(): AsyncIterable<
         activeIterators.delete(iterator);
       })
       .finally(() => {
-        drain.resolve();
+        flush.resolve();
       });
   }
 
@@ -86,6 +95,7 @@ export function raceAsyncIterables<TYield>(): AsyncIterable<
         activeIterators.clear();
         buffer.length = 0;
         running = false;
+        flush.resolve();
       });
 
       let iterable;
@@ -95,7 +105,7 @@ export function raceAsyncIterables<TYield>(): AsyncIterable<
       }
 
       while (activeIterators.size > 0) {
-        await drain.promise;
+        await flush.promise;
 
         let chunk;
         while ((chunk = buffer.shift())) {
@@ -113,7 +123,7 @@ export function raceAsyncIterables<TYield>(): AsyncIterable<
               throw value;
           }
         }
-        drain = createDeferred();
+        flush = createDeferred();
       }
     },
   };
