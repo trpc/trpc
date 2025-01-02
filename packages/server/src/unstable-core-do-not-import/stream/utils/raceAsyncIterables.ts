@@ -13,21 +13,31 @@ type ResultTuple<T> = [status: 0, value: T] | [status: 1, cause: unknown];
 /**
  * Merges multiple async iterables into a single async iterable that yields values in the order they resolve
  */
-export function raceAsyncIterables<T>(): AsyncIterable<T, void, unknown> & {
-  add(iterable: AsyncIterable<T, void, unknown>): void;
+export function raceAsyncIterables<TYield>(): AsyncIterable<
+  TYield,
+  void,
+  unknown
+> & {
+  add(iterable: AsyncIterable<TYield, void, unknown>): void;
 } {
-  const pendingIterables: AsyncIterable<T, void, unknown>[] = [];
+  const pendingIterables: AsyncIterable<TYield, void, unknown>[] = [];
 
-  const activeIterators = new Map<AsyncIterator<T, void, unknown>, State>();
+  const activeIterators = new Map<
+    AsyncIterator<TYield, void, unknown>,
+    State
+  >();
   let running = false;
   let frozen = false;
   const buffer: Array<
-    [iterator: AsyncIterator<T, void, unknown>, result: ResultTuple<T>]
+    [
+      iterator: AsyncIterator<TYield, void, unknown>,
+      result: ResultTuple<TYield>,
+    ]
   > = [];
 
   let drain = createDeferred<void>();
 
-  function pull(iterator: AsyncIterator<T>) {
+  function pull(iterator: AsyncIterator<TYield>) {
     const next = iterator.next();
     activeIterators.set(iterator, ActiveStatePending);
 
@@ -50,7 +60,7 @@ export function raceAsyncIterables<T>(): AsyncIterable<T, void, unknown> & {
   }
 
   return {
-    add(iterable: AsyncIterable<T, void, unknown>) {
+    add(iterable: AsyncIterable<TYield, void, unknown>) {
       if (frozen) {
         throw new Error('Cannot add iterable after iteration ended');
       }
