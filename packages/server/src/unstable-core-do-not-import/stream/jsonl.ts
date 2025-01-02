@@ -180,7 +180,7 @@ async function* createBatchStreamProducer(
           const next = await iterator.next();
           if (next.done) {
             yield [idx, ASYNC_ITERABLE_STATUS_RETURN, encode(next.value, path)];
-            return;
+            break;
           }
           yield [idx, ASYNC_ITERABLE_STATUS_YIELD, encode(next.value, path)];
         }
