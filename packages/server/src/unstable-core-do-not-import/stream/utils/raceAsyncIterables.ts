@@ -138,16 +138,16 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
       await using _finally = makeAsyncResource({}, async () => {
         state = 'done';
 
-        const results = await Promise.allSettled(
-          Array.from(activeIterators.values()).map((it) => it.destroy()),
+        const errors: unknown[] = [];
+        await Promise.all(
+          Array.from(activeIterators.values()).map((it) =>
+            it.destroy().catch((cause) => errors.push(cause)),
+          ),
         );
         buffer.length = 0;
         activeIterators.clear();
         flushSignal.resolve();
 
-        const errors = results
-          .filter((r) => r.status === 'rejected')
-          .map((r) => r.reason);
         if (errors.length > 0) {
           throw new AggregateError(errors);
         }
