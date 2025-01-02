@@ -21,7 +21,6 @@ function createManagedIterator<TYield, TReturn>(
 
   function pull() {
     if (state !== 'idle') {
-      // Already pulling
       return;
     }
     state = 'pending';
