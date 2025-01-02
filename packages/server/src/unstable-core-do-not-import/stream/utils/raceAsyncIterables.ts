@@ -13,6 +13,7 @@ function createManagedIterator<TYield, TReturn>(
   let state: 'idle' | 'pending' | 'done' = 'idle';
 
   function cleanup() {
+    state = 'done';
     onResult = () => {
       // noop
     };
@@ -38,7 +39,6 @@ function createManagedIterator<TYield, TReturn>(
         onResult({ status: 'yield', value: result.value });
       })
       .catch((cause) => {
-        state = 'done';
         onResult({ status: 'error', error: cause });
         cleanup();
       });
@@ -73,8 +73,18 @@ interface RaceAsyncIterables<TYield>
  * @template TYield The type of values yielded by the input iterables
  */
 export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
-  const pendingIterables: AsyncIterable<TYield, void, unknown>[] = [];
-  const activeIterators = new Set<ManagedIterator<TYield, void>>();
+  let state: 'idle' | 'pending' | 'done' = 'idle';
+  let flushSignal = createDeferred<void>();
+
+  /**
+   * used while {@link state} is `idle`
+   */
+  const iterables: AsyncIterable<TYield, void, unknown>[] = [];
+  /**
+   * used while {@link state} is `pending`
+   */
+  const iterators = new Set<ManagedIterator<TYield, void>>();
+
   const buffer: Array<
     [
       iterator: ManagedIterator<TYield, void>,
@@ -84,9 +94,6 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
       >,
     ]
   > = [];
-
-  let state: 'idle' | 'pending' | 'done' = 'idle';
-  let flushSignal = createDeferred<void>();
 
   function initIterable(iterable: AsyncIterable<TYield, void, unknown>) {
     if (state !== 'pending') {
@@ -103,16 +110,16 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
           buffer.push([iterator, result]);
           break;
         case 'return':
-          activeIterators.delete(iterator);
+          iterators.delete(iterator);
           break;
         case 'error':
           buffer.push([iterator, result]);
-          activeIterators.delete(iterator);
+          iterators.delete(iterator);
           break;
       }
       flushSignal.resolve();
     });
-    activeIterators.add(iterator);
+    iterators.add(iterator);
     iterator.pull();
   }
 
@@ -120,7 +127,7 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
     add(iterable: AsyncIterable<TYield, void, unknown>) {
       switch (state) {
         case 'idle':
-          pendingIterables.push(iterable);
+          iterables.push(iterable);
           break;
         case 'pending':
           initIterable(iterable);
@@ -142,12 +149,12 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
 
         const errors: unknown[] = [];
         await Promise.all(
-          Array.from(activeIterators.values()).map((it) =>
+          Array.from(iterators.values()).map((it) =>
             it.destroy().catch((cause) => errors.push(cause)),
           ),
         );
         buffer.length = 0;
-        activeIterators.clear();
+        iterators.clear();
         flushSignal.resolve();
 
         if (errors.length > 0) {
@@ -155,12 +162,12 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
         }
       });
 
-      while (pendingIterables.length > 0) {
+      while (iterables.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        initIterable(pendingIterables.shift()!);
+        initIterable(iterables.shift()!);
       }
 
-      while (activeIterators.size > 0) {
+      while (iterators.size > 0) {
         await flushSignal.promise;
 
         while (buffer.length > 0) {
