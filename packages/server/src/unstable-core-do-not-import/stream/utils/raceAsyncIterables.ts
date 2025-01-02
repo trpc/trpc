@@ -7,6 +7,9 @@ type ActiveStateIdle = 1 & { _brand: 'Idle' };
 const ActiveStateIdle = 1 as ActiveStateIdle;
 type State = ActiveStatePending | ActiveStateIdle;
 
+type ResultTuple<T> = [status: 0, value: T] | [status: 1, cause: unknown];
+
+/**
 /**
  * Merges multiple async iterables into a single async iterable that yields values in the order they resolve
  */
@@ -19,13 +22,12 @@ export function raceAsyncIterables<T>(): AsyncIterable<T, void, unknown> & {
   let running = false;
   let frozen = false;
   const buffer: Array<
-    | [AsyncIterator<T, void, unknown>, 0, T]
-    | [AsyncIterator<T, void, unknown>, 1, unknown]
+    [iterator: AsyncIterator<T, void, unknown>, result: ResultTuple<T>]
   > = [];
 
   let drain = createDeferred<void>();
 
-  function iterate(iterator: AsyncIterator<T>) {
+  function pull(iterator: AsyncIterator<T>) {
     const next = iterator.next();
     activeIterators.set(iterator, ActiveStatePending);
 
@@ -34,12 +36,12 @@ export function raceAsyncIterables<T>(): AsyncIterable<T, void, unknown> & {
         if (result.done) {
           activeIterators.delete(iterator);
         } else {
-          buffer.push([iterator, 0, result.value]);
+          buffer.push([iterator, [0, result.value]]);
           activeIterators.set(iterator, ActiveStateIdle);
         }
       })
       .catch((cause) => {
-        buffer.push([iterator, 1, cause]);
+        buffer.push([iterator, [1, cause]]);
         activeIterators.delete(iterator);
       })
       .finally(() => {
@@ -57,7 +59,7 @@ export function raceAsyncIterables<T>(): AsyncIterable<T, void, unknown> & {
         return;
       }
       const iterator = iterable[Symbol.asyncIterator]();
-      iterate(iterator);
+      pull(iterator);
     },
 
     async *[Symbol.asyncIterator]() {
@@ -79,7 +81,7 @@ export function raceAsyncIterables<T>(): AsyncIterable<T, void, unknown> & {
       let iterable;
       while ((iterable = pendingIterables.shift())) {
         const iterator = iterable[Symbol.asyncIterator]();
-        iterate(iterator);
+        pull(iterator);
       }
 
       while (activeIterators.size > 0) {
@@ -87,13 +89,14 @@ export function raceAsyncIterables<T>(): AsyncIterable<T, void, unknown> & {
 
         let chunk;
         while ((chunk = buffer.shift())) {
-          const [iterator, status, value] = chunk;
+          const [iterator, result] = chunk;
+          const [status, value] = result;
 
           switch (status) {
             case 0:
               yield value;
               if (activeIterators.get(iterator) === ActiveStateIdle) {
-                iterate(iterator);
+                pull(iterator);
               }
               break;
             case 1:

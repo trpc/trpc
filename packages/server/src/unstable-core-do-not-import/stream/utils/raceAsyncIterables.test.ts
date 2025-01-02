@@ -26,33 +26,33 @@ test('happy path', async () => {
   expect(aggregate).toEqual(['a:1', 'b:1', 'a:2']);
 });
 
-test('add after iteration starts', async () => {
+test('add iterable while iterating', async () => {
   const racer = raceAsyncIterables<string>();
 
-  const yieldDeferred = createDeferred<void>();
-  const addDeferred = createDeferred<void>();
+  const startB = createDeferred<void>();
+  const continueA = createDeferred<void>();
 
   racer.add(
     run(async function* () {
       yield 'a:1';
-      await yieldDeferred.promise;
+      await continueA.promise;
       yield 'a:2';
     }),
   );
 
-  addDeferred.promise.then(() => {
+  startB.promise.then(() => {
     racer.add(
       run(async function* () {
         yield 'b:1';
-        yieldDeferred.resolve();
+        continueA.resolve();
       }),
     );
   });
 
   const aggregate: string[] = [];
   for await (const value of racer) {
-    addDeferred.resolve();
     aggregate.push(value);
+    startB.resolve();
   }
 
   expect(aggregate).toEqual(['a:1', 'b:1', 'a:2']);
@@ -108,4 +108,55 @@ test('cannot iterate twice', async () => {
     for await (const _ of racer) {
     }
   }).rejects.toMatchInlineSnapshot(`[Error: Cannot iterate twice]`);
+});
+
+test('iterators are returned when error is thrown', async () => {
+  const racer = raceAsyncIterables<string>();
+
+  const aDispose = vi.fn();
+  const bDispose = vi.fn();
+
+  racer.add(
+    run(async function* () {
+      try {
+        yield 'a:1';
+        throw new Error('test');
+      } finally {
+        aDispose();
+      }
+    }),
+  );
+  racer.add(
+    run(async function* () {
+      try {
+        yield 'b:1';
+        yield 'b:2';
+      } finally {
+        bDispose();
+      }
+    }),
+  );
+
+  const aggregate: string[] = [];
+  await expect(async () => {
+    for await (const value of racer) {
+      aggregate.push(value);
+    }
+  }).rejects.toMatchInlineSnapshot(`[Error: test]`);
+
+  expect(aDispose).toHaveBeenCalledOnce();
+  expect(bDispose).toHaveBeenCalledOnce();
+
+  expect(aggregate).toEqual(['a:1', 'b:1']);
+});
+
+test('empty', async () => {
+  const racer = raceAsyncIterables<string>();
+
+  const aggregate: string[] = [];
+  for await (const value of racer) {
+    aggregate.push(value);
+  }
+
+  expect(aggregate).toEqual([]);
 });
