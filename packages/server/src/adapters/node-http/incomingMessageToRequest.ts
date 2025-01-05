@@ -136,14 +136,14 @@ export function incomingMessageToRequest(
 
   const onAbort = () => {
     res.off('close', onAbort);
-    req.socket?.off('end', onAbort);
+    req.socket?.off?.('end', onAbort);
 
     // abort the request
     ac.abort();
   };
 
   res.once('close', onAbort);
-  req.socket?.once('end', onAbort);
+  req.socket?.once?.('end', onAbort);
 
   // Get host from either regular header or HTTP/2 pseudo-header
   const url = createURL(req);
