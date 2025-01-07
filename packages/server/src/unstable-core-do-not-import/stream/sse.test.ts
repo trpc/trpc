@@ -54,6 +54,8 @@ test('e2e, server-sent events (SSE)', async () => {
         // debug stream
         new TransformStream({
           transform: (chunk, controller) => {
+            // console.debug('debug', chunk);
+            written.push(chunk);
             controller.enqueue(chunk);
           },
         }),
