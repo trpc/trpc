@@ -51,7 +51,6 @@ test('e2e, server-sent events (SSE)', async () => {
       serialize: (v) => SuperJSON.serialize(v),
     })
       .pipeThrough(
-        // debug stream
         new TransformStream({
           transform: (chunk, controller) => {
             controller.enqueue(chunk);
