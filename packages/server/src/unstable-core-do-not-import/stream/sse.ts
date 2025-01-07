@@ -176,27 +176,30 @@ export function sseStreamProducer<TValue = unknown>(
       };
     }
   }
+
   const stream = readableStreamFrom(generatorWithErrorHandling());
 
-  return stream.pipeThrough(
-    new TransformStream({
-      transform(chunk, controller: TransformStreamDefaultController<string>) {
-        if ('event' in chunk) {
-          controller.enqueue(`event: ${chunk.event}\n`);
-        }
-        if ('data' in chunk) {
-          controller.enqueue(`data: ${chunk.data}\n`);
-        }
-        if ('id' in chunk) {
-          controller.enqueue(`id: ${chunk.id}\n`);
-        }
-        if ('comment' in chunk) {
-          controller.enqueue(`: ${chunk.comment}\n`);
-        }
-        controller.enqueue('\n\n');
-      },
-    }),
-  );
+  return stream
+    .pipeThrough(
+      new TransformStream({
+        transform(chunk, controller: TransformStreamDefaultController<string>) {
+          if ('event' in chunk) {
+            controller.enqueue(`event: ${chunk.event}\n`);
+          }
+          if ('data' in chunk) {
+            controller.enqueue(`data: ${chunk.data}\n`);
+          }
+          if ('id' in chunk) {
+            controller.enqueue(`id: ${chunk.id}\n`);
+          }
+          if ('comment' in chunk) {
+            controller.enqueue(`: ${chunk.comment}\n`);
+          }
+          controller.enqueue('\n\n');
+        },
+      }),
+    )
+    .pipeThrough(new TextEncoderStream());
 }
 
 interface ConsumerStreamResultBase<TConfig extends ConsumerConfig> {
