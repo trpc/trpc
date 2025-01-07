@@ -21,6 +21,9 @@ export const suppressLogs = () => {
     console.error = error;
   };
 };
+
+const textDecoder = new TextDecoder();
+
 test('e2e, server-sent events (SSE)', async () => {
   async function* data(lastEventId: string | undefined) {
     let i = lastEventId ? Number(lastEventId) : 0;
@@ -51,7 +54,7 @@ test('e2e, server-sent events (SSE)', async () => {
       new TransformStream({
         transform: (chunk, controller) => {
           // console.debug('debug', chunk);
-          written.push(chunk);
+          written.push(textDecoder.decode(chunk));
           controller.enqueue(chunk);
         },
       }),
@@ -199,7 +202,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
     }).pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
-          requestTrace.written.push(chunk);
+          requestTrace.written.push(textDecoder.decode(chunk));
           controller.enqueue(chunk);
         },
       }),
