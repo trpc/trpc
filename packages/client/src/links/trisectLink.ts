@@ -27,11 +27,15 @@ export function trisectLink<TRouter extends AnyRouter = AnyRouter>(opts: {
     const link2 = asArray(opts[2]).map((link) => link(runtime));
     return (props) => {
       return observable((observer) => {
-        const links = opts.condition(props.op) === 0 ? link0 : opts.condition(props.op) === 1 ? link1 : link2;
+        const links =
+          opts.condition(props.op) === 0
+            ? link0
+            : opts.condition(props.op) === 1
+              ? link1
+              : link2;
 
         return createChain({ op: props.op, links }).subscribe(observer);
       });
     };
   };
 }
-

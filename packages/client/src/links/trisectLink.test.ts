@@ -2,7 +2,11 @@ import { observable } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from './internals/createChain';
 import { trisectLink } from './trisectLink';
-import { isNonJsonSerializable, type OperationLink, type TRPCLink } from './types';
+import {
+  isNonJsonSerializable,
+  type OperationLink,
+  type TRPCLink,
+} from './types';
 
 test('trisectLink', () => {
   const wsLinkSpy = vi.fn();
@@ -24,7 +28,7 @@ test('trisectLink', () => {
     // "dedupe link"
     trisectLink({
       condition(op) {
-        if (op.type === "subscription") {
+        if (op.type === 'subscription') {
           return 0;
         }
 
@@ -36,7 +40,7 @@ test('trisectLink', () => {
       },
       0: wsLink,
       1: [httpLinkFormData],
-      2: [httpLink]
+      2: [httpLink],
     })(null as any),
   ];
 
@@ -87,4 +91,3 @@ test('trisectLink', () => {
   expect(httpLinkSpy).toHaveBeenCalledTimes(0);
   expect(wsLinkSpy).toHaveBeenCalledTimes(0);
 });
-
