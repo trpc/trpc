@@ -21,8 +21,68 @@ test('splitLink', () => {
       condition(op) {
         return op.type === 'subscription';
       },
-      true: wsLink,
-      false: [httpLink],
+      options: {
+        true: wsLink,
+        false: [httpLink],
+      },
+    })(null as any),
+  ];
+
+  createChain({
+    links,
+    op: {
+      type: 'query',
+      input: null,
+      path: '.',
+      id: 0,
+      context: {},
+      signal: null,
+    },
+  }).subscribe({});
+  expect(httpLinkSpy).toHaveBeenCalledTimes(1);
+  expect(wsLinkSpy).toHaveBeenCalledTimes(0);
+  vi.resetAllMocks();
+
+  createChain({
+    links,
+    op: {
+      type: 'subscription',
+      input: null,
+      path: '.',
+      id: 0,
+      context: {},
+      signal: null,
+    },
+  }).subscribe({});
+  expect(httpLinkSpy).toHaveBeenCalledTimes(0);
+  expect(wsLinkSpy).toHaveBeenCalledTimes(1);
+});
+
+test('splitLink with arbitrary keys', () => {
+  const wsLinkSpy = vi.fn();
+  const wsLink: TRPCLink<any> = () => () =>
+    observable(() => {
+      wsLinkSpy();
+    });
+  const httpLinkSpy = vi.fn();
+  const httpLink: TRPCLink<any> = () => () =>
+    observable(() => {
+      httpLinkSpy();
+    });
+  const links: OperationLink<AnyRouter, any, any>[] = [
+    // "dedupe link"
+    splitLink({
+      condition(op) {
+        if (op.type === 'mutation') {
+          return 'baz';
+        }
+        return op.type === 'subscription' ? 'foo' : 'bar';
+      },
+      options: {
+        foo: wsLink,
+        bar: [httpLink],
+        baz: [httpLink],
+      },
     })(null as any),
   ];
 
