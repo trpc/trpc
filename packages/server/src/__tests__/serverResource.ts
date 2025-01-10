@@ -1,9 +1,9 @@
 import http from 'http';
 import type { Socket } from 'net';
-import { incomingMessageToRequest } from '../../../../adapters/node-http/incomingMessageToRequest';
-import { writeResponse } from '../../../../adapters/node-http/writeResponse';
-import { run } from '../../../utils';
-import { makeAsyncResource } from '../disposable';
+import { incomingMessageToRequest } from '../adapters/node-http/incomingMessageToRequest';
+import { writeResponse } from '../adapters/node-http/writeResponse';
+import { makeAsyncResource } from '../unstable-core-do-not-import/stream/utils/disposable';
+import { run } from '../unstable-core-do-not-import/utils';
 
 type Handler = (request: Request) => Response | Promise<Response>;
 

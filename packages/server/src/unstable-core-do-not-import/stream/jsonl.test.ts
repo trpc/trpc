@@ -1,4 +1,4 @@
-import { serverResource } from './utils/__tests__/serverResource';
+import { serverResource } from '@trpc/server/__tests__/serverResource';
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
 import { run } from '../utils';
