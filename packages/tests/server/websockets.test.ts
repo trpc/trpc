@@ -1,5 +1,6 @@
 import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
+import { AbortSignal } from '@miniflare/core';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
@@ -8,7 +9,11 @@ import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import type { Observable, Observer } from '@trpc/server/observable';
-import { observable } from '@trpc/server/observable';
+import {
+  observable,
+  observableToAsyncIterable,
+  observableToPromise,
+} from '@trpc/server/observable';
 import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
@@ -18,6 +23,7 @@ import type {
   LegacyObservableSubscriptionProcedure,
   SubscriptionProcedure,
 } from '@trpc/server/unstable-core-do-not-import/procedure';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { run } from '@trpc/server/unstable-core-do-not-import/utils';
 import { konn } from 'konn';
 import WebSocket from 'ws';
@@ -1863,4 +1869,61 @@ describe('subscriptions with createCaller', () => {
       expect(ctx.subscriptionEnded).toHaveBeenCalledTimes(1);
     });
   });
+});
+
+test('url callback and connection params is invoked for every reconnect', async () => {
+  const ctx = factory({
+    wsClient: {
+      lazy: {
+        enabled: true,
+        closeMs: 0,
+      },
+    },
+  });
+
+  let urlCalls = 0;
+  let connectionParamsCalls = 0;
+  const client = createWSClient({
+    url: () => {
+      urlCalls++;
+      return ctx.wssUrl;
+    },
+    connectionParams() {
+      connectionParamsCalls++;
+      return {};
+    },
+  });
+
+  async function waitForClientState<
+    T extends TRPCConnectionState<unknown>['state'],
+  >(state: T) {
+    for await (const res of observableToAsyncIterable(
+      client.connectionState,
+      new AbortController().signal,
+    )) {
+      if (res.state === state) {
+        return res as Extract<typeof res, { state: T }>;
+      }
+    }
+    throw new Error();
+  }
+
+  await waitForClientState('pending');
+  expect(urlCalls).toBe(1);
+  expect(connectionParamsCalls).toBe(1);
+
+  // destroy connections to force a reconnect
+  ctx.destroyConnections();
+
+  // it'll be connecting with an error
+  const state = await waitForClientState('connecting');
+  expect(state.error).toMatchInlineSnapshot(
+    `[TRPCClientError: WebSocket closed]`,
+  );
+
+  // it'll reconnect and be pending
+  await waitForClientState('pending');
+
+  expect(urlCalls).toBe(2);
+  expect(connectionParamsCalls).toBe(2);
 });
