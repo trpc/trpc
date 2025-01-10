@@ -531,6 +531,7 @@ export function createReactQueryUtils<TRouter extends AnyRouter, TSSRContext>(
   ) as CreateReactUtilsReturnType;
 
   return createFlatProxy<CreateReactUtilsReturnType>((key) => {
+    if (typeof key !== 'string') return undefined;
     const contextName = key as (typeof contextProps)[number];
     if (contextName === 'client') {
       return clientProxy;

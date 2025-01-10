@@ -20,14 +20,27 @@ import type {
   TRPCSubscriptionObserver,
   UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
-import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+import {
+  TRPCUntypedClient,
+  untypedClientSymbol,
+} from './internals/TRPCUntypedClient';
 import type { TRPCClientError } from './TRPCClientError';
 
 /**
  * @public
+ */
+export type TRPCClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
+  TRouter,
+  TRouter['_def']['record']
+> & {
+  [untypedClientSymbol]: TRPCUntypedClient<TRouter>;
+};
+
+/**
+ * @public
+ * @deprecated use {@link TRPCClient} instead
  **/
-export type inferRouterClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
+export type inferRouterClient<TRouter extends AnyRouter> = TRPCClient<TRouter>;
 
 type ResolverDef = {
   input: any;
@@ -119,9 +132,9 @@ export const clientCallTypeToProcedureType = (
  * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
  */
 export type CreateTRPCClient<TRouter extends AnyRouter> =
-  inferRouterClient<TRouter> extends infer $Value
+  TRPCClient<TRouter> extends infer $Value
     ? UntypedClientProperties & keyof $Value extends never
-      ? inferRouterClient<TRouter>
+      ? TRPCClient<TRouter>
       : IntersectionError<UntypedClientProperties & keyof $Value>
     : never;
 
@@ -145,7 +158,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
     if (client.hasOwnProperty(key)) {
       return (client as any)[key as any];
     }
-    if (key === '__untypedClient') {
+    if (key === untypedClientSymbol) {
       return client;
     }
     return proxy[key];
@@ -165,7 +178,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
  * @internal
  */
 export function getUntypedClient<TRouter extends AnyRouter>(
-  client: inferRouterClient<TRouter>,
+  client: TRPCClient<TRouter>,
 ): TRPCUntypedClient<TRouter> {
-  return (client as any).__untypedClient;
+  return client[untypedClientSymbol];
 }

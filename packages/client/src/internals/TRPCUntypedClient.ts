@@ -171,3 +171,5 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     });
   }
 }
+
+export const untypedClientSymbol = Symbol('TRPCClient');
