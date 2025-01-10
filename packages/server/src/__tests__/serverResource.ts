@@ -39,6 +39,10 @@ export function serverResource(handler: Handler) {
   server.on('connection', (conn) => {
     const idx = ++requestId;
     connections.set(idx, conn);
+
+    conn.once('close', () => {
+      connections.delete(idx);
+    });
   });
 
   const port = (server.address() as any).port;
