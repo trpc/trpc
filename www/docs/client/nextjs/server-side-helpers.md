@@ -80,9 +80,9 @@ For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/
 ```tsx title='pages/posts/[id].tsx'
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
-import { appRouter } from 'server/routers/_app';
+import { appRouter } from '~/server/routers/_app';
 import superjson from 'superjson';
-import { trpc } from 'utils/trpc';
+import { trpc } from '~/utils/trpc';
 
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,

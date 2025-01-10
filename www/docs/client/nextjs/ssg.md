@@ -22,10 +22,10 @@ import {
   GetStaticPropsContext,
   InferGetStaticPropsType,
 } from 'next';
-import { prisma } from 'server/context';
-import { appRouter } from 'server/routers/_app';
+import { prisma } from '~/server/context';
+import { appRouter } from '~/server/routers/_app';
 import superjson from 'superjson';
-import { trpc } from 'utils/trpc';
+import { trpc } from '~/utils/trpc';
 
 export async function getStaticProps(
   context: GetStaticPropsContext<{ id: string }>,
