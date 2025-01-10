@@ -189,6 +189,7 @@ export type TRPCUseQueries<TRouter extends AnyRouter> = <
       TRouter['_def']['record']
     >,
   ) => readonly [...QueriesOptions<TQueryOptions>],
+  options?: { combine: any },
 ) => QueriesResults<TQueryOptions>;
 
 /**

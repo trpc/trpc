@@ -149,6 +149,31 @@ test('single query with options', async () => {
   });
 });
 
+test('combine function', async () => {
+  const { client, App } = ctx;
+
+  function MyComponent() {
+    const results = client.useQueries(
+      (t) => [t.post.byId({ id: '1' }), t.post.byId({ id: '2' })],
+      {
+        combine: (results) =>
+          results.map((result) => result.data).join(' and '),
+      },
+    );
+
+    return <pre>{results}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('__result1 and __result2');
+  });
+});
+
 // regression https://github.com/trpc/trpc/issues/4802
 test('regression #4802: passes context to links', async () => {
   const { client, App } = ctx;
