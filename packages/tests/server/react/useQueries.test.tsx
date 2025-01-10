@@ -161,7 +161,7 @@ test('combine function', async () => {
       },
     );
 
-    return <pre>{results}</pre>;
+    return <pre>{JSON.stringify(results ?? 'n/a', null, 4)}</pre>;
   }
 
   const utils = render(
