@@ -182,6 +182,7 @@ export type SuspenseQueriesOptions<
  */
 export type TRPCUseQueries<TRouter extends AnyRouter> = <
   TQueryOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
+  TCombinedResult = QueriesResults<TQueryOptions>,
 >(
   queriesCallback: (
     t: UseQueriesProcedureRecord<
@@ -189,8 +190,10 @@ export type TRPCUseQueries<TRouter extends AnyRouter> = <
       TRouter['_def']['record']
     >,
   ) => readonly [...QueriesOptions<TQueryOptions>],
-  options?: { combine: any },
-) => QueriesResults<TQueryOptions>;
+  options?: {
+    combine?: (results: QueriesResults<TQueryOptions>) => TCombinedResult;
+  },
+) => TCombinedResult;
 
 /**
  * @internal
