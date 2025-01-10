@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useState } from 'react';
-import { trpc } from 'utils/trpc';
+import { trpc } from '~/utils/trpc';
 
 export default function AboutPage() {
   const [num, setNumber] = useState<number>();
