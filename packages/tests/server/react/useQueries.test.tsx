@@ -153,13 +153,20 @@ test('combine function', async () => {
   const { client, App } = ctx;
 
   function MyComponent() {
-    const results = client.useQueries(
-      (t) => [t.post.byId({ id: '1' }), t.post.byId({ id: '2' })],
-      {
-        combine: (results) =>
-          results.map((result) => result.data).join(' and '),
+    const results = client.useQueries((t) => [t.foo(), t.bar()], {
+      combine: (results) => {
+        const [foo, bar] = results;
+        if (!foo.data || !bar.data) {
+          return null;
+        }
+        expectTypeOf(foo.data).toEqualTypeOf<'foo'>();
+        expectTypeOf(bar.data).toEqualTypeOf<'bar'>();
+
+        return `${foo.data} and ${bar.data}` as const;
       },
-    );
+    });
+
+    expectTypeOf(results).toEqualTypeOf<'foo and bar' | null>();
 
     return <pre>{JSON.stringify(results, null, 4)}</pre>;
   }
@@ -170,7 +177,7 @@ test('combine function', async () => {
     </App>,
   );
   await waitFor(() => {
-    expect(utils.container).toHaveTextContent('__result1 and __result2');
+    expect(utils.container).toHaveTextContent('foo and bar');
   });
 });
 
