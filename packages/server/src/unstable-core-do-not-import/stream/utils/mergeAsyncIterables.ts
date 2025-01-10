@@ -55,7 +55,7 @@ type ManagedIterator<TYield, TReturn> = ReturnType<
   typeof createManagedIterator<TYield, TReturn>
 >;
 
-interface RaceAsyncIterables<TYield>
+interface MergedAsyncIterables<TYield>
   extends AsyncIterable<TYield, void, unknown> {
   add(iterable: AsyncIterable<TYield>): void;
 }
@@ -64,14 +64,14 @@ interface RaceAsyncIterables<TYield>
  * Creates a new async iterable that merges multiple async iterables into a single stream.
  * Values from the input iterables are yielded in the order they resolve, similar to Promise.race().
  *
- * New iterables can be added dynamically using the returned `add()` method, even after iteration has started.
+ * New iterables can be added dynamically using the returned {@link MergedAsyncIterables.add} method, even after iteration has started.
  *
  * If any of the input iterables throws an error, that error will be propagated through the merged stream.
  * Other iterables will not continue to be processed.
  *
  * @template TYield The type of values yielded by the input iterables
  */
-export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
+export function mergeAsyncIterables<TYield>(): MergedAsyncIterables<TYield> {
   let state: 'idle' | 'pending' | 'done' = 'idle';
   let flushSignal = createDeferred<void>();
 
@@ -148,9 +148,13 @@ export function raceAsyncIterables<TYield>(): RaceAsyncIterables<TYield> {
 
         const errors: unknown[] = [];
         await Promise.all(
-          Array.from(iterators.values()).map((it) =>
-            it.destroy().catch((cause) => errors.push(cause)),
-          ),
+          Array.from(iterators.values()).map(async (it) => {
+            try {
+              await it.destroy();
+            } catch (cause) {
+              errors.push(cause);
+            }
+          }),
         );
         buffer.length = 0;
         iterators.clear();

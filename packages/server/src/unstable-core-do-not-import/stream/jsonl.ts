@@ -3,7 +3,7 @@ import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
 import { makeResource } from './utils/disposable';
-import { raceAsyncIterables } from './utils/raceAsyncIterables';
+import { mergeAsyncIterables } from './utils/mergeAsyncIterables';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 
 /**
@@ -128,7 +128,7 @@ async function* createBatchStreamProducer(
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const racer = raceAsyncIterables<ChunkData>();
+  const racer = mergeAsyncIterables<ChunkData>();
   function registerAsync(
     callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, void>,
   ) {

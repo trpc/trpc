@@ -1,9 +1,9 @@
 import { run } from '../../utils';
 import { createDeferred } from './createDeferred';
-import { raceAsyncIterables } from './raceAsyncIterables';
+import { mergeAsyncIterables } from './mergeAsyncIterables';
 
 test('happy path', async () => {
-  const racer = raceAsyncIterables<string>();
+  const racer = mergeAsyncIterables<string>();
 
   racer.add(
     run(async function* () {
@@ -27,7 +27,7 @@ test('happy path', async () => {
 });
 
 test('add iterable while iterating', async () => {
-  const racer = raceAsyncIterables<string>();
+  const racer = mergeAsyncIterables<string>();
 
   const startB = createDeferred<void>();
   const continueA = createDeferred<void>();
@@ -59,7 +59,7 @@ test('add iterable while iterating', async () => {
 });
 
 test('iterators are returned() when disposed', async () => {
-  const racer = raceAsyncIterables<string>();
+  const racer = mergeAsyncIterables<string>();
 
   const disposeSpy = vi.fn();
   const beforeFirst = vi.fn();
@@ -92,7 +92,7 @@ test('iterators are returned() when disposed', async () => {
 });
 
 test('cannot iterate twice', async () => {
-  const racer = raceAsyncIterables<string>();
+  const racer = mergeAsyncIterables<string>();
 
   racer.add(
     run(async function* () {
@@ -111,7 +111,7 @@ test('cannot iterate twice', async () => {
 });
 
 test('iterators are returned when error is thrown', async () => {
-  const racer = raceAsyncIterables<string>();
+  const racer = mergeAsyncIterables<string>();
 
   const aDispose = vi.fn();
   const bDispose = vi.fn();
@@ -151,7 +151,7 @@ test('iterators are returned when error is thrown', async () => {
 });
 
 test('empty', async () => {
-  const racer = raceAsyncIterables<string>();
+  const racer = mergeAsyncIterables<string>();
 
   const aggregate: string[] = [];
   for await (const value of racer) {
