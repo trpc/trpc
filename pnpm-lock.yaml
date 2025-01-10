@@ -2146,8 +2146,8 @@ importers:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.39)
       docusaurus-plugin-typedoc:
-        specifier: 1.2.0
-        version: 1.2.0(typedoc-plugin-markdown@4.2.10(typedoc@0.26.11(typescript@5.1.6)))
+        specifier: 1.2.1
+        version: 1.2.1(typedoc-plugin-markdown@4.2.10(typedoc@0.26.11(typescript@5.1.6)))
       dotenv:
         specifier: ^16.0.1
         version: 16.0.3
@@ -9880,8 +9880,8 @@ packages:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
     engines: {node: '>=0.10.0'}
 
-  docusaurus-plugin-typedoc@1.2.0:
-    resolution: {integrity: sha512-BScoTkX6soV5CPEaipDktrmYgFHRMhSWPLWHlbzeGA9PeUsPhKauUCgqCgL50WUFvETaOZ8qXJxWauVllCZRMA==}
+  docusaurus-plugin-typedoc@1.2.1:
+    resolution: {integrity: sha512-4GlqhT1btGEjB94RzIRbkgsGtENvOMKnliWEXcPIUcbaV6zzq4py4GsLoD67QrLtAFAx6W9N1CbVh6yJ7ZXrDA==}
     peerDependencies:
       typedoc-plugin-markdown: '>=4.4.0'
 
@@ -27135,7 +27135,7 @@ snapshots:
     dependencies:
       esutils: 2.0.3
 
-  docusaurus-plugin-typedoc@1.2.0(typedoc-plugin-markdown@4.2.10(typedoc@0.26.11(typescript@5.1.6))):
+  docusaurus-plugin-typedoc@1.2.1(typedoc-plugin-markdown@4.2.10(typedoc@0.26.11(typescript@5.1.6))):
     dependencies:
       typedoc-plugin-markdown: 4.2.10(typedoc@0.26.11(typescript@5.1.6))
 
