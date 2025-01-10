@@ -678,7 +678,7 @@ export function createRootHooks<
     return [hook.data!, hook as any];
   }
 
-  const useQueries: TRPCUseQueries<TRouter> = (queriesCallback) => {
+  const useQueries: TRPCUseQueries<TRouter> = (queriesCallback, options) => {
     const { ssrState, queryClient, prefetchQuery, client } = useContext();
 
     const proxy = createUseQueries(client);
@@ -703,6 +703,7 @@ export function createRootHooks<
           ...query,
           queryKey: (query as TRPCQueryOptions<any, any>).queryKey,
         })),
+        combine: options?.combine as any,
       },
       queryClient,
     );
