@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { waitFor } from '@testing-library/react';
 import type { HTTPHeaders } from '@trpc/client';
 import {

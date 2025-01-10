@@ -1,4 +1,5 @@
-import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { httpBatchLink, httpLink } from '@trpc/client';
 import type { HTTPLinkBaseOptions } from '@trpc/client/links/internals/httpUtils';
 import { initTRPC } from '@trpc/server';

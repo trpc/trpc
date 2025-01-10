@@ -1,4 +1,5 @@
-import { waitError, waitMs } from './___testHelpers';
+import { waitMs } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { dataLoader } from '@trpc/client/internals/dataLoader';
 
 describe('basic', () => {

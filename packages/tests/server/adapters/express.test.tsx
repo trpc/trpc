@@ -1,7 +1,7 @@
 import type http from 'http';
-import { waitError } from '../___testHelpers';
 import type { Context } from './__router';
 import { router } from './__router';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';

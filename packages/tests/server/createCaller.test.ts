@@ -1,4 +1,5 @@
-import { ignoreErrors, waitError } from './___testHelpers';
+import { ignoreErrors } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 

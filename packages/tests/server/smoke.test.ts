@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
-import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { waitFor } from '@testing-library/react';
 import { getUntypedClient, TRPCClientError, wsLink } from '@trpc/client';
 import type { inferProcedureOutput } from '@trpc/server';
