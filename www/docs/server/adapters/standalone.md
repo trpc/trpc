@@ -86,7 +86,6 @@ import { appRouter } from './appRouter.ts';
 createHTTPServer({
   router: appRouter,
   createContext() {
-    console.log('context 3');
     return {};
   },
 }).listen(2022);
@@ -122,7 +121,6 @@ createHTTPServer({
   middleware: cors(),
   router: appRouter,
   createContext() {
-    console.log('context 3');
     return {};
   },
 }).listen(3333);
