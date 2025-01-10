@@ -28,11 +28,14 @@ export function splitLink<
         options?: never;
       }
     | {
-        condition(op: Operation): NoInfer<TOptions>;
+        condition(op: Operation): TOptions;
         /**
          * Define custom keys for the options
          */
-        options: Record<TOptions, TRPCLink<TRouter> | TRPCLink<TRouter>[]>;
+        options: Record<
+          NoInfer<TOptions>,
+          TRPCLink<TRouter> | TRPCLink<TRouter>[]
+        >;
       },
 ): TRPCLink<TRouter> {
   type $OptionRecord = Record<any, TRPCLink<TRouter> | TRPCLink<TRouter>[]>;
@@ -41,7 +44,7 @@ export function splitLink<
     false: (opts as any).false,
   };
   return (runtime) => {
-    const answers = Object.keys(options).reduce(
+    const operationLinkRecord = Object.keys(options).reduce(
       (acc, key) => {
         acc[key] = asArray(options[key]).map(
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -57,7 +60,9 @@ export function splitLink<
       return observable((observer) => {
         const answerKey = opts.condition(props.op);
 
-        const links = answers[answerKey] as OperationLink<TRouter>[];
+        const links = operationLinkRecord[
+          answerKey
+        ] as OperationLink<TRouter>[];
 
         return createChain({ op: props.op, links }).subscribe(observer);
       });
