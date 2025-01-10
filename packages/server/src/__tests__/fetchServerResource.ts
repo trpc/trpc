@@ -7,7 +7,7 @@ import { run } from '../unstable-core-do-not-import/utils';
 
 type Handler = (request: Request) => Response | Promise<Response>;
 
-export function serverResource(handler: Handler) {
+export function fetchServerResource(handler: Handler) {
   const connections = new Map<typeof requestId, Socket>();
 
   let abortCount = 0;

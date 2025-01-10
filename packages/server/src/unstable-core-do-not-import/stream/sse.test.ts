@@ -1,5 +1,5 @@
 import { EventEmitter, on } from 'node:events';
-import { serverResource } from '@trpc/server/__tests__/serverResource';
+import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';
@@ -38,7 +38,7 @@ test('e2e, server-sent events (SSE)', async () => {
 
   const written: string[] = [];
 
-  await using server = serverResource(async (request) => {
+  await using server = fetchServerResource(async (request) => {
     const url = new URL(request.url);
 
     const lastEventId: string | null =
@@ -170,7 +170,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
     written: string[];
   };
   const requests: RequestTrace[] = [];
-  await using server = serverResource(async (request) => {
+  await using server = fetchServerResource(async (request) => {
     const url = new URL(request.url);
 
     const stringToNumber = (v: string | null) => {
