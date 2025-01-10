@@ -1,6 +1,5 @@
 import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew, waitMs } from './___testHelpers';
-import { AbortSignal } from '@miniflare/core';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
@@ -9,11 +8,7 @@ import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import type { Observable, Observer } from '@trpc/server/observable';
-import {
-  observable,
-  observableToAsyncIterable,
-  observableToPromise,
-} from '@trpc/server/observable';
+import { observable, observableToAsyncIterable } from '@trpc/server/observable';
 import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
@@ -23,7 +18,6 @@ import type {
   LegacyObservableSubscriptionProcedure,
   SubscriptionProcedure,
 } from '@trpc/server/unstable-core-do-not-import/procedure';
-import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { run } from '@trpc/server/unstable-core-do-not-import/utils';
 import { konn } from 'konn';
 import WebSocket from 'ws';
