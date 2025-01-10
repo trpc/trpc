@@ -7,40 +7,57 @@ function asArray<TType>(value: TType | TType[]) {
   return Array.isArray(value) ? value : [value];
 }
 
-type Keyish<TReturnKey extends string | number | boolean> =
-  TReturnKey extends boolean
-    ? TReturnKey extends true
-      ? 'true'
-      : 'false'
-    : TReturnKey;
-
 export function splitLink<
-  TReturnKey extends string | number | boolean,
   TRouter extends AnyRouter = AnyRouter,
->(opts: {
-  condition(op: Operation): TReturnKey;
-  options: Record<
-    Keyish<NoInfer<TReturnKey>>,
-    TRPCLink<TRouter> | TRPCLink<TRouter>[]
-  >;
-}): TRPCLink<TRouter> {
+  TOptions extends string = never,
+>(
+  opts:
+    | {
+        condition(op: Operation): boolean;
+        /**
+         * The link to execute next if the test function returns `true`.
+         */
+        true: TRPCLink<TRouter> | TRPCLink<TRouter>[];
+        /**
+         * The link to execute next if the test function returns `false`.
+         */
+        false: TRPCLink<TRouter> | TRPCLink<TRouter>[];
+        /**
+         * Define custom keys for the options
+         */
+        options?: never;
+      }
+    | {
+        condition(op: Operation): NoInfer<TOptions>;
+        /**
+         * Define custom keys for the options
+         */
+        options: Record<TOptions, TRPCLink<TRouter> | TRPCLink<TRouter>[]>;
+      },
+): TRPCLink<TRouter> {
+  type $OptionRecord = Record<any, TRPCLink<TRouter> | TRPCLink<TRouter>[]>;
+  const options: $OptionRecord = opts.options ?? {
+    true: (opts as any).true,
+    false: (opts as any).false,
+  };
   return (runtime) => {
-    const answers = Object.keys(opts.options).reduce(
+    const answers = Object.keys(options).reduce(
       (acc, key) => {
-        acc[key as Keyish<TReturnKey>] = asArray(
-          opts.options[key as Keyish<TReturnKey>],
-        ).map((link) => link(runtime));
+        acc[key] = asArray(options[key]).map(
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          (link) => link!(runtime),
+        );
 
         return acc;
       },
-      {} as Record<Keyish<TReturnKey>, OperationLink<TRouter>[]>,
+      {} as Record<keyof $OptionRecord, OperationLink<TRouter>[]>,
     );
 
     return (props) => {
       return observable((observer) => {
         const answerKey = opts.condition(props.op);
 
-        const links = answers[answerKey as Keyish<TReturnKey>];
+        const links = answers[answerKey] as OperationLink<TRouter>[];
 
         return createChain({ op: props.op, links }).subscribe(observer);
       });
