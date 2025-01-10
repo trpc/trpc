@@ -78,6 +78,7 @@ test('useUtils()', async () => {
 
     return <div>{data}</div>;
   }
+
   const utils = render(
     <App url={server.url}>
       <MyComponent />
