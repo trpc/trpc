@@ -5,8 +5,8 @@ import {
   skipToken,
   type QueryClient,
 } from '@tanstack/react-query';
-import type { CreateTRPCClient } from '@trpc/client';
-import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
+import type { CreateTRPCClient, TRPCUntypedClient } from '@trpc/client';
+import { getUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import { getClientArgs } from '../internals/getClientArgs';
@@ -38,8 +38,7 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
   opts: CreateQueryUtilsOptions<TRouter>,
 ): TRPCQueryUtils<TRouter> {
   const { client, queryClient } = opts;
-  const untypedClient =
-    client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
+  const untypedClient = getUntypedClient(client);
 
   return {
     infiniteQueryOptions: (path, queryKey, opts) => {

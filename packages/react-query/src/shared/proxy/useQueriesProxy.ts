@@ -1,10 +1,6 @@
 import type { QueryOptions } from '@tanstack/react-query';
-import type { TRPCClient } from '@trpc/client';
-import {
-  getUntypedClient,
-  TRPCUntypedClient,
-  type TRPCClientError,
-} from '@trpc/client';
+import type { TRPCClient, TRPCUntypedClient } from '@trpc/client';
+import { getUntypedClient, type TRPCClientError } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyQueryProcedure,
@@ -93,8 +89,7 @@ export type UseSuspenseQueriesProcedureRecord<
 export function createUseQueries<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>,
 ) {
-  const untypedClient: TRPCUntypedClient<TRouter> =
-    client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
+  const untypedClient = getUntypedClient(client);
 
   return createRecursiveProxy<
     UseQueriesProcedureRecord<

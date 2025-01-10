@@ -33,7 +33,10 @@ export type TRPCClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
   TRouter,
   TRouter['_def']['record']
 > & {
-  [untypedClientSymbol]: TRPCUntypedClient<TRouter>;
+  [untypedClientSymbol]: TRPCUntypedClient<{
+    errorShape: TRouter['_def']['_config']['$types']['errorShape'];
+    transformer: TRouter['_def']['_config']['$types']['transformer'];
+  }>;
 };
 
 /**
@@ -178,7 +181,13 @@ export function createTRPCClient<TRouter extends AnyRouter>(
  * @internal
  */
 export function getUntypedClient<TRouter extends AnyRouter>(
-  client: TRPCClient<TRouter>,
-): TRPCUntypedClient<TRouter> {
+  client: TRPCClient<TRouter> | TRPCUntypedClient<TRouter>,
+): TRPCUntypedClient<{
+  errorShape: TRouter['_def']['_config']['$types']['errorShape'];
+  transformer: TRouter['_def']['_config']['$types']['transformer'];
+}> {
+  if (client instanceof TRPCUntypedClient) {
+    return client;
+  }
   return client[untypedClientSymbol];
 }

@@ -1,5 +1,5 @@
 import { observable } from '@trpc/server/observable';
-import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import type {
   Operation,
   OperationLink,
@@ -8,13 +8,13 @@ import type {
 
 /** @internal */
 export function createChain<
-  TRouter extends AnyRouter,
+  TInferrable extends InferrableClientTypes,
   TInput = unknown,
   TOutput = unknown,
 >(opts: {
-  links: OperationLink<TRouter, TInput, TOutput>[];
+  links: OperationLink<TInferrable, TInput, TOutput>[];
   op: Operation<TInput>;
-}): OperationResultObservable<TRouter, TOutput> {
+}): OperationResultObservable<TInferrable, TOutput> {
   return observable((observer) => {
     function execute(index = 0, op = opts.op) {
       const next = opts.links[index];

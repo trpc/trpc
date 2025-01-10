@@ -4,8 +4,8 @@ import type {
   QueryClient,
 } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
-import type { TRPCClient } from '@trpc/client';
-import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
+import type { TRPCClient, TRPCUntypedClient } from '@trpc/client';
+import { getUntypedClient } from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import {
   getTransformer,
@@ -109,8 +109,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     }
 
     const { client } = opts;
-    const untypedClient =
-      client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
+    const untypedClient = getUntypedClient(client);
 
     return {
       query: (queryOpts) =>

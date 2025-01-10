@@ -55,12 +55,12 @@ export type UntypedClientProperties =
   | 'runtime'
   | 'subscription';
 
-export class TRPCUntypedClient<TRouter extends AnyRouter> {
-  private readonly links: OperationLink<AnyRouter>[];
+export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
+  private readonly links: OperationLink<TInferrable>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
 
-  constructor(opts: CreateTRPCClientOptions<TRouter>) {
+  constructor(opts: CreateTRPCClientOptions<TInferrable>) {
     this.requestId = 0;
 
     this.runtime = {};
@@ -76,8 +76,8 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     context?: OperationContext;
     signal: Maybe<AbortSignal>;
   }) {
-    const chain$ = createChain<AnyRouter, TInput, TOutput>({
-      links: this.links as OperationLink<any, any, any>[],
+    const chain$ = createChain<TInferrable, TInput, TOutput>({
+      links: this.links as OperationLink<TInferrable, TInput, TOutput>[],
       op: {
         ...opts,
         context: opts.context ?? {},
@@ -99,7 +99,8 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
       type TValue = inferObservableValue<typeof req$>;
 
       const envelope = await observableToPromise<TValue>(req$);
-      const data = (envelope.result as any).data;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const data = envelope.result.data!;
       return data;
     } catch (err) {
       throw TRPCClientError.from(err as Error);

@@ -220,10 +220,10 @@ export async function waitError<TError extends Error = Error>(
   throw new Error('Function did not throw');
 }
 
-export async function waitTRPCClientError<TRoot extends InferrableClientTypes>(
-  fnOrPromise: Promise<unknown> | (() => unknown),
-) {
-  return waitError<TRPCClientError<TRoot>>(fnOrPromise, TRPCClientError);
+export async function waitTRPCClientError<
+  TInferrable extends InferrableClientTypes,
+>(fnOrPromise: Promise<unknown> | (() => unknown)) {
+  return waitError<TRPCClientError<TInferrable>>(fnOrPromise, TRPCClientError);
 }
 /* eslint-disable no-console */
 export const suppressLogs = () => {
