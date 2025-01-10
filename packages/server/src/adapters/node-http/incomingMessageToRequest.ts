@@ -10,8 +10,10 @@ export interface UniversalIncomingMessage
   /**
    * Socket is not always available in all deployments, so we need to make it optional
    * @see https://github.com/trpc/trpc/issues/6341
+   * The socket object provided in the request does not fully implement the expected Node.js Socket interface.
+   * @see https://github.com/trpc/trpc/pull/6358
    */
-  socket?: http.IncomingMessage['socket'];
+  socket?: Partial<http.IncomingMessage['socket']>;
 }
 
 function createBody(
