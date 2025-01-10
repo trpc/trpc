@@ -3,23 +3,23 @@ import { createDeferred } from './createDeferred';
 import { mergeAsyncIterables } from './mergeAsyncIterables';
 
 test('happy path', async () => {
-  const racer = mergeAsyncIterables<string>();
+  const merged = mergeAsyncIterables<string>();
 
-  racer.add(
+  merged.add(
     run(async function* () {
       yield 'a:1';
       yield 'a:2';
     }),
   );
 
-  racer.add(
+  merged.add(
     run(async function* () {
       yield 'b:1';
     }),
   );
 
   const aggregate: string[] = [];
-  for await (const value of racer) {
+  for await (const value of merged) {
     aggregate.push(value);
   }
 
@@ -27,12 +27,12 @@ test('happy path', async () => {
 });
 
 test('add iterable while iterating', async () => {
-  const racer = mergeAsyncIterables<string>();
+  const merged = mergeAsyncIterables<string>();
 
   const startB = createDeferred<void>();
   const continueA = createDeferred<void>();
 
-  racer.add(
+  merged.add(
     run(async function* () {
       yield 'a:1';
       await continueA.promise;
@@ -41,7 +41,7 @@ test('add iterable while iterating', async () => {
   );
 
   startB.promise.then(() => {
-    racer.add(
+    merged.add(
       run(async function* () {
         yield 'b:1';
         continueA.resolve();
@@ -50,7 +50,7 @@ test('add iterable while iterating', async () => {
   });
 
   const aggregate: string[] = [];
-  for await (const value of racer) {
+  for await (const value of merged) {
     aggregate.push(value);
     startB.resolve();
   }
@@ -59,12 +59,12 @@ test('add iterable while iterating', async () => {
 });
 
 test('iterators are returned() when disposed', async () => {
-  const racer = mergeAsyncIterables<string>();
+  const merged = mergeAsyncIterables<string>();
 
   const disposeSpy = vi.fn();
   const beforeFirst = vi.fn();
   const afterFirst = vi.fn();
-  racer.add(
+  merged.add(
     run(async function* () {
       try {
         beforeFirst();
@@ -80,7 +80,7 @@ test('iterators are returned() when disposed', async () => {
   expect(beforeFirst).not.toHaveBeenCalled();
 
   const aggregate: string[] = [];
-  for await (const value of racer) {
+  for await (const value of merged) {
     aggregate.push(value);
     break;
   }
@@ -92,31 +92,31 @@ test('iterators are returned() when disposed', async () => {
 });
 
 test('cannot iterate twice', async () => {
-  const racer = mergeAsyncIterables<string>();
+  const merged = mergeAsyncIterables<string>();
 
-  racer.add(
+  merged.add(
     run(async function* () {
       yield 'a:1';
     }),
   );
 
-  for await (const _ of racer) {
+  for await (const _ of merged) {
     break;
   }
 
   await expect(async () => {
-    for await (const _ of racer) {
+    for await (const _ of merged) {
     }
   }).rejects.toMatchInlineSnapshot(`[Error: Cannot iterate twice]`);
 });
 
 test('iterators are returned when error is thrown', async () => {
-  const racer = mergeAsyncIterables<string>();
+  const merged = mergeAsyncIterables<string>();
 
   const aDispose = vi.fn();
   const bDispose = vi.fn();
 
-  racer.add(
+  merged.add(
     run(async function* () {
       try {
         yield 'a:1';
@@ -126,7 +126,7 @@ test('iterators are returned when error is thrown', async () => {
       }
     }),
   );
-  racer.add(
+  merged.add(
     run(async function* () {
       try {
         yield 'b:1';
@@ -139,7 +139,7 @@ test('iterators are returned when error is thrown', async () => {
 
   const aggregate: string[] = [];
   await expect(async () => {
-    for await (const value of racer) {
+    for await (const value of merged) {
       aggregate.push(value);
     }
   }).rejects.toMatchInlineSnapshot(`[Error: test]`);
@@ -151,10 +151,10 @@ test('iterators are returned when error is thrown', async () => {
 });
 
 test('empty', async () => {
-  const racer = mergeAsyncIterables<string>();
+  const merged = mergeAsyncIterables<string>();
 
   const aggregate: string[] = [];
-  for await (const value of racer) {
+  for await (const value of merged) {
     aggregate.push(value);
   }
 

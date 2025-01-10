@@ -128,14 +128,14 @@ async function* createBatchStreamProducer(
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const racer = mergeAsyncIterables<ChunkData>();
+  const mergedIterables = mergeAsyncIterables<ChunkData>();
   function registerAsync(
     callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, void>,
   ) {
     const idx = counter++ as ChunkIndex;
 
     const iterable = callback(idx);
-    racer.add(iterable);
+    mergedIterables.add(iterable);
 
     return idx;
   }
@@ -251,7 +251,7 @@ async function* createBatchStreamProducer(
 
   yield newHead;
 
-  for await (const value of racer) {
+  for await (const value of mergedIterables) {
     yield value;
   }
 }
