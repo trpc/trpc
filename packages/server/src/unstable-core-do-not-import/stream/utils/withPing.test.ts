@@ -1,9 +1,7 @@
 import EventEmitter, { on } from 'events';
-import { konn } from 'konn';
 import { expect, vi } from 'vitest';
 import { run } from '../../utils';
 import { makeResource } from './disposable';
-import { timerResource } from './timerResource';
 import { withPing } from './withPing';
 
 export interface MyEvents {

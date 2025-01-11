@@ -21,6 +21,9 @@ export const suppressLogs = () => {
     console.error = error;
   };
 };
+
+const textDecoder = new TextDecoder();
+
 test('e2e, server-sent events (SSE)', async () => {
   async function* data(lastEventId: string | undefined) {
     let i = lastEventId ? Number(lastEventId) : 0;
@@ -46,16 +49,17 @@ test('e2e, server-sent events (SSE)', async () => {
     const stream = sseStreamProducer({
       data: data(lastEventId ?? undefined),
       serialize: (v) => SuperJSON.serialize(v),
-    }).pipeThrough(
-      // debug stream
-      new TransformStream({
-        transform: (chunk, controller) => {
-          // console.debug('debug', chunk);
-          written.push(chunk);
-          controller.enqueue(chunk);
-        },
-      }),
-    );
+    })
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(
+        // debug stream
+        new TransformStream({
+          transform(chunk, controller) {
+            written.push(chunk);
+            controller.enqueue(chunk);
+          },
+        }),
+      );
 
     return new Response(stream, {
       headers: sseHeaders,
@@ -196,14 +200,16 @@ test('SSE on serverless - emit and disconnect early', async () => {
       data: data(asNumber, reqAbortCtrl.signal),
       serialize: (v) => SuperJSON.serialize(v),
       emitAndEndImmediately: true,
-    }).pipeThrough(
-      new TransformStream({
-        transform(chunk, controller) {
-          requestTrace.written.push(chunk);
-          controller.enqueue(chunk);
-        },
-      }),
-    );
+    })
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(
+        new TransformStream({
+          transform(chunk, controller) {
+            requestTrace.written.push(chunk);
+            controller.enqueue(chunk);
+          },
+        }),
+      );
 
     return new Response(stream, {
       headers: sseHeaders,

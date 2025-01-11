@@ -13,6 +13,7 @@
   "dependencies": {
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/server": "npm:@trpc/server@next",
+    "superjson": "^1.12.4",
     "zod": "^3.0.0"
   },
   "devDependencies": {

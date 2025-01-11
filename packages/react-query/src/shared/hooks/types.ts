@@ -1,6 +1,5 @@
 import type {
   DefinedUseQueryResult,
-  DehydratedState,
   FetchInfiniteQueryOptions,
   FetchQueryOptions,
   InfiniteData,
@@ -21,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 import type {
   CreateTRPCClientOptions,
+  inferRouterClient,
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
@@ -227,18 +227,14 @@ export type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionPendingResult<TOutput>;
 
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
-  extends TRPCContextProps<TRouter, TSSRContext> {
+  extends Omit<TRPCContextProps<TRouter, TSSRContext>, 'client'> {
   children: ReactNode;
+  client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;
 }
 
 export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
   props: TRPCProviderProps<TRouter, TSSRContext>,
 ) => JSX.Element;
-
-export type UseDehydratedState<TRouter extends AnyRouter> = (
-  client: TRPCUntypedClient<TRouter>,
-  trpcState: DehydratedState | undefined,
-) => DehydratedState | undefined;
 
 export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,
