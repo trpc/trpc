@@ -6,32 +6,7 @@ import type { Operation, OperationLink, TRPCLink } from './types';
 function asArray<TType>(value: TType | TType[]): TType[] {
   return Array.isArray(value) ? value : [value];
 }
-/**
- * Creates a link that splits operations between different links based on a condition
- * @param opts Configuration object for the split link
- * @param opts.condition Function that determines which link(s) to use for an operation
- * @param opts.true Link(s) to use when condition returns true (only when using boolean condition)
- * @param opts.false Link(s) to use when condition returns false (only when using boolean condition)
- * @param opts.options Record of links mapped to custom condition values (only when using string condition)
- * @example
- * ```ts
- * // Boolean split example
- * splitLink({
- *   condition: (op) => op.type === 'query',
- *   true: queryLink,
- *   false: mutationLink
- * })
- *
- * // Custom split example
- * splitLink({
- *   condition: (op) => op.context.server as 'serverA' | 'serverB',
- *   options: {
- *     serverA: serverALink,
- *     serverB: serverBLink
- *   }
- * })
- * ```
- */
+
 export function splitLink<
   TRouter extends AnyRouter = AnyRouter,
   TOptions extends string = never,
