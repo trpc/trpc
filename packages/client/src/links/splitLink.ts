@@ -15,11 +15,11 @@ export function splitLink<
     | {
         condition: (op: Operation) => boolean;
         /**
-         * The link to execute next if the test function returns `true`.
+         * The link(s) to execute next if the test function returns `true`.
          */
         true: TRPCLink<TRouter> | TRPCLink<TRouter>[];
         /**
-         * The link to execute next if the test function returns `false`.
+         * The link(s) to execute next if the test function returns `false`.
          */
         false: TRPCLink<TRouter> | TRPCLink<TRouter>[];
         /**
