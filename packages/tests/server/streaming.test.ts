@@ -1,9 +1,9 @@
 import { EventEmitter } from 'node:events';
 import {
   routerToServerAndClientNew,
-  waitError,
   waitTRPCClientError,
 } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
