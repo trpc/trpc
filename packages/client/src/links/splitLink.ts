@@ -7,36 +7,50 @@ function asArray<TType>(value: TType | TType[]): TType[] {
   return Array.isArray(value) ? value : [value];
 }
 
+interface StandardSplitLinkOptions<TRouter extends AnyRouter> {
+  /**
+   * Function that determines which link(s) to execute based on the operation
+   */
+  condition: (op: Operation) => boolean;
+  /**
+   * The link(s) to execute next if the condition returns `true`
+   */
+  true: TRPCLink<TRouter> | TRPCLink<TRouter>[];
+  /**
+   * The link(s) to execute next if the condition returns `false`
+   */
+  false: TRPCLink<TRouter> | TRPCLink<TRouter>[];
+
+  /**
+   * Use this if you want to define custom keys for the options
+   */
+  options?: never;
+}
+
+interface DynamicSplitLinkOptions<
+  TRouter extends AnyRouter,
+  TOptions extends string,
+> {
+  /**
+   * Function that determines which link(s) to execute based on the operation
+   * @param op The operation to test
+   * @returns A string key that maps to the link(s) to execute in the options record
+   */
+  condition: (op: Operation) => TOptions;
+  /**
+   * Record mapping string keys to link(s) that should be executed when the condition returns that key
+   * The possible keys are inferred from {@link StandardSplitLinkOptions.options}
+   */
+  options: Record<string, TRPCLink<TRouter> | TRPCLink<TRouter>[]>;
+}
+
 export function splitLink<
   TRouter extends AnyRouter = AnyRouter,
   TOptions extends string = never,
 >(
   opts:
-    | {
-        condition: (op: Operation) => boolean;
-        /**
-         * The link(s) to execute next if the test function returns `true`.
-         */
-        true: TRPCLink<TRouter> | TRPCLink<TRouter>[];
-        /**
-         * The link(s) to execute next if the test function returns `false`.
-         */
-        false: TRPCLink<TRouter> | TRPCLink<TRouter>[];
-        /**
-         * Define custom keys for the options
-         */
-        options?: never;
-      }
-    | {
-        condition: (op: Operation) => TOptions;
-        /**
-         * Define custom keys for the options
-         */
-        options: Record<
-          NoInfer<TOptions>,
-          TRPCLink<TRouter> | TRPCLink<TRouter>[]
-        >;
-      },
+    | StandardSplitLinkOptions<TRouter>
+    | DynamicSplitLinkOptions<TRouter, TOptions>,
 ): TRPCLink<TRouter> {
   type $OptionRecord = Record<any, TRPCLink<TRouter> | TRPCLink<TRouter>[]>;
   const options: $OptionRecord = opts.options ?? {
