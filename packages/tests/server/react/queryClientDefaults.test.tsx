@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
-import { createTRPCReact,  } from '@trpc/react-query';
+import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
