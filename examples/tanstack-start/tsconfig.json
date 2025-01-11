@@ -9,7 +9,6 @@
     "isolatedModules": true,
     "skipLibCheck": true,
     "allowJs": true,
-    "baseUrl": ".",
     "paths": {
       "~/*": ["./app/*"]
     },

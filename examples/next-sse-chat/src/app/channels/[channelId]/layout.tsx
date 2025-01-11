@@ -42,8 +42,8 @@ export default async function Home(
               )}
               href={`/channels/${channel.id}`}
             >
-              <HashtagIcon className="h-4 w-4" />
-              {channel.name}
+              <HashtagIcon className="h-4 w-4 shrink-0" />
+              <span className="truncate">{channel.name}</span>
             </Link>
           ))}
         </div>

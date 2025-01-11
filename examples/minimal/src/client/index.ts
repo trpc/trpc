@@ -11,6 +11,7 @@ import {
  * We only import the `AppRouter` type from the server - this is not available at runtime
  */
 import type { AppRouter } from '../server/index.js';
+import { transformer } from '../shared/transformer.js';
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
@@ -19,9 +20,11 @@ const trpc = createTRPCClient<AppRouter>({
       condition: (op) => op.type === 'subscription',
       true: unstable_httpSubscriptionLink({
         url: 'http://localhost:3000',
+        transformer,
       }),
       false: unstable_httpBatchStreamLink({
         url: 'http://localhost:3000',
+        transformer,
       }),
     }),
   ],

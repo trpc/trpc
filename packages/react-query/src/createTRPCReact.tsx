@@ -10,7 +10,7 @@ import type {
   UseSuspenseInfiniteQueryResult,
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
-import type { TRPCClientErrorLike } from '@trpc/client';
+import type { createTRPCClient, TRPCClientErrorLike } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -38,7 +38,6 @@ import { createReactDecoration, createReactQueryUtils } from './shared';
 import type { CreateReactQueryHooks } from './shared/hooks/createHooksInternal';
 import { createRootHooks } from './shared/hooks/createHooksInternal';
 import type {
-  CreateClient,
   DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
   TRPCHookResult,
@@ -469,7 +468,7 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
    */
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
-  createClient: CreateClient<TRouter>;
+  createClient: typeof createTRPCClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
   useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
 };
