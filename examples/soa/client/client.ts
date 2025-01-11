@@ -2,8 +2,8 @@ import { createTRPCClient, httpBatchLink, splitLink } from '@trpc/client';
 import type { AppRouter } from '../faux-gateway/index.js';
 
 const servers = {
-  serverA: 'localhost:2021',
-  serverB: 'localhost:2022',
+  serverA: 'http://localhost:2021',
+  serverB: 'http://localhost:2022',
 } as const satisfies Record<string, string>;
 
 export const client = createTRPCClient<AppRouter>({
@@ -38,10 +38,10 @@ export const client = createTRPCClient<AppRouter>({
       options: {
         // Each server gets its own httpBatchLink with the appropriate URL
         serverA: httpBatchLink({
-          url: `http://${servers.serverA}`, // localhost:2021
+          url: servers.serverA,
         }),
         serverB: httpBatchLink({
-          url: `http://${servers.serverB}`, // localhost:2022
+          url: servers.serverB,
         }),
       },
     }),
