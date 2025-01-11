@@ -4,7 +4,7 @@ import type { AppRouter } from '../faux-gateway/index.js';
 const servers = {
   serverA: 'localhost:2021',
   serverB: 'localhost:2022',
-};
+} as const satisfies Record<string, string>;
 
 export const client = createTRPCClient<AppRouter>({
   links: [
