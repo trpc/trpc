@@ -22,9 +22,8 @@
     "incremental": true,
 
     /* Path aliases */
-    "baseUrl": ".",
     "paths": {
-      "~/*": ["src/*"]
+      "~/*": ["./src/*"]
     },
 
     "types": ["vitest/globals"]

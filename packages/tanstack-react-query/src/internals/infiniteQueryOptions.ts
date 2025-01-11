@@ -65,7 +65,7 @@ interface UndefinedTRPCInfiniteQueryOptionsOut<
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, TData>;
+  queryKey: DataTag<TRPCQueryKey, TData, TError>;
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
@@ -100,7 +100,7 @@ interface DefinedTRPCInfiniteQueryOptionsOut<
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, TData>;
+  queryKey: DataTag<TRPCQueryKey, TData, TError>;
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
@@ -139,7 +139,7 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, TData>;
+  queryKey: DataTag<TRPCQueryKey, TData, TError>;
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 

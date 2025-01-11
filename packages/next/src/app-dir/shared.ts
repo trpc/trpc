@@ -1,8 +1,9 @@
 import type {
   CreateTRPCClientOptions,
+  inferRouterClient,
   Resolver,
-  TRPCUntypedClient,
 } from '@trpc/client';
+import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { inferProcedureOutput } from '@trpc/server';
 import type {
   AnyClientTypes,
@@ -39,8 +40,11 @@ export type UseProcedureRecord<
 };
 
 export function createUseProxy<TRouter extends AnyRouter>(
-  client: TRPCUntypedClient<TRouter>,
+  client: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter>,
 ) {
+  const untypedClient: TRPCUntypedClient<TRouter> =
+    client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
+
   return createRecursiveProxy<
     UseProcedureRecord<
       TRouter['_def']['_config']['$types'],
@@ -49,7 +53,7 @@ export function createUseProxy<TRouter extends AnyRouter>(
   >((opts) => {
     const path = opts.path.join('.');
 
-    return client.query(path, ...opts.args);
+    return untypedClient.query(path, ...opts.args);
   });
 }
 

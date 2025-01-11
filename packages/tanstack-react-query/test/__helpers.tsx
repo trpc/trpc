@@ -15,12 +15,8 @@ import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import { vi } from 'vitest';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
-
-export {
-  ignoreErrors,
-  suppressLogs,
-  suppressLogsUntil,
-} from '../../tests/server/___testHelpers';
+import '@testing-library/dom';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 
 export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,
@@ -98,18 +94,20 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
     );
   }
 
-  return {
-    opts: ctx,
-    queryClient,
-    renderApp,
-    spyLink,
-    useTRPC,
-    trpcClient,
-    trpcServer,
-    /** @deprecated use resource manager instead */
-    close: ctx.close,
-    [Symbol.asyncDispose]: async () => {
+  return makeAsyncResource(
+    {
+      opts: ctx,
+      queryClient,
+      renderApp,
+      spyLink,
+      useTRPC,
+      trpcClient,
+      trpcServer,
+      /** @deprecated use resource manager instead */
+      close: ctx.close,
+    },
+    async () => {
       await ctx.close();
     },
-  };
+  );
 }

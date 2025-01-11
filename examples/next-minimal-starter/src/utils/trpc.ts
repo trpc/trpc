@@ -6,6 +6,7 @@ import {
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
+import { transformer } from './transformer';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') {
@@ -32,9 +33,11 @@ export const trpc = createTRPCNext<AppRouter>({
           condition: (op) => op.type === 'subscription',
           true: unstable_httpSubscriptionLink({
             url,
+            transformer,
           }),
           false: httpBatchLink({
             url,
+            transformer,
           }),
         }),
       ],
@@ -42,4 +45,5 @@ export const trpc = createTRPCNext<AppRouter>({
   },
   ssr: true,
   ssrPrepass,
+  transformer,
 });
