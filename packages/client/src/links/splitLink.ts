@@ -13,7 +13,7 @@ export function splitLink<
 >(
   opts:
     | {
-        condition(op: Operation): boolean;
+        condition: (op: Operation) => boolean;
         /**
          * The link to execute next if the test function returns `true`.
          */
@@ -28,7 +28,7 @@ export function splitLink<
         options?: never;
       }
     | {
-        condition(op: Operation): TOptions;
+        condition: (op: Operation) => TOptions;
         /**
          * Define custom keys for the options
          */
