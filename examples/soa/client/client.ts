@@ -12,21 +12,20 @@ export const client = createTRPCClient<AppRouter>({
     // and extracts routing information from the procedure path
     () => {
       return (ctx) => {
-        const { op } = ctx;
         // The procedure path looks like "serverA.users.list" or "serverB.posts.create"
         // We split it to get the server name from the first segment
 
-        const pathParts = op.path.split('.');
+        const pathParts = ctx.op.path.split('.');
         const serverName = pathParts.shift(); // Get serverA/serverB
 
         // Continue the chain with modified operation:
         // - Remove the server prefix from the path
         // - Store the server name in context for the split link to use
         return ctx.next({
-          ...op,
+          ...ctx.op,
           path: pathParts.join('.'),
           context: {
-            ...op.context,
+            ...ctx.op.context,
             serverName,
           },
         });
