@@ -15,7 +15,7 @@ export default {
     '^@trpc/server/__tests__(.*)$',
     '^@trpc/client/__tests__(.*)$',
     '^@trpc/react-query/__tests__(.*)$',
-    '^@trpc/tanstack-query/__tests__(.*)$',
+    '^@trpc/tanstack-react-query/__tests__(.*)$',
     '^@trpc/next/__tests__(.*)$',
     '<THIRD_PARTY_MODULES>',
     '^[./]',
