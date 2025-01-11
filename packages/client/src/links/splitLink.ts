@@ -7,7 +7,7 @@ function asArray<TType>(value: TType | TType[]): TType[] {
   return Array.isArray(value) ? value : [value];
 }
 
-interface StandardSplitLinkOptions<TRouter extends AnyRouter> {
+interface BinarySplitLinkOptions<TRouter extends AnyRouter> {
   /**
    * Function that determines which link(s) to execute based on the operation
    */
@@ -27,19 +27,17 @@ interface StandardSplitLinkOptions<TRouter extends AnyRouter> {
   options?: never;
 }
 
-interface DynamicSplitLinkOptions<
+interface MultiSplitLinkOptions<
   TRouter extends AnyRouter,
   TOptions extends string,
 > {
   /**
    * Function that determines which link(s) to execute based on the operation
-   * @param op The operation to test
-   * @returns A string key that maps to the link(s) to execute in the options record
    */
   condition: (op: Operation) => TOptions;
   /**
    * Record mapping string keys to link(s) that should be executed when the condition returns that key
-   * The possible keys are inferred from {@link StandardSplitLinkOptions.options}
+   * The possible keys are inferred from the return type of {@link MultiSplitLinkOptions.condition}
    */
   options: Record<string, TRPCLink<TRouter> | TRPCLink<TRouter>[]>;
 }
@@ -49,8 +47,8 @@ export function splitLink<
   TOptions extends string = never,
 >(
   opts:
-    | StandardSplitLinkOptions<TRouter>
-    | DynamicSplitLinkOptions<TRouter, TOptions>,
+    | BinarySplitLinkOptions<TRouter>
+    | MultiSplitLinkOptions<TRouter, TOptions>,
 ): TRPCLink<TRouter> {
   type $OptionRecord = Record<any, TRPCLink<TRouter> | TRPCLink<TRouter>[]>;
   const options: $OptionRecord = opts.options ?? {
