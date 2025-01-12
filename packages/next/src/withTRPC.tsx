@@ -7,6 +7,7 @@ import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
 import type {
   CreateTRPCClientOptions,
   inferRouterClient,
+  TRPCClientError,
   TRPCUntypedClient,
 } from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
@@ -14,7 +15,6 @@ import {
   getTransformer,
   type TransformerOptions,
 } from '@trpc/client/unstable-internals';
-import type { TRPCClientError } from '@trpc/client';
 import type {
   CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
