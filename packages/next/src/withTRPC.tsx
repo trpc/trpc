@@ -14,7 +14,7 @@ import {
   getTransformer,
   type TransformerOptions,
 } from '@trpc/client/unstable-internals';
-import type { TRPCClientError } from '@trpc/react-query';
+import type { TRPCClientError } from '@trpc/client';
 import type {
   CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
