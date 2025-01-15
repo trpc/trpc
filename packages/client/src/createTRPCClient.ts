@@ -27,16 +27,18 @@ import {
 import type { TRPCClientError } from './TRPCClientError';
 
 /**
+ * @internal
+ */
+const trpcClientSymbol = Symbol();
+
+/**
  * @public
  */
 export type TRPCClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
   TRouter,
   TRouter['_def']['record']
 > & {
-  [untypedClientSymbol]: TRPCUntypedClient<{
-    errorShape: TRouter['_def']['_config']['$types']['errorShape'];
-    transformer: TRouter['_def']['_config']['$types']['transformer'];
-  }>;
+  [trpcClientSymbol]: true;
 };
 
 /**
@@ -186,8 +188,12 @@ export function getUntypedClient<TRouter extends AnyRouter>(
   errorShape: TRouter['_def']['_config']['$types']['errorShape'];
   transformer: TRouter['_def']['_config']['$types']['transformer'];
 }> {
-  if (client instanceof TRPCUntypedClient) {
-    return client;
+  // Note: don't use `instanceof TRPCUntypedClient` as it won't work if @trpc/client isn't hoisted
+  if ((client as any)[untypedClientSymbol]) {
+    return (client as any)[untypedClientSymbol];
   }
-  return client[untypedClientSymbol];
+  return client as TRPCUntypedClient<{
+    errorShape: TRouter['_def']['_config']['$types']['errorShape'];
+    transformer: TRouter['_def']['_config']['$types']['transformer'];
+  }>;
 }
