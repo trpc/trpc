@@ -7,7 +7,13 @@ import { konn } from 'konn';
 
 const ctx = konn()
   .beforeEach(() => {
-    const t = initTRPC.create();
+    const t = initTRPC.create({
+      errorFormatter(opts) {
+        return {
+          ...opts.shape,
+        };
+      },
+    });
 
     const appRouter = t.router({
       foo: t.procedure.query(() => 'bar'),
@@ -25,10 +31,15 @@ test('getUntypedClient()', async () => {
   expect(await client.foo.query()).toBe('bar');
   const untyped = getUntypedClient(client);
 
-  type TRouter = typeof untyped extends TRPCUntypedClient<infer T> ? T : never;
+  type $Types1 = typeof untyped extends TRPCUntypedClient<infer T> ? T : never;
 
-  expectTypeOf<TRouter>().toEqualTypeOf<typeof ctx.router>();
-  expectTypeOf<TRouter>().not.toEqualTypeOf<AnyRouter>();
+  type $Types2 = {
+    errorShape: typeof ctx.router._def._config.$types.errorShape;
+    transformer: typeof ctx.router._def._config.$types.transformer;
+  };
+
+  expectTypeOf<$Types1>().toEqualTypeOf<$Types2>();
+  expectTypeOf<$Types1>().not.toEqualTypeOf<AnyRouter>();
 
   expect(await untyped.query('foo')).toBe('bar');
 });
