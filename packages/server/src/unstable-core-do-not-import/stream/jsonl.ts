@@ -1,9 +1,9 @@
-import { Unpromise } from '../../vendor/unpromise';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
 import { createDeferred } from './utils/createDeferred';
-import { makeAsyncResource, makeResource } from './utils/disposable';
+import { makeResource } from './utils/disposable';
+import { mergeAsyncIterables } from './utils/mergeAsyncIterables';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 
 /**
@@ -128,31 +128,14 @@ async function* createBatchStreamProducer(
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  await using queue = makeAsyncResource(
-    new Set<{
-      iterator: AsyncIterator<ChunkData, ChunkData>;
-      nextPromise: Promise<IteratorResult<ChunkData, ChunkData>>;
-    }>(),
-    async () => {
-      await Promise.all(Array.from(queue).map((it) => it.iterator.return?.()));
-    },
-  );
+  const mergedIterables = mergeAsyncIterables<ChunkData>();
   function registerAsync(
-    callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, ChunkData>,
+    callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, void>,
   ) {
     const idx = counter++ as ChunkIndex;
 
-    const iterator = callback(idx)[Symbol.asyncIterator]();
-
-    const nextPromise = iterator.next();
-
-    nextPromise.catch(() => {
-      // prevent unhandled promise rejection
-    });
-    queue.add({
-      iterator,
-      nextPromise,
-    });
+    const iterable = callback(idx);
+    mergedIterables.add(iterable);
 
     return idx;
   }
@@ -170,10 +153,10 @@ async function* createBatchStreamProducer(
       }
       try {
         const next = await promise;
-        return [idx, PROMISE_STATUS_FULFILLED, encode(next, path)];
+        yield [idx, PROMISE_STATUS_FULFILLED, encode(next, path)];
       } catch (cause) {
         opts.onError?.({ error: cause, path });
-        return [
+        yield [
           idx,
           PROMISE_STATUS_REJECTED,
           opts.formatError?.({ error: cause, path }),
@@ -196,17 +179,15 @@ async function* createBatchStreamProducer(
         while (true) {
           const next = await iterator.next();
           if (next.done) {
-            return [
-              idx,
-              ASYNC_ITERABLE_STATUS_RETURN,
-              encode(next.value, path),
-            ];
+            yield [idx, ASYNC_ITERABLE_STATUS_RETURN, encode(next.value, path)];
+            break;
           }
           yield [idx, ASYNC_ITERABLE_STATUS_YIELD, encode(next.value, path)];
         }
       } catch (cause) {
         opts.onError?.({ error: cause, path });
-        return [
+
+        yield [
           idx,
           ASYNC_ITERABLE_STATUS_ERROR,
           opts.formatError?.({ error: cause, path }),
@@ -270,21 +251,8 @@ async function* createBatchStreamProducer(
 
   yield newHead;
 
-  // Process all async iterables in parallel by racing their next values
-  while (queue.size > 0) {
-    // Race all iterators to get the next value from any of them
-    const [entry, res] = await Unpromise.race(
-      Array.from(queue).map(async (it) => [it, await it.nextPromise] as const),
-    );
-
-    yield res.value;
-
-    // Remove current iterator and re-add if not done
-    queue.delete(entry);
-    if (!res.done) {
-      entry.nextPromise = entry.iterator.next();
-      queue.add(entry);
-    }
+  for await (const value of mergedIterables) {
+    yield value;
   }
 }
 /**

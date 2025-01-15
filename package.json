@@ -59,7 +59,7 @@
     "@vitest/ui": "^2.0.4",
     "concurrently": "^9.0.0",
     "eslint": "^9.14.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-no-only-tests": "^3.3.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.1.0",
@@ -91,7 +91,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/node": "20.17.12"
+      "@types/node": "20.17.13"
     }
   },
   "manypkg": {
