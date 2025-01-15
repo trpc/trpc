@@ -1,6 +1,6 @@
 import { ImageResponse } from '@vercel/og';
-import { blogParams } from 'utils/zodParams';
 import { fetchFont } from '../../utils/fetchFont';
+import { blogParams } from '../../utils/zodParams';
 
 export const config = {
   runtime: 'edge',

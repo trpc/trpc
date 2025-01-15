@@ -10,8 +10,10 @@ export interface UniversalIncomingMessage
   /**
    * Socket is not always available in all deployments, so we need to make it optional
    * @see https://github.com/trpc/trpc/issues/6341
+   * The socket object provided in the request does not fully implement the expected Node.js Socket interface.
+   * @see https://github.com/trpc/trpc/pull/6358
    */
-  socket?: http.IncomingMessage['socket'];
+  socket?: Partial<http.IncomingMessage['socket']>;
 }
 
 function createBody(
@@ -136,14 +138,14 @@ export function incomingMessageToRequest(
 
   const onAbort = () => {
     res.off('close', onAbort);
-    req.socket?.off('end', onAbort);
+    req.socket?.off?.('end', onAbort);
 
     // abort the request
     ac.abort();
   };
 
   res.once('close', onAbort);
-  req.socket?.once('end', onAbort);
+  req.socket?.once?.('end', onAbort);
 
   // Get host from either regular header or HTTP/2 pseudo-header
   const url = createURL(req);
