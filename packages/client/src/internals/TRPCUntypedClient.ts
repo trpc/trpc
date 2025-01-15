@@ -173,4 +173,8 @@ export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
   }
 }
 
-export const untypedClientSymbol = '__internal_untypedClient';
+/**
+ * @internal
+ * This would ideally be a Symbol but that won't work when @trpc/client isn't hoisted
+ */
+export const untypedClientMarker = '__internal_untypedClient';

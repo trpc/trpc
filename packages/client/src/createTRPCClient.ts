@@ -22,7 +22,7 @@ import type {
 } from './internals/TRPCUntypedClient';
 import {
   TRPCUntypedClient,
-  untypedClientSymbol,
+  untypedClientMarker,
 } from './internals/TRPCUntypedClient';
 import type { TRPCClientError } from './TRPCClientError';
 
@@ -163,7 +163,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
     if (client.hasOwnProperty(key)) {
       return (client as any)[key as any];
     }
-    if (key === untypedClientSymbol) {
+    if (key === untypedClientMarker) {
       return client;
     }
     return proxy[key];
@@ -188,12 +188,8 @@ export function getUntypedClient<TRouter extends AnyRouter>(
   errorShape: TRouter['_def']['_config']['$types']['errorShape'];
   transformer: TRouter['_def']['_config']['$types']['transformer'];
 }> {
-  // Note: don't use `instanceof TRPCUntypedClient` as it won't work if @trpc/client isn't hoisted
-  if ((client as any)[untypedClientSymbol]) {
-    return (client as any)[untypedClientSymbol];
+  if ((client as any)[untypedClientMarker]) {
+    return (client as any)[untypedClientMarker];
   }
-  return client as TRPCUntypedClient<{
-    errorShape: TRouter['_def']['_config']['$types']['errorShape'];
-    transformer: TRouter['_def']['_config']['$types']['transformer'];
-  }>;
+  return client as any;
 }
