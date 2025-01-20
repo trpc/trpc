@@ -965,3 +965,132 @@ describe('timeouts', async () => {
     sub.unsubscribe();
   });
 });
+
+function createPuller(): PromiseLike<void> & {
+  pull: () => void;
+  reject: (err: unknown) => void;
+} {
+  let deferred = createDeferred<void>();
+
+  return {
+    pull: () => {
+      deferred.resolve();
+    },
+    reject: (err: unknown) => {
+      deferred.reject(err);
+    },
+    then(onFulfilled, onRejected) {
+      return deferred.promise.then(onFulfilled, onRejected).then((res) => {
+        deferred = createDeferred();
+        return res;
+      });
+    },
+  };
+}
+
+test('tracked() without transformer', async () => {
+  /**
+   * Test resource
+   */
+  function getCtxResource() {
+    const t = initTRPC.create({});
+
+    const puller = createPuller();
+    const finallySpy = vi.fn();
+    const onAbortSpy = vi.fn();
+
+    const router = t.router({
+      iterableInfinite: t.procedure
+        .input(
+          z
+            .object({
+              lastEventId: z.coerce.number().min(0).optional(),
+            })
+            .optional(),
+        )
+        .subscription(async function* (opts) {
+          opts.signal?.addEventListener(
+            'abort',
+            (reason) => {
+              onAbortSpy(reason);
+              puller.reject(reason);
+            },
+            { once: true },
+          );
+          try {
+            let idx = opts.input?.lastEventId ?? 0;
+            while (true) {
+              idx++;
+              yield tracked(String(idx), idx);
+              await puller;
+            }
+          } finally {
+            finallySpy();
+          }
+        }),
+    });
+
+    const opts = routerToServerAndClientNew(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            splitLink({
+              condition: (op) => op.type === 'subscription',
+              true: unstable_httpSubscriptionLink({
+                url: opts.httpUrl,
+              }),
+              false: unstable_httpBatchStreamLink({
+                url: opts.httpUrl,
+              }),
+            }),
+          ],
+        };
+      },
+    });
+    return makeAsyncResource(
+      {
+        ...opts,
+        puller,
+        finallySpy,
+        onAbortSpy,
+      },
+      async () => {
+        await opts.close();
+      },
+    );
+  }
+  await using ctx = getCtxResource();
+
+  const results: number[] = [];
+
+  const sub = ctx.client.iterableInfinite.subscribe(undefined, {
+    onData: (envelope) => {
+      expectTypeOf(envelope.data).toBeNumber();
+
+      results.push(envelope.data);
+    },
+  });
+
+  await vi.waitFor(() => {
+    expect(results).toHaveLength(1);
+  });
+
+  ctx.puller.pull();
+
+  await vi.waitFor(() => {
+    expect(results).toHaveLength(2);
+  });
+
+  ctx.puller.pull();
+
+  await vi.waitFor(() => {
+    expect(results).toEqual([1, 2, 3]);
+  });
+
+  sub.unsubscribe();
+
+  await vi.waitFor(() => {
+    expect(ctx.finallySpy).toHaveBeenCalledTimes(1);
+  });
+});
