@@ -1046,5 +1046,11 @@ test('tracked() without transformer', async () => {
     expect(results).toHaveLength(2);
   });
 
+  ctx.pull.next();
+
+  await vi.waitFor(() => {
+    expect(results).toEqual([1, 2, 3]);
+  });
+
   sub.unsubscribe();
 });
