@@ -965,3 +965,91 @@ describe('timeouts', async () => {
     sub.unsubscribe();
   });
 });
+
+test('tracked() without transformer', async () => {
+  function getCtx() {
+    const ee = new EventEmitter();
+    const eeEmit = (data: number | Error) => {
+      ee.emit('data', data);
+    };
+
+    const t = initTRPC.create({});
+
+    const router = t.router({
+      iterableEvent: t.procedure
+        .input(
+          z
+            .object({
+              lastEventId: z.coerce.number().min(0).optional(),
+            })
+            .optional(),
+        )
+        .subscription(async function* (opts) {
+          let idx = opts.input?.lastEventId ?? 0;
+          for await (const data of on(ee, 'data', {
+            signal: opts.signal,
+          })) {
+            const thing = data[0] as number | Error;
+
+            if (thing instanceof Error) {
+              throw thing;
+            }
+            yield tracked(String(idx++), thing);
+          }
+        }),
+    });
+
+    const opts = routerToServerAndClientNew(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            splitLink({
+              condition: (op) => op.type === 'subscription',
+              true: unstable_httpSubscriptionLink({
+                url: opts.httpUrl,
+              }),
+              false: unstable_httpBatchStreamLink({
+                url: opts.httpUrl,
+              }),
+            }),
+          ],
+        };
+      },
+    });
+    return makeAsyncResource(
+      {
+        ...opts,
+        eeEmit,
+      },
+      async () => {
+        await opts.close();
+      },
+    );
+  }
+  await using ctx = getCtx();
+
+  const results: number[] = [];
+
+  const onStarted = createDeferred<void>();
+  const sub = ctx.client.iterableEvent.subscribe(undefined, {
+    onData: (envelope) => {
+      expectTypeOf(envelope.data).toBeNumber();
+
+      results.push(envelope.data);
+    },
+    onStarted: () => {
+      onStarted.resolve();
+    },
+  });
+
+  await onStarted.promise;
+
+  ctx.eeEmit(1);
+
+  await vi.waitFor(() => {
+    expect(results).toHaveLength(1);
+  });
+
+  sub.unsubscribe();
+});
