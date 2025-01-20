@@ -967,6 +967,9 @@ describe('timeouts', async () => {
 });
 
 test('tracked() without transformer', async () => {
+  /**
+   * Test resource
+   */
   function getCtxResource() {
     const t = initTRPC.create({});
 
@@ -974,6 +977,8 @@ test('tracked() without transformer', async () => {
     const pull = {
       next: pullDeferred.resolve,
     };
+    const finallySpy = vi.fn();
+    const onAbortSpy = vi.fn();
 
     const router = t.router({
       iterableInfinite: t.procedure
@@ -985,13 +990,18 @@ test('tracked() without transformer', async () => {
             .optional(),
         )
         .subscription(async function* (opts) {
-          let idx = opts.input?.lastEventId ?? 0;
-          while (true) {
-            idx++;
-            yield tracked(String(idx), idx);
-            await pullDeferred.promise;
-            pullDeferred = createDeferred();
-            pull.next = pullDeferred.resolve;
+          opts.signal?.addEventListener('abort', onAbortSpy, { once: true });
+          try {
+            let idx = opts.input?.lastEventId ?? 0;
+            while (true) {
+              idx++;
+              yield tracked(String(idx), idx);
+              await pullDeferred.promise;
+              pullDeferred = createDeferred();
+              pull.next = pullDeferred.resolve;
+            }
+          } finally {
+            finallySpy();
           }
         }),
     });
@@ -1018,6 +1028,8 @@ test('tracked() without transformer', async () => {
       {
         ...opts,
         pull,
+        finallySpy,
+        onAbortSpy,
       },
       async () => {
         await opts.close();
@@ -1053,4 +1065,14 @@ test('tracked() without transformer', async () => {
   });
 
   sub.unsubscribe();
+
+  await vi.waitFor(() => {
+    expect(ctx.onAbortSpy).toHaveBeenCalledTimes(1);
+  });
+
+  ctx.pull.next();
+
+  await vi.waitFor(() => {
+    expect(ctx.finallySpy).toHaveBeenCalledTimes(1);
+  });
 });
