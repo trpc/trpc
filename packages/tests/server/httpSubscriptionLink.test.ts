@@ -966,16 +966,20 @@ describe('timeouts', async () => {
   });
 });
 
-function createPuller() {
+function createPuller(): PromiseLike<void> & {
+  pull: () => void;
+} {
   let deferred = createDeferred<void>();
 
   return {
     pull: () => {
       deferred.resolve();
-      deferred = createDeferred();
     },
-    get promise() {
-      return deferred.promise;
+    then(onfulfilled, onrejected) {
+      return deferred.promise.then(onfulfilled, onrejected).then((res) => {
+        deferred = createDeferred();
+        return res;
+      });
     },
   };
 }
@@ -1007,7 +1011,7 @@ test('tracked() without transformer', async () => {
             while (true) {
               idx++;
               yield tracked(String(idx), idx);
-              await puller.promise;
+              await puller;
             }
           } finally {
             finallySpy();
