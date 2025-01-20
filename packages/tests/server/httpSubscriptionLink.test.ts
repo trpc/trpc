@@ -967,7 +967,7 @@ describe('timeouts', async () => {
 });
 
 test('tracked() without transformer', async () => {
-  function getCtx() {
+  function getCtxResource() {
     const ee = new EventEmitter();
     const eeEmit = (data: number | Error) => {
       ee.emit('data', data);
@@ -1027,7 +1027,7 @@ test('tracked() without transformer', async () => {
       },
     );
   }
-  await using ctx = getCtx();
+  await using ctx = getCtxResource();
 
   const results: number[] = [];
 
