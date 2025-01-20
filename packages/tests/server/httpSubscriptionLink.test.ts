@@ -968,15 +968,15 @@ describe('timeouts', async () => {
 
 test('tracked() without transformer', async () => {
   function getCtxResource() {
-    const ee = new EventEmitter();
-    const eeEmit = (data: number | Error) => {
-      ee.emit('data', data);
-    };
-
     const t = initTRPC.create({});
 
+    let pullDeferred = createDeferred<void>();
+    const pull = {
+      next: pullDeferred.resolve,
+    };
+
     const router = t.router({
-      iterableEvent: t.procedure
+      iterableInfinite: t.procedure
         .input(
           z
             .object({
@@ -986,15 +986,12 @@ test('tracked() without transformer', async () => {
         )
         .subscription(async function* (opts) {
           let idx = opts.input?.lastEventId ?? 0;
-          for await (const data of on(ee, 'data', {
-            signal: opts.signal,
-          })) {
-            const thing = data[0] as number | Error;
-
-            if (thing instanceof Error) {
-              throw thing;
-            }
-            yield tracked(String(idx++), thing);
+          while (true) {
+            idx++;
+            yield tracked(String(idx), idx);
+            await pullDeferred.promise;
+            pullDeferred = createDeferred();
+            pull.next = pullDeferred.resolve;
           }
         }),
     });
@@ -1020,7 +1017,7 @@ test('tracked() without transformer', async () => {
     return makeAsyncResource(
       {
         ...opts,
-        eeEmit,
+        pull,
       },
       async () => {
         await opts.close();
@@ -1031,24 +1028,22 @@ test('tracked() without transformer', async () => {
 
   const results: number[] = [];
 
-  const onStarted = createDeferred<void>();
-  const sub = ctx.client.iterableEvent.subscribe(undefined, {
+  const sub = ctx.client.iterableInfinite.subscribe(undefined, {
     onData: (envelope) => {
       expectTypeOf(envelope.data).toBeNumber();
 
       results.push(envelope.data);
     },
-    onStarted: () => {
-      onStarted.resolve();
-    },
   });
-
-  await onStarted.promise;
-
-  ctx.eeEmit(1);
 
   await vi.waitFor(() => {
     expect(results).toHaveLength(1);
+  });
+
+  ctx.pull.next();
+
+  await vi.waitFor(() => {
+    expect(results).toHaveLength(2);
   });
 
   sub.unsubscribe();
