@@ -44,7 +44,7 @@
     "clsx": "^2.0.0",
     "cssnano": "^7.0.0",
     "docusaurus-preset-shiki-twoslash": "^1.1.41",
-    "framer-motion": "^11.0.0",
+    "framer-motion": "^12.0.0",
     "mdast-util-from-markdown": "^2.0.0",
     "mdast-util-mdx": "^3.0.0",
     "micromark-extension-mdxjs": "^3.0.0",
