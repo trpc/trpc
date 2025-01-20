@@ -968,6 +968,7 @@ describe('timeouts', async () => {
 
 function createPuller(): PromiseLike<void> & {
   pull: () => void;
+  reject: (err: unknown) => void;
 } {
   let deferred = createDeferred<void>();
 
@@ -975,8 +976,11 @@ function createPuller(): PromiseLike<void> & {
     pull: () => {
       deferred.resolve();
     },
-    then(onfulfilled, onrejected) {
-      return deferred.promise.then(onfulfilled, onrejected).then((res) => {
+    reject: (err: unknown) => {
+      deferred.reject(err);
+    },
+    then(onFulfilled, onRejected) {
+      return deferred.promise.then(onFulfilled, onRejected).then((res) => {
         deferred = createDeferred();
         return res;
       });
@@ -1005,7 +1009,14 @@ test('tracked() without transformer', async () => {
             .optional(),
         )
         .subscription(async function* (opts) {
-          opts.signal?.addEventListener('abort', onAbortSpy, { once: true });
+          opts.signal?.addEventListener(
+            'abort',
+            (reason) => {
+              onAbortSpy(reason);
+              puller.reject(reason);
+            },
+            { once: true },
+          );
           try {
             let idx = opts.input?.lastEventId ?? 0;
             while (true) {
@@ -1078,12 +1089,6 @@ test('tracked() without transformer', async () => {
   });
 
   sub.unsubscribe();
-
-  await vi.waitFor(() => {
-    expect(ctx.onAbortSpy).toHaveBeenCalledTimes(1);
-  });
-
-  ctx.puller.pull();
 
   await vi.waitFor(() => {
     expect(ctx.finallySpy).toHaveBeenCalledTimes(1);
