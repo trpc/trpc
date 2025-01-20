@@ -966,6 +966,20 @@ describe('timeouts', async () => {
   });
 });
 
+function createPuller() {
+  let deferred = createDeferred<void>();
+
+  return {
+    pull: () => {
+      deferred.resolve();
+      deferred = createDeferred();
+    },
+    get promise() {
+      return deferred.promise;
+    },
+  };
+}
+
 test('tracked() without transformer', async () => {
   /**
    * Test resource
@@ -973,10 +987,7 @@ test('tracked() without transformer', async () => {
   function getCtxResource() {
     const t = initTRPC.create({});
 
-    let pullDeferred = createDeferred<void>();
-    const pull = {
-      next: pullDeferred.resolve,
-    };
+    const puller = createPuller();
     const finallySpy = vi.fn();
     const onAbortSpy = vi.fn();
 
@@ -996,9 +1007,7 @@ test('tracked() without transformer', async () => {
             while (true) {
               idx++;
               yield tracked(String(idx), idx);
-              await pullDeferred.promise;
-              pullDeferred = createDeferred();
-              pull.next = pullDeferred.resolve;
+              await puller.promise;
             }
           } finally {
             finallySpy();
@@ -1027,7 +1036,7 @@ test('tracked() without transformer', async () => {
     return makeAsyncResource(
       {
         ...opts,
-        pull,
+        puller,
         finallySpy,
         onAbortSpy,
       },
@@ -1052,13 +1061,13 @@ test('tracked() without transformer', async () => {
     expect(results).toHaveLength(1);
   });
 
-  ctx.pull.next();
+  ctx.puller.pull();
 
   await vi.waitFor(() => {
     expect(results).toHaveLength(2);
   });
 
-  ctx.pull.next();
+  ctx.puller.pull();
 
   await vi.waitFor(() => {
     expect(results).toEqual([1, 2, 3]);
@@ -1070,7 +1079,7 @@ test('tracked() without transformer', async () => {
     expect(ctx.onAbortSpy).toHaveBeenCalledTimes(1);
   });
 
-  ctx.pull.next();
+  ctx.puller.pull();
 
   await vi.waitFor(() => {
     expect(ctx.finallySpy).toHaveBeenCalledTimes(1);
