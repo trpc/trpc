@@ -3,13 +3,14 @@ import type { Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyProcedure,
   AnyRouter,
+  coerceToRouterRecord,
   inferClientTypes,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   IntersectionError,
   ProcedureOptions,
   ProcedureType,
-  RouterRecord,
+  RouterRecord
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createFlatProxy,
@@ -80,24 +81,22 @@ type DecoratedProcedureRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? DecoratedProcedureRecord<TRouter, $Value>
-      : $Value extends AnyRouter
-        ? DecoratedProcedureRecord<TRouter, $Value['_def']['record']>
-        : $Value extends AnyProcedure
-          ? DecorateProcedure<
-              $Value['_def']['type'],
-              {
-                input: inferProcedureInput<$Value>;
-                output: inferTransformedProcedureOutput<
-                  inferClientTypes<TRouter>,
-                  $Value
-                >;
-                errorShape: inferClientTypes<TRouter>['errorShape'];
-                transformer: inferClientTypes<TRouter>['transformer'];
-              }
-            >
-          : never
+    ? $Value extends AnyProcedure
+      ? DecorateProcedure<
+          $Value['_def']['type'],
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<
+              inferClientTypes<TRouter>,
+              $Value
+            >;
+            errorShape: inferClientTypes<TRouter>['errorShape'];
+            transformer: inferClientTypes<TRouter>['transformer'];
+          }
+        >
+      : $Value extends RouterRecord | AnyRouter
+        ? DecoratedProcedureRecord<TRouter, coerceToRouterRecord<$Value>>
+        : never
     : never;
 };
 

@@ -8,6 +8,7 @@ const client = createTRPCClient<AppRouter>({
     }),
   ],
 });
+
 {
   const res = await client.router01.foo.query();
 

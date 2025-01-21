@@ -20,6 +20,7 @@ import type {
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
+  coerceToRouterRecord,
   DeepPartial,
   inferProcedureInput,
   inferProcedureOutput,
@@ -398,8 +399,9 @@ export type DecoratedProcedureUtilsRecord<
   TRecord extends RouterRecord,
 > = DecorateRouter & {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateRouter
+    ? $Value extends RouterRecord | AnyRouter
+      ? DecoratedProcedureUtilsRecord<TRoot, coerceToRouterRecord<$Value>> &
+          DecorateRouter
       : $Value extends AnyQueryProcedure
         ? DecorateQueryProcedure<TRoot, $Value>
         : $Value extends AnyMutationProcedure

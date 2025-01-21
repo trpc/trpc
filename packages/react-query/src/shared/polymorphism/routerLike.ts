@@ -3,6 +3,7 @@ import type {
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
+  coerceToRouterRecord,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { MutationLike } from './mutationLike';
@@ -20,8 +21,8 @@ export type RouterLikeInner<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? RouterLikeInner<TRoot, $Value>
+    ? $Value extends RouterRecord | AnyRouter
+      ? RouterLikeInner<TRoot, coerceToRouterRecord<$Value>>
       : $Value extends AnyQueryProcedure
         ? QueryLike<TRoot, $Value>
         : $Value extends AnyMutationProcedure
