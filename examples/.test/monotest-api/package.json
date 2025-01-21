@@ -17,7 +17,6 @@
     "@monotest/router01": "workspace:*",
     "@monotest/trpc": "workspace:*",
     "@trpc/server": "npm:@trpc/server@next",
-    
     "zod": "^3.23.8"
   },
   "devDependencies": {
