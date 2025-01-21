@@ -7,7 +7,7 @@ import { httpBatchLink } from '@trpc/client'
 import { createTRPCReact } from '@trpc/react-query'
 import superjson from 'superjson'
 
-import { AppRouter } from '@monotest/api'
+import type { AppRouter } from '@monotest/api'
 
 export const trpcReact = createTRPCReact<AppRouter>()
 trpcReact.router01
