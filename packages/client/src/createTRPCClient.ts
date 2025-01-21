@@ -82,20 +82,22 @@ type DecoratedProcedureRecord<
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends RouterRecord
       ? DecoratedProcedureRecord<TRouter, $Value>
-      : $Value extends AnyProcedure
-        ? DecorateProcedure<
-            $Value['_def']['type'],
-            {
-              input: inferProcedureInput<$Value>;
-              output: inferTransformedProcedureOutput<
-                inferClientTypes<TRouter>,
-                $Value
-              >;
-              errorShape: inferClientTypes<TRouter>['errorShape'];
-              transformer: inferClientTypes<TRouter>['transformer'];
-            }
-          >
-        : never
+      : $Value extends AnyRouter
+        ? DecoratedProcedureRecord<TRouter, $Value['_def']['record']>
+        : $Value extends AnyProcedure
+          ? DecorateProcedure<
+              $Value['_def']['type'],
+              {
+                input: inferProcedureInput<$Value>;
+                output: inferTransformedProcedureOutput<
+                  inferClientTypes<TRouter>,
+                  $Value
+                >;
+                errorShape: inferClientTypes<TRouter>['errorShape'];
+                transformer: inferClientTypes<TRouter>['transformer'];
+              }
+            >
+          : never
     : never;
 };
 
