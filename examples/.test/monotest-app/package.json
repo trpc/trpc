@@ -1,5 +1,5 @@
 {
-  "name": "monotest-app",
+  "name": "@monotest/app",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@monotest/api": "workspace:*",
-    "@monotest/router01": "workspace:*",
     "@tanstack/react-query": "^5.62.8",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",

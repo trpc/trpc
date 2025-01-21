@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { trpcReact } from './trpc-setup'
 
 export function App() {
-  const q1 = trpcReact.router01.foo.useQuery() // <-- bug in trpc?
+  const q1 = trpcReact.router01.foo.useQuery()
   
   const client = trpcReact.useUtils().client;
 

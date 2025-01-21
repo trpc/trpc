@@ -1,5 +1,5 @@
 {
-  "name": "@monotest/router01",
+  "name": "@monotest/api-router01",
   "version": "0.0.1",
   "private": true,
   "type": "module",
