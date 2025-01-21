@@ -8,24 +8,13 @@ import { useState } from 'react';
 
 export const trpcReact = createTRPCReact<AppRouter>();
 
-function getBaseUrl() {
-  if (typeof window !== 'undefined') {
-    return window.location.origin;
-  }
-
-  if (process.env['VERCEL_URL']) {
-    return `https://${process.env['VERCEL_URL']}`;
-  }
-  return `http://localhost:${String(process.env['PORT'])}`;
-}
-
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     trpcReact.createClient({
       links: [
         httpBatchLink({
-          url: getBaseUrl() + '/api/trpc',
+          url: '/api/trpc',
         }),
       ],
     }),
