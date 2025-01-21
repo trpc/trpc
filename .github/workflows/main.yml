@@ -253,3 +253,14 @@ jobs:
 
       - run: pnpm build
       - run: pnpx pkg-pr-new publish './packages/*'
+
+  monotest-build:
+    name: Test a monorepo using built declaration files
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/setup
+      - run: pnpm monotest-build

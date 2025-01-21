@@ -15,6 +15,7 @@ import type {
   AnyProcedure,
   AnyRootTypes,
   AnyRouter,
+  coerceToRouterRecord,
   inferAsyncIterableYield,
   inferProcedureInput,
   inferTransformedProcedureOutput,
@@ -437,18 +438,18 @@ export type DecorateRouterRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? DecorateRouterRecord<TRoot, $Value>
-      : $Value extends AnyProcedure
-        ? DecorateProcedure<
-            $Value['_def']['type'],
-            {
-              input: inferProcedureInput<$Value>;
-              output: inferTransformedProcedureOutput<TRoot, $Value>;
-              transformer: TRoot['transformer'];
-              errorShape: TRoot['errorShape'];
-            }
-          >
+    ? $Value extends AnyProcedure
+      ? DecorateProcedure<
+          $Value['_def']['type'],
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<TRoot, $Value>;
+            transformer: TRoot['transformer'];
+            errorShape: TRoot['errorShape'];
+          }
+        >
+      : $Value extends RouterRecord | AnyRouter
+        ? DecorateRouterRecord<TRoot, coerceToRouterRecord<$Value>>
         : never
     : never;
 };
