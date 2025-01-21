@@ -1,0 +1,30 @@
+{
+  "name": "monotest-app",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "dev": "vite --port 3000",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@monotest/api": "workspace:*",
+    "@monotest/router01": "workspace:*",
+    "@tanstack/react-query": "latest",
+    "@trpc/client": "npm:@trpc/client@next",
+    "@trpc/react-query": "npm:@trpc/react-query@next",
+    "@trpc/server": "npm:@trpc/server@next",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "superjson": "^2.2.1"
+  },
+  "devDependencies": {
+    "@monotest/tsconfig": "workspace:*",
+    "@types/react": "^18.3.10",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "vite": "^5.4.8"
+  }
+}

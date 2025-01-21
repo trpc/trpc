@@ -11,6 +11,8 @@
     "clean-dev": "pnpm clean && pnpm install && pnpm build && pnpm dev",
     "clean-i": "pnpm clean && pnpm install",
     "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
+    "monotest-build": "turbo --filter=\"@monotest/*\" build",
+    "monotest-dev": "turbo watch build --filter=\"@monotest/*\"",
     "build-www": "turbo --filter www build",
     "dev": "turbo --filter=\"@trpc/*\" dev",
     "dev-www": "turbo --filter www dev",

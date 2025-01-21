@@ -1,0 +1,10 @@
+{
+  "extends": ["@monotest/tsconfig/react.json"],
+  "compilerOptions": {
+    "outDir": "./dist",
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+  },
+  "include": ["vite.config.ts", "src/**/*"]
+}
