@@ -407,12 +407,6 @@ importers:
       '@trpc/server':
         specifier: npm:@trpc/server@next
         version: link:../../../packages/server
-      superjson:
-        specifier: ^2.2.1
-        version: 2.2.2
-      zod:
-        specifier: ^3.23.8
-        version: 3.23.8
     devDependencies:
       '@monotest/tsconfig':
         specifier: workspace:*
@@ -18165,7 +18159,7 @@ snapshots:
   '@babel/code-frame@7.24.7':
     dependencies:
       '@babel/highlight': 7.24.7
-      picocolors: 1.1.0
+      picocolors: 1.1.1
 
   '@babel/code-frame@7.25.7':
     dependencies:
