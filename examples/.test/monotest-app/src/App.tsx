@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { trpcReact, TRPCReactProvider } from './trpc-setup';
+import { trpcReact, TRPCReactProvider } from './react-setup';
 
 function MyComponent() {
   const q1 = trpcReact.router01.foo.useQuery();
