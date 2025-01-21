@@ -329,9 +329,6 @@ importers:
       '@trpc/server':
         specifier: npm:@trpc/server@next
         version: link:../../../packages/server
-      superjson:
-        specifier: ^2.2.1
-        version: 2.2.2
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -391,9 +388,6 @@ importers:
       '@trpc/server':
         specifier: npm:@trpc/server@next
         version: link:../../../packages/server
-      superjson:
-        specifier: ^2.2.1
-        version: 2.2.2
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -16060,10 +16054,6 @@ packages:
   superjson@1.12.4:
     resolution: {integrity: sha512-vkpPQAxdCg9SLfPv5GPC5fnGrui/WryktoN9O5+Zif/14QIMjw+RITf/5LbBh+9QpBFb3KNvJth+puz2H8o6GQ==}
     engines: {node: '>=10'}
-
-  superjson@2.2.2:
-    resolution: {integrity: sha512-5JRxVqC8I8NuOUjzBbvVJAKNM8qoVuH0O77h4WInc/qC2q5IreqKxYwgkga3PfA22OayK2ikceb/B26dztPl+Q==}
-    engines: {node: '>=16'}
 
   superstruct@2.0.0:
     resolution: {integrity: sha512-l9HkF2HGmEc4cm0Mc3E08o/lhminlAdDDekqc+m1urG+SK6CL3e0TL0EJ8QyXkDwfS69rgI94GOXLD4qCD+1WA==}
@@ -35066,10 +35056,6 @@ snapshots:
       - supports-color
 
   superjson@1.12.4:
-    dependencies:
-      copy-anything: 3.0.2
-
-  superjson@2.2.2:
     dependencies:
       copy-anything: 3.0.2
 
