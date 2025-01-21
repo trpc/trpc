@@ -253,3 +253,10 @@ jobs:
 
       - run: pnpm build
       - run: pnpx pkg-pr-new publish './packages/*'
+
+  build-monotest:
+    name: Build monotest
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - run: pnpm monotest-build
