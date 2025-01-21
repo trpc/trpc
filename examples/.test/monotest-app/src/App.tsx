@@ -7,7 +7,7 @@ function MyComponent() {
   const client = trpcReact.useUtils().client;
 
   useEffect(() => {
-    client.router01.foo.query();
+    void client.router01.foo.query();
   }, [client]);
 
   q1.data;
