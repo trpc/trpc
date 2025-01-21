@@ -10,7 +10,7 @@ import type {
   IntersectionError,
   ProcedureOptions,
   ProcedureType,
-  RouterRecord
+  RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createFlatProxy,
