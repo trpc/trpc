@@ -11,7 +11,6 @@ import type {
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
-  coerceToRouterRecord,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProtectedIntersection,
@@ -34,8 +33,8 @@ export type UseProcedureRecord<
           errorShape: TRoot['errorShape'];
           transformer: TRoot['transformer'];
         }>
-      : $Value extends RouterRecord | AnyRouter
-        ? UseProcedureRecord<TRoot, coerceToRouterRecord<$Value>>
+      : $Value extends RouterRecord
+        ? UseProcedureRecord<TRoot, $Value>
         : never
     : never;
 };

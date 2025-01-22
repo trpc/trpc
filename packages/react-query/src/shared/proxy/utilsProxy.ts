@@ -20,7 +20,6 @@ import type {
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
-  coerceToRouterRecord,
   DeepPartial,
   inferProcedureInput,
   inferProcedureOutput,
@@ -399,13 +398,12 @@ export type DecoratedProcedureUtilsRecord<
   TRecord extends RouterRecord,
 > = DecorateRouter & {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends AnyMutationProcedure
-      ? DecorateMutationProcedure<TRoot, $Value>
-      : $Value extends AnyQueryProcedure
-        ? DecorateQueryProcedure<TRoot, $Value>
-        : $Value extends RouterRecord | AnyRouter
-          ? DecoratedProcedureUtilsRecord<TRoot, coerceToRouterRecord<$Value>> &
-              DecorateRouter
+    ? $Value extends AnyQueryProcedure
+      ? DecorateQueryProcedure<TRoot, $Value>
+      : $Value extends AnyMutationProcedure
+        ? DecorateMutationProcedure<TRoot, $Value>
+        : $Value extends RouterRecord
+          ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateRouter
           : never
     : never;
 }; // Add functions that should be available at utils root

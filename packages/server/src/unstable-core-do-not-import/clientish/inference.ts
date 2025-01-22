@@ -4,7 +4,7 @@ import type {
   inferProcedureInput,
   inferProcedureOutput,
 } from '../procedure';
-import type { AnyRouter, coerceToRouterRecord, RouterRecord } from '../router';
+import type { AnyRouter, RouterRecord } from '../router';
 import type {
   AnyClientTypes,
   inferClientTypes,
@@ -41,8 +41,8 @@ export type GetInferenceHelpers<
       ? TType extends 'input'
         ? inferProcedureInput<$Value>
         : inferTransformedProcedureOutput<TRoot, $Value>
-      : $Value extends RouterRecord | AnyRouter
-        ? GetInferenceHelpers<TType, TRoot, coerceToRouterRecord<$Value>>
+      : $Value extends RouterRecord
+        ? GetInferenceHelpers<TType, TRoot, $Value>
         : never
     : never;
 };

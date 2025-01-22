@@ -2,8 +2,6 @@ import type { Resolver } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyRootTypes,
-  AnyRouter,
-  coerceToRouterRecord,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProcedureType,
@@ -54,8 +52,8 @@ export type NextAppDirDecorateRouterRecord<
             transformer: TRoot['transformer'];
           }
         >
-      : $Value extends RouterRecord | AnyRouter
-        ? NextAppDirDecorateRouterRecord<TRoot, coerceToRouterRecord<$Value>>
+      : $Value extends RouterRecord
+        ? NextAppDirDecorateRouterRecord<TRoot, $Value>
         : never
     : never;
 };

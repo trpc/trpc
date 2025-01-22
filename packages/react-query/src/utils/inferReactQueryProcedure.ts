@@ -5,7 +5,6 @@ import type {
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
-  coerceToRouterRecord,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   RouterRecord,
@@ -82,11 +81,8 @@ type inferReactQueryProcedureOptionsInner<
       ? InferQueryOptions<TRoot, $Value>
       : $Value extends AnyMutationProcedure
         ? InferMutationOptions<TRoot, $Value>
-        : $Value extends RouterRecord | AnyRouter
-          ? inferReactQueryProcedureOptionsInner<
-              TRoot,
-              coerceToRouterRecord<$Value>
-            >
+        : $Value extends RouterRecord
+          ? inferReactQueryProcedureOptionsInner<TRoot, $Value>
           : never
     : never;
 };

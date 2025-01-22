@@ -3,7 +3,6 @@ import type { Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyProcedure,
   AnyRouter,
-  coerceToRouterRecord,
   inferClientTypes,
   inferProcedureInput,
   inferTransformedProcedureOutput,
@@ -94,8 +93,8 @@ type DecoratedProcedureRecord<
             transformer: inferClientTypes<TRouter>['transformer'];
           }
         >
-      : $Value extends RouterRecord | AnyRouter
-        ? DecoratedProcedureRecord<TRouter, coerceToRouterRecord<$Value>>
+      : $Value extends RouterRecord
+        ? DecoratedProcedureRecord<TRouter, $Value>
         : never
     : never;
 };

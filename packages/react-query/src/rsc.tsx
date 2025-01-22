@@ -16,7 +16,6 @@ import {
 import type {
   AnyProcedure,
   AnyRootTypes,
-  coerceToRouterRecord,
   inferProcedureOutput,
   inferRouterRootTypes,
   Maybe,
@@ -63,8 +62,8 @@ type DecorateRouterRecord<
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends AnyProcedure
       ? DecorateProcedure<TRoot, $Value>
-      : $Value extends RouterRecord | AnyRouter
-        ? DecorateRouterRecord<TRoot, coerceToRouterRecord<$Value>>
+      : $Value extends RouterRecord
+        ? DecorateRouterRecord<TRoot, $Value>
         : never
     : never;
 };
