@@ -10,7 +10,6 @@ import type {
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
-  coerceToRouterRecord,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   RouterRecord,
@@ -47,10 +46,10 @@ export type UseQueriesProcedureRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends AnyQueryProcedure
-      ? GetQueryOptions<TRoot, $Value>
-      : $Value extends RouterRecord | AnyRouter
-        ? UseQueriesProcedureRecord<TRoot, coerceToRouterRecord<$Value>>
+    ? $Value extends RouterRecord
+      ? UseQueriesProcedureRecord<TRoot, $Value>
+      : $Value extends AnyQueryProcedure
+        ? GetQueryOptions<TRoot, $Value>
         : never
     : never;
 };
@@ -79,10 +78,10 @@ export type UseSuspenseQueriesProcedureRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends AnyQueryProcedure
-      ? GetSuspenseQueryOptions<TRoot, $Value>
-      : $Value extends RouterRecord | AnyRouter
-        ? UseSuspenseQueriesProcedureRecord<TRoot, coerceToRouterRecord<$Value>>
+    ? $Value extends RouterRecord
+      ? UseSuspenseQueriesProcedureRecord<TRoot, $Value>
+      : $Value extends AnyQueryProcedure
+        ? GetSuspenseQueryOptions<TRoot, $Value>
         : never
     : never;
 };

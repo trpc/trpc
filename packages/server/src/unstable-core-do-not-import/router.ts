@@ -35,8 +35,8 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
 export type DecorateRouterRecord<TRecord extends RouterRecord> = {
   [TKey in keyof TRecord]: TRecord[TKey] extends AnyProcedure
     ? DecorateProcedure<TRecord[TKey]>
-    : coerceToRouterRecord<TRecord[TKey]> extends RouterRecord
-      ? DecorateRouterRecord<coerceToRouterRecord<TRecord[TKey]>>
+    : TRecord[TKey] extends RouterRecord
+      ? DecorateRouterRecord<TRecord[TKey]>
       : never;
 };
 
@@ -378,7 +378,3 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
 
   return router as MergeRouters<TRouters>;
 }
-
-export type coerceToRouterRecord<T> = T extends AnyRouter
-  ? T['_def']['record']
-  : T;

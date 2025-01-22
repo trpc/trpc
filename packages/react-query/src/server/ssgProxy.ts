@@ -15,7 +15,6 @@ import type {
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
-  coerceToRouterRecord,
   inferClientTypes,
   inferRouterContext,
   Maybe,
@@ -65,10 +64,11 @@ type DecoratedProcedureSSGRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends AnyQueryProcedure
-      ? Pick<DecorateQueryProcedure<TRoot, $Value>, SSGFns>
-      : $Value extends RouterRecord | AnyRouter
-        ? DecoratedProcedureSSGRecord<TRoot, coerceToRouterRecord<$Value>>
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureSSGRecord<TRoot, $Value>
+      : // utils only apply to queries
+        $Value extends AnyQueryProcedure
+        ? Pick<DecorateQueryProcedure<TRoot, $Value>, SSGFns>
         : never
     : never;
 };

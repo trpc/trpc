@@ -3,7 +3,6 @@ import type { Unsubscribable } from '@trpc/server/observable';
 import type {
   AnyProcedure,
   AnyRouter,
-  coerceToRouterRecord,
   inferClientTypes,
   inferProcedureInput,
   inferTransformedProcedureOutput,
@@ -81,21 +80,21 @@ type DecoratedProcedureRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends AnyProcedure
-      ? DecorateProcedure<
-          $Value['_def']['type'],
-          {
-            input: inferProcedureInput<$Value>;
-            output: inferTransformedProcedureOutput<
-              inferClientTypes<TRouter>,
-              $Value
-            >;
-            errorShape: inferClientTypes<TRouter>['errorShape'];
-            transformer: inferClientTypes<TRouter>['transformer'];
-          }
-        >
-      : $Value extends RouterRecord | AnyRouter
-        ? DecoratedProcedureRecord<TRouter, coerceToRouterRecord<$Value>>
+    ? $Value extends RouterRecord
+      ? DecoratedProcedureRecord<TRouter, $Value>
+      : $Value extends AnyProcedure
+        ? DecorateProcedure<
+            $Value['_def']['type'],
+            {
+              input: inferProcedureInput<$Value>;
+              output: inferTransformedProcedureOutput<
+                inferClientTypes<TRouter>,
+                $Value
+              >;
+              errorShape: inferClientTypes<TRouter>['errorShape'];
+              transformer: inferClientTypes<TRouter>['transformer'];
+            }
+          >
         : never
     : never;
 };
