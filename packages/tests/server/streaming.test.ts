@@ -53,6 +53,11 @@ describe('no transformer', () => {
             );
             return opts.input.wait;
           }),
+        embedPromise: t.procedure.query(() => {
+          return {
+            foo: Promise.resolve('bar'),
+          };
+        }),
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
@@ -408,6 +413,18 @@ describe('no transformer', () => {
     const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
     expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
     expect(serverError.message).toMatchInlineSnapshot(`""`);
+  });
+
+  test('embedPromise', async () => {
+    const { client } = ctx;
+
+    const result = await client.embedPromise.query();
+
+    expectTypeOf(result).toEqualTypeOf<{ foo: Promise<string> }>();
+
+    expect(result.foo).toBeInstanceOf(Promise);
+
+    expect(await result.foo).toEqual('bar');
   });
 });
 
