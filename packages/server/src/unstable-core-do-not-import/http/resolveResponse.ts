@@ -288,8 +288,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
    */
   const isStreamCall = req.headers.get('trpc-accept') === 'application/jsonl';
 
-  const experimentalIterablesAndDeferreds =
-    config.iterablesAndDeferreds ?? true;
   const experimentalSSE = config.sse?.enabled ?? true;
   try {
     const [infoError, info] = infoTuple;
@@ -529,7 +527,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
          *   }
          * }
          */
-        maxDepth: experimentalIterablesAndDeferreds ? 4 : 3,
+        maxDepth: Infinity,
         data: rpcCalls.map(async (res) => {
           const [error, result] = await res;
 

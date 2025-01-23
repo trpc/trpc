@@ -18,6 +18,7 @@ import { observable } from '@trpc/server/observable';
 import {
   createDeferred,
   isAsyncIterable,
+  run,
 } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
@@ -55,7 +56,15 @@ describe('no transformer', () => {
           }),
         embedPromise: t.procedure.query(() => {
           return {
-            foo: Promise.resolve('bar'),
+            deeply: run(async () => {
+              return {
+                nested: run(async () => {
+                  return {
+                    promise: Promise.resolve('foo'),
+                  };
+                }),
+              };
+            }),
           };
         }),
         error: t.procedure.query(() => {
@@ -415,16 +424,27 @@ describe('no transformer', () => {
     expect(serverError.message).toMatchInlineSnapshot(`""`);
   });
 
-  test('embedPromise', async () => {
+  test('embed promise', async () => {
     const { client } = ctx;
 
     const result = await client.embedPromise.query();
 
-    expectTypeOf(result).toEqualTypeOf<{ foo: Promise<string> }>();
+    expectTypeOf(result).toEqualTypeOf<{
+      deeply: Promise<{
+        nested: Promise<{
+          promise: Promise<string>;
+        }>;
+      }>;
+    }>();
 
-    expect(result.foo).toBeInstanceOf(Promise);
+    expect(result.deeply).toBeInstanceOf(Promise);
+    const deeply = await result.deeply;
+    expect(deeply.nested).toBeInstanceOf(Promise);
+    const nested = await deeply.nested;
+    expect(nested.promise).toBeInstanceOf(Promise);
+    const promise = await nested.promise;
 
-    expect(await result.foo).toEqual('bar');
+    expect(promise).toEqual('foo');
   });
 });
 
