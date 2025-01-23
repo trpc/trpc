@@ -24,6 +24,25 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Allow promises to be embedded in nested data (non-breaking)
+
+We now allow promises to be embedded in nested data when using the [`httpBatchStreamLink`](../client/links/httpBatchStreamLink.md), this means that you can now do things like this:
+
+```ts
+const router = router({
+  embedPromise: publicProcedure.query(() => {
+    async function slowThing() {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return 'slow';
+    }
+    return {
+      instant: 'instant',
+      slow: slowThing(),
+    };
+  }),
+});
+```
+
 ### Removed export of `@trpc/client` from `@trpc/react-query` (non-breaking)
 
 We have removed the re-exports of `@trpc/client` types and utilities from the `@trpc/react-query` package.
