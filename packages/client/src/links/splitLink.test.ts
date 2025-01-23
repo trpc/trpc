@@ -21,10 +21,8 @@ test('splitLink', () => {
       condition(op) {
         return op.type === 'subscription';
       },
-      options: {
-        true: wsLink,
-        false: [httpLink],
-      },
+      true: wsLink,
+      false: [httpLink],
     })(null as any),
   ];
 

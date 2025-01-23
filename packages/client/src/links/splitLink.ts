@@ -3,47 +3,73 @@ import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from './internals/createChain';
 import type { Operation, OperationLink, TRPCLink } from './types';
 
-function asArray<TType>(value: TType | TType[]) {
+function asArray<TType>(value: TType | TType[]): TType[] {
   return Array.isArray(value) ? value : [value];
 }
 
-type Keyish<TReturnKey extends string | number | boolean> =
-  TReturnKey extends boolean
-    ? TReturnKey extends true
-      ? 'true'
-      : 'false'
-    : TReturnKey;
-
 export function splitLink<
-  TReturnKey extends string | number | boolean,
   TRouter extends AnyRouter = AnyRouter,
->(opts: {
-  condition(op: Operation): TReturnKey;
-  options: Record<
-    Keyish<NoInfer<TReturnKey>>,
-    TRPCLink<TRouter> | TRPCLink<TRouter>[]
-  >;
-}): TRPCLink<TRouter> {
+  TOptions extends string = never,
+>(
+  opts:
+    | {
+        /**
+         * Function that determines which link(s) to execute based on the operation
+         */
+        condition: (op: Operation) => boolean;
+        /**
+         * The link(s) to execute next if the condition returns `true`
+         */
+        true: TRPCLink<TRouter> | TRPCLink<TRouter>[];
+        /**
+         * The link(s) to execute next if the condition returns `false`
+         */
+        false: TRPCLink<TRouter> | TRPCLink<TRouter>[];
+
+        /**
+         * Use this if you want to define custom keys for the options
+         */
+        options?: never;
+      }
+    | {
+        /**
+         * Function that determines which link(s) to execute based on the operation
+         */
+        condition: (op: Operation) => TOptions;
+        /**
+         * Record mapping string keys to link(s) that should be executed when the condition returns that key
+         * The possible keys are inferred from the return type of `condition`
+         */
+        options: Record<string, TRPCLink<TRouter> | TRPCLink<TRouter>[]>;
+      },
+): TRPCLink<TRouter> {
+  type $OptionRecord = Record<any, TRPCLink<TRouter> | TRPCLink<TRouter>[]>;
+  const options: $OptionRecord = opts.options ?? {
+    true: (opts as any).true,
+    false: (opts as any).false,
+  };
   return (runtime) => {
-    const answers = Object.keys(opts.options).reduce(
+    const operationLinkRecord = Object.keys(options).reduce(
       (acc, key) => {
-        acc[key as Keyish<TReturnKey>] = asArray(
-          opts.options[key as Keyish<TReturnKey>],
-        ).map((link) => link(runtime));
+        acc[key] = asArray(options[key]).map(
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          (link) => link!(runtime),
+        );
 
         return acc;
       },
-      {} as Record<Keyish<TReturnKey>, OperationLink<TRouter>[]>,
+      {} as Record<keyof $OptionRecord, OperationLink<TRouter>[]>,
     );
 
-    return (props) => {
-      return observable((observer) => {
+    return (props) =>
+      observable((observer) => {
         const answerKey = opts.condition(props.op);
 
-        const links = answers[answerKey as Keyish<TReturnKey>];
+        const links = operationLinkRecord[
+          answerKey
+        ] as OperationLink<TRouter>[];
 
         return createChain({ op: props.op, links }).subscribe(observer);
       });
-    };
   };
 }

@@ -6,5 +6,7 @@ export const serverA_appRouter = router({
       if (typeof val === 'string') return val;
       throw new Error(`Invalid input: ${typeof val}`);
     })
-    .query(({ input }) => ({ greeting: `hello, ${input}!` as const })),
+    .query(async (opts) => {
+      return `[from server A]: hello, ${opts.input}!` as const;
+    }),
 });
