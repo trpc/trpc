@@ -33,7 +33,7 @@ const router = router({
   embedPromise: publicProcedure.query(() => {
     async function slowThing() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      return 'slow'
+      return 'slow';
     }
     return {
       instant: 'instant',
