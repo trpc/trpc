@@ -320,7 +320,7 @@ test('myzod', async () => {
   await close();
 });
 
-test('arktype v2 schema', async () => {
+test('arktype', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
@@ -345,28 +345,6 @@ test('arktype v2 schema', async () => {
   await close();
 });
 
-test('arktype schema - using .assert', async () => {
-  const t = initTRPC.create();
-
-  const router = t.router({
-    num: t.procedure
-      .input(arktype.type({ text: 'string' }).assert)
-      .query(({ input }) => {
-        expectTypeOf(input).toEqualTypeOf<{ text: string }>();
-        return {
-          input,
-        };
-      }),
-  });
-
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query({ text: '123' });
-  expect(res.input).toMatchObject({ text: '123' });
-
-  // @ts-expect-error this only accepts {text: string}
-  await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`[TRPCClientError: text must be a string (was a number)]`);
-  await close();
-});
 test('runtypes', async () => {
   const t = initTRPC.create();
 
