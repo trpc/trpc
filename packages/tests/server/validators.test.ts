@@ -320,7 +320,7 @@ test('myzod', async () => {
   await close();
 });
 
-test('arktype', async () => {
+test('arktype v2 schema', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
