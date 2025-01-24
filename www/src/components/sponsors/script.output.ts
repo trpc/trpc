@@ -13,7 +13,7 @@ export const topSponsors = [
   {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 36,
+    "weight": 35,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1671157456000
@@ -21,7 +21,7 @@ export const topSponsors = [
   {
     "name": "KeenEthics",
     "imgSrc": "https://github.com/keenethics.png",
-    "weight": 30,
+    "weight": 29,
     "login": "keenethics",
     "link": "https://keenethics.com",
     "createdAt": 1727395200000
@@ -161,7 +161,7 @@ export const allSponsors = [
   {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 36,
+    "weight": 35,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1671157456000
@@ -249,7 +249,7 @@ export const allSponsors = [
   {
     "name": "Jaron Heard",
     "imgSrc": "https://avatars.githubusercontent.com/u/7065695?u=127a7eca50605c12366363d6aba3da9e749aeff7&v=4",
-    "weight": 3,
+    "weight": 4,
     "login": "jaronheard",
     "link": "http://www.jaronheard.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1722033178000
@@ -273,7 +273,7 @@ export const allSponsors = [
   {
     "name": "KeenEthics",
     "imgSrc": "https://github.com/keenethics.png",
-    "weight": 30,
+    "weight": 29,
     "login": "keenethics",
     "link": "https://keenethics.com",
     "createdAt": 1727395200000
@@ -281,9 +281,17 @@ export const allSponsors = [
   {
     "name": "Ryan Magoon",
     "imgSrc": "https://avatars.githubusercontent.com/u/5327290?v=4",
-    "weight": 7,
+    "weight": 8,
     "login": "ryanmagoon",
     "link": "https://github.com/ryanmagoon",
     "createdAt": 1729879193000
+  },
+  {
+    "name": "CodeRabbit",
+    "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
+    "weight": 4,
+    "login": "coderabbitai",
+    "link": "http://coderabbit.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1737645299000
   }
 ] as const;
