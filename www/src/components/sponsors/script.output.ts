@@ -19,14 +19,6 @@ export const topSponsors = [
     "createdAt": 1671157456000
   },
   {
-    "name": "KeenEthics",
-    "imgSrc": "https://github.com/keenethics.png",
-    "weight": 29,
-    "login": "keenethics",
-    "link": "https://keenethics.com",
-    "createdAt": 1727395200000
-  },
-  {
     "name": "Dr. B",
     "imgSrc": "https://avatars.githubusercontent.com/u/77294655?v=4",
     "weight": 14,
@@ -41,6 +33,14 @@ export const topSponsors = [
     "login": "flylance-apps",
     "link": "http://flylance.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1651211349000
+  },
+  {
+    "name": "Unkey",
+    "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
+    "weight": 11,
+    "login": "unkeyed",
+    "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1708012798000
   }
 ] as const;
 
@@ -269,14 +269,6 @@ export const allSponsors = [
     "login": "val-town",
     "link": "https://github.com/val-town",
     "createdAt": 1725043677000
-  },
-  {
-    "name": "KeenEthics",
-    "imgSrc": "https://github.com/keenethics.png",
-    "weight": 29,
-    "login": "keenethics",
-    "link": "https://keenethics.com",
-    "createdAt": 1727395200000
   },
   {
     "name": "Ryan Magoon",
