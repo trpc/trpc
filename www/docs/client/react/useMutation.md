@@ -13,7 +13,8 @@ Works like react-query's mutations - [see their docs](https://tanstack.com/query
 
 ### Example
 
-<details><summary>Backend code</summary>
+<details>
+<summary>Backend code</summary>
 
 ```tsx title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
@@ -49,7 +50,6 @@ export const appRouter = t.router({
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
-  // This can either be a tuple ['login'] or string 'login'
   const mutation = trpc.login.useMutation();
 
   const handleLogin = () => {

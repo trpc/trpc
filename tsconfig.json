@@ -1,27 +1,18 @@
 {
   "extends": "./tsconfig.build.json",
-  "include": [
-    "packages",
-    "types",
-    "scripts",
-    "examples",
-    ".eslintrc.js",
-    "*.ts"
-  ],
+  "include": ["packages", "types", "scripts", "examples"],
   "exclude": [],
   "compilerOptions": {
     "allowJs": false,
-    "baseUrl": ".",
     "paths": {
-      "$test/*": ["test/*"],
-      "@trpc/client": ["packages/client/src"],
-      "@trpc/client/*": ["packages/client/src/*"],
-      "@trpc/next": ["packages/next/src"],
-      "@trpc/next/*": ["packages/next/src/*"],
-      "@trpc/react-query": ["packages/react-query/src"],
-      "@trpc/react-query/*": ["packages/react-query/src/*"],
-      "@trpc/server": ["packages/server/src"],
-      "@trpc/server/*": ["packages/server/src/*"]
+      "@trpc/client": ["./packages/client/src"],
+      "@trpc/client/*": ["./packages/client/src/*"],
+      "@trpc/next": ["./packages/next/src"],
+      "@trpc/next/*": ["./packages/next/src/*"],
+      "@trpc/react-query": ["./packages/react-query/src"],
+      "@trpc/react-query/*": ["./packages/react-query/src/*"],
+      "@trpc/server": ["./packages/server/src"],
+      "@trpc/server/*": ["./packages/server/src/*"]
     },
     "types": ["node", "vitest/globals"]
   }

@@ -18,16 +18,17 @@ const sections: Def = {
   diamond: [],
   gold: [
     //
-    'tryretool',
   ],
   silver: [
     //
     'calcom',
+    'coderabbitai',
   ],
   bronze: [
     //
     'hidrb',
     'flylance-apps',
+    'ryanmagoon',
   ],
 };
 
@@ -52,12 +53,12 @@ for (const sponsor of sponsors) {
   const section = sections.diamond.includes(login)
     ? 'diamond'
     : sections.gold.includes(login)
-    ? 'gold'
-    : sections.silver.includes(login)
-    ? 'silver'
-    : sections.bronze.includes(login)
-    ? 'bronze'
-    : 'other';
+      ? 'gold'
+      : sections.silver.includes(login)
+        ? 'silver'
+        : sections.bronze.includes(login)
+          ? 'bronze'
+          : 'other';
 
   buckets[section].push(sponsor);
 }
@@ -107,14 +108,16 @@ for (const [k, config] of Object.entries(bucketConfig)) {
   }
   markdown.push(`### ${config.title}`);
 
-  const cols = buckets[key].map(
-    (sponsor) =>
-      `<td align="center"><a href="${encodeURI(
-        sponsor.link,
-      )}"><img src="${encodeURI(sponsor.imgSrc)}&s=${config.imgSize}" width="${
-        config.imgSize
-      }" alt="${encodeURI(sponsor.name)}"/><br />${sponsor.name}</a></td>`,
-  );
+  const cols = buckets[key].map((sponsor) => {
+    const imgSrc = new URL(sponsor.imgSrc);
+    imgSrc.searchParams.set('s', config.imgSize.toString());
+
+    return `<td align="center"><a href="${encodeURI(
+      sponsor.link,
+    )}"><img src="${encodeURI(imgSrc.toString())}" width="${
+      config.imgSize
+    }" alt="${encodeURI(sponsor.name)}"/><br />${sponsor.name}</a></td>`;
+  });
 
   const rowsMatrix: string[][] = [[]];
   for (const col of cols) {

@@ -10,11 +10,12 @@ import type {
   UseSuspenseInfiniteQueryResult,
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
-import type { TRPCClientErrorLike } from '@trpc/client';
+import type { createTRPCClient, TRPCClientErrorLike } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyRootTypes,
   AnyRouter,
+  inferAsyncIterableYield,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProcedureType,
@@ -37,11 +38,11 @@ import { createReactDecoration, createReactQueryUtils } from './shared';
 import type { CreateReactQueryHooks } from './shared/hooks/createHooksInternal';
 import { createRootHooks } from './shared/hooks/createHooksInternal';
 import type {
-  CreateClient,
   DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
   TRPCHookResult,
   TRPCProvider,
+  TRPCSubscriptionResult,
   TRPCUseQueryBaseOptions,
   UseTRPCMutationOptions,
   UseTRPCMutationResult,
@@ -300,11 +301,11 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
   TDef['input'] extends CursorInput
     ? {
         /**
-         * @link https://trpc.io/docs/v11/client/react/useInfiniteQuery
+         * @see https://trpc.io/docs/v11/client/react/useInfiniteQuery
          */
         useInfiniteQuery: useTRPCInfiniteQuery<TDef>;
         /**
-         * @link https://trpc.io/docs/client/react/suspense#usesuspenseinfinitequery
+         * @see https://trpc.io/docs/client/react/suspense#usesuspenseinfinitequery
          */
         useSuspenseInfiniteQuery: useTRPCSuspenseInfiniteQuery<TDef>;
 
@@ -324,12 +325,12 @@ export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
  */
 export type DecoratedQueryMethods<TDef extends ResolverDef> = {
   /**
-   * @link https://trpc.io/docs/v11/client/react/useQuery
+   * @see https://trpc.io/docs/v11/client/react/useQuery
    */
   useQuery: ProcedureUseQuery<TDef>;
   usePrefetchQuery: ProcedureUsePrefetchQuery<TDef>;
   /**
-   * @link https://trpc.io/docs/v11/client/react/suspense#usesuspensequery
+   * @see https://trpc.io/docs/v11/client/react/suspense#usesuspensequery
    */
   useSuspenseQuery: <
     TQueryFnData extends TDef['output'] = TDef['output'],
@@ -355,7 +356,7 @@ export type DecoratedQuery<TDef extends ResolverDef> =
 
 export type DecoratedMutation<TDef extends ResolverDef> = {
   /**
-   * @link https://trpc.io/docs/v11/client/react/useMutation
+   * @see https://trpc.io/docs/v11/client/react/useMutation
    */
   useMutation: <TContext = unknown>(
     opts?: UseTRPCMutationOptions<
@@ -376,17 +377,38 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
   // Without skip token
   (
     input: TDef['input'],
-    opts: UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
-  ): void;
+    opts?: UseTRPCSubscriptionOptions<
+      inferAsyncIterableYield<TDef['output']>,
+      TRPCClientErrorLike<TDef>
+    >,
+  ): Exclude<
+    TRPCSubscriptionResult<
+      inferAsyncIterableYield<TDef['output']>,
+      TRPCClientErrorLike<TDef>
+    >,
+    // The idle state is
+    | {
+        status: 'idle';
+      }
+    | {
+        connectionState: 'idle';
+      }
+  >;
 
   // With skip token
   (
     input: TDef['input'] | SkipToken,
-    opts: Omit<
-      UseTRPCSubscriptionOptions<TDef['output'], TRPCClientErrorLike<TDef>>,
+    opts?: Omit<
+      UseTRPCSubscriptionOptions<
+        inferAsyncIterableYield<TDef['output']>,
+        TRPCClientErrorLike<TDef>
+      >,
       'enabled'
     >,
-  ): void;
+  ): TRPCSubscriptionResult<
+    inferAsyncIterableYield<TDef['output']>,
+    TRPCClientErrorLike<TDef>
+  >;
 }
 /**
  * @internal
@@ -397,15 +419,15 @@ export type DecorateProcedure<
 > = TType extends 'query'
   ? DecoratedQuery<TDef>
   : TType extends 'mutation'
-  ? DecoratedMutation<TDef>
-  : TType extends 'subscription'
-  ? {
-      /**
-       * @link https://trpc.io/docs/v11/subscriptions
-       */
-      useSubscription: ProcedureUseSubscription<TDef>;
-    }
-  : never;
+    ? DecoratedMutation<TDef>
+    : TType extends 'subscription'
+      ? {
+          /**
+           * @see https://trpc.io/docs/v11/subscriptions
+           */
+          useSubscription: ProcedureUseSubscription<TDef>;
+        }
+      : never;
 
 /**
  * @internal
@@ -415,9 +437,7 @@ export type DecorateRouterRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? DecorateRouterRecord<TRoot, $Value>
-      : $Value extends AnyProcedure
+    ? $Value extends AnyProcedure
       ? DecorateProcedure<
           $Value['_def']['type'],
           {
@@ -427,7 +447,9 @@ export type DecorateRouterRecord<
             errorShape: TRoot['errorShape'];
           }
         >
-      : never
+      : $Value extends RouterRecord
+        ? DecorateRouterRecord<TRoot, $Value>
+        : never
     : never;
 };
 
@@ -438,15 +460,15 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
   /**
    * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
    *
-   * @link https://trpc.io/docs/v11/client/react/useUtils
+   * @see https://trpc.io/docs/v11/client/react/useUtils
    */
   useContext(): CreateReactUtils<TRouter, TSSRContext>;
   /**
-   * @link https://trpc.io/docs/v11/client/react/useUtils
+   * @see https://trpc.io/docs/v11/client/react/useUtils
    */
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
-  createClient: CreateClient<TRouter>;
+  createClient: typeof createTRPCClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
   useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
 };

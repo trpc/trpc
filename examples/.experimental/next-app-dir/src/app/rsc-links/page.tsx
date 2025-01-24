@@ -1,6 +1,5 @@
-import { api } from '~/trpc/server-http';
+import { api } from '~/trpc/server-invoker';
 import { Suspense } from 'react';
-import { ServerHttpGreeting } from './ServerHttpGreeting';
 import { ServerInvokedGreeting } from './ServerInvokedGreeting';
 
 export const dynamic = 'force-dynamic';
@@ -17,12 +16,6 @@ export default async function Home() {
       <AuthThing />
 
       <div style={separator} />
-
-      <div style={{ height: 160 }}>
-        <Suspense fallback={<>Loading Server...</>}>
-          <ServerHttpGreeting />
-        </Suspense>
-      </div>
 
       <div style={separator} />
 

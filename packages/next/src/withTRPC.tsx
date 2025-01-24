@@ -4,13 +4,17 @@
  */
 import type { DehydratedState, QueryClient } from '@tanstack/react-query';
 import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
-import type { CreateTRPCClientOptions, TRPCUntypedClient } from '@trpc/client';
+import type {
+  CreateTRPCClientOptions,
+  inferRouterClient,
+  TRPCClientError,
+  TRPCUntypedClient,
+} from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import {
   getTransformer,
   type TransformerOptions,
 } from '@trpc/client/unstable-internals';
-import type { TRPCClientError } from '@trpc/react-query';
 import type {
   CreateTRPCReactOptions,
   CreateTRPCReactQueryClientConfig,
@@ -51,7 +55,7 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
   WithTRPCOptions<TRouter> & {
     /**
      * If you enable this, you also need to add a `ssrPrepass`-prop
-     * @link https://trpc.io/docs/client/nextjs/ssr
+     * @see https://trpc.io/docs/client/nextjs/ssr
      */
     ssr:
       | true
@@ -62,7 +66,7 @@ export type WithTRPCSSROptions<TRouter extends AnyRouter> =
     }) => ResponseMeta;
     /**
      * use `import { ssrPrepass } from '@trpc/next/ssrPrepass'`
-     * @link https://trpc.io/docs/client/nextjs/ssr
+     * @see https://trpc.io/docs/client/nextjs/ssr
      */
     ssrPrepass: TRPCPrepassHelper;
   };
@@ -78,7 +82,7 @@ export type TRPCPrepassProps<
 > = {
   config: WithTRPCConfig<TRouter>;
   queryClient: QueryClient;
-  trpcClient: TRPCUntypedClient<TRouter>;
+  trpcClient: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter>;
   ssrState: 'prepass';
   ssrContext: TSSRContext;
 };
@@ -170,7 +174,7 @@ export function withTRPC<
           appOrPageCtx as any,
         );
         const originalPageProps = isApp
-          ? originalProps.pageProps ?? {}
+          ? (originalProps.pageProps ?? {})
           : originalProps;
 
         pageProps = {

@@ -10,7 +10,7 @@ export function hardcodedExample() {
 }
 
 const t = initTRPC.create();
-const symbol = Symbol('symbol');
+const symbol = Symbol();
 const appRouter = t.router({
   inputWithIndexSignature: t.procedure
     .input(hardcodedExample())

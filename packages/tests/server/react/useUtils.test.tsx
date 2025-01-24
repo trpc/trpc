@@ -173,14 +173,23 @@ test('client mutation', async () => {
 test('fetch', async () => {
   const { client, App } = ctx;
 
+  const context = {
+    ___TEST___: true,
+  };
   function MyComponent() {
     const utils = client.useUtils();
     const [posts, setPosts] = useState<Post[]>([]);
 
     useEffect(() => {
-      utils.post.all.fetch().then((allPosts) => {
-        setPosts(allPosts);
-      });
+      utils.post.all
+        .fetch(undefined, {
+          trpc: {
+            context,
+          },
+        })
+        .then((allPosts) => {
+          setPosts(allPosts);
+        });
     }, []);
 
     return <p>{posts[0]?.text}</p>;
@@ -194,11 +203,17 @@ test('fetch', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('new post');
   });
+
+  expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
 });
 
 test('prefetch', async () => {
   const { client, App } = ctx;
   const renderclient = vi.fn();
+
+  const context = {
+    ___TEST___: true,
+  };
 
   function Posts() {
     const allPosts = client.post.all.useQuery();
@@ -216,9 +231,15 @@ test('prefetch', async () => {
     const utils = client.useUtils();
     const [hasPrefetched, setHasPrefetched] = useState(false);
     useEffect(() => {
-      utils.post.all.prefetch().then(() => {
-        setHasPrefetched(true);
-      });
+      utils.post.all
+        .prefetch(undefined, {
+          trpc: {
+            context,
+          },
+        })
+        .then(() => {
+          setHasPrefetched(true);
+        });
     }, [utils]);
 
     return hasPrefetched ? <Posts /> : null;
@@ -233,6 +254,8 @@ test('prefetch', async () => {
   await waitFor(() => {
     expect(renderclient).toHaveBeenNthCalledWith<[Post[]]>(1, [defaultPost]);
   });
+
+  expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
 });
 
 test('invalidate', async () => {

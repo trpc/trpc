@@ -1,5 +1,4 @@
 // @ts-check
-/* eslint-disable @typescript-eslint/no-var-requires */
 
 const { parseEnv } = require('./src/utils/env');
 const { generateTypedocDocusaurusPlugins } = require('./docusaurus.typedoc.js');
@@ -34,13 +33,13 @@ module.exports = {
   favicon: 'img/favicon.ico',
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
+  future: {
+    experimental_faster: true,
+  },
   themeConfig: {
     disableSwitch: false,
     respectPrefersColorScheme: true,
     image: `${env.OG_URL}/api/landing?cache-buster=${new Date().getDate()}`,
-    prism: {
-      theme: require('prism-react-renderer/themes/vsDark'),
-    },
     algolia: {
       appId: 'BTGPSR4MOE',
       apiKey: 'ed8b3896f8e3e2b421e4c38834b915a8',
@@ -182,13 +181,11 @@ module.exports = {
         name: 'docusaurus-tailwindcss',
         configurePostCss(postcssOptions) {
           // Appends TailwindCSS, AutoPrefixer & CSSNano.
-          /* eslint-disable @typescript-eslint/no-var-requires */
           postcssOptions.plugins.push(require('tailwindcss'));
           postcssOptions.plugins.push(require('autoprefixer'));
           if (process.env.NODE_ENV === 'production') {
             postcssOptions.plugins.push(require('cssnano'));
           }
-          /* eslint-enable @typescript-eslint/no-var-requires */
           return postcssOptions;
         },
       };
@@ -229,26 +226,32 @@ module.exports = {
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          remarkPlugins: [
+            [
+              require('remark-shiki-twoslash').default,
+              require('./shikiTwoslash.config'),
+            ],
+            require('./mdxToJsx'), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
+          ],
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          remarkPlugins: [
+            [
+              require('remark-shiki-twoslash').default,
+              require('./shikiTwoslash.config'),
+            ],
+            require('./mdxToJsx'), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
+          ],
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: ['./src/css/custom.css'],
         },
         gtag: {
           trackingID: 'G-7KLX2VFLVR',
         },
-      },
-    ],
-    [
-      'docusaurus-preset-shiki-twoslash',
-      {
-        // Not sure how reliable this path is (it's relative from the preset package)?
-        // None of the light themes had good support for `diff` mode, so had to patch my own theme
-        themes: ['../../../../../../www/min-light-with-diff', 'github-dark'],
       },
     ],
   ],

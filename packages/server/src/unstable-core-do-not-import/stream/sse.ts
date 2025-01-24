@@ -1,10 +1,19 @@
+import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
-import { run } from '../utils';
-import type { ConsumerOnError } from './jsonl';
+import { isAbortError } from '../http/isAbortError';
+import type { MaybePromise } from '../types';
+import { identity, run } from '../utils';
+import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
-import { createTimeoutPromise } from './utils/createDeferred';
-import { createReadableStream } from './utils/createReadableStream';
+import { takeWithGrace, withMaxDuration } from './utils/asyncIterable';
+import { makeAsyncResource } from './utils/disposable';
+import { readableStreamFrom } from './utils/readableStreamFrom';
+import {
+  disposablePromiseTimerResult,
+  timerResource,
+} from './utils/timerResource';
+import { PING_SYM, withPing } from './utils/withPing';
 
 type Serialize = (value: any) => any;
 type Deserialize = (value: any) => any;
@@ -12,7 +21,7 @@ type Deserialize = (value: any) => any;
 /**
  * @internal
  */
-export interface PingOptions {
+export interface SSEPingOptions {
   /**
    * Enable ping comments sent from the server
    * @default false
@@ -25,14 +34,22 @@ export interface PingOptions {
   intervalMs?: number;
 }
 
-export interface SSEStreamProducerOptions {
+export interface SSEClientOptions {
+  /**
+   * Timeout and reconnect after inactivity in milliseconds
+   * @default undefined
+   */
+  reconnectAfterInactivityMs?: number;
+}
+
+export interface SSEStreamProducerOptions<TValue = unknown> {
   serialize?: Serialize;
-  data: AsyncIterable<unknown>;
+  data: AsyncIterable<TValue>;
+
   maxDepth?: number;
-  ping?: PingOptions;
+  ping?: SSEPingOptions;
   /**
    * Maximum duration in milliseconds for the request before ending the stream
-   * Only useful for serverless runtimes
    * @default undefined
    */
   maxDurationMs?: number;
@@ -43,232 +60,389 @@ export interface SSEStreamProducerOptions {
    */
   emitAndEndImmediately?: boolean;
   formatError?: (opts: { error: unknown }) => unknown;
+  /**
+   * Client-specific options - these will be sent to the client as part of the first message
+   * @default {}
+   */
+  client?: SSEClientOptions;
 }
 
+const PING_EVENT = 'ping';
 const SERIALIZED_ERROR_EVENT = 'serialized-error';
+const CONNECTED_EVENT = 'connected';
 
-type SSEvent = Partial<{
-  id: string;
+interface SSEvent {
+  id?: string;
   data: unknown;
-  comment: string;
-  event: string;
-}>;
+  comment?: string;
+  event?: string;
+}
 /**
  *
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
-export function sseStreamProducer(opts: SSEStreamProducerOptions) {
-  const stream = createReadableStream<SSEvent>();
-  stream.controller.enqueue({
-    comment: 'connected',
-  });
+export function sseStreamProducer<TValue = unknown>(
+  opts: SSEStreamProducerOptions<TValue>,
+) {
+  const { serialize = identity } = opts;
 
-  const { serialize = (v) => v } = opts;
-
-  const ping: Required<PingOptions> = {
+  const ping: Required<SSEPingOptions> = {
     enabled: opts.ping?.enabled ?? false,
     intervalMs: opts.ping?.intervalMs ?? 1000,
   };
+  const client: SSEClientOptions = opts.client ?? {};
 
-  run(async () => {
-    const iterator = opts.data[Symbol.asyncIterator]();
-
-    const closedPromise = stream.cancelledPromise.then(() => 'closed' as const);
-    const maxDurationPromise = createTimeoutPromise(
-      opts.maxDurationMs ?? Infinity,
-      'maxDuration' as const,
+  if (
+    ping.enabled &&
+    client.reconnectAfterInactivityMs &&
+    ping.intervalMs > client.reconnectAfterInactivityMs
+  ) {
+    throw new Error(
+      `Ping interval must be less than client reconnect interval to prevent unnecessary reconnection - ping.intervalMs: ${ping.intervalMs} client.reconnectAfterInactivityMs: ${client.reconnectAfterInactivityMs}`,
     );
+  }
 
-    let nextPromise = iterator.next();
+  async function* generator(): AsyncIterable<SSEvent, void> {
+    yield {
+      event: CONNECTED_EVENT,
+      data: JSON.stringify(client),
+    };
 
-    while (true) {
-      const pingPromise = createTimeoutPromise(
-        ping.enabled ? ping.intervalMs : Infinity,
-        'ping' as const,
-      );
-      const next = await Promise.race([
-        nextPromise.catch(getTRPCErrorFromUnknown),
-        pingPromise.promise,
-        closedPromise,
-        maxDurationPromise.promise,
-      ]);
+    type TIteratorValue = Awaited<TValue> | typeof PING_SYM;
 
-      pingPromise.clear();
-      if (next === 'closed') {
-        break;
-      }
-      if (next === 'maxDuration') {
-        break;
-      }
+    let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
 
-      if (next === 'ping') {
-        stream.controller.enqueue({
-          comment: 'ping',
-        });
+    if (opts.emitAndEndImmediately) {
+      iterable = takeWithGrace(iterable, {
+        count: 1,
+        gracePeriodMs: 1,
+      });
+    }
+
+    if (
+      opts.maxDurationMs &&
+      opts.maxDurationMs > 0 &&
+      opts.maxDurationMs !== Infinity
+    ) {
+      iterable = withMaxDuration(iterable, {
+        maxDurationMs: opts.maxDurationMs,
+      });
+    }
+
+    if (ping.enabled && ping.intervalMs !== Infinity && ping.intervalMs > 0) {
+      iterable = withPing(iterable, ping.intervalMs);
+    }
+
+    // We need those declarations outside the loop for garbage collection reasons. If they were
+    // declared inside, they would not be freed until the next value is present.
+    let value: null | TIteratorValue;
+    let chunk: null | SSEvent;
+
+    for await (value of iterable) {
+      if (value === PING_SYM) {
+        yield { event: PING_EVENT, data: '' };
         continue;
       }
 
-      if (next instanceof Error) {
-        const data = opts.formatError
-          ? opts.formatError({ error: next })
-          : null;
-        stream.controller.enqueue({
-          event: SERIALIZED_ERROR_EVENT,
-          data: JSON.stringify(serialize(data)),
-        });
-        break;
-      }
-      if (next.done) {
-        break;
-      }
+      chunk = isTrackedEnvelope(value)
+        ? { id: value[0], data: value[1] }
+        : { data: value };
 
-      const value = next.value;
+      chunk.data = JSON.stringify(serialize(chunk.data));
 
-      const chunk: SSEvent = isTrackedEnvelope(value)
-        ? {
-            id: value[0],
-            data: value[1],
-          }
-        : {
-            data: value,
-          };
-      if ('data' in chunk) {
-        chunk.data = JSON.stringify(serialize(chunk.data));
-      }
+      yield chunk;
 
-      stream.controller.enqueue(chunk);
-
-      if (opts.emitAndEndImmediately) {
-        // end the stream in the next tick so that we can send a few more events from the queue
-        setTimeout(maxDurationPromise.resolve, 1);
-      }
-
-      nextPromise = iterator.next();
+      // free up references for garbage collection
+      value = null;
+      chunk = null;
     }
-    maxDurationPromise.clear();
-    await iterator.return?.();
-    try {
-      stream.controller.close();
-    } catch {}
-  }).catch((error) => {
-    return stream.controller.error(error);
-  });
+  }
 
-  return stream.readable.pipeThrough(
-    new TransformStream<SSEvent, string>({
-      transform(chunk, controller) {
-        if ('event' in chunk) {
-          controller.enqueue(`event: ${chunk.event}\n`);
-        }
-        if ('data' in chunk) {
-          controller.enqueue(`data: ${chunk.data}\n`);
-        }
-        if ('id' in chunk) {
-          controller.enqueue(`id: ${chunk.id}\n`);
-        }
-        if ('comment' in chunk) {
-          controller.enqueue(`: ${chunk.comment}\n`);
-        }
-        controller.enqueue('\n\n');
-      },
-    }),
-  );
+  async function* generatorWithErrorHandling(): AsyncIterable<SSEvent, void> {
+    try {
+      yield* generator();
+    } catch (cause) {
+      if (isAbortError(cause)) {
+        // ignore abort errors, send any other errors
+        return;
+      }
+      // `err` must be caused by `opts.data`, `JSON.stringify` or `serialize`.
+      // So, a user error in any case.
+      const error = getTRPCErrorFromUnknown(cause);
+      const data = opts.formatError?.({ error }) ?? null;
+      yield {
+        event: SERIALIZED_ERROR_EVENT,
+        data: JSON.stringify(serialize(data)),
+      };
+    }
+  }
+
+  const stream = readableStreamFrom(generatorWithErrorHandling());
+
+  return stream
+    .pipeThrough(
+      new TransformStream({
+        transform(chunk, controller: TransformStreamDefaultController<string>) {
+          if ('event' in chunk) {
+            controller.enqueue(`event: ${chunk.event}\n`);
+          }
+          if ('data' in chunk) {
+            controller.enqueue(`data: ${chunk.data}\n`);
+          }
+          if ('id' in chunk) {
+            controller.enqueue(`id: ${chunk.id}\n`);
+          }
+          if ('comment' in chunk) {
+            controller.enqueue(`: ${chunk.comment}\n`);
+          }
+          controller.enqueue('\n\n');
+        },
+      }),
+    )
+    .pipeThrough(new TextEncoderStream());
 }
 
-type ConsumerStreamResult<TData> =
-  | {
-      ok: true;
-      data: inferTrackedOutput<TData>;
-    }
-  | {
-      ok: false;
-      error: unknown;
-    };
+interface ConsumerStreamResultBase<TConfig extends ConsumerConfig> {
+  eventSource: InstanceType<TConfig['EventSource']> | null;
+}
+
+interface ConsumerStreamResultData<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
+  type: 'data';
+  data: inferTrackedOutput<TConfig['data']>;
+}
+
+interface ConsumerStreamResultError<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
+  type: 'serialized-error';
+  error: TConfig['error'];
+}
+
+interface ConsumerStreamResultConnecting<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
+  type: 'connecting';
+  event: EventSourceLike.EventOf<TConfig['EventSource']> | null;
+}
+interface ConsumerStreamResultTimeout<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
+  type: 'timeout';
+  ms: number;
+}
+interface ConsumerStreamResultPing<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
+  type: 'ping';
+}
+
+interface ConsumerStreamResultConnected<TConfig extends ConsumerConfig>
+  extends ConsumerStreamResultBase<TConfig> {
+  type: 'connected';
+  options: SSEClientOptions;
+}
+
+type ConsumerStreamResult<TConfig extends ConsumerConfig> =
+  | ConsumerStreamResultData<TConfig>
+  | ConsumerStreamResultError<TConfig>
+  | ConsumerStreamResultConnecting<TConfig>
+  | ConsumerStreamResultTimeout<TConfig>
+  | ConsumerStreamResultPing<TConfig>
+  | ConsumerStreamResultConnected<TConfig>;
+
+export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
+  url: () => MaybePromise<string>;
+  init: () =>
+    | MaybePromise<EventSourceLike.InitDictOf<TConfig['EventSource']>>
+    | undefined;
+  signal: AbortSignal;
+  deserialize?: Deserialize;
+  EventSource: TConfig['EventSource'];
+}
+
+interface ConsumerConfig {
+  data: unknown;
+  error: unknown;
+  EventSource: EventSourceLike.AnyConstructor;
+}
+
+async function withTimeout<T>(opts: {
+  promise: Promise<T>;
+  timeoutMs: number;
+  onTimeout: () => Promise<NoInfer<T>>;
+}): Promise<T> {
+  using timeoutPromise = timerResource(opts.timeoutMs);
+  const res = await Unpromise.race([opts.promise, timeoutPromise.start()]);
+
+  if (res === disposablePromiseTimerResult) {
+    return await opts.onTimeout();
+  }
+  return res;
+}
 
 /**
  * @see https://html.spec.whatwg.org/multipage/server-sent-events.html
  */
-export function sseStreamConsumer<TData>(opts: {
-  from: EventSource;
-  onError?: ConsumerOnError;
-  deserialize?: Deserialize;
-}): AsyncIterable<ConsumerStreamResult<TData>> {
+export function sseStreamConsumer<TConfig extends ConsumerConfig>(
+  opts: SSEStreamConsumerOptions<TConfig>,
+): AsyncIterable<ConsumerStreamResult<TConfig>> {
   const { deserialize = (v) => v } = opts;
-  const eventSource = opts.from;
 
-  const stream = createReadableStream<MessageEvent>();
+  let clientOptions: SSEClientOptions = {};
 
-  const transform = new TransformStream<
-    MessageEvent,
-    ConsumerStreamResult<TData>
-  >({
-    async transform(chunk, controller) {
-      const data = deserialize(JSON.parse(chunk.data));
-      if (chunk.type === SERIALIZED_ERROR_EVENT) {
+  const signal = opts.signal;
+
+  let _es: InstanceType<TConfig['EventSource']> | null = null;
+
+  const createStream = () =>
+    new ReadableStream<ConsumerStreamResult<TConfig>>({
+      async start(controller) {
+        const [url, init] = await Promise.all([opts.url(), opts.init()]);
+        const eventSource = (_es = new opts.EventSource(
+          url,
+          init,
+        ) as InstanceType<TConfig['EventSource']>);
+
         controller.enqueue({
-          ok: false,
-          error: data,
+          type: 'connecting',
+          eventSource: _es,
+          event: null,
         });
-        return;
+
+        eventSource.addEventListener(CONNECTED_EVENT, (_msg) => {
+          const msg = _msg as EventSourceLike.MessageEvent;
+
+          const options: SSEClientOptions = JSON.parse(msg.data);
+
+          clientOptions = options;
+          controller.enqueue({
+            type: 'connected',
+            options,
+            eventSource,
+          });
+        });
+
+        eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (_msg) => {
+          const msg = _msg as EventSourceLike.MessageEvent;
+
+          controller.enqueue({
+            type: 'serialized-error',
+            error: deserialize(JSON.parse(msg.data)),
+            eventSource,
+          });
+        });
+        eventSource.addEventListener(PING_EVENT, () => {
+          controller.enqueue({
+            type: 'ping',
+            eventSource,
+          });
+        });
+        eventSource.addEventListener('error', (event) => {
+          if (eventSource.readyState === EventSource.CLOSED) {
+            controller.error(event);
+          } else {
+            controller.enqueue({
+              type: 'connecting',
+              eventSource,
+              event,
+            });
+          }
+        });
+        eventSource.addEventListener('message', (_msg) => {
+          const msg = _msg as EventSourceLike.MessageEvent;
+
+          const chunk = deserialize(JSON.parse(msg.data));
+
+          const def: SSEvent = {
+            data: chunk,
+          };
+          if (msg.lastEventId) {
+            def.id = msg.lastEventId;
+          }
+          controller.enqueue({
+            type: 'data',
+            data: def as inferTrackedOutput<TConfig['data']>,
+            eventSource,
+          });
+        });
+
+        const onAbort = () => {
+          try {
+            eventSource.close();
+            controller.close();
+          } catch {
+            // ignore errors in case the controller is already closed
+          }
+        };
+        if (signal.aborted) {
+          onAbort();
+        } else {
+          signal.addEventListener('abort', onAbort);
+        }
+      },
+      cancel() {
+        _es?.close();
+      },
+    });
+
+  const getStreamResource = () => {
+    let stream = createStream();
+    let reader = stream.getReader();
+
+    async function dispose() {
+      await reader.cancel();
+      _es = null;
+    }
+
+    return makeAsyncResource(
+      {
+        read() {
+          return reader.read();
+        },
+        async recreate() {
+          await dispose();
+
+          stream = createStream();
+          reader = stream.getReader();
+        },
+      },
+      dispose,
+    );
+  };
+
+  return run(async function* () {
+    await using stream = getStreamResource();
+
+    while (true) {
+      let promise = stream.read();
+
+      const timeoutMs = clientOptions.reconnectAfterInactivityMs;
+      if (timeoutMs) {
+        promise = withTimeout({
+          promise,
+          timeoutMs,
+          onTimeout: async () => {
+            const res: Awaited<typeof promise> = {
+              value: {
+                type: 'timeout',
+                ms: timeoutMs,
+                eventSource: _es,
+              },
+              done: false,
+            };
+            // Close and release old reader
+            await stream.recreate();
+
+            return res;
+          },
+        });
       }
-      // console.debug('transforming', chunk.type, chunk.data);
-      const def: SSEvent = {
-        data,
-      };
 
-      if (chunk.lastEventId) {
-        def.id = chunk.lastEventId;
+      const result = await promise;
+
+      if (result.done) {
+        return result.value;
       }
-
-      controller.enqueue({
-        ok: true,
-        data: def as inferTrackedOutput<TData>,
-      });
-    },
-  });
-
-  eventSource.addEventListener('message', (msg) => {
-    stream.controller.enqueue(msg);
-  });
-  eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (msg) => {
-    stream.controller.enqueue(msg);
-  });
-  eventSource.addEventListener('error', (cause) => {
-    if (eventSource.readyState === EventSource.CLOSED) {
-      stream.controller.error(cause);
+      yield result.value;
     }
   });
-
-  const readable = stream.readable.pipeThrough(transform);
-  return {
-    [Symbol.asyncIterator]() {
-      const reader = readable.getReader();
-
-      const iterator: AsyncIterator<ConsumerStreamResult<TData>> = {
-        async next() {
-          const value = await reader.read();
-          if (value.done) {
-            return {
-              value: undefined,
-              done: true,
-            };
-          }
-          return {
-            value: value.value,
-            done: false,
-          };
-        },
-        async return() {
-          reader.releaseLock();
-          return {
-            value: undefined,
-            done: true,
-          };
-        },
-      };
-      return iterator;
-    },
-  };
 }
 
 export const sseHeaders = {

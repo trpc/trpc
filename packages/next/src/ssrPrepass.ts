@@ -5,9 +5,9 @@
 import type { DehydratedState } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
 import { createTRPCUntypedClient } from '@trpc/client';
+import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import { getTransformer } from '@trpc/client/unstable-internals';
-import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import { getQueryClient } from '@trpc/react-query/shared';
 import type {
   AnyRouter,
@@ -59,7 +59,7 @@ export const ssrPrepass: TRPCPrepassHelper = (opts) => {
       if (typeof parent.ssr === 'function') {
         try {
           return await parent.ssr({ ctx: appOrPageCtx.ctx });
-        } catch (e) {
+        } catch {
           return false;
         }
       }
@@ -81,7 +81,7 @@ export const ssrPrepass: TRPCPrepassHelper = (opts) => {
         appOrPageCtx as any,
       );
       const originalPageProps = isApp
-        ? originalProps.pageProps ?? {}
+        ? (originalProps.pageProps ?? {})
         : originalProps;
 
       pageProps = {

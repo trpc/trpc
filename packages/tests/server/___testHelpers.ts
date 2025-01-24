@@ -9,7 +9,12 @@ import {
   TRPCClientError,
 } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
-import { type AnyRouter } from '@trpc/server';
+import {
+  isTrackedEnvelope,
+  tracked,
+  type AnyRouter,
+  type TrackedEnvelope,
+} from '@trpc/server';
 import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
@@ -22,6 +27,7 @@ import type {
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
+import { z } from 'zod';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
@@ -64,7 +70,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
       onErrorSpy(it);
       return opts?.server?.onError?.(it);
     },
-    createContext(it) {
+    async createContext(it) {
       (createContextSpy as any)(it);
 
       it.req.on('aborted', onReqAborted);
@@ -232,6 +238,19 @@ export const suppressLogs = () => {
     console.log = log;
     console.error = error;
   };
+};
+
+/**
+ * Pause logging until the promise resolves or throws
+ */
+export const suppressLogsUntil = async (fn: () => Promise<void>) => {
+  const release = suppressLogs();
+
+  try {
+    await fn();
+  } finally {
+    release();
+  }
 };
 export const ignoreErrors = async (fn: () => unknown) => {
   /* eslint-enable no-console */

@@ -15,6 +15,7 @@ export type PackageJson = {
     overrides: Record<string, string>;
   };
   funding: string[];
+  peerDependencies: Record<string, string>;
 };
 
 // create directories on the way if they don't exist
@@ -116,11 +117,16 @@ export async function generateEntrypoints(rawInputs: string[]) {
 
   // Exclude test files in builds
   pkgJson.files.push('!**/*.test.*');
+  pkgJson.files.push('!**/__tests__');
   // Add `funding` in all packages
   pkgJson.funding = ['https://trpc.io/sponsor'];
 
+  // Add `peerDependencies` in all packages
+  pkgJson.peerDependencies ??= {};
+  pkgJson.peerDependencies['typescript'] = '>=5.7.2';
+
   // write package.json
-  const formattedPkgJson = prettier.format(JSON.stringify(pkgJson), {
+  const formattedPkgJson = await prettier.format(JSON.stringify(pkgJson), {
     parser: 'json-stringify',
     ...(await prettier.resolveConfig(pkgJsonPath)),
   });
@@ -129,7 +135,7 @@ export async function generateEntrypoints(rawInputs: string[]) {
   const turboPath = path.resolve('turbo.json');
   const turboJson = JSON.parse(fs.readFileSync(turboPath, 'utf8'));
   turboJson.tasks['codegen-entrypoints'].outputs = [...scriptOutputs];
-  const formattedTurboJson = prettier.format(JSON.stringify(turboJson), {
+  const formattedTurboJson = await prettier.format(JSON.stringify(turboJson), {
     parser: 'json',
     ...(await prettier.resolveConfig(turboPath)),
   });

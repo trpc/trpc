@@ -36,12 +36,12 @@ export interface RootConfig<TTypes extends RootTypes> {
   $types: TTypes;
   /**
    * Use a data transformer
-   * @link https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/v11/data-transformers
    */
   transformer: CombinedDataTransformer;
   /**
    * Use custom error formatting
-   * @link https://trpc.io/docs/v11/error-formatting
+   * @see https://trpc.io/docs/v11/error-formatting
    */
   errorFormatter: ErrorFormatter<TTypes['ctx'], TTypes['errorShape']>;
   /**
@@ -65,26 +65,21 @@ export interface RootConfig<TTypes extends RootTypes> {
 
   defaultMeta?: TTypes['meta'] extends object ? TTypes['meta'] : never;
 
-  experimental?: {
+  /**
+   * Options for server-sent events (SSE) subscriptions
+   * @see https://trpc.io/docs/client/links/httpSubscriptionLink
+   */
+  sse?: {
     /**
-     * Enable support for returning async iterables and returning deferred promises when using `httpBatchStreamLink`
+     * Enable server-sent events (SSE) subscriptions
      * @default true
      */
-    iterablesAndDeferreds?: boolean;
-    /**
-     * Enable support for server-sent events (SSE) subscriptions
-     */
-    sseSubscriptions?: {
-      /**
-       * Enable server-sent events (SSE) subscriptions
-       * @default true
-       */
-      enabled?: boolean;
-    } & Pick<
-      SSEStreamProducerOptions,
-      'ping' | 'emitAndEndImmediately' | 'maxDurationMs'
-    >;
-  };
+    enabled?: boolean;
+  } & Pick<
+    SSEStreamProducerOptions,
+    'ping' | 'emitAndEndImmediately' | 'maxDurationMs' | 'client'
+  >;
+  experimental?: {};
 }
 
 /**
@@ -114,7 +109,7 @@ export type CreateContextCallback<
   object extends TContext ? true : false,
   {
     /**
-     * @link https://trpc.io/docs/v11/context
+     * @see https://trpc.io/docs/v11/context
      **/
     createContext: TFunction;
   }

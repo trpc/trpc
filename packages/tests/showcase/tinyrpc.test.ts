@@ -1,5 +1,5 @@
 /**
- * @link https://trpc.io/blog/tinyrpc-client
+ * @see https://trpc.io/blog/tinyrpc-client
  */
 
 import '@trpc/server';

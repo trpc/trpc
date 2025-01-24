@@ -6,7 +6,10 @@
 // even if end-user `tsconfig.json` omits it in the `lib` array.
 
 import { observable, tap } from '@trpc/server/observable';
-import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  AnyRouter,
+  InferrableClientTypes,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClientError } from '../TRPCClientError';
 import type { Operation, OperationResultEnvelope, TRPCLink } from './types';
 
@@ -15,10 +18,12 @@ type ConsoleEsque = {
   error: (...args: any[]) => void;
 };
 
-type EnableFnOptions<TRouter extends AnyRouter> =
+type EnableFnOptions<TRouter extends InferrableClientTypes> =
   | {
       direction: 'down';
-      result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
+      result:
+        | OperationResultEnvelope<unknown, TRPCClientError<TRouter>>
+        | TRPCClientError<TRouter>;
     }
   | (Operation & {
       direction: 'up';
@@ -34,7 +39,9 @@ type LoggerLinkFnOptions<TRouter extends AnyRouter> = Operation &
          * Request result
          */
         direction: 'down';
-        result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
+        result:
+          | OperationResultEnvelope<unknown, TRPCClientError<TRouter>>
+          | TRPCClientError<TRouter>;
         elapsedMs: number;
       }
     | {
@@ -193,7 +200,8 @@ const defaultLogger =
     const fn: 'error' | 'log' =
       props.direction === 'down' &&
       props.result &&
-      (props.result instanceof Error || 'error' in props.result.result)
+      (props.result instanceof Error ||
+        ('error' in props.result.result && props.result.result.error))
         ? 'error'
         : 'log';
 
@@ -201,7 +209,7 @@ const defaultLogger =
   };
 
 /**
- * @link https://trpc.io/docs/v11/client/links/loggerLink
+ * @see https://trpc.io/docs/v11/client/links/loggerLink
  */
 export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},
@@ -219,24 +227,28 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
     return ({ op, next }) => {
       return observable((observer) => {
         // ->
-        enabled({ ...op, direction: 'up' }) &&
+        if (enabled({ ...op, direction: 'up' })) {
           logger({
             ...op,
             direction: 'up',
           });
+        }
         const requestStartTime = Date.now();
         function logResult(
-          result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>,
+          result:
+            | OperationResultEnvelope<unknown, TRPCClientError<TRouter>>
+            | TRPCClientError<TRouter>,
         ) {
           const elapsedMs = Date.now() - requestStartTime;
 
-          enabled({ ...op, direction: 'down', result }) &&
+          if (enabled({ ...op, direction: 'down', result })) {
             logger({
               ...op,
               direction: 'down',
               elapsedMs,
               result,
             });
+          }
         }
         return next(op)
           .pipe(

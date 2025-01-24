@@ -36,15 +36,20 @@ type ResolverDef = {
   errorShape: any;
 };
 
+type coerceAsyncGeneratorToIterable<T> =
+  T extends AsyncGenerator<infer $T, infer $Return, infer $Next>
+    ? AsyncIterable<$T, $Return, $Next>
+    : T;
+
 /** @internal */
 export type Resolver<TDef extends ResolverDef> = (
   input: TDef['input'],
   opts?: ProcedureOptions,
-) => Promise<TDef['output']>;
+) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
 
 type SubscriptionResolver<TDef extends ResolverDef> = (
   input: TDef['input'],
-  opts?: Partial<
+  opts: Partial<
     TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
   > &
     ProcedureOptions,
@@ -58,14 +63,14 @@ type DecorateProcedure<
       query: Resolver<TDef>;
     }
   : TType extends 'mutation'
-  ? {
-      mutate: Resolver<TDef>;
-    }
-  : TType extends 'subscription'
-  ? {
-      subscribe: SubscriptionResolver<TDef>;
-    }
-  : never;
+    ? {
+        mutate: Resolver<TDef>;
+      }
+    : TType extends 'subscription'
+      ? {
+          subscribe: SubscriptionResolver<TDef>;
+        }
+      : never;
 
 /**
  * @internal
@@ -75,9 +80,7 @@ type DecoratedProcedureRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? DecoratedProcedureRecord<TRouter, $Value>
-      : $Value extends AnyProcedure
+    ? $Value extends AnyProcedure
       ? DecorateProcedure<
           $Value['_def']['type'],
           {
@@ -90,7 +93,9 @@ type DecoratedProcedureRecord<
             transformer: inferClientTypes<TRouter>['transformer'];
           }
         >
-      : never
+      : $Value extends RouterRecord
+        ? DecoratedProcedureRecord<TRouter, $Value>
+        : never
     : never;
 };
 

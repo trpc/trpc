@@ -5,11 +5,11 @@ import {
   httpBatchLink,
   httpLink,
   loggerLink,
+  retryLink,
   TRPCClientError,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { createChain } from '@trpc/client/links/internals/createChain';
-import { retryLink } from '@trpc/client/links/internals/retryLink';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { observable, observableToPromise } from '@trpc/server/observable';
@@ -36,7 +36,7 @@ test('chainer', async () => {
 
   const chain = createChain({
     links: [
-      retryLink({ attempts: 3 })(mockRuntime),
+      retryLink({ retry: (opts) => opts.attempts <= 3 })(mockRuntime),
       httpLink({
         url: `http://localhost:${httpPort}`,
       })(mockRuntime),
@@ -435,7 +435,7 @@ test('create client with links', async () => {
   const client = createTRPCClient<typeof router>({
     ...trpcClientOptions,
     links: [
-      retryLink({ attempts: 3 }),
+      retryLink({ retry: (opts) => opts.attempts < 3 }),
       httpLink({
         url: `http://localhost:${httpPort}`,
         headers: {},

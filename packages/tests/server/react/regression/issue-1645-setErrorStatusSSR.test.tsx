@@ -14,7 +14,7 @@ afterEach(async () => {
 });
 
 /**
- * @link https://github.com/trpc/trpc/pull/1645
+ * @see https://github.com/trpc/trpc/pull/1645
  */
 test('regression: SSR with error sets `status`=`error`', async () => {
   // @ts-ignore

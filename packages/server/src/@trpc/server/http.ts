@@ -18,9 +18,7 @@ export type {
 } from '../../unstable-core-do-not-import';
 
 export {
-  getBatchStreamFormatter,
   octetInputParser,
   parseConnectionParamsFromUnknown,
   parseConnectionParamsFromString,
-  toURL,
 } from '../../unstable-core-do-not-import';

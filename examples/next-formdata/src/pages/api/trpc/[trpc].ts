@@ -19,7 +19,6 @@ const handler = trpcNext.createNextApiHandler({
   router: appRouter,
   createContext,
 });
-
 // export API handler
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   await handler(req, res);

@@ -205,7 +205,7 @@ async function main() {
     // rawList.push({
     //   __typename: 'Organization',
     //   name: 'Tola',
-    //   imgSrc: 'https://avatars.githubusercontent.com/u/92736868?v=4',
+    //   imgSrc: 'https://github.com/tolahq.png',
     //   monthlyPriceInDollars: 1110,
     //   link: 'https://tolahq.com/?ref=trpc',
     //   privacyLevel: 'PUBLIC',

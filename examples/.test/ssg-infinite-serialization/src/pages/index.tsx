@@ -1,11 +1,11 @@
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import superjson from 'superjson';
 import { appRouter } from '~/server/routers/_app';
 import { trpc } from '~/utils/trpc';
+import superjson from 'superjson';
 
 /**
  * This page will be served statically
- * @link https://trpc.io/docs/v11/ssg
+ * @see https://trpc.io/docs/v11/ssg
  */
 export const getStaticProps = async () => {
   const ssg = createServerSideHelpers({
@@ -13,7 +13,6 @@ export const getStaticProps = async () => {
     ctx: {},
     // transformer: superjson,
   });
-
 
   await ssg.getPosts.prefetchInfinite({});
 
@@ -26,9 +25,12 @@ export const getStaticProps = async () => {
 };
 
 export default function IndexPage() {
-  const result = trpc.getPosts.useInfiniteQuery({}, {
-    getNextPageParam: (lastPage) => lastPage.nextCursor
-  });
+  const result = trpc.getPosts.useInfiniteQuery(
+    {},
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
 
   if (!result.data) {
     /* unreachable, page is served statically */
@@ -47,16 +49,16 @@ export default function IndexPage() {
           {page.items.map((post) => (
             <div key={post.id}>{post.title}</div>
           ))}
-          </div>
+        </div>
       ))}
 
-        <button 
-          data-testid="load-more" 
-          onClick={() => result.fetchNextPage()} 
-          disabled={result.isFetchingNextPage || !result.hasNextPage}
-        >
-          {result.hasNextPage ? "Load more" : "No more posts to fetch"}
-        </button>
+      <button
+        data-testid="load-more"
+        onClick={() => result.fetchNextPage()}
+        disabled={result.isFetchingNextPage || !result.hasNextPage}
+      >
+        {result.hasNextPage ? 'Load more' : 'No more posts to fetch'}
+      </button>
     </div>
   );
 }

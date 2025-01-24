@@ -149,6 +149,38 @@ test('single query with options', async () => {
   });
 });
 
+test('combine function', async () => {
+  const { client, App } = ctx;
+
+  function MyComponent() {
+    const results = client.useQueries((t) => [t.foo(), t.bar()], {
+      combine: (results) => {
+        const [foo, bar] = results;
+        if (!foo.data || !bar.data) {
+          return null;
+        }
+        expectTypeOf(foo.data).toEqualTypeOf<'foo'>();
+        expectTypeOf(bar.data).toEqualTypeOf<'bar'>();
+
+        return `${foo.data} and ${bar.data}` as const;
+      },
+    });
+
+    expectTypeOf(results).toEqualTypeOf<'foo and bar' | null>();
+
+    return <pre>{JSON.stringify(results, null, 4)}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await waitFor(() => {
+    expect(utils.container).toHaveTextContent('foo and bar');
+  });
+});
+
 // regression https://github.com/trpc/trpc/issues/4802
 test('regression #4802: passes context to links', async () => {
   const { client, App } = ctx;

@@ -3,6 +3,7 @@ import { observable } from '@trpc/server/observable';
 import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
+import { allAbortSignals } from '../internals/signals';
 import type { NonEmptyArray } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
@@ -10,7 +11,6 @@ import type { HTTPResult } from './internals/httpUtils';
 import {
   getUrl,
   jsonHttpRequester,
-  mergeAbortSignals,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
 import type { Operation, TRPCLink } from './types';
@@ -50,7 +50,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         async fetch(batchOps) {
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
-          const ac = mergeAbortSignals(batchOps);
+          const signal = allAbortSignals(...batchOps.map((op) => op.signal));
 
           const res = await jsonHttpRequester({
             ...resolvedOpts,
@@ -68,7 +68,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
               }
               return opts.headers;
             },
-            signal: ac.signal,
+            signal,
           });
           const resJSON = Array.isArray(res.json)
             ? res.json

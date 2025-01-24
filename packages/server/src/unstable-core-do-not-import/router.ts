@@ -25,7 +25,7 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
   TProcedure['_def']['type'] extends 'subscription'
     ? TProcedure extends LegacyObservableSubscriptionProcedure<any>
       ? Observable<inferProcedureOutput<TProcedure>, TRPCError>
-      : AsyncIterable<inferProcedureOutput<TProcedure>>
+      : inferProcedureOutput<TProcedure>
     : inferProcedureOutput<TProcedure>
 >;
 
@@ -33,10 +33,12 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
  * @internal
  */
 export type DecorateRouterRecord<TRecord extends RouterRecord> = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends AnyProcedure
-    ? DecorateProcedure<TRecord[TKey]>
-    : TRecord[TKey] extends RouterRecord
-    ? DecorateRouterRecord<TRecord[TKey]>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends AnyProcedure
+      ? DecorateProcedure<$Value>
+      : $Value extends RouterRecord
+        ? DecorateRouterRecord<$Value>
+        : never
     : never;
 };
 
@@ -80,7 +82,7 @@ export interface Router<
   };
   /**
    * @deprecated use `t.createCallerFactory(router)` instead
-   * @link https://trpc.io/docs/v11/server/server-side-calls
+   * @see https://trpc.io/docs/v11/server/server-side-calls
    */
   createCaller: RouterCaller<TRoot, TRecord>;
 }
@@ -146,10 +148,10 @@ export type DecorateCreateRouterOptions<
     ? $Value extends AnyProcedure
       ? $Value
       : $Value extends Router<any, infer TRecord>
-      ? TRecord
-      : $Value extends CreateRouterOptions
-      ? DecorateCreateRouterOptions<$Value>
-      : never
+        ? TRecord
+        : $Value extends CreateRouterOptions
+          ? DecorateCreateRouterOptions<$Value>
+          : never
     : never;
 };
 
@@ -159,13 +161,9 @@ export type DecorateCreateRouterOptions<
 export function createRouterFactory<TRoot extends AnyRootTypes>(
   config: RootConfig<TRoot>,
 ) {
-  function createRouterInner<TInput extends RouterRecord>(
-    input: TInput,
-  ): BuiltRouter<TRoot, TInput>;
   function createRouterInner<TInput extends CreateRouterOptions>(
     input: TInput,
-  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>>;
-  function createRouterInner(input: RouterRecord | CreateRouterOptions) {
+  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>> {
     const reservedWordsUsed = new Set(
       Object.keys(input).filter((v) => reservedWords.includes(v)),
     );
@@ -213,13 +211,14 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       record,
     };
 
-    return {
-      ...record,
+    const router: BuiltRouter<TRoot, {}> = {
+      ...(record as {}),
       _def,
       createCaller: createCallerFactory<TRoot>()({
         _def,
       }),
     };
+    return router as BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>>;
   }
 
   return createRouterInner;
@@ -318,7 +317,6 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
 type MergeRouters<
   TRouters extends AnyRouter[],
   TRoot extends AnyRootTypes = TRouters[0]['_def']['_config']['$types'],
-  // eslint-disable-next-line @typescript-eslint/ban-types
   TRecord extends RouterRecord = {},
 > = TRouters extends [
   infer Head extends AnyRouter,

@@ -1,4 +1,4 @@
-import type { inferObservableValue } from '../observable';
+import type { inferObservableValue, Observable } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -37,29 +37,29 @@ import { mergeWithoutOverrides } from './utils';
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
   : TWith extends UnsetMarker
-  ? TType
-  : Simplify<TType & TWith>;
-``;
+    ? TType
+    : Simplify<TType & TWith>;
+
 type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
-type inferSubscriptionOutput<TOutput> = TOutput extends AsyncIterable<
-  infer $Output
->
-  ? inferTrackedOutput<$Output>
-  : inferObservableValue<TOutput>;
-
-type inferSubscriptionProcedure<TInputIn, TOutputOut, $Output> =
-  $Output extends AsyncIterable<any>
-    ? SubscriptionProcedure<{
-        input: DefaultValue<TInputIn, void>;
-        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
-      }>
-    : LegacyObservableSubscriptionProcedure<{
-        input: DefaultValue<TInputIn, void>;
-        output: DefaultValue<TOutputOut, inferSubscriptionOutput<$Output>>;
-      }>;
+type inferAsyncIterable<TOutput> =
+  TOutput extends AsyncIterable<infer $Yield, infer $Return, infer $Next>
+    ? {
+        yield: $Yield;
+        return: $Return;
+        next: $Next;
+      }
+    : never;
+type inferSubscriptionOutput<TOutput> =
+  TOutput extends AsyncIterable<any>
+    ? AsyncIterable<
+        inferTrackedOutput<inferAsyncIterable<TOutput>['yield']>,
+        inferAsyncIterable<TOutput>['return'],
+        inferAsyncIterable<TOutput>['next']
+      >
+    : TypeError<'Subscription output could not be inferred'>;
 
 export type CallerOverride<TContext> = (opts: {
   args: unknown[];
@@ -144,35 +144,36 @@ export type AnyProcedureBuilder = ProcedureBuilder<
  */
 export type inferProcedureBuilderResolverOptions<
   TProcedureBuilder extends AnyProcedureBuilder,
-> = TProcedureBuilder extends ProcedureBuilder<
-  infer TContext,
-  infer TMeta,
-  infer TContextOverrides,
-  infer _TInputIn,
-  infer TInputOut,
-  infer _TOutputIn,
-  infer _TOutputOut,
-  infer _TCaller
->
-  ? ProcedureResolverOptions<
-      TContext,
-      TMeta,
-      TContextOverrides,
-      TInputOut extends UnsetMarker
-        ? // if input is not set, we don't want to infer it as `undefined` since a procedure further down the chain might have set an input
-          unknown
-        : TInputOut extends object
-        ? Simplify<
-            TInputOut & {
-              /**
-               * Extra input params might have been added by a `.input()` further down the chain
-               */
-              [keyAddedByInputCallFurtherDown: string]: unknown;
-            }
-          >
-        : TInputOut
-    >
-  : never;
+> =
+  TProcedureBuilder extends ProcedureBuilder<
+    infer TContext,
+    infer TMeta,
+    infer TContextOverrides,
+    infer _TInputIn,
+    infer TInputOut,
+    infer _TOutputIn,
+    infer _TOutputOut,
+    infer _TCaller
+  >
+    ? ProcedureResolverOptions<
+        TContext,
+        TMeta,
+        TContextOverrides,
+        TInputOut extends UnsetMarker
+          ? // if input is not set, we don't want to infer it as `undefined` since a procedure further down the chain might have set an input
+            unknown
+          : TInputOut extends object
+            ? Simplify<
+                TInputOut & {
+                  /**
+                   * Extra input params might have been added by a `.input()` further down the chain
+                   */
+                  [keyAddedByInputCallFurtherDown: string]: unknown;
+                }
+              >
+            : TInputOut
+      >
+    : never;
 
 export interface ProcedureBuilder<
   TContext,
@@ -186,20 +187,20 @@ export interface ProcedureBuilder<
 > {
   /**
    * Add an input parser to the procedure.
-   * @link https://trpc.io/docs/v11/server/validators
+   * @see https://trpc.io/docs/v11/server/validators
    */
   input<$Parser extends Parser>(
     schema: TInputOut extends UnsetMarker
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
-      ? TInputOut extends Record<string, unknown> | undefined
-        ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
-          ? undefined extends TInputOut
-            ? $Parser
-            : TypeError<'Cannot chain an optional parser to a required parser'>
-          : $Parser
-        : TypeError<'All input parsers did not resolve to an object'>
-      : TypeError<'All input parsers did not resolve to an object'>,
+        ? TInputOut extends Record<string, unknown> | undefined
+          ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
+            ? undefined extends TInputOut
+              ? $Parser
+              : TypeError<'Cannot chain an optional parser to a required parser'>
+            : $Parser
+          : TypeError<'All input parsers did not resolve to an object'>
+        : TypeError<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<
     TContext,
     TMeta,
@@ -212,7 +213,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add an output parser to the procedure.
-   * @link https://trpc.io/docs/v11/server/validators
+   * @see https://trpc.io/docs/v11/server/validators
    */
   output<$Parser extends Parser>(
     schema: $Parser,
@@ -228,7 +229,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a meta data to the procedure.
-   * @link https://trpc.io/docs/v11/server/metadata
+   * @see https://trpc.io/docs/v11/server/metadata
    */
   meta(
     meta: TMeta,
@@ -244,7 +245,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Add a middleware to the procedure.
-   * @link https://trpc.io/docs/v11/server/middlewares
+   * @see https://trpc.io/docs/v11/server/middlewares
    */
   use<$ContextOverridesOut>(
     fn:
@@ -310,7 +311,7 @@ export interface ProcedureBuilder<
   >;
   /**
    * Query procedure
-   * @link https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/v11/concepts#vocabulary
    */
   query<$Output>(
     resolver: ProcedureResolver<
@@ -332,7 +333,7 @@ export interface ProcedureBuilder<
 
   /**
    * Mutation procedure
-   * @link https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/v11/concepts#vocabulary
    */
   mutation<$Output>(
     resolver: ProcedureResolver<
@@ -354,9 +355,9 @@ export interface ProcedureBuilder<
 
   /**
    * Subscription procedure
-   * @link https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/v11/server/subscriptions
    */
-  subscription<$Output>(
+  subscription<$Output extends AsyncIterable<any, void, any>>(
     resolver: ProcedureResolver<
       TContext,
       TMeta,
@@ -367,8 +368,30 @@ export interface ProcedureBuilder<
     >,
   ): TCaller extends true
     ? TypeError<'Not implemented'>
-    : inferSubscriptionProcedure<TInputIn, TOutputOut, $Output>;
-
+    : SubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: inferSubscriptionOutput<DefaultValue<TOutputOut, $Output>>;
+      }>;
+  /**
+   * @deprecated Using subscriptions with an observable is deprecated. Use an async generator instead.
+   * This feature will be removed in v12 of tRPC.
+   * @see https://trpc.io/docs/v11/server/subscriptions
+   */
+  subscription<$Output extends Observable<any, any>>(
+    resolver: ProcedureResolver<
+      TContext,
+      TMeta,
+      TContextOverrides,
+      TInputOut,
+      TOutputIn,
+      $Output
+    >,
+  ): TCaller extends true
+    ? TypeError<'Not implemented'>
+    : LegacyObservableSubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: inferObservableValue<DefaultValue<TOutputOut, $Output>>;
+      }>;
   /**
    * Overrides the way a procedure is invoked
    * Do not use this unless you know what you're doing - this is an experimental API
@@ -406,7 +429,7 @@ function createNewBuilder(
     ...mergeWithoutOverrides(def1, rest),
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
-    meta: def1.meta && meta ? { ...def1.meta, ...meta } : meta ?? def1.meta,
+    meta: def1.meta && meta ? { ...def1.meta, ...meta } : (meta ?? def1.meta),
   });
 }
 
@@ -476,7 +499,7 @@ export function createBuilder<TContext, TMeta>(
         resolver,
       ) as AnyMutationProcedure;
     },
-    subscription(resolver) {
+    subscription(resolver: ProcedureResolver<any, any, any, any, any, any>) {
       return createResolver({ ..._def, type: 'subscription' }, resolver) as any;
     },
     experimental_caller(caller) {

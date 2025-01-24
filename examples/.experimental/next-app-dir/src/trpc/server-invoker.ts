@@ -25,7 +25,7 @@ export const api = experimental_createTRPCNextAppDirServer<typeof appRouter>({
             return {
               session: await auth(),
               headers: {
-                cookie: cookies().toString(),
+                cookie: (await cookies()).toString(),
                 'x-trpc-source': 'rsc-invoke',
               },
             };

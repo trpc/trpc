@@ -3,9 +3,9 @@
   "include": ["server", "showcase", "setupTests.ts", "vitest.config.ts"],
   "compilerOptions": {
     "skipLibCheck": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "target": "ES2020",
-    "types": ["node", "vitest/globals"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "target": "ES2023",
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
     "noUnusedLocals": false,
     "noEmit": true
   }

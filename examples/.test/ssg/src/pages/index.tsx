@@ -1,11 +1,11 @@
 import { createServerSideHelpers } from '@trpc/react-query/server';
-import superjson from 'superjson';
 import { appRouter } from '~/server/routers/_app';
 import { trpc } from '~/utils/trpc';
+import superjson from 'superjson';
 
 /**
  * This page will be served statically
- * @link https://trpc.io/docs/v11/ssg
+ * @see https://trpc.io/docs/v11/ssg
  */
 export const getStaticProps = async () => {
   const ssg = createServerSideHelpers({

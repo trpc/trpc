@@ -1,5 +1,5 @@
 /**
- * @link https://trpc.io/blog/tinyrpc-client
+ * @see https://trpc.io/blog/tinyrpc-client
  */
 import type {
   AnyTRPCMutationProcedure,
@@ -58,18 +58,18 @@ type DecorateProcedure<TProcedure> = TProcedure extends AnyTRPCQueryProcedure
       query: Resolver<TProcedure>;
     }
   : TProcedure extends AnyTRPCMutationProcedure
-  ? {
-      mutate: Resolver<TProcedure>;
-    }
-  : never;
+    ? {
+        mutate: Resolver<TProcedure>;
+      }
+    : never;
 
 type DecorateRouterRecord<TRecord extends TRPCRouterRecord> = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends TRPCRouterRecord
       ? DecorateRouterRecord<$Value>
       : $Value extends AnyTRPCProcedure
-      ? DecorateProcedure<$Value>
-      : never
+        ? DecorateProcedure<$Value>
+        : never
     : never;
 };
 

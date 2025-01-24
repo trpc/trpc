@@ -30,7 +30,7 @@ export type HTTPLinkBaseOptions<
   /**
    * Send all requests `as POST`s requests regardless of the procedure type
    * The HTTP handler must separately allow overriding the method. See:
-   * @link https://trpc.io/docs/rpc
+   * @see https://trpc.io/docs/rpc
    */
   methodOverride?: 'POST';
 } & TransformerOptions<TRoot>;
@@ -239,44 +239,4 @@ export async function httpRequest(
     json: json as TRPCResponse,
     meta,
   };
-}
-
-/**
- * Merges multiple abort signals into a single one
- * - When all signals have been aborted, the merged signal will be aborted
- */
-export function mergeAbortSignals(
-  opts: {
-    signal: Maybe<AbortSignal>;
-  }[],
-): AbortController {
-  const ac = new AbortController();
-
-  if (opts.some((o) => !o.signal)) {
-    return ac;
-  }
-
-  const count = opts.length;
-
-  let abortedCount = 0;
-
-  const onAbort = () => {
-    if (++abortedCount === count) {
-      ac.abort();
-    }
-  };
-
-  for (const o of opts) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const signal = o.signal!;
-    if (signal.aborted) {
-      onAbort();
-    } else {
-      signal.addEventListener('abort', onAbort, {
-        once: true,
-      });
-    }
-  }
-
-  return ac;
 }
