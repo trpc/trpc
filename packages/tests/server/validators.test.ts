@@ -2,7 +2,6 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { initTRPC } from '@trpc/server';
 import * as arktype from 'arktype';
-import * as arktype2 from 'arktype2';
 import myzod from 'myzod';
 import * as T from 'runtypes';
 import * as $ from 'scale-codec';
@@ -321,7 +320,7 @@ test('myzod', async () => {
   await close();
 });
 
-test('arktype v1 schema', async () => {
+test('arktype v2 schema', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
@@ -341,60 +340,11 @@ test('arktype v1 schema', async () => {
 
   // @ts-expect-error this only accepts {text: string}
   await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`
-    [TRPCClientError: text must be a string (was number)]
-  `);
-  await close();
-});
-
-test('arktype v2 schema', async () => {
-  const t = initTRPC.create();
-
-  const router = t.router({
-    num: t.procedure
-      .input(arktype2.type({ text: 'string' }))
-      .query(({ input }) => {
-        expectTypeOf(input).toEqualTypeOf<{ text: string }>();
-        return {
-          input,
-        };
-      }),
-  });
-
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query({ text: '123' });
-  expect(res.input).toMatchObject({ text: '123' });
-
-  // @ts-expect-error this only accepts {text: string}
-  await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`
     [TRPCClientError: text must be a string (was a number)]
   `);
   await close();
 });
 
-test('arktype schema - using .assert', async () => {
-  const t = initTRPC.create();
-
-  const router = t.router({
-    num: t.procedure
-      .input(arktype.type({ text: 'string' }).assert)
-      .query(({ input }) => {
-        expectTypeOf(input).toEqualTypeOf<{ text: string }>();
-        return {
-          input,
-        };
-      }),
-  });
-
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query({ text: '123' });
-  expect(res.input).toMatchObject({ text: '123' });
-
-  // @ts-expect-error this only accepts {text: string}
-  await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`
-    [TRPCClientError: text must be a string (was number)]
-  `);
-  await close();
-});
 test('runtypes', async () => {
   const t = initTRPC.create();
 

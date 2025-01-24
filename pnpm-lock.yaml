@@ -2007,11 +2007,8 @@ importers:
         specifier: ^3.0.0
         version: 3.0.0
       arktype:
-        specifier: 1.0.14-alpha
-        version: 1.0.14-alpha
-      arktype2:
-        specifier: npm:arktype@2.0.1
-        version: arktype@2.0.1
+        specifier: ^2.0.1
+        version: 2.0.1
       dataloader:
         specifier: ^2.2.2
         version: 2.2.2
@@ -2224,8 +2221,8 @@ importers:
         specifier: ^19.0.0
         version: 19.0.0
       arktype:
-        specifier: 1.0.14-alpha
-        version: 1.0.14-alpha
+        specifier: ^2.0.1
+        version: 2.0.1
       autoprefixer:
         specifier: ^10.4.7
         version: 10.4.13(postcss@8.4.39)
@@ -8545,9 +8542,6 @@ packages:
   aria-query@5.3.2:
     resolution: {integrity: sha512-COROpnaoap1E2F000S62r6A60uHZnmlvomhfyT2DlTcrY1OrBKn2UhH7qn5wTC9zMvD0AY7csdPSNwKP+7WiQw==}
     engines: {node: '>= 0.4'}
-
-  arktype@1.0.14-alpha:
-    resolution: {integrity: sha512-theD5K4QrYCWMtQ52Masj169IgtMJ8Argld/MBS4lotEwR3b+GzfBvsqVJ1OIKhJDTdES02FLQTjcfRe00//mA==}
 
   arktype@2.0.1:
     resolution: {integrity: sha512-IfczIefYOd2Omac9J1MH8YKmhGe4pQor1rg3w9mc6m8DA9fSnBRI7GF0XP8GQiHH5Khlj6MS6J1ZPbt68HDbrQ==}
@@ -25774,8 +25768,6 @@ snapshots:
       dequal: 2.0.3
 
   aria-query@5.3.2: {}
-
-  arktype@1.0.14-alpha: {}
 
   arktype@2.0.1:
     dependencies:
