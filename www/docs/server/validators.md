@@ -386,8 +386,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(type({ name: 'string' }).assert)
-    .output(type({ greeting: 'string' }).assert)
+    .input(type({ name: 'string' }))
+    .output(type({ greeting: 'string' }))
     .query(({ input }) => {
       //      ^?
       return {
