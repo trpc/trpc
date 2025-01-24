@@ -6,8 +6,8 @@ export type Assign<T1, T2> = {
   [$Key in keyof T1 | keyof T2]: $Key extends keyof T2
     ? T2[$Key]
     : $Key extends keyof T1
-    ? T1[$Key]
-    : never;
+      ? T1[$Key]
+      : never;
 };
 
 type UnionToIntersection<T> = (T extends any ? (k: T) => void : never) extends (
@@ -45,11 +45,8 @@ export type Builder<TOptions extends MiddlewareOptions> = UnionToIntersection<
 > & {
   [$typesSymbol]: TOptions;
 };
-export type inferBuilderOptions<TBuilder> = TBuilder extends Builder<
-  infer TOptions
->
-  ? TOptions
-  : never;
+export type inferBuilderOptions<TBuilder> =
+  TBuilder extends Builder<infer TOptions> ? TOptions : never;
 
 export type Module<TName extends BuilderModuleName> = {
   name: TName;

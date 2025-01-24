@@ -89,18 +89,18 @@ export type inferParser<TParser extends Parser> =
         error: $Err;
       }
     : TParser extends ParserWithInputOutput<infer $In, infer $TOut>
-    ? {
-        in: $In;
-        out: $TOut;
-        error: never;
-      }
-    : TParser extends ParserWithoutInput<infer $InOut>
-    ? {
-        in: $InOut;
-        out: $InOut;
-        error: never;
-      }
-    : never;
+      ? {
+          in: $In;
+          out: $TOut;
+          error: never;
+        }
+      : TParser extends ParserWithoutInput<infer $InOut>
+        ? {
+            in: $InOut;
+            out: $InOut;
+            error: never;
+          }
+        : never;
 
 type TypedOKResult<TDef extends ParserDef> = [
   true,

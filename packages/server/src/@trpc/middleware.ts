@@ -117,9 +117,9 @@ export interface MiddlewareFunctionOptions<TOptions extends MiddlewareOptions> {
       ctx?: $ContextOverride;
       input?: unknown;
     }): Promise<MiddlewareResult<$ContextOverride>>;
-    (opts: { getRawInput: GetRawInputFn }): Promise<
-      MiddlewareResult<TOptions['ctx_overrides']>
-    >;
+    (opts: {
+      getRawInput: GetRawInputFn;
+    }): Promise<MiddlewareResult<TOptions['ctx_overrides']>>;
   };
 }
 /**
@@ -129,9 +129,9 @@ export type MiddlewareFunction<
   TOptions extends MiddlewareOptions,
   $ContextOverridesOut,
 > = {
-  (opts: MiddlewareFunctionOptions<TOptions>): Promise<
-    MiddlewareResult<$ContextOverridesOut>
-  >;
+  (
+    opts: MiddlewareFunctionOptions<TOptions>,
+  ): Promise<MiddlewareResult<$ContextOverridesOut>>;
   _type?: string | undefined;
 };
 /**
@@ -150,8 +150,8 @@ export type AnyMiddlewareFunction = MiddlewareFunction<any, any>;
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
   : TWith extends UnsetMarker
-  ? TType
-  : Simplify<TType & TWith>;
+    ? TType
+    : Simplify<TType & TWith>;
 /**
  * @internal
  */
@@ -242,14 +242,14 @@ export interface MiddlewareBuilder<TOptions extends MiddlewareOptions> {
     schema: TOptions['input_in'] extends UnsetMarker
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
-      ? TOptions['input_in'] extends Record<string, unknown> | undefined
-        ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
-          ? undefined extends TOptions['input_in']
-            ? $Parser
-            : TypeError<'Cannot chain an optional parser to a required parser'>
-          : $Parser
-        : TypeError<'All input parsers did not resolve to an object'>
-      : TypeError<'All input parsers did not resolve to an object'>,
+        ? TOptions['input_in'] extends Record<string, unknown> | undefined
+          ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
+            ? undefined extends TOptions['input_in']
+              ? $Parser
+              : TypeError<'Cannot chain an optional parser to a required parser'>
+            : $Parser
+          : TypeError<'All input parsers did not resolve to an object'>
+        : TypeError<'All input parsers did not resolve to an object'>,
   ) => MiddlewareBuilder<
     Overwrite<
       TOptions,
@@ -401,7 +401,8 @@ export function createMiddlewareBuilder<TOptions extends FactoryOptions>(opts: {
         ...mergeWithoutOverrides(_def as Record<string, any>, rest),
         inputs: [..._def.inputs, ...(inputs ?? [])],
         middlewares: [..._def.middlewares, ...middlewares],
-        meta: _def.meta && meta ? { ..._def.meta, ...meta } : meta ?? _def.meta,
+        meta:
+          _def.meta && meta ? { ..._def.meta, ...meta } : (meta ?? _def.meta),
       },
     });
   }
@@ -446,8 +447,5 @@ export function createMiddlewareBuilder<TOptions extends FactoryOptions>(opts: {
   return full;
 }
 
-export type inferMiddlewareBuilderOptions<T> = T extends MiddlewareBuilder<
-  infer U
->
-  ? U
-  : never;
+export type inferMiddlewareBuilderOptions<T> =
+  T extends MiddlewareBuilder<infer U> ? U : never;
