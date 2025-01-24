@@ -387,7 +387,6 @@ const publicProcedure = t.procedure;
 export const appRouter = t.router({
   hello: publicProcedure
     .input(type({ name: 'string' }))
-    .output(type({ greeting: 'string' }))
     .query(({ input }) => {
       //      ^?
       return {
