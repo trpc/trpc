@@ -22,7 +22,6 @@ const sections: Def = {
   silver: [
     //
     'calcom',
-    'keenethics',
     'coderabbitai',
   ],
   bronze: [
