@@ -186,13 +186,16 @@ async function main() {
       .filter((it) => it.privacyLevel === 'PUBLIC')
       // overrides
       .map((sponsor) => {
-        // switch (sponsor.login) {
-        //   case 't3dotgg':
-        //     return {
-        //       ...sponsor,
-        //       monthlyPriceInDollars: 5,
-        //     };
-        // }
+        switch (sponsor.login) {
+          case 'dakshgup':
+            return {
+              ...sponsor,
+              name: 'Greptile',
+              imgSrc: 'https://github.com/greptileai.png',
+              link: 'https://greptile.com/?utm_source=opensource&utm_medium=github&utm_campaign=trpc',
+              login: 'greptileai',
+            };
+        }
         return sponsor;
       });
 

@@ -24,7 +24,7 @@ const sections: Def = {
     //
     'calcom',
     'coderabbitai',
-    'dakshgup',
+    'greptileai',
   ],
   bronze: [
     //
