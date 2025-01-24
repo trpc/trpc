@@ -285,5 +285,13 @@ export const allSponsors = [
     "login": "coderabbitai",
     "link": "http://coderabbit.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1737645299000
+  },
+  {
+    "name": "Daksh Gupta",
+    "imgSrc": "https://avatars.githubusercontent.com/u/14093093?u=1202c02205038bb3fa38b0e4288e08bae83eb387&v=4",
+    "weight": 5,
+    "login": "dakshgup",
+    "link": "https://www.linkedin.com/in/dakshg?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1737747280000
   }
 ] as const;
