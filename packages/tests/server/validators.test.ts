@@ -399,7 +399,7 @@ test('runtypes', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(T.Record({ text: T.String })).query(({ input }) => {
+    num: t.procedure.input(T.Object({ text: T.String })).query(({ input }) => {
       expectTypeOf(input).toMatchTypeOf<{ text: string }>();
       return {
         input,
@@ -411,10 +411,10 @@ test('runtypes', async () => {
   const res = await client.num.query({ text: '123' });
   expect(res.input).toMatchObject({ text: '123' });
 
-  // @ts-expect-error this only accepts a `number`
+  // @ts-expect-error this only accepts an object with text property
   await expect(client.num.query('13')).rejects.toMatchInlineSnapshot(`
-  [TRPCClientError: Expected { text: string; }, but was string]
-`);
+    [TRPCClientError: Expected { text: string; }, but was string]
+  `);
   await close();
 });
 
