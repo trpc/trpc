@@ -43,21 +43,21 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { unstable_httpBatchStreamLink } from '@trpc/client';
 
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
-  const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
-      links: [unstable_httpBatchStreamLink({ url: BASE_URL + '/api/trpc' })],
-    }),
-  );
+const [queryClient] = useState(() => new QueryClient());
+const [trpcClient] = useState(() =>
+createTRPCClient<AppRouter>({
+links: [unstable_httpBatchStreamLink({ url: BASE_URL + '/api/trpc' })],
+}),
+);
 
-  return (
-    <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        {props.children}
-        <ReactQueryDevtools />
-      </QueryClientProvider>
-    </TRPCProvider>
-  );
+return (
+<TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+<QueryClientProvider client={queryClient}>
+{props.children}
+<ReactQueryDevtools />
+</QueryClientProvider>
+</TRPCProvider>
+);
 }
 
 3. Wrap your app with the provider stack:
