@@ -1,4 +1,5 @@
-import { SchemaError, type StandardSchemaV1 } from './standardSchema';
+import { StandardSchemaV1Error } from '../vendor/standard-schema-v1/error';
+import { type StandardSchemaV1 } from '../vendor/standard-schema-v1/spec';
 
 // zod / typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
@@ -123,7 +124,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     return async (value) => {
       const result = await parser['~standard'].validate(value);
       if (result.issues) {
-        throw new SchemaError(result.issues);
+        throw new StandardSchemaV1Error(result.issues);
       }
       return result.value;
     };

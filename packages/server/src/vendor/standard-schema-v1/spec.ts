@@ -1,3 +1,8 @@
+/**
+ *
+ * @see https://github.com/standard-schema/standard-schema/blob/main/packages/spec/src/index.ts
+ */
+
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -72,19 +77,4 @@ export declare namespace StandardSchemaV1 {
   >['output'];
 }
 
-/** A schema error with useful information. */
-export class SchemaError extends Error {
-  /** The schema issues. */
-  public readonly issues: ReadonlyArray<StandardSchemaV1.Issue>;
 
-  /**
-   * Creates a schema error with useful information.
-   *
-   * @param issues The schema issues.
-   */
-  constructor(issues: ReadonlyArray<StandardSchemaV1.Issue>) {
-    super(issues[0]?.message);
-    this.name = 'SchemaError';
-    this.issues = issues;
-  }
-}
