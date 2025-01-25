@@ -32,9 +32,15 @@ import {
 import type { HTTPErrorHandler } from '@trpc/server/http';
 import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import type { DataTransformerOptions } from '@trpc/server/unstable-core-do-not-import/transformer';
+import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import * as React from 'react';
 import { WebSocketServer } from 'ws';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
+
+(global as any).EventSource = NativeEventSource || EventSourcePolyfill;
+// This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
+globalThis.fetch = fetch as any;
+globalThis.WebSocket = WebSocket as any;
 
 /**
  * TODO: Remove this duplication from tests/server package: https://github.com/trpc/trpc/pull/6383
