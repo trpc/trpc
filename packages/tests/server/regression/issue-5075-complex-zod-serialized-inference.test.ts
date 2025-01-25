@@ -99,7 +99,7 @@ describe('Zod schema serialization kitchen sink', () => {
       zUnion: string | number;
       zIntersection: { name: string; age: number };
       zLazy: string;
-      zPromise: {};
+      zPromise: Promise<string>;
       // zFunction: (...args: any[]) => any; <-- not serialized, OK.
       zMap: object;
       zSet: object;

@@ -66,11 +66,6 @@ export interface RootConfig<TTypes extends RootTypes> {
   defaultMeta?: TTypes['meta'] extends object ? TTypes['meta'] : never;
 
   /**
-   * Enable support for returning async iterables and returning deferred promises when using `httpBatchStreamLink`
-   * @default true
-   */
-  iterablesAndDeferreds?: boolean;
-  /**
    * Options for server-sent events (SSE) subscriptions
    * @see https://trpc.io/docs/client/links/httpSubscriptionLink
    */
