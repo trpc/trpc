@@ -150,7 +150,10 @@ test('observableToAsyncIterable()', async () => {
   });
 
   const aggregate: unknown[] = [];
-  for await (const value of observableToAsyncIterable(obs)) {
+  for await (const value of observableToAsyncIterable(
+    obs,
+    new AbortController().signal,
+  )) {
     aggregate.push(value);
   }
   expect(aggregate).toMatchInlineSnapshot(`
@@ -180,7 +183,10 @@ test('observableToAsyncIterable() - doesnt hang', async () => {
   }, 1);
 
   const aggregate: unknown[] = [];
-  for await (const value of observableToAsyncIterable(obs)) {
+  for await (const value of observableToAsyncIterable(
+    obs,
+    new AbortController().signal,
+  )) {
     aggregate.push(value);
     if (aggregate.length === 3) {
       break;

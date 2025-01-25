@@ -37,13 +37,13 @@ export type GetInferenceHelpers<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? GetInferenceHelpers<TType, TRoot, $Value>
-      : $Value extends AnyProcedure
+    ? $Value extends AnyProcedure
       ? TType extends 'input'
         ? inferProcedureInput<$Value>
         : inferTransformedProcedureOutput<TRoot, $Value>
-      : never
+      : $Value extends RouterRecord
+        ? GetInferenceHelpers<TType, TRoot, $Value>
+        : never
     : never;
 };
 

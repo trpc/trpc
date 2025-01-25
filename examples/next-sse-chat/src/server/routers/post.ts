@@ -1,10 +1,8 @@
 import { tracked } from '@trpc/server';
-import { streamToAsyncIterable } from '~/lib/stream-to-async-iterator';
 import { db } from '~/server/db/client';
 import { Post, type PostType } from '~/server/db/schema';
 import { z } from 'zod';
 import { authedProcedure, publicProcedure, router } from '../trpc';
-import type { MyEvents } from './channel';
 import { currentlyTyping, ee } from './channel';
 
 export const postRouter = router({
@@ -88,60 +86,57 @@ export const postRouter = router({
       }),
     )
     .subscription(async function* (opts) {
-      let lastMessageCursor: Date | null = null;
-
-      const eventId = opts.input.lastEventId;
-      if (eventId) {
-        const itemById = await db.query.Post.findFirst({
-          where: (fields, ops) => ops.eq(fields.id, eventId),
-        });
-        lastMessageCursor = itemById?.createdAt ?? null;
-      }
-
-      let unsubscribe = () => {
-        //
-      };
-
-      // We use a readable stream here to prevent the client from missing events
-      // created between the fetching & yield'ing of `newItemsSinceCursor` and the
-      // subscription to the ee
-      const stream = new ReadableStream<PostType>({
-        async start(controller) {
-          const onAdd: MyEvents['add'] = (channelId, data) => {
-            if (channelId === opts.input.channelId) {
-              controller.enqueue(data);
-            }
-          };
-          ee.on('add', onAdd);
-          unsubscribe = () => {
-            ee.off('add', onAdd);
-          };
-
-          const newItemsSinceCursor = await db.query.Post.findMany({
-            where: (fields, ops) =>
-              ops.and(
-                ops.eq(fields.channelId, opts.input.channelId),
-                lastMessageCursor
-                  ? ops.gt(fields.createdAt, lastMessageCursor)
-                  : undefined,
-              ),
-            orderBy: (fields, ops) => ops.asc(fields.createdAt),
-          });
-
-          for (const item of newItemsSinceCursor) {
-            controller.enqueue(item);
-          }
-        },
-        cancel() {
-          unsubscribe();
-        },
+      // We start by subscribing to the event emitter so that we don't miss any new events while fetching
+      const iterable = ee.toIterable('add', {
+        signal: opts.signal,
       });
 
-      for await (const post of streamToAsyncIterable(stream, {
-        signal: opts.signal,
-      })) {
-        // tracking the post id ensures the client can reconnect at any time and get the latest events this id
+      // Fetch the last message createdAt based on the last event id
+      let lastMessageCreatedAt = await (async () => {
+        const lastEventId = opts.input.lastEventId;
+        if (!lastEventId) return null;
+
+        const itemById = await db.query.Post.findFirst({
+          where: (fields, ops) => ops.eq(fields.id, lastEventId),
+        });
+        return itemById?.createdAt ?? null;
+      })();
+
+      const newPostsSinceLastMessage = await db.query.Post.findMany({
+        where: (fields, ops) =>
+          ops.and(
+            ops.eq(fields.channelId, opts.input.channelId),
+            lastMessageCreatedAt
+              ? ops.gt(fields.createdAt, lastMessageCreatedAt)
+              : undefined,
+          ),
+        orderBy: (fields, ops) => ops.asc(fields.createdAt),
+      });
+
+      function* maybeYield(post: PostType) {
+        if (post.channelId !== opts.input.channelId) {
+          // ignore posts from other channels - the event emitter can emit from other channels
+          return;
+        }
+        if (lastMessageCreatedAt && post.createdAt <= lastMessageCreatedAt) {
+          // ignore posts that we've already sent - happens if there is a race condition between the query and the event emitter
+          return;
+        }
+
         yield tracked(post.id, post);
+
+        // update the cursor so that we don't send this post again
+        lastMessageCreatedAt = post.createdAt;
+      }
+
+      // yield the posts we fetched from the db
+      for (const post of newPostsSinceLastMessage) {
+        yield* maybeYield(post);
+      }
+
+      // yield any new posts from the event emitter
+      for await (const [channelId, post] of iterable) {
+        yield* maybeYield(post);
       }
     }),
 });

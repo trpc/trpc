@@ -1,5 +1,4 @@
 // @ts-check
-/* eslint-disable @typescript-eslint/no-var-requires */
 
 const { parseEnv } = require('./src/utils/env');
 const { generateTypedocDocusaurusPlugins } = require('./docusaurus.typedoc.js');
@@ -34,6 +33,9 @@ module.exports = {
   favicon: 'img/favicon.ico',
   organizationName: 'trpc', // Usually your GitHub org/user name.
   projectName: 'trpc', // Usually your repo name.
+  future: {
+    experimental_faster: true,
+  },
   themeConfig: {
     disableSwitch: false,
     respectPrefersColorScheme: true,
@@ -167,25 +169,23 @@ module.exports = {
   plugins: [
     // Sidebar order is decided by the position in the array below
     ...(env.TYPEDOC
-        ? generateTypedocDocusaurusPlugins([
+      ? generateTypedocDocusaurusPlugins([
           'server',
           'client',
           'react-query',
           'next',
         ])
-        : []),
+      : []),
     async function myPlugin() {
       return {
         name: 'docusaurus-tailwindcss',
         configurePostCss(postcssOptions) {
           // Appends TailwindCSS, AutoPrefixer & CSSNano.
-          /* eslint-disable @typescript-eslint/no-var-requires */
           postcssOptions.plugins.push(require('tailwindcss'));
           postcssOptions.plugins.push(require('autoprefixer'));
           if (process.env.NODE_ENV === 'production') {
             postcssOptions.plugins.push(require('cssnano'));
           }
-          /* eslint-enable @typescript-eslint/no-var-requires */
           return postcssOptions;
         },
       };
@@ -227,18 +227,24 @@ module.exports = {
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
           remarkPlugins: [
-            [require("remark-shiki-twoslash").default, require("./shikiTwoslash.config")],
-            require("./mdxToJsx"), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
-          ]
+            [
+              require('remark-shiki-twoslash').default,
+              require('./shikiTwoslash.config'),
+            ],
+            require('./mdxToJsx'), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
+          ],
         },
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
           editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
           remarkPlugins: [
-            [require("remark-shiki-twoslash").default, require("./shikiTwoslash.config")],
-            require("./mdxToJsx"), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
-          ]
+            [
+              require('remark-shiki-twoslash').default,
+              require('./shikiTwoslash.config'),
+            ],
+            require('./mdxToJsx'), // Transforms HTML nodes output by shiki-twoslash into JSX nodes
+          ],
         },
         theme: {
           customCss: ['./src/css/custom.css'],

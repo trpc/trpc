@@ -113,9 +113,8 @@ describe('offline', () => {
           </button>
         </App>,
       );
-      const restoreConnectionButton = await utils.findByTestId(
-        'restore-connection',
-      );
+      const restoreConnectionButton =
+        await utils.findByTestId('restore-connection');
       expect(onMutationSuccess.mock.calls).toHaveLength(0);
       await userEvent.click(restoreConnectionButton);
       await waitFor(() => {

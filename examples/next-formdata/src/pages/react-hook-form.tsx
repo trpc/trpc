@@ -9,13 +9,8 @@ import type { z } from 'zod';
 /**
  * zod-form-data wraps zod in an effect where the original type is a `FormData`
  */
-type UnwrapZodEffect<TType extends z.ZodType> = TType extends z.ZodEffects<
-  infer U,
-  any,
-  any
->
-  ? U
-  : TType;
+type UnwrapZodEffect<TType extends z.ZodType> =
+  TType extends z.ZodEffects<infer U, any, any> ? U : TType;
 
 type GetInput<TType extends z.ZodType> = UnwrapZodEffect<TType>['_input'];
 
@@ -26,7 +21,7 @@ function useZodFormData<TSchema extends z.ZodType>(
 ) {
   const formRef = useRef<HTMLFormElement>(null);
   const _resolver = zodResolver(props.schema, undefined, {
-    rawValues: true,
+    raw: true,
   });
 
   const form = useForm<GetInput<TSchema>>({

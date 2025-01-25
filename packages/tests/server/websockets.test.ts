@@ -3,11 +3,12 @@ import { routerToServerAndClientNew, waitMs } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import type { Observable, Observer } from '@trpc/server/observable';
-import { observable } from '@trpc/server/observable';
+import { observable, observableToAsyncIterable } from '@trpc/server/observable';
 import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
@@ -110,9 +111,14 @@ function factory(config?: {
             emit.next(data);
           };
           ee.on('server:msg', onMessage);
+          const onError = (error: unknown) => {
+            emit.error(error);
+          };
+          ee.on('observable:error', onError);
           return () => {
             subscriptionEnded();
             ee.off('server:msg', onMessage);
+            ee.off('observable:error', onError);
           };
         });
         ee.emit('subscription:created');
@@ -142,6 +148,9 @@ function factory(config?: {
   // TODO: Uncomment when the expect-type library gets fixed
   // expectTypeOf<AnyRouter>().toMatchTypeOf<typeof appRouter>();
 
+  const connectionState =
+    vi.fn<Observer<TRPCConnectionState<unknown>, never>['next']>();
+
   const opts = routerToServerAndClientNew(appRouter, {
     wsClient: {
       retryDelayMs: () => 10,
@@ -151,6 +160,7 @@ function factory(config?: {
       ...config?.wsClient,
     },
     client({ wsClient }) {
+      wsClient.connectionState.subscribe({ next: connectionState });
       return {
         links: [wsLink({ client: wsClient })],
       };
@@ -176,16 +186,36 @@ function factory(config?: {
     onSlowMutationCalled,
     subscriptionEnded,
     nextIterable,
+    connectionState,
   };
 }
 
 test('query', async () => {
-  const { client: client, close } = factory();
-  expect(await client.greeting.query()).toBe('hello world');
-  expect(await client.greeting.query(null)).toBe('hello world');
-  expect(await client.greeting.query('alexdotjs')).toBe('hello alexdotjs');
+  const ctx = factory();
+  expect(await ctx.client.greeting.query()).toBe('hello world');
+  expect(await ctx.client.greeting.query(null)).toBe('hello world');
+  expect(await ctx.client.greeting.query('alexdotjs')).toBe('hello alexdotjs');
 
-  await close();
+  await ctx.close();
+
+  expect(ctx.connectionState.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "error": null,
+          "state": "connecting",
+          "type": "state",
+        },
+      ],
+      Array [
+        Object {
+          "error": null,
+          "state": "pending",
+          "type": "state",
+        },
+      ],
+    ]
+  `);
 });
 
 test('mutation', async () => {
@@ -220,6 +250,7 @@ test('basic subscription test (observable)', async () => {
   });
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
+  const onStateChangeMock = vi.fn();
   const subscription = client.onMessageObservable.subscribe(undefined, {
     onStarted() {
       onStartedMock();
@@ -229,6 +260,7 @@ test('basic subscription test (observable)', async () => {
       expectTypeOf(data).toMatchTypeOf<Message>();
       onDataMock(data);
     },
+    onConnectionStateChange: onStateChangeMock,
   });
 
   await waitFor(() => {
@@ -258,6 +290,92 @@ test('basic subscription test (observable)', async () => {
       Array [
         Object {
           "id": "2",
+        },
+      ],
+    ]
+  `);
+
+  subscription.unsubscribe();
+
+  await waitFor(() => {
+    expect(ee.listenerCount('server:msg')).toBe(0);
+    expect(ee.listenerCount('server:error')).toBe(0);
+  });
+  await close();
+  expect(onStateChangeMock.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "error": null,
+          "state": "connecting",
+          "type": "state",
+        },
+      ],
+      Array [
+        Object {
+          "error": null,
+          "state": "pending",
+          "type": "state",
+        },
+      ],
+    ]
+  `);
+});
+
+test('subscription observable with error', async () => {
+  const { client, close, ee } = factory();
+  ee.once('subscription:created', () => {
+    setTimeout(() => {
+      // two emits to be sure an error is triggered in order
+      ee.emit('server:msg', {
+        id: '1',
+      });
+      ee.emit('server:msg', {
+        id: '2',
+      });
+      ee.emit('observable:error', new Error('MyError'));
+    });
+  });
+  const onStartedMock = vi.fn();
+  const onDataOrErrorMock = vi.fn();
+  const subscription = client.onMessageObservable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataOrErrorMock({ data });
+    },
+    onError(error) {
+      onDataOrErrorMock({ error });
+    },
+  });
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+    expect(onDataOrErrorMock).toHaveBeenCalledTimes(3);
+  });
+
+  expect(onDataOrErrorMock.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "data": Object {
+            "id": "1",
+          },
+        },
+      ],
+      Array [
+        Object {
+          "data": Object {
+            "id": "2",
+          },
+        },
+      ],
+      Array [
+        Object {
+          "error": [TRPCClientError: MyError],
         },
       ],
     ]
@@ -859,10 +977,7 @@ describe('regression test - slow createContext', () => {
         },
       ]
     `);
-
-    await waitFor(() => {
-      expect(createContext).toHaveBeenCalledTimes(1);
-    });
+    expect(createContext).toHaveBeenCalledTimes(1);
 
     await t.close();
   });
@@ -1200,6 +1315,19 @@ describe('lazy mode', () => {
       });
     }
 
+    expect(ctx.connectionState.mock.calls.map((it) => it[0]?.state))
+      .toMatchInlineSnapshot(`
+      Array [
+        "idle",
+        "connecting",
+        "pending",
+        "idle",
+        "connecting",
+        "pending",
+        "idle",
+      ]
+    `);
+
     await ctx.close();
   });
   test('subscription', async () => {
@@ -1376,6 +1504,7 @@ describe('keep alive on the server', () => {
 
     wss.on('connection', (ws) => {
       ws.on('message', (raw) => {
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         if (raw.toString() === 'PONG') {
           onPong();
         }
@@ -1526,7 +1655,8 @@ describe('keep alive from the client', () => {
     await vi.advanceTimersByTimeAsync(pongTimeoutMs);
 
     expect(pong).toBe(false);
-    expect(onClose).toHaveBeenCalled();
+
+    expect(onClose).toHaveBeenCalledTimes(1);
 
     await ctx.close();
   });
@@ -1630,7 +1760,7 @@ describe('subscriptions with createCaller', () => {
     expectTypeOf(ctx.router.onMessageIterable).toEqualTypeOf<
       SubscriptionProcedure<{
         input: string | null | undefined;
-        output: AsyncGenerator<Message, void, any>;
+        output: AsyncIterable<Message, void, any>;
       }>
     >();
     const abortController = new AbortController();
@@ -1647,7 +1777,7 @@ describe('subscriptions with createCaller', () => {
     const onDone = vi.fn();
     const onError = vi.fn();
 
-    void run(async () => {
+    run(async () => {
       for await (const msg of result) {
         msgs.push(msg);
       }
@@ -1733,4 +1863,61 @@ describe('subscriptions with createCaller', () => {
       expect(ctx.subscriptionEnded).toHaveBeenCalledTimes(1);
     });
   });
+});
+
+test('url callback and connection params is invoked for every reconnect', async () => {
+  const ctx = factory({
+    wsClient: {
+      lazy: {
+        enabled: true,
+        closeMs: 0,
+      },
+    },
+  });
+
+  let urlCalls = 0;
+  let connectionParamsCalls = 0;
+  const client = createWSClient({
+    url: () => {
+      urlCalls++;
+      return ctx.wssUrl;
+    },
+    connectionParams() {
+      connectionParamsCalls++;
+      return {};
+    },
+  });
+
+  async function waitForClientState<
+    T extends TRPCConnectionState<unknown>['state'],
+  >(state: T) {
+    for await (const res of observableToAsyncIterable(
+      client.connectionState,
+      new AbortController().signal,
+    )) {
+      if (res.state === state) {
+        return res as Extract<typeof res, { state: T }>;
+      }
+    }
+    throw new Error();
+  }
+
+  await waitForClientState('pending');
+  expect(urlCalls).toBe(1);
+  expect(connectionParamsCalls).toBe(1);
+
+  // destroy connections to force a reconnect
+  ctx.destroyConnections();
+
+  // it'll be connecting with an error
+  const state = await waitForClientState('connecting');
+  expect(state.error).toMatchInlineSnapshot(
+    `[TRPCClientError: WebSocket closed]`,
+  );
+
+  // it'll reconnect and be pending
+  await waitForClientState('pending');
+
+  expect(urlCalls).toBe(2);
+  expect(connectionParamsCalls).toBe(2);
 });

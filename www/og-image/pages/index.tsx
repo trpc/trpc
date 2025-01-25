@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
-import { blogParams, docsParams } from 'utils/zodParams';
+import { blogParams, docsParams } from '../utils/zodParams';
 
 const ogImageUrl = `${
   process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : ''
@@ -60,7 +60,7 @@ export default function Page() {
           />
         </div>
       </main>
-      {/* eslint-disable-next-line react/no-unknown-property */}
+      {}
       <style jsx>{`
         img {
           max-width: 100%;

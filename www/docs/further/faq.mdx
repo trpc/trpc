@@ -18,6 +18,21 @@ Feel free to contribute to this page with improvements or create a new discussio
 - Make sure you have no type errors in your code
 - Make sure you have `"strict": true` in your `tsconfig.json`
 - Make sure your `@trpc/*`-versions match in your `package.json`
+- Make sure you are using the TypeScript-version required by tRPC (`>=5.7.2`)
+- Make sure your editor is using the same TypeScript version as your `package.json`
+
+### VSCode settings
+
+Add these settings to your `.vscode/settings.json` in your project root to make sure your editor is using the same TypeScript version as your `package.json`:
+
+```json title=".vscode/settings.json"
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
+```
+
+We highly recommend committing this file to your repo so your colleagues also get the same experience.
 
 ## How do I make a middleware change the type of my `Context`?
 

@@ -8,7 +8,7 @@
     "dev": "run-p dev:* --print-label",
     "type-check": "tsc",
     "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
-    "lint": "eslint --cache --ext \".js,.ts,.tsx\" src",
+    "lint": "eslint --cache src",
     "start": "pnpm dev",
     "test-dev": "start-server-and-test 'tsx src/server' 2021 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
@@ -17,7 +17,7 @@
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
-    "express": "^4.17.1",
+    "express": "^5.0.0",
     "zod": "^3.0.0"
   },
   "alias": {
@@ -25,14 +25,14 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
-    "@types/node": "^20.10.0",
-    "@types/react": "^18.3.1",
+    "@types/node": "^22.9.0",
+    "@types/react": "^19.0.0",
     "esbuild": "^0.17.10",
-    "eslint": "^8.57.0",
+    "eslint": "^9.13.0",
     "npm-run-all": "^4.1.5",
     "start-server-and-test": "^1.12.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.6.2",
+    "typescript": "^5.7.2",
     "wait-port": "^1.0.1"
   },
   "publishConfig": {

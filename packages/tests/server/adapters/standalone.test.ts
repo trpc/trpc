@@ -119,7 +119,8 @@ test('error query', async () => {
   try {
     await client.exampleError.query();
   } catch (e) {
-    expect(e).toStrictEqual(new TRPCClientError('Unexpected error'));
+    expect(e).toBeInstanceOf(TRPCClientError);
+    expect((e as Error).message).toBe('Unexpected error');
   }
 });
 
@@ -226,4 +227,48 @@ test('force content-type on mutations', async () => {
       }
     `);
   }
+});
+
+test('bad url does not crash server', async () => {
+  const { port, address } = await startServer({
+    router,
+  });
+
+  const res = await fetch(`http://${address}:${port}`, {
+    method: 'GET',
+    headers: {
+      // use faux host header
+      Host: 'hotmail-com.olc.protection.outlook.com%3A25',
+    },
+  });
+  expect(res.ok).toBe(false);
+
+  const json: any = await res.json();
+
+  if (json.error.data.stack) {
+    json.error.data.stack = '[redacted]';
+  }
+  expect(json).toMatchInlineSnapshot(`
+    Object {
+      "error": Object {
+        "code": -32600,
+        "data": Object {
+          "code": "BAD_REQUEST",
+          "httpStatus": 400,
+          "stack": "[redacted]",
+        },
+        "message": "Invalid URL",
+      },
+    }
+  `);
+
+  expect(res.status).toBe(400);
+
+  const client = createClient(port, address);
+
+  expect(await client.hello.query({ who: 'test' })).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello test",
+    }
+  `);
 });

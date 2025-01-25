@@ -4,8 +4,11 @@ dist/
 .next/
 .turbo/
 .vercel/
+.vinxi/
+.output/
 .eslintcache
 *.tsbuildinfo
+app.config.timestamp_*
 
 db.sqlite
 

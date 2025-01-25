@@ -18,39 +18,39 @@ if (ExecutionEnvironment.canUseDOM) {
 
   const observer = new MutationObserver(onThemeOrClassChanged);
   const rootElement = document.documentElement;
-  const themeAttribute = "data-theme";
+  const themeAttribute = 'data-theme';
 
   observer.observe(rootElement, {
-    attributeFilter: [themeAttribute, "class"],
+    attributeFilter: [themeAttribute, 'class'],
     subtree: false,
   });
 
   function makeElementVisible(selector) {
     const codeBlocks = document.querySelectorAll(selector);
-    if(codeBlocks) {
+    if (codeBlocks) {
       codeBlocks.forEach((el) => {
         el.style.display = 'block';
-      })
+      });
     }
   }
 
   function makeElementInvisible(selector) {
     const codeBlocks = document.querySelectorAll(selector);
-    if(codeBlocks) {
+    if (codeBlocks) {
       codeBlocks.forEach((el) => {
         el.style.display = 'none';
-      })
+      });
     }
   }
 
   function onThemeOrClassChanged() {
     const theme = htmlElement?.getAttribute('data-theme');
-    if(theme === darkTheme) {
+    if (theme === darkTheme) {
       makeElementVisible(DARK_THEME_SELECTOR);
       makeElementInvisible(LIGHT_THEME_SELECTOR);
     }
 
-    if(theme === lightTheme) {
+    if (theme === lightTheme) {
       makeElementVisible(LIGHT_THEME_SELECTOR);
       makeElementInvisible(DARK_THEME_SELECTOR);
     }

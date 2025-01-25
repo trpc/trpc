@@ -35,9 +35,9 @@ type DecorateProcedure<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
 > = {
-  (input: inferProcedureInput<TProcedure>): Promise<
-    inferProcedureOutput<TProcedure>
-  >;
+  (
+    input: inferProcedureInput<TProcedure>,
+  ): Promise<inferProcedureOutput<TProcedure>>;
   prefetch: (
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
@@ -59,10 +59,12 @@ type DecorateRouterRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends AnyProcedure
-    ? DecorateProcedure<TRoot, TRecord[TKey]>
-    : TRecord[TKey] extends RouterRecord
-    ? DecorateRouterRecord<TRoot, TRecord[TKey]>
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends AnyProcedure
+      ? DecorateProcedure<TRoot, $Value>
+      : $Value extends RouterRecord
+        ? DecorateRouterRecord<TRoot, $Value>
+        : never
     : never;
 };
 
@@ -73,7 +75,7 @@ type Caller<TRouter extends AnyRouter> = ReturnType<
 // ts-prune-ignore-next
 /**
  * @note This requires `@tanstack/react-query@^5.49.0`
- * @note Make sure to have `dehyrate.serializeData` and `hydrate.deserializeData`
+ * @note Make sure to have `dehydrate.serializeData` and `hydrate.deserializeData`
  * set to your data transformer in your `QueryClient` factory.
  * @example
  * ```ts

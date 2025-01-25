@@ -3,8 +3,8 @@
   "globalDependencies": [
     ".eslintrc.js",
     "tsconfig.json",
-    "scripts/entrypoints.ts",
-    "scripts/getRollupConfig.ts"
+    "tsconfig.build.json",
+    "scripts/**"
   ],
   "globalEnv": [
     "CI",

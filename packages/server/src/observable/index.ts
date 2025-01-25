@@ -1,6 +1,19 @@
-export type { inferObservableValue } from './observable';
-export { isObservable, observable, observableToPromise } from './observable';
-export { map, share, tap } from './operators';
+export {
+  isObservable,
+  observable,
+  observableToAsyncIterable,
+  observableToPromise,
+  type inferObservableValue,
+} from './observable';
+
+export {
+  distinctUntilChanged,
+  distinctUntilDeepChanged,
+  map,
+  share,
+  tap,
+} from './operators';
+
 export type {
   Observable,
   Observer,
@@ -8,3 +21,9 @@ export type {
   Unsubscribable,
   UnsubscribeFn,
 } from './types';
+
+export {
+  behaviorSubject,
+  type BehaviorSubject,
+  type ReadonlyBehaviorSubject,
+} from './behaviorSubject';

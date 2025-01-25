@@ -18,11 +18,12 @@ import { observable } from '@trpc/server/observable';
 import {
   createDeferred,
   isAsyncIterable,
+  run,
 } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
-import { zAsyncGenerator } from './zAsyncGenerator';
+import { zAsyncIterable } from './zAsyncIterable';
 
 describe('no transformer', () => {
   const orderedResults: number[] = [];
@@ -37,7 +38,6 @@ describe('no transformer', () => {
       let iterableDeferred = createDeferred<void>();
       const nextIterable = () => {
         iterableDeferred.resolve();
-        iterableDeferred = createDeferred();
       };
       const yieldSpy = vi.fn((v: number) => v);
 
@@ -54,6 +54,19 @@ describe('no transformer', () => {
             );
             return opts.input.wait;
           }),
+        embedPromise: t.procedure.query(() => {
+          return {
+            deeply: run(async () => {
+              return {
+                nested: run(async () => {
+                  return {
+                    promise: Promise.resolve('foo'),
+                  };
+                }),
+              };
+            }),
+          };
+        }),
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
@@ -82,7 +95,7 @@ describe('no transformer', () => {
               .optional(),
           )
           .output(
-            zAsyncGenerator({
+            zAsyncIterable({
               yield: z.number(),
               return: z.string(),
             }),
@@ -90,7 +103,9 @@ describe('no transformer', () => {
           .query(async function* (opts) {
             for (let i = 0; i < 10; i++) {
               yield yieldSpy(i + 1);
+
               await iterableDeferred.promise;
+
               iterableDeferred = createDeferred();
             }
 
@@ -157,6 +172,21 @@ describe('no transformer', () => {
       await opts?.close?.();
     })
     .done();
+
+  test('server-side call', async () => {
+    const caller = ctx.router.createCaller({});
+    const iterable = await caller.iterable();
+    expectTypeOf(iterable).toEqualTypeOf<
+      AsyncIterable<number, string, unknown>
+    >();
+
+    const aggregated: number[] = [];
+    for await (const value of iterable) {
+      ctx.nextIterable();
+      aggregated.push(value);
+    }
+    expect(aggregated).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
 
   test('out-of-order streaming', async () => {
     const { client } = ctx;
@@ -245,7 +275,7 @@ describe('no transformer', () => {
     const iterable = await client.iterable.query();
 
     expectTypeOf(iterable).toEqualTypeOf<
-      AsyncGenerator<number, string, unknown>
+      AsyncIterable<number, string, unknown>
     >();
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
@@ -319,6 +349,7 @@ describe('no transformer', () => {
           2,
           3,
           4,
+          5,
         ]
       `);
     expect(err).toMatchInlineSnapshot(
@@ -330,14 +361,17 @@ describe('no transformer', () => {
   });
 
   test('output validation iterable yield error', async () => {
-    const clientError = await waitError(async () => {
-      const iterable = await ctx.client.iterable.query({
-        badYield: true,
-      });
-      for await (const value of iterable) {
-        ctx.nextIterable();
-      }
-    }, TRPCClientError<typeof ctx.router>);
+    const clientError = await waitError(
+      async () => {
+        const iterable = await ctx.client.iterable.query({
+          badYield: true,
+        });
+        for await (const value of iterable) {
+          ctx.nextIterable();
+        }
+      },
+      TRPCClientError<typeof ctx.router>,
+    );
 
     expect(clientError.data?.code).toBe('INTERNAL_SERVER_ERROR');
     expect(clientError.message).toMatchInlineSnapshot(`
@@ -359,14 +393,17 @@ describe('no transformer', () => {
   });
 
   test('output validation iterable return error', async () => {
-    const clientError = await waitError(async () => {
-      const iterable = await ctx.client.iterable.query({
-        badReturn: true,
-      });
-      for await (const value of iterable) {
-        ctx.nextIterable();
-      }
-    }, TRPCClientError<typeof ctx.router>);
+    const clientError = await waitError(
+      async () => {
+        const iterable = await ctx.client.iterable.query({
+          badReturn: true,
+        });
+        for await (const value of iterable) {
+          ctx.nextIterable();
+        }
+      },
+      TRPCClientError<typeof ctx.router>,
+    );
 
     expect(clientError.data?.code).toBe('INTERNAL_SERVER_ERROR');
     expect(clientError.message).toMatchInlineSnapshot(`
@@ -385,6 +422,29 @@ describe('no transformer', () => {
     const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
     expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
     expect(serverError.message).toMatchInlineSnapshot(`""`);
+  });
+
+  test('embed promise', async () => {
+    const { client } = ctx;
+
+    const result = await client.embedPromise.query();
+
+    expectTypeOf(result).toEqualTypeOf<{
+      deeply: Promise<{
+        nested: Promise<{
+          promise: Promise<string>;
+        }>;
+      }>;
+    }>();
+
+    expect(result.deeply).toBeInstanceOf(Promise);
+    const deeply = await result.deeply;
+    expect(deeply.nested).toBeInstanceOf(Promise);
+    const nested = await deeply.nested;
+    expect(nested.promise).toBeInstanceOf(Promise);
+    const promise = await nested.promise;
+
+    expect(promise).toEqual('foo');
   });
 });
 
@@ -546,7 +606,7 @@ describe('with transformer', () => {
     const iterable = await client.iterable.query();
 
     expectTypeOf(iterable).toEqualTypeOf<
-      AsyncGenerator<number, string, unknown>
+      AsyncIterable<number, string, unknown>
     >();
 
     const aggregated: unknown[] = [];
@@ -637,11 +697,14 @@ describe('with transformer', () => {
     const iterable = await client.iterableWithError.query();
 
     const aggregated: unknown[] = [];
-    const error = await waitError(async () => {
-      for await (const value of iterable) {
-        aggregated.push(value);
-      }
-    }, TRPCClientError<typeof router>);
+    const error = await waitError(
+      async () => {
+        for await (const value of iterable) {
+          aggregated.push(value);
+        }
+      },
+      TRPCClientError<typeof router>,
+    );
 
     error.data!.stack = '[redacted]';
     expect(error.data).toMatchInlineSnapshot(`

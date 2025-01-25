@@ -31,9 +31,18 @@ const ctx = konn()
 test('useSuspenseQuery()', async () => {
   const { client, App } = ctx;
   function MyComponent() {
-    const [data, query1] = client.post.byId.useSuspenseQuery({
-      id: '1',
-    });
+    const [data, query1] = client.post.byId.useSuspenseQuery(
+      {
+        id: '1',
+      },
+      {
+        trpc: {
+          context: {
+            test: true,
+          },
+        },
+      },
+    );
     expectTypeOf(data).toEqualTypeOf<'__result'>();
 
     type TData = typeof data;
@@ -52,31 +61,9 @@ test('useSuspenseQuery()', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result`);
   });
-});
 
-test('useSuspenseQuery()', async () => {
-  const { client, App } = ctx;
-  function MyComponent() {
-    const [data, query1] = client.post.byId.useSuspenseQuery({
-      id: '1',
-    });
-    expectTypeOf(data).toEqualTypeOf<'__result'>();
-
-    type TData = typeof data;
-    expectTypeOf<TData>().toMatchTypeOf<'__result'>();
-    expect(data).toBe('__result');
-    expect(query1.data).toBe('__result');
-
-    return <>{query1.data}</>;
-  }
-
-  const utils = render(
-    <App>
-      <MyComponent />
-    </App>,
-  );
-  await waitFor(() => {
-    expect(utils.container).toHaveTextContent(`__result`);
+  expect(ctx.spyLink.mock.calls[0]?.[0].context).toMatchObject({
+    test: true,
   });
 });
 

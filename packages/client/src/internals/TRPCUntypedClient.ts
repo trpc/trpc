@@ -5,11 +5,13 @@ import type {
 import { observableToPromise, share } from '@trpc/server/observable';
 import type {
   AnyRouter,
+  inferAsyncIterableYield,
   InferrableClientTypes,
   Maybe,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { createChain } from '../links/internals/createChain';
+import type { TRPCConnectionState } from '../links/internals/subscriptions';
 import type {
   OperationContext,
   OperationLink,
@@ -27,14 +29,13 @@ export interface TRPCRequestOptions {
   signal?: AbortSignal;
 }
 
-type inferAsyncIterableYield<T> = T extends AsyncIterable<infer U> ? U : T;
-
 export interface TRPCSubscriptionObserver<TValue, TError> {
   onStarted: (opts: { context: OperationContext | undefined }) => void;
   onData: (value: inferAsyncIterableYield<TValue>) => void;
   onError: (err: TError) => void;
   onStopped: () => void;
   onComplete: () => void;
+  onConnectionStateChange: (state: TRPCConnectionState<TError>) => void;
 }
 
 /** @internal */
@@ -134,19 +135,31 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
       type: 'subscription',
       path,
       input,
-      context: opts?.context,
-      signal: null,
+      context: opts.context,
+      signal: opts.signal,
     });
     return observable$.subscribe({
       next(envelope) {
-        if (envelope.result.type === 'started') {
-          opts.onStarted?.({
-            context: envelope.context,
-          });
-        } else if (envelope.result.type === 'stopped') {
-          opts.onStopped?.();
-        } else {
-          opts.onData?.(envelope.result.data);
+        switch (envelope.result.type) {
+          case 'state': {
+            opts.onConnectionStateChange?.(envelope.result);
+            break;
+          }
+          case 'started': {
+            opts.onStarted?.({
+              context: envelope.context,
+            });
+            break;
+          }
+          case 'stopped': {
+            opts.onStopped?.();
+            break;
+          }
+          case 'data':
+          case undefined: {
+            opts.onData?.(envelope.result.data);
+            break;
+          }
         }
       },
       error(err) {

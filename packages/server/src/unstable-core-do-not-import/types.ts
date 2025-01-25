@@ -34,6 +34,13 @@ export type FilterKeys<TObj extends object, TFilter> = {
 /**
  * @internal
  */
+export type Result<TType, TErr = unknown> =
+  | { ok: true; value: TType }
+  | { ok: false; error: TErr };
+
+/**
+ * @internal
+ */
 export type Filter<TObj extends object, TFilter> = Pick<
   TObj,
   FilterKeys<TObj, TFilter>
@@ -76,8 +83,8 @@ export type WithoutIndexSignature<TObj> = {
   [K in keyof TObj as string extends K
     ? never
     : number extends K
-    ? never
-    : K]: TObj[K];
+      ? never
+      : K]: TObj[K];
 };
 
 /**
@@ -94,14 +101,13 @@ export type Overwrite<TType, TWith> = TWith extends any
           | keyof WithoutIndexSignature<TWith>]: K extends keyof TWith
           ? TWith[K]
           : K extends keyof TType
-          ? TType[K]
-          : never;
+            ? TType[K]
+            : never;
       } & (string extends keyof TWith // Handle cases with an index signature
         ? { [key: string]: TWith[string] }
         : number extends keyof TWith
-        ? { [key: number]: TWith[number] }
-        : // eslint-disable-next-line @typescript-eslint/ban-types
-          {})
+          ? { [key: number]: TWith[number] }
+          : {})
     : TWith
   : never;
 
@@ -123,6 +129,17 @@ export type PickFirstDefined<TType, TPick> = undefined extends TType
     ? never
     : TPick
   : TType;
+
+export type KeyFromValue<
+  TValue,
+  TType extends Record<PropertyKey, PropertyKey>,
+> = {
+  [K in keyof TType]: TValue extends TType[K] ? K : never;
+}[keyof TType];
+
+export type InvertKeyValue<TType extends Record<PropertyKey, PropertyKey>> = {
+  [TValue in TType[keyof TType]]: KeyFromValue<TValue, TType>;
+};
 
 /**
  * ================================
@@ -150,9 +167,16 @@ export type ProtectedIntersection<TType, TWith> = keyof TType &
  */
 export type GetRawInputFn = () => Promise<unknown>;
 
-const errorSymbol = Symbol();
-export type ErrorSymbol = typeof errorSymbol;
+const _errorSymbol = Symbol();
+export type ErrorSymbol = typeof _errorSymbol;
 export type TypeError<TMessage extends string> = TMessage & {
-  _: typeof errorSymbol;
+  _: typeof _errorSymbol;
 };
 export type ValueOf<TObj> = TObj[keyof TObj];
+
+/**
+ * @internal
+ * Infers the type of the value yielded by an async iterable
+ */
+export type inferAsyncIterableYield<T> =
+  T extends AsyncIterable<infer U> ? U : T;

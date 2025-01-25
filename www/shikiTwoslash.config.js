@@ -1,4 +1,4 @@
 // @ts-check
 module.exports = {
-  themes: ["min-light", "github-dark"],
+  themes: ['min-light', 'github-dark'],
 };

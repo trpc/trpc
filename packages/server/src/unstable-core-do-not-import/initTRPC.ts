@@ -16,12 +16,8 @@ import type { DataTransformerOptions } from './transformer';
 import { defaultTransformer, getDataTransformer } from './transformer';
 import type { Unwrap, ValidateShape } from './types';
 
-type inferErrorFormatterShape<TType> = TType extends ErrorFormatter<
-  any,
-  infer TShape
->
-  ? TShape
-  : DefaultErrorShape;
+type inferErrorFormatterShape<TType> =
+  TType extends ErrorFormatter<any, infer TShape> ? TShape : DefaultErrorShape;
 interface RuntimeConfigOptions<TContext extends object, TMeta extends object>
   extends Partial<
     Omit<
@@ -68,9 +64,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
    * @see https://trpc.io/docs/v11/server/routers#initialize-trpc
    */
   create<TOptions extends RuntimeConfigOptions<TContext, TMeta>>(
-    opts?:
-      | ValidateShape<TOptions, RuntimeConfigOptions<TContext, TMeta>>
-      | undefined,
+    opts?: ValidateShape<TOptions, RuntimeConfigOptions<TContext, TMeta>>,
   ) {
     type $Root = CreateRootTypes<{
       ctx: TContext;
@@ -82,6 +76,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
     }>;
 
     const config: RootConfig<$Root> = {
+      ...opts,
       transformer: getDataTransformer(opts?.transformer ?? defaultTransformer),
       isDev:
         opts?.isDev ??
@@ -95,7 +90,6 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * @internal
        */
       $types: null as any,
-      experimental: opts?.experimental ?? {},
     };
 
     {

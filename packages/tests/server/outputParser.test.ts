@@ -340,6 +340,24 @@ test('yup', async () => {
         return yup.number().required();
       case 'string':
         return yup.string().required();
+      case 'bigint': {
+        throw new Error('Not implemented yet: "bigint" case');
+      }
+      case 'boolean': {
+        throw new Error('Not implemented yet: "boolean" case');
+      }
+      case 'symbol': {
+        throw new Error('Not implemented yet: "symbol" case');
+      }
+      case 'undefined': {
+        throw new Error('Not implemented yet: "undefined" case');
+      }
+      case 'object': {
+        throw new Error('Not implemented yet: "object" case');
+      }
+      case 'function': {
+        throw new Error('Not implemented yet: "function" case');
+      }
       default:
         throw new Error('Fail');
     }

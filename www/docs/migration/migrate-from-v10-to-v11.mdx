@@ -24,6 +24,91 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Allow promises to be embedded in nested data (non-breaking)
+
+We now allow promises to be embedded in nested data when using the [`httpBatchStreamLink`](../client/links/httpBatchStreamLink.md), this means that you can now do things like this:
+
+```ts
+const router = router({
+  embedPromise: publicProcedure.query(() => {
+    async function slowThing() {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return 'slow';
+    }
+    return {
+      instant: 'instant',
+      slow: slowThing(),
+    };
+  }),
+});
+```
+
+### Removed export of `@trpc/client` from `@trpc/react-query` (non-breaking)
+
+We have removed the re-exports of `@trpc/client` types and utilities from the `@trpc/react-query` package.
+
+This should not be a breaking change, but if you have missing imports after upgrading, you may need to update some import statements from `from '@trpc/react-query'` to `from '@trpc/client'`.
+
+### Moved `reconnectAfterInactivityMs` to `sse.client` (non-breaking)
+
+Updated [HTTP Subscription Link improvements](#http-subscription-link-improvements)-section and related docs.
+
+### TypeScript version >=5.7.2 is now required (non-breaking)
+
+tRPC now requires TypeScript version 5.7.2 or higher. This change was made in response to [a bug report](https://github.com/trpc/trpc/issues/6243) where we decided to take a forward-looking approach.
+
+If you try to install tRPC with an unsupported TypeScript version, you'll receive a peer dependency error during installation.
+
+If you notice your editor showing `any` types, it's likely because your editor isn't using the correct TypeScript version. To fix this, you'll need to configure your editor to use the TypeScript version installed in your project's `package.json`.
+
+For VSCode users, add these settings to your `.vscode/settings.json`:
+
+```json title=".vscode/settings.json"
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
+```
+
+### Moves `experimental.sseSubscriptions` -> `sse` (non-breaking)
+
+The `experimental.sseSubscriptions` option has been moved to just `sse` in the `initTRPC.create()`-function.
+
+### HTTP Subscription Link improvements (non-breaking) {#http-subscription-link-improvements}
+
+Added support for detecting and recovering from stale connections:
+
+On the server, you can configure a ping interval to keep the connection alive:
+
+```ts
+export const t = initTRPC.create({
+  // ...
+  sse: {
+    ping: {
+      enabled: true,
+      intervalMs: 15_000,
+    },
+    client: {
+      // Reconnect if no messages or pings are received for 20 seconds
+      reconnectAfterInactivityMs: 20_000,
+    },
+  },
+});
+```
+
+We will likely add a default ping interval and timeout configuration in the future, but this is not yet decided. Feedback is welcome in the [🎏-rfc-streaming](https://trpc.io/discord) channel on Discord.
+
+See the [`httpSubscriptionLink` docs](../client/links/httpSubscriptionLink.md#timeout) for more details on these features.
+
+### Introduction of `retryLink` (non-breaking)
+
+See [retryLink](../client/links/retryLink.md) - allows you to retry failed operations
+
+### `useSubscription` improvements (non-breaking)
+
+- When subscribing to procedures using the [useSubscription](../client/react/useSubscription.md) hook it will now return information about the status of the subscription and the connection.
+- Ability to have a ponyfill when using [`httpSubscriptionLink`](../client/links/httpSubscriptionLink.md)
+
 ### Subscription procedure output type changed to `AsyncGenerator` (non-breaking)
 
 If you've used subscriptions with async generators with the v11, this might be breaking with how you infer your types.
@@ -52,11 +137,8 @@ SubscriptionProcedure<{
 If you need to infer the value you can use a helper like the below:
 
 ```ts
-type inferAsyncIterableYield<TOutput> = TOutput extends AsyncGenerator<
-  infer $Yield
->
-  ? $Yield
-  : never;
+type inferAsyncIterableYield<TOutput> =
+  TOutput extends AsyncGenerator<infer $Yield> ? $Yield : never;
 ```
 
 </details>

@@ -57,8 +57,8 @@ test('useInfiniteQuery()', async () => {
             {q.isFetchingNextPage
               ? 'Loading more...'
               : q.hasNextPage
-              ? 'Load More'
-              : 'Nothing more to load'}
+                ? 'Load More'
+                : 'Nothing more to load'}
           </button>
         </div>
         <div>
@@ -144,8 +144,8 @@ test('useInfiniteQuery bi-directional', async () => {
             {q.isFetchingPreviousPage
               ? 'Loading previous...'
               : q.hasPreviousPage
-              ? 'Load Previous'
-              : 'Nothing previous to load'}
+                ? 'Load Previous'
+                : 'Nothing previous to load'}
           </button>
         </div>
         {q.data?.pages.map((group, i) => (
@@ -166,8 +166,8 @@ test('useInfiniteQuery bi-directional', async () => {
             {q.isFetchingNextPage
               ? 'Loading more...'
               : q.hasNextPage
-              ? 'Load More'
-              : 'Nothing more to load'}
+                ? 'Load More'
+                : 'Nothing more to load'}
           </button>
         </div>
         <div>
@@ -273,8 +273,8 @@ test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
             {q.isFetchingNextPage
               ? 'Loading more...'
               : q.hasNextPage
-              ? 'Load More'
-              : 'Nothing more to load'}
+                ? 'Load More'
+                : 'Nothing more to load'}
           </button>
         </div>
         <div>
@@ -402,8 +402,8 @@ test('useInfiniteQuery and fetchInfiniteQuery', async () => {
             {q.isFetchingNextPage
               ? 'Loading more...'
               : q.hasNextPage
-              ? 'Load More'
-              : 'Nothing more to load'}
+                ? 'Load More'
+                : 'Nothing more to load'}
           </button>
         </div>
         <div>
@@ -528,23 +528,6 @@ test('useInfiniteQuery() is exposed on procedure with optional inputs', () => {
   // Assert 'useInfiniteQuery' is exposed in 'trpc.paginatedPosts'.
 
   expectTypeOf(trpc.paginatedPosts.useInfiniteQuery).toBeFunction();
-});
-
-test('useInfiniteQuery() is **not** exposed if there is not cursor', () => {
-  ignoreErrors(async () => {
-    // @ts-expect-error 'cursor' is required
-    factory.trpc.postById.useInfiniteQuery;
-    const ssg = createServerSideHelpers({
-      router: factory.appRouter,
-      ctx: {},
-    });
-
-    // good
-    await ssg.paginatedPosts.fetchInfinite({ limit: 1 });
-
-    // @ts-expect-error 'cursor' is required
-    await ssg.postById.fetchInfinite({ limit: 1 });
-  });
 });
 
 test('regression 5412: invalidating a query', async () => {
