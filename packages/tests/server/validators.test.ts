@@ -243,14 +243,16 @@ test('valibot v1', async () => {
     }),
   });
 
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query(123);
+  const ctx = routerToServerAndClientNew(router);
+  const res = await ctx.client.num.query(123);
 
-  await expect(client.num.query('123' as any)).rejects.toMatchInlineSnapshot(
+  await expect(
+    ctx.client.num.query('123' as any),
+  ).rejects.toMatchInlineSnapshot(
     '[TRPCClientError: Invalid type: Expected number but received "123"]',
   );
   expect(res.input).toBe(123);
-  await close();
+  await ctx.close();
 });
 
 test('valibot v1 async', async () => {
@@ -269,18 +271,18 @@ test('valibot v1 async', async () => {
     }),
   });
 
-  const { close, client } = routerToServerAndClientNew(router);
+  const ctx = routerToServerAndClientNew(router);
 
-  await expect(client.q.query('bar')).rejects.toMatchInlineSnapshot(
+  await expect(ctx.client.q.query('bar')).rejects.toMatchInlineSnapshot(
     '[TRPCClientError: Invalid input: Received "bar"]',
   );
-  const res = await client.q.query('foo');
+  const res = await ctx.client.q.query('foo');
   expect(res).toMatchInlineSnapshot(`
       Object {
         "input": "foo",
       }
     `);
-  await close();
+  await ctx.close();
 });
 
 test('valibot v1 transform mixed input/output', async () => {
@@ -301,9 +303,9 @@ test('valibot v1 transform mixed input/output', async () => {
     }),
   });
 
-  const { close, client } = routerToServerAndClientNew(router);
+  const ctx = routerToServerAndClientNew(router);
 
-  await expect(client.num.query({ length: '123' })).resolves
+  await expect(ctx.client.num.query({ length: '123' })).resolves
     .toMatchInlineSnapshot(`
             Object {
               "input": Object {
@@ -314,12 +316,12 @@ test('valibot v1 transform mixed input/output', async () => {
 
   await expect(
     // @ts-expect-error this should only accept a string
-    client.num.query({ length: 123 }),
+    ctx.client.num.query({ length: 123 }),
   ).rejects.toMatchInlineSnapshot(
     '[TRPCClientError: Invalid type: Expected string but received 123]',
   );
 
-  await close();
+  await ctx.close();
 });
 
 test('superstruct', async () => {
@@ -334,15 +336,15 @@ test('superstruct', async () => {
     }),
   });
 
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query(123);
+  const ctx = routerToServerAndClientNew(router);
+  const res = await ctx.client.num.query(123);
 
   // @ts-expect-error this only accepts a `number`
-  await expect(client.num.query('123')).rejects.toMatchInlineSnapshot(
+  await expect(ctx.client.num.query('123')).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Expected a number, but received: "123"]`,
   );
   expect(res.input).toBe(123);
-  await close();
+  await ctx.close();
 });
 
 test('yup', async () => {
