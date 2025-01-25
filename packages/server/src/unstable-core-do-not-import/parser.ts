@@ -1,4 +1,4 @@
-import type { v1 } from '@standard-schema/spec';
+import { SchemaError, type StandardSchemaV1 } from './standardSchema';
 
 // zod / typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
@@ -20,7 +20,7 @@ export type ParserArkTypeEsque<TInput, TParsedInput> = {
   infer: TParsedInput;
 };
 
-export type ParserStandardSchemaEsque<TInput, TParsedInput> = v1.StandardSchema<
+export type ParserStandardSchemaEsque<TInput, TParsedInput> = StandardSchemaV1<
   TInput,
   TParsedInput
 >;
@@ -130,13 +130,4 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   }
 
   throw new Error('Could not find a validator fn');
-}
-
-class SchemaError extends Error {
-  public readonly issues: ReadonlyArray<v1.StandardIssue>;
-  constructor(issues: ReadonlyArray<v1.StandardIssue>) {
-    super(issues[0]?.message);
-    this.name = 'SchemaError';
-    this.issues = issues;
-  }
 }
