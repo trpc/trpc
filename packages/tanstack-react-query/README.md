@@ -16,13 +16,94 @@
 
 > A tRPC wrapper around @tanstack/react-query.
 
+> [!WARNING]
+>
+> 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧
+> This package is currently in beta as we stabilize the API. We might do breaking changes without respecting semver.
+
 ## Documentation
 
-TODO
+Full documentation is coming as the package API stabilizes. The following shows a quickstart.
+
+1. Initialize the React context:
+
+```ts
+// utils/trpc.tsx
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '~/server/routers/_app';
+
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+```
+
+2. Initialize the tRPC client and create a provider stack with React Query:
+
+```tsx
+// utils.trpc.tsx
+export function TRPCReactProvider(props: { children: React.ReactNode }) {
+  const queryClient = useState(() => new QueryClient());
+  const [trpcClient] = useState(() =>
+    createTRPCClient<AppRouter>({
+      links: [unstable_httpBatchStreamLink({ url: BASE_URL + '/api/trpc' })],
+    }),
+  );
+
+  return (
+    <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        {props.children}
+        <ReactQueryDevtools />
+      </QueryClientProvider>
+    </TRPCProvider>
+  );
+}
+```
+
+3. Wrap your app with the provider stack:
+
+```tsx
+// app/root.tsx
+function App() {
+  return (
+    <TRPCReactProvider>
+      <Outlet />
+    </TRPCReactProvider>
+  );
+}
+```
+
+4. Use the generated `useTRPC` hook to get your typesafe queryOptions proxy. Notice that we import the hooks directly from `@tanstack/react-query`.
+
+```tsx
+import {
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import { useTRPC } from '~/utils/trpc';
+
+export function Post() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const { data: latestPost } = useSuspenseQuery(
+    trpc.getLatestPost.queryOptions(),
+  );
+
+  const { mutate: createPost } = useMutation(
+    trpc.createPost.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries(trpc.getLatestPost.queryFilter());
+      },
+    }),
+  );
+
+  return <>...</>;
+}
+```
 
 ## Installation
 
-> Requires `@tanstack/react-query` v5.59.15 or higher
+> Requires `@tanstack/react-query` v5.62.8 or higher
 
 ```bash
 # npm
