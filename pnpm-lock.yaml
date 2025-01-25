@@ -1973,6 +1973,9 @@ importers:
       eslint:
         specifier: ^8.57.0
         version: 8.57.1
+      event-source-polyfill:
+        specifier: ^1.0.31
+        version: 1.0.31
       konn:
         specifier: ^0.7.0
         version: 0.7.0

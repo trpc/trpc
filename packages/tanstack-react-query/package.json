@@ -62,6 +62,7 @@
     "@types/node": "^20.10.0",
     "@types/react": "^18.3.1",
     "eslint": "^8.57.0",
+    "event-source-polyfill": "^1.0.31",
     "konn": "^0.7.0",
     "react": "^19.0.0",
     "react-dom": "^18.3.1",
