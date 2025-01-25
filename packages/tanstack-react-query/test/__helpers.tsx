@@ -34,7 +34,7 @@ import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stre
 import type { DataTransformerOptions } from '@trpc/server/unstable-core-do-not-import/transformer';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import * as React from 'react';
-import { WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
