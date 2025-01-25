@@ -37,28 +37,30 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 2. Initialize the tRPC client and create a provider stack with React Query:
 
-import { useState } from 'react';
+```tsx
+// utils/trpc.tsx
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { unstable_httpBatchStreamLink } from '@trpc/client';
+import { useState } from 'react';
 
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
-const [queryClient] = useState(() => new QueryClient());
-const [trpcClient] = useState(() =>
-createTRPCClient<AppRouter>({
-links: [unstable_httpBatchStreamLink({ url: BASE_URL + '/api/trpc' })],
-}),
-);
+  const [queryClient] = useState(() => new QueryClient());
+  const [trpcClient] = useState(() =>
+    createTRPCClient<AppRouter>({
+      links: [unstable_httpBatchStreamLink({ url: BASE_URL + '/api/trpc' })],
+    }),
+  );
 
-return (
-<TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-<QueryClientProvider client={queryClient}>
-{props.children}
-<ReactQueryDevtools />
-</QueryClientProvider>
-</TRPCProvider>
-);
+  return (
+    <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        {props.children}
+      </QueryClientProvider>
+    </TRPCProvider>
+  );
 }
+```
 
 3. Wrap your app with the provider stack:
 
