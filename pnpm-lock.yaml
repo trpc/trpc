@@ -1994,6 +1994,9 @@ importers:
       vitest:
         specifier: ^2.0.4
         version: 2.0.4(@edge-runtime/vm@2.0.2)(@types/node@20.17.16)(@vitest/ui@2.0.4)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)
+      ws:
+        specifier: ^8.0.0
+        version: 8.17.1
       zod:
         specifier: ^3.0.0
         version: 3.23.8
