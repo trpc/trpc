@@ -37,10 +37,13 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
 2. Initialize the tRPC client and create a provider stack with React Query:
 
-```tsx
-// utils.trpc.tsx
+import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { unstable_httpBatchStreamLink } from '@trpc/client';
+
 export function TRPCReactProvider(props: { children: React.ReactNode }) {
-  const queryClient = useState(() => new QueryClient());
+  const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
       links: [unstable_httpBatchStreamLink({ url: BASE_URL + '/api/trpc' })],
@@ -56,7 +59,6 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
     </TRPCProvider>
   );
 }
-```
 
 3. Wrap your app with the provider stack:
 
