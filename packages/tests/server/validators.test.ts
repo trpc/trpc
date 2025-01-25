@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
 import * as arktype from 'arktype';
 import myzod from 'myzod';
 import * as T from 'runtypes';
@@ -252,7 +252,53 @@ test('valibot v1', async () => {
     '[TRPCClientError: Invalid type: Expected number but received "123"]',
   );
   expect(res.input).toBe(123);
+
   await ctx.close();
+});
+
+test('valibot v1 error type', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input(v1.number()).query(({ input }) => {
+      expectTypeOf(input).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const caller = router.createCaller({});
+  const err = await waitError(
+    caller.num(
+      // @ts-expect-error this should only accept a number
+      '123',
+    ),
+    TRPCError,
+  );
+  expect(err).toMatchInlineSnapshot(
+    `[TRPCError: Invalid type: Expected number but received "123"]`,
+  );
+
+  assert(err.cause instanceof StandardSchemaV1Error);
+  expect(err.cause.issues).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "abortEarly": undefined,
+        "abortPipeEarly": undefined,
+        "expected": "number",
+        "input": "123",
+        "issues": undefined,
+        "kind": "schema",
+        "lang": undefined,
+        "message": "Invalid type: Expected number but received "123"",
+        "path": undefined,
+        "received": ""123"",
+        "requirement": undefined,
+        "type": "number",
+      },
+    ]
+  `);
 });
 
 test('valibot v1 async', async () => {
@@ -315,13 +361,13 @@ test('valibot v1 transform mixed input/output', async () => {
           `);
 
   await expect(
-    // @ts-expect-error this should only accept a string
-    ctx.client.num.query({ length: 123 }),
+    ctx.client.num.query({
+      // @ts-expect-error this should only accept a string
+      length: 123,
+    }),
   ).rejects.toMatchInlineSnapshot(
     '[TRPCClientError: Invalid type: Expected string but received 123]',
   );
-
-  await ctx.close();
 });
 
 test('superstruct', async () => {
