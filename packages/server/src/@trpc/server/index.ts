@@ -37,6 +37,7 @@ export {
   type QueryProcedure as TRPCQueryProcedure,
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
   type TRPCBuilder,
+  StandardSchemaV1Error,
   /**
    * @deprecated use `tracked(id, data)` instead
    */

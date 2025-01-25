@@ -40,3 +40,5 @@ export * from './unstable-core-do-not-import/stream/utils/disposable';
 export * from './unstable-core-do-not-import/transformer';
 export * from './unstable-core-do-not-import/types';
 export * from './unstable-core-do-not-import/utils';
+export * from './vendor/standard-schema-v1/error';
+export * from './vendor/standard-schema-v1/spec';
