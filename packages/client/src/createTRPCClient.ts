@@ -48,7 +48,7 @@ type coerceAsyncGeneratorToIterable<T> =
 /** @internal */
 export type Resolver<
   TDef extends ResolverDef,
-  TContext extends ClientContext = ClientContext,
+  TContext extends ClientContext,
 > = (
   input: TDef['input'],
   opts?: TRPCProcedureOptions<TContext>,
@@ -56,7 +56,7 @@ export type Resolver<
 
 type SubscriptionResolver<
   TDef extends ResolverDef,
-  TContext extends ClientContext = ClientContext,
+  TContext extends ClientContext,
 > = (
   input: TDef['input'],
   opts: Partial<

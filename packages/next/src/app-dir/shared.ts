@@ -4,6 +4,7 @@ import type {
   Resolver,
 } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
+import type { ClientContext } from '@trpc/client/internals/types';
 import type { inferProcedureOutput } from '@trpc/server';
 import type {
   AnyClientTypes,
@@ -24,31 +25,37 @@ import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 export type UseProcedureRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
+  TContext extends ClientContext,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends AnyQueryProcedure
-      ? Resolver<{
-          input: inferProcedureInput<$Value>;
-          output: inferTransformedProcedureOutput<TRoot, $Value>;
-          errorShape: TRoot['errorShape'];
-          transformer: TRoot['transformer'];
-        }>
+      ? Resolver<
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<TRoot, $Value>;
+            errorShape: TRoot['errorShape'];
+            transformer: TRoot['transformer'];
+          },
+          TContext
+        >
       : $Value extends RouterRecord
-        ? UseProcedureRecord<TRoot, $Value>
+        ? UseProcedureRecord<TRoot, $Value, TContext>
         : never
     : never;
 };
 
-export function createUseProxy<TRouter extends AnyRouter>(
-  client: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter>,
-) {
+export function createUseProxy<
+  TRouter extends AnyRouter,
+  TContext extends ClientContext,
+>(client: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter>) {
   const untypedClient: TRPCUntypedClient<TRouter> =
     client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
 
   return createRecursiveProxy<
     UseProcedureRecord<
       TRouter['_def']['_config']['$types'],
-      TRouter['_def']['record']
+      TRouter['_def']['record'],
+      TContext
     >
   >((opts) => {
     const path = opts.path.join('.');
@@ -57,12 +64,16 @@ export function createUseProxy<TRouter extends AnyRouter>(
   });
 }
 
-type NextAppRouterUse<TRouter extends AnyRouter> = {
+type NextAppRouterUse<
+  TRouter extends AnyRouter,
+  TContext extends ClientContext,
+> = {
   <TData extends Promise<unknown>[]>(
     cb: (
       t: UseProcedureRecord<
         TRouter['_def']['_config']['$types'],
-        TRouter['_def']['record']
+        TRouter['_def']['record'],
+        TContext
       >,
     ) => [...TData],
   ): {
@@ -72,22 +83,29 @@ type NextAppRouterUse<TRouter extends AnyRouter> = {
     cb: (
       t: UseProcedureRecord<
         TRouter['_def']['_config']['$types'],
-        TRouter['_def']['record']
+        TRouter['_def']['record'],
+        TContext
       >,
     ) => TData,
   ): Awaited<TData>;
 };
-type CreateTRPCNextAppRouterBase<TRouter extends AnyRouter> = {
-  use: NextAppRouterUse<TRouter>;
+type CreateTRPCNextAppRouterBase<
+  TRouter extends AnyRouter,
+  TContext extends ClientContext,
+> = {
+  use: NextAppRouterUse<TRouter, TContext>;
 };
-export type CreateTRPCNextAppRouter<TRouter extends AnyRouter> =
-  ProtectedIntersection<
-    CreateTRPCNextAppRouterBase<TRouter>,
-    UseProcedureRecord<
-      TRouter['_def']['_config']['$types'],
-      TRouter['_def']['record']
-    >
-  >;
+export type CreateTRPCNextAppRouter<
+  TRouter extends AnyRouter,
+  TContext extends ClientContext,
+> = ProtectedIntersection<
+  CreateTRPCNextAppRouterBase<TRouter, TContext>,
+  UseProcedureRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record'],
+    TContext
+  >
+>;
 
 /**
  * @internal

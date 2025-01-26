@@ -1,4 +1,5 @@
 import type { Resolver } from '@trpc/client';
+import type { ClientContext } from '@trpc/client/internals/types';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -18,9 +19,10 @@ type ResolverDef = {
 export type DecorateProcedureServer<
   TType extends ProcedureType,
   TDef extends ResolverDef,
+  TContext extends ClientContext,
 > = TType extends 'query'
   ? {
-      query: Resolver<TDef>;
+      query: Resolver<TDef, TContext>;
       revalidate: (
         input?: TDef['input'],
       ) => Promise<
@@ -29,17 +31,18 @@ export type DecorateProcedureServer<
     }
   : TType extends 'mutation'
     ? {
-        mutate: Resolver<TDef>;
+        mutate: Resolver<TDef, TContext>;
       }
     : TType extends 'subscription'
       ? {
-          subscribe: Resolver<TDef>;
+          subscribe: Resolver<TDef, TContext>;
         }
       : never;
 
 export type NextAppDirDecorateRouterRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
+  TContext extends ClientContext,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends AnyProcedure
@@ -50,10 +53,11 @@ export type NextAppDirDecorateRouterRecord<
             output: inferTransformedProcedureOutput<TRoot, $Value>;
             errorShape: TRoot['errorShape'];
             transformer: TRoot['transformer'];
-          }
+          },
+          TContext
         >
       : $Value extends RouterRecord
-        ? NextAppDirDecorateRouterRecord<TRoot, $Value>
+        ? NextAppDirDecorateRouterRecord<TRoot, $Value, TContext>
         : never
     : never;
 };
