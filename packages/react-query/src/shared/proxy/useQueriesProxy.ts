@@ -5,6 +5,7 @@ import {
   type inferRouterClient,
   type TRPCClientError,
 } from '@trpc/client';
+import type { ClientContext } from '@trpc/client/internals/types';
 import type {
   AnyProcedure,
   AnyQueryProcedure,
@@ -90,9 +91,10 @@ export type UseSuspenseQueriesProcedureRecord<
  * Create proxy for `useQueries` options
  * @internal
  */
-export function createUseQueries<TRouter extends AnyRouter>(
-  client: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter>,
-) {
+export function createUseQueries<
+  TRouter extends AnyRouter,
+  TContext extends ClientContext,
+>(client: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter, TContext>) {
   const untypedClient: TRPCUntypedClient<TRouter> =
     client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
 
@@ -106,7 +108,7 @@ export function createUseQueries<TRouter extends AnyRouter>(
     const dotPath = arrayPath.join('.');
     const [input, _opts] = opts.args as [
       unknown,
-      Partial<QueryOptions> & TRPCUseQueryBaseOptions,
+      Partial<QueryOptions> & TRPCUseQueryBaseOptions<TContext>,
     ];
 
     const options: QueryOptions = {

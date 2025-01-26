@@ -17,6 +17,7 @@ import {
   getUntypedClient,
   TRPCUntypedClient,
 } from '@trpc/client';
+import type { ClientContext } from '@trpc/client/internals/types';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
@@ -77,6 +78,7 @@ const trackResult = <T extends object>(
  */
 export function createRootHooks<
   TRouter extends AnyRouter,
+  TContext extends ClientContext,
   TSSRContext = unknown,
 >(config?: CreateTRPCReactOptions<TRouter>) {
   const mutationSuccessOverride: UseMutationOverride['onSuccess'] =
@@ -92,7 +94,9 @@ export function createRootHooks<
 
   const createClient = createTRPCClient<TRouter>;
 
-  const TRPCProvider: TRPCProvider<TRouter, TSSRContext> = (props) => {
+  const TRPCProvider: TRPCProvider<TRouter, TSSRContext, TContext> = (
+    props,
+  ) => {
     const { abortOnUnmount = false, queryClient, ssrContext } = props;
     const [ssrState, setSSRState] = React.useState<SSRState>(
       props.ssrState ?? false,
@@ -166,7 +170,7 @@ export function createRootHooks<
   function useQuery(
     path: readonly string[],
     input: unknown,
-    opts?: UseTRPCQueryOptions<unknown, unknown, TError>,
+    opts?: UseTRPCQueryOptions<unknown, unknown, TError, TContext>,
   ): UseTRPCQueryResult<unknown, TError> {
     const context = useContext();
     const { abortOnUnmount, client, ssrState, queryClient, prefetchQuery } =
@@ -239,7 +243,7 @@ export function createRootHooks<
   function usePrefetchQuery(
     path: string[],
     input: unknown,
-    opts?: UseTRPCPrefetchQueryOptions<unknown, unknown, TError>,
+    opts?: UseTRPCPrefetchQueryOptions<unknown, unknown, TError, TContext>,
   ): void {
     const context = useContext();
     const queryKey = getQueryKeyInternal(path, input, 'query');
@@ -274,7 +278,7 @@ export function createRootHooks<
   function useSuspenseQuery(
     path: readonly string[],
     input: unknown,
-    opts?: UseTRPCSuspenseQueryOptions<unknown, unknown, TError>,
+    opts?: UseTRPCSuspenseQueryOptions<unknown, unknown, TError, TContext>,
   ): UseTRPCSuspenseQueryResult<unknown, TError> {
     const context = useContext();
     const queryKey = getQueryKeyInternal(path, input, 'query');
@@ -314,7 +318,7 @@ export function createRootHooks<
 
   function useMutation(
     path: readonly string[],
-    opts?: UseTRPCMutationOptions<unknown, TError, unknown, unknown>,
+    opts?: UseTRPCMutationOptions<unknown, TError, unknown, TContext>,
   ): UseTRPCMutationResult<unknown, TError, unknown, unknown> {
     const { client, queryClient } = useContext();
 
@@ -505,7 +509,7 @@ export function createRootHooks<
   function useInfiniteQuery(
     path: readonly string[],
     input: unknown,
-    opts: UseTRPCInfiniteQueryOptions<unknown, unknown, TError>,
+    opts: UseTRPCInfiniteQueryOptions<unknown, unknown, TError, TContext>,
   ): UseTRPCInfiniteQueryResult<unknown, TError, unknown> {
     const {
       client,
@@ -528,7 +532,7 @@ export function createRootHooks<
       !isInputSkipToken &&
       !queryClient.getQueryCache().find({ queryKey })
     ) {
-      void prefetchInfiniteQuery(queryKey, { ...defaultOpts, ...opts });
+      void prefetchInfiniteQuery(queryKey, { ...defaultOpts, ...opts } as any);
     }
 
     const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, {
@@ -579,7 +583,12 @@ export function createRootHooks<
   function usePrefetchInfiniteQuery(
     path: string[],
     input: unknown,
-    opts: UseTRPCPrefetchInfiniteQueryOptions<unknown, unknown, TError>,
+    opts: UseTRPCPrefetchInfiniteQueryOptions<
+      unknown,
+      unknown,
+      TError,
+      TContext
+    >,
   ): void {
     const context = useContext();
     const queryKey = getQueryKeyInternal(path, input, 'infinite');
@@ -627,7 +636,12 @@ export function createRootHooks<
   function useSuspenseInfiniteQuery(
     path: readonly string[],
     input: unknown,
-    opts: UseTRPCSuspenseInfiniteQueryOptions<unknown, unknown, TError>,
+    opts: UseTRPCSuspenseInfiniteQueryOptions<
+      unknown,
+      unknown,
+      TError,
+      TContext
+    >,
   ): UseTRPCSuspenseInfiniteQueryResult<unknown, TError, unknown> {
     const context = useContext();
     const queryKey = getQueryKeyInternal(path, input, 'infinite');
@@ -687,7 +701,7 @@ export function createRootHooks<
 
     if (typeof window === 'undefined' && ssrState === 'prepass') {
       for (const query of queries) {
-        const queryOption = query as TRPCQueryOptions<any, any>;
+        const queryOption = query as TRPCQueryOptions<any, any, any>;
         if (
           queryOption.trpc?.ssr !== false &&
           !queryClient.getQueryCache().find({ queryKey: queryOption.queryKey })
@@ -701,7 +715,7 @@ export function createRootHooks<
       {
         queries: queries.map((query) => ({
           ...query,
-          queryKey: (query as TRPCQueryOptions<any, any>).queryKey,
+          queryKey: (query as TRPCQueryOptions<any, any, any>).queryKey,
         })),
         combine: options?.combine as any,
       },
@@ -723,7 +737,7 @@ export function createRootHooks<
         queries: queries.map((query) => ({
           ...query,
           queryFn: query.queryFn,
-          queryKey: (query as TRPCQueryOptions<any, any>).queryKey,
+          queryKey: (query as TRPCQueryOptions<any, any, any>).queryKey,
         })),
       },
       queryClient,
@@ -756,5 +770,6 @@ export function createRootHooks<
  */
 export type CreateReactQueryHooks<
   TRouter extends AnyRouter,
+  TContext extends ClientContext,
   TSSRContext = unknown,
-> = ReturnType<typeof createRootHooks<TRouter, TSSRContext>>;
+> = ReturnType<typeof createRootHooks<TRouter, TContext, TSSRContext>>;
