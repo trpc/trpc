@@ -31,7 +31,6 @@ export {
   type AnyQueryProcedure as AnyTRPCQueryProcedure,
   type RouterRecord as TRPCRouterRecord,
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
-  type ProcedureOptions as TRPCProcedureOptions,
   type CreateContextCallback,
   type MutationProcedure as TRPCMutationProcedure,
   type QueryProcedure as TRPCQueryProcedure,
