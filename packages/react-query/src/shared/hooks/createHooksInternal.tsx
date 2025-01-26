@@ -528,7 +528,7 @@ export function createRootHooks<
       !isInputSkipToken &&
       !queryClient.getQueryCache().find({ queryKey })
     ) {
-      void prefetchInfiniteQuery(queryKey, { ...defaultOpts, ...opts } as any);
+      void prefetchInfiniteQuery(queryKey, { ...defaultOpts, ...opts });
     }
 
     const ssrOpts = useSSRQueryOptionsIfNeeded(queryKey, {
