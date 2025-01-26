@@ -1,0 +1,108 @@
+---
+slug: introducing-tanstack-react-query-client
+title: Introducing the new Tanstack React Query integration
+authors: [nicklucas]
+---
+
+We are excited to announce the new Tanstack React Query integration for tRPC. Compared to our classic [React Query Integration](/docs/client/react) it's simpler and more Tanstack Query-native, choosing to utilise the [QueryOptions](https://tanstack.com/query/latest/docs/framework/react/guides/query-options) and [MutationOptions](https://tanstack.com/query/latest/docs/framework/react/guides/mutations) interfaces native to Tanstack React Query, instead of wrapping `useQuery` and `useMutation` with our own client.
+
+```tsx
+import { useTRPC } from './trpc';
+import { useQuery } from '@tanstack/react-query';
+
+function Users() {
+  const trpc = useTRPC();
+
+  const greetingQuery = useQuery(
+    trpc.greeting.queryOptions({ name: 'Jerry' })
+  )
+
+  // greetingQuery.data === 'Hello Jerry'
+}
+```
+
+With this new client we're removing a layer of abstraction which is a common source of confusion for new users, and instead providing a more direct way to work with Tanstack React Query which will feel immediately familiar to those who are following Tanstack's own [documentation](https://tanstack.com/query/latest). It also means we need less tRPC documentation to explain it, though we've [written a guide to get started anyway](/docs/tanstack-react-query/introduction).
+
+## What's happening to the classic tRPC React Query integration?
+
+It's not going anywhere soon! We're committing to maintaining it for a long time to come, but it won't receieve any significant new features.
+
+We recommend new projects start with the new Tanstack React Query integration, and existing projects to consider migrating over gradually.
+
+## How do I migrate?
+
+There are a few approaches to migrate over, but you will probably want to try a combination of:
+
+### Codemod migration
+
+We're working on a codemod to help you migrate your existing codebase over to the new client. This is already available to try but we need your feedback and contributions to improve it. Codemods are very tricky to get right so we're looking for your help to make it as effective as possible.
+
+You can find docs on how to use the codemode [here](/docs/tanstack-react-query/codemod).
+
+### Gradual migration
+
+Start by using the new Tanstack React Query integration in new parts of your application, and gradually migrate over existing parts as you see fit. Query Keys are identical which means you can use the new client and classic client together and still rely on Tanstack Query's caching.
+
+#### Migrating Queries
+
+A classic query might look like this:
+
+```tsx
+import { trpc } from './trpc';
+
+function Users() {
+  const greetingQuery = trpc.greeting.useQuery(
+    { name: 'Jerry' }
+  )
+
+  // greetingQuery.data === 'Hello Jerry'
+}
+```
+
+Becomes:
+
+```tsx
+import { useTRPC } from './trpc';
+import { useQuery } from '@tanstack/react-query';
+
+function Users() {
+  const trpc = useTRPC();
+
+  const greetingQuery = useQuery(
+    trpc.greeting.queryOptions({ name: 'Jerry' })
+  )
+
+  // greetingQuery.data === 'Hello Jerry'
+}
+```
+
+#### Migrating Mutations
+
+A classic mutation might look like this:
+
+```tsx
+import { trpc } from './trpc';
+
+function Users() {
+  const createUserMutation = trpc.createUser.useMutation()
+
+  createUserMutation.mutate({ name: 'Jerry' })
+}
+```
+
+Becomes:
+
+```tsx
+import { useTRPC } from './trpc';
+import { useMutation } from '@tanstack/react-query';
+
+function Users() {
+  const trpc = useTRPC();
+
+  const createUserMutation = useMutation(
+    trpc.createUser.mutationOptions()
+  )
+
+  createUserMutation.mutate({ name: 'Jerry' })
+}
+```
