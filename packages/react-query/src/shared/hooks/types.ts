@@ -24,6 +24,7 @@ import type {
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
+import type { ClientContext } from '@trpc/client/internals/types';
 import type {
   AnyRouter,
   DistributiveOmit,
@@ -37,7 +38,7 @@ export type OutputWithCursor<TData, TCursor = any> = {
   data: TData;
 };
 
-export interface TRPCReactRequestOptions
+export interface TRPCReactRequestOptions<TContext extends ClientContext>
   // For RQ, we use their internal AbortSignals instead of letting the user pass their own
   extends Omit<TRPCRequestOptions, 'signal'> {
   /**
@@ -48,56 +49,70 @@ export interface TRPCReactRequestOptions
    * Opt out or into aborting request on unmount
    */
   abortOnUnmount?: boolean;
+  /**
+   * Context to be passed to the procedure
+   */
+  context?: TContext;
 }
 
-export interface TRPCUseQueryBaseOptions {
+export interface TRPCUseQueryBaseOptions<TContext extends ClientContext> {
   /**
    * tRPC-related options
    */
-  trpc?: TRPCReactRequestOptions;
+  trpc?: TRPCReactRequestOptions<TContext>;
 }
 
 export interface UseTRPCQueryOptions<
   TOutput,
   TData,
   TError,
+  TContext extends ClientContext,
   TQueryOptsData = TOutput,
 > extends DistributiveOmit<
       UseBaseQueryOptions<TOutput, TError, TData, TQueryOptsData, any>,
       'queryKey'
     >,
-    TRPCUseQueryBaseOptions {}
+    TRPCUseQueryBaseOptions<TContext> {}
 
-export interface UseTRPCSuspenseQueryOptions<TOutput, TData, TError>
-  extends DistributiveOmit<
+export interface UseTRPCSuspenseQueryOptions<
+  TOutput,
+  TData,
+  TError,
+  TContext extends ClientContext,
+> extends DistributiveOmit<
       UseSuspenseQueryOptions<TOutput, TError, TData, any>,
       'queryKey'
     >,
-    TRPCUseQueryBaseOptions {}
+    TRPCUseQueryBaseOptions<TContext> {}
 
-export interface UseTRPCPrefetchQueryOptions<TOutput, TData, TError>
-  extends DistributiveOmit<
+export interface UseTRPCPrefetchQueryOptions<
+  TOutput,
+  TData,
+  TError,
+  TContext extends ClientContext,
+> extends DistributiveOmit<
       FetchQueryOptions<TOutput, TError, TData, any>,
       'queryKey'
     >,
-    TRPCUseQueryBaseOptions {}
+    TRPCUseQueryBaseOptions<TContext> {}
 
 /** @internal **/
 export interface DefinedUseTRPCQueryOptions<
   TOutput,
   TData,
   TError,
+  TContext extends ClientContext,
   TQueryOptsData = TOutput,
 > extends DistributiveOmit<
-    UseTRPCQueryOptions<TOutput, TData, TError, TQueryOptsData>,
+    UseTRPCQueryOptions<TOutput, TData, TError, TContext, TQueryOptsData>,
     'queryKey'
   > {
   initialData: InitialDataFunction<TQueryOptsData> | TQueryOptsData;
 }
 
-export interface TRPCQueryOptions<TData, TError>
+export interface TRPCQueryOptions<TData, TError, TContext extends ClientContext>
   extends DistributiveOmit<QueryOptions<TData, TError, TData, any>, 'queryKey'>,
-    TRPCUseQueryBaseOptions {
+    TRPCUseQueryBaseOptions<TContext> {
   queryKey: TRPCQueryKey;
 }
 
@@ -105,8 +120,12 @@ export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
   ? TInput['cursor']
   : unknown;
 
-export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
-  extends DistributiveOmit<
+export interface UseTRPCInfiniteQueryOptions<
+  TInput,
+  TOutput,
+  TError,
+  TContext extends ClientContext,
+> extends DistributiveOmit<
       UseInfiniteQueryOptions<
         TOutput,
         TError,
@@ -117,27 +136,35 @@ export interface UseTRPCInfiniteQueryOptions<TInput, TOutput, TError>
       >,
       'queryKey' | 'initialPageParam'
     >,
-    TRPCUseQueryBaseOptions {
+    TRPCUseQueryBaseOptions<TContext> {
   initialCursor?: ExtractCursorType<TInput>;
 }
 
-export type UseTRPCPrefetchInfiniteQueryOptions<TInput, TOutput, TError> =
-  DistributiveOmit<
-    FetchInfiniteQueryOptions<
-      TOutput,
-      TError,
-      TOutput,
-      any,
-      ExtractCursorType<TInput>
-    >,
-    'queryKey' | 'initialPageParam'
-  > &
-    TRPCUseQueryBaseOptions & {
-      initialCursor?: ExtractCursorType<TInput>;
-    };
+export type UseTRPCPrefetchInfiniteQueryOptions<
+  TInput,
+  TOutput,
+  TError,
+  TContext extends ClientContext,
+> = DistributiveOmit<
+  FetchInfiniteQueryOptions<
+    TOutput,
+    TError,
+    TOutput,
+    any,
+    ExtractCursorType<TInput>
+  >,
+  'queryKey' | 'initialPageParam'
+> &
+  TRPCUseQueryBaseOptions<TContext> & {
+    initialCursor?: ExtractCursorType<TInput>;
+  };
 
-export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
-  extends DistributiveOmit<
+export interface UseTRPCSuspenseInfiniteQueryOptions<
+  TInput,
+  TOutput,
+  TError,
+  TContext extends ClientContext,
+> extends DistributiveOmit<
       UseSuspenseInfiniteQueryOptions<
         TOutput,
         TError,
@@ -148,7 +175,7 @@ export interface UseTRPCSuspenseInfiniteQueryOptions<TInput, TOutput, TError>
       >,
       'queryKey' | 'initialPageParam'
     >,
-    TRPCUseQueryBaseOptions {
+    TRPCUseQueryBaseOptions<TContext> {
   initialCursor?: ExtractCursorType<TInput>;
 }
 
@@ -156,9 +183,9 @@ export interface UseTRPCMutationOptions<
   TInput,
   TError,
   TOutput,
-  TContext = unknown,
+  TContext extends ClientContext,
 > extends UseMutationOptions<TOutput, TError, TInput, TContext>,
-    TRPCUseQueryBaseOptions {}
+    TRPCUseQueryBaseOptions<TContext> {}
 
 export interface UseTRPCSubscriptionOptions<TOutput, TError> {
   /**
@@ -225,15 +252,20 @@ export type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionErrorResult<TOutput, TError>
   | TRPCSubscriptionPendingResult<TOutput>;
 
-export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
-  extends Omit<TRPCContextProps<TRouter, TSSRContext>, 'client'> {
+export interface TRPCProviderProps<
+  TRouter extends AnyRouter,
+  TSSRContext,
+  TContext extends ClientContext,
+> extends Omit<TRPCContextProps<TRouter, TSSRContext>, 'client'> {
   children: ReactNode;
-  client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;
+  client: inferRouterClient<TRouter, TContext> | TRPCUntypedClient<TRouter>;
 }
 
-export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
-  props: TRPCProviderProps<TRouter, TSSRContext>,
-) => JSX.Element;
+export type TRPCProvider<
+  TRouter extends AnyRouter,
+  TSSRContext,
+  TContext extends ClientContext,
+> = (props: TRPCProviderProps<TRouter, TSSRContext, TContext>) => JSX.Element;
 
 export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,

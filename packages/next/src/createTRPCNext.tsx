@@ -1,5 +1,6 @@
 /* istanbul ignore file -- @preserve */
 // We're testing this through E2E-testing
+import type { ClientContext } from '@trpc/client/internals/types';
 import type {
   CreateReactUtils,
   DecorateRouterRecord,
@@ -49,20 +50,23 @@ export interface CreateTRPCNextBase<
 export type CreateTRPCNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext,
+  TContext extends ClientContext,
 > = ProtectedIntersection<
   CreateTRPCNextBase<TRouter, TSSRContext>,
   DecorateRouterRecord<
     TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record']
+    TRouter['_def']['record'],
+    TContext
   >
 >;
 
 export function createTRPCNext<
   TRouter extends AnyRouter,
   TSSRContext extends NextPageContext = NextPageContext,
+  TContext extends ClientContext = ClientContext,
 >(
   opts: WithTRPCNoSSROptions<TRouter> | WithTRPCSSROptions<TRouter>,
-): CreateTRPCNext<TRouter, TSSRContext> {
+): CreateTRPCNext<TRouter, TSSRContext, TContext> {
   const hooks = createRootHooks<TRouter, TSSRContext>(opts);
 
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
@@ -70,7 +74,8 @@ export function createTRPCNext<
 
   const proxy = createReactDecoration(hooks) as DecorateRouterRecord<
     TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record']
+    TRouter['_def']['record'],
+    TContext
   >;
 
   return createFlatProxy((key) => {

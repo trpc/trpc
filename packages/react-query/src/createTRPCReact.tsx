@@ -11,6 +11,7 @@ import type {
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
 import type { createTRPCClient, TRPCClientErrorLike } from '@trpc/client';
+import type { ClientContext } from '@trpc/client/internals/types';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -117,11 +118,15 @@ type inferCursorType<TInput> = TInput extends { cursor?: any }
   ? TInput['cursor']
   : unknown;
 
-type makeInfiniteQueryOptions<TCursor, TOptions> = Omit<
+type makeInfiniteQueryOptions<
+  TCursor,
+  TOptions,
+  TContext extends ClientContext,
+> = Omit<
   TOptions,
   'queryKey' | 'initialPageParam' | 'queryFn' | 'queryHash' | 'queryHashFn'
 > &
-  TRPCUseQueryBaseOptions & {
+  TRPCUseQueryBaseOptions<TContext> & {
     initialCursor?: TCursor;
   };
 
@@ -182,7 +187,10 @@ type trpcInfiniteData<TDef extends ResolverDef> = Simplify<
 //   queryClient?: QueryClient,
 // ): UseInfiniteQueryResult<TData, TError>;
 
-export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
+export interface useTRPCInfiniteQuery<
+  TDef extends ResolverDef,
+  TContext extends ClientContext,
+> {
   // 1st
   <TData = trpcInfiniteData<TDef>>(
     input: InfiniteInput<TDef['input']>,
@@ -199,13 +207,17 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         any,
         //     TPageParam
         inferCursorType<TDef['input']>
-      >
+      >,
+      TContext
     >,
   ): TRPCHookResult &
     DefinedUseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>>;
 
   // 2nd
-  <TData = trpcInfiniteData<TDef>>(
+  <
+    TData = trpcInfiniteData<TDef>,
+    TContext extends ClientContext = ClientContext,
+  >(
     input: InfiniteInput<TDef['input']>,
     opts?: makeInfiniteQueryOptions<
       inferCursorType<TDef['input']>,
@@ -220,12 +232,16 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         any,
         //     TPageParam
         inferCursorType<TDef['input']>
-      >
+      >,
+      TContext
     >,
   ): TRPCHookResult & UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>>;
 
   // 3rd:
-  <TData = trpcInfiniteData<TDef>>(
+  <
+    TData = trpcInfiniteData<TDef>,
+    TContext extends ClientContext = ClientContext,
+  >(
     input: InfiniteInput<TDef['input']>,
     opts?: makeInfiniteQueryOptions<
       inferCursorType<TDef['input']>,
@@ -242,7 +258,8 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
         any,
         //     TPageParam
         inferCursorType<TDef['input']>
-      >
+      >,
+      TContext
     >,
   ): TRPCHookResult & UseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>>;
 }
@@ -266,7 +283,10 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
 //   queryClient?: QueryClient,
 // ): UseSuspenseInfiniteQueryResult<TData, TError>;
 
-export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = (
+export type useTRPCSuspenseInfiniteQuery<
+  TDef extends ResolverDef,
+  TContext extends ClientContext,
+> = (
   input: InfiniteInput<TDef['input']>,
   opts: makeInfiniteQueryOptions<
     inferCursorType<TDef['input']>,
@@ -283,7 +303,8 @@ export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = (
       any,
       //     TPageParam
       inferCursorType<TDef['input']>
-    >
+    >,
+    TContext
   >,
 ) => [
   trpcInfiniteData<TDef>,
@@ -297,33 +318,38 @@ export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = (
 /**
  * @internal
  */
-export type MaybeDecoratedInfiniteQuery<TDef extends ResolverDef> =
-  TDef['input'] extends CursorInput
-    ? {
-        /**
-         * @see https://trpc.io/docs/v11/client/react/useInfiniteQuery
-         */
-        useInfiniteQuery: useTRPCInfiniteQuery<TDef>;
-        /**
-         * @see https://trpc.io/docs/client/react/suspense#usesuspenseinfinitequery
-         */
-        useSuspenseInfiniteQuery: useTRPCSuspenseInfiniteQuery<TDef>;
+export type MaybeDecoratedInfiniteQuery<
+  TDef extends ResolverDef,
+  TContext extends ClientContext,
+> = TDef['input'] extends CursorInput
+  ? {
+      /**
+       * @see https://trpc.io/docs/v11/client/react/useInfiniteQuery
+       */
+      useInfiniteQuery: useTRPCInfiniteQuery<TDef, TContext>;
+      /**
+       * @see https://trpc.io/docs/client/react/suspense#usesuspenseinfinitequery
+       */
+      useSuspenseInfiniteQuery: useTRPCSuspenseInfiniteQuery<TDef, TContext>;
 
-        usePrefetchInfiniteQuery: (
-          input: Omit<TDef['input'], ReservedInfiniteQueryKeys> | SkipToken,
-          opts: TRPCFetchInfiniteQueryOptions<
-            TDef['input'],
-            TDef['output'],
-            TRPCClientErrorLike<TDef>
-          >,
-        ) => void;
-      }
-    : object;
+      usePrefetchInfiniteQuery: (
+        input: Omit<TDef['input'], ReservedInfiniteQueryKeys> | SkipToken,
+        opts: TRPCFetchInfiniteQueryOptions<
+          TDef['input'],
+          TDef['output'],
+          TRPCClientErrorLike<TDef>
+        >,
+      ) => void;
+    }
+  : object;
 
 /**
  * @internal
  */
-export type DecoratedQueryMethods<TDef extends ResolverDef> = {
+export type DecoratedQueryMethods<
+  TDef extends ResolverDef,
+  TContext extends ClientContext,
+> = {
   /**
    * @see https://trpc.io/docs/v11/client/react/useQuery
    */
@@ -340,7 +366,8 @@ export type DecoratedQueryMethods<TDef extends ResolverDef> = {
     opts?: UseTRPCSuspenseQueryOptions<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TDef>
+      TRPCClientErrorLike<TDef>,
+      TContext
     >,
   ) => [
     TData,
@@ -351,25 +378,31 @@ export type DecoratedQueryMethods<TDef extends ResolverDef> = {
 /**
  * @internal
  */
-export type DecoratedQuery<TDef extends ResolverDef> =
-  MaybeDecoratedInfiniteQuery<TDef> & DecoratedQueryMethods<TDef>;
+export type DecoratedQuery<
+  TDef extends ResolverDef,
+  TContext extends ClientContext,
+> = MaybeDecoratedInfiniteQuery<TDef, TContext> &
+  DecoratedQueryMethods<TDef, TContext>;
 
-export type DecoratedMutation<TDef extends ResolverDef> = {
+export type DecoratedMutation<
+  TDef extends ResolverDef,
+  TContext extends ClientContext,
+> = {
   /**
    * @see https://trpc.io/docs/v11/client/react/useMutation
    */
-  useMutation: <TContext = unknown>(
+  useMutation: <TMutationContext extends TContext = TContext>(
     opts?: UseTRPCMutationOptions<
       TDef['input'],
       TRPCClientErrorLike<TDef>,
       TDef['output'],
-      TContext
+      TMutationContext
     >,
   ) => UseTRPCMutationResult<
     TDef['output'],
     TRPCClientErrorLike<TDef>,
     TDef['input'],
-    TContext
+    TMutationContext
   >;
 };
 
@@ -416,10 +449,11 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
 export type DecorateProcedure<
   TType extends ProcedureType,
   TDef extends ResolverDef,
+  TContext extends ClientContext,
 > = TType extends 'query'
-  ? DecoratedQuery<TDef>
+  ? DecoratedQuery<TDef, TContext>
   : TType extends 'mutation'
-    ? DecoratedMutation<TDef>
+    ? DecoratedMutation<TDef, TContext>
     : TType extends 'subscription'
       ? {
           /**
@@ -435,6 +469,7 @@ export type DecorateProcedure<
 export type DecorateRouterRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
+  TContext extends ClientContext,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends AnyProcedure
@@ -445,10 +480,11 @@ export type DecorateRouterRecord<
             output: inferTransformedProcedureOutput<TRoot, $Value>;
             transformer: TRoot['transformer'];
             errorShape: TRoot['errorShape'];
-          }
+          },
+          TContext
         >
       : $Value extends RouterRecord
-        ? DecorateRouterRecord<TRoot, $Value>
+        ? DecorateRouterRecord<TRoot, $Value, TContext>
         : never
     : never;
 };
@@ -456,7 +492,11 @@ export type DecorateRouterRecord<
 /**
  * @internal
  */
-export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
+export type CreateTRPCReactBase<
+  TRouter extends AnyRouter,
+  TSSRContext,
+  TContext extends ClientContext,
+> = {
   /**
    * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
    *
@@ -467,8 +507,8 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
    * @see https://trpc.io/docs/v11/client/react/useUtils
    */
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
-  Provider: TRPCProvider<TRouter, TSSRContext>;
-  createClient: typeof createTRPCClient<TRouter>;
+  Provider: TRPCProvider<TRouter, TSSRContext, TContext>;
+  createClient: typeof createTRPCClient<TRouter, TContext>;
   useQueries: TRPCUseQueries<TRouter>;
   useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
 };
@@ -476,11 +516,13 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
 export type CreateTRPCReact<
   TRouter extends AnyRouter,
   TSSRContext,
+  TContext extends ClientContext,
 > = ProtectedIntersection<
-  CreateTRPCReactBase<TRouter, TSSRContext>,
+  CreateTRPCReactBase<TRouter, TSSRContext, TContext>,
   DecorateRouterRecord<
     TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record']
+    TRouter['_def']['record'],
+    TContext
   >
 >;
 
@@ -489,15 +531,17 @@ export type CreateTRPCReact<
  */
 export function createHooksInternal<
   TRouter extends AnyRouter,
+  TContext extends ClientContext,
   TSSRContext = unknown,
 >(trpc: CreateReactQueryHooks<TRouter, TSSRContext>) {
-  type CreateHooksInternal = CreateTRPCReact<TRouter, TSSRContext>;
+  type CreateHooksInternal = CreateTRPCReact<TRouter, TSSRContext, TContext>;
 
   const proxy = createReactDecoration<TRouter, TSSRContext>(
     trpc,
   ) as DecorateRouterRecord<
     TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record']
+    TRouter['_def']['record'],
+    TContext
   >;
   return createFlatProxy<CreateHooksInternal>((key) => {
     if (key === 'useContext' || key === 'useUtils') {
@@ -520,12 +564,13 @@ export function createHooksInternal<
 
 export function createTRPCReact<
   TRouter extends AnyRouter,
+  TContext extends ClientContext,
   TSSRContext = unknown,
 >(
   opts?: CreateTRPCReactOptions<TRouter>,
-): CreateTRPCReact<TRouter, TSSRContext> {
+): CreateTRPCReact<TRouter, TSSRContext, TContext> {
   const hooks = createRootHooks<TRouter, TSSRContext>(opts);
-  const proxy = createHooksInternal<TRouter, TSSRContext>(hooks);
+  const proxy = createHooksInternal<TRouter, TContext, TSSRContext>(hooks);
 
   return proxy as any;
 }
