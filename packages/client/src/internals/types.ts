@@ -87,7 +87,7 @@ export interface ResponseEsque {
  */
 export type NonEmptyArray<TItem> = [TItem, ...TItem[]];
 
-type ClientContext = Record<string, unknown>;
+export interface ClientContext extends Record<string, unknown> {}
 
 /**
  * @public
