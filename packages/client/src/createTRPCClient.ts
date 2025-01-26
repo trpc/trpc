@@ -68,7 +68,7 @@ type SubscriptionResolver<
 type DecorateProcedure<
   TType extends ProcedureType,
   TDef extends ResolverDef,
-  TContext extends ClientContext = ClientContext,
+  TContext extends ClientContext,
 > = TType extends 'query'
   ? {
       query: Resolver<TDef, TContext>;
@@ -113,7 +113,7 @@ type DecoratedProcedureRecord<
 };
 
 const clientCallTypeMap: Record<
-  keyof DecorateProcedure<any, any>,
+  keyof DecorateProcedure<any, any, any>,
   ProcedureType
 > = {
   query: 'query',
