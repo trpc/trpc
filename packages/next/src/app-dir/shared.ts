@@ -47,7 +47,7 @@ export type UseProcedureRecord<
 export function createUseProxy<
   TRouter extends AnyRouter,
   TContext extends ClientContext,
->(client: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter>) {
+>(client: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter, TContext>) {
   const untypedClient: TRPCUntypedClient<TRouter> =
     client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
 
