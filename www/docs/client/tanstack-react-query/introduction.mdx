@@ -41,22 +41,18 @@ import ImportAppRouter from '../../partials/_import-approuter.mdx';
 
 Create a set of strongly-typed React hooks from your `AppRouter` type signature with `createTRPCReact`.
 
-```ts twoslash title='utils/trpc.ts'
+```ts twoslash title='utils/trpc.ts' include utils
 // @include: router
 // @filename: utils/trpc.ts
 // ---cut---
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/router';
-export type {
-  AppRouter
-}
+
+export type { AppRouter };
 
 const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
-export {
-  TRPCProvider,
-  useTRPC
-}
+export { TRPCProvider, useTRPC };
 ```
 
 ### 4. Add tRPC providers
@@ -70,12 +66,7 @@ If you already use React Query in your application, you **should** re-use the `Q
 ```tsx title='App.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { useState } from 'react';
-import {
-  queryClient,
-  trpcClient,
-  TRPCProvider,
-  useTRPC,
-} from './utils/trpc';
+import { queryClient, trpcClient, TRPCProvider, useTRPC } from './utils/trpc';
 
 export function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -107,12 +98,12 @@ The reason for using `useState` in the creation of the `queryClient` and the `TR
 
 You can now use the tRPC React Query integration to call queries and mutations on your API.
 
-```tsx twoslash title='Users.tsx'
-import {useQuery, useMutation} from "@tanstack/react-query";
+```tsx title='Users.tsx'
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTRPC } from './utils/trpc';
 
 export default function Users() {
-  const trpc = useTRPC()
+  const trpc = useTRPC();
   const userQuery = useQuery(trpc.getUser.queryOptions({ id: 'id_bilbo' }));
   const userCreator = useMutation(trpc.createUser.mutationOptions());
 
