@@ -1,3 +1,5 @@
+import { AsyncLocalStorage } from 'async_hooks';
+import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { experimental_trpcMiddleware, initTRPC } from '@trpc/server';
 
 test('decorate independently', () => {
@@ -538,4 +540,61 @@ test('meta', () => {
 
     return next();
   });
+});
+
+test('recipe: summon context through middleware', async () => {
+  type Context = {
+    foo: string;
+  };
+  const t = initTRPC.context<Context>().create();
+
+  // <initialize AsyncLocalStorage>
+  const asyncStore = new AsyncLocalStorage<Context>();
+  const getAsyncStore = () => {
+    const ctx = asyncStore.getStore();
+    if (!ctx) {
+      throw new Error('No context found');
+    }
+    return ctx;
+  };
+  // </initialize AsyncLocalStorage>
+
+  const procedureWithContext = t.procedure.use((opts) => {
+    // this middleware adds a context that can be fetched by `getContext()`
+    return asyncStore.run(opts.ctx, async () => {
+      return await opts.next();
+    });
+  });
+
+  const router = t.router({
+    proc: t.procedure
+      .use((opts) => {
+        // this middleware adds a context that can be fetched by `getContext()`
+        return asyncStore.run(opts.ctx, async () => {
+          return await opts.next();
+        });
+      })
+      .query(() => {
+        const store = getAsyncStore();
+        expect(store.foo).toBe('bar');
+        return store;
+      }),
+  });
+
+  const ctx = routerToServerAndClientNew(router, {
+    server: {
+      createContext() {
+        return { foo: 'bar' };
+      },
+    },
+  });
+  const res = await ctx.client.proc.query();
+
+  expect(res).toMatchInlineSnapshot(`
+    Object {
+      "foo": "bar",
+    }
+  `);
+
+  await ctx.close();
 });
