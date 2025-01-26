@@ -87,15 +87,15 @@ export interface ResponseEsque {
  */
 export type NonEmptyArray<TItem> = [TItem, ...TItem[]];
 
-type ClientContext = Record<string, unknown>;
+export type ClientContext = Record<string, unknown>;
 
 /**
  * @public
  */
-export interface TRPCProcedureOptions {
+export interface TRPCProcedureOptions<TContext extends ClientContext> {
   /**
    * Client-side context
    */
-  context?: ClientContext;
+  context?: TContext;
   signal?: AbortSignal;
 }

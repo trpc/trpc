@@ -20,14 +20,18 @@ import type {
   UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
-import type { TRPCProcedureOptions } from './internals/types';
+import type { ClientContext, TRPCProcedureOptions } from './internals/types';
 import type { TRPCClientError } from './TRPCClientError';
 
 /**
  * @public
  **/
 export type inferRouterClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
+  DecoratedProcedureRecord<
+    TRouter,
+    TRouter['_def']['record'],
+    inferClientTypes<TRouter>['_config']['ctx']
+  >;
 
 type ResolverDef = {
   input: any;
@@ -42,33 +46,40 @@ type coerceAsyncGeneratorToIterable<T> =
     : T;
 
 /** @internal */
-export type Resolver<TDef extends ResolverDef> = (
+export type Resolver<
+  TDef extends ResolverDef,
+  TContext extends ClientContext = ClientContext,
+> = (
   input: TDef['input'],
-  opts?: TRPCProcedureOptions,
+  opts?: TRPCProcedureOptions<TContext>,
 ) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
 
-type SubscriptionResolver<TDef extends ResolverDef> = (
+type SubscriptionResolver<
+  TDef extends ResolverDef,
+  TContext extends ClientContext = ClientContext,
+> = (
   input: TDef['input'],
   opts: Partial<
     TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
   > &
-    TRPCProcedureOptions,
+    TRPCProcedureOptions<TContext>,
 ) => Unsubscribable;
 
 type DecorateProcedure<
   TType extends ProcedureType,
   TDef extends ResolverDef,
+  TContext extends ClientContext = ClientContext,
 > = TType extends 'query'
   ? {
-      query: Resolver<TDef>;
+      query: Resolver<TDef, TContext>;
     }
   : TType extends 'mutation'
     ? {
-        mutate: Resolver<TDef>;
+        mutate: Resolver<TDef, TContext>;
       }
     : TType extends 'subscription'
       ? {
-          subscribe: SubscriptionResolver<TDef>;
+          subscribe: SubscriptionResolver<TDef, TContext>;
         }
       : never;
 
@@ -78,6 +89,7 @@ type DecorateProcedure<
 type DecoratedProcedureRecord<
   TRouter extends AnyRouter,
   TRecord extends RouterRecord,
+  TContext extends ClientContext,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends AnyProcedure
@@ -91,10 +103,11 @@ type DecoratedProcedureRecord<
             >;
             errorShape: inferClientTypes<TRouter>['errorShape'];
             transformer: inferClientTypes<TRouter>['transformer'];
-          }
+          },
+          TContext
         >
       : $Value extends RouterRecord
-        ? DecoratedProcedureRecord<TRouter, $Value>
+        ? DecoratedProcedureRecord<TRouter, $Value, TContext>
         : never
     : never;
 };
