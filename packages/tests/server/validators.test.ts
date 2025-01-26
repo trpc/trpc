@@ -6,8 +6,7 @@ import myzod from 'myzod';
 import * as T from 'runtypes';
 import * as $ from 'scale-codec';
 import * as st from 'superstruct';
-import * as v0 from 'valibot0';
-import * as v1 from 'valibot1';
+import * as v from 'valibot';
 import * as yup from 'yup';
 import { z } from 'zod';
 
@@ -235,7 +234,7 @@ test('valibot v1', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(v1.number()).query(({ input }) => {
+    num: t.procedure.input(v.number()).query(({ input }) => {
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -260,7 +259,7 @@ test('valibot v1 error type', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(v1.number()).query(({ input }) => {
+    num: t.procedure.input(v.number()).query(({ input }) => {
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -303,9 +302,9 @@ test('valibot v1 error type', async () => {
 
 test('valibot v1 async', async () => {
   const t = initTRPC.create();
-  const input = v1.pipeAsync(
-    v1.string(),
-    v1.checkAsync(async (value) => value === 'foo'),
+  const input = v.pipeAsync(
+    v.string(),
+    v.checkAsync(async (value) => value === 'foo'),
   );
 
   const router = t.router({
@@ -333,10 +332,10 @@ test('valibot v1 async', async () => {
 
 test('valibot v1 transform mixed input/output', async () => {
   const t = initTRPC.create();
-  const input = v1.object({
-    length: v1.pipe(
-      v1.string(),
-      v1.transform((s) => s.length),
+  const input = v.object({
+    length: v.pipe(
+      v.string(),
+      v.transform((s) => s.length),
     ),
   });
 
