@@ -128,7 +128,7 @@ export type CreateTRPCClient<TRouter extends AnyRouter> =
 /**
  * @internal
  */
-export function createTRPCClientProxy<TRouter extends AnyRouter>(
+function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
 ): CreateTRPCClient<TRouter> {
   const proxy = createRecursiveProxy<CreateTRPCClient<TRouter>>(
