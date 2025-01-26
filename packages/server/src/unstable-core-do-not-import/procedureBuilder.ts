@@ -11,7 +11,12 @@ import {
   createOutputMiddleware,
   middlewareMarker,
 } from './middleware';
-import type { inferParser, Parser } from './parser';
+import type {
+  inferParser,
+  inferParserOrCallback,
+  Parser,
+  ParserCallback,
+} from './parser';
 import { getParseFn } from './parser';
 import type {
   AnyMutationProcedure,
@@ -189,12 +194,31 @@ export interface ProcedureBuilder<
    * Add an input parser to the procedure.
    * @see https://trpc.io/docs/v11/server/validators
    */
-  input<$Parser extends Parser>(
+  input<
+    $Parser extends
+      | Parser
+      | ParserCallback<
+          {
+            ctx: TContext;
+          },
+          any
+        >,
+  >(
     schema: TInputOut extends UnsetMarker
       ? $Parser
-      : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
+      : inferParserOrCallback<
+            {
+              ctx: TContext;
+            },
+            $Parser
+          >['out'] extends Record<string, unknown> | undefined
         ? TInputOut extends Record<string, unknown> | undefined
-          ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
+          ? undefined extends inferParserOrCallback<
+              {
+                ctx: TContext;
+              },
+              $Parser
+            >['out'] // if current is optional the previous must be too
             ? undefined extends TInputOut
               ? $Parser
               : TypeError<'Cannot chain an optional parser to a required parser'>
@@ -205,12 +229,29 @@ export interface ProcedureBuilder<
     TContext,
     TMeta,
     TContextOverrides,
-    IntersectIfDefined<TInputIn, inferParser<$Parser>['in']>,
-    IntersectIfDefined<TInputOut, inferParser<$Parser>['out']>,
+    IntersectIfDefined<
+      TInputIn,
+      inferParserOrCallback<
+        {
+          ctx: TContext;
+        },
+        $Parser
+      >['in']
+    >,
+    IntersectIfDefined<
+      TInputOut,
+      inferParserOrCallback<
+        {
+          ctx: TContext;
+        },
+        $Parser
+      >['out']
+    >,
     TOutputIn,
     TOutputOut,
     TCaller
   >;
+
   /**
    * Add an output parser to the procedure.
    * @see https://trpc.io/docs/v11/server/validators
@@ -455,7 +496,9 @@ export function createBuilder<TContext, TMeta>(
   const builder: AnyProcedureBuilder = {
     _def,
     input(input) {
-      const parser = getParseFn(input as Parser);
+      const parser = getParseFn(
+        input as any as Parser | ParserCallback<any, any>,
+      );
       return createNewBuilder(_def, {
         inputs: [input as Parser],
         middlewares: [createInputMiddleware(parser)],

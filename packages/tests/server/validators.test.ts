@@ -434,3 +434,44 @@ test('zod default', () => {
       }),
   });
 });
+
+test('input as callback', async () => {
+  type Organization = {
+    id: string;
+    name: string;
+  };
+  type Membership = {
+    Organization: Organization;
+  };
+  type User = {
+    id: string;
+    memberships: Membership[];
+  };
+  const t = initTRPC
+    .context<{
+      user: null | User;
+    }>()
+    .create();
+
+  const router = t.router({
+    greeting: t.procedure
+      .input(() =>
+        z.object({
+          name: z.string(),
+        }),
+      )
+      .query((opts) => {
+        expectTypeOf(opts.input).toEqualTypeOf<{ name: string }>();
+        return `Hello ${opts.input.name}`;
+      }),
+  });
+
+  {
+    const caller = router.createCaller({
+      user: null,
+    });
+
+    const res = await caller.greeting({ name: 'John' });
+    expect(res).toBe('Hello John');
+  }
+});

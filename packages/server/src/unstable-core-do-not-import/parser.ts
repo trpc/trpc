@@ -1,5 +1,6 @@
 import { StandardSchemaV1Error } from '../vendor/standard-schema-v1/error';
 import { type StandardSchemaV1 } from '../vendor/standard-schema-v1/spec';
+import { isObject } from './utils';
 
 // zod / typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
@@ -56,6 +57,14 @@ export type ParserWithInputOutput<TInput, TParsedInput> =
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
+interface ParserCallbackOptions {
+  ctx: unknown;
+}
+export type ParserCallback<
+  TOptions extends ParserCallbackOptions,
+  TParser extends Parser,
+> = (opts: { ctx: TOptions['ctx'] }) => TParser;
+
 export type inferParser<TParser extends Parser> =
   TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>
     ? {
@@ -69,9 +78,33 @@ export type inferParser<TParser extends Parser> =
         }
       : never;
 
-export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
+export type inferParserOrCallback<
+  TOptions extends ParserCallbackOptions,
+  TParserOrCallback extends Parser | ParserCallback<TOptions, any>,
+> =
+  TParserOrCallback extends ParserCallback<TOptions, infer $TParser>
+    ? inferParser<$TParser>
+    : TParserOrCallback extends Parser
+      ? inferParser<TParserOrCallback>
+      : never;
 
-export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
+export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
+export type ParserWrapper<TType> = {
+  [parserWrapper]: ParseFn<TType>;
+  parser: Parser;
+};
+
+const parserWrapper = Symbol();
+
+export function isParserWrapper(obj: unknown): obj is {
+  [parserWrapper]: unknown;
+} {
+  return isObject(obj) && parserWrapper in obj;
+}
+
+export function getParseFn<TType>(
+  procedureParser: Parser,
+): ParseFn<TType> | ParserWrapper<TType> {
   const parser = procedureParser as any;
 
   if (typeof parser.parseAsync === 'function') {
@@ -111,6 +144,13 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
         throw new StandardSchemaV1Error(result.issues);
       }
       return result.value;
+    };
+  }
+
+  if (typeof parser === 'function') {
+    return {
+      [parserWrapper]: parser,
+      parser,
     };
   }
 
