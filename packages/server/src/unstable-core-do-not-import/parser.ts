@@ -79,16 +79,16 @@ export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
 
-  if (typeof parser === 'function' && typeof parser.assert === 'function') {
-    // ParserArkTypeEsque - arktype schemas shouldn't be called as a function because they return a union type instead of throwing
-    return parser.assert.bind(parser);
-  }
+  // if (typeof parser === 'function' && typeof parser.assert === 'function') {
+  //   // ParserArkTypeEsque - arktype schemas shouldn't be called as a function because they return a union type instead of throwing
+  //   return parser.assert.bind(parser);
+  // }
 
-  if (typeof parser === 'function') {
-    // ParserValibotEsque (>= v0.31.0)
-    // ParserCustomValidatorEsque
-    return parser;
-  }
+  // if (typeof parser === 'function') {
+  //   // ParserValibotEsque (>= v0.31.0)
+  //   // ParserCustomValidatorEsque
+  //   return parser;
+  // }
 
   if (typeof parser.parseAsync === 'function') {
     // ParserZodEsque

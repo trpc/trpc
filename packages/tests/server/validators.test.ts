@@ -508,61 +508,6 @@ test('runtypes', async () => {
   await close();
 });
 
-test('validator fn', async () => {
-  const t = initTRPC.create();
-
-  const numParser = (input: unknown) => {
-    if (typeof input !== 'number') {
-      throw new Error('Not a number');
-    }
-    return input;
-  };
-
-  const router = t.router({
-    num: t.procedure.input(numParser).query(({ input }) => {
-      expectTypeOf(input).toBeNumber();
-      return {
-        input,
-      };
-    }),
-  });
-
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query(123);
-  await expect(client.num.query('123' as any)).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: Not a number]`,
-  );
-  expect(res.input).toBe(123);
-  await close();
-});
-
-test('async validator fn', async () => {
-  const t = initTRPC.create();
-  async function numParser(input: unknown) {
-    if (typeof input !== 'number') {
-      throw new Error('Not a number');
-    }
-    return input;
-  }
-
-  const router = t.router({
-    num: t.procedure.input(numParser).query(({ input }) => {
-      expectTypeOf(input).toBeNumber();
-      return {
-        input,
-      };
-    }),
-  });
-
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query(123);
-  await expect(client.num.query('123' as any)).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: Not a number]`,
-  );
-  expect(res.input).toBe(123);
-  await close();
-});
-
 test('recipe: summon context in input parser', async () => {
   type Context = {
     foo: string;
