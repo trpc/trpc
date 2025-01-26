@@ -75,6 +75,18 @@ module.exports = {
         id: 'client/overview',
       },
       items: [
+        'client/tanstack-react-query/introduction',
+        // {
+        //   type: 'doc',
+        //   label: 'Tanstack React Query (New! ⭐️)',
+        //   // collapsed: true,
+        //   id: 'client/tanstack-react-query/introduction',
+        //   // link: {
+        //   //   type: 'doc',
+        //   //   id: 'client/tanstack-react-query/introduction',
+        //   // },
+        //   // items: ['client/tanstack-react-query/introduction'],
+        // },
         {
           type: 'category',
           label: 'React Query Integration',

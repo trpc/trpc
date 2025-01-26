@@ -898,12 +898,12 @@ importers:
       '@trpc/client':
         specifier: npm:@trpc/client@next
         version: link:../../../packages/client
-      '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
-        version: link:../../../packages/react-query
       '@trpc/server':
         specifier: npm:@trpc/server@next
         version: link:../../../packages/server
+      '@trpc/tanstack-react-query':
+        specifier: npm:@trpc/tanstack-react-query@next
+        version: link:../../../packages/tanstack-react-query
       react:
         specifier: ^19.0.0
         version: 19.0.0
@@ -2193,6 +2193,9 @@ importers:
       '@trpc/server':
         specifier: workspace:*
         version: link:../packages/server
+      '@trpc/tanstack-react-query':
+        specifier: workspace:*
+        version: link:../packages/tanstack-react-query
       '@unkey/ratelimit':
         specifier: ^0.5.0
         version: 0.5.0
