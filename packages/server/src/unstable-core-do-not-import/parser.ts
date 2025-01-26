@@ -34,10 +34,6 @@ export type ParserSuperstructEsque<TInput> = {
   create: (input: unknown) => TInput;
 };
 
-export type ParserCustomValidatorEsque<TInput> = (
-  input: unknown,
-) => Promise<TInput> | TInput;
-
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
 };
@@ -47,7 +43,6 @@ export type ParserScaleEsque<TInput> = {
 };
 
 export type ParserWithoutInput<TInput> =
-  | ParserCustomValidatorEsque<TInput>
   | ParserMyZodEsque<TInput>
   | ParserScaleEsque<TInput>
   | ParserSuperstructEsque<TInput>
@@ -78,17 +73,6 @@ export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 
 export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
-
-  // if (typeof parser === 'function' && typeof parser.assert === 'function') {
-  //   // ParserArkTypeEsque - arktype schemas shouldn't be called as a function because they return a union type instead of throwing
-  //   return parser.assert.bind(parser);
-  // }
-
-  // if (typeof parser === 'function') {
-  //   // ParserValibotEsque (>= v0.31.0)
-  //   // ParserCustomValidatorEsque
-  //   return parser;
-  // }
 
   if (typeof parser.parseAsync === 'function') {
     // ParserZodEsque

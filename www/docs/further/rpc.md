@@ -20,7 +20,7 @@ Nested procedures are separated by dots, so for a request to `byId` below would 
 ```ts
 export const appRouter = router({
   post: router({
-    byId: publicProcedure.input(String).query(async (opts) => {
+    byId: publicProcedure.input(z.string()).query(async (opts) => {
       // [...]
     }),
   }),
@@ -42,13 +42,13 @@ When batching, we combine all parallel procedure calls of the same HTTP method i
 
 ```tsx title='server/router.ts'
 export const appRouter = t.router({
-  postById: t.procedure.input(String).query(async (opts) => {
+  postById: t.procedure.input(z.string()).query(async (opts) => {
     const post = await opts.ctx.post.findUnique({
       where: { id: opts.input },
     });
     return post;
   }),
-  relatedPosts: t.procedure.input(String).query(async (opts) => {
+  relatedPosts: t.procedure.input(z.string()).query(async (opts) => {
     const posts = await opts.ctx.findRelatedPostsById(opts.input);
     return posts;
   }),
