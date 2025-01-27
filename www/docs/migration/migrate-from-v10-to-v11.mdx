@@ -24,6 +24,10 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Move `TRPCProcedureOptions` to `@trpc/client` (non-breaking for most)
+
+If you previously used `ProcedureOptions` from `@trpc/server`, you now need to use `TRPCProcedureOptions` from `@trpc/client` instead.
+
 ### Allow promises to be embedded in nested data (non-breaking)
 
 We now allow promises to be embedded in nested data when using the [`httpBatchStreamLink`](../client/links/httpBatchStreamLink.md), this means that you can now do things like this:
