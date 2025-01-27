@@ -18,7 +18,7 @@ import type {
   Parser,
   ParserCallback,
 } from './parser';
-import { getParseFn, getParseFnOrWrapper } from './parser';
+import { resolveParser, resolveParserOrCallback } from './parser';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -497,14 +497,14 @@ export function createBuilder<TContext, TMeta>(
   const builder: AnyProcedureBuilder = {
     _def,
     input(fn) {
-      const parser = getParseFnOrWrapper(fn as AnyParserOrCallback);
+      const parser = resolveParserOrCallback(fn as AnyParserOrCallback);
       return createNewBuilder(_def, {
         inputs: [fn as AnyParserOrCallback],
         middlewares: [createInputMiddleware(parser)],
       });
     },
     output(output: Parser) {
-      const parser = getParseFn(output);
+      const parser = resolveParser(output);
       if (!parser) {
         throw new Error('Unable to resolve parse fn');
       }

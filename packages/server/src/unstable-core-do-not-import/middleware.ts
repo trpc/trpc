@@ -1,9 +1,9 @@
 import { TRPCError } from './error/TRPCError';
 import {
-  getParseFn,
   isParserWrapper,
-  type ParseFn,
-  type ParseFnOrCallback,
+  resolveParser,
+  type ResolvedParser,
+  type ResolvedParserOrCallback,
 } from './parser';
 import type { ProcedureType } from './procedure';
 import type { GetRawInputFn, Overwrite, Simplify } from './types';
@@ -185,18 +185,18 @@ export const experimental_standaloneMiddleware = <
  * Please note, `trpc-openapi` uses this function.
  */
 export function createInputMiddleware<TInput>(
-  parseFnOrCallback: ParseFnOrCallback<TInput>,
+  parseFnOrCallback: ResolvedParserOrCallback<TInput>,
 ) {
   const inputMiddleware: AnyMiddlewareFunction =
     async function inputValidatorMiddleware(opts) {
       let parsedInput: TInput;
 
       const rawInput = await opts.getRawInput();
-      const parse: ParseFn<TInput> = isParserWrapper(parseFnOrCallback)
+      const parse: ResolvedParser<TInput> = isParserWrapper(parseFnOrCallback)
         ? run(() => {
             const parser = parseFnOrCallback.callback(opts);
 
-            const parse = getParseFn<TInput>(parser);
+            const parse = resolveParser<TInput>(parser);
 
             if (!parse) {
               throw new Error('Invalid parser in parser callback');
@@ -233,7 +233,9 @@ export function createInputMiddleware<TInput>(
 /**
  * @internal
  */
-export function createOutputMiddleware<TOutput>(parse: ParseFn<TOutput>) {
+export function createOutputMiddleware<TOutput>(
+  parse: ResolvedParser<TOutput>,
+) {
   const outputMiddleware: AnyMiddlewareFunction =
     async function outputValidatorMiddleware({ next }) {
       const result = await next();
