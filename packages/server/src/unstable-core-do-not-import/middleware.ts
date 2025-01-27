@@ -194,7 +194,6 @@ export function createInputMiddleware<TInput>(
       const rawInput = await opts.getRawInput();
       const parse: ParseFn<TInput> = isParserWrapper(parseFnOrCallback)
         ? run(() => {
-            console.log(parseFnOrCallback);
             const parser = parseFnOrCallback.callback(opts);
 
             const parse = getParseFn<TInput>(parser);
