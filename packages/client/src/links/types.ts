@@ -5,7 +5,7 @@ import type {
   TRPCResultMessage,
   TRPCSuccessResponse,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { ResponseEsque } from '../internals/types';
+import type { ClientContext, ResponseEsque } from '../internals/types';
 import type { TRPCClientError } from '../TRPCClientError';
 import type { TRPCConnectionState } from './internals/subscriptions';
 
@@ -18,17 +18,20 @@ export {
 /**
  * @internal
  */
-export interface OperationContext extends Record<string, unknown> {}
+export interface OperationContext extends ClientContext {}
 
 /**
  * @internal
  */
-export type Operation<TInput = unknown> = {
+export type Operation<
+  TInput = unknown,
+  TContext extends OperationContext = OperationContext,
+> = {
   id: number;
   type: 'mutation' | 'query' | 'subscription';
   input: TInput;
   path: string;
-  context: OperationContext;
+  context: TContext;
   signal: Maybe<AbortSignal>;
 };
 
@@ -94,18 +97,22 @@ export type OperationResultObserver<
  */
 export type OperationLink<
   TInferrable extends InferrableClientTypes,
+  TContext extends OperationContext = OperationContext,
   TInput = unknown,
   TOutput = unknown,
 > = (opts: {
-  op: Operation<TInput>;
+  op: Operation<TInput, TContext>;
   next: (
-    op: Operation<TInput>,
+    op: Operation<TInput, TContext>,
   ) => OperationResultObservable<TInferrable, TOutput>;
 }) => OperationResultObservable<TInferrable, TOutput>;
 
 /**
  * @public
  */
-export type TRPCLink<TInferrable extends InferrableClientTypes> = (
+export type TRPCLink<
+  TInferrable extends InferrableClientTypes,
+  TContext extends ClientContext,
+> = (
   opts: TRPCClientRuntime,
-) => OperationLink<TInferrable>;
+) => OperationLink<TInferrable, TContext, unknown, unknown>;

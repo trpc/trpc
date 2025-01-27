@@ -24,6 +24,7 @@ import type {
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
+import type { ClientContext } from '@trpc/client/internals/types';
 import type {
   AnyRouter,
   DistributiveOmit,
@@ -225,15 +226,20 @@ export type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionErrorResult<TOutput, TError>
   | TRPCSubscriptionPendingResult<TOutput>;
 
-export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
-  extends Omit<TRPCContextProps<TRouter, TSSRContext>, 'client'> {
+export interface TRPCProviderProps<
+  TRouter extends AnyRouter,
+  TContext extends ClientContext,
+  TSSRContext,
+> extends Omit<TRPCContextProps<TRouter, TSSRContext>, 'client'> {
   children: ReactNode;
-  client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;
+  client: inferRouterClient<TRouter, TContext> | TRPCUntypedClient<TRouter>;
 }
 
-export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (
-  props: TRPCProviderProps<TRouter, TSSRContext>,
-) => JSX.Element;
+export type TRPCProvider<
+  TRouter extends AnyRouter,
+  TContext extends ClientContext,
+  TSSRContext,
+> = (props: TRPCProviderProps<TRouter, TContext, TSSRContext>) => JSX.Element;
 
 export type CreateClient<TRouter extends AnyRouter> = (
   opts: CreateTRPCClientOptions<TRouter>,

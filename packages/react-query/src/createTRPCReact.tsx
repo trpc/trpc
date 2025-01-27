@@ -346,10 +346,7 @@ export type MaybeDecoratedInfiniteQuery<
 /**
  * @internal
  */
-export type DecoratedQueryMethods<
-  TDef extends ResolverDef,
-  TContext extends ClientContext,
-> = {
+export type DecoratedQueryMethods<TDef extends ResolverDef> = {
   /**
    * @see https://trpc.io/docs/v11/client/react/useQuery
    */
@@ -366,8 +363,7 @@ export type DecoratedQueryMethods<
     opts?: UseTRPCSuspenseQueryOptions<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TDef>,
-      TContext
+      TRPCClientErrorLike<TDef>
     >,
   ) => [
     TData,

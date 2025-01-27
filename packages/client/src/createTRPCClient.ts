@@ -170,7 +170,9 @@ export function createTRPCClientProxy<
 export function createTRPCClient<
   TRouter extends AnyRouter,
   TContext extends ClientContext = ClientContext,
->(opts: CreateTRPCClientOptions<TRouter>): CreateTRPCClient<TRouter, TContext> {
+>(
+  opts: CreateTRPCClientOptions<TRouter, TContext>,
+): CreateTRPCClient<TRouter, TContext> {
   const client = new TRPCUntypedClient(opts);
   const proxy = createTRPCClientProxy<TRouter, TContext>(client);
   return proxy;

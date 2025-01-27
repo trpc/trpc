@@ -13,24 +13,24 @@ import type {
 import { createChain } from '../links/internals/createChain';
 import type { TRPCConnectionState } from '../links/internals/subscriptions';
 import type {
-  OperationContext,
   OperationLink,
   TRPCClientRuntime,
   TRPCLink,
 } from '../links/types';
 import { TRPCClientError } from '../TRPCClientError';
+import type { ClientContext } from './types';
 
 type TRPCType = 'mutation' | 'query' | 'subscription';
 export interface TRPCRequestOptions {
   /**
    * Pass additional context to links
    */
-  context?: OperationContext;
+  context?: ClientContext;
   signal?: AbortSignal;
 }
 
 export interface TRPCSubscriptionObserver<TValue, TError> {
-  onStarted: (opts: { context: OperationContext | undefined }) => void;
+  onStarted: (opts: { context: ClientContext | undefined }) => void;
   onData: (value: inferAsyncIterableYield<TValue>) => void;
   onError: (err: TError) => void;
   onStopped: () => void;
@@ -39,8 +39,11 @@ export interface TRPCSubscriptionObserver<TValue, TError> {
 }
 
 /** @internal */
-export type CreateTRPCClientOptions<TRouter extends InferrableClientTypes> = {
-  links: TRPCLink<TRouter>[];
+export type CreateTRPCClientOptions<
+  TRouter extends InferrableClientTypes,
+  TContext extends ClientContext,
+> = {
+  links: TRPCLink<TRouter, TContext>[];
   transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
 };
 
@@ -55,12 +58,15 @@ export type UntypedClientProperties =
   | 'runtime'
   | 'subscription';
 
-export class TRPCUntypedClient<TRouter extends AnyRouter> {
-  private readonly links: OperationLink<AnyRouter>[];
+export class TRPCUntypedClient<
+  TRouter extends AnyRouter,
+  TContext extends ClientContext,
+> {
+  private readonly links: OperationLink<AnyRouter, TContext>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
 
-  constructor(opts: CreateTRPCClientOptions<TRouter>) {
+  constructor(opts: CreateTRPCClientOptions<TRouter, TContext>) {
     this.requestId = 0;
 
     this.runtime = {};
@@ -73,7 +79,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     type: TRPCType;
     input: TInput;
     path: string;
-    context?: OperationContext;
+    context?: ClientContext;
     signal: Maybe<AbortSignal>;
   }) {
     const chain$ = createChain<AnyRouter, TInput, TOutput>({
@@ -91,7 +97,7 @@ export class TRPCUntypedClient<TRouter extends AnyRouter> {
     type: TRPCType;
     input: TInput;
     path: string;
-    context?: OperationContext;
+    context?: ClientContext;
     signal: Maybe<AbortSignal>;
   }): Promise<TOutput> {
     try {
