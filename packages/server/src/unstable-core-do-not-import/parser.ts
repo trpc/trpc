@@ -78,6 +78,8 @@ export type inferParser<TParser extends Parser> =
         }
       : never;
 
+export type AnyParserOrCallback = Parser | ParserCallback<any, any>;
+
 export type inferParserOrCallback<
   TOptions extends ParserCallbackOptions,
   TParserOrCallback extends Parser | ParserCallback<TOptions, any>,
@@ -89,10 +91,12 @@ export type inferParserOrCallback<
       : never;
 
 export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
-export type ParserWrapper<TType> = {
-  [parserWrapper]: ParseFn<TType>;
-  parser: Parser;
+export type ParseFnCallback = {
+  [parserWrapper]: true;
+  callback: ParserCallback<any, Parser>;
 };
+
+export type ParseFnOrCallback<TType> = ParseFn<TType> | ParseFnCallback;
 
 const parserWrapper = Symbol();
 
@@ -103,8 +107,8 @@ export function isParserWrapper(obj: unknown): obj is {
 }
 
 export function getParseFn<TType>(
-  procedureParser: Parser,
-): ParseFn<TType> | ParserWrapper<TType> {
+  procedureParser: AnyParserOrCallback,
+): ParseFn<TType> | null {
   const parser = procedureParser as any;
 
   if (typeof parser.parseAsync === 'function') {
@@ -146,11 +150,19 @@ export function getParseFn<TType>(
       return result.value;
     };
   }
+  return null;
+}
 
-  if (typeof parser === 'function') {
+export function getParseFnOrWrapper<TType>(
+  procedureParser: AnyParserOrCallback,
+): ParseFn<TType> | ParseFnCallback {
+  const parser = procedureParser;
+
+  const parseFn = getParseFn(procedureParser);
+  if (!parseFn && typeof parser === 'function') {
     return {
-      [parserWrapper]: parser,
-      parser,
+      [parserWrapper]: true,
+      callback: procedureParser as ParserCallback<any, any>,
     };
   }
 

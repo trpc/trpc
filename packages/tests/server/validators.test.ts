@@ -436,16 +436,8 @@ test('zod default', () => {
 });
 
 test('input as callback', async () => {
-  type Organization = {
-    id: string;
-    name: string;
-  };
-  type Membership = {
-    Organization: Organization;
-  };
   type User = {
-    id: string;
-    memberships: Membership[];
+    name: string;
   };
   const t = initTRPC
     .context<{
@@ -455,9 +447,12 @@ test('input as callback', async () => {
 
   const router = t.router({
     greeting: t.procedure
-      .input(() =>
+      .input((opts) =>
         z.object({
-          name: z.string(),
+          name: z
+            .string()
+            .optional()
+            .default(opts.ctx.user?.name ?? 'world'),
         }),
       )
       .query((opts) => {
@@ -471,7 +466,24 @@ test('input as callback', async () => {
       user: null,
     });
 
-    const res = await caller.greeting({ name: 'John' });
-    expect(res).toBe('Hello John');
+    {
+      const res = await caller.greeting({ name: 'John' });
+      expect(res).toBe('Hello John');
+    }
+
+    {
+      const res = await caller.greeting({});
+      expect(res).toBe('Hello world');
+    }
+    {
+      const caller = router.createCaller({
+        user: {
+          name: 'John',
+        },
+      });
+
+      const res = await caller.greeting({});
+      expect(res).toBe('Hello John');
+    }
   }
 });

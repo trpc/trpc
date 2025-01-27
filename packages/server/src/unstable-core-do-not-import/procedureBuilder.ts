@@ -12,12 +12,13 @@ import {
   middlewareMarker,
 } from './middleware';
 import type {
+  AnyParserOrCallback,
   inferParser,
   inferParserOrCallback,
   Parser,
   ParserCallback,
 } from './parser';
-import { getParseFn } from './parser';
+import { getParseFn, getParseFnOrWrapper } from './parser';
 import type {
   AnyMutationProcedure,
   AnyProcedure,
@@ -73,7 +74,7 @@ export type CallerOverride<TContext> = (opts: {
 }) => Promise<unknown>;
 type ProcedureBuilderDef<TMeta> = {
   procedure: true;
-  inputs: Parser[];
+  inputs: AnyParserOrCallback[];
   output?: Parser;
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
@@ -195,7 +196,7 @@ export interface ProcedureBuilder<
    * @see https://trpc.io/docs/v11/server/validators
    */
   input<
-    $Parser extends
+    $ParserOrCallback extends
       | Parser
       | ParserCallback<
           {
@@ -205,24 +206,24 @@ export interface ProcedureBuilder<
         >,
   >(
     schema: TInputOut extends UnsetMarker
-      ? $Parser
+      ? $ParserOrCallback
       : inferParserOrCallback<
             {
               ctx: TContext;
             },
-            $Parser
+            $ParserOrCallback
           >['out'] extends Record<string, unknown> | undefined
         ? TInputOut extends Record<string, unknown> | undefined
           ? undefined extends inferParserOrCallback<
               {
                 ctx: TContext;
               },
-              $Parser
+              $ParserOrCallback
             >['out'] // if current is optional the previous must be too
             ? undefined extends TInputOut
-              ? $Parser
+              ? $ParserOrCallback
               : TypeError<'Cannot chain an optional parser to a required parser'>
-            : $Parser
+            : $ParserOrCallback
           : TypeError<'All input parsers did not resolve to an object'>
         : TypeError<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<
@@ -235,7 +236,7 @@ export interface ProcedureBuilder<
         {
           ctx: TContext;
         },
-        $Parser
+        $ParserOrCallback
       >['in']
     >,
     IntersectIfDefined<
@@ -244,7 +245,7 @@ export interface ProcedureBuilder<
         {
           ctx: TContext;
         },
-        $Parser
+        $ParserOrCallback
       >['out']
     >,
     TOutputIn,
@@ -495,17 +496,18 @@ export function createBuilder<TContext, TMeta>(
 
   const builder: AnyProcedureBuilder = {
     _def,
-    input(input) {
-      const parser = getParseFn(
-        input as any as Parser | ParserCallback<any, any>,
-      );
+    input(fn) {
+      const parser = getParseFnOrWrapper(fn as AnyParserOrCallback);
       return createNewBuilder(_def, {
-        inputs: [input as Parser],
+        inputs: [fn as AnyParserOrCallback],
         middlewares: [createInputMiddleware(parser)],
       });
     },
     output(output: Parser) {
       const parser = getParseFn(output);
+      if (!parser) {
+        throw new Error('Unable to resolve parse fn');
+      }
       return createNewBuilder(_def, {
         output,
         middlewares: [createOutputMiddleware(parser)],
