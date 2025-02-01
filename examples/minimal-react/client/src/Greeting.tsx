@@ -3,9 +3,7 @@ import { useTRPC } from './utils/trpc';
 
 export function Greeting() {
   const trpc = useTRPC();
-  const query = trpc.greeting.queryOptions({ name: 'tRPC user' });
-  type t = typeof query;
-  const greeting = useQuery(query);
+  const greeting = useQuery(trpc.greeting.queryOptions({ name: 'tRPC user' }));
 
   return <div>{greeting.data?.text}</div>;
 }
