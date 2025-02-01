@@ -114,7 +114,7 @@ export class RequestManager {
           callbacks,
         },
       }),
-      {} as typeof this.pendingRequests,
+      this.pendingRequests,
     );
     return requests;
   }

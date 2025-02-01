@@ -26,7 +26,7 @@ export function wsLink<TRouter extends AnyRouter>(
       return observable((observer) => {
         const connStateSubscription =
           op.type === 'subscription'
-            ? opts.client.connectionState.subscribe({
+            ? client.connectionState.subscribe({
                 next(result) {
                   observer.next({
                     result,
