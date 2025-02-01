@@ -70,8 +70,8 @@ export class WsClient {
     // Set up inactivity timeout for lazy connections.
     this.inactivityTimeout = new ResettableTimeout(() => {
       if (
-        this.requestManager.hasPendingRequests() ||
-        this.requestManager.hasActiveRequests()
+        this.requestManager.hasOutgoingRequests() ||
+        this.requestManager.hasPendingRequests()
       ) {
         this.inactivityTimeout.reset();
         return;
@@ -166,7 +166,7 @@ export class WsClient {
 
   /**
    * Closes the WebSocket connection and stops managing requests.
-   * Ensures all pending and active requests are properly finalized.
+   * Ensures all outgoing and pending requests are properly finalized.
    */
   public async close() {
     this.inactivityTimeout.stop();
@@ -178,7 +178,7 @@ export class WsClient {
     for (const request of this.requestManager.getRequests()) {
       if (request.message.method === 'subscription') {
         request.callbacks.complete();
-      } else if (request.state === 'pending') {
+      } else if (request.state === 'outgoing') {
         request.callbacks.error(
           TRPCClientError.from(
             new TRPCWebSocketClosedError({
@@ -272,7 +272,7 @@ export class WsClient {
 
   private setupWebSocketListeners(ws: WebSocket) {
     const handleCloseOrError = (cause: unknown) => {
-      const reqs = this.requestManager.getActiveRequests();
+      const reqs = this.requestManager.getPendingRequests();
       for (const { message, callbacks } of reqs) {
         if (message.method === 'subscription') continue;
 
@@ -313,7 +313,7 @@ export class WsClient {
       });
 
       const messages = this.requestManager
-        .getActiveRequests()
+        .getPendingRequests()
         .map(({ message }) => message);
       if (messages.length) {
         ws.send(JSON.stringify(messages.length === 1 ? messages[0] : messages));
@@ -346,7 +346,7 @@ export class WsClient {
   }
 
   private handleResponseMessage(message: TRPCResponseMessage) {
-    const request = this.requestManager.getActiveRequest(message.id);
+    const request = this.requestManager.getPendingRequest(message.id);
     if (!request) return;
 
     request.callbacks.next(message);
@@ -418,7 +418,7 @@ export class WsClient {
         await this.open();
       }
       await sleep(0);
-      if (!this.requestManager.hasPendingRequests()) return;
+      if (!this.requestManager.hasOutgoingRequests()) return;
       this.send(this.requestManager.flush().map(({ message }) => message));
     });
 

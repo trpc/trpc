@@ -28,27 +28,27 @@ interface Request {
 
 /**
  * Manages WebSocket requests, tracking their lifecycle and providing utility methods
- * for handling pending and active requests.
+ * for handling outgoing and pending requests.
  *
- * - **Pending requests**: Requests that are queued and waiting to be sent.
- * - **Active requests**: Requests that have been sent but are awaiting a response.
+ * - **Outgoing requests**: Requests that are queued and waiting to be sent.
+ * - **Pending requests**: Requests that have been sent and are in flight awaiting a response.
  *   For subscriptions, multiple responses may be received until the subscription is closed.
  */
 export class RequestManager {
   /**
-   * Stores requests that are pending, meaning they are registered but not yet sent over the WebSocket.
+   * Stores requests that are outgoing, meaning they are registered but not yet sent over the WebSocket.
    */
-  private pendingRequests = new Array<Request & { id: MessageId }>();
+  private outgoingRequests = new Array<Request & { id: MessageId }>();
 
   /**
-   * Stores requests that are active, meaning they have been sent over the WebSocket
-   * but are still awaiting responses. For subscriptions, this includes requests
+   * Stores requests that are pending (in flight), meaning they have been sent over the WebSocket
+   * and are awaiting responses. For subscriptions, this includes requests
    * that may receive multiple responses.
    */
-  private activeRequest: Record<MessageId, Request> = {};
+  private pendingRequests: Record<MessageId, Request> = {};
 
   /**
-   * Registers a new request by adding it to the pending queue and setting up
+   * Registers a new request by adding it to the outgoing queue and setting up
    * callbacks for lifecycle events such as completion or error.
    *
    * @param message - The outgoing message to be sent.
@@ -58,7 +58,7 @@ export class RequestManager {
   public register(message: TRPCClientOutgoingMessage, callbacks: TCallbacks) {
     const { promise: end, resolve } = withResolvers<void>();
 
-    this.pendingRequests.push({
+    this.outgoingRequests.push({
       id: String(message.id),
       message,
       end,
@@ -83,29 +83,29 @@ export class RequestManager {
   }
 
   /**
-   * Deletes a request from both the pending and active collections, if it exists.
+   * Deletes a request from both the outgoing and pending collections, if it exists.
    */
   public delete(messageId: MessageIdLike) {
     if (messageId === null) return;
 
-    this.pendingRequests = this.pendingRequests.filter(
+    this.outgoingRequests = this.outgoingRequests.filter(
       ({ id }) => id !== String(messageId),
     );
-    delete this.activeRequest[String(messageId)];
+    delete this.pendingRequests[String(messageId)];
   }
 
   /**
-   * Moves all pending requests to the active state and clears the pending queue.
+   * Moves all outgoing requests to the pending state and clears the outgoing queue.
    *
-   * The caller is expected to handle the actual activation of the requests
+   * The caller is expected to handle the actual sending of the requests
    * (e.g., sending them over the network) after this method is called.
    *
-   * @returns The list of requests that were transitioned to the active state.
+   * @returns The list of requests that were transitioned to the pending state.
    */
   public flush() {
-    const requests = this.pendingRequests;
-    this.pendingRequests = [];
-    this.activeRequest = requests.reduce(
+    const requests = this.outgoingRequests;
+    this.outgoingRequests = [];
+    this.pendingRequests = requests.reduce(
       (acc, { id, message, end, callbacks }) => ({
         ...acc,
         [id]: {
@@ -114,50 +114,50 @@ export class RequestManager {
           callbacks,
         },
       }),
-      {} as typeof this.activeRequest,
+      {} as typeof this.pendingRequests,
     );
     return requests;
   }
 
   /**
-   * Retrieves all currently active requests, which are awaiting responses or
-   * handling ongoing subscriptions.
-   */
-  public getActiveRequests() {
-    return Object.values(this.activeRequest);
-  }
-
-  /**
-   * Retrieves a specific active request by its message ID.
-   */
-  public getActiveRequest(messageId: MessageIdLike) {
-    if (messageId === null) return null;
-
-    return this.activeRequest[String(messageId)];
-  }
-
-  /**
-   * Retrieves all pending requests, which are waiting to be sent.
+   * Retrieves all currently pending requests, which are in flight awaiting responses
+   * or handling ongoing subscriptions.
    */
   public getPendingRequests() {
-    return this.pendingRequests;
+    return Object.values(this.pendingRequests);
   }
 
   /**
-   * Retrieves all requests, both pending and active, with their respective states.
+   * Retrieves a specific pending request by its message ID.
+   */
+  public getPendingRequest(messageId: MessageIdLike) {
+    if (messageId === null) return null;
+
+    return this.pendingRequests[String(messageId)];
+  }
+
+  /**
+   * Retrieves all outgoing requests, which are waiting to be sent.
+   */
+  public getOutgoingRequests() {
+    return this.outgoingRequests;
+  }
+
+  /**
+   * Retrieves all requests, both outgoing and pending, with their respective states.
    *
-   * @returns An array of all requests with their state ("pending" or "active").
+   * @returns An array of all requests with their state ("outgoing" or "pending").
    */
   public getRequests() {
     return [
-      ...this.getPendingRequests().map((request) => ({
-        state: 'pending' as const,
+      ...this.getOutgoingRequests().map((request) => ({
+        state: 'outgoing' as const,
         message: request.message,
         end: request.end,
         callbacks: request.callbacks,
       })),
-      ...this.getActiveRequests().map((request) => ({
-        state: 'active' as const,
+      ...this.getPendingRequests().map((request) => ({
+        state: 'pending' as const,
         message: request.message,
         end: request.end,
         callbacks: request.callbacks,
@@ -166,16 +166,16 @@ export class RequestManager {
   }
 
   /**
-   * Checks if there are any active requests, including ongoing subscriptions.
+   * Checks if there are any pending requests, including ongoing subscriptions.
    */
-  public hasActiveRequests() {
-    return this.getActiveRequests().length > 0;
+  public hasPendingRequests() {
+    return this.getPendingRequests().length > 0;
   }
 
   /**
-   * Checks if there are any pending requests waiting to be sent.
+   * Checks if there are any outgoing requests waiting to be sent.
    */
-  public hasPendingRequests() {
-    return this.pendingRequests.length > 0;
+  public hasOutgoingRequests() {
+    return this.outgoingRequests.length > 0;
   }
 }
