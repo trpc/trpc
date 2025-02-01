@@ -23,7 +23,6 @@ import type { TCallbacks } from './requestManager';
 import { RequestManager } from './requestManager';
 import {
   buildConnectionMessage,
-  prepareUrl,
   ResettableTimeout,
   TRPCWebSocketClosedError,
 } from './utils';
@@ -83,7 +82,7 @@ export class WsClient {
     // Initialize the WebSocket connection.
     this.activeConnection = new WsConnection({
       WebSocketPonyfill: opts.WebSocket,
-      promiseUrl: prepareUrl(opts.url, !!opts.connectionParams),
+      urlOptions: opts,
       keepAlive: {
         ...keepAliveDefaults,
         ...opts.keepAlive,

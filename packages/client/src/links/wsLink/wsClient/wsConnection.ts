@@ -1,5 +1,6 @@
+import { UrlOptionsWithConnectionParams } from '@trpc/client/links/internals/urlWithConnectionParams';
 import { behaviorSubject } from '@trpc/server/observable';
-import { withResolvers } from './utils';
+import { prepareUrl, withResolvers } from './utils';
 
 /**
  * Opens a WebSocket connection asynchronously and returns a promise
@@ -85,7 +86,7 @@ function setupPingInterval(
 
 export interface WebSocketConnectionOptions {
   WebSocketPonyfill?: typeof WebSocket;
-  promiseUrl: Promise<string>;
+  urlOptions: UrlOptionsWithConnectionParams;
   keepAlive: PingPongOptions & {
     enabled: boolean;
   };
@@ -100,7 +101,7 @@ export class WsConnection {
   public id = ++WsConnection.connectCount;
 
   private readonly WebSocketPonyfill: typeof WebSocket;
-  private readonly promiseUrl: Promise<string>;
+  private readonly urlOptions: UrlOptionsWithConnectionParams;
   private readonly keepAliveOpts: WebSocketConnectionOptions['keepAlive'];
   public readonly wsObservable = behaviorSubject<WebSocket | null>(null);
 
@@ -112,7 +113,7 @@ export class WsConnection {
       );
     }
 
-    this.promiseUrl = opts.promiseUrl;
+    this.urlOptions = opts.urlOptions;
     this.keepAliveOpts = opts.keepAlive;
   }
 
@@ -156,7 +157,7 @@ export class WsConnection {
     if (this.openPromise) return this.openPromise;
 
     this.id = ++WsConnection.connectCount;
-    const wsPromise = this.promiseUrl.then(
+    const wsPromise = prepareUrl(this.urlOptions).then(
       (url) => new this.WebSocketPonyfill(url),
     );
     this.openPromise = wsPromise.then(asyncWsOpen);

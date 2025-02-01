@@ -2,8 +2,11 @@ import type {
   TRPCConnectionParamsMessage,
   TRPCRequestInfo,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { CallbackOrValue } from '../../internals/urlWithConnectionParams';
-import { resultOf } from '../../internals/urlWithConnectionParams';
+import {
+  CallbackOrValue,
+  resultOf,
+  UrlOptionsWithConnectionParams,
+} from '../../internals/urlWithConnectionParams';
 
 export class TRPCWebSocketClosedError extends Error {
   constructor(opts: { message: string; cause?: unknown }) {
@@ -65,15 +68,12 @@ export function withResolvers<T>() {
 /**
  * Resolves a WebSocket URL and optionally appends connection parameters.
  *
- * If `withConnectionParams` is true, appends `connectionParams=1` query parameter.
+ * If connectionParams are provided, appends 'connectionParams=1' query parameter.
  */
-export async function prepareUrl(
-  urlCallbackOrValue: CallbackOrValue<string>,
-  withConnectionParams: boolean,
-) {
-  const url = await resultOf(urlCallbackOrValue);
+export async function prepareUrl(urlOptions: UrlOptionsWithConnectionParams) {
+  const url = await resultOf(urlOptions.url);
 
-  if (!withConnectionParams) return url;
+  if (!urlOptions.connectionParams) return url;
 
   // append `?connectionParams=1` when connection params are used
   const prefix = url.includes('?') ? '&' : '?';
