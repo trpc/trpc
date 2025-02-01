@@ -102,7 +102,6 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
    */
   queryKey: (
     input?: TDef['input'],
-    // tslint seems to be wrong here, the type is correct
   ) => DataTag<TRPCQueryKey, TDef['output'], TDef['errorShape']>;
 
   /**
