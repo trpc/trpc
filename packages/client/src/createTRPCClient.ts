@@ -7,7 +7,6 @@ import type {
   inferProcedureInput,
   inferTransformedProcedureOutput,
   IntersectionError,
-  ProcedureOptions,
   ProcedureType,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -21,6 +20,7 @@ import type {
   UntypedClientProperties,
 } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+import type { TRPCProcedureOptions } from './internals/types';
 import type { TRPCClientError } from './TRPCClientError';
 
 /**
@@ -44,7 +44,7 @@ type coerceAsyncGeneratorToIterable<T> =
 /** @internal */
 export type Resolver<TDef extends ResolverDef> = (
   input: TDef['input'],
-  opts?: ProcedureOptions,
+  opts?: TRPCProcedureOptions,
 ) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
 
 type SubscriptionResolver<TDef extends ResolverDef> = (
@@ -52,7 +52,7 @@ type SubscriptionResolver<TDef extends ResolverDef> = (
   opts: Partial<
     TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
   > &
-    ProcedureOptions,
+    TRPCProcedureOptions,
 ) => Unsubscribable;
 
 type DecorateProcedure<
