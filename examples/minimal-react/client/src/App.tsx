@@ -18,10 +18,10 @@ export function App() {
   );
 
   return (
-    <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
         <Greeting />
-      </QueryClientProvider>
-    </TRPCProvider>
+      </TRPCProvider>
+    </QueryClientProvider>
   );
 }
