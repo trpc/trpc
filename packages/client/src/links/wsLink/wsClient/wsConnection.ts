@@ -1,4 +1,4 @@
-import { UrlOptionsWithConnectionParams } from '@trpc/client/links/internals/urlWithConnectionParams';
+import type { UrlOptionsWithConnectionParams } from '@trpc/client/links/internals/urlWithConnectionParams';
 import { behaviorSubject } from '@trpc/server/observable';
 import { prepareUrl, withResolvers } from './utils';
 

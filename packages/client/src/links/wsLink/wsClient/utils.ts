@@ -2,11 +2,11 @@ import type {
   TRPCConnectionParamsMessage,
   TRPCRequestInfo,
 } from '@trpc/server/unstable-core-do-not-import';
-import {
+import type {
   CallbackOrValue,
-  resultOf,
   UrlOptionsWithConnectionParams,
 } from '../../internals/urlWithConnectionParams';
+import { resultOf } from '../../internals/urlWithConnectionParams';
 
 export class TRPCWebSocketClosedError extends Error {
   constructor(opts: { message: string; cause?: unknown }) {
