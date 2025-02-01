@@ -4,7 +4,7 @@ title: Introducing the new Tanstack React Query integration
 authors: [nicklucas]
 ---
 
-We are excited to announce the new Tanstack React Query integration for tRPC. Compared to our classic [React Query Integration](/docs/client/react) it's simpler and more Tanstack Query-native, choosing to utilise the [QueryOptions](https://tanstack.com/query/latest/docs/framework/react/guides/query-options) and [MutationOptions](https://tanstack.com/query/latest/docs/framework/react/guides/mutations) interfaces native to Tanstack React Query, instead of wrapping `useQuery` and `useMutation` with our own client.
+We are excited to announce the new Tanstack React Query integration for tRPC is now available on tRPC's Next release. Compared to our classic [React Query Integration](/docs/client/react) it's simpler and more Tanstack Query-native, choosing to utilise the [QueryOptions](https://tanstack.com/query/latest/docs/framework/react/guides/query-options) and [MutationOptions](https://tanstack.com/query/latest/docs/framework/react/guides/mutations) interfaces native to Tanstack React Query, instead of wrapping `useQuery` and `useMutation` with our own client.
 
 ```tsx
 import { useQuery } from '@tanstack/react-query';
@@ -19,11 +19,11 @@ function Users() {
 }
 ```
 
-With this new client we're removing a layer of abstraction which is a common source of confusion for new users, and instead providing a more direct way to work with Tanstack React Query which will feel immediately familiar to those who are following Tanstack's own [documentation](https://tanstack.com/query/latest). It also means we need less tRPC documentation to explain it, though we've [written a guide to get started anyway](/docs/tanstack-react-query/introduction).
+With this new client we're removing a layer of abstraction which is a common source of confusion for new users, and instead providing a more direct way to work with Tanstack React Query which will feel immediately familiar to those who are following Tanstack's own [documentation](https://tanstack.com/query/latest). It also means we need less tRPC documentation to explain it, though we of course have [documentation to get you started](/docs/tanstack-react-query/introduction).
 
 ## What's happening to the classic tRPC React Query integration?
 
-It's not going anywhere soon! We're committing to maintaining it for a long time to come, but it won't receieve any significant new features.
+It's not going anywhere soon! We're committing to maintaining it for a long time to come, but it won't recieve any significant new features.
 
 We recommend new projects start with the new Tanstack React Query integration, and existing projects to consider migrating over gradually.
 
@@ -43,7 +43,7 @@ Start by using the new Tanstack React Query integration in new parts of your app
 
 #### Migrating Queries
 
-A classic query might look like this:
+A classic query might look like this
 
 ```tsx
 import { trpc } from './trpc';
@@ -55,7 +55,7 @@ function Users() {
 }
 ```
 
-Becomes:
+and changes to
 
 ```tsx
 import { useQuery } from '@tanstack/react-query';
@@ -72,7 +72,7 @@ function Users() {
 
 #### Migrating Mutations
 
-A classic mutation might look like this:
+A classic mutation might look like this
 
 ```tsx
 import { trpc } from './trpc';
@@ -84,7 +84,7 @@ function Users() {
 }
 ```
 
-Becomes:
+and changes to
 
 ```tsx
 import { useMutation } from '@tanstack/react-query';

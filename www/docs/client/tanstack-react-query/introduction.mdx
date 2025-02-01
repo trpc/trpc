@@ -3,12 +3,12 @@ id: introduction
 title: Tanstack React Query
 sidebar_label: Tanstack React Query (⭐️)
 description: Tanstack React Query
-slug: /tanstack-react-query/introduction
+slug: /client/tanstack-react-query/introduction
 ---
 
-With tRPC v11 we're introducing a new way to work with Tanstack React Query. Compared to our classic [React Query Integration](/docs/client/react) it's simpler and more Tanstack Query-native, choosing to utilise the [QueryOptions](https://tanstack.com/query/latest/docs/framework/react/guides/query-options) and [MutationOptions](https://tanstack.com/query/latest/docs/framework/react/guides/mutations) interfaces instead of wrapping `useQuery` and `useMutation` with our own client.
+Compared to our [classic React Query Integration](/docs/client/react) this client is simpler and more Tanstack Query-native, providing factories for common Tanstack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. We think it's the future and recommend using this over the classic client
 
-In this way we're removing a layer of abstraction which is a common source of confusion for new users, and instead providing a more direct way to work with Tanstack React Query which will feel immediately familiar to those who are following Tanstack's own [documentation](https://tanstack.com/query/latest). It also means we need less tRPC documentation to explain it, so let's dive in!
+## Setup
 
 ### 1. Install dependencies
 
@@ -65,6 +65,7 @@ If you already use React Query in your application, you **should** re-use the `Q
 
 ```tsx title='App.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import React, { useState } from 'react';
 import { queryClient, trpcClient, TRPCProvider, useTRPC } from './utils/trpc';
 
@@ -90,9 +91,7 @@ export function App() {
 }
 ```
 
-:::note
-The reason for using `useState` in the creation of the `queryClient` and the `TRPCClient`, as opposed to declaring them outside of the component, is to ensure that each request gets a unique client when using SSR. If you use client side rendering then you can create them as singletons in trpc.ts.
-:::
+The reason for using `useState` in the creation of the `queryClient` and the `TRPCClient`, as opposed to declaring them outside of the component, is to ensure that each request gets a unique client when using SSR. If you use client side rendering then you could create them as singletons.
 
 #### 5. Fetch data
 
@@ -115,6 +114,81 @@ export default function Users() {
         Create Frodo
       </button>
     </div>
+  );
+}
+```
+
+## Usage
+
+The philosophy of this client is to provide factories which work natively and type-safely with tanstack React Query. This means just by following the autocompletes the client gives you, you can focus on building just with the knowledge the [Tanstack React Query docs](https://tanstack.com/query/latest/docs/framework/react/overview) provide.
+
+```tsx
+export default function Basics() {
+  const trpc = useTRPC();
+
+  // Create QueryOptions which can be passed to useQuery,
+  // useSuspenseQuery, useInfiniteQuery
+  trpc.path.to.query.queryOptions({ /** inputs */ })
+
+  // Create MutationOptions which can be passed to useMutation
+  trpc.path.to.mutation.mutationOptions()
+
+  // Create QueryKey which can be used to manipulated many methods
+  // on Tanstack's QueryClient in a type-safe manner
+  trpc.path.to.query.queryKey()
+
+  return (
+    // Your app here
+  )
+}
+```
+
+## Subscriptions
+
+Tanstack does not provide a subscription hook, so we continue to expose our own abstraction here which works with a [standard tRPC subscription setup](/docs/server/subscriptions)
+
+```tsx title='App.tsx'
+import {
+  createTRPCClient,
+  httpBatchLink,
+  splitLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
+
+// Modify your links to include a subscription link
+createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: unstable_httpSubscriptionLink({
+        url: 'http://localhost:3000',
+        transformer,
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000',
+        transformer,
+      }),
+    }),
+  ],
+})
+```
+
+```tsx title='SubscriptionExample.tsx'
+function SubscriptionExample() {
+  const trpc = useTRPC();
+  const subscription = useSubscription(trpc.path.to.subscription.subscriptionOptions(
+    {
+      onData: (data) => {
+        // you can handle the data here
+      },
+    }
+  ));
+
+  // Or you can handle the data here
+  subscription.data
+
+  return (
+    // Your app here
   );
 }
 ```

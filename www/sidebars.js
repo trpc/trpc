@@ -76,20 +76,9 @@ module.exports = {
       },
       items: [
         'client/tanstack-react-query/introduction',
-        // {
-        //   type: 'doc',
-        //   label: 'Tanstack React Query (New! ⭐️)',
-        //   // collapsed: true,
-        //   id: 'client/tanstack-react-query/introduction',
-        //   // link: {
-        //   //   type: 'doc',
-        //   //   id: 'client/tanstack-react-query/introduction',
-        //   // },
-        //   // items: ['client/tanstack-react-query/introduction'],
-        // },
         {
           type: 'category',
-          label: 'React Query Integration',
+          label: 'React Query Integration (Classic)',
           collapsed: true,
           link: {
             type: 'doc',
