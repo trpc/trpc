@@ -262,6 +262,10 @@ h5 {
   @apply font-semibold;
 }
 
+.theme-admonition-note a {
+  @apply dark:text-sky-300 dark:hover:text-sky-400;
+}
+
 /**
  * Disable underline for some links
  **/
