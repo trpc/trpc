@@ -49,14 +49,14 @@ import {
 
 export interface DecorateQueryKeyable {
   /**
-   * Calculate the Tanstack Query Key for a Route
+   * Calculate the TanStack Query Key for a Route
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
    */
   queryKey: () => TRPCQueryKey;
 
   /**
-   * Calculate a Tanstack Query Filter for a Route
+   * Calculate a TanStack Query Filter for a Route
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    */
@@ -96,7 +96,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   infiniteQueryOptions: TRPCInfiniteQueryOptions<TDef>;
 
   /**
-   * Calculate the Tanstack Query Key for a Query Procedure
+   * Calculate the TanStack Query Key for a Query Procedure
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
    */
@@ -105,7 +105,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   ) => DataTag<TRPCQueryKey, TDef['output'], TDef['errorShape']>;
 
   /**
-   * Calculate a Tanstack Query Filter for a Query Procedure
+   * Calculate a TanStack Query Filter for a Query Procedure
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    */
@@ -135,7 +135,7 @@ export interface DecorateMutationProcedure<TDef extends ResolverDef> {
   mutationOptions: TRPCMutationOptions<TDef>;
 
   /**
-   * Calculate the Tanstack Mutation Key for a Mutation Procedure
+   * Calculate the TanStack Mutation Key for a Mutation Procedure
    */
   mutationKey: () => TRPCMutationKey;
 }

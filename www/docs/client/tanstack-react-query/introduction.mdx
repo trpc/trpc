@@ -1,12 +1,12 @@
 ---
 id: introduction
-title: Tanstack React Query
-sidebar_label: Tanstack React Query (⭐️)
-description: Tanstack React Query
+title: TanStack React Query
+sidebar_label: TanStack React Query (⭐️)
+description: TanStack React Query
 slug: /client/tanstack-react-query/introduction
 ---
 
-Compared to our [classic React Query Integration](/docs/client/react) this client is simpler and more Tanstack Query-native, providing factories for common Tanstack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. We think it's the future and recommend using this over the classic client
+Compared to our [classic React Query Integration](/docs/client/react) this client is simpler and more TanStack Query-native, providing factories for common TanStack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. We think it's the future and recommend using this over the classic client
 
 ## Setup
 
@@ -84,7 +84,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-        // Your app here
+        {/* Your app here */}
       </TRPCProvider>
     </QueryClientProvider>
   );
@@ -97,11 +97,11 @@ The reason for using `useState` in the creation of the `queryClient` and the `TR
 
 You can now use the tRPC React Query integration to call queries and mutations on your API.
 
-```tsx title='Users.tsx'
+```tsx title='user-list.tsx'
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTRPC } from './utils/trpc';
 
-export default function Users() {
+export default function UserList() {
   const trpc = useTRPC();
   const userQuery = useQuery(trpc.getUser.queryOptions({ id: 'id_bilbo' }));
   const userCreator = useMutation(trpc.createUser.mutationOptions());
@@ -120,7 +120,7 @@ export default function Users() {
 
 ## Usage
 
-The philosophy of this client is to provide factories which work natively and type-safely with tanstack React Query. This means just by following the autocompletes the client gives you, you can focus on building just with the knowledge the [Tanstack React Query docs](https://tanstack.com/query/latest/docs/framework/react/overview) provide.
+The philosophy of this client is to provide factories which work natively and type-safely with tanstack React Query. This means just by following the autocompletes the client gives you, you can focus on building just with the knowledge the [TanStack React Query docs](https://tanstack.com/query/latest/docs/framework/react/overview) provide.
 
 ```tsx
 export default function Basics() {
@@ -134,7 +134,7 @@ export default function Basics() {
   trpc.path.to.mutation.mutationOptions()
 
   // Create QueryKey which can be used to manipulated many methods
-  // on Tanstack's QueryClient in a type-safe manner
+  // on TanStack's QueryClient in a type-safe manner
   trpc.path.to.query.queryKey()
 
   return (
@@ -145,7 +145,7 @@ export default function Basics() {
 
 ## Subscriptions
 
-Tanstack does not provide a subscription hook, so we continue to expose our own abstraction here which works with a [standard tRPC subscription setup](/docs/server/subscriptions)
+TanStack does not provide a subscription hook, so we continue to expose our own abstraction here which works with a [standard tRPC subscription setup](/docs/server/subscriptions)
 
 ```tsx title='App.tsx'
 import {

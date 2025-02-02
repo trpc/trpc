@@ -1,13 +1,13 @@
 {
   "name": "@trpc/tanstack-react-query",
   "version": "10.45.1",
-  "description": "Tanstack React Query Integration for tRPC",
+  "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "typings": "dist/index.d.ts",
-  "homepage": "https://trpc.io",
+  "homepage": "https://trpc.io/docs/client/tanstack-react-query/introduction",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trpc/trpc.git",
