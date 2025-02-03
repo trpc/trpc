@@ -7,7 +7,9 @@ async function main() {
   const app = express();
 
   // For testing purposes, wait-on requests '/'
-  app.get('/', (_req, res) => res.send('Server is running!'));
+  app.get('/', (_req, res) => {
+    res.send('Server is running!');
+  });
 
   app.use(
     '/trpc',
