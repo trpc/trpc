@@ -75,7 +75,16 @@ module.exports = {
         id: 'client/overview',
       },
       items: [
-        'client/tanstack-react-query/introduction',
+        {
+          type: 'category',
+          label: 'TanStack React Query (⭐️)',
+          collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/tanstack-react-query/introduction',
+          },
+          items: ['client/tanstack-react-query/migrating'],
+        },
         {
           type: 'category',
           label: 'React Query Integration (Classic)',

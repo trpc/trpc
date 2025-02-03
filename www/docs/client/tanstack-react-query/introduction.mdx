@@ -125,17 +125,20 @@ The philosophy of this client is to provide factories which work natively and ty
 ```tsx
 export default function Basics() {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  // Create QueryOptions which can be passed to useQuery,
-  // useSuspenseQuery, useInfiniteQuery
-  trpc.path.to.query.queryOptions({ /** inputs */ })
+  // Create QueryOptions which can be passed to query hooks
+  const queryOptions = trpc.path.to.query.queryOptions({ /** inputs */ })
+  // useQuery(queryOptions), useSuspenseQuery(queryOptions), useInfiniteQuery(queryOptions)
 
   // Create MutationOptions which can be passed to useMutation
-  trpc.path.to.mutation.mutationOptions()
+  const mutationOptions = trpc.path.to.mutation.mutationOptions()
+  // useMutation(mutationOptions)
 
-  // Create QueryKey which can be used to manipulated many methods
+  // Create a QueryKey which can be used to manipulated many methods
   // on TanStack's QueryClient in a type-safe manner
-  trpc.path.to.query.queryKey()
+  const queryKey = trpc.path.to.query.queryKey()
+  // queryClient.invalidateQueries(queryKey)
 
   return (
     // Your app here
