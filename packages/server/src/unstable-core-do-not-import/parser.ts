@@ -1,5 +1,6 @@
 import { StandardSchemaV1Error } from '../vendor/standard-schema-v1/error';
 import { type StandardSchemaV1 } from '../vendor/standard-schema-v1/spec';
+import { isObject } from './utils';
 
 // zod / typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
@@ -34,10 +35,6 @@ export type ParserSuperstructEsque<TInput> = {
   create: (input: unknown) => TInput;
 };
 
-export type ParserCustomValidatorEsque<TInput> = (
-  input: unknown,
-) => Promise<TInput> | TInput;
-
 export type ParserYupEsque<TInput> = {
   validateSync: (input: unknown) => TInput;
 };
@@ -47,7 +44,6 @@ export type ParserScaleEsque<TInput> = {
 };
 
 export type ParserWithoutInput<TInput> =
-  | ParserCustomValidatorEsque<TInput>
   | ParserMyZodEsque<TInput>
   | ParserScaleEsque<TInput>
   | ParserSuperstructEsque<TInput>
@@ -60,6 +56,14 @@ export type ParserWithInputOutput<TInput, TParsedInput> =
   | ParserStandardSchemaEsque<TInput, TParsedInput>;
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
+
+interface ParserCallbackOptions {
+  ctx: unknown;
+}
+export type ParserCallback<
+  TOptions extends ParserCallbackOptions,
+  TParser extends Parser,
+> = (opts: { ctx: TOptions['ctx'] }) => TParser;
 
 export type inferParser<TParser extends Parser> =
   TParser extends ParserWithInputOutput<infer $TIn, infer $TOut>
@@ -74,21 +78,40 @@ export type inferParser<TParser extends Parser> =
         }
       : never;
 
-export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
+export type AnyParserOrCallback = Parser | ParserCallback<any, any>;
 
-export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
+export type inferParserOrCallback<
+  TOptions extends ParserCallbackOptions,
+  TParserOrCallback extends Parser | ParserCallback<TOptions, any>,
+> =
+  TParserOrCallback extends ParserCallback<TOptions, infer $TParser>
+    ? inferParser<$TParser>
+    : TParserOrCallback extends Parser
+      ? inferParser<TParserOrCallback>
+      : never;
+
+export type ResolvedParser<TType> = (value: unknown) => Promise<TType> | TType;
+export type ResolvedCallbackParser = {
+  [parserWrapper]: true;
+  callback: ParserCallback<any, Parser>;
+};
+
+export type ResolvedParserOrCallback<TType> =
+  | ResolvedParser<TType>
+  | ResolvedCallbackParser;
+
+const parserWrapper = Symbol();
+
+export function isParserWrapper(obj: unknown): obj is {
+  [parserWrapper]: unknown;
+} {
+  return isObject(obj) && parserWrapper in obj;
+}
+
+export function resolveParser<TType>(
+  procedureParser: AnyParserOrCallback,
+): ResolvedParser<TType> | null {
   const parser = procedureParser as any;
-
-  if (typeof parser === 'function' && typeof parser.assert === 'function') {
-    // ParserArkTypeEsque - arktype schemas shouldn't be called as a function because they return a union type instead of throwing
-    return parser.assert.bind(parser);
-  }
-
-  if (typeof parser === 'function') {
-    // ParserValibotEsque (>= v0.31.0)
-    // ParserCustomValidatorEsque
-    return parser;
-  }
 
   if (typeof parser.parseAsync === 'function') {
     // ParserZodEsque
@@ -127,6 +150,21 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
         throw new StandardSchemaV1Error(result.issues);
       }
       return result.value;
+    };
+  }
+  return null;
+}
+
+export function resolveParserOrCallback<TType>(
+  procedureParser: AnyParserOrCallback,
+): ResolvedParser<TType> | ResolvedCallbackParser {
+  const parser = procedureParser;
+
+  const parseFn = resolveParser(procedureParser);
+  if (!parseFn && typeof parser === 'function') {
+    return {
+      [parserWrapper]: true,
+      callback: procedureParser as ParserCallback<any, any>,
     };
   }
 

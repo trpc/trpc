@@ -7,7 +7,7 @@ import type {
   DefaultErrorShape,
 } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
-import * as v1 from 'valibot1';
+import * as v1 from 'valibot';
 import { z, ZodError } from 'zod';
 
 function isTRPCClientError<TRouter extends AnyRouter>(
