@@ -1,10 +1,9 @@
-// @ts-check
-
+import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 import { parseEnv } from './src/utils/env';
 
 const env = parseEnv(process.env);
 
-module.exports = {
+const config: SidebarsConfig = {
   docs: [
     {
       type: 'category',
@@ -197,3 +196,5 @@ module.exports = {
     },
   ],
 };
+
+export default config;
