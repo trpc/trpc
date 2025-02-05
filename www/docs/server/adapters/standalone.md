@@ -165,10 +165,10 @@ createServer((req, res) => {
 The Standalone adapter also supports HTTP/2.
 
 ```ts title='server.ts'
+import http2 from 'http2';
 import { createHTTP2Handler } from '@trpc/server/adapters/standalone';
 import { appRouter } from './_app.ts';
 import { createContext } from './context.ts';
-import http2 from 'http2';
 
 const handler = createHTTP2Handler({
   router: appRouter,
