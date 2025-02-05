@@ -1,4 +1,4 @@
-"import { EventEmitter } from 'events';
+import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
 import { waitFor } from '@testing-library/react';
 import type { HTTPHeaders, TRPCLink } from '@trpc/client';
@@ -484,7 +484,7 @@ describe('authorized user', () => {
         "isBatchCall": true,
         "signal": Object {},
         "type": "query",
-        "url": "http://localhost:49172/trpc/request.info?batch=1&input=%7B%7D",
+        "url": "http://localhost:<<redacted>>/trpc/request.info?batch=1&input=%7B%7D",
       }
     `);
   });
