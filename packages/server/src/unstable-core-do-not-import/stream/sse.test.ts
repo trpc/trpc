@@ -22,8 +22,6 @@ export const suppressLogs = () => {
   };
 };
 
-const textDecoder = new TextDecoder();
-
 test('e2e, server-sent events (SSE)', async () => {
   async function* data(lastEventId: string | undefined) {
     let i = lastEventId ? Number(lastEventId) : 0;
