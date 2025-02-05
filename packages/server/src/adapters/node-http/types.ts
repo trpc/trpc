@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-duplicate-type-constituents */
 /**
  * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
  *
@@ -8,6 +9,8 @@
  * ```
  */
 import type * as http from 'http';
+import type * as http2 from 'http2';
+import type { EventEmitter } from 'stream';
 // @trpc/server
 import type {
   AnyRouter,
@@ -22,11 +25,33 @@ import type {
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../../unstable-core-do-not-import';
 
-export type NodeHTTPRequest = http.IncomingMessage & {
+export interface NodeHTTPRequest extends EventEmitter {
+  /**
+   * Many adapters will add a `body` property to the incoming message and pre-parse the body
+   */
   body?: unknown;
-  query?: unknown;
-};
-export type NodeHTTPResponse = http.ServerResponse & {
+  /**
+   * Socket is not always available in all deployments, so we need to make it optional
+   * @see https://github.com/trpc/trpc/issues/6341
+   * The socket object provided in the request does not fully implement the expected Node.js Socket interface.
+   * @see https://github.com/trpc/trpc/pull/6358
+   */
+  socket?: Partial<http.IncomingMessage['socket']>;
+
+  headers:
+    | http.IncomingMessage['headers']
+    | http2.Http2ServerRequest['headers'];
+
+  url?: http.IncomingMessage['url'] | http2.Http2ServerRequest['url'];
+  method?: http.IncomingMessage['method'] | http2.Http2ServerRequest['method'];
+  destroy:
+    | http.IncomingMessage['destroy']
+    | http2.Http2ServerRequest['destroy'];
+}
+
+export interface NodeHTTPResponse extends EventEmitter {
+  write: (chunk: string | Uint8Array) => boolean;
+  end: http.ServerResponse['end'] | http2.Http2ServerResponse['end'];
   /**
    * Force the partially-compressed response to be flushed to the client.
    *
@@ -36,7 +61,19 @@ export type NodeHTTPResponse = http.ServerResponse & {
    * e.g. Express w/ `compression()`)
    */
   flush?: () => void;
-};
+
+  statusCode:
+    | http.ServerResponse['statusCode']
+    | http2.Http2ServerResponse['statusCode'];
+
+  headersSent:
+    | http.ServerResponse['headersSent']
+    | http2.Http2ServerResponse['headersSent'];
+
+  setHeader:
+    | http.ServerResponse['setHeader']
+    | http2.Http2ServerResponse['setHeader'];
+}
 
 export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,

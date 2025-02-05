@@ -1,23 +1,9 @@
 import type * as http from 'http';
 import { TRPCError } from '../../@trpc/server';
-
-export interface UniversalIncomingMessage
-  extends Omit<http.IncomingMessage, 'socket'> {
-  /**
-   * Many adapters will add a `body` property to the incoming message and pre-parse the body
-   */
-  body?: unknown;
-  /**
-   * Socket is not always available in all deployments, so we need to make it optional
-   * @see https://github.com/trpc/trpc/issues/6341
-   * The socket object provided in the request does not fully implement the expected Node.js Socket interface.
-   * @see https://github.com/trpc/trpc/pull/6358
-   */
-  socket?: Partial<http.IncomingMessage['socket']>;
-}
+import type { NodeHTTPRequest, NodeHTTPResponse } from './types';
 
 function createBody(
-  req: UniversalIncomingMessage,
+  req: NodeHTTPRequest,
   opts: {
     /**
      * Max body size in bytes. If the body is larger than this, the request will be aborted
@@ -79,7 +65,7 @@ function createBody(
     },
   });
 }
-export function createURL(req: UniversalIncomingMessage): URL {
+export function createURL(req: NodeHTTPRequest): URL {
   try {
     const protocol =
       req.socket && 'encrypted' in req.socket && req.socket.encrypted
@@ -125,8 +111,8 @@ function createHeaders(incoming: http.IncomingHttpHeaders): Headers {
  * Convert an [`IncomingMessage`](https://nodejs.org/api/http.html#class-httpincomingmessage) to a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)
  */
 export function incomingMessageToRequest(
-  req: UniversalIncomingMessage,
-  res: http.ServerResponse,
+  req: NodeHTTPRequest,
+  res: NodeHTTPResponse,
   opts: {
     /**
      * Max body size in bytes. If the body is larger than this, the request will be aborted
