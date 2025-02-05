@@ -41,8 +41,14 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
+      - name: Install OpenSSL (Ubuntu)
+        shell: bash
+        run: |
+          if [ "$(uname)" = "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y openssl
+          fi
       - run: pnpm test-ci
-
       - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
