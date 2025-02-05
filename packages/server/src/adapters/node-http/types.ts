@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-duplicate-type-constituents */
 /**
  * If you're making an adapter for tRPC and looking at this file for reference, you should import types and functions from `@trpc/server` and `@trpc/server/http`
  *
@@ -10,7 +9,6 @@
  */
 import type * as http from 'http';
 import type * as http2 from 'http2';
-import type { EventEmitter } from 'stream';
 // @trpc/server
 import type {
   AnyRouter,
@@ -23,9 +21,15 @@ import type {
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 // eslint-disable-next-line no-restricted-imports
-import type { MaybePromise } from '../../unstable-core-do-not-import';
+import type {
+  DistributiveOmit,
+  MaybePromise,
+} from '../../unstable-core-do-not-import';
 
-export interface NodeHTTPRequest extends EventEmitter {
+export type NodeHTTPRequest = DistributiveOmit<
+  http.IncomingMessage | http2.Http2ServerRequest,
+  'socket'
+> & {
   /**
    * Many adapters will add a `body` property to the incoming message and pre-parse the body
    */
@@ -36,22 +40,15 @@ export interface NodeHTTPRequest extends EventEmitter {
    * The socket object provided in the request does not fully implement the expected Node.js Socket interface.
    * @see https://github.com/trpc/trpc/pull/6358
    */
-  socket?: Partial<http.IncomingMessage['socket']>;
+  socket?:
+    | Partial<http.IncomingMessage['socket']>
+    | Partial<http2.Http2ServerRequest['socket']>;
+};
 
-  headers:
-    | http.IncomingMessage['headers']
-    | http2.Http2ServerRequest['headers'];
-
-  url?: http.IncomingMessage['url'] | http2.Http2ServerRequest['url'];
-  method?: http.IncomingMessage['method'] | http2.Http2ServerRequest['method'];
-  destroy:
-    | http.IncomingMessage['destroy']
-    | http2.Http2ServerRequest['destroy'];
-}
-
-export interface NodeHTTPResponse extends EventEmitter {
-  write: (chunk: string | Uint8Array) => boolean;
-  end: http.ServerResponse['end'] | http2.Http2ServerResponse['end'];
+export type NodeHTTPResponse = DistributiveOmit<
+  http.ServerResponse | http2.Http2ServerResponse,
+  'write'
+> & {
   /**
    * Force the partially-compressed response to be flushed to the client.
    *
@@ -62,19 +59,8 @@ export interface NodeHTTPResponse extends EventEmitter {
    */
   flush?: () => void;
 
-  statusCode:
-    | http.ServerResponse['statusCode']
-    | http2.Http2ServerResponse['statusCode'];
-
-  headersSent:
-    | http.ServerResponse['headersSent']
-    | http2.Http2ServerResponse['headersSent'];
-
-  setHeader:
-    | http.ServerResponse['setHeader']
-    | http2.Http2ServerResponse['setHeader'];
-}
-
+  write: (chunk: string | Uint8Array) => boolean;
+};
 export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,

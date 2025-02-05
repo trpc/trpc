@@ -64,12 +64,22 @@ export type DeepPartial<TObject> = TObject extends object
     }
   : TObject;
 
+type AllKeys<T> = T extends T ? keyof T : never;
+
 /**
  * Omits the key without removing a potential union
  * @internal
  */
-export type DistributiveOmit<TObj, TKey extends keyof any> = TObj extends any
-  ? Omit<TObj, TKey>
+export type DistributiveOmit<T, TKey extends AllKeys<T>> = T extends T
+  ? Omit<T, TKey>
+  : never;
+
+/**
+ * Picks the key without removing a potential union
+ * @internal
+ */
+export type DistributedPick<T, TKey extends AllKeys<T>> = T extends T
+  ? Pick<T, TKey>
   : never;
 
 /**
