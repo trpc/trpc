@@ -157,5 +157,50 @@ createServer((req, res) => {
    */
 
   handler(req, res);
-}).listen(3333);
+}).listen(3001);
+```
+
+## HTTP2
+
+The Standalone adapter also supports HTTP/2.
+
+```ts title='server.ts'
+import { createHTTP2Handler } from '@trpc/server/adapters/standalone';
+import { appRouter } from './_app.ts';
+import { createContext } from './context.ts';
+
+const handler = createHTTP2Handler({
+  router: appRouter,
+  createContext,
+});
+
+const server = http2.createSecureServer({
+  key: "...",
+  cert: "...",
+}, (req, res) => {
+  /**
+   * Handle the request however you like,
+   * just call the tRPC handler when you're ready
+   */
+  handler(req, res);
+});
+
+server.listen(3001);
+```
+
+```ts twoslash title='context.ts'
+import { CreateHTTP2ContextOptions } from '@trpc/server/adapters/standalone';
+
+export async function createContext(opts: CreateHTTP2ContextOptions) {
+  opts.req;
+  //    ^?
+  opts.res;
+  //    ^?
+
+  opts.info;
+  //    ^?
+  return {};
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
 ```
