@@ -402,6 +402,9 @@ export function createWSClient(opts: WebSocketClientOptions) {
               pongTimeout = setTimeout(() => {
                 const wasOpen = self.state === 'open';
                 destroy();
+                onCloseOrError(new TRPCWebSocketClosedError({ 
+                  message: 'Connection lost - no pong response received' 
+                }));
                 if (wasOpen) {
                   opts.onClose?.();
                 }
