@@ -1,9 +1,7 @@
 /* eslint-disable no-restricted-imports */
-import childProcess from 'child_process';
 import { EventEmitter } from 'events';
 import * as http from 'http';
 import * as http2 from 'http2';
-import path from 'path';
 import { makeResource, run } from '@trpc/server/unstable-core-do-not-import';
 import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { expect } from 'vitest';
