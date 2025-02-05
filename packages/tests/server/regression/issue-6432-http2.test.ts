@@ -33,7 +33,7 @@ function createCertificate() {
         -days 365 -nodes \
         -subj '/CN=localhost' \
         -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"`.trim(),
-    // { stdio: 'ignore' },
+    { stdio: 'ignore' },
   );
 
   const key = fs.readFileSync(`${name}.key`);
@@ -111,7 +111,7 @@ describe('with trpc', () => {
       return 'Hello World';
     }),
     goodbyeNoInput: t.procedure.mutation(() => {
-      return `Goodbye 'World'}`;
+      return `Goodbye World`;
     }),
     goodbyeWithInput: t.procedure
       .input(
