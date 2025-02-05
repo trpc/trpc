@@ -80,7 +80,7 @@ function createHttp2ServerResource(
 }
 
 test('smoke', async () => {
-  const server = createHttp2ServerResource((req, res) => {
+  const server = createHttp2ServerResource((_req, res) => {
     res.end('Hello World');
   });
 
