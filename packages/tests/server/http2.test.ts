@@ -4,15 +4,9 @@ import * as http2 from 'http2';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import type { CreateHTTP2ContextOptions } from '@trpc/server/adapters/standalone';
-import {
-  createHTTP2Handler,
-  createHTTPHandler,
-} from '@trpc/server/adapters/standalone';
+import { createHTTP2Handler } from '@trpc/server/adapters/standalone';
 import { run } from '@trpc/server/unstable-core-do-not-import';
-import {
-  makeAsyncResource,
-  makeResource,
-} from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import * as undici from 'undici';
 import { z } from 'zod';
 
@@ -25,7 +19,7 @@ undici.setGlobalDispatcher(
   }),
 );
 
-function createCertificate() {
+const cert = run(() => {
   const nonce = () => Math.random().toString(36).substring(2, 15);
   const name = `${__dirname}/localhost-${nonce()}`;
 
@@ -50,7 +44,7 @@ function createCertificate() {
     key,
     cert,
   };
-}
+});
 
 function createHttp2ServerResource(
   handler: (
@@ -58,7 +52,7 @@ function createHttp2ServerResource(
     res: http2.Http2ServerResponse,
   ) => Promise<void> | void,
 ) {
-  const server = http2.createSecureServer(createCertificate(), (req, res) => {
+  const server = http2.createSecureServer(cert, (req, res) => {
     run(async () => handler(req, res)).catch((err) => {
       // eslint-disable-next-line no-console
       console.error(err);
