@@ -174,16 +174,19 @@ const handler = createHTTP2Handler({
   createContext,
 });
 
-const server = http2.createSecureServer({
-  key: "...",
-  cert: "...",
-}, (req, res) => {
-  /**
-   * Handle the request however you like,
-   * just call the tRPC handler when you're ready
-   */
-  handler(req, res);
-});
+const server = http2.createSecureServer(
+  {
+    key: '...',
+    cert: '...',
+  },
+  (req, res) => {
+    /**
+     * Handle the request however you like,
+     * just call the tRPC handler when you're ready
+     */
+    handler(req, res);
+  },
+);
 
 server.listen(3001);
 ```
