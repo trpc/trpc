@@ -23,7 +23,7 @@ undici.setGlobalDispatcher(
 
 function createCertificate() {
   const nonce = () => Math.random().toString(36).substring(2, 15);
-  const name = `__generated__/localhost-${nonce()}`;
+  const name = `${__dirname}/localhost-${nonce()}`;
 
   childProcess.execSync(
     `

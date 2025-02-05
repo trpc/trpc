@@ -41,10 +41,8 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - shell: bash
-        run: |
-          sudo apt-get install -y openssl
       - run: pnpm test-ci
+
       - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
