@@ -145,7 +145,7 @@ export function incomingMessageToRequest(
   };
 
   res.once('close', onAbort);
-  req.socket?.once?.('end', onAbort);
+  req.socket?.once?.('close', onAbort);
 
   // Get host from either regular header or HTTP/2 pseudo-header
   const url = createURL(req);
