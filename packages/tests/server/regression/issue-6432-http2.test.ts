@@ -110,13 +110,14 @@ describe('with trpc', () => {
     hello: t.procedure.query(() => {
       return 'Hello World';
     }),
-    goodbye: t.procedure
+    goodbyeNoInput: t.procedure.mutation((opts) => {
+      return `Goodbye ${opts.input?.name ?? 'World'}`;
+    }),
+    goodbyeWithInput: t.procedure
       .input(
-        z
-          .object({
-            name: z.string(),
-          })
-          .optional(),
+        z.object({
+          name: z.string(),
+        }),
       )
       .mutation((opts) => {
         return `Goodbye ${opts.input?.name ?? 'World'}`;
@@ -180,7 +181,7 @@ describe('with trpc', () => {
       ],
     });
 
-    const result = await client.goodbye.mutate();
+    const result = await client.goodbyeNoInput.mutate();
     expect(result).toBe('Goodbye World');
   });
 
@@ -200,7 +201,7 @@ describe('with trpc', () => {
       ],
     });
 
-    const result = await client.goodbye.mutate({
+    const result = await client.goodbyeWithInput.mutate({
       name: 'John',
     });
     expect(result).toBe('Goodbye John');
