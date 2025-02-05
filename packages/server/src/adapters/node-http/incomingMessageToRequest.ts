@@ -68,8 +68,10 @@ function createBody(
 export function createURL(req: NodeHTTPRequest): URL {
   try {
     const protocol =
-      (req.socket && 'encrypted' in req.socket && req.socket.encrypted) ||
-      req.headers[':scheme'] === 'https'
+      // http2
+      (req.headers[':scheme'] && req.headers[':scheme'] === 'https') ||
+      // http1
+      (req.socket && 'encrypted' in req.socket && req.socket.encrypted)
         ? 'https:'
         : 'http:';
 

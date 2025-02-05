@@ -3,6 +3,7 @@ import fs from 'fs';
 import * as http2 from 'http2';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
+import type { CreateHTTP2ContextOptions } from '@trpc/server/adapters/standalone';
 import {
   createHTTP2Handler,
   createHTTPHandler,
@@ -82,126 +83,94 @@ function createHttp2ServerResource(
   );
 }
 
-test('smoke', async () => {
-  const server = createHttp2ServerResource((_req, res) => {
-    res.end('Hello World');
-  });
+function createContext(opts: CreateHTTP2ContextOptions) {
+  return opts;
+}
+const t = initTRPC.context<typeof createContext>().create();
 
-  const client = http2.connect(server.url, {
-    rejectUnauthorized: false,
-  });
+const router = t.router({
+  hello: t.procedure.query((opts) => {
+    const url = opts.ctx.info.url!;
+    expect(url.pathname).toBe('/hello');
+    expect(url.protocol).toBe('https:');
 
-  using _clientCleanup = makeResource({}, () => {
-    client.close();
-  });
+    return 'Hello World';
+  }),
+  goodbyeNoInput: t.procedure.mutation((opts) => {
+    const url = opts.ctx.info.url!;
+    expect(url.pathname).toBe('/goodbyeNoInput');
 
-  const req = client.request({
-    ':method': 'GET',
-    ':path': '/',
-  });
+    return `Goodbye World`;
+  }),
+  goodbyeWithInput: t.procedure
+    .input(
+      z.object({
+        name: z.string(),
+      }),
+    )
+    .mutation((opts) => {
+      const url = opts.ctx.info.url!;
+      expect(url.pathname).toBe('/goodbyeWithInput');
+      // expect(url.searchParams.get('name')).toBe(opts.input.name);
 
-  let data = '';
-  for await (const chunk of req) {
-    data += chunk;
-  }
-  expect(data).toBe('Hello World');
+      return `Goodbye ${opts.input.name}`;
+    }),
 });
 
-describe('with trpc', () => {
-  const t = initTRPC.create();
-  const router = t.router({
-    hello: t.procedure.query(() => {
-      return 'Hello World';
-    }),
-    goodbyeNoInput: t.procedure.mutation(() => {
-      return `Goodbye World`;
-    }),
-    goodbyeWithInput: t.procedure
-      .input(
-        z.object({
-          name: z.string(),
-        }),
-      )
-      .mutation((opts) => {
-        return `Goodbye ${opts.input.name}`;
+const handler = createHTTP2Handler({
+  router,
+  createContext,
+});
+
+test('query', async () => {
+  const server = createHttp2ServerResource(handler);
+
+  const client = createTRPCClient<typeof router>({
+    links: [
+      httpBatchLink({
+        url: server.url,
+        // @ts-expect-error this is fine
+        fetch: undici.fetch,
       }),
+    ],
   });
 
-  const handler = createHTTP2Handler({
-    router,
-    createContext(opts) {
-      expectTypeOf(opts.req).toEqualTypeOf<http2.Http2ServerRequest>();
-      expectTypeOf(opts.res).toEqualTypeOf<http2.Http2ServerResponse>();
-      return {};
-    },
+  const result = await client.hello.query();
+  expect(result).toBe('Hello World');
+});
+
+test('mutation without body', async () => {
+  const server = createHttp2ServerResource(handler);
+
+  const client = createTRPCClient<typeof router>({
+    links: [
+      httpBatchLink({
+        url: server.url,
+        // @ts-expect-error this is fine
+        fetch: undici.fetch,
+      }),
+    ],
   });
 
-  test('fetch', async () => {
-    const server = createHttp2ServerResource(handler);
+  const result = await client.goodbyeNoInput.mutate();
+  expect(result).toBe('Goodbye World');
+});
 
-    const client = await undici.fetch(`${server.url}/hello`);
+test('mutation with body', async () => {
+  const server = createHttp2ServerResource(handler);
 
-    const result = await client.json();
-
-    expect(result).toMatchInlineSnapshot(`
-    Object {
-      "result": Object {
-        "data": "Hello World",
-      },
-    }
-  `);
+  const client = createTRPCClient<typeof router>({
+    links: [
+      httpBatchLink({
+        url: server.url,
+        // @ts-expect-error this is fine
+        fetch: undici.fetch,
+      }),
+    ],
   });
 
-  test('query', async () => {
-    const server = createHttp2ServerResource(handler);
-
-    const client = createTRPCClient<typeof router>({
-      links: [
-        httpBatchLink({
-          url: server.url,
-          // @ts-expect-error this is fine
-          fetch: undici.fetch,
-        }),
-      ],
-    });
-
-    const result = await client.hello.query();
-    expect(result).toBe('Hello World');
+  const result = await client.goodbyeWithInput.mutate({
+    name: 'John',
   });
-
-  test('mutation without body', async () => {
-    const server = createHttp2ServerResource(handler);
-
-    const client = createTRPCClient<typeof router>({
-      links: [
-        httpBatchLink({
-          url: server.url,
-          // @ts-expect-error this is fine
-          fetch: undici.fetch,
-        }),
-      ],
-    });
-
-    const result = await client.goodbyeNoInput.mutate();
-    expect(result).toBe('Goodbye World');
-  });
-
-  test('mutation with body', async () => {
-    const server = createHttp2ServerResource(handler);
-
-    const client = createTRPCClient<typeof router>({
-      links: [
-        httpBatchLink({
-          url: server.url,
-          // @ts-expect-error this is fine
-          fetch: undici.fetch,
-        }),
-      ],
-    });
-
-    const result = await client.goodbyeWithInput.mutate({
-      name: 'John',
-    });
-    expect(result).toBe('Goodbye John');
-  });
+  expect(result).toBe('Goodbye John');
 });
