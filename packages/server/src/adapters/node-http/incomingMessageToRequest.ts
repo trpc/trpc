@@ -1,14 +1,8 @@
-import type * as http1 from 'http';
-import type * as http2 from 'http2';
+import type * as http from 'http';
 import { TRPCError } from '../../@trpc/server';
 
-/**
- * @internal
- */
-export type UniversalIncomingMessage = (
-  | Omit<http1.IncomingMessage, 'socket'>
-  | Omit<http2.Http2ServerRequest, 'socket'>
-) & {
+export interface UniversalIncomingMessage
+  extends Omit<http.IncomingMessage, 'socket'> {
   /**
    * Many adapters will add a `body` property to the incoming message and pre-parse the body
    */
@@ -19,14 +13,8 @@ export type UniversalIncomingMessage = (
    * The socket object provided in the request does not fully implement the expected Node.js Socket interface.
    * @see https://github.com/trpc/trpc/pull/6358
    */
-  socket?:
-    | Partial<http1.IncomingMessage['socket']>
-    | Partial<http2.Http2ServerRequest['socket']>;
-};
-
-export type UniversalResponse =
-  | http1.ServerResponse
-  | http2.Http2ServerResponse;
+  socket?: Partial<http.IncomingMessage['socket']>;
+}
 
 function createBody(
   req: UniversalIncomingMessage,
@@ -111,7 +99,7 @@ export function createURL(req: UniversalIncomingMessage): URL {
   }
 }
 
-function createHeaders(incoming: http1.IncomingHttpHeaders): Headers {
+function createHeaders(incoming: http.IncomingHttpHeaders): Headers {
   const headers = new Headers();
 
   for (const key in incoming) {
@@ -138,7 +126,7 @@ function createHeaders(incoming: http1.IncomingHttpHeaders): Headers {
  */
 export function incomingMessageToRequest(
   req: UniversalIncomingMessage,
-  res: UniversalResponse,
+  res: http.ServerResponse,
   opts: {
     /**
      * Max body size in bytes. If the body is larger than this, the request will be aborted

@@ -14,7 +14,7 @@ import { z } from 'zod';
 
 undici.setGlobalDispatcher(
   new undici.Agent({
-    allowH2: true,
+    allowH2: true, // Allow HTTP/2
     connect: {
       rejectUnauthorized: false, // Allow self-signed certificates
     },
@@ -110,8 +110,8 @@ describe('with trpc', () => {
     hello: t.procedure.query(() => {
       return 'Hello World';
     }),
-    goodbyeNoInput: t.procedure.mutation((opts) => {
-      return `Goodbye ${opts.input?.name ?? 'World'}`;
+    goodbyeNoInput: t.procedure.mutation(() => {
+      return `Goodbye 'World'}`;
     }),
     goodbyeWithInput: t.procedure
       .input(
@@ -120,7 +120,7 @@ describe('with trpc', () => {
         }),
       )
       .mutation((opts) => {
-        return `Goodbye ${opts.input?.name ?? 'World'}`;
+        return `Goodbye ${opts.input.name}`;
       }),
   });
 
