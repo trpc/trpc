@@ -7,6 +7,7 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
+import type * as http from 'http';
 // @trpc/server
 import type {
   AnyRouter,
@@ -20,16 +21,12 @@ import type {
 } from '../../@trpc/server/http';
 // eslint-disable-next-line no-restricted-imports
 import type { MaybePromise } from '../../unstable-core-do-not-import';
-import type {
-  UniversalIncomingMessage,
-  UniversalResponse,
-} from './incomingMessageToRequest';
 
-export type NodeHTTPRequest = UniversalIncomingMessage & {
+export type NodeHTTPRequest = http.IncomingMessage & {
   body?: unknown;
   query?: unknown;
 };
-export type NodeHTTPResponse = UniversalResponse & {
+export type NodeHTTPResponse = http.ServerResponse & {
   /**
    * Force the partially-compressed response to be flushed to the client.
    *
