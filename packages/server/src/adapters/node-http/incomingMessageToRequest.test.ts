@@ -1,5 +1,11 @@
+/* eslint-disable no-restricted-imports */
+import childProcess from 'child_process';
 import { EventEmitter } from 'events';
 import * as http from 'http';
+import * as http2 from 'http2';
+import path from 'path';
+import { makeResource, run } from '@trpc/server/unstable-core-do-not-import';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { expect } from 'vitest';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
 
@@ -324,4 +330,46 @@ test('aborts request when response closes', async () => {
   mockRes.emit('close');
 
   expect(request.signal.aborted).toBe(true);
+});
+
+test.only('http2', async () => {
+  const server = http2.createServer((req, res) => {
+    run(async () => {
+      const request = incomingMessageToRequest(req, res, {
+        maxBodySize: null,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 1));
+
+      expect(request.signal.aborted).toBe(false);
+      res.end('Hello World');
+    });
+  });
+
+  await using _cleanup = makeAsyncResource({}, async () => {
+    await new Promise((resolve) => {
+      server.close(resolve);
+    });
+  });
+  server.listen(0);
+
+  const port: number = (server.address() as any).port;
+
+  const client = http2.connect(`http://localhost:${port}`, {
+    rejectUnauthorized: false,
+  });
+
+  using _clientCleanup = makeResource({}, () => {
+    client.close();
+  });
+
+  const req = client.request({
+    ':method': 'GET',
+    ':path': '/',
+  });
+
+  let data = '';
+  for await (const chunk of req) {
+    data += chunk;
+  }
+  expect(data).toBe('Hello World');
 });
