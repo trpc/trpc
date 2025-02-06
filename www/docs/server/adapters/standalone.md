@@ -89,6 +89,7 @@ createHTTPServer({
     console.log('context 3');
     return {};
   },
+  // pathname: '/trpc/', // optional, defaults to '/'
 }).listen(2022);
 ```
 
@@ -198,6 +199,7 @@ import { createContext } from './context.ts';
 const handler = createHTTP2Handler({
   router: appRouter,
   createContext,
+  // pathname: '/trpc/', // optional, defaults to '/'
 });
 
 const server = http2.createSecureServer(
