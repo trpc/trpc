@@ -102,6 +102,12 @@ export type NodeHTTPHandlerOptions<
      */
     middleware?: ConnectMiddleware<TRequest, TResponse>;
     maxBodySize?: number;
+    /**
+     * The path to handle requests for
+     * @default '/'
+     * @example '/trpc'
+     */
+    pathname?: string;
   };
 
 export type NodeHTTPRequestHandlerOptions<
@@ -111,8 +117,16 @@ export type NodeHTTPRequestHandlerOptions<
 > = {
   req: TRequest;
   res: TResponse;
+  /**
+   * The tRPC path to handle requests for
+   * @example 'post.all'
+   */
   path: string;
-} & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>;
+} & Omit<
+  NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>,
+  // This should be translated into a 'path' before passed to the handler
+  'pathname'
+>;
 
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;

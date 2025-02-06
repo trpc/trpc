@@ -1,7 +1,7 @@
 import * as childProcess from 'child_process';
 import fs from 'fs';
 import * as http2 from 'http2';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import type { CreateHTTP2ContextOptions } from '@trpc/server/adapters/standalone';
 import { createHTTP2Handler } from '@trpc/server/adapters/standalone';
@@ -83,12 +83,12 @@ function createContext(opts: CreateHTTP2ContextOptions) {
 const t = initTRPC.context<typeof createContext>().create();
 
 const router = t.router({
-  hello: t.procedure.query((opts) => {
+  status: t.procedure.query((opts) => {
     const url = opts.ctx.info.url!;
-    expect(url.pathname).toBe('/hello');
-    expect(url.protocol).toBe('https:');
 
-    return 'Hello World';
+    return {
+      url,
+    };
   }),
   goodbyeNoInput: t.procedure.mutation((opts) => {
     const url = opts.ctx.info.url!;
@@ -120,7 +120,7 @@ test('query', async () => {
 
   const client = createTRPCClient<typeof router>({
     links: [
-      httpBatchLink({
+      httpLink({
         url: server.url,
         // @ts-expect-error this is fine
         fetch: undici.fetch,
@@ -128,8 +128,8 @@ test('query', async () => {
     ],
   });
 
-  const result = await client.hello.query();
-  expect(result).toBe('Hello World');
+  const result = await client.status.query();
+  expect(result.url).toContain('https://localhost:');
 });
 
 test('mutation without body', async () => {
@@ -141,7 +141,7 @@ test('mutation without body', async () => {
 
   const client = createTRPCClient<typeof router>({
     links: [
-      httpBatchLink({
+      httpLink({
         url: server.url,
         // @ts-expect-error this is fine
         fetch: undici.fetch,
@@ -162,7 +162,7 @@ test('mutation with body', async () => {
 
   const client = createTRPCClient<typeof router>({
     links: [
-      httpBatchLink({
+      httpLink({
         url: server.url,
         // @ts-expect-error this is fine
         fetch: undici.fetch,
@@ -180,7 +180,7 @@ test('custom path', async () => {
   const handler = createHTTP2Handler({
     router,
     createContext,
-    path: '/trpc',
+    pathname: '/trpc',
   });
   const server = createHttp2ServerResource((req, res) => {
     if (req.url.startsWith('/trpc')) {
@@ -200,7 +200,7 @@ test('custom path', async () => {
   {
     const client = createTRPCClient<typeof router>({
       links: [
-        httpBatchLink({
+        httpLink({
           url: `${server.url}/trpc`,
           // @ts-expect-error this is fine
           fetch: undici.fetch,
@@ -208,7 +208,11 @@ test('custom path', async () => {
       ],
     });
 
-    const result = await client.hello.query();
-    expect(result).toBe('Hello World');
+    const result = await client.status.query();
+    const url = result.url.replace(/localhost:\d+/, 'localhost:<<redacted>>');
+
+    expect(url).toMatchInlineSnapshot(
+      `"https://localhost:<<redacted>>/trpc/status"`,
+    );
   }
 });
