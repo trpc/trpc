@@ -183,7 +183,7 @@ test('custom path', async () => {
     pathname: '/trpc/',
   });
   const server = createHttp2ServerResource((req, res) => {
-    if (req.url.startsWith('/trpc')) {
+    if (req.url.startsWith('/trpc/')) {
       return handler(req, res);
     }
 
