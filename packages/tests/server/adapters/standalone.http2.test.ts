@@ -180,7 +180,7 @@ test('custom path', async () => {
   const handler = createHTTP2Handler({
     router,
     createContext,
-    pathname: '/trpc',
+    pathname: '/trpc/',
   });
   const server = createHttp2ServerResource((req, res) => {
     if (req.url.startsWith('/trpc')) {

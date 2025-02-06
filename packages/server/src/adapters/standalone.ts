@@ -27,9 +27,25 @@ import {
   nodeHTTPRequestHandler,
 } from './node-http';
 
+type StandaloneHandlerOptions<
+  TRouter extends AnyRouter,
+  TRequest extends NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse,
+> = NodeHTTPHandlerOptions<TRouter, TRequest, TResponse> & {
+  /**
+   * The pathname to handle requests for.
+   * This will be sliced from the beginning of the request path
+   * (Do not miss including the trailing slash)
+   * @default '/'
+   * @example '/trpc/'
+   * @example '/trpc/api/'
+   */
+  pathname?: string;
+};
+
 // --- http1 ---
 export type CreateHTTPHandlerOptions<TRouter extends AnyRouter> =
-  NodeHTTPHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
+  StandaloneHandlerOptions<TRouter, http.IncomingMessage, http.ServerResponse>;
 
 export type CreateHTTPContextOptions = NodeHTTPCreateContextFnOptions<
   http.IncomingMessage,
@@ -41,20 +57,17 @@ function createHandler<
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 >(
-  opts: NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>,
+  opts: StandaloneHandlerOptions<TRouter, TRequest, TResponse>,
 ): (req: TRequest, res: TResponse) => void {
+  const sliceLength = opts.pathname?.length ?? 1;
+
   return (req, res) => {
     let path = '';
+
     run(async () => {
       const url = createURL(req);
 
-      path = opts.pathname
-        ? url.pathname.slice(opts.pathname.length)
-        : url.pathname;
-
-      if (path.startsWith('/')) {
-        path = path.slice(1);
-      }
+      path = url.pathname.slice(sliceLength);
 
       await nodeHTTPRequestHandler({
         ...(opts as any),
@@ -90,7 +103,7 @@ export function createHTTPServer<TRouter extends AnyRouter>(
 
 // --- http2 ---
 export type CreateHTTP2HandlerOptions<TRouter extends AnyRouter> =
-  NodeHTTPHandlerOptions<
+  StandaloneHandlerOptions<
     TRouter,
     http2.Http2ServerRequest,
     http2.Http2ServerResponse

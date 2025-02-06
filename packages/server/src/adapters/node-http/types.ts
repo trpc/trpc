@@ -102,12 +102,6 @@ export type NodeHTTPHandlerOptions<
      */
     middleware?: ConnectMiddleware<TRequest, TResponse>;
     maxBodySize?: number;
-    /**
-     * The path to handle requests for
-     * @default '/'
-     * @example '/trpc'
-     */
-    pathname?: string;
   };
 
 export type NodeHTTPRequestHandlerOptions<
