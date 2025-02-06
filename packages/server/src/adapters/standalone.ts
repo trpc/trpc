@@ -59,7 +59,8 @@ function createHandler<
 >(
   opts: StandaloneHandlerOptions<TRouter, TRequest, TResponse>,
 ): (req: TRequest, res: TResponse) => void {
-  const sliceLength = opts.basePath?.length ?? 1;
+  const basePath = opts.basePath ?? '/';
+  const sliceLength = basePath.length;
 
   return (req, res) => {
     let path = '';
