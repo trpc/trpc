@@ -17,10 +17,10 @@ import {
   type ResolveHTTPRequestOptionsContextFn,
 } from '../../@trpc/server/http';
 // @trpc/server/node-http
+import type { NodeHTTPRequest } from '../node-http';
 import {
   incomingMessageToRequest,
   type NodeHTTPCreateContextOption,
-  type UniversalIncomingMessage,
 } from '../node-http';
 
 export type FastifyHandlerOptions<
@@ -54,7 +54,7 @@ export async function fastifyRequestHandler<
     });
   };
 
-  const incomingMessage: UniversalIncomingMessage = opts.req.raw;
+  const incomingMessage: NodeHTTPRequest = opts.req.raw;
 
   // monkey-path body to the IncomingMessage
   if ('body' in opts.req) {

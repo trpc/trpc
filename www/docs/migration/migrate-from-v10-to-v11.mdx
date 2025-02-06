@@ -24,6 +24,12 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Added support for HTTP/2 servers (non-breaking)
+
+We now support HTTP/2 servers, this means that you can now use the `createHTTP2Handler` and `createHTTPServer` functions to create HTTP/2 servers.
+
+See the [standalone adapter docs](../server/adapters/standalone.md#http2) for more information.
+
 ### Move `TRPCProcedureOptions` to `@trpc/client` (non-breaking for most)
 
 If you previously used `ProcedureOptions` from `@trpc/server`, you now need to use `TRPCProcedureOptions` from `@trpc/client` instead.
