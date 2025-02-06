@@ -161,7 +161,7 @@ createServer((req, res) => {
 }).listen(3001);
 ```
 
-## Custom pathname to handle requests under
+## Custom pathname to handle requests under {#custom-pathname}
 
 The Standalone adapter also supports a `pathname` option, which will slice the pathname from the beginning of the request path.
 
