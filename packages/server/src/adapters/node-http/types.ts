@@ -108,7 +108,7 @@ export type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
-> = {
+> = NodeHTTPHandlerOptions<TRouter, TRequest, TResponse> & {
   req: TRequest;
   res: TResponse;
   /**
@@ -116,11 +116,7 @@ export type NodeHTTPRequestHandlerOptions<
    * @example 'post.all'
    */
   path: string;
-} & Omit<
-  NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>,
-  // This should be translated into a 'path' before passed to the handler
-  'pathname'
->;
+};
 
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
