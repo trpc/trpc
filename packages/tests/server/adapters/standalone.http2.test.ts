@@ -111,12 +111,11 @@ const router = t.router({
     }),
 });
 
-const handler = createHTTP2Handler({
-  router,
-  createContext,
-});
-
 test('query', async () => {
+  const handler = createHTTP2Handler({
+    router,
+    createContext,
+  });
   const server = createHttp2ServerResource(handler);
 
   const client = createTRPCClient<typeof router>({
@@ -134,6 +133,10 @@ test('query', async () => {
 });
 
 test('mutation without body', async () => {
+  const handler = createHTTP2Handler({
+    router,
+    createContext,
+  });
   const server = createHttp2ServerResource(handler);
 
   const client = createTRPCClient<typeof router>({
@@ -151,6 +154,10 @@ test('mutation without body', async () => {
 });
 
 test('mutation with body', async () => {
+  const handler = createHTTP2Handler({
+    router,
+    createContext,
+  });
   const server = createHttp2ServerResource(handler);
 
   const client = createTRPCClient<typeof router>({
@@ -167,4 +174,41 @@ test('mutation with body', async () => {
     name: 'John',
   });
   expect(result).toBe('Goodbye John');
+});
+
+test('custom path', async () => {
+  const handler = createHTTP2Handler({
+    router,
+    createContext,
+    path: '/trpc',
+  });
+  const server = createHttp2ServerResource((req, res) => {
+    if (req.url.startsWith('/trpc')) {
+      return handler(req, res);
+    }
+
+    res.writeHead(404);
+    res.write('Not Found');
+    res.end();
+  });
+
+  {
+    const result = await fetch(`${server.url}/some-other-path`);
+    expect(result.status).toBe(404);
+    expect(await result.text()).toMatchInlineSnapshot(`"Not Found"`);
+  }
+  {
+    const client = createTRPCClient<typeof router>({
+      links: [
+        httpBatchLink({
+          url: `${server.url}/trpc`,
+          // @ts-expect-error this is fine
+          fetch: undici.fetch,
+        }),
+      ],
+    });
+
+    const result = await client.hello.query();
+    expect(result).toBe('Hello World');
+  }
 });
