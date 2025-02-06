@@ -67,6 +67,7 @@ function createHandler<
     run(async () => {
       const url = createURL(req);
 
+      // get procedure(s) path and remove the leading slash
       path = url.pathname.slice(sliceLength);
 
       await nodeHTTPRequestHandler({
