@@ -108,11 +108,15 @@ export type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
-> = {
+> = NodeHTTPHandlerOptions<TRouter, TRequest, TResponse> & {
   req: TRequest;
   res: TResponse;
+  /**
+   * The tRPC path to handle requests for
+   * @example 'post.all'
+   */
   path: string;
-} & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>;
+};
 
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;
