@@ -412,13 +412,18 @@ export class WsClient {
   private batchSend(message: TRPCClientOutgoingMessage, callbacks: TCallbacks) {
     this.inactivityTimeout.reset();
 
-    void run(async () => {
+    run(async () => {
       if (!this.activeConnection.isOpen()) {
         await this.open();
       }
       await sleep(0);
+
       if (!this.requestManager.hasOutgoingRequests()) return;
+
       this.send(this.requestManager.flush().map(({ message }) => message));
+    }).catch((err) => {
+      this.requestManager.delete(message.id);
+      callbacks.error(TRPCClientError.from(err));
     });
 
     return this.requestManager.register(message, callbacks);

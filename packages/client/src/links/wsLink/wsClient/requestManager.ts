@@ -105,17 +105,10 @@ export class RequestManager {
   public flush() {
     const requests = this.outgoingRequests;
     this.outgoingRequests = [];
-    this.pendingRequests = requests.reduce(
-      (acc, { id, message, end, callbacks }) => ({
-        ...acc,
-        [id]: {
-          message,
-          end,
-          callbacks,
-        },
-      }),
-      this.pendingRequests,
-    );
+
+    for (const request of requests) {
+      this.pendingRequests[request.id] = request;
+    }
     return requests;
   }
 

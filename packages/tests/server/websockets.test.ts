@@ -1924,3 +1924,146 @@ test('url callback and connection params is invoked for every reconnect', async 
   expect(urlCalls).toBe(2);
   expect(connectionParamsCalls).toBe(2);
 });
+
+test('active subscription while querying', async () => {
+  const { client, close, ee } = factory();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+
+  const subscription = client.onMessageIterable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataMock(data);
+    },
+  });
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+  });
+
+  ee.emit('server:msg', {
+    id: '1',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+  });
+
+  // ensure we can do a query while having an active subscription
+  const result = await client.greeting.query('hello');
+  expect(result).toMatchInlineSnapshot(`"hello hello"`);
+
+  ee.emit('server:msg', {
+    id: '2',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(2);
+  });
+
+  // Make sure it didn't reconnect or whatever
+  expect(onStartedMock).toHaveBeenCalledTimes(1);
+
+  subscription.unsubscribe();
+
+  await waitFor(() => {
+    expect(ee.listenerCount('server:msg')).toBe(0);
+    expect(ee.listenerCount('server:error')).toBe(0);
+  });
+
+  await close();
+});
+
+test('lazy connection where the first connection fails', async () => {
+  let i = 0;
+  const ctx = factory({
+    async createContext() {
+      // console.log('createContext', i);
+      if (i++ === 0) {
+        throw new Error('first connection failed');
+      }
+      return {};
+    },
+    wsClient: {
+      lazy: {
+        enabled: true,
+        closeMs: 0,
+      },
+    },
+  });
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+
+  const subscription = ctx.client.onMessageIterable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataMock(data);
+    },
+  });
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+  });
+
+  ctx.ee.emit('server:msg', {
+    id: '1',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+  });
+
+  subscription.unsubscribe();
+
+  await ctx.close();
+});
+
+test('connection where the first connection fails', async () => {
+  let i = 0;
+  const ctx = factory({
+    async createContext() {
+      // console.log('createContext', i);
+      if (i++ === 0) {
+        throw new Error('first connection failed');
+      }
+      return {};
+    },
+  });
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+
+  const subscription = ctx.client.onMessageIterable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataMock(data);
+    },
+  });
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+  });
+
+  ctx.ee.emit('server:msg', {
+    id: '1',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+  });
+
+  subscription.unsubscribe();
+
+  await ctx.close();
+});
