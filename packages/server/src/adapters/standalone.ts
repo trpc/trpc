@@ -33,14 +33,14 @@ type StandaloneHandlerOptions<
   TResponse extends NodeHTTPResponse,
 > = NodeHTTPHandlerOptions<TRouter, TRequest, TResponse> & {
   /**
-   * The pathname to handle requests for.
+   * The base path to handle requests for.
    * This will be sliced from the beginning of the request path
    * (Do not miss including the trailing slash)
    * @default '/'
    * @example '/trpc/'
    * @example '/trpc/api/'
    */
-  pathname?: string;
+  basePath?: string;
 };
 
 // --- http1 ---
@@ -59,7 +59,7 @@ function createHandler<
 >(
   opts: StandaloneHandlerOptions<TRouter, TRequest, TResponse>,
 ): (req: TRequest, res: TResponse) => void {
-  const sliceLength = opts.pathname?.length ?? 1;
+  const sliceLength = opts.basePath?.length ?? 1;
 
   return (req, res) => {
     let path = '';

@@ -89,7 +89,7 @@ createHTTPServer({
     console.log('context 3');
     return {};
   },
-  // pathname: '/trpc/', // optional, defaults to '/'
+  // basePath: '/trpc/', // optional, defaults to '/'
 }).listen(2022);
 ```
 
@@ -161,9 +161,9 @@ createServer((req, res) => {
 }).listen(3001);
 ```
 
-## Custom pathname to handle requests under {#custom-pathname}
+## Custom base path to handle requests under {#custom-basePath}
 
-The Standalone adapter also supports a `pathname` option, which will slice the pathname from the beginning of the request path.
+The Standalone adapter also supports a `basePath` option, which will slice the basePath from the beginning of the request path.
 
 ```ts title='server.ts'
 import { createServer } from 'http';
@@ -172,7 +172,7 @@ import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 
 const handler = createHTTPHandler({
   router: appRouter,
-  pathname: '/trpc/',
+  basePath: '/trpc/',
 });
 
 createServer((req, res) => {
@@ -199,7 +199,7 @@ import { createContext } from './context.ts';
 const handler = createHTTP2Handler({
   router: appRouter,
   createContext,
-  // pathname: '/trpc/', // optional, defaults to '/'
+  // basePath: '/trpc/', // optional, defaults to '/'
 });
 
 const server = http2.createSecureServer(
