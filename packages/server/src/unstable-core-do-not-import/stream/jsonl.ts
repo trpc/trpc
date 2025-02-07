@@ -242,7 +242,7 @@ async function* createBatchStreamProducer(
       return [[value]];
     }
 
-    const newObj = {} as Record<string, unknown>;
+    const newObj: Record<string, unknown> = {};
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
       const transformed = encodeAsync(item, [...path, key]);
