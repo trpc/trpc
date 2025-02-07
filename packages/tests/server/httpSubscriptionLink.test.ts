@@ -1053,6 +1053,11 @@ test('cancel subscription by returning on the server', async () => {
         "state": "pending",
         "type": "state",
       },
+      Object {
+        "error": null,
+        "state": "idle",
+        "type": "state",
+      },
     ]
   `);
 
