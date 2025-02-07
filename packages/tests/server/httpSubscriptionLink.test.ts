@@ -31,16 +31,37 @@ import { zAsyncIterable } from './zAsyncIterable';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const returnDataSymbol = Symbol('returnData');
+
+export interface MyEvents {
+  data: (str: Error | number | [typeof returnDataSymbol, number]) => void;
+}
+declare interface MyEventEmitter {
+  on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  off<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  once<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  emit<TEv extends keyof MyEvents>(
+    event: TEv,
+    ...args: Parameters<MyEvents[TEv]>
+  ): boolean;
+}
+
+class MyEventEmitter extends EventEmitter {
+  public toIterable<TEv extends keyof MyEvents>(
+    event: TEv,
+    opts: NonNullable<Parameters<typeof on>[2]>,
+  ): AsyncIterable<Parameters<MyEvents[TEv]>> {
+    return on(this, event, opts) as any;
+  }
+}
+
 const orderedResults: number[] = [];
 const ctx = konn()
   .beforeEach(() => {
     const onIterableInfiniteSpy =
       vi.fn<(args: { input: { lastEventId?: number } }) => void>();
 
-    const ee = new EventEmitter();
-    const eeEmit = (data: number | Error) => {
-      ee.emit('data', data);
-    };
+    const ee = new MyEventEmitter();
 
     const t = initTRPC.create({
       transformer: superjson,
@@ -54,20 +75,24 @@ const ctx = konn()
           .output(
             zAsyncIterable({
               yield: z.number(),
+              return: z.number(),
               tracked: false,
             }),
           )
           .subscription(async function* (opts) {
-            for await (const data of on(ee, 'data', {
+            for await (const [thing] of ee.toIterable('data', {
               signal: opts.signal,
             })) {
-              const thing = data[0] as number | Error;
-
               if (thing instanceof Error) {
                 throw thing;
               }
-              yield thing;
+              if (Array.isArray(thing)) {
+                return thing[1];
+              } else {
+                yield thing;
+              }
             }
+            throw new Error('Unreachable?');
           }),
 
         iterableInfinite: t.procedure
@@ -134,7 +159,6 @@ const ctx = konn()
     return {
       ...opts,
       ee,
-      eeEmit,
       infiniteYields,
       onIterableInfiniteSpy,
     };
@@ -165,8 +189,8 @@ test('iterable event', async () => {
     },
   );
 
-  ctx.eeEmit(1);
-  ctx.eeEmit(2);
+  ctx.ee.emit('data', 1);
+  ctx.ee.emit('data', 2);
 
   await vi.waitFor(() => {
     expect(onData).toHaveBeenCalledTimes(2);
@@ -213,13 +237,13 @@ test(
     await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
-    ctx.eeEmit(1);
+    ctx.ee.emit('data', 1);
 
     await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
-    ctx.eeEmit(new Error('test error'));
+    ctx.ee.emit('data', new Error('test error'));
 
     await suppressLogsUntil(async () => {
       await vi.waitFor(
@@ -232,7 +256,7 @@ test(
       );
     });
 
-    ctx.eeEmit(2);
+    ctx.ee.emit('data', 2);
 
     await vi.waitFor(
       () => {
@@ -303,8 +327,8 @@ test('iterable event with bad yield', async () => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
-  ctx.eeEmit(1);
-  ctx.eeEmit('NOT_A_NUMBER' as never);
+  ctx.ee.emit('data', 1);
+  ctx.ee.emit('data', 'NOT_A_NUMBER' as never);
   await vi.waitFor(() => {
     expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
   });
