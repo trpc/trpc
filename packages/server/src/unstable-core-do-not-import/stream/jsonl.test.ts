@@ -626,3 +626,59 @@ test('e2e, withPing', async () => {
     await expect(value.slow).resolves.toBe('after');
   }
 });
+
+// https://github.com/trpc/trpc/pull/6457
+test('regression: encode/decode with superjson at top level', async () => {
+  const data = {
+    0: Promise.resolve(new Date(1)),
+  } as const;
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+  });
+
+  const [stream1, stream2] = stream.tee();
+
+  const streamEnd = run(async () => {
+    const reader = stream2.pipeThrough(new TextDecoderStream()).getReader();
+    const aggregated: string[] = [];
+    while (true) {
+      const res = await reader.read();
+
+      if (res.value) {
+        aggregated.push(res.value);
+      }
+      if (res.done) {
+        break;
+      }
+    }
+    return aggregated;
+  });
+
+  const aggregated = await streamEnd;
+
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
+    from: stream1,
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: new AbortController(),
+  });
+
+  expect(aggregated).toMatchInlineSnapshot(`
+    Array [
+      "{"json":{"0":[[0],[null,0,0]]}}
+    ",
+      "{"json":[0,0,[["1970-01-01T00:00:00.001Z"]]],"meta":{"values":{"2.0.0":["Date"]}}}
+    ",
+    ]
+  `);
+  {
+    expect(head[0]).toBeInstanceOf(Promise);
+
+    const value = await head[0];
+    expect(value).toBeInstanceOf(Date);
+
+    expect(value.getTime()).toBe(1);
+  }
+
+  expect(meta.isEmpty()).toBe(true);
+});
