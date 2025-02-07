@@ -1,4 +1,5 @@
 import { Unpromise } from '../../../vendor/unpromise';
+import { throwAbortError } from '../../http/AbortError';
 import { makeAsyncResource } from './disposable';
 import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
@@ -31,7 +32,7 @@ export async function* withMaxDuration<T>(
     result = await Unpromise.race([iterator.next(), timerPromise]);
     if (result === disposablePromiseTimerResult) {
       // cancelled due to timeout
-      throw new DOMException('AbortError', 'AbortError');
+      throwAbortError();
     }
     if (result.done) {
       return result;
@@ -70,7 +71,7 @@ export async function* takeWithGrace<T>(
   while (true) {
     result = await Unpromise.race([iterator.next(), timerPromise]);
     if (result === disposablePromiseTimerResult) {
-      throw new DOMException('AbortError', 'AbortError');
+      throwAbortError();
     }
     if (result.done) {
       return result.value;
