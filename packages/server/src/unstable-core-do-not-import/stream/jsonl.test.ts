@@ -23,7 +23,6 @@ test('encode/decode with superjson', async () => {
         yield 3;
       },
     }),
-    2: Promise.resolve(new Date(1)),
   } as const;
   const stream = jsonlStreamProducer({
     data,
@@ -47,6 +46,29 @@ test('encode/decode with superjson', async () => {
     }
     return aggregated;
   });
+
+  const aggregated = await streamEnd;
+
+  expect(aggregated).toMatchInlineSnapshot(`
+    Array [
+      "{"json":{"0":[[0],[null,0,0]],"1":[[0],[null,0,1]]}}
+    ",
+      "{"json":[0,0,[[{"foo":{"bar":{"baz":"qux"}},"deferred":0}],["deferred",0,2]]]}
+    ",
+      "{"json":[1,0,[[0],[null,1,3]]]}
+    ",
+      "{"json":[2,0,[[42]]]}
+    ",
+      "{"json":[3,1,[[1]]]}
+    ",
+      "{"json":[3,1,[[2]]]}
+    ",
+      "{"json":[3,1,[[3]]]}
+    ",
+      "{"json":[3,0,[[]]]}
+    ",
+    ]
+  `);
 
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: stream1,
@@ -75,19 +97,8 @@ test('encode/decode with superjson', async () => {
     }
     expect(aggregated).toEqual([1, 2, 3]);
   }
-  {
-    expect(head[2]).toBeInstanceOf(Promise);
-
-    const value = await head[2];
-    expect(value).toBeInstanceOf(Date);
-    expect(value.getTime()).toBe(1);
-  }
 
   expect(meta.isEmpty()).toBe(true);
-
-  const aggregated = await streamEnd;
-
-  expect(aggregated).toMatchInlineSnapshot();
 });
 
 test('encode/decode - error', async () => {
@@ -614,4 +625,60 @@ test('e2e, withPing', async () => {
 
     await expect(value.slow).resolves.toBe('after');
   }
+});
+
+// https://github.com/trpc/trpc/pull/6457
+test('regression: encode/decode with superjson at top level', async () => {
+  const data = {
+    0: Promise.resolve(new Date(1)),
+  } as const;
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+  });
+
+  const [stream1, stream2] = stream.tee();
+
+  const streamEnd = run(async () => {
+    const reader = stream2.pipeThrough(new TextDecoderStream()).getReader();
+    const aggregated: string[] = [];
+    while (true) {
+      const res = await reader.read();
+
+      if (res.value) {
+        aggregated.push(res.value);
+      }
+      if (res.done) {
+        break;
+      }
+    }
+    return aggregated;
+  });
+
+  const aggregated = await streamEnd;
+
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
+    from: stream1,
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: new AbortController(),
+  });
+
+  expect(aggregated).toMatchInlineSnapshot(`
+    Array [
+      "{"json":{"0":[[0],[null,0,0]]}}
+    ",
+      "{"json":[0,0,[[{}]]]}
+    ",
+    ]
+  `);
+  {
+    expect(head[0]).toBeInstanceOf(Promise);
+
+    const value = await head[0];
+    expect(value).toBeInstanceOf(Date);
+
+    expect(value.getTime()).toBe(1);
+  }
+
+  expect(meta.isEmpty()).toBe(true);
 });
