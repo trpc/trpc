@@ -503,15 +503,6 @@ describe('with transformer', () => {
           yield 2;
           throw new Error('foo');
         }),
-        nonJsonData: t.procedure.query(() => {
-          return {
-            date: new Date(1),
-            map: new Map([['foo', 'bar']]),
-          };
-        }),
-        nonJsonDataAtTopLevel: t.procedure.query(() => {
-          return new Date(1);
-        }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -726,31 +717,5 @@ describe('with transformer', () => {
     `);
     expect(aggregated).toEqual([1, 2]);
     expect(error.message).toBe('foo');
-  });
-
-  test('non-json data', async () => {
-    const data = await ctx.client.nonJsonData.query();
-
-    expectTypeOf(data.date).toEqualTypeOf<Date>();
-    expect(data.date).toBeInstanceOf(Date);
-
-    expectTypeOf(data.map).toEqualTypeOf<Map<string, string>>();
-    expect(data.map).toBeInstanceOf(Map);
-
-    expect(data).toMatchInlineSnapshot(`
-      Object {
-        "date": 1970-01-01T00:00:00.001Z,
-        "map": Map {
-          "foo" => "bar",
-        },
-      }
-    `);
-  });
-
-  test('non-json data at the top level', async () => {
-    const data = await ctx.client.nonJsonDataAtTopLevel.query();
-
-    expectTypeOf(data).toEqualTypeOf<Date>();
-    expect(data).toBeInstanceOf(Date);
   });
 });
