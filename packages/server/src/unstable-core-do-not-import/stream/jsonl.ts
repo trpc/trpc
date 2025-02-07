@@ -263,7 +263,7 @@ async function* createBatchStreamProducer(
 
   yield newHead;
 
-  let iterable: AsyncIterable<Head | ChunkData | typeof PING_SYM, void> =
+  let iterable: AsyncIterable<ChunkData | typeof PING_SYM, void> =
     mergedIterables;
   if (opts.pingMs) {
     iterable = withPing(mergedIterables, opts.pingMs);
