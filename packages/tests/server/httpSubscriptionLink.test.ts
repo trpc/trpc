@@ -994,10 +994,12 @@ test('iterable event with return value', async () => {
   const onStartedSpy = vi.fn();
   const onDataSpy = vi.fn();
   const onCompleteSpy = vi.fn();
+  const onErrorSpy = vi.fn();
   const sub = ctx.client.sub.iterableEvent.subscribe(undefined, {
     onData: onDataSpy,
     onStarted: onStartedSpy,
     onComplete: onCompleteSpy,
+    onError: onErrorSpy,
   });
 
   await vi.waitFor(() => {
@@ -1022,6 +1024,8 @@ test('iterable event with return value', async () => {
   await vi.waitFor(() => {
     expect(onCompleteSpy).toHaveBeenCalledTimes(1);
   });
+
+  expect(onErrorSpy).not.toHaveBeenCalled();
 
   sub.unsubscribe();
 });
