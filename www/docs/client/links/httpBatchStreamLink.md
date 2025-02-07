@@ -147,3 +147,17 @@ Receiving the stream relies on the `TextDecoder` and `TextDecoderStream` APIs, w
 ## Reference
 
 You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpBatchStreamLink.ts)
+
+## Configure a ping option to keep the connection alive
+
+When setting up your root config, you can pass in a `jsonl` option to configure a ping option to keep the connection alive.
+
+```ts
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create({
+  jsonl: {
+    pingMs: 1000,
+  },
+});
+```
