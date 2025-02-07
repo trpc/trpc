@@ -239,11 +239,6 @@ interface ConsumerStreamResultPing<TConfig extends ConsumerConfig>
   type: 'ping';
 }
 
-interface ConsumerStreamResultReturn<TConfig extends ConsumerConfig>
-  extends ConsumerStreamResultBase<TConfig> {
-  type: 'return';
-}
-
 interface ConsumerStreamResultConnected<TConfig extends ConsumerConfig>
   extends ConsumerStreamResultBase<TConfig> {
   type: 'connected';
@@ -256,8 +251,7 @@ type ConsumerStreamResult<TConfig extends ConsumerConfig> =
   | ConsumerStreamResultConnecting<TConfig>
   | ConsumerStreamResultTimeout<TConfig>
   | ConsumerStreamResultPing<TConfig>
-  | ConsumerStreamResultConnected<TConfig>
-  | ConsumerStreamResultReturn<TConfig>;
+  | ConsumerStreamResultConnected<TConfig>;
 
 export interface SSEStreamConsumerOptions<TConfig extends ConsumerConfig> {
   url: () => MaybePromise<string>;
@@ -347,11 +341,9 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
           });
         });
         eventSource.addEventListener(RETURN_EVENT, () => {
-          controller.enqueue({
-            type: 'return',
-            eventSource,
-          });
+          eventSource.close();
           controller.close();
+          _es = null;
         });
         eventSource.addEventListener('error', (event) => {
           if (eventSource.readyState === EventSource.CLOSED) {

@@ -147,9 +147,6 @@ export function unstable_httpSubscriptionLink<
               case 'ping':
                 // do nothing
                 break;
-              case 'return':
-                // stop the loop
-                return;
               case 'data':
                 const chunkData = chunk.data;
 
@@ -232,19 +229,15 @@ export function unstable_httpSubscriptionLink<
               }
             }
           }
-        })
-          .then(() => {
-            ac.abort();
-            observer.next({
-              result: {
-                type: 'stopped',
-              },
-            });
-            observer.complete();
-          })
-          .catch((error) => {
-            observer.error(TRPCClientError.from(error));
+          observer.next({
+            result: {
+              type: 'stopped',
+            },
           });
+          observer.complete();
+        }).catch((error) => {
+          observer.error(TRPCClientError.from(error));
+        });
 
         return () => {
           observer.complete();

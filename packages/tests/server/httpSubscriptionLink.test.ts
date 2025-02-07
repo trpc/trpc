@@ -129,6 +129,7 @@ const ctx = konn()
               observer.next(value);
             },
             error: observer.error,
+            complete: observer.complete,
           });
           return unsubscribe;
         });
@@ -864,6 +865,9 @@ describe('timeouts', async () => {
               observer.next(envelope);
             },
             error: observer.error,
+            complete: () => {
+              observer.complete();
+            },
           });
           return unsubscribe;
         });
@@ -989,16 +993,20 @@ describe('timeouts', async () => {
   });
 });
 
-test('iterable event with return value', async () => {
+test('cancel subscription by returning on the server', async () => {
   const onStartedSpy = vi.fn();
   const onDataSpy = vi.fn();
   const onCompleteSpy = vi.fn();
   const onErrorSpy = vi.fn();
+  const onStoppedSpy = vi.fn();
+  const onConnectionStateChangeSpy = vi.fn();
   const sub = ctx.client.sub.iterableEvent.subscribe(undefined, {
     onData: onDataSpy,
     onStarted: onStartedSpy,
     onComplete: onCompleteSpy,
     onError: onErrorSpy,
+    onStopped: onStoppedSpy,
+    onConnectionStateChange: onConnectionStateChangeSpy,
   });
 
   await vi.waitFor(() => {
@@ -1027,8 +1035,26 @@ test('iterable event with return value', async () => {
   ctx.ee.emit('data', returnSymbol);
 
   await vi.waitFor(() => {
+    expect(onStoppedSpy).toHaveBeenCalledTimes(1);
+  });
+  await vi.waitFor(() => {
     expect(onCompleteSpy).toHaveBeenCalledTimes(1);
   });
+
+  expect(onConnectionStateChangeSpy.mock.calls.flat()).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "error": null,
+        "state": "connecting",
+        "type": "state",
+      },
+      Object {
+        "error": null,
+        "state": "pending",
+        "type": "state",
+      },
+    ]
+  `);
 
   expect(es.readyState).toBe(EventSource.CLOSED);
 
