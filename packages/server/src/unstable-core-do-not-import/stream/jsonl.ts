@@ -239,7 +239,7 @@ async function* createBatchStreamProducer(
       return [[placeholder], [null, ...reg]];
     }
 
-    if (Object.getPrototypeOf(value) !== Object.prototype) {
+    if (Object.prototype.toString.call(value) !== '[object Object]') {
       return [[value]];
     }
     const newObj = {} as Record<string, unknown>;
