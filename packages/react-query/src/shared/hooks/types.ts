@@ -179,6 +179,10 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
    * Called when an **unrecoverable error** occurs and the subscription is closed
    */
   onError?: (err: TError) => void;
+  /**
+   * Called when the subscription is completed
+   */
+  onComplete?: () => void;
 }
 
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {

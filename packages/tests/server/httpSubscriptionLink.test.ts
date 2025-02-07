@@ -33,7 +33,7 @@ const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const returnSymbol = Symbol();
 
-export interface MyEvents {
+interface MyEvents {
   data: (str: Error | number | typeof returnSymbol) => void;
 }
 declare interface MyEventEmitter {

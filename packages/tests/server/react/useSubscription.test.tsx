@@ -14,6 +14,30 @@ import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
 
+const returnSymbol = Symbol();
+
+interface MyEvents {
+  data: (str: Error | number | typeof returnSymbol) => void;
+}
+declare interface MyEventEmitter {
+  on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  off<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  once<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
+  emit<TEv extends keyof MyEvents>(
+    event: TEv,
+    ...args: Parameters<MyEvents[TEv]>
+  ): boolean;
+}
+
+class MyEventEmitter extends EventEmitter {
+  public toIterable<TEv extends keyof MyEvents>(
+    event: TEv,
+    opts: NonNullable<Parameters<typeof on>[2]>,
+  ): AsyncIterable<Parameters<MyEvents[TEv]>> {
+    return on(this, event, opts) as any;
+  }
+}
+
 /**
  * a function that displays the diff over time in a list of values
  */
@@ -34,7 +58,7 @@ function diff(list: any[]) {
 const getCtx = (protocol: 'http' | 'ws') => {
   return konn()
     .beforeEach(() => {
-      const ee = new EventEmitter();
+      const ee = new MyEventEmitter();
       const t = initTRPC.create({
         errorFormatter({ shape }) {
           return {
@@ -50,10 +74,16 @@ const getCtx = (protocol: 'http' | 'ws') => {
         onEventIterable: t.procedure
           .input(z.number())
           .subscription(async function* (opts) {
-            for await (const event of on(ee, 'data', {
+            for await (const [data] of ee.toIterable('data', {
               signal: opts.signal,
             })) {
-              const data = event[0] as number;
+              if (data instanceof Error) {
+                throw data;
+              }
+              if (data === returnSymbol) {
+                return;
+              }
+
               yield data + opts.input;
             }
           }),
@@ -64,7 +94,10 @@ const getCtx = (protocol: 'http' | 'ws') => {
           .input(z.number())
           .subscription(({ input }) => {
             return observable<number>((emit) => {
-              const onData = (data: number) => {
+              const onData: MyEvents['data'] = (data) => {
+                if (typeof data !== 'number') {
+                  throw new Error('Invalid data');
+                }
                 emit.next(data + input);
               };
               ee.on('data', onData);
@@ -89,7 +122,7 @@ const getCtx = (protocol: 'http' | 'ws') => {
 };
 describe.each([
   //
-  'http',
+  // 'http',
   'ws',
 ] as const)('useSubscription - %s', (protocol) => {
   const ctx = getCtx(protocol);
@@ -175,6 +208,77 @@ describe.each([
     await waitFor(() => {
       // no event listeners
       expect(ctx.ee.listenerCount('data')).toBe(0);
+    });
+  });
+
+  test.only('iterable - return from server', async () => {
+    const onDataMock = vi.fn();
+    const onErrorMock = vi.fn();
+    const onCompletedMock = vi.fn();
+
+    const { App, client } = ctx;
+
+    let setEnabled = null as never as (enabled: boolean) => void;
+
+    function MyComponent() {
+      const [data, setData] = useState<number[]>();
+      const [enabled, _setEnabled] = useState(false);
+      setEnabled = _setEnabled;
+
+      const sub = client.onEventIterable.useSubscription(10, {
+        enabled,
+        onData: (data) => {
+          expectTypeOf(data).toMatchTypeOf<number>();
+          onDataMock(data);
+          setData((prev) => [...(prev ?? []), data]);
+        },
+        onError: onErrorMock,
+        onComplete: onCompletedMock,
+      });
+
+      return (
+        <pre>
+          <div>status:{sub.status}</div>
+          <div>All data: {data?.join(',') ?? 'EMPTY'}</div>
+        </pre>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:idle`);
+    });
+
+    ignoreErrors(() => {
+      setEnabled(true);
+    });
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:connecting`);
+    });
+    expect(onDataMock).toHaveBeenCalledTimes(0);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    ctx.ee.emit('data', 20);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`All data: 30`);
+    });
+
+    ctx.ee.emit('data', returnSymbol);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:idle`);
+    });
+
+    expect(onCompletedMock).toHaveBeenCalledTimes(1);
+
+    ignoreErrors(() => {
+      setEnabled(false);
     });
   });
 

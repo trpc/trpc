@@ -434,6 +434,17 @@ export function createRootHooks<
               };
             });
           },
+          onComplete: () => {
+            if (!isStopped) {
+              optsRef.current.onComplete?.();
+              updateState((prev) => ({
+                ...prev,
+                status: 'idle',
+                error: null,
+                data: undefined,
+              }));
+            }
+          },
         },
       );
 
