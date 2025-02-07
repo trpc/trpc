@@ -515,6 +515,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         untransformedJSON: null,
       });
       const stream = jsonlStreamProducer({
+        ...config.jsonl,
         /**
          * Example structure for `maxDepth: 4`:
          * {
