@@ -25,7 +25,6 @@ export type NodeJSReadableStreamEsque = {
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Object.prototype.toString.call(value) === '[object Object]';
 }
-// ---------- types
 
 // ---------- types
 const CHUNK_VALUE_TYPE_PROMISE = 0;
