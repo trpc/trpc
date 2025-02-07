@@ -846,9 +846,7 @@ describe('timeouts', async () => {
               observer.next(envelope);
             },
             error: observer.error,
-            complete: () => {
-              observer.complete();
-            },
+            complete: observer.complete,
           });
           return unsubscribe;
         });
