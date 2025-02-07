@@ -322,6 +322,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               break;
             }
             if (next.done) {
+              respond({
+                id,
+                jsonrpc,
+                result: {
+                  type: 'stopped',
+                },
+              });
               break;
             }
 

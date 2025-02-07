@@ -122,7 +122,7 @@ const getCtx = (protocol: 'http' | 'ws') => {
 };
 describe.each([
   //
-  // 'http',
+  'http',
   'ws',
 ] as const)('useSubscription - %s', (protocol) => {
   const ctx = getCtx(protocol);
@@ -211,7 +211,7 @@ describe.each([
     });
   });
 
-  test.only('iterable - return from server', async () => {
+  test('iterable - return from server', async () => {
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
     const onCompletedMock = vi.fn();
