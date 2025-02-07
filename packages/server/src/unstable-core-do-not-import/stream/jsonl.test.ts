@@ -48,31 +48,6 @@ test('encode/decode with superjson', async () => {
     return aggregated;
   });
 
-  const aggregated = await streamEnd;
-
-  expect(aggregated).toMatchInlineSnapshot(`
-    Array [
-      "{"json":{"0":[[0],[null,0,0]],"1":[[0],[null,0,1]],"2":[[0],[null,0,2]]}}
-    ",
-      "{"json":[0,0,[[{"foo":{"bar":{"baz":"qux"}},"deferred":0}],["deferred",0,3]]]}
-    ",
-      "{"json":[1,0,[[0],[null,1,4]]]}
-    ",
-      "{"json":[2,0,[[{}]]]}
-    ",
-      "{"json":[3,0,[[42]]]}
-    ",
-      "{"json":[4,1,[[1]]]}
-    ",
-      "{"json":[4,1,[[2]]]}
-    ",
-      "{"json":[4,1,[[3]]]}
-    ",
-      "{"json":[4,0,[[]]]}
-    ",
-    ]
-  `);
-
   const [head, meta] = await jsonlStreamConsumer<typeof data>({
     from: stream1,
     deserialize: (v) => SuperJSON.deserialize(v),
@@ -100,8 +75,19 @@ test('encode/decode with superjson', async () => {
     }
     expect(aggregated).toEqual([1, 2, 3]);
   }
+  {
+    expect(head[2]).toBeInstanceOf(Promise);
+
+    const value = await head[2];
+    expect(value).toBeInstanceOf(Date);
+    expect(value.getTime()).toBe(1);
+  }
 
   expect(meta.isEmpty()).toBe(true);
+
+  const aggregated = await streamEnd;
+
+  expect(aggregated).toMatchInlineSnapshot();
 });
 
 test('encode/decode - error', async () => {
