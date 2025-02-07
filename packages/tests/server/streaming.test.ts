@@ -355,9 +355,7 @@ describe('no transformer', () => {
     expect(err).toMatchInlineSnapshot(
       `[AbortError: The operation was aborted.]`,
     );
-    expect(err.message).toMatchInlineSnapshot(
-      `"The operation was aborted."`,
-    );
+    expect(err.message).toMatchInlineSnapshot(`"The operation was aborted."`);
   });
 
   test('output validation iterable yield error', async () => {

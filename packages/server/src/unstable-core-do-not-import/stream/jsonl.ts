@@ -5,6 +5,7 @@ import { createDeferred } from './utils/createDeferred';
 import { makeResource } from './utils/disposable';
 import { mergeAsyncIterables } from './utils/mergeAsyncIterables';
 import { readableStreamFrom } from './utils/readableStreamFrom';
+import { PING_SYM, withPing } from './utils/withPing';
 
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
@@ -21,7 +22,9 @@ export type NodeJSReadableStreamEsque = {
   ): NodeJSReadableStreamEsque;
 };
 
-// ---------- types
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Object.prototype.toString.call(value) === '[object Object]';
+}
 
 // ---------- types
 const CHUNK_VALUE_TYPE_PROMISE = 0;
@@ -107,12 +110,18 @@ export type ProducerOnError = (opts: {
   error: unknown;
   path: PathArray;
 }) => void;
-export interface ProducerOptions {
+export interface JSONLProducerOptions {
   serialize?: Serialize;
   data: Record<string, unknown> | unknown[];
   onError?: ProducerOnError;
   formatError?: (opts: { error: unknown; path: PathArray }) => unknown;
   maxDepth?: number;
+  /**
+   * Interval in milliseconds to send a ping to the client to keep the connection alive
+   * This will be sent as a whitespace character
+   * @default undefined
+   */
+  pingMs?: number;
 }
 
 class MaxDepthError extends Error {
@@ -122,8 +131,8 @@ class MaxDepthError extends Error {
 }
 
 async function* createBatchStreamProducer(
-  opts: ProducerOptions,
-): AsyncIterable<Head | ChunkData, void> {
+  opts: JSONLProducerOptions,
+): AsyncIterable<Head | ChunkData | typeof PING_SYM, void> {
   const { data } = opts;
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
@@ -223,14 +232,16 @@ async function* createBatchStreamProducer(
     if (value === undefined) {
       return [[]];
     }
-    if (!isObject(value)) {
-      return [[value]];
-    }
     const reg = encodeAsync(value, path);
     if (reg) {
       return [[placeholder], [null, ...reg]];
     }
-    const newObj = {} as Record<string, unknown>;
+
+    if (!isPlainObject(value)) {
+      return [[value]];
+    }
+
+    const newObj: Record<string, unknown> = {};
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
       const transformed = encodeAsync(item, [...path, key]);
@@ -251,7 +262,13 @@ async function* createBatchStreamProducer(
 
   yield newHead;
 
-  for await (const value of mergedIterables) {
+  let iterable: AsyncIterable<ChunkData | typeof PING_SYM, void> =
+    mergedIterables;
+  if (opts.pingMs) {
+    iterable = withPing(mergedIterables, opts.pingMs);
+  }
+
+  for await (const value of iterable) {
     yield value;
   }
 }
@@ -259,7 +276,7 @@ async function* createBatchStreamProducer(
  * JSON Lines stream producer
  * @see https://jsonlines.org/
  */
-export function jsonlStreamProducer(opts: ProducerOptions) {
+export function jsonlStreamProducer(opts: JSONLProducerOptions) {
   let stream = readableStreamFrom(createBatchStreamProducer(opts));
 
   const { serialize } = opts;
@@ -267,7 +284,11 @@ export function jsonlStreamProducer(opts: ProducerOptions) {
     stream = stream.pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
-          controller.enqueue(serialize(chunk));
+          if (chunk === PING_SYM) {
+            controller.enqueue(PING_SYM);
+          } else {
+            controller.enqueue(serialize(chunk));
+          }
         },
       }),
     );
@@ -277,7 +298,11 @@ export function jsonlStreamProducer(opts: ProducerOptions) {
     .pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
-          controller.enqueue(JSON.stringify(chunk) + '\n');
+          if (chunk === PING_SYM) {
+            controller.enqueue(' ');
+          } else {
+            controller.enqueue(JSON.stringify(chunk) + '\n');
+          }
         },
       }),
     )
