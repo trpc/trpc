@@ -42,7 +42,12 @@ test('streaming query interruption should throw TRPCClientError', async () => {
       }
     }),
   );
+  // unsure if err should be an AbortError or a TRPCClientError
+  console.log('err', err.name);
+  console.log('err.cause', err.cause?.name);
+  console.log('err.cause.name', err.cause?.cause?.name);
 
+  console.log('err', err);
   expect(err).toBeInstanceOf(TRPCClientError);
   expect(err.cause).toBeInstanceOf(DOMException);
   expect((err.cause as DOMException).name).toBe('AbortError');
