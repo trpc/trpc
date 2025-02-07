@@ -509,6 +509,9 @@ describe('with transformer', () => {
             map: new Map([['foo', 'bar']]),
           };
         }),
+        nonJsonDataAtTopLevel: t.procedure.query(() => {
+          return new Date(1);
+        }),
       });
 
       const linkSpy: TRPCLink<typeof router> = () => {
@@ -726,9 +729,7 @@ describe('with transformer', () => {
   });
 
   test('non-json data', async () => {
-    const { client } = ctx;
-
-    const data = await client.nonJsonData.query();
+    const data = await ctx.client.nonJsonData.query();
 
     expectTypeOf(data.date).toEqualTypeOf<Date>();
     expect(data.date).toBeInstanceOf(Date);
@@ -744,5 +745,12 @@ describe('with transformer', () => {
         },
       }
     `);
+  });
+
+  test('non-json data at the top level', async () => {
+    const data = await ctx.client.nonJsonDataAtTopLevel.query();
+
+    expectTypeOf(data).toEqualTypeOf<Date>();
+    expect(data).toBeInstanceOf(Date);
   });
 });
