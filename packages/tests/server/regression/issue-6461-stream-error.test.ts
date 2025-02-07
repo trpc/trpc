@@ -18,18 +18,13 @@ const appRouter = t.router({
 });
 
 test('streaming query interruption should throw TRPCClientError', async () => {
-  const ctx = makeAsyncResource(
-    routerToServerAndClientNew(appRouter, {
-      client(opts) {
-        return {
-          links: [unstable_httpBatchStreamLink({ url: opts.httpUrl })],
-        };
-      },
-    }),
-    async () => {
-      await ctx.close();
+  const ctx = routerToServerAndClientNew(appRouter, {
+    client(opts) {
+      return {
+        links: [unstable_httpBatchStreamLink({ url: opts.httpUrl })],
+      };
     },
-  );
+  });
 
   const err = await waitError(
     run(async () => {
@@ -53,4 +48,6 @@ test('streaming query interruption should throw TRPCClientError', async () => {
   expect((err.cause as DOMException).name).toBe('AbortError');
 
   expect(err).toMatchInlineSnapshot();
+
+  await ctx.close();
 });
