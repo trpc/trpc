@@ -34,7 +34,7 @@ const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 const returnDataSymbol = Symbol('returnData');
 
 export interface MyEvents {
-  data: (str: Error | number | [typeof returnDataSymbol, number]) => void;
+  data: (str: Error | number | typeof returnDataSymbol) => void;
 }
 declare interface MyEventEmitter {
   on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
@@ -75,7 +75,6 @@ const ctx = konn()
           .output(
             zAsyncIterable({
               yield: z.number(),
-              return: z.number(),
               tracked: false,
             }),
           )
@@ -86,11 +85,11 @@ const ctx = konn()
               if (thing instanceof Error) {
                 throw thing;
               }
-              if (Array.isArray(thing)) {
-                return thing[1];
-              } else {
-                yield thing;
+              if (thing === returnDataSymbol) {
+                return;
               }
+
+              yield thing;
             }
             throw new Error('Unreachable?');
           }),
@@ -1005,6 +1004,12 @@ test('iterable event with return value', async () => {
   await vi.waitFor(() => {
     expect(onStartedSpy).toHaveBeenCalledTimes(1);
   });
+
+  const es = onStartedSpy.mock.calls[0]![0].context?.eventSource;
+  assert(es instanceof EventSource);
+
+  expect(es.readyState).toBe(EventSource.OPEN);
+
   // yield
   ctx.ee.emit('data', 1);
 
@@ -1018,12 +1023,14 @@ test('iterable event with return value', async () => {
       ],
     ]
   `);
-
-  ctx.ee.emit('data', [returnDataSymbol, 1]);
+  expect(es.readyState).toBe(EventSource.OPEN);
+  ctx.ee.emit('data', returnDataSymbol);
 
   await vi.waitFor(() => {
     expect(onCompleteSpy).toHaveBeenCalledTimes(1);
   });
+
+  expect(es.readyState).toBe(EventSource.CLOSED);
 
   expect(onErrorSpy).not.toHaveBeenCalled();
 
