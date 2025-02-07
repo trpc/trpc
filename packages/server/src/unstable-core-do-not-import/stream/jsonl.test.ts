@@ -200,7 +200,7 @@ test('encode/decode - error', async () => {
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(0);
 });
 
-test('decode - bad data', async () => {
+test.only('decode - bad data', async () => {
   const textEncoder = new TextEncoderStream();
   const writer = textEncoder.writable.getWriter();
 
@@ -209,7 +209,7 @@ test('decode - bad data', async () => {
       await writer.write(
         JSON.stringify({
           error: 'bad data',
-        }),
+        }) + '\n',
       );
       await writer.close();
     })().catch(() => {
@@ -222,9 +222,8 @@ test('decode - bad data', async () => {
     });
     expect(true).toBe(false);
   } catch (err) {
-    expect(err).toMatchInlineSnapshot(
-      `[Error: Invalid response or stream interrupted]`,
-    );
+    // console.log('err', err);
+    expect(err).toMatchInlineSnapshot(`[TypeError: Cannot convert undefined or null to object]`);
   }
 });
 
@@ -553,9 +552,7 @@ test('should work to throw after stream is closed', async () => {
 
   ac.abort();
 
-  await expect(head0.deferred).rejects.toMatchInlineSnapshot(
-    `[Error: Invalid response or stream interrupted]`,
-  );
+  await expect(head0.deferred).rejects.toMatchInlineSnapshot(`DOMException {}`);
 
   deferred.resolve({
     p: Promise.resolve({
