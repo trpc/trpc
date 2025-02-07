@@ -579,3 +579,50 @@ test('should work to throw after stream is closed', async () => {
     }
   `);
 });
+
+test('e2e, withPing', async () => {
+  const deferred = createDeferred<void>();
+  const data = {
+    0: Promise.resolve({
+      slow: run(async () => {
+        await deferred.promise;
+        return 'after';
+      }),
+    }),
+  } as const;
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+    pingMs: 1,
+  });
+
+  await using server = serverResourceForStream(stream);
+
+  const res = await fetch(server.url);
+
+  const [original, tee] = res.body!.tee();
+  const text = tee.pipeThrough(new TextDecoderStream());
+
+  const [head, _meta] = await jsonlStreamConsumer<typeof data>({
+    from: original,
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: new AbortController(),
+  });
+
+  {
+    expect(head[0]).toBeInstanceOf(Promise);
+
+    let allData = '';
+    for await (const chunk of text) {
+      allData += chunk;
+      if (chunk.includes('  ')) break;
+    }
+
+    deferred.resolve();
+
+    const value = await head[0];
+    expect(value.slow).toBeInstanceOf(Promise);
+
+    await expect(value.slow).resolves.toBe('after');
+  }
+});
