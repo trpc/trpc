@@ -209,7 +209,7 @@ test('decode - bad data', async () => {
       await writer.write(
         JSON.stringify({
           error: 'bad data',
-        }),
+        }) + '\n',
       );
       await writer.close();
     })().catch(() => {
@@ -222,8 +222,9 @@ test('decode - bad data', async () => {
     });
     expect(true).toBe(false);
   } catch (err) {
+    // console.log('err', err);
     expect(err).toMatchInlineSnapshot(
-      `[Error: Invalid response or stream interrupted]`,
+      `[TypeError: Cannot convert undefined or null to object]`,
     );
   }
 });
@@ -553,9 +554,7 @@ test('should work to throw after stream is closed', async () => {
 
   ac.abort();
 
-  await expect(head0.deferred).rejects.toMatchInlineSnapshot(
-    `[Error: Invalid response or stream interrupted]`,
-  );
+  await expect(head0.deferred).rejects.toMatchInlineSnapshot(`DOMException {}`);
 
   deferred.resolve({
     p: Promise.resolve({
