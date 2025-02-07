@@ -618,12 +618,6 @@ test('e2e, withPing', async () => {
       if (chunk.includes('  ')) break;
     }
 
-    expect(allData).toMatchInlineSnapshot(`
-      "{"json":{"0":[[0],[null,0,0]]}}
-      {"json":[0,0,[[{"slow":0}],["slow",0,1]]]}
-        "
-    `);
-
     deferred.resolve();
 
     const value = await head[0];

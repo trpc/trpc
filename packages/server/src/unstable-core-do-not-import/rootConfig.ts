@@ -1,5 +1,6 @@
 import type { CombinedDataTransformer } from '../unstable-core-do-not-import';
 import type { DefaultErrorShape, ErrorFormatter } from './error/formatter';
+import type { JSONLProducerOptions } from './stream/jsonl';
 import type { SSEStreamProducerOptions } from './stream/sse';
 
 /**
@@ -84,12 +85,9 @@ export interface RootConfig<TTypes extends RootTypes> {
    * Options for batch stream
    * @see https://trpc.io/docs/client/links/httpBatchStreamLink
    */
-  jsonl?: {
-    pingMs?: number;
-  };
+  jsonl?: Pick<JSONLProducerOptions, 'pingMs'>;
   experimental?: {};
 }
-// initTRPC.create({ /* */ })
 
 /**
  * @internal

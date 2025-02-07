@@ -108,12 +108,17 @@ export type ProducerOnError = (opts: {
   error: unknown;
   path: PathArray;
 }) => void;
-export interface ProducerOptions {
+export interface JSONLProducerOptions {
   serialize?: Serialize;
   data: Record<string, unknown> | unknown[];
   onError?: ProducerOnError;
   formatError?: (opts: { error: unknown; path: PathArray }) => unknown;
   maxDepth?: number;
+  /**
+   * Interval in milliseconds to send a ping to the client to keep the connection alive
+   * This will be sent as a whitespace character
+   * @default undefined
+   */
   pingMs?: number;
 }
 
@@ -124,7 +129,7 @@ class MaxDepthError extends Error {
 }
 
 async function* createBatchStreamProducer(
-  opts: ProducerOptions,
+  opts: JSONLProducerOptions,
 ): AsyncIterable<Head | ChunkData | typeof PING_SYM, void> {
   const { data } = opts;
   let counter = 0 as ChunkIndex;
@@ -267,7 +272,7 @@ async function* createBatchStreamProducer(
  * JSON Lines stream producer
  * @see https://jsonlines.org/
  */
-export function jsonlStreamProducer(opts: ProducerOptions) {
+export function jsonlStreamProducer(opts: JSONLProducerOptions) {
   let stream = readableStreamFrom(createBatchStreamProducer(opts));
 
   const { serialize } = opts;
