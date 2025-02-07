@@ -1,8 +1,10 @@
 FROM node:22 AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN npm install -g corepack
-RUN corepack enable
+# https://github.com/nodejs/corepack/issues/627
+RUN npm install -g corepack 
+
+RUN corepack enable pnpm
 
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
