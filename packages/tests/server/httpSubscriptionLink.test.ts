@@ -990,6 +990,42 @@ describe('timeouts', async () => {
   });
 });
 
+test('iterable event with return value', async () => {
+  const onStartedSpy = vi.fn();
+  const onDataSpy = vi.fn();
+  const onCompleteSpy = vi.fn();
+  const sub = ctx.client.sub.iterableEvent.subscribe(undefined, {
+    onData: onDataSpy,
+    onStarted: onStartedSpy,
+    onComplete: onCompleteSpy,
+  });
+
+  await vi.waitFor(() => {
+    expect(onStartedSpy).toHaveBeenCalledTimes(1);
+  });
+  // yield
+  ctx.ee.emit('data', 1);
+
+  await vi.waitFor(() => {
+    expect(onDataSpy).toHaveBeenCalledTimes(1);
+  });
+  expect(onDataSpy.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        1,
+      ],
+    ]
+  `);
+
+  ctx.ee.emit('data', [returnDataSymbol, 1]);
+
+  await vi.waitFor(() => {
+    expect(onCompleteSpy).toHaveBeenCalledTimes(1);
+  });
+
+  sub.unsubscribe();
+});
+
 function createPuller(): PromiseLike<void> & {
   pull: () => void;
   reject: (err: unknown) => void;
