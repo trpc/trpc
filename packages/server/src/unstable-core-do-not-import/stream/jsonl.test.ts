@@ -23,6 +23,7 @@ test('encode/decode with superjson', async () => {
         yield 3;
       },
     }),
+    2: Promise.resolve(new Date(1)),
   } as const;
   const stream = jsonlStreamProducer({
     data,
@@ -51,21 +52,23 @@ test('encode/decode with superjson', async () => {
 
   expect(aggregated).toMatchInlineSnapshot(`
     Array [
-      "{"json":{"0":[[0],[null,0,0]],"1":[[0],[null,0,1]]}}
+      "{"json":{"0":[[0],[null,0,0]],"1":[[0],[null,0,1]],"2":[[0],[null,0,2]]}}
     ",
-      "{"json":[0,0,[[{"foo":{"bar":{"baz":"qux"}},"deferred":0}],["deferred",0,2]]]}
+      "{"json":[0,0,[[{"foo":{"bar":{"baz":"qux"}},"deferred":0}],["deferred",0,3]]]}
     ",
-      "{"json":[1,0,[[0],[null,1,3]]]}
+      "{"json":[1,0,[[0],[null,1,4]]]}
     ",
-      "{"json":[2,0,[[42]]]}
+      "{"json":[2,0,[[{}]]]}
     ",
-      "{"json":[3,1,[[1]]]}
+      "{"json":[3,0,[[42]]]}
     ",
-      "{"json":[3,1,[[2]]]}
+      "{"json":[4,1,[[1]]]}
     ",
-      "{"json":[3,1,[[3]]]}
+      "{"json":[4,1,[[2]]]}
     ",
-      "{"json":[3,0,[[]]]}
+      "{"json":[4,1,[[3]]]}
+    ",
+      "{"json":[4,0,[[]]]}
     ",
     ]
   `);
