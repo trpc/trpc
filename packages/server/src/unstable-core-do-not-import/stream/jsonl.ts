@@ -130,7 +130,7 @@ async function* createBatchStreamProducer(
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  let mergedIterables = mergeAsyncIterables<ChunkData>();
+  const mergedIterables = mergeAsyncIterables<ChunkData>();
   function registerAsync(
     callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, void>,
   ) {

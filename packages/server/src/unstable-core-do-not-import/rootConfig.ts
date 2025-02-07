@@ -85,8 +85,8 @@ export interface RootConfig<TTypes extends RootTypes> {
    * @see https://trpc.io/docs/client/links/httpBatchStreamLink
    */
   jsonl?: {
-    pingMs?: number
-  }
+    pingMs?: number;
+  };
   experimental?: {};
 }
 // initTRPC.create({ /* */ })
