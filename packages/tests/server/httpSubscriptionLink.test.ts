@@ -31,10 +31,10 @@ import { zAsyncIterable } from './zAsyncIterable';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const returnDataSymbol = Symbol('returnData');
+const returnSymbol = Symbol();
 
 export interface MyEvents {
-  data: (str: Error | number | typeof returnDataSymbol) => void;
+  data: (str: Error | number | typeof returnSymbol) => void;
 }
 declare interface MyEventEmitter {
   on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
@@ -85,7 +85,7 @@ const ctx = konn()
               if (thing instanceof Error) {
                 throw thing;
               }
-              if (thing === returnDataSymbol) {
+              if (thing === returnSymbol) {
                 return;
               }
 
@@ -1024,7 +1024,7 @@ test('iterable event with return value', async () => {
     ]
   `);
   expect(es.readyState).toBe(EventSource.OPEN);
-  ctx.ee.emit('data', returnDataSymbol);
+  ctx.ee.emit('data', returnSymbol);
 
   await vi.waitFor(() => {
     expect(onCompleteSpy).toHaveBeenCalledTimes(1);

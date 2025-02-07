@@ -351,6 +351,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
             type: 'return',
             eventSource,
           });
+          controller.close();
         });
         eventSource.addEventListener('error', (event) => {
           if (eventSource.readyState === EventSource.CLOSED) {

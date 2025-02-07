@@ -234,6 +234,7 @@ export function unstable_httpSubscriptionLink<
           }
         })
           .then(() => {
+            ac.abort();
             observer.next({
               result: {
                 type: 'stopped',
