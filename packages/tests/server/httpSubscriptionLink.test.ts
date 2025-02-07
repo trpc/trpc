@@ -73,7 +73,6 @@ const ctx = konn()
 
               yield thing;
             }
-            throw new Error('Unreachable?');
           }),
 
         iterableInfinite: t.procedure
