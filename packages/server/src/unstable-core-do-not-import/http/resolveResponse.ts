@@ -593,6 +593,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           return shape;
         },
+        pingMs: config.jsonl?.pingMs
       });
 
       return new Response(stream, {

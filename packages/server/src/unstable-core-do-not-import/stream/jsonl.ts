@@ -5,6 +5,7 @@ import { createDeferred } from './utils/createDeferred';
 import { makeResource } from './utils/disposable';
 import { mergeAsyncIterables } from './utils/mergeAsyncIterables';
 import { readableStreamFrom } from './utils/readableStreamFrom';
+import { PING_SYM, withPing } from './utils/withPing';
 
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
@@ -113,6 +114,7 @@ export interface ProducerOptions {
   onError?: ProducerOnError;
   formatError?: (opts: { error: unknown; path: PathArray }) => unknown;
   maxDepth?: number;
+  pingMs?: number;
 }
 
 class MaxDepthError extends Error {
@@ -123,12 +125,12 @@ class MaxDepthError extends Error {
 
 async function* createBatchStreamProducer(
   opts: ProducerOptions,
-): AsyncIterable<Head | ChunkData, void> {
+): AsyncIterable<Head | ChunkData | typeof PING_SYM, void> {
   const { data } = opts;
   let counter = 0 as ChunkIndex;
   const placeholder = 0 as PlaceholderValue;
 
-  const mergedIterables = mergeAsyncIterables<ChunkData>();
+  let mergedIterables = mergeAsyncIterables<ChunkData>();
   function registerAsync(
     callback: (idx: ChunkIndex) => AsyncIterable<ChunkData, void>,
   ) {
@@ -251,7 +253,13 @@ async function* createBatchStreamProducer(
 
   yield newHead;
 
-  for await (const value of mergedIterables) {
+  let iterable: AsyncIterable<Head | ChunkData | typeof PING_SYM, void> =
+    mergedIterables;
+  if (opts.pingMs) {
+    iterable = withPing(mergedIterables, opts.pingMs);
+  }
+
+  for await (const value of iterable) {
     yield value;
   }
 }
@@ -267,7 +275,11 @@ export function jsonlStreamProducer(opts: ProducerOptions) {
     stream = stream.pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
-          controller.enqueue(serialize(chunk));
+          if (chunk === PING_SYM) {
+            controller.enqueue(PING_SYM);
+          } else {
+            controller.enqueue(serialize(chunk));
+          }
         },
       }),
     );
@@ -277,7 +289,11 @@ export function jsonlStreamProducer(opts: ProducerOptions) {
     .pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
-          controller.enqueue(JSON.stringify(chunk) + '\n');
+          if (chunk === PING_SYM) {
+            controller.enqueue(' ');
+          } else {
+            controller.enqueue(JSON.stringify(chunk) + '\n');
+          }
         },
       }),
     )

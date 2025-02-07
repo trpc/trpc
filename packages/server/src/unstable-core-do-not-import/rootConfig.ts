@@ -79,8 +79,17 @@ export interface RootConfig<TTypes extends RootTypes> {
     SSEStreamProducerOptions,
     'ping' | 'emitAndEndImmediately' | 'maxDurationMs' | 'client'
   >;
+
+  /**
+   * Options for batch stream
+   * @see https://trpc.io/docs/client/links/httpBatchStreamLink
+   */
+  jsonl?: {
+    pingMs?: number
+  }
   experimental?: {};
 }
+// initTRPC.create({ /* */ })
 
 /**
  * @internal
