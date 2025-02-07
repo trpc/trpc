@@ -43,4 +43,8 @@ test('streaming query interruption should throw TRPCClientError', async () => {
   );
 
   expect(err).toBeInstanceOf(TRPCClientError);
+  expect(err.cause).toBeInstanceOf(DOMException);
+  expect((err.cause as DOMException).name).toBe('AbortError');
+
+  expect(err).toMatchInlineSnapshot();
 });
