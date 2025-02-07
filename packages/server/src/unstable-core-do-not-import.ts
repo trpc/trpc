@@ -43,4 +43,4 @@ export * from './unstable-core-do-not-import/types';
 export * from './unstable-core-do-not-import/utils';
 export * from './vendor/standard-schema-v1/error';
 export * from './vendor/standard-schema-v1/spec';
-export { Unpromise } from './vendor/unpromise';
+export * from './vendor/unpromise';
