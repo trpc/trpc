@@ -24,7 +24,7 @@ export interface MyEvents {
 }
 
 // In a real app, you'd probably use Redis or something
-const ee = new IterableEventEmitter<MyEvents>();
+export const ee = new IterableEventEmitter<MyEvents>();
 
 // who is currently typing for each channel, key is `name`
 export const currentlyTyping: Record<string, WhoIsTyping> = Object.create(null);
