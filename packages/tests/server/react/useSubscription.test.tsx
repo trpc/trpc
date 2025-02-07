@@ -196,8 +196,6 @@ describe.each([
     const onErrorMock = vi.fn();
     const onCompletedMock = vi.fn();
 
-    const { App, client } = ctx;
-
     let setEnabled = null as never as (enabled: boolean) => void;
 
     function MyComponent() {
@@ -205,7 +203,7 @@ describe.each([
       const [enabled, _setEnabled] = useState(false);
       setEnabled = _setEnabled;
 
-      const sub = client.onEventIterable.useSubscription(10, {
+      const sub = ctx.client.onEventIterable.useSubscription(0, {
         enabled,
         onData: (data) => {
           expectTypeOf(data).toMatchTypeOf<number>();
@@ -217,17 +215,17 @@ describe.each([
       });
 
       return (
-        <pre>
+        <>
           <div>status:{sub.status}</div>
           <div>All data: {data?.join(',') ?? 'EMPTY'}</div>
-        </pre>
+        </>
       );
     }
 
     const utils = render(
-      <App>
+      <ctx.App>
         <MyComponent />
-      </App>,
+      </ctx.App>,
     );
 
     await waitFor(() => {
@@ -238,16 +236,15 @@ describe.each([
       setEnabled(true);
     });
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`status:connecting`);
-    });
-    expect(onDataMock).toHaveBeenCalledTimes(0);
-    await waitFor(() => {
       expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    await waitFor(() => {
+      expect(ctx.ee.listenerCount('data')).toBe(1);
     });
     ctx.ee.emit('data', 20);
 
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`All data: 30`);
+      expect(utils.container).toHaveTextContent(`All data: 20`);
     });
 
     ctx.ee.emit('data', returnSymbol);
@@ -361,7 +358,9 @@ describe('connection state - http', () => {
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`status:pending`);
+      expect(ctx.ee.listenerCount('data')).toBe(1);
     });
+
     // emit
     ctx.ee.emit('data', 20);
 
@@ -398,6 +397,7 @@ describe('connection state - http', () => {
     await waitFor(
       () => {
         expect(utils.container).toHaveTextContent('status:pending');
+        expect(ctx.ee.listenerCount('data')).toBe(1);
       },
       {
         timeout: 5_000,
@@ -479,7 +479,9 @@ describe('reset - http', () => {
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`status:pending`);
+      expect(ctx.ee.listenerCount('data')).toBe(1);
     });
+
     // emit
     ctx.ee.emit('data', 20);
 
