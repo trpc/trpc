@@ -200,7 +200,7 @@ test('encode/decode - error', async () => {
   expect(onConsumerErrorSpy).toHaveBeenCalledTimes(0);
 });
 
-test.only('decode - bad data', async () => {
+test('decode - bad data', async () => {
   const textEncoder = new TextEncoderStream();
   const writer = textEncoder.writable.getWriter();
 
@@ -223,7 +223,9 @@ test.only('decode - bad data', async () => {
     expect(true).toBe(false);
   } catch (err) {
     // console.log('err', err);
-    expect(err).toMatchInlineSnapshot(`[TypeError: Cannot convert undefined or null to object]`);
+    expect(err).toMatchInlineSnapshot(
+      `[TypeError: Cannot convert undefined or null to object]`,
+    );
   }
 });
 

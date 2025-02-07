@@ -593,7 +593,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const controller = streamManager.getOrCreate(idx);
           controller.enqueue(chunk);
         },
-        close: () => closeOrAbort(new AsyncError('Stream closed')),
+        close: () => closeOrAbort(new Error('Stream closed')),
         abort: closeOrAbort,
       }),
       {

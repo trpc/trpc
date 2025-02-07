@@ -353,10 +353,10 @@ describe('no transformer', () => {
         ]
       `);
     expect(err).toMatchInlineSnapshot(
-      `[Error: Invalid response or stream interrupted]`,
+      `[AbortError: The operation was aborted.]`,
     );
     expect(err.message).toMatchInlineSnapshot(
-      `"Invalid response or stream interrupted"`,
+      `"The operation was aborted."`,
     );
   });
 
