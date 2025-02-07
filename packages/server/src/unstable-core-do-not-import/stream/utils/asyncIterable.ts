@@ -31,9 +31,7 @@ export async function* withMaxDuration<T>(
     result = await Unpromise.race([iterator.next(), timerPromise]);
     if (result === disposablePromiseTimerResult) {
       // cancelled due to timeout
-
-      const res = await iterator.return?.();
-      return res?.value;
+      throw new DOMException('AbortError', 'AbortError');
     }
     if (result.done) {
       return result;
@@ -72,9 +70,7 @@ export async function* takeWithGrace<T>(
   while (true) {
     result = await Unpromise.race([iterator.next(), timerPromise]);
     if (result === disposablePromiseTimerResult) {
-      // cancelled
-      const res = await iterator.return?.();
-      return res?.value;
+      throw new DOMException('AbortError', 'AbortError');
     }
     if (result.done) {
       return result.value;
