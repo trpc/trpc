@@ -24,6 +24,27 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Stopping subscriptions from the server (rarely breaking)
+
+We now support stopping subscriptions from the server, this means that you can now do things like this:
+
+```ts
+const myRouter = router({
+  sub: publicProcedure.subscription(async function* (opts) {
+    for await (const data of on(ee, 'data', {
+      signal: opts.signal,
+    })) {
+      const num = data[0] as number | undefined;
+      if (num === undefined) {
+        // This will now stop the subscription on the client and trigger the `onComplete` callback
+        return;
+      }
+      yield num;
+    }
+  }),
+});
+```
+
 ### Custom `basePath` to handle requests under in the standalone adapter (non-breaking)
 
 The standalone adapter now supports a `basePath` option, which will slice the basePath from the beginning of the request path.
