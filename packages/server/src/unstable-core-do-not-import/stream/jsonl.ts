@@ -22,6 +22,9 @@ export type NodeJSReadableStreamEsque = {
   ): NodeJSReadableStreamEsque;
 };
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Object.prototype.toString.call(value) === '[object Object]';
+}
 // ---------- types
 
 // ---------- types
@@ -230,18 +233,15 @@ async function* createBatchStreamProducer(
     if (value === undefined) {
       return [[]];
     }
-    if (!isObject(value)) {
-      return [[value]];
-    }
-
     const reg = encodeAsync(value, path);
     if (reg) {
       return [[placeholder], [null, ...reg]];
     }
 
-    if (Object.prototype.toString.call(value) !== '[object Object]') {
+    if (!isPlainObject(value)) {
       return [[value]];
     }
+
     const newObj = {} as Record<string, unknown>;
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
