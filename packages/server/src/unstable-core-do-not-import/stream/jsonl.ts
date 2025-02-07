@@ -371,10 +371,6 @@ function createConsumerStream<THead>(
     }),
   );
 }
-/**
- * Represents a chunk of data or stream interruption error that can be enqueued to a controller
- */
-type ControllerChunk = ChunkData;
 
 /**
  * Creates a handler for managing stream controllers and their lifecycle
@@ -396,15 +392,15 @@ function createStreamsManager(abortController: AbortController) {
    * Creates a stream controller
    */
   function createStreamController() {
-    let originalController: ReadableStreamDefaultController<ControllerChunk>;
-    const stream = new ReadableStream<ControllerChunk>({
+    let originalController: ReadableStreamDefaultController<ChunkData>;
+    const stream = new ReadableStream<ChunkData>({
       start(controller) {
         originalController = controller;
       },
     });
 
     const streamController = {
-      enqueue: (v: ControllerChunk) => originalController.enqueue(v),
+      enqueue: (v: ChunkData) => originalController.enqueue(v),
       close: () => {
         originalController.close();
 
