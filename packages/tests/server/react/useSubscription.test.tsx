@@ -1,14 +1,12 @@
-import { EventEmitter, on } from 'events';
 import {
   ignoreErrors,
-  suppressLogs,
+  IterableEventEmitter,
   suppressLogsUntil,
 } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
-import { skipToken } from '@tanstack/react-query';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import type { TRPCSubscriptionResult } from '@trpc/react-query/shared';
-import { initTRPC, sse } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';
@@ -16,27 +14,9 @@ import { z } from 'zod';
 
 const returnSymbol = Symbol();
 
-interface MyEvents {
-  data: (str: Error | number | typeof returnSymbol) => void;
-}
-declare interface MyEventEmitter {
-  on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  off<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  once<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  emit<TEv extends keyof MyEvents>(
-    event: TEv,
-    ...args: Parameters<MyEvents[TEv]>
-  ): boolean;
-}
-
-class MyEventEmitter extends EventEmitter {
-  public toIterable<TEv extends keyof MyEvents>(
-    event: TEv,
-    opts: NonNullable<Parameters<typeof on>[2]>,
-  ): AsyncIterable<Parameters<MyEvents[TEv]>> {
-    return on(this, event, opts) as any;
-  }
-}
+type MyEvents = {
+  data: [number | Error | typeof returnSymbol];
+};
 
 /**
  * a function that displays the diff over time in a list of values
@@ -58,7 +38,7 @@ function diff(list: any[]) {
 const getCtx = (protocol: 'http' | 'ws') => {
   return konn()
     .beforeEach(() => {
-      const ee = new MyEventEmitter();
+      const ee = new IterableEventEmitter<MyEvents>();
       const t = initTRPC.create({
         errorFormatter({ shape }) {
           return {
@@ -94,7 +74,7 @@ const getCtx = (protocol: 'http' | 'ws') => {
           .input(z.number())
           .subscription(({ input }) => {
             return observable<number>((emit) => {
-              const onData: MyEvents['data'] = (data) => {
+              const onData: (...args: MyEvents['data']) => void = (data) => {
                 if (typeof data !== 'number') {
                   throw new Error('Invalid data');
                 }

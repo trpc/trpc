@@ -1,5 +1,6 @@
 import { EventEmitter, on } from 'node:events';
 import {
+  IterableEventEmitter,
   routerToServerAndClientNew,
   suppressLogs,
   suppressLogsUntil,
@@ -33,35 +34,16 @@ const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const returnSymbol = Symbol();
 
-interface MyEvents {
-  data: (str: Error | number | typeof returnSymbol) => void;
-}
-declare interface MyEventEmitter {
-  on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  off<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  once<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  emit<TEv extends keyof MyEvents>(
-    event: TEv,
-    ...args: Parameters<MyEvents[TEv]>
-  ): boolean;
-}
-
-class MyEventEmitter extends EventEmitter {
-  public toIterable<TEv extends keyof MyEvents>(
-    event: TEv,
-    opts: NonNullable<Parameters<typeof on>[2]>,
-  ): AsyncIterable<Parameters<MyEvents[TEv]>> {
-    return on(this, event, opts) as any;
-  }
-}
-
+type MyEvents = {
+  data: [Error | number | typeof returnSymbol];
+};
 const orderedResults: number[] = [];
 const ctx = konn()
   .beforeEach(() => {
     const onIterableInfiniteSpy =
       vi.fn<(args: { input: { lastEventId?: number } }) => void>();
 
-    const ee = new MyEventEmitter();
+    const ee = new IterableEventEmitter<MyEvents>();
 
     const t = initTRPC.create({
       transformer: superjson,
