@@ -1,7 +1,7 @@
-FROM node
+FROM node:22 AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+# RUN corepack enable
 
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
