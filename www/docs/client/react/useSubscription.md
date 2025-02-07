@@ -100,7 +100,7 @@ export function MyComponent() {
     <div>
       <h1>Subscription Example</h1>
       <p>
-        {status}: <pre>{JSON.stringify(data, null, 2)}</pre>
+        {result.status}: <pre>{JSON.stringify(result.data, null, 2)}</pre>
       </p>
       <h2>Previous numbers:</h2>
       <ul>
