@@ -4,7 +4,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 # https://github.com/nodejs/corepack/issues/627
 RUN npm install -g corepack 
 
-RUN corepack enable pnpm
+RUN corepack enable
 
 ARG DATABASE_URL
 ENV DATABASE_URL=$DATABASE_URL
