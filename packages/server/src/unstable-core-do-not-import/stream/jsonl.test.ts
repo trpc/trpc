@@ -667,7 +667,7 @@ test('regression: encode/decode with superjson at top level', async () => {
     Array [
       "{"json":{"0":[[0],[null,0,0]]}}
     ",
-      "{"json":[0,0,[[{}]]]}
+      "{"json":[0,0,[["1970-01-01T00:00:00.001Z"]]],"meta":{"values":{"2.0.0":["Date"]}}}
     ",
     ]
   `);

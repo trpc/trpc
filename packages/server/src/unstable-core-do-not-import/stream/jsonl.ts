@@ -233,9 +233,14 @@ async function* createBatchStreamProducer(
     if (!isObject(value)) {
       return [[value]];
     }
+
     const reg = encodeAsync(value, path);
     if (reg) {
       return [[placeholder], [null, ...reg]];
+    }
+
+    if (Object.getPrototypeOf(value) !== Object.prototype) {
+      return [[value]];
     }
     const newObj = {} as Record<string, unknown>;
     const asyncValues: ChunkDefinition[] = [];
