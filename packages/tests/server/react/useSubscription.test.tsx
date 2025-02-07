@@ -242,9 +242,10 @@ describe.each([
       expect(ctx.ee.listenerCount('data')).toBe(1);
     });
     ctx.ee.emit('data', 20);
+    ctx.ee.emit('data', 30);
 
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`All data: 20`);
+      expect(utils.container).toHaveTextContent(`All data: 20,30`);
     });
 
     ctx.ee.emit('data', returnSymbol);
