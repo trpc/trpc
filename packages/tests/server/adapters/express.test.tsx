@@ -132,6 +132,11 @@ test('request info from context should include both calls', async () => {
     t.client.request.info.query(),
   ]);
 
+  // Replace port number in snapshot with <<redacted>>
+  if (res[1].url) {
+    res[1].url = res[1].url.replace(/:\d+\//, ':<<redacted>>/');
+  }
+
   expect(res).toMatchInlineSnapshot(`
     Array [
       Object {
@@ -151,6 +156,7 @@ test('request info from context should include both calls', async () => {
         "isBatchCall": true,
         "signal": Object {},
         "type": "query",
+        "url": "http://localhost:<<redacted>>/hello,request.info?batch=1&input=%7B%220%22%3A%7B%22who%22%3A%22test%22%7D%7D",
       },
     ]
   `);

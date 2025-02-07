@@ -136,6 +136,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             accept: null,
             type: 'unknown',
             signal: abortController.signal,
+            url: null,
           },
         });
 

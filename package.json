@@ -4,7 +4,7 @@
   "type": "module",
   "engines": {
     "node": "^22.11.0",
-    "pnpm": "^9.6.0"
+    "pnpm": "^9.12.2"
   },
   "packageManager": "pnpm@9.12.2",
   "scripts": {
@@ -92,7 +92,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/node": "20.17.16"
+      "@types/node": "20.17.17"
     }
   },
   "manypkg": {

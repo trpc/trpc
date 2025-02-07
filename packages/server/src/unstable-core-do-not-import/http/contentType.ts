@@ -8,6 +8,7 @@ import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 type GetRequestInfoOptions = {
   path: string;
   req: Request;
+  url: URL | null;
   searchParams: URLSearchParams;
   headers: Headers;
   router: AnyRouter;
@@ -174,6 +175,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           ? null
           : parseConnectionParamsFromString(connectionParamsStr),
       signal: req.signal,
+      url: opts.url,
     };
     return info;
   },
@@ -210,6 +212,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       type: 'mutation',
       connectionParams: null,
       signal: req.signal,
+      url: opts.url,
     };
   },
 };
@@ -246,6 +249,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       type: 'mutation',
       connectionParams: null,
       signal: req.signal,
+      url: opts.url,
     };
   },
 };

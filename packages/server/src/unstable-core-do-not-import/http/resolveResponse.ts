@@ -233,6 +233,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           router,
           searchParams: url.searchParams,
           headers: opts.req.headers,
+          url,
         }),
       ];
     } catch (cause) {
