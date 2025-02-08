@@ -78,11 +78,12 @@ type LazyLoader<TAny> = {
 };
 
 /**
- * lazy load a router
+ * Lazy load a router
+ * @see https://trpc.io/docs/server/routers#lazy-load
  */
 export function lazy<TRouter extends AnyRouter>(
   getRouter: () => Promise<TRouter>,
-): Lazy<TRouter> {
+): Lazy<NoInfer<TRouter>> {
   let cachedPromise: Promise<TRouter> | null = null;
   const lazyGetter = (() => {
     if (!cachedPromise) {

@@ -75,11 +75,11 @@ const t = initTRPC.context<Context>().meta<Meta>().create({
 });
 ```
 
-### Lazy load routers {#lazy-load}
+### Lazy / dynamically load routers {#lazy-load}
 
-When using lazy loading, you can use the `experimental_lazy` function to lazy load your routers.
+When using lazy loading, you can use the `experimental_lazy` function to dynamically load your routers.
 
-This can be useful to decrease cold starts of your application.
+This can be useful to reduce cold starts of your application.
 
 ```ts twoslash
 // @filename: trpc.ts
@@ -89,21 +89,17 @@ const t = initTRPC.create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
+// ---cut---
 // @filename: routers/_app.ts
 import { experimental_lazy } from '@trpc/server';
 import { router } from '../trpc';
 
-const user = experimental_lazy(() =>
-  import('./user.js').then((m) => {
-    console.log('💤 lazy loaded user router');
-    return m.userRouter;
-  }),
-);
 
 export const appRouter = router({
-  user,
+  // ✨ Dynamically load the user router
+  user: experimental_lazy(() => import('./user.js').then((m) => m.userRouter)),
 });
-
+export type AppRouter = typeof appRouter;
 
 // @filename: routers/user.ts
 import { router, publicProcedure } from '../trpc';
