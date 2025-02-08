@@ -1979,15 +1979,7 @@ test('active subscription while querying', async () => {
 });
 
 test('lazy connection where the first connection fails', async () => {
-  let i = 0;
   const ctx = factory({
-    async createContext() {
-      // console.log('createContext', i);
-      if (i++ === 0) {
-        throw new Error('first connection failed');
-      }
-      return {};
-    },
     wsClient: {
       lazy: {
         enabled: true,
@@ -1998,6 +1990,8 @@ test('lazy connection where the first connection fails', async () => {
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
 
+  // Close the server before
+  await ctx.close();
   const subscription = ctx.client.onMessageIterable.subscribe(undefined, {
     onStarted() {
       onStartedMock();
@@ -2009,6 +2003,41 @@ test('lazy connection where the first connection fails', async () => {
     },
   });
 
+  // Wait for the first connection to fail
+  await new Promise<void>((resolve) => {
+    const sub = ctx.wsClient.connectionState.subscribe({
+      next(state) {
+        if (state.state === 'connecting' && state.error) {
+          resolve();
+          sub.unsubscribe();
+        }
+      },
+    });
+  });
+
+  ctx.open();
+
+  {
+    /**
+     * @deprecated
+     * This is just to check that the test is setup correctly and that the server is running
+     * Remove me & this block after the test is working
+     */
+    const removeMe = createWSClient({
+      url: ctx.wssUrl,
+    });
+    await new Promise<void>((resolve) => {
+      const sub = removeMe.connectionState.subscribe({
+        next(state) {
+          if (state.state === 'pending') {
+            resolve();
+            sub.unsubscribe();
+          }
+        },
+      });
+    });
+    console.log('new websocket client created');
+  }
   await waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
   });
@@ -2040,6 +2069,9 @@ test('connection where the first connection fails', async () => {
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
 
+  // Close the server before the client has a chance to connect
+  await ctx.close();
+
   const subscription = ctx.client.onMessageIterable.subscribe(undefined, {
     onStarted() {
       onStartedMock();
@@ -2050,6 +2082,42 @@ test('connection where the first connection fails', async () => {
       onDataMock(data);
     },
   });
+
+  // Wait for the first connection to fail
+  await new Promise<void>((resolve) => {
+    const sub = ctx.wsClient.connectionState.subscribe({
+      next(state) {
+        if (state.state === 'connecting' && state.error) {
+          resolve();
+          sub.unsubscribe();
+        }
+      },
+    });
+  });
+
+  ctx.open();
+
+  {
+    /**
+     * @deprecated
+     * This is just to check that the test is setup correctly and that the server is running
+     * Remove me & this block after the test is working
+     */
+    const removeMe = createWSClient({
+      url: ctx.wssUrl,
+    });
+    await new Promise<void>((resolve) => {
+      const sub = removeMe.connectionState.subscribe({
+        next(state) {
+          if (state.state === 'pending') {
+            resolve();
+            sub.unsubscribe();
+          }
+        },
+      });
+    });
+    console.log('new websocket client created');
+  }
 
   await waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
