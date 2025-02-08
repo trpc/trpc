@@ -223,11 +223,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
   type $Context = inferRouterContext<TRouter>;
 
-  const infoTuple: ResultTuple<TRPCRequestInfo> = run(() => {
+  const infoTuple: ResultTuple<TRPCRequestInfo> = await run(async () => {
     try {
       return [
         undefined,
-        getRequestInfo({
+        await getRequestInfo({
           req,
           path: decodeURIComponent(opts.path),
           router,

@@ -306,7 +306,10 @@ function isProcedure(
   return typeof procedureOrRouter === 'function';
 }
 
-async function getProcedureAtPath(_def: AnyRouter['_def'], path: string) {
+export async function getProcedureAtPath(
+  _def: AnyRouter['_def'],
+  path: string,
+): Promise<AnyProcedure | null> {
   let procedure = _def.procedures[path];
 
   while (!procedure) {
@@ -314,10 +317,7 @@ async function getProcedureAtPath(_def: AnyRouter['_def'], path: string) {
     // console.log(`found lazy: ${key ?? 'NOPE'} (fullPath: ${fullPath})`);
 
     if (!key) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: `No "query"-procedure on path "${path}"`,
-      });
+      return null;
     }
     // console.log('loading', key, '.......');
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -387,6 +387,12 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
 
           let ctx: Context | undefined = undefined;
           try {
+            if (!procedure) {
+              throw new TRPCError({
+                code: 'NOT_FOUND',
+                message: `No procedure found on path "${path}"`,
+              });
+            }
             ctx = isFunction(ctxOrCallback)
               ? await Promise.resolve(ctxOrCallback())
               : ctxOrCallback;
@@ -404,7 +410,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
               error: getTRPCErrorFromUnknown(cause),
               input: args[0],
               path: fullPath,
-              type: procedure._def.type,
+              type: procedure?._def.type ?? 'unknown',
             });
             throw cause;
           }
