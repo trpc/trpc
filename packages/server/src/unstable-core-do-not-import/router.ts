@@ -13,7 +13,13 @@ import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
 import type { MaybePromise, ValueOf } from './types';
-import { isFunction, mergeWithoutOverrides, omitPrototype } from './utils';
+import {
+  isFunction,
+  isObject,
+  mergeWithoutOverrides,
+  omitPrototype,
+  run,
+} from './utils';
 
 export interface RouterRecord {
   [key: string]: AnyProcedure | RouterRecord;
@@ -82,12 +88,34 @@ type LazyLoader<TAny> = {
  * @see https://trpc.io/docs/server/routers#lazy-load
  */
 export function lazy<TRouter extends AnyRouter>(
-  getRouter: () => Promise<TRouter>,
+  getRouter: () => Promise<
+    | TRouter
+    | {
+        [key: string]: TRouter;
+      }
+  >,
 ): Lazy<NoInfer<TRouter>> {
   let cachedPromise: Promise<TRouter> | null = null;
   const lazyGetter = (() => {
     if (!cachedPromise) {
-      cachedPromise = getRouter();
+      cachedPromise = run(async (): Promise<TRouter> => {
+        const mod = await getRouter();
+
+        // if the module is a router, return it
+        if (isRouter(mod)) {
+          return mod;
+        }
+
+        const routers = Object.values(mod);
+
+        if (routers.length !== 1 || !isRouter(routers[0])) {
+          throw new Error(
+            'Invalid router module - either define exactly 1 export or return the router directly',
+          );
+        }
+
+        return routers[0];
+      });
     }
     return cachedPromise;
   }) as Lazy<TRouter>;
@@ -135,8 +163,10 @@ export type inferRouterError<TRouter extends AnyRouter> =
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['meta'];
 
-function isRouter(value: ValueOf<CreateRouterOptions>): value is AnyRouter {
-  return typeof value === 'object' && value._def && 'router' in value._def;
+function isRouter(value: unknown): value is AnyRouter {
+  return (
+    isObject(value) && isObject(value['_def']) && 'router' in value['_def']
+  );
 }
 
 const emptyRouter = {

@@ -78,17 +78,27 @@ export const publicProcedure = t.procedure;
 import { experimental_lazy } from '@trpc/server';
 import { router } from '../trpc';
 
-
 export const appRouter = router({
-  // ✨ Dynamically load the user router
-  greeting: experimental_lazy(() => import('./greeting.js').then((m) => m.greetingRouter)),
+  // ✨ Short-hand lazy load the greeting router if you exactly 1 export and it is the router
+  greeting: experimental_lazy(() => import('./greeting.js')),
+  // ✨ Alternative way to lazy load the user router (if you have more than 1 export)
+  user: experimental_lazy(() => import('./user.js').then((m) => m.userRouter)),
 });
 export type AppRouter = typeof appRouter;
 
+// ----------------------------------------------------
 // @filename: routers/greeting.ts
 import { router, publicProcedure } from '../trpc';
 export const greetingRouter = router({
   hello: publicProcedure.query(() => 'world'),
+});
+
+// ----------------------------------------------------
+// @filename: routers/user.ts
+import { router, publicProcedure } from '../trpc';
+
+export const userRouter = router({
+  list: publicProcedure.query(() => ['John', 'Jane', 'Jim']),
 });
 ```
 

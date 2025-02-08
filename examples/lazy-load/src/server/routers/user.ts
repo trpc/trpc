@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { db } from '../db.js';
 import { publicProcedure, router } from '../trpc.js';
 
+console.log('💤 Lazy loading user router...');
+
 export const userRouter = router({
   list: publicProcedure.query(async () => {
     // Retrieve users from a datasource, this is an imaginary database

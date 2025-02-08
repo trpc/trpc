@@ -37,4 +37,4 @@ console.log('User 1:', user);
 
 const hello = await trpc.slow.hello.query();
 //    ^?
-console.log('Hello:', hello);
+console.log('slow.hello:', hello);
