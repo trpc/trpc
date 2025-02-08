@@ -44,6 +44,7 @@ export {
   tracked,
   type TrackedEnvelope,
   isTrackedEnvelope,
+  lazy as experimental_lazy,
 } from '../../unstable-core-do-not-import';
 
 export type {
