@@ -58,9 +58,11 @@ export type AppRouter = typeof appRouter;
 
 ## Dynamically load routers {#lazy-load}
 
-When using lazy loading, you can use the `experimental_lazy` function to dynamically load your routers.
+You can use the `experimental_lazy` function to dynamically load your routers. This can be useful to reduce cold starts of your application.
 
-This can be useful to reduce cold starts of your application.
+There's no difference in how you use the router after it's been lazy loaded vs. how you use a normal router.
+
+**Example code of lazy loading a router:**
 
 ```ts twoslash
 // @target: esnext
@@ -88,16 +90,6 @@ import { router, publicProcedure } from '../trpc';
 export const greetingRouter = router({
   hello: publicProcedure.query(() => 'world'),
 });
-
-// @filename: client.ts
-import { createTRPCClient } from '@trpc/client';
-import type { AppRouter } from './routers/_app';
-
-const client = createTRPCClient<AppRouter>({
-  links: [ /* ... */ ],
-});
-
-//
 ```
 
 ## Advanced usage
