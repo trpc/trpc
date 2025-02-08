@@ -65,6 +65,7 @@ When initializing your router, tRPC allows you to:
 - [Format](/docs/server/error-formatting) and [handle](/docs/server/error-handling) errors
 - [Transform data](/docs/server/data-transformers) as needed
 - Customize the [runtime configuration](#runtime-configuration)
+- Lazy load routers
 
 You can use method chaining to customize your `t`-object on initialization. For example:
 
@@ -72,6 +73,43 @@ You can use method chaining to customize your `t`-object on initialization. For 
 const t = initTRPC.context<Context>().meta<Meta>().create({
   /* [...] */
 });
+```
+
+### Lazy load routers {#lazy-load}
+
+When using lazy loading, you can use the `experimental_lazy` function to lazy load your routers.
+
+This can be useful to decrease cold starts of your application.
+
+```ts twoslash
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+// @filename: routers/user.ts
+import { router } from '../trpc';
+export const userRouter = router({
+  hello: publicProcedure.query(() => 'world'),
+});
+
+// @filename: routers/_app.ts
+import { experimental_lazy } from '@trpc/server';
+import { router } from '../trpc';
+
+const user = experimental_lazy(() =>
+  import('./user.js').then((m) => {
+    console.log('💤 lazy loaded user router');
+    return m.userRouter;
+  }),
+);
+
+export const appRouter = router({
+  user,
+});
+
 ```
 
 ### Runtime Configuration
