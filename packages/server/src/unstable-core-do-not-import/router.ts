@@ -85,7 +85,7 @@ type LazyLoader<TAny> = {
 
 /**
  * Lazy load a router
- * @see https://trpc.io/docs/server/routers#lazy-load
+ * @see https://trpc.io/docs/server/merging-routers#lazy-load
  */
 export function lazy<TRouter extends AnyRouter>(
   getRouter: () => Promise<
