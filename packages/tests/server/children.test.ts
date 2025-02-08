@@ -43,5 +43,5 @@ test('w/o children', async () => {
     foo,
   });
 
-  expect(router._def.procedures['foo']).toBe(foo);
+  expect(router._def.procedures.foo).toBe(foo);
 });
