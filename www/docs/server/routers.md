@@ -79,9 +79,9 @@ import { experimental_lazy } from '@trpc/server';
 import { router } from '../trpc';
 
 export const appRouter = router({
-  // ✨ Short-hand lazy load the greeting router if you exactly 1 export and it is the router
+  // Option 1: Short-hand lazy load the greeting router if you exactly 1 export and it is the router
   greeting: experimental_lazy(() => import('./greeting.js')),
-  // ✨ Alternative way to lazy load the user router (if you have more than 1 export)
+  // Option 2: Alternative way to lazy load if you have more than 1 export
   user: experimental_lazy(() => import('./user.js').then((m) => m.userRouter)),
 });
 export type AppRouter = typeof appRouter;
