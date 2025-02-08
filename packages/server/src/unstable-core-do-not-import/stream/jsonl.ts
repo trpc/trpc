@@ -22,7 +22,9 @@ export type NodeJSReadableStreamEsque = {
   ): NodeJSReadableStreamEsque;
 };
 
-// ---------- types
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Object.prototype.toString.call(value) === '[object Object]';
+}
 
 // ---------- types
 const CHUNK_VALUE_TYPE_PROMISE = 0;
@@ -230,14 +232,16 @@ async function* createBatchStreamProducer(
     if (value === undefined) {
       return [[]];
     }
-    if (!isObject(value)) {
-      return [[value]];
-    }
     const reg = encodeAsync(value, path);
     if (reg) {
       return [[placeholder], [null, ...reg]];
     }
-    const newObj = {} as Record<string, unknown>;
+
+    if (!isPlainObject(value)) {
+      return [[value]];
+    }
+
+    const newObj: Record<string, unknown> = {};
     const asyncValues: ChunkDefinition[] = [];
     for (const [key, item] of Object.entries(value)) {
       const transformed = encodeAsync(item, [...path, key]);
@@ -258,7 +262,7 @@ async function* createBatchStreamProducer(
 
   yield newHead;
 
-  let iterable: AsyncIterable<Head | ChunkData | typeof PING_SYM, void> =
+  let iterable: AsyncIterable<ChunkData | typeof PING_SYM, void> =
     mergedIterables;
   if (opts.pingMs) {
     iterable = withPing(mergedIterables, opts.pingMs);
@@ -305,13 +309,6 @@ export function jsonlStreamProducer(opts: JSONLProducerOptions) {
     .pipeThrough(new TextEncoderStream());
 }
 
-class StreamInterruptedError extends Error {
-  constructor(cause?: unknown) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore https://github.com/tc39/proposal-error-cause
-    super('Invalid response or stream interrupted', { cause });
-  }
-}
 class AsyncError extends Error {
   constructor(public readonly data: unknown) {
     super('Received error from server');
@@ -399,10 +396,6 @@ function createConsumerStream<THead>(
     }),
   );
 }
-/**
- * Represents a chunk of data or stream interruption error that can be enqueued to a controller
- */
-type ControllerChunk = ChunkData | StreamInterruptedError;
 
 /**
  * Creates a handler for managing stream controllers and their lifecycle
@@ -424,29 +417,19 @@ function createStreamsManager(abortController: AbortController) {
    * Creates a stream controller
    */
   function createStreamController() {
-    let originalController: ReadableStreamDefaultController<ControllerChunk>;
-    const stream = new ReadableStream<ControllerChunk>({
+    let originalController: ReadableStreamDefaultController<ChunkData>;
+    const stream = new ReadableStream<ChunkData>({
       start(controller) {
         originalController = controller;
       },
     });
 
     const streamController = {
-      enqueue: (v: ControllerChunk) => originalController.enqueue(v),
+      enqueue: (v: ChunkData) => originalController.enqueue(v),
       close: () => {
         originalController.close();
 
-        // mark as closed and remove methods
-        Object.assign(streamController, {
-          closed: true,
-          close: () => {
-            // noop
-          },
-          enqueue: () => {
-            // noop
-          },
-          getReaderResource: null,
-        });
+        clear();
 
         if (isEmpty()) {
           abortController.abort();
@@ -461,7 +444,26 @@ function createStreamsManager(abortController: AbortController) {
           streamController.close();
         });
       },
+      error: (reason: unknown) => {
+        originalController.error(reason);
+        clear();
+      },
     };
+    function clear() {
+      Object.assign(streamController, {
+        closed: true,
+        close: () => {
+          // noop
+        },
+        enqueue: () => {
+          // noop
+        },
+        getReaderResource: null,
+        error: () => {
+          // noop
+        },
+      });
+    }
 
     return streamController;
   }
@@ -482,10 +484,8 @@ function createStreamsManager(abortController: AbortController) {
    * Cancels all pending controllers and rejects deferred promises
    */
   function cancelAll(reason: unknown) {
-    const error = new StreamInterruptedError(reason);
     for (const controller of controllerMap.values()) {
-      controller.enqueue(error);
-      controller.close();
+      controller.error(reason);
     }
   }
 
@@ -537,9 +537,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
           using reader = controller.getReaderResource();
 
           const { value } = await reader.read();
-          if (value instanceof StreamInterruptedError) {
-            throw value;
-          }
           const [_chunkId, status, data] = value as PromiseChunk;
           switch (status) {
             case PROMISE_STATUS_FULFILLED:
@@ -555,9 +552,6 @@ export async function jsonlStreamConsumer<THead>(opts: {
 
           while (true) {
             const { value } = await reader.read();
-            if (value instanceof StreamInterruptedError) {
-              throw value;
-            }
 
             const [_chunkId, status, data] = value as IterableChunk;
 
@@ -594,11 +588,9 @@ export async function jsonlStreamConsumer<THead>(opts: {
     return data;
   }
 
-  const closeOrAbort = (reason?: unknown) => {
-    const error = new StreamInterruptedError(reason);
-
-    headDeferred?.reject(error);
-    streamManager.cancelAll(error);
+  const closeOrAbort = (reason: unknown) => {
+    headDeferred?.reject(reason);
+    streamManager.cancelAll(reason);
   };
   source
     .pipeTo(
@@ -622,7 +614,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
           const controller = streamManager.getOrCreate(idx);
           controller.enqueue(chunk);
         },
-        close: closeOrAbort,
+        close: () => closeOrAbort(new Error('Stream closed')),
         abort: closeOrAbort,
       }),
       {
