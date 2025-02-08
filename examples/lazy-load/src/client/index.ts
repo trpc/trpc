@@ -5,7 +5,7 @@ import { createTRPCClient, httpBatchLink } from '@trpc/client';
 /**
  * We only import the `AppRouter` type from the server - this is not available at runtime
  */
-import type { AppRouter } from '../server/index.js';
+import type { AppRouter } from '../server/routers/_app.js';
 
 // Initialize the tRPC client
 const trpc = createTRPCClient<AppRouter>({
@@ -34,3 +34,7 @@ console.log('Created user:', createdUser);
 const user = await trpc.user.byId.query('1');
 //    ^?
 console.log('User 1:', user);
+
+const hello = await trpc.slow.hello.query();
+//    ^?
+console.log('Hello:', hello);
