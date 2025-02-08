@@ -765,11 +765,11 @@ importers:
         version: link:../../packages/server
       zod:
         specifier: ^3.0.0
-        version: 3.22.4
+        version: 3.23.8
     devDependencies:
       '@types/node':
-        specifier: ^20.10.0
-        version: 20.10.4
+        specifier: 20.17.17
+        version: 20.17.17
       npm-run-all:
         specifier: ^4.1.5
         version: 4.1.5
@@ -778,10 +778,10 @@ importers:
         version: 1.14.0
       tsx:
         specifier: ^4.0.0
-        version: 4.6.2
+        version: 4.19.1
       typescript:
         specifier: ^5.4.0
-        version: 5.4.2
+        version: 5.7.2
       wait-port:
         specifier: ^1.0.1
         version: 1.0.4
