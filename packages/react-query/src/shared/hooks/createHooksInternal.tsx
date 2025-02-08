@@ -352,6 +352,24 @@ export function createRootHooks<
     return hook;
   }
 
+  const initialStateIdle: TRPCSubscriptionResult<unknown, TError> = {
+    data: undefined,
+    error: null,
+    status: 'idle',
+    reset: () => {
+      // noop
+    },
+  };
+
+  const initialStateConnecting: TRPCSubscriptionResult<unknown, TError> = {
+    data: undefined,
+    error: null,
+    status: 'connecting',
+    reset: () => {
+      // noop
+    },
+  };
+
   /* istanbul ignore next -- @preserve */
   function useSubscription(
     path: readonly string[],
@@ -363,7 +381,9 @@ export function createRootHooks<
     const { client } = useContext();
 
     const optsRef = React.useRef<typeof opts>(opts);
-    optsRef.current = opts;
+    React.useEffect(() => {
+      optsRef.current = opts;
+    });
 
     type $Result = TRPCSubscriptionResult<unknown, TError>;
 
@@ -375,110 +395,6 @@ export function createRootHooks<
 
     type Unsubscribe = () => void;
     const currentSubscriptionRef = React.useRef<Unsubscribe | null>(null);
-
-    const reset = React.useCallback((): void => {
-      // unsubscribe from the previous subscription
-      currentSubscriptionRef.current?.();
-
-      updateState(getInitialState);
-      if (!enabled) {
-        return;
-      }
-
-      let isStopped = false;
-      const subscription = client.subscription(
-        path.join('.'),
-        input ?? undefined,
-        {
-          onStarted: () => {
-            if (!isStopped) {
-              optsRef.current.onStarted?.();
-              updateState((prev) => ({
-                ...prev,
-                status: 'pending',
-                error: null,
-              }));
-            }
-          },
-          onData: (data) => {
-            if (!isStopped) {
-              optsRef.current.onData?.(data);
-              updateState((prev) => ({
-                ...prev,
-                status: 'pending',
-                data,
-                error: null,
-              }));
-            }
-          },
-          onError: (error) => {
-            if (!isStopped) {
-              optsRef.current.onError?.(error);
-              updateState((prev) => ({
-                ...prev,
-                status: 'error',
-                error,
-              }));
-            }
-          },
-          onConnectionStateChange: (result) => {
-            const delta = {
-              status: result.state,
-              error: result.error,
-            } as $Result;
-
-            updateState((prev) => {
-              return {
-                ...prev,
-                ...delta,
-              };
-            });
-          },
-          onComplete: () => {
-            if (!isStopped) {
-              optsRef.current.onComplete?.();
-              updateState((prev) => ({
-                ...prev,
-                status: 'idle',
-                error: null,
-                data: undefined,
-              }));
-            }
-          },
-        },
-      );
-
-      currentSubscriptionRef.current = () => {
-        isStopped = true;
-        subscription.unsubscribe();
-      };
-
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [queryKey, enabled]);
-
-    const getInitialState = React.useCallback((): $Result => {
-      return enabled
-        ? {
-            data: undefined,
-            error: null,
-            status: 'connecting',
-            reset,
-          }
-        : {
-            data: undefined,
-            error: null,
-            status: 'idle',
-            reset,
-          };
-    }, [enabled, reset]);
-
-    const resultRef = React.useRef<$Result>(getInitialState());
-
-    const [state, setState] = React.useState<$Result>(
-      trackResult(resultRef.current, addTrackedProp),
-    );
-
-    state.reset = reset;
 
     const updateState = React.useCallback(
       (callback: (prevState: $Result) => $Result) => {
@@ -499,16 +415,92 @@ export function createRootHooks<
       [addTrackedProp],
     );
 
-    React.useEffect(() => {
+    const reset = React.useCallback((): void => {
+      // unsubscribe from the previous subscription
+      currentSubscriptionRef.current?.();
+
       if (!enabled) {
+        updateState(() => ({ ...initialStateIdle, reset }));
         return;
       }
+      updateState(() => ({ ...initialStateConnecting, reset }));
+      const subscription = client.subscription(
+        path.join('.'),
+        input ?? undefined,
+        {
+          onStarted: () => {
+            optsRef.current.onStarted?.();
+            updateState((prev) => ({
+              ...prev,
+              status: 'pending',
+              error: null,
+            }));
+          },
+          onData: (data) => {
+            optsRef.current.onData?.(data);
+            updateState((prev) => ({
+              ...prev,
+              status: 'pending',
+              data,
+              error: null,
+            }));
+          },
+          onError: (error) => {
+            optsRef.current.onError?.(error);
+            updateState((prev) => ({
+              ...prev,
+              status: 'error',
+              error,
+            }));
+          },
+          onConnectionStateChange: (result) => {
+            const delta = {
+              status: result.state,
+              error: result.error,
+            } as $Result;
+
+            updateState((prev) => {
+              return {
+                ...prev,
+                ...delta,
+              };
+            });
+          },
+          onComplete: () => {
+            optsRef.current.onComplete?.();
+            updateState((prev) => ({
+              ...prev,
+              status: 'idle',
+              error: null,
+              data: undefined,
+            }));
+          },
+        },
+      );
+
+      currentSubscriptionRef.current = () => {
+        subscription.unsubscribe();
+      };
+
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [client, queryKey, enabled, updateState]);
+    React.useEffect(() => {
       reset();
 
       return () => {
         currentSubscriptionRef.current?.();
       };
-    }, [reset, enabled]);
+    }, [reset]);
+
+    const resultRef = React.useRef<$Result>(
+      enabled
+        ? { ...initialStateConnecting, reset }
+        : { ...initialStateIdle, reset },
+    );
+
+    const [state, setState] = React.useState<$Result>(
+      trackResult(resultRef.current, addTrackedProp),
+    );
 
     return state;
   }
