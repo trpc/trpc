@@ -1,9 +1,21 @@
-import type { QueryClient } from '@tanstack/react-query';
+import type { QueryFunctionContext } from '@tanstack/react-query';
+import {
+  infiniteQueryOptions,
+  queryOptions,
+  skipToken,
+  type QueryClient,
+} from '@tanstack/react-query';
 import type { CreateTRPCClient } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import { getClientArgs } from '../internals/getClientArgs';
-import type { TRPCQueryUtils } from '../shared';
+import type { TRPCQueryKey } from '../internals/getQueryKey';
+import {
+  buildQueryFromAsyncIterable,
+  createTRPCOptionsResult,
+} from '../internals/trpcResult';
+import { type TRPCQueryUtils } from '../shared';
 
 export interface CreateQueryUtilsOptions<TRouter extends AnyRouter> {
   /**
@@ -30,6 +42,82 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
     client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
 
   return {
+    infiniteQueryOptions: (path, queryKey, opts) => {
+      const inputIsSkipToken = queryKey[1]?.input === skipToken;
+
+      const queryFn = async (
+        queryFnContext: QueryFunctionContext<TRPCQueryKey, unknown>,
+      ): Promise<unknown> => {
+        const actualOpts = {
+          ...opts,
+          trpc: {
+            ...opts?.trpc,
+            ...(opts?.trpc?.abortOnUnmount
+              ? { signal: queryFnContext.signal }
+              : { signal: null }),
+          },
+        };
+
+        const result = await untypedClient.query(
+          ...getClientArgs(queryKey, actualOpts, {
+            direction: queryFnContext.direction,
+            pageParam: queryFnContext.pageParam,
+          }),
+        );
+
+        return result;
+      };
+
+      return Object.assign(
+        infiniteQueryOptions({
+          ...opts,
+          initialData: opts?.initialData as any,
+          queryKey,
+          queryFn: inputIsSkipToken ? skipToken : queryFn,
+          initialPageParam: (opts?.initialCursor as any) ?? null,
+        }),
+        { trpc: createTRPCOptionsResult({ path }) },
+      );
+    },
+
+    queryOptions: (path, queryKey, opts) => {
+      const inputIsSkipToken = queryKey[1]?.input === skipToken;
+
+      const queryFn = async (
+        queryFnContext: QueryFunctionContext<TRPCQueryKey>,
+      ): Promise<unknown> => {
+        const actualOpts = {
+          ...opts,
+          trpc: {
+            ...opts?.trpc,
+            ...(opts?.trpc?.abortOnUnmount
+              ? { signal: queryFnContext.signal }
+              : { signal: null }),
+          },
+        };
+
+        const result = await untypedClient.query(
+          ...getClientArgs(queryKey, actualOpts),
+        );
+
+        if (isAsyncIterable(result)) {
+          return buildQueryFromAsyncIterable(result, queryClient, queryKey);
+        }
+
+        return result;
+      };
+
+      return Object.assign(
+        queryOptions({
+          ...opts,
+          initialData: opts?.initialData as any,
+          queryKey,
+          queryFn: inputIsSkipToken ? skipToken : queryFn,
+        }),
+        { trpc: createTRPCOptionsResult({ path }) },
+      );
+    },
+
     fetchQuery: (queryKey, opts) => {
       return queryClient.fetchQuery({
         ...opts,
@@ -122,6 +210,18 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       return queryClient.setQueryData(queryKey, updater as any, options);
     },
 
+    // eslint-disable-next-line max-params
+    setQueriesData: (queryKey, filters, updater, options) => {
+      return queryClient.setQueriesData(
+        {
+          ...filters,
+          queryKey,
+        },
+        updater,
+        options,
+      );
+    },
+
     getQueryData: (queryKey) => {
       return queryClient.getQueryData(queryKey);
     },
@@ -132,6 +232,32 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
 
     getInfiniteQueryData: (queryKey) => {
       return queryClient.getQueryData(queryKey);
+    },
+
+    setMutationDefaults: (mutationKey, options) => {
+      const path = mutationKey[0];
+      const canonicalMutationFn = (input: unknown) => {
+        return untypedClient.mutation(
+          ...getClientArgs([path, { input }], opts),
+        );
+      };
+      return queryClient.setMutationDefaults(
+        mutationKey,
+        typeof options === 'function'
+          ? options({ canonicalMutationFn })
+          : options,
+      );
+    },
+
+    getMutationDefaults: (mutationKey) => {
+      return queryClient.getMutationDefaults(mutationKey);
+    },
+
+    isMutating: (filters) => {
+      return queryClient.isMutating({
+        ...filters,
+        exact: true,
+      });
     },
   };
 }

@@ -31,7 +31,7 @@ export function experimental_createTRPCNextAppDirClient<
 
   const cache = new Map<string, QueryResult>();
 
-  return createRecursiveProxy(({ path, args }) => {
+  return createRecursiveProxy<CreateTRPCClient<TRouter>>(({ path, args }) => {
     // const pathCopy = [key, ...path];
     const pathCopy = [...path];
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -63,6 +63,6 @@ export function experimental_createTRPCNextAppDirClient<
     });
 
     return promise;
-  }) as CreateTRPCClient<TRouter>;
+  });
   // });
 }

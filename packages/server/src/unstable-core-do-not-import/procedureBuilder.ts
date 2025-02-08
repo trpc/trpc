@@ -1,4 +1,4 @@
-import type { inferObservableValue } from '../observable';
+import type { inferObservableValue, Observable } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -17,12 +17,13 @@ import type {
   AnyMutationProcedure,
   AnyProcedure,
   AnyQueryProcedure,
-  AnySubscriptionProcedure,
+  LegacyObservableSubscriptionProcedure,
   MutationProcedure,
   ProcedureType,
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
+import type { inferTrackedOutput } from './stream/tracked';
 import type {
   GetRawInputFn,
   MaybePromise,
@@ -30,21 +31,41 @@ import type {
   Simplify,
   TypeError,
 } from './types';
+import type { UnsetMarker } from './utils';
 import { mergeWithoutOverrides } from './utils';
 
 type IntersectIfDefined<TType, TWith> = TType extends UnsetMarker
   ? TWith
   : TWith extends UnsetMarker
-  ? TType
-  : Simplify<TType & TWith>;
+    ? TType
+    : Simplify<TType & TWith>;
 
-/** @internal */
-export const unsetMarker = Symbol('unsetMarker');
-type UnsetMarker = typeof unsetMarker;
 type DefaultValue<TValue, TFallback> = TValue extends UnsetMarker
   ? TFallback
   : TValue;
 
+type inferAsyncIterable<TOutput> =
+  TOutput extends AsyncIterable<infer $Yield, infer $Return, infer $Next>
+    ? {
+        yield: $Yield;
+        return: $Return;
+        next: $Next;
+      }
+    : never;
+type inferSubscriptionOutput<TOutput> =
+  TOutput extends AsyncIterable<any>
+    ? AsyncIterable<
+        inferTrackedOutput<inferAsyncIterable<TOutput>['yield']>,
+        inferAsyncIterable<TOutput>['return'],
+        inferAsyncIterable<TOutput>['next']
+      >
+    : TypeError<'Subscription output could not be inferred'>;
+
+export type CallerOverride<TContext> = (opts: {
+  args: unknown[];
+  invoke: (opts: ProcedureCallOptions<TContext>) => Promise<unknown>;
+  _def: AnyProcedure['_def'];
+}) => Promise<unknown>;
 type ProcedureBuilderDef<TMeta> = {
   procedure: true;
   inputs: Parser[];
@@ -52,9 +73,20 @@ type ProcedureBuilderDef<TMeta> = {
   meta?: TMeta;
   resolver?: ProcedureBuilderResolver;
   middlewares: AnyMiddlewareFunction[];
+  /**
+   * @deprecated use `type` instead
+   */
   mutation?: boolean;
+  /**
+   * @deprecated use `type` instead
+   */
   query?: boolean;
+  /**
+   * @deprecated use `type` instead
+   */
   subscription?: boolean;
+  type?: ProcedureType;
+  caller?: CallerOverride<unknown>;
 };
 
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
@@ -71,6 +103,10 @@ export interface ProcedureResolverOptions<
 > {
   ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
   input: TInputOut extends UnsetMarker ? undefined : TInputOut;
+  /**
+   * The AbortSignal of the request
+   */
+  signal: AbortSignal | undefined;
 }
 
 /**
@@ -98,6 +134,7 @@ export type AnyProcedureBuilder = ProcedureBuilder<
   any,
   any,
   any,
+  any,
   any
 >;
 
@@ -107,34 +144,36 @@ export type AnyProcedureBuilder = ProcedureBuilder<
  */
 export type inferProcedureBuilderResolverOptions<
   TProcedureBuilder extends AnyProcedureBuilder,
-> = TProcedureBuilder extends ProcedureBuilder<
-  infer TContext,
-  infer TMeta,
-  infer TContextOverrides,
-  infer _TInputIn,
-  infer TInputOut,
-  infer _TOutputIn,
-  infer _TOutputOut
->
-  ? ProcedureResolverOptions<
-      TContext,
-      TMeta,
-      TContextOverrides,
-      TInputOut extends UnsetMarker
-        ? // if input is not set, we don't want to infer it as `undefined` since a procedure further down the chain might have set an input
-          unknown
-        : TInputOut extends object
-        ? Simplify<
-            TInputOut & {
-              /**
-               * Extra input params might have been added by a `.input()` further down the chain
-               */
-              [keyAddedByInputCallFurtherDown: string]: unknown;
-            }
-          >
-        : TInputOut
-    >
-  : never;
+> =
+  TProcedureBuilder extends ProcedureBuilder<
+    infer TContext,
+    infer TMeta,
+    infer TContextOverrides,
+    infer _TInputIn,
+    infer TInputOut,
+    infer _TOutputIn,
+    infer _TOutputOut,
+    infer _TCaller
+  >
+    ? ProcedureResolverOptions<
+        TContext,
+        TMeta,
+        TContextOverrides,
+        TInputOut extends UnsetMarker
+          ? // if input is not set, we don't want to infer it as `undefined` since a procedure further down the chain might have set an input
+            unknown
+          : TInputOut extends object
+            ? Simplify<
+                TInputOut & {
+                  /**
+                   * Extra input params might have been added by a `.input()` further down the chain
+                   */
+                  [keyAddedByInputCallFurtherDown: string]: unknown;
+                }
+              >
+            : TInputOut
+      >
+    : never;
 
 export interface ProcedureBuilder<
   TContext,
@@ -144,23 +183,24 @@ export interface ProcedureBuilder<
   TInputOut,
   TOutputIn,
   TOutputOut,
+  TCaller extends boolean,
 > {
   /**
    * Add an input parser to the procedure.
-   * @link https://trpc.io/docs/v11/server/validators
+   * @see https://trpc.io/docs/v11/server/validators
    */
   input<$Parser extends Parser>(
     schema: TInputOut extends UnsetMarker
       ? $Parser
       : inferParser<$Parser>['out'] extends Record<string, unknown> | undefined
-      ? TInputOut extends Record<string, unknown> | undefined
-        ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
-          ? undefined extends TInputOut
-            ? $Parser
-            : TypeError<'Cannot chain an optional parser to a required parser'>
-          : $Parser
-        : TypeError<'All input parsers did not resolve to an object'>
-      : TypeError<'All input parsers did not resolve to an object'>,
+        ? TInputOut extends Record<string, unknown> | undefined
+          ? undefined extends inferParser<$Parser>['out'] // if current is optional the previous must be too
+            ? undefined extends TInputOut
+              ? $Parser
+              : TypeError<'Cannot chain an optional parser to a required parser'>
+            : $Parser
+          : TypeError<'All input parsers did not resolve to an object'>
+        : TypeError<'All input parsers did not resolve to an object'>,
   ): ProcedureBuilder<
     TContext,
     TMeta,
@@ -168,11 +208,12 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputIn, inferParser<$Parser>['in']>,
     IntersectIfDefined<TInputOut, inferParser<$Parser>['out']>,
     TOutputIn,
-    TOutputOut
+    TOutputOut,
+    TCaller
   >;
   /**
    * Add an output parser to the procedure.
-   * @link https://trpc.io/docs/v11/server/validators
+   * @see https://trpc.io/docs/v11/server/validators
    */
   output<$Parser extends Parser>(
     schema: $Parser,
@@ -183,11 +224,12 @@ export interface ProcedureBuilder<
     TInputIn,
     TInputOut,
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
-    IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>
+    IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
+    TCaller
   >;
   /**
    * Add a meta data to the procedure.
-   * @link https://trpc.io/docs/v11/server/metadata
+   * @see https://trpc.io/docs/v11/server/metadata
    */
   meta(
     meta: TMeta,
@@ -198,11 +240,12 @@ export interface ProcedureBuilder<
     TInputIn,
     TInputOut,
     TOutputIn,
-    TOutputOut
+    TOutputOut,
+    TCaller
   >;
   /**
    * Add a middleware to the procedure.
-   * @link https://trpc.io/docs/v11/server/middlewares
+   * @see https://trpc.io/docs/v11/server/middlewares
    */
   use<$ContextOverridesOut>(
     fn:
@@ -226,7 +269,8 @@ export interface ProcedureBuilder<
     TInputIn,
     TInputOut,
     TOutputIn,
-    TOutputOut
+    TOutputOut,
+    TCaller
   >;
 
   /**
@@ -250,7 +294,8 @@ export interface ProcedureBuilder<
             $InputIn,
             $InputOut,
             $OutputIn,
-            $OutputOut
+            $OutputOut,
+            TCaller
           >
         : TypeError<'Meta mismatch'>
       : TypeError<'Context mismatch'>,
@@ -261,11 +306,12 @@ export interface ProcedureBuilder<
     IntersectIfDefined<TInputIn, $InputIn>,
     IntersectIfDefined<TInputIn, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
-    IntersectIfDefined<TOutputOut, $OutputOut>
+    IntersectIfDefined<TOutputOut, $OutputOut>,
+    TCaller
   >;
   /**
    * Query procedure
-   * @link https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/v11/concepts#vocabulary
    */
   query<$Output>(
     resolver: ProcedureResolver<
@@ -276,14 +322,18 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): QueryProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, $Output>;
-  }>;
+  ): TCaller extends true
+    ? (
+        input: DefaultValue<TInputIn, void>,
+      ) => Promise<DefaultValue<TOutputOut, $Output>>
+    : QueryProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, $Output>;
+      }>;
 
   /**
    * Mutation procedure
-   * @link https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/v11/concepts#vocabulary
    */
   mutation<$Output>(
     resolver: ProcedureResolver<
@@ -294,16 +344,20 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): MutationProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, $Output>;
-  }>;
+  ): TCaller extends true
+    ? (
+        input: DefaultValue<TInputIn, void>,
+      ) => Promise<DefaultValue<TOutputOut, $Output>>
+    : MutationProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: DefaultValue<TOutputOut, $Output>;
+      }>;
 
   /**
    * Subscription procedure
-   * @link https://trpc.io/docs/v11/concepts#vocabulary
+   * @see https://trpc.io/docs/v11/server/subscriptions
    */
-  subscription<$Output>(
+  subscription<$Output extends AsyncIterable<any, void, any>>(
     resolver: ProcedureResolver<
       TContext,
       TMeta,
@@ -312,10 +366,48 @@ export interface ProcedureBuilder<
       TOutputIn,
       $Output
     >,
-  ): SubscriptionProcedure<{
-    input: DefaultValue<TInputIn, void>;
-    output: DefaultValue<TOutputOut, inferObservableValue<$Output>>;
-  }>;
+  ): TCaller extends true
+    ? TypeError<'Not implemented'>
+    : SubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: inferSubscriptionOutput<DefaultValue<TOutputOut, $Output>>;
+      }>;
+  /**
+   * @deprecated Using subscriptions with an observable is deprecated. Use an async generator instead.
+   * This feature will be removed in v12 of tRPC.
+   * @see https://trpc.io/docs/v11/server/subscriptions
+   */
+  subscription<$Output extends Observable<any, any>>(
+    resolver: ProcedureResolver<
+      TContext,
+      TMeta,
+      TContextOverrides,
+      TInputOut,
+      TOutputIn,
+      $Output
+    >,
+  ): TCaller extends true
+    ? TypeError<'Not implemented'>
+    : LegacyObservableSubscriptionProcedure<{
+        input: DefaultValue<TInputIn, void>;
+        output: inferObservableValue<DefaultValue<TOutputOut, $Output>>;
+      }>;
+  /**
+   * Overrides the way a procedure is invoked
+   * Do not use this unless you know what you're doing - this is an experimental API
+   */
+  experimental_caller(
+    caller: CallerOverride<TContext>,
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    TInputIn,
+    TInputOut,
+    TOutputIn,
+    TOutputOut,
+    true
+  >;
   /**
    * @internal
    */
@@ -337,7 +429,7 @@ function createNewBuilder(
     ...mergeWithoutOverrides(def1, rest),
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
-    meta: def1.meta && meta ? { ...def1.meta, ...meta } : meta ?? def1.meta,
+    meta: def1.meta && meta ? { ...def1.meta, ...meta } : (meta ?? def1.meta),
   });
 }
 
@@ -350,7 +442,8 @@ export function createBuilder<TContext, TMeta>(
   UnsetMarker,
   UnsetMarker,
   UnsetMarker,
-  UnsetMarker
+  UnsetMarker,
+  false
 > {
   const _def: AnyProcedureBuilderDef = {
     procedure: true,
@@ -406,11 +499,13 @@ export function createBuilder<TContext, TMeta>(
         resolver,
       ) as AnyMutationProcedure;
     },
-    subscription(resolver) {
-      return createResolver(
-        { ..._def, type: 'subscription' },
-        resolver,
-      ) as AnySubscriptionProcedure;
+    subscription(resolver: ProcedureResolver<any, any, any, any, any, any>) {
+      return createResolver({ ..._def, type: 'subscription' }, resolver) as any;
+    },
+    experimental_caller(caller) {
+      return createNewBuilder(_def, {
+        caller,
+      }) as any;
     },
   };
 
@@ -418,10 +513,10 @@ export function createBuilder<TContext, TMeta>(
 }
 
 function createResolver(
-  _def: AnyProcedureBuilderDef & { type: ProcedureType },
+  _defIn: AnyProcedureBuilderDef & { type: ProcedureType },
   resolver: AnyResolver,
 ) {
-  const finalBuilder = createNewBuilder(_def, {
+  const finalBuilder = createNewBuilder(_defIn, {
     resolver,
     middlewares: [
       async function resolveMiddleware(opts) {
@@ -435,19 +530,41 @@ function createResolver(
       },
     ],
   });
+  const _def: AnyProcedure['_def'] = {
+    ...finalBuilder._def,
+    type: _defIn.type,
+    experimental_caller: Boolean(finalBuilder._def.caller),
+    meta: finalBuilder._def.meta,
+    $types: null as any,
+  };
 
-  return createProcedureCaller(finalBuilder._def);
+  const invoke = createProcedureCaller(finalBuilder._def);
+  const callerOverride = finalBuilder._def.caller;
+  if (!callerOverride) {
+    return invoke;
+  }
+  const callerWrapper = async (...args: unknown[]) => {
+    return await callerOverride({
+      args,
+      invoke,
+      _def: _def,
+    });
+  };
+
+  callerWrapper._def = _def;
+  return callerWrapper;
 }
 
 /**
  * @internal
  */
-export interface ProcedureCallOptions {
-  ctx: unknown;
+export interface ProcedureCallOptions<TContext> {
+  ctx: TContext;
   getRawInput: GetRawInputFn;
   input?: unknown;
   path: string;
   type: ProcedureType;
+  signal: AbortSignal | undefined;
 }
 
 const codeblock = `
@@ -455,73 +572,55 @@ This is a client-only function.
 If you want to call this function on the server, see https://trpc.io/docs/v11/server/server-side-calls
 `.trim();
 
+// run the middlewares recursively with the resolver as the last one
+async function callRecursive(
+  index: number,
+  _def: AnyProcedureBuilderDef,
+  opts: ProcedureCallOptions<any>,
+): Promise<MiddlewareResult<any>> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const middleware = _def.middlewares[index]!;
+    const result = await middleware({
+      ...opts,
+      meta: _def.meta,
+      input: opts.input,
+      next(_nextOpts?: any) {
+        const nextOpts = _nextOpts as
+          | {
+              ctx?: Record<string, unknown>;
+              input?: unknown;
+              getRawInput?: GetRawInputFn;
+            }
+          | undefined;
+
+        return callRecursive(index + 1, _def, {
+          ...opts,
+          ctx: nextOpts?.ctx ? { ...opts.ctx, ...nextOpts.ctx } : opts.ctx,
+          input: nextOpts && 'input' in nextOpts ? nextOpts.input : opts.input,
+          getRawInput: nextOpts?.getRawInput ?? opts.getRawInput,
+        });
+      },
+    });
+    return result;
+  } catch (cause) {
+    return {
+      ok: false,
+      error: getTRPCErrorFromUnknown(cause),
+      marker: middlewareMarker,
+    };
+  }
+}
+
 function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
-  async function procedure(opts: ProcedureCallOptions) {
+  async function procedure(opts: ProcedureCallOptions<unknown>) {
     // is direct server-side call
     if (!opts || !('getRawInput' in opts)) {
       throw new Error(codeblock);
     }
 
-    // run the middlewares recursively with the resolver as the last one
-    async function callRecursive(
-      callOpts: {
-        ctx: any;
-        index: number;
-        input?: unknown;
-        getRawInput?: GetRawInputFn;
-      } = {
-        index: 0,
-        ctx: opts.ctx,
-      },
-    ): Promise<MiddlewareResult<any>> {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const middleware = _def.middlewares[callOpts.index]!;
-        const result = await middleware({
-          ctx: callOpts.ctx,
-          type: opts.type,
-          path: opts.path,
-          getRawInput: callOpts.getRawInput ?? opts.getRawInput,
-          meta: _def.meta,
-          input: callOpts.input,
-          next(_nextOpts?: any) {
-            const nextOpts = _nextOpts as
-              | {
-                  ctx?: Record<string, unknown>;
-                  input?: unknown;
-                  getRawInput?: GetRawInputFn;
-                }
-              | undefined;
-
-            return callRecursive({
-              index: callOpts.index + 1,
-              ctx:
-                nextOpts && 'ctx' in nextOpts
-                  ? { ...callOpts.ctx, ...nextOpts.ctx }
-                  : callOpts.ctx,
-              input:
-                nextOpts && 'input' in nextOpts
-                  ? nextOpts.input
-                  : callOpts.input,
-              getRawInput:
-                nextOpts && 'getRawInput' in nextOpts
-                  ? nextOpts.getRawInput
-                  : callOpts.getRawInput,
-            });
-          },
-        });
-        return result;
-      } catch (cause) {
-        return {
-          ok: false,
-          error: getTRPCErrorFromUnknown(cause),
-          marker: middlewareMarker,
-        };
-      }
-    }
-
     // there's always at least one "next" since we wrap this.resolver in a middleware
-    const result = await callRecursive();
+    const result = await callRecursive(0, _def, opts);
 
     if (!result) {
       throw new TRPCError({

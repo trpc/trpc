@@ -5,14 +5,13 @@ sidebar_label: createTRPCQueryUtils()
 slug: /client/react/createTRPCQueryUtils
 ---
 
+The use case for `createTRPCQueryUtils` is when you need to use the helpers outside of a React Component, for example in `react-router`s loaders.
+
 Similar to `useUtils`, `createTRPCQueryUtils` is a function that gives you access to helpers that let you manage the cached data of the queries you execute via `@trpc/react-query`. These helpers are actually thin wrappers around `@tanstack/react-query`'s [`queryClient`](https://tanstack.com/query/v5/docs/reference/QueryClient) methods. If you want more in-depth information about options and usage patterns for `useUtils` helpers than what we provide here, we will link to their respective `@tanstack/react-query` docs so you can refer to them accordingly.
 
-:::note
-
 The difference between `useUtils` and `createTRPCQueryUtils` is that `useUtils` is a react hook that uses `useQueryClient` under the hood. This means that it is able to work better within React Components.
-The use case for `createTRPCQueryUtils` is when you need to use the helpers outside of a React Component, for example in react-router's loaders.
 
-:::
+If you need access to the client directly, you can use the `client` object that you passed to `createTRPCQueryUtils` during creation.
 
 :::caution
 
@@ -57,10 +56,11 @@ import { useLoaderData } from 'react-router-dom';
 import type { AppRouter } from './server';
 
 const trpc = createTRPCReact<AppRouter>();
+const trpcClient = trpc.createClient({ links: [] });
 
 const queryClient = new QueryClient();
 
-const clientUtils = createTRPCQueryUtils({ queryClient, client: trpc });
+const clientUtils = createTRPCQueryUtils({ queryClient, client: trpcClient });
 
 // This is a react-router loader
 export async function loader() {
@@ -99,4 +99,4 @@ If you were using Remix Run or SSR you wouldn't re-use the same `queryClient` fo
 
 Much like `useUtils`, `createTRPCQueryUtils` gives you access to same set of helpers. The only difference is that you need to pass in the `queryClient` and `client` objects.
 
-You can see them on the [useUtils](/docs/client/react/useUtils) page.
+You can see them on the [useUtils](./useUtils.mdx#helpers)-page.

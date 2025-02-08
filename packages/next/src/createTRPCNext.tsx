@@ -31,11 +31,11 @@ export interface CreateTRPCNextBase<
   /**
    * @deprecated renamed to `useUtils` and will be removed in a future tRPC version
    *
-   * @link https://trpc.io/docs/v11/client/react/useUtils
+   * @see https://trpc.io/docs/v11/client/react/useUtils
    */
   useContext(): CreateReactUtils<TRouter, TSSRContext>;
   /**
-   * @link https://trpc.io/docs/v11/client/react/useUtils
+   * @see https://trpc.io/docs/v11/client/react/useUtils
    */
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   withTRPC: ReturnType<typeof withTRPC<TRouter, TSSRContext>>;
@@ -68,6 +68,11 @@ export function createTRPCNext<
   // TODO: maybe set TSSRContext to `never` when using `WithTRPCNoSSROptions`
   const _withTRPC = withTRPC(opts);
 
+  const proxy = createReactDecoration(hooks) as DecorateRouterRecord<
+    TRouter['_def']['_config']['$types'],
+    TRouter['_def']['record']
+  >;
+
   return createFlatProxy((key) => {
     if (key === 'useContext' || key === 'useUtils') {
       return () => {
@@ -91,6 +96,6 @@ export function createTRPCNext<
       return _withTRPC;
     }
 
-    return createReactDecoration(key, hooks);
+    return proxy[key];
   });
 }

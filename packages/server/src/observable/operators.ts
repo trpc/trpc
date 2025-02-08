@@ -112,3 +112,50 @@ export function tap<TValue, TError>(
     });
   };
 }
+
+const distinctUnsetMarker = Symbol();
+export function distinctUntilChanged<TValue, TError>(
+  compare: (a: TValue, b: TValue) => boolean = (a, b) => a === b,
+): MonoTypeOperatorFunction<TValue, TError> {
+  return (source) => {
+    return observable((destination) => {
+      let lastValue: TValue | typeof distinctUnsetMarker = distinctUnsetMarker;
+
+      return source.subscribe({
+        next(value) {
+          if (lastValue !== distinctUnsetMarker && compare(lastValue, value)) {
+            return;
+          }
+          lastValue = value;
+          destination.next(value);
+        },
+        error(error) {
+          destination.error(error);
+        },
+        complete() {
+          destination.complete();
+        },
+      });
+    });
+  };
+}
+
+const isDeepEqual = <T>(a: T, b: T): boolean => {
+  if (a === b) {
+    return true;
+  }
+  const bothAreObjects =
+    a && b && typeof a === 'object' && typeof b === 'object';
+
+  return (
+    !!bothAreObjects &&
+    Object.keys(a).length === Object.keys(b).length &&
+    Object.entries(a).every(([k, v]) => isDeepEqual(v, b[k as keyof T]))
+  );
+};
+export function distinctUntilDeepChanged<
+  TValue,
+  TError,
+>(): MonoTypeOperatorFunction<TValue, TError> {
+  return distinctUntilChanged(isDeepEqual);
+}

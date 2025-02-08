@@ -1,7 +1,13 @@
 // @vitest-environment miniflare
 /// <reference types="@cloudflare/workers-types" />
 
-import { ReadableStream as MiniflareReadableStream } from 'stream/web';
+import {
+  ReadableStream as MiniflareReadableStream,
+  TextDecoderStream as MiniflareTextDecoderStream,
+  TextEncoderStream as MiniflareTextEncoderStream,
+  TransformStream as MiniflareTransformStream,
+  WritableStream as MiniflareWritableStream,
+} from 'stream/web';
 import { Response as MiniflareResponse } from '@miniflare/core';
 import type { TRPCLink } from '@trpc/client';
 import {
@@ -20,6 +26,10 @@ import { z } from 'zod';
 globalThis.Response = MiniflareResponse as any;
 // miniflare must use the web stream "polyfill"
 globalThis.ReadableStream = MiniflareReadableStream as any;
+globalThis.WritableStream = MiniflareWritableStream as any;
+globalThis.TransformStream = MiniflareTransformStream as any;
+globalThis.TextEncoderStream = MiniflareTextEncoderStream as any;
+globalThis.TextDecoderStream = MiniflareTextDecoderStream as any;
 
 const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
   const getUser = () => {
@@ -72,6 +82,9 @@ function createAppRouter() {
         );
         return opts.input.wait;
       }),
+    helloMutation: publicProcedure.input(z.string()).mutation((opts) => {
+      return `hello ${opts.input}`;
+    }),
   });
 
   return appRouter;
@@ -95,11 +108,6 @@ async function startServer(endpoint = '') {
       req: event.request,
       router,
       createContext,
-      responseMeta() {
-        return {
-          headers: {},
-        };
-      },
     });
     event.respondWith(response);
   });
@@ -195,6 +203,7 @@ describe('with default server', () => {
       client.deferred.query({ wait: 1 }),
       client.deferred.query({ wait: 2 }),
     ]);
+
     expect(results).toEqual([3, 1, 2]);
     expect(orderedResults).toEqual([1, 2, 3]);
   });
@@ -265,4 +274,31 @@ test.each([
   });
 
   await custom.close();
+});
+
+// https://github.com/trpc/trpc/issues/5659
+test('mutation', async () => {
+  const t = await startServer();
+
+  const res = await Promise.all([
+    t.client.helloMutation.mutate('world'),
+    t.client.helloMutation.mutate('KATT'),
+  ]);
+  expect(res).toEqual(['hello world', 'hello KATT']);
+
+  await t.close();
+});
+
+test('batching', async () => {
+  const t = await startServer();
+
+  const normalResult = await (
+    await fetch(`${t.url}/hello,foo?batch=1&input={}`)
+  ).json();
+  const comma = '%2C';
+  const urlEncodedResult = await (
+    await fetch(`${t.url}/hello${comma}foo?batch=1&input={}`)
+  ).json();
+
+  expect(normalResult).toEqual(urlEncodedResult);
 });

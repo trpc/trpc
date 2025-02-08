@@ -120,6 +120,67 @@ export const appRouter = t.router({
 });
 ```
 
+### Output validation of subscriptions
+
+Since subscriptions are async iterators, you can use the same validation techniques as above.
+
+Have a look at the [subscriptions guide](subscriptions.md#output-validation) for more information.
+
+## Non-JSON Content Types
+
+In addition to JSON-serializable data, tRPC can be used with FormData, File, and other Binary types
+
+### `FormData` Input
+
+FormData is natively supported, and for more advanced usage you could also combine this with a library like [zod-form-data](https://www.npmjs.com/package/zod-form-data) to validate inputs in a type-safe way.
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+// ---cut---
+
+// Our examples use Zod by default, but usage with other libraries is identical
+import { z } from 'zod';
+
+export const t = initTRPC.create();
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure.input(z.instanceof(FormData)).query((opts) => {
+    const data = opts.input;
+    //    ^?
+    return {
+      greeting: `Hello ${data.get('name')}`,
+    };
+  }),
+});
+```
+
+### `File` and other Binary Type Inputs
+
+tRPC converts many octet content types to a `ReadableStream` which can be consumed in a procedure. Currently these are `Blob` `Uint8Array` and `File` but more can be added easily.
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+// ---cut---
+
+import { octetInputParser } from '@trpc/server/http';
+
+export const t = initTRPC.create();
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  upload: publicProcedure.input(octetInputParser).query((opts) => {
+    const data = opts.input;
+    //    ^?
+    return {
+      valid: true,
+    };
+  }),
+});
+```
+
 ## The most basic validator: a function
 
 You can define a validator without any 3rd party dependencies, with a function.
@@ -324,9 +385,33 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
+  hello: publicProcedure.input(type({ name: 'string' })).query(({ input }) => {
+    //      ^?
+    return {
+      greeting: `hello ${input.name}`,
+    };
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [@effect/schema](https://github.com/Effect-TS/effect/tree/main/packages/schema)
+
+```ts
+import * as Schema from '@effect/schema/Schema';
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
   hello: publicProcedure
-    .input(type({ name: 'string' }).assert)
-    .output(type({ greeting: 'string' }).assert)
+    .input(Schema.decodeUnknownSync(Schema.Struct({ name: Schema.String })))
+    .output(
+      Schema.decodeUnknownSync(Schema.Struct({ greeting: Schema.String })),
+    )
     .query(({ input }) => {
       //      ^?
       return {
@@ -366,8 +451,7 @@ export type AppRouter = typeof appRouter;
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
-import { wrap } from '@typeschema/valibot';
-import { object, string } from 'valibot';
+import * as v from 'valibot';
 
 export const t = initTRPC.create();
 
@@ -375,8 +459,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(wrap(object({ name: string() })))
-    .output(wrap(object({ greeting: string() })))
+    .input(v.object({ name: v.string() }))
+    .output(v.object({ greeting: v.string() }))
     .query(({ input }) => {
       //      ^?
       return {
@@ -428,6 +512,31 @@ export const appRouter = t.router({
     )
     .query(({ input }) => {
       //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### With [TypeBox](https://github.com/sinclairzx81/typebox)
+
+```ts
+import { Type } from '@sinclair/typebox';
+import { initTRPC } from '@trpc/server';
+import { wrap } from '@typeschema/typebox';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(wrap(Type.Object({ name: Type.String() })))
+    .output(wrap(Type.Object({ greeting: Type.String() })))
+    .query(({ input }) => {
       return {
         greeting: `hello ${input.name}`,
       };

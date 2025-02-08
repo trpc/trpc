@@ -30,7 +30,7 @@ export type InferQueryOptions<
     TRPCClientErrorLike<TRoot>,
     TData
   >,
-  'select'
+  'select' | 'queryFn'
 >;
 
 /**
@@ -39,10 +39,12 @@ export type InferQueryOptions<
 export type InferMutationOptions<
   TRoot extends AnyRootTypes,
   TProcedure extends AnyProcedure,
+  TMeta = unknown,
 > = UseTRPCMutationOptions<
   inferProcedureInput<TProcedure>,
   TRPCClientErrorLike<TRoot>,
-  inferTransformedProcedureOutput<TRoot, TProcedure>
+  inferTransformedProcedureOutput<TRoot, TProcedure>,
+  TMeta
 >;
 
 /**
@@ -75,13 +77,13 @@ type inferReactQueryProcedureOptionsInner<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? inferReactQueryProcedureOptionsInner<TRoot, $Value>
-      : $Value extends AnyMutationProcedure
-      ? InferMutationOptions<TRoot, $Value>
-      : $Value extends AnyQueryProcedure
+    ? $Value extends AnyQueryProcedure
       ? InferQueryOptions<TRoot, $Value>
-      : never
+      : $Value extends AnyMutationProcedure
+        ? InferMutationOptions<TRoot, $Value>
+        : $Value extends RouterRecord
+          ? inferReactQueryProcedureOptionsInner<TRoot, $Value>
+          : never
     : never;
 };
 

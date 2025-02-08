@@ -1,5 +1,6 @@
 name: subtree-matrix
 on:
+  workflow_dispatch:
   push:
     branches:
       - next
@@ -15,15 +16,16 @@ jobs:
       matrix:
         path: [
             #
-            next-prisma-starter,
-            next-prisma-websockets-starter,
-            next-prisma-todomvc,
-            next-minimal-starter,
-            next-big-router,
-            minimal,
-            minimal-react,
-            .experimental/next-formdata,
             .experimental/next-app-dir,
+            minimal-react,
+            minimal,
+            next-big-router,
+            next-formdata,
+            next-minimal-starter,
+            next-prisma-starter,
+            next-prisma-todomvc,
+            next-prisma-websockets-starter,
+            next-sse-chat,
           ]
 
     name: Update downstream ${{ matrix.path }} package
@@ -43,10 +45,10 @@ jobs:
       - name: Get the above output
         run: echo "The replaced value is ${{ steps.findandreplace.outputs.value }}"
 
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 22.x
           cache: 'pnpm'
 
       - name: Install dependencies and create separate lockfile

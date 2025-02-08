@@ -54,7 +54,7 @@ test('untyped client - happy path with input', async () => {
   await close();
 });
 
-test('very happy path', async () => {
+test('very happy path - query', async () => {
   const greeting = t.procedure
     .input(z.string())
     .use(({ next }) => {
@@ -71,6 +71,26 @@ test('very happy path', async () => {
   }
   const { client, close } = routerToServerAndClientNew(router);
   expect(await client.greeting.query('KATT')).toBe('hello KATT');
+  await close();
+});
+
+test('very happy path - mutation', async () => {
+  const greeting = t.procedure
+    .input(z.string())
+    .use(({ next }) => {
+      return next();
+    })
+    .mutation(({ input }) => `hello ${input}`);
+  const router = t.router({
+    greeting,
+  });
+
+  {
+    type TContext = inferProcedureOutput<typeof greeting>;
+    expectTypeOf<TContext>().toMatchTypeOf<string>();
+  }
+  const { client, close } = routerToServerAndClientNew(router);
+  expect(await client.greeting.mutate('KATT')).toBe('hello KATT');
   await close();
 });
 
@@ -153,7 +173,7 @@ test('sad path', async () => {
   // @ts-expect-error this procedure does not exist
   const result = await waitError(client.not.found.query(), TRPCClientError);
   expect(result).toMatchInlineSnapshot(
-    `[TRPCClientError: No "query"-procedure on path "not.found"]`,
+    `[TRPCClientError: No procedure found on path "not.found"]`,
   );
   await close();
 });
@@ -165,7 +185,7 @@ test('call a mutation as a query', async () => {
   const { client, close } = routerToServerAndClientNew(router);
 
   await expect((client.hello as any).mutate()).rejects.toMatchInlineSnapshot(
-    `[TRPCClientError: No "mutation"-procedure on path "hello"]`,
+    `[TRPCClientError: Unsupported POST-request to query procedure at path "hello"]`,
   );
 
   await close();

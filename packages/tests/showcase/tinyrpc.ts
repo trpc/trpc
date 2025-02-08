@@ -1,5 +1,5 @@
 /**
- * @link https://trpc.io/blog/tinyrpc-client
+ * @see https://trpc.io/blog/tinyrpc-client
  */
 import type {
   AnyTRPCMutationProcedure,
@@ -13,13 +13,16 @@ import type {
 import type { TRPCResponse } from '@trpc/server/rpc';
 
 interface ProxyCallbackOptions {
-  path: string[];
-  args: unknown[];
+  path: readonly string[];
+  args: readonly unknown[];
 }
 
 type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
 
-function createRecursiveProxy(callback: ProxyCallback, path: string[]) {
+function createRecursiveProxy(
+  callback: ProxyCallback,
+  path: readonly string[],
+) {
   const proxy: unknown = new Proxy(
     () => {
       // dummy no-op function since we don't have any
@@ -55,18 +58,18 @@ type DecorateProcedure<TProcedure> = TProcedure extends AnyTRPCQueryProcedure
       query: Resolver<TProcedure>;
     }
   : TProcedure extends AnyTRPCMutationProcedure
-  ? {
-      mutate: Resolver<TProcedure>;
-    }
-  : never;
+    ? {
+        mutate: Resolver<TProcedure>;
+      }
+    : never;
 
 type DecorateRouterRecord<TRecord extends TRPCRouterRecord> = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends TRPCRouterRecord
       ? DecorateRouterRecord<$Value>
       : $Value extends AnyTRPCProcedure
-      ? DecorateProcedure<$Value>
-      : never
+        ? DecorateProcedure<$Value>
+        : never
     : never;
 };
 

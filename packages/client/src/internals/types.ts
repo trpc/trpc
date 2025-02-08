@@ -1,21 +1,3 @@
-export type AbortControllerEsque = new () => AbortControllerInstanceEsque;
-
-/**
- * Allows you to abort one or more requests.
- */
-export interface AbortControllerInstanceEsque {
-  /**
-   * The AbortSignal object associated with this object.
-   */
-  readonly signal: AbortSignal;
-
-  /**
-   * Sets this object's AbortSignal's aborted flag and signals to
-   * any observers that the associated activity is to be aborted.
-   */
-  abort(): void;
-}
-
 /**
  * A subset of the standard fetch function type needed by tRPC internally.
  * @see fetch from lib.dom.d.ts
@@ -52,7 +34,7 @@ export interface RequestInitEsque {
   /**
    * Sets the request's body.
    */
-  body?: FormData | ReadableStream | string | null;
+  body?: FormData | string | null | Uint8Array | Blob | File;
 
   /**
    * Sets the request's associated headers.
@@ -67,7 +49,7 @@ export interface RequestInitEsque {
   /**
    * Sets the request's signal.
    */
-  signal?: AbortSignal | null;
+  signal?: AbortSignal | undefined;
 }
 
 /**
@@ -104,3 +86,16 @@ export interface ResponseEsque {
  * @internal
  */
 export type NonEmptyArray<TItem> = [TItem, ...TItem[]];
+
+type ClientContext = Record<string, unknown>;
+
+/**
+ * @public
+ */
+export interface TRPCProcedureOptions {
+  /**
+   * Client-side context
+   */
+  context?: ClientContext;
+  signal?: AbortSignal;
+}

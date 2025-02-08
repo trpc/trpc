@@ -1,4 +1,4 @@
-import { trpc } from '../utils/trpc';
+import { trpc } from '~/utils/trpc';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Head from 'next/head';
@@ -54,7 +54,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
           /**
            * In a real app you probably don't want to use this manually
            * Checkout React Hook Form - it works great with tRPC
-           * @link https://react-hook-form.com/
+           * @see https://react-hook-form.com/
            */
           await postMessage();
         }}
@@ -171,12 +171,7 @@ export default function IndexPage() {
     },
   });
 
-  const [currentlyTyping, setCurrentlyTyping] = useState<string[]>([]);
-  trpc.post.whoIsTyping.useSubscription(undefined, {
-    onData(data) {
-      setCurrentlyTyping(data);
-    },
-  });
+  const whoIsTypingResult = trpc.post.whoIsTyping.useSubscription();
 
   return (
     <>
@@ -255,8 +250,8 @@ export default function IndexPage() {
                 {isFetchingNextPage
                   ? 'Loading more...'
                   : hasNextPage
-                  ? 'Load More'
-                  : 'Nothing more to load'}
+                    ? 'Load More'
+                    : 'Nothing more to load'}
               </button>
               <div className="space-y-4">
                 {messages?.map((item) => (
@@ -293,8 +288,8 @@ export default function IndexPage() {
             <div className="w-full">
               <AddMessageForm onMessagePost={() => scrollToBottomOfList()} />
               <p className="h-2 italic text-gray-400">
-                {currentlyTyping.length
-                  ? `${currentlyTyping.join(', ')} typing...`
+                {whoIsTypingResult.data?.length
+                  ? `${whoIsTypingResult.data.join(', ')} typing...`
                   : ''}
               </p>
             </div>
@@ -316,7 +311,7 @@ export default function IndexPage() {
  * - Export `appRouter` & `createContext` from [trpc].ts
  * - Make the `opts` object optional on `createContext()`
  *
- * @link https://trpc.io/docs/v11/ssg
+ * @see https://trpc.io/docs/v11/ssg
  */
 // export const getStaticProps = async (
 //   context: GetStaticPropsContext<{ filter: string }>,

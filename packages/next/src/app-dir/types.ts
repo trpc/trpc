@@ -28,23 +28,21 @@ export type DecorateProcedureServer<
       >;
     }
   : TType extends 'mutation'
-  ? {
-      mutate: Resolver<TDef>;
-    }
-  : TType extends 'subscription'
-  ? {
-      subscribe: Resolver<TDef>;
-    }
-  : never;
+    ? {
+        mutate: Resolver<TDef>;
+      }
+    : TType extends 'subscription'
+      ? {
+          subscribe: Resolver<TDef>;
+        }
+      : never;
 
 export type NextAppDirDecorateRouterRecord<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? NextAppDirDecorateRouterRecord<TRoot, $Value>
-      : $Value extends AnyProcedure
+    ? $Value extends AnyProcedure
       ? DecorateProcedureServer<
           $Value['_def']['type'],
           {
@@ -54,6 +52,8 @@ export type NextAppDirDecorateRouterRecord<
             transformer: TRoot['transformer'];
           }
         >
-      : never
+      : $Value extends RouterRecord
+        ? NextAppDirDecorateRouterRecord<TRoot, $Value>
+        : never
     : never;
 };

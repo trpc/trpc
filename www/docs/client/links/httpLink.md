@@ -44,12 +44,12 @@ export interface HTTPLinkOptions {
   AbortController?: typeof AbortController | null;
   /**
    * Data transformer
-   * @link https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/v11/data-transformers
    **/
   transformer?: DataTransformerOptions;
   /**
    * Headers to be set on outgoing requests or a callback that of said headers
-   * @link http://trpc.io/docs/v10/header
+   * @see http://trpc.io/docs/v10/header
    */
   headers?:
     | HTTPHeaders
@@ -57,7 +57,7 @@ export interface HTTPLinkOptions {
   /**
    * Send all requests as POSTS requests regardless of the procedure type
    * The server must separately allow overriding the method. See:
-   * @link https://trpc.io/docs/rpc
+   * @see https://trpc.io/docs/rpc
    */
   methodOverride?: 'POST';
 }

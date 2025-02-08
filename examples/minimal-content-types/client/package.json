@@ -1,0 +1,27 @@
+{
+  "name": "examples-minimal-content-types-react-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint --cache src",
+    "start": "vite preview"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.62.8",
+    "@trpc/client": "npm:@trpc/client@next",
+    "@trpc/react-query": "npm:@trpc/react-query@next",
+    "@trpc/server": "npm:@trpc/server@next",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.13.0",
+    "typescript": "^5.7.2",
+    "vite": "^5.3.4"
+  }
+}

@@ -14,7 +14,7 @@ export const mockAPIGatewayProxyEventV1 = ({
   resource,
   pathParameters,
 }: {
-  body: string;
+  body?: string;
   headers: { [key: string]: string };
   queryStringParameters: Record<string, string>;
   path: string;
@@ -23,7 +23,7 @@ export const mockAPIGatewayProxyEventV1 = ({
   pathParameters?: APIGatewayProxyEventPathParameters;
 }): APIGatewayProxyEvent => {
   return {
-    body,
+    body: body ?? null,
     headers,
     multiValueHeaders: {},
     path: `/${path}`,
@@ -76,7 +76,7 @@ export const mockAPIGatewayProxyEventV2 = ({
   routeKey,
   pathParameters,
 }: {
-  body: string;
+  body?: string;
   headers: { [key: string]: string };
   queryStringParameters: Record<string, string>;
   path: string;

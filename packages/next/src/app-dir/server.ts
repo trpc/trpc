@@ -3,10 +3,12 @@ import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
 } from '@trpc/client';
+import type { CreateContextCallback } from '@trpc/server';
 import type {
   AnyProcedure,
   AnyRootTypes,
   AnyRouter,
+  ErrorHandlerOptions,
   inferClientTypes,
   inferProcedureInput,
   MaybePromise,
@@ -16,14 +18,16 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   createRecursiveProxy,
+  formDataToObject,
   getErrorShape,
   getTRPCErrorFromUnknown,
   transformTRPCResponse,
   TRPCError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { revalidateTag } from 'next/cache';
+import { isNotFoundError } from 'next/dist/client/components/not-found';
+import { isRedirectError } from 'next/dist/client/components/redirect';
 import { cache } from 'react';
-import { formDataToObject } from './formDataToObject';
 import type {
   ActionHandlerDef,
   CreateTRPCNextAppRouterOptions,
@@ -31,6 +35,8 @@ import type {
 } from './shared';
 import { generateCacheTag, isFormData } from './shared';
 import type { NextAppDirDecorateRouterRecord } from './types';
+
+export type { ActionHandlerDef };
 
 // ts-prune-ignore-next
 export function experimental_createTRPCNextAppDirServer<
@@ -41,7 +47,12 @@ export function experimental_createTRPCNextAppDirServer<
     return createTRPCUntypedClient(config);
   });
 
-  return createRecursiveProxy((callOpts) => {
+  return createRecursiveProxy<
+    NextAppDirDecorateRouterRecord<
+      TRouter['_def']['_config']['$types'],
+      TRouter['_def']['record']
+    >
+  >((callOpts) => {
     // lazily initialize client
     const client = getClient();
 
@@ -58,12 +69,19 @@ export function experimental_createTRPCNextAppDirServer<
     }
 
     return (client[procedureType] as any)(procedurePath, ...callOpts.args);
-  }) as NextAppDirDecorateRouterRecord<
-    TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record']
-  >;
+  });
 }
 
+/**
+ * Rethrow errors that should be handled by Next.js
+ */
+const throwNextErrors = (error: TRPCError) => {
+  const { cause } = error;
+  if (isRedirectError(cause) || isNotFoundError(cause)) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    throw error.cause!;
+  }
+};
 /**
  * @internal
  */
@@ -77,17 +95,35 @@ export function experimental_createServerActionHandler<
   },
 >(
   t: TInstance,
-  opts: {
-    createContext: () => MaybePromise<TInstance['_config']['$types']['ctx']>;
+  opts: CreateContextCallback<
+    TInstance['_config']['$types']['ctx'],
+    () => MaybePromise<TInstance['_config']['$types']['ctx']>
+  > & {
     /**
      * Transform form data to a `Record` before passing it to the procedure
      * @default true
      */
     normalizeFormData?: boolean;
+    /**
+     * Called when an error occurs in the handler
+     */
+    onError?: (
+      opts: ErrorHandlerOptions<TInstance['_config']['$types']['ctx']>,
+    ) => void;
+
+    /**
+     * Rethrow errors that should be handled by Next.js
+     * @default true
+     */
+    rethrowNextErrors?: boolean;
   },
 ) {
   const config = t._config;
-  const { normalizeFormData = true, createContext } = opts;
+  const {
+    normalizeFormData = true,
+    createContext,
+    rethrowNextErrors = true,
+  } = opts;
 
   const transformer = config.transformer;
 
@@ -100,11 +136,11 @@ export function experimental_createServerActionHandler<
     return async function actionHandler(
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
-      const ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
+      let ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
       try {
-        const ctx = await createContext();
+        ctx = (await createContext?.()) ?? {};
         if (normalizeFormData && isFormData(rawInput)) {
-          // Normalizes formdata so we can use `z.object({})` etc on the server
+          // Normalizes FormData so we can use `z.object({})` etc on the server
           try {
             rawInput = formDataToObject(rawInput);
           } catch {
@@ -117,13 +153,17 @@ export function experimental_createServerActionHandler<
           rawInput = transformer.input.deserialize(rawInput);
         }
 
-        const data = await proc({
-          input: undefined,
-          ctx,
-          path: 'serverAction',
-          getRawInput: async () => rawInput,
-          type: proc._def.type,
-        });
+        const data = proc._def.experimental_caller
+          ? await proc(rawInput as any)
+          : await proc({
+              input: undefined,
+              ctx,
+              path: '',
+              getRawInput: async () => rawInput,
+              type: proc._def.type,
+              // is it possible to get the AbortSignal from the request?
+              signal: undefined,
+            });
 
         const transformedJSON = transformTRPCResponse(config, {
           result: {
@@ -133,16 +173,27 @@ export function experimental_createServerActionHandler<
         return transformedJSON;
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
+
+        opts.onError?.({
+          ctx,
+          error,
+          input: rawInput,
+          path: '',
+          type: proc._def.type,
+        });
+
+        if (rethrowNextErrors) {
+          throwNextErrors(error);
+        }
+
         const shape = getErrorShape({
           config,
           ctx,
           error,
           input: rawInput,
-          path: 'serverAction',
+          path: '',
           type: proc._def.type,
         });
-
-        // TODO: send the right HTTP header?!
 
         return transformTRPCResponse(t._config, {
           error: shape,

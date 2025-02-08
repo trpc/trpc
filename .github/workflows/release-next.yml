@@ -5,6 +5,7 @@ on:
     branches:
       - 'next'
     paths:
+      - '.github/setup/*'
       - '.github/workflows/release-next.yml'
       - 'packages/**'
       - '!packages/**/package.json'
@@ -36,4 +37,8 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - run: pnpm lerna publish --force-publish --canary major --preid next --dist-tag next --yes
+      - run: pnpm lerna publish --force-publish --canary major --preid rc --dist-tag next --yes
+      - name: Invoke subtree workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: subtree.yml

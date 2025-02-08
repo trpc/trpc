@@ -1,6 +1,5 @@
 // This is an awful script, don't judge
 import fs from 'fs';
-import { graphql } from '@octokit/graphql';
 import type { Node, SponsorEsque } from './script.types';
 
 const { TRPC_GITHUB_TOKEN } = process.env;
@@ -8,11 +7,13 @@ if (!TRPC_GITHUB_TOKEN) {
   throw new Error('TRPC_GITHUB_TOKEN is not set');
 }
 
-const graphqlWithAuth = graphql.defaults({
-  headers: {
-    authorization: `token ${TRPC_GITHUB_TOKEN}`,
-  },
-});
+const graphqlWithAuthPromise = import('@octokit/graphql').then(({ graphql }) =>
+  graphql.defaults({
+    headers: {
+      authorization: `token ${TRPC_GITHUB_TOKEN}`,
+    },
+  }),
+);
 
 function ensureHttpAndAddRef(urlStr: string) {
   const httpUrlStr = urlStr.startsWith('http') ? urlStr : `http://${urlStr}`;
@@ -20,6 +21,9 @@ function ensureHttpAndAddRef(urlStr: string) {
   if (!url.searchParams.has('ref')) {
     url.searchParams.set('ref', 'trpc');
   }
+  url.searchParams.set('utm_source', 'github');
+  url.searchParams.set('utm_medium', 'referral');
+  url.searchParams.set('utm_campaign', 'trpc');
   return url.toString();
 }
 
@@ -76,6 +80,7 @@ const sponsorEsqueFragment = `
 `;
 async function getViewerGithubSponsors() {
   let sponsors: ReturnType<typeof flattenSponsor>[] = [];
+  const graphqlWithAuth = await graphqlWithAuthPromise;
 
   const fetchPage = async (cursor = '') => {
     const res: {
@@ -116,6 +121,7 @@ async function getViewerGithubSponsors() {
 
 async function getOrgGithubSponsors() {
   let sponsors: ReturnType<typeof flattenSponsor>[] = [];
+  const graphqlWithAuth = await graphqlWithAuthPromise;
 
   const fetchPage = async (cursor = '') => {
     const res: {
@@ -180,13 +186,16 @@ async function main() {
       .filter((it) => it.privacyLevel === 'PUBLIC')
       // overrides
       .map((sponsor) => {
-        // switch (sponsor.login) {
-        //   case 't3dotgg':
-        //     return {
-        //       ...sponsor,
-        //       monthlyPriceInDollars: 5,
-        //     };
-        // }
+        switch (sponsor.login) {
+          case 'dakshgup':
+            return {
+              ...sponsor,
+              name: 'Greptile',
+              imgSrc: 'https://github.com/greptileai.png',
+              link: 'https://greptile.com/?utm_source=opensource&utm_medium=github&utm_campaign=trpc',
+              login: 'greptileai',
+            };
+        }
         return sponsor;
       });
 
@@ -196,17 +205,17 @@ async function main() {
     );
 
     // add manual sponsors
-    rawList.push({
-      __typename: 'Organization',
-      name: 'Tola',
-      imgSrc: 'https://avatars.githubusercontent.com/u/92736868?v=4',
-      monthlyPriceInDollars: 1110,
-      link: 'https://tolahq.com/?ref=trpc',
-      privacyLevel: 'PUBLIC',
-      login: 'tolahq',
-      // 8 months between 1st of sept and 1st of april
-      createdAt: Date.now() - 8 * 30 * 24 * 60 * 60 * 1000,
-    });
+    // rawList.push({
+    //   __typename: 'Organization',
+    //   name: 'Tola',
+    //   imgSrc: 'https://github.com/tolahq.png',
+    //   monthlyPriceInDollars: 1110,
+    //   link: 'https://tolahq.com/?ref=trpc',
+    //   privacyLevel: 'PUBLIC',
+    //   login: 'tolahq',
+    //   // 8 months between 1st of sept and 1st of april
+    //   createdAt: Date.now() - 8 * 30 * 24 * 60 * 60 * 1000,
+    // });
     const list = rawList.map((sponsor) => {
       // calculate total value
       const MONTH_MS = 30 * 24 * 60 * 60 * 1000;

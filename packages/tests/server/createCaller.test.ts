@@ -1,5 +1,5 @@
-import { ignoreErrors } from './___testHelpers';
-import { initTRPC } from '@trpc/server';
+import { ignoreErrors, waitError } from './___testHelpers';
+import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 describe('with context', () => {
@@ -144,4 +144,149 @@ test('docs', async () => {
   //       ^?
 
   expect(postList).toHaveLength(2);
+});
+
+type Context = {
+  foo?: 'bar';
+};
+const t = initTRPC.context<Context>().create();
+
+const { procedure } = t;
+
+test('undefined input query', async () => {
+  const router = t.router({
+    hello: procedure.query(() => 'world'),
+  });
+
+  const caller = router.createCaller({});
+  const result = await caller.hello();
+
+  expectTypeOf<string>(result);
+});
+
+test('input query', async () => {
+  const router = t.router({
+    greeting: t.procedure
+      .input(z.object({ name: z.string() }))
+      .query(({ input }) => `Hello ${input.name}`),
+  });
+
+  const caller = router.createCaller({});
+  const result = await caller.greeting({ name: 'Sachin' });
+
+  expectTypeOf<string>(result);
+});
+
+test('input mutation', async () => {
+  const posts = ['One', 'Two', 'Three'];
+
+  const router = t.router({
+    post: t.router({
+      delete: t.procedure.input(z.number()).mutation(({ input }) => {
+        posts.splice(input, 1);
+      }),
+    }),
+  });
+
+  const caller = router.createCaller({});
+  await caller.post.delete(0);
+
+  expect(posts).toStrictEqual(['Two', 'Three']);
+});
+
+test('input subscription', async () => {
+  const onDelete = vi.fn();
+  const router = t.router({
+    onDelete: t.procedure.subscription(onDelete),
+  });
+
+  const caller = router.createCaller({});
+  await caller.onDelete();
+
+  expect(onDelete).toHaveBeenCalledTimes(1);
+});
+
+test('context with middleware', async () => {
+  const isAuthed = t.middleware(({ next, ctx }) => {
+    if (!ctx.foo) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'You are not authorized',
+      });
+    }
+
+    return next();
+  });
+
+  const protectedProcedure = t.procedure.use(isAuthed);
+
+  const router = t.router({
+    secret: protectedProcedure.query(({ ctx }) => ctx.foo),
+  });
+
+  const caller = router.createCaller({});
+  const error = await waitError(caller.secret(), TRPCError);
+  expect(error.code).toBe('UNAUTHORIZED');
+  expect(error.message).toBe('You are not authorized');
+
+  const authorizedCaller = router.createCaller({ foo: 'bar' });
+  const result = await authorizedCaller.secret();
+  expect(result).toBe('bar');
+});
+
+describe('onError handler', () => {
+  const router = t.router({
+    thrower: t.procedure.query(() => {
+      throw new Error('error');
+    }),
+  });
+
+  const ctx: Context = {
+    foo: 'bar',
+  };
+
+  test('should call the onError handler when an error is thrown, rethrowing the error afterwards', async () => {
+    const callerHandler = vi.fn();
+    const caller = t.createCallerFactory(router)(ctx, {
+      onError: callerHandler,
+    });
+    await expect(caller.thrower()).rejects.toThrow('error');
+
+    expect(callerHandler).toHaveBeenCalledOnce();
+    expect(callerHandler.mock.calls[0]?.[0]).toMatchInlineSnapshot(`
+      Object {
+        "ctx": Object {
+          "foo": "bar",
+        },
+        "error": [TRPCError: error],
+        "input": undefined,
+        "path": "thrower",
+        "type": "query",
+      }
+    `);
+  });
+
+  test('rethrow errors', async () => {
+    const caller = t.createCallerFactory(router)(ctx, {
+      onError: () => {
+        throw new Error('custom error');
+      },
+    });
+
+    const err = await waitError(caller.thrower());
+
+    expect(err.message).toBe('custom error');
+  });
+
+  test('rethrow errors with createCaller()', async () => {
+    const caller = router.createCaller(ctx, {
+      onError: () => {
+        throw new Error('custom error');
+      },
+    });
+
+    const err = await waitError(caller.thrower());
+
+    expect(err.message).toBe('custom error');
+  });
 });

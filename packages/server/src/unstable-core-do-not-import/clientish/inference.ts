@@ -1,5 +1,9 @@
 import type { inferObservableValue } from '../../observable';
-import type { AnyProcedure, inferProcedureInput } from '../procedure';
+import type {
+  AnyProcedure,
+  inferProcedureInput,
+  inferProcedureOutput,
+} from '../procedure';
 import type { AnyRouter, RouterRecord } from '../router';
 import type {
   AnyClientTypes,
@@ -16,16 +20,16 @@ export type inferTransformedProcedureOutput<
   TInferrable extends InferrableClientTypes,
   TProcedure extends AnyProcedure,
 > = inferClientTypes<TInferrable>['transformer'] extends false
-  ? Serialize<TProcedure['_def']['_output_out']>
-  : TProcedure['_def']['_output_out'];
+  ? Serialize<inferProcedureOutput<TProcedure>>
+  : inferProcedureOutput<TProcedure>;
 /** @internal */
 
 export type inferTransformedSubscriptionOutput<
   TInferrable extends InferrableClientTypes,
   TProcedure extends AnyProcedure,
 > = inferClientTypes<TInferrable>['transformer'] extends false
-  ? Serialize<inferObservableValue<TProcedure['_def']['_output_out']>>
-  : inferObservableValue<TProcedure['_def']['_output_out']>;
+  ? Serialize<inferObservableValue<inferProcedureOutput<TProcedure>>>
+  : inferObservableValue<inferProcedureOutput<TProcedure>>;
 
 export type GetInferenceHelpers<
   TType extends 'input' | 'output',
@@ -33,13 +37,13 @@ export type GetInferenceHelpers<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? GetInferenceHelpers<TType, TRoot, $Value>
-      : $Value extends AnyProcedure
+    ? $Value extends AnyProcedure
       ? TType extends 'input'
         ? inferProcedureInput<$Value>
         : inferTransformedProcedureOutput<TRoot, $Value>
-      : never
+      : $Value extends RouterRecord
+        ? GetInferenceHelpers<TType, TRoot, $Value>
+        : never
     : never;
 };
 

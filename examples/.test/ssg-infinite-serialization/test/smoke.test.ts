@@ -5,7 +5,7 @@ test('query should be prefetched', async ({ page, javaScriptEnabled }) => {
   await page.goto('/');
 
   /**
-   * Since we're prefetching the query the data should be 
+   * Since we're prefetching the query the data should be
    * available immediately
    */
   expect(await page.textContent('text=First Post')).toBeTruthy();

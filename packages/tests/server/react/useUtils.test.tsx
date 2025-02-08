@@ -173,14 +173,23 @@ test('client mutation', async () => {
 test('fetch', async () => {
   const { client, App } = ctx;
 
+  const context = {
+    ___TEST___: true,
+  };
   function MyComponent() {
     const utils = client.useUtils();
     const [posts, setPosts] = useState<Post[]>([]);
 
     useEffect(() => {
-      utils.post.all.fetch().then((allPosts) => {
-        setPosts(allPosts);
-      });
+      utils.post.all
+        .fetch(undefined, {
+          trpc: {
+            context,
+          },
+        })
+        .then((allPosts) => {
+          setPosts(allPosts);
+        });
     }, []);
 
     return <p>{posts[0]?.text}</p>;
@@ -194,11 +203,17 @@ test('fetch', async () => {
   await waitFor(() => {
     expect(utils.container).toHaveTextContent('new post');
   });
+
+  expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
 });
 
 test('prefetch', async () => {
   const { client, App } = ctx;
   const renderclient = vi.fn();
+
+  const context = {
+    ___TEST___: true,
+  };
 
   function Posts() {
     const allPosts = client.post.all.useQuery();
@@ -216,9 +231,15 @@ test('prefetch', async () => {
     const utils = client.useUtils();
     const [hasPrefetched, setHasPrefetched] = useState(false);
     useEffect(() => {
-      utils.post.all.prefetch().then(() => {
-        setHasPrefetched(true);
-      });
+      utils.post.all
+        .prefetch(undefined, {
+          trpc: {
+            context,
+          },
+        })
+        .then(() => {
+          setHasPrefetched(true);
+        });
     }, [utils]);
 
     return hasPrefetched ? <Posts /> : null;
@@ -233,6 +254,8 @@ test('prefetch', async () => {
   await waitFor(() => {
     expect(renderclient).toHaveBeenNthCalledWith<[Post[]]>(1, [defaultPost]);
   });
+
+  expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
 });
 
 test('invalidate', async () => {
@@ -266,6 +289,9 @@ test('invalidate', async () => {
 
                   // @ts-expect-error Should not exist
                   utils.post.create.invalidate;
+
+                  // @ts-expect-error Should not exist
+                  utils.post.all.setMutationDefaults;
                 },
               },
             );
@@ -778,7 +804,7 @@ describe('cancel', () => {
 describe('query keys are stored separately', () => {
   test('getInfiniteData() does not data from useQuery()', async () => {
     const { client, App } = ctx;
-    const unset = '__unset' as const;
+    const unset = '__unset';
     const data = {
       infinite: unset as unknown,
       query: unset as unknown,
@@ -817,5 +843,50 @@ describe('query keys are stored separately', () => {
       ]
     `);
     expect(data.infinite).toBeUndefined();
+  });
+});
+
+test('isMutating', async () => {
+  const { client, App } = ctx;
+
+  function MyComponent() {
+    const createPostMutation = client.post.create.useMutation();
+    const isMutating = client.useUtils().post.create.isMutating();
+    const [isMutatingHistory, setIsMutatingHistory] = useState<number[]>([]);
+
+    useEffect(() => {
+      setIsMutatingHistory((prev) => {
+        const last = prev[prev.length - 1];
+        return last !== isMutating ? [...prev, isMutating] : prev;
+      });
+    });
+
+    return (
+      <>
+        <button
+          data-testid="add-post"
+          onClick={() => {
+            createPostMutation.mutate({ text: '' });
+          }}
+        />
+        <span data-testid="is-mutating-history">
+          {isMutatingHistory.join(',')}
+        </span>
+      </>
+    );
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+
+  const addPostButton = await utils.findByTestId('add-post');
+  const isMutatingHistorySpan = await utils.findByTestId('is-mutating-history');
+
+  await userEvent.click(addPostButton);
+  await waitFor(() => {
+    expect(isMutatingHistorySpan).toHaveTextContent('0,1,0');
   });
 });

@@ -1,4 +1,4 @@
-import { api } from '~/trpc/server-http';
+import { api } from '~/trpc/server-invoker';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +23,7 @@ export default async function PostPage() {
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <span>Title: {latestPost.title}</span>
         <span>Content: {latestPost.content}</span>
-        <span>Created At: {latestPost.createdAt.toISOString()}</span>
+        <span>Created At: {latestPost.createdAt.toLocaleString()}</span>
       </div>
       <form
         style={{

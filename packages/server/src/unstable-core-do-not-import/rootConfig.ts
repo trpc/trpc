@@ -1,5 +1,7 @@
 import type { CombinedDataTransformer } from '../unstable-core-do-not-import';
 import type { DefaultErrorShape, ErrorFormatter } from './error/formatter';
+import type { JSONLProducerOptions } from './stream/jsonl';
+import type { SSEStreamProducerOptions } from './stream/sse';
 
 /**
  * The initial generics that are used in the init function
@@ -35,12 +37,12 @@ export interface RootConfig<TTypes extends RootTypes> {
   $types: TTypes;
   /**
    * Use a data transformer
-   * @link https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/v11/data-transformers
    */
   transformer: CombinedDataTransformer;
   /**
    * Use custom error formatting
-   * @link https://trpc.io/docs/v11/error-formatting
+   * @see https://trpc.io/docs/v11/error-formatting
    */
   errorFormatter: ErrorFormatter<TTypes['ctx'], TTypes['errorShape']>;
   /**
@@ -63,6 +65,28 @@ export interface RootConfig<TTypes extends RootTypes> {
   isDev: boolean;
 
   defaultMeta?: TTypes['meta'] extends object ? TTypes['meta'] : never;
+
+  /**
+   * Options for server-sent events (SSE) subscriptions
+   * @see https://trpc.io/docs/client/links/httpSubscriptionLink
+   */
+  sse?: {
+    /**
+     * Enable server-sent events (SSE) subscriptions
+     * @default true
+     */
+    enabled?: boolean;
+  } & Pick<
+    SSEStreamProducerOptions,
+    'ping' | 'emitAndEndImmediately' | 'maxDurationMs' | 'client'
+  >;
+
+  /**
+   * Options for batch stream
+   * @see https://trpc.io/docs/client/links/httpBatchStreamLink
+   */
+  jsonl?: Pick<JSONLProducerOptions, 'pingMs'>;
+  experimental?: {};
 }
 
 /**
@@ -76,3 +100,24 @@ export type AnyRootTypes = CreateRootTypes<{
   errorShape: any;
   transformer: any;
 }>;
+
+type PartialIf<TCondition extends boolean, TType> = TCondition extends true
+  ? Partial<TType>
+  : TType;
+
+/**
+ * Adds a `createContext` option with a given callback function
+ * If context is the default value, then the `createContext` option is optional
+ */
+export type CreateContextCallback<
+  TContext,
+  TFunction extends (...args: any[]) => any,
+> = PartialIf<
+  object extends TContext ? true : false,
+  {
+    /**
+     * @see https://trpc.io/docs/v11/context
+     **/
+    createContext: TFunction;
+  }
+>;

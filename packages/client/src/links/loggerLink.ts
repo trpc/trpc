@@ -6,7 +6,10 @@
 // even if end-user `tsconfig.json` omits it in the `lib` array.
 
 import { observable, tap } from '@trpc/server/observable';
-import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  AnyRouter,
+  InferrableClientTypes,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCClientError } from '../TRPCClientError';
 import type { Operation, OperationResultEnvelope, TRPCLink } from './types';
 
@@ -15,10 +18,12 @@ type ConsoleEsque = {
   error: (...args: any[]) => void;
 };
 
-type EnableFnOptions<TRouter extends AnyRouter> =
+type EnableFnOptions<TRouter extends InferrableClientTypes> =
   | {
       direction: 'down';
-      result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
+      result:
+        | OperationResultEnvelope<unknown, TRPCClientError<TRouter>>
+        | TRPCClientError<TRouter>;
     }
   | (Operation & {
       direction: 'up';
@@ -34,7 +39,9 @@ type LoggerLinkFnOptions<TRouter extends AnyRouter> = Operation &
          * Request result
          */
         direction: 'down';
-        result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>;
+        result:
+          | OperationResultEnvelope<unknown, TRPCClientError<TRouter>>
+          | TRPCClientError<TRouter>;
         elapsedMs: number;
       }
     | {
@@ -49,6 +56,8 @@ type LoggerLinkFn<TRouter extends AnyRouter> = (
   opts: LoggerLinkFnOptions<TRouter>,
 ) => void;
 
+type ColorMode = 'ansi' | 'css' | 'none';
+
 export interface LoggerLinkOptions<TRouter extends AnyRouter> {
   logger?: LoggerLinkFn<TRouter>;
   enabled?: EnabledFn<TRouter>;
@@ -60,7 +69,12 @@ export interface LoggerLinkOptions<TRouter extends AnyRouter> {
    * Color mode
    * @default typeof window === 'undefined' ? 'ansi' : 'css'
    */
-  colorMode?: 'ansi' | 'css';
+  colorMode?: ColorMode;
+
+  /**
+   * Include context in the log - defaults to false unless `colorMode` is 'css'
+   */
+  withContext?: boolean;
 }
 
 function isFormData(value: unknown): value is FormData {
@@ -96,15 +110,18 @@ const palettes = {
 
 function constructPartsAndArgs(
   opts: LoggerLinkFnOptions<any> & {
-    colorMode: 'ansi' | 'css';
+    colorMode: ColorMode;
+    withContext?: boolean;
   },
 ) {
-  const { direction, type, path, id, input } = opts;
+  const { direction, type, withContext, path, id, input } = opts;
 
   const parts: string[] = [];
   const args: any[] = [];
 
-  if (opts.colorMode === 'ansi') {
+  if (opts.colorMode === 'none') {
+    parts.push(direction === 'up' ? '>>' : '<<', type, `#${id}`, path);
+  } else if (opts.colorMode === 'ansi') {
     const [lightRegular, darkRegular] = palettes.ansi.regular[type];
     const [lightBold, darkBold] = palettes.ansi.bold[type];
     const reset = '\x1b[0m';
@@ -118,46 +135,38 @@ function constructPartsAndArgs(
       path,
       reset,
     );
-
-    if (direction === 'up') {
-      args.push({ input: opts.input });
-    } else {
-      args.push({
-        input: opts.input,
-        // strip context from result cause it's too noisy in terminal wihtout collapse mode
-        result: 'result' in opts.result ? opts.result.result : opts.result,
-        elapsedMs: opts.elapsedMs,
-      });
-    }
-
-    return { parts, args };
-  }
-
-  const [light, dark] = palettes.css[type];
-  const css = `
+  } else {
+    // css color mode
+    const [light, dark] = palettes.css[type];
+    const css = `
     background-color: #${direction === 'up' ? light : dark};
     color: ${direction === 'up' ? 'black' : 'white'};
     padding: 2px;
   `;
 
-  parts.push(
-    '%c',
-    direction === 'up' ? '>>' : '<<',
-    type,
-    `#${id}`,
-    `%c${path}%c`,
-    '%O',
-  );
-  args.push(css, `${css}; font-weight: bold;`, `${css}; font-weight: normal;`);
+    parts.push(
+      '%c',
+      direction === 'up' ? '>>' : '<<',
+      type,
+      `#${id}`,
+      `%c${path}%c`,
+      '%O',
+    );
+    args.push(
+      css,
+      `${css}; font-weight: bold;`,
+      `${css}; font-weight: normal;`,
+    );
+  }
 
   if (direction === 'up') {
-    args.push({ input, context: opts.context });
+    args.push(withContext ? { input, context: opts.context } : { input });
   } else {
     args.push({
       input,
       result: opts.result,
       elapsedMs: opts.elapsedMs,
-      context: opts.context,
+      ...(withContext && { context: opts.context }),
     });
   }
 
@@ -169,9 +178,11 @@ const defaultLogger =
   <TRouter extends AnyRouter>({
     c = console,
     colorMode = 'css',
+    withContext,
   }: {
     c?: ConsoleEsque;
-    colorMode?: 'ansi' | 'css';
+    colorMode?: ColorMode;
+    withContext?: boolean;
   }): LoggerLinkFn<TRouter> =>
   (props) => {
     const rawInput = props.input;
@@ -183,12 +194,14 @@ const defaultLogger =
       ...props,
       colorMode,
       input,
+      withContext,
     });
 
     const fn: 'error' | 'log' =
       props.direction === 'down' &&
       props.result &&
-      (props.result instanceof Error || 'error' in props.result.result)
+      (props.result instanceof Error ||
+        ('error' in props.result.result && props.result.result.error))
         ? 'error'
         : 'log';
 
@@ -196,7 +209,7 @@ const defaultLogger =
   };
 
 /**
- * @link https://trpc.io/docs/v11/client/links/loggerLink
+ * @see https://trpc.io/docs/v11/client/links/loggerLink
  */
 export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
   opts: LoggerLinkOptions<TRouter> = {},
@@ -205,30 +218,37 @@ export function loggerLink<TRouter extends AnyRouter = AnyRouter>(
 
   const colorMode =
     opts.colorMode ?? (typeof window === 'undefined' ? 'ansi' : 'css');
-  const { logger = defaultLogger({ c: opts.console, colorMode }) } = opts;
+  const withContext = opts.withContext ?? colorMode === 'css';
+  const {
+    logger = defaultLogger({ c: opts.console, colorMode, withContext }),
+  } = opts;
 
   return () => {
     return ({ op, next }) => {
       return observable((observer) => {
         // ->
-        enabled({ ...op, direction: 'up' }) &&
+        if (enabled({ ...op, direction: 'up' })) {
           logger({
             ...op,
             direction: 'up',
           });
+        }
         const requestStartTime = Date.now();
         function logResult(
-          result: OperationResultEnvelope<unknown> | TRPCClientError<TRouter>,
+          result:
+            | OperationResultEnvelope<unknown, TRPCClientError<TRouter>>
+            | TRPCClientError<TRouter>,
         ) {
           const elapsedMs = Date.now() - requestStartTime;
 
-          enabled({ ...op, direction: 'down', result }) &&
+          if (enabled({ ...op, direction: 'down', result })) {
             logger({
               ...op,
               direction: 'down',
               elapsedMs,
               result,
             });
+          }
         }
         return next(op)
           .pipe(

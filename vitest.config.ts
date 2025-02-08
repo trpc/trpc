@@ -34,7 +34,7 @@ for (const pkg of dirs.sort()) {
 }
 
 export default defineConfig({
-  clearScreen: false,
+  clearScreen: true,
   test: {
     environment: 'jsdom',
     globals: true,
@@ -45,11 +45,21 @@ export default defineConfig({
     coverage: {
       provider: 'istanbul',
       include: ['**/src/**'],
-      exclude: ['**/www/**', '**/examples/**'],
+      exclude: [
+        '**/www/**',
+        '**/examples/**',
+        // skip codecov for experimental features
+        // FIXME: delete me once they're stable
+        '**/next/src/app-dir/**',
+        '**/server/src/adapters/next-app-dir/**',
+      ],
     },
     poolOptions: {
       threads: {
         useAtomics: !!process.env['CI'],
+      },
+      forks: {
+        execArgv: ['--expose-gc'],
       },
     },
   },

@@ -12,8 +12,8 @@ You may need to call your procedure(s) directly from the same server they're hos
 `createCaller` should not be used to call procedures from within other procedures. This creates overhead by (potentially) creating context again, executing all middlewares, and validating the input - all of which were already done by the current procedure. Instead, you should extract the shared logic into a separate function and call that from within the procedures, like so:
 
 <div className="flex gap-2 w-full justify-between pt-2">
-  <img src="https://user-images.githubusercontent.com/51714798/212568342-0a8440cb-68ed-48ae-9849-8c7bc417633e.png" className="w-[49.5%]" />
-  <img src="https://user-images.githubusercontent.com/51714798/212568254-06cc56d0-35f6-4bb5-bff9-d25caf092c2c.png" className="w-[49.5%]" />
+  <img src="https://assets.trpc.io/www/docs/server/server-side-calls/bad.png" className="w-[49.5%]" />
+  <img src="https://assets.trpc.io/www/docs/server/server-side-calls/good.png" className="w-[49.5%]" />
 </div>
 
 :::
@@ -89,7 +89,7 @@ const postList = await caller.post.list();
 
 ### Example usage in an integration test
 
-> Taken from <https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts>
+> Taken from [https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts](https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts)
 
 ```ts
 import { inferProcedureInput } from '@trpc/server';
@@ -290,4 +290,56 @@ export default async (
     });
   }
 };
+```
+
+### Error handling
+
+The `createFactoryCaller` and the `createCaller` function can take an error handler through the `onError` option. This can be used to throw errors that are not wrapped in a TRPCError, or respond to errors in some other way. Any handler passed to createCallerFactory will be called before the handler passed to createCaller.
+The handler is called with the same arguments as an error formatter would be, except for the shape field:
+
+```ts
+{
+  ctx: unknown; // The request context
+  error: TRPCError; // The TRPCError that was thrown
+  path: string | undefined; // The path of the procedure that threw the error
+  input: unknown; // The input that was passed to the procedure
+  type: 'query' | 'mutation' | 'subscription' | 'unknown'; // The type of the procedure that threw the error
+}
+```
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC
+  .context<{
+    foo?: 'bar';
+  }>()
+  .create();
+
+const router = t.router({
+  greeting: t.procedure.input(z.object({ name: z.string() })).query((opts) => {
+    if (opts.input.name === 'invalid') {
+      throw new Error('Invalid name');
+    }
+
+    return `Hello ${opts.input.name}`;
+  }),
+});
+
+const caller = router.createCaller(
+  {
+    /* context */
+  },
+  {
+    onError: (opts) => {
+      console.error('An error occurred:', opts.error);
+    },
+  },
+);
+
+// The following will log "An error occurred: Error: Invalid name", and then throw a plain error
+//  with the message "This is a custom error"
+await caller.greeting({ name: 'invalid' });
 ```

@@ -5,7 +5,7 @@ sidebar_label: WebSocket Link
 slug: /client/links/wsLink
 ---
 
-`wsLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../../further/subscriptions.md).
+`wsLink` is a [**terminating link**](./overview.md#the-terminating-link) that's used when using tRPC's WebSockets Client and Subscriptions, which you can learn more about [here](../../server/subscriptions.md)).
 
 ## Usage
 
@@ -24,7 +24,11 @@ const trpcClient = createTRPCClient<AppRouter>({
 });
 ```
 
-## `wsLink` Options
+## Authentication / Connection params
+
+[See more here](../../server/websockets.md#connection-params)
+
+## `wsLink` / `createWSClient` Options
 
 The `wsLink` function requires a `TRPCWebSocketClient` to be passed, which can be configured with the fields defined in `WebSocketClientOptions`:
 
@@ -33,7 +37,7 @@ export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
   /**
    * Data transformer
-   * @link https://trpc.io/docs/v11/data-transformers
+   * @see https://trpc.io/docs/v11/data-transformers
    **/
   transformer?: DataTransformerOptions;
 }
@@ -47,6 +51,11 @@ export interface WebSocketClientOptions {
    */
   url: string | (() => MaybePromise<string>);
   /**
+   * Connection params that are available in `createContext()`
+   * These are sent as the first message
+   */
+  connectionParams: string | (() => MaybePromise<string>);
+  /**
    * Ponyfill which WebSocket implementation to use
    */
   WebSocket?: typeof WebSocket;
@@ -59,6 +68,10 @@ export interface WebSocketClientOptions {
    * Triggered when a WebSocket connection is established
    */
   onOpen?: () => void;
+  /**
+   * Triggered when a WebSocket connection encounters an error
+   */
+  onError?: (evt?: Event) => void;
   /**
    * Triggered when a WebSocket connection is closed
    */
@@ -77,6 +90,25 @@ export interface WebSocketClientOptions {
      * @default 0
      */
     closeMs: number;
+  };
+  /**
+   * Send ping messages to the server and kill the connection if no pong message is returned
+   */
+  keepAlive?: {
+    /**
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Send a ping message every this many milliseconds
+     * @default 5_000
+     */
+    intervalMs?: number;
+    /**
+     * Close the WebSocket after this many milliseconds if the server does not respond
+     * @default 1_000
+     */
+    pongTimeoutMs?: number;
   };
 }
 ```

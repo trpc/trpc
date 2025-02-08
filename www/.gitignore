@@ -21,3 +21,6 @@ yarn-error.log*
 
 
 .env
+
+
+/src/components/CompaniesUsing.script.output.ts

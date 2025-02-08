@@ -4,10 +4,11 @@ on:
   push:
     branches:
       # Replace this with the branch you want to release from
-      # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
-      - 'issues/4129-lazy-routers'
-      # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
+      # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
+      - '01-22-fix'
+      # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
     paths:
+      - '.github/setup/*'
       - '.github/workflows/release-tmp.yml'
       - 'packages/**'
       - '!packages/**/package.json'

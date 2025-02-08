@@ -1,18 +1,16 @@
+import type { Result } from '../unstable-core-do-not-import';
 import type {
   Observable,
   Observer,
   OperatorFunction,
   TeardownLogic,
   UnaryFunction,
+  Unsubscribable,
 } from './types';
 
 /** @public */
-export type inferObservableValue<TObservable> = TObservable extends Observable<
-  infer TValue,
-  unknown
->
-  ? TValue
-  : never;
+export type inferObservableValue<TObservable> =
+  TObservable extends Observable<infer TValue, unknown> ? TValue : never;
 
 /** @public */
 export function isObservable(x: unknown): x is Observable<unknown, unknown> {
@@ -89,19 +87,11 @@ function pipeReducer(prev: any, fn: UnaryFunction<any, any>) {
   return fn(prev);
 }
 
-class ObservableAbortError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ObservableAbortError';
-    Object.setPrototypeOf(this, ObservableAbortError.prototype);
-  }
-}
-
 /** @internal */
 export function observableToPromise<TValue>(
   observable: Observable<TValue, unknown>,
 ) {
-  let abort: () => void;
+  const ac = new AbortController();
   const promise = new Promise<TValue>((resolve, reject) => {
     let isDone = false;
     function onDone() {
@@ -109,9 +99,11 @@ export function observableToPromise<TValue>(
         return;
       }
       isDone = true;
-      reject(new ObservableAbortError('This operation was aborted.'));
       obs$.unsubscribe();
     }
+    ac.signal.addEventListener('abort', () => {
+      reject(ac.signal.reason);
+    });
     const obs$ = observable.subscribe({
       next(data) {
         isDone = true;
@@ -119,20 +111,96 @@ export function observableToPromise<TValue>(
         onDone();
       },
       error(data) {
-        isDone = true;
         reject(data);
-        onDone();
       },
       complete() {
-        isDone = true;
+        ac.abort();
         onDone();
       },
     });
-    abort = onDone;
   });
+  return promise;
+}
+
+/**
+ * @internal
+ */
+function observableToReadableStream<TValue>(
+  observable: Observable<TValue, unknown>,
+  signal: AbortSignal,
+): ReadableStream<Result<TValue>> {
+  let unsub: Unsubscribable | null = null;
+
+  const onAbort = () => {
+    unsub?.unsubscribe();
+    unsub = null;
+    signal.removeEventListener('abort', onAbort);
+  };
+
+  return new ReadableStream<Result<TValue>>({
+    start(controller) {
+      unsub = observable.subscribe({
+        next(data) {
+          controller.enqueue({ ok: true, value: data });
+        },
+        error(error) {
+          controller.enqueue({ ok: false, error });
+          controller.close();
+        },
+        complete() {
+          controller.close();
+        },
+      });
+
+      if (signal.aborted) {
+        onAbort();
+      } else {
+        signal.addEventListener('abort', onAbort, { once: true });
+      }
+    },
+    cancel() {
+      onAbort();
+    },
+  });
+}
+
+/** @internal */
+export function observableToAsyncIterable<TValue>(
+  observable: Observable<TValue, unknown>,
+  signal: AbortSignal,
+): AsyncIterable<TValue> {
+  const stream = observableToReadableStream(observable, signal);
+
+  const reader = stream.getReader();
+  const iterator: AsyncIterator<TValue> = {
+    async next() {
+      const value = await reader.read();
+      if (value.done) {
+        return {
+          value: undefined,
+          done: true,
+        };
+      }
+      const { value: result } = value;
+      if (!result.ok) {
+        throw result.error;
+      }
+      return {
+        value: result.value,
+        done: false,
+      };
+    },
+    async return() {
+      await reader.cancel();
+      return {
+        value: undefined,
+        done: true,
+      };
+    },
+  };
   return {
-    promise,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    abort: abort!,
+    [Symbol.asyncIterator]() {
+      return iterator;
+    },
   };
 }

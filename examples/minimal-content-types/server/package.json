@@ -1,0 +1,22 @@
+{
+  "name": "examples-minimal-content-types-react-server",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch index.ts",
+    "lint": "eslint --cache index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@trpc/server": "npm:@trpc/server@next",
+    "cors": "^2.8.5",
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.13",
+    "@types/node": "^22.9.0",
+    "eslint": "^9.13.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.2"
+  }
+}

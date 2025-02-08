@@ -1,8 +1,10 @@
 import type {
   CreateTRPCClientOptions,
+  inferRouterClient,
   Resolver,
-  TRPCUntypedClient,
 } from '@trpc/client';
+import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
+import type { inferProcedureOutput } from '@trpc/server';
 import type {
   AnyClientTypes,
   AnyProcedure,
@@ -24,30 +26,35 @@ export type UseProcedureRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? UseProcedureRecord<TRoot, $Value>
-      : $Value extends AnyQueryProcedure
+    ? $Value extends AnyQueryProcedure
       ? Resolver<{
           input: inferProcedureInput<$Value>;
           output: inferTransformedProcedureOutput<TRoot, $Value>;
           errorShape: TRoot['errorShape'];
           transformer: TRoot['transformer'];
         }>
-      : never
+      : $Value extends RouterRecord
+        ? UseProcedureRecord<TRoot, $Value>
+        : never
     : never;
 };
 
 export function createUseProxy<TRouter extends AnyRouter>(
-  client: TRPCUntypedClient<TRouter>,
+  client: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter>,
 ) {
-  return createRecursiveProxy((opts) => {
+  const untypedClient: TRPCUntypedClient<TRouter> =
+    client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
+
+  return createRecursiveProxy<
+    UseProcedureRecord<
+      TRouter['_def']['_config']['$types'],
+      TRouter['_def']['record']
+    >
+  >((opts) => {
     const path = opts.path.join('.');
 
-    return client.query(path, ...opts.args);
-  }) as UseProcedureRecord<
-    TRouter['_def']['_config']['$types'],
-    TRouter['_def']['record']
-  >;
+    return untypedClient.query(path, ...opts.args);
+  });
 }
 
 type NextAppRouterUse<TRouter extends AnyRouter> = {
@@ -124,6 +131,6 @@ export type inferActionDef<
   TProc extends AnyProcedure,
 > = {
   input: inferProcedureInput<TProc>;
-  output: TProc['_def']['_output_out'];
+  output: inferProcedureOutput<TProc>;
   errorShape: TRoot['errorShape'];
 };

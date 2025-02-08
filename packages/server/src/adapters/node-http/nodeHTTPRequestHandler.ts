@@ -7,154 +7,115 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+
 // @trpc/server
-import type { AnyRouter } from '../../@trpc/server';
-import type {
-  HTTPRequest,
-  HTTPResponse,
-  ResolveHTTPRequestOptionsContextFn,
-  ResponseChunk,
-} from '../../@trpc/server/http';
+
 import {
-  getBatchStreamFormatter,
-  resolveHTTPResponse,
-} from '../../@trpc/server/http';
-import { nodeHTTPJSONContentTypeHandler } from './content-type/json';
-import type { NodeHTTPContentTypeHandler } from './internals/contentType';
+  getTRPCErrorFromUnknown,
+  transformTRPCResponse,
+  type AnyRouter,
+} from '../../@trpc/server';
+import type { ResolveHTTPRequestOptionsContextFn } from '../../@trpc/server/http';
+import { resolveResponse } from '../../@trpc/server/http';
+// eslint-disable-next-line no-restricted-imports
+import { getErrorShape, run } from '../../unstable-core-do-not-import';
+import { incomingMessageToRequest } from './incomingMessageToRequest';
 import type {
   NodeHTTPRequest,
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
 } from './types';
+import { writeResponse } from './writeResponse';
 
-const defaultJSONContentTypeHandler = nodeHTTPJSONContentTypeHandler();
+/**
+ * @internal
+ */
+export function internal_exceptionHandler<
+  TRouter extends AnyRouter,
+  TRequest extends NodeHTTPRequest,
+  TResponse extends NodeHTTPResponse,
+>(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
+  return (cause: unknown) => {
+    const { res, req } = opts;
+    const error = getTRPCErrorFromUnknown(cause);
 
+    const shape = getErrorShape({
+      config: opts.router._def._config,
+      error,
+      type: 'unknown',
+      path: undefined,
+      input: undefined,
+      ctx: undefined,
+    });
+
+    opts.onError?.({
+      req,
+      error,
+      type: 'unknown',
+      path: undefined,
+      input: undefined,
+      ctx: undefined,
+    });
+
+    const transformed = transformTRPCResponse(opts.router._def._config, {
+      error: shape,
+    });
+
+    res.statusCode = shape.data.httpStatus;
+    res.end(JSON.stringify(transformed));
+  };
+}
+
+/**
+ * @remark the promise never rejects
+ */
 export async function nodeHTTPRequestHandler<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
 >(opts: NodeHTTPRequestHandlerOptions<TRouter, TRequest, TResponse>) {
-  const handleViaMiddleware = opts.middleware ?? ((_req, _res, next) => next());
+  return new Promise<void>((resolve) => {
+    const handleViaMiddleware =
+      opts.middleware ?? ((_req, _res, next) => next());
 
-  return handleViaMiddleware(opts.req, opts.res, async (err) => {
-    if (err) throw err;
-
-    //
-    // Build tRPC dependencies
-
-    const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
-      innerOpts,
-    ) => {
-      return await opts.createContext?.({
-        ...opts,
-        ...innerOpts,
-      });
-    };
-
-    const query = opts.req.query
-      ? new URLSearchParams(opts.req.query as any)
-      : new URLSearchParams(opts.req.url!.split('?')[1]);
-
-    const jsonContentTypeHandler =
-      defaultJSONContentTypeHandler as unknown as NodeHTTPContentTypeHandler<
-        TRequest,
-        TResponse
-      >;
-
-    const contentTypeHandlers = opts.experimental_contentTypeHandlers ?? [
-      jsonContentTypeHandler,
-    ];
-
-    const contentTypeHandler =
-      contentTypeHandlers.find((handler) =>
-        handler.isMatch({
-          // FIXME: no typecasting should be needed here
-          ...(opts as any),
-          query,
-        }),
-      ) ??
-      // fallback to json
-      jsonContentTypeHandler;
-
-    const bodyResult = await contentTypeHandler.getBody({
-      // FIXME: no typecasting should be needed here
-      ...(opts as any),
-      query,
+    opts.res.once('finish', () => {
+      resolve();
     });
-
-    const req: HTTPRequest = {
-      method: opts.req.method!,
-      headers: opts.req.headers,
-      query,
-      body: bodyResult.ok ? bodyResult.data : undefined,
-    };
-
-    let isStream = false;
-    let formatter: ReturnType<typeof getBatchStreamFormatter>;
-    const unstable_onHead = (head: HTTPResponse, isStreaming: boolean) => {
-      if (
-        'status' in head &&
-        (!opts.res.statusCode || opts.res.statusCode === 200)
-      ) {
-        opts.res.statusCode = head.status;
-      }
-      for (const [key, value] of Object.entries(head.headers ?? {})) {
-        /* istanbul ignore if -- @preserve */
-        if (typeof value === 'undefined') {
-          continue;
-        }
-        opts.res.setHeader(key, value);
-      }
-      if (isStreaming) {
-        opts.res.setHeader('Transfer-Encoding', 'chunked');
-        const vary = opts.res.getHeader('Vary');
-        opts.res.setHeader(
-          'Vary',
-          vary ? 'trpc-batch-mode, ' + vary : 'trpc-batch-mode',
-        );
-        isStream = true;
-        formatter = getBatchStreamFormatter();
-        opts.res.flushHeaders();
-      }
-    };
-
-    const unstable_onChunk = ([index, string]: ResponseChunk) => {
-      if (index === -1) {
-        /**
-         * Full response, no streaming. This can happen
-         * - if the response is an error
-         * - if response is empty (HEAD request)
-         */
-        opts.res.end(string);
-      } else {
-        opts.res.write(formatter!(index, string));
-        opts.res.flush?.();
-      }
-    };
-
-    await resolveHTTPResponse<TRouter, HTTPRequest>({
-      ...opts,
-      req,
-      createContext,
-      error: bodyResult.ok ? null : bodyResult.error,
-      preprocessedBody: bodyResult.ok ? bodyResult.preprocessed : false,
-      onError(o) {
-        opts?.onError?.({
-          ...o,
-          req: opts.req,
+    return handleViaMiddleware(opts.req, opts.res, (err: unknown) => {
+      run(async () => {
+        const request = incomingMessageToRequest(opts.req, opts.res, {
+          maxBodySize: opts.maxBodySize ?? null,
         });
-      },
-      contentTypeHandler,
-      unstable_onHead,
-      unstable_onChunk,
+
+        // Build tRPC dependencies
+        const createContext: ResolveHTTPRequestOptionsContextFn<
+          TRouter
+        > = async (innerOpts) => {
+          return await opts.createContext?.({
+            ...opts,
+            ...innerOpts,
+          });
+        };
+
+        const response = await resolveResponse({
+          ...opts,
+          req: request,
+          error: err ? getTRPCErrorFromUnknown(err) : null,
+          createContext,
+          onError(o) {
+            opts?.onError?.({
+              ...o,
+              req: opts.req,
+            });
+          },
+        });
+
+        await writeResponse({
+          request,
+          response,
+          rawResponse: opts.res,
+        });
+      }).catch(internal_exceptionHandler(opts));
     });
-
-    if (isStream) {
-      opts.res.write(formatter!.end());
-      opts.res.end();
-    }
-
-    return opts.res;
   });
 }

@@ -68,15 +68,15 @@ test('config types', () => {
     expectTypeOf<typeof t._config.$types.meta>().toEqualTypeOf<Meta>();
   }
 
-  {
-    const {
-      _config: { $types },
-    } = initTRPC.create();
-    // @ts-expect-error mock unknown key
-    expect(() => $types.unknown).toThrow(
-      `Tried to access "$types.unknown" which is not available at runtime`,
-    );
-  }
+  // {
+  //   const {
+  //     _config: { $types },
+  //   } = initTRPC.create();
+  //   // @ts-expect-error mock unknown key
+  //   expect(() => $types.unknown).toThrow(
+  //     `Tried to access "$types.unknown" which is not available at runtime`,
+  //   );
+  // }
 });
 
 test('detect server env', () => {

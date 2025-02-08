@@ -8,8 +8,7 @@ import {
 } from '@trpc/next/app-dir/client';
 import { experimental_nextHttpLink } from '@trpc/next/app-dir/links/nextHttp';
 import type { AppRouter } from '~/server/routers/_app';
-import superjson from 'superjson';
-import { getUrl } from './shared';
+import { getUrl, transformer } from './shared';
 
 export const api = experimental_createTRPCNextAppDirClient<AppRouter>({
   config() {
@@ -19,7 +18,7 @@ export const api = experimental_createTRPCNextAppDirClient<AppRouter>({
           enabled: (op) => true,
         }),
         experimental_nextHttpLink({
-          transformer: superjson,
+          transformer,
           batch: true,
           url: getUrl(),
           headers() {
@@ -37,7 +36,7 @@ export const useAction = experimental_createActionHook<AppRouter>({
   links: [
     loggerLink(),
     experimental_serverActionLink({
-      transformer: superjson,
+      transformer,
     }),
   ],
 });

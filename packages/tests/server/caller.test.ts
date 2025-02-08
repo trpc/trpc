@@ -1,92 +1,83 @@
-import { waitError } from './___testHelpers';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-const t = initTRPC
-  .context<{
-    foo?: 'bar';
-  }>()
-  .create();
+test('experimental caller', async () => {
+  const t = initTRPC.create();
 
-const { procedure } = t;
-
-test('undefined input query', async () => {
-  const router = t.router({
-    hello: procedure.query(() => 'world'),
-  });
-
-  const caller = router.createCaller({});
-  const result = await caller.hello();
-
-  expectTypeOf<string>(result);
-});
-
-test('input query', async () => {
-  const router = t.router({
-    greeting: t.procedure
-      .input(z.object({ name: z.string() }))
-      .query(({ input }) => `Hello ${input.name}`),
-  });
-
-  const caller = router.createCaller({});
-  const result = await caller.greeting({ name: 'Sachin' });
-
-  expectTypeOf<string>(result);
-});
-
-test('input mutation', async () => {
-  const posts = ['One', 'Two', 'Three'];
-
-  const router = t.router({
-    post: t.router({
-      delete: t.procedure.input(z.number()).mutation(({ input }) => {
-        posts.splice(input, 1);
-      }),
-    }),
-  });
-
-  const caller = router.createCaller({});
-  await caller.post.delete(0);
-
-  expect(posts).toStrictEqual(['Two', 'Three']);
-});
-
-test('input subscription', async () => {
-  const onDelete = vi.fn();
-  const router = t.router({
-    onDelete: t.procedure.subscription(onDelete),
-  });
-
-  const caller = router.createCaller({});
-  await caller.onDelete();
-
-  expect(onDelete).toHaveBeenCalledTimes(1);
-});
-
-test('context with middleware', async () => {
-  const isAuthed = t.middleware(({ next, ctx }) => {
-    if (!ctx.foo) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: 'You are not authorized',
+  const base = t.procedure
+    .use((opts) => {
+      return opts.next({
+        ctx: {
+          foo: 'bar' as const,
+        },
       });
-    }
+    })
+    .experimental_caller(async (opts) => {
+      switch (opts._def.type) {
+        case 'mutation': {
+          /**
+           * When you wrap an action with useFormState, it gets an extra argument as its first argument.
+           * The submitted form data is therefore its second argument instead of its first as it would usually be.
+           * The new first argument that gets added is the current state of the form.
+           * @see https://react.dev/reference/react-dom/hooks/useFormState#my-action-can-no-longer-read-the-submitted-form-data
+           */
+          const input = opts.args.length === 1 ? opts.args[0] : opts.args[1];
 
-    return next();
-  });
+          return opts.invoke({
+            type: 'query',
+            ctx: {},
+            getRawInput: async () => input,
+            path: '',
+            input,
+            signal: undefined,
+          });
+        }
+        case 'query': {
+          const input = opts.args[0];
+          return opts.invoke({
+            type: 'query',
+            ctx: {},
+            getRawInput: async () => input,
+            path: '',
+            input,
+            signal: undefined,
+          });
+        }
+        case 'subscription':
+        default: {
+          throw new TRPCError({
+            code: 'NOT_IMPLEMENTED',
+            message: `Not implemented for type ${opts._def.type}`,
+          });
+        }
+      }
+    });
 
-  const protectedProcedure = t.procedure.use(isAuthed);
+  {
+    // no input
+    const proc = base.query(async () => 'hello');
+    const result = await proc();
+    expect(result).toBe('hello');
 
-  const router = t.router({
-    secret: protectedProcedure.query(({ ctx }) => ctx.foo),
-  });
+    expect((proc as any)._def.type).toMatchInlineSnapshot(`"query"`);
+  }
 
-  const caller = router.createCaller({});
-  const error = await waitError(caller.secret(), TRPCError);
-  expect(error.code).toBe('UNAUTHORIZED');
-  expect(error.message).toBe('You are not authorized');
+  {
+    // input
+    const proc = base
+      .input(z.string())
+      .query(async (opts) => `hello ${opts.input}`);
+    const result = await proc('world');
+    expect(result).toBe('hello world');
+  }
+  {
+    // mutation with input
+    const proc = base.input(z.string()).mutation(async (opts) => {
+      return opts.input;
+    });
 
-  const authorizedCaller = router.createCaller({ foo: 'bar' });
-  const result = await authorizedCaller.secret();
-  expect(result).toBe('bar');
+    const result = await proc('world');
+    expect(result).toBe('world');
+    expect((proc as any)._def.type).toBe('mutation');
+  }
 });

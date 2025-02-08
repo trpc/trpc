@@ -1,5 +1,9 @@
 import type { TRPCError } from '../error/TRPCError';
-import type { ProcedureType } from '../procedure';
+import type {
+  AnyProcedure,
+  ErrorHandlerOptions,
+  ProcedureType,
+} from '../procedure';
 import type {
   AnyRouter,
   inferRouterContext,
@@ -8,19 +12,14 @@ import type {
 import type { TRPCResponse } from '../rpc';
 import type { Dict } from '../types';
 
-export type HTTPHeaders = Dict<string[] | string>;
-
-export interface HTTPResponse {
-  status: number;
-  headers?: HTTPHeaders;
-  body?: string;
-}
-
-export type ResponseChunk = [procedureIndex: number, responseBody: string];
+/**
+ * @deprecated use `Headers` instead, this will be removed in v12
+ */
+type HTTPHeaders = Dict<string[] | string>;
 
 export interface ResponseMeta {
   status?: number;
-  headers?: HTTPHeaders;
+  headers?: Headers | HTTPHeaders;
 }
 
 /**
@@ -31,24 +30,17 @@ export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: {
   ctx?: inferRouterContext<TRouter>;
   /**
    * The different tRPC paths requested
+   * @deprecated use `info` instead, this will be removed in v12
    **/
-  paths?: string[];
+  paths: readonly string[] | undefined;
+  info: TRPCRequestInfo | undefined;
   type: ProcedureType | 'unknown';
   errors: TRPCError[];
   /**
-   * `true` if the `ResponseMeta` are being
-   * generated without knowing the response data
-   * (e.g. for streaming requests).
+   * `true` if the `ResponseMeta` is being generated without knowing the response data (e.g. for streamed requests).
    */
-  eagerGeneration?: boolean;
+  eagerGeneration: boolean;
 }) => ResponseMeta;
-
-export interface HTTPRequest {
-  method: string;
-  query: URLSearchParams;
-  headers: HTTPHeaders;
-  body: unknown;
-}
 
 /**
  * Base interface for anything using HTTP
@@ -58,52 +50,90 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
   /**
    * Add handler to be called before response is sent to the user
    * Useful for setting cache headers
-   * @link https://trpc.io/docs/v11/caching
+   * @see https://trpc.io/docs/v11/caching
    */
   responseMeta?: ResponseMetaFn<TRouter>;
 }
 
-/** @internal */
-export type ProcedureCall = {
-  type: ProcedureType;
-  input?: unknown;
+export type TRPCAcceptHeader = 'application/jsonl';
+
+interface TRPCRequestInfoProcedureCall {
   path: string;
-};
+  /**
+   * Read the raw input (deduped and memoized)
+   */
+  getRawInput: () => Promise<unknown>;
+  /**
+   * Get already parsed inputs - won't trigger reading the body or parsing the inputs
+   */
+  result: () => unknown;
+  /**
+   * The procedure being called, `null` if not found
+   * @internal
+   */
+  procedure: AnyProcedure | null;
+}
 
 /**
  * Information about the incoming request
- * @internal
+ * @public
  */
-export type TRPCRequestInfo = {
+export interface TRPCRequestInfo {
+  /**
+   * The `trpc-accept` header
+   */
+  accept: TRPCAcceptHeader | null;
+  /**
+   * The type of the request
+   */
+  type: ProcedureType | 'unknown';
+  /**
+   * If the content type handler has detected that this is a batch call
+   */
   isBatchCall: boolean;
-  calls: ProcedureCall[];
-};
+  /**
+   * The calls being made
+   */
+  calls: TRPCRequestInfoProcedureCall[];
+  /**
+   * Connection params when using `httpSubscriptionLink` or `createWSClient`
+   */
+  connectionParams: Dict<string> | null;
+  /**
+   * Signal when the request is aborted
+   * Can be used to abort async operations during the request, e.g. `fetch()`-requests
+   */
+  signal: AbortSignal;
+  /**
+   * The URL of the request if available
+   */
+  url: URL | null;
+}
 
 /**
- * Inner createContext function for `resolveHTTPResponse` used to forward `TRPCRequestInfo` to `createContext`
+ * Inner createContext function for `resolveResponse` used to forward `TRPCRequestInfo` to `createContext`
  * @internal
  */
 export type ResolveHTTPRequestOptionsContextFn<TRouter extends AnyRouter> =
   (opts: { info: TRPCRequestInfo }) => Promise<inferRouterContext<TRouter>>;
 
+interface HTTPErrorHandlerOptions<TRouter extends AnyRouter, TRequest>
+  extends ErrorHandlerOptions<inferRouterContext<TRouter>> {
+  req: TRequest;
+}
 /**
  * @internal
  */
-export type OnErrorFunction<TRouter extends AnyRouter, TRequest> = (opts: {
-  error: TRPCError;
-  type: ProcedureType | 'unknown';
-  path: string | undefined;
-  req: TRequest;
-  input: unknown;
-  ctx: inferRouterContext<TRouter> | undefined;
-}) => void;
+export type HTTPErrorHandler<TRouter extends AnyRouter, TRequest> = (
+  opts: HTTPErrorHandlerOptions<TRouter, TRequest>,
+) => void;
 
 /**
  * Base interface for any response handler
  * @internal
  */
 export interface BaseHandlerOptions<TRouter extends AnyRouter, TRequest> {
-  onError?: OnErrorFunction<TRouter, TRequest>;
+  onError?: HTTPErrorHandler<TRouter, TRequest>;
   /**
    * @deprecated use `allowBatching` instead, this will be removed in v12
    */

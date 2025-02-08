@@ -7,7 +7,7 @@ slug: /server/merging-routers
 
 Writing all API-code in your code in the same file is not a great idea. It's easy to merge routers with other routers.
 
-### Defining an inline sub-router
+### Defining an inline sub-router {#inline-sub-router}
 
 When you define an inline sub-router, you can represent your router as a plain object.
 

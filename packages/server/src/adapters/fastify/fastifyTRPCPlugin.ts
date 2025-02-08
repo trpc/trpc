@@ -9,12 +9,17 @@
  */
 /// <reference types="@fastify/websocket" />
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import type { FastifyHandlerOptions } from '.';
 // @trpc/server
 import type { AnyRouter } from '../../@trpc/server';
+// @trpc/server/http
 import type { NodeHTTPCreateContextFnOptions } from '../node-http';
-import type { WSSHandlerOptions } from '../ws';
-import { getWSConnectionHandler } from '../ws';
+// @trpc/server/ws
+import {
+  getWSConnectionHandler,
+  handleKeepAlive,
+  type WSSHandlerOptions,
+} from '../ws';
+import type { FastifyHandlerOptions } from './fastifyRequestHandler';
 import { fastifyRequestHandler } from './fastifyRequestHandler';
 
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
@@ -56,13 +61,20 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
   });
 
   if (opts.useWSS) {
+    const trpcOptions =
+      opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>;
+
     const onConnection = getWSConnectionHandler<TRouter>({
-      ...(opts.trpcOptions as unknown as WSSHandlerOptions<TRouter>),
+      ...trpcOptions,
     });
 
-    fastify.get(prefix ?? '/', { websocket: true }, ({ socket }, req) =>
-      onConnection(socket, req.raw),
-    );
+    fastify.get(prefix ?? '/', { websocket: true }, async (socket, req) => {
+      await onConnection(socket, req.raw);
+      if (trpcOptions?.keepAlive?.enabled) {
+        const { pingMs, pongWaitMs } = trpcOptions.keepAlive;
+        handleKeepAlive(socket, pingMs, pongWaitMs);
+      }
+    });
   }
 
   done();

@@ -1,4 +1,4 @@
-import type { ValueOf } from '../types';
+import type { InvertKeyValue, ValueOf } from '../types';
 
 // reference: https://www.jsonrpc.org/specification
 
@@ -20,8 +20,11 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   BAD_REQUEST: -32600, // 400
 
   // Internal JSON-RPC error
-  INTERNAL_SERVER_ERROR: -32603,
-  NOT_IMPLEMENTED: -32603,
+  INTERNAL_SERVER_ERROR: -32603, // 500
+  NOT_IMPLEMENTED: -32603, // 501
+  BAD_GATEWAY: -32603, // 502
+  SERVICE_UNAVAILABLE: -32603, // 503
+  GATEWAY_TIMEOUT: -32603, // 504
 
   // Implementation specific errors
   UNAUTHORIZED: -32001, // 401
@@ -31,23 +34,15 @@ export const TRPC_ERROR_CODES_BY_KEY = {
   TIMEOUT: -32008, // 408
   CONFLICT: -32009, // 409
   PRECONDITION_FAILED: -32012, // 412
-  UNSUPPORTED_MEDIA_TYPE: -32015, // 415
   PAYLOAD_TOO_LARGE: -32013, // 413
+  UNSUPPORTED_MEDIA_TYPE: -32015, // 415
   UNPROCESSABLE_CONTENT: -32022, // 422
   TOO_MANY_REQUESTS: -32029, // 429
   CLIENT_CLOSED_REQUEST: -32099, // 499
 } as const;
 
-type KeyFromValue<TValue, TType extends Record<PropertyKey, PropertyKey>> = {
-  [K in keyof TType]: TValue extends TType[K] ? K : never;
-}[keyof TType];
-
-type Invert<TType extends Record<PropertyKey, PropertyKey>> = {
-  [TValue in TType[keyof TType]]: KeyFromValue<TValue, TType>;
-};
-
 // pure
-export const TRPC_ERROR_CODES_BY_NUMBER: Invert<
+export const TRPC_ERROR_CODES_BY_NUMBER: InvertKeyValue<
   typeof TRPC_ERROR_CODES_BY_KEY
 > = {
   [-32700]: 'PARSE_ERROR',

@@ -1,12 +1,20 @@
 import type http from 'http';
+import { waitError } from '../___testHelpers';
 import type { Context } from './__router';
 import { router } from './__router';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
+import type { AnyRouter } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
+import type { NodeHTTPHandlerOptions } from '@trpc/server/adapters/node-http';
 import express from 'express';
 import fetch from 'node-fetch';
 
-async function startServer() {
+type CreateExpressContextOptions<TRouter extends AnyRouter> =
+  NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>;
+
+async function startServer(
+  opts?: Partial<CreateExpressContextOptions<typeof router>>,
+) {
   const createContext = (
     _opts: trpcExpress.CreateExpressContextOptions,
   ): Context => {
@@ -29,13 +37,24 @@ async function startServer() {
   const app = express();
 
   app.use(
-    '/trpc',
+    '/',
     trpcExpress.createExpressMiddleware({
       router,
-      maxBodySize: 10, // 10 bytes,
       createContext,
+      ...opts,
     }),
   );
+  // not found middleware
+  app.use((_req, res, _next) => {
+    res.status(404).send({ error: 'Not found' });
+  });
+  // error middleware
+  // eslint-disable-next-line max-params
+  const errHandler: express.ErrorRequestHandler = (err, _req, res, _next) => {
+    res.status(500).send({ error: err.message });
+  };
+  app.use(errHandler);
+
   const { server, port } = await new Promise<{
     server: http.Server;
     port: number;
@@ -48,11 +67,11 @@ async function startServer() {
     });
   });
 
+  const url = `http://localhost:${port}`;
   const client = createTRPCClient<typeof router>({
     links: [
       httpBatchLink({
-        url: `http://localhost:${port}/trpc`,
-        AbortController,
+        url,
         fetch: fetch as any,
       }),
     ],
@@ -65,9 +84,9 @@ async function startServer() {
           err ? reject(err) : resolve();
         }),
       ),
-    port,
     router,
     client,
+    url,
   };
 }
 
@@ -97,6 +116,14 @@ test('simple query', async () => {
   `);
 });
 
+test('batched requests in body work correctly', async () => {
+  const res = await Promise.all([
+    t.client.helloMutation.mutate('world'),
+    t.client.helloMutation.mutate('KATT'),
+  ]);
+  expect(res).toEqual(['hello world', 'hello KATT']);
+});
+
 test('request info from context should include both calls', async () => {
   const res = await Promise.all([
     t.client.hello.query({
@@ -105,26 +132,31 @@ test('request info from context should include both calls', async () => {
     t.client.request.info.query(),
   ]);
 
+  // Replace port number in snapshot with <<redacted>>
+  if (res[1].url) {
+    res[1].url = res[1].url.replace(/:\d+\//, ':<<redacted>>/');
+  }
+
   expect(res).toMatchInlineSnapshot(`
     Array [
       Object {
         "text": "hello test",
       },
       Object {
+        "accept": null,
         "calls": Array [
           Object {
-            "input": Object {
-              "who": "test",
-            },
             "path": "hello",
-            "type": "query",
           },
           Object {
             "path": "request.info",
-            "type": "query",
           },
         ],
+        "connectionParams": null,
         "isBatchCall": true,
+        "signal": Object {},
+        "type": "query",
+        "url": "http://localhost:<<redacted>>/hello,request.info?batch=1&input=%7B%220%22%3A%7B%22who%22%3A%22test%22%7D%7D",
       },
     ]
   `);
@@ -134,15 +166,67 @@ test('error query', async () => {
   try {
     await t.client.exampleError.query();
   } catch (e) {
-    expect(e).toStrictEqual(new TRPCClientError('Unexpected error'));
+    expect(e).toBeInstanceOf(TRPCClientError);
+    expect((e as Error).message).toBe('Unexpected error');
   }
 });
 
 test('payload too large', async () => {
-  try {
-    await t.client.exampleMutation.mutate({ payload: 'a'.repeat(100) });
-    expect(true).toBe(false); // should not be reached
-  } catch (e) {
-    expect(e).toStrictEqual(new TRPCClientError('PAYLOAD_TOO_LARGE'));
+  const t = await startServer({
+    maxBodySize: 100,
+  });
+
+  const err = await waitError(
+    () => t.client.exampleMutation.mutate({ payload: 'a'.repeat(101) }),
+    TRPCClientError<typeof router>,
+  );
+
+  expect(err.data?.code).toBe('PAYLOAD_TOO_LARGE');
+
+  // the trpc envelope takes some space so we can't have exactly 100 bytes of payload
+  await t.client.exampleMutation.mutate({ payload: 'a'.repeat(75) });
+
+  t.close();
+});
+
+test('bad url does not crash server', async () => {
+  const t = await startServer({
+    router,
+  });
+
+  const res = await fetch(`${t.url}`, {
+    method: 'GET',
+    headers: {
+      // use faux host header
+      Host: 'hotmail-com.olc.protection.outlook.com%3A25',
+    },
+  });
+  expect(res.ok).toBe(false);
+
+  const json: any = await res.json();
+
+  if (json.error.data.stack) {
+    json.error.data.stack = '[redacted]';
   }
+  expect(json).toMatchInlineSnapshot(`
+    Object {
+      "error": Object {
+        "code": -32600,
+        "data": Object {
+          "code": "BAD_REQUEST",
+          "httpStatus": 400,
+          "stack": "[redacted]",
+        },
+        "message": "Invalid URL",
+      },
+    }
+  `);
+
+  expect(res.status).toBe(400);
+
+  expect(await t.client.hello.query()).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello world",
+    }
+  `);
 });

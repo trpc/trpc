@@ -1,3 +1,4 @@
+import type { TRPCError } from './error/TRPCError';
 import type { ProcedureCallOptions } from './procedureBuilder';
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
@@ -6,23 +7,11 @@ export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
  */
 export type ProcedureType = (typeof procedureTypes)[number];
 
-type ClientContext = Record<string, unknown>;
-
-/**
- * @internal
- */
-export interface ProcedureOptions {
-  /**
-   * Client-side context
-   */
-  context?: ClientContext;
-  signal?: AbortSignal;
-}
-
 interface BuiltProcedureDef {
   input: unknown;
   output: unknown;
 }
+
 /**
  *
  * @internal
@@ -32,8 +21,14 @@ export interface Procedure<
   TDef extends BuiltProcedureDef,
 > {
   _def: {
-    _input_in: TDef['input'];
-    _output_out: TDef['output'];
+    /**
+     * These are just types, they can't be used at runtime
+     * @internal
+     */
+    $types: {
+      input: TDef['input'];
+      output: TDef['output'];
+    };
     procedure: true;
     type: TType;
     /**
@@ -41,11 +36,12 @@ export interface Procedure<
      * Meta is not inferrable on individual procedures, only on the router
      */
     meta: unknown;
+    experimental_caller: boolean;
   };
   /**
    * @internal
    */
-  (opts: ProcedureCallOptions): Promise<unknown>;
+  (opts: ProcedureCallOptions<unknown>): Promise<TDef['output']>;
 }
 
 export interface QueryProcedure<TDef extends BuiltProcedureDef>
@@ -57,18 +53,44 @@ export interface MutationProcedure<TDef extends BuiltProcedureDef>
 export interface SubscriptionProcedure<TDef extends BuiltProcedureDef>
   extends Procedure<'subscription', TDef> {}
 
+/**
+ * @deprecated
+ */
+export interface LegacyObservableSubscriptionProcedure<
+  TDef extends BuiltProcedureDef,
+> extends SubscriptionProcedure<TDef> {
+  _observable: true;
+}
+
 export type AnyQueryProcedure = QueryProcedure<any>;
 export type AnyMutationProcedure = MutationProcedure<any>;
-export type AnySubscriptionProcedure = SubscriptionProcedure<any>;
-export type AnyProcedure = Procedure<ProcedureType, any>;
+export type AnySubscriptionProcedure =
+  | SubscriptionProcedure<any>
+  | LegacyObservableSubscriptionProcedure<any>;
+
+export type AnyProcedure =
+  | AnyQueryProcedure
+  | AnyMutationProcedure
+  | AnySubscriptionProcedure;
 
 export type inferProcedureInput<TProcedure extends AnyProcedure> =
-  undefined extends inferProcedureParams<TProcedure>['_input_in']
-    ? void | inferProcedureParams<TProcedure>['_input_in']
-    : inferProcedureParams<TProcedure>['_input_in'];
+  undefined extends inferProcedureParams<TProcedure>['$types']['input']
+    ? void | inferProcedureParams<TProcedure>['$types']['input']
+    : inferProcedureParams<TProcedure>['$types']['input'];
 
 export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   ? TProcedure['_def']
   : never;
 export type inferProcedureOutput<TProcedure> =
-  inferProcedureParams<TProcedure>['_output_out'];
+  inferProcedureParams<TProcedure>['$types']['output'];
+
+/**
+ * @internal
+ */
+export interface ErrorHandlerOptions<TContext> {
+  error: TRPCError;
+  type: ProcedureType | 'unknown';
+  path: string | undefined;
+  input: unknown;
+  ctx: TContext | undefined;
+}

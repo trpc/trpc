@@ -25,6 +25,8 @@
   --docsearch-key-shadow: none !important;
   --docsearch-footer-shadow: none !important;
   --docsearch-key-gradient: #f4f4f5 !important;
+
+  --tweet-border: 1px solid var(--ifm-color-emphasis-300);
 }
 
 :root[data-theme='dark'] {
@@ -69,13 +71,15 @@ div[class^='announcementBar_'] {
 }
 
 .homepage .main-wrapper {
-  background: linear-gradient(180deg, hsla(0, 0%, 100%, 0) 0, #fff 300px),
+  background:
+    linear-gradient(180deg, hsla(0, 0%, 100%, 0) 0, #fff 300px),
     fixed 0 0 /20px 20px radial-gradient(#d1d1d1 1px, transparent 0),
     fixed 10px 10px /20px 20px radial-gradient(#d1d1d1 1px, transparent 0);
 }
 
 [data-theme='dark'] .homepage .main-wrapper {
-  background: linear-gradient(180deg, transparent 0, #111 300px),
+  background:
+    linear-gradient(180deg, transparent 0, #111 300px),
     fixed 0 0 /20px 20px radial-gradient(#313131 1px, transparent 0),
     fixed 10px 10px /20px 20px radial-gradient(#313131 1px, transparent 0);
 }
@@ -241,7 +245,8 @@ h5 {
   @apply list-disc pl-8;
 }
 
-.markdown blockquote {
+.markdown blockquote,
+.markdown .shiki {
   margin: 0 0 var(--ifm-spacing-vertical);
 }
 
@@ -255,6 +260,10 @@ h5 {
 
 .theme-admonition a {
   @apply font-semibold;
+}
+
+.theme-admonition-note a {
+  @apply dark:text-sky-300 dark:hover:text-sky-400;
 }
 
 /**
@@ -289,6 +298,10 @@ h5 {
 
 [data-theme='dark'] .shiki .code-title {
   @apply border-zinc-700;
+}
+
+[data-theme='dark'] .shiki.min-light {
+  display: none;
 }
 
 [data-theme='light'] .shiki.min-light-with-diff .popover {
@@ -355,7 +368,7 @@ html.v10 .trpcgif--v10.trpcgif--landscape {
 
 html.v9 .trpcgif--v9 {
   display: block;
-} 
+}
 */
 
 /* Breadcrumbs */
@@ -433,7 +446,7 @@ details p {
 }
 
 .DocSearch.DocSearch-Button {
-  @apply rounded-md bg-zinc-100 dark:bg-zinc-800;
+  @apply rounded-md bg-zinc-100 dark:bg-zinc-800 sm:min-w-[139px];
 }
 
 .DocSearch-Button-Keys {

@@ -8,11 +8,11 @@ import { appRouter } from '~/server/routers/_app';
 export default trpcNext.createNextApiHandler({
   router: appRouter,
   /**
-   * @link https://trpc.io/docs/v11/context
+   * @see https://trpc.io/docs/v11/context
    */
   createContext,
   /**
-   * @link https://trpc.io/docs/v11/error-handling
+   * @see https://trpc.io/docs/v11/error-handling
    */
   onError({ error }) {
     if (error.code === 'INTERNAL_SERVER_ERROR') {
@@ -21,7 +21,7 @@ export default trpcNext.createNextApiHandler({
     }
   },
   /**
-   * @link https://trpc.io/docs/v11/caching#api-response-caching
+   * @see https://trpc.io/docs/v11/caching#api-response-caching
    */
   // responseMeta() {
   //   // ...

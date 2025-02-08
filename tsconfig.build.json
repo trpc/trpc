@@ -1,7 +1,13 @@
 {
   "compilerOptions": {
     "module": "esnext",
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "ES2018.AsyncGenerator",
+      "ES2018.AsyncIterable"
+    ],
     "target": "es2020",
     "declaration": true,
     "declarationMap": true,
@@ -19,5 +25,5 @@
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitOverride": true
   },
-  "exclude": ["test", "**/*.test.ts", "**/*.test.tsx"]
+  "exclude": ["test", "**/*.test.ts", "**/*.test.tsx", "__tests__"]
 }

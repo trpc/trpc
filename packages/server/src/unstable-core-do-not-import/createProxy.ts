@@ -1,6 +1,6 @@
 interface ProxyCallbackOptions {
-  path: string[];
-  args: unknown[];
+  path: readonly string[];
+  args: readonly unknown[];
 }
 type ProxyCallback = (opts: ProxyCallbackOptions) => unknown;
 
@@ -8,26 +8,51 @@ const noop = () => {
   // noop
 };
 
-function createInnerProxy(callback: ProxyCallback, path: string[]) {
-  const proxy: unknown = new Proxy(noop, {
+const freezeIfAvailable = (obj: object) => {
+  if (Object.freeze) {
+    Object.freeze(obj);
+  }
+};
+
+function createInnerProxy(
+  callback: ProxyCallback,
+  path: readonly string[],
+  memo: Record<string, unknown>,
+) {
+  const cacheKey = path.join('.');
+
+  memo[cacheKey] ??= new Proxy(noop, {
     get(_obj, key) {
       if (typeof key !== 'string' || key === 'then') {
         // special case for if the proxy is accidentally treated
         // like a PromiseLike (like in `Promise.resolve(proxy)`)
         return undefined;
       }
-      return createInnerProxy(callback, [...path, key]);
+      return createInnerProxy(callback, [...path, key], memo);
     },
     apply(_1, _2, args) {
-      const isApply = path[path.length - 1] === 'apply';
-      return callback({
-        args: isApply ? (args.length >= 2 ? args[1] : []) : args,
-        path: isApply ? path.slice(0, -1) : path,
-      });
+      const lastOfPath = path[path.length - 1];
+
+      let opts = { args, path };
+      // special handling for e.g. `trpc.hello.call(this, 'there')` and `trpc.hello.apply(this, ['there'])
+      if (lastOfPath === 'call') {
+        opts = {
+          args: args.length >= 2 ? [args[1]] : [],
+          path: path.slice(0, -1),
+        };
+      } else if (lastOfPath === 'apply') {
+        opts = {
+          args: args.length >= 2 ? args[1] : [],
+          path: path.slice(0, -1),
+        };
+      }
+      freezeIfAvailable(opts.args);
+      freezeIfAvailable(opts.path);
+      return callback(opts);
     },
   });
 
-  return proxy;
+  return memo[cacheKey];
 }
 
 /**
@@ -35,8 +60,9 @@ function createInnerProxy(callback: ProxyCallback, path: string[]) {
  *
  * @internal
  */
-export const createRecursiveProxy = (callback: ProxyCallback) =>
-  createInnerProxy(callback, []);
+export const createRecursiveProxy = <TFaux = unknown>(
+  callback: ProxyCallback,
+): TFaux => createInnerProxy(callback, [], Object.create(null)) as TFaux;
 
 /**
  * Used in place of `new Proxy` where each handler will map 1 level deep to another value.

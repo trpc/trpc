@@ -8,26 +8,47 @@
  * ```
  */
 import type * as http from 'http';
+import type * as http2 from 'http2';
 // @trpc/server
-import type { AnyRouter, inferRouterContext } from '../../@trpc/server';
+import type {
+  AnyRouter,
+  CreateContextCallback,
+  inferRouterContext,
+} from '../../@trpc/server';
 // @trpc/server/http
 import type {
   HTTPBaseHandlerOptions,
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 // eslint-disable-next-line no-restricted-imports
-import type { MaybePromise } from '../../unstable-core-do-not-import';
-import type { NodeHTTPContentTypeHandler } from './internals/contentType';
+import type {
+  DistributiveOmit,
+  MaybePromise,
+} from '../../unstable-core-do-not-import';
 
-interface ParsedQs {
-  [key: string]: ParsedQs | ParsedQs[] | string[] | string | undefined;
-}
-
-export type NodeHTTPRequest = http.IncomingMessage & {
-  query?: ParsedQs;
+export type NodeHTTPRequest = DistributiveOmit<
+  http.IncomingMessage | http2.Http2ServerRequest,
+  'socket'
+> & {
+  /**
+   * Many adapters will add a `body` property to the incoming message and pre-parse the body
+   */
   body?: unknown;
+  /**
+   * Socket is not always available in all deployments, so we need to make it optional
+   * @see https://github.com/trpc/trpc/issues/6341
+   * The socket object provided in the request does not fully implement the expected Node.js Socket interface.
+   * @see https://github.com/trpc/trpc/pull/6358
+   */
+  socket?:
+    | Partial<http.IncomingMessage['socket']>
+    | Partial<http2.Http2ServerRequest['socket']>;
 };
-export type NodeHTTPResponse = http.ServerResponse & {
+
+export type NodeHTTPResponse = DistributiveOmit<
+  http.ServerResponse | http2.Http2ServerResponse,
+  'write'
+> & {
   /**
    * Force the partially-compressed response to be flushed to the client.
    *
@@ -37,25 +58,17 @@ export type NodeHTTPResponse = http.ServerResponse & {
    * e.g. Express w/ `compression()`)
    */
   flush?: () => void;
-};
 
+  write: (chunk: string | Uint8Array) => boolean;
+};
 export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
   TResponse,
-> = object extends inferRouterContext<TRouter>
-  ? {
-      /**
-       * @link https://trpc.io/docs/v11/context
-       **/
-      createContext?: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
-    }
-  : {
-      /**
-       * @link https://trpc.io/docs/v11/context
-       **/
-      createContext: NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>;
-    };
+> = CreateContextCallback<
+  inferRouterContext<TRouter>,
+  NodeHTTPCreateContextFn<TRouter, TRequest, TResponse>
+>;
 
 /**
  * @internal
@@ -87,23 +100,23 @@ export type NodeHTTPHandlerOptions<
      * You can also use it for other needs which a connect/node.js compatible middleware can solve,
      *  though you might wish to consider an alternative solution like the Express adapter if your needs are complex.
      */
-    middleware?: ConnectMiddleware;
+    middleware?: ConnectMiddleware<TRequest, TResponse>;
     maxBodySize?: number;
-    experimental_contentTypeHandlers?: NodeHTTPContentTypeHandler<
-      TRequest,
-      TResponse
-    >[];
   };
 
 export type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
-> = {
+> = NodeHTTPHandlerOptions<TRouter, TRequest, TResponse> & {
   req: TRequest;
   res: TResponse;
+  /**
+   * The tRPC path to handle requests for
+   * @example 'post.all'
+   */
   path: string;
-} & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>;
+};
 
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;

@@ -18,6 +18,9 @@ const router = t.router({
     .query(({ input }) => ({
       text: `hello ${input?.who}`,
     })),
+  helloMutation: t.procedure
+    .input(z.string())
+    .mutation(({ input }) => `hello ${input}`),
   mut: t.procedure.mutation(() => 'mutation'),
 
   exampleError: t.procedure.query(() => {
@@ -43,7 +46,6 @@ function createClient(port: number, address: string) {
     links: [
       httpBatchLink({
         url: `http://${address}:${port}`,
-        AbortController,
         fetch: fetch as any,
       }),
     ],
@@ -95,6 +97,19 @@ test('simple query', async () => {
   `);
 });
 
+test('batched requests in body work correctly', async () => {
+  const { port, address } = await startServer({
+    router,
+  });
+  const client = createClient(port, address);
+
+  const res = await Promise.all([
+    client.helloMutation.mutate('world'),
+    client.helloMutation.mutate('KATT'),
+  ]);
+  expect(res).toEqual(['hello world', 'hello KATT']);
+});
+
 test('error query', async () => {
   const { port, address } = await startServer({
     router,
@@ -104,7 +119,8 @@ test('error query', async () => {
   try {
     await client.exampleError.query();
   } catch (e) {
-    expect(e).toStrictEqual(new TRPCClientError('Unexpected error'));
+    expect(e).toBeInstanceOf(TRPCClientError);
+    expect((e as Error).message).toBe('Unexpected error');
   }
 });
 
@@ -118,7 +134,11 @@ test('middleware intercepts request', async () => {
     router,
   });
 
-  const result = await fetch(`http://${address}:${port}`);
+  const result = await fetch(`http://${address}:${port}`, {
+    headers: {
+      'content-type': 'application/json',
+    },
+  });
   expect(result.status).toBe(419);
 });
 
@@ -202,9 +222,53 @@ test('force content-type on mutations', async () => {
             "httpStatus": 415,
             "stack": "[redacted]",
           },
-          "message": "Invalid Content-Type header (expected application/json)",
+          "message": "Missing content-type header",
         },
       }
     `);
   }
+});
+
+test('bad url does not crash server', async () => {
+  const { port, address } = await startServer({
+    router,
+  });
+
+  const res = await fetch(`http://${address}:${port}`, {
+    method: 'GET',
+    headers: {
+      // use faux host header
+      Host: 'hotmail-com.olc.protection.outlook.com%3A25',
+    },
+  });
+  expect(res.ok).toBe(false);
+
+  const json: any = await res.json();
+
+  if (json.error.data.stack) {
+    json.error.data.stack = '[redacted]';
+  }
+  expect(json).toMatchInlineSnapshot(`
+    Object {
+      "error": Object {
+        "code": -32600,
+        "data": Object {
+          "code": "BAD_REQUEST",
+          "httpStatus": 400,
+          "stack": "[redacted]",
+        },
+        "message": "Invalid URL",
+      },
+    }
+  `);
+
+  expect(res.status).toBe(400);
+
+  const client = createClient(port, address);
+
+  expect(await client.hello.query({ who: 'test' })).toMatchInlineSnapshot(`
+    Object {
+      "text": "hello test",
+    }
+  `);
 });

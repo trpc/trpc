@@ -1,10 +1,10 @@
 import path from 'path';
 import nodeResolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
 import type { RollupOptions } from 'rollup';
 import del from 'rollup-plugin-delete';
 import externals from 'rollup-plugin-node-externals';
 import { swc } from 'rollup-plugin-swc3';
-import typescript from 'rollup-plugin-typescript2';
 import analyzeSizeChange from './analyzeSizeChange';
 
 const isWatchMode = process.argv.includes('--watch');
@@ -13,6 +13,7 @@ const extensions = ['.ts', '.tsx'];
 type Options = {
   input: string[];
   packageDir: string;
+  externalPackages?: (string | RegExp)[];
 };
 
 export function buildConfig({ input, packageDir }: Options): RollupOptions[] {
@@ -25,7 +26,11 @@ export function buildConfig({ input, packageDir }: Options): RollupOptions[] {
   return [types(options), lib(options)];
 }
 
-function types({ input, packageDir }: Options): RollupOptions {
+function types({
+  input,
+  packageDir,
+  externalPackages,
+}: Options): RollupOptions {
   return {
     input,
     output: {
@@ -33,6 +38,7 @@ function types({ input, packageDir }: Options): RollupOptions {
       preserveModules: true,
       preserveModulesRoot: 'src',
     },
+    external: externalPackages,
     plugins: [
       !isWatchMode &&
         del({
@@ -46,14 +52,13 @@ function types({ input, packageDir }: Options): RollupOptions {
       }),
       typescript({
         tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
-        tsconfigOverride: { emitDeclarationOnly: true },
-        abortOnError: !isWatchMode,
+        outDir: path.resolve(packageDir, 'dist'),
       }),
     ],
   };
 }
 
-function lib({ input, packageDir }: Options): RollupOptions {
+function lib({ input, packageDir, externalPackages }: Options): RollupOptions {
   return {
     input,
     output: [
@@ -74,6 +79,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
         preserveModulesRoot: 'src',
       },
     ],
+    external: externalPackages,
     plugins: [
       externals({
         packagePath: path.resolve(packageDir, 'package.json'),
@@ -90,7 +96,7 @@ function lib({ input, packageDir }: Options): RollupOptions {
               useBuiltins: true,
             },
           },
-          externalHelpers: true,
+          externalHelpers: false,
         },
       }),
       !isWatchMode && analyzeSizeChange(packageDir),

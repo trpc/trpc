@@ -2,10 +2,10 @@
 import type { Simplify, WithoutIndexSignature } from '../types';
 
 /**
- * @link https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
+ * @see https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
  */
 type JsonPrimitive = boolean | number | string | null;
-// eslint-disable-next-line @typescript-eslint/ban-types
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 type NonJsonPrimitive = Function | symbol | undefined;
 /*
  * `any` is the only type that can let you equate `0` with `1`
@@ -26,6 +26,8 @@ type IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never
 export type Serialize<T> =
   IsAny<T> extends true ? any :
   unknown extends T ? unknown :
+  T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :
+  T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :
   T extends JsonReturnable ? T :
   T extends Map<any, any> | Set<any> ? object :
   T extends NonJsonPrimitive ? never :
@@ -118,5 +120,5 @@ type UndefinedToOptional<T extends object> =
     (ExactOptionalPropertyTypes extends true
       ? HandleIndexSignature<T> & HandleUndefined<WithoutIndexSignature<T>>
       : HasIndexSignature<T> extends true
-      ? HandleIndexSignature<T>
-      : HandleUndefined<T>);
+        ? HandleIndexSignature<T>
+        : HandleUndefined<T>);

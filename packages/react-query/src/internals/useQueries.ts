@@ -125,19 +125,24 @@ export type QueriesOptions<
 > = TQueriesOptions extends []
   ? []
   : TQueriesOptions extends [infer Head]
-  ? [...TResult, GetOptions<Head>]
-  : TQueriesOptions extends [infer Head, ...infer Tail]
-  ? QueriesOptions<Tail, [...TResult, GetOptions<Head>]>
-  : unknown[] extends TQueriesOptions
-  ? TQueriesOptions
-  : TQueriesOptions extends UseQueryOptionsForUseQueries<
-      infer TQueryFnData,
-      infer TError,
-      infer TData,
-      infer TQueryKey
-    >[]
-  ? UseQueryOptionsForUseQueries<TQueryFnData, TError, TData, TQueryKey>[]
-  : UseQueryOptionsForUseQueries[];
+    ? [...TResult, GetOptions<Head>]
+    : TQueriesOptions extends [infer Head, ...infer Tail]
+      ? QueriesOptions<Tail, [...TResult, GetOptions<Head>]>
+      : unknown[] extends TQueriesOptions
+        ? TQueriesOptions
+        : TQueriesOptions extends UseQueryOptionsForUseQueries<
+              infer TQueryFnData,
+              infer TError,
+              infer TData,
+              infer TQueryKey
+            >[]
+          ? UseQueryOptionsForUseQueries<
+              TQueryFnData,
+              TError,
+              TData,
+              TQueryKey
+            >[]
+          : UseQueryOptionsForUseQueries[];
 
 type GetSuspenseOptions<TQueryOptions> =
   TQueryOptions extends UseQueryOptionsForUseSuspenseQueries<any, any, any, any>
@@ -153,30 +158,31 @@ export type SuspenseQueriesOptions<
 > = TQueriesOptions extends []
   ? []
   : TQueriesOptions extends [infer Head]
-  ? [...TResult, GetSuspenseOptions<Head>]
-  : TQueriesOptions extends [infer Head, ...infer Tail]
-  ? QueriesOptions<Tail, [...TResult, GetSuspenseOptions<Head>]>
-  : unknown[] extends TQueriesOptions
-  ? TQueriesOptions
-  : TQueriesOptions extends UseQueryOptionsForUseSuspenseQueries<
-      infer TQueryFnData,
-      infer TError,
-      infer TData,
-      infer TQueryKey
-    >[]
-  ? UseQueryOptionsForUseSuspenseQueries<
-      TQueryFnData,
-      TError,
-      TData,
-      TQueryKey
-    >[]
-  : UseQueryOptionsForUseSuspenseQueries[];
+    ? [...TResult, GetSuspenseOptions<Head>]
+    : TQueriesOptions extends [infer Head, ...infer Tail]
+      ? SuspenseQueriesOptions<Tail, [...TResult, GetSuspenseOptions<Head>]>
+      : unknown[] extends TQueriesOptions
+        ? TQueriesOptions
+        : TQueriesOptions extends UseQueryOptionsForUseSuspenseQueries<
+              infer TQueryFnData,
+              infer TError,
+              infer TData,
+              infer TQueryKey
+            >[]
+          ? UseQueryOptionsForUseSuspenseQueries<
+              TQueryFnData,
+              TError,
+              TData,
+              TQueryKey
+            >[]
+          : UseQueryOptionsForUseSuspenseQueries[];
 
 /**
  * @internal
  */
 export type TRPCUseQueries<TRouter extends AnyRouter> = <
   TQueryOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
+  TCombinedResult = QueriesResults<TQueryOptions>,
 >(
   queriesCallback: (
     t: UseQueriesProcedureRecord<
@@ -184,7 +190,10 @@ export type TRPCUseQueries<TRouter extends AnyRouter> = <
       TRouter['_def']['record']
     >,
   ) => readonly [...QueriesOptions<TQueryOptions>],
-) => QueriesResults<TQueryOptions>;
+  options?: {
+    combine?: (results: QueriesResults<TQueryOptions>) => TCombinedResult;
+  },
+) => TCombinedResult;
 
 /**
  * @internal

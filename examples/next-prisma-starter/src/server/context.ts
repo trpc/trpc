@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type * as trpcNext from '@trpc/server/adapters/next';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface CreateContextOptions {
   // session: Session | null
 }
@@ -18,7 +18,7 @@ export type Context = Awaited<ReturnType<typeof createContextInner>>;
 
 /**
  * Creates context for an incoming request
- * @link https://trpc.io/docs/v11/context
+ * @see https://trpc.io/docs/v11/context
  */
 export async function createContext(
   opts: trpcNext.CreateNextContextOptions,

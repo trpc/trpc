@@ -30,16 +30,15 @@ export const createContext = async (opts: CreateNextContextOptions) => {
   };
 };
 
-const t1 = initTRPC.context<typeof createContext>().create();
-// @noErrors
-t1.procedure.use(({ ctx }) => { ... });
-//                  ^?
+export type Context = Awaited<ReturnType<typeof createContext>>;
+const t = initTRPC.context<Context>().create();
 
-type Context = Awaited<ReturnType<typeof createContext>>;
-const t2 = initTRPC.context<Context>().create();
-// @noErrors
-t2.procedure.use(({ ctx }) => { ... });
-//                  ^?
+t.procedure.use((opts) => {
+  opts.ctx;
+  //    ^?
+
+  return opts.next();
+});
 ```
 
 ## Creating the context
@@ -52,7 +51,7 @@ The `createContext()` function must be passed to the handler that is mounting yo
 // 1. HTTP request
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import { createContext } from './context';
-import { createCaller } from './router';
+import { appRouter } from './router';
 
 const handler = createHTTPHandler({
   router: appRouter,
@@ -93,7 +92,7 @@ import { getSession } from 'next-auth/react';
 
 /**
  * Creates context for an incoming request
- * @link https://trpc.io/docs/v11/context
+ * @see https://trpc.io/docs/v11/context
  */
 export async function createContext(opts: CreateNextContextOptions) {
   const session = await getSession({ req: opts.req });
@@ -170,7 +169,7 @@ interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
  * - testing, so you don't have to mock Next.js' `req`/`res`
  * - tRPC's `createServerSideHelpers` where we don't have `req`/`res`
  *
- * @link https://trpc.io/docs/v11/context#inner-and-outer-context
+ * @see https://trpc.io/docs/v11/context#inner-and-outer-context
  */
 export async function createContextInner(opts?: CreateInnerContextOptions) {
   return {
@@ -182,7 +181,7 @@ export async function createContextInner(opts?: CreateInnerContextOptions) {
 /**
  * Outer context. Used in the routers and will e.g. bring `req` & `res` to the context as "not `undefined`".
  *
- * @link https://trpc.io/docs/v11/context#inner-and-outer-context
+ * @see https://trpc.io/docs/v11/context#inner-and-outer-context
  */
 export async function createContext(opts: CreateNextContextOptions) {
   const session = getSessionFromCookie(opts.req);

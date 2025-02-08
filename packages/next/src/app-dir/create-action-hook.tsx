@@ -1,6 +1,7 @@
 import type {
   CreateTRPCClientOptions,
   TRPCLink,
+  TRPCProcedureOptions,
   TRPCRequestOptions,
 } from '@trpc/client';
 import { createTRPCUntypedClient, TRPCClientError } from '@trpc/client';
@@ -14,7 +15,6 @@ import type {
   inferClientTypes,
   InferrableClientTypes,
   MaybePromise,
-  ProcedureOptions,
   Simplify,
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -25,8 +25,8 @@ import type { ActionHandlerDef } from './shared';
 import { isFormData } from './shared';
 
 type MutationArgs<TDef extends ActionHandlerDef> = TDef['input'] extends void
-  ? [input?: undefined | void, opts?: ProcedureOptions]
-  : [input: FormData | TDef['input'], opts?: ProcedureOptions];
+  ? [input?: undefined | void, opts?: TRPCProcedureOptions]
+  : [input: FormData | TDef['input'], opts?: TRPCProcedureOptions];
 
 interface UseTRPCActionBaseResult<TDef extends ActionHandlerDef> {
   mutate: (...args: MutationArgs<TDef>) => void;
@@ -81,16 +81,16 @@ export function experimental_serverActionLink<
         TypeError<'Generic parameter missing in `experimental_createActionHook<HERE>()` or experimental_serverActionLink<HERE>()'>,
       ]
     : inferClientTypes<TInferrable>['transformer'] extends true
-    ? [
-        opts: TransformerOptions<{
-          transformer: true;
-        }>,
-      ]
-    : [
-        opts?: TransformerOptions<{
-          transformer: false;
-        }>,
-      ]
+      ? [
+          opts: TransformerOptions<{
+            transformer: true;
+          }>,
+        ]
+      : [
+          opts?: TransformerOptions<{
+            transformer: false;
+          }>,
+        ]
 ): TRPCLink<TInferrable> {
   const [opts] = args as [CoercedTransformerParameters];
   const transformer = getTransformer(opts?.transformer);

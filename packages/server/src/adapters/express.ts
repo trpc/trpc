@@ -9,11 +9,13 @@
  */
 import type * as express from 'express';
 import type { AnyRouter } from '../@trpc/server';
+// eslint-disable-next-line no-restricted-imports
+import { run } from '../unstable-core-do-not-import';
 import type {
   NodeHTTPCreateContextFnOptions,
   NodeHTTPHandlerOptions,
 } from './node-http';
-import { nodeHTTPRequestHandler } from './node-http';
+import { internal_exceptionHandler, nodeHTTPRequestHandler } from './node-http';
 
 export type CreateExpressContextOptions = NodeHTTPCreateContextFnOptions<
   express.Request,
@@ -23,19 +25,24 @@ export type CreateExpressContextOptions = NodeHTTPCreateContextFnOptions<
 export function createExpressMiddleware<TRouter extends AnyRouter>(
   opts: NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>,
 ): express.Handler {
-  return async (req, res) => {
-    const endpoint = req.path.slice(1);
+  return (req, res) => {
+    let path = '';
+    run(async () => {
+      path = req.path.slice(req.path.lastIndexOf('/') + 1);
 
-    await nodeHTTPRequestHandler({
-      // FIXME: no typecasting should be needed here
-      ...(opts as NodeHTTPHandlerOptions<
-        AnyRouter,
-        express.Request,
-        express.Response
-      >),
-      req,
-      res,
-      path: endpoint,
-    });
+      await nodeHTTPRequestHandler({
+        ...(opts as any),
+        req,
+        res,
+        path,
+      });
+    }).catch(
+      internal_exceptionHandler({
+        req,
+        res,
+        path,
+        ...opts,
+      }),
+    );
   };
 }

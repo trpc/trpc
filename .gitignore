@@ -4,8 +4,13 @@ dist/
 .next/
 .turbo/
 .vercel/
+.vinxi/
+.output/
 .eslintcache
 *.tsbuildinfo
+app.config.timestamp_*
+
+db.sqlite
 
 node_modules/
 package-lock.json

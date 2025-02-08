@@ -34,6 +34,7 @@ test('splitLink', () => {
       path: '.',
       id: 0,
       context: {},
+      signal: null,
     },
   }).subscribe({});
   expect(httpLinkSpy).toHaveBeenCalledTimes(1);
@@ -48,6 +49,7 @@ test('splitLink', () => {
       path: '.',
       id: 0,
       context: {},
+      signal: null,
     },
   }).subscribe({});
   expect(httpLinkSpy).toHaveBeenCalledTimes(0);

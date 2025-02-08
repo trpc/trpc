@@ -31,7 +31,19 @@ export {
   type AnyQueryProcedure as AnyTRPCQueryProcedure,
   type RouterRecord as TRPCRouterRecord,
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
-  type ProcedureOptions as TRPCProcedureOptions,
+  type CreateContextCallback,
+  type MutationProcedure as TRPCMutationProcedure,
+  type QueryProcedure as TRPCQueryProcedure,
+  type SubscriptionProcedure as TRPCSubscriptionProcedure,
+  type TRPCBuilder,
+  StandardSchemaV1Error,
+  /**
+   * @deprecated use `tracked(id, data)` instead
+   */
+  sse,
+  tracked,
+  type TrackedEnvelope,
+  isTrackedEnvelope,
 } from '../../unstable-core-do-not-import';
 
 export type {

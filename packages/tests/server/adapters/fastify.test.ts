@@ -5,6 +5,7 @@ import type { HTTPHeaders, TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   createWSClient,
+  httpBatchLink,
   splitLink,
   unstable_httpBatchStreamLink,
   wsLink,
@@ -65,7 +66,10 @@ function createAppRouter() {
       .query(({ input, ctx }) => ({
         text: `hello ${input?.username ?? ctx.user?.name ?? 'world'}`,
       })),
-    ['post.edit']: publicProcedure
+    helloMutation: publicProcedure
+      .input(z.string())
+      .mutation(({ input }) => `hello ${input}`),
+    editPost: publicProcedure
       .input(
         z.object({
           id: z.string(),
@@ -165,9 +169,9 @@ function createServer(opts: ServerOptions) {
   });
 
   instance.register(async function (fastify) {
-    fastify.get('/ws', { websocket: true }, (connection) => {
-      connection.socket.on('message', (message) => {
-        connection.socket.send(message);
+    fastify.get('/ws', { websocket: true }, (socket) => {
+      socket.on('message', (message) => {
+        socket.send(message);
       });
     });
   });
@@ -225,7 +229,6 @@ function createClient(opts: ClientOptions) {
         false: unstable_httpBatchStreamLink({
           url: `http://${host}`,
           headers: opts.headers,
-          AbortController,
           fetch: fetch as any,
         }),
       }),
@@ -233,6 +236,21 @@ function createClient(opts: ClientOptions) {
   });
 
   return { client, wsClient };
+}
+
+function createBatchClient(opts: ClientOptions) {
+  const host = `localhost:${opts.port}${config.prefix}`;
+  const client = createTRPCClient<AppRouter>({
+    links: [
+      httpBatchLink({
+        url: `http://${host}`,
+        headers: opts.headers,
+        fetch: fetch as any,
+      }),
+    ],
+  });
+
+  return { client };
 }
 
 interface AppOptions {
@@ -251,7 +269,7 @@ async function createApp(opts: AppOptions = {}) {
 
   const { client } = createClient({ ...opts.clientOptions, port: url.port });
 
-  return { server: instance, stop, client, ee, url };
+  return { server: instance, stop, client, ee, url, opts };
 }
 
 let app: Awaited<ReturnType<typeof createApp>>;
@@ -308,7 +326,7 @@ describe('anonymous user', () => {
 
   test('mutation', async () => {
     expect(
-      await app.client['post.edit'].mutate({
+      await app.client.editPost.mutate({
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),
@@ -317,6 +335,19 @@ describe('anonymous user', () => {
         "error": "Unauthorized user",
       }
     `);
+  });
+
+  test('batched requests in body work correctly', async () => {
+    const { client } = createBatchClient({
+      ...app.opts.clientOptions,
+      port: app.url.port,
+    });
+
+    const res = await Promise.all([
+      client.helloMutation.mutate('world'),
+      client.helloMutation.mutate('KATT'),
+    ]);
+    expect(res).toEqual(['hello world', 'hello KATT']);
   });
 
   test('does not bind other websocket connection', async () => {
@@ -437,22 +468,30 @@ describe('authorized user', () => {
   test('request info', async () => {
     const info = await app.client.request.info.query();
 
+    if (info.url) {
+      info.url = info.url.replace(/:\d+\//, ':<<redacted>>/');
+    }
+
     expect(info).toMatchInlineSnapshot(`
       Object {
+        "accept": "application/jsonl",
         "calls": Array [
           Object {
             "path": "request.info",
-            "type": "query",
           },
         ],
+        "connectionParams": null,
         "isBatchCall": true,
+        "signal": Object {},
+        "type": "query",
+        "url": "http://localhost:<<redacted>>/trpc/request.info?batch=1&input=%7B%7D",
       }
-  `);
+    `);
   });
 
   test('mutation', async () => {
     expect(
-      await app.client['post.edit'].mutate({
+      await app.client.editPost.mutate({
         id: '42',
         data: { title: 'new_title', text: 'new_text' },
       }),
@@ -552,9 +591,7 @@ describe('issue #5530 - cannot receive new WebSocket messages after receiving 16
     const data = 'A'.repeat(8192);
 
     for (let i = 0; i < 4; i++) {
-      expect(await app.client.echo.query(data)).toMatchInlineSnapshot(
-        `"${data}"`,
-      );
+      expect(await app.client.echo.query(data)).toBe(data);
     }
   });
 });

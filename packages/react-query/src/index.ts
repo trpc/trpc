@@ -1,6 +1,4 @@
-export * from '@trpc/client';
-
-export { getQueryKey } from './internals/getQueryKey';
+export { getQueryKey, getMutationKey } from './internals/getQueryKey';
 export {
   createTRPCReact,
   type CreateTRPCReact,

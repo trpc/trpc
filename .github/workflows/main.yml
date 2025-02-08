@@ -1,6 +1,9 @@
 name: main
 on:
   pull_request:
+    types: [synchronize, opened, reopened]
+  push:
+    branches: [main, next, canary]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -8,6 +11,8 @@ concurrency:
 
 jobs:
   build:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -16,14 +21,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm build
   test:
     timeout-minutes: 10
     env:
@@ -33,22 +36,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build tRPC, then test
-        run: pnpm turbo --filter "@trpc/*" build
       - run: pnpm test-ci
 
-      - uses: codecov/codecov-action@v4
-        # with:
-        #   # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-        #   directory: .
+      - uses: codecov/codecov-action@v5
+        with:
+          fail_ci_if_error: true
+          # only use token if not a fork PR
+          token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || '' }}
 
   e2e:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     name: 'E2E-tests'
     needs: [build]
     services:
@@ -62,17 +65,15 @@ jobs:
           - 5432:5432
     env:
       NEXTAUTH_SECRET: supersecret
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     continue-on-error: true
     strategy:
       matrix:
-        dir:
-          [
+        dir: [
             .experimental/next-app-dir,
-            .experimental/next-formdata,
             .test/diagnostics-big-router,
             .test/internal-types-export,
             .test/ssg,
@@ -81,23 +82,24 @@ jobs:
             express-server,
             fastify-server,
             minimal-react,
+            next-formdata,
             next-minimal-starter,
             next-prisma-starter,
             next-prisma-todomvc,
             next-prisma-websockets-starter,
+            # next-sse-chat,
             soa,
             standalone-server,
+            tanstack-start,
             vercel-edge-runtime,
           ]
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build --force
+      - run: pnpm build
 
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
@@ -107,14 +109,14 @@ jobs:
             then pnpm playwright install chromium;
           fi
 
-      - name: Run test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - name: Run build
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check --force
-      - name: Run test-start
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+      - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     name: 'E2E-tests (Deno)'
     needs: [build]
     env:
@@ -130,14 +132,12 @@ jobs:
       matrix:
         dir: [deno-deploy]
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm build
 
       - uses: denoland/setup-deno@v1
         with:
@@ -145,13 +145,13 @@ jobs:
 
       - run: deno --version
 
-      - name: run test
-        if: ${{ matrix.dir == 'deno-deploy' }}
-        run: |
+      - run: |
           cd ./examples/${{ matrix.dir }}
           pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
 
   e2e-bun:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     name: 'E2E-tests (Bun)'
     needs: [build]
     env:
@@ -167,29 +167,26 @@ jobs:
         dir: [bun]
         os: [ubuntu-latest]
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm build
 
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
       - run: bun --version
 
-      - name: Run test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - name: Run build
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
-      - name: Run test-start
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
     needs: [build]
     services:
       postgres:
@@ -215,16 +212,14 @@ jobs:
             next-prisma-websockets-starter,
             next-prisma-todomvc,
           ]
-        node-start: ['18.x']
+        node-start: ['18.x', '20.x']
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - name: Build trpc
-        run: pnpm turbo --filter "@trpc/*" build
+      - run: pnpm build
 
       - uses: actions/setup-node@v4
         with:
@@ -238,9 +233,34 @@ jobs:
           if grep --silent '"@playwright/test"';
             then pnpm playwright install chromium;
           fi
-      - name: Run test-dev
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - name: Run build
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
-      - name: Run test-start
-        run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
+  # https://pkg.pr.new
+  release-tmp:
+    name: Release using pkg.pr.new
+    needs: [build]
+    runs-on: ubuntu-latest
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/setup
+
+      - run: pnpm build
+      - run: pnpx pkg-pr-new publish './packages/*'
+
+  monotest-build:
+    name: Test a monorepo using built declaration files
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/setup
+      - run: pnpm monotest-build

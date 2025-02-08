@@ -1,9 +1,9 @@
 /**
  * Originally from Vercel's Satori project.
- * @link https://github.com/vercel/satori/blob/main/playground/pages/api/font.ts
+ * @see https://github.com/vercel/satori/blob/main/playground/pages/api/font.ts
  */
 import type { NextRequest } from 'next/server';
-import { fontParams } from 'utils/zodParams';
+import { fontParams } from '../../utils/zodParams';
 
 export const config = {
   runtime: 'edge',
@@ -35,11 +35,9 @@ export default async (req: NextRequest) => {
     })
   ).text();
 
-  const resource = css.match(
-    /src: url\((.+)\) format\('(opentype|truetype)'\)/,
-  );
+  const resource = /src: url\((.+)\) format\('(opentype|truetype)'\)/.exec(css);
 
-  if (!resource || !resource[1]) return;
+  if (!resource?.[1]) return;
 
   const res = await fetch(resource[1]);
 

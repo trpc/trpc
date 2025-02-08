@@ -5,6 +5,8 @@ on:
     branches:
       - 'main'
     paths:
+      - '.github/setup/*'
+      - '.github/workflows/release.yml'
       - 'packages/**'
       - '!packages/**/package.json'
       - '!packages/test/**'

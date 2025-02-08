@@ -117,7 +117,7 @@ const ctx = konn()
       posts: t.router({
         getAll: t.procedure.query(() => {
           resolvers.posts.getAll();
-          return `posts.getAll` as const;
+          return `posts.getAll`;
         }),
 
         getAllInfinite: t.procedure
@@ -145,7 +145,7 @@ const ctx = konn()
             const last = items[items.length - 1];
             const nextIndex = db.posts.findIndex((item) => item === last) + 1;
             if (db.posts[nextIndex]) {
-              nextCursor = db.posts[nextIndex]!.createdAt;
+              nextCursor = db.posts[nextIndex].createdAt;
             }
             return {
               items,
