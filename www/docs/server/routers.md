@@ -89,12 +89,6 @@ const t = initTRPC.create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-// @filename: routers/user.ts
-import { router } from '../trpc';
-export const userRouter = router({
-  hello: publicProcedure.query(() => 'world'),
-});
-
 // @filename: routers/_app.ts
 import { experimental_lazy } from '@trpc/server';
 import { router } from '../trpc';
@@ -110,6 +104,12 @@ export const appRouter = router({
   user,
 });
 
+
+// @filename: routers/user.ts
+import { router, publicProcedure } from '../trpc';
+export const userRouter = router({
+  hello: publicProcedure.query(() => 'world'),
+});
 ```
 
 ### Runtime Configuration

@@ -76,14 +76,20 @@ type LazyLoader<TAny> = {
   load: () => Promise<void>;
   ref: Lazy<TAny>;
 };
-export function lazy<TAny>(getRouter: () => Promise<TAny>): Lazy<TAny> {
-  let cachedPromise: Promise<TAny> | null = null;
+
+/**
+ * lazy load a router
+ */
+export function lazy<TRouter extends AnyRouter>(
+  getRouter: () => Promise<TRouter>,
+): Lazy<TRouter> {
+  let cachedPromise: Promise<TRouter> | null = null;
   const lazyGetter = (() => {
     if (!cachedPromise) {
       cachedPromise = getRouter();
     }
     return cachedPromise;
-  }) as Lazy<TAny>;
+  }) as Lazy<TRouter>;
   lazyGetter[lazySymbol] = true;
   return lazyGetter;
 }
