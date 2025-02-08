@@ -1,6 +1,6 @@
 import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
-import { isAbortError } from '../http/AbortError';
+import { isAbortError } from '../http/abortError2';
 import type { MaybePromise } from '../types';
 import { identity, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
