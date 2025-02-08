@@ -58,11 +58,13 @@ describe('lazy loading routers', () => {
     const t = initTRPC.create();
 
     const router = t.router({
+      root: t.procedure.query(() => 'root procedure'),
       child: lazy(async () =>
         t.router({
           grandchild: lazy(async () =>
             t.router({
               foo: t.procedure.query(() => 'bar'),
+              baz: t.procedure.query(() => 'baz'),
             }),
           ),
         }),
@@ -71,17 +73,21 @@ describe('lazy loading routers', () => {
 
     const caller = router.createCaller({});
 
-    expect(router._def.record).toMatchInlineSnapshot(`Object {}`);
+    // No procedures loaded yet
+    expect(router._def.procedures).toMatchInlineSnapshot(`
+      Object {
+        "root": [Function],
+      }
+    `);
+
     expect(await caller.child.grandchild.foo()).toBe('bar');
 
-    // (Maybe we should just delete `_.def.record`)
-    expect(router._def.record).toMatchInlineSnapshot(`
+    // Procedures loaded
+    expect(router._def.procedures).toMatchInlineSnapshot(`
       Object {
-        "child": Object {
-          "grandchild": Object {
-            "foo": [Function],
-          },
-        },
+        "child.grandchild.baz": [Function],
+        "child.grandchild.foo": [Function],
+        "root": [Function],
       }
     `);
   });
