@@ -459,12 +459,10 @@ export function createRootHooks<
               error: result.error,
             } as $Result;
 
-            updateState((prev) => {
-              return {
-                ...prev,
-                ...delta,
-              };
-            });
+            updateState((prev) => ({
+              ...prev,
+              ...delta,
+            }));
           },
           onComplete: () => {
             optsRef.current.onComplete?.();
