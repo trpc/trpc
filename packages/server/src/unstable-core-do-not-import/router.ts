@@ -182,10 +182,8 @@ export type DecorateCreateRouterOptions<
       ? $Value
       : $Value extends Router<any, infer TRecord>
         ? TRecord
-        : $Value extends Lazy<infer $Lazy>
-          ? $Lazy extends Router<any, infer TRecord>
-            ? TRecord
-            : never
+        : $Value extends Lazy<Router<any, infer TRecord>>
+          ? TRecord
           : $Value extends CreateRouterOptions
             ? DecorateCreateRouterOptions<$Value>
             : never

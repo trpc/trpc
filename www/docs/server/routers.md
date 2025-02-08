@@ -56,32 +56,14 @@ const appRouter = router({
 export type AppRouter = typeof appRouter;
 ```
 
-## Advanced usage
-
-When initializing your router, tRPC allows you to:
-
-- Setup [request contexts](/docs/server/context)
-- Assign [metadata](/docs/server/metadata) to procedures
-- [Format](/docs/server/error-formatting) and [handle](/docs/server/error-handling) errors
-- [Transform data](/docs/server/data-transformers) as needed
-- Customize the [runtime configuration](#runtime-configuration)
-- Lazy load routers
-
-You can use method chaining to customize your `t`-object on initialization. For example:
-
-```ts
-const t = initTRPC.context<Context>().meta<Meta>().create({
-  /* [...] */
-});
-```
-
-### Lazy / dynamically load routers {#lazy-load}
+## Dynamically load routers {#lazy-load}
 
 When using lazy loading, you can use the `experimental_lazy` function to dynamically load your routers.
 
 This can be useful to reduce cold starts of your application.
 
 ```ts twoslash
+// @target: esnext
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
@@ -97,14 +79,42 @@ import { router } from '../trpc';
 
 export const appRouter = router({
   // ✨ Dynamically load the user router
-  user: experimental_lazy(() => import('./user.js').then((m) => m.userRouter)),
+  greeting: experimental_lazy(() => import('./greeting.js').then((m) => m.greetingRouter)),
 });
 export type AppRouter = typeof appRouter;
 
-// @filename: routers/user.ts
+// @filename: routers/greeting.ts
 import { router, publicProcedure } from '../trpc';
-export const userRouter = router({
+export const greetingRouter = router({
   hello: publicProcedure.query(() => 'world'),
+});
+
+// @filename: client.ts
+import { createTRPCClient } from '@trpc/client';
+import type { AppRouter } from './routers/_app';
+
+const client = createTRPCClient<AppRouter>({
+  links: [ /* ... */ ],
+});
+
+//
+```
+
+## Advanced usage
+
+When initializing your router, tRPC allows you to:
+
+- Setup [request contexts](/docs/server/context)
+- Assign [metadata](/docs/server/metadata) to procedures
+- [Format](/docs/server/error-formatting) and [handle](/docs/server/error-handling) errors
+- [Transform data](/docs/server/data-transformers) as needed
+- Customize the [runtime configuration](#runtime-configuration)
+
+You can use method chaining to customize your `t`-object on initialization. For example:
+
+```ts
+const t = initTRPC.context<Context>().meta<Meta>().create({
+  /* [...] */
 });
 ```
 
