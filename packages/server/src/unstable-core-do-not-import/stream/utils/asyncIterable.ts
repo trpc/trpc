@@ -1,5 +1,5 @@
 import { Unpromise } from '../../../vendor/unpromise';
-import { throwAbortError } from '../../http/abortError2';
+import { throwAbortError } from '../../http/abortError';
 import { makeAsyncResource } from './disposable';
 import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
