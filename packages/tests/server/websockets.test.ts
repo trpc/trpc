@@ -2017,27 +2017,6 @@ test('lazy connection where the first connection fails', async () => {
 
   ctx.open();
 
-  {
-    /**
-     * @deprecated
-     * This is just to check that the test is setup correctly and that the server is running
-     * Remove me & this block after the test is working
-     */
-    const removeMe = createWSClient({
-      url: ctx.wssUrl,
-    });
-    await new Promise<void>((resolve) => {
-      const sub = removeMe.connectionState.subscribe({
-        next(state) {
-          if (state.state === 'pending') {
-            resolve();
-            sub.unsubscribe();
-          }
-        },
-      });
-    });
-    console.log('new websocket client created');
-  }
   await waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
   });
@@ -2056,16 +2035,7 @@ test('lazy connection where the first connection fails', async () => {
 });
 
 test('connection where the first connection fails', async () => {
-  let i = 0;
-  const ctx = factory({
-    async createContext() {
-      // console.log('createContext', i);
-      if (i++ === 0) {
-        throw new Error('first connection failed');
-      }
-      return {};
-    },
-  });
+  const ctx = factory();
   const onStartedMock = vi.fn();
   const onDataMock = vi.fn();
 
@@ -2096,28 +2066,6 @@ test('connection where the first connection fails', async () => {
   });
 
   ctx.open();
-
-  {
-    /**
-     * @deprecated
-     * This is just to check that the test is setup correctly and that the server is running
-     * Remove me & this block after the test is working
-     */
-    const removeMe = createWSClient({
-      url: ctx.wssUrl,
-    });
-    await new Promise<void>((resolve) => {
-      const sub = removeMe.connectionState.subscribe({
-        next(state) {
-          if (state.state === 'pending') {
-            resolve();
-            sub.unsubscribe();
-          }
-        },
-      });
-    });
-    console.log('new websocket client created');
-  }
 
   await waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);

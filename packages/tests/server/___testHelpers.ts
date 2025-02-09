@@ -95,7 +95,9 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   let wss = new WebSocketServer({ port: 0 });
   const wssPort = (wss.address() as any).port as number;
   const applyWSSHandlerOpts: WSSHandlerOptions<TRouter> = {
-    wss,
+    get wss() {
+      return wss;
+    },
     router,
     ...((opts?.wssServer as any) ?? {}),
     createContext(it) {

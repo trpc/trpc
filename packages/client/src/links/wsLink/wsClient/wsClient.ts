@@ -18,7 +18,6 @@ import type { TRPCConnectionState } from '../../internals/subscriptions';
 import type { Operation, OperationResultEnvelope } from '../../types';
 import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
-import { ReconnectManager } from './reconnectManager';
 import type { TCallbacks } from './requestManager';
 import { RequestManager } from './requestManager';
 import {
@@ -40,17 +39,17 @@ export class WsClient {
     TRPCConnectionState<TRPCClientError<AnyTRPCRouter>>
   >;
 
+  private allowReconnect = false;
   private requestManager = new RequestManager();
   private readonly activeConnection: WsConnection;
+  private readonly reconnectRetryDelay: (attemptIndex: number) => number;
   private inactivityTimeout: ResettableTimeout;
   private readonly callbacks: Pick<
     WebSocketClientOptions,
     'onOpen' | 'onClose' | 'onError'
   >;
   private readonly connectionParams: WebSocketClientOptions['connectionParams'];
-  private readonly lazyMode:
-    | { enabled: true }
-    | { enabled: false; reconnectManager: ReconnectManager };
+  private readonly lazyMode: boolean;
 
   constructor(opts: WebSocketClientOptions) {
     // Initialize callbacks, connection parameters, and options.
@@ -94,27 +93,9 @@ export class WsClient {
         this.setupWebSocketListeners(ws);
       },
     });
+    this.reconnectRetryDelay = opts.retryDelayMs ?? exponentialBackoff;
 
-    this.lazyMode = lazyOptions.enabled
-      ? {
-          enabled: true,
-        }
-      : {
-          enabled: false,
-          reconnectManager: new ReconnectManager(
-            this.activeConnection,
-            opts.retryDelayMs ?? exponentialBackoff,
-            {
-              onError: (error) => {
-                this.connectionState.next({
-                  type: 'state',
-                  state: 'connecting',
-                  error: TRPCClientError.from(error),
-                });
-              },
-            },
-          ),
-        };
+    this.lazyMode = lazyOptions.enabled;
 
     this.connectionState = behaviorSubject<
       TRPCConnectionState<TRPCClientError<AnyTRPCRouter>>
@@ -125,7 +106,7 @@ export class WsClient {
     });
 
     // Automatically open the connection if lazy mode is disabled.
-    if (!lazyOptions.enabled) {
+    if (!this.lazyMode) {
       this.open().catch(() => null);
     }
   }
@@ -135,6 +116,7 @@ export class WsClient {
    * the connection state accordingly.
    */
   private async open() {
+    this.allowReconnect = true;
     if (this.connectionState.get().state !== 'connecting') {
       this.connectionState.next({
         type: 'state',
@@ -146,20 +128,13 @@ export class WsClient {
     try {
       await this.activeConnection.open();
     } catch (error) {
-      this.connectionState.next({
-        type: 'state',
-        state: 'connecting',
-        error: TRPCClientError.from(
-          new TRPCWebSocketClosedError({
-            message: 'Initialization error',
-            cause: error,
-          }),
-        ),
-      });
-
-      if (!this.lazyMode.enabled) {
-        this.lazyMode.reconnectManager.reconnect();
-      }
+      this.reconnect(
+        new TRPCWebSocketClosedError({
+          message: 'Initialization error',
+          cause: error,
+        }),
+      );
+      return this.reconnecting;
     }
   }
 
@@ -168,10 +143,8 @@ export class WsClient {
    * Ensures all outgoing and pending requests are properly finalized.
    */
   public async close() {
+    this.allowReconnect = false;
     this.inactivityTimeout.stop();
-    if (!this.lazyMode.enabled) {
-      this.lazyMode.reconnectManager.stop();
-    }
 
     const requestsToAwait: Promise<void>[] = [];
     for (const request of this.requestManager.getRequests()) {
@@ -269,6 +242,36 @@ export class WsClient {
     return backwardCompatibility(this.activeConnection);
   }
 
+  /**
+   * Manages the reconnection process for the WebSocket using retry logic.
+   * Ensures that only one reconnection attempt is active at a time by tracking the current
+   * reconnection state in the `reconnecting` promise.
+   */
+  private reconnecting: Promise<void> | null = null;
+  private reconnect(closedError: TRPCWebSocketClosedError) {
+    this.connectionState.next({
+      type: 'state',
+      state: 'connecting',
+      error: TRPCClientError.from(closedError),
+    });
+    if (this.reconnecting) return;
+
+    const tryReconnect = async (attemptIndex: number) => {
+      try {
+        await sleep(this.reconnectRetryDelay(attemptIndex));
+        if (this.allowReconnect) {
+          await this.activeConnection.close();
+          await this.activeConnection.open();
+        }
+        this.reconnecting = null;
+      } catch {
+        await tryReconnect(attemptIndex + 1);
+      }
+    };
+
+    this.reconnecting = tryReconnect(0);
+  }
+
   private setupWebSocketListeners(ws: WebSocket) {
     const handleCloseOrError = (cause: unknown) => {
       const reqs = this.requestManager.getPendingRequests();
@@ -289,7 +292,7 @@ export class WsClient {
     };
 
     ws.addEventListener('open', async () => {
-      if (this.lazyMode.enabled) {
+      if (this.lazyMode) {
         this.inactivityTimeout.start();
       }
 
@@ -336,11 +339,27 @@ export class WsClient {
     ws.addEventListener('close', (event) => {
       handleCloseOrError(event);
       this.callbacks.onClose?.(event);
+
+      if (!this.lazyMode) {
+        this.reconnect(
+          new TRPCWebSocketClosedError({
+            message: 'WebSocket closed',
+            cause: event,
+          }),
+        );
+      }
     });
 
     ws.addEventListener('error', (event) => {
       handleCloseOrError(event);
       this.callbacks.onError?.(event);
+
+      this.reconnect(
+        new TRPCWebSocketClosedError({
+          message: 'WebSocket closed',
+          cause: event,
+        }),
+      );
     });
   }
 
@@ -369,19 +388,11 @@ export class WsClient {
 
   private handleIncomingRequest(message: TRPCClientIncomingRequest) {
     if (message.method === 'reconnect') {
-      this.connectionState.next({
-        type: 'state',
-        state: 'connecting',
-        error: TRPCClientError.from(
-          new TRPCWebSocketClosedError({
-            message: 'Server requested reconnect',
-          }),
-        ),
-      });
-
-      if (!this.lazyMode.enabled) {
-        this.lazyMode.reconnectManager.reconnect();
-      }
+      this.reconnect(
+        new TRPCWebSocketClosedError({
+          message: 'Server requested reconnect',
+        }),
+      );
     }
   }
 
