@@ -386,11 +386,14 @@ export function createRootHooks<
 
     type $Result = TRPCSubscriptionResult<unknown, TError>;
 
-    const trackedProps = React.useRef(new Set<keyof $Result>([]));
+    const [trackedProps] = React.useState(new Set<keyof $Result>([]));
 
-    const addTrackedProp = React.useCallback((key: keyof $Result) => {
-      trackedProps.current.add(key);
-    }, []);
+    const addTrackedProp = React.useCallback(
+      (key: keyof $Result) => {
+        trackedProps.add(key);
+      },
+      [trackedProps],
+    );
 
     const currentSubscriptionRef = React.useRef<Unsubscribable>(null);
 
@@ -400,7 +403,7 @@ export function createRootHooks<
         const next = (resultRef.current = callback(prev));
 
         let shouldUpdate = false;
-        for (const key of trackedProps.current) {
+        for (const key of trackedProps) {
           if (prev[key] !== next[key]) {
             shouldUpdate = true;
             break;
@@ -410,7 +413,7 @@ export function createRootHooks<
           setState(trackResult(next, addTrackedProp));
         }
       },
-      [addTrackedProp],
+      [addTrackedProp, trackedProps],
     );
 
     const reset = React.useCallback((): void => {
