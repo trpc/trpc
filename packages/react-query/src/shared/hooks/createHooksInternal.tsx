@@ -42,6 +42,8 @@ import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 import type {
   TRPCProvider,
   TRPCQueryOptions,
+  TRPCSubscriptionConnectingResult,
+  TRPCSubscriptionIdleResult,
   TRPCSubscriptionResult,
   UseTRPCInfiniteQueryOptions,
   UseTRPCInfiniteQueryResult,
@@ -351,23 +353,19 @@ export function createRootHooks<
 
     return hook;
   }
-
-  const initialStateIdle: TRPCSubscriptionResult<unknown, TError> = {
+  const initialStateIdle: Omit<TRPCSubscriptionIdleResult<unknown>, 'reset'> = {
     data: undefined,
     error: null,
     status: 'idle',
-    reset: () => {
-      // noop
-    },
   };
 
-  const initialStateConnecting: TRPCSubscriptionResult<unknown, TError> = {
+  const initialStateConnecting: Omit<
+    TRPCSubscriptionConnectingResult<unknown, TError>,
+    'reset'
+  > = {
     data: undefined,
     error: null,
     status: 'connecting',
-    reset: () => {
-      // noop
-    },
   };
 
   /* istanbul ignore next -- @preserve */
