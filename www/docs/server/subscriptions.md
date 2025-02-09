@@ -115,9 +115,9 @@ export const subRouter = router({
 });
 ```
 
-## Stopping a subscription
+## Stopping a subscription from the server {#stopping-from-server}
 
-If you need to stop a subscription, simply `return` in the generator function.
+If you need to stop a subscription from the server, simply `return` in the generator function.
 
 ```ts
 import { publicProcedure, router } from '../trpc';
@@ -143,6 +143,8 @@ export const subRouter = router({
   }),
 });
 ```
+
+On the client, you just `.unsubscribe()` the subscription.
 
 ## Cleanup of side effects
 
@@ -177,8 +179,6 @@ export const subRouter = router({
 ## Error handling
 
 Throwing an error in a generator function propagates to `trpc`'s `onError()` on the backend, but the error will not be sent to the client - the client will automatically reconnect based on the last event id that is [tracked using `tracked()`](#tracked).
-
-If this is surprising behavior to you and you have a finite amount of data to send, you should consider using [httpBatchStreamLink](../client/links/httpBatchStreamLink.md) instead.
 
 ## Output validation {#output-validation}
 
