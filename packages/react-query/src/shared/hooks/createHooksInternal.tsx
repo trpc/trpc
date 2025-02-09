@@ -17,6 +17,7 @@ import {
   getUntypedClient,
   TRPCUntypedClient,
 } from '@trpc/client';
+import type { Unsubscribable } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
@@ -391,8 +392,7 @@ export function createRootHooks<
       trackedProps.current.add(key);
     }, []);
 
-    type Unsubscribe = () => void;
-    const currentSubscriptionRef = React.useRef<Unsubscribe | null>(null);
+    const currentSubscriptionRef = React.useRef<Unsubscribable>(null);
 
     const updateState = React.useCallback(
       (callback: (prevState: $Result) => $Result) => {
@@ -415,7 +415,7 @@ export function createRootHooks<
 
     const reset = React.useCallback((): void => {
       // unsubscribe from the previous subscription
-      currentSubscriptionRef.current?.();
+      currentSubscriptionRef.current?.unsubscribe();
 
       if (!enabled) {
         updateState(() => ({ ...initialStateIdle, reset }));
@@ -474,9 +474,7 @@ export function createRootHooks<
         },
       );
 
-      currentSubscriptionRef.current = () => {
-        subscription.unsubscribe();
-      };
+      currentSubscriptionRef.current = subscription;
 
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [client, queryKey, enabled, updateState]);
@@ -484,7 +482,7 @@ export function createRootHooks<
       reset();
 
       return () => {
-        currentSubscriptionRef.current?.();
+        currentSubscriptionRef.current?.unsubscribe();
       };
     }, [reset]);
 
