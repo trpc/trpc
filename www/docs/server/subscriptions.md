@@ -178,7 +178,9 @@ export const subRouter = router({
 
 ## Error handling
 
-Throwing an error in a generator function propagates to `trpc`'s `onError()` on the backend, but the error will not be sent to the client - the client will automatically reconnect based on the last event id that is [tracked using `tracked()`](#tracked).
+Throwing an error in a generator function propagates to `trpc`'s `onError()` on the backend.
+
+If the error thrown is a 5xx error, the client will automatically attempt to reconnect based on the last event id that is [tracked using `tracked()`](#tracked). For other errors, the subscription will be cancelled and propagate to the `onError()` callback.
 
 ## Output validation {#output-validation}
 
