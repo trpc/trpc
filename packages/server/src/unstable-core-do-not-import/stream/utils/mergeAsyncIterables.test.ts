@@ -29,8 +29,8 @@ test('happy path', async () => {
 test('add iterable while iterating', async () => {
   const merged = mergeAsyncIterables<string>();
 
-  const startB = createDeferred<void>();
-  const continueA = createDeferred<void>();
+  const startB = createDeferred();
+  const continueA = createDeferred();
 
   merged.add(
     run(async function* () {
