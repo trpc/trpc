@@ -140,7 +140,6 @@ export interface Router<
     lazy: Record<string, LazyLoader<AnyRouter>>;
   };
   /**
-   * @deprecated use `t.createCallerFactory(router)` instead
    * @see https://trpc.io/docs/v11/server/server-side-calls
    */
   createCaller: RouterCaller<TRoot, TRecord>;
@@ -341,10 +340,14 @@ function isProcedure(
   return typeof procedureOrRouter === 'function';
 }
 
+/**
+ * @internal
+ */
 export async function getProcedureAtPath(
-  _def: AnyRouter['_def'],
+  router: Pick<Router<any, any>, '_def'>,
   path: string,
 ): Promise<AnyProcedure | null> {
+  const { _def } = router;
   let procedure = _def.procedures[path];
 
   while (!procedure) {
@@ -375,7 +378,7 @@ export async function callProcedure(
   },
 ) {
   const { type, path } = opts;
-  const proc = await getProcedureAtPath(opts.router._def, path);
+  const proc = await getProcedureAtPath(opts.router, path);
   if (
     !proc ||
     !isProcedure(proc) ||
@@ -406,7 +409,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
   return function createCallerInner<TRecord extends RouterRecord>(
     router: Pick<Router<TRoot, TRecord>, '_def'>,
   ): RouterCaller<TRoot, TRecord> {
-    const _def = router._def;
+    const { _def } = router;
     type Context = TRoot['ctx'];
 
     return function createCaller(ctxOrCallback, opts) {
@@ -418,7 +421,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
             return _def;
           }
 
-          const procedure = await getProcedureAtPath(_def, fullPath);
+          const procedure = await getProcedureAtPath(router, fullPath);
 
           let ctx: Context | undefined = undefined;
           try {

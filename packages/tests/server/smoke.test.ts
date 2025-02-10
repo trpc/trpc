@@ -26,12 +26,18 @@ const t = initTRPC
   });
 const { procedure } = t;
 
-test('untyped client - happy path w/o input', async () => {
+test.only('untyped client - happy path w/o input', async () => {
   const router = t.router({
     hello: procedure.query(() => 'world'),
   });
 
-  const { client, close } = routerToServerAndClientNew(router);
+  const { client, close } = routerToServerAndClientNew(router, {
+    server: {
+      onError(opts) {
+        console.log('onError', opts);
+      },
+    },
+  });
   const untypedClient = getUntypedClient(client);
 
   // client is untyped
