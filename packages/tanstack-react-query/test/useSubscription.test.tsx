@@ -3,7 +3,6 @@ import { getServerAndReactClient } from './__helpers';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { konn } from 'konn';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
@@ -29,69 +28,62 @@ function diff(list: any[]) {
 }
 
 const getCtx = (protocol: 'http' | 'ws') => {
-  return konn()
-    .beforeEach(() => {
-      const ee = new EventEmitter();
-      const t = initTRPC.create({
-        errorFormatter({ shape }) {
-          return {
-            ...shape,
-            data: {
-              ...shape.data,
-              foo: 'bar' as const,
-            },
-          };
-        },
-      });
-      const appRouter = t.router({
-        onEventIterable: t.procedure
-          .input(z.number())
-          .subscription(async function* (opts) {
-            for await (const event of on(ee, 'data', {
-              signal: opts.signal,
-            })) {
-              const data = event[0] as number;
-              yield data + opts.input;
-            }
-          }),
-        /**
-         * @deprecated delete in v12
-         */
-        onEventObservable: t.procedure
-          .input(z.number())
-          .subscription(({ input }) => {
-            return observable<number>((emit) => {
-              const onData = (data: number) => {
-                emit.next(data + input);
-              };
-              ee.on('data', onData);
-              return () => {
-                ee.off('data', onData);
-              };
-            });
-          }),
-      });
-
+  const ee = new EventEmitter();
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
       return {
-        ...getServerAndReactClient(appRouter, {
-          subscriptions: protocol,
-        }),
-        ee,
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
       };
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
+    },
+  });
+  const appRouter = t.router({
+    onEventIterable: t.procedure
+      .input(z.number())
+      .subscription(async function* (opts) {
+        for await (const event of on(ee, 'data', {
+          signal: opts.signal,
+        })) {
+          const data = event[0] as number;
+          yield data + opts.input;
+        }
+      }),
+    /**
+     * @deprecated delete in v12
+     */
+    onEventObservable: t.procedure
+      .input(z.number())
+      .subscription(({ input }) => {
+        return observable<number>((emit) => {
+          const onData = (data: number) => {
+            emit.next(data + input);
+          };
+          ee.on('data', onData);
+          return () => {
+            ee.off('data', onData);
+          };
+        });
+      }),
+  });
+
+  return {
+    ...getServerAndReactClient(appRouter, {
+      subscriptions: protocol,
+    }),
+    ee,
+  };
 };
+
 describe.each([
   //
   'http',
   'ws',
 ] as const)('useSubscription - %s', (protocol) => {
-  const ctx = getCtx(protocol);
-
-  test('iterable', async () => {
+  test.only('iterable', async () => {
+    await using ctx = getCtx(protocol);
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
@@ -174,6 +166,8 @@ describe.each([
   });
 
   test('observable()', async () => {
+    await using ctx = getCtx(protocol);
+
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
@@ -239,9 +233,8 @@ describe.each([
 });
 
 describe('connection state - http', () => {
-  const ctx = getCtx('http');
-
   test('iterable', async () => {
+    await using ctx = getCtx('http');
     const { useTRPC } = ctx;
 
     const queryResult: unknown[] = [];
@@ -351,9 +344,8 @@ describe('connection state - http', () => {
 });
 
 describe('reset - http', () => {
-  const ctx = getCtx('http');
-
   test('iterable', async () => {
+    await using ctx = getCtx('http');
     const { useTRPC } = ctx;
 
     const queryResult: TRPCSubscriptionResult<number, unknown>[] = [];
