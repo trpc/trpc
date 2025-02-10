@@ -147,9 +147,8 @@ unstable_httpBatchStreamLink({
       ...opts,
       reactNative: { textStreaming: true },
     }),
-  ...restOfConfig
-  }
-)
+  ...restOfConfig,
+});
 ```
 
 ## Compatibility (server-side)
