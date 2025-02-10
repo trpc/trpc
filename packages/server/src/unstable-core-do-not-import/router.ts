@@ -370,12 +370,12 @@ export async function getProcedureAtPath(
  */
 export async function callProcedure(
   opts: ProcedureCallOptions<unknown> & {
-    _def: AnyRouter['_def'];
+    router: AnyRouter;
     allowMethodOverride?: boolean;
   },
 ) {
   const { type, path } = opts;
-  const proc = await getProcedureAtPath(opts._def, path);
+  const proc = await getProcedureAtPath(opts.router._def, path);
   if (
     !proc ||
     !isProcedure(proc) ||

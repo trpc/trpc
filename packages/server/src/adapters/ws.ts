@@ -219,7 +219,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
         const abortController = new AbortController();
         const result = await callProcedure({
-          _def: router._def,
+          router,
           path,
           getRawInput: async () => input,
           ctx,

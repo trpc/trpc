@@ -96,7 +96,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
         serialize: transformer.output.serialize,
         query: (queryOpts) => {
           return callProcedure({
-            _def: router._def,
+            router,
             path: queryOpts.path,
             getRawInput: async () => queryOpts.input,
             ctx,
