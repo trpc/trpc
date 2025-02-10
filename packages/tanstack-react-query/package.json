@@ -1,13 +1,13 @@
 {
   "name": "@trpc/tanstack-react-query",
   "version": "0.0.0-alpha.3",
-  "description": "Tanstack React Query Integration for tRPC",
+  "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "typings": "dist/index.d.ts",
-  "homepage": "https://trpc.io",
+  "homepage": "https://trpc.io/docs/client/tanstack-react-query/introduction",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trpc/trpc.git",
@@ -48,7 +48,7 @@
     }
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.62.9",
+    "@tanstack/react-query": "^5.62.8",
     "@trpc/client": "10.45.1",
     "@trpc/server": "^10.45.1",
     "react": ">=18.2.0",
@@ -56,12 +56,13 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.62.9",
+    "@tanstack/react-query": "^5.66.0",
     "@trpc/client": "10.45.1",
     "@trpc/server": "^10.45.1",
     "@types/node": "^20.10.0",
     "@types/react": "^18.3.1",
     "eslint": "^8.57.0",
+    "event-source-polyfill": "^1.0.31",
     "konn": "^0.7.0",
     "react": "^19.0.0",
     "react-dom": "^18.3.1",
@@ -69,6 +70,7 @@
     "tsx": "^4.0.0",
     "typescript": "^5.6.2",
     "vitest": "^2.0.4",
+    "ws": "^8.0.0",
     "zod": "^3.0.0"
   },
   "publishConfig": {

@@ -32,10 +32,10 @@
     "!**/__tests__"
   ],
   "dependencies": {
-    "@effect/cli": "0.48.25",
-    "@effect/platform": "0.69.25",
-    "@effect/platform-node": "0.64.27",
-    "effect": "3.10.16",
+    "@effect/cli": "0.54.4",
+    "@effect/platform": "0.75.4",
+    "@effect/platform-node": "0.71.4",
+    "effect": "3.12.10",
     "jscodeshift": "17.1.1",
     "typescript": "^5.6.2"
   },

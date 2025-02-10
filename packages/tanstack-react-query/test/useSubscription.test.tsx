@@ -3,12 +3,39 @@ import { getServerAndReactClient } from './__helpers';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { konn } from 'konn';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 import type { TRPCSubscriptionResult } from '../src';
 import { useSubscription } from '../src';
+
+/* eslint-disable no-console */
+export const suppressLogs = () => {
+  const log = console.log;
+  const error = console.error;
+  const noop = () => {
+    // ignore
+  };
+  console.log = noop;
+  console.error = noop;
+
+  function cleanup() {
+    console.log = log;
+    console.error = error;
+  }
+
+  return makeResource(cleanup, cleanup);
+};
+
+/**
+ * Pause logging until the promise resolves or throws
+ */
+export const suppressLogsUntil = async (fn: () => Promise<void>) => {
+  using _ = suppressLogs();
+
+  await fn();
+};
 
 /**
  * a function that displays the diff over time in a list of values
@@ -29,131 +56,122 @@ function diff(list: any[]) {
 }
 
 const getCtx = (protocol: 'http' | 'ws') => {
-  return konn()
-    .beforeEach(() => {
-      const ee = new EventEmitter();
-      const t = initTRPC.create({
-        errorFormatter({ shape }) {
-          return {
-            ...shape,
-            data: {
-              ...shape.data,
-              foo: 'bar' as const,
-            },
-          };
-        },
-      });
-      const appRouter = t.router({
-        onEventIterable: t.procedure
-          .input(z.number())
-          .subscription(async function* (opts) {
-            for await (const event of on(ee, 'data', {
-              signal: opts.signal,
-            })) {
-              const data = event[0] as number;
-              yield data + opts.input;
-            }
-          }),
-        /**
-         * @deprecated delete in v12
-         */
-        onEventObservable: t.procedure
-          .input(z.number())
-          .subscription(({ input }) => {
-            return observable<number>((emit) => {
-              const onData = (data: number) => {
-                emit.next(data + input);
-              };
-              ee.on('data', onData);
-              return () => {
-                ee.off('data', onData);
-              };
-            });
-          }),
-      });
-
+  const ee = new EventEmitter();
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
       return {
-        ...getServerAndReactClient(appRouter, {
-          subscriptions: protocol,
-        }),
-        ee,
+        ...shape,
+        data: {
+          ...shape.data,
+          foo: 'bar' as const,
+        },
       };
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
+    },
+  });
+  const appRouter = t.router({
+    onEventIterable: t.procedure
+      .input(z.number())
+      .subscription(async function* (opts) {
+        for await (const event of on(ee, 'data', {
+          signal: opts.signal,
+        })) {
+          const data = event[0] as number;
+          yield data + opts.input;
+        }
+      }),
+    /**
+     * @deprecated delete in v12
+     */
+    onEventObservable: t.procedure
+      .input(z.number())
+      .subscription(({ input }) => {
+        return observable<number>((emit) => {
+          const onData = (data: number) => {
+            emit.next(data + input);
+          };
+          ee.on('data', onData);
+          return () => {
+            ee.off('data', onData);
+          };
+        });
+      }),
+  });
+
+  return {
+    ...getServerAndReactClient(appRouter, {
+      subscriptions: protocol,
+    }),
+    ee,
+  };
 };
+
 describe.each([
   //
   'http',
   'ws',
 ] as const)('useSubscription - %s', (protocol) => {
-  const ctx = getCtx(protocol);
-
   test('iterable', async () => {
+    await using ctx = getCtx(protocol);
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
     const { useTRPC } = ctx;
 
-    let setEnabled = null as never as (enabled: boolean) => void;
-
     function MyComponent() {
-      const [isStarted, setIsStarted] = React.useState(false);
-      const [data, setData] = React.useState<number>();
-      const [enabled, _setEnabled] = React.useState(true);
-      setEnabled = _setEnabled;
+      const [enabled, setEnabled] = React.useState(true);
 
       const trpc = useTRPC();
-      useSubscription(
+      const result = useSubscription(
         trpc.onEventIterable.subscriptionOptions(10, {
           enabled,
-          onStarted: () => {
-            setIsStarted(true);
-          },
           onData: (data) => {
             expectTypeOf(data).toMatchTypeOf<number>();
             onDataMock(data);
-            setData(data);
           },
           onError: onErrorMock,
         }),
       );
 
-      if (!isStarted) {
-        return <>{'__connecting'}</>;
-      }
-
-      if (!data) {
-        return <>{'__connected'}</>;
-      }
-
-      return <pre>{`__data:${data}`}</pre>;
+      return (
+        <>
+          <button
+            onClick={() => {
+              setEnabled((it) => !it);
+            }}
+            data-testid="toggle-enabled"
+          >
+            toggle enabled
+          </button>
+          <div>status:{result.status}</div>
+          <div>error:{result.error?.message}</div>
+          <div>data:{result.data ?? 'NO_DATA'}</div>
+        </>
+      );
     }
 
     const utils = ctx.renderApp(<MyComponent />);
 
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__connecting`);
+      expect(utils.container).toHaveTextContent(`status:connecting`);
     });
     expect(onDataMock).toHaveBeenCalledTimes(0);
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__connected`);
+      expect(utils.container).toHaveTextContent(`status:pending`);
     });
     ctx.ee.emit('data', 20);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`data:30`);
+    });
 
     await waitFor(() => {
       expect(onDataMock).toHaveBeenCalledTimes(1);
     });
     expect(onDataMock.mock.calls[0]?.[0]).toEqual(30);
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__data:30`);
-    });
     expect(onDataMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(0);
 
-    setEnabled(false);
+    fireEvent.click(utils.getByTestId('toggle-enabled'));
 
     await waitFor(() => {
       if (protocol === 'http') {
@@ -174,25 +192,21 @@ describe.each([
   });
 
   test('observable()', async () => {
+    await using ctx = getCtx(protocol);
+
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
     const { useTRPC } = ctx;
-    let setEnabled = null as never as (enabled: boolean) => void;
 
     function MyComponent() {
-      const [isStarted, setIsStarted] = React.useState(false);
       const [data, setData] = React.useState<number>();
-      const [enabled, _setEnabled] = React.useState(true);
-      setEnabled = _setEnabled;
+      const [enabled, setEnabled] = React.useState(true);
 
       const trpc = useTRPC();
-      useSubscription(
+      const result = useSubscription(
         trpc.onEventObservable.subscriptionOptions(10, {
           enabled: enabled,
-          onStarted: () => {
-            setIsStarted(true);
-          },
           onData: (data) => {
             expectTypeOf(data).toMatchTypeOf<number>();
             onDataMock(data);
@@ -202,34 +216,35 @@ describe.each([
         }),
       );
 
-      if (!isStarted) {
-        return <>{'__connecting'}</>;
-      }
-
-      if (!data) {
-        return <>{'__connected'}</>;
-      }
-
-      return <pre>{`__data:${data}`}</pre>;
+      return (
+        <>
+          <button
+            onClick={() => {
+              setEnabled((it) => !it);
+            }}
+            data-testid="toggle-enabled"
+          >
+            toggle enabled
+          </button>
+          <div>status:{result.status}</div>
+          <div>data:{data ?? 'NO_DATA'}</div>
+        </>
+      );
     }
 
     const utils = ctx.renderApp(<MyComponent />);
 
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__connecting`);
-    });
-    expect(onDataMock).toHaveBeenCalledTimes(0);
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__connected`);
+      expect(utils.container).toHaveTextContent(`status:pending`);
     });
     ctx.ee.emit('data', 20);
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__data:30`);
+      expect(utils.container).toHaveTextContent(`data:30`);
     });
     expect(onDataMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(0);
 
-    setEnabled(false);
+    fireEvent.click(utils.getByTestId('toggle-enabled'));
 
     await waitFor(() => {
       // no event listeners
@@ -239,9 +254,8 @@ describe.each([
 });
 
 describe('connection state - http', () => {
-  const ctx = getCtx('http');
-
   test('iterable', async () => {
+    await using ctx = getCtx('http');
     const { useTRPC } = ctx;
 
     const queryResult: unknown[] = [];
@@ -298,10 +312,12 @@ describe('connection state - http', () => {
     `);
     queryResult.length = 0;
 
-    ctx.opts.destroyConnections();
+    await suppressLogsUntil(async () => {
+      ctx.opts.destroyConnections();
 
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('status:connecting');
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('status:connecting');
+      });
     });
 
     await waitFor(
@@ -351,9 +367,8 @@ describe('connection state - http', () => {
 });
 
 describe('reset - http', () => {
-  const ctx = getCtx('http');
-
   test('iterable', async () => {
+    await using ctx = getCtx('http');
     const { useTRPC } = ctx;
 
     const queryResult: TRPCSubscriptionResult<number, unknown>[] = [];

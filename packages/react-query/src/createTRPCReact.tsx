@@ -381,18 +381,9 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
       inferAsyncIterableYield<TDef['output']>,
       TRPCClientErrorLike<TDef>
     >,
-  ): Exclude<
-    TRPCSubscriptionResult<
-      inferAsyncIterableYield<TDef['output']>,
-      TRPCClientErrorLike<TDef>
-    >,
-    // The idle state is
-    | {
-        status: 'idle';
-      }
-    | {
-        connectionState: 'idle';
-      }
+  ): TRPCSubscriptionResult<
+    inferAsyncIterableYield<TDef['output']>,
+    TRPCClientErrorLike<TDef>
   >;
 
   // With skip token
@@ -437,18 +428,18 @@ export type DecorateRouterRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? DecorateRouterRecord<TRoot, $Value>
-      : $Value extends AnyProcedure
-        ? DecorateProcedure<
-            $Value['_def']['type'],
-            {
-              input: inferProcedureInput<$Value>;
-              output: inferTransformedProcedureOutput<TRoot, $Value>;
-              transformer: TRoot['transformer'];
-              errorShape: TRoot['errorShape'];
-            }
-          >
+    ? $Value extends AnyProcedure
+      ? DecorateProcedure<
+          $Value['_def']['type'],
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<TRoot, $Value>;
+            transformer: TRoot['transformer'];
+            errorShape: TRoot['errorShape'];
+          }
+        >
+      : $Value extends RouterRecord
+        ? DecorateRouterRecord<TRoot, $Value>
         : never
     : never;
 };

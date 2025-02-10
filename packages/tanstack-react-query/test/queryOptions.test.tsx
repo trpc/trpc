@@ -43,7 +43,10 @@ const testContext = () => {
     }),
   });
 
-  return Object.assign(getServerAndReactClient(appRouter), { nextIterable });
+  return {
+    ...getServerAndReactClient(appRouter),
+    nextIterable,
+  };
 };
 
 describe('queryOptions', () => {
@@ -219,7 +222,7 @@ describe('queryOptions', () => {
       });
       ctx.nextIterable();
 
-      expectTypeOf(query1.data!).toMatchTypeOf<number[]>();
+      expectTypeOf(query1.data).toEqualTypeOf<undefined | number[]>();
 
       return (
         <pre>

@@ -180,6 +180,10 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
    * Called when an **unrecoverable error** occurs and the subscription is closed
    */
   onError?: (err: TError) => void;
+  /**
+   * Called when the subscription is completed on the server
+   */
+  onComplete?: () => void;
 }
 
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {
@@ -209,7 +213,7 @@ export interface TRPCSubscriptionConnectingResult<TOutput, TError>
 export interface TRPCSubscriptionPendingResult<TOutput>
   extends TRPCSubscriptionBaseResult<TOutput, undefined> {
   status: 'pending';
-  data: TOutput;
+  data: TOutput | undefined;
   error: null;
 }
 

@@ -8,21 +8,22 @@
   <strong>End-to-end typesafe APIs made easy</strong>
 </p>
 
-<p align="center">
-  <img src="https://assets.trpc.io/www/v10/v10-dark-landscape.gif" alt="Demo" />
-</p>
-
 # `@trpc/tanstack-react-query`
 
-> A tRPC wrapper around @tanstack/react-query.
+> A tRPC wrapper around `@tanstack/react-query`.
+
+> [!WARNING]
+>
+> 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧
+> This package is currently in beta as we stabilize the API. We might do breaking changes without respecting semver.
 
 ## Documentation
 
-TODO
+Full documentation can be found at https://trpc.io/docs/client/tanstack-react-query/introduction.
 
 ## Installation
 
-> Requires `@tanstack/react-query` v5.59.15 or higher
+> Requires `@tanstack/react-query` v5.62.8 or higher
 
 ```bash
 # npm

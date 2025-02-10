@@ -7,19 +7,21 @@ import {
   type TRPCRequestOptions,
 } from '@trpc/client';
 import {
-  callProcedure,
   type AnyProcedure,
   type inferProcedureInput,
   type inferRouterContext,
   type inferTransformedProcedureOutput,
   type ProcedureType,
 } from '@trpc/server';
-import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import type {
   AnyRootTypes,
   AnyRouter,
   MaybePromise,
   RouterRecord,
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  callProcedure,
+  createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   trpcInfiniteQueryOptions,
@@ -49,14 +51,14 @@ import {
 
 export interface DecorateQueryKeyable {
   /**
-   * Calculate the Tanstack Query Key for a Route
+   * Calculate the TanStack Query Key for a Route
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
    */
   queryKey: () => TRPCQueryKey;
 
   /**
-   * Calculate a Tanstack Query Filter for a Route
+   * Calculate a TanStack Query Filter for a Route
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    */
@@ -96,17 +98,16 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   infiniteQueryOptions: TRPCInfiniteQueryOptions<TDef>;
 
   /**
-   * Calculate the Tanstack Query Key for a Query Procedure
+   * Calculate the TanStack Query Key for a Query Procedure
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
    */
   queryKey: (
     input?: TDef['input'],
-    // tslint seems to be wrong here, the type is correct
   ) => DataTag<TRPCQueryKey, TDef['output'], TDef['errorShape']>;
 
   /**
-   * Calculate a Tanstack Query Filter for a Query Procedure
+   * Calculate a TanStack Query Filter for a Query Procedure
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    */
@@ -136,7 +137,7 @@ export interface DecorateMutationProcedure<TDef extends ResolverDef> {
   mutationOptions: TRPCMutationOptions<TDef>;
 
   /**
-   * Calculate the Tanstack Mutation Key for a Mutation Procedure
+   * Calculate the TanStack Mutation Key for a Mutation Procedure
    */
   mutationKey: () => TRPCMutationKey;
 }
@@ -239,7 +240,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       if ('router' in opts) {
         return Promise.resolve(unwrapLazyArg(opts.ctx)).then((ctx) =>
           callProcedure({
-            procedures: opts.router._def.procedures,
+            router: opts.router,
             path: path,
             getRawInput: async () => input,
             ctx: ctx,

@@ -64,11 +64,10 @@ type DecoratedProcedureSSGRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? DecoratedProcedureSSGRecord<TRoot, $Value>
-      : // utils only apply to queries
-        $Value extends AnyQueryProcedure
-        ? Pick<DecorateQueryProcedure<TRoot, $Value>, SSGFns>
+    ? $Value extends AnyQueryProcedure
+      ? Pick<DecorateQueryProcedure<TRoot, $Value>, SSGFns>
+      : $Value extends RouterRecord
+        ? DecoratedProcedureSSGRecord<TRoot, $Value>
         : never
     : never;
 };
@@ -97,7 +96,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
         serialize: transformer.output.serialize,
         query: (queryOpts) => {
           return callProcedure({
-            procedures: router._def.procedures,
+            router,
             path: queryOpts.path,
             getRawInput: async () => queryOpts.input,
             ctx,

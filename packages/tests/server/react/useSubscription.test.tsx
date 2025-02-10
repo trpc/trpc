@@ -1,18 +1,22 @@
-import { EventEmitter, on } from 'events';
 import {
   ignoreErrors,
-  suppressLogs,
+  IterableEventEmitter,
   suppressLogsUntil,
 } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
-import { skipToken } from '@tanstack/react-query';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import type { TRPCSubscriptionResult } from '@trpc/react-query/shared';
-import { initTRPC, sse } from '@trpc/server';
+import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { konn } from 'konn';
 import React, { useState } from 'react';
 import { z } from 'zod';
+
+const returnSymbol = Symbol();
+
+type MyEvents = {
+  data: [number | Error | typeof returnSymbol];
+};
 
 /**
  * a function that displays the diff over time in a list of values
@@ -34,7 +38,7 @@ function diff(list: any[]) {
 const getCtx = (protocol: 'http' | 'ws') => {
   return konn()
     .beforeEach(() => {
-      const ee = new EventEmitter();
+      const ee = new IterableEventEmitter<MyEvents>();
       const t = initTRPC.create({
         errorFormatter({ shape }) {
           return {
@@ -50,10 +54,16 @@ const getCtx = (protocol: 'http' | 'ws') => {
         onEventIterable: t.procedure
           .input(z.number())
           .subscription(async function* (opts) {
-            for await (const event of on(ee, 'data', {
+            for await (const [data] of ee.toIterable('data', {
               signal: opts.signal,
             })) {
-              const data = event[0] as number;
+              if (data instanceof Error) {
+                throw data;
+              }
+              if (data === returnSymbol) {
+                return;
+              }
+
               yield data + opts.input;
             }
           }),
@@ -64,7 +74,10 @@ const getCtx = (protocol: 'http' | 'ws') => {
           .input(z.number())
           .subscription(({ input }) => {
             return observable<number>((emit) => {
-              const onData = (data: number) => {
+              const onData: (...args: MyEvents['data']) => void = (data) => {
+                if (typeof data !== 'number') {
+                  throw new Error('Invalid data');
+                }
                 emit.next(data + input);
               };
               ee.on('data', onData);
@@ -178,6 +191,75 @@ describe.each([
     });
   });
 
+  test('iterable - return from server', async () => {
+    const onDataMock = vi.fn();
+    const onErrorMock = vi.fn();
+    const onCompletedMock = vi.fn();
+
+    let setEnabled = null as never as (enabled: boolean) => void;
+
+    function MyComponent() {
+      const [data, setData] = useState<number[]>();
+      const [enabled, _setEnabled] = useState(false);
+      setEnabled = _setEnabled;
+
+      const sub = ctx.client.onEventIterable.useSubscription(0, {
+        enabled,
+        onData: (data) => {
+          expectTypeOf(data).toMatchTypeOf<number>();
+          onDataMock(data);
+          setData((prev) => [...(prev ?? []), data]);
+        },
+        onError: onErrorMock,
+        onComplete: onCompletedMock,
+      });
+
+      return (
+        <>
+          <div>status:{sub.status}</div>
+          <div>All data: {data?.join(',') ?? 'EMPTY'}</div>
+        </>
+      );
+    }
+
+    const utils = render(
+      <ctx.App>
+        <MyComponent />
+      </ctx.App>,
+    );
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:idle`);
+    });
+
+    ignoreErrors(() => {
+      setEnabled(true);
+    });
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    await waitFor(() => {
+      expect(ctx.ee.listenerCount('data')).toBe(1);
+    });
+    ctx.ee.emit('data', 20);
+    ctx.ee.emit('data', 30);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`All data: 20,30`);
+    });
+
+    ctx.ee.emit('data', returnSymbol);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:idle`);
+    });
+
+    expect(onCompletedMock).toHaveBeenCalledTimes(1);
+
+    ignoreErrors(() => {
+      setEnabled(false);
+    });
+  });
+
   test('observable()', async () => {
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
@@ -277,7 +359,9 @@ describe('connection state - http', () => {
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`status:pending`);
+      expect(ctx.ee.listenerCount('data')).toBe(1);
     });
+
     // emit
     ctx.ee.emit('data', 20);
 
@@ -314,6 +398,7 @@ describe('connection state - http', () => {
     await waitFor(
       () => {
         expect(utils.container).toHaveTextContent('status:pending');
+        expect(ctx.ee.listenerCount('data')).toBe(1);
       },
       {
         timeout: 5_000,
@@ -395,7 +480,9 @@ describe('reset - http', () => {
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`status:pending`);
+      expect(ctx.ee.listenerCount('data')).toBe(1);
     });
+
     // emit
     ctx.ee.emit('data', 20);
 
