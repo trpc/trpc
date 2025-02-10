@@ -1,6 +1,6 @@
 import { Unpromise } from '../../vendor/unpromise';
 import { getTRPCErrorFromUnknown } from '../error/TRPCError';
-import { isAbortError } from '../http/isAbortError';
+import { isAbortError } from '../http/abortError';
 import type { MaybePromise } from '../types';
 import { identity, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
@@ -70,6 +70,7 @@ export interface SSEStreamProducerOptions<TValue = unknown> {
 const PING_EVENT = 'ping';
 const SERIALIZED_ERROR_EVENT = 'serialized-error';
 const CONNECTED_EVENT = 'connected';
+const RETURN_EVENT = 'return';
 
 interface SSEvent {
   id?: string;
@@ -161,6 +162,11 @@ export function sseStreamProducer<TValue = unknown>(
   async function* generatorWithErrorHandling(): AsyncIterable<SSEvent, void> {
     try {
       yield* generator();
+
+      yield {
+        event: RETURN_EVENT,
+        data: '',
+      };
     } catch (cause) {
       if (isAbortError(cause)) {
         // ignore abort errors, send any other errors
@@ -333,6 +339,11 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
             type: 'ping',
             eventSource,
           });
+        });
+        eventSource.addEventListener(RETURN_EVENT, () => {
+          eventSource.close();
+          controller.close();
+          _es = null;
         });
         eventSource.addEventListener('error', (event) => {
           if (eventSource.readyState === EventSource.CLOSED) {

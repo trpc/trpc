@@ -8,31 +8,23 @@ import { z } from 'zod';
 
 export type WhoIsTyping = Record<string, { lastTyped: Date }>;
 
-export interface MyEvents {
-  add: (channelId: string, data: PostType) => void;
-  isTypingUpdate: (channelId: string, who: WhoIsTyping) => void;
-}
-declare interface MyEventEmitter {
-  on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  off<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  once<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  emit<TEv extends keyof MyEvents>(
-    event: TEv,
-    ...args: Parameters<MyEvents[TEv]>
-  ): boolean;
-}
-
-class MyEventEmitter extends EventEmitter {
-  public toIterable<TEv extends keyof MyEvents>(
-    event: TEv,
-    opts: NonNullable<Parameters<typeof on>[2]>,
-  ): AsyncIterable<Parameters<MyEvents[TEv]>> {
-    return on(this, event, opts) as any;
+type EventMap<T> = Record<keyof T, any[]>;
+class IterableEventEmitter<T extends EventMap<T>> extends EventEmitter<T> {
+  toIterable<TEventName extends keyof T & string>(
+    eventName: TEventName,
+    opts?: NonNullable<Parameters<typeof on>[2]>,
+  ): AsyncIterable<T[TEventName]> {
+    return on(this as any, eventName, opts) as any;
   }
 }
 
+export interface MyEvents {
+  add: [channelId: string, data: PostType];
+  isTypingUpdate: [channelId: string, who: WhoIsTyping];
+}
+
 // In a real app, you'd probably use Redis or something
-export const ee = new MyEventEmitter();
+export const ee = new IterableEventEmitter<MyEvents>();
 
 // who is currently typing for each channel, key is `name`
 export const currentlyTyping: Record<string, WhoIsTyping> = Object.create(null);

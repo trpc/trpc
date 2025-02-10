@@ -8,25 +8,25 @@ import { EventEmitter } from 'events';
 import { prisma } from '../prisma';
 import { z } from 'zod';
 import { authedProcedure, publicProcedure, router } from '../trpc';
+import { on } from 'node:events';
+
+type EventMap<T> = Record<keyof T, any[]>;
+class IterableEventEmitter<T extends EventMap<T>> extends EventEmitter<T> {
+  toIterable<TEventName extends keyof T & string>(
+    eventName: TEventName,
+    opts?: NonNullable<Parameters<typeof on>[2]>,
+  ): AsyncIterable<T[TEventName]> {
+    return on(this as any, eventName, opts) as any;
+  }
+}
 
 interface MyEvents {
-  add: (data: Post) => void;
-  isTypingUpdate: () => void;
+  add: [Post];
+  isTypingUpdate: [];
 }
-declare interface MyEventEmitter {
-  on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  off<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  once<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  emit<TEv extends keyof MyEvents>(
-    event: TEv,
-    ...args: Parameters<MyEvents[TEv]>
-  ): boolean;
-}
-
-class MyEventEmitter extends EventEmitter {}
 
 // In a real app, you'd probably use Redis or something
-const ee = new MyEventEmitter();
+const ee = new IterableEventEmitter<MyEvents>();
 
 // who is currently typing, key is `name`
 const currentlyTyping: Record<string, { lastTyped: Date }> =
