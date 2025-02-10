@@ -5,7 +5,7 @@ export const topSponsors = [
   {
     "name": "Cal.com, Inc.",
     "imgSrc": "https://avatars.githubusercontent.com/u/79145102?v=4",
-    "weight": 102,
+    "weight": 101,
     "login": "calcom",
     "link": "https://cal.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1656581731000
@@ -13,7 +13,7 @@ export const topSponsors = [
   {
     "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 45,
+    "weight": 51,
     "login": "tryretool",
     "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
@@ -35,12 +35,12 @@ export const topSponsors = [
     "createdAt": 1633034677000
   },
   {
-    "name": "Flylance",
-    "imgSrc": "https://avatars.githubusercontent.com/u/67534310?v=4",
-    "weight": 12,
-    "login": "flylance-apps",
-    "link": "http://flylance.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1651211349000
+    "name": "Unkey",
+    "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
+    "weight": 11,
+    "login": "unkeyed",
+    "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1708012798000
   }
 ] as const;
 
@@ -79,10 +79,10 @@ export const allSponsors = [
     "createdAt": 1641570413000
   },
   {
-    "name": "SchlagerKhan",
-    "imgSrc": "https://avatars.githubusercontent.com/u/6490268?v=4",
+    "name": "Kalle",
+    "imgSrc": "https://avatars.githubusercontent.com/u/6490268?u=59a369dc23fca0ed9943e5f020ff27ca968704d9&v=4",
     "weight": 2,
-    "login": "SchlagerKhan",
+    "login": "debuglebowski",
     "link": "https://iamkhan.io/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1644656389000
   },
@@ -95,14 +95,6 @@ export const allSponsors = [
     "createdAt": 1646015010000
   },
   {
-    "name": "Flylance",
-    "imgSrc": "https://avatars.githubusercontent.com/u/67534310?v=4",
-    "weight": 12,
-    "login": "flylance-apps",
-    "link": "http://flylance.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1651211349000
-  },
-  {
     "name": "Dmitry Maykov",
     "imgSrc": "https://avatars.githubusercontent.com/u/6147048?u=8ae662ac99e91917062164de0d9404002b99cf2e&v=4",
     "weight": 3,
@@ -113,7 +105,7 @@ export const allSponsors = [
   {
     "name": "Cal.com, Inc.",
     "imgSrc": "https://avatars.githubusercontent.com/u/79145102?v=4",
-    "weight": 102,
+    "weight": 101,
     "login": "calcom",
     "link": "https://cal.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1656581731000
@@ -241,7 +233,7 @@ export const allSponsors = [
   {
     "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 45,
+    "weight": 51,
     "login": "tryretool",
     "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
