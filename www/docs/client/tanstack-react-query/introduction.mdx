@@ -117,27 +117,27 @@ function makeQueryClient() {
         staleTime: 60 * 1000,
       },
     },
-  })
+  });
 }
 
-let browserQueryClient: QueryClient | undefined = undefined
+let browserQueryClient: QueryClient | undefined = undefined;
 
 function getQueryClient() {
   if (typeof window === 'undefined') {
     // Server: always make a new query client
-    return makeQueryClient()
+    return makeQueryClient();
   } else {
     // Browser: make a new query client if we don't already have one
     // This is very important, so we don't re-make a new client if React
     // suspends during the initial render. This may not be needed if we
     // have a suspense boundary BELOW the creation of the query client
-    if (!browserQueryClient) browserQueryClient = makeQueryClient()
-    return browserQueryClient
+    if (!browserQueryClient) browserQueryClient = makeQueryClient();
+    return browserQueryClient;
   }
 }
 
 export function App() {
-  const queryClient = getQueryClient()
+  const queryClient = getQueryClient();
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
       links: [
@@ -221,23 +221,33 @@ The `trpc` object is fully type-safe and will provide autocompletes for all the 
 Available for all query procedures. Provides a type-safe wrapper around [Tanstack's `queryOptions` function](https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions). The first argument is the input for the procedure, and the second argument accepts any native Tanstack React Query options.
 
 ```ts
-const queryOptions = trpc.path.to.query.queryOptions({ /** input */ }, {
-  // Any Tanstack React Query options
-  stateTime: 1000,
-})
+const queryOptions = trpc.path.to.query.queryOptions(
+  {
+    /** input */
+  },
+  {
+    // Any Tanstack React Query options
+    stateTime: 1000,
+  },
+);
 ```
 
 You can additionally provide a `trpc` object to the `queryOptions` function to provide tRPC request options to the client.
 
 ```ts
-const queryOptions = trpc.path.to.query.queryOptions({ /** input */ }, {
-  trpc: {
-    // Provide tRPC request options to the client
-    context: {
-      // see https://trpc.io/docs/client/links#managing-context
-    }
-  }
-})
+const queryOptions = trpc.path.to.query.queryOptions(
+  {
+    /** input */
+  },
+  {
+    trpc: {
+      // Provide tRPC request options to the client
+      context: {
+        // see https://trpc.io/docs/client/links#managing-context
+      },
+    },
+  },
+);
 ```
 
 The result can be passed to `useQuery` or `useSuspenseQuery` hooks or query client methods like `fetchQuery`, `prefetchQuery`, `prefetchInfiniteQuery`, `invalidateQueries`, etc.
@@ -247,10 +257,15 @@ The result can be passed to `useQuery` or `useSuspenseQuery` hooks or query clie
 Available for all query procedures that takes a cursor input. Provides a type-safe wrapper around [Tanstack's `infiniteQueryOptions` function](https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions). The first argument is the input for the procedure, and the second argument accepts any native Tanstack React Query options.
 
 ```ts
-const infiniteQueryOptions = trpc.path.to.query.infiniteQueryOptions({ /** input */ }, {
-  // Any Tanstack React Query options
-  getNextPageParam: (lastPage, pages) => lastPage.nextCursor
-})
+const infiniteQueryOptions = trpc.path.to.query.infiniteQueryOptions(
+  {
+    /** input */
+  },
+  {
+    // Any Tanstack React Query options
+    getNextPageParam: (lastPage, pages) => lastPage.nextCursor,
+  },
+);
 ```
 
 ### `queryKey`
@@ -258,19 +273,19 @@ const infiniteQueryOptions = trpc.path.to.query.infiniteQueryOptions({ /** input
 Available for all query procedures. Allows you to access the query key in a type-safe manner.
 
 ```ts
-const queryKey = trpc.path.to.query.queryKey()
+const queryKey = trpc.path.to.query.queryKey();
 ```
 
 Since Tanstack React Query uses fuzzy matching for query keys, you can also create a partial query key for any sub-path to match all queries beloning to a router:
 
 ```ts
-const queryKey = trpc.router.queryKey()
+const queryKey = trpc.router.queryKey();
 ```
 
 Or even the root path to match all tRPC queries:
 
 ```ts
-const queryKey = trpc.queryKey()
+const queryKey = trpc.queryKey();
 ```
 
 ### `queryFilter`
@@ -278,12 +293,17 @@ const queryKey = trpc.queryKey()
 Available for all query procedures as well as routers and sub-routers. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) in a type-safe manner.
 
 ```ts
-const queryFilter = trpc.path.to.query.queryFilter({ /** input */ }, {
-  // Any Tanstack React Query filter
-  predicate: (query) => {
-    query.state.data;
-  }
-})
+const queryFilter = trpc.path.to.query.queryFilter(
+  {
+    /** input */
+  },
+  {
+    // Any Tanstack React Query filter
+    predicate: (query) => {
+      query.state.data;
+    },
+  },
+);
 ```
 
 Useful for creating filters that can be passed to client methods like `queryClient.invalidateQueries` etc.
@@ -297,8 +317,8 @@ const mutationOptions = trpc.path.to.mutation.mutationOptions({
   // Any Tanstack React Query options
   onSuccess: (data) => {
     // do something with the data
-  }
-})
+  },
+});
 ```
 
 ### `mutationKey`
@@ -306,7 +326,7 @@ const mutationOptions = trpc.path.to.mutation.mutationOptions({
 Available for all mutation procedures. Allows you to get the mutation key in a type-safe manner.
 
 ```ts
-const mutationKey = trpc.path.to.mutation.mutationKey()
+const mutationKey = trpc.path.to.mutation.mutationKey();
 ```
 
 ### `subscriptionOptions`
@@ -318,33 +338,37 @@ Note that you need to have either the [`httpSubscriptionLink`](/docs/client/link
 ```tsx
 function SubscriptionExample() {
   const trpc = useTRPC();
-  const subscription = useSubscription(trpc.path.to.subscription.subscriptionOptions(
-    { /** input */ },
-    {
-      enabled: true,
-      onStarted: () => {
-        // do something when the subscription is started
+  const subscription = useSubscription(
+    trpc.path.to.subscription.subscriptionOptions(
+      {
+        /** input */
       },
-      onData: (data) => {
-        // you can handle the data here
+      {
+        enabled: true,
+        onStarted: () => {
+          // do something when the subscription is started
+        },
+        onData: (data) => {
+          // you can handle the data here
+        },
+        onError: (error) => {
+          // you can handle the error here
+        },
+        onConnectionStateChange: (state) => {
+          // you can handle the connection state here
+        },
       },
-      onError: (error) => {
-        // you can handle the error here
-      },
-      onConnectionStateChange: (state) => {
-        // you can handle the connection state here
-      },
-    }
-  ));
+    ),
+  );
 
   // Or you can handle the state here
-  subscription.data
-  subscription.error
-  subscription.status
+  subscription.data;
+  subscription.error;
+  subscription.status;
 
   // Reset the subscription
-  subscription.reset()
+  subscription.reset();
 
-  return <>...</>
+  return <>...</>;
 }
 ```
