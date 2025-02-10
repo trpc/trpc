@@ -255,10 +255,22 @@ const infiniteQueryOptions = trpc.path.to.query.infiniteQueryOptions({ /** input
 
 ### `queryKey`
 
-Available for all query procedures as well as routers and sub-routers. Allows you to access the query key in a type-safe manner.
+Available for all query procedures. Allows you to access the query key in a type-safe manner.
 
 ```ts
 const queryKey = trpc.path.to.query.queryKey()
+```
+
+Since Tanstack React Query uses fuzzy matching for query keys, you can also create a partial query key for any sub-path to match all queries beloning to a router:
+
+```ts
+const queryKey = trpc.router.queryKey()
+```
+
+Or even the root path to match all tRPC queries:
+
+```ts
+const queryKey = trpc.queryKey()
 ```
 
 ### `queryFilter`
