@@ -29,7 +29,6 @@ const sections: Def = {
   bronze: [
     //
     'hidrb',
-    'flylance-apps',
     'ryanmagoon',
   ],
 };
