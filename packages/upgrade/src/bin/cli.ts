@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/unbound-method */
-import path from 'path';
+import path from 'node:path';
 import { Command as CLICommand, Options, Prompt } from '@effect/cli';
 import { Command } from '@effect/platform';
 import { NodeContext, NodeRuntime } from '@effect/platform-node';
@@ -7,6 +7,8 @@ import {
   Array,
   Console,
   Effect,
+  Logger,
+  LogLevel,
   Match,
   Order,
   pipe,
@@ -24,13 +26,22 @@ import {
 } from 'typescript';
 import { version } from '../../package.json';
 
-const assertCleanGitTree = Command.string(Command.make('git', 'status')).pipe(
-  Effect.filterOrFail(
-    String.includes('nothing to commit'),
-    () =>
-      'Git tree is not clean, please commit your changes and try again, or run with `--force`',
-  ),
-);
+const MakeCommand = (command: string, ...args: string[]) => {
+  return Command.make(command, ...args).pipe(
+    Command.workingDirectory(process.cwd()),
+    Command.runInShell(true),
+  );
+};
+
+const assertCleanGitTree = Command.string(MakeCommand('git', 'status'))
+  .pipe()
+  .pipe(
+    Effect.filterOrFail(
+      String.includes('nothing to commit'),
+      () =>
+        'Git tree is not clean, please commit your changes and try again, or run with `--force`',
+    ),
+  );
 const getPackageManager = () =>
   Match.value(process.env.npm_config_user_agent ?? 'npm').pipe(
     Match.when(String.startsWith('pnpm'), () => 'pnpm'),
@@ -42,7 +53,7 @@ const getPackageManager = () =>
 const installPackage = (packageName: string) => {
   const packageManager = getPackageManager();
   return Command.streamLines(
-    Command.make(packageManager, 'install', packageName),
+    MakeCommand(packageManager, 'install', packageName),
   ).pipe(Stream.mapEffect(Console.log), Stream.runDrain);
 };
 
@@ -50,15 +61,20 @@ const uninstallPackage = (packageName: string) => {
   const packageManager = getPackageManager();
   const uninstallCmd = packageManager === 'yarn' ? 'remove' : 'uninstall';
   return Command.streamLines(
-    Command.make(packageManager, uninstallCmd, packageName),
+    MakeCommand(packageManager, uninstallCmd, packageName),
   ).pipe(Stream.mapEffect(Console.log), Stream.runDrain);
 };
 
 const filterIgnored = (files: readonly SourceFile[]) =>
   Effect.gen(function* () {
     const ignores = yield* Command.string(
-      Command.make('git', 'check-ignore', '**/*'),
-    ).pipe(Effect.map((_) => _.split('\n')));
+      MakeCommand('git', 'check-ignore', '**/*').pipe(Command.runInShell(true)),
+    ).pipe(
+      Effect.tap((_) => Effect.logDebug('Ignored files output:', _)),
+      Effect.map((_) => _.split('\n')),
+    );
+
+    yield* Effect.logDebug('cwd:', process.cwd());
 
     yield* Effect.logDebug(
       'All files in program:',
@@ -72,6 +88,7 @@ const filterIgnored = (files: readonly SourceFile[]) =>
         (source) =>
           source.fileName.startsWith(path.resolve()) && // only look ahead of current directory
           !source.fileName.includes('/trpc/packages/') && // relative paths when running codemod locally
+          !source.fileName.includes('/node_modules/') && // always ignore node_modules
           !ignores.includes(source.fileName), // ignored files
       )
       .map((source) => source.fileName);
@@ -208,7 +225,9 @@ const rootComamnd = CLICommand.make(
         yield* Effect.log('Uninstalling @trpc/react-query');
         yield* uninstallPackage('@trpc/react-query');
       }
-    }),
+    }).pipe(
+      Logger.withMinimumLogLevel(args.verbose ? LogLevel.Debug : LogLevel.Info),
+    ),
 );
 
 const cli = CLICommand.run(rootComamnd, {
