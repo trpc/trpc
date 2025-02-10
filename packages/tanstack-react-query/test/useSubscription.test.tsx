@@ -9,6 +9,34 @@ import { z } from 'zod';
 import type { TRPCSubscriptionResult } from '../src';
 import { useSubscription } from '../src';
 
+/* eslint-disable no-console */
+export const suppressLogs = () => {
+  const log = console.log;
+  const error = console.error;
+  const noop = () => {
+    // ignore
+  };
+  console.log = noop;
+  console.error = noop;
+  return () => {
+    console.log = log;
+    console.error = error;
+  };
+};
+
+/**
+ * Pause logging until the promise resolves or throws
+ */
+export const suppressLogsUntil = async (fn: () => Promise<void>) => {
+  const release = suppressLogs();
+
+  try {
+    await fn();
+  } finally {
+    release();
+  }
+};
+
 /**
  * a function that displays the diff over time in a list of values
  */
@@ -169,21 +197,15 @@ describe.each([
     const onErrorMock = vi.fn();
 
     const { useTRPC } = ctx;
-    let setEnabled = null as never as (enabled: boolean) => void;
 
     function MyComponent() {
-      const [isStarted, setIsStarted] = React.useState(false);
       const [data, setData] = React.useState<number>();
-      const [enabled, _setEnabled] = React.useState(true);
-      setEnabled = _setEnabled;
+      const [enabled, setEnabled] = React.useState(true);
 
       const trpc = useTRPC();
-      useSubscription(
+      const result = useSubscription(
         trpc.onEventObservable.subscriptionOptions(10, {
           enabled: enabled,
-          onStarted: () => {
-            setIsStarted(true);
-          },
           onData: (data) => {
             expectTypeOf(data).toMatchTypeOf<number>();
             onDataMock(data);
@@ -193,34 +215,35 @@ describe.each([
         }),
       );
 
-      if (!isStarted) {
-        return <>{'__connecting'}</>;
-      }
-
-      if (!data) {
-        return <>{'__connected'}</>;
-      }
-
-      return <pre>{`__data:${data}`}</pre>;
+      return (
+        <>
+          <button
+            onClick={() => {
+              setEnabled((it) => !it);
+            }}
+            data-testid="toggle-enabled"
+          >
+            toggle enabled
+          </button>
+          <div>status:{result.status}</div>
+          <div>data:{data ?? 'NO_DATA'}</div>
+        </>
+      );
     }
 
     const utils = ctx.renderApp(<MyComponent />);
 
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__connecting`);
-    });
-    expect(onDataMock).toHaveBeenCalledTimes(0);
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__connected`);
+      expect(utils.container).toHaveTextContent(`status:pending`);
     });
     ctx.ee.emit('data', 20);
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__data:30`);
+      expect(utils.container).toHaveTextContent(`data:30`);
     });
     expect(onDataMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(0);
 
-    setEnabled(false);
+    fireEvent.click(utils.getByTestId('toggle-enabled'));
 
     await waitFor(() => {
       // no event listeners
@@ -288,10 +311,12 @@ describe('connection state - http', () => {
     `);
     queryResult.length = 0;
 
-    ctx.opts.destroyConnections();
+    await suppressLogsUntil(async () => {
+      ctx.opts.destroyConnections();
 
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent('status:connecting');
+      await waitFor(() => {
+        expect(utils.container).toHaveTextContent('status:connecting');
+      });
     });
 
     await waitFor(

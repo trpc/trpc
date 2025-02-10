@@ -90,7 +90,7 @@ export interface TRPCSubscriptionConnectingResult<TOutput, TError>
 export interface TRPCSubscriptionPendingResult<TOutput>
   extends TRPCSubscriptionBaseResult<TOutput, undefined> {
   status: 'pending';
-  data: TOutput;
+  data: TOutput | undefined;
   error: null;
 }
 
@@ -157,57 +157,57 @@ export function useSubscription<TOutput, TError>(
     if (!opts.enabled) {
       return;
     }
-
-    let isStopped = false;
     const subscription = opts.subscribe({
       onStarted: () => {
-        if (!isStopped) {
-          optsRef.current.onStarted?.();
-          updateState((prev) => ({
-            ...(prev as any),
-            status: 'pending',
-            error: null,
-          }));
-        }
+        optsRef.current.onStarted?.();
+        updateState((prev) => ({
+          ...(prev as any),
+          status: 'pending',
+          error: null,
+        }));
       },
       onData: (data) => {
-        if (!isStopped) {
-          optsRef.current.onData?.(data);
-          updateState((prev) => ({
-            ...(prev as any),
-            status: 'pending',
-            data,
-            error: null,
-          }));
-        }
+        optsRef.current.onData?.(data);
+        updateState((prev) => ({
+          ...(prev as any),
+          status: 'pending',
+          data,
+          error: null,
+        }));
       },
       onError: (error) => {
-        if (!isStopped) {
-          optsRef.current.onError?.(error);
-          updateState((prev) => ({
-            ...(prev as any),
-            status: 'error',
-            error,
-          }));
-        }
+        optsRef.current.onError?.(error);
+        updateState((prev) => ({
+          ...(prev as any),
+          status: 'error',
+          error,
+        }));
       },
       onConnectionStateChange: (result) => {
-        const delta = {
-          status: result.state,
-          error: result.error,
-        } as $Result;
-
         updateState((prev) => {
-          return {
-            ...prev,
-            ...delta,
-          };
+          switch (result.state) {
+            case 'connecting':
+              return {
+                ...prev,
+                status: 'connecting',
+                error: result.error,
+              };
+            case 'pending':
+              // handled in onStarted
+              return prev;
+            case 'idle':
+              return {
+                ...prev,
+                status: 'idle',
+                data: undefined,
+                error: null,
+              };
+          }
         });
       },
     });
 
     currentSubscriptionRef.current = () => {
-      isStopped = true;
       subscription.unsubscribe();
     };
 
