@@ -18,7 +18,6 @@ import {
   isObject,
   mergeWithoutOverrides,
   omitPrototype,
-  run,
 } from './utils';
 
 export interface RouterRecord {
@@ -83,6 +82,17 @@ type LazyLoader<TAny> = {
   ref: Lazy<TAny>;
 };
 
+function once<T>(fn: () => T): () => T {
+  const uncalled = Symbol();
+  let result: T | typeof uncalled = uncalled;
+  return (): T => {
+    if (result === uncalled) {
+      result = fn();
+    }
+    return result;
+  };
+}
+
 /**
  * Lazy load a router
  * @see https://trpc.io/docs/server/merging-routers#lazy-load
@@ -95,29 +105,23 @@ export function lazy<TRouter extends AnyRouter>(
       }
   >,
 ): Lazy<NoInfer<TRouter>> {
-  let cachedPromise: Promise<TRouter> | null = null;
-  const lazyGetter = (() => {
-    if (!cachedPromise) {
-      cachedPromise = run(async (): Promise<TRouter> => {
-        const mod = await getRouter();
+  const lazyGetter = (async (): Promise<TRouter> => {
+    const mod = await getRouter();
 
-        // if the module is a router, return it
-        if (isRouter(mod)) {
-          return mod;
-        }
-
-        const routers = Object.values(mod);
-
-        if (routers.length !== 1 || !isRouter(routers[0])) {
-          throw new Error(
-            "Invalid router module - either define exactly 1 export or return the router directly.\nExample: `experimental_lazy(() => import('./slow.js').then((m) => m.slowRouter))`",
-          );
-        }
-
-        return routers[0];
-      });
+    // if the module is a router, return it
+    if (isRouter(mod)) {
+      return mod;
     }
-    return cachedPromise;
+
+    const routers = Object.values(mod);
+
+    if (routers.length !== 1 || !isRouter(routers[0])) {
+      throw new Error(
+        "Invalid router module - either define exactly 1 export or return the router directly.\nExample: `experimental_lazy(() => import('./slow.js').then((m) => m.slowRouter))`",
+      );
+    }
+
+    return routers[0];
   }) as Lazy<TRouter>;
   lazyGetter[lazySymbol] = true;
   return lazyGetter;
@@ -250,7 +254,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
     }): LazyLoader<AnyRouter> {
       return {
         ref: opts.ref,
-        load: async () => {
+        load: once(async () => {
           const router = await opts.ref();
           const lazyPath = [...opts.path, opts.key];
           const lazyKey = lazyPath.join('.');
@@ -273,7 +277,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
               aggregate: opts.aggregate[opts.key] as RouterRecord,
             });
           }
-        },
+        }),
       };
     }
 
