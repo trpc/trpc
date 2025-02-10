@@ -82,70 +82,67 @@ describe.each([
   'http',
   'ws',
 ] as const)('useSubscription - %s', (protocol) => {
-  test.only('iterable', async () => {
+  test('iterable', async () => {
     await using ctx = getCtx(protocol);
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
     const { useTRPC } = ctx;
 
-    let setEnabled = null as never as (enabled: boolean) => void;
-
     function MyComponent() {
-      const [isStarted, setIsStarted] = React.useState(false);
-      const [data, setData] = React.useState<number>();
-      const [enabled, _setEnabled] = React.useState(true);
-      setEnabled = _setEnabled;
+      const [enabled, setEnabled] = React.useState(true);
 
       const trpc = useTRPC();
-      useSubscription(
+      const result = useSubscription(
         trpc.onEventIterable.subscriptionOptions(10, {
           enabled,
-          onStarted: () => {
-            setIsStarted(true);
-          },
           onData: (data) => {
             expectTypeOf(data).toMatchTypeOf<number>();
             onDataMock(data);
-            setData(data);
           },
           onError: onErrorMock,
         }),
       );
 
-      if (!isStarted) {
-        return <>{'__connecting'}</>;
-      }
-
-      if (!data) {
-        return <>{'__connected'}</>;
-      }
-
-      return <pre>{`__data:${data}`}</pre>;
+      return (
+        <>
+          <button
+            onClick={() => {
+              setEnabled((it) => !it);
+            }}
+            data-testid="toggle-enabled"
+          >
+            toggle enabled
+          </button>
+          <div>status:{result.status}</div>
+          <div>data:{result.data ?? 'NO_DATA'}</div>
+        </>
+      );
     }
 
     const utils = ctx.renderApp(<MyComponent />);
 
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__connecting`);
+      expect(utils.container).toHaveTextContent(`status:connecting`);
     });
     expect(onDataMock).toHaveBeenCalledTimes(0);
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__connected`);
+      expect(utils.container).toHaveTextContent(`status:pending`);
     });
     ctx.ee.emit('data', 20);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`data:30`);
+    });
 
     await waitFor(() => {
       expect(onDataMock).toHaveBeenCalledTimes(1);
     });
     expect(onDataMock.mock.calls[0]?.[0]).toEqual(30);
-    await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__data:30`);
-    });
     expect(onDataMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(0);
 
-    setEnabled(false);
+    fireEvent.click(utils.getByTestId('toggle-enabled'));
 
     await waitFor(() => {
       if (protocol === 'http') {
