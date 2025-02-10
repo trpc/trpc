@@ -3,6 +3,7 @@ import { getServerAndReactClient } from './__helpers';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
@@ -18,23 +19,22 @@ export const suppressLogs = () => {
   };
   console.log = noop;
   console.error = noop;
-  return () => {
+
+  function cleanup() {
     console.log = log;
     console.error = error;
-  };
+  }
+
+  return makeResource(cleanup, cleanup);
 };
 
 /**
  * Pause logging until the promise resolves or throws
  */
 export const suppressLogsUntil = async (fn: () => Promise<void>) => {
-  const release = suppressLogs();
+  using _ = suppressLogs();
 
-  try {
-    await fn();
-  } finally {
-    release();
-  }
+  await fn();
 };
 
 /**
@@ -110,7 +110,7 @@ describe.each([
   'http',
   'ws',
 ] as const)('useSubscription - %s', (protocol) => {
-  test('iterable', async () => {
+  test.only('iterable', async () => {
     await using ctx = getCtx(protocol);
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
@@ -143,6 +143,7 @@ describe.each([
             toggle enabled
           </button>
           <div>status:{result.status}</div>
+          <div>error:{result.error?.message}</div>
           <div>data:{result.data ?? 'NO_DATA'}</div>
         </>
       );

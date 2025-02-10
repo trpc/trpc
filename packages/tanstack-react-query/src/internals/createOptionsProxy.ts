@@ -22,6 +22,7 @@ import type {
 import {
   callProcedure,
   createRecursiveProxy,
+  run,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   trpcInfiniteQueryOptions,

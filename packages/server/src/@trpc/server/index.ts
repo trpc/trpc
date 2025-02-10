@@ -97,6 +97,10 @@ export {
    * @deprecated use `getTRPCErrorShape` instead
    */
   getErrorShape,
+  /**
+   * @deprecated use `callTRPCProcedure` instead
+   */
+  callProcedure,
 } from '../../unstable-core-do-not-import';
 
 /**
