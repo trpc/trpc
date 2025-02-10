@@ -51,6 +51,8 @@ See the [subscriptions docs](../server/subscriptions.md#stopping-from-server) fo
 
 See the [lazy-loading routers docs](../server/merging-routers.md#lazy-load) for more information.
 
+> As part of this, we've changed the argument of the internal method `callProcedure()` to receive a `{ router: AnyRouter }`-param instead of a `{ _def: AnyRouter['_def'] }`-param.
+
 ### Custom `basePath` to handle requests under in the standalone adapter (non-breaking)
 
 The standalone adapter now supports a `basePath` option, which will slice the basePath from the beginning of the request path.
