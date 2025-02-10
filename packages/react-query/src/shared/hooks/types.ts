@@ -180,7 +180,7 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
    */
   onError?: (err: TError) => void;
   /**
-   * Called when the subscription is completed
+   * Called when the subscription is completed on the server
    */
   onComplete?: () => void;
 }

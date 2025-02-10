@@ -455,24 +455,41 @@ export function createRootHooks<
             }));
           },
           onConnectionStateChange: (result) => {
-            const delta = {
-              status: result.state,
-              error: result.error,
-            } as $Result;
+            updateState((prev) => {
+              switch (result.state) {
+                case 'idle':
+                  return {
+                    ...prev,
+                    status: result.state,
+                    error: null,
+                    data: undefined,
+                  };
+                case 'connecting':
+                  return {
+                    ...prev,
+                    error: result.error,
+                    status: result.state,
+                  };
 
-            updateState((prev) => ({
-              ...prev,
-              ...delta,
-            }));
+                case 'pending':
+                  // handled when data is received
+                  return prev;
+              }
+            });
           },
           onComplete: () => {
             optsRef.current.onComplete?.();
+
+            // In the case of WebSockets, the connection might not be idle so `onConnectionStateChange` will not be called until the connection is closed.
+            // In this case, we need to set the state to idle manually.
             updateState((prev) => ({
               ...prev,
               status: 'idle',
               error: null,
               data: undefined,
             }));
+
+            // (We might want to add a `connectionState` to the state to track the connection state separately)
           },
         },
       );
