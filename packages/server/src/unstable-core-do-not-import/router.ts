@@ -105,7 +105,7 @@ export function lazy<TRouter extends AnyRouter>(
       }
   >,
 ): Lazy<NoInfer<TRouter>> {
-  const lazyGetter = (async (): Promise<TRouter> => {
+  async function load(): Promise<TRouter> {
     const mod = await getRouter();
 
     // if the module is a router, return it
@@ -122,9 +122,10 @@ export function lazy<TRouter extends AnyRouter>(
     }
 
     return routers[0];
-  }) as Lazy<TRouter>;
-  lazyGetter[lazySymbol] = true;
-  return lazyGetter;
+  }
+  load[lazySymbol] = true;
+
+  return load as Lazy<TRouter>;
 }
 
 function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
