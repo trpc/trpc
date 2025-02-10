@@ -6,7 +6,7 @@ import type {
   inferRouterContext,
 } from '../@trpc/server';
 import {
-  callProcedure,
+  callTRPCProcedure,
   getErrorShape,
   getTRPCErrorFromUnknown,
   transformTRPCResponse,
@@ -218,7 +218,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         await ctxPromise; // asserts context has been set
 
         const abortController = new AbortController();
-        const result = await callProcedure({
+        const result = await callTRPCProcedure({
           router,
           path,
           getRawInput: async () => input,

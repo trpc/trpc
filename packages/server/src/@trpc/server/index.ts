@@ -44,6 +44,7 @@ export {
   type TrackedEnvelope,
   isTrackedEnvelope,
   lazy as experimental_lazy,
+  callProcedure as callTRPCProcedure,
 } from '../../unstable-core-do-not-import';
 
 export type {
@@ -97,11 +98,6 @@ export {
    * @deprecated use `getTRPCErrorShape` instead
    */
   getErrorShape,
-
-  /**
-   * @deprecated use `callTRPCProcedure` instead
-   */
-  callProcedure,
 } from '../../unstable-core-do-not-import';
 
 /**
