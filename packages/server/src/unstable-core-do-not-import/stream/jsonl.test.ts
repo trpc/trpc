@@ -614,7 +614,7 @@ test('e2e, withPing', async () => {
     let allData = '';
     for await (const chunk of text) {
       allData += chunk;
-      if (chunk.includes('  ')) break;
+      if (allData.includes('    ')) break;
     }
 
     deferred.resolve();
