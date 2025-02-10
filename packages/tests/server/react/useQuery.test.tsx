@@ -23,7 +23,7 @@ function createDeferred<TValue>() {
 
 const ctx = konn()
   .beforeEach(() => {
-    let iterableDeferred = createDeferred<void>();
+    let iterableDeferred = createDeferred();
     const nextIterable = () => {
       iterableDeferred.resolve();
       iterableDeferred = createDeferred();

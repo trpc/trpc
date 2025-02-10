@@ -580,7 +580,7 @@ test('should work to throw after stream is closed', async () => {
 });
 
 test('e2e, withPing', async () => {
-  const deferred = createDeferred<void>();
+  const deferred = createDeferred();
   const data = {
     0: Promise.resolve({
       slow: run(async () => {
