@@ -212,7 +212,7 @@ export interface TRPCSubscriptionConnectingResult<TOutput, TError>
 export interface TRPCSubscriptionPendingResult<TOutput>
   extends TRPCSubscriptionBaseResult<TOutput, undefined> {
   status: 'pending';
-  data: TOutput;
+  data: TOutput | undefined;
   error: null;
 }
 
