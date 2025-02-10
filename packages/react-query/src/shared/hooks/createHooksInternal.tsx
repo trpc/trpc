@@ -472,7 +472,7 @@ export function createRootHooks<
                   };
 
                 case 'pending':
-                  // handled when data is received
+                  // handled when data is / onStarted
                   return prev;
               }
             });
