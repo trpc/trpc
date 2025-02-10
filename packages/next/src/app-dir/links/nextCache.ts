@@ -50,7 +50,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
               //   // that calls with different tags are properly separated
               //   // @link https://github.com/trpc/trpc/issues/4622
               const procedureResult = await callProcedure({
-                _def: opts.router._def,
+                router: opts.router,
                 path,
                 getRawInput: async () => input,
                 ctx: ctx,
