@@ -110,7 +110,7 @@ describe.each([
   'http',
   'ws',
 ] as const)('useSubscription - %s', (protocol) => {
-  test.only('iterable', async () => {
+  test('iterable', async () => {
     await using ctx = getCtx(protocol);
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
