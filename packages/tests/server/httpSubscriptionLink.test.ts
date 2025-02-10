@@ -1051,7 +1051,7 @@ function createPuller(): PromiseLike<void> & {
   pull: () => void;
   reject: (err: unknown) => void;
 } {
-  let deferred = createDeferred<void>();
+  let deferred = createDeferred();
 
   return {
     pull: () => {

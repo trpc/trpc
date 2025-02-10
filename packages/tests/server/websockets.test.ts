@@ -45,7 +45,7 @@ function factory(config?: {
 
   const t = initTRPC.create();
 
-  let iterableDeferred = createDeferred<void>();
+  let iterableDeferred = createDeferred();
   const nextIterable = () => {
     iterableDeferred.resolve();
     iterableDeferred = createDeferred();

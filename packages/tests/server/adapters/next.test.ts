@@ -18,7 +18,7 @@ function createHttpServer(opts: {
   handler: trpcNext.NextApiHandler;
   query: object;
 }) {
-  const deferred = createDeferred<void>();
+  const deferred = createDeferred();
   const httpServer = http.createServer((req, res) => {
     const _req = req as any;
     const _res = res as any;
