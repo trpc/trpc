@@ -7,19 +7,21 @@ import {
   type TRPCRequestOptions,
 } from '@trpc/client';
 import {
-  callProcedure,
   type AnyProcedure,
   type inferProcedureInput,
   type inferRouterContext,
   type inferTransformedProcedureOutput,
   type ProcedureType,
 } from '@trpc/server';
-import { createRecursiveProxy } from '@trpc/server/unstable-core-do-not-import';
 import type {
   AnyRootTypes,
   AnyRouter,
   MaybePromise,
   RouterRecord,
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  callProcedure,
+  createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
   trpcInfiniteQueryOptions,
@@ -238,7 +240,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       if ('router' in opts) {
         return Promise.resolve(unwrapLazyArg(opts.ctx)).then((ctx) =>
           callProcedure({
-            _def: opts.router._def,
+            router: opts.router,
             path: path,
             getRawInput: async () => input,
             ctx: ctx,
