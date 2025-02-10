@@ -35,7 +35,7 @@ describe('no transformer', () => {
 
       const manualRelease = new Map<number, () => void>();
 
-      let iterableDeferred = createDeferred<void>();
+      let iterableDeferred = createDeferred();
       const nextIterable = () => {
         iterableDeferred.resolve();
       };
