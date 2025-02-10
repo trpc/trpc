@@ -30,6 +30,45 @@ We are excited to announce the new TanStack React Query integration for tRPC is 
 
 [Read the blog post](/blog/introducing-tanstack-react-query-client) for more information.
 
+### Stopping subscriptions from the server (rarely breaking)
+
+We now support stopping subscriptions from the server, this means that you can now do things like this:
+
+```ts
+const myRouter = router({
+  sub: publicProcedure.subscription(async function* (opts) {
+    for await (const data of on(ee, 'data', {
+      signal: opts.signal,
+    })) {
+      const num = data[0] as number | undefined;
+      if (num === undefined) {
+        // This will now stop the subscription on the client and trigger the `onComplete` callback
+        return;
+      }
+      yield num;
+    }
+  }),
+});
+```
+
+See the [subscriptions docs](../server/subscriptions.md#stopping-from-server) for more information.
+
+### Added support for lazy-loading routers (non-breaking)
+
+See the [lazy-loading routers docs](../server/merging-routers.md#lazy-load) for more information.
+
+### Custom `basePath` to handle requests under in the standalone adapter (non-breaking)
+
+The standalone adapter now supports a `basePath` option, which will slice the basePath from the beginning of the request path.
+
+See the [standalone adapter docs](../server/adapters/standalone.md#custom-basePath) for more information.
+
+### Added support for HTTP/2 servers (non-breaking)
+
+We now support HTTP/2 servers, this means that you can now use the `createHTTP2Handler` and `createHTTPServer` functions to create HTTP/2 servers.
+
+See the [standalone adapter docs](../server/adapters/standalone.md#http2) for more information.
+
 ### Move `TRPCProcedureOptions` to `@trpc/client` (non-breaking for most)
 
 If you previously used `ProcedureOptions` from `@trpc/server`, you now need to use `TRPCProcedureOptions` from `@trpc/client` instead.

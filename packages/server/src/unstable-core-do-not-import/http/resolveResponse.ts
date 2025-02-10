@@ -223,16 +223,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
   type $Context = inferRouterContext<TRouter>;
 
-  const infoTuple: ResultTuple<TRPCRequestInfo> = run(() => {
+  const infoTuple: ResultTuple<TRPCRequestInfo> = await run(async () => {
     try {
       return [
         undefined,
-        getRequestInfo({
+        await getRequestInfo({
           req,
           path: decodeURIComponent(opts.path),
           router,
           searchParams: url.searchParams,
           headers: opts.req.headers,
+          url,
         }),
       ];
     } catch (cause) {
@@ -514,6 +515,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         untransformedJSON: null,
       });
       const stream = jsonlStreamProducer({
+        ...config.jsonl,
         /**
          * Example structure for `maxDepth: 4`:
          * {

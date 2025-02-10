@@ -104,6 +104,10 @@ export interface TRPCRequestInfo {
    * Can be used to abort async operations during the request, e.g. `fetch()`-requests
    */
   signal: AbortSignal;
+  /**
+   * The URL of the request if available
+   */
+  url: URL | null;
 }
 
 /**

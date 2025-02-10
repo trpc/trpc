@@ -1,5 +1,6 @@
 import { EventEmitter, on } from 'node:events';
 import {
+  IterableEventEmitter,
   routerToServerAndClientNew,
   suppressLogs,
   suppressLogsUntil,
@@ -31,16 +32,18 @@ import { zAsyncIterable } from './zAsyncIterable';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const returnSymbol = Symbol();
+
+type MyEvents = {
+  data: [Error | number | typeof returnSymbol];
+};
 const orderedResults: number[] = [];
 const ctx = konn()
   .beforeEach(() => {
     const onIterableInfiniteSpy =
       vi.fn<(args: { input: { lastEventId?: number } }) => void>();
 
-    const ee = new EventEmitter();
-    const eeEmit = (data: number | Error) => {
-      ee.emit('data', data);
-    };
+    const ee = new IterableEventEmitter<MyEvents>();
 
     const t = initTRPC.create({
       transformer: superjson,
@@ -58,14 +61,16 @@ const ctx = konn()
             }),
           )
           .subscription(async function* (opts) {
-            for await (const data of on(ee, 'data', {
+            for await (const [thing] of ee.toIterable('data', {
               signal: opts.signal,
             })) {
-              const thing = data[0] as number | Error;
-
               if (thing instanceof Error) {
                 throw thing;
               }
+              if (thing === returnSymbol) {
+                return;
+              }
+
               yield thing;
             }
           }),
@@ -105,6 +110,7 @@ const ctx = konn()
               observer.next(value);
             },
             error: observer.error,
+            complete: observer.complete,
           });
           return unsubscribe;
         });
@@ -134,7 +140,6 @@ const ctx = konn()
     return {
       ...opts,
       ee,
-      eeEmit,
       infiniteYields,
       onIterableInfiniteSpy,
     };
@@ -165,8 +170,8 @@ test('iterable event', async () => {
     },
   );
 
-  ctx.eeEmit(1);
-  ctx.eeEmit(2);
+  ctx.ee.emit('data', 1);
+  ctx.ee.emit('data', 2);
 
   await vi.waitFor(() => {
     expect(onData).toHaveBeenCalledTimes(2);
@@ -213,13 +218,13 @@ test(
     await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
-    ctx.eeEmit(1);
+    ctx.ee.emit('data', 1);
 
     await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
-    ctx.eeEmit(new Error('test error'));
+    ctx.ee.emit('data', new Error('test error'));
 
     await suppressLogsUntil(async () => {
       await vi.waitFor(
@@ -232,7 +237,7 @@ test(
       );
     });
 
-    ctx.eeEmit(2);
+    ctx.ee.emit('data', 2);
 
     await vi.waitFor(
       () => {
@@ -303,8 +308,8 @@ test('iterable event with bad yield', async () => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
-  ctx.eeEmit(1);
-  ctx.eeEmit('NOT_A_NUMBER' as never);
+  ctx.ee.emit('data', 1);
+  ctx.ee.emit('data', 'NOT_A_NUMBER' as never);
   await vi.waitFor(() => {
     expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
   });
@@ -841,6 +846,7 @@ describe('timeouts', async () => {
               observer.next(envelope);
             },
             error: observer.error,
+            complete: observer.complete,
           });
           return unsubscribe;
         });
@@ -964,6 +970,81 @@ describe('timeouts', async () => {
 
     sub.unsubscribe();
   });
+});
+
+test('cancel subscription by returning on the server', async () => {
+  const onStartedSpy = vi.fn();
+  const onDataSpy = vi.fn();
+  const onCompleteSpy = vi.fn();
+  const onErrorSpy = vi.fn();
+  const onStoppedSpy = vi.fn();
+  const onConnectionStateChangeSpy = vi.fn();
+  const sub = ctx.client.sub.iterableEvent.subscribe(undefined, {
+    onData: onDataSpy,
+    onStarted: onStartedSpy,
+    onComplete: onCompleteSpy,
+    onError: onErrorSpy,
+    onStopped: onStoppedSpy,
+    onConnectionStateChange: onConnectionStateChangeSpy,
+  });
+
+  await vi.waitFor(() => {
+    expect(onStartedSpy).toHaveBeenCalledTimes(1);
+  });
+
+  const es = onStartedSpy.mock.calls[0]![0].context?.eventSource;
+  assert(es instanceof EventSource);
+
+  expect(es.readyState).toBe(EventSource.OPEN);
+
+  // yield
+  ctx.ee.emit('data', 1);
+
+  await vi.waitFor(() => {
+    expect(onDataSpy).toHaveBeenCalledTimes(1);
+  });
+  expect(onDataSpy.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        1,
+      ],
+    ]
+  `);
+  expect(es.readyState).toBe(EventSource.OPEN);
+  ctx.ee.emit('data', returnSymbol);
+
+  await vi.waitFor(() => {
+    expect(onStoppedSpy).toHaveBeenCalledTimes(1);
+  });
+  await vi.waitFor(() => {
+    expect(onCompleteSpy).toHaveBeenCalledTimes(1);
+  });
+
+  expect(onConnectionStateChangeSpy.mock.calls.flat()).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "error": null,
+        "state": "connecting",
+        "type": "state",
+      },
+      Object {
+        "error": null,
+        "state": "pending",
+        "type": "state",
+      },
+      Object {
+        "error": null,
+        "state": "idle",
+        "type": "state",
+      },
+    ]
+  `);
+
+  expect(es.readyState).toBe(EventSource.CLOSED);
+
+  expect(onErrorSpy).not.toHaveBeenCalled();
+
+  sub.unsubscribe();
 });
 
 function createPuller(): PromiseLike<void> & {

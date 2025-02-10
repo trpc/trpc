@@ -1,6 +1,9 @@
+import EventEmitter from 'events';
+import * as events from 'events';
 import type { IncomingMessage } from 'http';
 import http from 'http';
 import type { AddressInfo, Socket } from 'net';
+import { on } from 'node:events';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import {
   createTRPCClient,
@@ -260,3 +263,16 @@ export const ignoreErrors = async (fn: () => unknown) => {
 };
 
 export const doNotExecute = (_func: () => void) => true;
+
+type EventMap<T> = Record<keyof T, any[]>;
+
+export class IterableEventEmitter<
+  T extends EventMap<T>,
+> extends EventEmitter<T> {
+  toIterable<TEventName extends keyof T & string>(
+    eventName: TEventName,
+    opts?: NonNullable<Parameters<typeof on>[2]>,
+  ): AsyncIterable<T[TEventName]> {
+    return on(this as any, eventName, opts) as any;
+  }
+}

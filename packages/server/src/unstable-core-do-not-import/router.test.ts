@@ -1,4 +1,5 @@
 import { initTRPC } from '..';
+import { lazy } from './router';
 
 const t = initTRPC.create();
 
@@ -32,5 +33,62 @@ describe('router', () => {
         }),
       }),
     ).toThrow('Duplicate key: foo..bar');
+  });
+});
+
+describe('lazy loading routers', () => {
+  test('lazy child', async () => {
+    const t = initTRPC.create();
+
+    const child = lazy(async () =>
+      t.router({
+        foo: t.procedure.query(() => 'bar'),
+      }),
+    );
+    const router = t.router({
+      child,
+    });
+
+    const caller = router.createCaller({});
+
+    expect(await caller.child.foo()).toBe('bar');
+  });
+
+  test('lazy grandchild', async () => {
+    const t = initTRPC.create();
+
+    const router = t.router({
+      root: t.procedure.query(() => 'root procedure'),
+      child: lazy(async () =>
+        t.router({
+          grandchild: lazy(async () =>
+            t.router({
+              foo: t.procedure.query(() => 'bar'),
+              baz: t.procedure.query(() => 'baz'),
+            }),
+          ),
+        }),
+      ),
+    });
+
+    const caller = router.createCaller({});
+
+    // No procedures loaded yet
+    expect(router._def.procedures).toMatchInlineSnapshot(`
+      Object {
+        "root": [Function],
+      }
+    `);
+
+    expect(await caller.child.grandchild.foo()).toBe('bar');
+
+    // Procedures loaded
+    expect(router._def.procedures).toMatchInlineSnapshot(`
+      Object {
+        "child.grandchild.baz": [Function],
+        "child.grandchild.foo": [Function],
+        "root": [Function],
+      }
+    `);
   });
 });

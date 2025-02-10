@@ -353,11 +353,9 @@ describe('no transformer', () => {
         ]
       `);
     expect(err).toMatchInlineSnapshot(
-      `[Error: Invalid response or stream interrupted]`,
+      `[AbortError: The operation was aborted.]`,
     );
-    expect(err.message).toMatchInlineSnapshot(
-      `"Invalid response or stream interrupted"`,
-    );
+    expect(err.message).toMatchInlineSnapshot(`"The operation was aborted."`);
   });
 
   test('output validation iterable yield error', async () => {
