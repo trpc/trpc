@@ -37,7 +37,7 @@ describe('router', () => {
 });
 
 describe('lazy loading routers', () => {
-  test('lazy child', async () => {
+  test('smoke test', async () => {
     const t = initTRPC.create();
 
     const child = lazy(async () =>
@@ -54,7 +54,7 @@ describe('lazy loading routers', () => {
     expect(await caller.child.foo()).toBe('bar');
   });
 
-  test('lazy grandchild', async () => {
+  test('nested routers', async () => {
     const t = initTRPC.create();
 
     const router = t.router({
@@ -90,5 +90,26 @@ describe('lazy loading routers', () => {
         "root": [Function],
       }
     `);
+  });
+
+  // regression: https://github.com/trpc/trpc/issues/6469
+  test('parallel loading', async () => {
+    const t = initTRPC.create();
+
+    const child = lazy(async () =>
+      t.router({
+        one: t.procedure.query(() => 'one'),
+        two: t.procedure.query(() => 'two'),
+      }),
+    );
+    const router = t.router({
+      child,
+    });
+
+    const caller = router.createCaller({});
+
+    const parallel = Promise.all([caller.child.one(), caller.child.two()]);
+
+    expect(await parallel).toEqual(['one', 'two']);
   });
 });
