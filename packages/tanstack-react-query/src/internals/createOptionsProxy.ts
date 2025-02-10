@@ -238,7 +238,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
       if ('router' in opts) {
         return Promise.resolve(unwrapLazyArg(opts.ctx)).then((ctx) =>
           callProcedure({
-            procedures: opts.router._def.procedures,
+            _def: opts.router._def,
             path: path,
             getRawInput: async () => input,
             ctx: ctx,
