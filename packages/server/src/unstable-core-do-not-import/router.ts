@@ -123,9 +123,9 @@ export function lazy<TRouter extends AnyRouter>(
 
     return routers[0];
   }
-  load[lazySymbol] = true;
+  load[lazySymbol] = true as const;
 
-  return load as Lazy<TRouter>;
+  return load;
 }
 
 function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
