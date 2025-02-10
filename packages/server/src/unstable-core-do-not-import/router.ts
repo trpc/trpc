@@ -98,15 +98,15 @@ function once<T>(fn: () => T): () => T {
  * @see https://trpc.io/docs/server/merging-routers#lazy-load
  */
 export function lazy<TRouter extends AnyRouter>(
-  getRouter: () => Promise<
+  importRouter: () => Promise<
     | TRouter
     | {
         [key: string]: TRouter;
       }
   >,
 ): Lazy<NoInfer<TRouter>> {
-  async function load(): Promise<TRouter> {
-    const mod = await getRouter();
+  async function resolve(): Promise<TRouter> {
+    const mod = await importRouter();
 
     // if the module is a router, return it
     if (isRouter(mod)) {
@@ -123,9 +123,9 @@ export function lazy<TRouter extends AnyRouter>(
 
     return routers[0];
   }
-  load[lazySymbol] = true as const;
+  resolve[lazySymbol] = true as const;
 
-  return load;
+  return resolve;
 }
 
 function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
