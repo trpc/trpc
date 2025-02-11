@@ -56,7 +56,7 @@ import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import React, { useState } from 'react';
 import { TRPCProvider, useTRPC } from './utils/trpc';
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 export function App() {
   const [trpcClient] = useState(() =>
