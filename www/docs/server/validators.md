@@ -423,7 +423,7 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-<!-- Runtimes example is broken -->
+<!-- runtypes example is broken -->
 <!--
 ### With [runtypes](https://github.com/pelotom/runtypes)
 
