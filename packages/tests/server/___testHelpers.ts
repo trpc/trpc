@@ -176,7 +176,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
       }
     },
   };
-  return makeAsyncResource(ctx, ctx.close);
+  return ctx;
 }
 
 export async function waitMs(ms: number) {
