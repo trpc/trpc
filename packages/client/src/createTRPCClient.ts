@@ -5,8 +5,8 @@ import type {
   AnyRouter,
   inferClientTypes,
   inferProcedureInput,
+  InferrableClientTypes,
   inferTransformedProcedureOutput,
-  IntersectionError,
   ProcedureType,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -15,10 +15,7 @@ import {
   createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
-import type {
-  TRPCSubscriptionObserver,
-  UntypedClientProperties,
-} from './internals/TRPCUntypedClient';
+import type { TRPCSubscriptionObserver } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from './internals/types';
 import type { TRPCClientError } from './TRPCClientError';
@@ -76,7 +73,7 @@ type DecorateProcedure<
  * @internal
  */
 type DecoratedProcedureRecord<
-  TRouter extends AnyRouter,
+  TRoot extends InferrableClientTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
@@ -86,15 +83,15 @@ type DecoratedProcedureRecord<
           {
             input: inferProcedureInput<$Value>;
             output: inferTransformedProcedureOutput<
-              inferClientTypes<TRouter>,
+              inferClientTypes<TRoot>,
               $Value
             >;
-            errorShape: inferClientTypes<TRouter>['errorShape'];
-            transformer: inferClientTypes<TRouter>['transformer'];
+            errorShape: inferClientTypes<TRoot>['errorShape'];
+            transformer: inferClientTypes<TRoot>['transformer'];
           }
         >
       : $Value extends RouterRecord
-        ? DecoratedProcedureRecord<TRouter, $Value>
+        ? DecoratedProcedureRecord<TRoot, $Value>
         : never
     : never;
 };
@@ -116,22 +113,12 @@ export const clientCallTypeToProcedureType = (
 };
 
 /**
- * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
- */
-export type CreateTRPCClient<TRouter extends AnyRouter> =
-  inferRouterClient<TRouter> extends infer $Value
-    ? UntypedClientProperties & keyof $Value extends never
-      ? inferRouterClient<TRouter>
-      : IntersectionError<UntypedClientProperties & keyof $Value>
-    : never;
-
-/**
  * @internal
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
-): CreateTRPCClient<TRouter> {
-  const proxy = createRecursiveProxy<CreateTRPCClient<TRouter>>(
+): inferRouterClient<TRouter> {
+  const proxy = createRecursiveProxy<inferRouterClient<TRouter>>(
     ({ path, args }) => {
       const pathCopy = [...path];
       const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
@@ -141,10 +128,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
       return (client as any)[procedureType](fullPath, ...args);
     },
   );
-  return createFlatProxy<CreateTRPCClient<TRouter>>((key) => {
-    if (client.hasOwnProperty(key)) {
-      return (client as any)[key as any];
-    }
+  return createFlatProxy<inferRouterClient<TRouter>>((key) => {
     if (key === '__untypedClient') {
       return client;
     }
@@ -154,7 +138,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
-): CreateTRPCClient<TRouter> {
+): inferRouterClient<TRouter> {
   const client = new TRPCUntypedClient(opts);
   const proxy = createTRPCClientProxy<TRouter>(client);
   return proxy;
