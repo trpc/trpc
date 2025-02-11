@@ -72,7 +72,7 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.62.8",
+    "@tanstack/react-query": "^5.66.0",
     "@trpc/client": "workspace:*",
     "@trpc/server": "^10.45.1",
     "@types/express": "^5.0.0",
