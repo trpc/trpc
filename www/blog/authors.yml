@@ -5,12 +5,13 @@ KATT:
   url: https://x.com/alexdotjs
   socials:
     x: alexdotjs
+    bluesky: katt.dev
     github: KATT
     linkedin: https://www.linkedin.com/in/johanssonalexander
 
 sachinraja:
   name: Sachin Raja
-  title: tRPC Core Team Member
+  title: tRPC Core Team Member (alumni)
   image_url: https://github.com/sachinraja.png
   socials:
     x: s4chinraja
@@ -23,6 +24,7 @@ juliusmarminge:
   image_url: https://github.com/juliusmarminge.png
   socials:
     x: jullerino
+    bluesky: jumr.dev
     github: juliusmarminge
 
 nicklucas:
