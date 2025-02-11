@@ -24,7 +24,7 @@ import type { TRPCClientError } from './TRPCClientError';
  * @public
  **/
 export type inferRouterClient<TRouter extends AnyRouter> = TRPCClient<
-  TRouter,
+  inferClientTypes<TRouter>,
   TRouter['_def']['record']
 >;
 
@@ -154,7 +154,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
-): inferRouterClient<TRouter> {
+): TRPCClient<inferClientTypes<TRouter>, TRouter['_def']['record']> {
   const client = new TRPCUntypedClient(opts);
   const proxy = createTRPCClientProxy<TRouter>(client);
   return proxy;

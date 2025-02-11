@@ -34,16 +34,20 @@ export type InferrableClientTypes =
   | RootConfigLike
   | AnyClientTypes;
 
+type PickTypes<T extends AnyClientTypes> = {
+  transformer: T['transformer'];
+  errorShape: T['errorShape'];
+};
 /**
  * Infer the root types from a InferrableClientTypes
  */
 export type inferClientTypes<TInferrable extends InferrableClientTypes> =
   TInferrable extends AnyClientTypes
-    ? TInferrable
+    ? PickTypes<TInferrable>
     : TInferrable extends RootConfigLike
-      ? TInferrable['$types']
+      ? PickTypes<TInferrable['$types']>
       : TInferrable extends InitLike
-        ? TInferrable['_config']['$types']
+        ? PickTypes<TInferrable['_config']['$types']>
         : TInferrable extends RouterLike
-          ? TInferrable['_def']['_config']['$types']
+          ? PickTypes<TInferrable['_def']['_config']['$types']>
           : never;
