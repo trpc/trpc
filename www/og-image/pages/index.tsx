@@ -36,9 +36,23 @@ export default function Page() {
           <h2>Blog</h2>
           <img
             src={`/api/blog?${blogParams.toSearchString({
-              authorImg: 'https://avatars.githubusercontent.com/u/459267',
-              authorName: 'Alex "KATT" Johansson',
-              authorTitle: 'Creator of tRPC',
+              authors: [
+                {
+                  name: 'Alex "KATT" Johansson',
+                  title: 'Creator of tRPC',
+                  img: 'https://github.com/KATT.png',
+                },
+                {
+                  name: 'Julius Marminge',
+                  title: 'tRPC Core Team',
+                  img: 'https://github.com/juliusmarminge.png',
+                },
+                {
+                  name: 'Julius Marminge',
+                  title: 'tRPC Core Team',
+                  img: 'https://github.com/juliusmarminge.png',
+                },
+              ],
               date: '2021-08-01',
               description:
                 'Eiusmod elit id dolor proident Lorem ut quis exercitation velit cupidatat sit occaecat. Fugiat do culpa exercitation quis anim tempor excepteur sit qui dolor ex aute in. Proident magna eiusmod mollit amet tempor aute in. Labore officia Lorem velit adipisicing reprehenderit. Incididunt aute aliqua Lorem qui consectetur eiusmod pariatur ut exercitation ea est mollit quis.',
