@@ -4,7 +4,9 @@ import { useRouter } from 'next/router';
 
 import type { NextPageWithLayout } from '~/pages/_app';
 import type { RouterOutput } from '~/utils/trpc';
-import { trpc } from '~/utils/trpc';
+import { useTRPC } from '~/utils/trpc';
+
+import { useQuery } from '@tanstack/react-query';
 
 type PostByIdOutput = RouterOutput['post']['byId'];
 
@@ -31,8 +33,58 @@ function PostItem(props: { post: PostByIdOutput }) {
 }
 
 const PostViewPage: NextPageWithLayout = () => {
+  const trpc = useTRPC();
   const id = useRouter().query.id as string;
-  const postQuery = trpc.post.byId.useQuery({ id });
+  const opts = trpc.post.byId.queryOptions({ id });
+  /*
+  const opts: UnusedSkipTokenTRPCQueryOptionsOut<{
+    id: string;
+    title: string;
+    text: string;
+    createdAt: Date;
+    updatedAt: Date;
+}, {
+    id: string;
+    title: string;
+    text: string;
+    createdAt: Date;
+    updatedAt: Date;
+}, TRPCClientErrorLike<{
+    transformer: true;
+    errorShape: DefaultErrorShape;
+}>>
+    */
+  const postQuery = useQuery(opts);
+  /**
+   (alias) useQuery<{
+    id: string;
+    title: string;
+    text: string;
+    createdAt: Date;
+    updatedAt: Date;
+}, TRPCClientErrorLike<{
+    transformer: true;
+    errorShape: DefaultErrorShape;
+}>, {
+    id: string;
+    title: string;
+    text: string;
+    createdAt: Date;
+    updatedAt: Date;
+}, TRPCQueryKey>(options: UndefinedInitialDataOptions<...>, queryClient?: QueryClient): UseQueryResult<...> (+2 overloads)
+import useQuery
+
+const postQuery: UseQueryResult<{
+    id: string;
+    title: string;
+    text: string;
+    createdAt: Date;
+    updatedAt: Date;
+}, TRPCClientErrorLike<{
+    transformer: true;
+    errorShape: DefaultErrorShape;
+}>>
+   */
 
   if (postQuery.error) {
     return (
