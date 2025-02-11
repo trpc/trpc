@@ -127,7 +127,7 @@ export function incomingMessageToRequest(
 
   const onAbort = () => {
     res.off('close', onAbort);
-    req.socket?.off?.('end', onAbort);
+    req.socket?.off?.('close', onAbort);
 
     // abort the request
     ac.abort();
