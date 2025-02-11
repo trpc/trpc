@@ -136,7 +136,20 @@ This includes support for `undici`, `node-fetch`, native Node.js fetch implement
 
 ### React Native
 
-Receiving the stream relies on the `TextDecoder` and `TextDecoderStream` APIs, which is not available in React Native. If you still want to enable streaming, you need to polyfill those.
+Receiving the stream relies on the `TextDecoder` and `TextDecoderStream` APIs, which is not available in React Native. It's important to note that if your `TextDecoderStream` polyfill does not automatically polyfill `ReadableStream` and `WritableStream` those will also need to be polyfilled. If you still want to enable streaming, you need to polyfill those.
+
+You will also need to overide the default fetch in the `httpBatchStreamLink` configuration options. In the below example we will be using the [Expo fetch](https://docs.expo.dev/versions/latest/sdk/expo/) package for the fetch implementation.
+
+```typescript
+unstable_httpBatchStreamLink({
+  fetch: (url, opts) =>
+    fetch(url, {
+      ...opts,
+      reactNative: { textStreaming: true },
+    }),
+  ...restOfConfig,
+});
+```
 
 ## Compatibility (server-side)
 
