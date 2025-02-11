@@ -22,31 +22,15 @@ import Tabs from '@theme/Tabs';
 
 ### 2. Import your `AppRouter`
 
-```twoslash include router
-// @filename: server/router.ts
-import { initTRPC } from '@trpc/server';
-import { z } from "zod";
-const t = initTRPC.create();
-
-const appRouter = t.router({
-  getUser: t.procedure.input(z.object({ id: z.string() })).query(() => ({ name: 'foo' })),
-  createUser: t.procedure.input(z.object({ name: z.string() })).mutation(() => 'bar'),
-});
-export type AppRouter = typeof appRouter;
-```
-
 import ImportAppRouter from '../../partials/_import-approuter.mdx';
 
 <ImportAppRouter />
 
-### 3. Create tRPC context
+### 3. Create React context for tRPC
 
 Create a strongly-typed context provider and consumer from your `AppRouter` type signature with `createTRPCContext`.
 
-```ts twoslash title='utils/trpc.ts' include utils
-// @include: router
-// @filename: utils/trpc.ts
-// ---cut---
+```ts title='utils/trpc.ts'
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/router';
 
