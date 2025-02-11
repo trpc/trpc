@@ -6,6 +6,10 @@ export const config = {
   runtime: 'edge',
 };
 
+const classNames = (...classes: (string | undefined | null | false | 0)[]) => {
+  return classes.filter(Boolean).join(' ');
+};
+
 export default async (req: Request) => {
   const [inter900, inter700, inter400] = await Promise.all([
     fetchFont('Inter', 900),
@@ -50,21 +54,31 @@ export default async (req: Request) => {
             </p>
           </div>
           <div tw="flex items-center">
-            <img
-              src={props.authorImg}
-              alt="author profile"
-              width="75px"
-              height="75px"
-              tw="mr-6 rounded-xl"
-            />
-            <div tw="flex flex-col justify-center">
-              <p tw="text-2xl leading-[1px] font-semibold">
-                {props.authorName}
-              </p>
-              <p tw="text-xl leading-[1px] text-zinc-300">
-                {props.authorTitle}
-              </p>
-            </div>
+            {props.authors.map((author, idx) => {
+              const isLast = idx === props.authors.length - 1;
+              return (
+                <div
+                  key={idx}
+                  tw={classNames('flex items-center', !isLast && 'mr-8')}
+                >
+                  <img
+                    src={author.img}
+                    alt={`${author.name}'s profile`}
+                    width="75px"
+                    height="75px"
+                    tw="mr-6 rounded-xl"
+                  />
+                  <div tw="flex flex-col justify-center">
+                    <p tw="text-2xl leading-[1px] font-semibold">
+                      {author.name}
+                    </p>
+                    <p tw="text-xl leading-[1px] text-zinc-300">
+                      {author.title}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
