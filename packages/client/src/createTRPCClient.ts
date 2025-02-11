@@ -23,8 +23,19 @@ import type { TRPCClientError } from './TRPCClientError';
 /**
  * @public
  **/
-export type inferRouterClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
+export type inferRouterClient<TRouter extends AnyRouter> = TRPCClient<
+  TRouter,
+  TRouter['_def']['record']
+>;
+
+const untypedClientSymbol = Symbol('untypedClient');
+
+export type TRPCClient<
+  TRoot extends InferrableClientTypes,
+  TRecord extends RouterRecord,
+> = DecoratedProcedureRecord<TRoot, TRecord> & {
+  [untypedClientSymbol]: TRPCUntypedClient<TRoot>;
+};
 
 type ResolverDef = {
   input: any;
@@ -125,11 +136,16 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 
       const fullPath = pathCopy.join('.');
 
-      return (client as any)[procedureType](fullPath, ...args);
+      return (client[procedureType] as any)(fullPath, ...(args as any));
     },
   );
   return createFlatProxy<inferRouterClient<TRouter>>((key) => {
-    if (key === '__untypedClient') {
+    if (
+      key === untypedClientSymbol ||
+      // Safer for monorepos?:
+      (typeof key === 'symbol' &&
+        key.description === untypedClientSymbol.description)
+    ) {
       return client;
     }
     return proxy[key];
@@ -148,8 +164,8 @@ export function createTRPCClient<TRouter extends AnyRouter>(
  * Get an untyped client from a proxy client
  * @internal
  */
-export function getUntypedClient<TRouter extends AnyRouter>(
-  client: inferRouterClient<TRouter>,
-): TRPCUntypedClient<TRouter> {
-  return (client as any).__untypedClient;
+export function getUntypedClient<TInferrable extends InferrableClientTypes>(
+  client: TRPCClient<TInferrable, any>,
+): TRPCUntypedClient<TInferrable> {
+  return client[untypedClientSymbol];
 }

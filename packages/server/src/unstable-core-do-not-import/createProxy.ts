@@ -70,11 +70,12 @@ export const createRecursiveProxy = <TFaux = unknown>(
  * @internal
  */
 export const createFlatProxy = <TFaux>(
-  callback: (path: string & keyof TFaux) => any,
+  callback: (path: keyof TFaux) => any,
 ): TFaux => {
   return new Proxy(noop, {
     get(_obj, name) {
-      if (typeof name !== 'string' || name === 'then') {
+      const type = typeof name;
+      if (name === 'then' || (type !== 'symbol' && type !== 'string')) {
         // special case for if the proxy is accidentally treated
         // like a PromiseLike (like in `Promise.resolve(proxy)`)
         return undefined;
