@@ -73,7 +73,7 @@ interface MergedAsyncIterables<TYield>
  */
 export function mergeAsyncIterables<TYield>(): MergedAsyncIterables<TYield> {
   let state: 'idle' | 'pending' | 'done' = 'idle';
-  let flushSignal = createDeferred<void>();
+  let flushSignal = createDeferred();
 
   /**
    * used while {@link state} is `idle`

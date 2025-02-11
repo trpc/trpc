@@ -423,6 +423,8 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+<!-- runtypes example is broken -->
+<!--
 ### With [runtypes](https://github.com/pelotom/runtypes)
 
 ```ts twoslash
@@ -445,7 +447,7 @@ export const appRouter = t.router({
 });
 
 export type AppRouter = typeof appRouter;
-```
+``` -->
 
 ### With [Valibot](https://github.com/fabian-hiller/valibot)
 
