@@ -24,13 +24,7 @@ import type { TRPCClientError } from './TRPCClientError';
  * @public
  **/
 export type inferRouterClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<
-    {
-      errorShape: TRouter['_def']['_config']['$types']['errorShape'];
-      transformer: TRouter['_def']['_config']['$types']['transformer'];
-    },
-    TRouter['_def']['record']
-  >;
+  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
 
 type ResolverDef = {
   input: any;
