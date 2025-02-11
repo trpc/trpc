@@ -196,7 +196,6 @@ export default function Basics() {
 
   const invalidateMyQueryKey = () => {
     queryClient.invalidateQueries({ queryKey: myQueryKey })
-
   }
 
   return (
@@ -353,13 +352,23 @@ function SubscriptionExample() {
   );
 
   // Or you can handle the state here
-  subscription.data;
-  subscription.error;
+  subscription.data; // The lastly received data
+  subscription.error; // The lastly received error
+
+  /**
+   * The current status of the subscription.
+   * Will be one of: `'idle'`, `'connecting'`, `'pending'`, or `'error'`.
+   *
+   * - `idle`: subscription is disabled or ended
+   * - `connecting`: trying to establish a connection
+   * - `pending`: connected to the server, receiving data
+   * - `error`: an error occurred and the subscription is stopped
+   */
   subscription.status;
 
-  // Reset the subscription
+  // Reset the subscription (if you have an error etc)
   subscription.reset();
 
-  return <>...</>;
+  return <>{/* ... */}</>;
 }
 ```
