@@ -1006,7 +1006,7 @@ export const tweets = {
             {
                 "id": "10364832",
                 "username": "ralex1993",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1529879227918561292/8ujpSdLe_normal.jpg",
+                "profile_image_url": "https://github.com/alexanderson1993.png",
                 "public_metrics": {
                     "followers_count": 2599,
                     "following_count": 372,
@@ -1162,7 +1162,7 @@ export const tweets = {
             {
                 "id": "19268321",
                 "username": "housecor",
-                "profile_image_url": "https://pbs.twimg.com/profile_images/1525874017630035970/veQQouGw_normal.jpg",
+                "profile_image_url": "https://github.com/coryhouse.png",
                 "public_metrics": {
                     "followers_count": 65333,
                     "following_count": 673,
