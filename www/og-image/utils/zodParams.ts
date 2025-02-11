@@ -67,9 +67,13 @@ export const blogParams = zodParams(
         }).format(date),
       ),
     readingTimeInMinutes: z.number().positive(),
-    authorName: z.string(),
-    authorTitle: z.string(),
-    authorImg: z.string(),
+    authors: z.array(
+      z.object({
+        name: z.string(),
+        title: z.string(),
+        img: z.string(),
+      }),
+    ),
   }),
 );
 
