@@ -54,7 +54,7 @@ When building an SPA using only client-side rendering, you can create the `Query
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import React, { useState } from 'react';
-import { queryClient, trpcClient, TRPCProvider, useTRPC } from './utils/trpc';
+import { TRPCProvider, useTRPC } from './utils/trpc';
 
 const queryClient = new QueryClient()
 
