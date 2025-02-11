@@ -27,6 +27,7 @@ import type {
   DataTransformerOptions,
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import/stream/utils/disposable';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket, WebSocketServer } from 'ws';
@@ -175,7 +176,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
       }
     },
   };
-  return ctx;
+  return makeAsyncResource(ctx, ctx.close);
 }
 
 export async function waitMs(ms: number) {
