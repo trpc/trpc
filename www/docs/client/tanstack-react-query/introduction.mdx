@@ -180,17 +180,24 @@ export default function Basics() {
   const queryClient = useQueryClient();
 
   // Create QueryOptions which can be passed to query hooks
-  const queryOptions = trpc.path.to.query.queryOptions({ /** inputs */ })
-  // useQuery(queryOptions), useSuspenseQuery(queryOptions), useInfiniteQuery(queryOptions)
+  const myQueryOptions = trpc.path.to.query.queryOptions({ /** inputs */ })
+  const myQuery = useQuery(myQueryOptions)
+  // or:
+  // useSuspenseQuery(myQueryOptions)
+  // useInfiniteQuery(myQueryOptions)
 
   // Create MutationOptions which can be passed to useMutation
-  const mutationOptions = trpc.path.to.mutation.mutationOptions()
-  // useMutation(mutationOptions)
+  const myMutationOptions = trpc.path.to.mutation.mutationOptions()
+  const myMutation = useMutation(myMutationOptions)
 
   // Create a QueryKey which can be used to manipulated many methods
   // on TanStack's QueryClient in a type-safe manner
-  const queryKey = trpc.path.to.query.queryKey()
-  // queryClient.invalidateQueries({ queryKey })
+  const myQueryKey = trpc.path.to.query.queryKey()
+
+  const invalidateMyQueryKey = () => {
+    queryClient.invalidateQueries({ queryKey: myQueryKey })
+
+  }
 
   return (
     // Your app here
