@@ -1,4 +1,3 @@
-import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { initTRPC } from '@trpc/server';
 
@@ -9,10 +8,10 @@ test('using client as procedure name', async () => {
     request: t.procedure.query(() => 'x'),
   });
 
-  const ctx = routerToServerAndClientNew(router)
+  const ctx = routerToServerAndClientNew(router);
 
   expect(await ctx.client.client.query()).toBe('x');
   expect(await ctx.client.request.query()).toBe('x');
 
-  await ctx.close()
+  await ctx.close();
 });
