@@ -8,10 +8,13 @@ import type {
   FileInfo,
   FunctionDeclaration,
   Identifier,
-  JSCodeshift,
   MemberExpression,
   Options,
 } from 'jscodeshift';
+import {
+  findParentOfType,
+  replaceMemberExpressionRootIndentifier,
+} from '../lib/walkers';
 
 interface TransformOptions extends Options {
   trpcImportName?: string;
@@ -342,35 +345,3 @@ export default function transform(
 
   return dirtyFlag ? root.toSource() : undefined;
 }
-
-// FIX: move this to the proper location
-function findParentOfType<TPath>(
-  path: ASTPath<unknown>,
-  type: unknown,
-): ASTPath<unknown> | false {
-  // @ts-expect-error FIX: typedef
-  if (!type.check(path.node)) {
-    return findParentOfType(path.parentPath, type);
-  }
-  if (!path.parent) {
-    return false;
-  }
-  return path as ASTPath<TPath>;
-}
-
-function replaceMemberExpressionRootIndentifier(
-  j: JSCodeshift,
-  expr: MemberExpression,
-  id: Identifier,
-) {
-  if (j.Identifier.check(expr.object)) {
-    expr.object = id;
-    return true;
-  }
-  if (j.MemberExpression.check(expr.object)) {
-    return replaceMemberExpressionRootIndentifier(j, expr.object, id);
-  }
-  return false;
-}
-
-export const parser = 'tsx';
