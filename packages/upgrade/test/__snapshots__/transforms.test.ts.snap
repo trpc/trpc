@@ -118,7 +118,10 @@ export function Component() {
 
   const mutation = useMutation(
     trpc.post.create.mutationOptions({
-      onSettled: () => queryClient.invalidateQueries(trpc.post.queryFilter()),
+      onSettled: () => {
+        queryClient.invalidateQueries(trpc.post.queryFilter());
+        queryClient.invalidateQueries(trpc.post.list.queryFilter());
+      },
     }),
   );
 }
