@@ -126,7 +126,6 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     links: [
       splitLink({
         condition(op) {
-          console.log('condition', op.context);
           // check for context property `skipBatch`
           return Boolean(op.context['skipBatch']);
         },

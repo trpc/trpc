@@ -523,6 +523,11 @@ export function createBuilder<TContext, TMeta>(
       ) as AnyMutationProcedure;
     },
     subscription(resolver: ProcedureResolver<any, any, any, any, any, any>) {
+      if (_def.experimental_response) {
+        throw new Error(
+          'Subscription procedures cannot be marked as experimental_Response',
+        );
+      }
       return createResolver({ ..._def, type: 'subscription' }, resolver) as any;
     },
     experimental_caller(caller) {

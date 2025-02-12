@@ -301,7 +301,7 @@ test('lazy', async () => {
   await close();
 });
 
-test('experimental_Response', async () => {
+test('experimental_Response happy path', async () => {
   const router = t.router({
     hello: procedure.output('experimental_Response').query(() => {
       return new Response('hello', {
@@ -323,4 +323,16 @@ test('experimental_Response', async () => {
   expect(res.headers.get('content-type')).toBe('text/plain');
   expect(await res.text()).toBe('hello');
   await close();
+});
+
+test('experimental_Response unhappy path', async () => {
+  expect(() => {
+    procedure.output('experimental_Response').subscription(() => {
+      return new Response('hello', {
+        headers: {
+          'content-type': 'text/plain',
+        },
+      });
+    });
+  }).toThrowErrorMatchingInlineSnapshot(`[Error: Subscription procedures cannot be marked as experimental_Response]`);
 });
