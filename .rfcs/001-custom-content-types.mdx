@@ -1,0 +1,80 @@
+## Custom response types (RFC)
+
+You can return a `Response` object from your procedure by specifying `'Response'` as the output type. This is useful when you need full control over the response, such as returning files, streams, or custom headers.
+
+This feature allows you to have full control over the HTTP response, enabling use cases like:
+
+- File downloads and other binary data
+- Custom content types
+- Custom headers and status codes
+
+Note that when using `'Response'`:
+
+- You're responsible for properly formatting the response
+- You're responsible for setting appropriate headers
+- You're responsible for doing manual deserialization and type safety on the client when needed
+- The responses can not be batched and will be rejected by the server if attempted (needs to be called with `httpLink()`)
+
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create();
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  // Simple file download example
+  downloadFile: publicProcedure
+    .output('Response')
+    .query(() => {
+      return new Response('Hello World', {
+        headers: {
+          'Content-Type': 'text/plain',
+          'Content-Disposition': 'attachment; filename="hello.txt"',
+        },
+      });
+    }),
+
+  // Stream example with custom headers
+  streamData: publicProcedure
+    .input(z.object({ count: z.number().min(1) }))
+    .output('Response')
+    .mutation(async ({ input }) => {
+      const stream = new ReadableStream({
+        async start(controller) {
+          for (let i = 0; i < input.count; i++) {
+            controller.enqueue(`data: ${i}\n\n`);
+            await new Promise(r => setTimeout(r, 1000));
+          }
+          controller.close();
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }),
+
+  // Binary file example
+  getImage: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .output('Response')
+    .query(async ({ input }) => {
+      const imageBuffer = await getImageFromDatabase(input.id); // hypothetical function
+
+      return new Response(imageBuffer, {
+        headers: {
+          'Content-Type': 'image/jpeg',
+          'Cache-Control': 'public, max-age=3600',
+        },
+      });
+    }),
+});
+```
+
+### Why a static `.output('experimental_Response')`?
+
+The `.output('experimental_Response')` is static because it changes the type of the procedure in a way that is not compatible with the usual tRPC type system and allows us to reject a request if it is tried to be called with e.g. batching.
