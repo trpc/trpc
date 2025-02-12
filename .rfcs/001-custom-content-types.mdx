@@ -72,8 +72,8 @@ export const appRouter = t.router({
       });
     }),
 });
+```
 
 ### Why a static `.output('experimental_Response')`?
 
 The `.output('experimental_Response')` is static because it changes the type of the procedure in a way that is not compatible with the usual tRPC type system and allows us to reject a request if it is tried to be called with e.g. batching.
-```
