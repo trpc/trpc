@@ -681,6 +681,13 @@ test('experimental_Response happy path', async () => {
   expect(res.headers.get('content-type')).toBe('text/plain');
   expect(await res.text()).toBe('hello');
 
+  {
+    // should fail when not batching
+    const res = await waitError(ctx.client.hello.query(), TRPCClientError);
+    expect(res).toMatchInlineSnapshot(
+      `[TRPCClientError: This procedure cannot be batched and needs to be called with httpLink]`,
+    );
+  }
   await ctx.close();
 });
 
