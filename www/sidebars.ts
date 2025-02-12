@@ -76,7 +76,21 @@ const config: SidebarsConfig = {
       items: [
         {
           type: 'category',
-          label: 'React Query Integration',
+          label: 'TanStack React Query (⭐️)',
+          collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/tanstack-react-query/setup',
+          },
+          items: [
+            'client/tanstack-react-query/setup',
+            'client/tanstack-react-query/usage',
+            'client/tanstack-react-query/migrating',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'React Query Integration (Classic)',
           collapsed: true,
           link: {
             type: 'doc',
