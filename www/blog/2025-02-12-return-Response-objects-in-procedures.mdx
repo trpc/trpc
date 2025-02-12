@@ -113,10 +113,11 @@ To use custom response types, you need to enable the feature in your tRPC config
 // @module: esnext
 // @target: esnext
 import { initTRPC } from '@trpc/server';
+
 export const t = initTRPC.create({
   experimental: {
-    outputResponse: true // <-- enable the feature
-  }
+    outputResponse: true, // <-- enable the feature
+  },
 });
 ```
 

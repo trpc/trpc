@@ -12,7 +12,9 @@
       "@trpc/react-query": ["./packages/react-query/src"],
       "@trpc/react-query/*": ["./packages/react-query/src/*"],
       "@trpc/server": ["./packages/server/src"],
-      "@trpc/server/*": ["./packages/server/src/*"]
+      "@trpc/server/*": ["./packages/server/src/*"],
+      "@trpc/tanstack-react-query": ["./packages/tanstack-react-query/src"],
+      "@trpc/tanstack-react-query/*": ["./packages/tanstack-react-query/src/*"]
     },
     "types": ["node", "vitest/globals"]
   }
