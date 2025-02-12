@@ -47,30 +47,3 @@ While the classic client is going to be maintained for a long time to come, we r
 Both clients are compatible with each other and can exist in the same application, so you can migrate at your own pace. We are also working on a codemod which **we would love** community contributions to.
 
 👉 [Read the Migration Docs](/docs/client/tanstack-react-query/migrating)
-
-## Try it out!
-
-import { Iframe } from '@site/src/components/Iframe';
-import { searchParams } from '@site/src/utils/searchParams';
-import clsx from 'clsx';
-
-<div
-  className={clsx(
-    'relative z-10 my-0 h-[600px] w-full overflow-hidden rounded-xl md:my-4 lg:my-8',
-  )}
->
-  <Iframe
-    src={
-      `https://stackblitz.com/github/trpc/trpc/tree/next/examples/minimal-react?` +
-      searchParams({
-        embed: '1',
-        file: ['client/src/Greeting.tsx', 'server/index.ts'],
-        hideNavigation: '1',
-        terminalHeight: '1',
-        showSidebar: '0',
-        view: 'editor',
-      })
-    }
-    frameBorder="0"
-  />
-</div>
