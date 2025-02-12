@@ -1,13 +1,19 @@
 ---
 id: httpLink
-title: HTTP Link
+title: HTTP Link / httpLink
 sidebar_label: HTTP Link
 slug: /client/links/httpLink
 ---
 
 `httpLink` is a [**terminating link**](./overview.md#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.
 
-`httpLink` supports both POST and GET requests.
+`httpLink` supports both POST and GET requests and provides several key capabilities:
+
+- Sending `FormData` for file uploads and form submissions
+- Handling custom response types like `Response` objects for advanced use cases (file downloads, streams, etc.)
+- Standard JSON responses for regular API calls
+
+You likely want to combine this link with [`httpBatchLink`](./httpBatchLink.md) or [`httpBatchStreamLink`](./httpBatchStreamLink.md) using a by [`splitLink`](./splitLink.mdx) to handle different types of operations in your app.
 
 ## Usage
 
@@ -25,6 +31,83 @@ const client = createTRPCClient<AppRouter>({
     }),
   ],
 });
+```
+
+## Key Features
+
+### `FormData` Support
+
+`httpLink` allows you to send `FormData` directly to your procedures, making it ideal for file uploads and form submissions:
+
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+import { zfd } from 'zod-form-data';
+export const t = initTRPC.create({
+  experimental: { outputResponse: true }
+});
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+// @filename: utils.ts
+export declare function processFileStream(buffer: File): {
+    stream: ReadableStream<Uint8Array>;
+    format: string;
+};
+// @filename: client.ts
+// ---cut---
+import { publicProcedure, router } from './server';
+import { processFileStream } from './utils';
+import { z } from 'zod';
+import { zfd } from 'zod-form-data';
+
+const appRouter = router({
+  uploadFile: publicProcedure
+    .input(
+      zfd.formData({
+        file: zfd.file(),
+      })
+    )
+    .mutation(async (opts) => {
+      // ...
+    }),
+});
+```
+
+```ts title="client.ts"
+const formData = new FormData();
+formData.append('file', fileInput.files[0]);
+
+// Send FormData to your procedure
+const result = await client.uploadFile.mutate(formData);
+```
+
+### Custom Response Types
+
+When your server procedures return `Response` objects (with the `experimental.outputResponse` flag enabled), `httpLink` can handle various response types including:
+
+- File downloads
+- Streams
+- Custom content types
+- Special headers
+
+```ts
+// Server procedure returning a custom Response
+const appRouter = t.router({
+  downloadFile: publicProcedure.query(() => {
+    return new Response('Hello World', {
+      headers: {
+        'Content-Type': 'text/plain',
+        'Content-Disposition': 'attachment; filename="hello.txt"',
+      },
+    });
+  }),
+});
+
+// Client usage
+const response = await client.downloadFile.query();
+// response is a Response object you can handle accordingly
 ```
 
 ## `httpLink` Options

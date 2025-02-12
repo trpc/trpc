@@ -1,6 +1,6 @@
 ---
 id: retryLink
-title: Retry Link
+title: Retry Link / retryLink
 sidebar_label: Retry Link
 slug: /client/links/retryLink
 ---

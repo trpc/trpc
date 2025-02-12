@@ -1,6 +1,6 @@
 ---
 id: httpSubscriptionLink
-title: HTTP Subscription Link
+title: HTTP Subscription Link / httpSubscriptionLink
 sidebar_label: HTTP Subscription Link
 slug: /client/links/httpSubscriptionLink
 ---
