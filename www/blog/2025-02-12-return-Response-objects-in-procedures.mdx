@@ -148,9 +148,7 @@ export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
 import { createTRPCClient } from '@trpc/client';
-import { unstable_httpBatchStreamLink } from '@trpc/client';
-import { httpLink } from '@trpc/client';
-import { splitLink } from '@trpc/client';
+import { unstable_httpBatchStreamLink, httpLink, splitLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
 const client = createTRPCClient<AppRouter>({
