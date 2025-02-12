@@ -7,7 +7,7 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "typings": "dist/index.d.ts",
-  "homepage": "https://trpc.io/docs/client/tanstack-react-query/introduction",
+  "homepage": "https://trpc.io/docs/client/tanstack-react-query/setup",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/trpc/trpc.git",

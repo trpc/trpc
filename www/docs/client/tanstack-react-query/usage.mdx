@@ -1,201 +1,25 @@
 ---
-id: introduction
+id: usage
 title: TanStack React Query
-sidebar_label: TanStack React Query (⭐️)
-description: TanStack React Query
-slug: /client/tanstack-react-query/introduction
+sidebar_label: Usage
+description: TanStack React Query usage
+slug: /client/tanstack-react-query/usage
 ---
 
-Compared to our [classic React Query Integration](/docs/client/react) this client is simpler and more TanStack Query-native, providing factories for common TanStack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. We think it's the future and recommend using this over the classic client
+Compared to our [classic React Query Integration](/docs/client/react) this client is simpler and more TanStack Query-native, providing factories for common TanStack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. We think it's the future and recommend using this over the classic client, <a href="/blog/introducing-tanstack-react-query-client">read the announcement post</a> for more information about this change.
 
-## Setup
+## Quick example query
 
-### 1. Install dependencies
+```tsx
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
 
-The following dependencies should be installed
-
-import { InstallSnippet } from '@site/src/components/InstallSnippet';
-import TabItem from '@theme/TabItem';
-import Tabs from '@theme/Tabs';
-
-<InstallSnippet pkgs="@trpc/server@next @trpc/client@next @trpc/tanstack-react-query@next @tanstack/react-query@latest" />
-
-### 2. Import your `AppRouter`
-
-```twoslash include router
-// @filename: server/router.ts
-import { initTRPC } from '@trpc/server';
-import { z } from "zod";
-const t = initTRPC.create();
-
-const appRouter = t.router({
-  getUser: t.procedure.input(z.object({ id: z.string() })).query(() => ({ name: 'foo' })),
-  createUser: t.procedure.input(z.object({ name: z.string() })).mutation(() => 'bar'),
-});
-export type AppRouter = typeof appRouter;
-```
-
-```twoslash include utils
-// @filename: utils/trpc.ts
-// ---cut---
-import { createTRPCContext } from '@trpc/tanstack-react-query';
-import type { AppRouter } from '../server/router';
-
-export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
-```
-
-import ImportAppRouter from '../../partials/_import-approuter.mdx';
-
-<ImportAppRouter />
-
-### 3. Create a React Context for tRPC
-
-Create a strongly-typed context provider and consumer from your `AppRouter` type signature with `createTRPCContext`.
-
-```ts title='utils/trpc.ts' twoslash
-// @include: router
-// @include: utils
-```
-
-### 4. Add tRPC providers
-
-Create a tRPC client, and wrap your application in the tRPC Provider, as below. You will also need to set up and connect React Query, which [they document in more depth](https://tanstack.com/query/latest/docs/framework/react/quick-start).
-
-:::tip
-If you already use React Query in your application, you **should** re-use the `QueryClient` and `QueryClientProvider` you already have.
-:::
-
-<Tabs>
-<TabItem value="spa" label="Client-rendered apps">
-
-When building an SPA using only client-side rendering, you can create the `QueryClient` as a singleton.
-
-```tsx title='components/App.tsx' twoslash
-// @include: router
-// @include: utils
-// @filename: ./components/App.tsx
-// ---cut---
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import React, { useState } from 'react';
-import { TRPCProvider, useTRPC } from './utils/trpc';
-
-const queryClient = new QueryClient();
-
-export function App() {
-  const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
-      links: [
-        httpBatchLink({
-          url: 'http://localhost:2022',
-        }),
-      ],
-    }),
-  );
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-        {/* Your app here */}
-      </TRPCProvider>
-    </QueryClientProvider>
-  );
-}
-```
-
-  </TabItem>
-
-  <TabItem value="ssr" label="Server-rendered apps">
-
-When using server-side rendering using full-stack frameworks like Next.js, **you must** create a new client for each request so that
-different users doesn't share the same cache. You can read more about the QueryClient initialization in the [React Query docs](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#initial-setup).
-
-```tsx title='App.tsx'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createTRPCClient, httpBatchLink } from '@trpc/client';
-import React, { useState } from 'react';
-import { queryClient, trpcClient, TRPCProvider, useTRPC } from './utils/trpc';
-
-function makeQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        // With SSR, we usually want to set some default staleTime
-        // above 0 to avoid refetching immediately on the client
-        staleTime: 60 * 1000,
-      },
-    },
-  });
-}
-
-let browserQueryClient: QueryClient | undefined = undefined;
-
-function getQueryClient() {
-  if (typeof window === 'undefined') {
-    // Server: always make a new query client
-    return makeQueryClient();
-  } else {
-    // Browser: make a new query client if we don't already have one
-    // This is very important, so we don't re-make a new client if React
-    // suspends during the initial render. This may not be needed if we
-    // have a suspense boundary BELOW the creation of the query client
-    if (!browserQueryClient) browserQueryClient = makeQueryClient();
-    return browserQueryClient;
-  }
-}
-
-export function App() {
-  const queryClient = getQueryClient();
-  const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
-      links: [
-        httpBatchLink({
-          url: 'http://localhost:2022',
-        }),
-      ],
-    }),
-  );
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-        {/* Your app here */}
-      </TRPCProvider>
-    </QueryClientProvider>
-  );
-}
-```
-
-  </TabItem>
-</Tabs>
-
-### 5. Fetch data
-
-You can now use the tRPC React Query integration to call queries and mutations on your API.
-
-```tsx twoslash title='components/user-list.tsx'
-// @include: router
-// @include: utils
-// ---cut---
-// @filename: ./components/user-list.tsx
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useTRPC } from '../utils/trpc';
-
-export default function UserList() {
+function Users() {
   const trpc = useTRPC();
 
-  const userQuery = useQuery(trpc.getUser.queryOptions({ id: 'id_bilbo' }));
-  const userCreator = useMutation(trpc.createUser.mutationOptions());
+  const greetingQuery = useQuery(trpc.greeting.queryOptions({ name: 'Jerry' }));
 
-  return (
-    <div>
-      <p>{userQuery.data?.name}</p>
-
-      <button onClick={() => userCreator.mutate({ name: 'Frodo' })}>
-        Create Frodo
-      </button>
-    </div>
-  );
+  // greetingQuery.data === 'Hello Jerry'
 }
 ```
 
