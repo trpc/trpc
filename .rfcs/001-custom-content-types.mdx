@@ -1,6 +1,6 @@
 # Custom response types RFC
 
-You can return a `Response` object from your procedure by specifying `'Response'` as the output type. This is useful when you need full control over the response, such as returning files, streams, or custom headers.
+Suggestion to add the ability to return a `Response` object from your procedure by specifying `'Response'` as the output type. This is useful when you need full control over the response, such as returning files, streams, or custom headers.
 
 This feature allows you to have full control over the HTTP response, enabling use cases like:
 
@@ -32,6 +32,8 @@ Note that when using `'Response'`:
 The `.output('experimental_Response')` is static because it changes the type of the procedure in a way that is not compatible with the usual tRPC type system and allows us to reject a request if it is tried to be called with e.g. batching.
 
 ## More examples
+
+### Different content types
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
@@ -90,7 +92,7 @@ export const appRouter = t.router({
 });
 ```
 
-## Client handling
+### Client handling
 
 The client will not be able to handle the `Response` type directly. You will need to use the `httpLink`.
 
@@ -104,10 +106,15 @@ const client = createTRPCClient<AppRouter>({
       true: httpLink({
         url,
       }),
-      false: httpBatchLink({
+      false: unstable_httpBatchStreamLink({
         url: '/api',
       }),
     }),
   ],
 });
+
+
+// Usage
+const res = await client.downloadFile.query();
+//    ^? Response
 ```
