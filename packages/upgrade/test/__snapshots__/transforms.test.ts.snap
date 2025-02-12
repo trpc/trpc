@@ -9,6 +9,8 @@ export function Component() {
   useQuery(trpc.post.list.queryOptions());
   useQuery(trpc.post.queryOptions());
   useQuery(trpc.a.b.c.d.queryOptions());
+  // eslint-disable-next-line @typescript-eslint/dot-notation
+  useQuery(trpc['post'].queryOptions());
 
   useQuery(trpc.post.byId.queryOptions({ id: 1 }));
   useQuery(trpc.num.queryOptions(1));
@@ -118,7 +120,16 @@ export function Component() {
 
   const mutation = useMutation(
     trpc.post.create.mutationOptions({
-      onSettled: () => queryClient.invalidateQueries(trpc.post.queryFilter()),
+      onSettled: () => {
+        queryClient.invalidateQueries(trpc.post.queryFilter());
+        queryClient.invalidateQueries(trpc.post.list.queryFilter());
+        queryClient.invalidateQueries(
+          trpc.post.x.y.z.longPropName.queryFilter(),
+        );
+
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        queryClient.invalidateQueries(trpc['post'].queryFilter());
+      },
     }),
   );
 }

@@ -11,6 +11,8 @@ import type {
   MemberExpression,
   Options,
 } from 'jscodeshift';
+import { replaceMemberExpressionRootIndentifier } from '../lib/ast/modifiers';
+import { findParentOfType } from '../lib/ast/walkers';
 
 interface TransformOptions extends Options {
   trpcImportName?: string;
@@ -205,7 +207,18 @@ export default function transform(
             .find(j.Identifier, { name: oldIdentifier.name })
             .forEach((path) => {
               if (j.MemberExpression.check(path.parent?.parent?.node)) {
-                const callExprPath = path.parent.parent.parent;
+                const callExprPath = findParentOfType<CallExpression>(
+                  path.parentPath,
+                  j.CallExpression,
+                );
+                if (!callExprPath) {
+                  console.warn(
+                    `Failed to walk up the tree to find utilMethod call expression, on file: ${file.path}`,
+                    callExprPath,
+                    { start: path.node.loc?.start, end: path.node.loc?.end },
+                  );
+                  return;
+                }
                 const callExpr = callExprPath.node as CallExpression;
                 const memberExpr = callExpr.callee as MemberExpression;
                 if (
@@ -213,8 +226,9 @@ export default function transform(
                   !j.MemberExpression.check(memberExpr)
                 ) {
                   console.warn(
-                    'Failed to walk up the tree to find utilMethod call expression',
+                    `Failed to walk up the tree to find utilMethod with a \`trpc.PATH.<call>\`, on file: ${file.path}`,
                     callExpr,
+                    { start: path.node.loc?.start, end: path.node.loc?.end },
                   );
                   return;
                 }
@@ -222,7 +236,6 @@ export default function transform(
                 if (
                   !(
                     j.MemberExpression.check(memberExpr.object) &&
-                    j.Identifier.check(memberExpr.object.object) &&
                     j.Identifier.check(memberExpr.property) &&
                     memberExpr.property.name in utilMap
                   )
@@ -236,11 +249,21 @@ export default function transform(
 
                 // Replace util.PATH.proxyMethod() with trpc.PATH.queryFilter()
                 const proxyMethod = memberExpr.property.name as ProxyMethod;
-                memberExpr.object.object = j.identifier(trpcImportName!);
+                const replacedPath = replaceMemberExpressionRootIndentifier(
+                  j,
+                  memberExpr,
+                  j.identifier(trpcImportName!),
+                );
+                if (!replacedPath) {
+                  console.warn(
+                    'Failed to wrap proxy call expression',
+                    memberExpr,
+                  );
+                }
                 memberExpr.property = j.identifier('queryFilter');
 
                 // Wrap it in queryClient.utilMethod()
-                j(callExprPath).replaceWith(
+                callExprPath.replace(
                   j.memberExpression(
                     j.identifier('queryClient'),
                     j.callExpression(j.identifier(utilMap[proxyMethod]), [
