@@ -22,16 +22,14 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 export const appRouter = t.router({
   // Simple file download example
-  downloadFile: publicProcedure
-    .output('Response')
-    .query(() => {
-      return new Response('Hello World', {
-        headers: {
-          'Content-Type': 'text/plain',
-          'Content-Disposition': 'attachment; filename="hello.txt"',
-        },
-      });
-    }),
+  downloadFile: publicProcedure.output('Response').query(() => {
+    return new Response('Hello World', {
+      headers: {
+        'Content-Type': 'text/plain',
+        'Content-Disposition': 'attachment; filename="hello.txt"',
+      },
+    });
+  }),
 
   // Stream example with custom headers
   streamData: publicProcedure
@@ -42,7 +40,7 @@ export const appRouter = t.router({
         async start(controller) {
           for (let i = 0; i < opts.input.count; i++) {
             controller.enqueue(`data: ${i}\n\n`);
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise((r) => setTimeout(r, 1000));
           }
           controller.close();
         },
@@ -52,7 +50,7 @@ export const appRouter = t.router({
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
+          Connection: 'keep-alive',
         },
       });
     }),
