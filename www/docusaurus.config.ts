@@ -47,14 +47,14 @@ export default {
       // contextualSearch: true,
       // searchParameters: {},
     },
-    // announcementBar: {
-    //   id: 'actions',
-    //   content:
-    //     "🚀 New blog post live! Check out how to use Server Actions with tRPC <a href='/blog/trpc-actions'><strong>here</strong></a>.",
-    //   backgroundColor: 'var(--ifm-color-primary-dark)',
-    //   textColor: '#ffffff',
-    //   isCloseable: true,
-    // },
+    announcementBar: {
+      id: 'actions',
+      content:
+        "🔥 Just in: Return Response objects directly from tRPC procedures for file downloads & more! <a href='/blog/2025/02/12/return-Response-objects-in-procedures#conclusion'><strong>Read the blog post</strong></a>",
+      backgroundColor: 'var(--ifm-color-primary-dark)',
+      textColor: '#ffffff',
+      isCloseable: true,
+    },
     navbar: {
       title: 'tRPC',
       logo: {
