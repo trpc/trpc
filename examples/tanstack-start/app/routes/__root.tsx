@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import { Body, Head, Html, Meta, Scripts } from '@tanstack/start';
-import { TRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import appCss from '~/app.css?url';
 import { DefaultCatchBoundary } from '~/components/DefaultCatchBoundary';
 import { NotFound } from '~/components/NotFound';
@@ -17,7 +17,7 @@ import * as React from 'react';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
-  trpc: TRPCOptionsProxy<TRPCRouter>;
+  trpc: ReturnType<typeof createServerSideHelpers<TRPCRouter>>;
 }>()({
   meta: () => [
     { charSet: 'utf-8' },
