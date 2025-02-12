@@ -1,14 +1,13 @@
 import { QueryClient } from '@tanstack/react-query';
 import { createRouter as createTanStackRouter } from '@tanstack/react-router';
 import { routerWithQueryClient } from '@tanstack/react-router-with-query';
-import { createTRPCClient, unstable_httpBatchStreamLink } from '@trpc/client';
-import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import { unstable_httpBatchStreamLink } from '@trpc/client';
+import { createServerSideHelpers } from '@trpc/react-query/server';
 import superjson from 'superjson';
 import { DefaultCatchBoundary } from './components/DefaultCatchBoundary';
 import { NotFound } from './components/NotFound';
 import { routeTree } from './routeTree.gen';
-import { TRPCProvider } from './trpc/react';
-import { TRPCRouter } from './trpc/router';
+import { trpc } from './trpc/react';
 
 // NOTE: Most of the integration code found here is experimental and will
 // definitely end up in a more streamlined API in the future. This is just
@@ -31,7 +30,7 @@ export function createRouter() {
     },
   });
 
-  const trpcClient = createTRPCClient<TRPCRouter>({
+  const trpcClient = trpc.createClient({
     links: [
       unstable_httpBatchStreamLink({
         transformer: superjson,
@@ -40,10 +39,7 @@ export function createRouter() {
     ],
   });
 
-  const serverHelpers = createTRPCOptionsProxy({
-    client: trpcClient,
-    queryClient: queryClient,
-  });
+  const serverHelpers = createServerSideHelpers({ client: trpcClient });
 
   const router = createTanStackRouter({
     context: { queryClient, trpc: serverHelpers },
@@ -53,9 +49,9 @@ export function createRouter() {
     defaultNotFoundComponent: () => <NotFound />,
     Wrap: (props) => {
       return (
-        <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
           {props.children}
-        </TRPCProvider>
+        </trpc.Provider>
       );
     },
   });

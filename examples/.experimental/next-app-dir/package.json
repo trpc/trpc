@@ -19,7 +19,6 @@
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
-    "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query@next",
     "@types/node": "^22.9.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
