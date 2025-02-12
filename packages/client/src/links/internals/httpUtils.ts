@@ -151,7 +151,7 @@ export type Requester = (
 ) => Promise<JsonHTTPResult | ResponseHTTPResult>;
 
 export const jsonHttpRequester: Requester = (opts) => {
-  return jsonHttpRequest({
+  return httpRequest({
     ...opts,
     contentTypeHeader: 'application/json',
     getUrl,
@@ -228,7 +228,7 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
   });
 }
 
-export async function jsonHttpRequest(
+export async function httpRequest(
   opts: HTTPRequestOptions,
 ): Promise<JsonHTTPResult | ResponseHTTPResult> {
   const res = await fetchHTTPResponse(opts);

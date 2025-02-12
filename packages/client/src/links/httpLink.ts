@@ -13,7 +13,7 @@ import type {
 import {
   getInput,
   getUrl,
-  jsonHttpRequest,
+  httpRequest,
   jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
@@ -44,7 +44,7 @@ const universalRequester: Requester = (opts) => {
       throw new Error('FormData is only supported for mutations');
     }
 
-    return jsonHttpRequest({
+    return httpRequest({
       ...opts,
       // The browser will set this automatically and include the boundary= in it
       contentTypeHeader: undefined,
@@ -58,7 +58,7 @@ const universalRequester: Requester = (opts) => {
       throw new Error('Octet type input is only supported for mutations');
     }
 
-    return jsonHttpRequest({
+    return httpRequest({
       ...opts,
       contentTypeHeader: 'application/octet-stream',
       getUrl,
