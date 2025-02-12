@@ -1,6 +1,6 @@
 # Custom response types RFC
 
-This RFC is proposes to add the ability to return a `Response` object from procedures. This is useful when you need full control over the response, such as returning files, streams, or custom headers.
+This RFC proposes to add the ability to return a `Response` object from procedures. This is useful when you need full control over the response, such as returning files, streams, or custom headers.
 
 This has been a long-requested feature in [#1937](https://github.com/trpc/trpc/issues/1937) which has been partially solved already by allowing the use of handling e.g. `FormData` in mutation inputs.
 
@@ -41,7 +41,7 @@ const res = await client.hello.query();
 
 ### Implementation details
 
-- The `.output('Response')` is static because it changes the type of the procedure in a way that is not compatible with the usual tRPC type system and allows us to reject a request if it is tried to be called with e.g. batching.
+- The `.output('Response')` is static because it changes the type of the procedure in a way that is not compatible with the usual tRPC type system and allows us to reject a request upfront if it is tried to be called with e.g. batching.
 
 ## Fuller example
 
