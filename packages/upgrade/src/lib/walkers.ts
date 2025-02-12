@@ -48,5 +48,3 @@ export function replaceMemberExpressionRootIndentifier(
   }
   return false;
 }
-
-export const parser = 'tsx';

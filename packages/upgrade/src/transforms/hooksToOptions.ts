@@ -345,3 +345,5 @@ export default function transform(
 
   return dirtyFlag ? root.toSource() : undefined;
 }
+
+export const parser = 'tsx';
