@@ -88,7 +88,6 @@ type ProcedureBuilderDef<TMeta> = {
    */
   subscription?: boolean;
   type?: ProcedureType;
-  experimental_response?: boolean;
   caller?: CallerOverride<unknown>;
 };
 
@@ -514,11 +513,6 @@ export function createBuilder<TContext, TMeta>(
       ) as AnyMutationProcedure;
     },
     subscription(resolver: ProcedureResolver<any, any, any, any, any, any>) {
-      if (_def.experimental_response) {
-        throw new Error(
-          'Subscription procedures cannot currently return a Response - please post an issue with your use case',
-        );
-      }
       return createResolver({ ..._def, type: 'subscription' }, resolver) as any;
     },
     experimental_caller(caller) {
