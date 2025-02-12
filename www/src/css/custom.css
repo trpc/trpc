@@ -312,23 +312,15 @@ h5 {
   @apply border-zinc-300 bg-zinc-100;
 }
 
-.markdown ul {
-  @apply list-inside list-disc;
-}
-
-.markdown ol {
-  @apply list-inside list-decimal;
-}
-
-.markdown ol li {
-  @apply my-4;
-}
-
 .markdown li > p {
   display: inline;
 }
 
 /** Hide noisy shiki stuff */
+
+.markdown .shiki {
+  @apply my-4;
+}
 
 .shiki data-lsp {
   border-bottom: 0 !important;

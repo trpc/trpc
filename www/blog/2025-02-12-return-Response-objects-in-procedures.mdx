@@ -35,11 +35,12 @@ export const t = initTRPC.create({
   experimental: { outputResponse: true }
 });
 export const publicProcedure = t.procedure;
+export const router = t.router;
 // @filename: server.ts
-// ---cut---
-import { t, publicProcedure } from './types';
+import { t, publicProcedure, router } from './types';
 
-const appRouter = t.router({
+// ---cut---
+const appRouter = router({
   hello: publicProcedure.query(async () => {
     return new Response('Hello World', {
       headers: {
@@ -48,8 +49,6 @@ const appRouter = t.router({
     });
   }),
 });
-
-export type AppRouter = typeof appRouter;
 ```
 
 ```ts twoslash title="client.ts"
@@ -61,10 +60,11 @@ export const t = initTRPC.create({
   experimental: { outputResponse: true }
 });
 export const publicProcedure = t.procedure;
+export const router = t.router;
 // @filename: server.ts
-import { t, publicProcedure } from './types';
+import { t, publicProcedure, router } from './types';
 
-const appRouter = t.router({
+const appRouter = router({
   hello: publicProcedure.query(async () => {
     return new Response('Hello World', {
       headers: {
@@ -97,13 +97,13 @@ response;
 
 When using custom response types, keep in mind:
 
-1. Responses cannot be batched - you must use `httpLink()`
-2. The return type will always be `Response` and you lose the automatic type inference that tRPC usually provides, since you're working directly with the [Web Response API](https://developer.mozilla.org/en-US/docs/Web/API/Response). You'll need to handle parsing and type safety manually on the client side.
-3. You are responsible for:
-   - Properly formatting the response
-   - Setting appropriate headers
-   - Manual deserialization on the client
-   - Maintaining type safety when needed
+- Responses cannot be batched - you must use `httpLink()`
+- The return type will always be `Response` and you lose the automatic type inference that tRPC usually provides, since you're working directly with the [Web Response API](https://developer.mozilla.org/en-US/docs/Web/API/Response). You'll need to handle parsing and type safety manually on the client side.
+- You are responsible for:
+  - Properly formatting the response
+  - Setting appropriate headers
+  - Manual deserialization on the client
+  - Maintaining type safety when needed
 
 ## Setup
 
@@ -207,6 +207,13 @@ const appRouter = t.router({
 
 ### File Transformation
 
+This example demonstrates:
+
+- Accepting file uploads via `FormData`
+- Processing the uploaded file
+- Returning the processed file with appropriate headers
+- Supporting different output formats
+
 ```ts twoslash
 // @filename: server.ts
 import { initTRPC } from '@trpc/server';
@@ -250,13 +257,6 @@ const appRouter = router({
     }),
 });
 ```
-
-This example demonstrates:
-
-- Accepting file uploads via `FormData`
-- Processing the uploaded image
-- Returning the processed image with appropriate headers
-- Supporting different output formats
 
 ## Conclusion
 
