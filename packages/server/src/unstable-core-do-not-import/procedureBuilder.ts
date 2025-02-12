@@ -68,7 +68,7 @@ export type CallerOverride<TContext> = (opts: {
   _def: AnyProcedure['_def'];
 }) => Promise<unknown>;
 type ProcedureBuilderDef<TMeta> = {
-  _config: RootConfig<any>;
+  _config: Partial<Pick<RootConfig<any>, 'experimental'>>;
   procedure: true;
   inputs: Parser[];
   output?: Parser;
@@ -441,7 +441,7 @@ function createNewBuilder(
   def1: AnyProcedureBuilderDef,
   def2: Partial<AnyProcedureBuilderDef>,
 ): AnyProcedureBuilder {
-  const { middlewares = [], inputs, meta, ...rest } = def2;
+  const { middlewares = [], inputs, meta, _config, ...rest } = def2;
 
   // TODO: maybe have a fn here to warn about calls
   return createBuilder({
@@ -449,6 +449,14 @@ function createNewBuilder(
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
     meta: def1.meta && meta ? { ...def1.meta, ...meta } : (meta ?? def1.meta),
+    _config: !_config
+      ? def1._config
+      : {
+          experimental: {
+            ...def1._config.experimental,
+            ..._config.experimental,
+          },
+        },
   });
 }
 
