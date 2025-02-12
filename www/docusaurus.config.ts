@@ -72,12 +72,12 @@ export default {
           label: 'Quickstart',
         },
         {
-          to: 'docs/community/awesome-trpc',
-          label: 'Awesome tRPC Collection',
+          to: 'blog',
+          label: 'Blog',
         },
         {
-          to: 'docs/client/nextjs',
-          label: 'Using Next.js',
+          to: 'docs/community/awesome-trpc',
+          label: 'Awesome tRPC Collection',
         },
         {
           href: 'https://github.com/trpc/trpc',
