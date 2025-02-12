@@ -87,7 +87,7 @@ export interface RootConfig<TTypes extends RootTypes> {
    */
   jsonl?: Pick<JSONLProducerOptions, 'pingMs'>;
   experimental?: {
-    responseOutput?: boolean;
+    outputResponse?: boolean;
   };
 }
 

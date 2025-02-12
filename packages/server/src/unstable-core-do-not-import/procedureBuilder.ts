@@ -23,6 +23,7 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
+import type { RootConfig } from './rootConfig';
 import type { inferTrackedOutput } from './stream/tracked';
 import type {
   GetRawInputFn,
@@ -67,6 +68,7 @@ export type CallerOverride<TContext> = (opts: {
   _def: AnyProcedure['_def'];
 }) => Promise<unknown>;
 type ProcedureBuilderDef<TMeta> = {
+  _config: RootConfig<any>;
   procedure: true;
   inputs: Parser[];
   output?: Parser;
@@ -450,8 +452,11 @@ function createNewBuilder(
   });
 }
 
+type SetRequired<TType, TKey extends keyof TType> = TType &
+  Required<Pick<TType, TKey>>;
+
 export function createBuilder<TContext, TMeta>(
-  initDef: Partial<AnyProcedureBuilderDef> = {},
+  initDef: SetRequired<Partial<ProcedureBuilderDef<TMeta>>, '_config'>,
 ): ProcedureBuilder<
   TContext,
   TMeta,
@@ -481,6 +486,11 @@ export function createBuilder<TContext, TMeta>(
     output(_output: unknown) {
       const output = _output as Parser | 'Response';
       if (output === 'Response') {
+        if (!_def._config.experimental?.outputResponse) {
+          throw new Error(
+            'You need to activate outputResponse in the root config to use this feature - e.g. `initTRPC.create({ experimental: { outputResponse: true } })`',
+          );
+        }
         return createNewBuilder(_def, {
           experimental_response: true,
         });

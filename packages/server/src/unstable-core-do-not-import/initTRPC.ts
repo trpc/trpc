@@ -113,6 +113,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * @see https://trpc.io/docs/v11/server/procedures
        */
       procedure: createBuilder<$Root['ctx'], $Root['meta']>({
+        _config: config,
         meta: opts?.defaultMeta,
       }),
       /**

@@ -327,7 +327,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             message: `No procedure found on path "${call.path}"`,
           });
         }
-        if (proc._def.experimental_response && info.isBatchCall) {
+        if (
+          config.experimental?.outputResponse &&
+          proc._def.experimental_response &&
+          info.isBatchCall
+        ) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: 'This procedure cannot be batched - use httpLink instead',
@@ -381,7 +385,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       const call = info.calls[0]!;
       const [error, result] = await rpcCalls[0]!;
 
-      if (!error && call.procedure?._def.experimental_response) {
+      if (
+        config.experimental?.outputResponse &&
+        !error &&
+        call.procedure?._def.experimental_response
+      ) {
         const response = result.data;
 
         if (!(response instanceof Response)) {

@@ -2,9 +2,12 @@ import { routerToServerAndClientNew, waitError } from './___testHelpers';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 
-const t = initTRPC.create();
-
 test('happy path', async () => {
+  const t = initTRPC.create({
+    experimental: {
+      outputResponse: true,
+    },
+  });
   const router = t.router({
     hello: t.procedure.output('Response').query(() => {
       return new Response('hello', {
@@ -30,6 +33,11 @@ test('happy path', async () => {
 });
 
 test('does not work with subscriptions', async () => {
+  const t = initTRPC.create({
+    experimental: {
+      outputResponse: true,
+    },
+  });
   expect(() => {
     t.procedure.output('Response').subscription(() => {
       return new Response('hello', {
@@ -39,11 +47,16 @@ test('does not work with subscriptions', async () => {
       });
     });
   }).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Subscription procedures cannot be marked as Response]`,
+    `[Error: Subscription procedures cannot currently return a Response - please post an issue with your use case]`,
   );
 });
 
 test('needs to return a Response', async () => {
+  const t = initTRPC.create({
+    experimental: {
+      outputResponse: true,
+    },
+  });
   const router = t.router({
     hello: t.procedure
       .output('Response')
@@ -66,4 +79,26 @@ test('needs to return a Response', async () => {
     `[TRPCClientError: Expected to receive a Response output]`,
   );
   await ctx.close();
+});
+
+test('experimental flag', async () => {
+  const t = initTRPC.create({
+    experimental: {
+      outputResponse: false,
+    },
+  });
+
+  expect(() => {
+    const router = t.router({
+      hello: t.procedure.output('Response').query(() => {
+        return new Response('hello', {
+          headers: {
+            'content-type': 'text/plain',
+          },
+        });
+      }),
+    });
+  }).toThrowErrorMatchingInlineSnapshot(
+    `[Error: You need to activate outputResponse in the root config to use this feature - e.g. \`initTRPC.create({ experimental: { outputResponse: true } })\`]`,
+  );
 });
