@@ -9,10 +9,9 @@ This has been a long-requested feature in [#1937](https://github.com/trpc/trpc/i
 ```ts
 // Backend:
 const appRouter = router({
-  hello: publicProcedure
-    .query(async () => {
-      return new Response('Hello World');
-    }),
+  hello: publicProcedure.query(async () => {
+    return new Response('Hello World');
+  }),
 });
 
 export type AppRouter = typeof appRouter;
