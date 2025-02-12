@@ -20,7 +20,7 @@ import type {
 } from '@tanstack/react-query';
 import type {
   CreateTRPCClientOptions,
-  inferRouterClient,
+  TRPCClient,
   TRPCRequestOptions,
   TRPCUntypedClient,
 } from '@trpc/client';
@@ -233,7 +233,7 @@ export type TRPCSubscriptionResult<TOutput, TError> =
 export interface TRPCProviderProps<TRouter extends AnyRouter, TSSRContext>
   extends Omit<TRPCContextProps<TRouter, TSSRContext>, 'client'> {
   children: ReactNode;
-  client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;
+  client: TRPCClient<TRouter> | TRPCUntypedClient<TRouter>;
 }
 
 export type TRPCProvider<TRouter extends AnyRouter, TSSRContext> = (

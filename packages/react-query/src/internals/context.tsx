@@ -16,7 +16,7 @@ import type {
   Updater,
 } from '@tanstack/react-query';
 import type {
-  inferRouterClient,
+  TRPCClient,
   TRPCClientError,
   TRPCRequestOptions,
   TRPCUntypedClient,
@@ -104,7 +104,7 @@ export type DecoratedTRPCContextProps<
   TRouter extends AnyRouter,
   TSSRContext,
 > = TRPCContextPropsBase<TRouter, TSSRContext> & {
-  client: inferRouterClient<TRouter>;
+  client: TRPCClient<TRouter>;
 };
 
 export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext>

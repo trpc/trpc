@@ -6,7 +6,7 @@ import type { DehydratedState, QueryClient } from '@tanstack/react-query';
 import { HydrationBoundary, QueryClientProvider } from '@tanstack/react-query';
 import type {
   CreateTRPCClientOptions,
-  inferRouterClient,
+  TRPCClient,
   TRPCClientError,
   TRPCUntypedClient,
 } from '@trpc/client';
@@ -82,7 +82,7 @@ export type TRPCPrepassProps<
 > = {
   config: WithTRPCConfig<TRouter>;
   queryClient: QueryClient;
-  trpcClient: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter>;
+  trpcClient: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>;
   ssrState: 'prepass';
   ssrContext: TSSRContext;
 };

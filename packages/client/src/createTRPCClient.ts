@@ -22,19 +22,20 @@ import type { TRPCClientError } from './TRPCClientError';
 
 /**
  * @public
+ * @deprecated use {@link TRPCClient} instead, will be removed in v12
  **/
-export type inferRouterClient<TRouter extends AnyRouter> = TRPCClient<
-  inferClientTypes<TRouter>,
-  TRouter['_def']['record']
->;
+export type inferRouterClient<TRouter extends AnyRouter> = TRPCClient<TRouter>;
 
 const untypedClientSymbol = Symbol('untypedClient');
 
-export type TRPCClient<
-  TRoot extends InferrableClientTypes,
-  TRecord extends RouterRecord,
-> = DecoratedProcedureRecord<TRoot, TRecord> & {
-  [untypedClientSymbol]: TRPCUntypedClient<TRoot>;
+/**
+ * @public
+ **/
+export type TRPCClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
+  TRouter,
+  TRouter['_def']['record']
+> & {
+  [untypedClientSymbol]: TRPCUntypedClient<TRouter>;
 };
 
 type ResolverDef = {
@@ -128,18 +129,16 @@ export const clientCallTypeToProcedureType = (
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
-): inferRouterClient<TRouter> {
-  const proxy = createRecursiveProxy<inferRouterClient<TRouter>>(
-    ({ path, args }) => {
-      const pathCopy = [...path];
-      const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
+): TRPCClient<TRouter> {
+  const proxy = createRecursiveProxy<TRPCClient<TRouter>>(({ path, args }) => {
+    const pathCopy = [...path];
+    const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
 
-      const fullPath = pathCopy.join('.');
+    const fullPath = pathCopy.join('.');
 
-      return (client[procedureType] as any)(fullPath, ...(args as any));
-    },
-  );
-  return createFlatProxy<inferRouterClient<TRouter>>((key) => {
+    return (client[procedureType] as any)(fullPath, ...(args as any));
+  });
+  return createFlatProxy<TRPCClient<TRouter>>((key) => {
     if (
       key === untypedClientSymbol ||
       // Safer for monorepos?:
@@ -154,7 +153,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
-): TRPCClient<inferClientTypes<TRouter>, TRouter['_def']['record']> {
+): TRPCClient<TRouter> {
   const client = new TRPCUntypedClient(opts);
   const proxy = createTRPCClientProxy<TRouter>(client);
   return proxy;
@@ -164,8 +163,8 @@ export function createTRPCClient<TRouter extends AnyRouter>(
  * Get an untyped client from a proxy client
  * @internal
  */
-export function getUntypedClient<TInferrable extends InferrableClientTypes>(
-  client: TRPCClient<TInferrable, any>,
-): TRPCUntypedClient<TInferrable> {
+export function getUntypedClient<TRouter extends AnyRouter>(
+  client: TRPCClient<TRouter>,
+): TRPCUntypedClient<TRouter> {
   return client[untypedClientSymbol];
 }

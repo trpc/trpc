@@ -4,7 +4,7 @@ import type {
   QueryClient,
 } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
-import type { inferRouterClient } from '@trpc/client';
+import type { TRPCClient } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import {
@@ -41,7 +41,7 @@ type CreateSSGHelpersInternal<TRouter extends AnyRouter> = {
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
 interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
-  client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;
+  client: TRPCClient<TRouter> | TRPCUntypedClient<TRouter>;
 }
 
 type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
