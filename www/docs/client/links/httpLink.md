@@ -35,7 +35,7 @@ const client = createTRPCClient<AppRouter>({
 
 ## Key Features
 
-### `FormData` Support
+### `FormData` Support {#FormData}
 
 `httpLink` allows you to send `FormData` directly to your procedures, making it ideal for file uploads and form submissions:
 

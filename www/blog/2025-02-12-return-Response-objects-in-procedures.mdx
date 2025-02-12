@@ -15,7 +15,7 @@ Most applications won't need custom response types since tRPC provides powerful 
 - Batching via [httpBatchLink](/docs/client/links/httpBatchLink) streaming responses via [httpBatchStreamLink](/docs/client/links/httpBatchStreamLink)
 - Real-time data with [subscriptions](/docs/server/subscriptions)
 - JSON responses with handling of custom data types using [data transformers](/docs/server/data-transformers)
-- Uploading files and `FormData` as [seen below](#file-transformation)
+- Uploading files and `FormData` as seen in the [`httpLink` docs](/docs/client/links/httpLink#FormData)
 
 However, sometimes you need more control over your HTTP responses than just sending JSON data:
 
@@ -227,14 +227,14 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 // @filename: utils.ts
-export declare function processFileStream(buffer: File): {
+export declare function processFile(buffer: File): {
     stream: ReadableStream<Uint8Array>;
     format: string;
 };
 // @filename: index.ts
 // ---cut---
 import { publicProcedure, router } from './server';
-import { processFileStream } from './utils';
+import { processFile } from './utils';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 
@@ -246,7 +246,7 @@ const appRouter = router({
       })
     )
     .mutation(async (opts) => {
-      const processed = processFileStream(opts.input.file);
+      const processed = processFile(opts.input.file);
       //     ^?
 
       return new Response(processed.stream, {
