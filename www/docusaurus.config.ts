@@ -50,7 +50,7 @@ export default {
     announcementBar: {
       id: 'actions',
       content:
-        "New post: Return <code>Response</code>-objects directly from tRPC procedures: <a href='/blog/2025/02/12/return-Response-objects-in-procedures#conclusion'><strong>Read the blog post</strong></a>",
+        "New post: Return <code>Response</code>-objects directly from tRPC procedures: <a href='/blog/return-Response-objects-in-procedures'><strong>Read the blog post</strong></a>",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
       isCloseable: true,
