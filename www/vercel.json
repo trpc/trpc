@@ -537,7 +537,7 @@
     },
     {
       "source": "/blog/trpc-actions",
-      "destination": "/blog/2024-05-23-trpc-actions",
+      "destination": "/blog/2024/05/23/trpc-actions",
       "permanent": true
     },
     {
