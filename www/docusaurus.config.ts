@@ -50,7 +50,7 @@ export default {
     announcementBar: {
       id: 'actions',
       content:
-        "🔥 Just in: Return Response objects directly from tRPC procedures for file downloads & more! <a href='/blog/2025/02/12/return-Response-objects-in-procedures#conclusion'><strong>Read the blog post</strong></a>",
+        "New post: Return <code>Response</code>-objects directly from tRPC procedures: <a href='/blog/2025/02/12/return-Response-objects-in-procedures#conclusion'><strong>Read the blog post</strong></a>",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
       isCloseable: true,
@@ -90,6 +90,12 @@ export default {
           position: 'right',
           className: 'header-social-link header-twitter-link',
           'aria-label': 'Twitter',
+        },
+        {
+          href: 'https://bsky.app/profile/trpc.io',
+          position: 'right',
+          className: 'header-social-link header-bluesky-link',
+          'aria-label': 'Bluesky',
         },
         {
           href: 'https://trpc.io/discord',

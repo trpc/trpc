@@ -363,6 +363,15 @@ html.v9 .trpcgif--v9 {
 }
 */
 
+#__docusaurus > [role='banner'] code {
+  background: inherit;
+  border: none;
+  padding: inherit;
+  font-family: monospace;
+  font-size: 0.8rem;
+  vertical-align: inherit;
+}
+
 /* Breadcrumbs */
 .breadcrumbs {
   @apply flex items-center;
