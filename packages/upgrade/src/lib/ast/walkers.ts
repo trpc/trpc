@@ -1,9 +1,4 @@
-import type {
-  ASTPath,
-  Identifier,
-  JSCodeshift,
-  MemberExpression,
-} from 'jscodeshift';
+import type { ASTPath, JSCodeshift } from 'jscodeshift';
 
 /**
  * Walks the path upwards to look for the closest parent

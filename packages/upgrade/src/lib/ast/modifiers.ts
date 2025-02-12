@@ -1,3 +1,5 @@
+import type { Identifier, JSCodeshift, MemberExpression } from 'jscodeshift';
+
 /**
  * Replaces the identifier for the root path key
  * of a member expression
