@@ -33,6 +33,7 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/no-empty-interface': 'off',
       '@typescript-eslint/array-type': 'off',
+      '@typescript-eslint/prefer-function-type': 'off',
 
       '@typescript-eslint/prefer-promise-reject-errors': 'off',
       '@typescript-eslint/no-empty-object-type': 'off',

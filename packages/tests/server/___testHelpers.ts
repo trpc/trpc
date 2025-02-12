@@ -14,12 +14,7 @@ import {
   TRPCClientError,
 } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
-import {
-  isTrackedEnvelope,
-  tracked,
-  type AnyRouter,
-  type TrackedEnvelope,
-} from '@trpc/server';
+import { type AnyRouter } from '@trpc/server';
 import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
 import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
@@ -31,8 +26,8 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
+import type { Mock } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
-import { z } from 'zod';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
@@ -67,7 +62,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   const serverOverrides: Partial<CreateHTTPHandlerOptions<TRouter>> =
     opts?.server ?? {};
 
-  const onReqAborted = vitest.fn();
+  const onReqAborted = vitest.fn() satisfies Mock;
   const handler = createHTTPHandler({
     router,
     ...serverOverrides,
