@@ -334,5 +334,7 @@ test('experimental_Response unhappy path', async () => {
         },
       });
     });
-  }).toThrowErrorMatchingInlineSnapshot(`[Error: Subscription procedures cannot be marked as experimental_Response]`);
+  }).toThrowErrorMatchingInlineSnapshot(
+    `[Error: Subscription procedures cannot be marked as experimental_Response]`,
+  );
 });
