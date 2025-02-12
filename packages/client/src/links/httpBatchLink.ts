@@ -70,6 +70,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
             },
             signal,
           });
+          if (res.type === 'response') {
+            throw new Error('Response is not supported in httpBatchLink');
+          }
           const resJSON = Array.isArray(res.json)
             ? res.json
             : batchOps.map(() => res.json);
