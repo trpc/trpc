@@ -9,7 +9,7 @@ test('happy path', async () => {
     },
   });
   const router = t.router({
-    hello: t.procedure.output('Response').query(() => {
+    hello: t.procedure.query(() => {
       return new Response('hello', {
         headers: {
           'content-type': 'text/plain',
@@ -24,6 +24,7 @@ test('happy path', async () => {
       skipBatch: true,
     },
   });
+  expectTypeOf(res).toEqualTypeOf<Response>();
   expect(res.ok).toBe(true);
   expect(res.status).toBe(200);
   expect(res.headers.get('content-type')).toBe('text/plain');
@@ -38,47 +39,15 @@ test('does not work with subscriptions', async () => {
       outputResponse: true,
     },
   });
-  expect(() => {
-    t.procedure.output('Response').subscription(() => {
-      return new Response('hello', {
-        headers: {
-          'content-type': 'text/plain',
-        },
-      });
-    });
-  }).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Subscription procedures cannot currently return a Response - please post an issue with your use case]`,
-  );
-});
 
-test('needs to return a Response', async () => {
-  const t = initTRPC.create({
-    experimental: {
-      outputResponse: true,
-    },
-  });
-  const router = t.router({
-    hello: t.procedure
-      .output('Response')
-      // @ts-expect-error - this should not be allowed
-      .query(() => {
-        return 'foo';
-      }),
-  });
-
-  const ctx = routerToServerAndClientNew(router);
-  const res = await waitError(
-    ctx.client.hello.query(undefined, {
-      context: {
-        skipBatch: true,
+  // @ts-expect-error - this should not be allowed
+  t.procedure.subscription(async () => {
+    return new Response('hello', {
+      headers: {
+        'content-type': 'text/plain',
       },
-    }),
-    TRPCClientError,
-  );
-  expect(res).toMatchInlineSnapshot(
-    `[TRPCClientError: Expected to receive a Response output]`,
-  );
-  await ctx.close();
+    });
+  });
 });
 
 test('experimental flag', async () => {
@@ -88,17 +57,28 @@ test('experimental flag', async () => {
     },
   });
 
-  expect(() => {
-    const router = t.router({
-      hello: t.procedure.output('Response').query(() => {
-        return new Response('hello', {
-          headers: {
-            'content-type': 'text/plain',
-          },
-        });
-      }),
-    });
-  }).toThrowErrorMatchingInlineSnapshot(
-    `[Error: You need to activate outputResponse in the root config to use this feature - e.g. \`initTRPC.create({ experimental: { outputResponse: true } })\`]`,
+  const router = t.router({
+    hello: t.procedure.query(() => {
+      return new Response('hello', {
+        headers: {
+          'content-type': 'text/plain',
+        },
+      });
+    }),
+  });
+  const ctx = routerToServerAndClientNew(router);
+  const res = await waitError(
+    ctx.client.hello.query(undefined, {
+      context: {
+        skipBatch: true,
+      },
+    }),
+    TRPCClientError,
   );
+
+  expect(res).toMatchInlineSnapshot(
+    `[TRPCClientError: You need to activate outputResponse in the root config to use this feature - e.g. \`initTRPC.create({ experimental: { outputResponse: true } })\`]`,
+  );
+
+  await ctx.close();
 });

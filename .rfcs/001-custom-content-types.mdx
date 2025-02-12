@@ -10,7 +10,6 @@ This has been a long-requested feature in [#1937](https://github.com/trpc/trpc/i
 // Backend:
 const appRouter = router({
   hello: publicProcedure
-    .output('Response') // <-- define that we're returning a Response
     .query(async () => {
       return new Response('Hello World');
     }),
@@ -39,10 +38,6 @@ const res = await client.hello.query();
 - The user is responsible for doing manual deserialization on the client
 - The user is responsible for type safety on the client when needed
 
-### Implementation details
-
-- The `.output('Response')` is static because it changes the type of the procedure in a way that is not compatible with the usual tRPC type system and allows us to reject a request upfront if it is tried to be called with e.g. batching.
-
 ## Fuller example
 
 ### Different content types
@@ -54,7 +49,7 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 export const appRouter = t.router({
   // Simple file download example
-  downloadFile: publicProcedure.output('Response').query(() => {
+  downloadFile: publicProcedure.query(() => {
     return new Response('Hello World', {
       headers: {
         'Content-Type': 'text/plain',
@@ -66,7 +61,6 @@ export const appRouter = t.router({
   // JSON stream example
   streamData: publicProcedure
     .input(z.object({ count: z.number().min(1) }))
-    .output('Response')
     .mutation(async (opts) => {
       const stream = new ReadableStream({
         async start(controller) {
@@ -91,7 +85,6 @@ export const appRouter = t.router({
   // Binary file example
   getImage: publicProcedure
     .input(z.object({ id: z.string() }))
-    .output('Response')
     .query(async (opts) => {
       const imageBuffer = await getImageFromDatabase(opts.input.id); // hypothetical function
 
@@ -110,7 +103,6 @@ export const appRouter = t.router({
         file: zfd.file(),
       }),
     )
-    .output('Response')
     .mutation(async (opts) => {
       const arrayBuffer = await opts.input.file.arrayBuffer();
       const transformedBuffer = await transformImage(

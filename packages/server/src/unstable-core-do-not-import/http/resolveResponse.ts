@@ -327,16 +327,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             message: `No procedure found on path "${call.path}"`,
           });
         }
-        if (
-          config.experimental?.outputResponse &&
-          proc._def.experimental_response &&
-          info.isBatchCall
-        ) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'This procedure cannot be batched - use httpLink instead',
-          });
-        }
 
         if (!methodMapper[proc._def.type].includes(req.method as HTTPMethods)) {
           throw new TRPCError({
@@ -362,6 +352,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           signal: opts.req.signal,
         });
 
+        if (
+          config.experimental?.outputResponse &&
+          info.isBatchCall &&
+          data instanceof Response
+        ) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'This procedure cannot be batched - use httpLink instead',
+          });
+        }
+
         return [undefined, { data }];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
@@ -385,18 +386,12 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       const call = info.calls[0]!;
       const [error, result] = await rpcCalls[0]!;
 
-      if (
-        config.experimental?.outputResponse &&
-        !error &&
-        call.procedure?._def.experimental_response
-      ) {
+      if (!error && result?.data instanceof Response) {
         const response = result.data;
-
-        if (!(response instanceof Response)) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Expected to receive a Response output',
-          });
+        if (!config.experimental?.outputResponse) {
+          throw new Error(
+            'You need to activate outputResponse in the root config to use this feature - e.g. `initTRPC.create({ experimental: { outputResponse: true } })`',
+          );
         }
 
         const headers = new Headers(response.headers);

@@ -661,7 +661,7 @@ test('zod default', () => {
 test('happy path', async () => {
   const t = initTRPC.create();
   const router = t.router({
-    hello: t.procedure.output('Response').query(() => {
+    hello: t.procedure.query(() => {
       return new Response('hello', {
         headers: {
           'content-type': 'text/plain',
@@ -698,7 +698,8 @@ test('happy path', async () => {
 test('does not work with subscriptions', async () => {
   const t = initTRPC.create();
   expect(() => {
-    t.procedure.output('Response').subscription(() => {
+    // @ts-expect-error - this should not be allowed
+    t.procedure.subscription(async () => {
       return new Response('hello', {
         headers: {
           'content-type': 'text/plain',
@@ -713,12 +714,9 @@ test('does not work with subscriptions', async () => {
 test('needs to return a Response', async () => {
   const t = initTRPC.create();
   const router = t.router({
-    hello: t.procedure
-      .output('Response')
-      // @ts-expect-error - this should not be allowed
-      .query(() => {
-        return 'foo';
-      }),
+    hello: t.procedure.query(() => {
+      return 'foo';
+    }),
   });
 
   const ctx = routerToServerAndClientNew(router);

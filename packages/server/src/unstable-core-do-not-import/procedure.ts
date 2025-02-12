@@ -32,7 +32,6 @@ export interface Procedure<
     };
     procedure: true;
     type: TType;
-    experimental_response: boolean;
     /**
      * @internal
      * Meta is not inferrable on individual procedures, only on the router

@@ -231,22 +231,6 @@ export interface ProcedureBuilder<
     TCaller
   >;
   /**
-   * Add an output parser to the procedure.
-   * @see https://trpc.io/docs/v11/server/validators
-   */
-  output(
-    schema: 'Response',
-  ): ProcedureBuilder<
-    TContext,
-    TMeta,
-    TContextOverrides,
-    TInputIn,
-    TInputOut,
-    Response,
-    Response,
-    TCaller
-  >;
-  /**
    * Add a meta data to the procedure.
    * @see https://trpc.io/docs/v11/server/metadata
    */
@@ -491,18 +475,7 @@ export function createBuilder<TContext, TMeta>(
         middlewares: [createInputMiddleware(parser)],
       });
     },
-    output(_output: unknown) {
-      const output = _output as Parser | 'Response';
-      if (output === 'Response') {
-        if (!_def._config.experimental?.outputResponse) {
-          throw new Error(
-            'You need to activate outputResponse in the root config to use this feature - e.g. `initTRPC.create({ experimental: { outputResponse: true } })`',
-          );
-        }
-        return createNewBuilder(_def, {
-          experimental_response: true,
-        });
-      }
+    output(output: Parser) {
       const parser = getParseFn(output);
       return createNewBuilder(_def, {
         output,
@@ -580,7 +553,6 @@ function createResolver(
     ...finalBuilder._def,
     type: _defIn.type,
     experimental_caller: Boolean(finalBuilder._def.caller),
-    experimental_response: Boolean(finalBuilder._def.experimental_response),
     meta: finalBuilder._def.meta,
     $types: null as any,
   };
