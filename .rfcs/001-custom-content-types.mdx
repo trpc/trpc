@@ -1,4 +1,4 @@
-## Custom response types (RFC)
+# Custom response types RFC
 
 You can return a `Response` object from your procedure by specifying `'Response'` as the output type. This is useful when you need full control over the response, such as returning files, streams, or custom headers.
 
@@ -8,12 +8,28 @@ This feature allows you to have full control over the HTTP response, enabling us
 - Custom content types
 - Custom headers and status codes
 
+## tl;dr
+
+```ts
+publicProcedure.output('Response').query(() => {
+  return new Response('Hello World');
+});
+```
+
+## Considerations
+
 Note that when using `'Response'`:
 
 - You're responsible for properly formatting the response
 - You're responsible for setting appropriate headers
 - You're responsible for doing manual deserialization and type safety on the client when needed
 - The responses can not be batched and will be rejected by the server if attempted (needs to be called with `httpLink()`)
+
+### Why a static `.output('experimental_Response')`?
+
+The `.output('experimental_Response')` is static because it changes the type of the procedure in a way that is not compatible with the usual tRPC type system and allows us to reject a request if it is tried to be called with e.g. batching.
+
+## Example Example
 
 ```ts twoslash
 import { initTRPC } from '@trpc/server';
@@ -73,7 +89,3 @@ export const appRouter = t.router({
     }),
 });
 ```
-
-### Why a static `.output('experimental_Response')`?
-
-The `.output('experimental_Response')` is static because it changes the type of the procedure in a way that is not compatible with the usual tRPC type system and allows us to reject a request if it is tried to be called with e.g. batching.
