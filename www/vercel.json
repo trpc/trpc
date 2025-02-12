@@ -534,6 +534,31 @@
       "source": "/docs/subscriptions",
       "destination": "/docs/server/subscriptions",
       "permanent": true
+    },
+    {
+      "source": "/blog/trpc-actions",
+      "destination": "/blog/2024-05-23-trpc-actions",
+      "permanent": true
+    },
+    {
+      "source": "/blog/tiny-trpc-client",
+      "destination": "/blog/2023/01/17/tinyrpc-client",
+      "permanent": true
+    },
+    {
+      "source": "/blog/typescript-performance-lessons",
+      "destination": "/blog/2023/01/14/typescript-performance-lessons",
+      "permanent": true
+    },
+    {
+      "source": "/blog/announcing-trpc-10",
+      "destination": "/blog/2022/11/21/announcing-trpc-10",
+      "permanent": true
+    },
+    {
+      "source": "/blog/introducing-trpc",
+      "destination": "/blog/2021/05/05/hello-world",
+      "permanent": true
     }
   ]
 }
