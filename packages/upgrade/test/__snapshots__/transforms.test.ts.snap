@@ -9,6 +9,8 @@ export function Component() {
   useQuery(trpc.post.list.queryOptions());
   useQuery(trpc.post.queryOptions());
   useQuery(trpc.a.b.c.d.queryOptions());
+  // eslint-disable-next-line @typescript-eslint/dot-notation
+  useQuery(trpc['post'].queryOptions());
 
   useQuery(trpc.post.byId.queryOptions({ id: 1 }));
   useQuery(trpc.num.queryOptions(1));
