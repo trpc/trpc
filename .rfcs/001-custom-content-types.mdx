@@ -20,7 +20,6 @@ import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
 const publicProcedure = t.procedure;
-
 export const appRouter = t.router({
   // Simple file download example
   downloadFile: publicProcedure
@@ -38,10 +37,10 @@ export const appRouter = t.router({
   streamData: publicProcedure
     .input(z.object({ count: z.number().min(1) }))
     .output('Response')
-    .mutation(async ({ input }) => {
+    .mutation(async (opts) => {
       const stream = new ReadableStream({
         async start(controller) {
-          for (let i = 0; i < input.count; i++) {
+          for (let i = 0; i < opts.input.count; i++) {
             controller.enqueue(`data: ${i}\n\n`);
             await new Promise(r => setTimeout(r, 1000));
           }
@@ -62,8 +61,8 @@ export const appRouter = t.router({
   getImage: publicProcedure
     .input(z.object({ id: z.string() }))
     .output('Response')
-    .query(async ({ input }) => {
-      const imageBuffer = await getImageFromDatabase(input.id); // hypothetical function
+    .query(async (opts) => {
+      const imageBuffer = await getImageFromDatabase(opts.input.id); // hypothetical function
 
       return new Response(imageBuffer, {
         headers: {
@@ -73,8 +72,8 @@ export const appRouter = t.router({
       });
     }),
 });
-```
 
 ### Why a static `.output('experimental_Response')`?
 
 The `.output('experimental_Response')` is static because it changes the type of the procedure in a way that is not compatible with the usual tRPC type system and allows us to reject a request if it is tried to be called with e.g. batching.
+```
