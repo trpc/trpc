@@ -683,9 +683,13 @@ test('experimental_Response happy path', async () => {
 
   {
     // should fail when not batching
-    const res = await waitError(ctx.client.hello.query(), TRPCClientError);
+    const res = await waitError(
+      ctx.client.hello.query(),
+      TRPCClientError<typeof router>,
+    );
+    expect(res?.data?.code).toBe('NOT_ACCEPTABLE');
     expect(res).toMatchInlineSnapshot(
-      `[TRPCClientError: This procedure cannot be batched and needs to be called with httpLink]`,
+      `[TRPCClientError: This procedure cannot be batched - use httpLink instead]`,
     );
   }
   await ctx.close();
