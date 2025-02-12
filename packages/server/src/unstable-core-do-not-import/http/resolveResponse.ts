@@ -352,11 +352,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           signal: opts.req.signal,
         });
 
-        if (
-          config.experimental?.outputResponse &&
-          info.isBatchCall &&
-          data instanceof Response
-        ) {
+        if (info.isBatchCall && data instanceof Response) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: 'This procedure cannot be batched - use httpLink instead',
