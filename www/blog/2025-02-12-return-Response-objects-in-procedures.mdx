@@ -106,7 +106,9 @@ When using custom response types, keep in mind:
 
 ## Setup
 
-To use custom response types, you need to enable the feature in your tRPC configuration:
+To use custom response types, you currently need to enable the feature in your tRPC configuration:
+
+### Enable the feature
 
 ```ts twoslash
 // @module: esnext
@@ -119,6 +121,10 @@ export const t = initTRPC.create({
   },
 });
 ```
+
+### Setting up the client
+
+When returning Response objects, you need to use `httpLink` since responses cannot be batched. However, for optimal performance, you'll likely want to use batching for your other procedures. You can achieve this using `splitLink`:
 
 ```ts twoslash
 // @module: esnext
@@ -146,6 +152,7 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpLink, splitLink, unstable_httpBatchStreamLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
