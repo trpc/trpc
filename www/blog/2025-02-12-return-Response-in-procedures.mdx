@@ -1,0 +1,265 @@
+---
+title: Return Response in Procedures
+description: Learn how to return Response objects from your tRPC procedures for advanced use cases like file downloads, streams, and custom headers
+authors: [KATT]
+---
+
+tRPC now supports returning [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response)-objects directly from procedures, giving you full control over response handling.
+
+{/* truncate */}
+
+## Why Custom Response Types?
+
+Most applications won't need custom response types since tRPC provides powerful built-in features for common use cases:
+
+- Batching via [httpBatchLink](/docs/client/links/httpBatchLink) streaming responses via [httpBatchStreamLink](/docs/client/links/httpBatchStreamLink)
+- Real-time data with [subscriptions](/docs/server/subscriptions)
+- JSON responses with handling of custom data types using [transformers](/docs/server/transformers)
+- Uploading files and `FormData` as [seen below](#file-transformation)
+
+However, sometimes you need more control over your HTTP responses than just sending JSON data:
+
+- Sending raw files to the client
+- Handling binary data
+
+## Basic Example
+
+Here's a simple example of returning a custom response:
+
+```ts twoslash title="server.ts"
+// @module: esnext
+// @target: esnext
+// @filename: types.ts
+import { initTRPC } from '@trpc/server';
+export const t = initTRPC.create({
+  experimental: { outputResponse: true }
+});
+export const publicProcedure = t.procedure;
+// @filename: server.ts
+// ---cut---
+import { t, publicProcedure } from './types';
+
+const appRouter = t.router({
+  hello: publicProcedure.query(async () => {
+    return new Response('Hello World', {
+      headers: {
+        'content-type': 'text/plain',
+      },
+    });
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+```ts twoslash title="client.ts"
+// @module: esnext
+// @target: esnext
+// @filename: types.ts
+import { initTRPC } from '@trpc/server';
+export const t = initTRPC.create({
+  experimental: { outputResponse: true }
+});
+export const publicProcedure = t.procedure;
+// @filename: server.ts
+import { t, publicProcedure } from './types';
+
+const appRouter = t.router({
+  hello: publicProcedure.query(async () => {
+    return new Response('Hello World', {
+      headers: {
+        'content-type': 'text/plain',
+      },
+    });
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+
+
+// @filename: client.ts
+import { createTRPCClient } from '@trpc/client';
+import { httpLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [httpLink({ url: '/api' })],
+});
+
+// ---cut---
+const response = await client.hello.query();
+
+response;
+//   ^?
+```
+
+## Important Considerations & Type Safety
+
+When using custom response types, keep in mind:
+
+1. Responses cannot be batched - you must use `httpLink()`
+2. The return type will always be `Response` and you lose the automatic type inference that tRPC usually provides, since you're working directly with the [Web Response API](https://developer.mozilla.org/en-US/docs/Web/API/Response). You'll need to handle parsing and type safety manually on the client side.
+3. You are responsible for:
+   - Properly formatting the response
+   - Setting appropriate headers
+   - Manual deserialization on the client
+   - Maintaining type safety when needed
+
+## Setup
+
+To use custom response types, you need to enable the feature in your tRPC configuration:
+
+```ts twoslash
+// @module: esnext
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+export const t = initTRPC.create({
+  experimental: {
+    outputResponse: true // <-- enable the feature
+  }
+});
+```
+
+```ts twoslash
+// @module: esnext
+// @target: esnext
+// @filename: types.ts
+import { initTRPC } from '@trpc/server';
+export const t = initTRPC.create({
+  experimental: { outputResponse: true }
+});
+export const publicProcedure = t.procedure;
+// @filename: server.ts
+import { t, publicProcedure } from './types';
+// ---cut---
+const appRouter = t.router({
+  downloadFile: publicProcedure.query(() => {
+    return new Response('Hello World', {
+      headers: {
+        'Content-Type': 'text/plain',
+        'Content-Disposition': 'attachment; filename="hello.txt"',
+      },
+    });
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient } from '@trpc/client';
+import { unstable_httpBatchStreamLink } from '@trpc/client';
+import { httpLink } from '@trpc/client';
+import { splitLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition(op) {
+        return Boolean(op.context.skipBatch);
+      },
+      true: httpLink({
+        url: '/api',
+      }),
+      false: unstable_httpBatchStreamLink({
+        url: '/api',
+      }),
+    }),
+  ],
+});
+
+// Usage
+const response = await client.downloadFile.query(undefined, {
+  context: {
+    skipBatch: true,
+  },
+});
+
+console.log(response);
+//              ^?
+```
+
+## Real World Examples
+
+### File Download
+
+```ts twoslash
+// @filename: types.ts
+import { initTRPC } from '@trpc/server';
+export const t = initTRPC.create({
+  experimental: { outputResponse: true }
+});
+export const publicProcedure = t.procedure;
+// @filename: index.ts
+import { t, publicProcedure } from './types';
+// ---cut---
+const appRouter = t.router({
+  downloadFile: publicProcedure.query(() => {
+    return new Response('Hello World', {
+      headers: {
+        'Content-Type': 'text/plain',
+        'Content-Disposition': 'attachment; filename="hello.txt"',
+      },
+    });
+  }),
+});
+```
+
+### File Transformation
+
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+import { zfd } from 'zod-form-data';
+export const t = initTRPC.create({
+  experimental: { outputResponse: true }
+});
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+// @filename: utils.ts
+export declare function processFileStream(buffer: File): {
+    stream: ReadableStream<Uint8Array>;
+    format: string;
+};
+// @filename: index.ts
+// ---cut---
+import { publicProcedure, router } from './server';
+import { processFileStream } from './utils';
+import { z } from 'zod';
+import { zfd } from 'zod-form-data';
+
+const appRouter = router({
+  processFile: publicProcedure
+    .input(
+      zfd.formData({
+        file: zfd.file(),
+      })
+    )
+    .mutation(async (opts) => {
+      const processed = processFileStream(opts.input.file);
+      //     ^?
+
+      return new Response(processed.stream, {
+        headers: {
+          'content-type': `image/${processed.format}`,
+          'content-disposition': `attachment; filename="processed.${processed.format}"`,
+        },
+      });
+    }),
+});
+```
+
+This example demonstrates:
+
+- Accepting file uploads via `FormData`
+- Processing the uploaded image
+- Returning the processed image with appropriate headers
+- Supporting different output formats
+
+## Conclusion
+
+Custom response types open up new possibilities for handling complex data scenarios in your tRPC applications. While they require a bit more manual handling compared to standard JSON responses, they provide the flexibility needed for advanced use cases like file downloads, streaming, and custom content types.
+
+Remember to enable the experimental feature and configure your client appropriately to make the most of this powerful capability.
