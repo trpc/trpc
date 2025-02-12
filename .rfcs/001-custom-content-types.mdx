@@ -89,3 +89,25 @@ export const appRouter = t.router({
     }),
 });
 ```
+
+## Client handling
+
+The client will not be able to handle the `Response` type directly. You will need to use the `httpLink`.
+
+```ts
+const client = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition(op) {
+        return Boolean(op.context.skipBatch);
+      },
+      true: httpLink({
+        url,
+      }),
+      false: httpBatchLink({
+        url: '/api',
+      }),
+    }),
+  ],
+});
+```
