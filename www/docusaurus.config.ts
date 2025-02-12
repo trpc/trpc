@@ -47,14 +47,14 @@ export default {
       // contextualSearch: true,
       // searchParameters: {},
     },
-    // announcementBar: {
-    //   id: 'actions',
-    //   content:
-    //     "🚀 New blog post live! Check out how to use Server Actions with tRPC <a href='/blog/trpc-actions'><strong>here</strong></a>.",
-    //   backgroundColor: 'var(--ifm-color-primary-dark)',
-    //   textColor: '#ffffff',
-    //   isCloseable: true,
-    // },
+    announcementBar: {
+      id: 'tanstack-react-query-integration',
+      content:
+        "🚀 We just released a new <em>TanStack React Query</em>-integration! Check out <a href='/blog/introducing-tanstack-react-query-client'><strong>the blog post here</strong></a>.",
+      backgroundColor: 'var(--ifm-color-primary-dark)',
+      textColor: '#ffffff',
+      isCloseable: true,
+    },
     navbar: {
       title: 'tRPC',
       logo: {
