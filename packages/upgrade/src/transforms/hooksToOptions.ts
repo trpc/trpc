@@ -11,10 +11,8 @@ import type {
   MemberExpression,
   Options,
 } from 'jscodeshift';
-import {
-  findParentOfType,
-  replaceMemberExpressionRootIndentifier,
-} from '../lib/walkers';
+import { replaceMemberExpressionRootIndentifier } from '../lib/ast/modifiers';
+import { findParentOfType } from '../lib/ast/walkers';
 
 interface TransformOptions extends Options {
   trpcImportName?: string;
