@@ -205,7 +205,18 @@ export default function transform(
             .find(j.Identifier, { name: oldIdentifier.name })
             .forEach((path) => {
               if (j.MemberExpression.check(path.parent?.parent?.node)) {
-                const callExprPath = path.parent.parent.parent;
+                const callExprPath = findParentOfType<CallExpression>(
+                  path.parentPath,
+                  j.CallExpression,
+                );
+                if (!callExprPath) {
+                  console.warn(
+                    `Failed to walk up the tree to find utilMethod call expression, on file: ${file.path}`,
+                    callExprPath,
+                    { start: path.node.loc?.start, end: path.node.loc?.end },
+                  );
+                  return;
+                }
                 const callExpr = callExprPath.node as CallExpression;
                 const memberExpr = callExpr.callee as MemberExpression;
                 if (
@@ -213,8 +224,9 @@ export default function transform(
                   !j.MemberExpression.check(memberExpr)
                 ) {
                   console.warn(
-                    'Failed to walk up the tree to find utilMethod call expression',
+                    `Failed to walk up the tree to find utilMethod with a \`trpc.PATH.<call>\`, on file: ${file.path}`,
                     callExpr,
+                    { start: path.node.loc?.start, end: path.node.loc?.end },
                   );
                   return;
                 }
@@ -222,7 +234,6 @@ export default function transform(
                 if (
                   !(
                     j.MemberExpression.check(memberExpr.object) &&
-                    j.Identifier.check(memberExpr.object.object) &&
                     j.Identifier.check(memberExpr.property) &&
                     memberExpr.property.name in utilMap
                   )
@@ -240,7 +251,7 @@ export default function transform(
                 memberExpr.property = j.identifier('queryFilter');
 
                 // Wrap it in queryClient.utilMethod()
-                j(callExprPath).replaceWith(
+                callExprPath.replace(
                   j.memberExpression(
                     j.identifier('queryClient'),
                     j.callExpression(j.identifier(utilMap[proxyMethod]), [
@@ -319,6 +330,21 @@ export default function transform(
   }
 
   return dirtyFlag ? root.toSource() : undefined;
+}
+
+// FIX: move this to the proper location
+function findParentOfType<TPath>(
+  path: ASTPath<unknown>,
+  type: unknown,
+): ASTPath<unknown> | false {
+  // @ts-expect-error FIX: typedef
+  if (!type.check(path.node)) {
+    return findParentOfType(path.parentPath, type);
+  }
+  if (!path.parent) {
+    return false;
+  }
+  return path as ASTPath<TPath>;
 }
 
 export const parser = 'tsx';
