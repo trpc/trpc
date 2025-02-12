@@ -19,7 +19,7 @@
 
 ## Documentation
 
-Full documentation can be found at https://trpc.io/docs/client/tanstack-react-query/introduction.
+Full documentation can be found at https://trpc.io/docs/client/tanstack-react-query/setup.
 
 ## Installation
 
