@@ -86,6 +86,7 @@ type ProcedureBuilderDef<TMeta> = {
    */
   subscription?: boolean;
   type?: ProcedureType;
+  outputType?: 'experimental_Response';
   caller?: CallerOverride<unknown>;
 };
 
@@ -225,6 +226,22 @@ export interface ProcedureBuilder<
     TInputOut,
     IntersectIfDefined<TOutputIn, inferParser<$Parser>['in']>,
     IntersectIfDefined<TOutputOut, inferParser<$Parser>['out']>,
+    TCaller
+  >;
+  /**
+   * Add an output parser to the procedure.
+   * @see https://trpc.io/docs/v11/server/validators
+   */
+  output(
+    schema: 'experimental_Response',
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    TContextOverrides,
+    TInputIn,
+    TInputOut,
+    Response,
+    Response,
     TCaller
   >;
   /**
@@ -461,7 +478,13 @@ export function createBuilder<TContext, TMeta>(
         middlewares: [createInputMiddleware(parser)],
       });
     },
-    output(output: Parser) {
+    output(_output: unknown) {
+      const output = _output as Parser | 'experimental_Response';
+      if (output === 'experimental_Response') {
+        return createNewBuilder(_def, {
+          outputType: 'experimental_Response',
+        });
+      }
       const parser = getParseFn(output);
       return createNewBuilder(_def, {
         output,

@@ -300,3 +300,26 @@ test('lazy', async () => {
   expect(await client.inSomeOtherFile.hello.query()).toBe('world');
   await close();
 });
+
+test('experimental_Response', async () => {
+  const router = t.router({
+    hello: procedure.output('experimental_Response').query(() => {
+      return new Response('hello', {
+        headers: {
+          'content-type': 'text/plain',
+        },
+      });
+    }),
+  });
+
+  const { client, close } = routerToServerAndClientNew(router);
+  const res = await client.hello.query(undefined, {
+    context: {
+      skipBatch: true,
+    },
+  });
+  expect(res.status).toBe(200);
+  expect(res.headers.get('content-type')).toBe('text/plain');
+  expect(await res.text()).toBe('hello');
+  await close();
+});

@@ -9,6 +9,8 @@ import {
   createTRPCClient,
   createWSClient,
   httpBatchLink,
+  httpLink,
+  splitLink,
   TRPCClientError,
 } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
@@ -122,9 +124,21 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   });
   const trpcClientOptions = {
     links: [
-      httpBatchLink({
-        url: httpUrl,
-        transformer: opts?.transformer as any,
+      splitLink({
+        condition(op) {
+          // check for context property `skipBatch`
+          return Boolean(op.context['skipBatch']);
+        },
+        // when condition is true, use normal request
+        true: httpLink({
+          url: httpUrl,
+          transformer: opts?.transformer as any,
+        }),
+        // when condition is false, use batching
+        false: httpBatchLink({
+          url: httpUrl,
+          transformer: opts?.transformer as any,
+        }),
       }),
     ],
     ...(opts?.client
