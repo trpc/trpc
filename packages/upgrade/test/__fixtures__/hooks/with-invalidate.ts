@@ -7,6 +7,7 @@ export function Component() {
     onSettled: () => {
       utils.post.invalidate();
       utils.post.list.invalidate();
+      utils.post.x.y.z.longPropName.invalidate();
     },
   });
 }

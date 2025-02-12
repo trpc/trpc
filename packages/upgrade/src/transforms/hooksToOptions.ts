@@ -8,6 +8,7 @@ import type {
   FileInfo,
   FunctionDeclaration,
   Identifier,
+  JSCodeshift,
   MemberExpression,
   Options,
 } from 'jscodeshift';
@@ -247,7 +248,14 @@ export default function transform(
 
                 // Replace util.PATH.proxyMethod() with trpc.PATH.queryFilter()
                 const proxyMethod = memberExpr.property.name as ProxyMethod;
-                memberExpr.object.object = j.identifier(trpcImportName!);
+                const replacedPath = replaceMemberExpressionRootIndentifier(
+                  j,
+                  memberExpr,
+                  j.identifier(trpcImportName!),
+                );
+                if (!replacedPath) {
+                  console.warn('');
+                }
                 memberExpr.property = j.identifier('queryFilter');
 
                 // Wrap it in queryClient.utilMethod()
@@ -345,6 +353,21 @@ function findParentOfType<TPath>(
     return false;
   }
   return path as ASTPath<TPath>;
+}
+
+function replaceMemberExpressionRootIndentifier(
+  j: JSCodeshift,
+  expr: MemberExpression,
+  id: Identifier,
+) {
+  if (j.Identifier.check(expr.object)) {
+    expr.object = id;
+    return true;
+  }
+  if (j.MemberExpression.check(expr.object)) {
+    return replaceMemberExpressionRootIndentifier(j, expr.object, id);
+  }
+  return false;
 }
 
 export const parser = 'tsx';

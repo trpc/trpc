@@ -121,6 +121,9 @@ export function Component() {
       onSettled: () => {
         queryClient.invalidateQueries(trpc.post.queryFilter());
         queryClient.invalidateQueries(trpc.post.list.queryFilter());
+        queryClient.invalidateQueries(
+          trpc.post.x.y.z.longPropName.queryFilter(),
+        );
       },
     }),
   );
