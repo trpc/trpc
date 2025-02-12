@@ -124,6 +124,9 @@ export function Component() {
         queryClient.invalidateQueries(
           trpc.post.x.y.z.longPropName.queryFilter(),
         );
+
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        queryClient.invalidateQueries(trpc['post'].queryFilter());
       },
     }),
   );

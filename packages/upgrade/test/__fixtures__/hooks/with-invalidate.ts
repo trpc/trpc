@@ -8,6 +8,9 @@ export function Component() {
       utils.post.invalidate();
       utils.post.list.invalidate();
       utils.post.x.y.z.longPropName.invalidate();
+
+      // eslint-disable-next-line @typescript-eslint/dot-notation
+      utils['post'].invalidate();
     },
   });
 }
