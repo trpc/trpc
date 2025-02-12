@@ -1,6 +1,5 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { TRPCClientError } from '@trpc/client';
 import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
 import * as arktype from 'arktype';
 import myzod from 'myzod';
