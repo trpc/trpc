@@ -7,13 +7,13 @@ import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
   HTTPLinkBaseOptions,
-  HTTPResult,
+  JsonHTTPResult,
   Requester,
 } from './internals/httpUtils';
 import {
   getInput,
   getUrl,
-  httpRequest,
+  jsonHttpRequest,
   jsonHttpRequester,
   resolveHTTPLinkOptions,
 } from './internals/httpUtils';
@@ -44,7 +44,7 @@ const universalRequester: Requester = (opts) => {
       throw new Error('FormData is only supported for mutations');
     }
 
-    return httpRequest({
+    return jsonHttpRequest({
       ...opts,
       // The browser will set this automatically and include the boundary= in it
       contentTypeHeader: undefined,
@@ -58,7 +58,7 @@ const universalRequester: Requester = (opts) => {
       throw new Error('Octet type input is only supported for mutations');
     }
 
-    return httpRequest({
+    return jsonHttpRequest({
       ...opts,
       contentTypeHeader: 'application/octet-stream',
       getUrl,
@@ -105,9 +105,20 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
             return opts.headers;
           },
         });
-        let meta: HTTPResult['meta'] | undefined = undefined;
+        let meta: JsonHTTPResult['meta'] | undefined = undefined;
         request
           .then((res) => {
+            if (res.type === 'response') {
+              observer.next({
+                result: {
+                  type: 'data',
+                  data: res.response,
+                },
+              });
+              observer.complete();
+              return;
+            }
+
             meta = res.meta;
             const transformed = transformResult(
               res.json,

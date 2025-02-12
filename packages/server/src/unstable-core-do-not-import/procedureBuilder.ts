@@ -86,7 +86,7 @@ type ProcedureBuilderDef<TMeta> = {
    */
   subscription?: boolean;
   type?: ProcedureType;
-  outputType?: 'experimental_Response';
+  experimental_response?: boolean;
   caller?: CallerOverride<unknown>;
 };
 
@@ -482,7 +482,7 @@ export function createBuilder<TContext, TMeta>(
       const output = _output as Parser | 'experimental_Response';
       if (output === 'experimental_Response') {
         return createNewBuilder(_def, {
-          outputType: 'experimental_Response',
+          experimental_response: true,
         });
       }
       const parser = getParseFn(output);
@@ -557,6 +557,7 @@ function createResolver(
     ...finalBuilder._def,
     type: _defIn.type,
     experimental_caller: Boolean(finalBuilder._def.caller),
+    experimental_response: Boolean(finalBuilder._def.experimental_response),
     meta: finalBuilder._def.meta,
     $types: null as any,
   };

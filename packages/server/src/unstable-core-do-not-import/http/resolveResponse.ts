@@ -327,6 +327,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             message: `No procedure found on path "${call.path}"`,
           });
         }
+        if (proc._def.experimental_response && info.isBatchCall) {
+          throw new TRPCError({
+            code: 'UNSUPPORTED_MEDIA_TYPE',
+            message:
+              'This procedure cannot be batched and needs to be called with httpLink',
+          });
+        }
 
         if (!methodMapper[proc._def.type].includes(req.method as HTTPMethods)) {
           throw new TRPCError({
@@ -351,6 +358,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           type: proc._def.type,
           signal: opts.req.signal,
         });
+
         return [undefined, { data }];
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
@@ -371,8 +379,28 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
     // ----------- response handlers -----------
     if (!info.isBatchCall) {
-      const [call] = info.calls;
+      const call = info.calls[0]!;
       const [error, result] = await rpcCalls[0]!;
+
+      if (!error && call.procedure?._def.experimental_response) {
+        const response = result.data;
+
+        if (!(response instanceof Response)) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Expected to receive a Response output',
+          });
+        }
+
+        const headers = new Headers(response.headers);
+        headers.set('trpc-response-output', '1');
+
+        return new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers,
+        });
+      }
 
       switch (info.type) {
         case 'unknown':
@@ -394,8 +422,8 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   config,
                   ctx: ctxManager.valueOrUndefined(),
                   error,
-                  input: call!.result(),
-                  path: call!.path,
+                  input: call.result(),
+                  path: call.path,
                   type: info.type,
                 }),
               }
@@ -409,6 +437,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             headers,
             untransformedJSON: [res],
           });
+
           return new Response(
             JSON.stringify(transformTRPCResponse(config, res)),
             {
@@ -437,7 +466,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               return errorToAsyncIterable(
                 new TRPCError({
                   message: `Subscription ${
-                    call!.path
+                    call.path
                   } did not return an observable or a AsyncGenerator`,
                   code: 'INTERNAL_SERVER_ERROR',
                 }),

@@ -69,7 +69,8 @@ const METHOD = {
   subscription: 'PATCH',
 } as const;
 
-export interface HTTPResult {
+export interface JsonHTTPResult {
+  type?: 'json';
   json: TRPCResponse;
   meta: {
     response: ResponseEsque;
@@ -77,6 +78,10 @@ export interface HTTPResult {
   };
 }
 
+export interface ResponseHTTPResult {
+  type: 'response';
+  response: Response;
+}
 type GetInputOptions = {
   transformer: CombinedDataTransformer;
 } & ({ input: unknown } | { inputs: unknown[] });
@@ -143,10 +148,10 @@ export type Requester = (
   opts: HTTPBaseRequestOptions & {
     headers: () => HTTPHeaders | Promise<HTTPHeaders>;
   },
-) => Promise<HTTPResult>;
+) => Promise<JsonHTTPResult | ResponseHTTPResult>;
 
 export const jsonHttpRequester: Requester = (opts) => {
-  return httpRequest({
+  return jsonHttpRequest({
     ...opts,
     contentTypeHeader: 'application/json',
     getUrl,
@@ -223,12 +228,18 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
   });
 }
 
-export async function httpRequest(
+export async function jsonHttpRequest(
   opts: HTTPRequestOptions,
-): Promise<HTTPResult> {
-  const meta = {} as HTTPResult['meta'];
-
+): Promise<JsonHTTPResult | ResponseHTTPResult> {
   const res = await fetchHTTPResponse(opts);
+  if (res.headers.get('trpc-response-output') === '1') {
+    return {
+      type: 'response',
+      response: res as Response,
+    };
+  }
+  const meta = {} as JsonHTTPResult['meta'];
+
   meta.response = res;
 
   const json = await res.json();

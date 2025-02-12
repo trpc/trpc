@@ -7,7 +7,7 @@ import { allAbortSignals } from '../internals/signals';
 import type { NonEmptyArray } from '../internals/types';
 import { TRPCClientError } from '../TRPCClientError';
 import type { HTTPBatchLinkOptions } from './HTTPBatchLinkOptions';
-import type { HTTPResult } from './internals/httpUtils';
+import type { JsonHTTPResult } from './internals/httpUtils';
 import {
   getUrl,
   jsonHttpRequester,
@@ -27,7 +27,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
   return () => {
     const batchLoader = (
       type: ProcedureType,
-    ): BatchLoader<Operation, HTTPResult> => {
+    ): BatchLoader<Operation, JsonHTTPResult> => {
       return {
         validate(batchOps) {
           if (maxURLLength === Infinity) {
@@ -97,7 +97,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
         const loader = loaders[op.type];
         const promise = loader.load(op);
 
-        let _res = undefined as HTTPResult | undefined;
+        let _res = undefined as JsonHTTPResult | undefined;
         promise
           .then((res) => {
             _res = res;

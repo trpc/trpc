@@ -318,6 +318,7 @@ test('experimental_Response', async () => {
       skipBatch: true,
     },
   });
+  expect(res.ok).toBe(true);
   expect(res.status).toBe(200);
   expect(res.headers.get('content-type')).toBe('text/plain');
   expect(await res.text()).toBe('hello');
