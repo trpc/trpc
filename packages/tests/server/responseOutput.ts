@@ -4,9 +4,9 @@ import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
-test('experimental_Response happy path', async () => {
+test('happy path', async () => {
   const router = t.router({
-    hello: t.procedure.output('experimental_Response').query(() => {
+    hello: t.procedure.output('Response').query(() => {
       return new Response('hello', {
         headers: {
           'content-type': 'text/plain',
@@ -29,9 +29,9 @@ test('experimental_Response happy path', async () => {
   await ctx.close();
 });
 
-test('experimental_Response does not work with subscriptions', async () => {
+test('does not work with subscriptions', async () => {
   expect(() => {
-    t.procedure.output('experimental_Response').subscription(() => {
+    t.procedure.output('Response').subscription(() => {
       return new Response('hello', {
         headers: {
           'content-type': 'text/plain',
@@ -39,14 +39,14 @@ test('experimental_Response does not work with subscriptions', async () => {
       });
     });
   }).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Subscription procedures cannot be marked as experimental_Response]`,
+    `[Error: Subscription procedures cannot be marked as Response]`,
   );
 });
 
-test('experimental_Response needs to return a Response', async () => {
+test('needs to return a Response', async () => {
   const router = t.router({
     hello: t.procedure
-      .output('experimental_Response')
+      .output('Response')
       // @ts-expect-error - this should not be allowed
       .query(() => {
         return 'foo';

@@ -658,10 +658,10 @@ test('zod default', () => {
   });
 });
 
-test('experimental_Response happy path', async () => {
+test('happy path', async () => {
   const t = initTRPC.create();
   const router = t.router({
-    hello: t.procedure.output('experimental_Response').query(() => {
+    hello: t.procedure.output('Response').query(() => {
       return new Response('hello', {
         headers: {
           'content-type': 'text/plain',
@@ -695,10 +695,10 @@ test('experimental_Response happy path', async () => {
   await ctx.close();
 });
 
-test('experimental_Response does not work with subscriptions', async () => {
+test('does not work with subscriptions', async () => {
   const t = initTRPC.create();
   expect(() => {
-    t.procedure.output('experimental_Response').subscription(() => {
+    t.procedure.output('Response').subscription(() => {
       return new Response('hello', {
         headers: {
           'content-type': 'text/plain',
@@ -706,15 +706,15 @@ test('experimental_Response does not work with subscriptions', async () => {
       });
     });
   }).toThrowErrorMatchingInlineSnapshot(
-    `[Error: Subscription procedures cannot be marked as experimental_Response]`,
+    `[Error: Subscription procedures cannot currently return a Response - please post an issue with your use case]`,
   );
 });
 
-test('experimental_Response needs to return a Response', async () => {
+test('needs to return a Response', async () => {
   const t = initTRPC.create();
   const router = t.router({
     hello: t.procedure
-      .output('experimental_Response')
+      .output('Response')
       // @ts-expect-error - this should not be allowed
       .query(() => {
         return 'foo';

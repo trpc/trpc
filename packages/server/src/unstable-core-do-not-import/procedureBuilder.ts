@@ -233,7 +233,7 @@ export interface ProcedureBuilder<
    * @see https://trpc.io/docs/v11/server/validators
    */
   output(
-    schema: 'experimental_Response',
+    schema: 'Response',
   ): ProcedureBuilder<
     TContext,
     TMeta,
@@ -479,8 +479,8 @@ export function createBuilder<TContext, TMeta>(
       });
     },
     output(_output: unknown) {
-      const output = _output as Parser | 'experimental_Response';
-      if (output === 'experimental_Response') {
+      const output = _output as Parser | 'Response';
+      if (output === 'Response') {
         return createNewBuilder(_def, {
           experimental_response: true,
         });
@@ -525,7 +525,7 @@ export function createBuilder<TContext, TMeta>(
     subscription(resolver: ProcedureResolver<any, any, any, any, any, any>) {
       if (_def.experimental_response) {
         throw new Error(
-          'Subscription procedures cannot be marked as experimental_Response',
+          'Subscription procedures cannot currently return a Response - please post an issue with your use case',
         );
       }
       return createResolver({ ..._def, type: 'subscription' }, resolver) as any;

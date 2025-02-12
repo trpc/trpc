@@ -1,37 +1,49 @@
 # Custom response types RFC
 
-Suggestion to add the ability to return a `Response` object from your procedure by specifying `'Response'` as the output type. This is useful when you need full control over the response, such as returning files, streams, or custom headers.
+This RFC is proposes to add the ability to return a `Response` object from procedures. This is useful when you need full control over the response, such as returning files, streams, or custom headers.
 
-This feature allows you to have full control over the HTTP response, enabling use cases like:
-
-- File downloads and other binary data
-- Custom content types
-- Custom headers and status codes
+This has been a long-requested feature in [#1937](https://github.com/trpc/trpc/issues/1937) which has been partially solved already by allowing the use of handling e.g. `FormData` in mutation inputs.
 
 ## tl;dr
 
 ```ts
+// Backend:
 const appRouter = router({
-  hello: publicProcedure.output('Response').query(() => {
-    return new Response('Hello World');
-  }),
+  hello: publicProcedure
+    .output('Response') // <-- define that we're returning a Response
+    .query(async () => {
+      return new Response('Hello World');
+    }),
 });
+
+export type AppRouter = typeof appRouter;
+
+// Usage:
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpLink({
+      url: '/api',
+    }),
+  ],
+});
+
+const res = await client.hello.query();
+//     ^? Response
 ```
 
 ## Considerations
 
-Note that when using `'Response'`:
-
-- You're responsible for properly formatting the response
-- You're responsible for setting appropriate headers
-- You're responsible for doing manual deserialization and type safety on the client when needed
 - The responses can not be batched and will be rejected by the server if attempted (needs to be called with `httpLink()`)
+- The user is responsible for properly formatting the response
+- The user is responsible for setting appropriate headers
+- The user is responsible for doing manual deserialization on the client
+- The user is responsible for type safety on the client when needed
 
-### Why a static `.output('experimental_Response')`?
+### Implementation details
 
-The `.output('experimental_Response')` is static because it changes the type of the procedure in a way that is not compatible with the usual tRPC type system and allows us to reject a request if it is tried to be called with e.g. batching.
+- The `.output('Response')` is static because it changes the type of the procedure in a way that is not compatible with the usual tRPC type system and allows us to reject a request if it is tried to be called with e.g. batching.
 
-## More examples
+## Fuller example
 
 ### Different content types
 
@@ -51,26 +63,27 @@ export const appRouter = t.router({
     });
   }),
 
-  // Stream example with custom headers
+  // JSON stream example
   streamData: publicProcedure
     .input(z.object({ count: z.number().min(1) }))
     .output('Response')
     .mutation(async (opts) => {
       const stream = new ReadableStream({
         async start(controller) {
-          for (let i = 0; i < opts.input.count; i++) {
-            controller.enqueue(`data: ${i}\n\n`);
-            await new Promise((r) => setTimeout(r, 1000));
-          }
+          const encoder = new TextEncoder();
+          const data = Array.from({ length: opts.input.count }, (_, i) => ({
+            value: i,
+          }));
+
+          controller.enqueue(encoder.encode(JSON.stringify(data)));
           controller.close();
         },
       });
 
       return new Response(stream, {
         headers: {
-          'Content-Type': 'text/event-stream',
+          'Content-Type': 'application/jsonl',
           'Cache-Control': 'no-cache',
-          Connection: 'keep-alive',
         },
       });
     }),
@@ -89,12 +102,36 @@ export const appRouter = t.router({
         },
       });
     }),
+
+  // File upload and transform example
+  uploadAndTransform: publicProcedure
+    .input(
+      zfd.formData({
+        file: zfd.file(),
+      }),
+    )
+    .output('Response')
+    .mutation(async (opts) => {
+      const arrayBuffer = await opts.input.file.arrayBuffer();
+      const transformedBuffer = await transformImage(
+        arrayBuffer,
+        opts.input.format,
+      ); // hypothetical function
+
+      return new Response(transformedBuffer, {
+        headers: {
+          'Content-Type': `image/${opts.input.format}`,
+          'Content-Disposition': `attachment; filename="transformed.${opts.input.format}"`,
+          'Cache-Control': 'no-cache',
+        },
+      });
+    }),
 });
 ```
 
-### Client handling
+### Client setup
 
-The client will not be able to handle the `Response` type directly. You will need to use the `httpLink`.
+You will need to use the `httpLink`:
 
 ```ts
 const client = createTRPCClient<AppRouter>({
@@ -113,8 +150,12 @@ const client = createTRPCClient<AppRouter>({
   ],
 });
 
-
 // Usage
-const res = await client.downloadFile.query();
-//    ^? Response
+const res = await client.downloadFile.query(undefined, {
+  context: {
+    skipBatch: true,
+  },
+});
+console.log(res)
+//           ^? Response
 ```

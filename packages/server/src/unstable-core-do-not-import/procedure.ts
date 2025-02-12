@@ -10,6 +10,7 @@ export type ProcedureType = (typeof procedureTypes)[number];
 interface BuiltProcedureDef {
   input: unknown;
   output: unknown;
+  experimental_response?: boolean;
 }
 
 /**
