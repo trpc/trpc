@@ -687,7 +687,7 @@ test('experimental_Response happy path', async () => {
       ctx.client.hello.query(),
       TRPCClientError<typeof router>,
     );
-    expect(res?.data?.code).toBe('NOT_ACCEPTABLE');
+    expect(res?.data?.code).toBe('BAD_REQUEST');
     expect(res).toMatchInlineSnapshot(
       `[TRPCClientError: This procedure cannot be batched - use httpLink instead]`,
     );

@@ -329,7 +329,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         }
         if (proc._def.experimental_response && info.isBatchCall) {
           throw new TRPCError({
-            code: 'NOT_ACCEPTABLE',
+            code: 'BAD_REQUEST',
             message: 'This procedure cannot be batched - use httpLink instead',
           });
         }
