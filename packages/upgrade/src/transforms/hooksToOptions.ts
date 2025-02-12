@@ -254,7 +254,10 @@ export default function transform(
                   j.identifier(trpcImportName!),
                 );
                 if (!replacedPath) {
-                  console.warn('');
+                  console.warn(
+                    'Failed to wrap proxy call expression',
+                    memberExpr,
+                  );
                 }
                 memberExpr.property = j.identifier('queryFilter');
 
