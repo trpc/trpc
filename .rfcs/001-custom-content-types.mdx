@@ -11,8 +11,8 @@ This feature allows you to have full control over the HTTP response, enabling us
 ## tl;dr
 
 ```ts
-const myRouter = t.router({
-  myProcedure: publicProcedure
+const appRouter = router({
+  hello: publicProcedure
     .output('Response')
     .query(() => {
       return new Response('Hello World');
