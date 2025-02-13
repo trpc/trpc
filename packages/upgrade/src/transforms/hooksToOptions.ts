@@ -219,7 +219,7 @@ export default function transform(
                   );
                   return;
                 }
-                const callExpr = callExprPath.node as CallExpression;
+                const callExpr = callExprPath.node;
                 const memberExpr = callExpr.callee as MemberExpression;
                 if (
                   !j.CallExpression.check(callExpr) ||
