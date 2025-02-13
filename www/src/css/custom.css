@@ -241,8 +241,16 @@ h5 {
   @apply text-lg;
 }
 
+.markdown ul,
+.markdown ol {
+  @apply pl-8;
+  margin-bottom: var(--ifm-leading);
+}
 .markdown ul {
-  @apply list-disc pl-8;
+  @apply list-disc;
+}
+.markdown ol {
+  @apply list-decimal;
 }
 
 .markdown blockquote,

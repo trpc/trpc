@@ -7,7 +7,16 @@ slug: /server/context
 
 Your context holds data that all of your tRPC procedures will have access to, and is a great place to put things like database connections or authentication information.
 
-Setting up the context is done in 2 steps, defining the type during initialization and then creating the runtime context for each request.
+Setting up the context is done in 2 steps:
+
+1. Defining the type during initialization
+2. Creating the runtime context for each request
+
+:::info
+The examples below are using the [Standalone Adapter](./adapters/standalone.md).
+
+Depending on [your adapter](./adapters-intro.md), you need to use a different first argument for the `createContext` function.
+:::
 
 ## Defining the context type
 
@@ -15,33 +24,73 @@ When initializing tRPC using `initTRPC`, you should pipe `.context<TContext>()` 
 
 This will make sure your context is properly typed in your procedures and middlewares.
 
-```ts twoslash
-import * as trpc from '@trpc/server';
+```ts twoslash title='server/context.ts'
+// @filename: /server/somewhere/in/your/app/utils.ts
+interface Session {}
+export declare function getSession(request: Request): Session | null
+// @filename: server/context.ts
 // ---cut---
-import { initTRPC } from '@trpc/server';
-import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
-import { getSession } from 'next-auth/react';
+import {
+  getSession // Example function
+} from './somewhere/in/your/app/utils';
+import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 
-export const createContext = async (opts: CreateNextContextOptions) => {
-  const session = await getSession({ req: opts.req });
+export async function createContext(opts: CreateHTTPContextOptions) {
+  // Create your context based on the request object
+  // Will be available as `ctx` in all your resolvers
+
+  const session = await getSession(opts.req);
+
 
   return {
+    ...opts,
     session,
+    // ^?
   };
-};
+}
 
+// This context will be available as `ctx` in all your resolvers
 export type Context = Awaited<ReturnType<typeof createContext>>;
-const t = initTRPC.context<Context>().create();
+//           ^?
 
-t.procedure.use((opts) => {
-  opts.ctx;
-  //    ^?
-
-  return opts.next();
-});
 ```
 
-## Creating the context
+## Using the context in the root `initTRPC`-object
+
+```ts twoslash title="server/trpc.ts"
+// @filename: server/context.ts
+import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+interface Session {}
+export type Context =  {
+  session: Session
+} & CreateHTTPContextOptions
+// @filename: server/trpc.ts
+// ---cut---
+import {initTRPC, TRPCError} from '@trpc/server';
+import {Context} from './context'
+
+const t = initTRPC.context<Context>().create();
+
+
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+
+export const protectedProcedure = publicProcedure.use(async (opts) => {
+  const {session} = opts.ctx;
+    //     ^?
+    if (!session) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+    return opts.next({
+      ctx: {
+        session,
+      }
+    })
+})
+```
+
+## Creating the context in your adapter or a server-side call
 
 The `createContext()` function must be passed to the handler that is mounting your appRouter, which may be via HTTP, a [server-side call](server-side-calls) or our [server-side helpers](/docs/client/nextjs/server-side-helpers).
 
