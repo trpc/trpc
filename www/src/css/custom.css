@@ -241,6 +241,11 @@ h5 {
   @apply text-lg;
 }
 
+.markdown blockquote,
+.markdown .shiki {
+  margin: 0 0 var(--ifm-spacing-vertical);
+}
+
 .markdown ul,
 .markdown ol {
   @apply pl-8;
@@ -251,11 +256,6 @@ h5 {
 }
 .markdown ol {
   @apply list-decimal;
-}
-
-.markdown blockquote,
-.markdown .shiki {
-  margin: 0 0 var(--ifm-spacing-vertical);
 }
 
 .pagination-nav__label {
