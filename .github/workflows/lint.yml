@@ -28,16 +28,16 @@ jobs:
 
       # <autofixing>
       - run: pnpm turbo lint -- --fix
-        if: ${{ failure() || success() }}
+        if: ${{ success() }}
       - run: pnpm manypkg fix
-        if: ${{ failure() || success() }}
+        if: ${{ success() }}
       - run: pnpm format-fix
-        if: ${{ failure() || success() }}
+        if: ${{ success() }}
       # </autofixing>
 
       # commit autofixes
       - uses: autofix-ci/action@551dded8c6cc8a1054039c8bc0b8b48c51dfc6ef
-        if: ${{ failure() || success() }}
+        if: ${{ success() }}
         with:
           commit-message: 'chore: apply lint and formatting fixes'
           fail-fast: false

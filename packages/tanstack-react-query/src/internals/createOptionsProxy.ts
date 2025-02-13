@@ -1,9 +1,9 @@
 import type { DataTag } from '@tanstack/react-query';
 import { type QueryClient, type QueryFilters } from '@tanstack/react-query';
+import type { TRPCClient } from '@trpc/client';
 import {
   getUntypedClient,
   TRPCUntypedClient,
-  type CreateTRPCClient,
   type TRPCRequestOptions,
 } from '@trpc/client';
 import {
@@ -206,7 +206,7 @@ export interface TRPCOptionsProxyOptionsInternal<TRouter extends AnyRouter> {
 }
 
 export interface TRPCOptionsProxyOptionsExternal<TRouter extends AnyRouter> {
-  client: TRPCUntypedClient<TRouter> | CreateTRPCClient<TRouter>;
+  client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>;
 }
 
 export type TRPCOptionsProxyOptions<TRouter extends AnyRouter> =
