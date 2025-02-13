@@ -16,13 +16,13 @@ export function replaceMemberExpressionRootIndentifier(
   j: JSCodeshift,
   expr: MemberExpression,
   id: Identifier,
-) {
+): boolean {
   if (j.Identifier.check(expr.object)) {
     expr.object = id;
     return true;
   }
-  if (j.MemberExpression.check(expr.object)) {
-    return replaceMemberExpressionRootIndentifier(j, expr.object, id);
-  }
-  return false;
+
+  return !j.MemberExpression.check(expr.object)
+    ? false
+    : replaceMemberExpressionRootIndentifier(j, expr.object, id);
 }

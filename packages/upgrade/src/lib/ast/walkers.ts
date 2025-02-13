@@ -7,12 +7,11 @@ import type { ASTPath, JSCodeshift } from 'jscodeshift';
 export function findParentOfType<TPath>(
   path: ASTPath<unknown>,
   type: JSCodeshift['AnyType'],
-): ASTPath<unknown> | false {
-  if (!type.check(path.node)) {
-    return findParentOfType(path.parentPath, type);
-  }
+): ASTPath<TPath> | false {
   if (!path.parent) {
     return false;
   }
-  return path as ASTPath<TPath>;
+  return type.check(path.node)
+    ? (path as ASTPath<TPath>)
+    : findParentOfType(path.parentPath, type);
 }
