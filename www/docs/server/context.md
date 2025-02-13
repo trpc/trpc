@@ -25,22 +25,22 @@ When initializing tRPC using `initTRPC`, you should pipe `.context<TContext>()` 
 This will make sure your context is properly typed in your procedures and middlewares.
 
 ```ts twoslash title='server/context.ts'
-// @filename: /server/somewhere/in/your/app/utils.ts
-interface Session {}
-export declare function getSession(request: Request): Session | null
 // @filename: server/context.ts
 // ---cut---
-import {
-  getSession // Example function
-} from './somewhere/in/your/app/utils';
 import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import {
+  getSession, // Example function
+} from './somewhere/in/your/app/utils';
+
+// @filename: /server/somewhere/in/your/app/utils.ts
+interface Session {}
+export declare function getSession(request: Request): Session | null;
 
 export async function createContext(opts: CreateHTTPContextOptions) {
   // Create your context based on the request object
   // Will be available as `ctx` in all your resolvers
 
   const session = await getSession(opts.req);
-
 
   return {
     ...opts,
@@ -52,42 +52,41 @@ export async function createContext(opts: CreateHTTPContextOptions) {
 // This context will be available as `ctx` in all your resolvers
 export type Context = Awaited<ReturnType<typeof createContext>>;
 //           ^?
-
 ```
 
 ## Using the context in the root `initTRPC`-object
 
 ```ts twoslash title="server/trpc.ts"
 // @filename: server/context.ts
-import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
-interface Session {}
-export type Context =  {
-  session: Session
-} & CreateHTTPContextOptions
+
 // @filename: server/trpc.ts
 // ---cut---
-import {initTRPC, TRPCError} from '@trpc/server';
-import {Context} from './context'
+import { initTRPC, TRPCError } from '@trpc/server';
+import { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+import { Context } from './context';
+
+interface Session {}
+export type Context = {
+  session: Session;
+} & CreateHTTPContextOptions;
 
 const t = initTRPC.context<Context>().create();
-
 
 export const publicProcedure = t.procedure;
 export const router = t.router;
 
-
 export const protectedProcedure = publicProcedure.use(async (opts) => {
-  const {session} = opts.ctx;
-    //     ^?
-    if (!session) {
-      throw new TRPCError({ code: 'UNAUTHORIZED' });
-    }
-    return opts.next({
-      ctx: {
-        session,
-      }
-    })
-})
+  const { session } = opts.ctx;
+  //     ^?
+  if (!session) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return opts.next({
+    ctx: {
+      session,
+    },
+  });
+});
 ```
 
 ## Creating the context in your adapter or a server-side call
@@ -218,7 +217,7 @@ interface CreateInnerContextOptions extends Partial<CreateHTTPContextOptions> {
 export async function createContextInner(opts: CreateInnerContextOptions) {
   return {
     ...opts,
-    session
+    session,
   };
 }
 
