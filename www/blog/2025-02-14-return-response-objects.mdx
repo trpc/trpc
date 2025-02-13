@@ -54,13 +54,13 @@ const appRouter = router({
 ```ts twoslash title="client.ts"
 // @module: esnext
 // @target: esnext
-// @filename: types.ts
+// @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
 export const t = initTRPC.create();
 export const publicProcedure = t.procedure;
 export const router = t.router;
 // @filename: server.ts
-import { t, publicProcedure, router } from './types';
+import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
   hello: publicProcedure.query(async () => {
@@ -127,14 +127,15 @@ When returning Response objects, you need to use `httpLink` since responses cann
 ```ts twoslash
 // @module: esnext
 // @target: esnext
-// @filename: types.ts
+// @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
 export const t = initTRPC.create();
 export const publicProcedure = t.procedure;
+export const router = t.router;
 // @filename: server.ts
-import { t, publicProcedure } from './types';
+import { router, publicProcedure } from './trpc';
 // ---cut---
-const appRouter = t.router({
+const appRouter = router({
   downloadFile: publicProcedure.query(() => {
     return new Response('Hello World', {
       headers: {
@@ -184,14 +185,15 @@ console.log(response);
 ### File Download
 
 ```ts twoslash
-// @filename: types.ts
+// @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
 export const t = initTRPC.create();
 export const publicProcedure = t.procedure;
+export const router = t.router;
 // @filename: index.ts
-import { t, publicProcedure } from './types';
+import { router, publicProcedure } from './trpc';
 // ---cut---
-const appRouter = t.router({
+const appRouter = router({
   downloadFile: publicProcedure.query(() => {
     return new Response('Hello World', {
       headers: {
