@@ -191,62 +191,59 @@ export const protectedProcedure = t.procedure.use(function isAuthed(opts) {
 
 ## Inner and outer context {#inner-and-outer-context}
 
-In some scenarios it could make sense to split up your context into "inner" and "outer" functions.
+In MOST scenarios it could make sense to split up your context into "inner" and "outer" functions.
 
-**Inner context** is where you define context which doesn’t depend on the request, e.g. your database connection. You can use this function for integration testing or [server-side helpers](/docs/client/nextjs/server-side-helpers), where you don’t have a request object. Whatever is defined here will **always** be available in your procedures.
+**Inner context** is where you define context which doesn’t depend on the request, e.g. your the resolved `User` for a request. You can use this function for integration testing or [server-side helpers](/docs/client/nextjs/server-side-helpers), where you don’t have a request object. Whatever is defined here will **always** be available in your procedures.
 
 **Outer context** is where you define context which depends on the request, e.g. for the user's session. Whatever is defined here is only available for procedures that are called via HTTP.
 
 ### Example for inner & outer context
 
 ```ts
-import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
-import { getSessionFromCookie, type Session } from './auth';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 
 /**
  * Defines your inner context shape.
  * Add fields here that the inner context brings.
  */
-interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
+interface CreateInnerContextOptions extends Partial<CreateHTTPContextOptions> {
   session: Session | null;
 }
 
-/**
- * Inner context. Will always be available in your procedures, in contrast to the outer context.
- *
- * Also useful for:
- * - testing, so you don't have to mock `req`/`res`
- * - tRPC's .createCaller() where we don't have `req`/`res`
- *
- * @see https://trpc.io/docs/v11/context#inner-and-outer-context
+/*
+ * Defines your inner context shape
+ * Add fields here that the inner context brings.
+ * @see https://trpc.io/docs/server/context#inner-and-outer-context
  */
 export async function createContextInner(opts: CreateInnerContextOptions) {
   return {
     ...opts,
-    session: opts.session,
+    session
   };
 }
 
-/**
- * Outer context. Used in the routers and will e.g. bring `req` & `res` to the context as "not `undefined`".
- *
- * @see https://trpc.io/docs/v11/context#inner-and-outer-context
- */
-export async function createContext(opts: CreateNextContextOptions) {
-  const session = getSessionFromCookie(opts.req);
-
-  const contextInner = await createContextInner({ session });
-
-  return {
-    ...contextInner,
-    req: opts.req,
-    res: opts.res,
-  };
-}
-
+// This context will be available as `ctx` in all your resolvers
 export type Context = Awaited<ReturnType<typeof createContextInner>>;
 
-// The usage in your router is the same as the example above.
+export async function createContext(
+  /**
+   * Depending on your adapter, the first argument of this function will be different.
+   * @see https://trpc.io/docs/server/context
+   */
+  opts: CreateHTTPContextOptions,
+) {
+  // Create your context based on the request object
+  // Will be available as `ctx` in all your resolvers
+
+  const session = await getSession(opts.req);
+
+  const ctx = await createContextInner({
+    ...opts,
+    session,
+  });
+
+  return ctx;
+}
 ```
 
 It is important to infer your `Context` from the **inner** context, as only what is defined there is really always available in your procedures.
