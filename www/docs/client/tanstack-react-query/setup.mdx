@@ -61,6 +61,10 @@ Create a strongly-typed context provider and consumer from your `AppRouter` type
 // @include: utils
 ```
 
+:::note
+If you don't rely on React context, you can also use the `createTRPCOptionsProxy` function to create a proxy to the tRPC client directly.
+:::
+
 ### 4. Add tRPC providers
 
 Create a tRPC client, and wrap your application in the tRPC Provider, as below. You will also need to set up and connect React Query, which [they document in more depth](https://tanstack.com/query/latest/docs/framework/react/quick-start).
