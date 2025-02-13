@@ -22,6 +22,7 @@ However, sometimes you need more control over your HTTP responses than just send
 
 - Sending raw files to the client
 - Handling binary data
+- Integration with SDKs that return `Response`s, like [Vercel AI SDK]
 
 ## Basic Example
 
@@ -32,9 +33,7 @@ Here's a simple example of returning a custom response:
 // @target: esnext
 // @filename: types.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create({
-  experimental: { outputResponse: true }
-});
+export const t = initTRPC.create();
 export const publicProcedure = t.procedure;
 export const router = t.router;
 // @filename: server.ts
@@ -57,9 +56,7 @@ const appRouter = router({
 // @target: esnext
 // @filename: types.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create({
-  experimental: { outputResponse: true }
-});
+export const t = initTRPC.create();
 export const publicProcedure = t.procedure;
 export const router = t.router;
 // @filename: server.ts
@@ -132,9 +129,7 @@ When returning Response objects, you need to use `httpLink` since responses cann
 // @target: esnext
 // @filename: types.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create({
-  experimental: { outputResponse: true }
-});
+export const t = initTRPC.create();
 export const publicProcedure = t.procedure;
 // @filename: server.ts
 import { t, publicProcedure } from './types';
@@ -191,9 +186,7 @@ console.log(response);
 ```ts twoslash
 // @filename: types.ts
 import { initTRPC } from '@trpc/server';
-export const t = initTRPC.create({
-  experimental: { outputResponse: true }
-});
+export const t = initTRPC.create();
 export const publicProcedure = t.procedure;
 // @filename: index.ts
 import { t, publicProcedure } from './types';
@@ -224,9 +217,7 @@ This example demonstrates:
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
-export const t = initTRPC.create({
-  experimental: { outputResponse: true }
-});
+export const t = initTRPC.create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
@@ -261,6 +252,99 @@ const appRouter = router({
       });
     }),
 });
+```
+
+### Integration with the `useChat()`-hook from the [AI SDK](https://sdk.vercel.ai) {#useChat}
+
+The benefit of using tRPC over a custom endpoint API endpoint is that you can use the same auth logic as your other backend procedures.
+
+```tsx twoslash title="server/_app.ts"
+// @module: esnext
+// @target: esnext
+// @filename: server/trpc.ts
+import { initTRPC } from '@trpc/server';
+interface User {}
+export const t = initTRPC.create();
+export const protectedProcedure = t.procedure.use(opts => opts.next({
+  ctx: {
+    user: null as never as User,
+  }
+}))
+export const router = t.router;
+
+// @filename: server/_app.ts
+// ---cut---
+import { protectedProcedure, router } from './trpc';
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+import { z } from 'zod';
+
+const appRouter = router({
+  ai: protectedProcedure.input(
+      z.object({
+        messages: z.array(
+          z.object({
+            role: z.enum(['system', 'user', 'assistant', 'data']),
+            content: z.string(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async (opts) => {
+      // You can access the user from the context as any other procedure
+      opts.ctx.user;
+      //        ^?
+      const response = streamText({
+        model: openai('gpt-4o'),
+        system: 'You are a helpful assistant.',
+        messages: opts.input.messages,
+      });
+
+      return response.toDataStreamResponse();
+    }),
+});
+
+
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/_app';
+
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/Chat.tsx
+import { useChat } from '@ai-sdk/react';
+import { trpc } from '../utils/trpc';
+import React from 'react';
+
+export function Greeting() {
+  const utils = trpc.useUtils();
+  const chat = useChat({
+    fetch: (...args: any[]) => utils.client.ai.mutate(JSON.parse(args[1].body), {
+      signal: args[1].signal,
+      context: {
+        skipBatch: true,
+      }
+    }),
+  });
+
+  return (
+    <>
+      {chat.messages.map((message) => (
+        <div key={message.id}>
+          {message.role === 'user' ? 'User: ' : 'AI: '}
+          {message.content}
+        </div>
+      ))}
+
+      <form onSubmit={chat.handleSubmit}>
+        <input name="prompt" value={chat.input} onChange={chat.handleInputChange} />
+        <button type="submit">Submit</button>
+      </form>
+    </>
+  );
+}
 ```
 
 ## Conclusion

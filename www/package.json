@@ -21,6 +21,8 @@
     "lint": "eslint --cache src"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^1.1.10",
+    "@ai-sdk/react": "^1.1.13",
     "@algolia/client-search": "^5.0.0",
     "@docusaurus/core": "^3.7.0",
     "@docusaurus/faster": "^3.7.0",
@@ -41,6 +43,7 @@
     "@unkey/ratelimit": "^0.5.0",
     "@visx/hierarchy": "^3.0.0",
     "@visx/responsive": "^3.0.0",
+    "ai": "^4.1.36",
     "clsx": "^2.0.0",
     "cssnano": "^7.0.0",
     "docusaurus-preset-shiki-twoslash": "^1.1.41",
