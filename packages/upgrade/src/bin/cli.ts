@@ -16,21 +16,49 @@ import {
   Stream,
   String,
 } from 'effect';
-import type { SourceFile } from 'typescript';
+import type { Program, SourceFile } from 'typescript';
 import {
   createProgram,
   findConfigFile,
+  forEachChild,
+  isImportDeclaration,
+  isStringLiteral,
   parseJsonConfigFileContent,
   readConfigFile,
   sys,
 } from 'typescript';
 import { version } from '../../package.json';
+import { findTRPCImportReferencePaths } from '../lib/ast/scanners';
 
 const MakeCommand = (command: string, ...args: string[]) => {
   return Command.make(command, ...args).pipe(
     Command.workingDirectory(process.cwd()),
     Command.runInShell(true),
   );
+};
+
+const findFilesImportingTrpcClient = (program: Program): string[] => {
+  const foundFiles: string[] = [];
+  for (const sourceFile of program.getSourceFiles()) {
+    // Only process source files that are part of your project
+    if (!sourceFile.isDeclarationFile) {
+      let importsTrpcClient = false;
+      forEachChild(sourceFile, (node) => {
+        if (isImportDeclaration(node)) {
+          const moduleSpecifier = node.moduleSpecifier;
+          if (isStringLiteral(moduleSpecifier)) {
+            if (moduleSpecifier.text === '@trpc/react-query') {
+              importsTrpcClient = true;
+            }
+          }
+        }
+      });
+      if (importsTrpcClient) {
+        foundFiles.push(sourceFile.fileName);
+      }
+    }
+  }
+  return foundFiles;
 };
 
 const assertCleanGitTree = Command.string(MakeCommand('git', 'status'))
@@ -203,6 +231,10 @@ const rootComamnd = CLICommand.make(
       const program = yield* TSProgram;
       const sourceFiles = program.getSourceFiles();
 
+      const possibleReferences = findTRPCImportReferencePaths(program);
+      const trpcFile = possibleReferences.mostUsed.file;
+      const trpcImportName = possibleReferences.importName;
+
       const commitedFiles = yield* filterIgnored(sourceFiles);
       yield* Effect.forEach(transforms, (transform) => {
         return pipe(
@@ -210,7 +242,11 @@ const rootComamnd = CLICommand.make(
           Effect.flatMap(() =>
             Effect.tryPromise(async () =>
               import('jscodeshift/src/Runner.js').then(({ run }) =>
-                run(transform, commitedFiles, args),
+                run(transform, commitedFiles, {
+                  ...args,
+                  trpcFile: trpcFile,
+                  trpcImportName: trpcImportName,
+                }),
               ),
             ),
           ),
