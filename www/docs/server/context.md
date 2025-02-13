@@ -189,7 +189,7 @@ export const protectedProcedure = t.procedure.use(function isAuthed(opts) {
 
 <!-- prettier-ignore-end -->
 
-## Inner and outer context
+## Inner and outer context {#inner-and-outer-context}
 
 In some scenarios it could make sense to split up your context into "inner" and "outer" functions.
 
@@ -215,14 +215,14 @@ interface CreateInnerContextOptions extends Partial<CreateNextContextOptions> {
  * Inner context. Will always be available in your procedures, in contrast to the outer context.
  *
  * Also useful for:
- * - testing, so you don't have to mock Next.js' `req`/`res`
- * - tRPC's `createServerSideHelpers` where we don't have `req`/`res`
+ * - testing, so you don't have to mock `req`/`res`
+ * - tRPC's .createCaller() where we don't have `req`/`res`
  *
  * @see https://trpc.io/docs/v11/context#inner-and-outer-context
  */
-export async function createContextInner(opts?: CreateInnerContextOptions) {
+export async function createContextInner(opts: CreateInnerContextOptions) {
   return {
-    prisma,
+    ...opts,
     session: opts.session,
   };
 }
