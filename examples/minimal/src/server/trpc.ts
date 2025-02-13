@@ -1,11 +1,12 @@
 import { initTRPC } from '@trpc/server';
 import { transformer } from '../shared/transformer.js';
+import type { Context } from './context.js';
 
 /**
  * Initialization of tRPC backend
  * Should be done only once per backend!
  */
-const t = initTRPC.create({
+const t = initTRPC.context<Context>().create({
   transformer,
 });
 
