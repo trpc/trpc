@@ -306,6 +306,56 @@ const appRouter = router({
 
 
 export type AppRouter = typeof appRouter;
+```
+
+```tsx twoslash title="components/Chat.tsx"
+// @module: esnext
+// @target: esnext
+// @filename: server/trpc.ts
+import { initTRPC } from '@trpc/server';
+interface User {}
+export const t = initTRPC.create();
+export const protectedProcedure = t.procedure.use(opts => opts.next({
+  ctx: {
+    user: null as never as User,
+  }
+}))
+export const router = t.router;
+
+// @filename: server/_app.ts
+// ---cut---
+import { protectedProcedure, router } from './trpc';
+import { openai } from '@ai-sdk/openai';
+import { streamText } from 'ai';
+import { z } from 'zod';
+
+const appRouter = router({
+  ai: protectedProcedure.input(
+      z.object({
+        messages: z.array(
+          z.object({
+            role: z.enum(['system', 'user', 'assistant', 'data']),
+            content: z.string(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async (opts) => {
+      // You can access the user from the context as any other procedure
+      opts.ctx.user;
+      //        ^?
+      const response = streamText({
+        model: openai('gpt-4o'),
+        system: 'You are a helpful assistant.',
+        messages: opts.input.messages,
+      });
+
+      return response.toDataStreamResponse();
+    }),
+});
+
+
+export type AppRouter = typeof appRouter;
 
 // @filename: utils/trpc.ts
 import { createTRPCReact } from '@trpc/react-query';
@@ -314,6 +364,7 @@ import type { AppRouter } from '../server/_app';
 export const trpc = createTRPCReact<AppRouter>();
 
 // @filename: components/Chat.tsx
+// ---cut---
 import { useChat } from '@ai-sdk/react';
 import { trpc } from '../utils/trpc';
 import React from 'react';
