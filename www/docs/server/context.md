@@ -5,11 +5,11 @@ sidebar_label: Context
 slug: /server/context
 ---
 
-Your context holds data that all of your tRPC procedures will have access to, and is a great place to put things like database connections or authentication information.
+Your context holds data that all of your tRPC procedures will have access to, and is a great place to put things like authentication information.
 
 Setting up the context is done in 2 steps:
 
-1. Defining the type during initialization
+1. Defining the type during initialization (this changes slightly depending on [which adapter](/docs/server/adapters-intro.md) you are using)
 2. Creating the runtime context for each request
 
 :::info
