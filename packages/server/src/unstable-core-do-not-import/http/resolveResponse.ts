@@ -390,14 +390,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           );
         }
 
-        const headers = new Headers(response.headers);
-        headers.set('trpc-response-output', '1');
-
-        return new Response(response.body, {
-          status: response.status,
-          statusText: response.statusText,
-          headers,
-        });
+        return response;
       }
 
       switch (info.type) {

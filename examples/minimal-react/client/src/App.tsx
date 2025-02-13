@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { httpBatchLink } from '@trpc/client';
+import { httpBatchLink, httpLink } from '@trpc/client';
 import { useState } from 'react';
 import { Greeting } from './Greeting';
 import { trpc } from './utils/trpc';
@@ -9,7 +9,7 @@ export function App() {
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
-        httpBatchLink({
+        httpLink({
           url: 'http://localhost:2022',
         }),
       ],

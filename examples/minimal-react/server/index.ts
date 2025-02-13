@@ -2,33 +2,42 @@
  * This is the API-handler of your app that contains all your API routes.
  * On a bigger app, you will probably want to split this file up into multiple files.
  */
+import { openai } from '@ai-sdk/openai';
 import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { streamText } from 'ai';
 import cors from 'cors';
 import { z } from 'zod';
 
-const t = initTRPC.create();
+const t = initTRPC.create({
+  experimental: {
+    outputResponse: true,
+  },
+});
 
 const publicProcedure = t.procedure;
 const router = t.router;
 
 const appRouter = router({
-  greeting: publicProcedure
-    // This is the input schema of your procedure
-    // 💡 Tip: Try changing this and see type errors on the client straight away
+  chat: publicProcedure
     .input(
-      z
-        .object({
-          name: z.string().nullish(),
-        })
-        .nullish(),
+      z.object({
+        messages: z.array(
+          z.object({
+            role: z.enum(['system', 'user', 'assistant', 'data']),
+            content: z.string(),
+          }),
+        ),
+      }),
     )
-    .query(({ input }) => {
-      // This is what you're returning to your client
-      return {
-        text: `hello ${input?.name ?? 'world'}`,
-        // 💡 Tip: Try adding a new property here and see it propagate to the client straight-away
-      };
+    .query(async (opts) => {
+      const response = streamText({
+        model: openai('gpt-4o'),
+        system: 'You are a helpful assistant.',
+        messages: opts.input.messages,
+      });
+
+      return response.toDataStreamResponse();
     }),
 });
 

@@ -232,7 +232,9 @@ export async function httpRequest(
   opts: HTTPRequestOptions,
 ): Promise<JsonHTTPResult | ResponseHTTPResult> {
   const res = await fetchHTTPResponse(opts);
-  if (res.headers.get('trpc-response-output') === '1') {
+  // Assumes we only have 2 cases, JSON or not...
+  // If it's JSON, we parse it. Else we leave it to the caller to handle
+  if (!res.headers.get('content-type')?.startsWith('application/json')) {
     return {
       type: 'response',
       response: res as Response,

@@ -13,6 +13,8 @@
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
+    "@ai-sdk/react": "^1.1.13",
+    "ai": "^4.1.36",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
