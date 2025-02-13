@@ -1,5 +1,5 @@
 import { type QueryClient } from '@tanstack/react-query';
-import { type CreateTRPCClient } from '@trpc/client';
+import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import {
@@ -16,7 +16,7 @@ export function createTRPCContext<TRouter extends AnyTRPCRouter>() {
     props: Readonly<{
       children: React.ReactNode;
       queryClient: QueryClient;
-      trpcClient: CreateTRPCClient<TRouter>;
+      trpcClient: TRPCClient<TRouter>;
     }>,
   ) {
     const value = React.useMemo(
