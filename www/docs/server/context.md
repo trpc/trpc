@@ -24,6 +24,8 @@ When initializing tRPC using `initTRPC`, you should pipe `.context<TContext>()` 
 
 This will make sure your context is properly typed in your procedures and middlewares.
 
+<!-- prettier-ignore-start -->
+
 ```ts twoslash title='server/context.ts'
 // @filename: /server/somewhere/in/your/app/utils.ts
 interface Session {}
@@ -76,7 +78,7 @@ export const router = t.router;
 
 
 export const protectedProcedure = publicProcedure.use(async (opts) => {
-  const {session} = opts.ctx;
+  const { session } = opts.ctx;
     //     ^?
     if (!session) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -88,6 +90,7 @@ export const protectedProcedure = publicProcedure.use(async (opts) => {
     })
 })
 ```
+<!-- prettier-ignore-end -->
 
 ## Creating the context in your adapter or a server-side call
 
@@ -217,7 +220,7 @@ interface CreateInnerContextOptions extends Partial<CreateHTTPContextOptions> {
 export async function createContextInner(opts: CreateInnerContextOptions) {
   return {
     ...opts,
-    session
+    session,
   };
 }
 
