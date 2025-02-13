@@ -26,7 +26,7 @@ import type { TRPCClientError } from './TRPCClientError';
  **/
 export type inferRouterClient<TRouter extends AnyRouter> = TRPCClient<TRouter>;
 
-const untypedClientSymbol = Symbol('untypedClient');
+const untypedClientSymbol = Symbol.for('trpc_untypedClient');
 
 /**
  * @public
@@ -142,12 +142,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
     return (client[procedureType] as any)(fullPath, ...(args as any));
   });
   return createFlatProxy<TRPCClient<TRouter>>((key) => {
-    if (
-      key === untypedClientSymbol ||
-      // Safer for monorepos?:
-      (typeof key === 'symbol' &&
-        key.description === untypedClientSymbol.description)
-    ) {
+    if (key === untypedClientSymbol) {
       return client;
     }
     return proxy[key];
