@@ -17,18 +17,22 @@ Procedures in tRPC are very flexible primitives to create backend functions. The
 
 The `t` object you create during tRPC setup returns an initial `t.procedure` which all other procedures are built on:
 
-```ts twoslash
+```ts twoslash title="tRPC initial setup and an AppRouter"
+// @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const t = initTRPC.context<{ signGuestBook: () => Promise<void> }>().create();
+const t = initTRPC.create();
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-const appRouter = router({
+// @filename: _app.ts
+import { publicProcedure, router } from './trpc';
+
+export const appRouter = router({
   // Queries are the best place to fetch data
-  hello: publicProcedure.query(() => {
+  hello: publicProcedure.query(async () => {
     return {
       message: 'hello world',
     };
@@ -36,13 +40,14 @@ const appRouter = router({
 
   // Mutations are the best place to do things like updating a database
   goodbye: publicProcedure.mutation(async (opts) => {
-    await opts.ctx.signGuestBook();
 
     return {
       message: 'goodbye!',
     };
   }),
 });
+
+export type AppRouter = typeof appRouter;
 ```
 
 ## Reusable "Base Procedures" {#reusable-base-procedures}
