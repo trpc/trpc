@@ -10,16 +10,15 @@ The `createContext` function is called for each incoming request, so here you ca
 ## Create context from request headers
 
 ```ts twoslash title='server/context.ts'
-// @filename: server/context.ts
-// ---cut---
-import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-import {
-  getSession, // Example function
-} from './somewhere/in/your/app/utils';
-
 // @filename: /server/somewhere/in/your/app/utils.ts
 interface Session {}
-export declare function getSession(request: Request): Session | null;
+export declare function getSession(request: Request): Session | null
+// @filename: server/context.ts
+// ---cut---
+import {
+  getSession // Example function
+} from './somewhere/in/your/app/utils';
+import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 
 export async function createContext(opts: FetchCreateContextFnOptions) {
   // Create your context based on the request object
@@ -27,6 +26,7 @@ export async function createContext(opts: FetchCreateContextFnOptions) {
 
   const session = await getSession(opts.req);
   //                     ^?
+
 
   return {
     ...opts,
