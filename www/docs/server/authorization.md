@@ -108,7 +108,7 @@ export const protectedProcedure = publicProcedure.use(
 /// ....... ✨ usage in a procedure
 // @filename: server/routers/post.ts
 import { publicProcedure, protectedProcedure, router } from '../trpc'
-import  { z} from 'zod';
+import { z } from 'zod';
 
 export const postRouter = router({
   add: protectedProcedure.mutation(async (opts) => {
