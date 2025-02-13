@@ -32,7 +32,10 @@ const untypedClientSymbol = Symbol('untypedClient');
  * @public
  **/
 export type TRPCClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
-  TRouter,
+  {
+    transformer: TRouter['_def']['_config']['$types']['transformer'];
+    errorShape: TRouter['_def']['_config']['$types']['errorShape'];
+  },
   TRouter['_def']['record']
 > & {
   [untypedClientSymbol]: TRPCUntypedClient<TRouter>;
