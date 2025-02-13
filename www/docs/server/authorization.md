@@ -9,6 +9,7 @@ The `createContext` function is called for each incoming request, so here you ca
 
 ## Create context from request headers
 
+<!-- prettier-ignore-start -->
 ```ts twoslash title='server/context.ts'
 // @filename: /server/somewhere/in/your/app/utils.ts
 interface Session {}
@@ -39,9 +40,11 @@ export async function createContext(opts: FetchCreateContextFnOptions) {
 export type Context = Awaited<ReturnType<typeof createContext>>;
 //           ^?
 ```
+<!-- prettier-ignore-end -->
 
 ## Authorize using a base procedure (recommended) {#base-procedure}
 
+<!-- prettier-ignore-start -->
 ```ts twoslash title='server/trpc.ts'
 // @filename: /server/somewhere/in/your/app/utils.ts
 interface Session {}
@@ -105,7 +108,7 @@ export const protectedProcedure = publicProcedure.use(
 /// ....... ✨ usage in a procedure
 // @filename: server/routers/post.ts
 import { publicProcedure, protectedProcedure, router } from '../trpc'
-import {z} from 'zod';
+import  { z} from 'zod';
 
 export const postRouter = router({
   add: protectedProcedure.mutation(async (opts) => {
@@ -118,6 +121,7 @@ export const postRouter = router({
 })
 
 ```
+<!-- prettier-ignore-end -->
 
 ## Authorize in a resolver resolver
 
