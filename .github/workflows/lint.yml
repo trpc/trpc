@@ -32,7 +32,7 @@ jobs:
       - run: pnpm manypkg fix
         if: ${{ success() }}
       - run: pnpm format-fix
-        if: ${{ success() }}
+        if: ${{ failure() || success() }}
       # </autofixing>
 
       # commit autofixes
