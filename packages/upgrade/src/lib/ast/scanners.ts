@@ -11,14 +11,17 @@ import {
   type Program,
 } from 'typescript';
 
-export function findSourcesWithImport(program: Program) {
+export function findSourceAndImportName(program: Program) {
   const files = program.getSourceFiles().filter((sourceFile) => {
     if (sourceFile.isDeclarationFile) return false;
     let found = false;
     forEachChild(sourceFile, (node) => {
       if (!found && isImportDeclaration(node)) {
         const { moduleSpecifier } = node;
-        if (isStringLiteral(moduleSpecifier) && moduleSpecifier.text.includes('@trpc/react-query')) {
+        if (
+          isStringLiteral(moduleSpecifier) &&
+          moduleSpecifier.text.includes('@trpc/react-query')
+        ) {
           found = true;
         }
       }
@@ -39,7 +42,8 @@ export function findSourcesWithImport(program: Program) {
             declaration.initializer &&
             isCallExpression(declaration.initializer) &&
             isIdentifier(declaration.initializer.expression) &&
-            declaration.initializer.expression.getText(sourceFile) === 'createTRPCReact'
+            declaration.initializer.expression.getText(sourceFile) ===
+              'createTRPCReact'
           ) {
             importName = declaration.name.getText(sourceFile);
           }
@@ -54,8 +58,9 @@ export function findSourcesWithImport(program: Program) {
   };
 }
 
-export function findTRPCImportReferencePaths(program: Program) {
-  const { files: filesImportingTRPC, importName } = findSourcesWithImport(program);
+export function findTRPCImportReferences(program: Program) {
+  const { files: filesImportingTRPC, importName } =
+    findSourceAndImportName(program);
   const trpcReferenceSpecifiers = new Map<string, string>();
 
   program.getSourceFiles().forEach((sourceFile) => {
@@ -74,7 +79,7 @@ export function findTRPCImportReferencePaths(program: Program) {
         ) {
           trpcReferenceSpecifiers.set(
             resolved.resolvedModule.resolvedFileName,
-            node.moduleSpecifier.text
+            node.moduleSpecifier.text,
           );
         }
       }

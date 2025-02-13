@@ -28,7 +28,7 @@ import {
   sys,
 } from 'typescript';
 import { version } from '../../package.json';
-import { findTRPCImportReferencePaths } from '../lib/ast/scanners';
+import { findTRPCImportReferences } from '../lib/ast/scanners';
 
 const MakeCommand = (command: string, ...args: string[]) => {
   return Command.make(command, ...args).pipe(
@@ -231,7 +231,7 @@ const rootComamnd = CLICommand.make(
       const program = yield* TSProgram;
       const sourceFiles = program.getSourceFiles();
 
-      const possibleReferences = findTRPCImportReferencePaths(program);
+      const possibleReferences = findTRPCImportReferences(program);
       const trpcFile = possibleReferences.mostUsed.file;
       const trpcImportName = possibleReferences.importName;
 
