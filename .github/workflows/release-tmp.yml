@@ -5,7 +5,7 @@ on:
     branches:
       # Replace this with the branch you want to release from
       # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
-      - 'issues/4129-lazy-routers'
+      - '02-12-response-types-idea'
       # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
     paths:
       - '.github/setup/*'
