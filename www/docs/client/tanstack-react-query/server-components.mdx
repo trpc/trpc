@@ -187,8 +187,8 @@ function getQueryClient() {
   // This is very important, so we don't re-make a new client if React
   // suspends during the initial render. This may not be needed if we
   // have a suspense boundary BELOW the creation of the query client
-    if (!browserQueryClient) browserQueryClient = makeQueryClient();
-    return browserQueryClient;
+  if (!browserQueryClient) browserQueryClient = makeQueryClient();
+  return browserQueryClient;
 }
 
 function getUrl() {
@@ -264,7 +264,7 @@ createTRPCOptionsProxy({
   }),
   queryClient: getQueryClient,
   ctx: createTRPCContext,
-})
+});
 ```
 
 Create a `HydrateClient` component to hydrate the query client:
@@ -289,14 +289,16 @@ concept as "render as you fetch" commonly implemented as loaders. This means the
 the data is needed by using the `useQuery` or `useSuspenseQuery` hooks.
 
 ```tsx title='app/page.tsx'
-import { trpc, HydrateClient, getQueryClient } from '~/trpc/server';
+import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
 import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
   const queryClient = getQueryClient();
-  void queryClient.prefetchQuery(trpc.hello.queryOptions({
-    /** input */
-  }));
+  void queryClient.prefetchQuery(
+    trpc.hello.queryOptions({
+      /** input */
+    }),
+  );
 
   return (
     <HydrateClient>
@@ -340,9 +342,11 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
 Then you can use it like this:
 
 ```tsx
-prefetch(trpc.hello.queryOptions({
-  /** input */
-}));
+prefetch(
+  trpc.hello.queryOptions({
+    /** input */
+  }),
+);
 ```
 
 :::
