@@ -26,6 +26,12 @@ import type { TRPCClientError } from './TRPCClientError';
  **/
 export type inferRouterClient<TRouter extends AnyRouter> = TRPCClient<TRouter>;
 
+/**
+ * @public
+ * @deprecated use {@link TRPCClient} instead, will be removed in v12
+ **/
+export type CreateTRPCClient<TRouter extends AnyRouter> = TRPCClient<TRouter>;
+
 const untypedClientSymbol = Symbol.for('trpc_untypedClient');
 
 /**
