@@ -92,7 +92,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/node": "20.17.18"
+      "@types/node": "20.17.19"
     }
   },
   "manypkg": {
