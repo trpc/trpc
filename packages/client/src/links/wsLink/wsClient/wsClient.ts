@@ -291,35 +291,34 @@ export class WsClient {
       }
     };
 
-    ws.addEventListener('open', async () => {
-      if (this.lazyMode) {
-        this.inactivityTimeout.start();
-      }
-
-      if (this.connectionParams) {
-        try {
-          ws.send(await buildConnectionMessage(this.connectionParams));
-        } catch (error) {
-          ws.close(3000);
-          handleCloseOrError(error);
-          return;
+    ws.addEventListener('open', () => {
+      run(async () => {
+        if (this.lazyMode) {
+          this.inactivityTimeout.start();
         }
-      }
 
-      this.callbacks.onOpen?.();
+        if (this.connectionParams) {
+          ws.send(await buildConnectionMessage(this.connectionParams));
+        }
 
-      this.connectionState.next({
-        type: 'state',
-        state: 'pending',
-        error: null,
-      });
+        this.callbacks.onOpen?.();
 
-      const messages = this.requestManager
-        .getPendingRequests()
-        .map(({ message }) => message);
-      if (messages.length) {
-        ws.send(JSON.stringify(messages.length === 1 ? messages[0] : messages));
-      }
+        this.connectionState.next({
+          type: 'state',
+          state: 'pending',
+          error: null,
+        });
+
+        const messages = this.requestManager
+            .getPendingRequests()
+            .map(({ message }) => message);
+        if (messages.length) {
+          ws.send(JSON.stringify(messages.length === 1 ? messages[0] : messages));
+        }
+      }).catch(error => {
+        ws.close(3000);
+        handleCloseOrError(error);
+      })
     });
 
     ws.addEventListener('message', ({ data }) => {
