@@ -310,15 +310,15 @@ export class WsClient {
         });
 
         const messages = this.requestManager
-            .getPendingRequests()
-            .map(({ message }) => message);
+          .getPendingRequests()
+          .map(({ message }) => message);
         if (messages.length) {
           ws.send(JSON.stringify(messages));
         }
-      }).catch(error => {
+      }).catch((error) => {
         ws.close(3000);
         handleCloseOrError(error);
-      })
+      });
     });
 
     ws.addEventListener('message', ({ data }) => {
