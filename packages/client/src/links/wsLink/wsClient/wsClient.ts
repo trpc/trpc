@@ -313,7 +313,7 @@ export class WsClient {
             .getPendingRequests()
             .map(({ message }) => message);
         if (messages.length) {
-          ws.send(JSON.stringify(messages.length === 1 ? messages[0] : messages));
+          ws.send(JSON.stringify(messages));
         }
       }).catch(error => {
         ws.close(3000);
