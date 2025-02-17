@@ -169,7 +169,7 @@ your tRPC router and create typesafe hooks using `createTRPCContext`. We'll also
 // ^-- to make sure we can mount the Provider from a server component
 import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { httpBatchLink, createTRPCClient } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { useState } from 'react';
 import { makeQueryClient } from './query-client';
 import type { AppRouter } from './routers/_app';
@@ -273,8 +273,8 @@ concept as "render as you fetch" commonly implemented as loaders. This means the
 the data is needed by using the `useQuery` or `useSuspenseQuery` hooks.
 
 ```tsx title='app/page.tsx'
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient, trpc } from '~/trpc/server';
-import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
@@ -336,7 +336,7 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
 Then you can use it like this:
 
 ```tsx
-import { trpc, prefetch, HydrateClient } from '~/trpc/server';
+import { HydrateClient, prefetch, trpc } from '~/trpc/server';
 
 function Home() {
   prefetch(
