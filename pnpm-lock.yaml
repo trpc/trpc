@@ -1972,8 +1972,8 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
       valibot:
-        specifier: 1.0.0-rc.0
-        version: 1.0.0-rc.0(typescript@5.7.2)
+        specifier: 1.0.0-rc.1
+        version: 1.0.0-rc.1(typescript@5.7.2)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -2419,8 +2419,8 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
       valibot:
-        specifier: 1.0.0-rc.0
-        version: 1.0.0-rc.0(typescript@5.7.2)
+        specifier: 1.0.0-rc.1
+        version: 1.0.0-rc.1(typescript@5.7.2)
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -17554,8 +17554,8 @@ packages:
       typescript:
         optional: true
 
-  valibot@1.0.0-rc.0:
-    resolution: {integrity: sha512-9ZUrOXOejY/WaIn8p0Z469R1qBAwNJeqq8jzOIDsl1qR8gqtObHQmyHLFli0UCkcGiTco5kH6/KPLWsTWE9b2g==}
+  valibot@1.0.0-rc.1:
+    resolution: {integrity: sha512-bTHNpeeQ403xS7qGHF/tw3EC/zkZOU5VdkfIsmRDu1Sp+BJNTNCm6m5HlwOgyW/03lofP+uQiq3R+Poo9wiCEg==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -36606,7 +36606,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.7.2
 
-  valibot@1.0.0-rc.0(typescript@5.7.2):
+  valibot@1.0.0-rc.1(typescript@5.7.2):
     optionalDependencies:
       typescript: 5.7.2
 
