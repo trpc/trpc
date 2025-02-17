@@ -2,9 +2,8 @@
 slug: introducing-tanstack-react-query-client
 title: Introducing the new TanStack React Query integration
 authors: [juliusmarminge, nicklucas]
+commentDiscussionId: 6508
 ---
-
-import { BlogComments } from '@site/src/components/BlogComments';
 
 We are excited to announce the new TanStack React Query integration for tRPC is now available on tRPC's `next`-release. Compared to our classic [React Query Integration](/docs/client/react) it's simpler and more TanStack Query-native, choosing to utilize the [QueryOptions](https://tanstack.com/query/latest/docs/framework/react/guides/query-options) and [MutationOptions](https://tanstack.com/query/latest/docs/framework/react/guides/mutations) interfaces native to TanStack React Query, instead of wrapping `useQuery` and `useMutation` with our own client.
 
@@ -49,5 +48,3 @@ While the classic client is going to be maintained for a long time to come, we r
 Both clients are compatible with each other and can exist in the same application, so you can migrate at your own pace. We are also working on a codemod which **we would love** community contributions to. We'd like to thank [@reaper](https://bsky.app/profile/reaper.is) for his contributions to the codemod so far!
 
 👉 [Read the Migration Docs](/docs/client/tanstack-react-query/migrating)
-
-<BlogComments discussionId={6508} />
