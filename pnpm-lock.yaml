@@ -1969,8 +1969,8 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
       valibot:
-        specifier: 1.0.0-rc.0
-        version: 1.0.0-rc.0(typescript@5.7.2)
+        specifier: 1.0.0-rc.1
+        version: 1.0.0-rc.1(typescript@5.7.2)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -2373,8 +2373,8 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
       valibot:
-        specifier: 1.0.0-rc.0
-        version: 1.0.0-rc.0(typescript@5.7.2)
+        specifier: 1.0.0-rc.1
+        version: 1.0.0-rc.1(typescript@5.7.2)
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -17135,8 +17135,8 @@ packages:
       typescript:
         optional: true
 
-  valibot@1.0.0-rc.0:
-    resolution: {integrity: sha512-9ZUrOXOejY/WaIn8p0Z469R1qBAwNJeqq8jzOIDsl1qR8gqtObHQmyHLFli0UCkcGiTco5kH6/KPLWsTWE9b2g==}
+  valibot@1.0.0-rc.1:
+    resolution: {integrity: sha512-bTHNpeeQ403xS7qGHF/tw3EC/zkZOU5VdkfIsmRDu1Sp+BJNTNCm6m5HlwOgyW/03lofP+uQiq3R+Poo9wiCEg==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -27786,8 +27786,8 @@ snapshots:
       '@typescript-eslint/parser': 7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2)
       eslint: 9.13.0(jiti@2.3.3)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
+      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0)(eslint@9.13.0(jiti@2.3.3))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-react: 7.37.2(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-react-hooks: 5.1.0(eslint@9.13.0(jiti@2.3.3))
@@ -27809,12 +27809,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)):
+  eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0)(eslint@9.13.0(jiti@2.3.3)):
     dependencies:
       debug: 4.4.0(supports-color@8.1.1)
       enhanced-resolve: 5.17.1
       eslint: 9.13.0(jiti@2.3.3)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
       get-tsconfig: 4.8.1
       globby: 13.1.3
       is-core-module: 2.13.1
@@ -27823,18 +27823,18 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2)
       eslint: 9.13.0(jiti@2.3.3)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
+      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0)(eslint@9.13.0(jiti@2.3.3))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -27845,7 +27845,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.13.0(jiti@2.3.3)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3
@@ -35822,7 +35822,7 @@ snapshots:
     optionalDependencies:
       typescript: 5.7.2
 
-  valibot@1.0.0-rc.0(typescript@5.7.2):
+  valibot@1.0.0-rc.1(typescript@5.7.2):
     optionalDependencies:
       typescript: 5.7.2
 
