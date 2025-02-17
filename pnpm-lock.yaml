@@ -176,9 +176,6 @@ importers:
       '@trpc/next':
         specifier: npm:@trpc/next@next
         version: link:../../../packages/next
-      '@trpc/react-query':
-        specifier: npm:@trpc/react-query@next
-        version: link:../../../packages/react-query
       '@trpc/server':
         specifier: npm:@trpc/server@next
         version: link:../../../packages/server
