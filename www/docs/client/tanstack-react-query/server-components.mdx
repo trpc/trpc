@@ -362,7 +362,7 @@ function Home() {
 You may prefer handling loading and error states using Suspense and Error Boundaries. You can do this by using the `useSuspenseQuery` hook.
 
 ```tsx title='app/page.tsx'
-import { trpc, prefetch, HydrateClient } from '~/trpc/server';
+import { HydrateClient, prefetch, trpc } from '~/trpc/server';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ClientGreeting } from './client-greeting';
@@ -386,6 +386,7 @@ export default async function Home() {
 
 ```tsx title='app/client-greeting.tsx'
 'use client';
+
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { trpc } from '~/trpc/client';
 
@@ -424,7 +425,7 @@ If you **really** need to use the data both on the server as well as inside clie
 guide, you can use `fetchQuery` instead of `prefetch` to have the data both on the server as well as hydrating it down to the client:
 
 ```tsx title='app/page.tsx'
-import { getQueryClient, trpc, HydrateClient } from '~/trpc/server';
+import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
 
 export default async function Home() {
   const queryClient = getQueryClient();
