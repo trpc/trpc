@@ -5,6 +5,11 @@ import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
 import { createTRPCOptionsProxy } from './createOptionsProxy';
 
+/**
+ * Create a set of type-safe provider-consumers
+ *
+ * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-setup-the-trpc-context-provider
+ */
 export function createTRPCContext<TRouter extends AnyTRPCRouter>() {
   const TRPCContext = React.createContext<TRPCOptionsProxy<TRouter> | null>(
     null,

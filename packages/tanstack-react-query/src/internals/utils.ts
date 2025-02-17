@@ -78,7 +78,9 @@ export async function buildQueryFromAsyncIterable(
  * To allow easy interactions with groups of related queries, such as
  * invalidating all queries of a router, we use an array as the path when
  * storing in tanstack query.
- **/
+ *
+ * @internal
+ */
 export function getQueryKeyInternal(
   path: readonly string[],
   input: unknown,
@@ -127,6 +129,9 @@ export function getQueryKeyInternal(
   ];
 }
 
+/**
+ * @internal
+ */
 export function getMutationKeyInternal(
   path: readonly string[],
 ): TRPCMutationKey {
@@ -136,6 +141,9 @@ export function getMutationKeyInternal(
   return splitPath.length ? [splitPath] : ([] as unknown as TRPCMutationKey);
 }
 
+/**
+ * @internal
+ */
 export function unwrapLazyArg<T>(valueOrLazy: T | (() => T)): T {
   return (isFunction(valueOrLazy) ? valueOrLazy() : valueOrLazy) as T;
 }
