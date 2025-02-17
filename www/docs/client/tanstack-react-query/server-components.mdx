@@ -395,3 +395,49 @@ export function ClientGreeting() {
   return <div>{data.greeting}</div>;
 }
 ```
+
+### Getting data in a server component
+
+If you need access to the data in a server component, we recommend creating a server caller and using it directly. Please note that this method is de-attached from your query client and does not
+store the data in the cache. This means that you cannot use the data in a server component and expect it to be available in the client. This is
+intentional and explained in more detail in the [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#data-ownership-and-revalidation)
+guide.
+
+```tsx title='trpc/server.tsx'
+// ...
+export const caller = appRouter.createCaller(createTRPCContext);
+```
+
+```tsx title='app/page.tsx'
+import { caller } from '~/trpc/server';
+
+export default async function Home() {
+  const greeting = await caller.hello();
+  //    ^? { greeting: string }
+
+  return <div>{greeting.greeting}</div>;
+}
+```
+
+If you **really** need to use the data both on the server as well as inside client components and understand the tradeoffs explained in the
+[Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#data-ownership-and-revalidation)
+guide, you can use `fetchQuery` instead of `prefetch` to have the data both on the server as well as hydrating it down to the client:
+
+```tsx title='app/page.tsx'
+import { getQueryClient, trpc, HydrateClient } from '~/trpc/server';
+
+export default async function Home() {
+  const queryClient = getQueryClient();
+  const greeting = await queryClient.fetchQuery(trpc.hello.queryOptions());
+
+  // Do something with greeting on the server
+
+  return (
+    <HydrateClient>
+      <div>...</div>
+      {/** ... */}
+      <ClientGreeting />
+    </HydrateClient>
+  );
+}
+```
