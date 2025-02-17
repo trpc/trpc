@@ -161,7 +161,9 @@ export function useSubscription<TOutput, TError>(
   }, []);
 
   type Unsubscribe = () => void;
-  const currentSubscriptionRef = React.useRef<Unsubscribe>();
+  const currentSubscriptionRef = React.useRef<Unsubscribe>(() => {
+    // noop
+  });
 
   const reset = React.useCallback((): void => {
     // unsubscribe from the previous subscription
