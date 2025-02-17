@@ -6,7 +6,7 @@ import type { TRPCOptionsProxy } from './createOptionsProxy';
 import { createTRPCOptionsProxy } from './createOptionsProxy';
 
 export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
-  TRPCProvider: React.ComponentType<{
+  TRPCProvider: React.FunctionComponent<{
     children: React.ReactNode;
     queryClient: QueryClient;
     trpcClient: CreateTRPCClient<TRouter>;
