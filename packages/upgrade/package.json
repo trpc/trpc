@@ -1,0 +1,55 @@
+{
+  "name": "@trpc/upgrade",
+  "version": "0.0.0-alpha.26",
+  "description": "Upgrade scripts for tRPC",
+  "author": "juliusmarminge",
+  "license": "MIT",
+  "bin": "./dist/cli.cjs",
+  "homepage": "https://trpc.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/upgrade"
+  },
+  "exports": {
+    "./transforms/hooksToOptions": {
+      "require": "./dist/transforms/hooksToOptions.cjs"
+    },
+    "./transforms/provider": {
+      "require": "./dist/transforms/provider.cjs"
+    }
+  },
+  "scripts": {
+    "build": "bunchee",
+    "run": "tsx src/cli.ts"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "package.json",
+    "!**/*.test.*",
+    "!**/__tests__"
+  ],
+  "dependencies": {
+    "@effect/cli": "0.56.1",
+    "@effect/platform": "0.77.1",
+    "@effect/platform-node": "0.73.1",
+    "effect": "3.13.1",
+    "jscodeshift": "17.1.1",
+    "typescript": "^5.6.2"
+  },
+  "devDependencies": {
+    "@types/jscodeshift": "0.12.0",
+    "@types/node": "^22.9.0",
+    "bunchee": "5.6.1",
+    "esbuild": "0.19.2",
+    "tsx": "^4.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
+}

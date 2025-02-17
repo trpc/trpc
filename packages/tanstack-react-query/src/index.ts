@@ -23,3 +23,4 @@ export type {
 } from './internals/subscriptionOptions';
 export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
 export { useSubscription } from './internals/subscriptionOptions';
+export type * from './internals/types';
