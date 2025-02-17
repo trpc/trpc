@@ -244,8 +244,8 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
             path: path,
             getRawInput: async () => input,
             ctx: ctx,
-            type: type,
             signal: undefined,
+            type,
           }),
         );
       }

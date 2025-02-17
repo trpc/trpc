@@ -106,7 +106,7 @@ export interface ProcedureResolverOptions<
   /**
    * The AbortSignal of the request
    */
-  signal: AbortSignal | undefined;
+  signal?: AbortSignal | undefined;
 }
 
 /**
@@ -562,9 +562,8 @@ export interface ProcedureCallOptions<TContext> {
   ctx: TContext;
   getRawInput: GetRawInputFn;
   input?: unknown;
-  path: string;
-  type: ProcedureType;
-  signal: AbortSignal | undefined;
+  path?: string;
+  signal?: AbortSignal | undefined;
 }
 
 const codeblock = `
@@ -579,10 +578,14 @@ async function callRecursive(
   opts: ProcedureCallOptions<any>,
 ): Promise<MiddlewareResult<any>> {
   try {
+    if (!_def.type) {
+      throw new Error('Procedure type not set and can not be called yet.');
+    }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const middleware = _def.middlewares[index]!;
     const result = await middleware({
       ...opts,
+      type: _def.type,
       meta: _def.meta,
       input: opts.input,
       next(_nextOpts?: any) {

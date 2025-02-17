@@ -156,11 +156,8 @@ export function experimental_createServerActionHandler<
         const data = proc._def.experimental_caller
           ? await proc(rawInput as any)
           : await proc({
-              input: undefined,
               ctx,
-              path: '',
               getRawInput: async () => rawInput,
-              type: proc._def.type,
               // is it possible to get the AbortSignal from the request?
               signal: undefined,
             });

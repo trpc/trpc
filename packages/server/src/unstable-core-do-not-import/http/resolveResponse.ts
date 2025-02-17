@@ -348,7 +348,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           path: call.path,
           getRawInput: call.getRawInput,
           ctx: ctxManager.value(),
-          type: proc._def.type,
           signal: opts.req.signal,
         });
         return [undefined, { data }];

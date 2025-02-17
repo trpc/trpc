@@ -91,7 +91,6 @@ export function nextAppDirCaller<TContext, TMeta>(
 
         return await opts
           .invoke({
-            type: opts._def.type,
             ctx,
             getRawInput: async () => input,
             path,
@@ -108,7 +107,6 @@ export function nextAppDirCaller<TContext, TMeta>(
         const input = opts.args[0];
         return await opts
           .invoke({
-            type: opts._def.type,
             ctx,
             getRawInput: async () => input,
             path,

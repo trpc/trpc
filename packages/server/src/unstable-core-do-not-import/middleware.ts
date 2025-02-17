@@ -96,11 +96,11 @@ export type MiddlewareFunction<
   (opts: {
     ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
     type: ProcedureType;
-    path: string;
+    path?: string;
     input: TInputOut;
     getRawInput: GetRawInputFn;
     meta: TMeta | undefined;
-    signal: AbortSignal | undefined;
+    signal?: AbortSignal | undefined;
     next: {
       (): Promise<MiddlewareResult<TContextOverridesIn>>;
       <$ContextOverride>(opts: {
