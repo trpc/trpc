@@ -3,10 +3,11 @@ import type {
   DefinedInitialDataOptions,
   QueryClient,
   QueryFunction,
+  SkipToken,
   UndefinedInitialDataOptions,
   UnusedSkipTokenOptions,
 } from '@tanstack/react-query';
-import { queryOptions, skipToken, type SkipToken } from '@tanstack/react-query';
+import { queryOptions, skipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type {
   coerceAsyncIterableToArray,

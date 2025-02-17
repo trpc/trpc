@@ -2,16 +2,13 @@ import type {
   DataTag,
   DefinedInitialDataInfiniteOptions,
   InfiniteData,
+  QueryClient,
   QueryFunction,
+  SkipToken,
   UndefinedInitialDataInfiniteOptions,
   UnusedSkipTokenInfiniteOptions,
 } from '@tanstack/react-query';
-import {
-  infiniteQueryOptions,
-  skipToken,
-  type QueryClient,
-  type SkipToken,
-} from '@tanstack/react-query';
+import { infiniteQueryOptions, skipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import';
 import type {

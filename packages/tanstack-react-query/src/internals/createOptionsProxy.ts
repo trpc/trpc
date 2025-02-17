@@ -1,28 +1,18 @@
-import type { DataTag } from '@tanstack/react-query';
-import { type QueryClient, type QueryFilters } from '@tanstack/react-query';
-import {
-  getUntypedClient,
-  TRPCUntypedClient,
-  type CreateTRPCClient,
-  type TRPCRequestOptions,
-} from '@trpc/client';
-import {
-  type AnyProcedure,
-  type inferProcedureInput,
-  type inferRouterContext,
-  type inferTransformedProcedureOutput,
-  type ProcedureType,
-} from '@trpc/server';
+import type { DataTag, QueryClient, QueryFilters } from '@tanstack/react-query';
+import type { CreateTRPCClient, TRPCRequestOptions } from '@trpc/client';
+import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type {
-  AnyRootTypes,
-  AnyRouter,
-  MaybePromise,
-  RouterRecord,
-} from '@trpc/server/unstable-core-do-not-import';
-import {
-  callProcedure,
-  createRecursiveProxy,
-} from '@trpc/server/unstable-core-do-not-import';
+  AnyTRPCProcedure,
+  AnyTRPCRootTypes,
+  AnyTRPCRouter,
+  inferProcedureInput,
+  inferRouterContext,
+  inferTransformedProcedureOutput,
+  TRPCProcedureType,
+  TRPCRouterRecord,
+} from '@trpc/server';
+import { callTRPCProcedure, createTRPCRecursiveProxy } from '@trpc/server';
+import type { MaybePromise } from '@trpc/server/unstable-core-do-not-import';
 import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
@@ -150,7 +140,7 @@ export interface DecorateSubscriptionProcedure<TDef extends ResolverDef> {
 }
 
 export type DecorateProcedure<
-  TType extends ProcedureType,
+  TType extends TRPCProcedureType,
   TDef extends ResolverDef,
 > = TType extends 'query'
   ? DecorateQueryProcedure<TDef>
@@ -164,13 +154,13 @@ export type DecorateProcedure<
  * @internal
  */
 export type DecoratedProcedureUtilsRecord<
-  TRoot extends AnyRootTypes,
-  TRecord extends RouterRecord,
+  TRoot extends AnyTRPCRootTypes,
+  TRecord extends TRPCRouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
+    ? $Value extends TRPCRouterRecord
       ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateQueryKeyable
-      : $Value extends AnyProcedure
+      : $Value extends AnyTRPCProcedure
         ? DecorateProcedure<
             $Value['_def']['type'],
             {
@@ -184,7 +174,7 @@ export type DecoratedProcedureUtilsRecord<
     : never;
 };
 
-export type TRPCOptionsProxy<TRouter extends AnyRouter> =
+export type TRPCOptionsProxy<TRouter extends AnyTRPCRouter> =
   DecoratedProcedureUtilsRecord<
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
@@ -198,18 +188,22 @@ export interface TRPCOptionsProxyOptionsBase {
   };
 }
 
-export interface TRPCOptionsProxyOptionsInternal<TRouter extends AnyRouter> {
+export interface TRPCOptionsProxyOptionsInternal<
+  TRouter extends AnyTRPCRouter,
+> {
   router: TRouter;
   ctx:
     | inferRouterContext<TRouter>
     | (() => MaybePromise<inferRouterContext<TRouter>>);
 }
 
-export interface TRPCOptionsProxyOptionsExternal<TRouter extends AnyRouter> {
+export interface TRPCOptionsProxyOptionsExternal<
+  TRouter extends AnyTRPCRouter,
+> {
   client: TRPCUntypedClient<TRouter> | CreateTRPCClient<TRouter>;
 }
 
-export type TRPCOptionsProxyOptions<TRouter extends AnyRouter> =
+export type TRPCOptionsProxyOptions<TRouter extends AnyTRPCRouter> =
   TRPCOptionsProxyOptionsBase &
     (
       | TRPCOptionsProxyOptionsInternal<TRouter>
@@ -232,14 +226,14 @@ function getQueryType(method: UtilsMethods) {
   return map[method];
 }
 
-export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
+export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
   opts: TRPCOptionsProxyOptions<TRouter>,
 ): TRPCOptionsProxy<TRouter> {
-  const callIt = (type: ProcedureType): any => {
+  const callIt = (type: TRPCProcedureType): any => {
     return (path: string, input: unknown, trpcOpts: TRPCRequestOptions) => {
       if ('router' in opts) {
         return Promise.resolve(unwrapLazyArg(opts.ctx)).then((ctx) =>
-          callProcedure({
+          callTRPCProcedure({
             router: opts.router,
             path: path,
             getRawInput: async () => input,
@@ -259,7 +253,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
     };
   };
 
-  return createRecursiveProxy(({ args, path: _path }) => {
+  return createTRPCRecursiveProxy(({ args, path: _path }) => {
     const path = [..._path];
     const utilName = path.pop() as UtilsMethods;
     const [arg1, arg2] = args as any[];

@@ -1,11 +1,9 @@
-import { type QueryClient } from '@tanstack/react-query';
-import { type CreateTRPCClient } from '@trpc/client';
+import type { QueryClient } from '@tanstack/react-query';
+import type { CreateTRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
-import {
-  createTRPCOptionsProxy,
-  type TRPCOptionsProxy,
-} from './createOptionsProxy';
+import type { TRPCOptionsProxy } from './createOptionsProxy';
+import { createTRPCOptionsProxy } from './createOptionsProxy';
 
 export function createTRPCContext<TRouter extends AnyTRPCRouter>() {
   const TRPCContext = React.createContext<TRPCOptionsProxy<TRouter> | null>(

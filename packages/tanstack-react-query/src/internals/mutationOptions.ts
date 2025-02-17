@@ -1,7 +1,7 @@
-import type { MutationFunction } from '@tanstack/react-query';
-import {
-  type QueryClient,
-  type UseMutationOptions,
+import type {
+  MutationFunction,
+  QueryClient,
+  UseMutationOptions,
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type {

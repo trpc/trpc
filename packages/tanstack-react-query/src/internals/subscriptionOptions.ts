@@ -1,4 +1,5 @@
-import { hashKey, skipToken, type SkipToken } from '@tanstack/react-query';
+import type { SkipToken } from '@tanstack/react-query';
+import { hashKey, skipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { Unsubscribable } from '@trpc/server/observable';

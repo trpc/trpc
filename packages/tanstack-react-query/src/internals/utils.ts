@@ -1,4 +1,5 @@
-import { skipToken, type QueryClient } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
+import { skipToken } from '@tanstack/react-query';
 import { isFunction, isObject } from '@trpc/server/unstable-core-do-not-import';
 import type {
   QueryType,
