@@ -12,6 +12,31 @@ Compared to our [classic React Query Integration](/docs/client/react) this clien
 You can try this integration out on the homepage of tRPC.io: [https://trpc.io/?try=minimal-react#try-it-out](/?try=minimal-react#try-it-out)
 :::
 
+<details>
+<summary>❓ Do I have to use an integration?</summary>
+
+No! The integration is fully optional. You can use `@tanstack/react-query` using just a [vanilla tRPC client](/docs/client/vanilla), although then you'll have to manually manage query keys and do not get the same level of DX as when using the integration package.
+
+```ts title='utils/trpc.ts'
+export const trpc = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: 'YOUR_API_URL' })],
+});
+```
+
+```tsx title='components/PostList.tsx'
+function PostList() {
+  const { data } = useQuery({
+    queryKey: ['posts'],
+    queryFn: () => trpc.post.list.query(),
+  });
+  data; // Post[]
+
+  // ...
+}
+```
+
+</details>
+
 ## Setup
 
 ### 1. Install dependencies
