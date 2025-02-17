@@ -267,7 +267,7 @@ createTRPCOptionsProxy({
 
 Create a `HydrateClient` component to hydrate the query client:
 
-```tsx
+```tsx title='trpc/server.tsx'
 export function HydrateClient(props: { children: React.ReactNode }) {
   const dehydratedState = dehydrate(getQueryClient());
 
