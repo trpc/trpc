@@ -265,20 +265,6 @@ createTRPCOptionsProxy({
 });
 ```
 
-Create a `HydrateClient` component to hydrate the query client:
-
-```tsx title='trpc/server.tsx'
-export function HydrateClient(props: { children: React.ReactNode }) {
-  const dehydratedState = dehydrate(getQueryClient());
-
-  return (
-    <HydrationBoundary state={dehydratedState}>
-      {props.children}
-    </HydrationBoundary>
-  );
-}
-```
-
 ## Using your API
 
 Now you can use your tRPC API in your app. While you can use the React Query hooks in client components just like you would in any other React app,
@@ -287,7 +273,8 @@ concept as "render as you fetch" commonly implemented as loaders. This means the
 the data is needed by using the `useQuery` or `useSuspenseQuery` hooks.
 
 ```tsx title='app/page.tsx'
-import { getQueryClient, HydrateClient, trpc } from '~/trpc/server';
+import { getQueryClient, trpc } from '~/trpc/server';
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
@@ -299,11 +286,11 @@ export default async function Home() {
   );
 
   return (
-    <HydrateClient>
+    <HydrationBoundary state={dehydrate(queryClient)}>
       <div>...</div>
       {/** ... */}
       <ClientGreeting />
-    </HydrateClient>
+    </HydrationBoundary>
   );
 }
 ```
@@ -322,9 +309,18 @@ export function ClientGreeting() {
 ```
 
 :::tip
-You can also create a `prefetch` helper function to make it a bit more consice and reusable:
+You can also create a `prefetch` and `HydrateClient` helper functions to make it a bit more consice and reusable:
 
-```tsx
+```tsx title='trpc/server.tsx'
+export function HydrateClient(props: { children: React.ReactNode }) {
+  const queryClient = getQueryClient();
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      {props.children}
+    </HydrationBoundary>
+  );
+}
+
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
   queryOptions: T,
 ) {
@@ -340,11 +336,23 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
 Then you can use it like this:
 
 ```tsx
-prefetch(
-  trpc.hello.queryOptions({
-    /** input */
-  }),
-);
+import { trpc, prefetch, HydrateClient } from '~/trpc/server';
+
+function Home() {
+  prefetch(
+    trpc.hello.queryOptions({
+      /** input */
+    }),
+  );
+
+  return (
+    <HydrateClient>
+      <div>...</div>
+      {/** ... */}
+      <ClientGreeting />
+    </HydrateClient>
+  );
+}
 ```
 
 :::
