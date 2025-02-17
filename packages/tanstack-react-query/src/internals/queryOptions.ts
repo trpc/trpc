@@ -155,13 +155,26 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
   >;
 }
 
+type AnyTRPCQueryOptionsIn =
+  | DefinedTRPCQueryOptionsIn<unknown, unknown, unknown>
+  | UnusedSkipTokenTRPCQueryOptionsIn<unknown, unknown, unknown>
+  | UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown>;
+
+type AnyTRPCQueryOptionsOut =
+  | DefinedTRPCQueryOptionsOut<unknown, unknown, unknown>
+  | UnusedSkipTokenTRPCQueryOptionsOut<unknown, unknown, unknown>
+  | UndefinedTRPCQueryOptionsOut<unknown, unknown, unknown>;
+
+/**
+ * @internal
+ */
 export function trpcQueryOptions(args: {
   query: typeof TRPCUntypedClient.prototype.query;
   queryClient: QueryClient | (() => QueryClient);
   path: readonly string[];
   queryKey: TRPCQueryKey;
-  opts: UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown>;
-}) {
+  opts: AnyTRPCQueryOptionsIn;
+}): AnyTRPCQueryOptionsOut {
   const { query, path, queryKey, opts } = args;
   const queryClient = unwrapLazyArg(args.queryClient);
 

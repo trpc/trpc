@@ -15,15 +15,16 @@ import { createTRPCOptionsResult } from './utils';
 interface BaseTRPCSubscriptionOptionsIn<TOutput, TError> {
   enabled?: boolean;
   onStarted?: () => void;
-  onData: (data: inferAsyncIterableYield<TOutput>) => void;
+  onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
+  onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
 interface UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError> {
   onStarted?: () => void;
-  onData: (data: inferAsyncIterableYield<TOutput>) => void;
+  onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
-  onConnectionStateChange: (state: TRPCConnectionState<TError>) => void;
+  onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
 interface TRPCSubscriptionOptionsOut<TOutput, TError>
@@ -108,15 +109,27 @@ export type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionErrorResult<TOutput, TError>
   | TRPCSubscriptionPendingResult<TOutput>;
 
+type AnyTRPCSubscriptionOptionsIn =
+  | BaseTRPCSubscriptionOptionsIn<unknown, unknown>
+  | UnusedSkipTokenTRPCSubscriptionOptionsIn<unknown, unknown>;
+
+type AnyTRPCSubscriptionOptionsOut = TRPCSubscriptionOptionsOut<
+  unknown,
+  unknown
+>;
+
+/**
+ * @internal
+ */
 export const trpcSubscriptionOptions = (args: {
   subscribe: typeof TRPCUntypedClient.prototype.subscription;
   path: readonly string[];
   queryKey: TRPCQueryKey;
-  opts: BaseTRPCSubscriptionOptionsIn<unknown, unknown> | undefined;
-}) => {
+  opts: AnyTRPCSubscriptionOptionsIn;
+}): AnyTRPCSubscriptionOptionsOut => {
   const { subscribe, path, queryKey, opts } = args;
   const input = queryKey[1]?.input;
-  const enabled = opts?.enabled ?? input !== skipToken;
+  const enabled = 'enabled' in opts ? !!opts.enabled : input !== skipToken;
 
   const _subscribe: ReturnType<TRPCSubscriptionOptions<any>>['subscribe'] = (
     innerOpts,

@@ -69,13 +69,30 @@ export interface MutationOptionsOverride {
   }) => MaybePromise<unknown>;
 }
 
+type AnyTRPCMutationOptionsIn = TRPCMutationOptionsIn<
+  unknown,
+  unknown,
+  unknown,
+  unknown
+>;
+
+type AnyTRPCMutationOptionsOut = TRPCMutationOptionsOut<
+  unknown,
+  unknown,
+  unknown,
+  unknown
+>;
+
+/**
+ * @internal
+ */
 export function trpcMutationOptions(args: {
   mutate: typeof TRPCUntypedClient.prototype.mutation;
   queryClient: QueryClient | (() => QueryClient);
   path: readonly string[];
-  opts: TRPCMutationOptionsIn<unknown, unknown, unknown, unknown> | undefined;
+  opts: AnyTRPCMutationOptionsIn;
   overrides: MutationOptionsOverride | undefined;
-}): TRPCMutationOptionsOut<unknown, unknown, unknown, unknown> {
+}): AnyTRPCMutationOptionsOut {
   const { mutate, path, opts, overrides } = args;
   const queryClient = unwrapLazyArg(args.queryClient);
 
