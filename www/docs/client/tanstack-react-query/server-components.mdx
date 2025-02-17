@@ -362,13 +362,13 @@ function Home() {
 You may prefer handling loading and error states using Suspense and Error Boundaries. You can do this by using the `useSuspenseQuery` hook.
 
 ```tsx title='app/page.tsx'
-import { trpc } from '~/trpc/server';
+import { trpc, prefetch, HydrateClient } from '~/trpc/server';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ClientGreeting } from './client-greeting';
 
 export default async function Home() {
-  void trpc.hello.prefetch();
+  prefetch(trpc.hello.queryOptions());
 
   return (
     <HydrateClient>
@@ -386,31 +386,12 @@ export default async function Home() {
 
 ```tsx title='app/client-greeting.tsx'
 'use client';
-
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { trpc } from '~/trpc/client';
 
 export function ClientGreeting() {
-  const [data] = trpc.hello.useSuspenseQuery();
+  const trpc = useTRPC();
+  const [data] = useSuspenseQuery(trpc.hello.queryOptions());
   return <div>{data.greeting}</div>;
-}
-```
-
-### Getting data in a server component
-
-If you need access to the data in a server component, you can invoke the procedure directly instead of using `.prefetch()`, just like you use
-[the normal server caller](/docs/server/server-side-calls). Please note that this method is de-attached from your query client and does not
-store the data in the cache. This means that you cannot use the data in a server component and expect it to be available in the client. This is
-intentional and explained in more detail in the [Advanced Server Rendering](https://tanstack.com/query/latest/docs/framework/react/guides/advanced-ssr#data-ownership-and-revalidation)
-guide.
-
-```tsx title='app/page.tsx'
-import { trpc } from '~/trpc/server';
-
-export default async function Home() {
-  // Use the caller directly without using `.prefetch()`
-  const greeting = await trpc.hello();
-  //    ^? { greeting: string }
-
-  return <div>{greeting.greeting}</div>;
 }
 ```
