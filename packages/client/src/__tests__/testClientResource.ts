@@ -2,7 +2,11 @@ import {
   trpcServerResource,
   type TRPCServerResourceOpts,
 } from '@trpc/server/__tests__/trpcServerResource';
-import { unstable_httpSubscriptionLink } from '@trpc/client';
+import {
+  httpBatchLink,
+  httpLink,
+  unstable_httpSubscriptionLink,
+} from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
 import type { AnyTRPCRouter } from '@trpc/server';
 import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
@@ -72,10 +76,30 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
             transformer,
             url: serverResource.httpUrl,
           }),
-          // This is the fallback / default link
-          false: unstable_httpBatchStreamLink({
-            url: serverResource.httpUrl,
-            transformer,
+
+          false: splitLink({
+            condition: (op) => !op.context['batch'],
+            true: httpLink({
+              client: wsClient,
+              transformer,
+              url: serverResource.httpUrl,
+            }),
+
+            // This is the fallback / default link
+            false: splitLink({
+              condition: (op) => !op.context['stream'],
+              true: httpBatchLink({
+                client: wsClient,
+                transformer,
+                url: serverResource.httpUrl,
+              }),
+
+              // This is the fallback / default link
+              false: unstable_httpBatchStreamLink({
+                url: serverResource.httpUrl,
+                transformer,
+              }),
+            }),
           }),
         }),
       }),
