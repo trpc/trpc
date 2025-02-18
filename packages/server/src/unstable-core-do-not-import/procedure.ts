@@ -7,19 +7,6 @@ export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
  */
 export type ProcedureType = (typeof procedureTypes)[number];
 
-type ClientContext = Record<string, unknown>;
-
-/**
- * @internal
- */
-export interface ProcedureOptions {
-  /**
-   * Client-side context
-   */
-  context?: ClientContext;
-  signal?: AbortSignal;
-}
-
 interface BuiltProcedureDef {
   input: unknown;
   output: unknown;

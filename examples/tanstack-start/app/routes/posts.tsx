@@ -4,7 +4,9 @@ import { useTRPC } from '~/trpc/react';
 
 export const Route = createFileRoute('/posts')({
   loader: async ({ context }) => {
-    await context.trpc.post.list.prefetch();
+    await context.queryClient.prefetchQuery(
+      context.trpc.post.list.queryOptions(),
+    );
   },
   meta: () => [{ title: 'Posts' }],
   component: PostsComponent,

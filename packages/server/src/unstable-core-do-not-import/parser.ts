@@ -1,3 +1,6 @@
+import { StandardSchemaV1Error } from '../vendor/standard-schema-v1/error';
+import { type StandardSchemaV1 } from '../vendor/standard-schema-v1/spec';
+
 // zod / typeschema
 export type ParserZodEsque<TInput, TParsedInput> = {
   _input: TInput;
@@ -17,6 +20,11 @@ export type ParserArkTypeEsque<TInput, TParsedInput> = {
   inferIn: TInput;
   infer: TParsedInput;
 };
+
+export type ParserStandardSchemaEsque<TInput, TParsedInput> = StandardSchemaV1<
+  TInput,
+  TParsedInput
+>;
 
 export type ParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
@@ -48,7 +56,8 @@ export type ParserWithoutInput<TInput> =
 export type ParserWithInputOutput<TInput, TParsedInput> =
   | ParserZodEsque<TInput, TParsedInput>
   | ParserValibotEsque<TInput, TParsedInput>
-  | ParserArkTypeEsque<TInput, TParsedInput>;
+  | ParserArkTypeEsque<TInput, TParsedInput>
+  | ParserStandardSchemaEsque<TInput, TParsedInput>;
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
@@ -107,6 +116,17 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     return (value) => {
       parser.assert(value);
       return value as TType;
+    };
+  }
+
+  if ('~standard' in parser) {
+    // StandardSchemaEsque
+    return async (value) => {
+      const result = await parser['~standard'].validate(value);
+      if (result.issues) {
+        throw new StandardSchemaV1Error(result.issues);
+      }
+      return result.value;
     };
   }
 

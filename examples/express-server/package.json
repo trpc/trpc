@@ -24,7 +24,7 @@
     "scheduler/tracing": "../../node_modules/scheduler/tracing-profiling"
   },
   "devDependencies": {
-    "@types/express": "^4.17.17",
+    "@types/express": "^5.0.0",
     "@types/node": "^22.9.0",
     "@types/react": "^19.0.0",
     "esbuild": "^0.17.10",

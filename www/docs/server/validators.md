@@ -385,15 +385,12 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  hello: publicProcedure
-    .input(type({ name: 'string' }).assert)
-    .output(type({ greeting: 'string' }).assert)
-    .query(({ input }) => {
-      //      ^?
-      return {
-        greeting: `hello ${input.name}`,
-      };
-    }),
+  hello: publicProcedure.input(type({ name: 'string' })).query(({ input }) => {
+    //      ^?
+    return {
+      greeting: `hello ${input.name}`,
+    };
+  }),
 });
 
 export type AppRouter = typeof appRouter;
@@ -426,6 +423,8 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+<!-- runtypes example is broken -->
+<!--
 ### With [runtypes](https://github.com/pelotom/runtypes)
 
 ```ts twoslash
@@ -448,7 +447,7 @@ export const appRouter = t.router({
 });
 
 export type AppRouter = typeof appRouter;
-```
+``` -->
 
 ### With [Valibot](https://github.com/fabian-hiller/valibot)
 
@@ -462,8 +461,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(v.parser(v.object({ name: v.string() })))
-    .output(v.parser(v.object({ greeting: v.string() })))
+    .input(v.object({ name: v.string() }))
+    .output(v.object({ greeting: v.string() }))
     .query(({ input }) => {
       //      ^?
       return {

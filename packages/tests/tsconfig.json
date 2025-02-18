@@ -5,7 +5,7 @@
     "skipLibCheck": true,
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "target": "ES2023",
-    "types": ["node", "vitest/globals"],
+    "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
     "noUnusedLocals": false,
     "noEmit": true
   }

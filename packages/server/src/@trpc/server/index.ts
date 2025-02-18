@@ -7,10 +7,10 @@ export {
   experimental_standaloneMiddleware as experimental_trpcMiddleware,
   initTRPC,
   // --- FIXME a bunch of these exports are only useful for plugins - move them somewhere else? ----
-  callProcedure as callTRPCProcedure,
   getTRPCErrorFromUnknown,
   transformTRPCResponse,
   createFlatProxy as createTRPCFlatProxy,
+  createRecursiveProxy as createTRPCRecursiveProxy,
   type inferProcedureInput,
   type inferProcedureOutput,
   type inferProcedureBuilderResolverOptions,
@@ -24,6 +24,7 @@ export {
   type inferTransformedSubscriptionOutput,
   type AnyProcedure as AnyTRPCProcedure,
   type AnyRouter as AnyTRPCRouter,
+  type AnyRootTypes as AnyTRPCRootTypes,
   type AnyMiddlewareFunction as AnyTRPCMiddlewareFunction,
   type CombinedDataTransformer as TRPCCombinedDataTransformer,
   type ProcedureType as TRPCProcedureType,
@@ -31,12 +32,12 @@ export {
   type AnyQueryProcedure as AnyTRPCQueryProcedure,
   type RouterRecord as TRPCRouterRecord,
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
-  type ProcedureOptions as TRPCProcedureOptions,
   type CreateContextCallback,
   type MutationProcedure as TRPCMutationProcedure,
   type QueryProcedure as TRPCQueryProcedure,
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
   type TRPCBuilder,
+  StandardSchemaV1Error,
   /**
    * @deprecated use `tracked(id, data)` instead
    */
@@ -44,6 +45,8 @@ export {
   tracked,
   type TrackedEnvelope,
   isTrackedEnvelope,
+  lazy as experimental_lazy,
+  callProcedure as callTRPCProcedure,
 } from '../../unstable-core-do-not-import';
 
 export type {
@@ -97,11 +100,6 @@ export {
    * @deprecated use `getTRPCErrorShape` instead
    */
   getErrorShape,
-
-  /**
-   * @deprecated use `callTRPCProcedure` instead
-   */
-  callProcedure,
 } from '../../unstable-core-do-not-import';
 
 /**

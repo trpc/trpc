@@ -1,0 +1,22 @@
+{
+  "name": "@monotest/trpc",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@trpc/server": "npm:@trpc/server@next"
+  },
+  "devDependencies": {
+    "@monotest/tsconfig": "workspace:*"
+  }
+}

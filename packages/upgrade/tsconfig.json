@@ -1,0 +1,11 @@
+{
+  "include": ["**/*.ts", "test"],
+  "exclude": ["test/fixtures"],
+  "compilerOptions": {
+    "module": "Preserve",
+    "target": "ESNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "lib": ["ESNext"]
+  }
+}

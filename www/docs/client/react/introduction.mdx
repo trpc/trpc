@@ -1,16 +1,43 @@
 ---
 id: introduction
-title: React Query Integration
+title: React Query Integration (Classic)
 sidebar_label: Introduction
 description: React Query Integration
 slug: /client/react
 ---
 
+:::warning
+These are the docs for our 'Classic' React Query integration, which (while still supported) is not the recommended way to start new tRPC projects with TanStack React Query. We recommend using the new [TanStack React Query Integration](/docs/client/tanstack-react-query/setup) instead.
+:::
+
 tRPC offers a first class integration with React. Under the hood this is simply a wrapper around the very popular [@tanstack/react-query](https://tanstack.com/query/latest), so we recommend that you familiarise yourself with React Query, as their docs go in to much greater depth on its usage.
 
-:::tip
-If you are using Next.js we recommend using [our integration with that](../nextjs/introduction.mdx) instead
-:::
+If you are using Next.js we recommend using [our integration with that](../nextjs/introduction.mdx) instead.
+
+<details>
+<summary>❓ Do I have to use an integration?</summary>
+
+No! The integration is fully optional. You can use `@tanstack/react-query` using just a [vanilla tRPC client](/docs/client/vanilla), although then you'll have to manually manage query keys and do not get the same level of DX as when using the integration package.
+
+```ts title='utils/trpc.ts'
+export const trpc = createTRPCClient<AppRouter>({
+  links: [httpBatchLink({ url: 'YOUR_API_URL' })],
+});
+```
+
+```tsx title='components/PostList.tsx'
+function PostList() {
+  const { data } = useQuery({
+    queryKey: ['posts'],
+    queryFn: () => trpc.post.list.query(),
+  });
+  data; // Post[]
+
+  // ...
+}
+```
+
+</details>
 
 ### The tRPC React Query Integration
 

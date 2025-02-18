@@ -305,7 +305,7 @@ test('aborts request when socket ends', async () => {
   });
 
   expect(request.signal.aborted).toBe(false);
-  mockReq.socket.emit('end');
+  mockReq.socket.emit('close');
 
   expect(request.signal.aborted).toBe(true);
 });

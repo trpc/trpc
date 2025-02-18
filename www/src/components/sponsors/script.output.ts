@@ -13,7 +13,7 @@ export const topSponsors = [
   {
     "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 40,
+    "weight": 50,
     "login": "tryretool",
     "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
@@ -21,18 +21,10 @@ export const topSponsors = [
   {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 36,
+    "weight": 34,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1671157456000
-  },
-  {
-    "name": "KeenEthics",
-    "imgSrc": "https://github.com/keenethics.png",
-    "weight": 30,
-    "login": "keenethics",
-    "link": "https://keenethics.com",
-    "createdAt": 1727395200000
   },
   {
     "name": "Dr. B",
@@ -41,6 +33,14 @@ export const topSponsors = [
     "login": "hidrb",
     "link": "https://github.com/hidrb",
     "createdAt": 1633034677000
+  },
+  {
+    "name": "Unkey",
+    "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
+    "weight": 11,
+    "login": "unkeyed",
+    "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1708012798000
   }
 ] as const;
 
@@ -79,10 +79,10 @@ export const allSponsors = [
     "createdAt": 1641570413000
   },
   {
-    "name": "SchlagerKhan",
-    "imgSrc": "https://avatars.githubusercontent.com/u/6490268?v=4",
+    "name": "Kalle",
+    "imgSrc": "https://avatars.githubusercontent.com/u/6490268?u=59a369dc23fca0ed9943e5f020ff27ca968704d9&v=4",
     "weight": 3,
-    "login": "SchlagerKhan",
+    "login": "debuglebowski",
     "link": "https://iamkhan.io/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1644656389000
   },
@@ -93,14 +93,6 @@ export const allSponsors = [
     "login": "jwyce",
     "link": "http://jwyce.gg/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1646015010000
-  },
-  {
-    "name": "Flylance",
-    "imgSrc": "https://avatars.githubusercontent.com/u/67534310?v=4",
-    "weight": 12,
-    "login": "flylance-apps",
-    "link": "http://flylance.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1651211349000
   },
   {
     "name": "Dmitry Maykov",
@@ -137,7 +129,7 @@ export const allSponsors = [
   {
     "name": "Tom Ballinger",
     "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
-    "weight": 6,
+    "weight": 5,
     "login": "thomasballinger",
     "link": "http://ballingt.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1662563270000
@@ -161,7 +153,7 @@ export const allSponsors = [
   {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 36,
+    "weight": 34,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1671157456000
@@ -177,7 +169,7 @@ export const allSponsors = [
   {
     "name": "Drizzle Team",
     "imgSrc": "https://avatars.githubusercontent.com/u/108468352?v=4",
-    "weight": 2,
+    "weight": 3,
     "login": "drizzle-team",
     "link": "https://drizzle.team/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1694781987000
@@ -201,7 +193,7 @@ export const allSponsors = [
   {
     "name": "Unkey",
     "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
-    "weight": 10,
+    "weight": 11,
     "login": "unkeyed",
     "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1708012798000
@@ -241,7 +233,7 @@ export const allSponsors = [
   {
     "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 40,
+    "weight": 50,
     "login": "tryretool",
     "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
@@ -249,7 +241,7 @@ export const allSponsors = [
   {
     "name": "Sail Jess",
     "imgSrc": "https://avatars.githubusercontent.com/u/5610115?u=be201750effeb8826a788dea206e594008cfe3f2&v=4",
-    "weight": 2,
+    "weight": 3,
     "login": "cerjs",
     "link": "https://github.com/cerjs",
     "createdAt": 1721703779000
@@ -279,27 +271,35 @@ export const allSponsors = [
     "createdAt": 1725043677000
   },
   {
-    "name": "KeenEthics",
-    "imgSrc": "https://github.com/keenethics.png",
-    "weight": 30,
-    "login": "keenethics",
-    "link": "https://keenethics.com",
-    "createdAt": 1727395200000
-  },
-  {
     "name": "Ryan Magoon",
     "imgSrc": "https://avatars.githubusercontent.com/u/5327290?v=4",
-    "weight": 7,
+    "weight": 8,
     "login": "ryanmagoon",
     "link": "https://github.com/ryanmagoon",
     "createdAt": 1729879193000
   },
   {
-    "name": "Siwat",
-    "imgSrc": "https://avatars.githubusercontent.com/u/3685871?u=a62cd77da0388f306e0bf59f7f77e7286ea9758a&v=4",
+    "name": "CodeRabbit",
+    "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
+    "weight": 4,
+    "login": "coderabbitai",
+    "link": "https://www.coderabbit.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1737645299000
+  },
+  {
+    "name": "Greptile",
+    "imgSrc": "https://github.com/greptileai.png",
+    "weight": 5,
+    "login": "greptileai",
+    "link": "https://greptile.com/?utm_source=opensource&utm_medium=github&utm_campaign=trpc",
+    "createdAt": 1737747280000
+  },
+  {
+    "name": "Venue Ink",
+    "imgSrc": "https://avatars.githubusercontent.com/u/67328248?v=4",
     "weight": 1,
-    "login": "siwatpru",
-    "link": "https://github.com/siwatpru",
-    "createdAt": 1733232946000
+    "login": "venuelive",
+    "link": "https://venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1739302642000
   }
 ] as const;

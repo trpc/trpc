@@ -4,24 +4,25 @@ import React from 'react';
 import { blogParams } from '../../../../og-image/utils/zodParams';
 import { useEnv } from '../../../utils/useEnv';
 
-export default function BlogPostPageMetadata(): JSX.Element {
+export default function BlogPostPageMetadata(): React.JSX.Element {
   const { assets, metadata } = useBlogPost();
   const { title, description, date, tags, authors, frontMatter } = metadata;
 
   const { keywords } = frontMatter;
 
   const env = useEnv();
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const author = authors[0]!;
 
   const ogImg = `${env.OG_URL}/api/blog?${blogParams.toSearchString({
     title: metadata.title,
     description: metadata.description,
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    authorName: author.name!,
-    authorTitle: author.title!,
-    authorImg: author.imageURL!,
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+    authors: authors.map((author) => ({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      name: author.name!,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      title: author.title!,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      img: author.imageURL!,
+    })),
     date,
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     readingTimeInMinutes: metadata.readingTime!,

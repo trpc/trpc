@@ -1,7 +1,13 @@
+import EventEmitter from 'events';
+import * as events from 'events';
 import type { IncomingMessage } from 'http';
 import http from 'http';
 import type { AddressInfo, Socket } from 'net';
+<<<<<<< HEAD
 import { waitError } from '@trpc/server/__tests__/waitError';
+=======
+import { on } from 'node:events';
+>>>>>>> origin/next
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import {
   createTRPCClient,
@@ -22,6 +28,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
+import type { Mock } from 'vitest';
 import { WebSocket, WebSocketServer } from 'ws';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
@@ -57,7 +64,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   const serverOverrides: Partial<CreateHTTPHandlerOptions<TRouter>> =
     opts?.server ?? {};
 
-  const onReqAborted = vitest.fn();
+  const onReqAborted = vitest.fn() satisfies Mock;
   const handler = createHTTPHandler({
     router,
     ...serverOverrides,
@@ -89,10 +96,12 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   });
 
   // wss
-  const wss = new WebSocketServer({ port: 0 });
+  let wss = new WebSocketServer({ port: 0 });
   const wssPort = (wss.address() as any).port as number;
   const applyWSSHandlerOpts: WSSHandlerOptions<TRouter> = {
-    wss,
+    get wss() {
+      return wss;
+    },
     router,
     ...((opts?.wssServer as any) ?? {}),
     createContext(it) {
@@ -100,7 +109,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
       return opts?.wssServer?.createContext?.(it) ?? it;
     },
   };
-  const wssHandler = applyWSSHandler(applyWSSHandlerOpts);
+  let wssHandler = applyWSSHandler(applyWSSHandlerOpts);
   const wssUrl = `ws://localhost:${wssPort}`;
 
   const server = httpServer.listen(0);
@@ -140,6 +149,14 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
         }),
       ]);
     },
+    open: () => {
+      if (server.listening) {
+        throw new Error('Server is already running');
+      }
+      server.listen(httpPort);
+      wss = new WebSocketServer({ port: wssPort });
+      wssHandler = applyWSSHandler(applyWSSHandlerOpts);
+    },
     router,
     trpcClientOptions,
     httpPort,
@@ -147,9 +164,13 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     httpUrl,
     wssUrl,
     applyWSSHandlerOpts,
-    wssHandler,
+    get wssHandler() {
+      return wssHandler;
+    },
     connections,
-    wss,
+    get wss() {
+      return wss;
+    },
     onErrorSpy,
     createContextSpy,
     onRequestSpy,
@@ -219,3 +240,16 @@ export const ignoreErrors = async (fn: () => unknown) => {
 };
 
 export const doNotExecute = (_func: () => void) => true;
+
+type EventMap<T> = Record<keyof T, any[]>;
+
+export class IterableEventEmitter<
+  T extends EventMap<T>,
+> extends EventEmitter<T> {
+  toIterable<TEventName extends keyof T & string>(
+    eventName: TEventName,
+    opts?: NonNullable<Parameters<typeof on>[2]>,
+  ): AsyncIterable<T[TEventName]> {
+    return on(this as any, eventName, opts) as any;
+  }
+}

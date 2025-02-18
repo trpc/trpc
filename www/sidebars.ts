@@ -1,10 +1,9 @@
-// @ts-check
-
+import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 import { parseEnv } from './src/utils/env';
 
 const env = parseEnv(process.env);
 
-module.exports = {
+const config: SidebarsConfig = {
   docs: [
     {
       type: 'category',
@@ -77,7 +76,22 @@ module.exports = {
       items: [
         {
           type: 'category',
-          label: 'React Query Integration',
+          label: 'TanStack React Query (⭐️)',
+          collapsed: true,
+          link: {
+            type: 'doc',
+            id: 'client/tanstack-react-query/setup',
+          },
+          items: [
+            'client/tanstack-react-query/setup',
+            'client/tanstack-react-query/usage',
+            'client/tanstack-react-query/migrating',
+            'client/tanstack-react-query/server-components',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'React Query Integration (Classic)',
           collapsed: true,
           link: {
             type: 'doc',
@@ -197,3 +211,5 @@ module.exports = {
     },
   ],
 };
+
+export default config;

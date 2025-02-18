@@ -1,7 +1,8 @@
-// @ts-check
-
-const { parseEnv } = require('./src/utils/env');
-const { generateTypedocDocusaurusPlugins } = require('./docusaurus.typedoc.js');
+/* eslint-disable @typescript-eslint/no-require-imports */
+import type * as Preset from '@docusaurus/preset-classic';
+import type { Config } from '@docusaurus/types';
+import { generateTypedocDocusaurusPlugins } from './docusaurus.typedoc.js';
+import { parseEnv } from './src/utils/env';
 
 const env = parseEnv(process.env);
 
@@ -21,8 +22,7 @@ const poweredByVercel = `
   </div>
 `.trim();
 
-/** @type {import('@docusaurus/types').Config} */
-module.exports = {
+export default {
   title: 'tRPC',
   tagline: 'Move Fast and Break Nothing.\nEnd-to-end typesafe APIs made easy.',
   url: 'https://trpc.io',
@@ -47,14 +47,14 @@ module.exports = {
       // contextualSearch: true,
       // searchParameters: {},
     },
-    // announcementBar: {
-    //   id: 'actions',
-    //   content:
-    //     "🚀 New blog post live! Check out how to use Server Actions with tRPC <a href='/blog/trpc-actions'><strong>here</strong></a>.",
-    //   backgroundColor: 'var(--ifm-color-primary-dark)',
-    //   textColor: '#ffffff',
-    //   isCloseable: true,
-    // },
+    announcementBar: {
+      id: 'tanstack-react-query-integration',
+      content:
+        "🚀 We just released a new <em>TanStack React Query</em>-integration! Check out <a href='/blog/introducing-tanstack-react-query-client'><strong>the blog post here</strong></a>.",
+      backgroundColor: 'var(--ifm-color-primary-dark)',
+      textColor: '#ffffff',
+      isCloseable: true,
+    },
     navbar: {
       title: 'tRPC',
       logo: {
@@ -165,7 +165,7 @@ module.exports = {
       ],
       copyright: poweredByVercel,
     },
-  },
+  } satisfies Preset.ThemeConfig,
   plugins: [
     // Sidebar order is decided by the position in the array below
     ...(env.TYPEDOC
@@ -252,7 +252,7 @@ module.exports = {
         gtag: {
           trackingID: 'G-7KLX2VFLVR',
         },
-      },
+      } satisfies Preset.Options,
     ],
   ],
   scripts: [
@@ -270,4 +270,4 @@ module.exports = {
   customFields: {
     env,
   },
-};
+} satisfies Config;

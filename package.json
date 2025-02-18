@@ -4,25 +4,26 @@
   "type": "module",
   "engines": {
     "node": "^22.11.0",
-    "pnpm": "^9.6.0"
+    "pnpm": "^9.12.2"
   },
   "packageManager": "pnpm@9.12.2",
   "scripts": {
     "clean-dev": "pnpm clean && pnpm install && pnpm build && pnpm dev",
     "clean-i": "pnpm clean && pnpm install",
-    "build": "turbo --filter=\"@trpc/*\" --filter=\"!@trpc/tests\" build",
+    "build": "turbo --filter=\"@trpc/*\" build",
+    "monotest-build": "turbo --filter=\"@monotest/*\" build",
     "build-www": "turbo --filter www build",
     "dev": "turbo --filter=\"@trpc/*\" dev",
     "dev-www": "turbo --filter www dev",
-    "test": "turbo codegen-tests && conc -c \"green,blue\" \"vitest run\" \"pnpm -F tests test-run:tsc\"",
-    "test-ci": "turbo codegen-tests && conc \"CI=true vitest run --coverage\" \"pnpm -F tests test-run:tsc\"",
+    "test": "turbo codegen-tests && conc -c \"green,blue\" \"vitest run\" \"turbo test-run:tsc\"",
+    "test-ci": "turbo codegen-tests && conc \"CI=true vitest run --coverage\" \"turbo test-run:tsc\"",
     "test-watch": "vitest",
     "ts-watch": "turbo run ts-watch",
     "lint": "turbo lint",
     "lint-fix": "turbo lint --continue -- --fix && manypkg fix && pnpm format-fix",
     "format": "prettier \"**/*\" --ignore-unknown",
     "format-fix": "pnpm format --write --list-different",
-    "lint-prune": "! ts-prune | grep -v \"used in module\" | grep -v rpc | grep -v observable | grep -v http",
+    "lint-prune": "! ts-prune | grep -v \"used in module\" | grep -v rpc | grep -v observable | grep -v http | grep -v __fixtures__ | grep -v __generated__",
     "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -o -name __generated__ -type d -prune | xargs rm -rf",
     "codegen:tests": "turbo codegen-tests",
     "codegen:entrypoints": "turbo codegen-entrypoints",
@@ -55,15 +56,15 @@
     "@testing-library/user-event": "^14.4.3",
     "@types/event-source-polyfill": "^1.0.5",
     "@types/node": "^22.9.0",
-    "@vitest/coverage-istanbul": "^2.0.4",
-    "@vitest/ui": "^2.0.4",
+    "@vitest/coverage-istanbul": "^3.0.0",
+    "@vitest/ui": "^3.0.0",
     "concurrently": "^9.0.0",
     "eslint": "^9.14.0",
-    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-no-only-tests": "^3.3.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-unicorn": "56.0.1",
+    "eslint-plugin-unicorn": "57.0.0",
     "event-source-polyfill": "^1.0.31",
     "express": "^5.0.0",
     "fast-glob": "^3.2.12",
@@ -85,13 +86,13 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.13.0",
     "vite": "^6.0.0",
-    "vitest": "^2.0.4",
+    "vitest": "^3.0.0",
     "vitest-environment-miniflare": "^2.14.1",
     "zod": "^3.0.0"
   },
   "pnpm": {
     "overrides": {
-      "@types/node": "20.17.12"
+      "@types/node": "20.17.19"
     }
   },
   "manypkg": {

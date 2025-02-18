@@ -18,6 +18,7 @@ import { observable } from '@trpc/server/observable';
 import {
   createDeferred,
   isAsyncIterable,
+  run,
 } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
@@ -34,7 +35,7 @@ describe('no transformer', () => {
 
       const manualRelease = new Map<number, () => void>();
 
-      let iterableDeferred = createDeferred<void>();
+      let iterableDeferred = createDeferred();
       const nextIterable = () => {
         iterableDeferred.resolve();
       };
@@ -53,6 +54,19 @@ describe('no transformer', () => {
             );
             return opts.input.wait;
           }),
+        embedPromise: t.procedure.query(() => {
+          return {
+            deeply: run(async () => {
+              return {
+                nested: run(async () => {
+                  return {
+                    promise: Promise.resolve('foo'),
+                  };
+                }),
+              };
+            }),
+          };
+        }),
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
@@ -339,11 +353,9 @@ describe('no transformer', () => {
         ]
       `);
     expect(err).toMatchInlineSnapshot(
-      `[Error: Invalid response or stream interrupted]`,
+      `[AbortError: The operation was aborted.]`,
     );
-    expect(err.message).toMatchInlineSnapshot(
-      `"Invalid response or stream interrupted"`,
-    );
+    expect(err.message).toMatchInlineSnapshot(`"The operation was aborted."`);
   });
 
   test('output validation iterable yield error', async () => {
@@ -408,6 +420,29 @@ describe('no transformer', () => {
     const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
     expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
     expect(serverError.message).toMatchInlineSnapshot(`""`);
+  });
+
+  test('embed promise', async () => {
+    const { client } = ctx;
+
+    const result = await client.embedPromise.query();
+
+    expectTypeOf(result).toEqualTypeOf<{
+      deeply: Promise<{
+        nested: Promise<{
+          promise: Promise<string>;
+        }>;
+      }>;
+    }>();
+
+    expect(result.deeply).toBeInstanceOf(Promise);
+    const deeply = await result.deeply;
+    expect(deeply.nested).toBeInstanceOf(Promise);
+    const nested = await deeply.nested;
+    expect(nested.promise).toBeInstanceOf(Promise);
+    const promise = await nested.promise;
+
+    expect(promise).toEqual('foo');
   });
 });
 

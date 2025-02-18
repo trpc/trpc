@@ -4,6 +4,7 @@ import { SignedIn, SignedOut } from '~/server/auth';
 import { caller } from '~/server/routers/_app';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { twMerge } from 'tailwind-merge';
 import { CreateChannelDialog } from './channels/create-channel';
 
 export default async function Home() {
@@ -58,15 +59,18 @@ export default async function Home() {
               </SignedOut>
             </Suspense>
           </div>
-          <div className="flex flex-col items-start gap-2">
+          <div className="flex w-full flex-col items-start">
             {channels.map((channel) => (
               <Link
                 key={channel.id}
-                className={buttonVariants({ variant: 'link' })}
+                className={twMerge(
+                  buttonVariants({ variant: 'link' }),
+                  'w-full justify-start',
+                )}
                 href={`/channels/${channel.id}`}
               >
-                <HashtagIcon className="mr-2 size-4" />
-                {channel.name}
+                <HashtagIcon className="mr-2 size-4 shrink-0" />
+                <span className="truncate">{channel.name}</span>
               </Link>
             ))}
           </div>
