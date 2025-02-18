@@ -13,7 +13,11 @@ import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import'
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket } from 'ws';
-import type { TRPCWebSocketClient, WebSocketClientOptions } from '..';
+import type {
+  Operation,
+  TRPCWebSocketClient,
+  WebSocketClientOptions,
+} from '..';
 import {
   createTRPCClient,
   createWSClient,
@@ -50,6 +54,10 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
 ) {
   const serverResource = trpcServerResource(router, opts);
 
+  const spyLink = vi.fn((_op: Operation<unknown>) => {
+    // noop
+  });
+
   // client
   const wsClient = createWSClient({
     url: serverResource.wssUrl,
@@ -63,8 +71,18 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
   const transformer = router._def._config.transformer as any;
   const trpcClientOptions = {
     links: [
+      () => {
+        // here we just got initialized in the app - this happens once per app
+        // useful for storing cache for instance
+        return ({ next, op }) => {
+          // this is when passing the result to the next link
+
+          spyLink(op);
+          return next(op);
+        };
+      },
       splitLink({
-        condition: (op) => !!op.context?.['ws'],
+        condition: (op) => op.context?.['ws'] === true,
         true: wsLink({
           client: wsClient,
           transformer,
@@ -78,7 +96,7 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
           }),
 
           false: splitLink({
-            condition: (op) => !op.context['batch'],
+            condition: (op) => op.context['batch'] === false,
             true: httpLink({
               client: wsClient,
               transformer,
@@ -87,7 +105,7 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
 
             // This is the fallback / default link
             false: splitLink({
-              condition: (op) => !op.context['stream'],
+              condition: (op) => op.context['stream'] === false,
               true: httpBatchLink({
                 client: wsClient,
                 transformer,
@@ -123,6 +141,7 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
     wsClient,
     client,
     trpcClientOptions,
+    spyLink,
   };
   return ctx;
 }

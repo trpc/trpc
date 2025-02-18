@@ -208,11 +208,6 @@ describe('queryOptions', () => {
           selects.push(data);
           return data;
         },
-        trpc: {
-          context: {
-            stream: 1,
-          },
-        },
       });
       const query1 = useQuery(opts);
       states.push({
@@ -226,14 +221,14 @@ describe('queryOptions', () => {
 
       return (
         <pre>
-          {query1.status}:{query1.isFetching ? 'fetching' : 'notFetching'}
+          {query1.status}:{query1.fetchStatus}
         </pre>
       );
     }
 
     const utils = ctx.renderApp(<MyComponent />);
     await waitFor(() => {
-      expect(utils.container).toHaveTextContent(`success:notFetching`);
+      expect(utils.container).toHaveTextContent(`success:idle`);
     });
 
     expect(selects).toEqual([

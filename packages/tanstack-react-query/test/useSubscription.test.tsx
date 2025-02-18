@@ -55,7 +55,7 @@ function diff(list: any[]) {
   });
 }
 
-const getCtx = (protocol: 'http' | 'ws') => {
+const getCtx = () => {
   const ee = new EventEmitter();
   const t = initTRPC.create({
     errorFormatter({ shape }) {
@@ -98,9 +98,7 @@ const getCtx = (protocol: 'http' | 'ws') => {
   });
 
   return {
-    ...getServerAndReactClient(appRouter, {
-      subscriptions: protocol,
-    }),
+    ...getServerAndReactClient(appRouter),
     ee,
   };
 };
@@ -111,7 +109,7 @@ describe.each([
   'ws',
 ] as const)('useSubscription - %s', (protocol) => {
   test('iterable', async () => {
-    await using ctx = getCtx(protocol);
+    await using ctx = getCtx();
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
@@ -175,10 +173,10 @@ describe.each([
 
     await waitFor(() => {
       if (protocol === 'http') {
-        expect(ctx.opts.onReqAborted).toHaveBeenCalledTimes(1);
+        expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
       } else {
-        ctx.opts.wsClient.close();
-        expect(ctx.opts.wss.clients.size).toBe(0);
+        ctx.wsClient.close();
+        expect(ctx.wss.clients.size).toBe(0);
       }
     });
 
@@ -192,7 +190,7 @@ describe.each([
   });
 
   test('observable()', async () => {
-    await using ctx = getCtx(protocol);
+    await using ctx = getCtx();
 
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
@@ -255,7 +253,7 @@ describe.each([
 
 describe('connection state - http', () => {
   test('iterable', async () => {
-    await using ctx = getCtx('http');
+    await using ctx = getCtx();
     const { useTRPC } = ctx;
 
     const queryResult: unknown[] = [];
@@ -313,7 +311,7 @@ describe('connection state - http', () => {
     queryResult.length = 0;
 
     await suppressLogsUntil(async () => {
-      ctx.opts.destroyConnections();
+      ctx.destroyConnections();
 
       await waitFor(() => {
         expect(utils.container).toHaveTextContent('status:connecting');
@@ -368,7 +366,7 @@ describe('connection state - http', () => {
 
 describe('reset - http', () => {
   test('iterable', async () => {
-    await using ctx = getCtx('http');
+    await using ctx = getCtx();
     const { useTRPC } = ctx;
 
     const queryResult: TRPCSubscriptionResult<number, unknown>[] = [];
