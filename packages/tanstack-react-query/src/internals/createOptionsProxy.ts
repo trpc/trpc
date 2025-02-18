@@ -57,13 +57,13 @@ export interface DecorateQueryKeyable {
   queryFilter: (input?: undefined, filters?: QueryFilters) => QueryFilters;
 }
 
-export type InferInput<
+export type inferInput<
   TProcedure extends
     | DecorateQueryProcedure<any>
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['input'];
 
-export type InferOutput<
+export type inferOutput<
   TProcedure extends
     | DecorateQueryProcedure<any>
     | DecorateMutationProcedure<any>,
@@ -71,7 +71,7 @@ export type InferOutput<
 
 export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   /**
-   * @internal prefer using InferInput and InferOutput to access types
+   * @internal prefer using InferInput and inferOutput to access types
    */
   '~types': {
     input: TDef['input'];
@@ -124,7 +124,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
   /**
-   * @internal prefer using InferInput and InferOutput to access types
+   * @internal prefer using inferInput and inferOutput to access types
    */
   '~types': {
     input: TDef['input'];
@@ -195,7 +195,7 @@ export type TRPCOptionsProxy<TRouter extends AnyTRPCRouter> =
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
   > &
-    DecorateQueryKeyable;
+    DecorateQueryKeyable & { client: TrpcClient };
 
 export interface TRPCOptionsProxyOptionsBase {
   queryClient: QueryClient | (() => QueryClient);

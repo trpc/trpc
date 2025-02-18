@@ -244,12 +244,12 @@ export type Outputs = inferRouterOutputs<AppRouter>
 //
 // Infer types for a single procedure
 
-import type { InferInput, InferOutput } from '@trpc/tanstack-react-query';
+import type { inferInput, inferOutput } from '@trpc/tanstack-react-query';
 
 function Component() {
   const trpc = useTRPC()
 
-  type Input = InferInput<typeof trpc.path.to.procedure>
-  type Output = InferOutput<typeof trpc.path.to.procedure>
+  type Input = inferInput<typeof trpc.path.to.procedure>
+  type Output = inferOutput<typeof trpc.path.to.procedure>
 }
 ```
