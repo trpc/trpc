@@ -6,6 +6,7 @@ import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, httpBatchLink } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
 import { type AnyRouter } from '@trpc/server';
+import type { AnyTRPCRouter } from '@trpc/server';
 import type { DataTransformerOptions } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
@@ -16,14 +17,14 @@ import { WebSocket } from 'ws';
 globalThis.fetch = fetch as any;
 globalThis.WebSocket = WebSocket as any;
 
-export type CreateClientCallback<TRouter extends AnyRouter> = (opts: {
+export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
   httpUrl: string;
   wssUrl: string;
   wsClient: TRPCWebSocketClient;
   transformer?: DataTransformerOptions;
 }) => Partial<WithTRPCConfig<TRouter>>;
 
-interface RouterToServerAndClientNewOpts<TRouter extends AnyRouter>
+interface RouterToServerAndClientNewOpts<TRouter extends AnyTRPCRouter>
   extends TRPCServerResourceOpts<TRouter> {
   wsClient?: Partial<WebSocketClientOptions>;
   client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback<TRouter>;
