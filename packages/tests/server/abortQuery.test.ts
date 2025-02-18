@@ -5,11 +5,9 @@ const t = initTRPC.create();
 
 const router = t.router({
   testQuery: t.procedure.query(async () => {
-    await waitMs(1000);
     return 'hello';
   }),
   testMutation: t.procedure.mutation(async () => {
-    await waitMs(1000);
     return 'hello';
   }),
 });
