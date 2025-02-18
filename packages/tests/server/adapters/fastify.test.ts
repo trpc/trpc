@@ -5,6 +5,7 @@ import type { HTTPHeaders, TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   createWSClient,
+  httpLink,
   httpBatchLink,
   splitLink,
   unstable_httpBatchStreamLink,
@@ -118,6 +119,19 @@ function createAppRouter() {
         );
         return opts.input.wait;
       }),
+    multipartForm: publicProcedure.input(
+        z.instanceof(FormData)
+    ).mutation(async (opts) => {
+      let result = {} as object;
+      opts.input.forEach((value, key) => {
+        result[key] = value instanceof File ? {
+          name: value.name,
+          type: value.type,
+          size: value.size,
+        } : value
+      });
+      return result;
+    })
   });
 
   return { appRouter, ee, onNewMessageSubscription, onSubscriptionEnded };
@@ -226,10 +240,20 @@ function createClient(opts: ClientOptions) {
           return op.type === 'subscription';
         },
         true: wsLink({ client: wsClient }),
-        false: unstable_httpBatchStreamLink({
-          url: `http://${host}`,
-          headers: opts.headers,
-          fetch: fetch as any,
+        false: splitLink({
+          condition(op) {
+            return op.input instanceof FormData;
+          },
+          true: httpLink({
+            url: `http://${host}`,
+            headers: opts.headers,
+            fetch,
+          }),
+          false: unstable_httpBatchStreamLink({
+            url: `http://${host}`,
+            headers: opts.headers,
+            fetch,
+          })
         }),
       }),
     ],
@@ -446,6 +470,27 @@ describe('anonymous user', () => {
     expect(results).toEqual([3, 1, 2]);
     expect(orderedResults).toEqual([1, 2, 3]);
   });
+
+  test('multipart/formdata', async () => {
+    const fd = new FormData();
+    fd.set(
+        'about',
+        new File(['hi bob'], 'bob.txt', {
+          type: 'text/plain',
+        }),
+    );
+    fd.set('foo' ,'bar');
+    expect(await app.client.multipartForm.mutate(fd)).toMatchInlineSnapshot(`
+      Object {
+        "about": Object {
+          "name": "bob.txt",
+          "size": 6,
+          "type": "text/plain",
+        },
+        "foo": "bar",
+      }
+    `);
+  })
 });
 
 describe('authorized user', () => {
