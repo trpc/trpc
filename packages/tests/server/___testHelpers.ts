@@ -187,6 +187,9 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   return ctx;
 }
 
+/**
+ * @deprecated should not be needed - use deferred instead
+ */
 export async function waitMs(ms: number) {
   await new Promise<void>((resolve) => setTimeout(resolve, ms));
 }

@@ -1,4 +1,4 @@
-import { waitMs } from './___testHelpers';
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { dataLoader } from '@trpc/client/internals/dataLoader';
 
@@ -32,9 +32,12 @@ describe('basic', () => {
   });
 
   test('time between calls', async () => {
+    using fakeTimers = fakeTimersResource();
     const res1 = loader.load(3);
-    await waitMs(1);
+    await fakeTimers.advanceTimersByTimeAsync(0);
+
     const res2 = loader.load(4);
+    await fakeTimers.advanceTimersByTimeAsync(0);
 
     const $result = await Promise.all([res1, res2]);
 
