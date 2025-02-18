@@ -1,5 +1,5 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew, waitMs } from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
@@ -22,6 +22,13 @@ import { run } from '@trpc/server/unstable-core-do-not-import/utils';
 import { konn } from 'konn';
 import WebSocket from 'ws';
 import { z } from 'zod';
+
+/**
+ * @deprecated should not be needed - use deferred instead
+ */
+async function waitMs(ms: number) {
+  await new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
 
 type Message = {
   id: string;

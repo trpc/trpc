@@ -1,5 +1,5 @@
-import { IterableEventEmitter } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
+import { IterableEventEmitter } from '@trpc/server/__tests__/iterableEventEmitter';
 import {
   ignoreErrors,
   suppressLogsUntil,

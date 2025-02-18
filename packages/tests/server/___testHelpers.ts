@@ -186,29 +186,3 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   };
   return ctx;
 }
-
-/**
- * @deprecated should not be needed - use deferred instead
- */
-export async function waitMs(ms: number) {
-  await new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
-
-export async function waitTRPCClientError<TRoot extends InferrableClientTypes>(
-  fnOrPromise: Promise<unknown> | (() => unknown),
-) {
-  return waitError<TRPCClientError<TRoot>>(fnOrPromise, TRPCClientError);
-}
-
-type EventMap<T> = Record<keyof T, any[]>;
-
-export class IterableEventEmitter<
-  T extends EventMap<T>,
-> extends EventEmitter<T> {
-  toIterable<TEventName extends keyof T & string>(
-    eventName: TEventName,
-    opts?: NonNullable<Parameters<typeof on>[2]>,
-  ): AsyncIterable<T[TEventName]> {
-    return on(this as any, eventName, opts) as any;
-  }
-}

@@ -1,8 +1,6 @@
 import { EventEmitter, on } from 'node:events';
-import {
-  IterableEventEmitter,
-  routerToServerAndClientNew,
-} from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
 import {
   suppressLogs,
   suppressLogsUntil,
