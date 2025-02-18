@@ -84,6 +84,9 @@ export function trpcServerResource<TRouter extends AnyTRPCRouter>(
 
   const ctx = {
     close: async () => {
+      if (!server.listening) {
+        throw new Error('Server is not running');
+      }
       ctx.destroyConnections();
       await Promise.all([
         new Promise((resolve) => server.close(resolve)),
