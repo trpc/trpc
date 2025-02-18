@@ -1,8 +1,8 @@
 export { createTRPCContext } from './internals/Context';
 export type {
   TRPCOptionsProxy,
-  InferInput,
-  InferOutput,
+  inferInput,
+  inferOutput,
   DecorateMutationProcedure,
   DecorateProcedure,
   DecorateQueryKeyable,
