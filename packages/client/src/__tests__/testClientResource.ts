@@ -12,7 +12,9 @@ import type { TRPCWebSocketClient, WebSocketClientOptions } from '..';
 import {
   createTRPCClient,
   createWSClient,
+  splitLink,
   unstable_httpBatchStreamLink,
+  wsLink,
 } from '..';
 import type { TransformerOptions } from '../unstable-internals';
 
@@ -52,11 +54,27 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
     },
     ...opts?.wsClient,
   });
+
+  const transformer = router._def._config.transformer as any;
   const trpcClientOptions = {
     links: [
-      unstable_httpBatchStreamLink({
-        url: serverResource.httpUrl,
-        transformer: router._def._config.transformer as any,
+      splitLink({
+        condition: (op) => op.type === 'subscription',
+        true: wsLink({
+          client: wsClient,
+          transformer,
+        }),
+        false: splitLink({
+          condition: (op) => !!op.context?.['ws'],
+          true: wsLink({
+            client: wsClient,
+            transformer,
+          }),
+          false: unstable_httpBatchStreamLink({
+            url: serverResource.httpUrl,
+            transformer,
+          }),
+        }),
       }),
     ],
     ...(opts?.client
