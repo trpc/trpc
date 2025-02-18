@@ -195,7 +195,7 @@ export type TRPCOptionsProxy<TRouter extends AnyTRPCRouter> =
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
   > &
-    DecorateQueryKeyable & { client: TrpcClient };
+    DecorateQueryKeyable;
 
 export interface TRPCOptionsProxyOptionsBase {
   queryClient: QueryClient | (() => QueryClient);
