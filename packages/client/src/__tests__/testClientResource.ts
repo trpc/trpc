@@ -2,14 +2,19 @@ import {
   trpcServerResource,
   type TRPCServerResourceOpts,
 } from '@trpc/server/__tests__/trpcServerResource';
-import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
-import { createTRPCClient, createWSClient, httpBatchLink } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
 import type { AnyTRPCRouter } from '@trpc/server';
-import type { DataTransformerOptions } from '@trpc/server/unstable-core-do-not-import';
+import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
 import { WebSocket } from 'ws';
+import type { TRPCWebSocketClient, WebSocketClientOptions } from '..';
+import {
+  createTRPCClient,
+  createWSClient,
+  unstable_httpBatchStreamLink,
+} from '..';
+import type { TransformerOptions } from '../unstable-internals';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
@@ -20,20 +25,19 @@ export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
   httpUrl: string;
   wssUrl: string;
   wsClient: TRPCWebSocketClient;
-  transformer?: DataTransformerOptions;
+  transformer: TransformerOptions<inferClientTypes<TRouter>>;
 }) => Partial<WithTRPCConfig<TRouter>>;
 
 interface RouterToServerAndClientNewOpts<TRouter extends AnyTRPCRouter>
   extends TRPCServerResourceOpts<TRouter> {
+  /**
+   * Defaults to being lazy
+   */
   wsClient?: Partial<WebSocketClientOptions>;
   client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback<TRouter>;
-  transformer?: DataTransformerOptions;
 }
 
-/**
- * @deprecated Use `testServerAndClientResource` instead
- */
-export function routerToServerAndClientNew<TRouter extends AnyTRPCRouter>(
+export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
   router: TRouter,
   opts?: RouterToServerAndClientNewOpts<TRouter>,
 ) {
@@ -42,13 +46,17 @@ export function routerToServerAndClientNew<TRouter extends AnyTRPCRouter>(
   // client
   const wsClient = createWSClient({
     url: serverResource.wssUrl,
+    lazy: {
+      enabled: true,
+      closeMs: 0,
+    },
     ...opts?.wsClient,
   });
   const trpcClientOptions = {
     links: [
-      httpBatchLink({
+      unstable_httpBatchStreamLink({
         url: serverResource.httpUrl,
-        transformer: opts?.transformer as any,
+        transformer: router._def._config.transformer as any,
       }),
     ],
     ...(opts?.client
@@ -57,6 +65,7 @@ export function routerToServerAndClientNew<TRouter extends AnyTRPCRouter>(
             httpUrl: serverResource.httpUrl,
             wssUrl: serverResource.wssUrl,
             wsClient,
+            transformer: router._def._config.transformer as any,
           })
         : opts.client
       : {}),
