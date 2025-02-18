@@ -2,6 +2,7 @@ import {
   trpcServerResource,
   type TRPCServerResourceOpts,
 } from '@trpc/server/__tests__/trpcServerResource';
+import { unstable_httpSubscriptionLink } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
 import type { AnyTRPCRouter } from '@trpc/server';
 import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
@@ -59,17 +60,19 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
   const trpcClientOptions = {
     links: [
       splitLink({
-        condition: (op) => op.type === 'subscription',
+        condition: (op) => !!op.context?.['ws'],
         true: wsLink({
           client: wsClient,
           transformer,
         }),
         false: splitLink({
-          condition: (op) => !!op.context?.['ws'],
-          true: wsLink({
+          condition: (op) => op.type === 'subscription',
+          true: unstable_httpSubscriptionLink({
             client: wsClient,
             transformer,
+            url: serverResource.httpUrl,
           }),
+          // This is the fallback
           false: unstable_httpBatchStreamLink({
             url: serverResource.httpUrl,
             transformer,
