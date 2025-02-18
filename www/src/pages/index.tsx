@@ -31,19 +31,19 @@ const sandboxes = [
     files: ['src/client/index.ts', 'src/server/index.ts'],
   },
   {
+    id: 'minimal-react',
+    title: 'React',
+    description:
+      'This is a minimal full-stack React application using tRPC and React.',
+    files: ['client/src/Greeting.tsx', 'server/index.ts'],
+  },
+  {
     id: 'next-minimal-starter',
     title: 'Next.js',
     description:
       'This is a minimal full-stack React application using tRPC and Next.js.',
     files: ['src/pages/index.tsx', 'src/pages/api/trpc/[trpc].ts'],
   },
-  // {
-  //   id: 'minimal-react',
-  //   title: 'React',
-  //   description:
-  //     'This is a minimal full-stack React application using tRPC and React.',
-  //   files: ['client/src/App.tsx', 'server/index.ts'],
-  // },
 ] as const;
 
 /**
