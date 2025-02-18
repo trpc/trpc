@@ -1,9 +1,9 @@
+import { IterableEventEmitter } from '../___testHelpers';
+import { getServerAndReactClient } from './__reactHelpers';
 import {
   ignoreErrors,
-  IterableEventEmitter,
   suppressLogsUntil,
-} from '../___testHelpers';
-import { getServerAndReactClient } from './__reactHelpers';
+} from '@trpc/server/__tests__/suppressLogs';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import type { TRPCSubscriptionResult } from '@trpc/react-query/shared';
 import { initTRPC } from '@trpc/server';

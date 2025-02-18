@@ -2,9 +2,11 @@ import { EventEmitter, on } from 'node:events';
 import {
   IterableEventEmitter,
   routerToServerAndClientNew,
+} from './___testHelpers';
+import {
   suppressLogs,
   suppressLogsUntil,
-} from './___testHelpers';
+} from '@trpc/server/__tests__/suppressLogs';
 import type {
   OperationResultEnvelope,
   TRPCClientError,

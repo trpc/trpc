@@ -1,5 +1,5 @@
-import { ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
+import { ignoreErrors } from '@trpc/server/__tests__/suppressLogs';
 import { useIsFetching } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
