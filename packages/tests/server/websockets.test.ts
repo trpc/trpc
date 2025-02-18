@@ -153,7 +153,7 @@ function factory(config?: {
 
   const opts = routerToServerAndClientNew(appRouter, {
     wsClient: {
-      retryDelayMs: () => 10,
+      retryDelayMs: () => 50,
       onOpen: onOpenMock,
       onError: onErrorMock,
       onClose: onCloseMock,
@@ -640,7 +640,7 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
 
   await waitFor(() => {
-    expect(conn.ws!.readyState).toBe(WebSocket.CLOSED);
+    expect(conn.ws.readyState).toBe(WebSocket.CLOSED);
   });
   await close();
 });
@@ -659,7 +659,7 @@ test('requests get aborted if called before connection is established and reques
   );
   await close();
   await waitFor(() => {
-    expect(conn!.ws!.readyState).toBe(WebSocket.CLOSED);
+    expect(conn!.ws.readyState).toBe(WebSocket.CLOSED);
   });
   await close();
 });
@@ -1348,12 +1348,12 @@ describe('lazy mode', () => {
     const sub = client.onMessageObservable.subscribe(undefined, {
       onData: onDataMock,
     });
-    expect(wsClient.connection).not.toBe(null);
 
     expect(ctx.onOpenMock).toHaveBeenCalledTimes(0);
     await waitFor(() => {
-      expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
+      expect(wsClient.connection).not.toBe(null);
     });
+    expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
 
     // emit a message, check that we receive it
     ctx.ee.emit('server:msg', {
@@ -1594,11 +1594,11 @@ describe('keep alive from the client', () => {
 
     await vi.advanceTimersByTimeAsync(1);
     await new Promise((resolve) => {
-      ctx.wsClient.connection!.ws!.addEventListener('open', resolve);
+      ctx.wsClient.connection!.ws.addEventListener('open', resolve);
     });
 
     let pong = false;
-    ctx.wsClient.connection!.ws!.addEventListener('message', (msg) => {
+    ctx.wsClient.connection!.ws.addEventListener('message', (msg) => {
       if (msg.data == 'PONG') {
         pong = true;
       }
@@ -1640,11 +1640,11 @@ describe('keep alive from the client', () => {
 
     await vi.advanceTimersByTimeAsync(1);
     await new Promise((resolve) => {
-      ctx.wsClient.connection!.ws!.addEventListener('open', resolve);
+      ctx.wsClient.connection!.ws.addEventListener('open', resolve);
     });
 
     let pong = false;
-    ctx.wsClient.connection!.ws!.addEventListener('message', (msg) => {
+    ctx.wsClient.connection!.ws.addEventListener('message', (msg) => {
       if (msg.data === 'PONG') {
         pong = true;
       }
@@ -1656,7 +1656,10 @@ describe('keep alive from the client', () => {
 
     expect(pong).toBe(false);
 
-    expect(onClose).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
 
     await ctx.close();
   });
@@ -1920,4 +1923,163 @@ test('url callback and connection params is invoked for every reconnect', async 
 
   expect(urlCalls).toBe(2);
   expect(connectionParamsCalls).toBe(2);
+});
+
+test('active subscription while querying', async () => {
+  const { client, close, ee } = factory();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+
+  const subscription = client.onMessageIterable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataMock(data);
+    },
+  });
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+  });
+
+  ee.emit('server:msg', {
+    id: '1',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+  });
+
+  // ensure we can do a query while having an active subscription
+  const result = await client.greeting.query('hello');
+  expect(result).toMatchInlineSnapshot(`"hello hello"`);
+
+  ee.emit('server:msg', {
+    id: '2',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(2);
+  });
+
+  // Make sure it didn't reconnect or whatever
+  expect(onStartedMock).toHaveBeenCalledTimes(1);
+
+  subscription.unsubscribe();
+
+  await waitFor(() => {
+    expect(ee.listenerCount('server:msg')).toBe(0);
+    expect(ee.listenerCount('server:error')).toBe(0);
+  });
+
+  await close();
+});
+
+test('lazy connection where the first connection fails', async () => {
+  const ctx = factory({
+    wsClient: {
+      lazy: {
+        enabled: true,
+        closeMs: 0,
+      },
+    },
+  });
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+
+  // Close the server before
+  await ctx.close();
+  const subscription = ctx.client.onMessageIterable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataMock(data);
+    },
+  });
+
+  // Wait for the first connection to fail
+  await new Promise<void>((resolve) => {
+    const sub = ctx.wsClient.connectionState.subscribe({
+      next(state) {
+        if (state.state === 'connecting' && state.error) {
+          resolve();
+          sub.unsubscribe();
+        }
+      },
+    });
+  });
+
+  ctx.open();
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+  });
+
+  ctx.ee.emit('server:msg', {
+    id: '1',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+  });
+
+  subscription.unsubscribe();
+
+  await ctx.close();
+});
+
+test('connection where the first connection fails', async () => {
+  const ctx = factory();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+
+  // Close the server before the client has a chance to connect
+  await ctx.close();
+
+  const subscription = ctx.client.onMessageIterable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataMock(data);
+    },
+  });
+
+  // Wait for the first connection to fail
+  await new Promise<void>((resolve) => {
+    const sub = ctx.wsClient.connectionState.subscribe({
+      next(state) {
+        if (state.state === 'connecting' && state.error) {
+          resolve();
+          sub.unsubscribe();
+        }
+      },
+    });
+  });
+
+  ctx.open();
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+  });
+
+  ctx.ee.emit('server:msg', {
+    id: '1',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+  });
+
+  subscription.unsubscribe();
+
+  await ctx.close();
 });

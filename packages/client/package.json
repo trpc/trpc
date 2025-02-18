@@ -55,10 +55,10 @@
       "require": "./dist/links/splitLink.js",
       "default": "./dist/links/splitLink.js"
     },
-    "./links/wsLink": {
-      "import": "./dist/links/wsLink.mjs",
-      "require": "./dist/links/wsLink.js",
-      "default": "./dist/links/wsLink.js"
+    "./links/wsLink/wsLink": {
+      "import": "./dist/links/wsLink/wsLink.mjs",
+      "require": "./dist/links/wsLink/wsLink.js",
+      "default": "./dist/links/wsLink/wsLink.js"
     },
     "./unstable-internals": {
       "import": "./dist/unstable-internals.mjs",
