@@ -4,7 +4,7 @@ import Giscus from '@giscus/react';
 import BlogPostItem from '@theme-original/BlogPostItem';
 import React from 'react';
 
-export default function BlogPostItemWrapper(props: any) {
+export default function BlogPostItemWrapper(props: any): React.JSX.Element {
   const { metadata, isBlogPostPage } = useBlogPost();
   const { colorMode } = useColorMode();
 
