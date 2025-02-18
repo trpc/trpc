@@ -2175,16 +2175,16 @@ importers:
     dependencies:
       '@effect/cli':
         specifier: 0.56.2
-        version: 0.56.2(@effect/platform@0.77.2(effect@3.13.1))(@effect/printer-ansi@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(@effect/printer@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(effect@3.13.1)
+        version: 0.56.2(@effect/platform@0.77.2(effect@3.13.2))(@effect/printer-ansi@0.41.1(@effect/typeclass@0.32.1(effect@3.13.2))(effect@3.13.2))(@effect/printer@0.41.1(@effect/typeclass@0.32.1(effect@3.13.2))(effect@3.13.2))(effect@3.13.2)
       '@effect/platform':
         specifier: 0.77.2
-        version: 0.77.2(effect@3.13.1)
+        version: 0.77.2(effect@3.13.2)
       '@effect/platform-node':
         specifier: 0.73.2
-        version: 0.73.2(@effect/platform@0.77.2(effect@3.13.1))(effect@3.13.1)
+        version: 0.73.2(@effect/platform@0.77.2(effect@3.13.2))(effect@3.13.2)
       effect:
-        specifier: 3.13.1
-        version: 3.13.1
+        specifier: 3.13.2
+        version: 3.13.2
       jscodeshift:
         specifier: 17.1.1
         version: 17.1.1(@babel/preset-env@7.26.0(@babel/core@7.26.0))
@@ -10868,8 +10868,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  effect@3.13.1:
-    resolution: {integrity: sha512-YbA45m51eZapqy/ptZvIIZi+XBj13fPCzbiDRLgxZTEUhKuf4xLzuuSsKc61Y3SIscMM2o+VPht2ty+bVEQHQQ==}
+  effect@3.13.2:
+    resolution: {integrity: sha512-/w+CPqHDJ33Wq7xC4YKAchrEEPtjvxh563xH9kDTZp99seNYBoBs87vl8DJwartEjj+KLQLP8PzoDne+XmGT2A==}
 
   ejs@3.1.9:
     resolution: {integrity: sha512-rC+QVNMJWv+MtPgkt0y+0rVEIdbtxVADApW9JXrUVlzHetgcyczP/E7DJmWJ4fJCZF2cPcBk0laWO9ZHMG3DmQ==}
@@ -21902,28 +21902,28 @@ snapshots:
     dependencies:
       '@edge-runtime/primitives': 2.0.2
 
-  '@effect/cli@0.56.2(@effect/platform@0.77.2(effect@3.13.1))(@effect/printer-ansi@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(@effect/printer@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(effect@3.13.1)':
+  '@effect/cli@0.56.2(@effect/platform@0.77.2(effect@3.13.2))(@effect/printer-ansi@0.41.1(@effect/typeclass@0.32.1(effect@3.13.2))(effect@3.13.2))(@effect/printer@0.41.1(@effect/typeclass@0.32.1(effect@3.13.2))(effect@3.13.2))(effect@3.13.2)':
     dependencies:
-      '@effect/platform': 0.77.2(effect@3.13.1)
-      '@effect/printer': 0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1)
-      '@effect/printer-ansi': 0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1)
-      effect: 3.13.1
+      '@effect/platform': 0.77.2(effect@3.13.2)
+      '@effect/printer': 0.41.1(@effect/typeclass@0.32.1(effect@3.13.2))(effect@3.13.2)
+      '@effect/printer-ansi': 0.41.1(@effect/typeclass@0.32.1(effect@3.13.2))(effect@3.13.2)
+      effect: 3.13.2
       ini: 4.1.3
       toml: 3.0.0
       yaml: 2.7.0
 
-  '@effect/platform-node-shared@0.27.2(@effect/platform@0.77.2(effect@3.13.1))(effect@3.13.1)':
+  '@effect/platform-node-shared@0.27.2(@effect/platform@0.77.2(effect@3.13.2))(effect@3.13.2)':
     dependencies:
-      '@effect/platform': 0.77.2(effect@3.13.1)
+      '@effect/platform': 0.77.2(effect@3.13.2)
       '@parcel/watcher': 2.4.1
-      effect: 3.13.1
+      effect: 3.13.2
       multipasta: 0.2.5
 
-  '@effect/platform-node@0.73.2(@effect/platform@0.77.2(effect@3.13.1))(effect@3.13.1)':
+  '@effect/platform-node@0.73.2(@effect/platform@0.77.2(effect@3.13.2))(effect@3.13.2)':
     dependencies:
-      '@effect/platform': 0.77.2(effect@3.13.1)
-      '@effect/platform-node-shared': 0.27.2(@effect/platform@0.77.2(effect@3.13.1))(effect@3.13.1)
-      effect: 3.13.1
+      '@effect/platform': 0.77.2(effect@3.13.2)
+      '@effect/platform-node-shared': 0.27.2(@effect/platform@0.77.2(effect@3.13.2))(effect@3.13.2)
+      effect: 3.13.2
       mime: 3.0.0
       undici: 7.2.3
       ws: 8.18.0
@@ -21931,26 +21931,26 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform@0.77.2(effect@3.13.1)':
+  '@effect/platform@0.77.2(effect@3.13.2)':
     dependencies:
-      effect: 3.13.1
+      effect: 3.13.2
       find-my-way-ts: 0.1.5
       multipasta: 0.2.5
 
-  '@effect/printer-ansi@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1)':
+  '@effect/printer-ansi@0.41.1(@effect/typeclass@0.32.1(effect@3.13.2))(effect@3.13.2)':
     dependencies:
-      '@effect/printer': 0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1)
-      '@effect/typeclass': 0.32.1(effect@3.13.1)
-      effect: 3.13.1
+      '@effect/printer': 0.41.1(@effect/typeclass@0.32.1(effect@3.13.2))(effect@3.13.2)
+      '@effect/typeclass': 0.32.1(effect@3.13.2)
+      effect: 3.13.2
 
-  '@effect/printer@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1)':
+  '@effect/printer@0.41.1(@effect/typeclass@0.32.1(effect@3.13.2))(effect@3.13.2)':
     dependencies:
-      '@effect/typeclass': 0.32.1(effect@3.13.1)
-      effect: 3.13.1
+      '@effect/typeclass': 0.32.1(effect@3.13.2)
+      effect: 3.13.2
 
-  '@effect/typeclass@0.32.1(effect@3.13.1)':
+  '@effect/typeclass@0.32.1(effect@3.13.2)':
     dependencies:
-      effect: 3.13.1
+      effect: 3.13.2
 
   '@emnapi/runtime@1.3.1':
     dependencies:
@@ -28337,7 +28337,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  effect@3.13.1:
+  effect@3.13.2:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
