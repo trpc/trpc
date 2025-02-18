@@ -14,18 +14,17 @@ Symbol.asyncDispose ??= Symbol();
  * @returns The original value with Symbol.dispose method added
  */
 export function makeResource<T>(thing: T, dispose: () => void): T & Disposable {
-  const it = thing as T & Partial<Disposable>;
+  const it = thing as T & Disposable;
 
   // eslint-disable-next-line no-restricted-syntax
-  const existing = it[Symbol.dispose];
+  if (it[Symbol.dispose]) {
+    throw new Error('Symbol.dispose already exists');
+  }
 
   // eslint-disable-next-line no-restricted-syntax
-  it[Symbol.dispose] = () => {
-    dispose();
-    existing?.();
-  };
+  it[Symbol.dispose] = dispose;
 
-  return it as T & Disposable;
+  return it;
 }
 
 /**
@@ -39,16 +38,15 @@ export function makeAsyncResource<T>(
   thing: T,
   dispose: () => Promise<void>,
 ): T & AsyncDisposable {
-  const it = thing as T & Partial<AsyncDisposable>;
+  const it = thing as T & AsyncDisposable;
 
   // eslint-disable-next-line no-restricted-syntax
-  const existing = it[Symbol.asyncDispose];
+  if (it[Symbol.asyncDispose]) {
+    throw new Error('Symbol.asyncDispose already exists');
+  }
 
   // eslint-disable-next-line no-restricted-syntax
-  it[Symbol.asyncDispose] = async () => {
-    await dispose();
-    await existing?.();
-  };
+  it[Symbol.asyncDispose] = dispose;
 
-  return it as T & AsyncDisposable;
+  return it;
 }
