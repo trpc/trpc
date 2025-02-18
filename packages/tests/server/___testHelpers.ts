@@ -5,7 +5,6 @@ import {
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, httpBatchLink } from '@trpc/client';
 import type { WithTRPCConfig } from '@trpc/next';
-import { type AnyRouter } from '@trpc/server';
 import type { AnyTRPCRouter } from '@trpc/server';
 import type { DataTransformerOptions } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
@@ -31,7 +30,7 @@ interface RouterToServerAndClientNewOpts<TRouter extends AnyTRPCRouter>
   transformer?: DataTransformerOptions;
 }
 
-export function routerToServerAndClientNew<TRouter extends AnyRouter>(
+export function routerToServerAndClientNew<TRouter extends AnyTRPCRouter>(
   router: TRouter,
   opts?: RouterToServerAndClientNewOpts<TRouter>,
 ) {
