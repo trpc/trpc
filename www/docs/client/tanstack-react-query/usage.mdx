@@ -228,21 +228,22 @@ function SubscriptionExample() {
 
 ### Inferring Input and Output types
 
-When you need to infer the input and output types for a procedure or router, there are 2 options available depending on the situation
+When you need to infer the input and output types for a procedure or router, there are 2 options available depending on the situation.
+
+Infer the input and output types of a full router
 
 ```ts
-//
-// Infer the input and output types of a full router
-
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
-//
-// Infer types for a single procedure
-
-import type { inferInput, inferOutput } from '@trpc/tanstack-react-query';
 import { AppRouter } from './path/to/server';
 
 export type Inputs = inferRouterInputs<AppRouter>;
 export type Outputs = inferRouterOutputs<AppRouter>;
+```
+
+Infer types for a single procedure
+
+```ts
+import type { inferInput, inferOutput } from '@trpc/tanstack-react-query';
 
 function Component() {
   const trpc = useTRPC();
