@@ -2175,13 +2175,13 @@ importers:
     dependencies:
       '@effect/cli':
         specifier: 0.56.2
-        version: 0.56.2(@effect/platform@0.77.1(effect@3.13.1))(@effect/printer-ansi@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(@effect/printer@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(effect@3.13.1)
+        version: 0.56.2(@effect/platform@0.77.2(effect@3.13.1))(@effect/printer-ansi@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(@effect/printer@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(effect@3.13.1)
       '@effect/platform':
-        specifier: 0.77.1
-        version: 0.77.1(effect@3.13.1)
+        specifier: 0.77.2
+        version: 0.77.2(effect@3.13.1)
       '@effect/platform-node':
         specifier: 0.73.2
-        version: 0.73.2(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)
+        version: 0.73.2(@effect/platform@0.77.2(effect@3.13.1))(effect@3.13.1)
       effect:
         specifier: 3.13.1
         version: 3.13.1
@@ -4653,10 +4653,10 @@ packages:
       '@effect/platform': ^0.77.2
       effect: ^3.13.2
 
-  '@effect/platform@0.77.1':
-    resolution: {integrity: sha512-3oHbKiOLN7AIjyucZW+kH5ebG1PhEEBrsdd+HWbDQbAG0gVZfgOUmXR9cyM6M9L+9oVPgOW5mIgcEi6RvD02Cw==}
+  '@effect/platform@0.77.2':
+    resolution: {integrity: sha512-stvroKHJVfjd3XhZJEPUAOgzqu9DH1vnGHIAjfs2ma6Z4qcjVpFXrxa0ZYmwRaWVIFsiADMenkN0I7XrRdAgLw==}
     peerDependencies:
-      effect: ^3.13.1
+      effect: ^3.13.2
 
   '@effect/printer-ansi@0.41.1':
     resolution: {integrity: sha512-3TiahYMKWF2gRDTMaIUxxOK8R+lwinZFMcrX+mAVo4LBaDs5YfT+0us0B9e8g+rogX0qFjH69jQovKDCWLgmOA==}
@@ -21902,9 +21902,9 @@ snapshots:
     dependencies:
       '@edge-runtime/primitives': 2.0.2
 
-  '@effect/cli@0.56.2(@effect/platform@0.77.1(effect@3.13.1))(@effect/printer-ansi@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(@effect/printer@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(effect@3.13.1)':
+  '@effect/cli@0.56.2(@effect/platform@0.77.2(effect@3.13.1))(@effect/printer-ansi@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(@effect/printer@0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1))(effect@3.13.1)':
     dependencies:
-      '@effect/platform': 0.77.1(effect@3.13.1)
+      '@effect/platform': 0.77.2(effect@3.13.1)
       '@effect/printer': 0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1)
       '@effect/printer-ansi': 0.41.1(@effect/typeclass@0.32.1(effect@3.13.1))(effect@3.13.1)
       effect: 3.13.1
@@ -21912,17 +21912,17 @@ snapshots:
       toml: 3.0.0
       yaml: 2.7.0
 
-  '@effect/platform-node-shared@0.27.2(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)':
+  '@effect/platform-node-shared@0.27.2(@effect/platform@0.77.2(effect@3.13.1))(effect@3.13.1)':
     dependencies:
-      '@effect/platform': 0.77.1(effect@3.13.1)
+      '@effect/platform': 0.77.2(effect@3.13.1)
       '@parcel/watcher': 2.4.1
       effect: 3.13.1
       multipasta: 0.2.5
 
-  '@effect/platform-node@0.73.2(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)':
+  '@effect/platform-node@0.73.2(@effect/platform@0.77.2(effect@3.13.1))(effect@3.13.1)':
     dependencies:
-      '@effect/platform': 0.77.1(effect@3.13.1)
-      '@effect/platform-node-shared': 0.27.2(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)
+      '@effect/platform': 0.77.2(effect@3.13.1)
+      '@effect/platform-node-shared': 0.27.2(@effect/platform@0.77.2(effect@3.13.1))(effect@3.13.1)
       effect: 3.13.1
       mime: 3.0.0
       undici: 7.2.3
@@ -21931,7 +21931,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform@0.77.1(effect@3.13.1)':
+  '@effect/platform@0.77.2(effect@3.13.1)':
     dependencies:
       effect: 3.13.1
       find-my-way-ts: 0.1.5
@@ -28912,7 +28912,7 @@ snapshots:
       eslint: 9.13.0(jiti@2.3.3)
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-react: 7.37.2(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-react-hooks: 5.1.0(eslint@9.13.0(jiti@2.3.3))
@@ -28939,7 +28939,7 @@ snapshots:
       debug: 4.4.0(supports-color@8.1.1)
       enhanced-resolve: 5.17.1
       eslint: 9.13.0(jiti@2.3.3)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
       get-tsconfig: 4.8.1
       globby: 13.1.3
       is-core-module: 2.13.1
@@ -28959,7 +28959,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3)):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
