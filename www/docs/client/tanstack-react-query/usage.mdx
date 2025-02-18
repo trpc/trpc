@@ -228,7 +228,7 @@ function SubscriptionExample() {
 
 ### Inferring Input and Output types
 
-Available for all query procedures as well as routers and sub-routers. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) in a type-safe manner.
+When you need to infer the input and output types for a peocedure or router, there are 2 options available depending on the situation
 
 ```ts
 import { AppRouter } from './path/to/server'
@@ -249,7 +249,7 @@ import type { InferInput, InferOutput } from '@trpc/tanstack-react-query';
 function Component() {
   const trpc = useTRPC()
 
-  export type Input = InferInput<typeof trpc.path.to.procedure>
-  export type Output = InferOutput<typeof trpc.path.to.procedure>
+  type Input = InferInput<typeof trpc.path.to.procedure>
+  type Output = InferOutput<typeof trpc.path.to.procedure>
 }
 ```
