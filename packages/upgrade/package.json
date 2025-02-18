@@ -34,7 +34,7 @@
   "dependencies": {
     "@effect/cli": "0.56.2",
     "@effect/platform": "0.77.1",
-    "@effect/platform-node": "0.73.1",
+    "@effect/platform-node": "0.73.2",
     "effect": "3.13.1",
     "jscodeshift": "17.1.1",
     "typescript": "^5.6.2"

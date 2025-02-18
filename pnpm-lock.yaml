@@ -2180,8 +2180,8 @@ importers:
         specifier: 0.77.1
         version: 0.77.1(effect@3.13.1)
       '@effect/platform-node':
-        specifier: 0.73.1
-        version: 0.73.1(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)
+        specifier: 0.73.2
+        version: 0.73.2(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)
       effect:
         specifier: 3.13.1
         version: 3.13.1
@@ -4641,17 +4641,17 @@ packages:
       '@effect/printer-ansi': ^0.41.2
       effect: ^3.13.2
 
-  '@effect/platform-node-shared@0.27.1':
-    resolution: {integrity: sha512-z3zQTwLiH3S/TcFv736F7ncAwqHU/PGW4VJeHy3ptwgaXq4QZGabn7pdE1Plx3eTcQaFNqVgeSgLoGlEKAo4rw==}
+  '@effect/platform-node-shared@0.27.2':
+    resolution: {integrity: sha512-U6eXYCOEFTrQSShnzftzLcG4ybauDMLL8uwU7kKS3s6Wzaz7ivALFSVyxgQnaxO3t2QQBePWdd9b3DVsLgiBFw==}
     peerDependencies:
-      '@effect/platform': ^0.77.1
-      effect: ^3.13.1
+      '@effect/platform': ^0.77.2
+      effect: ^3.13.2
 
-  '@effect/platform-node@0.73.1':
-    resolution: {integrity: sha512-gQQDb8vPBBPl7QEtzYvvD+DDj7dfkMzkP4jaekCB+LezwcwITRexSZdNglFyeOk+0wbzYle1JwJiXQkoVut6Bw==}
+  '@effect/platform-node@0.73.2':
+    resolution: {integrity: sha512-lO9SlcN7/Fpzu5VE/EKMxkmXt0n0vQ+rCirfGL1cNFcax9klw0A6uAJj2UvDRnX+o5YRlWNAgg5AN5uiGDUy0g==}
     peerDependencies:
-      '@effect/platform': ^0.77.1
-      effect: ^3.13.1
+      '@effect/platform': ^0.77.2
+      effect: ^3.13.2
 
   '@effect/platform@0.77.1':
     resolution: {integrity: sha512-3oHbKiOLN7AIjyucZW+kH5ebG1PhEEBrsdd+HWbDQbAG0gVZfgOUmXR9cyM6M9L+9oVPgOW5mIgcEi6RvD02Cw==}
@@ -21912,17 +21912,17 @@ snapshots:
       toml: 3.0.0
       yaml: 2.7.0
 
-  '@effect/platform-node-shared@0.27.1(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)':
+  '@effect/platform-node-shared@0.27.2(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)':
     dependencies:
       '@effect/platform': 0.77.1(effect@3.13.1)
       '@parcel/watcher': 2.4.1
       effect: 3.13.1
       multipasta: 0.2.5
 
-  '@effect/platform-node@0.73.1(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)':
+  '@effect/platform-node@0.73.2(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)':
     dependencies:
       '@effect/platform': 0.77.1(effect@3.13.1)
-      '@effect/platform-node-shared': 0.27.1(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)
+      '@effect/platform-node-shared': 0.27.2(@effect/platform@0.77.1(effect@3.13.1))(effect@3.13.1)
       effect: 3.13.1
       mime: 3.0.0
       undici: 7.2.3
@@ -23381,7 +23381,7 @@ snapshots:
       kleur: 4.1.5
       selfsigned: 2.1.1
       undici: 5.9.1
-      ws: 8.17.1
+      ws: 8.18.0
       youch: 2.2.2
     transitivePeerDependencies:
       - bufferutil
@@ -23567,7 +23567,7 @@ snapshots:
       '@miniflare/core': 2.10.0
       '@miniflare/shared': 2.10.0
       undici: 5.9.1
-      ws: 8.17.1
+      ws: 8.18.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -23587,7 +23587,7 @@ snapshots:
       '@miniflare/core': 2.14.2
       '@miniflare/shared': 2.14.2
       undici: 5.28.2
-      ws: 8.17.1
+      ws: 8.18.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -28912,7 +28912,7 @@ snapshots:
       eslint: 9.13.0(jiti@2.3.3)
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-react: 7.37.2(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-react-hooks: 5.1.0(eslint@9.13.0(jiti@2.3.3))
@@ -28939,7 +28939,7 @@ snapshots:
       debug: 4.4.0(supports-color@8.1.1)
       enhanced-resolve: 5.17.1
       eslint: 9.13.0(jiti@2.3.3)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
       get-tsconfig: 4.8.1
       globby: 13.1.3
       is-core-module: 2.13.1
@@ -28959,7 +28959,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)))(eslint@9.13.0(jiti@2.3.3)):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -37548,7 +37548,7 @@ snapshots:
       sockjs: 0.3.24
       spdy: 4.0.2
       webpack-dev-middleware: 5.3.4(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.15)))
-      ws: 8.17.1
+      ws: 8.18.0
     optionalDependencies:
       webpack: 5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.15))
     transitivePeerDependencies:
