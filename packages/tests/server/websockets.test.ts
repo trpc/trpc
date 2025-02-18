@@ -663,7 +663,6 @@ test('requests get aborted if called before connection is established and reques
   await expect(promise).rejects.toMatchInlineSnapshot(
     '[TRPCClientError: Closed before connection was established]',
   );
-  await close();
   await waitFor(() => {
     expect(conn!.ws.readyState).toBe(WebSocket.CLOSED);
   });
