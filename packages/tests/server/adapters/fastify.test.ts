@@ -5,8 +5,8 @@ import type { HTTPHeaders, TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   createWSClient,
-  httpLink,
   httpBatchLink,
+  httpLink,
   splitLink,
   unstable_httpBatchStreamLink,
   wsLink,
@@ -119,19 +119,22 @@ function createAppRouter() {
         );
         return opts.input.wait;
       }),
-    multipartForm: publicProcedure.input(
-        z.instanceof(FormData)
-    ).mutation(async (opts) => {
-      let result = {} as object;
-      opts.input.forEach((value, key) => {
-        result[key] = value instanceof File ? {
-          name: value.name,
-          type: value.type,
-          size: value.size,
-        } : value
-      });
-      return result;
-    })
+    multipartForm: publicProcedure
+      .input(z.instanceof(FormData))
+      .mutation(async (opts) => {
+        const result = {} as object;
+        opts.input.forEach((value, key) => {
+          result[key] =
+            value instanceof File
+              ? {
+                  name: value.name,
+                  type: value.type,
+                  size: value.size,
+                }
+              : value;
+        });
+        return result;
+      }),
   });
 
   return { appRouter, ee, onNewMessageSubscription, onSubscriptionEnded };
@@ -253,7 +256,7 @@ function createClient(opts: ClientOptions) {
             url: `http://${host}`,
             headers: opts.headers,
             fetch,
-          })
+          }),
         }),
       }),
     ],
@@ -474,12 +477,12 @@ describe('anonymous user', () => {
   test('multipart/formdata', async () => {
     const fd = new FormData();
     fd.set(
-        'about',
-        new File(['hi bob'], 'bob.txt', {
-          type: 'text/plain',
-        }),
+      'about',
+      new File(['hi bob'], 'bob.txt', {
+        type: 'text/plain',
+      }),
     );
-    fd.set('foo' ,'bar');
+    fd.set('foo', 'bar');
     expect(await app.client.multipartForm.mutate(fd)).toMatchInlineSnapshot(`
       Object {
         "about": Object {
@@ -490,7 +493,7 @@ describe('anonymous user', () => {
         "foo": "bar",
       }
     `);
-  })
+  });
 });
 
 describe('authorized user', () => {
