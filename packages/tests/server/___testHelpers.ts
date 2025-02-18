@@ -1,13 +1,9 @@
 import EventEmitter from 'events';
-import * as events from 'events';
 import type { IncomingMessage } from 'http';
 import http from 'http';
 import type { AddressInfo, Socket } from 'net';
-<<<<<<< HEAD
-import { waitError } from '@trpc/server/__tests__/waitError';
-=======
 import { on } from 'node:events';
->>>>>>> origin/next
+import { waitError } from '@trpc/server/__tests__/waitError';
 import type { TRPCWebSocketClient, WebSocketClientOptions } from '@trpc/client';
 import {
   createTRPCClient,
