@@ -104,7 +104,6 @@ export function trpcServerResource<TRouter extends AnyTRPCRouter>(
       wssHandler = applyWSSHandler(applyWSSHandlerOpts);
     },
     router,
-    httpPort,
     wssPort,
     httpUrl,
     wssUrl,
