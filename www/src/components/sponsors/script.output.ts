@@ -13,7 +13,7 @@ export const topSponsors = [
   {
     "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 51,
+    "weight": 50,
     "login": "tryretool",
     "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
@@ -21,7 +21,7 @@ export const topSponsors = [
   {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 35,
+    "weight": 34,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1671157456000
@@ -37,7 +37,7 @@ export const topSponsors = [
   {
     "name": "Unkey",
     "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
-    "weight": 12,
+    "weight": 11,
     "login": "unkeyed",
     "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1708012798000
@@ -129,7 +129,7 @@ export const allSponsors = [
   {
     "name": "Tom Ballinger",
     "imgSrc": "https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4",
-    "weight": 6,
+    "weight": 5,
     "login": "thomasballinger",
     "link": "http://ballingt.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1662563270000
@@ -153,7 +153,7 @@ export const allSponsors = [
   {
     "name": "Ahoy Labs",
     "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "weight": 35,
+    "weight": 34,
     "login": "ahoylabs",
     "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1671157456000
@@ -185,7 +185,7 @@ export const allSponsors = [
   {
     "name": "Proxidize",
     "imgSrc": "https://avatars.githubusercontent.com/u/70805857?v=4",
-    "weight": 6,
+    "weight": 5,
     "login": "proxidize",
     "link": "https://proxidize.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1707060132000
@@ -193,7 +193,7 @@ export const allSponsors = [
   {
     "name": "Unkey",
     "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
-    "weight": 12,
+    "weight": 11,
     "login": "unkeyed",
     "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1708012798000
@@ -233,7 +233,7 @@ export const allSponsors = [
   {
     "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 51,
+    "weight": 50,
     "login": "tryretool",
     "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
@@ -241,7 +241,7 @@ export const allSponsors = [
   {
     "name": "Sail Jess",
     "imgSrc": "https://avatars.githubusercontent.com/u/5610115?u=be201750effeb8826a788dea206e594008cfe3f2&v=4",
-    "weight": 2,
+    "weight": 3,
     "login": "cerjs",
     "link": "https://github.com/cerjs",
     "createdAt": 1721703779000
@@ -281,9 +281,9 @@ export const allSponsors = [
   {
     "name": "CodeRabbit",
     "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
-    "weight": 5,
+    "weight": 4,
     "login": "coderabbitai",
-    "link": "http://coderabbit.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "link": "https://www.coderabbit.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1737645299000
   },
   {
