@@ -71,7 +71,7 @@ export type inferOutput<
 
 export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   /**
-   * @internal prefer using InferInput and inferOutput to access types
+   * @internal prefer using inferInput and inferOutput to access types
    */
   '~types': {
     input: TDef['input'];
