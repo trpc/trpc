@@ -1,12 +1,13 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@testing-library/dom';
 import '@testing-library/jest-dom/vitest';
 import * as Http from 'node:http';
 import type * as Net from 'node:net';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import type {
   CreateTRPCClientOptions,
+  Operation,
   TRPCWebSocketClient,
   WebSocketClientOptions,
 } from '@trpc/client';
@@ -15,6 +16,10 @@ import {
   createWSClient,
   getUntypedClient,
   httpBatchLink,
+  splitLink,
+  unstable_httpBatchStreamLink,
+  unstable_httpSubscriptionLink,
+  wsLink,
 } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import {
@@ -33,8 +38,6 @@ import * as React from 'react';
 import { WebSocket, WebSocketServer } from 'ws';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
-export * from '@trpc/client/__tests__/testClientResource';
-
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 // This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
 globalThis.fetch = fetch as any;
@@ -42,7 +45,6 @@ globalThis.WebSocket = WebSocket as any;
 
 /**
  * TODO: Remove this duplication from tests/server package: https://github.com/trpc/trpc/pull/6383
- * @deprecated
  */
 export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
   httpUrl: string;
@@ -52,7 +54,7 @@ export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
 }) => Partial<CreateTRPCClientOptions<TRouter>>;
 
 /**
- * @deprecated
+ * TODO: Remove this duplication from tests/server package: https://github.com/trpc/trpc/pull/6383
  */
 export function routerToServerAndClientNew<TRouter extends AnyTRPCRouter>(
   router: TRouter,
@@ -186,13 +188,56 @@ export function routerToServerAndClientNew<TRouter extends AnyTRPCRouter>(
   return ctx;
 }
 
-/**
- * @deprecated use {@link testReactResource}
- */
 export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,
+  opts?: {
+    subscriptions?: 'ws' | 'http';
+  },
 ) {
-  const ctx = testServerAndClientResource(appRouter);
+  const spyLink = vi.fn((_op: Operation<unknown>) => {
+    // noop
+  });
+
+  const ctx = routerToServerAndClientNew(appRouter, {
+    client: (clientOpts) => ({
+      links: [
+        () => {
+          // here we just got initialized in the app - this happens once per app
+          // useful for storing cache for instance
+          return ({ next, op }) => {
+            // this is when passing the result to the next link
+
+            spyLink(op);
+            return next(op);
+          };
+        },
+        splitLink({
+          condition: (op) => op.type === 'subscription',
+          true:
+            opts?.subscriptions === 'http'
+              ? unstable_httpSubscriptionLink({
+                  url: clientOpts.httpUrl,
+                  transformer: clientOpts.transformer as any,
+                })
+              : wsLink({
+                  client: clientOpts.wsClient,
+                  transformer: clientOpts.transformer as any,
+                }),
+          false: splitLink({
+            condition: (op) => !!op.context['stream'],
+            true: unstable_httpBatchStreamLink({
+              url: clientOpts.httpUrl,
+              transformer: clientOpts.transformer as any,
+            }),
+            false: httpBatchLink({
+              url: clientOpts.httpUrl,
+              transformer: clientOpts.transformer as any,
+            }),
+          }),
+        }),
+      ],
+    }),
+  });
 
   const queryClient = new QueryClient();
 
@@ -219,17 +264,22 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
     );
   }
 
-  return {
-    ...ctx,
-    queryClient,
-    renderApp,
-
-    useTRPC,
-    trpcClient,
-    trpcServer,
-    /** @deprecated use resource manager instead */
-    close: ctx.close,
-  };
+  return makeAsyncResource(
+    {
+      ...ctx,
+      queryClient,
+      renderApp,
+      spyLink,
+      useTRPC,
+      trpcClient,
+      trpcServer,
+      /** @deprecated use resource manager instead */
+      close: ctx.close,
+    },
+    async () => {
+      await ctx.close();
+    },
+  );
 }
 
 export function testReactResource<TRouter extends AnyTRPCRouter>(

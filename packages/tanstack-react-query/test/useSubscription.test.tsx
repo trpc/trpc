@@ -55,7 +55,7 @@ function diff(list: any[]) {
   });
 }
 
-const getCtx = () => {
+const getCtx = (protocol: 'http' | 'ws') => {
   const ee = new EventEmitter();
   const t = initTRPC.create({
     errorFormatter({ shape }) {
@@ -98,7 +98,9 @@ const getCtx = () => {
   });
 
   return {
-    ...getServerAndReactClient(appRouter),
+    ...getServerAndReactClient(appRouter, {
+      subscriptions: protocol,
+    }),
     ee,
   };
 };
@@ -109,7 +111,7 @@ describe.each([
   'ws',
 ] as const)('useSubscription - %s', (protocol) => {
   test('iterable', async () => {
-    await using ctx = getCtx();
+    await using ctx = getCtx(protocol);
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
 
@@ -190,7 +192,7 @@ describe.each([
   });
 
   test('observable()', async () => {
-    await using ctx = getCtx();
+    await using ctx = getCtx(protocol);
 
     const onDataMock = vi.fn();
     const onErrorMock = vi.fn();
@@ -253,7 +255,7 @@ describe.each([
 
 describe('connection state - http', () => {
   test('iterable', async () => {
-    await using ctx = getCtx();
+    await using ctx = getCtx('http');
     const { useTRPC } = ctx;
 
     const queryResult: unknown[] = [];
@@ -366,7 +368,7 @@ describe('connection state - http', () => {
 
 describe('reset - http', () => {
   test('iterable', async () => {
-    await using ctx = getCtx();
+    await using ctx = getCtx('http');
     const { useTRPC } = ctx;
 
     const queryResult: TRPCSubscriptionResult<number, unknown>[] = [];

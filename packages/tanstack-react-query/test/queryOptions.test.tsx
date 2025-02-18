@@ -208,6 +208,11 @@ describe('queryOptions', () => {
           selects.push(data);
           return data;
         },
+        trpc: {
+          context: {
+            stream: 1,
+          },
+        },
       });
       const query1 = useQuery(opts);
       states.push({
