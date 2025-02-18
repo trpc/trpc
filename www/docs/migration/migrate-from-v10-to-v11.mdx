@@ -97,12 +97,6 @@ const router = router({
 });
 ```
 
-### Removed export of `@trpc/client` from `@trpc/react-query` (non-breaking)
-
-We have removed the re-exports of `@trpc/client` types and utilities from the `@trpc/react-query` package.
-
-This should not be a breaking change, but if you have missing imports after upgrading, you may need to update some import statements from `from '@trpc/react-query'` to `from '@trpc/client'`.
-
 ### Moved `reconnectAfterInactivityMs` to `sse.client` (non-breaking)
 
 Updated [HTTP Subscription Link improvements](#http-subscription-link-improvements)-section and related docs.
