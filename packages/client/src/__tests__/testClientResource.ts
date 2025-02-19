@@ -7,13 +7,13 @@ import {
   httpLink,
   unstable_httpSubscriptionLink,
 } from '@trpc/client';
-import type { WithTRPCConfig } from '@trpc/next';
 import type { AnyTRPCRouter } from '@trpc/server';
 import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import type { Mock } from 'vitest';
 import { WebSocket } from 'ws';
 import type {
+  CreateTRPCClientOptions,
   Operation,
   TRPCWebSocketClient,
   WebSocketClientOptions,
@@ -35,7 +35,7 @@ export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
   wssUrl: string;
   wsClient: TRPCWebSocketClient;
   transformer: TransformerOptions<inferClientTypes<TRouter>>;
-}) => Partial<WithTRPCConfig<TRouter>>;
+}) => Partial<CreateTRPCClientOptions<TRouter>>;
 
 export interface TestServerAndClientResourceOpts<TRouter extends AnyTRPCRouter>
   extends TRPCServerResourceOpts<TRouter> {
@@ -43,7 +43,9 @@ export interface TestServerAndClientResourceOpts<TRouter extends AnyTRPCRouter>
    * Defaults to being lazy
    */
   wsClient?: Partial<WebSocketClientOptions>;
-  client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback<TRouter>;
+  client?:
+    | Partial<CreateTRPCClientOptions<TRouter>>
+    | CreateClientCallback<TRouter>;
 }
 
 export const __getSpyLink = (): Mock<(op: Operation<unknown>) => void> => {
@@ -134,7 +136,7 @@ export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
           })
         : opts.client
       : {}),
-  } as WithTRPCConfig<typeof router>;
+  } satisfies CreateTRPCClientOptions<typeof router>;
 
   const client = createTRPCClient<typeof router>(trpcClientOptions);
 
