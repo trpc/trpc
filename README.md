@@ -103,8 +103,8 @@ deno init --npm next-app --example https://github.com/trpc/trpc --example-path e
   <tbody>
     <tr>
       <td align="center"><a href="https://twitter.com/alexdotjs"><img src="https://avatars.githubusercontent.com/u/459267?v=4?s=100" width="100px;" alt=""/><br />Alex / KATT</a></td>
-      <td align="center"><a href="http://www.jumr.dev"><img src="https://avatars.githubusercontent.com/u/51714798?v=4&s=100" width="100px;" alt=""/><br />Julius Marminge<</a></td>
-      <td align="center"><a href="https://github.com/Nick-Lucas"><img src="https://avatars.githubusercontent.com/u/8896153?v=4&s=100" width="100px;" alt=""/><br />Nick Lucas<</a></td>
+      <td align="center"><a href="http://www.jumr.dev"><img src="https://avatars.githubusercontent.com/u/51714798?v=4&s=100" width="100px;" alt=""/><br />Julius Marminge</a></td>
+      <td align="center"><a href="https://github.com/Nick-Lucas"><img src="https://avatars.githubusercontent.com/u/8896153?v=4&s=100" width="100px;" alt=""/><br />Nick Lucas</a></td>
     </tr>
   </tbody>
 </table>
