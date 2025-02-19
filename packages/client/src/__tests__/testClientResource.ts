@@ -11,7 +11,6 @@ import type { WithTRPCConfig } from '@trpc/next';
 import type { AnyTRPCRouter } from '@trpc/server';
 import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
-import fetch from 'node-fetch';
 import type { Mock } from 'vitest';
 import { WebSocket } from 'ws';
 import type {
@@ -29,8 +28,6 @@ import {
 import type { TransformerOptions } from '../unstable-internals';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
-// This is a hack because the `server.close()` times out otherwise ¯\_(ツ)_/¯
-globalThis.fetch = fetch as any;
 globalThis.WebSocket = WebSocket as any;
 
 export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
