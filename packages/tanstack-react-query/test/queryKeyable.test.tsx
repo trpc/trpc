@@ -76,12 +76,12 @@ describe('get queryFilter', () => {
     function Component() {
       const trpc = useTRPC();
 
-      expect(trpc.queryFilter()).toMatchInlineSnapshot(`
+      expect(trpc.routeFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [],
         }
       `);
-      expect(trpc.bluesky.queryFilter()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.routeFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
             Array [
@@ -90,7 +90,7 @@ describe('get queryFilter', () => {
           ],
         }
       `);
-      expect(trpc.bluesky.post.queryFilter()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.post.routeFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
             Array [
@@ -170,15 +170,15 @@ describe('get queryKey', () => {
         '__result',
       );
 
-      expect(trpc.queryKey()).toMatchInlineSnapshot(`Array []`);
-      expect(trpc.bluesky.queryKey()).toMatchInlineSnapshot(`
+      expect(trpc.routeFilter()).toMatchInlineSnapshot(`Array []`);
+      expect(trpc.bluesky.routeFilter()).toMatchInlineSnapshot(`
         Array [
           Array [
             "bluesky",
           ],
         ]
       `);
-      expect(trpc.bluesky.post.queryKey()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.post.routeFilter()).toMatchInlineSnapshot(`
         Array [
           Array [
             "bluesky",
