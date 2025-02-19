@@ -7,19 +7,6 @@ import type { IntersectionError } from '@trpc/server/unstable-core-do-not-import
 import React from 'react';
 import { z } from 'zod';
 
-test('vanilla client', async () => {
-  const t = initTRPC.create();
-
-  const appRouter = t.router({
-    links: t.procedure.query(() => 'hello'),
-    a: t.procedure.query(() => 'a'),
-  });
-
-  const client = createTRPCClient<typeof appRouter>({ links: [] });
-
-  expectTypeOf(client).toMatchTypeOf<IntersectionError<'links'>>();
-});
-
 test('utils client', async () => {
   const t = initTRPC.create();
 

@@ -1,4 +1,4 @@
-import type { CreateTRPCClient } from '@trpc/client';
+import type { TRPCClient } from '@trpc/client';
 import {
   clientCallTypeToProcedureType,
   createTRPCUntypedClient,
@@ -31,7 +31,7 @@ export function experimental_createTRPCNextAppDirClient<
 
   const cache = new Map<string, QueryResult>();
 
-  return createRecursiveProxy<CreateTRPCClient<TRouter>>(({ path, args }) => {
+  return createRecursiveProxy<TRPCClient<TRouter>>(({ path, args }) => {
     // const pathCopy = [key, ...path];
     const pathCopy = [...path];
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
