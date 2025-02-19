@@ -10,6 +10,7 @@ import type { HTTPErrorHandler } from '@trpc/server/http';
 import type { Mock } from 'vitest';
 import { WebSocketServer } from 'ws';
 import { makeAsyncResource } from '../unstable-core-do-not-import/stream/utils/disposable';
+import { vi } from 'vitest';
 
 export interface TRPCServerResourceOpts<TRouter extends AnyTRPCRouter> {
   server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
