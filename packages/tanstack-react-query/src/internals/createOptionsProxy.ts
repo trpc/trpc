@@ -287,8 +287,9 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
     };
   };
 
-  return createTRPCRecursiveProxy(({ args, path }) => {
-    const utilName = path[path.length - 1] as UtilsMethods;
+  return createTRPCRecursiveProxy(({ args, path: _path }) => {
+    const path = [..._path];
+    const utilName = path.pop() as UtilsMethods;
     const [arg1, arg2] = args as any[];
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
@@ -304,9 +305,6 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
         };
       },
 
-      mutationKey: () => {
-        return getMutationKeyInternal(path);
-      },
       queryKey: () => {
         return getQueryKeyInternal(path, arg1, 'query');
       },
@@ -316,6 +314,16 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
           queryKey: getQueryKeyInternal(path, arg1, 'query'),
         };
       },
+      queryOptions: () => {
+        return trpcQueryOptions({
+          opts: arg2,
+          path,
+          queryClient: opts.queryClient,
+          queryKey: getQueryKeyInternal(path, arg1, 'query'),
+          query: callIt('query'),
+        });
+      },
+
       infiniteQueryKey: () => {
         return getQueryKeyInternal(path, arg1, 'infinite');
       },
@@ -334,14 +342,9 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
           queryKey: getQueryKeyInternal(path, arg1, 'infinite'),
         };
       },
-      queryOptions: () => {
-        return trpcQueryOptions({
-          opts: arg2,
-          path,
-          queryClient: opts.queryClient,
-          queryKey: getQueryKeyInternal(path, arg1, 'query'),
-          query: callIt('query'),
-        });
+
+      mutationKey: () => {
+        return getMutationKeyInternal(path);
       },
       mutationOptions: () => {
         return trpcMutationOptions({
@@ -352,6 +355,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
           overrides: opts.overrides?.mutations,
         });
       },
+
       subscriptionOptions: () => {
         return trpcSubscriptionOptions({
           opts: arg2,
