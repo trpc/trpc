@@ -59,6 +59,21 @@ export function Component2() {
 "
 `;
 
+exports[`hooks react-context.ts 1`] = `
+"import { useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { useTRPC } from './trpc';
+
+export function Component() {
+  const queryClient = useQueryClient();
+}
+
+export function Component2() {
+  const x = React.useContext(React.createContext(2));
+}
+"
+`;
+
 exports[`hooks suspense-destructuring.ts 1`] = `
 "import {
   useSuspenseInfiniteQuery,

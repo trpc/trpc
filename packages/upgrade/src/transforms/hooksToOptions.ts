@@ -196,7 +196,17 @@ export default function transform(
         },
       })
       .forEach((path) => {
+        let isTRPCContextUtil = false;
+
         if (
+          j.MemberExpression.check(path.value.callee) &&
+          j.Identifier.check(path.value.callee.object)
+        ) {
+          isTRPCContextUtil = path.value.callee.object.name == trpcImportName;
+        }
+
+        if (
+          isTRPCContextUtil &&
           j.VariableDeclarator.check(path.parentPath.node) &&
           j.Identifier.check(path.parentPath.node.id)
         ) {
