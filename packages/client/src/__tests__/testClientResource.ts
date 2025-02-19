@@ -12,6 +12,7 @@ import type { AnyTRPCRouter } from '@trpc/server';
 import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import fetch from 'node-fetch';
+import type { Mock } from 'vitest';
 import { WebSocket } from 'ws';
 import type {
   Operation,
@@ -48,15 +49,19 @@ interface RouterToServerAndClientNewOpts<TRouter extends AnyTRPCRouter>
   client?: Partial<WithTRPCConfig<TRouter>> | CreateClientCallback<TRouter>;
 }
 
+export const __getSpyLink = (): Mock<(op: Operation<unknown>) => void> => {
+  return vi.fn((_op) => {
+    // noop
+  });
+};
+
 export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
   router: TRouter,
   opts?: RouterToServerAndClientNewOpts<TRouter>,
 ) {
   const serverResource = trpcServerResource(router, opts);
 
-  const spyLink = vi.fn((_op: Operation<unknown>) => {
-    // noop
-  });
+  const spyLink = __getSpyLink();
 
   // client
   const wsClient = createWSClient({

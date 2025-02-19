@@ -1,4 +1,4 @@
-import { getServerAndReactClient } from './__helpers';
+import { getServerAndReactClient, testReactResource } from './__helpers';
 import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
@@ -44,7 +44,7 @@ const testContext = () => {
   });
 
   return {
-    ...getServerAndReactClient(appRouter),
+    ...testReactResource(appRouter),
     nextIterable,
   };
 };
@@ -323,7 +323,7 @@ describe('queryOptions', () => {
     await using ctx = testContext();
 
     const post = await ctx.queryClient.fetchQuery(
-      ctx.trpcServer.post.byId.queryOptions({ id: '1' }),
+      ctx.optionsProxyServer.post.byId.queryOptions({ id: '1' }),
     );
 
     expect(post).toEqual('__result');

@@ -44,7 +44,7 @@ globalThis.fetch = fetch as any;
 globalThis.WebSocket = WebSocket as any;
 
 /**
- * TODO: Remove this duplication from tests/server package: https://github.com/trpc/trpc/pull/6383
+ * @deprecated
  */
 export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
   httpUrl: string;
@@ -54,7 +54,7 @@ export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
 }) => Partial<CreateTRPCClientOptions<TRouter>>;
 
 /**
- * TODO: Remove this duplication from tests/server package: https://github.com/trpc/trpc/pull/6383
+ * @deprecated
  */
 export function routerToServerAndClientNew<TRouter extends AnyTRPCRouter>(
   router: TRouter,
@@ -188,6 +188,9 @@ export function routerToServerAndClientNew<TRouter extends AnyTRPCRouter>(
   return ctx;
 }
 
+/**
+ * @deprecated use {@link testReactResource} instead
+ */
 export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,
   opts?: {
@@ -312,20 +315,15 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
     );
   }
 
-  return makeAsyncResource(
-    {
-      ...ctx,
-      opts: ctx,
-      queryClient,
-      renderApp,
-      useTRPC,
-      optionsProxyClient,
-      optionsProxyServer,
-      /** @deprecated use resource manager instead */
-      close: ctx.close,
-    },
-    async () => {
-      await ctx.close();
-    },
-  );
+  return {
+    ...ctx,
+    opts: ctx,
+    queryClient,
+    renderApp,
+    useTRPC,
+    optionsProxyClient,
+    optionsProxyServer,
+    /** @deprecated use resource manager instead */
+    close: ctx.close,
+  };
 }

@@ -15,6 +15,17 @@ export interface TRPCServerResourceOpts<TRouter extends AnyTRPCRouter> {
   server?: Partial<CreateHTTPHandlerOptions<TRouter>>;
   wssServer?: Partial<WSSHandlerOptions<TRouter>>;
 }
+
+/**
+ * This is a hack in order to prevent typescript error
+ * "The inferred type of 'testServerAndClientResource' cannot be named without a reference to X"
+ */
+export const __getSpy = <T extends (...args: any[]) => void>(
+  mock: T,
+): Mock<T> => {
+  return vi.fn(mock);
+};
+
 export function trpcServerResource<TRouter extends AnyTRPCRouter>(
   router: TRouter,
   opts?: TRPCServerResourceOpts<TRouter>,
@@ -25,12 +36,18 @@ export function trpcServerResource<TRouter extends AnyTRPCRouter>(
     CreateHTTPHandlerOptions<TRouter>['createContext']
   >;
 
-  const onErrorSpy = vitest.fn<OnError>();
-  const createContextSpy = vitest.fn<CreateContext>();
+  const onErrorSpy = __getSpy<OnError>(() => {
+    // noop
+  });
+  const createContextSpy = __getSpy<CreateContext>(() => {
+    // noop
+  });
   const serverOverrides: Partial<CreateHTTPHandlerOptions<TRouter>> =
     opts?.server ?? {};
 
-  const onReqAborted = vitest.fn() satisfies Mock;
+  const onReqAborted = __getSpy(() => {
+    // noop
+  });
   const handler = createHTTPHandler({
     router,
     ...serverOverrides,
@@ -46,7 +63,9 @@ export function trpcServerResource<TRouter extends AnyTRPCRouter>(
       return opts?.server?.createContext?.(it) ?? it;
     },
   });
-  const onRequestSpy = vitest.fn<typeof handler>();
+  const onRequestSpy = __getSpy<typeof handler>(() => {
+    // noop
+  });
 
   const httpServer = http.createServer((...args) => {
     onRequestSpy(...args);
