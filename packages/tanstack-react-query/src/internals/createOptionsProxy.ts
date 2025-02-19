@@ -36,7 +36,7 @@ import {
 
 export interface DecorateRouterKeyable {
   /**
-   * Calculate the TanStack Query Key for a Route
+   * Calculate the TanStack Query Key for a Route, could be used to invalidate every procedure beneath this route
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
@@ -44,7 +44,7 @@ export interface DecorateRouterKeyable {
   routeKey: () => TRPCQueryKey;
 
   /**
-   * Calculate a TanStack Query Filter for a Route
+   * Calculate a TanStack Query Filter for a Route, could be used to manipulate every procedure beneath this route
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryFilter

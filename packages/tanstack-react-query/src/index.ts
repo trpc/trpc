@@ -5,7 +5,7 @@ export type {
   inferOutput,
   DecorateMutationProcedure,
   DecorateProcedure,
-  DecorateRouterKeyable as DecorateQueryKeyable,
+  DecorateRouterKeyable,
   DecorateQueryProcedure,
   DecorateSubscriptionProcedure,
 } from './internals/createOptionsProxy';
