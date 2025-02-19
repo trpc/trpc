@@ -83,8 +83,8 @@ export async function buildQueryFromAsyncIterable(
  */
 export function getQueryKeyInternal(
   path: readonly string[],
-  input: unknown,
-  type: QueryType,
+  input?: unknown,
+  type?: QueryType,
 ): TRPCQueryKey {
   // Construct a query key that is easy to destructure and flexible for
   // partial selecting etc.
