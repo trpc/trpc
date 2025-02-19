@@ -11,7 +11,6 @@ import type {
   Requester,
 } from './internals/httpUtils';
 import {
-  getInput,
   getUrl,
   httpRequest,
   jsonHttpRequester,
@@ -37,33 +36,34 @@ export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
   };
 
 const universalRequester: Requester = (opts) => {
-  const input = getInput(opts);
+  if ('input' in opts) {
+    const { input } = opts;
+    if (isFormData(input)) {
+      if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
+        throw new Error('FormData is only supported for mutations');
+      }
 
-  if (isFormData(input)) {
-    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
-      throw new Error('FormData is only supported for mutations');
+      return httpRequest({
+        ...opts,
+        // The browser will set this automatically and include the boundary= in it
+        contentTypeHeader: undefined,
+        getUrl,
+        getBody: () => input,
+      });
     }
 
-    return httpRequest({
-      ...opts,
-      // The browser will set this automatically and include the boundary= in it
-      contentTypeHeader: undefined,
-      getUrl,
-      getBody: () => input,
-    });
-  }
+    if (isOctetType(input)) {
+      if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
+        throw new Error('Octet type input is only supported for mutations');
+      }
 
-  if (isOctetType(input)) {
-    if (opts.type !== 'mutation' && opts.methodOverride !== 'POST') {
-      throw new Error('Octet type input is only supported for mutations');
+      return httpRequest({
+        ...opts,
+        contentTypeHeader: 'application/octet-stream',
+        getUrl,
+        getBody: () => input,
+      });
     }
-
-    return httpRequest({
-      ...opts,
-      contentTypeHeader: 'application/octet-stream',
-      getUrl,
-      getBody: () => input,
-    });
   }
 
   return jsonHttpRequester(opts);

@@ -1,4 +1,4 @@
-# trpc with Tanstack Start
+# trpc with TanStack Start
 
 ### Playing around
 

@@ -23,7 +23,7 @@
     "lint-fix": "turbo lint --continue -- --fix && manypkg fix && pnpm format-fix",
     "format": "prettier \"**/*\" --ignore-unknown",
     "format-fix": "pnpm format --write --list-different",
-    "lint-prune": "! ts-prune | grep -v \"used in module\" | grep -v rpc | grep -v observable | grep -v http",
+    "lint-prune": "! ts-prune | grep -v \"used in module\" | grep -v rpc | grep -v observable | grep -v http | grep -v __fixtures__ | grep -v __generated__",
     "clean": "find . -name node_modules -o -name .turbo -o -name .next -o -name dist -o -name __generated__ -type d -prune | xargs rm -rf",
     "codegen:tests": "turbo codegen-tests",
     "codegen:entrypoints": "turbo codegen-entrypoints",
@@ -64,7 +64,7 @@
     "eslint-plugin-no-only-tests": "^3.3.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-unicorn": "56.0.1",
+    "eslint-plugin-unicorn": "57.0.0",
     "event-source-polyfill": "^1.0.31",
     "express": "^5.0.0",
     "fast-glob": "^3.2.12",
@@ -76,7 +76,7 @@
     "prettier-plugin-tailwindcss": "^0.6.8",
     "rollup": "^4.27.4",
     "rollup-plugin-analyzer": "^4.0.0",
-    "rollup-plugin-delete": "^2.1.0",
+    "rollup-plugin-delete": "^3.0.0",
     "rollup-plugin-node-externals": "^8.0.0",
     "rollup-plugin-swc3": "^0.12.1",
     "superjson": "^1.12.4",
@@ -92,7 +92,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/node": "20.17.17"
+      "@types/node": "20.17.19"
     }
   },
   "manypkg": {

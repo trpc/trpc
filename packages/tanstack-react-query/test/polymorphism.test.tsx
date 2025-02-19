@@ -16,7 +16,7 @@ import type { ReactNode } from 'react';
 import React, { useState } from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
-import type { InferOutput } from '../src';
+import type { inferOutput } from '../src';
 import { t } from './polymorphism.common';
 /**
  * We define a router factory which can be used many times.
@@ -267,7 +267,7 @@ function ExportStatus<
   TStatus extends Factory.ExportRouteLike['status'],
 >(props: {
   status: TStatus;
-  renderAdditionalFields?: (data: InferOutput<TStatus>) => ReactNode;
+  renderAdditionalFields?: (data: inferOutput<TStatus>) => ReactNode;
   currentExport: number | null;
 }) {
   const exportStatus = useQuery(

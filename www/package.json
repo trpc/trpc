@@ -33,13 +33,16 @@
     "@docusaurus/theme-classic": "^3.7.0",
     "@docusaurus/theme-common": "^3.7.0",
     "@docusaurus/types": "^3.7.0",
+    "@giscus/react": "^3.1.0",
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@mdx-js/react": "^3.1.0",
+    "@tanstack/react-query": "^5.66.0",
     "@trpc/client": "workspace:*",
     "@trpc/next": "workspace:*",
     "@trpc/react-query": "workspace:*",
     "@trpc/server": "workspace:*",
+    "@trpc/tanstack-react-query": "workspace:*",
     "@unkey/ratelimit": "^0.5.0",
     "@visx/hierarchy": "^3.0.0",
     "@visx/responsive": "^3.0.0",
@@ -105,7 +108,7 @@
     "typedoc": "0.27.7",
     "typedoc-plugin-markdown": "4.4.2",
     "typescript": "^5.7.2",
-    "valibot": "1.0.0-rc.0",
+    "valibot": "1.0.0-rc.1",
     "yup": "^1.0.0"
   }
 }

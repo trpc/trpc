@@ -3,10 +3,11 @@ import type {
   DefinedInitialDataOptions,
   QueryClient,
   QueryFunction,
+  SkipToken,
   UndefinedInitialDataOptions,
   UnusedSkipTokenOptions,
 } from '@tanstack/react-query';
-import { queryOptions, skipToken, type SkipToken } from '@tanstack/react-query';
+import { queryOptions, skipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type {
   coerceAsyncIterableToArray,
@@ -154,13 +155,26 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
   >;
 }
 
+type AnyTRPCQueryOptionsIn =
+  | DefinedTRPCQueryOptionsIn<unknown, unknown, unknown>
+  | UnusedSkipTokenTRPCQueryOptionsIn<unknown, unknown, unknown>
+  | UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown>;
+
+type AnyTRPCQueryOptionsOut =
+  | DefinedTRPCQueryOptionsOut<unknown, unknown, unknown>
+  | UnusedSkipTokenTRPCQueryOptionsOut<unknown, unknown, unknown>
+  | UndefinedTRPCQueryOptionsOut<unknown, unknown, unknown>;
+
+/**
+ * @internal
+ */
 export function trpcQueryOptions(args: {
   query: typeof TRPCUntypedClient.prototype.query;
   queryClient: QueryClient | (() => QueryClient);
   path: readonly string[];
   queryKey: TRPCQueryKey;
-  opts: UndefinedTRPCQueryOptionsIn<unknown, unknown, unknown>;
-}) {
+  opts: AnyTRPCQueryOptionsIn;
+}): AnyTRPCQueryOptionsOut {
   const { query, path, queryKey, opts } = args;
   const queryClient = unwrapLazyArg(args.queryClient);
 

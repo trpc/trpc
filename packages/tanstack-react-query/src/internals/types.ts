@@ -1,5 +1,8 @@
 import type { TRPCRequestOptions } from '@trpc/client';
 
+/**
+ * @internal
+ */
 export type ResolverDef = {
   input: any;
   output: any;
@@ -7,10 +10,16 @@ export type ResolverDef = {
   errorShape: any;
 };
 
+/**
+ * @internal
+ */
 export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
   ? TInput['cursor']
   : unknown;
 
+/**
+ * @public
+ */
 export interface TRPCReactRequestOptions
   // For RQ, we use their internal AbortSignals instead of letting the user pass their own
   extends Omit<TRPCRequestOptions, 'signal'> {
@@ -24,6 +33,9 @@ export interface TRPCReactRequestOptions
   abortOnUnmount?: boolean;
 }
 
+/**
+ * @public
+ */
 export interface TRPCQueryBaseOptions {
   /**
    * tRPC-related options
@@ -31,17 +43,29 @@ export interface TRPCQueryBaseOptions {
   trpc?: TRPCReactRequestOptions;
 }
 
+/**
+ * @public
+ */
 export interface TRPCQueryOptionsResult {
   trpc: {
     path: string;
   };
 }
 
+/**
+ * @public
+ */
 export type QueryType = 'any' | 'infinite' | 'query';
 
+/**
+ * @public
+ */
 export type TRPCQueryKey = [
   readonly string[],
   { input?: unknown; type?: Exclude<QueryType, 'any'> }?,
 ];
 
+/**
+ * @public
+ */
 export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]

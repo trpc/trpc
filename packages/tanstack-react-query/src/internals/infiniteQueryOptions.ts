@@ -2,16 +2,13 @@ import type {
   DataTag,
   DefinedInitialDataInfiniteOptions,
   InfiniteData,
+  QueryClient,
   QueryFunction,
+  SkipToken,
   UndefinedInitialDataInfiniteOptions,
   UnusedSkipTokenInfiniteOptions,
 } from '@tanstack/react-query';
-import {
-  infiniteQueryOptions,
-  skipToken,
-  type QueryClient,
-  type SkipToken,
-} from '@tanstack/react-query';
+import { infiniteQueryOptions, skipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import';
 import type {
@@ -188,13 +185,33 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
   >;
 }
 
+type AnyTRPCInfiniteQueryOptionsIn =
+  | DefinedTRPCInfiniteQueryOptionsIn<unknown, unknown, unknown, unknown>
+  | UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
+      unknown,
+      unknown,
+      unknown,
+      unknown
+    >
+  | UndefinedTRPCInfiniteQueryOptionsIn<unknown, unknown, unknown, unknown>;
+
+type AnyTRPCInfiniteQueryOptionsOut =
+  | DefinedTRPCInfiniteQueryOptionsOut<unknown, unknown, unknown, unknown>
+  | UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
+      unknown,
+      unknown,
+      unknown,
+      unknown
+    >
+  | UndefinedTRPCInfiniteQueryOptionsOut<unknown, unknown, unknown, unknown>;
+
 export function trpcInfiniteQueryOptions(args: {
   query: typeof TRPCUntypedClient.prototype.query;
   queryClient: QueryClient | (() => QueryClient);
   path: readonly string[];
   queryKey: TRPCQueryKey;
-  opts: UndefinedTRPCInfiniteQueryOptionsIn<unknown, unknown, unknown, unknown>;
-}) {
+  opts: AnyTRPCInfiniteQueryOptionsIn;
+}): AnyTRPCInfiniteQueryOptionsOut {
   const { query, path, queryKey, opts } = args;
   const inputIsSkipToken = queryKey[1]?.input === skipToken;
 

@@ -1,28 +1,18 @@
-import type { DataTag } from '@tanstack/react-query';
-import { type QueryClient, type QueryFilters } from '@tanstack/react-query';
-import {
-  getUntypedClient,
-  TRPCUntypedClient,
-  type CreateTRPCClient,
-  type TRPCRequestOptions,
-} from '@trpc/client';
-import {
-  type AnyProcedure,
-  type inferProcedureInput,
-  type inferRouterContext,
-  type inferTransformedProcedureOutput,
-  type ProcedureType,
-} from '@trpc/server';
+import type { DataTag, QueryClient, QueryFilters } from '@tanstack/react-query';
+import type { CreateTRPCClient, TRPCRequestOptions } from '@trpc/client';
+import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type {
-  AnyRootTypes,
-  AnyRouter,
-  MaybePromise,
-  RouterRecord,
-} from '@trpc/server/unstable-core-do-not-import';
-import {
-  callProcedure,
-  createRecursiveProxy,
-} from '@trpc/server/unstable-core-do-not-import';
+  AnyTRPCProcedure,
+  AnyTRPCRootTypes,
+  AnyTRPCRouter,
+  inferProcedureInput,
+  inferRouterContext,
+  inferTransformedProcedureOutput,
+  TRPCProcedureType,
+  TRPCRouterRecord,
+} from '@trpc/server';
+import { callTRPCProcedure, createTRPCRecursiveProxy } from '@trpc/server';
+import type { MaybePromise } from '@trpc/server/unstable-core-do-not-import';
 import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
@@ -54,6 +44,7 @@ export interface DecorateQueryKeyable {
    * Calculate the TanStack Query Key for a Route
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
    */
   queryKey: () => TRPCQueryKey;
 
@@ -61,17 +52,18 @@ export interface DecorateQueryKeyable {
    * Calculate a TanStack Query Filter for a Route
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryFilter
    */
   queryFilter: (input?: undefined, filters?: QueryFilters) => QueryFilters;
 }
 
-export type InferInput<
+export type inferInput<
   TProcedure extends
     | DecorateQueryProcedure<any>
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['input'];
 
-export type InferOutput<
+export type inferOutput<
   TProcedure extends
     | DecorateQueryProcedure<any>
     | DecorateMutationProcedure<any>,
@@ -79,7 +71,7 @@ export type InferOutput<
 
 export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   /**
-   * @internal prefer using InferInput and InferOutput to access types
+   * @internal prefer using inferInput and inferOutput to access types
    */
   '~types': {
     input: TDef['input'];
@@ -88,12 +80,18 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
   };
 
   /**
+   * Create a set of type-safe query options that can be passed to `useQuery`, `prefetchQuery` etc.
+   *
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
    */
   queryOptions: TRPCQueryOptions<TDef>;
 
   /**
+   * Create a set of type-safe infinite query options that can be passed to `useInfiniteQuery`, `prefetchInfiniteQuery` etc.
+   *
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
    */
   infiniteQueryOptions: TRPCInfiniteQueryOptions<TDef>;
 
@@ -101,6 +99,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
    * Calculate the TanStack Query Key for a Query Procedure
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
    */
   queryKey: (
     input?: TDef['input'],
@@ -110,6 +109,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
    * Calculate a TanStack Query Filter for a Query Procedure
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryFilter
    */
   queryFilter: (
     input?: TDef['input'],
@@ -124,7 +124,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
 
 export interface DecorateMutationProcedure<TDef extends ResolverDef> {
   /**
-   * @internal prefer using InferInput and InferOutput to access types
+   * @internal prefer using inferInput and inferOutput to access types
    */
   '~types': {
     input: TDef['input'];
@@ -132,25 +132,31 @@ export interface DecorateMutationProcedure<TDef extends ResolverDef> {
   };
 
   /**
-   * @see
+   * Create a set of type-safe mutation options that can be passed to `useMutation`
+   *
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationOptions
    */
   mutationOptions: TRPCMutationOptions<TDef>;
 
   /**
    * Calculate the TanStack Mutation Key for a Mutation Procedure
+   *
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#mutationKey
    */
   mutationKey: () => TRPCMutationKey;
 }
 
 export interface DecorateSubscriptionProcedure<TDef extends ResolverDef> {
   /**
-   * @see
+   * Create a set of type-safe subscription options that can be passed to `useSubscription`
+   *
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#subscriptionOptions
    */
   subscriptionOptions: TRPCSubscriptionOptions<TDef>;
 }
 
 export type DecorateProcedure<
-  TType extends ProcedureType,
+  TType extends TRPCProcedureType,
   TDef extends ResolverDef,
 > = TType extends 'query'
   ? DecorateQueryProcedure<TDef>
@@ -164,13 +170,13 @@ export type DecorateProcedure<
  * @internal
  */
 export type DecoratedProcedureUtilsRecord<
-  TRoot extends AnyRootTypes,
-  TRecord extends RouterRecord,
+  TRoot extends AnyTRPCRootTypes,
+  TRecord extends TRPCRouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
+    ? $Value extends TRPCRouterRecord
       ? DecoratedProcedureUtilsRecord<TRoot, $Value> & DecorateQueryKeyable
-      : $Value extends AnyProcedure
+      : $Value extends AnyTRPCProcedure
         ? DecorateProcedure<
             $Value['_def']['type'],
             {
@@ -184,7 +190,7 @@ export type DecoratedProcedureUtilsRecord<
     : never;
 };
 
-export type TRPCOptionsProxy<TRouter extends AnyRouter> =
+export type TRPCOptionsProxy<TRouter extends AnyTRPCRouter> =
   DecoratedProcedureUtilsRecord<
     TRouter['_def']['_config']['$types'],
     TRouter['_def']['record']
@@ -198,18 +204,22 @@ export interface TRPCOptionsProxyOptionsBase {
   };
 }
 
-export interface TRPCOptionsProxyOptionsInternal<TRouter extends AnyRouter> {
+export interface TRPCOptionsProxyOptionsInternal<
+  TRouter extends AnyTRPCRouter,
+> {
   router: TRouter;
   ctx:
     | inferRouterContext<TRouter>
     | (() => MaybePromise<inferRouterContext<TRouter>>);
 }
 
-export interface TRPCOptionsProxyOptionsExternal<TRouter extends AnyRouter> {
+export interface TRPCOptionsProxyOptionsExternal<
+  TRouter extends AnyTRPCRouter,
+> {
   client: TRPCUntypedClient<TRouter> | CreateTRPCClient<TRouter>;
 }
 
-export type TRPCOptionsProxyOptions<TRouter extends AnyRouter> =
+export type TRPCOptionsProxyOptions<TRouter extends AnyTRPCRouter> =
   TRPCOptionsProxyOptionsBase &
     (
       | TRPCOptionsProxyOptionsInternal<TRouter>
@@ -232,14 +242,20 @@ function getQueryType(method: UtilsMethods) {
   return map[method];
 }
 
-export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
+/**
+ * Create a typed proxy from your router types. Can also be used on the server.
+ *
+ * @see https://trpc.io/docs/client/tanstack-react-query/setup#3b-setup-without-react-context
+ * @see https://trpc.io/docs/client/tanstack-react-query/server-components#5-create-a-trpc-caller-for-server-components
+ */
+export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
   opts: TRPCOptionsProxyOptions<TRouter>,
 ): TRPCOptionsProxy<TRouter> {
-  const callIt = (type: ProcedureType): any => {
+  const callIt = (type: TRPCProcedureType): any => {
     return (path: string, input: unknown, trpcOpts: TRPCRequestOptions) => {
       if ('router' in opts) {
         return Promise.resolve(unwrapLazyArg(opts.ctx)).then((ctx) =>
-          callProcedure({
+          callTRPCProcedure({
             router: opts.router,
             path: path,
             getRawInput: async () => input,
@@ -259,7 +275,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyRouter>(
     };
   };
 
-  return createRecursiveProxy(({ args, path: _path }) => {
+  return createTRPCRecursiveProxy(({ args, path: _path }) => {
     const path = [..._path];
     const utilName = path.pop() as UtilsMethods;
     const [arg1, arg2] = args as any[];

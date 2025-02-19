@@ -28,6 +28,15 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
 See the <a href="/blog/2025/02/12/return-Response-objects-in-procedures">blog post</a> for more information.
 
+### New TanStack React Query integration! (non-breaking)
+
+We are excited to announce the new TanStack React Query integration for tRPC is now available on tRPC's `next`-release!
+
+{/* Uses a `<a>`-link to prevent Docusaurus' build from failing */}
+
+<a href="/blog/introducing-tanstack-react-query-client">Read the blog post</a> for
+more information.
+
 ### Stopping subscriptions from the server (rarely breaking)
 
 We now support stopping subscriptions from the server, this means that you can now do things like this:
@@ -91,12 +100,6 @@ const router = router({
   }),
 });
 ```
-
-### Removed export of `@trpc/client` from `@trpc/react-query` (non-breaking)
-
-We have removed the re-exports of `@trpc/client` types and utilities from the `@trpc/react-query` package.
-
-This should not be a breaking change, but if you have missing imports after upgrading, you may need to update some import statements from `from '@trpc/react-query'` to `from '@trpc/client'`.
 
 ### Moved `reconnectAfterInactivityMs` to `sse.client` (non-breaking)
 

@@ -26,3 +26,12 @@ juliusmarminge:
     x: jullerino
     bluesky: jumr.dev
     github: juliusmarminge
+
+nicklucas:
+  name: Nick Lucas
+  title: tRPC Core Team Member
+  url: https://bsky.app/profile/nicklucas.dev
+  image_url: https://github.com/nick-lucas.png
+  socials:
+    bluesky: nicklucas.dev
+    github: nick-lucas

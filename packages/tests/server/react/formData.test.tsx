@@ -17,6 +17,7 @@ import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone'
 import { konn } from 'konn';
 import type { ReactNode } from 'react';
 import React from 'react';
+import transformer from 'superjson';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
 
@@ -220,4 +221,51 @@ test('GET requests are not supported', async () => {
   await expect(ctx.client.q.query(form)).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: FormData is only supported for mutations]`,
   );
+});
+
+describe('with transformer', () => {
+  const ctx = konn()
+    .beforeEach(() => {
+      const t = initTRPC.context<CreateHTTPContextOptions>().create({
+        transformer,
+      });
+
+      const appRouter = t.router({
+        polymorphic: t.procedure
+          .input(
+            zfd.formData({
+              text: z.string(),
+            }),
+          )
+          .mutation((opts) => {
+            return opts.input;
+          }),
+      });
+
+      return routerToServerAndClientNew(appRouter, {
+        client: ({ httpUrl }) => ({
+          links: [
+            httpLink({
+              url: httpUrl,
+              transformer,
+            }),
+          ],
+        }),
+      });
+    })
+    .afterEach(async (ctx) => {
+      await ctx?.close?.();
+    })
+    .done();
+
+  test('regression test: FormData + transformers', async () => {
+    const form = new FormData();
+    form.set('text', 'foo');
+
+    const formDataRes = await ctx.client.polymorphic.mutate(form);
+    const fd = new FormData();
+    fd.set('text', 'foo');
+    const jsonRes = await ctx.client.polymorphic.mutate(fd);
+    expect(formDataRes).toEqual(jsonRes);
+  });
 });

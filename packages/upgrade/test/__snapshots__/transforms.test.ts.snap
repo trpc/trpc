@@ -1,0 +1,147 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`hooks basic.ts 1`] = `
+"import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+export function Component() {
+  const trpc = useTRPC();
+  useQuery(trpc.post.list.queryOptions());
+  useQuery(trpc.post.queryOptions());
+  useQuery(trpc.a.b.c.d.queryOptions());
+  // eslint-disable-next-line @typescript-eslint/dot-notation
+  useQuery(trpc['post'].queryOptions());
+
+  useQuery(trpc.post.byId.queryOptions({ id: 1 }));
+  useQuery(trpc.num.queryOptions(1));
+
+  useQuery(trpc.post.list.queryOptions(undefined, { staleTime: 1000 }));
+  useQuery(trpc.post.byId.queryOptions({ id: 1 }, { staleTime: 1000 }));
+}
+"
+`;
+
+exports[`hooks existing-rq.ts 1`] = `""`;
+
+exports[`hooks existing-rq-mix.ts 1`] = `
+"import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+export function Component() {
+  const trpc = useTRPC();
+  useQuery({ queryKey: ['a'], queryFn: () => 1 });
+  useMutation({ mutationFn: () => 1 });
+
+  useQuery(trpc.post.byId.queryOptions({ id: 1 }));
+  useQuery(trpc.num.queryOptions(1));
+  useInfiniteQuery(trpc.post.list.infiniteQueryOptions());
+}
+"
+`;
+
+exports[`hooks multiple-functions.ts 1`] = `
+"import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+export function Component1() {
+  const trpc = useTRPC();
+  useQuery(trpc.post.list.queryOptions());
+  useQuery(trpc.post.queryOptions());
+  useQuery(trpc.a.b.c.d.queryOptions());
+}
+
+export function Component2() {
+  const trpc = useTRPC();
+  useQuery(trpc.post.list.queryOptions());
+  useQuery(trpc.post.queryOptions());
+  useQuery(trpc.a.b.c.d.queryOptions());
+}
+"
+`;
+
+exports[`hooks suspense-destructuring.ts 1`] = `
+"import {
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+export function Component(channelId: string) {
+  const trpc = useTRPC();
+  const query = useSuspenseQuery(trpc.post.list.queryOptions());
+
+  const data = query.data;
+
+  const [a, b] = [1, 2];
+
+  const query2 = useSuspenseInfiniteQuery(
+    trpc.post.infinite.infiniteQueryOptions(
+      { channelId },
+      {
+        getNextPageParam: (d) => d.nextCursor,
+        // No need to refetch as we have a subscription
+        refetchOnReconnect: false,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,
+      },
+    ),
+  );
+
+  const query3 = useSuspenseInfiniteQuery(
+    trpc.post.infinite.infiniteQueryOptions(
+      { channelId },
+      {
+        getNextPageParam: (d) => d.nextCursor,
+      },
+    ),
+  );
+
+  const data3 = query3.data;
+
+  const { data: data4 } = useSuspenseInfiniteQuery(
+    trpc.post.infinite.infiniteQueryOptions(
+      { channelId },
+      {
+        getNextPageParam: (d) => d.nextCursor,
+      },
+    ),
+  );
+}
+"
+`;
+
+exports[`hooks with-invalidate.ts 1`] = `
+"import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+export function Component() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation(
+    trpc.post.create.mutationOptions({
+      onSettled: () => {
+        queryClient.invalidateQueries(trpc.post.queryFilter());
+        queryClient.invalidateQueries(trpc.post.list.queryFilter());
+        queryClient.invalidateQueries(
+          trpc.post.x.y.z.longPropName.queryFilter(),
+        );
+
+        // eslint-disable-next-line @typescript-eslint/dot-notation
+        queryClient.invalidateQueries(trpc['post'].queryFilter());
+      },
+    }),
+  );
+}
+"
+`;
+
+exports[`provider basic.ts 1`] = `
+"'use client';
+
+import type { AppRouter } from '@acme/api';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+"
+`;

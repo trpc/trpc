@@ -1,8 +1,8 @@
 export { createTRPCContext } from './internals/Context';
 export type {
   TRPCOptionsProxy,
-  InferInput,
-  InferOutput,
+  inferInput,
+  inferOutput,
   DecorateMutationProcedure,
   DecorateProcedure,
   DecorateQueryKeyable,
@@ -23,3 +23,4 @@ export type {
 } from './internals/subscriptionOptions';
 export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
 export { useSubscription } from './internals/subscriptionOptions';
+export type * from './internals/types';

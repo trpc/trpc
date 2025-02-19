@@ -94,10 +94,12 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
   });
 
   // wss
-  const wss = new WebSocketServer({ port: 0 });
+  let wss = new WebSocketServer({ port: 0 });
   const wssPort = (wss.address() as any).port as number;
   const applyWSSHandlerOpts: WSSHandlerOptions<TRouter> = {
-    wss,
+    get wss() {
+      return wss;
+    },
     router,
     ...((opts?.wssServer as any) ?? {}),
     createContext(it) {
@@ -105,7 +107,7 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
       return opts?.wssServer?.createContext?.(it) ?? it;
     },
   };
-  const wssHandler = applyWSSHandler(applyWSSHandlerOpts);
+  let wssHandler = applyWSSHandler(applyWSSHandlerOpts);
   const wssUrl = `ws://localhost:${wssPort}`;
 
   const server = httpServer.listen(0);
@@ -157,6 +159,14 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
         }),
       ]);
     },
+    open: () => {
+      if (server.listening) {
+        throw new Error('Server is already running');
+      }
+      server.listen(httpPort);
+      wss = new WebSocketServer({ port: wssPort });
+      wssHandler = applyWSSHandler(applyWSSHandlerOpts);
+    },
     router,
     trpcClientOptions,
     httpPort,
@@ -164,9 +174,13 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     httpUrl,
     wssUrl,
     applyWSSHandlerOpts,
-    wssHandler,
+    get wssHandler() {
+      return wssHandler;
+    },
     connections,
-    wss,
+    get wss() {
+      return wss;
+    },
     onErrorSpy,
     createContextSpy,
     onRequestSpy,
