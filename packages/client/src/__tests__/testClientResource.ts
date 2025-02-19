@@ -1,4 +1,5 @@
 import {
+  __getSpy,
   trpcServerResource,
   type TRPCServerResourceOpts,
 } from '@trpc/server/__tests__/trpcServerResource';
@@ -10,7 +11,6 @@ import {
 import type { AnyTRPCRouter } from '@trpc/server';
 import type { inferClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
-import type { Mock } from 'vitest';
 import { WebSocket } from 'ws';
 import type {
   CreateTRPCClientOptions,
@@ -48,19 +48,13 @@ export interface TestServerAndClientResourceOpts<TRouter extends AnyTRPCRouter>
     | CreateClientCallback<TRouter>;
 }
 
-export const __getSpyLink = (): Mock<(op: Operation<unknown>) => void> => {
-  return vi.fn((_op) => {
-    // noop
-  });
-};
-
 export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
   router: TRouter,
   opts?: TestServerAndClientResourceOpts<TRouter>,
 ) {
   const serverResource = trpcServerResource(router, opts);
 
-  const spyLink = __getSpyLink();
+  const spyLink = __getSpy<(op: Operation<unknown>) => void>();
 
   // client
   const wsClient = createWSClient({

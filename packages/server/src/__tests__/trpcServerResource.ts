@@ -21,10 +21,10 @@ export interface TRPCServerResourceOpts<TRouter extends AnyTRPCRouter> {
  * This is a hack in order to prevent typescript error
  * "The inferred type of 'testServerAndClientResource' cannot be named without a reference to X"
  */
-export const __getSpy = <T extends (...args: any[]) => void>(
-  mock: T,
-): Mock<T> => {
-  return vi.fn(mock);
+export const __getSpy = <T extends (...args: any[]) => void>(): Mock<T> => {
+  return vi.fn(() => {
+    // noop
+  });
 };
 
 export function trpcServerResource<TRouter extends AnyTRPCRouter>(
@@ -37,18 +37,12 @@ export function trpcServerResource<TRouter extends AnyTRPCRouter>(
     CreateHTTPHandlerOptions<TRouter>['createContext']
   >;
 
-  const onErrorSpy = __getSpy<OnError>(() => {
-    // noop
-  });
-  const createContextSpy = __getSpy<CreateContext>(() => {
-    // noop
-  });
+  const onErrorSpy = __getSpy<OnError>();
+  const createContextSpy = __getSpy<CreateContext>();
   const serverOverrides: Partial<CreateHTTPHandlerOptions<TRouter>> =
     opts?.server ?? {};
 
-  const onReqAborted = __getSpy(() => {
-    // noop
-  });
+  const onReqAborted = __getSpy();
   const handler = createHTTPHandler({
     router,
     ...serverOverrides,
@@ -64,9 +58,7 @@ export function trpcServerResource<TRouter extends AnyTRPCRouter>(
       return opts?.server?.createContext?.(it) ?? it;
     },
   });
-  const onRequestSpy = __getSpy<typeof handler>(() => {
-    // noop
-  });
+  const onRequestSpy = __getSpy<typeof handler>();
 
   const httpServer = http.createServer((...args) => {
     onRequestSpy(...args);
