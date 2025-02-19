@@ -34,7 +34,7 @@ export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
   httpUrl: string;
   wssUrl: string;
   wsClient: TRPCWebSocketClient;
-  transformer: TransformerOptions<inferClientTypes<TRouter>>;
+  transformer: TransformerOptions<inferClientTypes<TRouter>>['transformer'];
 }) => Partial<CreateTRPCClientOptions<TRouter>>;
 
 export interface TestServerAndClientResourceOpts<TRouter extends AnyTRPCRouter>
