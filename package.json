@@ -76,7 +76,7 @@
     "prettier-plugin-tailwindcss": "^0.6.8",
     "rollup": "^4.27.4",
     "rollup-plugin-analyzer": "^4.0.0",
-    "rollup-plugin-delete": "^2.1.0",
+    "rollup-plugin-delete": "^3.0.0",
     "rollup-plugin-node-externals": "^8.0.0",
     "rollup-plugin-swc3": "^0.12.1",
     "superjson": "^1.12.4",

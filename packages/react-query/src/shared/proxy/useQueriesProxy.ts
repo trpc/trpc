@@ -1,8 +1,8 @@
 import type { QueryOptions } from '@tanstack/react-query';
+import type { TRPCClient } from '@trpc/client';
 import {
   getUntypedClient,
   TRPCUntypedClient,
-  type inferRouterClient,
   type TRPCClientError,
 } from '@trpc/client';
 import type {
@@ -91,7 +91,7 @@ export type UseSuspenseQueriesProcedureRecord<
  * @internal
  */
 export function createUseQueries<TRouter extends AnyRouter>(
-  client: TRPCUntypedClient<TRouter> | inferRouterClient<TRouter>,
+  client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>,
 ) {
   const untypedClient: TRPCUntypedClient<TRouter> =
     client instanceof TRPCUntypedClient ? client : getUntypedClient(client);
