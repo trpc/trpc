@@ -25,6 +25,7 @@ import {
   sys,
 } from 'typescript';
 import { version } from '../../package.json';
+import { findTRPCImportReferences } from '../lib/ast/scanners';
 
 const MakeCommand = (command: string, ...args: string[]) => {
   return Command.make(command, ...args).pipe(
@@ -203,6 +204,10 @@ const rootComamnd = CLICommand.make(
       const program = yield* TSProgram;
       const sourceFiles = program.getSourceFiles();
 
+      const possibleReferences = findTRPCImportReferences(program);
+      const trpcFile = possibleReferences.mostUsed.file;
+      const trpcImportName = possibleReferences.importName;
+
       const commitedFiles = yield* filterIgnored(sourceFiles);
       yield* Effect.forEach(transforms, (transform) => {
         return pipe(
@@ -210,7 +215,11 @@ const rootComamnd = CLICommand.make(
           Effect.flatMap(() =>
             Effect.tryPromise(async () =>
               import('jscodeshift/src/Runner.js').then(({ run }) =>
-                run(transform, commitedFiles, args),
+                run(transform, commitedFiles, {
+                  ...args,
+                  trpcFile: trpcFile,
+                  trpcImportName: trpcImportName,
+                }),
               ),
             ),
           ),
