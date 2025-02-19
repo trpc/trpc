@@ -1,3 +1,5 @@
+import '@testing-library/dom';
+import '@testing-library/jest-dom/vitest';
 import type { TestServerAndClientResourceOpts } from '@trpc/client/__tests__/testClientResource';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
