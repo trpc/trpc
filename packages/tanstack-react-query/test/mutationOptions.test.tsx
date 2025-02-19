@@ -1,18 +1,12 @@
-import { getServerAndReactClient } from './__helpers';
+import { testReactResource } from './__helpers';
 import { useMutation } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
 
 const testContext = () => {
-  let iterableDeferred = createDeferred<void>();
-  const nextIterable = () => {
-    iterableDeferred.resolve();
-    iterableDeferred = createDeferred();
-  };
   const t = initTRPC.create({});
 
   const appRouter = t.router({
@@ -38,7 +32,7 @@ const testContext = () => {
     }),
   });
 
-  return Object.assign(getServerAndReactClient(appRouter), { nextIterable });
+  return testReactResource(appRouter);
 };
 
 describe('mutationOptions', () => {

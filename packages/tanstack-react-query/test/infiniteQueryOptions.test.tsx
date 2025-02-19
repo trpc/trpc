@@ -1,4 +1,4 @@
-import { getServerAndReactClient } from './__helpers';
+import { testReactResource } from './__helpers';
 import {
   infiniteQueryOptions,
   useInfiniteQuery,
@@ -44,7 +44,7 @@ const testContext = () => {
     }),
   });
 
-  return getServerAndReactClient(appRouter);
+  return testReactResource(appRouter);
 };
 
 describe('infiniteQueryOptions', () => {

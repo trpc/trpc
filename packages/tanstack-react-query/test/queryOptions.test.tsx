@@ -1,4 +1,4 @@
-import { getServerAndReactClient, testReactResource } from './__helpers';
+import { testReactResource } from './__helpers';
 import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';

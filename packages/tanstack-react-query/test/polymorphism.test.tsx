@@ -8,7 +8,7 @@
   The polymorphism types can be used to generate abstract types which routers sharing a common 
   interface are compatible with, and allow you to pass around deep router paths to generic components with ease.
 */
-import { getServerAndReactClient } from './__helpers';
+import { testReactResource } from './__helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -78,13 +78,9 @@ describe('polymorphism', () => {
    * Test setup
    */
   const testContext = () => {
-    const { appRouter, IssueExportsProvider, DiscussionExportsProvider } =
-      createTRPCApi();
+    const { appRouter } = createTRPCApi();
 
-    return Object.assign(getServerAndReactClient(appRouter), {
-      IssueExportsProvider,
-      DiscussionExportsProvider,
-    });
+    return testReactResource(appRouter);
   };
 
   describe('simple factory', () => {
