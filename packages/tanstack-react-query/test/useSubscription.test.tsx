@@ -1,5 +1,5 @@
 import { EventEmitter, on } from 'node:events';
-import { getServerAndReactClient, testReactResource } from './__helpers';
+import { testReactResource } from './__helpers';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { unstable_httpSubscriptionLink, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
