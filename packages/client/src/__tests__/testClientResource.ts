@@ -40,7 +40,7 @@ export type CreateClientCallback<TRouter extends AnyTRPCRouter> = (opts: {
   transformer: TransformerOptions<inferClientTypes<TRouter>>;
 }) => Partial<WithTRPCConfig<TRouter>>;
 
-interface RouterToServerAndClientNewOpts<TRouter extends AnyTRPCRouter>
+export interface TestServerAndClientResourceOpts<TRouter extends AnyTRPCRouter>
   extends TRPCServerResourceOpts<TRouter> {
   /**
    * Defaults to being lazy
@@ -57,7 +57,7 @@ export const __getSpyLink = (): Mock<(op: Operation<unknown>) => void> => {
 
 export function testServerAndClientResource<TRouter extends AnyTRPCRouter>(
   router: TRouter,
-  opts?: RouterToServerAndClientNewOpts<TRouter>,
+  opts?: TestServerAndClientResourceOpts<TRouter>,
 ) {
   const serverResource = trpcServerResource(router, opts);
 

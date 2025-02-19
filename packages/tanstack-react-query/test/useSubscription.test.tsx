@@ -1,6 +1,7 @@
 import { EventEmitter, on } from 'node:events';
-import { getServerAndReactClient } from './__helpers';
+import { getServerAndReactClient, testReactResource } from './__helpers';
 import { fireEvent, waitFor } from '@testing-library/react';
+import { unstable_httpSubscriptionLink, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
@@ -97,10 +98,24 @@ const getCtx = (protocol: 'http' | 'ws') => {
       }),
   });
 
+  const ctx = testReactResource(appRouter, {
+    client(opts) {
+      return {
+        links: [
+          protocol === 'http'
+            ? unstable_httpSubscriptionLink({
+                url: opts.httpUrl,
+              })
+            : wsLink({
+                client: opts.wsClient,
+              }),
+        ],
+      };
+    },
+  });
+
   return {
-    ...getServerAndReactClient(appRouter, {
-      subscriptions: protocol,
-    }),
+    ...ctx,
     ee,
   };
 };

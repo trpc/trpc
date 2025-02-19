@@ -2,6 +2,7 @@ import '@testing-library/dom';
 import '@testing-library/jest-dom/vitest';
 import * as Http from 'node:http';
 import type * as Net from 'node:net';
+import type { TestServerAndClientResourceOpts } from '@trpc/client/__tests__/testClientResource';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
@@ -287,8 +288,9 @@ export function getServerAndReactClient<TRouter extends AnyTRPCRouter>(
 
 export function testReactResource<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,
+  opts?: TestServerAndClientResourceOpts<TRouter>,
 ) {
-  const ctx = testServerAndClientResource(appRouter);
+  const ctx = testServerAndClientResource(appRouter, opts);
 
   const queryClient = new QueryClient();
 
