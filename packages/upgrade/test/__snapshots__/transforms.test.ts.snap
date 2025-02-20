@@ -68,8 +68,10 @@ export function Component() {
   const queryClient = useQueryClient();
 }
 
+const DummyContext = React.createContext(2);
+
 export function Component2() {
-  const x = React.useContext(React.createContext(2));
+  const value = React.useContext(DummyContext);
 }
 "
 `;
