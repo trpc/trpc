@@ -250,7 +250,7 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
    */
   invalidateQueries: (
     queryKey: TRPCQueryKey,
-    filters?: InvalidateQueryFilters,
+    filters?: InvalidateQueryFilters<unknown, Error, unknown, TRPCQueryKey>,
     options?: InvalidateOptions,
   ) => Promise<void>;
 
