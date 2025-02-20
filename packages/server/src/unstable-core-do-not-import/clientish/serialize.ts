@@ -40,23 +40,31 @@ export type Serialize<T> =
     Simplify<SerializeObject<UndefinedToOptional<T>>> :
   never;
 
+type TupleKeys<T> = Extract<keyof T, `${number}`>;
+type TupleBrandedKeys<T> = Exclude<keyof T, keyof any[] | TupleKeys<T>>;
+
 /** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */
-type SerializeTuple<T extends [unknown, ...unknown[]]> = {
-  [K in keyof T]: T[K] extends NonJsonPrimitive ? null : Serialize<T[K]>;
+export type SerializeTuple<T extends [unknown, ...unknown[]]> = {
+  [K in TupleKeys<T>]: T[K] extends NonJsonPrimitive ? null : Serialize<T[K]>;
+} & {
+  [K in TupleBrandedKeys<T>]: T[K];
 };
 
-// prettier-ignore
-type SerializeObjectKey<T extends Record<any, any>, K> = 
+type SerializeObjectKey<T extends Record<any, any>, K> =
   // never include entries where the key is a symbol
-  K extends symbol ? never : 
-  // always include entries where the value is any
-  IsAny<T[K]> extends true ? K :
-  // always include entries where the value is unknown
-  unknown extends T[K] ? K : 
-  // never include entries where the value is a non-JSON primitive
-  T[K] extends NonJsonPrimitive ? never : 
-  // otherwise serialize the value
-  K;
+  K extends symbol
+    ? never
+    : // always include entries where the value is any
+      IsAny<T[K]> extends true
+      ? K
+      : // always include entries where the value is unknown
+        unknown extends T[K]
+        ? K
+        : // never include entries where the value is a non-JSON primitive
+          T[K] extends NonJsonPrimitive
+          ? never
+          : // otherwise serialize the value
+            K;
 /**
  * JSON serialize objects (not including arrays) and classes
  * @internal
