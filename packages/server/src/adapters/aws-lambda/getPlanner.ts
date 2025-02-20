@@ -40,7 +40,7 @@ interface Processor<TEvent extends LambdaEvent> {
   toResult: (response: Response) => Promise<inferAPIGWReturn<TEvent>>;
 }
 
-function getHeadersAndCookiesFromResponse(response: Response) {
+export function getHeadersAndCookiesFromResponse(response: Response) {
   const headers = Object.fromEntries(response.headers.entries());
 
   const cookies: string[] = response.headers

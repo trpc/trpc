@@ -7,6 +7,7 @@
  * import type { HTTPBaseHandlerOptions } from '@trpc/server/http'
  * ```
  */
+import { pipeline } from 'node:stream/promises';
 import type { Context as APIGWContext } from 'aws-lambda';
 // @trpc/server
 import type {
@@ -22,7 +23,7 @@ import type {
 } from '../../@trpc/server/http';
 import { resolveResponse } from '../../@trpc/server/http';
 import type { inferAPIGWReturn, LambdaEvent } from './getPlanner';
-import { getPlanner } from './getPlanner';
+import { getHeadersAndCookiesFromResponse, getPlanner } from './getPlanner';
 
 export type CreateAWSLambdaContextOptions<TEvent extends LambdaEvent> = {
   event: TEvent;
@@ -80,5 +81,60 @@ export function awsLambdaRequestHandler<
     });
 
     return await planner.toResult(response);
+  };
+}
+
+export function awsLambdaStreamingRequestHandler<
+  TRouter extends AnyRouter,
+  TEvent extends LambdaEvent,
+>(
+  opts: AWSLambdaOptions<TRouter, TEvent>,
+): (
+  event: TEvent,
+  responseStream: awslambda.ResponseStream,
+  context: APIGWContext,
+) => Promise<void> {
+  return async (event, responseStream, context) => {
+    // Seems like without this lambda keeps executing after streaming is done
+    context.callbackWaitsForEmptyEventLoop = false;
+
+    const planner = getPlanner(event);
+
+    const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
+      innerOpts,
+    ) => {
+      return await opts.createContext?.({ event, context, ...innerOpts });
+    };
+
+    const response = await resolveResponse({
+      ...opts,
+      createContext,
+      req: planner.request,
+      path: planner.path,
+      error: null,
+      onError(o) {
+        opts?.onError?.({
+          ...o,
+          req: event,
+        });
+      },
+    });
+
+    const { headers, cookies } = getHeadersAndCookiesFromResponse(response);
+
+    const httpResponseStream = awslambda.HttpResponseStream.from(
+      responseStream,
+      {
+        headers,
+        cookies,
+        statusCode: response.status,
+      },
+    );
+
+    if (response.body) {
+      await pipeline(response.body, httpResponseStream);
+    }
+
+    httpResponseStream.end();
   };
 }
