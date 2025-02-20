@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@monotest/api": "workspace:*",
-    "@tanstack/react-query": "^5.66.0",
+    "@tanstack/react-query": "https://pkg.pr.new/@tanstack/react-query@8670",
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",

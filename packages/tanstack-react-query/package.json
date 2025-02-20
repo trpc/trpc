@@ -56,7 +56,7 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.66.0",
+    "@tanstack/react-query": "https://pkg.pr.new/@tanstack/react-query@8670",
     "@trpc/client": "^10.45.1",
     "@trpc/server": "^10.45.1",
     "@types/node": "^20.10.0",
