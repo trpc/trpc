@@ -183,6 +183,7 @@ describe('get queryKey', () => {
       );
 
       expect(trpc.routeKey()).toMatchInlineSnapshot(`Array []`);
+
       expect(trpc.bluesky.routeKey()).toMatchInlineSnapshot(`
         Array [
           Array [
@@ -199,19 +200,14 @@ describe('get queryKey', () => {
         ]
       `);
       expect(trpc.bluesky.post.byId.routeKey()).toMatchInlineSnapshot(`
+        Array [
           Array [
-            Array [
-              "bluesky",
-              "post",
-              "byId",
-            ],
-            Object {
-              "input": Object {
-                "id": "1",
-              },
-            },
-          ]
-        `);
+            "bluesky",
+            "post",
+            "byId",
+          ],
+        ]
+      `);
       expect(trpc.bluesky.post.byId.queryKey({ id: '1' }))
         .toMatchInlineSnapshot(`
           Array [
@@ -224,6 +220,7 @@ describe('get queryKey', () => {
               "input": Object {
                 "id": "1",
               },
+              "type": "query",
             },
           ]
         `);
