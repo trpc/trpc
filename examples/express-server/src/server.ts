@@ -2,8 +2,8 @@ import { EventEmitter } from 'events';
 import { initTRPC, TRPCError } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
+import transformer from 'superjson';
 import { z } from 'zod';
-import transformer from 'superjson'
 
 const createContext = ({
   req,
@@ -26,9 +26,8 @@ const createContext = ({
 };
 type Context = Awaited<ReturnType<typeof createContext>>;
 
-
 const t = initTRPC.context<Context>().create({
-  transformer
+  transformer,
 });
 
 const router = t.router;
@@ -106,6 +105,15 @@ const appRouter = router({
       };
     }),
   }),
+  dateMutation: publicProcedure
+    .input(
+      z.object({
+        date: z.date(),
+      }),
+    )
+    .mutation((opts) => {
+      return opts.input;
+    }),
 });
 
 export type AppRouter = typeof appRouter;
