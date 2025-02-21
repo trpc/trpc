@@ -9,6 +9,8 @@ slug: /server/adapters/aws-lambda
 
 The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2) use cases.
 
+> This does not support streaming the response to the client, something required for SSE based subscription. See the next section for another adapter that supports this.
+
 > `httpBatchLink` requires the router to work on a single API Gateway Resource (as shown in the [example](https://github.com/trpc/trpc/tree/next/examples/lambda-api-gateway)).
 > If you'd like to have a Resource per procedure, you can use the `httpLink` instead ([more info](https://github.com/trpc/trpc/issues/5738#issuecomment-2130001522)).
 
@@ -111,3 +113,29 @@ function createContext({
 ```
 
 [Read more here about payload format version](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)
+
+## AWS Lambda Streaming Adapter
+
+Aws Lambda supports streaming responses to the client. This is useful for Server-Sent Events (SSE) based subscriptions.
+
+### How to make a streaming lambda
+
+In order to receive trpc subscription over SSE the lambda needs to stream its http response to the client, something not supported by the default lambda configuration, neither by the default trpc lambda adapter.
+
+To have a streaming lambda:
+
+- The lambda handler should be `awslambda.streamifyResponse`. Note that awslambda is provided by the lambda execution context and cannot be imported. Defining global types is necessary in ts.
+- You need to use lambda function direct URL (no apigateway integration). The lambda invoke method should be `RESPONSE_STREAM`
+
+With this setup, you can use the alternate trpc lambda streaming adapter.
+
+```ts title='handler.ts'
+import { awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
+
+const appRouter = /* ... */;
+
+export const handler = awslambda.streamifyResponse(awsLambdaStreamingRequestHandler({
+  router: appRouter,
+  /* ... */
+}))
+```
