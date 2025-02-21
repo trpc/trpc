@@ -1754,6 +1754,10 @@ importers:
         version: 5.7.2
 
   packages/client:
+    dependencies:
+      dataloader:
+        specifier: ^2.2.2
+        version: 2.2.2
     devDependencies:
       '@trpc/server':
         specifier: ^10.45.1
