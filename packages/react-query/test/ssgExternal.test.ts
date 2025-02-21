@@ -3,7 +3,6 @@ import type { InfiniteData } from '@tanstack/react-query';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
-import SuperJSON from 'superjson';
 import { z } from 'zod';
 
 const ctx = konn()

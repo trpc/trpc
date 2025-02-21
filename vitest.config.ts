@@ -41,7 +41,6 @@ export default defineConfig({
     snapshotFormat: {
       printBasicPrototype: true,
     },
-    setupFiles: ['./tests/setupTests.ts'],
     coverage: {
       provider: 'istanbul',
       include: ['**/src/**'],

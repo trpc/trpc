@@ -1,5 +1,5 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
-import { createQueryClient } from '../__queryClient';
+import { createQueryClient } from './__queryClient';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClientProvider } from '@tanstack/react-query';
 import type { Persister } from '@tanstack/react-query-persist-client';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
@@ -29,7 +29,7 @@ export function getServerAndReactClient<TRouter extends AnyRouter>(
     // noop
   });
 
-  const ctx = routerToServerAndClientNew(appRouter, {
+  const ctx = testServerAndClientResource(appRouter, {
     client: (clientOpts) => ({
       links: [
         () => {

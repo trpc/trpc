@@ -99,6 +99,7 @@
     "@types/node": "^22.9.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "devalue": "^5.0.0",
     "eslint": "^9.13.0",
     "express": "^5.0.0",
     "next": "^15.1.3",

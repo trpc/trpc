@@ -1818,6 +1818,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.0
         version: 19.0.0
+      devalue:
+        specifier: ^5.0.0
+        version: 5.0.0
       eslint:
         specifier: ^9.13.0
         version: 9.13.0(jiti@2.3.3)
@@ -1848,9 +1851,27 @@ importers:
 
   packages/react-query:
     devDependencies:
+      '@tanstack/query-sync-storage-persister':
+        specifier: ^5.66.0
+        version: 5.66.4
       '@tanstack/react-query':
         specifier: ^5.66.0
         version: 5.66.0(react@19.0.0)
+      '@tanstack/react-query-persist-client':
+        specifier: ^5.66.0
+        version: 5.66.0(@tanstack/react-query@5.66.0(react@19.0.0))(react@19.0.0)
+      '@testing-library/dom':
+        specifier: ^10.0.0
+        version: 10.0.0
+      '@testing-library/jest-dom':
+        specifier: ^6.0.0
+        version: 6.0.0(vitest@3.0.5(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jiti@2.3.3)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.6.2)(yaml@2.7.0))
+      '@testing-library/react':
+        specifier: ^16.1.0
+        version: 16.1.0(@testing-library/dom@10.0.0)(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@testing-library/user-event':
+        specifier: ^14.4.3
+        version: 14.4.3(@testing-library/dom@10.0.0)
       '@trpc/client':
         specifier: workspace:*
         version: link:../client
@@ -1896,6 +1917,9 @@ importers:
       zod:
         specifier: ^3.0.0
         version: 3.23.8
+      zod-form-data:
+        specifier: ^2.0.5
+        version: 2.0.5(zod@3.23.8)
 
   packages/server:
     devDependencies:
@@ -2052,36 +2076,9 @@ importers:
       '@miniflare/core':
         specifier: ^2.9.0
         version: 2.11.0
-      '@tanstack/query-sync-storage-persister':
-        specifier: ^5.59.13
-        version: 5.59.13
-      '@tanstack/react-query':
-        specifier: ^5.66.0
-        version: 5.66.0(react@19.0.0)
-      '@tanstack/react-query-persist-client':
-        specifier: ^5.64.2
-        version: 5.66.0(@tanstack/react-query@5.66.0(react@19.0.0))(react@19.0.0)
-      '@testing-library/dom':
-        specifier: ^10.0.0
-        version: 10.0.0
-      '@testing-library/jest-dom':
-        specifier: ^6.0.0
-        version: 6.0.0(vitest@3.0.5(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jiti@2.3.3)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.6.2)(yaml@2.7.0))
-      '@testing-library/react':
-        specifier: ^16.1.0
-        version: 16.1.0(@testing-library/dom@10.0.0)(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
-      '@testing-library/user-event':
-        specifier: ^14.4.3
-        version: 14.4.3(@testing-library/dom@10.0.0)
       '@trpc/client':
         specifier: workspace:*
         version: link:../client
-      '@trpc/next':
-        specifier: workspace:*
-        version: link:../next
-      '@trpc/react-query':
-        specifier: workspace:*
-        version: link:../react-query
       '@trpc/server':
         specifier: ^10.45.1
         version: link:../server
@@ -2118,18 +2115,9 @@ importers:
       myzod:
         specifier: ^1.3.1
         version: 1.8.8
-      next:
-        specifier: ^15.1.3
-        version: 15.1.3(@playwright/test@1.28.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       node-fetch:
         specifier: ^3.3.0
         version: 3.3.0
-      react:
-        specifier: ^19.0.0
-        version: 19.0.0
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.0.0(react@19.0.0)
       runtypes:
         specifier: ^7.0.0
         version: 7.0.1
@@ -2166,9 +2154,6 @@ importers:
       yup:
         specifier: ^1.0.0
         version: 1.0.0
-      zod-form-data:
-        specifier: ^2.0.1
-        version: 2.0.1(zod@3.23.8)
     devDependencies:
       '@vitest/spy':
         specifier: ^2.1.8
@@ -8114,23 +8099,23 @@ packages:
     resolution: {integrity: sha512-62z1qXIILvjdkQyMTVPFQedHOc6kQgunz9GHV9jSy2z1ixsDqyI9GxNj3AWx8Ucmhjwd5/P+v3XN10bsb+FzRA==}
     engines: {node: '>=12'}
 
-  '@tanstack/query-core@5.59.13':
-    resolution: {integrity: sha512-Oou0bBu/P8+oYjXsJQ11j+gcpLAMpqW42UlokQYEz4dE7+hOtVO9rVuolJKgEccqzvyFzqX4/zZWY+R/v1wVsQ==}
-
   '@tanstack/query-core@5.66.0':
     resolution: {integrity: sha512-J+JeBtthiKxrpzUu7rfIPDzhscXF2p5zE/hVdrqkACBP8Yu0M96mwJ5m/8cPPYQE9aRNvXztXHlNwIh4FEeMZw==}
+
+  '@tanstack/query-core@5.66.4':
+    resolution: {integrity: sha512-skM/gzNX4shPkqmdTCSoHtJAPMTtmIJNS0hE+xwTTUVYwezArCT34NMermABmBVUg5Ls5aiUXEDXfqwR1oVkcA==}
 
   '@tanstack/query-devtools@5.65.0':
     resolution: {integrity: sha512-g5y7zc07U9D3esMdqUfTEVu9kMHoIaVBsD0+M3LPdAdD710RpTcLiNvJY1JkYXqkq9+NV+CQoemVNpQPBXVsJg==}
 
-  '@tanstack/query-persist-client-core@5.59.13':
-    resolution: {integrity: sha512-dv6KxeJmHl8x9nCGEZtF+HW8pXYWwBX8DqZT7538RmIn+Y9rW5WSB3bCzFDr1hlaNa4B/5J+dk9L9i0egLFVoQ==}
-
   '@tanstack/query-persist-client-core@5.66.0':
     resolution: {integrity: sha512-y6bolShmbOmexexZfnmTiHsBOm4ruJxc2MQJzqi6PxkSPjkKAU+Zqviy4ZwQos5skwSw0g7b9L6V6Rd64oZc9g==}
 
-  '@tanstack/query-sync-storage-persister@5.59.13':
-    resolution: {integrity: sha512-GLgWyF49tXL4wpVWFVuaZwp6PcUbYUTkQ126Q3GGEl3xzosAhLyEKO9YkLRi8f8C2FfS7ukMbxGGr3NLQMKLCw==}
+  '@tanstack/query-persist-client-core@5.66.4':
+    resolution: {integrity: sha512-OAw98P8DhrZyxZ60Tz4Eq8KyEAKPWIf3tuSStzS0F3jovW42/RpFy7wmgg3SrOgI7/kVKspBvPQDQn6ymcpwCg==}
+
+  '@tanstack/query-sync-storage-persister@5.66.4':
+    resolution: {integrity: sha512-Cdbpx6LGMAoHISGQbB7Dma2PCG8iBeyw4uEgkXMo6f6YpCFdyFDaaDWdiFQPNOdha25BUPC4jWYPCPT32sHQCw==}
 
   '@tanstack/react-cross-context@1.60.0':
     resolution: {integrity: sha512-UZXc0ggrZLvNN3j1qQLtnhPp0gAcxeKS+d+hjGiJuIHSKt5fCbb/88C5uWrq4R4jsw5PnzUaKn8VqyUi/cXsXA==}
@@ -18393,6 +18378,11 @@ packages:
     peerDependencies:
       zod: ^3.11.x
 
+  zod-form-data@2.0.5:
+    resolution: {integrity: sha512-T7dV6lTBCwkd8PyvJVCnjXKpgXomU8gEm/TcvEZY7qNdRhIo9T17HrdlHIK68PzTAYaV2HxR9rgwpTSWv0L+QQ==}
+    peerDependencies:
+      zod: '>= 3.11.0'
+
   zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
 
@@ -25074,24 +25064,24 @@ snapshots:
 
   '@tanstack/history@1.85.3': {}
 
-  '@tanstack/query-core@5.59.13': {}
-
   '@tanstack/query-core@5.66.0': {}
 
-  '@tanstack/query-devtools@5.65.0': {}
+  '@tanstack/query-core@5.66.4': {}
 
-  '@tanstack/query-persist-client-core@5.59.13':
-    dependencies:
-      '@tanstack/query-core': 5.59.13
+  '@tanstack/query-devtools@5.65.0': {}
 
   '@tanstack/query-persist-client-core@5.66.0':
     dependencies:
       '@tanstack/query-core': 5.66.0
 
-  '@tanstack/query-sync-storage-persister@5.59.13':
+  '@tanstack/query-persist-client-core@5.66.4':
     dependencies:
-      '@tanstack/query-core': 5.59.13
-      '@tanstack/query-persist-client-core': 5.59.13
+      '@tanstack/query-core': 5.66.4
+
+  '@tanstack/query-sync-storage-persister@5.66.4':
+    dependencies:
+      '@tanstack/query-core': 5.66.4
+      '@tanstack/query-persist-client-core': 5.66.4
 
   '@tanstack/react-cross-context@1.60.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
@@ -37889,6 +37879,10 @@ snapshots:
       readable-stream: 4.3.0
 
   zod-form-data@2.0.1(zod@3.23.8):
+    dependencies:
+      zod: 3.23.8
+
+  zod-form-data@2.0.5(zod@3.23.8):
     dependencies:
       zod: 3.23.8
 
