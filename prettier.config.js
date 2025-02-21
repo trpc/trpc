@@ -12,11 +12,7 @@ export default {
     // Ensure test helpers are sorted first so that polyfills are loaded
     '___',
     '__',
-    '^@trpc/server/src/__tests__(.*)$',
-    '^@trpc/client/src/__tests__(.*)$',
-    '^@trpc/react-query/src/__tests__(.*)$',
-    '^@trpc/tanstack-react-query/src/__tests__(.*)$',
-    '^@trpc/next/src/__tests__(.*)$',
+    '^@trpc/(server|client|react-query|tanstack-react-query|next)/src/__tests__(.*)$',
     '<THIRD_PARTY_MODULES>',
     '^[./]',
   ],
