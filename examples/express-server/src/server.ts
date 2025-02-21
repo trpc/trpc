@@ -3,6 +3,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
 import { z } from 'zod';
+import transformer from 'superjson'
 
 const createContext = ({
   req,
@@ -25,7 +26,10 @@ const createContext = ({
 };
 type Context = Awaited<ReturnType<typeof createContext>>;
 
-const t = initTRPC.context<Context>().create();
+
+const t = initTRPC.context<Context>().create({
+  transformer
+});
 
 const router = t.router;
 const publicProcedure = t.procedure;

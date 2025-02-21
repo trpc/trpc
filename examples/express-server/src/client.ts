@@ -1,6 +1,7 @@
 import { createTRPCClient, httpBatchLink, loggerLink } from '@trpc/client';
 import { tap } from '@trpc/server/observable';
 import type { AppRouter } from './server';
+import transformer from 'superjson'
 
 const sleep = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -21,7 +22,7 @@ async function main() {
             }),
           );
         },
-      httpBatchLink({ url }),
+      httpBatchLink({ url, transformer }),
     ],
   });
 

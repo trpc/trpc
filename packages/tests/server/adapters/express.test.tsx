@@ -2,12 +2,20 @@ import type http from 'http';
 import { waitError } from '../___testHelpers';
 import type { Context } from './__router';
 import { router } from './__router';
-import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
-import type { AnyRouter } from '@trpc/server';
+import {
+  createTRPCClient,
+  httpBatchLink,
+  httpLink,
+  TRPCClientError,
+} from '@trpc/client';
+import { initTRPC, type AnyRouter } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import type { NodeHTTPHandlerOptions } from '@trpc/server/adapters/node-http';
+import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
 import express from 'express';
 import fetch from 'node-fetch';
+import transformer from 'superjson';
+import { z } from 'zod';
 
 type CreateExpressContextOptions<TRouter extends AnyRouter> =
   NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>;
@@ -229,4 +237,74 @@ test('bad url does not crash server', async () => {
       "text": "hello world",
     }
   `);
+});
+
+test('with transformer', async () => {
+  const t = initTRPC.create({
+    transformer,
+  });
+
+  const appRouter = t.router({
+    hello: t.procedure.query(() => 'hello world'),
+    inputDate: t.procedure
+      .input(
+        z.object({
+          date: z.date(),
+        }),
+      )
+      .query(({ input }) => input),
+    inputDateMutation: t.procedure
+      .input(
+        z.object({
+          date: z.date(),
+        }),
+      )
+      .mutation(({ input }) => input),
+  });
+
+  const app = express();
+
+  app.use(
+    '/api/v1',
+    trpcExpress.createExpressMiddleware({
+      router: appRouter,
+    }),
+  );
+
+  const { server, port } = await new Promise<{
+    server: http.Server;
+    port: number;
+  }>((resolve) => {
+    const server = app.listen(0, () => {
+      resolve({
+        server,
+        port: (server.address() as any).port,
+      });
+    });
+  });
+  await using _ = makeAsyncResource({}, async () => {
+    await new Promise((resolve) => server.close(resolve));
+  });
+
+  const client = createTRPCClient<typeof appRouter>({
+    links: [
+      httpLink({
+        url: `http://localhost:${port}/api/v1`,
+        transformer,
+      }),
+    ],
+  });
+
+  expect(await client.hello.query()).toBe('hello world');
+
+  {
+    const res = await client.inputDate.query({ date: new Date(0) });
+    expect(res.date).toBeInstanceOf(Date);
+    expect(res.date).toEqual(new Date(0));
+  }
+  {
+    const res = await client.inputDateMutation.mutate({ date: new Date(0) });
+    expect(res.date).toBeInstanceOf(Date);
+    expect(res.date).toEqual(new Date(0));
+  }
 });
