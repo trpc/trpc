@@ -76,7 +76,9 @@
     "!**/*.test.*",
     "!**/__tests__"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "dataloader": "^2.2.2"
+  },
   "peerDependencies": {
     "@trpc/server": "^10.45.1",
     "typescript": ">=5.7.2"
