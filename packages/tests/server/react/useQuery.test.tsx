@@ -1,12 +1,13 @@
-import { waitMs } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import { skipToken, type InfiniteData } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { defaultStructuralSharingFunction } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import React, { useEffect } from 'react';
+import superjson from 'superjson';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
@@ -18,7 +19,7 @@ const ctx = konn()
       iterableDeferred.resolve();
       iterableDeferred = createDeferred();
     };
-    const t = initTRPC.create({});
+    const t = initTRPC.create({ transformer: superjson });
 
     const appRouter = t.router({
       post: t.router({
@@ -37,7 +38,7 @@ const ctx = konn()
           )
           .query(() => ({
             id: 1,
-            date: new Date(),
+            date: new Date('2024-04-01'),
           })),
         list: t.procedure
           .input(
@@ -300,6 +301,59 @@ describe('useQuery()', () => {
         },
       ]
     `);
+  });
+
+  test('structural sharing with Date', async () => {
+    const { client, App, queryClient } = ctx;
+    queryClient.setDefaultOptions({
+      ...queryClient.getDefaultOptions(),
+      queries: {
+        ...queryClient.getDefaultOptions().queries,
+        structuralSharing: defaultStructuralSharingFunction,
+      },
+    });
+    const results: unknown[] = [];
+    function MyComponent() {
+      const query1 = client.post.byIdWithSerializable.useQuery({
+        id: '1',
+      });
+      useEffect(() => {
+        if (query1.fetchStatus === 'idle' && query1.data) {
+          results.push(query1.data);
+        }
+      }, [query1.fetchStatus, query1.data]);
+
+      const utils = client.useUtils();
+
+      return (
+        <>
+          <pre>
+            {query1.status}:{query1.isFetching ? 'fetching' : 'notFetching'}
+          </pre>
+          <button
+            data-testid="refetch"
+            onClick={() => {
+              utils.post.byIdWithSerializable.invalidate();
+            }}
+          />
+        </>
+      );
+    }
+
+    const utils = render(
+      <App>
+        <MyComponent />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`success:notFetching`);
+    });
+    await userEvent.click(utils.getByTestId('refetch'));
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`success:notFetching`);
+    });
+    expect(results).toHaveLength(2);
+    expect(results[0]).toBe(results[1]);
   });
 });
 

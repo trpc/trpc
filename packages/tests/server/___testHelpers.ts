@@ -126,7 +126,12 @@ export function routerToServerAndClientNew<TRouter extends AnyRouter>(
     ],
     ...(opts?.client
       ? typeof opts.client === 'function'
-        ? opts.client({ httpUrl, wssUrl, wsClient })
+        ? opts.client({
+            httpUrl,
+            wssUrl,
+            wsClient,
+            transformer: opts?.transformer,
+          })
         : opts.client
       : {}),
   } as WithTRPCConfig<typeof router>;

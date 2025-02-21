@@ -7,4 +7,8 @@ export {
   type CreateTRPCReactBase,
 } from './createTRPCReact';
 export type { inferReactQueryProcedureOptions } from './utils/inferReactQueryProcedure';
+export {
+  createStructuralSharingFunction,
+  defaultStructuralSharingFunction,
+} from './utils/structuralSharing';
 export { createTRPCQueryUtils } from './createTRPCQueryUtils';
