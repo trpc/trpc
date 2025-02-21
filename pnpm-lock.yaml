@@ -1788,6 +1788,9 @@ importers:
       undici:
         specifier: ^7.0.0
         version: 7.2.3
+      ws:
+        specifier: ^8.0.0
+        version: 8.18.0
 
   packages/next:
     devDependencies:
@@ -23393,7 +23396,7 @@ snapshots:
       kleur: 4.1.5
       selfsigned: 2.1.1
       undici: 5.9.1
-      ws: 8.17.1
+      ws: 8.18.0
       youch: 2.2.2
     transitivePeerDependencies:
       - bufferutil
@@ -23575,7 +23578,7 @@ snapshots:
       '@miniflare/core': 2.11.0
       '@miniflare/shared': 2.11.0
       undici: 5.9.1
-      ws: 8.17.1
+      ws: 8.18.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -31234,7 +31237,7 @@ snapshots:
       whatwg-encoding: 3.1.1
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.0.0
-      ws: 8.17.1
+      ws: 8.18.0
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - bufferutil

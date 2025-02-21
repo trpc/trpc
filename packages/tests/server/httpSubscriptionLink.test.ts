@@ -1,10 +1,11 @@
 import { EventEmitter, on } from 'node:events';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import {
-  IterableEventEmitter,
-  routerToServerAndClientNew,
   suppressLogs,
   suppressLogsUntil,
-} from './___testHelpers';
+} from '@trpc/server/__tests__/suppressLogs';
 import type {
   OperationResultEnvelope,
   TRPCClientError,
@@ -788,7 +789,7 @@ describe('timeouts', async () => {
   const getCtx = (ctxOpts: CtxOpts) => {
     const results: number[] = [];
 
-    vi.useFakeTimers();
+    const fakeTimers = fakeTimersResource();
 
     const onConnection = vi.fn<() => void>();
 
@@ -876,7 +877,6 @@ describe('timeouts', async () => {
       },
       async () => {
         vi.useRealTimers();
-        await opts.close?.();
       },
     );
   };
@@ -1129,17 +1129,12 @@ test('tracked() without transformer', async () => {
         };
       },
     });
-    return makeAsyncResource(
-      {
-        ...opts,
-        puller,
-        finallySpy,
-        onAbortSpy,
-      },
-      async () => {
-        await opts.close();
-      },
-    );
+    return {
+      ...opts,
+      puller,
+      finallySpy,
+      onAbortSpy,
+    };
   }
   await using ctx = getCtxResource();
 

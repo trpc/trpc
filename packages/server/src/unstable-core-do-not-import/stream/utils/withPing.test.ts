@@ -1,7 +1,7 @@
 import EventEmitter, { on } from 'events';
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import { expect, vi } from 'vitest';
 import { run } from '../../utils';
-import { makeResource } from './disposable';
 import { withPing } from './withPing';
 
 type EventMap<T> = Record<keyof T, any[]>;
@@ -16,19 +16,6 @@ class IterableEventEmitter<T extends EventMap<T>> extends EventEmitter<T> {
 
 interface MyEvents {
   message: [str: string];
-}
-
-function fakeTimersResource() {
-  vi.useFakeTimers();
-
-  return makeResource(
-    {
-      advanceTimersByTimeAsync: vi.advanceTimersByTimeAsync,
-    },
-    () => {
-      vi.useRealTimers();
-    },
-  );
 }
 
 test('yield values from source iterable', async () => {

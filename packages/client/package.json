@@ -92,7 +92,8 @@
     "tslib": "^2.8.1",
     "tsx": "^4.0.0",
     "typescript": "^5.7.2",
-    "undici": "^7.0.0"
+    "undici": "^7.0.0",
+    "ws": "^8.0.0"
   },
   "publishConfig": {
     "access": "public"
