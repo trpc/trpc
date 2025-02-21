@@ -72,9 +72,9 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
+    "@tanstack/query-sync-storage-persister": "^5.66.0",
     "@tanstack/react-query": "^5.66.0",
     "@tanstack/react-query-persist-client": "^5.66.0",
-    "@tanstack/query-sync-storage-persister": "^5.66.0",
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.1.0",
