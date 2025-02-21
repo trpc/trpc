@@ -41,7 +41,7 @@
     "next": "^15.1.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "superjson": "^1.12.4",
+    "superjson": "^2.2.2",
     "zod": "^3.0.0"
   },
   "devDependencies": {

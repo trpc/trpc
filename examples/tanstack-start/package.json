@@ -23,7 +23,7 @@
     "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query@next",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "superjson": "^1.12.4",
+    "superjson": "^2.2.2",
     "tailwind-merge": "^2.0.0",
     "vinxi": "^0.4.3",
     "zod": "^3.0.0"

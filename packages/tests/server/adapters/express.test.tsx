@@ -239,7 +239,7 @@ test('bad url does not crash server', async () => {
   `);
 });
 
-test('with transformer', async () => {
+test('with transformer + express.json()', async () => {
   const t = initTRPC.create({
     transformer,
   });
@@ -264,6 +264,7 @@ test('with transformer', async () => {
 
   const app = express();
 
+  app.use(express.json());
   app.use(
     '/api/v1',
     trpcExpress.createExpressMiddleware({

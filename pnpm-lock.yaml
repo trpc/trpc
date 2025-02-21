@@ -43,10 +43,10 @@ importers:
         version: 10.0.0
       '@testing-library/jest-dom':
         specifier: ^6.0.0
-        version: 6.0.0(vitest@3.0.5)
+        version: 6.0.0(vitest@3.0.5(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jiti@2.3.3)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.6.2)(yaml@2.7.0))
       '@testing-library/react':
         specifier: ^16.1.0
-        version: 16.1.0(@testing-library/dom@10.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 16.1.0(@testing-library/dom@10.0.0)(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@testing-library/user-event':
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@10.0.0)
@@ -126,8 +126,8 @@ importers:
         specifier: ^0.12.1
         version: 0.12.1(@swc/core@1.9.1(@swc/helpers@0.5.15))(rollup@4.27.4)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       ts-prune:
         specifier: ^0.10.3
         version: 0.10.3
@@ -213,8 +213,8 @@ importers:
         specifier: ^0.0.1
         version: 0.0.1
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       trpc-api:
         specifier: link:./src/trpc
         version: link:src/trpc
@@ -426,8 +426,8 @@ importers:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       zod:
         specifier: ^3.0.0
         version: 3.23.8
@@ -629,8 +629,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.1
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       zod:
         specifier: ^3.0.0
         version: 3.23.8
@@ -681,8 +681,8 @@ importers:
         specifier: ^4.16.0
         version: 4.26.2
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
@@ -798,8 +798,8 @@ importers:
         specifier: npm:@trpc/server@next
         version: link:../../packages/server
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       zod:
         specifier: ^3.0.0
         version: 3.23.8
@@ -1169,8 +1169,8 @@ importers:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       zod:
         specifier: ^3.0.0
         version: 3.23.8
@@ -1224,8 +1224,8 @@ importers:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       zod:
         specifier: ^3.0.0
         version: 3.23.8
@@ -1324,8 +1324,8 @@ importers:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       todomvc-app-css:
         specifier: ^2.3.0
         version: 2.4.2
@@ -1400,8 +1400,8 @@ importers:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       tsx:
         specifier: ^4.0.0
         version: 4.6.2
@@ -1521,8 +1521,8 @@ importers:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       tailwind-merge:
         specifier: ^2.0.0
         version: 2.0.0
@@ -1667,8 +1667,8 @@ importers:
         specifier: ^19.0.0
         version: 19.0.0(react@19.0.0)
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       tailwind-merge:
         specifier: ^2.0.0
         version: 2.0.0
@@ -1960,8 +1960,8 @@ importers:
         specifier: ^4.24.4
         version: 4.24.4
       superjson:
-        specifier: ^1.12.4
-        version: 1.12.4
+        specifier: ^2.2.2
+        version: 2.2.2
       superstruct:
         specifier: ^2.0.0
         version: 2.0.0
@@ -2066,10 +2066,10 @@ importers:
         version: 10.0.0
       '@testing-library/jest-dom':
         specifier: ^6.0.0
-        version: 6.0.0(vitest@3.0.5)
+        version: 6.0.0(vitest@3.0.5(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jiti@2.3.3)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.6.2)(yaml@2.7.0))
       '@testing-library/react':
         specifier: ^16.1.0
-        version: 16.1.0(@testing-library/dom@10.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 16.1.0(@testing-library/dom@10.0.0)(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@testing-library/user-event':
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@10.0.0)
@@ -4107,6 +4107,10 @@ packages:
 
   '@babel/runtime@7.26.0':
     resolution: {integrity: sha512-FDSOghenHTiToteC/QRlv2q3DhPZ/oOXTBoirfWNx1Cx3TMVcGWQtMMmQcSvb/JjpNeGzx8Pq/b4fKEJuWm1sw==}
+    engines: {node: '>=6.9.0'}
+
+  '@babel/runtime@7.26.9':
+    resolution: {integrity: sha512-aA63XwOkcl4xxQa3HjPMqOP6LiK0ZDv3mUPYEFXkpHbaFjtGggE1A61FjFzJnB+p7/oy2gA8E+rcBNl/zC1tMg==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.22.15':
@@ -8262,8 +8266,8 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       '@testing-library/dom': ^10.0.0
-      '@types/react': npm:types-react@rc
-      '@types/react-dom': npm:types-react-dom@rc
+      '@types/react': ^18.0.0 || ^19.0.0
+      '@types/react-dom': ^18.0.0 || ^19.0.0
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
     peerDependenciesMeta:
@@ -9649,6 +9653,9 @@ packages:
   caniuse-lite@1.0.30001690:
     resolution: {integrity: sha512-5ExiE3qQN6oF8Clf8ifIDcMRCRE/dMGcETG/XGMD8/XiXm6HXQgQTh1yZYLXXpSOsEUlJm1Xr7kGULZTuGtP/w==}
 
+  caniuse-lite@1.0.30001700:
+    resolution: {integrity: sha512-2S6XIXwaE7K7erT8dY+kLQcpa5ms63XlRkMkReXjle+kf6c5g38vyMl+Z5y8dSxOFDhcFe+nxnn261PLxBSQsQ==}
+
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
 
@@ -10072,8 +10079,8 @@ packages:
   cookiejar@2.1.4:
     resolution: {integrity: sha512-LDx6oHrK+PhzLKJU9j5S7/Y3jM/mUHvD/DeI1WQmJn652iPC5Y4TBzC9l+5OMOXlyTTA+SmVUPm0HQUwpD5Jqw==}
 
-  copy-anything@3.0.2:
-    resolution: {integrity: sha512-CzATjGXzUQ0EvuvgOCI6A4BGOo2bcVx8B+eC2nF862iv9fopnPQwlrbACakNCHRIJbCSBj+J/9JeDf60k64MkA==}
+  copy-anything@3.0.5:
+    resolution: {integrity: sha512-yCEafptTtb4bk7GLEQoM8KVJpxAfdBJYaXyzQEgQQQgYrZiDp8SJmGKlYza6CYjEDNstAdNdKA3UuoULlEbS6w==}
     engines: {node: '>=12.13'}
 
   copy-text-to-clipboard@3.0.1:
@@ -12863,8 +12870,8 @@ packages:
   is-weakset@2.0.2:
     resolution: {integrity: sha512-t2yVvttHkQktwnNNmBQ98AhENLdPUTDTE21uPqAQ0ARwQfGeQKRVS0NNurH7bTf7RrvcVn1OOge45CnBeHCSmg==}
 
-  is-what@4.1.7:
-    resolution: {integrity: sha512-DBVOQNiPKnGMxRMLIYSwERAS5MVY1B7xYiGnpgctsOFvVDz9f9PFXXxMcTOHuoqYp4NK9qFYQaIC1NRRxLMpBQ==}
+  is-what@4.1.16:
+    resolution: {integrity: sha512-ZhMwEosbFJkA0YhFnNDgTM4ZxDRsS6HqTo7qsZM08fehyRYIYa0yHu5R6mgo1n/8MgaPBXiPimPD77baVFYg+A==}
     engines: {node: '>=12.13'}
 
   is-wsl@2.2.0:
@@ -15802,8 +15809,8 @@ packages:
   react-error-overlay@6.0.11:
     resolution: {integrity: sha512-/6UZ2qgEyH2aqzYZgQPxEnz33NJ2gNsnHA2o5+o4wW9bLM/JYQitNP9xPhsXwC08hMMovfGe/8retsdDsczPRg==}
 
-  react-fast-compare@3.2.0:
-    resolution: {integrity: sha512-rtGImPZ0YyLrscKI9xTpV8psd6I8VAtjKCzQDlzyDvqJA8XOW78TXYQwNRNd8g8JZnDu8q9Fu/1v4HPAVwVdHA==}
+  react-fast-compare@3.2.2:
+    resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
 
   react-github-btn@1.4.0:
     resolution: {integrity: sha512-lV4FYClAfjWnBfv0iNlJUGhamDgIq6TayD0kPZED6VzHWdpcHmPfsYOZ/CFwLfPv4Zp+F4m8QKTj0oy2HjiGXg==}
@@ -16966,9 +16973,9 @@ packages:
     resolution: {integrity: sha512-xuW7dzkUpcJq7QnhOsnNUgtYp3xRwpt2F7abdRYIpCsAt0hhUqia0EdxyXZQQpNmGtsCzYHryaKSV3q3GJnq7w==}
     engines: {node: '>=14.18.0'}
 
-  superjson@1.12.4:
-    resolution: {integrity: sha512-vkpPQAxdCg9SLfPv5GPC5fnGrui/WryktoN9O5+Zif/14QIMjw+RITf/5LbBh+9QpBFb3KNvJth+puz2H8o6GQ==}
-    engines: {node: '>=10'}
+  superjson@2.2.2:
+    resolution: {integrity: sha512-5JRxVqC8I8NuOUjzBbvVJAKNM8qoVuH0O77h4WInc/qC2q5IreqKxYwgkga3PfA22OayK2ikceb/B26dztPl+Q==}
+    engines: {node: '>=16'}
 
   superstruct@2.0.0:
     resolution: {integrity: sha512-l9HkF2HGmEc4cm0Mc3E08o/lhminlAdDDekqc+m1urG+SK6CL3e0TL0EJ8QyXkDwfS69rgI94GOXLD4qCD+1WA==}
@@ -20741,6 +20748,10 @@ snapshots:
       regenerator-runtime: 0.14.1
 
   '@babel/runtime@7.26.0':
+    dependencies:
+      regenerator-runtime: 0.14.1
+
+  '@babel/runtime@7.26.9':
     dependencies:
       regenerator-runtime: 0.14.1
 
@@ -24607,7 +24618,7 @@ snapshots:
       '@module-federation/runtime-tools': 0.5.1
       '@rspack/binding': 1.1.8
       '@rspack/lite-tapable': 1.0.1
-      caniuse-lite: 1.0.30001690
+      caniuse-lite: 1.0.30001700
     optionalDependencies:
       '@swc/helpers': 0.5.15
     optional: true
@@ -24802,12 +24813,12 @@ snapshots:
 
   '@slorber/react-helmet-async@1.3.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
-      '@babel/runtime': 7.26.0
+      '@babel/runtime': 7.26.9
       invariant: 2.2.4
       prop-types: 15.8.1
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
-      react-fast-compare: 3.2.0
+      react-fast-compare: 3.2.2
       shallowequal: 1.1.0
 
   '@slorber/remark-comment@1.0.0':
@@ -25281,7 +25292,7 @@ snapshots:
       lz-string: 1.5.0
       pretty-format: 27.5.1
 
-  '@testing-library/jest-dom@6.0.0(vitest@3.0.5)':
+  '@testing-library/jest-dom@6.0.0(vitest@3.0.5(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jiti@2.3.3)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.6.2)(yaml@2.7.0))':
     dependencies:
       '@adobe/css-tools': 4.0.1
       '@babel/runtime': 7.21.5
@@ -25294,12 +25305,15 @@ snapshots:
     optionalDependencies:
       vitest: 3.0.5(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jiti@2.3.3)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.6.2)(yaml@2.7.0)
 
-  '@testing-library/react@16.1.0(@testing-library/dom@10.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+  '@testing-library/react@16.1.0(@testing-library/dom@10.0.0)(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       '@babel/runtime': 7.24.7
       '@testing-library/dom': 10.0.0
       react: 19.0.0
       react-dom: 19.0.0(react@19.0.0)
+    optionalDependencies:
+      '@types/react': 19.0.0
+      '@types/react-dom': 19.0.0
 
   '@testing-library/user-event@14.4.3(@testing-library/dom@10.0.0)':
     dependencies:
@@ -27112,6 +27126,9 @@ snapshots:
 
   caniuse-lite@1.0.30001690: {}
 
+  caniuse-lite@1.0.30001700:
+    optional: true
+
   ccount@2.0.1: {}
 
   chai@5.1.2:
@@ -27560,9 +27577,9 @@ snapshots:
 
   cookiejar@2.1.4: {}
 
-  copy-anything@3.0.2:
+  copy-anything@3.0.5:
     dependencies:
-      is-what: 4.1.7
+      is-what: 4.1.16
 
   copy-text-to-clipboard@3.0.1: {}
 
@@ -28901,7 +28918,7 @@ snapshots:
       eslint: 9.13.0(jiti@2.3.3)
       eslint-import-resolver-node: 0.3.9
       eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0)(eslint@9.13.0(jiti@2.3.3))
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.12.2(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-react: 7.37.2(eslint@9.13.0(jiti@2.3.3))
       eslint-plugin-react-hooks: 5.1.0(eslint@9.13.0(jiti@2.3.3))
@@ -28928,7 +28945,7 @@ snapshots:
       debug: 4.4.0(supports-color@8.1.1)
       enhanced-resolve: 5.17.1
       eslint: 9.13.0(jiti@2.3.3)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.12.2(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3))
       get-tsconfig: 4.8.1
       globby: 13.1.3
       is-core-module: 2.13.1
@@ -28948,7 +28965,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.12.2(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint@9.13.0(jiti@2.3.3)):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.13.0(jiti@2.3.3)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -28971,7 +28988,7 @@ snapshots:
       string.prototype.trimend: 1.0.8
       tsconfig-paths: 3.15.0
     optionalDependencies:
-      '@typescript-eslint/parser': 8.12.2(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2)
+      '@typescript-eslint/parser': 7.16.1(eslint@9.13.0(jiti@2.3.3))(typescript@5.7.2)
     transitivePeerDependencies:
       - eslint-import-resolver-typescript
       - eslint-import-resolver-webpack
@@ -31007,7 +31024,7 @@ snapshots:
       call-bind: 1.0.7
       get-intrinsic: 1.2.4
 
-  is-what@4.1.7: {}
+  is-what@4.1.16: {}
 
   is-wsl@2.2.0:
     dependencies:
@@ -34609,7 +34626,7 @@ snapshots:
 
   react-error-overlay@6.0.11: {}
 
-  react-fast-compare@3.2.0: {}
+  react-fast-compare@3.2.2: {}
 
   react-github-btn@1.4.0(react@19.0.0):
     dependencies:
@@ -36214,9 +36231,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  superjson@1.12.4:
+  superjson@2.2.2:
     dependencies:
-      copy-anything: 3.0.2
+      copy-anything: 3.0.5
 
   superstruct@2.0.0: {}
 

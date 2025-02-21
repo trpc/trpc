@@ -79,7 +79,7 @@
     "rollup-plugin-delete": "^3.0.0",
     "rollup-plugin-node-externals": "^8.0.0",
     "rollup-plugin-swc3": "^0.12.1",
-    "superjson": "^1.12.4",
+    "superjson": "^2.2.2",
     "ts-prune": "^0.10.3",
     "tsx": "^4.0.0",
     "turbo": "^2.0.9",
