@@ -1,4 +1,4 @@
-import { describe, expect, expectTypeOf, test } from 'vitest';
+import { describe, expect } from 'vitest';
 import { getQueryKeyInternal } from '../src/internals/utils';
 
 describe(getQueryKeyInternal, () => {
