@@ -1,14 +1,10 @@
-import { ignoreErrors } from '../___testHelpers';
-import { createQueryClient } from '../__queryClient';
 import type { Post } from './__testHelpers';
 import { createAppRouter } from './__testHelpers';
-import type { InfiniteData } from '@tanstack/react-query';
-import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import type { inferProcedureInput } from '@trpc/server';
-import React, { Fragment, useState } from 'react';
+import React, { Fragment } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {

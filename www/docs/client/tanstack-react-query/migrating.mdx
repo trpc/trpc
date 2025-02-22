@@ -19,14 +19,16 @@ We're working on a codemod to help you migrate your existing codebase over to th
 Run our upgrade CLI:
 
 ```sh
-npx @trpc/upgrade@11.0.0-rc.772
+npx @trpc/upgrade@next
 ```
 
 When prompted, select the transforms `Migrate Hooks to xxxOptions API` and `Migrate context provider setup`.
 
 ## Gradual migration
 
-The new and classic clients are compatible with each other and can live together in the same application. This means you can start migrating by using the new client in new parts of your application, and gradually migrate over existing usage as you see fit. Most importantly, Query Keys are identical, which means you can use the new client and classic client together and still rely on TanStack Query's caching.
+The new and classic clients are compatible with each other and [can live together in the same application](https://github.com/juliusmarminge/trpc-interop/blob/main/src/client.tsx).
+This means you can start migrating by using the new client in new parts of your application, and gradually migrate over existing usage as you see fit. Most importantly,
+Query Keys are identical, which means you can use the new client and classic client together and still rely on TanStack Query's caching.
 
 ### Migrating Queries
 

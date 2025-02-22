@@ -196,7 +196,13 @@ export default function transform(
         },
       })
       .forEach((path) => {
+        const isTRPCContextUtil =
+          j.MemberExpression.check(path.value.callee) &&
+          j.Identifier.check(path.value.callee.object) &&
+          path.value.callee.object.name == trpcImportName;
+
         if (
+          isTRPCContextUtil &&
           j.VariableDeclarator.check(path.parentPath.node) &&
           j.Identifier.check(path.parentPath.node.id)
         ) {
@@ -252,7 +258,7 @@ export default function transform(
                 const replacedPath = replaceMemberExpressionRootIndentifier(
                   j,
                   memberExpr,
-                  j.identifier(trpcImportName!),
+                  j.identifier(trpcImportName),
                 );
                 if (!replacedPath) {
                   console.warn(

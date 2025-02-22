@@ -1,5 +1,5 @@
-import { doNotExecute, ignoreErrors } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
+import { doNotExecute } from '@trpc/server/__tests__/suppressLogs';
 import { skipToken } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';

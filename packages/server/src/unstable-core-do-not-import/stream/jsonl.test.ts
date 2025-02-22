@@ -1,4 +1,4 @@
-import { serverResource } from './utils/__tests__/serverResource';
+import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
 import { waitFor } from '@testing-library/react';
 import SuperJSON from 'superjson';
 import { run } from '../utils';
@@ -233,7 +233,7 @@ function serverResourceForStream(
   stream: ReadableStream,
   headers: Record<string, string> = {},
 ) {
-  return serverResource(async () => {
+  return fetchServerResource(async () => {
     return new Response(stream, {
       headers,
     });

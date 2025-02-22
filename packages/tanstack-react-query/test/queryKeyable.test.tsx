@@ -1,22 +1,12 @@
-import { getServerAndReactClient } from './__helpers';
-import {
-  useInfiniteQuery,
-  useQueryClient,
-  useSuspenseInfiniteQuery,
-} from '@tanstack/react-query';
+import { testReactResource } from './__helpers';
+import { useQueryClient } from '@tanstack/react-query';
 import { initTRPC } from '@trpc/server';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import/error/formatter';
 import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
 const testContext = () => {
-  let iterableDeferred = createDeferred<void>();
-  const nextIterable = () => {
-    iterableDeferred.resolve();
-    iterableDeferred = createDeferred();
-  };
   const t = initTRPC.create({
     errorFormatter(opts) {
       return { foo: 1, ...opts.shape };
@@ -38,15 +28,10 @@ const testContext = () => {
     },
   });
 
-  return Object.assign(getServerAndReactClient(appRouter), { nextIterable });
+  return testReactResource(appRouter);
 };
 
 const testContextWithErrorShape = () => {
-  let iterableDeferred = createDeferred<void>();
-  const nextIterable = () => {
-    iterableDeferred.resolve();
-    iterableDeferred = createDeferred();
-  };
   const t = initTRPC.create({
     errorFormatter(opts) {
       return { foo: 1, ...opts.shape };
@@ -68,7 +53,7 @@ const testContextWithErrorShape = () => {
     },
   });
 
-  return Object.assign(getServerAndReactClient(appRouter), { nextIterable });
+  return testReactResource(appRouter);
 };
 
 describe('get queryFilter', () => {
@@ -161,6 +146,7 @@ describe('get queryFilter', () => {
         },
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       const b = query.getQueryData(a.queryKey!);
       assertType<'__result' | undefined>(b);
 

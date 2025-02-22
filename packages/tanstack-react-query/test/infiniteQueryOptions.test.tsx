@@ -1,4 +1,4 @@
-import { getServerAndReactClient } from './__helpers';
+import { testReactResource } from './__helpers';
 import {
   infiniteQueryOptions,
   useInfiniteQuery,
@@ -45,7 +45,7 @@ const testContext = () => {
     }),
   });
 
-  return getServerAndReactClient(appRouter);
+  return testReactResource(appRouter);
 };
 
 describe('infiniteQueryOptions', () => {
@@ -220,6 +220,7 @@ describe('infiniteQueryOptions', () => {
             {},
             {
               predicate(opts) {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                 expectTypeOf<typeof query1.data>(opts.state.data!);
                 expect(opts.state.data).toEqual(query1.data);
                 return true;

@@ -1,9 +1,6 @@
 import { EventEmitter } from 'node:events';
-import {
-  routerToServerAndClientNew,
-  waitError,
-  waitTRPCClientError,
-} from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
@@ -15,15 +12,18 @@ import {
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import {
-  createDeferred,
-  isAsyncIterable,
-  run,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
+import { createDeferred, run } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 import { zAsyncIterable } from './zAsyncIterable';
+
+async function waitTRPCClientError<TRoot extends InferrableClientTypes>(
+  fnOrPromise: Promise<unknown> | (() => unknown),
+) {
+  return waitError<TRPCClientError<TRoot>>(fnOrPromise, TRPCClientError);
+}
 
 describe('no transformer', () => {
   const orderedResults: number[] = [];
