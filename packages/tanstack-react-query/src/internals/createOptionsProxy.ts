@@ -208,7 +208,7 @@ export type DecorateProcedure<
   ? DecorateQueryProcedure<TDef> &
       (TDef['input'] extends CursorInput
         ? DecorateInfiniteQueryProcedure<TDef>
-        : {})
+        : Record<string, never>)
   : TType extends 'mutation'
     ? DecorateMutationProcedure<TDef>
     : TType extends 'subscription'

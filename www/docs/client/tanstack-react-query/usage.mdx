@@ -154,9 +154,6 @@ Like with query keys, if you want to run a filter across a whole route you can u
 ```ts
 const queryFilter = trpc.path.routeFilter(
   {
-    /** input */
-  },
-  {
     // Any Tanstack React Query filter
     predicate: (query) => {
       query.state.data;
