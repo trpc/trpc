@@ -4,7 +4,7 @@
   "description": "Upgrade scripts for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
-  "bin": "./dist/cli.cjs",
+  "bin": "./dist/bin.cjs",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
