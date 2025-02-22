@@ -13,7 +13,10 @@ import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
 } from '@trpc/server/rpc';
-import { createDeferred, sleep } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  sleep,
+} from '@trpc/server/unstable-core-do-not-import';
 import type {
   LegacyObservableSubscriptionProcedure,
   SubscriptionProcedure,
