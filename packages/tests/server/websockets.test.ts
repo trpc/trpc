@@ -13,7 +13,7 @@ import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
 } from '@trpc/server/rpc';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import { createDeferred, sleep } from '@trpc/server/unstable-core-do-not-import';
 import type {
   LegacyObservableSubscriptionProcedure,
   SubscriptionProcedure,
@@ -1746,6 +1746,28 @@ describe('auth / connectionParams', async () => {
       lazy: {
         enabled: true,
         closeMs: 0,
+      },
+    });
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        wsLink({
+          client: wsClient,
+        }),
+      ],
+    });
+    const result = await client.whoami.query();
+
+    expect(result).toEqual(USER_MOCK);
+  });
+
+  test('with async auth', async () => {
+    const wsClient = createWSClient({
+      url: ctx.wssUrl,
+      connectionParams: async () => {
+        await sleep(500);
+        return {
+          token: USER_TOKEN,
+        };
       },
     });
     const client = createTRPCClient<AppRouter>({

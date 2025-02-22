@@ -1,6 +1,6 @@
 import { behaviorSubject } from '@trpc/server/observable';
 import type { UrlOptionsWithConnectionParams } from '../../internals/urlWithConnectionParams';
-import { prepareUrl, withResolvers } from './utils';
+import { buildConnectionMessage, prepareUrl, withResolvers } from './utils';
 
 /**
  * Opens a WebSocket connection asynchronously and returns a promise
@@ -160,22 +160,29 @@ export class WsConnection {
     const wsPromise = prepareUrl(this.urlOptions).then(
       (url) => new this.WebSocketPonyfill(url),
     );
-    this.openPromise = wsPromise.then(asyncWsOpen);
-    this.ws = await wsPromise;
+    this.openPromise = wsPromise.then(async (ws) => {
+      this.ws = ws;
 
-    // Setup ping listener
-    this.ws.addEventListener('message', function ({ data }) {
-      if (data === 'PING') {
-        this.send('PONG');
+      // Setup ping listener
+      ws.addEventListener('message', function ({ data }) {
+        if (data === 'PING') {
+          this.send('PONG');
+        }
+      });
+
+      if (this.keepAliveOpts.enabled) {
+        setupPingInterval(ws, this.keepAliveOpts);
       }
-    });
 
-    if (this.keepAliveOpts.enabled) {
-      setupPingInterval(this.ws, this.keepAliveOpts);
-    }
+      ws.addEventListener('close', () => {
+        this.ws = null;
+      });
 
-    this.ws.addEventListener('close', () => {
-      this.ws = null;
+      await asyncWsOpen(ws);
+
+      if (this.urlOptions.connectionParams) {
+        ws.send(await buildConnectionMessage(this.urlOptions.connectionParams));
+      }
     });
 
     try {

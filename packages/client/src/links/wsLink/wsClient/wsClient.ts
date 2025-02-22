@@ -20,11 +20,7 @@ import type { WebSocketClientOptions } from './options';
 import { exponentialBackoff, keepAliveDefaults, lazyDefaults } from './options';
 import type { TCallbacks } from './requestManager';
 import { RequestManager } from './requestManager';
-import {
-  buildConnectionMessage,
-  ResettableTimeout,
-  TRPCWebSocketClosedError,
-} from './utils';
+import { ResettableTimeout, TRPCWebSocketClosedError } from './utils';
 import { backwardCompatibility, WsConnection } from './wsConnection';
 
 /**
@@ -48,7 +44,6 @@ export class WsClient {
     WebSocketClientOptions,
     'onOpen' | 'onClose' | 'onError'
   >;
-  private readonly connectionParams: WebSocketClientOptions['connectionParams'];
   private readonly lazyMode: boolean;
 
   constructor(opts: WebSocketClientOptions) {
@@ -58,7 +53,6 @@ export class WsClient {
       onClose: opts.onClose,
       onError: opts.onError,
     };
-    this.connectionParams = opts.connectionParams;
 
     const lazyOptions = {
       ...lazyDefaults,
@@ -295,10 +289,6 @@ export class WsClient {
       run(async () => {
         if (this.lazyMode) {
           this.inactivityTimeout.start();
-        }
-
-        if (this.connectionParams) {
-          ws.send(await buildConnectionMessage(this.connectionParams));
         }
 
         this.callbacks.onOpen?.();
