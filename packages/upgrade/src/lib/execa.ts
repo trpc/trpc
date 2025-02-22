@@ -1,4 +1,4 @@
-import * as CP from 'node:child_process';
-import * as Util from 'node:util';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
 
-export const execa = Util.promisify(CP.exec);
+export const execa = promisify(exec);

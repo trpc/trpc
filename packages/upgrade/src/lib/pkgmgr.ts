@@ -1,4 +1,4 @@
-import * as p from '@clack/prompts';
+import { log } from '@clack/prompts';
 import { execa } from './execa';
 
 function getPackageManager() {
@@ -16,10 +16,10 @@ export async function installPackage(packageName: string) {
     `${packageManager} ${installCmd} ${packageName}`,
   );
   if (stderr) {
-    p.log.error(stderr);
+    log.error(stderr);
   }
   if (process.env.VERBOSE) {
-    p.log.info(stdout);
+    log.info(stdout);
   }
 }
 
@@ -30,9 +30,9 @@ export async function uninstallPackage(packageName: string) {
     `${packageManager} ${uninstallCmd} ${packageName}`,
   );
   if (stderr) {
-    p.log.error(stderr);
+    log.error(stderr);
   }
   if (process.env.VERBOSE) {
-    p.log.info(stdout);
+    log.info(stdout);
   }
 }
