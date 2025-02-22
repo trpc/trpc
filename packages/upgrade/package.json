@@ -4,7 +4,8 @@
   "description": "Upgrade scripts for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
-  "bin": "./dist/bin.cjs",
+  "type": "module",
+  "bin": "./dist/bin.js",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -32,10 +33,8 @@
     "!**/__tests__"
   ],
   "dependencies": {
-    "@effect/cli": "0.56.2",
-    "@effect/platform": "0.77.2",
-    "@effect/platform-node": "0.73.2",
-    "effect": "3.13.2",
+    "@bomb.sh/args": "0.3.0",
+    "@clack/prompts": "0.10.0",
     "jscodeshift": "17.1.1",
     "typescript": "^5.6.2"
   },
