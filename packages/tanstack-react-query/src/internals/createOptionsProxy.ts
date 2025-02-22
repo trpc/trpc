@@ -69,25 +69,14 @@ export type inferOutput<
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['output'];
 
-export interface DecorateQueryProcedure<TDef extends ResolverDef>
-  extends DecorateRouterKeyable {
-  /**
-   * @internal prefer using inferInput and inferOutput to access types
-   */
-  '~types': {
-    input: TDef['input'];
-    output: TDef['output'];
-    errorShape: TDef['errorShape'];
-  };
+/**
+ * @remark `void` is here due to https://github.com/trpc/trpc/pull/4374
+ */
+type CursorInput = {
+  cursor?: any;
+} | void;
 
-  /**
-   * Create a set of type-safe query options that can be passed to `useQuery`, `prefetchQuery` etc.
-   *
-   * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
-   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
-   */
-  queryOptions: TRPCQueryOptions<TDef>;
-
+export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef> {
   /**
    * Calculate the TanStack Query Key for a Infinite Query Procedure
    *
@@ -132,6 +121,25 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
       TDef['errorShape']
     >
   >;
+}
+export interface DecorateQueryProcedure<TDef extends ResolverDef>
+  extends DecorateRouterKeyable {
+  /**
+   * @internal prefer using inferInput and inferOutput to access types
+   */
+  '~types': {
+    input: TDef['input'];
+    output: TDef['output'];
+    errorShape: TDef['errorShape'];
+  };
+
+  /**
+   * Create a set of type-safe query options that can be passed to `useQuery`, `prefetchQuery` etc.
+   *
+   * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
+   */
+  queryOptions: TRPCQueryOptions<TDef>;
 
   /**
    * Calculate the TanStack Query Key for a Query Procedure
@@ -197,7 +205,10 @@ export type DecorateProcedure<
   TType extends TRPCProcedureType,
   TDef extends ResolverDef,
 > = TType extends 'query'
-  ? DecorateQueryProcedure<TDef>
+  ? DecorateQueryProcedure<TDef> &
+      (TDef['input'] extends CursorInput
+        ? DecorateInfiniteQueryProcedure<TDef>
+        : {})
   : TType extends 'mutation'
     ? DecorateMutationProcedure<TDef>
     : TType extends 'subscription'
@@ -266,6 +277,7 @@ export type TRPCOptionsProxyOptions<TRouter extends AnyTRPCRouter> =
 
 type UtilsMethods =
   | keyof DecorateQueryProcedure<any>
+  | keyof DecorateInfiniteQueryProcedure<any>
   | keyof DecorateMutationProcedure<any>
   | keyof DecorateSubscriptionProcedure<any>
   | keyof DecorateRouterKeyable;

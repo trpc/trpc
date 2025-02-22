@@ -304,17 +304,24 @@ describe('infiniteQueryOptions', () => {
     });
   });
 
-  // TODO:
-  // test('no infinite on non cursor types', () => {
-  //   const { useTRPC } = ctx;
+  test('no infinite on non cursor types', async () => {
+    await using ctx = testContext();
+    const { useTRPC } = ctx;
 
-  //   ignoreErrors(() => {
-  //     const trpc = useTRPC();
+    // @ts-expect-error - unused, it's fine
+    function Component() {
+      const trpc = useTRPC();
 
-  //     // @ts-expect-error - not an infinite query
-  //     trpc.post.byId.infiniteQueryOptions({ id: '1' });
-  //   });
-  // });
+      // @ts-expect-error - not an infinite query
+      trpc.post.byId.infiniteQueryOptions({ id: '1' });
+
+      // @ts-expect-error - not an infinite query
+      trpc.post.byId.infiniteQueryKey({ id: '1' });
+
+      // @ts-expect-error - not an infinite query
+      trpc.post.byId.infiniteQueryFilter({ id: '1' });
+    }
+  });
 
   test('select', async () => {
     await using ctx = testContext();
