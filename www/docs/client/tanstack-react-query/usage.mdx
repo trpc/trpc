@@ -152,14 +152,12 @@ const queryFilter = trpc.path.to.query.queryFilter(
 Like with query keys, if you want to run a filter across a whole route you can use `routeFilter`
 
 ```ts
-const queryFilter = trpc.path.routeFilter(
-  {
-    // Any Tanstack React Query filter
-    predicate: (query) => {
-      query.state.data;
-    },
+const queryFilter = trpc.path.routeFilter({
+  // Any Tanstack React Query filter
+  predicate: (query) => {
+    query.state.data;
   },
-);
+});
 ```
 
 Useful for creating filters that can be passed to client methods like `queryClient.invalidateQueries` etc.
