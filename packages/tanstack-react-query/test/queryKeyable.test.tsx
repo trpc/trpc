@@ -1,5 +1,9 @@
 import { getServerAndReactClient } from './__helpers';
-import { useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useQueryClient,
+  useSuspenseInfiniteQuery,
+} from '@tanstack/react-query';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import/error/formatter';

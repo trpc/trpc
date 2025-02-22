@@ -1,4 +1,9 @@
-import type { DataTag, QueryClient, QueryFilters } from '@tanstack/react-query';
+import type {
+  DataTag,
+  InfiniteData,
+  QueryClient,
+  QueryFilters,
+} from '@tanstack/react-query';
 import type { TRPCClient, TRPCRequestOptions } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type {
@@ -91,7 +96,11 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
    */
   infiniteQueryKey: (
     input?: TDef['input'],
-  ) => DataTag<TRPCQueryKey, TDef['output'], TDef['errorShape']>;
+  ) => DataTag<
+    TRPCQueryKey,
+    InfiniteData<TDef['output'], number | null>,
+    TDef['errorShape']
+  >;
 
   /**
    * Create a set of type-safe infinite query options that can be passed to `useInfiniteQuery`, `prefetchInfiniteQuery` etc.
@@ -109,12 +118,19 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
    */
   infiniteQueryFilter: (
     input?: TDef['input'],
-    filters?: QueryFilters<TDef['output'], TDef['errorShape']>,
+    filters?: QueryFilters<
+      InfiniteData<TDef['output'], number | null>,
+      TDef['errorShape']
+    >,
   ) => QueryFilters<
-    TDef['output'],
+    InfiniteData<TDef['output'], number | null>,
     TDef['errorShape'],
-    TDef['output'],
-    DataTag<TRPCQueryKey, TDef['output'], TDef['errorShape']>
+    InfiniteData<TDef['output'], number | null>,
+    DataTag<
+      TRPCQueryKey,
+      InfiniteData<TDef['output'], number | null>,
+      TDef['errorShape']
+    >
   >;
 
   /**

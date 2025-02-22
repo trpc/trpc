@@ -56,6 +56,7 @@ describe('infiniteQueryOptions', () => {
     function MyComponent() {
       const trpc = useTRPC();
       const queryClient = useQueryClient();
+      const [invalidated, setInvalidated] = React.useState(false);
 
       const queryOptions = trpc.post.list.infiniteQueryOptions(
         {},
@@ -70,6 +71,41 @@ describe('infiniteQueryOptions', () => {
       if (!query1.data) {
         return <>...</>;
       }
+
+      //
+      // Check that query keys have correct types
+
+      expect(queryOptions.queryKey).toEqual(
+        trpc.post.list.infiniteQueryKey({}),
+      );
+
+      const queryData = queryClient.getQueryData(
+        trpc.post.list.infiniteQueryKey({}),
+      )!;
+      expectTypeOf<typeof query1.data>(queryData);
+      expect(query1.data).toEqual(queryData);
+
+      //
+      // Check that query filters have correct types
+
+      async function invalidate() {
+        await queryClient.invalidateQueries(
+          trpc.post.list.infiniteQueryFilter(
+            {},
+            {
+              predicate(opts) {
+                expectTypeOf<typeof query1.data>(opts.state.data);
+                expect(opts.state.data).toEqual(query1.data);
+                return true;
+              },
+            },
+          ),
+        );
+        setInvalidated(true);
+      }
+
+      //
+      // Check result data type
 
       expectTypeOf<
         InfiniteData<
@@ -90,6 +126,13 @@ describe('infiniteQueryOptions', () => {
             }}
           >
             Fetch more
+          </button>
+          <button
+            data-testid="invalidate"
+            onClick={invalidate}
+            disabled={invalidated}
+          >
+            invalidate
           </button>
           <button
             data-testid="prefetch"
@@ -122,11 +165,16 @@ describe('infiniteQueryOptions', () => {
       expect(utils.container).toHaveTextContent(`null`);
       expect(utils.container).not.toHaveTextContent(`undefined`);
     });
-    await userEvent.click(utils.getByTestId('fetchMore'));
 
+    await userEvent.click(utils.getByTestId('fetchMore'));
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
+    });
+
+    await userEvent.click(utils.getByTestId('invalidate'));
+    await waitFor(() => {
+      expect(utils.getByTestId('invalidate')).toBeDisabled();
     });
   });
 
@@ -137,6 +185,7 @@ describe('infiniteQueryOptions', () => {
     function MyComponent() {
       const trpc = useTRPC();
       const queryClient = useQueryClient();
+      const [invalidated, setInvalidated] = React.useState(false);
 
       const queryOptions = trpc.post.list.infiniteQueryOptions(
         {},
@@ -148,9 +197,41 @@ describe('infiniteQueryOptions', () => {
       );
       const query1 = useSuspenseInfiniteQuery(queryOptions);
       expect(queryOptions.trpc.path).toBe('post.list');
-      if (!query1.data) {
-        return <>...</>;
+
+      //
+      // Check that query keys have correct types
+
+      expect(queryOptions.queryKey).toEqual(
+        trpc.post.list.infiniteQueryKey({}),
+      );
+
+      const queryData = queryClient.getQueryData(
+        trpc.post.list.infiniteQueryKey({}),
+      )!;
+      expectTypeOf<typeof query1.data>(queryData);
+      expect(query1.data).toEqual(queryData);
+
+      //
+      // Check that query filters have correct types
+
+      async function invalidate() {
+        await queryClient.invalidateQueries(
+          trpc.post.list.infiniteQueryFilter(
+            {},
+            {
+              predicate(opts) {
+                expectTypeOf<typeof query1.data>(opts.state.data!);
+                expect(opts.state.data).toEqual(query1.data);
+                return true;
+              },
+            },
+          ),
+        );
+        setInvalidated(true);
       }
+
+      //
+      // Check result data type
 
       expectTypeOf<
         InfiniteData<
@@ -171,6 +252,13 @@ describe('infiniteQueryOptions', () => {
             }}
           >
             Fetch more
+          </button>
+          <button
+            data-testid="invalidate"
+            onClick={invalidate}
+            disabled={invalidated}
+          >
+            invalidate
           </button>
           <button
             data-testid="prefetch"
