@@ -12,6 +12,7 @@ export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
     trpcClient: CreateTRPCClient<TRouter>;
   }>;
   useTRPC: () => TRPCOptionsProxy<TRouter>;
+  useTRPCClient: () => TRPCClient<TRouter>;
 }
 /**
  * Create a set of type-safe provider-consumers
@@ -21,6 +22,9 @@ export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
 >(): CreateTRPCContextResult<TRouter> {
+  const TRPCClientContext = React.createContext<TRPCClient<TRouter> | null>(
+    null,
+  );
   const TRPCContext = React.createContext<TRPCOptionsProxy<TRouter> | null>(
     null,
   );
@@ -41,9 +45,11 @@ export function createTRPCContext<
       [props.trpcClient, props.queryClient],
     );
     return (
-      <TRPCContext.Provider value={value}>
-        {props.children}
-      </TRPCContext.Provider>
+      <TRPCClientContext.Provider value={props.trpcClient}>
+        <TRPCContext.Provider value={value}>
+          {props.children}
+        </TRPCContext.Provider>
+      </TRPCClientContext.Provider>
     );
   }
 
@@ -55,5 +61,15 @@ export function createTRPCContext<
     return utils;
   }
 
-  return { TRPCProvider, useTRPC };
+  function useTRPCClient() {
+    const client = React.useContext(TRPCClientContext);
+    if (!client) {
+      throw new Error(
+        'useTRPCClient() can only be used inside of a <TRPCProvider>',
+      );
+    }
+    return client;
+  }
+
+  return { TRPCProvider, useTRPC, useTRPCClient };
 }
