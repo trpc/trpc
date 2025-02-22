@@ -3,6 +3,7 @@ import {
   infiniteQueryOptions,
   useInfiniteQuery,
   useQueryClient,
+  useSuspenseInfiniteQuery,
   type InfiniteData,
 } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
@@ -115,6 +116,91 @@ describe('infiniteQueryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`[ "1" ]`);
+      expect(utils.container).toHaveTextContent(`null`);
+      expect(utils.container).not.toHaveTextContent(`undefined`);
+    });
+    await userEvent.click(utils.getByTestId('fetchMore'));
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(`[ "1" ]`);
+      expect(utils.container).toHaveTextContent(`[ "2" ]`);
+    });
+  });
+
+  test('basic suspense', async () => {
+    await using ctx = testContext();
+    const { useTRPC } = ctx;
+
+    function MyComponent() {
+      const trpc = useTRPC();
+      const queryClient = useQueryClient();
+
+      const queryOptions = trpc.post.list.infiniteQueryOptions(
+        {},
+        {
+          getNextPageParam(lastPage) {
+            return lastPage.next;
+          },
+        },
+      );
+      const query1 = useSuspenseInfiniteQuery(queryOptions);
+      expect(queryOptions.trpc.path).toBe('post.list');
+      if (!query1.data) {
+        return <>...</>;
+      }
+
+      expectTypeOf<
+        InfiniteData<
+          {
+            items: typeof fixtureData;
+            next?: number | undefined;
+          },
+          number | null
+        >
+      >(query1.data);
+
+      return (
+        <>
+          <button
+            data-testid="fetchMore"
+            onClick={() => {
+              query1.fetchNextPage();
+            }}
+          >
+            Fetch more
+          </button>
+          <button
+            data-testid="prefetch"
+            onClick={async () => {
+              const fetched =
+                await queryClient.fetchInfiniteQuery(queryOptions);
+              expectTypeOf<{
+                pages: {
+                  items: typeof fixtureData;
+                  next?: number | undefined;
+                }[];
+                pageParams: (number | null)[];
+              }>(fetched);
+              expect(
+                fetched.pageParams.some((p) => typeof p === 'undefined'),
+              ).toBeFalsy();
+            }}
+          >
+            Fetch
+          </button>
+          <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>
+        </>
+      );
+    }
+
+    const utils = ctx.renderApp(
+      <React.Suspense fallback="loading">
+        <MyComponent />
+      </React.Suspense>,
+    );
 
     await waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
