@@ -146,7 +146,6 @@ describe('get queryFilter', () => {
         },
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       const b = query.getQueryData(a.queryKey!);
       assertType<'__result' | undefined>(b);
 

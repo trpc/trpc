@@ -32,7 +32,12 @@ import {
   trpcSubscriptionOptions,
   type TRPCSubscriptionOptions,
 } from './subscriptionOptions';
-import type { ResolverDef, TRPCMutationKey, TRPCQueryKey } from './types';
+import type {
+  OptionalCursorInput,
+  ResolverDef,
+  TRPCMutationKey,
+  TRPCQueryKey,
+} from './types';
 import {
   getMutationKeyInternal,
   getQueryKeyInternal,
@@ -68,13 +73,6 @@ export type inferOutput<
     | DecorateQueryProcedure<any>
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['output'];
-
-/**
- * @remark `void` is here due to https://github.com/trpc/trpc/pull/4374
- */
-type CursorInput = {
-  cursor?: any;
-} | void;
 
 export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef> {
   /**
@@ -206,7 +204,7 @@ export type DecorateProcedure<
   TDef extends ResolverDef,
 > = TType extends 'query'
   ? DecorateQueryProcedure<TDef> &
-      (TDef['input'] extends CursorInput
+      (TDef['input'] extends OptionalCursorInput
         ? DecorateInfiniteQueryProcedure<TDef>
         : Record<string, never>)
   : TType extends 'mutation'

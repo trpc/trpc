@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import type { CreateTRPCClient, TRPCClient } from '@trpc/client';
+import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
@@ -9,7 +9,7 @@ export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
   TRPCProvider: React.FC<{
     children: React.ReactNode;
     queryClient: QueryClient;
-    trpcClient: CreateTRPCClient<TRouter>;
+    trpcClient: TRPCClient<TRouter>;
   }>;
   useTRPC: () => TRPCOptionsProxy<TRouter>;
   useTRPCClient: () => TRPCClient<TRouter>;

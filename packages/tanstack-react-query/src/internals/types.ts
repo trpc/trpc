@@ -11,9 +11,15 @@ export type ResolverDef = {
 };
 
 /**
+ * @remark `void` is here due to https://github.com/trpc/trpc/pull/4374
+ */
+type CursorInput = { cursor?: any };
+export type OptionalCursorInput = { cursor?: any } | void;
+
+/**
  * @internal
  */
-export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
+export type ExtractCursorType<TInput> = TInput extends CursorInput
   ? TInput['cursor']
   : unknown;
 

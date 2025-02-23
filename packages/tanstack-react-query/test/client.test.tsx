@@ -44,6 +44,7 @@ describe('useTRPCClient', () => {
 
       async function fetch() {
         const state = await vanillaClient.post.byId.query({ id: '1' });
+        expectTypeOf<'__result'>(state);
         setFetchedState(state);
       }
 
