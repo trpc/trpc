@@ -62,7 +62,7 @@ async function executeTests(
       .map((key) => [key, fixture[key]!] as const);
     for (const [name, Component] of fixtureComponents) {
       // eslint-disable-next-line no-console
-      console.log(`Running spec for ${name}`);
+      console.log(`Running spec on input for ${name}`);
       await spec.run(Component);
     }
   }
@@ -89,7 +89,7 @@ async function executeTests(
       }
 
       // eslint-disable-next-line no-console
-      console.log(`Running spec for ${name}`);
+      console.log(`Running spec on output for ${name}`);
       await spec.run(Component);
     }
   }
