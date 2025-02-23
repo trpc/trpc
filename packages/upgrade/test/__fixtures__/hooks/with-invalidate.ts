@@ -11,6 +11,10 @@ export function Component() {
 
       // eslint-disable-next-line @typescript-eslint/dot-notation
       utils['post'].invalidate();
+
+      utils.post.byId.invalidate({ id: 1 });
+
+      utils.post.list.invalidate({ cursor: 1 });
     },
   });
 }

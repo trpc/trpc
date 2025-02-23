@@ -253,7 +253,7 @@ export default function transform(
                   return;
                 }
 
-                // Replace util.PATH.proxyMethod() with trpc.PATH.pathFilter()
+                // Replace util.PATH.proxyMethod()
                 const proxyMethod = memberExpr.property.name as ProxyMethod;
                 const replacedPath = replaceMemberExpressionRootIndentifier(
                   j,
@@ -266,7 +266,28 @@ export default function transform(
                     memberExpr,
                   );
                 }
-                memberExpr.property = j.identifier('pathFilter');
+
+                /**
+                 * If no input, use pathFilter
+                 * If input has cursor, use infiniteQueryFilter
+                 * Otherwise, use queryFilter
+                 */
+                if (!callExpr.arguments.length) {
+                  memberExpr.property = j.identifier('pathFilter');
+                } else if (j.ObjectExpression.check(callExpr.arguments[0])) {
+                  if (
+                    callExpr.arguments[0].properties.find(
+                      (p) =>
+                        j.ObjectProperty.check(p) &&
+                        j.Identifier.check(p.key) &&
+                        p.key.name === 'cursor',
+                    )
+                  ) {
+                    memberExpr.property = j.identifier('infiniteQueryFilter');
+                  } else {
+                    memberExpr.property = j.identifier('queryFilter');
+                  }
+                }
 
                 // Wrap it in queryClient.utilMethod()
                 callExprPath.replace(

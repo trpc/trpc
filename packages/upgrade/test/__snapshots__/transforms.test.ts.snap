@@ -146,6 +146,12 @@ export function Component() {
 
         // eslint-disable-next-line @typescript-eslint/dot-notation
         queryClient.invalidateQueries(trpc['post'].pathFilter());
+
+        queryClient.invalidateQueries(trpc.post.byId.queryFilter({ id: 1 }));
+
+        queryClient.invalidateQueries(
+          trpc.post.list.infiniteQueryFilter({ cursor: 1 }),
+        );
       },
     }),
   );
