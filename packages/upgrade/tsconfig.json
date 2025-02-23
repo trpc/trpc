@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.json",
   "include": ["**/*.ts", "test"],
   "compilerOptions": {
     "module": "Preserve",
