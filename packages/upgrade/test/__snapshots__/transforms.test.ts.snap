@@ -156,6 +156,12 @@ export function Component() {
         queryClient.invalidateQueries(
           trpc.post.list.pathFilter({})
         );
+
+        queryClient.invalidateQueries(
+          trpc.post.pathFilter({
+            predicate: (query) => query.state.status !== 'pending',
+          }),
+        );
       },
     }),
   );

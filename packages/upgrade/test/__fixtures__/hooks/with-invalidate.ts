@@ -17,6 +17,10 @@ export function Component() {
       utils.post.list.invalidate({ cursor: 1 });
 
       utils.post.list.invalidate(undefined, {});
+
+      utils.post.invalidate(undefined, {
+        predicate: (query) => query.state.status !== 'pending',
+      });
     },
   });
 }

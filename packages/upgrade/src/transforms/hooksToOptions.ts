@@ -269,12 +269,14 @@ export default function transform(
 
                 /**
                  * If no input, use pathFilter
+                 * If input is undefined, use pathFilter
                  * If input has cursor, use infiniteQueryFilter
                  * Otherwise, use queryFilter
                  */
                 if (!callExpr.arguments.length) {
                   memberExpr.property = j.identifier('pathFilter');
                 } else if (j.ObjectExpression.check(callExpr.arguments[0])) {
+                  console.log('input', callExpr.arguments[0]);
                   if (
                     callExpr.arguments[0].properties.find(
                       (p) =>
