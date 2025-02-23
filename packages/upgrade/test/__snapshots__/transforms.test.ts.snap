@@ -153,9 +153,7 @@ export function Component() {
           trpc.post.list.infiniteQueryFilter({ cursor: 1 }),
         );
 
-        queryClient.invalidateQueries(
-          trpc.post.list.pathFilter({})
-        );
+        queryClient.invalidateQueries(trpc.post.list.pathFilter({}));
 
         queryClient.invalidateQueries(
           trpc.post.pathFilter({
