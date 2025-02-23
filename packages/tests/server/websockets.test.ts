@@ -1694,7 +1694,10 @@ describe('auth / connectionParams', async () => {
       return opts.ctx.user;
     }),
     iterable: t.procedure.subscription(async function* () {
-      await Promise.never();
+      await new Promise((_resolve) => {
+        // Intentionally never resolve to keep subscription active
+      });
+      yield null;
     }),
   });
 
