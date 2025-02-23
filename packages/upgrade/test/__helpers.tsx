@@ -43,7 +43,7 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
             trpcClient={ctx.client}
             queryClient={queryClient}
           >
-            {ui}
+            <React.Suspense fallback="suspended...">{ui}</React.Suspense>
           </trpcTrq.TRPCProvider>
         </baseProxy.Provider>
       </QueryClientProvider>,
