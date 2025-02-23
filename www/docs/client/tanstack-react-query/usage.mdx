@@ -263,3 +263,30 @@ function Component() {
   type Output = inferOutput<typeof trpc.path.to.procedure>;
 }
 ```
+
+### Accessing the tRPC client {#useTRPCClient}
+
+If you used the [setup with React Context](/docs/client/tanstack-react-query/setup#3a-setup-the-trpc-context-provider), you can access the tRPC client using the `useTRPCClient` hook.
+
+```tsx
+import { useTRPCClient } from './trpc';
+
+function Component() {
+  const trpcClient = useTRPCClient();
+
+  const result = await trpcClient.path.to.procedure.query({
+    /** input */
+  });
+}
+```
+
+If you [setup without React Context](/docs/client/tanstack-react-query/setup#3b-setup-without-react-context),
+you can import the global client instance directly instead.
+
+```ts
+import { client } from './trpc';
+
+const result = await client.path.to.procedure.query({
+  /** input */
+});
+```
