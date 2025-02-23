@@ -36,6 +36,10 @@ const hookToOptions = {
   },
 } as const;
 
+/**
+ * Map old proxy method to queryClient method
+ * 1st item is the queryClient method, 2nd item is the filter/key method to use
+ */
 const utilMap = {
   fetch: ['fetchQuery', 'queryOptions'],
   fetchInfinite: ['fetchInfiniteQuery', 'infiniteQueryOptions'],
