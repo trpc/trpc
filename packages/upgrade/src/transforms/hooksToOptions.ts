@@ -266,7 +266,7 @@ export default function transform(
                     memberExpr,
                   );
                 }
-                memberExpr.property = j.identifier('queryFilter');
+                memberExpr.property = j.identifier('routeFilter');
 
                 // Wrap it in queryClient.utilMethod()
                 callExprPath.replace(
