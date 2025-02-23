@@ -62,19 +62,41 @@ export interface DecorateRouterKeyable {
   routeFilter: (filters?: QueryFilters) => QueryFilters;
 }
 
+interface TypeHelper<TDef extends ResolverDef> {
+  /**
+   * @internal prefer using inferInput and inferOutput to access types
+   */
+  '~types': {
+    input: TDef['input'];
+    output: TDef['output'];
+    errorShape: TDef['errorShape'];
+  };
+}
+
 export type inferInput<
   TProcedure extends
+    | DecorateInfiniteQueryProcedure<any>
     | DecorateQueryProcedure<any>
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['input'];
 
 export type inferOutput<
   TProcedure extends
+    | DecorateInfiniteQueryProcedure<any>
     | DecorateQueryProcedure<any>
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['output'];
 
-export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef> {
+export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
+  extends TypeHelper<TDef> {
+  /**
+   * Create a set of type-safe infinite query options that can be passed to `useInfiniteQuery`, `prefetchInfiniteQuery` etc.
+   *
+   * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
+   */
+  infiniteQueryOptions: TRPCInfiniteQueryOptions<TDef>;
+
   /**
    * Calculate the TanStack Query Key for a Infinite Query Procedure
    *
@@ -88,14 +110,6 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef> {
     InfiniteData<TDef['output'], number | null>,
     TDef['errorShape']
   >;
-
-  /**
-   * Create a set of type-safe infinite query options that can be passed to `useInfiniteQuery`, `prefetchInfiniteQuery` etc.
-   *
-   * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
-   * @see https://trpc.io/docs/client/tanstack-react-query/usage#infiniteQueryOptions
-   */
-  infiniteQueryOptions: TRPCInfiniteQueryOptions<TDef>;
 
   /**
    * Calculate a TanStack Query Filter for a Infinite Query Procedure
@@ -121,16 +135,8 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef> {
   >;
 }
 export interface DecorateQueryProcedure<TDef extends ResolverDef>
-  extends DecorateRouterKeyable {
-  /**
-   * @internal prefer using inferInput and inferOutput to access types
-   */
-  '~types': {
-    input: TDef['input'];
-    output: TDef['output'];
-    errorShape: TDef['errorShape'];
-  };
-
+  extends TypeHelper<TDef>,
+    DecorateRouterKeyable {
   /**
    * Create a set of type-safe query options that can be passed to `useQuery`, `prefetchQuery` etc.
    *
@@ -166,15 +172,8 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
   >;
 }
 
-export interface DecorateMutationProcedure<TDef extends ResolverDef> {
-  /**
-   * @internal prefer using inferInput and inferOutput to access types
-   */
-  '~types': {
-    input: TDef['input'];
-    output: TDef['output'];
-  };
-
+export interface DecorateMutationProcedure<TDef extends ResolverDef>
+  extends TypeHelper<TDef> {
   /**
    * Create a set of type-safe mutation options that can be passed to `useMutation`
    *
@@ -331,15 +330,6 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
         };
       },
 
-      queryKey: () => {
-        return getQueryKeyInternal(path, arg1, 'query');
-      },
-      queryFilter: (): QueryFilters => {
-        return {
-          ...arg2,
-          queryKey: getQueryKeyInternal(path, arg1, 'query'),
-        };
-      },
       queryOptions: () => {
         return trpcQueryOptions({
           opts: arg2,
@@ -349,10 +339,16 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
           query: callIt('query'),
         });
       },
-
-      infiniteQueryKey: () => {
-        return getQueryKeyInternal(path, arg1, 'infinite');
+      queryKey: () => {
+        return getQueryKeyInternal(path, arg1, 'query');
       },
+      queryFilter: (): QueryFilters => {
+        return {
+          ...arg2,
+          queryKey: getQueryKeyInternal(path, arg1, 'query'),
+        };
+      },
+
       infiniteQueryOptions: () => {
         return trpcInfiniteQueryOptions({
           opts: arg2,
@@ -362,6 +358,9 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
           query: callIt('query'),
         });
       },
+      infiniteQueryKey: () => {
+        return getQueryKeyInternal(path, arg1, 'infinite');
+      },
       infiniteQueryFilter: (): QueryFilters => {
         return {
           ...arg2,
@@ -369,9 +368,6 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
         };
       },
 
-      mutationKey: () => {
-        return getMutationKeyInternal(path);
-      },
       mutationOptions: () => {
         return trpcMutationOptions({
           opts: arg1,
@@ -380,6 +376,9 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
           mutate: callIt('mutation'),
           overrides: opts.overrides?.mutations,
         });
+      },
+      mutationKey: () => {
+        return getMutationKeyInternal(path);
       },
 
       subscriptionOptions: () => {
