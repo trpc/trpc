@@ -154,7 +154,7 @@ export function Component() {
         );
 
         queryClient.invalidateQueries(
-          trpc.post.list.infiniteQueryFilter(undefined, {})
+          trpc.post.list.pathFilter({})
         );
       },
     }),
