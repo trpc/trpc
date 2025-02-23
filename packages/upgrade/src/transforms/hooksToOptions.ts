@@ -273,8 +273,17 @@ export default function transform(
                  * If input has cursor, use infiniteQueryFilter
                  * Otherwise, use queryFilter
                  */
-                if (!callExpr.arguments.length) {
+                const isNoArgs = !callExpr.arguments.length;
+                const isUndefindInputArg =
+                  callExpr.arguments.length > 0 &&
+                  callExpr.arguments[0].type === 'Identifier' &&
+                  callExpr.arguments[0].name === 'undefined';
+                if (isNoArgs || isUndefindInputArg) {
                   memberExpr.property = j.identifier('pathFilter');
+
+                  if (isUndefindInputArg) {
+                    callExpr.arguments.shift();
+                  }
                 } else if (j.ObjectExpression.check(callExpr.arguments[0])) {
                   console.log('input', callExpr.arguments[0]);
                   if (
