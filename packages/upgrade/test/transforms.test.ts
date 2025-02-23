@@ -28,6 +28,10 @@ const snapshotTestTransform = async (file: string, transform: Transformer) => {
   );
   const formatted = await formatFile(file, transformed);
 
+  if (formatted.trim().length === 0) {
+    expect.fail('Transformed file is empty');
+  }
+
   await expect(formatted).toMatchFileSnapshot(
     file.replace('.tsx', '.snap.tsx'),
   );
@@ -69,14 +73,30 @@ async function executeTests(
 
   await snapshotTestTransform(fixtureFile, transform);
 
-  // TODO: wait for or flush snapshot to disk before continuing
-  // const snapshotFile = join(fixturesDir, file.replace('.tsx', '.snap.tsx'));
-  // const snapshot = (await import(snapshotFile)) as ComponentFile;
-  // if (typeof snapshot.Component === 'undefined') {
-  //   expect.fail(`Snapshot file ${snapshotFile} does not export Component, this could indicate the transform didn't work or is a test harness problem`);
-  // }
+  if (hasSpec) {
+    const spec = (await import(specFile)) as SpecDefFile;
 
-  // await spec.run(snapshot.Component);
+    const snapshotFile = join(fixturesDir, file.replace('.tsx', '.snap.tsx'));
+    const snapshot = (await import(snapshotFile)) as ComponentFile;
+
+    // We get the original fixture components because we expect them to be 1-1 and if not we'll throw
+    const fixture = (await import(fixtureFile)) as ComponentFile;
+    const fixtureComponents = Object.keys(fixture)
+      .filter((key) => key.startsWith('Component'))
+      .map((key) => [key, snapshot[key]] as const);
+
+    for (const [name, Component] of fixtureComponents) {
+      if (!Component) {
+        expect.fail(
+          `Snapshot file ${snapshotFile} does not export ${name}, this could indicate the transform didn't work or is a test harness problem`,
+        );
+      }
+
+      // eslint-disable-next-line no-console
+      console.log(`Running spec for ${name}`);
+      await spec.run(Component);
+    }
+  }
 }
 
 describe('hooks', () => {
