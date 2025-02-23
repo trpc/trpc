@@ -1,15 +1,13 @@
 import '@testing-library/dom';
 import '@testing-library/jest-dom/vitest';
-import type { TestServerAndClientResourceOpts } from '@trpc/client/__tests__/testClientResource';
-import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import type { TestServerAndClientResourceOpts } from '../../client/src/__tests__/testClientResource';
+import { testServerAndClientResource } from '../../client/src/__tests__/testClientResource';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';
+import * as rq from '@trpc/react-query';
 import type { AnyTRPCRouter } from '@trpc/server';
-import {
-  createTRPCContext,
-  createTRPCOptionsProxy,
-} from '@trpc/tanstack-react-query';
+import * as trq from '@trpc/tanstack-react-query';
 import * as React from 'react';
 
 export function testReactResource<TRouter extends AnyTRPCRouter>(
@@ -20,25 +18,33 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
 
   const queryClient = new QueryClient();
 
-  const optionsProxyClient = createTRPCOptionsProxy({
-    client: getUntypedClient(ctx.client),
+  const untypedClient = getUntypedClient(ctx.client);
+  const optionsProxyClient = trq.createTRPCOptionsProxy({
+    client: untypedClient,
     queryClient,
   });
 
-  const optionsProxyServer = createTRPCOptionsProxy({
+  const optionsProxyServer = trq.createTRPCOptionsProxy({
     router: appRouter,
     ctx: {},
     queryClient,
   });
 
-  const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<TRouter>();
+  const trpcRq = rq.createTRPCReact<TRouter>();
+
+  const trpcTrq = trq.createTRPCContext<TRouter>();
 
   function renderApp(ui: React.ReactNode) {
     return render(
       <QueryClientProvider client={queryClient}>
-        <TRPCProvider trpcClient={ctx.client} queryClient={queryClient}>
-          {ui}
-        </TRPCProvider>
+        <trpcRq.Provider trpcClient={ctx.client} queryClient={queryClient}>
+          <trpcTrq.TRPCProvider
+            trpcClient={ctx.client}
+            queryClient={queryClient}
+          >
+            {ui}
+          </trpcTrq.TRPCProvider>
+        </trpcRq.Provider>
       </QueryClientProvider>,
     );
   }
@@ -48,8 +54,8 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
     opts: ctx,
     queryClient,
     renderApp,
-    useTRPC,
-    useTRPCClient,
+    trq: trpcTrq,
+    rq: trpcRq,
     optionsProxyClient,
     optionsProxyServer,
     /** @deprecated use resource manager instead */
