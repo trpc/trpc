@@ -1694,7 +1694,7 @@ describe('auth / connectionParams', async () => {
       return opts.ctx.user;
     }),
     iterable: t.procedure.subscription(async function* () {
-      await new Promise(() => {});
+      await Promise.never();
     }),
   });
 
