@@ -1286,7 +1286,7 @@ importers:
         version: 5.4.14(@types/node@20.17.19)(lightningcss@1.28.2)(terser@5.34.0)
       vitest:
         specifier: ^2.0.4
-        version: 2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)
+        version: 2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4(vitest@3.0.5))(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)
 
   examples/next-prisma-todomvc:
     dependencies:
@@ -2027,7 +2027,7 @@ importers:
         version: 5.7.2
       vitest:
         specifier: ^2.0.4
-        version: 2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)
+        version: 2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4(vitest@3.0.5))(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -2168,7 +2168,7 @@ importers:
         version: 1.0.0
       zod-form-data:
         specifier: ^2.0.1
-        version: 2.0.1(zod@3.23.8)
+        version: 2.0.1(zod@3.24.2)
     devDependencies:
       '@vitest/spy':
         specifier: ^2.1.8
@@ -2189,6 +2189,21 @@ importers:
         specifier: ^5.6.2
         version: 5.7.2
     devDependencies:
+      '@tanstack/react-query':
+        specifier: ^5.66.0
+        version: 5.66.0(react@19.0.0)
+      '@trpc/client':
+        specifier: workspace:*
+        version: link:../client
+      '@trpc/react-query':
+        specifier: workspace:*
+        version: link:../react-query
+      '@trpc/server':
+        specifier: workspace:*
+        version: link:../server
+      '@trpc/tanstack-react-query':
+        specifier: workspace:*
+        version: link:../tanstack-react-query
       '@types/jscodeshift':
         specifier: 0.12.0
         version: 0.12.0
@@ -2201,9 +2216,18 @@ importers:
       esbuild:
         specifier: 0.25.0
         version: 0.25.0
+      react:
+        specifier: ^19.0.0
+        version: 19.0.0
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.0.0(react@19.0.0)
       tsx:
         specifier: ^4.0.0
         version: 4.19.1
+      zod:
+        specifier: ^3.24.2
+        version: 3.24.2
 
   www:
     dependencies:
@@ -18330,6 +18354,9 @@ packages:
 
   zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+
+  zod@3.24.2:
+    resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -37223,7 +37250,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  vitest@2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0):
+  vitest@2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4(vitest@3.0.5))(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0):
     dependencies:
       '@vitest/expect': 2.1.9
       '@vitest/mocker': 2.1.9(vite@5.4.14(@types/node@20.17.19)(lightningcss@1.28.2)(terser@5.34.0))
@@ -37769,6 +37796,12 @@ snapshots:
     dependencies:
       zod: 3.23.8
 
+  zod-form-data@2.0.1(zod@3.24.2):
+    dependencies:
+      zod: 3.24.2
+
   zod@3.23.8: {}
+
+  zod@3.24.2: {}
 
   zwitch@2.0.4: {}

@@ -1,6 +1,9 @@
-import { trpc } from './trpc';
+import { useQueryClient } from '@tanstack/react-query';
+import { trpc } from './suspenseDestructuring.trpc';
 
-export function Component(channelId: string) {
+export function Component() {
+  const channelId = '1';
+
   const [data, query] = trpc.post.list.useSuspenseQuery();
 
   const [a, b] = [1, 2];
@@ -29,4 +32,6 @@ export function Component(channelId: string) {
       getNextPageParam: (d) => d.nextCursor,
     },
   );
+
+  return useQueryClient().isFetching() ? 'loading' : 'loaded';
 }

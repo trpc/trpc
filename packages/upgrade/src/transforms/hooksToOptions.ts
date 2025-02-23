@@ -276,7 +276,7 @@ export default function transform(
                 const isNoArgs = !callExpr.arguments.length;
                 const isUndefindInputArg =
                   callExpr.arguments.length > 0 &&
-                  callExpr.arguments[0].type === 'Identifier' &&
+                  j.Identifier.check(callExpr.arguments[0]) &&
                   callExpr.arguments[0].name === 'undefined';
                 if (isNoArgs || isUndefindInputArg) {
                   memberExpr.property = j.identifier('pathFilter');
