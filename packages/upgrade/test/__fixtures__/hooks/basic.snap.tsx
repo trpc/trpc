@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from './basic.trpc';
 
 export function Component() {
@@ -14,5 +14,5 @@ export function Component() {
   useQuery(trpc.post.list.queryOptions(undefined, { staleTime: 1000 }));
   useQuery(trpc.post.byId.queryOptions({ id: 1 }, { staleTime: 1000 }));
 
-  return null;
+  return useQueryClient().isFetching() ? 'loading' : 'loaded';
 }

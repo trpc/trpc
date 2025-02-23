@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["**/*.ts", "test"],
+  "include": ["**/*.ts", "**/*.tsx"],
   "compilerOptions": {
     "module": "Preserve",
     "target": "ESNext",

@@ -6,34 +6,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';
 import * as rq from '@trpc/react-query';
-import { initTRPC, type AnyTRPCRouter } from '@trpc/server';
+import { type AnyTRPCRouter } from '@trpc/server';
 import * as trq from '@trpc/tanstack-react-query';
 import * as React from 'react';
-import { z } from 'zod';
-
-export const t = initTRPC.create();
-export const appRouter = t.router({
-  a: {
-    b: {
-      c: {
-        d: t.procedure.query(() => {
-          return 'hello';
-        }),
-      },
-    },
-  },
-  num: t.procedure.input(z.number()).query(({ input }) => {
-    return input;
-  }),
-  post: {
-    list: t.procedure.query(() => {
-      return ['initial', 'optimistic'];
-    }),
-    byId: t.procedure.input(z.object({ id: z.number() })).query(({ input }) => {
-      return input;
-    }),
-  },
-});
 
 export function testReactResource<TRouter extends AnyTRPCRouter>(
   appRouter: TRouter,
