@@ -256,6 +256,14 @@ export class WsClient {
         if (this.allowReconnect) {
           await this.activeConnection.close();
           await this.activeConnection.open();
+
+          if (this.requestManager.hasPendingRequests()) {
+            this.send(
+              this.requestManager
+                .getPendingRequests()
+                .map(({ message }) => message),
+            );
+          }
         }
         this.reconnecting = null;
       } catch {
@@ -298,13 +306,6 @@ export class WsClient {
           state: 'pending',
           error: null,
         });
-
-        const messages = this.requestManager
-          .getPendingRequests()
-          .map(({ message }) => message);
-        if (messages.length) {
-          ws.send(JSON.stringify(messages));
-        }
       }).catch((error) => {
         ws.close(3000);
         handleCloseOrError(error);

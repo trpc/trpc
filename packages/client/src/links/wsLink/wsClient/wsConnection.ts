@@ -129,7 +129,11 @@ export class WsConnection {
    * Checks if the WebSocket connection is open and ready to communicate.
    */
   public isOpen(): this is { ws: WebSocket } {
-    return !!this.ws && this.ws.readyState === this.WebSocketPonyfill.OPEN;
+    return (
+      !!this.ws &&
+      this.ws.readyState === this.WebSocketPonyfill.OPEN &&
+      !this.openPromise
+    );
   }
 
   /**
@@ -175,7 +179,9 @@ export class WsConnection {
       }
 
       ws.addEventListener('close', () => {
-        this.ws = null;
+        if (this.ws === ws) {
+          this.ws = null;
+        }
       });
 
       await asyncWsOpen(ws);
