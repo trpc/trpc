@@ -15,6 +15,8 @@ export function Component() {
       utils.post.byId.invalidate({ id: 1 });
 
       utils.post.list.invalidate({ cursor: 1 });
+
+      utils.post.list.invalidate(undefined, {});
     },
   });
 }
