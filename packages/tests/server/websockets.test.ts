@@ -1695,7 +1695,7 @@ describe('auth / connectionParams', async () => {
     }),
     iterable: t.procedure.subscription(async function* () {
       await new Promise(() => {});
-    })
+    }),
   });
 
   type AppRouter = typeof appRouter;
@@ -1800,7 +1800,7 @@ describe('auth / connectionParams', async () => {
           token: USER_TOKEN,
         };
       },
-      onOpen: onConnectionOpen
+      onOpen: onConnectionOpen,
     });
     const client = createTRPCClient<AppRouter>({
       links: [
@@ -1810,7 +1810,7 @@ describe('auth / connectionParams', async () => {
       ],
     });
     client.iterable.subscribe(undefined, {
-      onStarted: onSubscriptionStarted
+      onStarted: onSubscriptionStarted,
     });
     await waitFor(() => {
       expect(onConnectionOpen).toHaveBeenCalledTimes(1);
