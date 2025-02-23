@@ -33,7 +33,7 @@ describe('hooks', () => {
   const literal = './__fixtures__/hooks'; // idk why but Vite seems to do some shit when the string is in-lined to URL
   const fixturesDir = new URL(literal, import.meta.url).pathname;
 
-  const ONLY_RUN: string[] = ['with-invalidate.ts'];
+  const ONLY_RUN: string[] = [];
 
   const fixtures = ONLY_RUN.length ? ONLY_RUN : readdirSync(fixturesDir);
   it.each(fixtures)(
