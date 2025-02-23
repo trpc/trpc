@@ -37,20 +37,19 @@ const hookToOptions = {
 } as const;
 
 const utilMap = {
-  fetch: 'fetchQuery',
-  fetchInfinite: 'fetchInfiniteQuery',
-  prefetch: 'prefetchQuery',
-  prefetchInfinite: 'prefetchInfiniteQuery',
-  ensureData: 'ensureQueryData',
-  invalidate: 'invalidateQueries',
-  reset: 'resetQueries',
-  refetch: 'refetchQueries',
-  cancel: 'cancelQuery',
-  setData: 'setQueryData',
-  setQueriesData: 'setQueriesData',
-  setInfiniteData: 'setInfiniteQueryData',
-  getData: 'getQueryData',
-  getInfiniteData: 'getInfiniteQueryData',
+  fetch: ['fetchQuery', 'queryOptions'],
+  fetchInfinite: ['fetchInfiniteQuery', 'infiniteQueryOptions'],
+  prefetch: ['prefetchQuery', 'queryOptions'],
+  prefetchInfinite: ['prefetchInfiniteQuery', 'infiniteQueryOptions'],
+  ensureData: ['ensureQueryData', 'queryOptions'],
+  invalidate: ['invalidateQueries', 'DYNAMIC_FILTER'],
+  reset: ['resetQueries', 'DYNAMIC_FILTER'],
+  refetch: ['refetchQueries', 'DYNAMIC_FILTER'],
+  cancel: ['cancelQueries', 'DYNAMIC_FILTER'],
+  setData: ['setQueryData', 'queryKey'],
+  setInfiniteData: ['setInfiniteQueryData', 'infiniteQueryKey'],
+  getData: ['getQueryData', 'queryKey'],
+  getInfiniteData: ['getInfiniteQueryData', 'infiniteQueryKey'],
   // setMutationDefaults: 'setMutationDefaults',
   // getMutationDefaults: 'getMutationDefaults',
   // isMutating: 'isMutating',
@@ -273,19 +272,38 @@ export default function transform(
                  * If input has cursor, use infiniteQueryFilter
                  * Otherwise, use queryFilter
                  */
+                const preferedFilter = utilMap[proxyMethod][1];
                 const isNoArgs = !callExpr.arguments.length;
                 const isUndefindInputArg =
                   callExpr.arguments.length > 0 &&
                   j.Identifier.check(callExpr.arguments[0]) &&
                   callExpr.arguments[0].name === 'undefined';
-                if (isNoArgs || isUndefindInputArg) {
+
+                let argToForward: any = undefined;
+
+                if (preferedFilter !== 'DYNAMIC_FILTER') {
+                  if (
+                    proxyMethod === 'setData' ||
+                    proxyMethod === 'setInfiniteData'
+                  ) {
+                    // First arg goes into queryKey(), second is forwarded to the wrapped method
+                    // We can omit the first arg if it's undefined
+                    argToForward = callExpr.arguments[1];
+                    if (callExpr.arguments[0] && !isUndefindInputArg) {
+                      callExpr.arguments = [callExpr.arguments[0]];
+                    } else {
+                      callExpr.arguments = [];
+                    }
+                  }
+
+                  memberExpr.property = j.identifier(preferedFilter);
+                } else if (isNoArgs || isUndefindInputArg) {
                   memberExpr.property = j.identifier('pathFilter');
 
                   if (isUndefindInputArg) {
                     callExpr.arguments.shift();
                   }
                 } else if (j.ObjectExpression.check(callExpr.arguments[0])) {
-                  console.log('input', callExpr.arguments[0]);
                   if (
                     callExpr.arguments[0].properties.find(
                       (p) =>
@@ -304,8 +322,9 @@ export default function transform(
                 callExprPath.replace(
                   j.memberExpression(
                     j.identifier('queryClient'),
-                    j.callExpression(j.identifier(utilMap[proxyMethod]), [
+                    j.callExpression(j.identifier(utilMap[proxyMethod][0]), [
                       callExpr,
+                      ...(argToForward ? [argToForward] : []),
                     ]),
                   ),
                 );

@@ -8,17 +8,18 @@ export function Component() {
   const postCreate = useMutation(
     trpc.post.create.mutationOptions({
       async onMutate(newPost) {
-        await queryClient.cancelQuery(trpc.post.list.pathFilter());
+        await queryClient.cancelQueries(trpc.post.list.pathFilter());
 
-        const prevData = queryClient.getQueryData(trpc.post.list.pathFilter());
-        queryClient.setQueryData(
-          trpc.post.list.pathFilter((old) => [...(old ?? []), newPost.title]),
-        );
+        const prevData = queryClient.getQueryData(trpc.post.list.queryKey());
+        queryClient.setQueryData(trpc.post.list.queryKey(), (old) => [
+          ...(old ?? []),
+          newPost.title,
+        ]);
 
         return { prevData };
       },
       onError(_err, _newPost, ctx) {
-        queryClient.setQueryData(trpc.post.list.pathFilter(ctx?.prevData));
+        queryClient.setQueryData(trpc.post.list.queryKey(), ctx?.prevData);
       },
       onSettled() {
         queryClient.invalidateQueries(trpc.post.list.pathFilter());
