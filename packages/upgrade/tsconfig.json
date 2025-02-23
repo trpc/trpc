@@ -3,6 +3,7 @@
   "include": ["**/*.ts", "**/*.tsx"],
   "compilerOptions": {
     "module": "Preserve",
+    "resolveJsonModule": true,
     "target": "ESNext",
     "strict": true,
     "skipLibCheck": true,
