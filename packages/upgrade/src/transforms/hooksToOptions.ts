@@ -208,7 +208,7 @@ export default function transform(
         ) {
           const oldIdentifier = path.parentPath.node.id as Identifier;
 
-          // Find all the references to `utils` and replace with `queryClient[helperMap](trpc.PATH.routeFilter())`
+          // Find all the references to `utils` and replace with `queryClient[helperMap](trpc.PATH.pathFilter())`
           root
             .find(j.Identifier, { name: oldIdentifier.name })
             .forEach((path) => {
@@ -253,7 +253,7 @@ export default function transform(
                   return;
                 }
 
-                // Replace util.PATH.proxyMethod() with trpc.PATH.routeFilter()
+                // Replace util.PATH.proxyMethod() with trpc.PATH.pathFilter()
                 const proxyMethod = memberExpr.property.name as ProxyMethod;
                 const replacedPath = replaceMemberExpressionRootIndentifier(
                   j,
@@ -266,7 +266,7 @@ export default function transform(
                     memberExpr,
                   );
                 }
-                memberExpr.property = j.identifier('routeFilter');
+                memberExpr.property = j.identifier('pathFilter');
 
                 // Wrap it in queryClient.utilMethod()
                 callExprPath.replace(

@@ -46,20 +46,20 @@ import {
 
 export interface DecorateRouterKeyable {
   /**
-   * Calculate the TanStack Query Key for a Route, could be used to invalidate every procedure beneath this route
+   * Calculate the TanStack Query Key for any path, could be used to invalidate every procedure beneath this path
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
-   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#pathKey
    */
-  routeKey: () => TRPCQueryKey;
+  pathKey: () => TRPCQueryKey;
 
   /**
-   * Calculate a TanStack Query Filter for a Route, could be used to manipulate every procedure beneath this route
+   * Calculate a TanStack Query Filter for any path, could be used to manipulate every procedure beneath this path
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
-   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryFilter
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#pathFilter
    */
-  routeFilter: (filters?: QueryFilters) => QueryFilters;
+  pathFilter: (filters?: QueryFilters) => QueryFilters;
 }
 
 interface TypeHelper<TDef extends ResolverDef> {
@@ -320,10 +320,10 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
     const contextMap: Record<UtilsMethods, () => unknown> = {
       '~types': undefined as any,
 
-      routeKey: () => {
+      pathKey: () => {
         return getQueryKeyInternal(path);
       },
-      routeFilter: (): QueryFilters => {
+      pathFilter: (): QueryFilters => {
         return {
           ...arg1,
           queryKey: getQueryKeyInternal(path),

@@ -98,7 +98,7 @@ describe('polymorphism', () => {
 
         const [currentExport, setCurrentExport] = useState<number | null>(null);
         const invalidate = useMutation({
-          mutationFn: () => client.invalidateQueries(trpc.github.routeFilter()),
+          mutationFn: () => client.invalidateQueries(trpc.github.pathFilter()),
         });
 
         return (
@@ -157,7 +157,7 @@ describe('polymorphism', () => {
         const [currentExport, setCurrentExport] = useState<number | null>(null);
 
         const invalidate = useMutation({
-          mutationFn: () => client.invalidateQueries(trpc.github.routeFilter()),
+          mutationFn: () => client.invalidateQueries(trpc.github.pathFilter()),
         });
 
         return (
@@ -224,7 +224,7 @@ function StartExportButton(props: {
       async onSuccess(data) {
         props.onExportStarted(data.id);
 
-        await client.invalidateQueries(props.route.routeFilter());
+        await client.invalidateQueries(props.route.pathFilter());
       },
     }),
   );

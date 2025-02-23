@@ -65,12 +65,12 @@ describe('get queryFilter', () => {
     function Component() {
       const trpc = useTRPC();
 
-      expect(trpc.routeFilter()).toMatchInlineSnapshot(`
+      expect(trpc.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [],
         }
       `);
-      expect(trpc.bluesky.routeFilter()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
             Array [
@@ -79,7 +79,7 @@ describe('get queryFilter', () => {
           ],
         }
       `);
-      expect(trpc.bluesky.post.routeFilter()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.post.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
             Array [
@@ -89,7 +89,7 @@ describe('get queryFilter', () => {
           ],
         }
       `);
-      expect(trpc.bluesky.post.byId.routeFilter()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.post.byId.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
             Array [
@@ -171,16 +171,16 @@ describe('get queryKey', () => {
         '__result',
       );
 
-      expect(trpc.routeKey()).toMatchInlineSnapshot(`Array []`);
+      expect(trpc.pathKey()).toMatchInlineSnapshot(`Array []`);
 
-      expect(trpc.bluesky.routeKey()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.pathKey()).toMatchInlineSnapshot(`
         Array [
           Array [
             "bluesky",
           ],
         ]
       `);
-      expect(trpc.bluesky.post.routeKey()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.post.pathKey()).toMatchInlineSnapshot(`
         Array [
           Array [
             "bluesky",
@@ -188,7 +188,7 @@ describe('get queryKey', () => {
           ],
         ]
       `);
-      expect(trpc.bluesky.post.byId.routeKey()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.post.byId.pathKey()).toMatchInlineSnapshot(`
         Array [
           Array [
             "bluesky",

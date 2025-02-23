@@ -122,13 +122,13 @@ const queryKey = trpc.path.to.query.queryKey();
 Since Tanstack React Query uses fuzzy matching for query keys, you can also create a partial query key for any sub-path to match all queries belonging to a router:
 
 ```ts
-const queryKey = trpc.router.routeKey();
+const queryKey = trpc.router.pathKey();
 ```
 
 Or even the root path to match all tRPC queries:
 
 ```ts
-const queryKey = trpc.routeKey();
+const queryKey = trpc.pathKey();
 ```
 
 ### `queryFilter` - creating query filters {#queryFilter}
@@ -149,10 +149,10 @@ const queryFilter = trpc.path.to.query.queryFilter(
 );
 ```
 
-Like with query keys, if you want to run a filter across a whole route you can use `routeFilter`
+Like with query keys, if you want to run a filter across a whole route you can use `pathFilter`
 
 ```ts
-const queryFilter = trpc.path.routeFilter({
+const queryFilter = trpc.path.pathFilter({
   // Any Tanstack React Query filter
   predicate: (query) => {
     query.state.data;
