@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { trpc } from './existingRqMix.trpc';
 
 export function Component() {
@@ -8,4 +8,6 @@ export function Component() {
   trpc.post.byId.useQuery({ id: 1 });
   trpc.num.useQuery(1);
   trpc.post.list.useInfiniteQuery({});
+
+  return useQueryClient().isFetching() ? 'loading' : 'loaded';
 }

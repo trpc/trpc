@@ -55,10 +55,11 @@ async function executeTests(fixturesDir: string, file: string, transform: any) {
 
   await snapshotTestTransform(fixtureFile, transform);
 
+  // TODO: wait for or flush snapshot to disk before continuing
   // const snapshotFile = join(fixturesDir, file.replace('.tsx', '.snap.tsx'));
   // const snapshot = (await import(snapshotFile)) as ComponentFile;
   // if (typeof snapshot.Component === 'undefined') {
-  //   expect.fail(`Snapshot file ${snapshotFile} does not export Component`);
+  //   expect.fail(`Snapshot file ${snapshotFile} does not export Component, this could indicate the transform didn't work or is a test harness problem`);
   // }
 
   // await spec.run(snapshot.Component);

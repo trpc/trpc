@@ -1,4 +1,4 @@
-import { trpc } from './trpc';
+import { trpc } from './withInvalidate.trpc';
 
 export function Component() {
   const utils = trpc.useUtils();
@@ -23,4 +23,8 @@ export function Component() {
       });
     },
   });
+
+  return (
+    <button data-testid="mutate" onClick={() => mutation.mutate({ id: 1 })} />
+  );
 }
