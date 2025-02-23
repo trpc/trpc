@@ -1,4 +1,4 @@
-import { trpc } from './trpc';
+import { trpc } from './basic.trpc';
 
 export function Component() {
   trpc.post.list.useQuery();

@@ -36,7 +36,12 @@
     "@bomb.sh/args": "0.3.0",
     "@clack/prompts": "0.10.0",
     "jscodeshift": "17.1.1",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "@tanstack/react-query": "^5.66.0",
+    "@trpc/client": "workspace:*",
+    "@trpc/react-query": "workspace:*",
+    "@trpc/tanstack-react-query": "workspace:*",
+    "@trpc/server": "workspace:*"
   },
   "devDependencies": {
     "@types/jscodeshift": "0.12.0",

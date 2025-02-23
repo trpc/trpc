@@ -1286,7 +1286,7 @@ importers:
         version: 5.4.14(@types/node@20.17.19)(lightningcss@1.28.2)(terser@5.34.0)
       vitest:
         specifier: ^2.0.4
-        version: 2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)
+        version: 2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4(vitest@3.0.5))(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)
 
   examples/next-prisma-todomvc:
     dependencies:
@@ -2027,7 +2027,7 @@ importers:
         version: 5.7.2
       vitest:
         specifier: ^2.0.4
-        version: 2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)
+        version: 2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4(vitest@3.0.5))(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -2182,6 +2182,21 @@ importers:
       '@clack/prompts':
         specifier: 0.10.0
         version: 0.10.0
+      '@tanstack/react-query':
+        specifier: ^5.66.0
+        version: 5.66.0(react@19.0.0)
+      '@trpc/client':
+        specifier: workspace:*
+        version: link:../client
+      '@trpc/react-query':
+        specifier: workspace:*
+        version: link:../react-query
+      '@trpc/server':
+        specifier: workspace:*
+        version: link:../server
+      '@trpc/tanstack-react-query':
+        specifier: workspace:*
+        version: link:../tanstack-react-query
       jscodeshift:
         specifier: 17.1.1
         version: 17.1.1(@babel/preset-env@7.26.0(@babel/core@7.26.0))
@@ -37223,7 +37238,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  vitest@2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0):
+  vitest@2.1.9(@edge-runtime/vm@2.0.2)(@types/node@20.17.19)(@vitest/ui@3.0.4(vitest@3.0.5))(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0):
     dependencies:
       '@vitest/expect': 2.1.9
       '@vitest/mocker': 2.1.9(vite@5.4.14(@types/node@20.17.19)(lightningcss@1.28.2)(terser@5.34.0))
