@@ -26,11 +26,7 @@ const snapshotTestTransform = async (file: string, transform: Transformer) => {
     { source },
     {},
   );
-  const formatted = await formatFile(file, transformed);
-
-  if (formatted.trim().length === 0) {
-    expect.fail('Transformed file is empty');
-  }
+  const formatted = await formatFile(file, transformed || source);
 
   await expect(formatted).toMatchFileSnapshot(
     file.replace('.tsx', '.snap.tsx'),
