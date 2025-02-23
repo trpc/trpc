@@ -127,6 +127,26 @@ export function Component(channelId: string) {
 "
 `;
 
+exports[`hooks use-queries.ts 1`] = `
+"import { useQueries, useSuspenseQueries } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+export function Component(props: { postIds: string[] }) {
+  const trpc = useTRPC();
+  const [posts, postQueries] = useSuspenseQueries({
+    queries: props.postIds.map((id) => trpc.post.byId.queryOptions({ id })),
+  });
+
+  const [post, greeting] = useQueries({
+    queries: [
+      trpc.post.byId.queryOptions({ id: '1' }, { enabled: false }),
+      trpc.greeting({ text: 'world' }),
+    ],
+  });
+}
+"
+`;
+
 exports[`hooks with-invalidate.ts 1`] = `
 "import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTRPC } from './trpc';

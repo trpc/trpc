@@ -1,5 +1,11 @@
 import { testReactResource } from './__helpers';
-import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import {
+  skipToken,
+  useQueries,
+  useQuery,
+  useSuspenseQueries,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
@@ -329,5 +335,85 @@ describe('queryOptions', () => {
     expect(post).toEqual('__result');
 
     expect(fetchSpy).toHaveBeenCalledTimes(0);
+  });
+
+  test('useQueries', async () => {
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+      const [query1, query2] = useQueries({
+        queries: [
+          trpc.post.byId.queryOptions({ id: '1' }),
+          trpc.post.byId.queryOptions({ id: '2' }),
+        ],
+      });
+
+      if (!query1.data) {
+        return <>...</>;
+      }
+
+      expectTypeOf(query1.data).toMatchTypeOf<'__result'>();
+      expectTypeOf(query1).toMatchTypeOf(query2);
+
+      return (
+        <pre>
+          {JSON.stringify(
+            {
+              query1: query1.data,
+              query2: query2.data,
+            },
+            null,
+            4,
+          )}
+        </pre>
+      );
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(
+        `{ "query1": "__result", "query2": "__result" }`,
+      );
+    });
+  });
+
+  test('useSuspenseQueries', async () => {
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+      const [query1, query2] = useSuspenseQueries({
+        queries: [
+          trpc.post.byId.queryOptions({ id: '1' }),
+          trpc.post.byId.queryOptions({ id: '2' }),
+        ],
+      });
+
+      expectTypeOf(query1.data).toMatchTypeOf<'__result'>();
+      expectTypeOf(query1).toMatchTypeOf(query2);
+
+      return (
+        <pre>
+          {JSON.stringify(
+            {
+              query1: query1.data,
+              query2: query2.data,
+            },
+            null,
+            4,
+          )}
+        </pre>
+      );
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(
+        `{ "query1": "__result", "query2": "__result" }`,
+      );
+    });
   });
 });
