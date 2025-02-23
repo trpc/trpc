@@ -51,6 +51,7 @@ export function createRouter() {
     defaultPreload: 'intent',
     defaultErrorComponent: DefaultCatchBoundary,
     defaultNotFoundComponent: () => <NotFound />,
+    scrollRestoration: true,
     Wrap: (props) => {
       return (
         <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>

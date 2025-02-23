@@ -51,6 +51,7 @@ function types({
         peerDeps: true,
       }),
       typescript({
+        exclude: ['**/*.test.*', '**/*.spec.*', '**/__tests__/**'],
         tsconfig: path.resolve(packageDir, 'tsconfig.build.json'),
         outDir: path.resolve(packageDir, 'dist'),
       }),
