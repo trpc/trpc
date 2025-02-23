@@ -90,18 +90,27 @@ export default function transform(
    * === HELPER FUNCTIONS BELOW ===
    */
 
+  function isDeclarationInScope(
+    path: ASTPath<FunctionDeclaration | ArrowFunctionExpression>,
+    name: string,
+  ) {
+    return (
+      j(path)
+        .find(j.VariableDeclarator, {
+          id: {
+            type: 'Identifier',
+            name,
+          },
+        })
+        .size() > 0
+    );
+  }
+
   function ensureUseTRPCCall(
     path: ASTPath<FunctionDeclaration | ArrowFunctionExpression>,
   ) {
     // Check if trpc is already declared in scope
-    const existingTRPC = j(path).find(j.VariableDeclarator, {
-      id: {
-        type: 'Identifier',
-        name: trpcImportName,
-      },
-    });
-
-    if (existingTRPC.size() > 0) {
+    if (isDeclarationInScope(path, trpcImportName!)) {
       return;
     }
 
@@ -342,11 +351,17 @@ export default function transform(
             });
 
           // Replace `const utils = trpc.useUtils()` with `const queryClient = useQueryClient()`
-          j(path).replaceWith(
-            j.callExpression(j.identifier('useQueryClient'), []),
-          );
-          path.parentPath.node.id = j.identifier('queryClient');
-          ensureImported('@tanstack/react-query', 'useQueryClient');
+          // If `queryClient` is already declared, just remove the utils declaration
+          if (isDeclarationInScope(fnPath, 'queryClient')) {
+            j(path).remove();
+            j(path.parentPath).remove();
+          } else {
+            j(path).replaceWith(
+              j.callExpression(j.identifier('useQueryClient'), []),
+            );
+            path.parentPath.node.id = j.identifier('queryClient');
+            ensureImported('@tanstack/react-query', 'useQueryClient');
+          }
         }
 
         dirtyFlag = true;

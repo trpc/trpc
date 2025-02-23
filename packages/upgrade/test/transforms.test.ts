@@ -99,11 +99,7 @@ describe('hooks', () => {
   const literal = './__fixtures__/hooks'; // idk why but Vite seems to do some shit when the string is in-lined to URL
   const fixturesDir = new URL(literal, import.meta.url).pathname;
 
-  const ONLY_RUN: string[] = [];
-
-  const fixtures = ONLY_RUN.length
-    ? ONLY_RUN
-    : readdirSync(fixturesDir).filter(isFixture);
+  const fixtures = readdirSync(fixturesDir).filter(isFixture);
 
   it.each(fixtures)('hooks %s', async (file) => {
     await executeTests(fixturesDir, file, hooksTransform);
@@ -114,11 +110,7 @@ describe('provider', () => {
   const literal = './__fixtures__/provider'; // idk why but Vite seems to do some shit when the string is in-lined to URL
   const fixturesDir = new URL(literal, import.meta.url).pathname;
 
-  const ONLY_RUN: string[] = [];
-
-  const fixtures = ONLY_RUN.length
-    ? ONLY_RUN
-    : readdirSync(fixturesDir).filter(isFixture);
+  const fixtures = readdirSync(fixturesDir).filter(isFixture);
 
   it.each(fixtures)('provider %s', async (file) => {
     await executeTests(fixturesDir, file, providerTransform);
