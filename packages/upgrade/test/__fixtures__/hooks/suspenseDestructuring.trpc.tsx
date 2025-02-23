@@ -4,18 +4,6 @@ import { z } from 'zod';
 
 export const t = initTRPC.create();
 export const appRouter = t.router({
-  a: {
-    b: {
-      c: {
-        d: t.procedure.query(() => {
-          return 'hello';
-        }),
-      },
-    },
-  },
-  num: t.procedure.input(z.number()).query(({ input }) => {
-    return input;
-  }),
   post: {
     list: t.procedure.query(() => {
       return ['initial', 'optimistic'];
@@ -28,9 +16,6 @@ export const appRouter = t.router({
           items: ['initial', 'optimistic'],
         };
       }),
-    byId: t.procedure.input(z.object({ id: z.number() })).query(({ input }) => {
-      return input;
-    }),
   },
 });
 

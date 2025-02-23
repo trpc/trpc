@@ -16,7 +16,8 @@ const formatFile = async (path: string, source: string) => {
   });
 };
 
-const snapshotTestTransform = async (file: string, transform: any) => {
+type Transformer = Parameters<typeof applyTransform>[0];
+const snapshotTestTransform = async (file: string, transform: Transformer) => {
   const source = readFileSync(file, 'utf-8');
 
   const transformed = applyTransform(
@@ -40,18 +41,31 @@ function isFixture(file: string) {
   );
 }
 
-async function executeTests(fixturesDir: string, file: string, transform: any) {
+async function executeTests(
+  fixturesDir: string,
+  file: string,
+  transform: Transformer,
+) {
   const fixtureFile = join(fixturesDir, file);
 
+  // Load the spec which can be used to test both input and transformed components
   const specFile = fixtureFile.replace('.tsx', '.spec.tsx');
-  if (!existsSync(specFile)) {
-    expect.fail(`There is no .spec.ts file at ${specFile}`);
+  const hasSpec = existsSync(specFile);
+
+  // Check the input component runs if a spec is provided
+  if (hasSpec) {
+    const spec = (await import(specFile)) as SpecDefFile;
+
+    const fixture = (await import(fixtureFile)) as ComponentFile;
+    const fixtureComponents = Object.keys(fixture)
+      .filter((key) => key.startsWith('Component'))
+      .map((key) => [key, fixture[key]!] as const);
+    for (const [name, Component] of fixtureComponents) {
+      // eslint-disable-next-line no-console
+      console.log(`Running spec for ${name}`);
+      await spec.run(Component);
+    }
   }
-
-  const spec = (await import(specFile)) as SpecDefFile;
-
-  const fixture = (await import(fixtureFile)) as ComponentFile;
-  await spec.run(fixture.Component);
 
   await snapshotTestTransform(fixtureFile, transform);
 

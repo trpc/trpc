@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { trpc } from './withInvalidate.trpc';
 
 export function Component() {
