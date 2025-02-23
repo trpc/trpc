@@ -8,7 +8,9 @@ export const Route = createFileRoute('/posts')({
       context.trpc.post.list.queryOptions(),
     );
   },
-  meta: () => [{ title: 'Posts' }],
+  head: () => ({
+    meta: [{ title: 'Posts' }],
+  }),
   component: PostsComponent,
 });
 
