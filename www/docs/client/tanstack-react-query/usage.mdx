@@ -133,7 +133,7 @@ const queryKey = trpc.pathKey();
 
 ### `queryFilter` - creating query filters {#queryFilter}
 
-Available for all query procedures as well as routers and sub-routers. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) in a type-safe manner.
+Available for all query procedures. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) in a type-safe manner.
 
 ```ts
 const queryFilter = trpc.path.to.query.queryFilter(
@@ -149,7 +149,7 @@ const queryFilter = trpc.path.to.query.queryFilter(
 );
 ```
 
-Like with query keys, if you want to run a filter across a whole route you can use `pathFilter`
+Like with query keys, if you want to run a filter across a whole router you can use `pathFilter` to target any sub-path.
 
 ```ts
 const queryFilter = trpc.path.pathFilter({

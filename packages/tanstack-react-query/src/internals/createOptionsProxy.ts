@@ -49,7 +49,7 @@ export interface DecorateRouterKeyable {
    * Calculate the TanStack Query Key for any path, could be used to invalidate every procedure beneath this path
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/query-keys
-   * @see https://trpc.io/docs/client/tanstack-react-query/usage#pathKey
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
    */
   pathKey: () => TRPCQueryKey;
 
@@ -57,7 +57,7 @@ export interface DecorateRouterKeyable {
    * Calculate a TanStack Query Filter for any path, could be used to manipulate every procedure beneath this path
    *
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
-   * @see https://trpc.io/docs/client/tanstack-react-query/usage#pathFilter
+   * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryFilter
    */
   pathFilter: (filters?: QueryFilters) => QueryFilters;
 }
