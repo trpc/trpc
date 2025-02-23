@@ -47,9 +47,9 @@ const utilMap = {
   refetch: ['refetchQueries', 'DYNAMIC_FILTER'],
   cancel: ['cancelQueries', 'DYNAMIC_FILTER'],
   setData: ['setQueryData', 'queryKey'],
-  setInfiniteData: ['setInfiniteQueryData', 'infiniteQueryKey'],
+  setInfiniteData: ['setQueryData', 'infiniteQueryKey'],
   getData: ['getQueryData', 'queryKey'],
-  getInfiniteData: ['getInfiniteQueryData', 'infiniteQueryKey'],
+  getInfiniteData: ['getQueryData', 'infiniteQueryKey'],
   // setMutationDefaults: 'setMutationDefaults',
   // getMutationDefaults: 'getMutationDefaults',
   // isMutating: 'isMutating',
@@ -93,6 +93,18 @@ export default function transform(
   function ensureUseTRPCCall(
     path: ASTPath<FunctionDeclaration | ArrowFunctionExpression>,
   ) {
+    // Check if trpc is already declared in scope
+    const existingTRPC = j(path).find(j.VariableDeclarator, {
+      id: {
+        type: 'Identifier',
+        name: trpcImportName,
+      },
+    });
+
+    if (existingTRPC.size() > 0) {
+      return;
+    }
+
     const variableDeclaration = j.variableDeclaration('const', [
       j.variableDeclarator(
         j.identifier(trpcImportName!),
@@ -145,7 +157,6 @@ export default function transform(
     fnPath: ASTPath<FunctionDeclaration | ArrowFunctionExpression>,
   ) {
     // REplace proxy-hooks with useX(options())
-    let hasInserted = false;
     for (const [hook, { fn, lib }] of Object.entries(hookToOptions)) {
       j(fnPath)
         .find(j.CallExpression, {
@@ -166,10 +177,7 @@ export default function transform(
           // Rename the hook to the options function
           memberExpr.property.name = fn;
 
-          if (!hasInserted) {
-            ensureUseTRPCCall(fnPath);
-            hasInserted = true;
-          }
+          ensureUseTRPCCall(fnPath);
 
           // Wrap it in the hook call
           j(path).replaceWith(
@@ -184,9 +192,9 @@ export default function transform(
 
   // Migrate trpc.useUtils() to useQueryClient()
   function migrateUseUtils(
-    path: ASTPath<FunctionDeclaration | ArrowFunctionExpression>,
+    fnPath: ASTPath<FunctionDeclaration | ArrowFunctionExpression>,
   ) {
-    j(path)
+    j(fnPath)
       .find(j.CallExpression, {
         callee: {
           property: {
@@ -328,6 +336,8 @@ export default function transform(
                     ]),
                   ),
                 );
+
+                ensureUseTRPCCall(fnPath);
               }
             });
 
