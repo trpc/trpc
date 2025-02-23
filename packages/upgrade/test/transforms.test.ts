@@ -26,16 +26,18 @@ const testFixture = async (file: string, transform: any) => {
   );
   const formatted = await formatFile(file, transformed);
 
-  expect(formatted).toMatchSnapshot();
+  await expect(formatted).toMatchFileSnapshot(file.replace('.ts', '.snap.ts'));
 };
 
 describe('hooks', () => {
   const literal = './__fixtures__/hooks'; // idk why but Vite seems to do some shit when the string is in-lined to URL
   const fixturesDir = new URL(literal, import.meta.url).pathname;
 
-  const ONLY_RUN: string[] = ['with-invalidate.ts'];
+  const ONLY_RUN: string[] = [];
 
-  const fixtures = ONLY_RUN.length ? ONLY_RUN : readdirSync(fixturesDir);
+  const fixtures = ONLY_RUN.length
+    ? ONLY_RUN
+    : readdirSync(fixturesDir).filter((f) => !f.endsWith('.snap.ts'));
   it.each(fixtures)(
     'hooks %s',
     async (file) => await testFixture(join(fixturesDir, file), hooksTransform),
@@ -48,7 +50,9 @@ describe('provider', () => {
 
   const ONLY_RUN: string[] = [];
 
-  const fixtures = ONLY_RUN.length ? ONLY_RUN : readdirSync(fixturesDir);
+  const fixtures = ONLY_RUN.length
+    ? ONLY_RUN
+    : readdirSync(fixturesDir).filter((f) => !f.endsWith('.snap.ts'));
   it.each(fixtures)(
     'provider %s',
     async (file) =>
