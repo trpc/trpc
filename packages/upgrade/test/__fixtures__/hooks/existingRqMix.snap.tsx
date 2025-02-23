@@ -13,7 +13,14 @@ export function Component() {
 
   useQuery(trpc.post.byId.queryOptions({ id: 1 }));
   useQuery(trpc.num.queryOptions(1));
-  useInfiniteQuery(trpc.post.list.infiniteQueryOptions({}));
+  useInfiniteQuery(
+    trpc.post.list.infiniteQueryOptions(
+      {},
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+      },
+    ),
+  );
 
   return useQueryClient().isFetching() ? 'loading' : 'loaded';
 }

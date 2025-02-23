@@ -7,7 +7,12 @@ export function Component() {
 
   trpc.post.byId.useQuery({ id: 1 });
   trpc.num.useQuery(1);
-  trpc.post.list.useInfiniteQuery({});
+  trpc.post.list.useInfiniteQuery(
+    {},
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
 
   return useQueryClient().isFetching() ? 'loading' : 'loaded';
 }

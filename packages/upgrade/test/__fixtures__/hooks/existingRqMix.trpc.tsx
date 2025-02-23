@@ -11,7 +11,7 @@ export const appRouter = t.router({
     list: t.procedure
       .input(z.object({ cursor: z.number().optional() }))
       .query(() => {
-        return ['initial', 'optimistic'];
+        return { items: ['initial', 'optimistic'], nextCursor: 2 };
       }),
     byId: t.procedure.input(z.object({ id: z.number() })).query(({ input }) => {
       return input;
