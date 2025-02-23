@@ -59,6 +59,38 @@ export function Component2() {
 "
 `;
 
+exports[`hooks optimistic-update.ts 1`] = `
+"import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+export function Component() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const postCreate = useMutation(
+    trpc.post.create.mutationOptions({
+      async onMutate(newPost) {
+        await queryClient.cancelQuery(trpc.post.list.pathFilter());
+
+        const prevData = queryClient.getQueryData(trpc.post.list.queryFilter());
+        queryClient.setQueryData(
+          trpc.post.list.queryKey(),
+          (old) => [...old, newPost]),
+        );
+
+        return { prevData };
+      },
+      onError(err, newPost, ctx) {
+        queryClient.setQueryData(trpc.post.list.queryKey(), ctx.prevData);
+      },
+      onSettled() {
+        queryClient.invalidateQueries(trpc.post.list.pathFilter());
+      },
+    }),
+  );
+}
+"
+`;
+
 exports[`hooks react-context.ts 1`] = `
 "import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
