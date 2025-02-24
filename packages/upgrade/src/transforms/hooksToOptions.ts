@@ -403,6 +403,12 @@ export default function transform(
           ? tuple.elements[1].name
           : null;
 
+        const deepDestructure =
+          j.ArrayPattern.check(declarator?.id) &&
+          j.ObjectPattern.check(tuple?.elements?.[0])
+            ? tuple?.elements?.[0]
+            : null;
+
         if (queryName) {
           declarator.id = j.identifier(queryName);
           dirtyFlag = true;
@@ -421,6 +427,12 @@ export default function transform(
           // const [dataName] = ... => const { data: dataName } = ...
           declarator.id = j.objectPattern([
             j.property('init', j.identifier('data'), j.identifier(dataName)),
+          ]);
+          dirtyFlag = true;
+        } else if (deepDestructure) {
+          // const [{ dataName }] = ... => const { data: { dataName } } = ...
+          declarator.id = j.objectPattern([
+            j.property('init', j.identifier('data'), deepDestructure),
           ]);
           dirtyFlag = true;
         }
