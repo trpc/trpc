@@ -104,7 +104,7 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
    */
   infiniteQueryKey: (
-    input?: TDef['input'],
+    input?: Partial<TDef['input']>,
   ) => DataTag<
     TRPCQueryKey,
     InfiniteData<TDef['output'], number | null>,
@@ -118,7 +118,7 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryFilter
    */
   infiniteQueryFilter: (
-    input?: TDef['input'],
+    input?: Partial<TDef['input']>,
     filters?: QueryFilters<
       InfiniteData<TDef['output'], number | null>,
       TDef['errorShape']
@@ -152,7 +152,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryKey
    */
   queryKey: (
-    input?: TDef['input'],
+    input?: Partial<TDef['input']>,
   ) => DataTag<TRPCQueryKey, TDef['output'], TDef['errorShape']>;
 
   /**
@@ -162,7 +162,7 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryFilter
    */
   queryFilter: (
-    input?: TDef['input'],
+    input?: Partial<TDef['input']>,
     filters?: QueryFilters<TDef['output'], TDef['errorShape']>,
   ) => QueryFilters<
     TDef['output'],

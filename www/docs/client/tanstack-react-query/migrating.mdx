@@ -87,7 +87,7 @@ function Users() {
 
   async function invalidateGreeting() {
     await queryClient.invalidateQueries(
-      trpc.greeting.queryKey({ name: 'Jerry' }),
+      trpc.greeting.queryFilter({ name: 'Jerry' }),
     );
   }
 }
