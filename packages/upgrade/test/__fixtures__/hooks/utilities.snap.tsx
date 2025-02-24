@@ -1,9 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useTRPC } from './utilities.trpc';
+import { useTRPC, useTRPCClient } from './utilities.trpc';
 
 export function Component() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+
+  const client1 = useTRPCClient();
+  const client2 = useTRPCClient();
 
   queryClient.cancelQueries(trpc.post.list.pathFilter());
   queryClient.cancelQueries(trpc.post.byId.queryFilter({ id: 1 }));

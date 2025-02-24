@@ -3,6 +3,9 @@ import { trpc } from './utilities.trpc';
 export function Component() {
   const utils = trpc.useUtils();
 
+  const client1 = utils.client;
+  const client2 = trpc.useUtils().client;
+
   utils.post.list.cancel();
   utils.post.byId.cancel({ id: 1 });
 

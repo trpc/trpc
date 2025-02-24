@@ -26,3 +26,4 @@ export const appRouter = t.router({
 export const ctx = testReactResource(appRouter);
 export const trpc = ctx.rq;
 export const useTRPC = ctx.trq.useTRPC;
+export const useTRPCClient = ctx.trq.useTRPCClient;
