@@ -1,6 +1,5 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, ErrorComponent, Link } from '@tanstack/react-router';
-import type { ErrorComponentProps } from '@tanstack/react-router';
 import { NotFound } from '~/components/NotFound';
 import { useTRPC } from '~/trpc/react';
 
@@ -12,17 +11,15 @@ export const Route = createFileRoute('/posts/$postId')({
 
     return { title: data.title };
   },
-  meta: ({ loaderData }) => [{ title: loaderData.title }],
-  errorComponent: PostErrorComponent,
+  head: ({ loaderData }) => ({
+    meta: [{ title: loaderData.title }],
+  }),
+  errorComponent: ({ error }) => <ErrorComponent error={error} />,
   notFoundComponent: () => {
     return <NotFound>Post not found</NotFound>;
   },
   component: PostComponent,
 });
-
-export function PostErrorComponent({ error }: ErrorComponentProps) {
-  return <ErrorComponent error={error} />;
-}
 
 function PostComponent() {
   const { postId } = Route.useParams();
