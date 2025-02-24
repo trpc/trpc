@@ -332,6 +332,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
 
       queryOptions: () => {
         return trpcQueryOptions({
+          input: arg1,
           opts: arg2,
           path,
           queryClient: opts.queryClient,
@@ -351,6 +352,7 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
 
       infiniteQueryOptions: () => {
         return trpcInfiniteQueryOptions({
+          input: arg1,
           opts: arg2,
           path,
           queryClient: opts.queryClient,

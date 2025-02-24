@@ -139,6 +139,7 @@ describe('queryOptions', () => {
     function MyComponent() {
       const trpc = useTRPC();
       const options = trpc.post.byId.queryOptions(skipToken);
+
       const query1 = useQuery(options);
 
       const query2 = useQuery(trpc.post.byId.queryOptions(skipToken));
