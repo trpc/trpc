@@ -3,12 +3,6 @@ import { trpc } from './utilities.trpc';
 export function Component() {
   const utils = trpc.useUtils();
 
-  const client1 = utils.client;
-  const client2 = trpc.useUtils().client;
-
-  const deepByid = trpc.useUtils().post.byId;
-  deepByid.invalidate();
-
   utils.post.list.cancel();
   utils.post.byId.cancel({ id: 1 });
 

@@ -5,12 +5,6 @@ export function Component() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const client1 = useTRPCClient();
-  const client2 = useTRPCClient();
-
-  const deepByid = trpc.post.byId;
-  queryClient.invalidateQueries(deepByid.pathFilter());
-
   queryClient.cancelQueries(trpc.post.list.pathFilter());
   queryClient.cancelQueries(trpc.post.byId.queryFilter({ id: 1 }));
 
