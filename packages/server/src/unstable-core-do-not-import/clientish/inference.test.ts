@@ -31,6 +31,6 @@ describe('inferTransformedProcedureOutput', () => {
 
     type Output = inferTransformedProcedureOutput<$Inferrable, typeof proc>;
 
-    expectTypeOf<Output>().toEqualTypeOf<string>();
+    expectTypeOf<Output>().toBeString();
   });
 });

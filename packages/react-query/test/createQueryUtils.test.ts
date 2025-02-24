@@ -77,7 +77,7 @@ describe('createTRPCQueryUtils()', () => {
       },
     );
 
-    expectTypeOf(q.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
+    expectTypeOf(q.pages[0]!.items).toEqualTypeOf<Post[]>();
     expect(q.pages[0]!.items[0]!.title).toBe('first post');
 
     expect(factory.linkSpy.up.mock.calls[0]![0]!.context).toMatchObject(

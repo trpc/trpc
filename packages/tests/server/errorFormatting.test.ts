@@ -48,8 +48,8 @@ describe('no custom error formatter', () => {
     }
     expectTypeOf(err.data).not.toBeAny();
     expectTypeOf(err.shape).not.toBeAny();
-    expectTypeOf(err.data!).toMatchTypeOf<DefaultErrorData>();
-    expectTypeOf(err.shape!).toMatchTypeOf<DefaultErrorShape>();
+    expectTypeOf(err.data!).toEqualTypeOf<DefaultErrorData>();
+    expectTypeOf(err.shape!).toEqualTypeOf<DefaultErrorShape>();
   });
 });
 
@@ -94,8 +94,8 @@ describe('with custom error formatter', () => {
     }
     expectTypeOf(err.data).not.toBeAny();
     expectTypeOf(err.shape).not.toBeAny();
-    expectTypeOf(err.data!).toMatchTypeOf<DefaultErrorData>();
-    expectTypeOf(err.shape!).toMatchTypeOf<DefaultErrorShape>();
+    expectTypeOf(err.data!).toExtend<DefaultErrorData>();
+    expectTypeOf(err.shape!).toExtend<DefaultErrorShape>();
     expectTypeOf(err.data!.foo).toEqualTypeOf<'bar'>();
 
     err.data!.stack = '[redacted]';
@@ -234,8 +234,8 @@ describe('custom error sub-classes', () => {
     }
     expectTypeOf(err.data).not.toBeAny();
     expectTypeOf(err.shape).not.toBeAny();
-    expectTypeOf(err.data!).toMatchTypeOf<DefaultErrorData>();
-    expectTypeOf(err.shape!).toMatchTypeOf<DefaultErrorShape>();
+    expectTypeOf(err.data!).toExtend<DefaultErrorData>();
+    expectTypeOf(err.shape!).toExtend<DefaultErrorShape>();
     expectTypeOf(err.data!.reason).toEqualTypeOf<
       'BAD_PHONE' | 'INVALID_AREA_CODE' | null
     >();
@@ -299,7 +299,7 @@ describe('zod errors according to docs', () => {
     assert(err.data);
     assert(err.data.zodError);
 
-    expectTypeOf(err.data.zodError).toMatchTypeOf<
+    expectTypeOf(err.data.zodError).toEqualTypeOf<
       z.typeToFlattenedError<any>
     >();
     expect(err.data?.zodError).toMatchInlineSnapshot(`

@@ -75,5 +75,5 @@ test('Fix #4947: standalone middlewares -- inputs are merged properly when using
     valueA: 'a';
     valueB: 'b';
     extraProp: 'extra';
-  }>().toMatchTypeOf<QueryKey>();
+  }>().toExtend<QueryKey>();
 });

@@ -21,7 +21,7 @@ test('utils client', async () => {
   const { client, App } = getServerAndReactClient(appRouter);
 
   function MyComponent() {
-    expectTypeOf(client).toMatchTypeOf<IntersectionError<'Provider'>>();
+    expectTypeOf(client).toEqualTypeOf<IntersectionError<'Provider'>>();
 
     return null;
   }

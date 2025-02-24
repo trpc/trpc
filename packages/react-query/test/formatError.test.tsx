@@ -22,12 +22,12 @@ test('react types test', async () => {
     }, []);
 
     if (mutation.error?.shape) {
-      expectTypeOf(mutation.error.shape).toMatchTypeOf<
+      expectTypeOf(mutation.error.shape).toExtend<
         DefaultErrorShape & {
           $test: string;
         }
       >();
-      expectTypeOf(mutation.error.shape).toMatchTypeOf<
+      expectTypeOf(mutation.error.shape).toExtend<
         DefaultErrorShape & {
           $test: string;
         }

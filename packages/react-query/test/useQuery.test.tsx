@@ -97,7 +97,7 @@ describe('useQuery()', () => {
       }
 
       type TData = (typeof query1)['data'];
-      expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+      expectTypeOf<TData>().toEqualTypeOf<'__result'>();
 
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }
@@ -118,7 +118,7 @@ describe('useQuery()', () => {
       const query1 = client.post.byId.useQuery(skipToken);
 
       type TData = (typeof query1)['data'];
-      expectTypeOf<TData>().toMatchTypeOf<'__result' | undefined>();
+      expectTypeOf<TData>().toEqualTypeOf<'__result' | undefined>();
 
       return <pre>{query1.status}</pre>;
     }
@@ -180,10 +180,10 @@ describe('useQuery()', () => {
   test('data type without initialData', () => {
     const expectation = expectTypeOf(() =>
       ctx.client.post.byId.useQuery({ id: '1' }),
-    ).returns;
+    ).returns.toHaveProperty('data');
 
-    expectation.toMatchTypeOf<{ data: '__result' | undefined }>();
-    expectation.not.toMatchTypeOf<{ data: '__result' }>();
+    expectation.toEqualTypeOf<'__result' | undefined>();
+    expectation.not.toEqualTypeOf<'__result'>();
   });
 
   test('data type with initialData', () => {
@@ -194,10 +194,10 @@ describe('useQuery()', () => {
           initialData: '__result',
         },
       ),
-    ).returns;
+    ).returns.toHaveProperty('data');
 
-    expectation.toMatchTypeOf<{ data: '__result' }>();
-    expectation.not.toMatchTypeOf<{ data: undefined }>();
+    expectation.toEqualTypeOf<'__result'>();
+    expectation.not.toBeNullable();
   });
 
   test('data type with conditional skipToken', () => {
@@ -205,10 +205,10 @@ describe('useQuery()', () => {
       ctx.client.post.byId.useQuery(
         Math.random() > 0.5 ? skipToken : { id: '1' },
       ),
-    ).returns;
+    ).returns.toHaveProperty('data');
 
-    expectation.toMatchTypeOf<{ data: '__result' | undefined }>();
-    expectation.not.toMatchTypeOf<{ data: undefined }>();
+    expectation.toEqualTypeOf<'__result' | undefined>();
+    expectation.not.toEqualTypeOf<undefined>();
   });
 
   test('iterable', async () => {
@@ -233,7 +233,7 @@ describe('useQuery()', () => {
       });
       ctx.nextIterable();
 
-      expectTypeOf(query1.data!).toMatchTypeOf<number[]>();
+      expectTypeOf(query1.data!).toEqualTypeOf<number[]>();
 
       return (
         <pre>

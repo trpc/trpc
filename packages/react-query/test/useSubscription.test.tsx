@@ -127,7 +127,7 @@ describe.each([
           setIsStarted(true);
         },
         onData: (data) => {
-          expectTypeOf(data).toMatchTypeOf<number>();
+          expectTypeOf(data).toBeNumber();
           onDataMock(data);
           setData(data);
         },
@@ -206,7 +206,7 @@ describe.each([
       const sub = ctx.client.onEventIterable.useSubscription(0, {
         enabled,
         onData: (data) => {
-          expectTypeOf(data).toMatchTypeOf<number>();
+          expectTypeOf(data).toBeNumber();
           onDataMock(data);
           setData((prev) => [...(prev ?? []), data]);
         },
@@ -279,7 +279,7 @@ describe.each([
           setIsStarted(true);
         },
         onData: (data) => {
-          expectTypeOf(data).toMatchTypeOf<number>();
+          expectTypeOf(data).toBeNumber();
           onDataMock(data);
           setData(data);
         },

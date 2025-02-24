@@ -153,9 +153,9 @@ function factory(config?: {
   const onErrorMock = vi.fn();
   const onCloseMock = vi.fn();
 
-  expectTypeOf(appRouter).toMatchTypeOf<AnyRouter>();
+  expectTypeOf(appRouter).toExtend<AnyRouter>();
   // TODO: Uncomment when the expect-type library gets fixed
-  // expectTypeOf<AnyRouter>().toMatchTypeOf<typeof appRouter>();
+  // expectTypeOf<AnyRouter>().toEqualTypeOf<typeof appRouter>();
 
   const connectionState =
     vi.fn<Observer<TRPCConnectionState<unknown>, never>['next']>();
@@ -266,7 +266,7 @@ test('basic subscription test (observable)', async () => {
     },
     onData(data) {
       expectTypeOf(data).not.toBeAny();
-      expectTypeOf(data).toMatchTypeOf<Message>();
+      expectTypeOf(data).toEqualTypeOf<Message>();
       onDataMock(data);
     },
     onConnectionStateChange: onStateChangeMock,
@@ -353,7 +353,7 @@ test('subscription observable with error', async () => {
     },
     onData(data) {
       expectTypeOf(data).not.toBeAny();
-      expectTypeOf(data).toMatchTypeOf<Message>();
+      expectTypeOf(data).toEqualTypeOf<Message>();
       onDataOrErrorMock({ data });
     },
     onError(error) {
@@ -419,7 +419,7 @@ test('basic subscription test (iterator)', async () => {
     },
     onData(data) {
       expectTypeOf(data).not.toBeAny();
-      expectTypeOf(data).toMatchTypeOf<Message>();
+      expectTypeOf(data).toEqualTypeOf<Message>();
       onDataMock(data);
     },
   });
@@ -1848,7 +1848,7 @@ describe('subscriptions with createCaller', () => {
       },
     );
     const result = await caller.onMessageIterable();
-    expectTypeOf(result).toMatchTypeOf<AsyncIterable<Message>>();
+    expectTypeOf(result).toExtend<AsyncIterable<Message>>();
 
     const msgs: Message[] = [];
     const onDone = vi.fn();
@@ -1906,7 +1906,7 @@ describe('subscriptions with createCaller', () => {
       },
     );
     const obs = await caller.onMessageObservable();
-    expectTypeOf(obs).toMatchTypeOf<Observable<Message, TRPCError>>();
+    expectTypeOf(obs).toEqualTypeOf<Observable<Message, TRPCError>>();
 
     const msgs: Message[] = [];
     const onDone = vi.fn();
@@ -2010,7 +2010,7 @@ test('active subscription while querying', async () => {
     },
     onData(data) {
       expectTypeOf(data).not.toBeAny();
-      expectTypeOf(data).toMatchTypeOf<Message>();
+      expectTypeOf(data).toEqualTypeOf<Message>();
       onDataMock(data);
     },
   });
@@ -2072,7 +2072,7 @@ test('lazy connection where the first connection fails', async () => {
     },
     onData(data) {
       expectTypeOf(data).not.toBeAny();
-      expectTypeOf(data).toMatchTypeOf<Message>();
+      expectTypeOf(data).toEqualTypeOf<Message>();
       onDataMock(data);
     },
   });
@@ -2122,7 +2122,7 @@ test('connection where the first connection fails', async () => {
     },
     onData(data) {
       expectTypeOf(data).not.toBeAny();
-      expectTypeOf(data).toMatchTypeOf<Message>();
+      expectTypeOf(data).toEqualTypeOf<Message>();
       onDataMock(data);
     },
   });

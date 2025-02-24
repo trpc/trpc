@@ -54,7 +54,7 @@ test('select as transform', async () => {
 
     type AppRouter = typeof ctx.appRouter;
     type Data = inferProcedureOutput<AppRouter['greeting']>;
-    expectTypeOf(result.data).not.toMatchTypeOf<Data>();
+    expectTypeOf(result.data).not.toEqualTypeOf<Data>();
     expectTypeOf<{ foo: string }>(result.data);
 
     return <pre>{JSON.stringify(result.data)}</pre>;
@@ -87,7 +87,7 @@ test('select as transform in suspense', async () => {
 
     type AppRouter = typeof ctx.appRouter;
     type Data = inferProcedureOutput<AppRouter['greeting']>;
-    expectTypeOf(data).not.toMatchTypeOf<Data>();
+    expectTypeOf(data).not.toEqualTypeOf<Data>();
     expectTypeOf<{ foo: string }>(data);
 
     return <pre>{JSON.stringify(data)}</pre>;
@@ -137,7 +137,7 @@ test('select as transform with initial data', async () => {
 
     type AppRouter = typeof ctx.appRouter;
     type Data = inferProcedureOutput<AppRouter['greeting']>;
-    expectTypeOf(data).not.toMatchTypeOf<Data>();
+    expectTypeOf(data).not.toEqualTypeOf<Data>();
     expectTypeOf<{ foo: string }>(data);
 
     return <pre>{JSON.stringify(data)}</pre>;

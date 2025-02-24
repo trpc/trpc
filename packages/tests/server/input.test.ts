@@ -78,7 +78,7 @@ describe('double input validator', () => {
     const result = await ctx.client.sendMessage.mutate(data);
 
     expect(result).toEqual(data);
-    expectTypeOf(result).toMatchTypeOf(data);
+    expectTypeOf(result).toEqualTypeOf(data);
   });
 
   test('sad path', async () => {

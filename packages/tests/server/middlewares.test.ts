@@ -220,7 +220,7 @@ test('pipe middlewares - inlined', async () => {
   });
 
   const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
+    expectTypeOf(opts.ctx).toMatchObjectType<{
       foo: 'foo';
     }>();
     return opts.next({
@@ -231,7 +231,7 @@ test('pipe middlewares - inlined', async () => {
   });
 
   const bazMiddleware = barMiddleware.unstable_pipe((opts) => {
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
+    expectTypeOf(opts.ctx).toMatchObjectType<{
       foo: 'foo';
       bar: 'bar';
     }>();
@@ -302,7 +302,7 @@ test('pipe middlewares - standalone', async () => {
   const bazMiddleware = fooMiddleware
     .unstable_pipe(barMiddleware)
     .unstable_pipe((opts) => {
-      expectTypeOf(opts.ctx).toMatchTypeOf<{
+      expectTypeOf(opts.ctx).toMatchObjectType<{
         foo: 'foo';
         bar: 'bar';
       }>();
@@ -362,7 +362,7 @@ test('pipe middlewares - failure', async () => {
     .create();
 
   const fooMiddleware = t.middleware((opts) => {
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
       init: { a: 'a'; b: 'b'; c: { d: 'd'; e: 'e' } };
     }>();
     opts.ctx.init.a;
@@ -375,7 +375,7 @@ test('pipe middlewares - failure', async () => {
   });
 
   const barMiddleware = t.middleware((opts) => {
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
       init: { a: 'a'; b: 'b'; c: { d: 'd'; e: 'e' } };
     }>();
     return opts.next({
@@ -419,7 +419,7 @@ test('pipe middlewares - override', async () => {
   const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
     // @ts-expect-error foundation has been overwritten
     opts.ctx.init.foundation;
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
       init: 'override';
       foo: 'foo';
     }>();
@@ -483,7 +483,7 @@ test('pipe middlewares - failure', async () => {
   });
 
   const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
-    expectTypeOf(opts.ctx).toMatchTypeOf<{
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
       init: 'override';
       foo: 'foo';
     }>();
@@ -534,7 +534,7 @@ test('meta', () => {
   const t = initTRPC.meta<Meta>().create();
 
   t.middleware(({ meta, next }) => {
-    expectTypeOf(meta).toMatchTypeOf<Meta | undefined>();
+    expectTypeOf(meta).toEqualTypeOf<Meta | undefined>();
 
     return next();
   });

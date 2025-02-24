@@ -27,7 +27,7 @@ test('useInfiniteQuery()', async () => {
       },
     );
 
-    expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
+    expectTypeOf(q.data?.pages[0]!.items).toEqualTypeOf<Post[] | undefined>();
 
     return q.status === 'pending' ? (
       <p>Loading...</p>
@@ -123,7 +123,7 @@ test('useInfiniteQuery bi-directional', async () => {
       },
     );
 
-    expectTypeOf(q.data?.pages[0]!.items).toMatchTypeOf<Post[] | undefined>();
+    expectTypeOf(q.data?.pages[0]!.items).toEqualTypeOf<Post[] | undefined>();
 
     return q.status === 'pending' ? (
       <p>Loading...</p>
@@ -243,7 +243,7 @@ test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
       },
     );
 
-    expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
+    expectTypeOf(q.data?.pages[0]?.items).toEqualTypeOf<Post[] | undefined>();
 
     return q.status === 'pending' ? (
       <p>Loading...</p>
@@ -372,7 +372,7 @@ test('useInfiniteQuery and fetchInfiniteQuery', async () => {
         getNextPageParam: (lastPage) => lastPage.nextCursor,
       },
     );
-    expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
+    expectTypeOf(q.data?.pages[0]?.items).toEqualTypeOf<Post[] | undefined>();
 
     return q.status === 'pending' ? (
       <p>Loading...</p>
@@ -539,7 +539,7 @@ test('regression 5412: invalidating a query', async () => {
         getNextPageParam: (lastPage) => lastPage.nextCursor,
       },
     );
-    expectTypeOf(q.data?.pages[0]?.items).toMatchTypeOf<Post[] | undefined>();
+    expectTypeOf(q.data?.pages[0]?.items).toEqualTypeOf<Post[] | undefined>();
 
     return (
       <>

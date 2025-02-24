@@ -399,7 +399,7 @@ test('yup', async () => {
 
   const router = t.router({
     num: t.procedure.input(yup.number().required()).query(({ input }) => {
-      expectTypeOf(input).toMatchTypeOf<number>();
+      expectTypeOf(input).toBeNumber();
       return {
         input,
       };
@@ -422,7 +422,7 @@ test('scale', async () => {
 
   const router = t.router({
     num: t.procedure.input($.i8).query(({ input }) => {
-      expectTypeOf(input).toMatchTypeOf<number>();
+      expectTypeOf(input).toBeNumber();
       return {
         input,
       };
@@ -445,7 +445,7 @@ test('myzod', async () => {
 
   const router = t.router({
     num: t.procedure.input(myzod.number()).query(({ input }) => {
-      expectTypeOf(input).toMatchTypeOf<number>();
+      expectTypeOf(input).toBeNumber();
       return {
         input,
       };
@@ -491,7 +491,7 @@ test('runtypes', async () => {
 
   const router = t.router({
     num: t.procedure.input(T.Object({ text: T.String })).query(({ input }) => {
-      expectTypeOf(input).toMatchTypeOf<{ text: string }>();
+      expectTypeOf(input).toEqualTypeOf<{ text: string }>();
       return {
         input,
       };
@@ -646,11 +646,11 @@ test('zod default', () => {
     num: t.procedure
       .input(input)
       .use((opts) => {
-        expectTypeOf(opts.input.users).toMatchTypeOf<number[]>();
+        expectTypeOf(opts.input.users).toEqualTypeOf<number[]>();
         return opts.next();
       })
       .query((opts) => {
-        expectTypeOf(opts.input.users).toMatchTypeOf<number[]>();
+        expectTypeOf(opts.input.users).toEqualTypeOf<number[]>();
         return {
           input,
         };

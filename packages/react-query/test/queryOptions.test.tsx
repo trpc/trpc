@@ -97,13 +97,13 @@ describe('queryOptions', () => {
       const query1 = useQuery(queryOptions);
 
       const query2 = useQuery(trpc.post.byId.queryOptions({ id: '1' }));
-      expectTypeOf(query1).toMatchTypeOf(query2);
+      expectTypeOf(query1).toEqualTypeOf(query2);
 
       if (!query1.data) {
         return <>...</>;
       }
 
-      expectTypeOf(query1.data).toMatchTypeOf<'__result'>();
+      expectTypeOf(query1.data).toEqualTypeOf<'__result'>();
 
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }
@@ -135,7 +135,7 @@ describe('queryOptions', () => {
         return <>...</>;
       }
 
-      expectTypeOf(query1.data).toMatchTypeOf<'mutated__result'>();
+      expectTypeOf(query1.data).toEqualTypeOf<'mutated__result'>();
 
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }
@@ -186,8 +186,8 @@ describe('queryOptions', () => {
 
       const query2 = useQuery(trpc.post.byId.queryOptions(skipToken));
 
-      expectTypeOf(query1.data).toMatchTypeOf<'__result' | undefined>();
-      expectTypeOf(query2.data).toMatchTypeOf<'__result' | undefined>();
+      expectTypeOf(query1.data).toEqualTypeOf<'__result' | undefined>();
+      expectTypeOf(query2.data).toEqualTypeOf<'__result' | undefined>();
 
       return <pre>{query1.status}</pre>;
     }
@@ -222,7 +222,7 @@ describe('queryOptions', () => {
         return <>...</>;
       }
 
-      expectTypeOf(query1.data).toMatchTypeOf<'__result'>();
+      expectTypeOf(query1.data).toEqualTypeOf<'__result'>();
 
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }
@@ -270,7 +270,7 @@ describe('queryOptions', () => {
       });
       ctx.nextIterable();
 
-      expectTypeOf(query1.data!).toMatchTypeOf<number[]>();
+      expectTypeOf(query1.data!).toEqualTypeOf<number[]>();
 
       return (
         <pre>
@@ -357,7 +357,7 @@ describe('queryOptions', () => {
         trpc.post.byId.queryOptions({ id: '1' }),
       );
 
-      expectTypeOf(data).toMatchTypeOf<'__result'>();
+      expectTypeOf(data).toEqualTypeOf<'__result'>();
 
       return <pre>{JSON.stringify(data ?? 'n/a', null, 4)}</pre>;
     }

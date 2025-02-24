@@ -40,7 +40,7 @@ describe('no transformer specified', () => {
 
     result.map;
     //     ^?
-    expectTypeOf(result).toMatchTypeOf<{
+    expectTypeOf(result).toMatchObjectType<{
       date: string;
       map: object;
       set: object;
@@ -98,7 +98,7 @@ describe('with transformer specified', () => {
 
     result.map;
     //     ^?
-    expectTypeOf(result).toMatchTypeOf<{
+    expectTypeOf(result).toMatchObjectType<{
       date: Date;
       map: Map<string, string>;
       set: Set<string>;

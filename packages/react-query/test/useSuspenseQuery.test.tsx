@@ -46,7 +46,7 @@ test('useSuspenseQuery()', async () => {
     expectTypeOf(data).toEqualTypeOf<'__result'>();
 
     type TData = typeof data;
-    expectTypeOf<TData>().toMatchTypeOf<'__result'>();
+    expectTypeOf<TData>().toEqualTypeOf<'__result'>();
     expect(data).toBe('__result');
     expect(query1.data).toBe('__result');
 

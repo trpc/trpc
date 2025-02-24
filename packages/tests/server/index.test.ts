@@ -108,7 +108,7 @@ describe('integration tests', () => {
       hello: t.procedure
         .input(z.object({ who: z.string() }).nullish())
         .query(({ input }) => {
-          expectTypeOf(input).toMatchTypeOf<Maybe<{ who: string }>>();
+          expectTypeOf(input).toEqualTypeOf<Maybe<{ who: string }>>();
           return {
             text: `hello ${input?.who ?? 'world'}`,
           };
@@ -180,7 +180,7 @@ describe('integration tests', () => {
           .input(z.object({ who: z.string() }))
           .query(({ input }) => {
             expectTypeOf(input).not.toBeAny();
-            expectTypeOf(input).toMatchTypeOf<{ who: string }>();
+            expectTypeOf(input).toEqualTypeOf<{ who: string }>();
 
             return {
               text: `hello ${input?.who ?? 'world'}`,
@@ -191,9 +191,9 @@ describe('integration tests', () => {
 
       const { close, client } = routerToServerAndClientNew(router);
       const res = await client.hello.query({ who: 'katt' });
-      expectTypeOf(res.input).toMatchTypeOf<Input>();
+      expectTypeOf(res.input).toEqualTypeOf<Input>();
       expectTypeOf(res.input).not.toBeAny();
-      expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
+      expectTypeOf(res).toEqualTypeOf<{ input: Input; text: string }>();
 
       expect(res.text).toEqual('hello katt');
 
@@ -220,7 +220,7 @@ describe('integration tests', () => {
 
       const { close, client } = routerToServerAndClientNew(router);
       const res = await client.postById.query(1);
-      expectTypeOf(res).toMatchTypeOf<{ id: number; title: string } | null>();
+      expectTypeOf(res).toEqualTypeOf<{ id: number; title: string } | null>();
       expect(res).toEqual({
         id: 1,
         title: 'helloo',
@@ -286,7 +286,7 @@ describe('integration tests', () => {
       {
         headers['authorization'] = 'kattsecret';
         const res = await client.whoami.query();
-        expectTypeOf(res).toMatchTypeOf<{ id: number; name: string }>();
+        expectTypeOf(res).toEqualTypeOf<{ id: number; name: string }>();
         expect(res).toEqual({
           id: 1,
           name: 'KATT',
@@ -305,7 +305,7 @@ describe('integration tests', () => {
           .input(z.object({ who: z.string() }).nullish())
           .query(({ input }) => {
             expectTypeOf(input).not.toBeAny();
-            expectTypeOf(input).toMatchTypeOf<Input>();
+            expectTypeOf(input).toEqualTypeOf<Input>();
 
             return {
               text: `hello ${input?.who ?? 'world'}`,
@@ -317,12 +317,12 @@ describe('integration tests', () => {
       const { close, client } = routerToServerAndClientNew(router);
       {
         const res = await client.hello.query({ who: 'katt' });
-        expectTypeOf(res.input).toMatchTypeOf<Input>();
+        expectTypeOf(res.input).toEqualTypeOf<Input>();
         expectTypeOf(res.input).not.toBeAny();
       }
       {
         const res = await client.hello.query();
-        expectTypeOf(res.input).toMatchTypeOf<Input>();
+        expectTypeOf(res.input).toEqualTypeOf<Input>();
         expectTypeOf(res.input).not.toBeAny();
       }
 
@@ -344,7 +344,7 @@ describe('integration tests', () => {
           )
           .mutation(({ input }) => {
             expectTypeOf(input).not.toBeAny();
-            expectTypeOf(input).toMatchTypeOf<Input>();
+            expectTypeOf(input).toEqualTypeOf<Input>();
 
             return {
               text: `hello ${input?.who ?? 'world'}`,
@@ -355,7 +355,7 @@ describe('integration tests', () => {
 
       const { close, client } = routerToServerAndClientNew(router);
       const res = await client.hello.mutate({ who: 'katt' });
-      expectTypeOf(res.input).toMatchTypeOf<Input>();
+      expectTypeOf(res.input).toEqualTypeOf<Input>();
       expectTypeOf(res.input).not.toBeAny();
       expect(res.text).toBe('hello katt');
       await close();
@@ -386,12 +386,12 @@ describe('createCaller()', () => {
 
   test('query()', async () => {
     const data = await router.createCaller({}).q(1);
-    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expectTypeOf(data).toEqualTypeOf<{ input: number }>();
     expect(data).toEqual({ input: 1 });
   });
   test('mutation()', async () => {
     const data = await router.createCaller({}).m(2);
-    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expectTypeOf(data).toEqualTypeOf<{ input: number }>();
     expect(data).toEqual({ input: 2 });
   });
   test('subscription()', async () => {
@@ -400,7 +400,7 @@ describe('createCaller()', () => {
       subObservable.subscribe({
         next(data: { input: number }) {
           expect(data).toEqual({ input: 3 });
-          expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+          expectTypeOf(data).toEqualTypeOf<{ input: number }>();
           resolve();
         },
       });
@@ -431,12 +431,12 @@ describe('createCaller()', () => {
 
   test('query()', async () => {
     const data = await router.createCaller({}).q(1);
-    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expectTypeOf(data).toEqualTypeOf<{ input: number }>();
     expect(data).toEqual({ input: 1 });
   });
   test('mutation()', async () => {
     const data = await router.createCaller({}).m(2);
-    expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+    expectTypeOf(data).toEqualTypeOf<{ input: number }>();
     expect(data).toEqual({ input: 2 });
   });
   test('subscription()', async () => {
@@ -445,7 +445,7 @@ describe('createCaller()', () => {
       subObservable.subscribe({
         next(data: { input: number }) {
           expect(data).toEqual({ input: 3 });
-          expectTypeOf(data).toMatchTypeOf<{ input: number }>();
+          expectTypeOf(data).toEqualTypeOf<{ input: number }>();
           resolve();
         },
       });

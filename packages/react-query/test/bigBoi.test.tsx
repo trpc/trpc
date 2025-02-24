@@ -22,7 +22,7 @@ test('vanilla', async () => {
 
     expect(result).toBe('hello KATT');
     expectTypeOf(result).not.toBeAny();
-    expectTypeOf(result).toMatchTypeOf<string>();
+    expectTypeOf(result).toBeString();
   }
   {
     const result = await client.r10.grandchild.grandChildMutation.mutate();
@@ -34,7 +34,7 @@ test('vanilla', async () => {
 
     expect(result).toBe('hello KATT');
     expectTypeOf(result).not.toBeAny();
-    expectTypeOf(result).toMatchTypeOf<string>();
+    expectTypeOf(result).toBeString();
   }
 });
 
@@ -47,7 +47,7 @@ test('useQuery()', async () => {
       return <>...</>;
     }
     expectTypeOf(query1.data).not.toBeAny();
-    expectTypeOf(query1.data).toMatchTypeOf<string>();
+    expectTypeOf(query1.data).toBeString();
     return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
   }
 

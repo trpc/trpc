@@ -57,8 +57,8 @@ describe('custom error formatter', () => {
       });
 
       if (query1.error) {
-        expectTypeOf(query1.error.data?.foo).toMatchTypeOf<'bar' | undefined>();
-        expectTypeOf(query1.error).toMatchTypeOf<
+        expectTypeOf(query1.error.data?.foo).toEqualTypeOf<'bar' | undefined>();
+        expectTypeOf(query1.error).toEqualTypeOf<
           TRPCClientErrorLike<typeof appRouter>
         >();
         expectTypeOf(query1.error).toEqualTypeOf<
@@ -141,7 +141,7 @@ describe('no custom formatter', () => {
       });
 
       if (query1.error) {
-        expectTypeOf(query1.error).toMatchTypeOf<
+        expectTypeOf(query1.error).toEqualTypeOf<
           TRPCClientErrorLike<typeof appRouter>
         >();
         expectTypeOf(query1.error).toEqualTypeOf<
@@ -211,5 +211,5 @@ test('types', async () => {
   type TRouterError__data = TRouterError['data'];
   //      ^?
 
-  expectTypeOf<TRouterError__data>().toMatchTypeOf<Maybe<DefaultErrorData>>();
+  expectTypeOf<TRouterError__data>().toEqualTypeOf<Maybe<DefaultErrorData>>();
 });

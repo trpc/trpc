@@ -140,7 +140,7 @@ describe.each([
         trpc.onEventIterable.subscriptionOptions(10, {
           enabled,
           onData: (data) => {
-            expectTypeOf(data).toMatchTypeOf<number>();
+            expectTypeOf(data).toBeNumber();
             onDataMock(data);
           },
           onError: onErrorMock,
@@ -223,7 +223,7 @@ describe.each([
         trpc.onEventObservable.subscriptionOptions(10, {
           enabled: enabled,
           onData: (data) => {
-            expectTypeOf(data).toMatchTypeOf<number>();
+            expectTypeOf(data).toBeNumber();
             onDataMock(data);
             setData(data);
           },

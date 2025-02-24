@@ -64,7 +64,7 @@ test('very happy path - query', async () => {
 
   {
     type TContext = inferProcedureOutput<typeof greeting>;
-    expectTypeOf<TContext>().toMatchTypeOf<string>();
+    expectTypeOf<TContext>().toBeString();
   }
   await using ctx = testServerAndClientResource(router);
   expect(await ctx.client.greeting.query('KATT')).toBe('hello KATT');
@@ -83,7 +83,7 @@ test('very happy path - mutation', async () => {
 
   {
     type TContext = inferProcedureOutput<typeof greeting>;
-    expectTypeOf<TContext>().toMatchTypeOf<string>();
+    expectTypeOf<TContext>().toBeString();
   }
   await using ctx = testServerAndClientResource(router);
   expect(await ctx.client.greeting.mutate('KATT')).toBe('hello KATT');
@@ -200,18 +200,18 @@ test('flat router', async () => {
 
   expect(router1.hello).toBe(hello);
   expect(router1.child.bye).toBe(bye);
-  expectTypeOf(router1.hello).toMatchTypeOf(hello);
-  expectTypeOf(router1.child.bye).toMatchTypeOf(bye);
+  expectTypeOf(router1.hello).toEqualTypeOf(hello);
+  expectTypeOf(router1.child.bye).toEqualTypeOf(bye);
 
   const router2 = t.router({
     router2hello: hello,
   });
   const merged = t.mergeRouters(router1, router2);
 
-  expectTypeOf(merged.hello).toMatchTypeOf(hello);
-  expectTypeOf(merged.child.bye).toMatchTypeOf(bye);
+  expectTypeOf(merged.hello).toEqualTypeOf(hello);
+  expectTypeOf(merged.child.bye).toEqualTypeOf(bye);
 
-  expectTypeOf(merged.router2hello).toMatchTypeOf(hello);
+  expectTypeOf(merged.router2hello).toEqualTypeOf(hello);
 
   expect(merged.hello).toBe(hello);
   expect(merged.child.bye).toBe(bye);
@@ -249,13 +249,13 @@ test('subscriptions', async () => {
   const subscription = ctx.client.onEvent.subscribe(10, {
     onStarted: onStartedMock,
     onData: (data) => {
-      expectTypeOf(data).toMatchTypeOf<number>();
+      expectTypeOf(data).toBeNumber();
       onDataMock(data);
     },
     onComplete: onCompleteMock,
   });
 
-  expectTypeOf(subscription).toMatchTypeOf<Unsubscribable>();
+  expectTypeOf(subscription).toEqualTypeOf<Unsubscribable>();
   await waitFor(() => {
     expect(onStartedMock).toBeCalledTimes(1);
   });

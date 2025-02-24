@@ -55,7 +55,7 @@ describe('inferRouterInputs', () => {
 
   test('happy path with optional fields', async () => {
     type Input = AppRouterInputs['sendMessage'];
-    expectTypeOf({ roomId: 'abcd', text: 'testing' }).toMatchTypeOf<Input>();
+    expectTypeOf({ roomId: 'abcd', text: 'testing' }).toExtend<Input>();
   });
 
   test('sad path', async () => {
@@ -81,23 +81,23 @@ describe('inferRouterOutputs', () => {
     expectTypeOf({
       roomId: 'abcd',
       text: 'testing 1',
-    }).toMatchTypeOf<Output>();
+    }).toExtend<Output>();
     expectTypeOf({
       roomId: 'abcd',
       text: 'testing 2',
       optionalKey: 'this is optional',
-    }).toMatchTypeOf<Output>();
+    }).toExtend<Output>();
     expectTypeOf({
       roomId: 'abcd',
       text: 'testing 3',
       optionalKey: 'this is optional',
       testField: 'hey',
-    }).toMatchTypeOf<Output>();
+    }).toExtend<Output>();
     expectTypeOf({
       roomId: 'abcd',
       text: 'testing 3',
       testField: 'hey',
-    }).toMatchTypeOf<Output>();
+    }).toExtend<Output>();
   });
 
   test('sad path', async () => {

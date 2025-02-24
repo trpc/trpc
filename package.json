@@ -2,10 +2,6 @@
   "name": "root",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": "^22.11.0",
-    "pnpm": "^9.12.2"
-  },
   "packageManager": "pnpm@9.12.2",
   "scripts": {
     "clean-dev": "pnpm clean && pnpm install && pnpm build && pnpm dev",
@@ -92,7 +88,8 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/node": "20.17.19"
+      "@types/node": "20.17.19",
+      "vitest@3.0.6>expect-type": "https://pkg.pr.new/mmkal/expect-type@126"
     }
   }
 }

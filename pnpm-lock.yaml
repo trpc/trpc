@@ -6,6 +6,7 @@ settings:
 
 overrides:
   '@types/node': 20.17.19
+  vitest@3.0.6>expect-type: https://pkg.pr.new/mmkal/expect-type@126
 
 importers:
 
@@ -10587,8 +10588,9 @@ packages:
     resolution: {integrity: sha512-eNTPlAD67BmP31LDINZ3U7HSF8l57TxOY2PmBJ1shpCvpnxBF93mWCE8YHBnXs8qiUZJc9WDcWIeC3a2HIAMfw==}
     engines: {node: '>=6'}
 
-  expect-type@1.1.0:
-    resolution: {integrity: sha512-bFi65yM+xZgk+u/KRIpekdSYkTB5W1pEf0Lt8Q8Msh7b+eQ7LXVtIB1Bkm4fvclDEL1b2CZkMhv2mOeF8tMdkA==}
+  expect-type@https://pkg.pr.new/mmkal/expect-type@126:
+    resolution: {tarball: https://pkg.pr.new/mmkal/expect-type@126}
+    version: 1.1.0
     engines: {node: '>=12.0.0'}
 
   exponential-backoff@3.1.1:
@@ -28685,7 +28687,7 @@ snapshots:
 
   exit-hook@2.2.1: {}
 
-  expect-type@1.1.0: {}
+  expect-type@https://pkg.pr.new/mmkal/expect-type@126: {}
 
   exponential-backoff@3.1.1: {}
 
@@ -36540,7 +36542,7 @@ snapshots:
       '@vitest/utils': 3.0.6
       chai: 5.2.0
       debug: 4.4.0(supports-color@9.4.0)
-      expect-type: 1.1.0
+      expect-type: https://pkg.pr.new/mmkal/expect-type@126
       magic-string: 0.30.17
       pathe: 2.0.3
       std-env: 3.8.0

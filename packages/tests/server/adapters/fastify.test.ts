@@ -391,7 +391,7 @@ describe('anonymous user', () => {
       onStarted: onStartedMock,
       onData(data) {
         expectTypeOf(data).not.toBeAny();
-        expectTypeOf(data).toMatchTypeOf<Message>();
+        expectTypeOf(data).toEqualTypeOf<Message>();
         onDataMock(data);
       },
     });

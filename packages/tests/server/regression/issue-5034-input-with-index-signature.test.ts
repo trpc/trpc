@@ -34,7 +34,7 @@ const appRouter = t.router({
       }),
     )
     .query((opts) => {
-      expectTypeOf(opts.ctx).toMatchTypeOf<{
+      expectTypeOf(opts.ctx).toEqualTypeOf<{
         foo: 'bar';
         [symbol]: true;
       }>();

@@ -67,7 +67,7 @@ test('useMutation', async () => {
     }
 
     type TData = (typeof mutation)['data'];
-    expectTypeOf<TData>().toMatchTypeOf<'__mutationResult'>();
+    expectTypeOf<TData>().toEqualTypeOf<'__mutationResult'>();
 
     return <pre>{JSON.stringify(mutation.data ?? 'n/a', null, 4)}</pre>;
   }
@@ -90,14 +90,14 @@ test('useMutation options inference', () => {
   type OptionsRequired = Required<Options>;
 
   type OnSuccessVariables = Parameters<OptionsRequired['onSuccess']>[1];
-  expectTypeOf<OnSuccessVariables>().toMatchTypeOf<{ text: string }>();
+  expectTypeOf<OnSuccessVariables>().toEqualTypeOf<{ text: string }>();
 
   function MyComponent() {
     const options: Options = {};
     client.post.createWithSerializable.useMutation({
       ...options,
       onSuccess: (data) => {
-        expectTypeOf(data).toMatchTypeOf<{
+        expectTypeOf(data).toEqualTypeOf<{
           id: number;
           text: string;
           date: string;
