@@ -32,7 +32,7 @@
     "!**/__tests__"
   ],
   "dependencies": {
-    "@bomb.sh/args": "0.3.0",
+    "@bomb.sh/args": "0.3.1",
     "@clack/prompts": "0.10.0",
     "jscodeshift": "17.1.1",
     "typescript": "^5.7.2"
