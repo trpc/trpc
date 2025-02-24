@@ -167,10 +167,13 @@ export interface TRPCUseQueryResult<TDef extends ResolverDef> {
         errorShape: TDef['errorShape'];
       }>
     >,
-  ): UseQueryResult<TData, TRPCClientErrorLike<{
-    transformer: TDef['transformer'];
-    errorShape: TDef['errorShape'];
-  }>>;
+  ): UseQueryResult<
+    TData,
+    TRPCClientErrorLike<{
+      transformer: TDef['transformer'];
+      errorShape: TDef['errorShape'];
+    }>
+  >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'],
     opts?: UnusedSkipTokenTRPCQueryOptionsIn<
@@ -181,24 +184,32 @@ export interface TRPCUseQueryResult<TDef extends ResolverDef> {
         errorShape: TDef['errorShape'];
       }>
     >,
-  ): UseQueryResult<TData, TRPCClientErrorLike<{
-    transformer: TDef['transformer'];
-    errorShape: TDef['errorShape'];
-  }>>;
+  ): UseQueryResult<
+    TData,
+    TRPCClientErrorLike<{
+      transformer: TDef['transformer'];
+      errorShape: TDef['errorShape'];
+    }>
+  >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
-    opts?: UseQueryResult<UndefinedTRPCQueryOptionsIn<
-      TQueryFnData,
-      TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>
-    >>,
-  ): UseQueryResult<TData, TRPCClientErrorLike<{
-    transformer: TDef['transformer'];
-    errorShape: TDef['errorShape'];
-  }>>;
+    opts?: UseQueryResult<
+      UndefinedTRPCQueryOptionsIn<
+        TQueryFnData,
+        TData,
+        TRPCClientErrorLike<{
+          transformer: TDef['transformer'];
+          errorShape: TDef['errorShape'];
+        }>
+      >
+    >,
+  ): UseQueryResult<
+    TData,
+    TRPCClientErrorLike<{
+      transformer: TDef['transformer'];
+      errorShape: TDef['errorShape'];
+    }>
+  >;
 }
 
 type AnyTRPCQueryOptionsIn =

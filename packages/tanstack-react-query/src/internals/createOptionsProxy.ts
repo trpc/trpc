@@ -1,4 +1,9 @@
-import { useQuery, type DataTag, type QueryClient, type QueryFilters } from '@tanstack/react-query';
+import {
+  useQuery,
+  type DataTag,
+  type QueryClient,
+  type QueryFilters,
+} from '@tanstack/react-query';
 import type { TRPCClient, TRPCRequestOptions } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type {
@@ -22,7 +27,7 @@ import {
   trpcMutationOptions,
   type TRPCMutationOptions,
 } from './mutationOptions';
-import type { TRPCUseQueryResult} from './queryOptions';
+import type { TRPCUseQueryResult } from './queryOptions';
 import { trpcQueryOptions, type TRPCQueryOptions } from './queryOptions';
 import {
   trpcSubscriptionOptions,
@@ -323,13 +328,15 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
         });
       },
       useQuery: () => {
-        return useQuery(trpcQueryOptions({
-          opts: arg2,
-          path,
-          queryClient: opts.queryClient,
-          queryKey: getQueryKey(),
-          query: callIt('query'),
-        }));
+        return useQuery(
+          trpcQueryOptions({
+            opts: arg2,
+            path,
+            queryClient: opts.queryClient,
+            queryKey: getQueryKey(),
+            query: callIt('query'),
+          }),
+        );
       },
       mutationOptions: () => {
         return trpcMutationOptions({
