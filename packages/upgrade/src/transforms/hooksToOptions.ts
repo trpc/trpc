@@ -232,7 +232,10 @@ export default function transform(
           root
             .find(j.Identifier, { name: oldIdentifier.name })
             .forEach((path) => {
-              if (j.MemberExpression.check(path.parent?.parent?.node)) {
+              if (
+                j.MemberExpression.check(path.parent?.parent?.node) ||
+                j.CallExpression.check(path.parent?.parent?.node)
+              ) {
                 const callExprPath = findParentOfType<CallExpression>(
                   path.parentPath,
                   j.CallExpression,
@@ -261,7 +264,6 @@ export default function transform(
 
                 if (
                   !(
-                    j.MemberExpression.check(memberExpr.object) &&
                     j.Identifier.check(memberExpr.property) &&
                     memberExpr.property.name in utilMap
                   )
