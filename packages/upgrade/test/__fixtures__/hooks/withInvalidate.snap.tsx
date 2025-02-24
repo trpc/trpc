@@ -9,6 +9,8 @@ export function Component() {
   const mutation = useMutation(
     trpc.post.create.mutationOptions({
       onSettled: () => {
+        queryClient.invalidateQueries(trpc.pathFilter());
+
         queryClient.invalidateQueries(trpc.post.pathFilter());
         queryClient.invalidateQueries(trpc.post.list.pathFilter());
         queryClient.invalidateQueries(
