@@ -1,6 +1,5 @@
 import { getServerAndReactClient } from '../__reactHelpers';
 import { render } from '@testing-library/react';
-import { createTRPCClient } from '@trpc/client';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { initTRPC } from '@trpc/server';
 import type { IntersectionError } from '@trpc/server/unstable-core-do-not-import';

@@ -1,5 +1,5 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
-import { createQueryClient, createQueryClientConfig } from '../__queryClient';
+import { createQueryClient, createQueryClientConfig } from './__queryClient';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClientProvider } from '@tanstack/react-query';
 import type { TRPCWebSocketClient } from '@trpc/client';
 import {
@@ -268,7 +268,7 @@ export function createAppRouter() {
     up: vi.fn(),
     down: vi.fn(),
   };
-  const { client, trpcClientOptions, close } = routerToServerAndClientNew(
+  const { client, trpcClientOptions, close } = testServerAndClientResource(
     appRouter,
     {
       server: {
@@ -318,10 +318,11 @@ export function createAppRouter() {
     },
   );
 
-  trpcClientOptions.queryClientConfig = createQueryClientConfig(
-    trpcClientOptions.queryClientConfig,
-  );
-  const queryClient = createQueryClient(trpcClientOptions.queryClientConfig);
+  // trpcClientOptions.queryClientConfig = createQueryClientConfig(
+  //   trpcClientOptions.queryClientConfig,
+  // );
+  const queryClient =
+    createQueryClient(/** trpcClientOptions.queryClientConfig */);
   const trpc = createTRPCReact<typeof appRouter>();
 
   function App(props: { children: ReactNode }) {

@@ -8,7 +8,8 @@
   The polymorphism types can be used to generate abstract types which routers sharing a common 
   interface are compatible with, and allow you to pass around deep router paths to generic components with ease.
 */
-import { routerToServerAndClientNew } from '../___testHelpers';
+
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import {
   QueryClient,
   QueryClientProvider,
@@ -105,7 +106,7 @@ describe('polymorphism', () => {
         PullRequestExportsProvider,
       } = createTRPCApi();
 
-      const opts = routerToServerAndClientNew(appRouter);
+      const opts = testServerAndClientResource(appRouter);
       const trpc = createTRPCReact<typeof appRouter>();
 
       const queryClient = new QueryClient();

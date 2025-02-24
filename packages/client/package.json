@@ -76,15 +76,15 @@
     "!**/*.test.*",
     "!**/__tests__"
   ],
-  "dependencies": {},
   "peerDependencies": {
     "@trpc/server": "^10.45.1",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@trpc/server": "^10.45.1",
+    "@trpc/server": "workspace:*",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "^22.13.5",
+    "dataloader": "^2.2.2",
     "eslint": "^9.21.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",

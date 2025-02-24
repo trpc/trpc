@@ -1,4 +1,4 @@
-import { createQueryClient } from '../__queryClient';
+import { createQueryClient } from './__queryClient';
 import type { Post } from './__testHelpers';
 import { createAppRouter } from './__testHelpers';
 import { createTRPCQueryUtils } from '@trpc/react-query';

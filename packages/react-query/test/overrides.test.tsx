@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -10,7 +10,7 @@ import type { ReactNode } from 'react';
 import React from 'react';
 import { z } from 'zod';
 
-describe('query client defaults', () => {
+describe('mutation override', () => {
   const ctx = konn()
     .beforeEach(() => {
       const t = initTRPC.create();
@@ -29,19 +29,22 @@ describe('query client defaults', () => {
           });
         }),
       });
-      const opts = routerToServerAndClientNew(appRouter);
-      const trpc = createTRPCReact<typeof appRouter>();
-
-      const queryClient = new QueryClient({
-        defaultOptions: {
-          mutations: {
-            onSuccess: async (opts) => {
-              await queryClient.invalidateQueries();
+      const opts = testServerAndClientResource(appRouter);
+      const trpc = createTRPCReact<typeof appRouter>({
+        overrides: {
+          useMutation: {
+            async onSuccess(opts) {
+              if (!opts.meta['skipInvalidate']) {
+                await opts.originalFn();
+                await opts.queryClient.invalidateQueries();
+              }
               onSuccessSpy(opts);
             },
           },
         },
       });
+
+      const queryClient = new QueryClient();
 
       function App(props: { children: ReactNode }) {
         return (
@@ -104,12 +107,12 @@ describe('query client defaults', () => {
   test('skip invalidate', async () => {
     const { trpc } = ctx;
     const nonce = `nonce-${Math.random()}`;
-    const onSuccessLocalSpy = vi.fn().mockReturnValue('something');
-
     function MyComp() {
       const listQuery = trpc.list.useQuery();
       const mutation = trpc.add.useMutation({
-        onSuccess: () => onSuccessLocalSpy(),
+        meta: {
+          skipInvalidate: true,
+        },
       });
 
       return (
@@ -136,12 +139,14 @@ describe('query client defaults', () => {
     await userEvent.click($.getByTestId('add'));
 
     await waitFor(() => {
-      expect(ctx.onSuccessSpy).not.toHaveBeenCalled();
+      expect(ctx.onSuccessSpy).toHaveBeenCalledTimes(1);
     });
 
-    await waitFor(() => {
-      expect(onSuccessLocalSpy).toHaveBeenCalledTimes(1);
-    });
+    expect(ctx.onSuccessSpy.mock.calls[0]![0]!.meta).toMatchInlineSnapshot(`
+      Object {
+        "skipInvalidate": true,
+      }
+    `);
 
     await waitFor(() => {
       expect($.container).not.toHaveTextContent(nonce);

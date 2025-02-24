@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
-import { routerToServerAndClientNew } from '../___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import type { DehydratedState } from '@tanstack/react-query';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
@@ -33,9 +33,7 @@ const ctx = konn()
     const appRouter = t.router({
       foo: t.procedure.query(() => 'bar' as const),
     });
-    const opts = routerToServerAndClientNew(appRouter, {
-      transformer,
-    });
+    const opts = testServerAndClientResource(appRouter);
 
     return opts;
   })

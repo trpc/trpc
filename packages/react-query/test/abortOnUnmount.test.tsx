@@ -1,5 +1,5 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
-import { createQueryClient } from '../__queryClient';
+import { createQueryClient } from './__queryClient';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClientProvider, useIsFetching } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -96,7 +96,7 @@ const ctx = konn()
       abortOnUnmount: true,
     });
     const proxy = createTRPCReact<typeof appRouter>();
-    const opts = routerToServerAndClientNew(appRouter);
+    const opts = testServerAndClientResource(appRouter);
 
     return {
       ...opts,

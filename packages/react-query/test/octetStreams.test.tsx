@@ -1,7 +1,7 @@
 // Vitest doesn't play nice with JSOM ArrayBuffer's: https://github.com/vitest-dev/vitest/issues/4043#issuecomment-1742028595
 // @vitest-environment node
-import { routerToServerAndClientNew } from '../___testHelpers';
-import { createQueryClient } from '../__queryClient';
+import { createQueryClient } from './__queryClient';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClientProvider } from '@tanstack/react-query';
 import {
   getUntypedClient,
@@ -52,7 +52,7 @@ const ctx = konn()
       log: vi.fn(),
       error: vi.fn(),
     };
-    const opts = routerToServerAndClientNew(appRouter, {
+    const opts = testServerAndClientResource(appRouter, {
       client: ({ httpUrl }) => ({
         links: [
           loggerLink({
