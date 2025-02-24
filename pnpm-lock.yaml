@@ -2088,9 +2088,6 @@ importers:
       '@types/node':
         specifier: 20.17.19
         version: 20.17.19
-      '@vitest/spy':
-        specifier: ^2.1.8
-        version: 2.1.9
       abort-controller:
         specifier: ^3.0.0
         version: 3.0.0
@@ -8023,9 +8020,6 @@ packages:
 
   '@vitest/snapshot@3.0.6':
     resolution: {integrity: sha512-qKSmxNQwT60kNwwJHMVwavvZsMGXWmngD023OHSgn873pV0lylK7dwBTfYP7e4URy5NiBCHHiQGA9DHkYkqRqg==}
-
-  '@vitest/spy@2.1.9':
-    resolution: {integrity: sha512-E1B35FwzXXTs9FHNK6bDszs7mtydNi5MIfUWpceJ8Xbfb1gBMscAnwLbEu+B44ed6W3XjL9/ehLPHR1fkf1KLQ==}
 
   '@vitest/spy@3.0.6':
     resolution: {integrity: sha512-HfOGx/bXtjy24fDlTOpgiAEJbRfFxoX3zIGagCqACkFKKZ/TTOE6gYMKXlqecvxEndKFuNHcHqP081ggZ2yM0Q==}
@@ -25573,10 +25567,6 @@ snapshots:
       '@vitest/pretty-format': 3.0.6
       magic-string: 0.30.17
       pathe: 2.0.3
-
-  '@vitest/spy@2.1.9':
-    dependencies:
-      tinyspy: 3.0.2
 
   '@vitest/spy@3.0.6':
     dependencies:

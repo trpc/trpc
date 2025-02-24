@@ -17,7 +17,6 @@
     "@trpc/client": "workspace:*",
     "@trpc/server": "^10.45.1",
     "@types/node": "^22.13.5",
-    "@vitest/spy": "^2.1.8",
     "abort-controller": "^3.0.0",
     "arktype": "^2.0.1",
     "dataloader": "^2.2.2",
