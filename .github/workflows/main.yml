@@ -106,7 +106,7 @@ jobs:
         run: |
           cat ./examples/${{ matrix.dir }}/package.json | 
           if grep --silent '"@playwright/test"';
-            then pnpm playwright install chromium;
+            then pnpm exec playwright install chromium;
           fi
 
       - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
@@ -231,7 +231,7 @@ jobs:
         run: |
           cat ./examples/${{ matrix.dir }}/package.json | 
           if grep --silent '"@playwright/test"';
-            then pnpm playwright install chromium;
+            then pnpm exec playwright install chromium;
           fi
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
