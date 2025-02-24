@@ -1,4 +1,4 @@
-import type { DataTag, QueryClient, QueryFilters } from '@tanstack/react-query';
+import { useQuery, type DataTag, type QueryClient, type QueryFilters } from '@tanstack/react-query';
 import type { TRPCClient, TRPCRequestOptions } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type {
@@ -22,6 +22,7 @@ import {
   trpcMutationOptions,
   type TRPCMutationOptions,
 } from './mutationOptions';
+import type { TRPCUseQueryResult} from './queryOptions';
 import { trpcQueryOptions, type TRPCQueryOptions } from './queryOptions';
 import {
   trpcSubscriptionOptions,
@@ -86,6 +87,8 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef> {
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryOptions
    */
   queryOptions: TRPCQueryOptions<TDef>;
+
+  useQuery: TRPCUseQueryResult<TDef>;
 
   /**
    * Create a set of type-safe infinite query options that can be passed to `useInfiniteQuery`, `prefetchInfiniteQuery` etc.
@@ -318,6 +321,15 @@ export function createTRPCOptionsProxy<TRouter extends AnyTRPCRouter>(
           queryKey: getQueryKey(),
           query: callIt('query'),
         });
+      },
+      useQuery: () => {
+        return useQuery(trpcQueryOptions({
+          opts: arg2,
+          path,
+          queryClient: opts.queryClient,
+          queryKey: getQueryKey(),
+          query: callIt('query'),
+        }));
       },
       mutationOptions: () => {
         return trpcMutationOptions({

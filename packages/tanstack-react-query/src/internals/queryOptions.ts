@@ -6,6 +6,7 @@ import type {
   SkipToken,
   UndefinedInitialDataOptions,
   UnusedSkipTokenOptions,
+  UseQueryResult,
 } from '@tanstack/react-query';
 import { queryOptions, skipToken } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
@@ -153,6 +154,51 @@ export interface TRPCQueryOptions<TDef extends ResolverDef> {
       errorShape: TDef['errorShape'];
     }>
   >;
+}
+
+export interface TRPCUseQueryResult<TDef extends ResolverDef> {
+  <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
+    input: TDef['input'] | SkipToken,
+    opts: DefinedTRPCQueryOptionsIn<
+      TQueryFnData,
+      TData,
+      TRPCClientErrorLike<{
+        transformer: TDef['transformer'];
+        errorShape: TDef['errorShape'];
+      }>
+    >,
+  ): UseQueryResult<TData, TRPCClientErrorLike<{
+    transformer: TDef['transformer'];
+    errorShape: TDef['errorShape'];
+  }>>;
+  <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
+    input: TDef['input'],
+    opts?: UnusedSkipTokenTRPCQueryOptionsIn<
+      TQueryFnData,
+      TData,
+      TRPCClientErrorLike<{
+        transformer: TDef['transformer'];
+        errorShape: TDef['errorShape'];
+      }>
+    >,
+  ): UseQueryResult<TData, TRPCClientErrorLike<{
+    transformer: TDef['transformer'];
+    errorShape: TDef['errorShape'];
+  }>>;
+  <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
+    input: TDef['input'] | SkipToken,
+    opts?: UseQueryResult<UndefinedTRPCQueryOptionsIn<
+      TQueryFnData,
+      TData,
+      TRPCClientErrorLike<{
+        transformer: TDef['transformer'];
+        errorShape: TDef['errorShape'];
+      }>
+    >>,
+  ): UseQueryResult<TData, TRPCClientErrorLike<{
+    transformer: TDef['transformer'];
+    errorShape: TDef['errorShape'];
+  }>>;
 }
 
 type AnyTRPCQueryOptionsIn =
