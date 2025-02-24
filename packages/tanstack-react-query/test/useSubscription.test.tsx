@@ -1,6 +1,7 @@
 import { EventEmitter, on } from 'node:events';
-import { getServerAndReactClient } from './__helpers';
+import { testReactResource } from './__helpers';
 import { fireEvent, waitFor } from '@testing-library/react';
+import { unstable_httpSubscriptionLink, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
@@ -97,10 +98,24 @@ const getCtx = (protocol: 'http' | 'ws') => {
       }),
   });
 
+  const ctx = testReactResource(appRouter, {
+    client(opts) {
+      return {
+        links: [
+          protocol === 'http'
+            ? unstable_httpSubscriptionLink({
+                url: opts.httpUrl,
+              })
+            : wsLink({
+                client: opts.wsClient,
+              }),
+        ],
+      };
+    },
+  });
+
   return {
-    ...getServerAndReactClient(appRouter, {
-      subscriptions: protocol,
-    }),
+    ...ctx,
     ee,
   };
 };
@@ -175,10 +190,10 @@ describe.each([
 
     await waitFor(() => {
       if (protocol === 'http') {
-        expect(ctx.opts.onReqAborted).toHaveBeenCalledTimes(1);
+        expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
       } else {
-        ctx.opts.wsClient.close();
-        expect(ctx.opts.wss.clients.size).toBe(0);
+        ctx.wsClient.close();
+        expect(ctx.wss.clients.size).toBe(0);
       }
     });
 
@@ -313,7 +328,7 @@ describe('connection state - http', () => {
     queryResult.length = 0;
 
     await suppressLogsUntil(async () => {
-      ctx.opts.destroyConnections();
+      ctx.destroyConnections();
 
       await waitFor(() => {
         expect(utils.container).toHaveTextContent('status:connecting');

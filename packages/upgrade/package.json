@@ -1,10 +1,11 @@
 {
   "name": "@trpc/upgrade",
-  "version": "0.0.0-alpha.26",
+  "version": "10.45.1",
   "description": "Upgrade scripts for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
-  "bin": "./dist/cli.cjs",
+  "type": "module",
+  "bin": "./dist/bin.js",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -20,8 +21,7 @@
     }
   },
   "scripts": {
-    "build": "bunchee",
-    "run": "tsx src/cli.ts"
+    "build": "bunchee"
   },
   "files": [
     "dist",
@@ -32,19 +32,15 @@
     "!**/__tests__"
   ],
   "dependencies": {
-    "@effect/cli": "0.56.2",
-    "@effect/platform": "0.77.2",
-    "@effect/platform-node": "0.73.2",
-    "effect": "3.13.2",
+    "@bomb.sh/args": "0.3.0",
+    "@clack/prompts": "0.10.0",
     "jscodeshift": "17.1.1",
-    "typescript": "^5.6.2"
+    "typescript": "^5.7.2"
   },
   "devDependencies": {
     "@types/jscodeshift": "0.12.0",
-    "@types/node": "^22.9.0",
-    "bunchee": "6.4.0",
-    "esbuild": "0.25.0",
-    "tsx": "^4.0.0"
+    "@types/node": "^22.13.5",
+    "bunchee": "6.4.0"
   },
   "publishConfig": {
     "access": "public"

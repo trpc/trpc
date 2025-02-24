@@ -1,4 +1,3 @@
-import { ignoreErrors, waitMs } from '../___testHelpers';
 import { getServerAndReactClient } from './__reactHelpers';
 import {
   infiniteQueryOptions,
@@ -14,7 +13,7 @@ import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { konn } from 'konn';
-import React, { Suspense, useEffect } from 'react';
+import React from 'react';
 import { z } from 'zod';
 
 const fixtureData = ['1', '2', '3', '4'];
