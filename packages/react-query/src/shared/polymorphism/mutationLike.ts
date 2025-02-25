@@ -13,8 +13,8 @@ import type {
  * Use to describe a mutation route which matches a given mutation procedure's interface
  */
 export type MutationLike<
-  TRoot extends AnyRootTypes,
-  TProcedure extends AnyProcedure,
+  TRoot extends AnyRootTypes = AnyRootTypes,
+  TProcedure extends AnyProcedure = AnyProcedure,
 > = {
   useMutation: (
     opts?: InferMutationOptions<TRoot, TProcedure>,
