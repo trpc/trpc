@@ -17,7 +17,7 @@ export async function filterIgnored(files: readonly SourceFile[]) {
   const { stdout } = await execa('git check-ignore **/*');
   const ignores = stdout.split('\n');
 
-  if (process.env.VERBOSE) {
+  if (process.env['VERBOSE']) {
     log.info(`cwd: ${process.cwd()}`);
     log.info(
       `All files in program: ${files.map((file) => file.fileName).join(', ')}`,
@@ -36,7 +36,7 @@ export async function filterIgnored(files: readonly SourceFile[]) {
     )
     .map((source) => source.fileName);
 
-  if (process.env.VERBOSE) {
+  if (process.env['VERBOSE']) {
     log.info(`Filtered files: ${filteredSourcePaths.join(', ')}`);
   }
 

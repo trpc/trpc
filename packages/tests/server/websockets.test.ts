@@ -13,7 +13,10 @@ import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
 } from '@trpc/server/rpc';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  sleep,
+} from '@trpc/server/unstable-core-do-not-import';
 import type {
   LegacyObservableSubscriptionProcedure,
   SubscriptionProcedure,
@@ -1690,6 +1693,12 @@ describe('auth / connectionParams', async () => {
     whoami: t.procedure.query((opts) => {
       return opts.ctx.user;
     }),
+    iterable: t.procedure.subscription(async function* () {
+      await new Promise((_resolve) => {
+        // Intentionally never resolve to keep subscription active
+      });
+      yield null;
+    }),
   });
 
   type AppRouter = typeof appRouter;
@@ -1758,6 +1767,66 @@ describe('auth / connectionParams', async () => {
     const result = await client.whoami.query();
 
     expect(result).toEqual(USER_MOCK);
+  });
+
+  test('with async auth', async () => {
+    const wsClient = createWSClient({
+      url: ctx.wssUrl,
+      connectionParams: async () => {
+        await sleep(500);
+        return {
+          token: USER_TOKEN,
+        };
+      },
+    });
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        wsLink({
+          client: wsClient,
+        }),
+      ],
+    });
+    const result = await client.whoami.query();
+
+    expect(result).toEqual(USER_MOCK);
+  });
+
+  test('reconnect with async auth and pending subscriptions', async () => {
+    const onConnectionOpen = vi.fn();
+    const onSubscriptionStarted = vi.fn();
+
+    const wsClient = createWSClient({
+      url: ctx.wssUrl,
+      connectionParams: async () => {
+        await sleep(500);
+        return {
+          token: USER_TOKEN,
+        };
+      },
+      onOpen: onConnectionOpen,
+    });
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        wsLink({
+          client: wsClient,
+        }),
+      ],
+    });
+    client.iterable.subscribe(undefined, {
+      onStarted: onSubscriptionStarted,
+    });
+    await waitFor(() => {
+      expect(onConnectionOpen).toHaveBeenCalledTimes(1);
+      expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
+    });
+
+    ctx.wssHandler.broadcastReconnectNotification();
+
+    await waitFor(() => {
+      expect(onConnectionOpen).toHaveBeenCalledTimes(2);
+      expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
+    });
+    expect(ctx.wss.clients.size).toBe(1);
   });
 });
 

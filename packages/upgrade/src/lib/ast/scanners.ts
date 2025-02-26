@@ -10,7 +10,7 @@ export function getProgram() {
     process.exit(1);
   }
 
-  if (process.env.VERBOSE) {
+  if (process.env['VERBOSE']) {
     p.log.info(`Using tsconfig: ${configFile}`);
   }
 
@@ -114,7 +114,7 @@ export function findTRPCImportReferences(program: ts.Program) {
   const mostUsed = { file: '' };
 
   [...trpcReferenceSpecifiers.values()].forEach((specifier) => {
-    counts[specifier] = (counts[specifier] || 0) + 1;
+    counts[specifier] = (counts[specifier] ?? 0) + 1;
     if (counts[specifier] > currentMax) {
       currentMax = counts[specifier];
       mostUsed.file = specifier;

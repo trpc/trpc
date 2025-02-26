@@ -206,14 +206,15 @@ type AnyTRPCInfiniteQueryOptionsOut =
   | UndefinedTRPCInfiniteQueryOptionsOut<unknown, unknown, unknown, unknown>;
 
 export function trpcInfiniteQueryOptions(args: {
+  input: unknown;
   query: typeof TRPCUntypedClient.prototype.query;
   queryClient: QueryClient | (() => QueryClient);
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: AnyTRPCInfiniteQueryOptionsIn;
 }): AnyTRPCInfiniteQueryOptionsOut {
-  const { query, path, queryKey, opts } = args;
-  const inputIsSkipToken = queryKey[1]?.input === skipToken;
+  const { input, query, path, queryKey, opts } = args;
+  const inputIsSkipToken = input === skipToken;
 
   const queryFn: QueryFunction<unknown, TRPCQueryKey, unknown> = async (
     queryFnContext,

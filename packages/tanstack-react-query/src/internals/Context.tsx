@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import type { CreateTRPCClient, TRPCClient } from '@trpc/client';
+import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
@@ -9,9 +9,10 @@ export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
   TRPCProvider: React.FC<{
     children: React.ReactNode;
     queryClient: QueryClient;
-    trpcClient: CreateTRPCClient<TRouter>;
+    trpcClient: TRPCClient<TRouter>;
   }>;
   useTRPC: () => TRPCOptionsProxy<TRouter>;
+  useTRPCClient: () => TRPCClient<TRouter>;
 }
 /**
  * Create a set of type-safe provider-consumers
@@ -21,6 +22,9 @@ export interface CreateTRPCContextResult<TRouter extends AnyTRPCRouter> {
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
 >(): CreateTRPCContextResult<TRouter> {
+  const TRPCClientContext = React.createContext<TRPCClient<TRouter> | null>(
+    null,
+  );
   const TRPCContext = React.createContext<TRPCOptionsProxy<TRouter> | null>(
     null,
   );
@@ -41,9 +45,11 @@ export function createTRPCContext<
       [props.trpcClient, props.queryClient],
     );
     return (
-      <TRPCContext.Provider value={value}>
-        {props.children}
-      </TRPCContext.Provider>
+      <TRPCClientContext.Provider value={props.trpcClient}>
+        <TRPCContext.Provider value={value}>
+          {props.children}
+        </TRPCContext.Provider>
+      </TRPCClientContext.Provider>
     );
   }
 
@@ -55,5 +61,15 @@ export function createTRPCContext<
     return utils;
   }
 
-  return { TRPCProvider, useTRPC };
+  function useTRPCClient() {
+    const client = React.useContext(TRPCClientContext);
+    if (!client) {
+      throw new Error(
+        'useTRPCClient() can only be used inside of a <TRPCProvider>',
+      );
+    }
+    return client;
+  }
+
+  return { TRPCProvider, useTRPC, useTRPCClient };
 }

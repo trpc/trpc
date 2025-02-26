@@ -1,5 +1,5 @@
 import { testReactResource } from './__helpers';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import * as React from 'react';
@@ -9,15 +9,23 @@ import { z } from 'zod';
 const testContext = () => {
   const t = initTRPC.create({});
 
+  const posts = ['initial'];
+
   const appRouter = t.router({
     post: t.router({
+      list: t.procedure.query(() => {
+        return posts;
+      }),
       create: t.procedure
         .input(
           z.object({
             text: z.string(),
           }),
         )
-        .mutation(() => '__mutationResult' as const),
+        .mutation(({ input }) => {
+          posts.push(input.text);
+          return '__mutationResult' as const;
+        }),
       createWithSerializable: t.procedure
         .input(
           z.object({
@@ -88,5 +96,66 @@ describe('mutationOptions', () => {
     });
 
     expect(calls).toEqual(['onMutate', 'onSuccess', 'onSettled']);
+  });
+
+  test('optimistic update', async () => {
+    await using ctx = testContext();
+    const { useTRPC } = ctx;
+
+    const calls: string[] = [];
+
+    function MyComponent() {
+      const trpc = useTRPC();
+      const queryClient = useQueryClient();
+
+      const query = useQuery(trpc.post.list.queryOptions());
+
+      const mutation = useMutation(
+        trpc.post.create.mutationOptions({
+          async onMutate(variables) {
+            calls.push('onMutate');
+            const queryKey = trpc.post.list.queryKey();
+            await queryClient.cancelQueries({ queryKey });
+
+            const previousData = queryClient.getQueryData(queryKey);
+            queryClient.setQueryData(queryKey, (old) => [
+              ...(old ?? []),
+              variables.text,
+            ]);
+
+            return { previousData };
+          },
+          onError(_err, _variables, context) {
+            calls.push('onError');
+            queryClient.setQueryData(
+              trpc.post.list.queryKey(),
+              context?.previousData,
+            );
+          },
+          onSettled() {
+            calls.push('onSettled');
+            queryClient.invalidateQueries(trpc.post.list.queryFilter());
+          },
+        }),
+      );
+
+      React.useEffect(() => {
+        mutation.mutate({
+          text: 'optimistic',
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, []);
+
+      return <pre>{JSON.stringify(query.data)}</pre>;
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+
+    await waitFor(() => {
+      expect(utils.container).toHaveTextContent(
+        JSON.stringify(['initial', 'optimistic']),
+      );
+    });
+    expect(calls).toEqual(['onMutate', 'onSettled']);
   });
 });
