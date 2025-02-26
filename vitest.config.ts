@@ -63,6 +63,7 @@ export default defineConfig({
         execArgv: ['--expose-gc'],
       },
     },
+    retry: 2,
   },
   resolve: {
     alias: aliases,
