@@ -2,6 +2,7 @@ import { testReactResource } from './__helpers';
 import { useQueryClient } from '@tanstack/react-query';
 import { initTRPC } from '@trpc/server';
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import/error/formatter';
+import type { TRPCQueryKey } from '@trpc/tanstack-react-query';
 import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
@@ -65,12 +66,12 @@ describe('get queryFilter', () => {
     function Component() {
       const trpc = useTRPC();
 
-      expect(trpc.queryFilter()).toMatchInlineSnapshot(`
+      expect(trpc.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [],
         }
       `);
-      expect(trpc.bluesky.queryFilter()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
             Array [
@@ -79,12 +80,23 @@ describe('get queryFilter', () => {
           ],
         }
       `);
-      expect(trpc.bluesky.post.queryFilter()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.post.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
             Array [
               "bluesky",
               "post",
+            ],
+          ],
+        }
+      `);
+      expect(trpc.bluesky.post.byId.pathFilter()).toMatchInlineSnapshot(`
+        Object {
+          "queryKey": Array [
+            Array [
+              "bluesky",
+              "post",
+              "byId",
             ],
           ],
         }
@@ -102,6 +114,7 @@ describe('get queryFilter', () => {
                 "input": Object {
                   "id": "1",
                 },
+                "type": "query",
               },
             ],
           }
@@ -128,13 +141,15 @@ describe('get queryFilter', () => {
           predicate(query) {
             const data = query.setData('__result');
             assertType<'__result' | undefined>(data);
+            assertType<TRPCQueryKey>(query.queryKey);
 
             return true;
           },
         },
       );
+      assertType<TRPCQueryKey>(a.queryKey);
 
-      const b = query.getQueryData(a.queryKey!);
+      const b = query.getQueryData(a.queryKey);
       assertType<'__result' | undefined>(b);
 
       return 'some text';
@@ -159,19 +174,29 @@ describe('get queryKey', () => {
         '__result',
       );
 
-      expect(trpc.queryKey()).toMatchInlineSnapshot(`Array []`);
-      expect(trpc.bluesky.queryKey()).toMatchInlineSnapshot(`
+      expect(trpc.pathKey()).toMatchInlineSnapshot(`Array []`);
+
+      expect(trpc.bluesky.pathKey()).toMatchInlineSnapshot(`
         Array [
           Array [
             "bluesky",
           ],
         ]
       `);
-      expect(trpc.bluesky.post.queryKey()).toMatchInlineSnapshot(`
+      expect(trpc.bluesky.post.pathKey()).toMatchInlineSnapshot(`
         Array [
           Array [
             "bluesky",
             "post",
+          ],
+        ]
+      `);
+      expect(trpc.bluesky.post.byId.pathKey()).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "bluesky",
+            "post",
+            "byId",
           ],
         ]
       `);
@@ -187,6 +212,7 @@ describe('get queryKey', () => {
               "input": Object {
                 "id": "1",
               },
+              "type": "query",
             },
           ]
         `);

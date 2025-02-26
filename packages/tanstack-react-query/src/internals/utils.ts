@@ -1,5 +1,4 @@
-import type { QueryClient } from '@tanstack/react-query';
-import { skipToken } from '@tanstack/react-query';
+import { skipToken, type QueryClient } from '@tanstack/react-query';
 import { isFunction, isObject } from '@trpc/server/unstable-core-do-not-import';
 import type {
   QueryType,
@@ -83,8 +82,8 @@ export async function buildQueryFromAsyncIterable(
  */
 export function getQueryKeyInternal(
   path: readonly string[],
-  input: unknown,
-  type: QueryType,
+  input?: unknown,
+  type?: QueryType,
 ): TRPCQueryKey {
   // Construct a query key that is easy to destructure and flexible for
   // partial selecting etc.
@@ -119,6 +118,7 @@ export function getQueryKeyInternal(
       },
     ];
   }
+
   return [
     splitPath,
     {

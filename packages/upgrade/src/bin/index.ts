@@ -21,11 +21,11 @@ const args = parse(process.argv.slice(2), {
   },
   boolean: true,
 });
-if (args.verbose) process.env.VERBOSE = '1';
+if (args.verbose) process.env['VERBOSE'] = '1';
 
 intro(`tRPC Upgrade CLI v${version}`);
 
-if (args.help) {
+if (args['help']) {
   log.info(
     `
 Usage: upgrade [options]

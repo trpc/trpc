@@ -1,6 +1,14 @@
 import type { TRPCRequestOptions } from '@trpc/client';
 
 /**
+ * Turn a set of optional properties into required
+ * @internal
+ */
+export type WithRequired<TObj, TKey extends keyof TObj> = TObj & {
+  [P in TKey]-?: TObj[P];
+};
+
+/**
  * @internal
  */
 export type ResolverDef = {
@@ -11,9 +19,15 @@ export type ResolverDef = {
 };
 
 /**
+ * @remark `void` is here due to https://github.com/trpc/trpc/pull/4374
+ */
+type CursorInput = { cursor?: any };
+export type OptionalCursorInput = CursorInput | void;
+
+/**
  * @internal
  */
-export type ExtractCursorType<TInput> = TInput extends { cursor?: any }
+export type ExtractCursorType<TInput> = TInput extends CursorInput
   ? TInput['cursor']
   : unknown;
 
