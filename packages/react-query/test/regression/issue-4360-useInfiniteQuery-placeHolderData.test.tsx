@@ -1,4 +1,4 @@
-import { getServerAndReactClient } from '../react/__reactHelpers';
+import { getServerAndReactClient } from '../__reactHelpers';
 import { ignoreErrors } from '@trpc/server/__tests__/suppressLogs';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';

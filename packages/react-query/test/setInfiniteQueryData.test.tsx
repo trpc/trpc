@@ -1,9 +1,7 @@
-import { createQueryClient } from '../__queryClient';
 import { createAppRouter } from './__testHelpers';
-import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React, { useState } from 'react';
+import React from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
 beforeEach(() => {

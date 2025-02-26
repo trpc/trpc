@@ -1,5 +1,5 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
-import { createQueryClient } from '../__queryClient';
+import { createQueryClient } from './__queryClient';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import { getUntypedClient } from '@trpc/client';
@@ -22,9 +22,9 @@ const ctx = konn()
     });
 
     return {
-      A: routerToServerAndClientNew(appRouterA),
-      B: routerToServerAndClientNew(appRouterB),
-      C: routerToServerAndClientNew(appRouterC),
+      A: testServerAndClientResource(appRouterA),
+      B: testServerAndClientResource(appRouterB),
+      C: testServerAndClientResource(appRouterC),
     };
   })
   .afterEach(async (ctx) => {
