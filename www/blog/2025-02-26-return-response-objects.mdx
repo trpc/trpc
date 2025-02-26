@@ -278,20 +278,17 @@ export const router = t.router;
 // ---cut---
 import { protectedProcedure, router } from './trpc';
 import { openai } from '@ai-sdk/openai';
-import { streamText } from 'ai';
+import { streamText, Message } from 'ai';
 import { z } from 'zod';
 
 const appRouter = router({
-  ai: protectedProcedure.input(
-      z.object({
-        messages: z.array(
-          z.object({
-            role: z.enum(['system', 'user', 'assistant', 'data']),
-            content: z.string(),
-          }),
-        ),
-      }),
-    )
+  ai: protectedProcedure
+    .use(async opts => opts.next({
+      ctx: {
+        // Get the raw input from the post body - you can also use an input validator to validate the input
+        rawInput: await opts.getRawInput()
+      }
+    }))
     .mutation(async (opts) => {
       // You can access the user from the context as any other procedure
       opts.ctx.user;
@@ -299,7 +296,7 @@ const appRouter = router({
       const response = streamText({
         model: openai('gpt-4o'),
         system: 'You are a helpful assistant.',
-        messages: opts.input.messages,
+        messages: opts.ctx.rawInput as Message[],
       });
 
       return response.toDataStreamResponse();
@@ -328,28 +325,24 @@ export const router = t.router;
 // ---cut---
 import { protectedProcedure, router } from './trpc';
 import { openai } from '@ai-sdk/openai';
-import { streamText } from 'ai';
+import { streamText, Message } from 'ai';
 import { z } from 'zod';
 
 const appRouter = router({
-  ai: protectedProcedure.input(
-      z.object({
-        messages: z.array(
-          z.object({
-            role: z.enum(['system', 'user', 'assistant', 'data']),
-            content: z.string(),
-          }),
-        ),
-      }),
-    )
+  ai: protectedProcedure
+    .use(async opts => opts.next({
+      ctx: {
+        // Get the raw input from the post body - you can also use an input validator to validate the input
+        rawInput: await opts.getRawInput()
+      }
+    }))
     .mutation(async (opts) => {
       // You can access the user from the context as any other procedure
       opts.ctx.user;
-      //        ^?
       const response = streamText({
         model: openai('gpt-4o'),
         system: 'You are a helpful assistant.',
-        messages: opts.input.messages,
+        messages: opts.ctx.rawInput as Message[],
       });
 
       return response.toDataStreamResponse();
