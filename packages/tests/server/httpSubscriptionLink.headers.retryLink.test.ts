@@ -1,9 +1,6 @@
 import { EventEmitter } from 'node:events';
-import {
-  routerToServerAndClientNew,
-  suppressLogs,
-  suppressLogsUntil,
-} from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { suppressLogsUntil } from '@trpc/server/__tests__/suppressLogs';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {

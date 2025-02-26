@@ -123,7 +123,7 @@ export const organizationProcedure = authedProcedure
   });
 
 export const appRouter = t.router({
-  whoami: authedProcedure.mutation(async (opts) => {
+  whoami: authedProcedure.query(async (opts) => {
     // user is non-nullable here
     const { ctx } = opts;
     //      ^?

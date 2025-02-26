@@ -1,4 +1,5 @@
-import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 
@@ -18,10 +19,10 @@ test('happy path', async () => {
     }),
   });
 
-  const ctx = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
   const res = await ctx.client.hello.query(undefined, {
     context: {
-      skipBatch: true,
+      batch: false,
     },
   });
   expectTypeOf(res).toEqualTypeOf<Response>();
@@ -29,8 +30,6 @@ test('happy path', async () => {
   expect(res.status).toBe(200);
   expect(res.headers.get('content-type')).toBe('text/plain');
   expect(await res.text()).toBe('hello');
-
-  await ctx.close();
 });
 
 test('does not work with subscriptions', async () => {
@@ -66,11 +65,11 @@ test('experimental flag', async () => {
       });
     }),
   });
-  const ctx = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
   const res = await waitError(
     ctx.client.hello.query(undefined, {
       context: {
-        skipBatch: true,
+        batch: false,
       },
     }),
     TRPCClientError,
@@ -79,6 +78,4 @@ test('experimental flag', async () => {
   expect(res).toMatchInlineSnapshot(
     `[TRPCClientError: You need to activate outputResponse in the root config to use this feature - e.g. \`initTRPC.create({ experimental: { outputResponse: true } })\`]`,
   );
-
-  await ctx.close();
 });

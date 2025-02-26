@@ -1,5 +1,5 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew, waitMs } from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
@@ -13,7 +13,10 @@ import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
 } from '@trpc/server/rpc';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  sleep,
+} from '@trpc/server/unstable-core-do-not-import';
 import type {
   LegacyObservableSubscriptionProcedure,
   SubscriptionProcedure,
@@ -22,6 +25,13 @@ import { run } from '@trpc/server/unstable-core-do-not-import/utils';
 import { konn } from 'konn';
 import WebSocket from 'ws';
 import { z } from 'zod';
+
+/**
+ * @deprecated should not be needed - use deferred instead
+ */
+async function waitMs(ms: number) {
+  await new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
 
 type Message = {
   id: string;
@@ -56,10 +66,9 @@ function factory(config?: {
       return `hello ${input ?? 'world'}`;
     }),
 
-    slow: t.procedure.mutation(async ({}) => {
+    mut: t.procedure.mutation(async ({}) => {
       onSlowMutationCalled();
-      await waitMs(50);
-      return 'slow query resolved';
+      return 'mutation resolved';
     }),
     iterable: t.procedure
       .input(
@@ -631,13 +640,13 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   await waitFor(() => {
     expect(wsClient.connection?.state === 'open').toBe(true);
   });
-  const promise = client.slow.mutate();
+  const promise = client.mut.mutate();
   await waitFor(() => {
     expect(onSlowMutationCalled).toHaveBeenCalledTimes(1);
   });
   const conn = wsClient.connection!;
   wsClient.close();
-  expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
+  expect(await promise).toMatchInlineSnapshot(`"mutation resolved"`);
 
   await waitFor(() => {
     expect(conn.ws.readyState).toBe(WebSocket.CLOSED);
@@ -651,13 +660,12 @@ test('requests get aborted if called before connection is established and reques
   await waitFor(() => {
     expect(wsClient.connection?.state === 'open').toBe(true);
   });
-  const promise = client.slow.mutate();
+  const promise = client.mut.mutate();
   const conn = wsClient.connection;
   wsClient.close();
   await expect(promise).rejects.toMatchInlineSnapshot(
     '[TRPCClientError: Closed before connection was established]',
   );
-  await close();
   await waitFor(() => {
     expect(conn!.ws.readyState).toBe(WebSocket.CLOSED);
   });
@@ -1117,7 +1125,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
       jsonrpc: '2.0',
       method: 'mutation',
       params: {
-        path: 'slow',
+        path: 'mut',
         input: undefined,
       },
     };
@@ -1137,7 +1145,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
         "id": 1,
         "jsonrpc": "2.0",
         "result": Object {
-          "data": "slow query resolved",
+          "data": "mutation resolved",
           "type": "data",
         },
       }
@@ -1685,6 +1693,12 @@ describe('auth / connectionParams', async () => {
     whoami: t.procedure.query((opts) => {
       return opts.ctx.user;
     }),
+    iterable: t.procedure.subscription(async function* () {
+      await new Promise((_resolve) => {
+        // Intentionally never resolve to keep subscription active
+      });
+      yield null;
+    }),
   });
 
   type AppRouter = typeof appRouter;
@@ -1753,6 +1767,66 @@ describe('auth / connectionParams', async () => {
     const result = await client.whoami.query();
 
     expect(result).toEqual(USER_MOCK);
+  });
+
+  test('with async auth', async () => {
+    const wsClient = createWSClient({
+      url: ctx.wssUrl,
+      connectionParams: async () => {
+        await sleep(500);
+        return {
+          token: USER_TOKEN,
+        };
+      },
+    });
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        wsLink({
+          client: wsClient,
+        }),
+      ],
+    });
+    const result = await client.whoami.query();
+
+    expect(result).toEqual(USER_MOCK);
+  });
+
+  test('reconnect with async auth and pending subscriptions', async () => {
+    const onConnectionOpen = vi.fn();
+    const onSubscriptionStarted = vi.fn();
+
+    const wsClient = createWSClient({
+      url: ctx.wssUrl,
+      connectionParams: async () => {
+        await sleep(500);
+        return {
+          token: USER_TOKEN,
+        };
+      },
+      onOpen: onConnectionOpen,
+    });
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        wsLink({
+          client: wsClient,
+        }),
+      ],
+    });
+    client.iterable.subscribe(undefined, {
+      onStarted: onSubscriptionStarted,
+    });
+    await waitFor(() => {
+      expect(onConnectionOpen).toHaveBeenCalledTimes(1);
+      expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
+    });
+
+    ctx.wssHandler.broadcastReconnectNotification();
+
+    await waitFor(() => {
+      expect(onConnectionOpen).toHaveBeenCalledTimes(2);
+      expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
+    });
+    expect(ctx.wss.clients.size).toBe(1);
   });
 });
 

@@ -17,7 +17,7 @@
   "tasks": {
     "codegen-entrypoints": {},
     "codegen-tests": {
-      "outputs": ["server/__generated__/bigBoi/**"]
+      "outputs": ["*/__generated__/bigBoi/**"]
     },
     "prebuild": {
       "cache": false
