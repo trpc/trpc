@@ -1,10 +1,10 @@
 import { testReactResource } from './__helpers';
-import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { skipToken } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import { describe, expect, expectTypeOf, test, vi } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
 
 const testContext = () => {
