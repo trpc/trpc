@@ -1,6 +1,14 @@
 import type { TRPCRequestOptions } from '@trpc/client';
 
 /**
+ * Turn a set of optional properties into required
+ * @internal
+ */
+export type WithRequired<TObj, TKey extends keyof TObj> = TObj & {
+  [P in TKey]-?: TObj[P];
+};
+
+/**
  * @internal
  */
 export type ResolverDef = {

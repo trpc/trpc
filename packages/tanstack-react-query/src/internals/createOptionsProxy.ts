@@ -37,6 +37,7 @@ import type {
   ResolverDef,
   TRPCMutationKey,
   TRPCQueryKey,
+  WithRequired,
 } from './types';
 import {
   getMutationKeyInternal,
@@ -59,7 +60,12 @@ export interface DecorateRouterKeyable {
    * @see https://tanstack.com/query/latest/docs/framework/react/guides/filters
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryFilter
    */
-  pathFilter: (filters?: QueryFilters) => QueryFilters;
+  pathFilter: (
+    filters?: QueryFilters<never, never, never, TRPCQueryKey>,
+  ) => WithRequired<
+    QueryFilters<never, never, never, TRPCQueryKey>,
+    'queryKey'
+  >;
 }
 
 interface TypeHelper<TDef extends ResolverDef> {
@@ -121,17 +127,26 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
     input?: Partial<TDef['input']>,
     filters?: QueryFilters<
       InfiniteData<TDef['output'], number | null>,
-      TDef['errorShape']
-    >,
-  ) => QueryFilters<
-    InfiniteData<TDef['output'], number | null>,
-    TDef['errorShape'],
-    InfiniteData<TDef['output'], number | null>,
-    DataTag<
-      TRPCQueryKey,
+      TDef['errorShape'],
       InfiniteData<TDef['output'], number | null>,
-      TDef['errorShape']
-    >
+      DataTag<
+        TRPCQueryKey,
+        InfiniteData<TDef['output'], number | null>,
+        TDef['errorShape']
+      >
+    >,
+  ) => WithRequired<
+    QueryFilters<
+      InfiniteData<TDef['output'], number | null>,
+      TDef['errorShape'],
+      InfiniteData<TDef['output'], number | null>,
+      DataTag<
+        TRPCQueryKey,
+        InfiniteData<TDef['output'], number | null>,
+        TDef['errorShape']
+      >
+    >,
+    'queryKey'
   >;
 }
 export interface DecorateQueryProcedure<TDef extends ResolverDef>
@@ -163,12 +178,20 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
    */
   queryFilter: (
     input?: Partial<TDef['input']>,
-    filters?: QueryFilters<TDef['output'], TDef['errorShape']>,
-  ) => QueryFilters<
-    TDef['output'],
-    TDef['errorShape'],
-    TDef['output'],
-    DataTag<TRPCQueryKey, TDef['output'], TDef['errorShape']>
+    filters?: QueryFilters<
+      TDef['output'],
+      TDef['errorShape'],
+      TDef['output'],
+      DataTag<TRPCQueryKey, TDef['output'], TDef['errorShape']>
+    >,
+  ) => WithRequired<
+    QueryFilters<
+      TDef['output'],
+      TDef['errorShape'],
+      TDef['output'],
+      DataTag<TRPCQueryKey, TDef['output'], TDef['errorShape']>
+    >,
+    'queryKey'
   >;
 }
 

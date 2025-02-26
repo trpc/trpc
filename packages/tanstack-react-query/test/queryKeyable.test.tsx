@@ -2,6 +2,7 @@ import { testReactResource } from './__helpers';
 import { useQueryClient } from '@tanstack/react-query';
 import { initTRPC } from '@trpc/server';
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import/error/formatter';
+import type { TRPCQueryKey } from '@trpc/tanstack-react-query';
 import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
@@ -140,13 +141,15 @@ describe('get queryFilter', () => {
           predicate(query) {
             const data = query.setData('__result');
             assertType<'__result' | undefined>(data);
+            assertType<TRPCQueryKey>(query.queryKey);
 
             return true;
           },
         },
       );
+      assertType<TRPCQueryKey>(a.queryKey);
 
-      const b = query.getQueryData(a.queryKey!);
+      const b = query.getQueryData(a.queryKey);
       assertType<'__result' | undefined>(b);
 
       return 'some text';
