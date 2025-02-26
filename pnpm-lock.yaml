@@ -2315,7 +2315,7 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       zod:
-        specifier: ^3.0.0
+        specifier: ^3.24.2
         version: 3.24.2
       zod-form-data:
         specifier: ^2.0.1
