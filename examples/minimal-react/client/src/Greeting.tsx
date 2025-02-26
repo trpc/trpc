@@ -11,7 +11,7 @@ export function Greeting() {
   );
   const greeting5 = trpc.greeting.useQuery(undefined, { enabled: true });
   if (Math.random()) {
-    trpc.greeting.useQuery()
+    trpc.greeting.useQuery();
   }
 
   greeting2.data satisfies typeof greeting.data;

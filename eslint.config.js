@@ -18,9 +18,9 @@ export default tseslint.config(
         rules: {
           'rules-of-hooks': {
             ...hooksPlugin.rules['rules-of-hooks'],
-            create: ((context, ...args) => {
-              const rule = hooksPlugin.rules['rules-of-hooks']
-              const original = rule.create(context, ...args)
+            create: (context, ...args) => {
+              const rule = hooksPlugin.rules['rules-of-hooks'];
+              const original = rule.create(context, ...args);
               return Object.fromEntries(
                 Object.keys(original).map((k) => {
                   if (k === 'CallExpression') {
@@ -28,34 +28,38 @@ export default tseslint.config(
                     // This should just be made configurable in eslint-plugin-react-hooks, but no movement on the issue for this: https://github.com/facebook/react/issues/25065. For now this works.
                     return [
                       k,
-                      node => {
+                      (node) => {
                         const calleeProxy = new Proxy(node.callee, {
                           get(calleeTarget, calleeProp, calleeReceiver) {
                             if (calleeProp === 'object') {
-                              return {type: 'Identifier', name: 'Trpc'}
+                              return { type: 'Identifier', name: 'Trpc' };
                             }
 
-                            return Reflect.get(calleeTarget, calleeProp, calleeReceiver)
+                            return Reflect.get(
+                              calleeTarget,
+                              calleeProp,
+                              calleeReceiver,
+                            );
                           },
-                        })
+                        });
                         const nodeProxy = new Proxy(node, {
                           get(target, prop, receiver) {
                             if (prop === 'callee') {
-                              return calleeProxy
+                              return calleeProxy;
                             }
 
-                            return Reflect.get(target, prop, receiver)
+                            return Reflect.get(target, prop, receiver);
                           },
-                        })
+                        });
 
-                        return original[k]?.(nodeProxy)
+                        return original[k]?.(nodeProxy);
                       },
-                    ]
+                    ];
                   }
-                  return [k, original[k]]
+                  return [k, original[k]];
                 }),
-              )
-            }),
+              );
+            },
           },
         },
       },
