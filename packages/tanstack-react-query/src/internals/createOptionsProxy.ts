@@ -61,9 +61,9 @@ export interface DecorateRouterKeyable {
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryFilter
    */
   pathFilter: (
-    filters?: QueryFilters<never, never, never, TRPCQueryKey>,
+    filters?: QueryFilters<unknown, unknown, unknown, TRPCQueryKey>,
   ) => WithRequired<
-    QueryFilters<never, never, never, TRPCQueryKey>,
+    QueryFilters<unknown, unknown, unknown, TRPCQueryKey>,
     'queryKey'
   >;
 }
