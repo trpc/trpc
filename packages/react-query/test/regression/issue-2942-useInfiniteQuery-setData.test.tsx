@@ -1,7 +1,7 @@
 import { getServerAndReactClient } from '../__reactHelpers';
 import type { DehydratedState, InfiniteData } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -97,7 +97,7 @@ test('with input', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
   });
 
@@ -175,7 +175,7 @@ test('w/o input', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
   });
   const before: DehydratedState['queries'] = JSON.parse(

@@ -1,6 +1,6 @@
 import { testReactResource } from './__helpers';
 import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
@@ -73,7 +73,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });
@@ -103,7 +103,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`mutated__result`);
     });
   });
@@ -127,7 +127,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });
@@ -150,7 +150,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`pending`);
     });
   });
@@ -182,7 +182,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
 
@@ -232,7 +232,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`success:idle`);
     });
 
@@ -313,7 +313,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });

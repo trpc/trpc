@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import type { InfiniteData } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -97,12 +97,12 @@ test('useSuspenseInfiniteQuery()', async () => {
       </Suspense>
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
   });
   await userEvent.click(utils.getByTestId('fetchMore'));
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`[ "1" ]`);
     expect(utils.container).toHaveTextContent(`[ "2" ]`);
   });

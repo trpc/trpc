@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import { getUntypedClient, TRPCClientError, wsLink } from '@trpc/client';
 import type { inferProcedureOutput } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
@@ -256,26 +256,26 @@ test('subscriptions', async () => {
   });
 
   expectTypeOf(subscription).toMatchTypeOf<Unsubscribable>();
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStartedMock).toBeCalledTimes(1);
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(subscriptionMock).toBeCalledTimes(1);
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(subscriptionMock).toHaveBeenNthCalledWith(1, 10);
   });
 
   ee.emit('data', 20);
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onDataMock).toBeCalledTimes(1);
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onDataMock).toHaveBeenNthCalledWith(1, 30);
   });
 
   subscription.unsubscribe();
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onCompleteMock).toBeCalledTimes(1);
   });
 });

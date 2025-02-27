@@ -1,5 +1,5 @@
 import { createAppRouter } from './__testHelpers';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import';
 import React, { useEffect } from 'react';
 
@@ -46,7 +46,7 @@ test('react types test', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('fieldErrors');
     expect(utils.getByTestId('err').innerText).toMatchInlineSnapshot(
       `undefined`,

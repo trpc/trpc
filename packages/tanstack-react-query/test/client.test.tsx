@@ -1,5 +1,5 @@
 import { testReactResource } from './__helpers';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
@@ -62,7 +62,7 @@ describe('useTRPCClient', () => {
     const utils = ctx.renderApp(<MyComponent />);
 
     await userEvent.click(utils.getByTestId('fetch'));
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`Fetched: __result`);
     });
   });

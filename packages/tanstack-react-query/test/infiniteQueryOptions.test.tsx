@@ -6,7 +6,7 @@ import {
   useSuspenseInfiniteQuery,
   type InfiniteData,
 } from '@tanstack/react-query';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import * as React from 'react';
@@ -160,20 +160,20 @@ describe('infiniteQueryOptions', () => {
 
     const utils = ctx.renderApp(<MyComponent />);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`null`);
       expect(utils.container).not.toHaveTextContent(`undefined`);
     });
 
     await userEvent.click(utils.getByTestId('fetchMore'));
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
     });
 
     await userEvent.click(utils.getByTestId('invalidate'));
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('invalidate')).toBeDisabled();
     });
   });
@@ -290,14 +290,14 @@ describe('infiniteQueryOptions', () => {
       </React.Suspense>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`null`);
       expect(utils.container).not.toHaveTextContent(`undefined`);
     });
     await userEvent.click(utils.getByTestId('fetchMore'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
     });
@@ -405,19 +405,19 @@ describe('infiniteQueryOptions', () => {
 
     const utils = ctx.renderApp(<MyComponent />);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`null`);
       expect(utils.container).not.toHaveTextContent(`undefined`);
     });
     await userEvent.click(utils.getByTestId('fetchMore'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('__selected');
     });
   });

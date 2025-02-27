@@ -1,5 +1,5 @@
 import { getServerAndReactClient } from '../__reactHelpers';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import type { inferProcedureOutput } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -66,7 +66,7 @@ test('select as transform', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`{"foo":"hello foo"}`);
   });
 });
@@ -99,7 +99,7 @@ test('select as transform in suspense', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`{"foo":"hello foo"}`);
   });
 });
@@ -149,7 +149,7 @@ test('select as transform with initial data', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`{"foo":"hello foo"}`);
   });
 });

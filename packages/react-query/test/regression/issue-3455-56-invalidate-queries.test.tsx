@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from '../__reactHelpers';
 import { useQuery } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -87,7 +87,7 @@ test('invalidate with filter', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('posts:done');
     expect(utils.container).toHaveTextContent('greeting:done');
   });
@@ -100,7 +100,7 @@ test('invalidate with filter', async () => {
   expect(utils.container).toHaveTextContent('posts:fetching');
   expect(utils.container).toHaveTextContent('greeting:done');
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('posts:done');
     expect(utils.container).toHaveTextContent('greeting:done');
   });
@@ -138,7 +138,7 @@ test('tanstack query queries are invalidated', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('rq:done');
     expect(utils.container).toHaveTextContent('trpc:done');
   });
@@ -148,7 +148,7 @@ test('tanstack query queries are invalidated', async () => {
   expect(utils.container).toHaveTextContent('rq:fetching');
   expect(utils.container).toHaveTextContent('trpc:fetching');
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('rq:done');
     expect(utils.container).toHaveTextContent('trpc:done');
   });
@@ -208,7 +208,7 @@ test('mixed providers with more "advanced" filter', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('rq1:done');
     expect(utils.container).toHaveTextContent('rq2:done');
     expect(utils.container).toHaveTextContent('trpc:done');
@@ -220,7 +220,7 @@ test('mixed providers with more "advanced" filter', async () => {
   expect(utils.container).toHaveTextContent('rq2:done');
   expect(utils.container).toHaveTextContent('trpc:fetching');
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('rq1:done');
     expect(utils.container).toHaveTextContent('rq2:done');
     expect(utils.container).toHaveTextContent('trpc:done');

@@ -1,6 +1,6 @@
 import { testReactResource } from './__helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
@@ -91,7 +91,7 @@ describe('mutationOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__mutationResult`);
     });
 
@@ -151,7 +151,7 @@ describe('mutationOptions', () => {
 
     const utils = ctx.renderApp(<MyComponent />);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(
         JSON.stringify(['initial', 'optimistic']),
       );

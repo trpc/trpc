@@ -1,6 +1,6 @@
 import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew } from './___testHelpers';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
@@ -272,7 +272,7 @@ test('basic subscription test (observable)', async () => {
     onConnectionStateChange: onStateChangeMock,
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
@@ -280,7 +280,7 @@ test('basic subscription test (observable)', async () => {
   ee.emit('server:msg', {
     id: '2',
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onDataMock).toHaveBeenCalledTimes(3);
   });
 
@@ -306,7 +306,7 @@ test('basic subscription test (observable)', async () => {
 
   subscription.unsubscribe();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);
   });
@@ -361,7 +361,7 @@ test('subscription observable with error', async () => {
     },
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
     expect(onDataOrErrorMock).toHaveBeenCalledTimes(3);
   });
@@ -392,7 +392,7 @@ test('subscription observable with error', async () => {
 
   subscription.unsubscribe();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);
   });
@@ -424,7 +424,7 @@ test('basic subscription test (iterator)', async () => {
     },
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
@@ -432,7 +432,7 @@ test('basic subscription test (iterator)', async () => {
   ee.emit('server:msg', {
     id: '2',
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onDataMock).toHaveBeenCalledTimes(3);
   });
 
@@ -458,11 +458,11 @@ test('basic subscription test (iterator)', async () => {
 
   subscription.unsubscribe();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ee.listenerCount('data')).toBe(0);
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);
   });
@@ -493,7 +493,7 @@ test('$subscription() - client resumes subscriptions after reconnecting', async 
     onComplete: onCompleteMock,
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
@@ -514,7 +514,7 @@ test('$subscription() - client resumes subscriptions after reconnecting', async 
     }, 1);
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onDataMock).toHaveBeenCalledTimes(1);
   });
   expect(onDataMock.mock.calls.map((args) => args[0])).toMatchInlineSnapshot(`
@@ -551,13 +551,13 @@ test('server subscription ended', async () => {
     onComplete: onCompleteMock,
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
   // destroy server subscription (called by server)
   subRef.current.complete();
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onCompleteMock).toHaveBeenCalledTimes(1);
   });
   await close();
@@ -587,13 +587,13 @@ test('can close wsClient when subscribed', async () => {
     onComplete: onCompleteMock,
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
   });
 
   wsClient.close();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onCompleteMock).toHaveBeenCalledTimes(1);
     expect(wsClientOnCloseMock).toHaveBeenCalledTimes(1);
     expect(serversideWsOnCloseMock).toHaveBeenCalledTimes(1);
@@ -624,7 +624,7 @@ test('sub emits errors', async () => {
     onComplete: onCompleteMock,
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
     expect(onDataMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(1);
@@ -637,18 +637,18 @@ test('sub emits errors', async () => {
 test('wait for slow queries/mutations before disconnecting', async () => {
   const { client, close, wsClient, onSlowMutationCalled } = factory();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(wsClient.connection?.state === 'open').toBe(true);
   });
   const promise = client.mut.mutate();
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onSlowMutationCalled).toHaveBeenCalledTimes(1);
   });
   const conn = wsClient.connection!;
   wsClient.close();
   expect(await promise).toMatchInlineSnapshot(`"mutation resolved"`);
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(conn.ws.readyState).toBe(WebSocket.CLOSED);
   });
   await close();
@@ -657,7 +657,7 @@ test('wait for slow queries/mutations before disconnecting', async () => {
 test('requests get aborted if called before connection is established and requests dispatched', async () => {
   const { client, close, wsClient } = factory();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(wsClient.connection?.state === 'open').toBe(true);
   });
   const promise = client.mut.mutate();
@@ -666,7 +666,7 @@ test('requests get aborted if called before connection is established and reques
   await expect(promise).rejects.toMatchInlineSnapshot(
     '[TRPCClientError: Closed before connection was established]',
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(conn!.ws.readyState).toBe(WebSocket.CLOSED);
   });
   await close();
@@ -706,20 +706,20 @@ test('subscriptions are automatically resumed upon explicit reconnect request', 
   }
   const sub1 = createSub();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
     expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
     expect(onOpenMock).toHaveBeenCalledTimes(1);
     expect(onCloseMock).toHaveBeenCalledTimes(0);
   });
   wssHandler.broadcastReconnectNotification();
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(wss.clients.size).toBe(1);
     expect(onOpenMock).toHaveBeenCalledTimes(2);
     expect(onCloseMock).toHaveBeenCalledTimes(1);
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
     expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
   });
@@ -727,7 +727,7 @@ test('subscriptions are automatically resumed upon explicit reconnect request', 
     id: '2',
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(sub1.onDataMock).toHaveBeenCalledTimes(2);
   });
   expect(sub1.onDataMock.mock.calls.map((args) => args[0]))
@@ -741,13 +741,13 @@ test('subscriptions are automatically resumed upon explicit reconnect request', 
       },
     ]
   `);
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(wss.clients.size).toBe(1);
   });
 
   await close();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onCloseMock).toHaveBeenCalledTimes(2);
   });
 });
@@ -786,7 +786,7 @@ test('subscriptions are automatically resumed if connection is lost', async () =
   }
   const sub1 = createSub();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
     expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
     expect(onOpenMock).toHaveBeenCalledTimes(1);
@@ -794,13 +794,13 @@ test('subscriptions are automatically resumed if connection is lost', async () =
   });
   // close connections forcefully
   wss.clients.forEach((ws) => ws.close());
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(wss.clients.size).toBe(1);
     expect(onOpenMock).toHaveBeenCalledTimes(2);
     expect(onCloseMock).toHaveBeenCalledTimes(1);
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(sub1.onStartedMock).toHaveBeenCalledTimes(1);
     expect(sub1.onDataMock).toHaveBeenCalledTimes(1);
   });
@@ -808,7 +808,7 @@ test('subscriptions are automatically resumed if connection is lost', async () =
     id: '2',
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(sub1.onDataMock).toHaveBeenCalledTimes(2);
   });
   expect(sub1.onDataMock.mock.calls.map((args) => args[0]))
@@ -822,13 +822,13 @@ test('subscriptions are automatically resumed if connection is lost', async () =
       },
     ]
   `);
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(wss.clients.size).toBe(1);
   });
 
   await close();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onCloseMock).toHaveBeenCalledTimes(2);
   });
 });
@@ -1256,11 +1256,11 @@ test('wsClient stops reconnecting after .close()', async () => {
     onError: onErrorMock,
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(retryDelayMsMock).toHaveBeenCalledTimes(1);
     expect(onErrorMock).toHaveBeenCalledTimes(1);
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
     expect(onErrorMock).toHaveBeenCalledTimes(2);
   });
@@ -1298,7 +1298,7 @@ describe('lazy mode', () => {
       `);
       expect(wsClient.connection).not.toBe(null);
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
         expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
       });
@@ -1317,7 +1317,7 @@ describe('lazy mode', () => {
         ]
       `);
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(ctx.onCloseMock).toHaveBeenCalledTimes(2);
         expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
       });
@@ -1358,7 +1358,7 @@ describe('lazy mode', () => {
     });
 
     expect(ctx.onOpenMock).toHaveBeenCalledTimes(0);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(wsClient.connection).not.toBe(null);
     });
     expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
@@ -1367,7 +1367,7 @@ describe('lazy mode', () => {
     ctx.ee.emit('server:msg', {
       id: '1',
     });
-    await waitFor(() => expect(onDataMock).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(onDataMock).toHaveBeenCalledTimes(1));
     expect(onDataMock.mock.calls).toMatchInlineSnapshot(`
       Array [
         Array [
@@ -1381,7 +1381,7 @@ describe('lazy mode', () => {
     // close subscription, check that we disconnect
     sub.unsubscribe();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
     });
 
@@ -1408,7 +1408,7 @@ describe('lazy mode', () => {
       const res = await client.greeting.query('query 1');
       expect(res).toMatchInlineSnapshot('"hello query 1"');
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
         expect(ctx.onCloseMock).toHaveBeenCalledTimes(1);
       });
@@ -1428,7 +1428,7 @@ describe('lazy mode', () => {
         ]
       `);
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(ctx.onCloseMock).toHaveBeenCalledTimes(2);
         expect(ctx.onOpenMock).toHaveBeenCalledTimes(2);
       });
@@ -1457,11 +1457,11 @@ describe('lastEventId', () => {
     {
       // connect and wait for the first message
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(onStarted).toHaveBeenCalledTimes(1);
       });
       ctx.nextIterable();
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(onData).toHaveBeenCalledTimes(1);
       });
       expect(onData.mock.calls[0]![0]).toEqual({
@@ -1476,12 +1476,12 @@ describe('lastEventId', () => {
       // disconnect and wait for the next message
       ctx.destroyConnections();
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(onStarted).toHaveBeenCalledTimes(2);
       });
       ctx.nextIterable();
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(onData).toHaveBeenCalledTimes(2);
       });
 
@@ -1665,7 +1665,7 @@ describe('keep alive from the client', () => {
     expect(pong).toBe(false);
 
     vi.useRealTimers();
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });
 
@@ -1815,14 +1815,14 @@ describe('auth / connectionParams', async () => {
     client.iterable.subscribe(undefined, {
       onStarted: onSubscriptionStarted,
     });
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onConnectionOpen).toHaveBeenCalledTimes(1);
       expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
     });
 
     ctx.wssHandler.broadcastReconnectNotification();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onConnectionOpen).toHaveBeenCalledTimes(2);
       expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
     });
@@ -1868,16 +1868,16 @@ describe('subscriptions with createCaller', () => {
       id: '2',
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(msgs).toHaveLength(2);
     });
 
     abortController.abort();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(ctx.ee.listenerCount('server:msg')).toBe(0);
     });
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onDone).toHaveBeenCalledTimes(0);
       expect(onError).toHaveBeenCalledTimes(1);
     });
@@ -1929,13 +1929,13 @@ describe('subscriptions with createCaller', () => {
       id: '2',
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(msgs).toHaveLength(2);
     });
 
     abortController.abort();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(ctx.ee.listenerCount('server:msg')).toBe(0);
       expect(ctx.subscriptionEnded).toHaveBeenCalledTimes(1);
     });
@@ -1979,7 +1979,7 @@ test('url callback and connection params is invoked for every reconnect', async 
     throw new Error();
   }
 
-  await waitForClientState('pending');
+  await vi.waitForClientState('pending');
   expect(urlCalls).toBe(1);
   expect(connectionParamsCalls).toBe(1);
 
@@ -1987,13 +1987,13 @@ test('url callback and connection params is invoked for every reconnect', async 
   ctx.destroyConnections();
 
   // it'll be connecting with an error
-  const state = await waitForClientState('connecting');
+  const state = await vi.waitForClientState('connecting');
   expect(state.error).toMatchInlineSnapshot(
     `[TRPCClientError: WebSocket closed]`,
   );
 
   // it'll reconnect and be pending
-  await waitForClientState('pending');
+  await vi.waitForClientState('pending');
 
   expect(urlCalls).toBe(2);
   expect(connectionParamsCalls).toBe(2);
@@ -2015,7 +2015,7 @@ test('active subscription while querying', async () => {
     },
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
   });
 
@@ -2023,7 +2023,7 @@ test('active subscription while querying', async () => {
     id: '1',
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onDataMock).toHaveBeenCalledTimes(1);
   });
 
@@ -2035,7 +2035,7 @@ test('active subscription while querying', async () => {
     id: '2',
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onDataMock).toHaveBeenCalledTimes(2);
   });
 
@@ -2044,7 +2044,7 @@ test('active subscription while querying', async () => {
 
   subscription.unsubscribe();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ee.listenerCount('server:msg')).toBe(0);
     expect(ee.listenerCount('server:error')).toBe(0);
   });
@@ -2091,7 +2091,7 @@ test('lazy connection where the first connection fails', async () => {
 
   ctx.open();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
   });
 
@@ -2099,7 +2099,7 @@ test('lazy connection where the first connection fails', async () => {
     id: '1',
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onDataMock).toHaveBeenCalledTimes(1);
   });
 
@@ -2141,7 +2141,7 @@ test('connection where the first connection fails', async () => {
 
   ctx.open();
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStartedMock).toHaveBeenCalledTimes(1);
   });
 
@@ -2149,7 +2149,7 @@ test('connection where the first connection fails', async () => {
     id: '1',
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onDataMock).toHaveBeenCalledTimes(1);
   });
 

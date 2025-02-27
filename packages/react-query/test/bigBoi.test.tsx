@@ -1,6 +1,6 @@
 import { appRouter } from './__generated__/bigBoi/_app';
 import { getServerAndReactClient } from './__reactHelpers';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { konn } from 'konn';
 import React from 'react';
 
@@ -56,7 +56,7 @@ test('useQuery()', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`hello KATT`);
   });
 });

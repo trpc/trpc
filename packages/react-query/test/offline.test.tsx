@@ -1,7 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { onlineManager } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createTRPCQueryUtils } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
@@ -94,7 +94,7 @@ describe('offline', () => {
       const statusSpan = await utils.findByTestId('status');
       const isPausedSpan = await utils.findByTestId('is-paused');
       await userEvent.click(mutateBtn);
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(statusSpan).toHaveTextContent('pending');
         expect(isPausedSpan).toHaveTextContent('1');
       });
@@ -117,7 +117,7 @@ describe('offline', () => {
         await utils.findByTestId('restore-connection');
       expect(onMutationSuccess.mock.calls).toHaveLength(0);
       await userEvent.click(restoreConnectionButton);
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(onMutationSuccess.mock.calls).toHaveLength(1);
         expect(onMutationSuccess.mock.calls[0]).toEqual([
           {

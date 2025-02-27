@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
   httpBatchLink,
@@ -226,13 +226,13 @@ describe('no transformer', () => {
       }),
     ] as const;
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(ctx.manualRelease.size).toBe(3);
     });
 
     // release 1
     ctx.manualRelease.get(1)!();
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(resolved[1]).toBe(true);
       expect(resolved[0]).toBe(false);
       expect(resolved[2]).toBe(false);
@@ -339,7 +339,7 @@ describe('no transformer', () => {
       ctx.nextIterable();
     }
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(ctx.connections.size).toBe(0);
     });
     expect(ctx.yieldSpy.mock.calls.flatMap((it) => it[0]))
