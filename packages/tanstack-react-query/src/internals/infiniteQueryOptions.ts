@@ -1,7 +1,6 @@
 import type {
   DataTag,
   DefinedInitialDataInfiniteOptions,
-  InfiniteData,
   QueryClient,
   QueryFunction,
   SkipToken,
@@ -14,6 +13,7 @@ import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import'
 import type {
   ExtractCursorType,
   ResolverDef,
+  TRPCInfiniteData,
   TRPCQueryBaseOptions,
   TRPCQueryKey,
   TRPCQueryOptionsResult,
@@ -36,7 +36,7 @@ interface UndefinedTRPCInfiniteQueryOptionsIn<
       UndefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
-        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCInfiniteData<TInput, TData>,
         TRPCQueryKey,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
@@ -55,14 +55,14 @@ interface UndefinedTRPCInfiniteQueryOptionsOut<
       UndefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
-        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCInfiniteData<TInput, TData>,
         TRPCQueryKey,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, TData, TError>;
+  queryKey: DataTag<TRPCQueryKey, TRPCInfiniteData<TInput, TData>, TError>;
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
@@ -71,7 +71,7 @@ interface DefinedTRPCInfiniteQueryOptionsIn<TInput, TQueryFnData, TData, TError>
       DefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
-        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCInfiniteData<TInput, TData>,
         TRPCQueryKey,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
@@ -90,14 +90,14 @@ interface DefinedTRPCInfiniteQueryOptionsOut<
       DefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
-        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCInfiniteData<TInput, TData>,
         TRPCQueryKey,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, TData, TError>;
+  queryKey: DataTag<TRPCQueryKey, TRPCInfiniteData<TInput, TData>, TError>;
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
@@ -110,7 +110,7 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
       UnusedSkipTokenInfiniteOptions<
         TQueryFnData,
         TError,
-        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCInfiniteData<TInput, TData>,
         TRPCQueryKey,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
@@ -129,14 +129,14 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
       UnusedSkipTokenInfiniteOptions<
         TQueryFnData,
         TError,
-        InfiniteData<TData, NonNullable<ExtractCursorType<TInput>> | null>,
+        TRPCInfiniteData<TInput, TData>,
         TRPCQueryKey,
         NonNullable<ExtractCursorType<TInput>> | null
       >,
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, TData, TError>;
+  queryKey: DataTag<TRPCQueryKey, TRPCInfiniteData<TInput, TData>, TError>;
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
@@ -147,13 +147,19 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TDef>
+      TRPCClientErrorLike<{
+        transformer: TDef['transformer'];
+        errorShape: TDef['errorShape'];
+      }>
     >,
   ): DefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<TDef>
+    TRPCClientErrorLike<{
+      transformer: TDef['transformer'];
+      errorShape: TDef['errorShape'];
+    }>
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'],
@@ -161,13 +167,19 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TDef>
+      TRPCClientErrorLike<{
+        transformer: TDef['transformer'];
+        errorShape: TDef['errorShape'];
+      }>
     >,
   ): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
     TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<TDef>
+    TRPCClientErrorLike<{
+      transformer: TDef['transformer'];
+      errorShape: TDef['errorShape'];
+    }>
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
@@ -175,35 +187,31 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<TDef>
+      TRPCClientErrorLike<{
+        transformer: TDef['transformer'];
+        errorShape: TDef['errorShape'];
+      }>
     >,
   ): UndefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<TDef>
+    TRPCClientErrorLike<{
+      transformer: TDef['transformer'];
+      errorShape: TDef['errorShape'];
+    }>
   >;
 }
 
 type AnyTRPCInfiniteQueryOptionsIn =
-  | DefinedTRPCInfiniteQueryOptionsIn<unknown, unknown, unknown, unknown>
-  | UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
-      unknown,
-      unknown,
-      unknown,
-      unknown
-    >
-  | UndefinedTRPCInfiniteQueryOptionsIn<unknown, unknown, unknown, unknown>;
+  | DefinedTRPCInfiniteQueryOptionsIn<any, any, any, any>
+  | UnusedSkipTokenTRPCInfiniteQueryOptionsIn<any, any, any, any>
+  | UndefinedTRPCInfiniteQueryOptionsIn<any, any, any, any>;
 
 type AnyTRPCInfiniteQueryOptionsOut =
-  | DefinedTRPCInfiniteQueryOptionsOut<unknown, unknown, unknown, unknown>
-  | UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
-      unknown,
-      unknown,
-      unknown,
-      unknown
-    >
-  | UndefinedTRPCInfiniteQueryOptionsOut<unknown, unknown, unknown, unknown>;
+  | DefinedTRPCInfiniteQueryOptionsOut<any, any, any, any>
+  | UnusedSkipTokenTRPCInfiniteQueryOptionsOut<any, any, any, any>
+  | UndefinedTRPCInfiniteQueryOptionsOut<any, any, any, any>;
 
 export function trpcInfiniteQueryOptions(args: {
   input: unknown;
