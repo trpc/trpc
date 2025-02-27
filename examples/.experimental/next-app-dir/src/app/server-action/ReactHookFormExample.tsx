@@ -37,7 +37,7 @@ export function ReactHookFormExample() {
       <p>Check the console for the logger output.</p>
       <FormProvider {...form}>
         <form
-          action={rhfAction}
+          action={rhfAction as any}
           ref={formRef}
           onSubmit={form.handleSubmit(async () => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

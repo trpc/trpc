@@ -33,6 +33,7 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/no-empty-interface': 'off',
       '@typescript-eslint/array-type': 'off',
+      '@typescript-eslint/prefer-function-type': 'off',
 
       '@typescript-eslint/prefer-promise-reject-errors': 'off',
       '@typescript-eslint/no-empty-object-type': 'off',
@@ -101,6 +102,21 @@ export default tseslint.config(
                 'Use `vi.waitFor` instead as the Testing Library one does not work with fake timers',
             },
           ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'MemberExpression[object.name="Symbol"][property.name="asyncDispose"]',
+          message:
+            'Usage of Symbol.asyncDispose is not allowed - use `makeAsyncResource()`',
+        },
+        {
+          selector:
+            'MemberExpression[object.name="Symbol"][property.name="dispose"]',
+          message:
+            'Usage of Symbol.dispose is not allowed - use `makeResource()`',
         },
       ],
       '@typescript-eslint/switch-exhaustiveness-check': 'error',

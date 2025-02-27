@@ -1,5 +1,6 @@
 import type { CombinedDataTransformer } from '../unstable-core-do-not-import';
 import type { DefaultErrorShape, ErrorFormatter } from './error/formatter';
+import type { JSONLProducerOptions } from './stream/jsonl';
 import type { SSEStreamProducerOptions } from './stream/sse';
 
 /**
@@ -65,26 +66,27 @@ export interface RootConfig<TTypes extends RootTypes> {
 
   defaultMeta?: TTypes['meta'] extends object ? TTypes['meta'] : never;
 
-  experimental?: {
+  /**
+   * Options for server-sent events (SSE) subscriptions
+   * @see https://trpc.io/docs/client/links/httpSubscriptionLink
+   */
+  sse?: {
     /**
-     * Enable support for returning async iterables and returning deferred promises when using `httpBatchStreamLink`
+     * Enable server-sent events (SSE) subscriptions
      * @default true
      */
-    iterablesAndDeferreds?: boolean;
-    /**
-     * Enable support for server-sent events (SSE) subscriptions
-     */
-    sseSubscriptions?: {
-      /**
-       * Enable server-sent events (SSE) subscriptions
-       * @default true
-       */
-      enabled?: boolean;
-    } & Pick<
-      SSEStreamProducerOptions,
-      'ping' | 'emitAndEndImmediately' | 'maxDurationMs'
-    >;
-  };
+    enabled?: boolean;
+  } & Pick<
+    SSEStreamProducerOptions,
+    'ping' | 'emitAndEndImmediately' | 'maxDurationMs' | 'client'
+  >;
+
+  /**
+   * Options for batch stream
+   * @see https://trpc.io/docs/client/links/httpBatchStreamLink
+   */
+  jsonl?: Pick<JSONLProducerOptions, 'pingMs'>;
+  experimental?: {};
 }
 
 /**

@@ -6,7 +6,7 @@ on:
       - next
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false # true causes the workflow to cancel and look failed on `main` (which is done after a release)
 jobs:
   sync-downstream:
     runs-on: ubuntu-latest

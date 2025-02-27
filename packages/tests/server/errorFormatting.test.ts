@@ -1,12 +1,14 @@
-import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { TRPCClientError } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
-import { initTRPC, TRPCError } from '@trpc/server';
+import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
 import type {
   DefaultErrorData,
   DefaultErrorShape,
 } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
+import * as v1 from 'valibot1';
 import { z, ZodError } from 'zod';
 
 function isTRPCClientError<TRouter extends AnyRouter>(
@@ -121,6 +123,55 @@ describe('with custom error formatter', () => {
       }
     `);
   });
+});
+
+test('custom error formatter with standard schema v1 (valibot)', async () => {
+  const t = initTRPC.create({
+    errorFormatter(opts) {
+      return {
+        ...opts.shape,
+        data: {
+          ...opts.shape.data,
+          standardSchemaV1Error:
+            opts.error.cause instanceof StandardSchemaV1Error
+              ? {
+                  issues: opts.error.cause.issues,
+                }
+              : null,
+        },
+      };
+    },
+  });
+
+  const appRouter = t.router({
+    greeting: t.procedure.input(v1.number()).query((opts) => opts.input),
+  });
+
+  const ctx = routerToServerAndClientNew(appRouter);
+
+  const err = await waitError(
+    ctx.client.greeting.query(
+      // @ts-expect-error this should only accept a number
+      '123',
+    ),
+    TRPCClientError<typeof appRouter>,
+  );
+
+  assert(err.data?.standardSchemaV1Error);
+  expect(err.data.standardSchemaV1Error).toMatchInlineSnapshot(`
+    Object {
+      "issues": Array [
+        Object {
+          "expected": "number",
+          "input": "123",
+          "kind": "schema",
+          "message": "Invalid type: Expected number but received "123"",
+          "received": ""123"",
+          "type": "number",
+        },
+      ],
+    }
+  `);
 });
 
 describe('custom error sub-classes', () => {

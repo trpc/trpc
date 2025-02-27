@@ -1,10 +1,13 @@
 import { initTRPC } from '@trpc/server';
+import { transformer } from '../shared/transformer.js';
 
 /**
  * Initialization of tRPC backend
  * Should be done only once per backend!
  */
-const t = initTRPC.create();
+const t = initTRPC.create({
+  transformer,
+});
 
 /**
  * Export reusable router and procedure helpers

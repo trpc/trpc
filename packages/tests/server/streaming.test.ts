@@ -1,9 +1,6 @@
 import { EventEmitter } from 'node:events';
-import {
-  routerToServerAndClientNew,
-  waitError,
-  waitTRPCClientError,
-} from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
@@ -15,14 +12,18 @@ import {
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import {
-  createDeferred,
-  isAsyncIterable,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
+import { createDeferred, run } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
-import { zAsyncGenerator } from './zAsyncGenerator';
+import { zAsyncIterable } from './zAsyncIterable';
+
+async function waitTRPCClientError<TRoot extends InferrableClientTypes>(
+  fnOrPromise: Promise<unknown> | (() => unknown),
+) {
+  return waitError<TRPCClientError<TRoot>>(fnOrPromise, TRPCClientError);
+}
 
 describe('no transformer', () => {
   const orderedResults: number[] = [];
@@ -34,10 +35,9 @@ describe('no transformer', () => {
 
       const manualRelease = new Map<number, () => void>();
 
-      let iterableDeferred = createDeferred<void>();
+      let iterableDeferred = createDeferred();
       const nextIterable = () => {
         iterableDeferred.resolve();
-        iterableDeferred = createDeferred();
       };
       const yieldSpy = vi.fn((v: number) => v);
 
@@ -54,6 +54,19 @@ describe('no transformer', () => {
             );
             return opts.input.wait;
           }),
+        embedPromise: t.procedure.query(() => {
+          return {
+            deeply: run(async () => {
+              return {
+                nested: run(async () => {
+                  return {
+                    promise: Promise.resolve('foo'),
+                  };
+                }),
+              };
+            }),
+          };
+        }),
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
@@ -82,7 +95,7 @@ describe('no transformer', () => {
               .optional(),
           )
           .output(
-            zAsyncGenerator({
+            zAsyncIterable({
               yield: z.number(),
               return: z.string(),
             }),
@@ -90,7 +103,9 @@ describe('no transformer', () => {
           .query(async function* (opts) {
             for (let i = 0; i < 10; i++) {
               yield yieldSpy(i + 1);
+
               await iterableDeferred.promise;
+
               iterableDeferred = createDeferred();
             }
 
@@ -157,6 +172,21 @@ describe('no transformer', () => {
       await opts?.close?.();
     })
     .done();
+
+  test('server-side call', async () => {
+    const caller = ctx.router.createCaller({});
+    const iterable = await caller.iterable();
+    expectTypeOf(iterable).toEqualTypeOf<
+      AsyncIterable<number, string, unknown>
+    >();
+
+    const aggregated: number[] = [];
+    for await (const value of iterable) {
+      ctx.nextIterable();
+      aggregated.push(value);
+    }
+    expect(aggregated).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
 
   test('out-of-order streaming', async () => {
     const { client } = ctx;
@@ -245,7 +275,7 @@ describe('no transformer', () => {
     const iterable = await client.iterable.query();
 
     expectTypeOf(iterable).toEqualTypeOf<
-      AsyncGenerator<number, string, unknown>
+      AsyncIterable<number, string, unknown>
     >();
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
@@ -319,14 +349,13 @@ describe('no transformer', () => {
           2,
           3,
           4,
+          5,
         ]
       `);
     expect(err).toMatchInlineSnapshot(
-      `[Error: Invalid response or stream interrupted]`,
+      `[AbortError: The operation was aborted.]`,
     );
-    expect(err.message).toMatchInlineSnapshot(
-      `"Invalid response or stream interrupted"`,
-    );
+    expect(err.message).toMatchInlineSnapshot(`"The operation was aborted."`);
   });
 
   test('output validation iterable yield error', async () => {
@@ -391,6 +420,29 @@ describe('no transformer', () => {
     const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
     expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
     expect(serverError.message).toMatchInlineSnapshot(`""`);
+  });
+
+  test('embed promise', async () => {
+    const { client } = ctx;
+
+    const result = await client.embedPromise.query();
+
+    expectTypeOf(result).toEqualTypeOf<{
+      deeply: Promise<{
+        nested: Promise<{
+          promise: Promise<string>;
+        }>;
+      }>;
+    }>();
+
+    expect(result.deeply).toBeInstanceOf(Promise);
+    const deeply = await result.deeply;
+    expect(deeply.nested).toBeInstanceOf(Promise);
+    const nested = await deeply.nested;
+    expect(nested.promise).toBeInstanceOf(Promise);
+    const promise = await nested.promise;
+
+    expect(promise).toEqual('foo');
   });
 });
 
@@ -552,7 +604,7 @@ describe('with transformer', () => {
     const iterable = await client.iterable.query();
 
     expectTypeOf(iterable).toEqualTypeOf<
-      AsyncGenerator<number, string, unknown>
+      AsyncIterable<number, string, unknown>
     >();
 
     const aggregated: unknown[] = [];

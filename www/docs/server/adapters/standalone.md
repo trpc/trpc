@@ -89,6 +89,7 @@ createHTTPServer({
     console.log('context 3');
     return {};
   },
+  // basePath: '/trpc/', // optional, defaults to '/'
 }).listen(2022);
 ```
 
@@ -134,7 +135,7 @@ The `middleware` option will accept any function which resembles a connect/node.
 2. Use a solution to compose middlewares such as [connect](https://github.com/senchalabs/connect)
 3. Extend the Standalone `createHTTPHandler` with a custom http server (see below)
 
-## Going further
+## Adding a handler to an Custom HTTP server
 
 `createHTTPServer` is returning an instance of Node's built-in `http.Server`(https://nodejs.org/api/http.html#class-httpserver), which means that you have an access to all it's properties and APIs. However, if `createHTTPServer` isn't enough for your usecase, you can also use the standalone adapter's `createHTTPHandler` function to create your own HTTP server. For instance:
 
@@ -157,5 +158,80 @@ createServer((req, res) => {
    */
 
   handler(req, res);
-}).listen(3333);
+}).listen(3001);
+```
+
+## Custom base path to handle requests under {#custom-basePath}
+
+The Standalone adapter also supports a `basePath` option, which will slice the basePath from the beginning of the request path.
+
+```ts title='server.ts'
+import { createServer } from 'http';
+import { initTRPC } from '@trpc/server';
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
+
+const handler = createHTTPHandler({
+  router: appRouter,
+  basePath: '/trpc/',
+});
+
+createServer((req, res) => {
+  if (req.url?.startsWith('/trpc/')) {
+    return handler(req, res);
+  }
+  // [... insert your custom logic here ...]
+
+  res.statusCode = 404;
+  res.end('Not Found');
+}).listen(3001);
+```
+
+## HTTP2
+
+The Standalone adapter also supports HTTP/2.
+
+```ts title='server.ts'
+import http2 from 'http2';
+import { createHTTP2Handler } from '@trpc/server/adapters/standalone';
+import { appRouter } from './_app.ts';
+import { createContext } from './context.ts';
+
+const handler = createHTTP2Handler({
+  router: appRouter,
+  createContext,
+  // basePath: '/trpc/', // optional, defaults to '/'
+});
+
+const server = http2.createSecureServer(
+  {
+    key: '...',
+    cert: '...',
+  },
+  (req, res) => {
+    /**
+     * Handle the request however you like,
+     * just call the tRPC handler when you're ready
+     */
+    handler(req, res);
+  },
+);
+
+server.listen(3001);
+```
+
+```ts twoslash title='context.ts'
+import { CreateHTTP2ContextOptions } from '@trpc/server/adapters/standalone';
+
+export async function createContext(opts: CreateHTTP2ContextOptions) {
+  opts.req;
+  //    ^?
+  opts.res;
+  //    ^?
+
+  opts.info;
+  //    ^?
+  return {};
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
 ```

@@ -25,6 +25,7 @@ import type {
   NodeHTTPRequestHandlerOptions,
   NodeHTTPResponse,
 } from './types';
+import { writeResponse } from './writeResponse';
 
 /**
  * @internal
@@ -82,7 +83,7 @@ export async function nodeHTTPRequestHandler<
     });
     return handleViaMiddleware(opts.req, opts.res, (err: unknown) => {
       run(async () => {
-        const req = incomingMessageToRequest(opts.req, {
+        const request = incomingMessageToRequest(opts.req, opts.res, {
           maxBodySize: opts.maxBodySize ?? null,
         });
 
@@ -98,7 +99,7 @@ export async function nodeHTTPRequestHandler<
 
         const response = await resolveResponse({
           ...opts,
-          req,
+          req: request,
           error: err ? getTRPCErrorFromUnknown(err) : null,
           createContext,
           onError(o) {
@@ -109,50 +110,11 @@ export async function nodeHTTPRequestHandler<
           },
         });
 
-        const { res } = opts;
-        if (res.statusCode === 200) {
-          // if the status code is set, we assume that it's been manually overridden
-          res.statusCode = response.status;
-        }
-        for (const [key, value] of response.headers) {
-          res.setHeader(key, value);
-        }
-        if (response.body) {
-          const reader = response.body.getReader();
-          const onAbort = () => {
-            // cancelling the reader will cause the whole stream to be cancelled
-            reader.cancel().catch(() => {
-              // console.error('reader.cancel() error', err);
-            });
-          };
-          req.signal.addEventListener('abort', onAbort, {
-            once: true,
-          });
-
-          while (true) {
-            const { done, value } = await reader.read();
-
-            if (done) {
-              break;
-            }
-            if (!res.writable) {
-              break;
-            }
-            if (res.write(value) === false) {
-              await new Promise<void>((resolve) => {
-                res.once('drain', resolve);
-              });
-            }
-
-            // useful for debugging chunked responses:
-            // console.log('wrote', Buffer.from(value).toString());
-
-            // IMPORTANT - flush the response buffer, otherwise the client will not receive the data until `.end()`
-            res.flush?.();
-          }
-          req.signal.removeEventListener('abort', onAbort);
-        }
-        res.end();
+        await writeResponse({
+          request,
+          response,
+          rawResponse: opts.res,
+        });
       }).catch(internal_exceptionHandler(opts));
     });
   });

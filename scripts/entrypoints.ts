@@ -15,6 +15,7 @@ export type PackageJson = {
     overrides: Record<string, string>;
   };
   funding: string[];
+  peerDependencies: Record<string, string>;
 };
 
 // create directories on the way if they don't exist
@@ -116,8 +117,13 @@ export async function generateEntrypoints(rawInputs: string[]) {
 
   // Exclude test files in builds
   pkgJson.files.push('!**/*.test.*');
+  pkgJson.files.push('!**/__tests__');
   // Add `funding` in all packages
   pkgJson.funding = ['https://trpc.io/sponsor'];
+
+  // Add `peerDependencies` in all packages
+  pkgJson.peerDependencies ??= {};
+  pkgJson.peerDependencies['typescript'] = '>=5.7.2';
 
   // write package.json
   const formattedPkgJson = await prettier.format(JSON.stringify(pkgJson), {

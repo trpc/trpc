@@ -63,7 +63,7 @@ async function start() {
   });
 
   // we're done - make sure app closes with a clean exit
-  wsClient.close();
+  await wsClient.close();
 }
 
 void start();

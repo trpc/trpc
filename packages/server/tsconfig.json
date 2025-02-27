@@ -3,7 +3,7 @@
   "include": ["src"],
   "compilerOptions": {
     // https://github.com/tsconfig/bases/blob/main/bases/node18.json
-    "lib": ["es2023", "DOM", "DOM.Iterable"],
+    "lib": ["es2023", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
     "target": "es2022",
     "module": "Node16",
     "moduleResolution": "Node16"

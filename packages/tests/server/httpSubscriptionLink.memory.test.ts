@@ -9,11 +9,9 @@ const ctx = konn()
   .beforeEach(() => {
     const ee = new EventEmitter();
     const t = initTRPC.create({
-      experimental: {
-        sseSubscriptions: {
-          maxDurationMs: 1000,
-          ping: { enabled: true, intervalMs: 200 },
-        },
+      sse: {
+        maxDurationMs: 1000,
+        ping: { enabled: true, intervalMs: 200 },
       },
     });
 

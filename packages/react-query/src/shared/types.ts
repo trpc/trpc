@@ -11,15 +11,12 @@ import type {
 } from '@tanstack/react-query';
 import type {
   AnyRouter,
+  coerceAsyncIterableToArray,
   DistributiveOmit,
   MaybePromise,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { TRPCQueryKey } from '../internals/getQueryKey';
-import type {
-  coerceAsyncIterableToArray,
-  ExtractCursorType,
-  TRPCReactRequestOptions,
-} from './hooks/types';
+import type { ExtractCursorType, TRPCReactRequestOptions } from './hooks/types';
 
 export interface TRPCQueryBaseOptions {
   /**
@@ -60,7 +57,7 @@ export interface UndefinedTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
       TRPCQueryKey
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>>;
+  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>, TError>;
 }
 
 export interface DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
@@ -83,7 +80,7 @@ export interface DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TError>
       TRPCQueryKey
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TData>>;
+  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TData>, TError>;
 }
 
 export interface UnusedSkipTokenTRPCQueryOptionsIn<TQueryFnData, TData, TError>
@@ -109,7 +106,7 @@ export interface UnusedSkipTokenTRPCQueryOptionsOut<
       TRPCQueryKey
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>>;
+  queryKey: DataTag<TRPCQueryKey, coerceAsyncIterableToArray<TOutput>, TError>;
 }
 
 /**
@@ -150,7 +147,7 @@ export interface UndefinedTRPCInfiniteQueryOptionsOut<
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, TData>;
+  queryKey: DataTag<TRPCQueryKey, TData, TError>;
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
@@ -189,7 +186,7 @@ export interface DefinedTRPCInfiniteQueryOptionsOut<
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, TData>;
+  queryKey: DataTag<TRPCQueryKey, TData, TError>;
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
@@ -228,7 +225,7 @@ export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
       'initialPageParam'
     >,
     TRPCQueryOptionsResult {
-  queryKey: DataTag<TRPCQueryKey, TData>;
+  queryKey: DataTag<TRPCQueryKey, TData, TError>;
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 

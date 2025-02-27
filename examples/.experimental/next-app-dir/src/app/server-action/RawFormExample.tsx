@@ -10,7 +10,7 @@ export function RawFormExample() {
         If you don not pass an input, it will fail validation and not reach the
         procedure.
       </p>
-      <form action={testAction}>
+      <form action={testAction as any}>
         <input type="text" name="text" />
         <button type="submit">Run server action raw debugging</button>
       </form>

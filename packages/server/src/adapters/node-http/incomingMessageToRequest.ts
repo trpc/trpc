@@ -1,15 +1,9 @@
 import type * as http from 'http';
 import { TRPCError } from '../../@trpc/server';
-
-export interface IncomingMessageWithBody extends http.IncomingMessage {
-  /**
-   * Many adapters will add a `body` property to the incoming message and pre-parse the body
-   */
-  body?: unknown;
-}
+import type { NodeHTTPRequest, NodeHTTPResponse } from './types';
 
 function createBody(
-  req: http.IncomingMessage,
+  req: NodeHTTPRequest,
   opts: {
     /**
      * Max body size in bytes. If the body is larger than this, the request will be aborted
@@ -19,16 +13,16 @@ function createBody(
 ): RequestInit['body'] {
   // Some adapters will pre-parse the body and add it to the request object
   if ('body' in req) {
+    if (req.body === undefined) {
+      // If body property exists but is undefined, return undefined
+      return undefined;
+    }
     // If the body is already a string, return it directly
     if (typeof req.body === 'string') {
       return req.body;
     }
     // If body exists but isn't a string, stringify it as JSON
-    else if (req.body !== undefined) {
-      return JSON.stringify(req.body);
-    }
-    // If body property exists but is undefined, return undefined
-    return undefined;
+    return JSON.stringify(req.body);
   }
   let size = 0;
   let hasClosed = false;
@@ -71,14 +65,17 @@ function createBody(
     },
   });
 }
-export function createURL(req: http.IncomingMessage): URL {
+export function createURL(req: NodeHTTPRequest): URL {
   try {
     const protocol =
-      req.socket && 'encrypted' in req.socket && req.socket.encrypted
+      // http2
+      (req.headers[':scheme'] && req.headers[':scheme'] === 'https') ||
+      // http1
+      (req.socket && 'encrypted' in req.socket && req.socket.encrypted)
         ? 'https:'
         : 'http:';
 
-    const host = req.headers.host ?? 'localhost';
+    const host = req.headers.host ?? req.headers[':authority'] ?? 'localhost';
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return new URL(req.url!, `${protocol}//${host}`);
@@ -117,7 +114,8 @@ function createHeaders(incoming: http.IncomingHttpHeaders): Headers {
  * Convert an [`IncomingMessage`](https://nodejs.org/api/http.html#class-httpincomingmessage) to a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)
  */
 export function incomingMessageToRequest(
-  req: http.IncomingMessage,
+  req: NodeHTTPRequest,
+  res: NodeHTTPResponse,
   opts: {
     /**
      * Max body size in bytes. If the body is larger than this, the request will be aborted
@@ -128,12 +126,15 @@ export function incomingMessageToRequest(
   const ac = new AbortController();
 
   const onAbort = () => {
+    res.off('close', onAbort);
+    req.socket?.off?.('close', onAbort);
+
+    // abort the request
     ac.abort();
-    req.off('aborted', onAbort);
-    req.off('close', onAbort);
   };
-  req.once('aborted', onAbort);
-  req.socket?.once('close', onAbort);
+
+  res.once('close', onAbort);
+  req.socket?.once?.('close', onAbort);
 
   // Get host from either regular header or HTTP/2 pseudo-header
   const url = createURL(req);

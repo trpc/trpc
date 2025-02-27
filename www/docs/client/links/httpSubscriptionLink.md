@@ -251,6 +251,48 @@ const trpc = createTRPCClient<AppRouter>({
 });
 ```
 
+## Timeout Configuration {#timeout}
+
+The `httpSubscriptionLink` supports configuring a timeout for inactivity through the `reconnectAfterInactivityMs` option. If no messages (including ping messages) are received within the specified timeout period, the connection will be marked as "connecting" and automatically attempt to reconnect.
+
+The timeout configuration is set on the server side when initializing tRPC:
+
+```ts title="server/trpc.ts"
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create({
+  sse: {
+    client: {
+      reconnectAfterInactivityMs: 3_000,
+    },
+  },
+});
+```
+
+## Server Ping Configuration {#server-ping}
+
+The server can be configured to send periodic ping messages to keep the connection alive and prevent timeout disconnections. This is particularly useful when combined with the `reconnectAfterInactivityMs`-option.
+
+```ts title="server/trpc.ts"
+import { initTRPC } from '@trpc/server';
+
+export const t = initTRPC.create({
+  sse: {
+    // Maximum duration of a single SSE connection in milliseconds
+    // maxDurationMs: 60_00,
+    ping: {
+      // Enable periodic ping messages to keep connection alive
+      enabled: true,
+      // Send ping message every 2s
+      intervalMs: 2_000,
+    },
+    // client: {
+    //   reconnectAfterInactivityMs: 3_000
+    // }
+  },
+});
+```
+
 ## Compatibility (React Native) {#compatibility-react-native}
 
 The `httpSubscriptionLink` makes use of the `EventSource` API, Streams API, and `AsyncIterator`s, these are not natively supported by React Native and will have to be ponyfilled.
@@ -304,4 +346,45 @@ type HTTPSubscriptionLinkOptions<
         | EventSourceLike.InitDictOf<TEventSource>
         | Promise<EventSourceLike.InitDictOf<TEventSource>>);
 };
+```
+
+## SSE Options on the server
+
+```ts
+export interface SSEStreamProducerOptions<TValue = unknown> {
+  ping?: {
+    /**
+     * Enable ping comments sent from the server
+     * @default false
+     */
+    enabled: boolean;
+    /**
+     * Interval in milliseconds
+     * @default 1000
+     */
+    intervalMs?: number;
+  };
+  /**
+   * Maximum duration in milliseconds for the request before ending the stream
+   * @default undefined
+   */
+  maxDurationMs?: number;
+  /**
+   * End the request immediately after data is sent
+   * Only useful for serverless runtimes that do not support streaming responses
+   * @default false
+   */
+  emitAndEndImmediately?: boolean;
+  /**
+   * Client-specific options - these will be sent to the client as part of the first message
+   * @default {}
+   */
+  client?: {
+    /**
+     * Timeout and reconnect after inactivity in milliseconds
+     * @default undefined
+     */
+    reconnectAfterInactivityMs?: number;
+  };
+}
 ```

@@ -143,6 +143,7 @@ test('v1 request info', async () => {
           "isBatchCall": false,
           "signal": Object {},
           "type": "query",
+          "url": "https://localhost/request.info",
         },
       },
     }

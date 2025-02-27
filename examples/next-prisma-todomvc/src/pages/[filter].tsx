@@ -6,13 +6,11 @@ import type {
   GetStaticPropsContext,
   InferGetStaticPropsType,
 } from 'next';
-import { i18n } from 'next-i18next.config';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import 'todomvc-app-css/index.css';
 import 'todomvc-common/base.css';
-import { useLocale } from '~/utils/use-locale';
 import { InfoFooter } from '../components/footer';
 import type { AppRouter } from '../server/routers/_app';
 import { ssgInit } from '../server/ssg-init';
@@ -140,7 +138,6 @@ function ListItem(props: { task: Task }) {
 
 type PageProps = InferGetStaticPropsType<typeof getStaticProps>;
 export default function TodosPage(props: PageProps) {
-  const { t } = useLocale();
   /*
    * This data will be hydrated from the `prefetch` in `getStaticProps`. This means that the page
    * will be rendered with the data from the server and there'll be no client loading state 👍
@@ -221,7 +218,7 @@ export default function TodosPage(props: PageProps) {
 
           <input
             className="new-todo"
-            placeholder={t('what_needs_to_be_done') ?? ''}
+            placeholder="What needs to be done"
             autoFocus
             onKeyDown={(e) => {
               const text = e.currentTarget.value.trim();
@@ -243,7 +240,7 @@ export default function TodosPage(props: PageProps) {
               toggleAll.mutate({ completed: e.currentTarget.checked });
             }}
           />
-          <label htmlFor="toggle-all">{t('mark_all_as_complete')}</label>
+          <label htmlFor="toggle-all">Mark all as complete</label>
           <ul className="todo-list">
             {allTasks.data
               ?.filter(({ completed }) =>
@@ -260,7 +257,7 @@ export default function TodosPage(props: PageProps) {
         <footer className="footer">
           <span className="todo-count">
             <strong>{tasksLeft} </strong>
-            {tasksLeft == 1 ? t('task_left') : t('tasks_left')}
+            {tasksLeft == 1 ? 'task left' : 'tasks left'}
           </span>
 
           <ul className="filters">
@@ -270,7 +267,7 @@ export default function TodosPage(props: PageProps) {
                   href={'/' + filter}
                   className={filter == props.filter ? 'selected' : ''}
                 >
-                  {t(filter)[0].toUpperCase() + t(filter).slice(1)}
+                  {filter[0].toUpperCase() + filter.slice(1)}
                 </Link>
               </li>
             ))}
@@ -283,26 +280,22 @@ export default function TodosPage(props: PageProps) {
                 clearCompleted.mutate();
               }}
             >
-              {t('clear_completed')}
+              Clear completed
             </button>
           )}
         </footer>
       </section>
 
-      <InfoFooter locales={props.locales} filter={props.filter} />
+      <InfoFooter filter={props.filter} />
     </>
   );
 }
 
 const filters = ['all', 'active', 'completed'] as const;
 export const getStaticPaths: GetStaticPaths = async () => {
-  /**
-   * Warning: This can be very heavy if you have a lot of locales
-   * @see https://nextjs.org/docs/advanced-features/i18n-routing#dynamic-routes-and-getstaticprops-pages
-   */
-  const paths = filters.flatMap((filter) =>
-    i18n.locales.map((locale) => ({ params: { filter }, locale })),
-  );
+  const paths = filters.map((filter) => ({
+    params: { filter },
+  }));
 
   return {
     paths,
@@ -319,8 +312,6 @@ export const getStaticProps = async (context: GetStaticPropsContext) => {
     props: {
       trpcState: ssg.dehydrate(),
       filter: (context.params?.filter as string) ?? 'all',
-      locale: context.locale ?? context.defaultLocale,
-      locales: context.locales ?? ['sv', 'en'],
     },
     revalidate: 1,
   };

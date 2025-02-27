@@ -25,5 +25,5 @@
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitOverride": true
   },
-  "exclude": ["test", "**/*.test.ts", "**/*.test.tsx"]
+  "exclude": ["test", "**/*.test.ts", "**/*.test.tsx", "__tests__"]
 }

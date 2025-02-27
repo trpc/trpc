@@ -76,6 +76,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
     }>;
 
     const config: RootConfig<$Root> = {
+      ...opts,
       transformer: getDataTransformer(opts?.transformer ?? defaultTransformer),
       isDev:
         opts?.isDev ??
@@ -89,7 +90,6 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
        * @internal
        */
       $types: null as any,
-      experimental: opts?.experimental ?? {},
     };
 
     {

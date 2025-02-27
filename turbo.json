@@ -1,6 +1,11 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  "globalDependencies": [".eslintrc.config.js", "tsconfig.json", "scripts/**"],
+  "globalDependencies": [
+    ".eslintrc.config.js",
+    "tsconfig.json",
+    "tsconfig.build.json",
+    "scripts/**"
+  ],
   "globalEnv": [
     "CI",
     "NODE_ENV",
@@ -12,7 +17,7 @@
   "tasks": {
     "codegen-entrypoints": {},
     "codegen-tests": {
-      "outputs": ["server/__generated__/bigBoi/**"]
+      "outputs": ["*/__generated__/bigBoi/**"]
     },
     "prebuild": {
       "cache": false
@@ -48,6 +53,10 @@
       "cache": false
     },
     "test-ci": {
+      "dependsOn": ["^build", "codegen-tests"],
+      "cache": false
+    },
+    "test-run:tsc": {
       "dependsOn": ["^build", "codegen-tests"],
       "cache": false
     },

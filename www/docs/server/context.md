@@ -30,16 +30,15 @@ export const createContext = async (opts: CreateNextContextOptions) => {
   };
 };
 
-const t1 = initTRPC.context<typeof createContext>().create();
-// @noErrors
-t1.procedure.use(({ ctx }) => { ... });
-//                  ^?
+export type Context = Awaited<ReturnType<typeof createContext>>;
+const t = initTRPC.context<Context>().create();
 
-type Context = Awaited<ReturnType<typeof createContext>>;
-const t2 = initTRPC.context<Context>().create();
-// @noErrors
-t2.procedure.use(({ ctx }) => { ... });
-//                  ^?
+t.procedure.use((opts) => {
+  opts.ctx;
+  //    ^?
+
+  return opts.next();
+});
 ```
 
 ## Creating the context

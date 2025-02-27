@@ -52,7 +52,7 @@ export function createForm<TDef extends ActionHandlerDef>(opts: {
       <FormProvider {...hook}>
         <form
           {...passThrough}
-          action={opts.action}
+          action={opts.action as any}
           ref={ref}
           onSubmit={hook.handleSubmit(() =>
             action.mutateAsync(new FormData(ref.current!) as any),

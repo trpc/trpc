@@ -5,11 +5,11 @@ import {
   httpBatchLink,
   httpLink,
   loggerLink,
+  retryLink,
   TRPCClientError,
   unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { createChain } from '@trpc/client/links/internals/createChain';
-import { retryLink } from '@trpc/client/links/internals/retryLink';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { observable, observableToPromise } from '@trpc/server/observable';
@@ -32,13 +32,13 @@ test('chainer', async () => {
     }),
   });
 
-  const { httpPort, close } = routerToServerAndClientNew(router);
+  const { httpUrl, close } = routerToServerAndClientNew(router);
 
   const chain = createChain({
     links: [
       retryLink({ retry: (opts) => opts.attempts <= 3 })(mockRuntime),
       httpLink({
-        url: `http://localhost:${httpPort}`,
+        url: httpUrl,
       })(mockRuntime),
     ],
     op: {
@@ -115,7 +115,7 @@ describe('batching', () => {
       }),
     });
 
-    const { httpPort, close } = routerToServerAndClientNew(router, {
+    const { httpUrl, close } = routerToServerAndClientNew(router, {
       server: {
         createContext() {
           metaCall();
@@ -125,7 +125,7 @@ describe('batching', () => {
     });
     const links = [
       httpBatchLink({
-        url: `http://localhost:${httpPort}`,
+        url: httpUrl,
       })(mockRuntime),
     ];
     const chain1 = createChain({
@@ -232,7 +232,7 @@ describe('batching', () => {
         }),
     });
 
-    const { httpPort, close } = routerToServerAndClientNew(router, {
+    const { httpUrl, close } = routerToServerAndClientNew(router, {
       server: {
         createContext() {
           metaCall();
@@ -242,7 +242,7 @@ describe('batching', () => {
     });
     const links = [
       unstable_httpBatchStreamLink({
-        url: `http://localhost:${httpPort}`,
+        url: httpUrl,
       })(mockRuntime),
     ];
     const chain1 = createChain({
@@ -389,7 +389,7 @@ describe('batching', () => {
       }),
     });
 
-    const { close, router, httpPort, trpcClientOptions } =
+    const { close, router, httpUrl, trpcClientOptions } =
       routerToServerAndClientNew(appRouter, {
         server: {
           allowBatching: false,
@@ -399,7 +399,7 @@ describe('batching', () => {
       ...trpcClientOptions,
       links: [
         httpBatchLink({
-          url: `http://localhost:${httpPort}`,
+          url: httpUrl,
           headers: {},
         }),
       ],
@@ -429,7 +429,7 @@ test('create client with links', async () => {
     }),
   });
 
-  const { close, router, httpPort, trpcClientOptions } =
+  const { close, router, httpUrl, trpcClientOptions } =
     routerToServerAndClientNew(appRouter);
 
   const client = createTRPCClient<typeof router>({
@@ -437,7 +437,7 @@ test('create client with links', async () => {
     links: [
       retryLink({ retry: (opts) => opts.attempts < 3 }),
       httpLink({
-        url: `http://localhost:${httpPort}`,
+        url: httpUrl,
         headers: {},
       }),
     ],
@@ -816,8 +816,8 @@ test('init with URL object', async () => {
     }),
   });
 
-  const { httpPort, close } = routerToServerAndClientNew(router);
-  const url = new URL(`http://localhost:${httpPort}`);
+  const { httpUrl, close } = routerToServerAndClientNew(router);
+  const url = new URL(httpUrl);
 
   const chain = createChain({
     links: [httpLink({ url: url })(mockRuntime)],

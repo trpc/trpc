@@ -1,5 +1,5 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew, waitMs } from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
 import { waitFor } from '@testing-library/react';
 import type { TRPCClientError, WebSocketClientOptions } from '@trpc/client';
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
@@ -8,12 +8,15 @@ import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import type { Observable, Observer } from '@trpc/server/observable';
-import { observable } from '@trpc/server/observable';
+import { observable, observableToAsyncIterable } from '@trpc/server/observable';
 import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
 } from '@trpc/server/rpc';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  sleep,
+} from '@trpc/server/unstable-core-do-not-import';
 import type {
   LegacyObservableSubscriptionProcedure,
   SubscriptionProcedure,
@@ -22,6 +25,13 @@ import { run } from '@trpc/server/unstable-core-do-not-import/utils';
 import { konn } from 'konn';
 import WebSocket from 'ws';
 import { z } from 'zod';
+
+/**
+ * @deprecated should not be needed - use deferred instead
+ */
+async function waitMs(ms: number) {
+  await new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
 
 type Message = {
   id: string;
@@ -45,7 +55,7 @@ function factory(config?: {
 
   const t = initTRPC.create();
 
-  let iterableDeferred = createDeferred<void>();
+  let iterableDeferred = createDeferred();
   const nextIterable = () => {
     iterableDeferred.resolve();
     iterableDeferred = createDeferred();
@@ -56,10 +66,9 @@ function factory(config?: {
       return `hello ${input ?? 'world'}`;
     }),
 
-    slow: t.procedure.mutation(async ({}) => {
+    mut: t.procedure.mutation(async ({}) => {
       onSlowMutationCalled();
-      await waitMs(50);
-      return 'slow query resolved';
+      return 'mutation resolved';
     }),
     iterable: t.procedure
       .input(
@@ -153,7 +162,7 @@ function factory(config?: {
 
   const opts = routerToServerAndClientNew(appRouter, {
     wsClient: {
-      retryDelayMs: () => 10,
+      retryDelayMs: () => 50,
       onOpen: onOpenMock,
       onError: onErrorMock,
       onClose: onCloseMock,
@@ -631,16 +640,16 @@ test('wait for slow queries/mutations before disconnecting', async () => {
   await waitFor(() => {
     expect(wsClient.connection?.state === 'open').toBe(true);
   });
-  const promise = client.slow.mutate();
+  const promise = client.mut.mutate();
   await waitFor(() => {
     expect(onSlowMutationCalled).toHaveBeenCalledTimes(1);
   });
   const conn = wsClient.connection!;
   wsClient.close();
-  expect(await promise).toMatchInlineSnapshot(`"slow query resolved"`);
+  expect(await promise).toMatchInlineSnapshot(`"mutation resolved"`);
 
   await waitFor(() => {
-    expect(conn.ws!.readyState).toBe(WebSocket.CLOSED);
+    expect(conn.ws.readyState).toBe(WebSocket.CLOSED);
   });
   await close();
 });
@@ -651,15 +660,14 @@ test('requests get aborted if called before connection is established and reques
   await waitFor(() => {
     expect(wsClient.connection?.state === 'open').toBe(true);
   });
-  const promise = client.slow.mutate();
+  const promise = client.mut.mutate();
   const conn = wsClient.connection;
   wsClient.close();
   await expect(promise).rejects.toMatchInlineSnapshot(
     '[TRPCClientError: Closed before connection was established]',
   );
-  await close();
   await waitFor(() => {
-    expect(conn!.ws!.readyState).toBe(WebSocket.CLOSED);
+    expect(conn!.ws.readyState).toBe(WebSocket.CLOSED);
   });
   await close();
 });
@@ -1117,7 +1125,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
       jsonrpc: '2.0',
       method: 'mutation',
       params: {
-        path: 'slow',
+        path: 'mut',
         input: undefined,
       },
     };
@@ -1137,7 +1145,7 @@ describe('include "jsonrpc" in response if sent with message', () => {
         "id": 1,
         "jsonrpc": "2.0",
         "result": Object {
-          "data": "slow query resolved",
+          "data": "mutation resolved",
           "type": "data",
         },
       }
@@ -1348,12 +1356,12 @@ describe('lazy mode', () => {
     const sub = client.onMessageObservable.subscribe(undefined, {
       onData: onDataMock,
     });
-    expect(wsClient.connection).not.toBe(null);
 
     expect(ctx.onOpenMock).toHaveBeenCalledTimes(0);
     await waitFor(() => {
-      expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
+      expect(wsClient.connection).not.toBe(null);
     });
+    expect(ctx.onOpenMock).toHaveBeenCalledTimes(1);
 
     // emit a message, check that we receive it
     ctx.ee.emit('server:msg', {
@@ -1594,11 +1602,11 @@ describe('keep alive from the client', () => {
 
     await vi.advanceTimersByTimeAsync(1);
     await new Promise((resolve) => {
-      ctx.wsClient.connection!.ws!.addEventListener('open', resolve);
+      ctx.wsClient.connection!.ws.addEventListener('open', resolve);
     });
 
     let pong = false;
-    ctx.wsClient.connection!.ws!.addEventListener('message', (msg) => {
+    ctx.wsClient.connection!.ws.addEventListener('message', (msg) => {
       if (msg.data == 'PONG') {
         pong = true;
       }
@@ -1640,11 +1648,11 @@ describe('keep alive from the client', () => {
 
     await vi.advanceTimersByTimeAsync(1);
     await new Promise((resolve) => {
-      ctx.wsClient.connection!.ws!.addEventListener('open', resolve);
+      ctx.wsClient.connection!.ws.addEventListener('open', resolve);
     });
 
     let pong = false;
-    ctx.wsClient.connection!.ws!.addEventListener('message', (msg) => {
+    ctx.wsClient.connection!.ws.addEventListener('message', (msg) => {
       if (msg.data === 'PONG') {
         pong = true;
       }
@@ -1656,7 +1664,10 @@ describe('keep alive from the client', () => {
 
     expect(pong).toBe(false);
 
-    expect(onClose).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
 
     await ctx.close();
   });
@@ -1681,6 +1692,12 @@ describe('auth / connectionParams', async () => {
   const appRouter = t.router({
     whoami: t.procedure.query((opts) => {
       return opts.ctx.user;
+    }),
+    iterable: t.procedure.subscription(async function* () {
+      await new Promise((_resolve) => {
+        // Intentionally never resolve to keep subscription active
+      });
+      yield null;
     }),
   });
 
@@ -1751,6 +1768,66 @@ describe('auth / connectionParams', async () => {
 
     expect(result).toEqual(USER_MOCK);
   });
+
+  test('with async auth', async () => {
+    const wsClient = createWSClient({
+      url: ctx.wssUrl,
+      connectionParams: async () => {
+        await sleep(500);
+        return {
+          token: USER_TOKEN,
+        };
+      },
+    });
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        wsLink({
+          client: wsClient,
+        }),
+      ],
+    });
+    const result = await client.whoami.query();
+
+    expect(result).toEqual(USER_MOCK);
+  });
+
+  test('reconnect with async auth and pending subscriptions', async () => {
+    const onConnectionOpen = vi.fn();
+    const onSubscriptionStarted = vi.fn();
+
+    const wsClient = createWSClient({
+      url: ctx.wssUrl,
+      connectionParams: async () => {
+        await sleep(500);
+        return {
+          token: USER_TOKEN,
+        };
+      },
+      onOpen: onConnectionOpen,
+    });
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        wsLink({
+          client: wsClient,
+        }),
+      ],
+    });
+    client.iterable.subscribe(undefined, {
+      onStarted: onSubscriptionStarted,
+    });
+    await waitFor(() => {
+      expect(onConnectionOpen).toHaveBeenCalledTimes(1);
+      expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
+    });
+
+    ctx.wssHandler.broadcastReconnectNotification();
+
+    await waitFor(() => {
+      expect(onConnectionOpen).toHaveBeenCalledTimes(2);
+      expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
+    });
+    expect(ctx.wss.clients.size).toBe(1);
+  });
 });
 
 describe('subscriptions with createCaller', () => {
@@ -1760,7 +1837,7 @@ describe('subscriptions with createCaller', () => {
     expectTypeOf(ctx.router.onMessageIterable).toEqualTypeOf<
       SubscriptionProcedure<{
         input: string | null | undefined;
-        output: AsyncGenerator<Message, void, any>;
+        output: AsyncIterable<Message, void, any>;
       }>
     >();
     const abortController = new AbortController();
@@ -1863,4 +1940,220 @@ describe('subscriptions with createCaller', () => {
       expect(ctx.subscriptionEnded).toHaveBeenCalledTimes(1);
     });
   });
+});
+
+test('url callback and connection params is invoked for every reconnect', async () => {
+  const ctx = factory({
+    wsClient: {
+      lazy: {
+        enabled: true,
+        closeMs: 0,
+      },
+    },
+  });
+
+  let urlCalls = 0;
+  let connectionParamsCalls = 0;
+  const client = createWSClient({
+    url: () => {
+      urlCalls++;
+      return ctx.wssUrl;
+    },
+    connectionParams() {
+      connectionParamsCalls++;
+      return {};
+    },
+  });
+
+  async function waitForClientState<
+    T extends TRPCConnectionState<unknown>['state'],
+  >(state: T) {
+    for await (const res of observableToAsyncIterable(
+      client.connectionState,
+      new AbortController().signal,
+    )) {
+      if (res.state === state) {
+        return res as Extract<typeof res, { state: T }>;
+      }
+    }
+    throw new Error();
+  }
+
+  await waitForClientState('pending');
+  expect(urlCalls).toBe(1);
+  expect(connectionParamsCalls).toBe(1);
+
+  // destroy connections to force a reconnect
+  ctx.destroyConnections();
+
+  // it'll be connecting with an error
+  const state = await waitForClientState('connecting');
+  expect(state.error).toMatchInlineSnapshot(
+    `[TRPCClientError: WebSocket closed]`,
+  );
+
+  // it'll reconnect and be pending
+  await waitForClientState('pending');
+
+  expect(urlCalls).toBe(2);
+  expect(connectionParamsCalls).toBe(2);
+});
+
+test('active subscription while querying', async () => {
+  const { client, close, ee } = factory();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+
+  const subscription = client.onMessageIterable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataMock(data);
+    },
+  });
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+  });
+
+  ee.emit('server:msg', {
+    id: '1',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+  });
+
+  // ensure we can do a query while having an active subscription
+  const result = await client.greeting.query('hello');
+  expect(result).toMatchInlineSnapshot(`"hello hello"`);
+
+  ee.emit('server:msg', {
+    id: '2',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(2);
+  });
+
+  // Make sure it didn't reconnect or whatever
+  expect(onStartedMock).toHaveBeenCalledTimes(1);
+
+  subscription.unsubscribe();
+
+  await waitFor(() => {
+    expect(ee.listenerCount('server:msg')).toBe(0);
+    expect(ee.listenerCount('server:error')).toBe(0);
+  });
+
+  await close();
+});
+
+test('lazy connection where the first connection fails', async () => {
+  const ctx = factory({
+    wsClient: {
+      lazy: {
+        enabled: true,
+        closeMs: 0,
+      },
+    },
+  });
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+
+  // Close the server before
+  await ctx.close();
+  const subscription = ctx.client.onMessageIterable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataMock(data);
+    },
+  });
+
+  // Wait for the first connection to fail
+  await new Promise<void>((resolve) => {
+    const sub = ctx.wsClient.connectionState.subscribe({
+      next(state) {
+        if (state.state === 'connecting' && state.error) {
+          resolve();
+          sub.unsubscribe();
+        }
+      },
+    });
+  });
+
+  ctx.open();
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+  });
+
+  ctx.ee.emit('server:msg', {
+    id: '1',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+  });
+
+  subscription.unsubscribe();
+
+  await ctx.close();
+});
+
+test('connection where the first connection fails', async () => {
+  const ctx = factory();
+  const onStartedMock = vi.fn();
+  const onDataMock = vi.fn();
+
+  // Close the server before the client has a chance to connect
+  await ctx.close();
+
+  const subscription = ctx.client.onMessageIterable.subscribe(undefined, {
+    onStarted() {
+      onStartedMock();
+    },
+    onData(data) {
+      expectTypeOf(data).not.toBeAny();
+      expectTypeOf(data).toMatchTypeOf<Message>();
+      onDataMock(data);
+    },
+  });
+
+  // Wait for the first connection to fail
+  await new Promise<void>((resolve) => {
+    const sub = ctx.wsClient.connectionState.subscribe({
+      next(state) {
+        if (state.state === 'connecting' && state.error) {
+          resolve();
+          sub.unsubscribe();
+        }
+      },
+    });
+  });
+
+  ctx.open();
+
+  await waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+  });
+
+  ctx.ee.emit('server:msg', {
+    id: '1',
+  });
+
+  await waitFor(() => {
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+  });
+
+  subscription.unsubscribe();
+
+  await ctx.close();
 });

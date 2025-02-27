@@ -126,6 +126,61 @@ Since subscriptions are async iterators, you can use the same validation techniq
 
 Have a look at the [subscriptions guide](subscriptions.md#output-validation) for more information.
 
+## Non-JSON Content Types
+
+In addition to JSON-serializable data, tRPC can be used with FormData, File, and other Binary types
+
+### `FormData` Input
+
+FormData is natively supported, and for more advanced usage you could also combine this with a library like [zod-form-data](https://www.npmjs.com/package/zod-form-data) to validate inputs in a type-safe way.
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+// ---cut---
+
+// Our examples use Zod by default, but usage with other libraries is identical
+import { z } from 'zod';
+
+export const t = initTRPC.create();
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure.input(z.instanceof(FormData)).query((opts) => {
+    const data = opts.input;
+    //    ^?
+    return {
+      greeting: `Hello ${data.get('name')}`,
+    };
+  }),
+});
+```
+
+### `File` and other Binary Type Inputs
+
+tRPC converts many octet content types to a `ReadableStream` which can be consumed in a procedure. Currently these are `Blob` `Uint8Array` and `File` but more can be added easily.
+
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+// ---cut---
+
+import { octetInputParser } from '@trpc/server/http';
+
+export const t = initTRPC.create();
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  upload: publicProcedure.input(octetInputParser).query((opts) => {
+    const data = opts.input;
+    //    ^?
+    return {
+      valid: true,
+    };
+  }),
+});
+```
+
 ## The most basic validator: a function
 
 You can define a validator without any 3rd party dependencies, with a function.
@@ -330,15 +385,12 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  hello: publicProcedure
-    .input(type({ name: 'string' }).assert)
-    .output(type({ greeting: 'string' }).assert)
-    .query(({ input }) => {
-      //      ^?
-      return {
-        greeting: `hello ${input.name}`,
-      };
-    }),
+  hello: publicProcedure.input(type({ name: 'string' })).query(({ input }) => {
+    //      ^?
+    return {
+      greeting: `hello ${input.name}`,
+    };
+  }),
 });
 
 export type AppRouter = typeof appRouter;
@@ -371,6 +423,8 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+<!-- runtypes example is broken -->
+<!--
 ### With [runtypes](https://github.com/pelotom/runtypes)
 
 ```ts twoslash
@@ -393,7 +447,7 @@ export const appRouter = t.router({
 });
 
 export type AppRouter = typeof appRouter;
-```
+``` -->
 
 ### With [Valibot](https://github.com/fabian-hiller/valibot)
 
@@ -407,8 +461,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(v.parser(v.object({ name: v.string() })))
-    .output(v.parser(v.object({ greeting: v.string() })))
+    .input(v.object({ name: v.string() }))
+    .output(v.object({ greeting: v.string() }))
     .query(({ input }) => {
       //      ^?
       return {

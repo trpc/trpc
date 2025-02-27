@@ -1,4 +1,5 @@
-import { routerToServerAndClientNew, waitError } from '../___testHelpers';
+import { routerToServerAndClientNew } from '../___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import type { TRPCClientError } from '@trpc/client';
 import { httpLink } from '@trpc/client';
 import type { TRPCError } from '@trpc/server';

@@ -262,6 +262,10 @@ h5 {
   @apply font-semibold;
 }
 
+.theme-admonition-note a {
+  @apply dark:text-sky-300 dark:hover:text-sky-400;
+}
+
 /**
  * Disable underline for some links
  **/
@@ -294,6 +298,10 @@ h5 {
 
 [data-theme='dark'] .shiki .code-title {
   @apply border-zinc-700;
+}
+
+[data-theme='dark'] .shiki.min-light {
+  display: none;
 }
 
 [data-theme='light'] .shiki.min-light-with-diff .popover {

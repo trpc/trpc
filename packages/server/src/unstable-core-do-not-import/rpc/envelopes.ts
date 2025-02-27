@@ -63,14 +63,15 @@ export interface TRPCRequest
 
 export interface TRPCResult<TData = unknown> {
   data: TData;
+  type?: 'data';
+  /**
+   * The id of the message to keep track of in case of a reconnect
+   */
+  id?: string;
 }
 
 export interface TRPCSuccessResponse<TData>
-  extends JSONRPC2.ResultResponse<
-    TRPCResult<TData> & {
-      type?: 'data';
-    }
-  > {}
+  extends JSONRPC2.ResultResponse<TRPCResult<TData>> {}
 
 export interface TRPCErrorResponse<
   TError extends TRPCErrorShape = TRPCErrorShape,
@@ -111,13 +112,7 @@ export interface TRPCResultMessage<TData>
   extends JSONRPC2.ResultResponse<
     | { type: 'started'; data?: never }
     | { type: 'stopped'; data?: never }
-    | (TRPCResult<TData> & {
-        type: 'data';
-        /**
-         * The id of the message to keep track of in case of a reconnect
-         */
-        id?: string;
-      })
+    | TRPCResult<TData>
   > {}
 
 export type TRPCResponseMessage<

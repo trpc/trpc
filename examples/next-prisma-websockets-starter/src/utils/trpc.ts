@@ -10,7 +10,7 @@ import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { inferRouterOutputs } from '@trpc/server';
 import type { NextPageContext } from 'next';
 import getConfig from 'next/config';
-import type { AppRouter } from 'server/routers/_app';
+import type { AppRouter } from '~/server/routers/_app';
 import superjson from 'superjson';
 
 // ℹ️ Type-only import:

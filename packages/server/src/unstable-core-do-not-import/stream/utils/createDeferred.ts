@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-export function createDeferred<TValue>() {
+export function createDeferred<TValue = void>() {
   let resolve: (value: TValue) => void;
   let reject: (error: unknown) => void;
   const promise = new Promise<TValue>((res, rej) => {

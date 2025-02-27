@@ -115,6 +115,37 @@ export const subRouter = router({
 });
 ```
 
+## Stopping a subscription from the server {#stopping-from-server}
+
+If you need to stop a subscription from the server, simply `return` in the generator function.
+
+```ts
+import { publicProcedure, router } from '../trpc';
+
+export const subRouter = router({
+  onPostAdd: publicProcedure
+    .input(
+      z.object({
+        lastEventId: z.string().coerce.number().min(0).optional(),
+      }),
+    )
+    .subscription(async function* (opts) {
+      let index = opts.input.lastEventId ?? 0;
+      while (true) {
+        const idx = index++;
+        if (idx > 100) {
+          // With this, the subscription will stop and the client will disconnect
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+    }
+  }),
+});
+```
+
+On the client, you just `.unsubscribe()` the subscription.
+
 ## Cleanup of side effects
 
 If you need to clean up any side-effects of your subscription you can use the [`try...finally`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/return#using_return_with_try...finally) pattern, as `trpc` invokes the `.return()` of the Generator Instance when the subscription stops for any reason.
@@ -147,9 +178,9 @@ export const subRouter = router({
 
 ## Error handling
 
-Throwing an error in a generator function propagates to `trpc`'s `onError()` on the backend, but the error will not be sent to the client - the client will automatically reconnect based on the last event id that is [tracked using `tracked()`](#tracked).
+Throwing an error in a generator function propagates to `trpc`'s `onError()` on the backend.
 
-If this is surprising behavior to you and you have a finite amount of data to send, you should consider using [httpBatchStreamLink](../client/links/httpBatchStreamLink.md) instead.
+If the error thrown is a 5xx error, the client will automatically attempt to reconnect based on the last event id that is [tracked using `tracked()`](#tracked). For other errors, the subscription will be cancelled and propagate to the `onError()` callback.
 
 ## Output validation {#output-validation}
 
@@ -157,7 +188,7 @@ Since subscriptions are async iterators, you have to go through the iterator to 
 
 ### Example with zod
 
-```ts title="zAsyncGenerator.ts"
+```ts title="zAsyncIterable.ts"
 import type { TrackedEnvelope } from '@trpc/server';
 import { isTrackedEnvelope, tracked } from '@trpc/server';
 import { z } from 'zod';
@@ -171,12 +202,12 @@ const trackedEnvelopeSchema =
   z.custom<TrackedEnvelope<unknown>>(isTrackedEnvelope);
 
 /**
- * A Zod schema helper designed specifically for validating async generators. This schema ensures that:
+ * A Zod schema helper designed specifically for validating async iterables. This schema ensures that:
  * 1. The value being validated is an async iterable.
  * 2. Each item yielded by the async iterable conforms to a specified type.
  * 3. The return value of the async iterable, if any, also conforms to a specified type.
  */
-export function zAsyncGenerator<
+export function zAsyncIterable<
   TYieldIn,
   TYieldOut,
   TReturnIn = void,
@@ -200,34 +231,39 @@ export function zAsyncGenerator<
 }) {
   return z
     .custom<
-      AsyncGenerator<
+      AsyncIterable<
         Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
         TReturnIn
       >
     >((val) => isAsyncIterable(val))
     .transform(async function* (iter) {
       const iterator = iter[Symbol.asyncIterator]();
-      let next;
-      while ((next = await iterator.next()) && !next.done) {
-        if (opts.tracked) {
-          const [id, data] = trackedEnvelopeSchema.parse(next.value);
-          yield tracked(id, await opts.yield.parseAsync(data));
-          continue;
+
+      try {
+        let next;
+        while ((next = await iterator.next()) && !next.done) {
+          if (opts.tracked) {
+            const [id, data] = trackedEnvelopeSchema.parse(next.value);
+            yield tracked(id, await opts.yield.parseAsync(data));
+            continue;
+          }
+          yield opts.yield.parseAsync(next.value);
         }
-        yield opts.yield.parseAsync(next.value);
+        if (opts.return) {
+          return await opts.return.parseAsync(next.value);
+        }
+        return;
+      } finally {
+        await iterator.return?.();
       }
-      if (opts.return) {
-        return await opts.return.parseAsync(next.value);
-      }
-      return;
     }) as z.ZodType<
-    AsyncGenerator<
+    AsyncIterable<
       Tracked extends true ? TrackedEnvelope<TYieldIn> : TYieldIn,
       TReturnIn,
       unknown
     >,
     any,
-    AsyncGenerator<
+    AsyncIterable<
       Tracked extends true ? TrackedEnvelope<TYieldOut> : TYieldOut,
       TReturnOut,
       unknown
@@ -240,7 +276,7 @@ Now you can use this helper to validate the output of your subscription procedur
 
 ```ts title="_app.ts"
 import { publicProcedure, router } from '../trpc';
-import { zAsyncGenerator } from './zAsyncGenerator';
+import { zAsyncIterable } from './zAsyncIterable';
 
 export const appRouter = router({
   mySubscription: publicProcedure
@@ -250,7 +286,7 @@ export const appRouter = router({
       }),
     )
     .output(
-      zAsyncGenerator({
+      zAsyncIterable({
         yield: z.object({
           count: z.number(),
         }),

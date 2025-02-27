@@ -174,6 +174,9 @@ export type TypeError<TMessage extends string> = TMessage & {
 };
 export type ValueOf<TObj> = TObj[keyof TObj];
 
+export type coerceAsyncIterableToArray<TValue> =
+  TValue extends AsyncIterable<infer $Inferred> ? $Inferred[] : TValue;
+
 /**
  * @internal
  * Infers the type of the value yielded by an async iterable

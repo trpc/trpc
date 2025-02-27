@@ -1,11 +1,11 @@
 import { EventEmitter, on } from 'node:events';
+import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';
-import { abortSignalsAnyPonyfill, run, sleep } from '../utils';
+import { run, sleep } from '../utils';
 import { sseHeaders, sseStreamConsumer, sseStreamProducer } from './sse';
 import { isTrackedEnvelope, sse, tracked } from './tracked';
-import { createServer } from './utils/createServer';
 
 (global as any).EventSource = NativeEventSource || EventSourcePolyfill;
 
@@ -21,9 +21,10 @@ export const suppressLogs = () => {
     console.error = error;
   };
 };
+
 test('e2e, server-sent events (SSE)', async () => {
-  async function* data(lastEventId?: Maybe<number>) {
-    let i = lastEventId ?? 0;
+  async function* data(lastEventId: string | undefined) {
+    let i = lastEventId ? Number(lastEventId) : 0;
     while (true) {
       i++;
       yield tracked(String(i), i);
@@ -34,64 +35,48 @@ test('e2e, server-sent events (SSE)', async () => {
   type Data = inferAsyncIterableYield<ReturnType<typeof data>>;
 
   const written: string[] = [];
-  const server = createServer(async (req, res) => {
-    const url = new URL(`http://${req.headers.host}${req.url}`);
 
-    const stringOrNull = (v: unknown) => {
-      if (typeof v === 'string') {
-        return v;
-      }
-      return null;
-    };
-    const stringToNumber = (v: string | null) => {
-      if (v === null) {
-        return null;
-      }
-      const num = Number(v);
-      if (Number.isNaN(num)) {
-        return null;
-      }
-      return num;
-    };
+  await using server = fetchServerResource(async (request) => {
+    const url = new URL(request.url);
+
     const lastEventId: string | null =
-      stringOrNull(req.headers['last-event-id']) ??
+      request.headers.get('last-event-id') ??
       url.searchParams.get('lastEventId') ??
       url.searchParams.get('Last-Event-Id');
 
-    const asNumber = stringToNumber(lastEventId);
-
     const stream = sseStreamProducer({
-      data: data(asNumber),
+      data: data(lastEventId ?? undefined),
       serialize: (v) => SuperJSON.serialize(v),
-      abortCtrl: new AbortController(),
-    });
-    const reader = stream.getReader();
-    for (const [key, value] of Object.entries(sseHeaders)) {
-      res.setHeader(key, value);
-    }
+    })
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(
+        // debug stream
+        new TransformStream({
+          transform(chunk, controller) {
+            written.push(chunk);
+            controller.enqueue(chunk);
+          },
+        }),
+      );
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-      res.write(value);
-      written.push(value);
-    }
-    res.end();
+    return new Response(stream, {
+      headers: sseHeaders,
+    });
   });
 
   const ac = new AbortController();
   const iterable = sseStreamConsumer<{
     data: Data;
     error: unknown;
-    EventSource: typeof EventSource;
+    EventSource: typeof EventSourcePolyfill;
   }>({
     url: () => server.url,
     signal: ac.signal,
-    init: () => ({}),
+    init: () => ({
+      lastEventIdQueryParameterName: 'lastEventId',
+    }),
     deserialize: SuperJSON.deserialize,
-    EventSource: EventSource,
+    EventSource: EventSourcePolyfill,
   });
   let es: EventSource | null = null;
 
@@ -102,51 +87,61 @@ test('e2e, server-sent events (SSE)', async () => {
   const ITERATIONS = 10;
   const values: number[] = [];
   const allEvents: inferAsyncIterableYield<typeof iterable>[] = [];
+  // Iterate through the SSE events from the server
   for await (const value of iterable) {
+    // Keep track of all events received
     allEvents.push(value);
+    // Store reference to current EventSource instance
     es = value.eventSource;
+
+    // If we receive a serialized error, throw it
     if (value.type === 'serialized-error') {
       throw value.error;
     }
+
+    // Handle data events
     if (value.type === 'data') {
+      // Store the actual data value
       values.push(value.data.data);
+
+      // After receiving ITERATIONS number of values...
       if (values.length === ITERATIONS) {
-        break;
+        // Simulate the server crashed
+        const release = suppressLogs();
+
+        await Promise.all([
+          // Restart the server
+          await server.restart(),
+          // Wait for the EventSource to detect the error and reconnect
+          await new Promise<void>((resolve) => {
+            es!.addEventListener(
+              'error',
+              () => {
+                resolve();
+              },
+              { once: true },
+            );
+          }),
+        ]);
+
+        // Restore console logs
+        release();
       }
-    }
-  }
-  expect(values).toEqual(range(1, ITERATIONS + 1));
 
-  const release = suppressLogs();
-  await Promise.all([
-    await server.restart(),
-    // wait for an error, the EventSource will reconnect
-    await new Promise<void>((resolve) => {
-      es!.addEventListener('error', () => {
-        resolve();
-      });
-    }),
-  ]);
-  release();
-
-  for await (const value of iterable) {
-    allEvents.push(value);
-    value.eventSource;
-    es = value.eventSource;
-    if (value.type === 'serialized-error') {
-      throw value.error;
-    }
-    if (value.type === 'data') {
-      values.push(value.data.data);
+      // Break after receiving double the ITERATIONS
       if (values.length === ITERATIONS * 2) {
         break;
       }
     }
   }
 
-  ac.abort();
-  await server.close();
   expect(values).toEqual(range(1, ITERATIONS * 2 + 1));
+
+  expect(server.abortCount).toBe(1);
+  // The break after double the ITERATIONS will trigger a second socket close
+  await vi.waitFor(() => expect(server.abortCount).toBe(2), {
+    timeout: 1000,
+  });
 
   expect(allEvents.filter((it) => it.type === 'connecting')).toHaveLength(2);
 });
@@ -173,15 +168,9 @@ test('SSE on serverless - emit and disconnect early', async () => {
     written: string[];
   };
   const requests: RequestTrace[] = [];
-  const server = createServer(async (req, res) => {
-    const url = new URL(`http://${req.headers.host}${req.url}`);
+  await using server = fetchServerResource(async (request) => {
+    const url = new URL(request.url);
 
-    const stringOrNull = (v: unknown) => {
-      if (typeof v === 'string') {
-        return v;
-      }
-      return null;
-    };
     const stringToNumber = (v: string | null) => {
       if (v === null) {
         return null;
@@ -193,7 +182,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
       return num;
     };
     const lastEventId: string | null =
-      stringOrNull(req.headers['last-event-id']) ??
+      request.headers.get('last-event-id') ??
       url.searchParams.get('lastEventId') ??
       url.searchParams.get('Last-Event-Id');
 
@@ -205,35 +194,24 @@ test('SSE on serverless - emit and disconnect early', async () => {
 
     const asNumber = stringToNumber(lastEventId);
 
-    const producerAbortCtrl = new AbortController();
-
     const stream = sseStreamProducer({
-      data: data(
-        asNumber,
-        abortSignalsAnyPonyfill([
-          reqAbortCtrl.signal,
-          producerAbortCtrl.signal,
-        ]),
-      ),
+      data: data(asNumber, reqAbortCtrl.signal),
       serialize: (v) => SuperJSON.serialize(v),
       emitAndEndImmediately: true,
-      abortCtrl: producerAbortCtrl,
+    })
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(
+        new TransformStream({
+          transform(chunk, controller) {
+            requestTrace.written.push(chunk);
+            controller.enqueue(chunk);
+          },
+        }),
+      );
+
+    return new Response(stream, {
+      headers: sseHeaders,
     });
-    const reader = stream.getReader();
-    for (const [key, value] of Object.entries(sseHeaders)) {
-      res.setHeader(key, value);
-    }
-
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) {
-        break;
-      }
-      res.write(value);
-      requestTrace.written.push(value);
-    }
-    res.end();
   });
 
   const reqAbortCtrl = new AbortController();
@@ -267,9 +245,6 @@ test('SSE on serverless - emit and disconnect early', async () => {
   const ITERATIONS = 3;
   const values: number[] = [];
   for await (const value of iterable) {
-    if (value.type === 'opened') {
-      continue;
-    }
     if (value.type === 'serialized-error') {
       throw value.error;
     }
@@ -301,7 +276,9 @@ test('SSE on serverless - emit and disconnect early', async () => {
       Object {
         "lastEventId": null,
         "written": Array [
-          ": connected
+          "event: connected
+    ",
+          "data: {}
     ",
           "
 
@@ -325,7 +302,9 @@ test('SSE on serverless - emit and disconnect early', async () => {
       Object {
         "lastEventId": "2",
         "written": Array [
-          ": connected
+          "event: connected
+    ",
+          "data: {}
     ",
           "
 
@@ -348,7 +327,6 @@ test('SSE on serverless - emit and disconnect early', async () => {
       },
     ]
   `);
-  await server.close();
 });
 
 test('sse()', () => {

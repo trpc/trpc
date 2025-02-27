@@ -24,6 +24,130 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### New TanStack React Query integration! (non-breaking)
+
+We are excited to announce the new TanStack React Query integration for tRPC is now available on tRPC's `next`-release!
+
+{/* Uses a `<a>`-link to prevent Docusaurus' build from failing */}
+
+<a href="/blog/introducing-tanstack-react-query-client">Read the blog post</a> for
+more information.
+
+### Stopping subscriptions from the server (rarely breaking)
+
+We now support stopping subscriptions from the server, this means that you can now do things like this:
+
+```ts
+const myRouter = router({
+  sub: publicProcedure.subscription(async function* (opts) {
+    for await (const data of on(ee, 'data', {
+      signal: opts.signal,
+    })) {
+      const num = data[0] as number | undefined;
+      if (num === undefined) {
+        // This will now stop the subscription on the client and trigger the `onComplete` callback
+        return;
+      }
+      yield num;
+    }
+  }),
+});
+```
+
+See the [subscriptions docs](../server/subscriptions.md#stopping-from-server) for more information.
+
+### Added support for lazy-loading routers (non-breaking)
+
+See the [lazy-loading routers docs](../server/merging-routers.md#lazy-load) for more information.
+
+> As part of this, we've changed the argument of the internal method `callProcedure()` to receive a `{ router: AnyRouter }`-param instead of a `{ _def: AnyRouter['_def'] }`-param.
+
+### Custom `basePath` to handle requests under in the standalone adapter (non-breaking)
+
+The standalone adapter now supports a `basePath` option, which will slice the basePath from the beginning of the request path.
+
+See the [standalone adapter docs](../server/adapters/standalone.md#custom-basePath) for more information.
+
+### Added support for HTTP/2 servers (non-breaking)
+
+We now support HTTP/2 servers, this means that you can now use the `createHTTP2Handler` and `createHTTPServer` functions to create HTTP/2 servers.
+
+See the [standalone adapter docs](../server/adapters/standalone.md#http2) for more information.
+
+### Move `TRPCProcedureOptions` to `@trpc/client` (non-breaking for most)
+
+If you previously used `ProcedureOptions` from `@trpc/server`, you now need to use `TRPCProcedureOptions` from `@trpc/client` instead.
+
+### Allow promises to be embedded in nested data (non-breaking)
+
+We now allow promises to be embedded in nested data when using the [`httpBatchStreamLink`](../client/links/httpBatchStreamLink.md), this means that you can now do things like this:
+
+```ts
+const router = router({
+  embedPromise: publicProcedure.query(() => {
+    async function slowThing() {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return 'slow';
+    }
+    return {
+      instant: 'instant',
+      slow: slowThing(),
+    };
+  }),
+});
+```
+
+### Moved `reconnectAfterInactivityMs` to `sse.client` (non-breaking)
+
+Updated [HTTP Subscription Link improvements](#http-subscription-link-improvements)-section and related docs.
+
+### TypeScript version >=5.7.2 is now required (non-breaking)
+
+tRPC now requires TypeScript version 5.7.2 or higher. This change was made in response to [a bug report](https://github.com/trpc/trpc/issues/6243) where we decided to take a forward-looking approach.
+
+If you try to install tRPC with an unsupported TypeScript version, you'll receive a peer dependency error during installation.
+
+If you notice your editor showing `any` types, it's likely because your editor isn't using the correct TypeScript version. To fix this, you'll need to configure your editor to use the TypeScript version installed in your project's `package.json`.
+
+For VSCode users, add these settings to your `.vscode/settings.json`:
+
+```json title=".vscode/settings.json"
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true
+}
+```
+
+### Moves `experimental.sseSubscriptions` -> `sse` (non-breaking)
+
+The `experimental.sseSubscriptions` option has been moved to just `sse` in the `initTRPC.create()`-function.
+
+### HTTP Subscription Link improvements (non-breaking) {#http-subscription-link-improvements}
+
+Added support for detecting and recovering from stale connections:
+
+On the server, you can configure a ping interval to keep the connection alive:
+
+```ts
+export const t = initTRPC.create({
+  // ...
+  sse: {
+    ping: {
+      enabled: true,
+      intervalMs: 15_000,
+    },
+    client: {
+      // Reconnect if no messages or pings are received for 20 seconds
+      reconnectAfterInactivityMs: 20_000,
+    },
+  },
+});
+```
+
+We will likely add a default ping interval and timeout configuration in the future, but this is not yet decided. Feedback is welcome in the [🎏-rfc-streaming](https://trpc.io/discord) channel on Discord.
+
+See the [`httpSubscriptionLink` docs](../client/links/httpSubscriptionLink.md#timeout) for more details on these features.
+
 ### Introduction of `retryLink` (non-breaking)
 
 See [retryLink](../client/links/retryLink.md) - allows you to retry failed operations

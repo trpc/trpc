@@ -1,11 +1,11 @@
-import { HydrateClient, trpc } from '~/trpc/rq-server';
+import { HydrateClient, prefetch, trpc } from '~/trpc/rq-server';
 import React from 'react';
 import { Post } from './post';
 
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
-  void trpc.getLatestPost.prefetch();
+  prefetch(trpc.getLatestPost.queryOptions());
 
   return (
     <main>

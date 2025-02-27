@@ -3,14 +3,14 @@ import * as http from 'http';
 import { expect } from 'vitest';
 import { incomingMessageToRequest } from './incomingMessageToRequest';
 
-function createServer(opts: Parameters<typeof incomingMessageToRequest>[1]) {
+function createServer(opts: Parameters<typeof incomingMessageToRequest>[2]) {
   type Handler = (req: Request) => Promise<void>;
 
   let rejectHandler: null | ((err: any) => void) = null;
   let resolveHandler: null | (() => void) = null;
   let handle: Handler | null = null;
   const server = http.createServer(async (req, res) => {
-    const request = incomingMessageToRequest(req, opts);
+    const request = incomingMessageToRequest(req, res, opts);
 
     await handle!(request).then(resolveHandler).catch(rejectHandler);
     res.end();
@@ -44,6 +44,11 @@ function createServer(opts: Parameters<typeof incomingMessageToRequest>[1]) {
       await promise;
     },
   };
+}
+
+function createMockRes() {
+  const mockRes = new EventEmitter();
+  return mockRes as http.ServerResponse;
 }
 
 function createMockReq(opts: Partial<http.IncomingMessage> = {}) {
@@ -183,11 +188,10 @@ test('uses https scheme when socket is encrypted', async () => {
     url: '/test',
     method: 'GET',
   });
-
   // @ts-expect-error - test
   mockReq.socket.encrypted = true;
 
-  const request = incomingMessageToRequest(mockReq, {
+  const request = incomingMessageToRequest(mockReq, createMockRes(), {
     maxBodySize: null,
   });
 
@@ -206,7 +210,7 @@ test('http2 - filters out pseudo-headers', async () => {
     method: 'GET',
   });
 
-  const request = incomingMessageToRequest(mockReq, {
+  const request = incomingMessageToRequest(mockReq, createMockRes(), {
     maxBodySize: null,
   });
 
@@ -232,7 +236,7 @@ test('http2 - falls back to localhost when no host/authority', async () => {
     method: 'GET',
   });
 
-  const request = incomingMessageToRequest(mockReq, {
+  const request = incomingMessageToRequest(mockReq, createMockRes(), {
     maxBodySize: null,
   });
 
@@ -248,7 +252,7 @@ test('adapter with pre-parsed body - string', async () => {
     body: 'hello world',
   });
 
-  const request = incomingMessageToRequest(mockReq, {
+  const request = incomingMessageToRequest(mockReq, createMockRes(), {
     maxBodySize: null,
   });
 
@@ -265,7 +269,7 @@ test('adapter with pre-parsed body - object', async () => {
     body: { hello: 'world' },
   });
 
-  const request = incomingMessageToRequest(mockReq, {
+  const request = incomingMessageToRequest(mockReq, createMockRes(), {
     maxBodySize: null,
   });
 
@@ -282,7 +286,7 @@ test('adapter with pre-parsed body - undefined', async () => {
     body: undefined,
   });
 
-  const request = incomingMessageToRequest(mockReq, {
+  const request = incomingMessageToRequest(mockReq, createMockRes(), {
     maxBodySize: null,
   });
 
@@ -291,17 +295,33 @@ test('adapter with pre-parsed body - undefined', async () => {
 });
 
 // regression test for https://github.com/trpc/trpc/issues/6193
-test('aborts request when socket closes', async () => {
+test('aborts request when socket ends', async () => {
   const mockReq = createMockReq({
     method: 'POST',
   });
 
-  const request = incomingMessageToRequest(mockReq, {
+  const request = incomingMessageToRequest(mockReq, createMockRes(), {
     maxBodySize: null,
   });
 
   expect(request.signal.aborted).toBe(false);
   mockReq.socket.emit('close');
+
+  expect(request.signal.aborted).toBe(true);
+});
+
+test('aborts request when response closes', async () => {
+  const mockReq = createMockReq({
+    method: 'POST',
+  });
+  const mockRes = createMockRes();
+
+  const request = incomingMessageToRequest(mockReq, mockRes, {
+    maxBodySize: null,
+  });
+
+  expect(request.signal.aborted).toBe(false);
+  mockRes.emit('close');
 
   expect(request.signal.aborted).toBe(true);
 });

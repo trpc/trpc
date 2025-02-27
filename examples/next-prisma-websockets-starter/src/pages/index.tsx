@@ -1,4 +1,4 @@
-import { trpc } from '../utils/trpc';
+import { trpc } from '~/utils/trpc';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Head from 'next/head';

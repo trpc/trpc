@@ -1,6 +1,9 @@
-FROM node:20-slim AS base
+FROM node:22 AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+# https://github.com/nodejs/corepack/issues/627
+RUN npm install -g corepack 
+
 RUN corepack enable
 
 ARG DATABASE_URL

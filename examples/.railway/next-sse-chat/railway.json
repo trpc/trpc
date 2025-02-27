@@ -8,7 +8,6 @@
     "healthcheckPath": "/",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
-    "runtime": "LEGACY",
     "sleepApplication": true
   }
 }
