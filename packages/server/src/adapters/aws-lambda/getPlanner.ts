@@ -4,6 +4,7 @@ import type {
   APIGatewayProxyResult,
   APIGatewayProxyStructuredResultV2,
 } from 'aws-lambda';
+import { splitSetCookieString } from 'cookie-es';
 
 export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 
@@ -45,7 +46,7 @@ function getHeadersAndCookiesFromResponse(response: Response) {
 
   const cookies: string[] = response.headers
     .getSetCookie()
-    .flatMap((value) => value.split(','))
+    .flatMap((value) => splitSetCookieString(value))
     .map((cookie) => cookie.trim());
 
   delete headers['set-cookie'];
