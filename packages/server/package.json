@@ -126,7 +126,6 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/ws": "^8.2.0",
-    "cookie-es": "^1.2.2",
     "devalue": "^5.0.0",
     "eslint": "^9.21.0",
     "express": "^5.0.0",
