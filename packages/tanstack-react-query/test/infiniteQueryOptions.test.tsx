@@ -9,8 +9,8 @@ import {
 import { waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { TRPCClientErrorLike } from '@trpc/client';
+import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import/error/formatter';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
@@ -133,7 +133,7 @@ describe('infiniteQueryOptions', () => {
 
       expectTypeOf<TRPCClientErrorLike<{
         transformer: false;
-        errorShape: DefaultErrorShape;
+        errorShape: inferRouterError<typeof ctx.router>;
       }> | null>(query1.error);
 
       return (

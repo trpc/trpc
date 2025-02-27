@@ -1,8 +1,8 @@
 import { testReactResource } from './__helpers';
 import { useQueryClient } from '@tanstack/react-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
+import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import/error/formatter';
 import type { TRPCQueryKey } from '@trpc/tanstack-react-query';
 import * as React from 'react';
 import { describe, expect, test } from 'vitest';
@@ -266,7 +266,7 @@ describe('get queryKey', () => {
       assertType<
         | TRPCClientErrorLike<{
             transformer: false;
-            errorShape: DefaultErrorShape;
+            errorShape: inferRouterError<typeof ctx.router>;
           }>
         | null
         | undefined
@@ -300,7 +300,7 @@ describe('get queryKey', () => {
       assertType<
         | TRPCClientErrorLike<{
             transformer: false;
-            errorShape: DefaultErrorShape;
+            errorShape: inferRouterError<typeof ctx.router>;
           }>
         | null
         | undefined
