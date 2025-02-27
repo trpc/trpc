@@ -1,8 +1,10 @@
 import { testReactResource } from './__helpers';
 import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
+import type { TRPCClientErrorLike } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import/error/formatter';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
@@ -68,6 +70,10 @@ describe('queryOptions', () => {
       }
 
       expectTypeOf(query1.data).toMatchTypeOf<'__result'>();
+      expectTypeOf(query1.error).toMatchTypeOf<TRPCClientErrorLike<{
+        transformer: false;
+        errorShape: DefaultErrorShape;
+      }> | null>();
 
       return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
     }

@@ -8,7 +8,9 @@ import {
 } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { TRPCClientErrorLike } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
+import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import/error/formatter';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
@@ -62,6 +64,10 @@ describe('infiniteQueryOptions', () => {
         {},
         {
           getNextPageParam(lastPage) {
+            expectTypeOf<{
+              items: string[];
+              next?: number | undefined;
+            }>(lastPage);
             return lastPage.next;
           },
         },
@@ -72,12 +78,17 @@ describe('infiniteQueryOptions', () => {
         return <>...</>;
       }
 
+      queryClient.setQueryData(queryOptions.queryKey, (data) => {
+        expectTypeOf<typeof data>(query1.data);
+        return data;
+      });
+
       //
       // Check that query keys have correct types
 
-      expect(queryOptions.queryKey).toEqual(
-        trpc.post.list.infiniteQueryKey({}),
-      );
+      const queryKey = trpc.post.list.infiniteQueryKey({});
+      expect(queryOptions.queryKey).toEqual(queryKey);
+      expectTypeOf<typeof queryOptions.queryKey>(queryKey);
 
       const queryData = queryClient.getQueryData(
         trpc.post.list.infiniteQueryKey({}),
@@ -116,6 +127,14 @@ describe('infiniteQueryOptions', () => {
           number | null
         >
       >(query1.data);
+
+      //
+      // Check error shape
+
+      expectTypeOf<TRPCClientErrorLike<{
+        transformer: false;
+        errorShape: DefaultErrorShape;
+      }> | null>(query1.error);
 
       return (
         <>
