@@ -25,6 +25,7 @@ import {
   callProcedure,
   createFlatProxy,
   createRecursiveProxy,
+  run,
 } from '@trpc/server/unstable-core-do-not-import';
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import type {
@@ -120,13 +121,29 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
 
   function _dehydrate(
     opts: DehydrateOptions = {
-      shouldDehydrateQuery() {
+      shouldDehydrateQuery(query) {
+        if (query.state.status === 'pending') {
+          return false;
+        }
         // makes sure to serialize errors
         return true;
       },
     },
   ): DehydratedState {
-    const before = dehydrate(queryClient, opts);
+    const before = run(() => {
+      const dehydrated = dehydrate(queryClient, opts);
+
+      return {
+        ...dehydrated,
+        queries: dehydrated.queries.map((query) => {
+          if (query.promise) {
+            const { promise: _, ...rest } = query;
+            return rest;
+          }
+          return query;
+        }),
+      };
+    });
     const after = resolvedOpts.serialize(before);
     return after;
   }
