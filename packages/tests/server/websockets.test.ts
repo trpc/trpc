@@ -154,8 +154,6 @@ function factory(config?: {
   const onCloseMock = vi.fn();
 
   expectTypeOf(appRouter).toExtend<AnyRouter>();
-  // TODO: Uncomment when the expect-type library gets fixed
-  // expectTypeOf<AnyRouter>().toEqualTypeOf<typeof appRouter>();
 
   const connectionState =
     vi.fn<Observer<TRPCConnectionState<unknown>, never>['next']>();
