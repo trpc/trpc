@@ -135,7 +135,10 @@ const appRouter = t.router({
   // open for anyone
   hello: t.procedure
     .input(z.string().nullish())
-    .query((opts) => `hello ${opts.input ?? opts.ctx.session?.user?.name ?? 'world'}`),
+    .query(
+      (opts) =>
+        `hello ${opts.input ?? opts.ctx.session?.user?.name ?? 'world'}`,
+    ),
   // checked in resolver
   secret: t.procedure.query((opts) => {
     if (!opts.ctx.session) {
