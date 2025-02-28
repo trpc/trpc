@@ -169,16 +169,17 @@ type AnyTRPCQueryOptionsOut =
  * @internal
  */
 export function trpcQueryOptions(args: {
+  input: unknown;
   query: typeof TRPCUntypedClient.prototype.query;
   queryClient: QueryClient | (() => QueryClient);
   path: readonly string[];
   queryKey: TRPCQueryKey;
   opts: AnyTRPCQueryOptionsIn;
 }): AnyTRPCQueryOptionsOut {
-  const { query, path, queryKey, opts } = args;
+  const { input, query, path, queryKey, opts } = args;
   const queryClient = unwrapLazyArg(args.queryClient);
 
-  const inputIsSkipToken = queryKey[1]?.input === skipToken;
+  const inputIsSkipToken = input === skipToken;
 
   const queryFn: QueryFunction<unknown, TRPCQueryKey> = async (
     queryFnContext,

@@ -119,21 +119,21 @@ Available for all query procedures. Allows you to access the query key in a type
 const queryKey = trpc.path.to.query.queryKey();
 ```
 
-Since Tanstack React Query uses fuzzy matching for query keys, you can also create a partial query key for any sub-path to match all queries beloning to a router:
+Since Tanstack React Query uses fuzzy matching for query keys, you can also create a partial query key for any sub-path to match all queries belonging to a router:
 
 ```ts
-const queryKey = trpc.router.queryKey();
+const queryKey = trpc.router.pathKey();
 ```
 
 Or even the root path to match all tRPC queries:
 
 ```ts
-const queryKey = trpc.queryKey();
+const queryKey = trpc.pathKey();
 ```
 
 ### `queryFilter` - creating query filters {#queryFilter}
 
-Available for all query procedures as well as routers and sub-routers. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) in a type-safe manner.
+Available for all query procedures. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) in a type-safe manner.
 
 ```ts
 const queryFilter = trpc.path.to.query.queryFilter(
@@ -147,6 +147,17 @@ const queryFilter = trpc.path.to.query.queryFilter(
     },
   },
 );
+```
+
+Like with query keys, if you want to run a filter across a whole router you can use `pathFilter` to target any sub-path.
+
+```ts
+const queryFilter = trpc.path.pathFilter({
+  // Any Tanstack React Query filter
+  predicate: (query) => {
+    query.state.data;
+  },
+});
 ```
 
 Useful for creating filters that can be passed to client methods like `queryClient.invalidateQueries` etc.
@@ -251,4 +262,31 @@ function Component() {
   type Input = inferInput<typeof trpc.path.to.procedure>;
   type Output = inferOutput<typeof trpc.path.to.procedure>;
 }
+```
+
+### Accessing the tRPC client {#useTRPCClient}
+
+If you used the [setup with React Context](/docs/client/tanstack-react-query/setup#3a-setup-the-trpc-context-provider), you can access the tRPC client using the `useTRPCClient` hook.
+
+```tsx
+import { useTRPCClient } from './trpc';
+
+function Component() {
+  const trpcClient = useTRPCClient();
+
+  const result = await trpcClient.path.to.procedure.query({
+    /** input */
+  });
+}
+```
+
+If you [setup without React Context](/docs/client/tanstack-react-query/setup#3b-setup-without-react-context),
+you can import the global client instance directly instead.
+
+```ts
+import { client } from './trpc';
+
+const result = await client.path.to.procedure.query({
+  /** input */
+});
 ```
