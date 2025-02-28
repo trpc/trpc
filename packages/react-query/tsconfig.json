@@ -1,7 +1,8 @@
 {
-  "extends": "../../tsconfig.json",
-  "include": ["src", "test"],
+  "extends": "./tsconfig.build.json",
+  "include": ["src"],
+  "exclude": [],
   "compilerOptions": {
-    "types": ["@testing-library/jest-dom", "vitest/globals"]
+    "types": ["node", "vitest/globals"]
   }
 }

@@ -1,14 +1,8 @@
 {
-  "extends": "../../tsconfig.json",
-  "include": ["**/*.ts", "**/*.tsx"],
+  "extends": "./tsconfig.build.json",
+  "include": ["src"],
+  "exclude": [],
   "compilerOptions": {
-    "module": "Preserve",
-    "resolveJsonModule": true,
-    "target": "ESNext",
-    "strict": true,
-    "skipLibCheck": true,
-    "lib": ["ESNext"],
-    "jsx": "preserve",
-    "types": ["@testing-library/jest-dom"]
+    "types": ["node", "vitest/globals"]
   }
 }

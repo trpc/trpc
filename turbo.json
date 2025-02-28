@@ -15,9 +15,15 @@
     "AUTH_GITHUB_SECRET"
   ],
   "tasks": {
-    "codegen-entrypoints": {},
+    "//#codegen-tsconfigs": {
+      "outputs": ["packages/*/tsconfig.json"]
+    },
+    "codegen-entrypoints": {
+      "dependsOn": ["//#codegen-tsconfigs"]
+    },
     "codegen-tests": {
-      "outputs": ["*/__generated__/bigBoi/**"]
+      "outputs": ["*/__generated__/bigBoi/**"],
+      "dependsOn": ["codegen-entrypoints"]
     },
     "prebuild": {
       "cache": false

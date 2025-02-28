@@ -23,10 +23,8 @@ COPY --from=build /app/out/full/ .
 COPY --from=build /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
 # Some other stuff we need to build trpc packages
-COPY --from=build /app/tsconfig.json ./tsconfig.json
-COPY --from=build /app/tsconfig.build.json ./tsconfig.build.json
+COPY --from=build /app/tsconfig*.json ./
 COPY --from=build /app/scripts/ ./scripts/
-
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm turbo build --filter=examples-next-sse-chat...
