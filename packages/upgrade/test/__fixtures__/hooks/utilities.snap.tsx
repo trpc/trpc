@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useTRPC, useTRPCClient } from './utilities.trpc';
+import { useTRPC } from './utilities.trpc';
 
 export function Component() {
   const trpc = useTRPC();
