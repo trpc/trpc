@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import http from 'http';
-import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import type { TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,

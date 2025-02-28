@@ -4,6 +4,7 @@ import {
   createTRPCUntypedClient,
 } from '@trpc/client';
 import type { CreateContextCallback } from '@trpc/server';
+import { rethrowNextErrors } from '@trpc/server/adapters/next-app-dir';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -25,8 +26,6 @@ import {
   TRPCError,
 } from '@trpc/server/unstable-core-do-not-import';
 import { revalidateTag } from 'next/cache';
-import { isNotFoundError } from 'next/dist/client/components/not-found';
-import { isRedirectError } from 'next/dist/client/components/redirect';
 import { cache } from 'react';
 import type {
   ActionHandlerDef,
@@ -73,16 +72,6 @@ export function experimental_createTRPCNextAppDirServer<
 }
 
 /**
- * Rethrow errors that should be handled by Next.js
- */
-const throwNextErrors = (error: TRPCError) => {
-  const { cause } = error;
-  if (isRedirectError(cause) || isNotFoundError(cause)) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    throw error.cause!;
-  }
-};
-/**
  * @internal
  */
 export type TRPCActionHandler<TDef extends ActionHandlerDef> = (
@@ -122,7 +111,7 @@ export function experimental_createServerActionHandler<
   const {
     normalizeFormData = true,
     createContext,
-    rethrowNextErrors = true,
+    rethrowNextErrors: shouldRethrowNextErrors = true,
   } = opts;
 
   const transformer = config.transformer;
@@ -182,8 +171,8 @@ export function experimental_createServerActionHandler<
           type: proc._def.type,
         });
 
-        if (rethrowNextErrors) {
-          throwNextErrors(error);
+        if (shouldRethrowNextErrors) {
+          rethrowNextErrors(error);
         }
 
         const shape = getErrorShape({

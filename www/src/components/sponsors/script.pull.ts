@@ -186,13 +186,16 @@ async function main() {
       .filter((it) => it.privacyLevel === 'PUBLIC')
       // overrides
       .map((sponsor) => {
-        // switch (sponsor.login) {
-        //   case 't3dotgg':
-        //     return {
-        //       ...sponsor,
-        //       monthlyPriceInDollars: 5,
-        //     };
-        // }
+        switch (sponsor.login) {
+          case 'dakshgup':
+            return {
+              ...sponsor,
+              name: 'Greptile',
+              imgSrc: 'https://github.com/greptileai.png',
+              link: 'https://greptile.com/?utm_source=opensource&utm_medium=github&utm_campaign=trpc',
+              login: 'greptileai',
+            };
+        }
         return sponsor;
       });
 
@@ -213,17 +216,6 @@ async function main() {
     //   // 8 months between 1st of sept and 1st of april
     //   createdAt: Date.now() - 8 * 30 * 24 * 60 * 60 * 1000,
     // });
-    // add keenethics
-    rawList.push({
-      __typename: 'Organization',
-      name: 'KeenEthics',
-      imgSrc: 'https://github.com/keenethics.png',
-      monthlyPriceInDollars: 1110,
-      link: 'https://keenethics.com',
-      privacyLevel: 'PUBLIC',
-      login: 'keenethics',
-      createdAt: new Date('2024-09-27').getTime(),
-    });
     const list = rawList.map((sponsor) => {
       // calculate total value
       const MONTH_MS = 30 * 24 * 60 * 60 * 1000;

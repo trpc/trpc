@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["**/*.ts", "**/*.tsx"],
+  "compilerOptions": {
+    "module": "Preserve",
+    "resolveJsonModule": true,
+    "target": "ESNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "lib": ["ESNext"],
+    "jsx": "preserve",
+    "types": ["@testing-library/jest-dom"]
+  }
+}

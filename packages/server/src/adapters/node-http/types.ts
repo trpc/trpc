@@ -8,6 +8,7 @@
  * ```
  */
 import type * as http from 'http';
+import type * as http2 from 'http2';
 // @trpc/server
 import type {
   AnyRouter,
@@ -20,13 +21,34 @@ import type {
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 // eslint-disable-next-line no-restricted-imports
-import type { MaybePromise } from '../../unstable-core-do-not-import';
+import type {
+  DistributiveOmit,
+  MaybePromise,
+} from '../../unstable-core-do-not-import';
 
-export type NodeHTTPRequest = http.IncomingMessage & {
+export type NodeHTTPRequest = DistributiveOmit<
+  http.IncomingMessage | http2.Http2ServerRequest,
+  'socket'
+> & {
+  /**
+   * Many adapters will add a `body` property to the incoming message and pre-parse the body
+   */
   body?: unknown;
-  query?: unknown;
+  /**
+   * Socket is not always available in all deployments, so we need to make it optional
+   * @see https://github.com/trpc/trpc/issues/6341
+   * The socket object provided in the request does not fully implement the expected Node.js Socket interface.
+   * @see https://github.com/trpc/trpc/pull/6358
+   */
+  socket?:
+    | Partial<http.IncomingMessage['socket']>
+    | Partial<http2.Http2ServerRequest['socket']>;
 };
-export type NodeHTTPResponse = http.ServerResponse & {
+
+export type NodeHTTPResponse = DistributiveOmit<
+  http.ServerResponse | http2.Http2ServerResponse,
+  'write'
+> & {
   /**
    * Force the partially-compressed response to be flushed to the client.
    *
@@ -36,8 +58,9 @@ export type NodeHTTPResponse = http.ServerResponse & {
    * e.g. Express w/ `compression()`)
    */
   flush?: () => void;
-};
 
+  write: (chunk: string | Uint8Array) => boolean;
+};
 export type NodeHTTPCreateContextOption<
   TRouter extends AnyRouter,
   TRequest,
@@ -85,11 +108,15 @@ export type NodeHTTPRequestHandlerOptions<
   TRouter extends AnyRouter,
   TRequest extends NodeHTTPRequest,
   TResponse extends NodeHTTPResponse,
-> = {
+> = NodeHTTPHandlerOptions<TRouter, TRequest, TResponse> & {
   req: TRequest;
   res: TResponse;
+  /**
+   * The tRPC path to handle requests for
+   * @example 'post.all'
+   */
   path: string;
-} & NodeHTTPHandlerOptions<TRouter, TRequest, TResponse>;
+};
 
 export type NodeHTTPCreateContextFnOptions<TRequest, TResponse> = {
   req: TRequest;

@@ -8,7 +8,14 @@ export default {
   trailingComma: 'all',
   endOfLine: 'auto',
   singleQuote: true,
-  importOrder: ['___', '__', '<THIRD_PARTY_MODULES>', '^[./]'],
+  importOrder: [
+    // Ensure test helpers are sorted first so that polyfills are loaded
+    '___',
+    '__',
+    '^@trpc/(server|client|react-query|tanstack-react-query|next)/src/__tests__(.*)$',
+    '<THIRD_PARTY_MODULES>',
+    '^[./]',
+  ],
   importOrderParserPlugins: ['typescript', 'jsx', 'explicitResourceManagement'],
   tailwindConfig: './www/tailwind.config.ts',
   plugins: [

@@ -41,7 +41,6 @@ export default defineConfig({
     snapshotFormat: {
       printBasicPrototype: true,
     },
-    setupFiles: ['./tests/setupTests.ts'],
     coverage: {
       provider: 'istanbul',
       include: ['**/src/**'],
@@ -52,6 +51,8 @@ export default defineConfig({
         // FIXME: delete me once they're stable
         '**/next/src/app-dir/**',
         '**/server/src/adapters/next-app-dir/**',
+        // Skip codecov for codemod package
+        '**/upgrade/src/**',
       ],
     },
     poolOptions: {
@@ -62,6 +63,7 @@ export default defineConfig({
         execArgv: ['--expose-gc'],
       },
     },
+    retry: 2,
   },
   resolve: {
     alias: aliases,

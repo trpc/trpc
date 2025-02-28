@@ -13,7 +13,12 @@ import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
 import { defaultTransformer } from './transformer';
 import type { MaybePromise, ValueOf } from './types';
-import { isFunction, mergeWithoutOverrides, omitPrototype } from './utils';
+import {
+  isFunction,
+  isObject,
+  mergeWithoutOverrides,
+  omitPrototype,
+} from './utils';
 
 export interface RouterRecord {
   [key: string]: AnyProcedure | RouterRecord;
@@ -33,11 +38,13 @@ type DecorateProcedure<TProcedure extends AnyProcedure> = (
  * @internal
  */
 export type DecorateRouterRecord<TRecord extends RouterRecord> = {
-  [TKey in keyof TRecord]: TRecord[TKey] extends AnyProcedure
-    ? DecorateProcedure<TRecord[TKey]>
-    : TRecord[TKey] extends RouterRecord
-      ? DecorateRouterRecord<TRecord[TKey]>
-      : never;
+  [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
+    ? $Value extends AnyProcedure
+      ? DecorateProcedure<$Value>
+      : $Value extends RouterRecord
+        ? DecorateRouterRecord<$Value>
+        : never
+    : never;
 };
 
 /**
@@ -67,6 +74,64 @@ export type RouterCaller<
   },
 ) => DecorateRouterRecord<TRecord>;
 
+const lazySymbol = Symbol('lazy');
+export type Lazy<TAny> = (() => Promise<TAny>) & { [lazySymbol]: true };
+
+type LazyLoader<TAny> = {
+  load: () => Promise<void>;
+  ref: Lazy<TAny>;
+};
+
+function once<T>(fn: () => T): () => T {
+  const uncalled = Symbol();
+  let result: T | typeof uncalled = uncalled;
+  return (): T => {
+    if (result === uncalled) {
+      result = fn();
+    }
+    return result;
+  };
+}
+
+/**
+ * Lazy load a router
+ * @see https://trpc.io/docs/server/merging-routers#lazy-load
+ */
+export function lazy<TRouter extends AnyRouter>(
+  importRouter: () => Promise<
+    | TRouter
+    | {
+        [key: string]: TRouter;
+      }
+  >,
+): Lazy<NoInfer<TRouter>> {
+  async function resolve(): Promise<TRouter> {
+    const mod = await importRouter();
+
+    // if the module is a router, return it
+    if (isRouter(mod)) {
+      return mod;
+    }
+
+    const routers = Object.values(mod);
+
+    if (routers.length !== 1 || !isRouter(routers[0])) {
+      throw new Error(
+        "Invalid router module - either define exactly 1 export or return the router directly.\nExample: `experimental_lazy(() => import('./slow.js').then((m) => m.slowRouter))`",
+      );
+    }
+
+    return routers[0];
+  }
+  resolve[lazySymbol] = true as const;
+
+  return resolve;
+}
+
+function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
+  return typeof input === 'function' && lazySymbol in input;
+}
+
 export interface Router<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
@@ -77,9 +142,9 @@ export interface Router<
     procedure?: never;
     procedures: TRecord;
     record: TRecord;
+    lazy: Record<string, LazyLoader<AnyRouter>>;
   };
   /**
-   * @deprecated use `t.createCallerFactory(router)` instead
    * @see https://trpc.io/docs/v11/server/server-side-calls
    */
   createCaller: RouterCaller<TRoot, TRecord>;
@@ -102,10 +167,10 @@ export type inferRouterError<TRouter extends AnyRouter> =
 export type inferRouterMeta<TRouter extends AnyRouter> =
   inferRouterRootTypes<TRouter>['meta'];
 
-function isRouter(
-  procedureOrRouter: ValueOf<CreateRouterOptions>,
-): procedureOrRouter is AnyRouter {
-  return procedureOrRouter._def && 'router' in procedureOrRouter._def;
+function isRouter(value: unknown): value is AnyRouter {
+  return (
+    isObject(value) && isObject(value['_def']) && 'router' in value['_def']
+  );
 }
 
 const emptyRouter = {
@@ -136,7 +201,11 @@ const reservedWords = [
 ];
 
 export type CreateRouterOptions = {
-  [key: string]: AnyProcedure | AnyRouter | CreateRouterOptions;
+  [key: string]:
+    | AnyProcedure
+    | AnyRouter
+    | CreateRouterOptions
+    | Lazy<AnyRouter>;
 };
 
 export type DecorateCreateRouterOptions<
@@ -147,9 +216,11 @@ export type DecorateCreateRouterOptions<
       ? $Value
       : $Value extends Router<any, infer TRecord>
         ? TRecord
-        : $Value extends CreateRouterOptions
-          ? DecorateCreateRouterOptions<$Value>
-          : never
+        : $Value extends Lazy<Router<any, infer TRecord>>
+          ? TRecord
+          : $Value extends CreateRouterOptions
+            ? DecorateCreateRouterOptions<$Value>
+            : never
     : never;
 };
 
@@ -159,13 +230,9 @@ export type DecorateCreateRouterOptions<
 export function createRouterFactory<TRoot extends AnyRootTypes>(
   config: RootConfig<TRoot>,
 ) {
-  function createRouterInner<TInput extends RouterRecord>(
-    input: TInput,
-  ): BuiltRouter<TRoot, TInput>;
   function createRouterInner<TInput extends CreateRouterOptions>(
     input: TInput,
-  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>>;
-  function createRouterInner(input: RouterRecord | CreateRouterOptions) {
+  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>> {
     const reservedWordsUsed = new Set(
       Object.keys(input).filter((v) => reservedWords.includes(v)),
     );
@@ -177,10 +244,55 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
     }
 
     const procedures: Record<string, AnyProcedure> = omitPrototype({});
+    const lazy: Record<string, LazyLoader<AnyRouter>> = omitPrototype({});
+
+    function createLazyLoader(opts: {
+      ref: Lazy<AnyRouter>;
+      path: readonly string[];
+      key: string;
+      aggregate: RouterRecord;
+    }): LazyLoader<AnyRouter> {
+      return {
+        ref: opts.ref,
+        load: once(async () => {
+          const router = await opts.ref();
+          const lazyPath = [...opts.path, opts.key];
+          const lazyKey = lazyPath.join('.');
+
+          opts.aggregate[opts.key] = step(router._def.record, lazyPath);
+
+          delete lazy[lazyKey];
+
+          // add lazy loaders for nested routers
+          for (const [nestedKey, nestedItem] of Object.entries(
+            router._def.lazy,
+          )) {
+            const nestedRouterKey = [...lazyPath, nestedKey].join('.');
+
+            // console.log('adding lazy', nestedRouterKey);
+            lazy[nestedRouterKey] = createLazyLoader({
+              ref: nestedItem.ref,
+              path: lazyPath,
+              key: nestedKey,
+              aggregate: opts.aggregate[opts.key] as RouterRecord,
+            });
+          }
+        }),
+      };
+    }
 
     function step(from: CreateRouterOptions, path: readonly string[] = []) {
       const aggregate: RouterRecord = omitPrototype({});
       for (const [key, item] of Object.entries(from ?? {})) {
+        if (isLazy(item)) {
+          lazy[[...path, key].join('.')] = createLazyLoader({
+            path,
+            ref: item,
+            key,
+            aggregate,
+          });
+          continue;
+        }
         if (isRouter(item)) {
           aggregate[key] = step(item._def.record, [...path, key]);
           continue;
@@ -209,17 +321,19 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
       _config: config,
       router: true,
       procedures,
+      lazy,
       ...emptyRouter,
       record,
     };
 
-    return {
-      ...record,
+    const router: BuiltRouter<TRoot, {}> = {
+      ...(record as {}),
       _def,
       createCaller: createCallerFactory<TRoot>()({
         _def,
       }),
     };
+    return router as BuiltRouter<TRoot, DecorateCreateRouterOptions<TInput>>;
   }
 
   return createRouterInner;
@@ -230,17 +344,46 @@ function isProcedure(
 ): procedureOrRouter is AnyProcedure {
   return typeof procedureOrRouter === 'function';
 }
+
 /**
  * @internal
  */
-export function callProcedure(
+export async function getProcedureAtPath(
+  router: Pick<Router<any, any>, '_def'>,
+  path: string,
+): Promise<AnyProcedure | null> {
+  const { _def } = router;
+  let procedure = _def.procedures[path];
+
+  while (!procedure) {
+    const key = Object.keys(_def.lazy).find((key) => path.startsWith(key));
+    // console.log(`found lazy: ${key ?? 'NOPE'} (fullPath: ${fullPath})`);
+
+    if (!key) {
+      return null;
+    }
+    // console.log('loading', key, '.......');
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const lazyRouter = _def.lazy[key]!;
+    await lazyRouter.load();
+
+    procedure = _def.procedures[path];
+  }
+
+  return procedure;
+}
+
+/**
+ * @internal
+ */
+export async function callProcedure(
   opts: ProcedureCallOptions<unknown> & {
-    procedures: RouterRecord;
+    router: AnyRouter;
     allowMethodOverride?: boolean;
   },
 ) {
   const { type, path } = opts;
-  const proc = opts.procedures[path];
+  const proc = await getProcedureAtPath(opts.router, path);
   if (
     !proc ||
     !isProcedure(proc) ||
@@ -271,7 +414,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
   return function createCallerInner<TRecord extends RouterRecord>(
     router: Pick<Router<TRoot, TRecord>, '_def'>,
   ): RouterCaller<TRoot, TRecord> {
-    const _def = router._def;
+    const { _def } = router;
     type Context = TRoot['ctx'];
 
     return function createCaller(ctxOrCallback, opts) {
@@ -283,10 +426,16 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
             return _def;
           }
 
-          const procedure = _def.procedures[fullPath] as AnyProcedure;
+          const procedure = await getProcedureAtPath(router, fullPath);
 
           let ctx: Context | undefined = undefined;
           try {
+            if (!procedure) {
+              throw new TRPCError({
+                code: 'NOT_FOUND',
+                message: `No procedure found on path "${path}"`,
+              });
+            }
             ctx = isFunction(ctxOrCallback)
               ? await Promise.resolve(ctxOrCallback())
               : ctxOrCallback;
@@ -304,7 +453,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
               error: getTRPCErrorFromUnknown(cause),
               input: args[0],
               path: fullPath,
-              type: procedure._def.type,
+              type: procedure?._def.type ?? 'unknown',
             });
             throw cause;
           }

@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
     runs-on: ubuntu-latest
 
@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
     runs-on: ubuntu-latest
 
@@ -65,7 +65,7 @@ jobs:
           - 5432:5432
     env:
       NEXTAUTH_SECRET: supersecret
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -106,7 +106,7 @@ jobs:
         run: |
           cat ./examples/${{ matrix.dir }}/package.json | 
           if grep --silent '"@playwright/test"';
-            then pnpm playwright install chromium;
+            then cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
           fi
 
       - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
@@ -122,7 +122,7 @@ jobs:
     env:
       NEXTAUTH_SECRET: supersecret
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
       # TURBO_REMOTE_ONLY: true
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -157,7 +157,7 @@ jobs:
     env:
       NEXTAUTH_SECRET: supersecret
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
       # TURBO_REMOTE_ONLY: true
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -200,7 +200,7 @@ jobs:
     env:
       NEXTAUTH_SECRET: supersecret
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     continue-on-error: true
@@ -231,7 +231,7 @@ jobs:
         run: |
           cat ./examples/${{ matrix.dir }}/package.json | 
           if grep --silent '"@playwright/test"';
-            then pnpm playwright install chromium;
+            then cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
           fi
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
@@ -243,7 +243,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
     steps:
       - uses: actions/checkout@v4
@@ -253,3 +253,14 @@ jobs:
 
       - run: pnpm build
       - run: pnpx pkg-pr-new publish './packages/*'
+
+  monotest-build:
+    name: Test a monorepo using built declaration files
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/setup
+      - run: pnpm monotest-build

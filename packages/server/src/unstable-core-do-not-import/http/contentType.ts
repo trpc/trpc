@@ -1,6 +1,6 @@
 import { TRPCError } from '../error/TRPCError';
-import type { AnyProcedure, ProcedureType } from '../procedure';
-import type { AnyRouter } from '../router';
+import type { ProcedureType } from '../procedure';
+import { getProcedureAtPath, type AnyRouter } from '../router';
 import { isObject, unsetMarker } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
@@ -8,6 +8,7 @@ import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 type GetRequestInfoOptions = {
   path: string;
   req: Request;
+  url: URL | null;
   searchParams: URLSearchParams;
   headers: Headers;
   router: AnyRouter;
@@ -15,7 +16,7 @@ type GetRequestInfoOptions = {
 
 type ContentTypeHandler = {
   isMatch: (opts: Request) => boolean;
-  parse: (opts: GetRequestInfoOptions) => TRPCRequestInfo;
+  parse: (opts: GetRequestInfoOptions) => Promise<TRPCRequestInfo>;
 };
 
 /**
@@ -65,7 +66,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
     return !!req.headers.get('content-type')?.startsWith('application/json');
   },
-  parse(opts) {
+  async parse(opts) {
     const { req } = opts;
     const isBatchCall = opts.searchParams.get('batch') === '1';
     const paths = isBatchCall ? opts.path.split(',') : [opts.path];
@@ -109,42 +110,45 @@ const jsonContentTypeHandler: ContentTypeHandler = {
       return acc;
     });
 
-    const calls = paths.map((path, index): TRPCRequestInfo['calls'][number] => {
-      const procedure: AnyProcedure | null =
-        opts.router._def.procedures[path] ?? null;
-      return {
-        path,
-        procedure,
-        getRawInput: async () => {
-          const inputs = await getInputs.read();
-          let input = inputs[index];
+    const calls = await Promise.all(
+      paths.map(
+        async (path, index): Promise<TRPCRequestInfo['calls'][number]> => {
+          const procedure = await getProcedureAtPath(opts.router, path);
+          return {
+            path,
+            procedure,
+            getRawInput: async () => {
+              const inputs = await getInputs.read();
+              let input = inputs[index];
 
-          if (procedure?._def.type === 'subscription') {
-            const lastEventId =
-              opts.headers.get('last-event-id') ??
-              opts.searchParams.get('lastEventId') ??
-              opts.searchParams.get('Last-Event-Id');
+              if (procedure?._def.type === 'subscription') {
+                const lastEventId =
+                  opts.headers.get('last-event-id') ??
+                  opts.searchParams.get('lastEventId') ??
+                  opts.searchParams.get('Last-Event-Id');
 
-            if (lastEventId) {
-              if (isObject(input)) {
-                input = {
-                  ...input,
-                  lastEventId: lastEventId,
-                };
-              } else {
-                input ??= {
-                  lastEventId: lastEventId,
-                };
+                if (lastEventId) {
+                  if (isObject(input)) {
+                    input = {
+                      ...input,
+                      lastEventId: lastEventId,
+                    };
+                  } else {
+                    input ??= {
+                      lastEventId: lastEventId,
+                    };
+                  }
+                }
               }
-            }
-          }
-          return input;
+              return input;
+            },
+            result: () => {
+              return getInputs.result()?.[index];
+            },
+          };
         },
-        result: () => {
-          return getInputs.result()?.[index];
-        },
-      };
-    });
+      ),
+    );
 
     const types = new Set(
       calls.map((call) => call.procedure?._def.type).filter(Boolean),
@@ -174,6 +178,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
           ? null
           : parseConnectionParamsFromString(connectionParamsStr),
       signal: req.signal,
+      url: opts.url,
     };
     return info;
   },
@@ -183,7 +188,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
   isMatch(req) {
     return !!req.headers.get('content-type')?.startsWith('multipart/form-data');
   },
-  parse(opts) {
+  async parse(opts) {
     const { req } = opts;
     if (req.method !== 'POST') {
       throw new TRPCError({
@@ -196,6 +201,7 @@ const formDataContentTypeHandler: ContentTypeHandler = {
       const fd = await req.formData();
       return fd;
     });
+    const procedure = await getProcedureAtPath(opts.router, opts.path);
     return {
       accept: null,
       calls: [
@@ -203,13 +209,14 @@ const formDataContentTypeHandler: ContentTypeHandler = {
           path: opts.path,
           getRawInput: getInputs.read,
           result: getInputs.result,
-          procedure: opts.router._def.procedures[opts.path] ?? null,
+          procedure,
         },
       ],
       isBatchCall: false,
       type: 'mutation',
       connectionParams: null,
       signal: req.signal,
+      url: opts.url,
     };
   },
 };
@@ -220,7 +227,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       .get('content-type')
       ?.startsWith('application/octet-stream');
   },
-  parse(opts) {
+  async parse(opts) {
     const { req } = opts;
     if (req.method !== 'POST') {
       throw new TRPCError({
@@ -238,7 +245,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
           path: opts.path,
           getRawInput: getInputs.read,
           result: getInputs.result,
-          procedure: opts.router._def.procedures[opts.path] ?? null,
+          procedure: await getProcedureAtPath(opts.router, opts.path),
         },
       ],
       isBatchCall: false,
@@ -246,6 +253,7 @@ const octetStreamContentTypeHandler: ContentTypeHandler = {
       type: 'mutation',
       connectionParams: null,
       signal: req.signal,
+      url: opts.url,
     };
   },
 };
@@ -275,7 +283,9 @@ function getContentTypeHandler(req: Request): ContentTypeHandler {
   });
 }
 
-export function getRequestInfo(opts: GetRequestInfoOptions): TRPCRequestInfo {
+export async function getRequestInfo(
+  opts: GetRequestInfoOptions,
+): Promise<TRPCRequestInfo> {
   const handler = getContentTypeHandler(opts.req);
-  return handler.parse(opts);
+  return await handler.parse(opts);
 }

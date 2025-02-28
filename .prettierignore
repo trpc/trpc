@@ -1,12 +1,11 @@
 __generated__/
 .docusaurus/
-.test/
 **/.next/
 **/www/build/
 **/www/typedoc/
 dist/
 examples/next-big-router/src/server/routers/*.ts
-examples/.diagnostics/**/*
+examples/.test/diagnostics-big-router/**/*
 packages/tests/vendor/
 packages/server/src/vendor/
 packages/coverage/
@@ -15,3 +14,4 @@ www/docs/main/quickstart.mdx
 .turbo
 .vinxi
 .output
+www/docs/typedoc

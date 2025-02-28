@@ -637,6 +637,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
   }
 
   procedure._def = _def;
+  procedure.procedure = true;
 
   // FIXME typecast shouldn't be needed - fixittt
   return procedure as unknown as AnyProcedure;

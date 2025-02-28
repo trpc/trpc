@@ -1,4 +1,5 @@
-import { routerToServerAndClientNew, waitError } from './___testHelpers';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { createTRPCClient, TRPCClientError } from '@trpc/client';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
 import { initTRPC } from '@trpc/server';

@@ -13,7 +13,7 @@ tRPC adheres to the industry standard when it comes to aborting procedures. All 
 // @filename: server.ts
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 // @noErrors
-import type { AppRouter } from 'server.ts';
+import type { AppRouter } from './server.ts';
 
 const proxy = createTRPCClient<AppRouter>({
   links: [

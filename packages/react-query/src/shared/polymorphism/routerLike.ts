@@ -13,19 +13,19 @@ import type { QueryLike } from './queryLike';
  */
 export type RouterLike<TRouter extends AnyRouter> = RouterLikeInner<
   TRouter['_def']['_config']['$types'],
-  TRouter['_def']['procedures']
+  TRouter['_def']['record']
 >;
 export type RouterLikeInner<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? RouterLikeInner<TRoot, $Value>
-      : $Value extends AnyQueryProcedure
-        ? QueryLike<TRoot, $Value>
-        : $Value extends AnyMutationProcedure
-          ? MutationLike<TRoot, $Value>
+    ? $Value extends AnyQueryProcedure
+      ? QueryLike<TRoot, $Value>
+      : $Value extends AnyMutationProcedure
+        ? MutationLike<TRoot, $Value>
+        : $Value extends RouterRecord
+          ? RouterLikeInner<TRoot, $Value>
           : never
     : never;
 };

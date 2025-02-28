@@ -2,10 +2,15 @@ import * as Headless from '@headlessui/react';
 import { cx } from 'class-variance-authority';
 import * as React from 'react';
 
-export const Input = React.forwardRef<
-  HTMLInputElement,
-  { className?: string } & Omit<Headless.InputProps, 'className'>
->(function Input({ className, type, ...props }, ref) {
+export function Input({
+  className,
+  type,
+  ref,
+  ...props
+}: { className?: string; ref?: React.Ref<HTMLInputElement> } & Omit<
+  Headless.InputProps,
+  'className'
+>) {
   return (
     <Headless.Input
       type={type}
@@ -18,12 +23,16 @@ export const Input = React.forwardRef<
       {...props}
     />
   );
-});
+}
 
-export const Label = React.forwardRef<
-  HTMLLabelElement,
-  { className?: string } & Omit<Headless.LabelProps, 'className'>
->(function Label({ className, ...props }, ref) {
+export function Label({
+  className,
+  ref,
+  ...props
+}: { className?: string; ref?: React.Ref<HTMLLabelElement> } & Omit<
+  Headless.LabelProps,
+  'className'
+>) {
   return (
     <Headless.Label
       ref={ref}
@@ -34,12 +43,16 @@ export const Label = React.forwardRef<
       )}
     />
   );
-});
+}
 
-export const Textarea = React.forwardRef<
-  HTMLTextAreaElement,
-  { className?: string } & Omit<Headless.TextareaProps, 'className'>
->(function TextArea({ className, ...props }, ref) {
+export function Textarea({
+  className,
+  ref,
+  ...props
+}: { className?: string; ref?: React.Ref<HTMLTextAreaElement> } & Omit<
+  Headless.TextareaProps,
+  'className'
+>) {
   return (
     <Headless.Textarea
       className={cx(
@@ -50,4 +63,4 @@ export const Textarea = React.forwardRef<
       {...props}
     />
   );
-});
+}

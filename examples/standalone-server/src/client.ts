@@ -61,7 +61,7 @@ async function main() {
       },
     });
   });
-  wsClient.close();
+  await wsClient.close();
 }
 
 void main();

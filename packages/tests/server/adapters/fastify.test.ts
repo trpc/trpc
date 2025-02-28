@@ -468,6 +468,10 @@ describe('authorized user', () => {
   test('request info', async () => {
     const info = await app.client.request.info.query();
 
+    if (info.url) {
+      info.url = info.url.replace(/:\d+\//, ':<<redacted>>/');
+    }
+
     expect(info).toMatchInlineSnapshot(`
       Object {
         "accept": "application/jsonl",
@@ -480,6 +484,7 @@ describe('authorized user', () => {
         "isBatchCall": true,
         "signal": Object {},
         "type": "query",
+        "url": "http://localhost:<<redacted>>/trpc/request.info?batch=1&input=%7B%7D",
       }
     `);
   });

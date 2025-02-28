@@ -161,3 +161,49 @@ export const userRouter = router({
 });
 
 ```
+
+## Dynamically load routers {#lazy-load}
+
+You can use the `experimental_lazy` function to dynamically load your routers. This can be useful to reduce cold starts of your application.
+
+There's no difference in how you use the router after it's been lazy loaded vs. how you use a normal router.
+
+**Example code of lazy loading a router:**
+
+```ts twoslash
+// @target: esnext
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+// ---cut---
+// @filename: routers/_app.ts
+import { experimental_lazy } from '@trpc/server';
+import { router } from '../trpc';
+
+export const appRouter = router({
+  // Option 1: Short-hand lazy load the greeting router if you have exactly 1 export and it is the router
+  greeting: experimental_lazy(() => import('./greeting.js')),
+  // Option 2: Alternative way to lazy load if you have more than 1 export
+  user: experimental_lazy(() => import('./user.js').then((m) => m.userRouter)),
+});
+export type AppRouter = typeof appRouter;
+
+// ----------------------------------------------------
+// @filename: routers/greeting.ts
+import { router, publicProcedure } from '../trpc';
+export const greetingRouter = router({
+  hello: publicProcedure.query(() => 'world'),
+});
+
+// ----------------------------------------------------
+// @filename: routers/user.ts
+import { router, publicProcedure } from '../trpc';
+
+export const userRouter = router({
+  list: publicProcedure.query(() => ['John', 'Jane', 'Jim']),
+});
+```

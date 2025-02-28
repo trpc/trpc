@@ -22,7 +22,7 @@
       "dependsOn": ["//#codegen-tsconfigs"]
     },
     "codegen-tests": {
-      "outputs": ["server/__generated__/bigBoi/**"],
+      "outputs": ["*/__generated__/bigBoi/**"],
       "dependsOn": ["codegen-entrypoints"]
     },
     "prebuild": {
@@ -59,6 +59,10 @@
       "cache": false
     },
     "test-ci": {
+      "dependsOn": ["^build", "codegen-tests"],
+      "cache": false
+    },
+    "test-run:tsc": {
       "dependsOn": ["^build", "codegen-tests"],
       "cache": false
     },

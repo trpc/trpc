@@ -1,4 +1,4 @@
-import { createTRPCProxyClient } from '@trpc/react-query';
+import { createTRPCProxyClient } from '@trpc/client';
 import type { inferRouterInputs } from '@trpc/server';
 import { experimental_standaloneMiddleware, initTRPC } from '@trpc/server';
 import * as z from 'zod';

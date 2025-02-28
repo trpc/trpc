@@ -114,10 +114,6 @@ test('add and get post', async () => {
 
 ## `router.createCaller()`
 
-:::caution
-`router.createCaller()` has been deprecated and will be removed in v11 or v12 of tRPC.
-:::
-
 With the `router.createCaller({})` function (first argument is `Context`) we retrieve an instance of `RouterCaller`.
 
 ### Input query example

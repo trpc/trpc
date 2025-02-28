@@ -229,11 +229,15 @@ export function unstable_httpSubscriptionLink<
               }
             }
           }
-
           observer.next({
             result: {
               type: 'stopped',
             },
+          });
+          connectionState.next({
+            type: 'state',
+            state: 'idle',
+            error: null,
           });
           observer.complete();
         }).catch((error) => {

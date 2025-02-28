@@ -10,7 +10,7 @@ function handler({ request }: { request: Request }) {
   });
 }
 
-export const Route = createAPIFileRoute('/api/trpc/$')({
+export const APIRoute = createAPIFileRoute('/api/trpc/$')({
   GET: handler,
   POST: handler,
 });

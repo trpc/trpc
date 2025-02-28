@@ -1,0 +1,51 @@
+---
+slug: introducing-tanstack-react-query-client
+title: Introducing the new TanStack React Query integration
+authors: [juliusmarminge, nicklucas]
+commentDiscussionId: 6508
+---
+
+We are excited to announce the new TanStack React Query integration for tRPC is now available on tRPC's `next`-release. Compared to our classic [React Query Integration](/docs/client/react) it's simpler and more TanStack Query-native, choosing to utilize the [QueryOptions](https://tanstack.com/query/latest/docs/framework/react/guides/query-options) and [MutationOptions](https://tanstack.com/query/latest/docs/framework/react/guides/mutations) interfaces native to TanStack React Query, instead of wrapping `useQuery` and `useMutation` with our own client.
+
+{/* truncate */}
+
+```tsx title="greeting.tsx"
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+export function Greeting() {
+  const trpc = useTRPC();
+
+  const greetingQuery = useQuery(trpc.greeting.queryOptions({ name: 'Jerry' }));
+
+  // greetingQuery.data === 'Hello Jerry'
+
+  // [...]
+}
+```
+
+With this new client we're removing a layer of abstraction which is a common source of confusion for new users, and instead providing a more direct way to work with TanStack React Query which will feel immediately familiar to those who are following TanStack's own [documentation](https://tanstack.com/query/latest). It also means we need less tRPC documentation to explain it, though we of course have [documentation to get you started](/docs/client/tanstack-react-query/setup).
+
+## Why the change?
+
+You can read our original RFC behind this change [here](https://github.com/trpc/trpc/discussions/6240) which goes into some detail. But some of our key reasons are:
+
+- **Simplicity**: The new client is simpler and more TanStack Query-native, providing factories for common TanStack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. This lowers the learning curve as you can follow the [official TanStack Query documentation](https://tanstack.com/query/latest)
+- **Familiarity**: The new client is more familiar to those who are already using TanStack Query, where you use TanStack Query for other workloads in your application doesn't force you to use an alternative syntax for tRPC
+- **React**: Our classic React Query integration actually breaks the rules of hooks; it [cannot be correctly linted](https://github.com/trpc/trpc/issues/2330), and it encourages some patterns which will break under the React Compiler such as passing around hooks as props. In this respect the new client is more idiomatic React
+- **Maintainability**: A challenge we've had with our versioning is keeping tRPC in lockstep with changes to TanStack Query, particularly new features which get added to QueryClient from time to time. By using the tiny surface area of native interfaces we can support React Query much more easily, while also following what [TanStack's maintainers consider best practice](https://bsky.app/profile/tkdodo.eu/post/3lgizrcvjmc24)
+- **Feedback**: As we've said the classic client is a common cause of difficulty for new users, but also the feedback we had on [the RFC](https://github.com/trpc/trpc/discussions/6240) for this client was overwhelmingly positive, with the majority of users who left us a comment or message excited to use this client. Of course not everyone is sold on the client right now, so we'll be keeping the classic client around
+
+## What's happening to the classic tRPC React Query integration?
+
+It's not going anywhere soon! We're committing to maintaining it for a long time to come, but it won't receive any significant new features and we'll consider it stable.
+
+We still recommend new projects start with the new TanStack React Query integration, and existing projects to consider migrating over gradually.
+
+## How do I migrate?
+
+While the classic client is going to be maintained for a long time to come, we recommend new projects start with the new client and active projects consider gradually migrating over.
+
+Both clients are compatible with each other and can exist in the same application, so you can migrate at your own pace. We are also working on a codemod which **we would love** community contributions to. We'd like to thank [@reaper](https://bsky.app/profile/reaper.is) for his contributions to the codemod so far!
+
+👉 [Read the Migration Docs](/docs/client/tanstack-react-query/migrating)

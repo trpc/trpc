@@ -1,13 +1,14 @@
 import { AsyncLocalStorage } from 'async_hooks';
-import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { initTRPC } from '@trpc/server';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
+import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
 import * as arktype from 'arktype';
-import * as arktype2 from 'arktype2';
 import myzod from 'myzod';
 import * as T from 'runtypes';
 import * as $ from 'scale-codec';
 import * as st from 'superstruct';
-import * as v from 'valibot';
+import * as v0 from 'valibot0';
+import * as v1 from 'valibot1';
 import * as yup from 'yup';
 import { z } from 'zod';
 
@@ -136,11 +137,11 @@ test('zod transform mixed input/output', async () => {
   await close();
 });
 
-test('valibot', async () => {
+test('valibot v0', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(v.parser(v.number())).query(({ input }) => {
+    num: t.procedure.input(v0.parser(v0.number())).query(({ input }) => {
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -158,12 +159,12 @@ test('valibot', async () => {
   await close();
 });
 
-test('valibot async', async () => {
+test('valibot v0 async', async () => {
   const t = initTRPC.create();
-  const input = v.parserAsync(
-    v.pipeAsync(
-      v.string(),
-      v.checkAsync(async (value) => value === 'foo'),
+  const input = v0.parserAsync(
+    v0.pipeAsync(
+      v0.string(),
+      v0.checkAsync(async (value) => value === 'foo'),
     ),
   );
 
@@ -190,13 +191,13 @@ test('valibot async', async () => {
   await close();
 });
 
-test('valibot transform mixed input/output', async () => {
+test('valibot v0 transform mixed input/output', async () => {
   const t = initTRPC.create();
-  const input = v.parser(
-    v.object({
-      length: v.pipe(
-        v.string(),
-        v.transform((s) => s.length),
+  const input = v0.parser(
+    v0.object({
+      length: v0.pipe(
+        v0.string(),
+        v0.transform((s) => s.length),
       ),
     }),
   );
@@ -231,6 +232,145 @@ test('valibot transform mixed input/output', async () => {
   await close();
 });
 
+test('valibot v1', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input(v1.number()).query(({ input }) => {
+      expectTypeOf(input).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const ctx = routerToServerAndClientNew(router);
+  const res = await ctx.client.num.query(123);
+
+  await expect(
+    ctx.client.num.query('123' as any),
+  ).rejects.toMatchInlineSnapshot(
+    '[TRPCClientError: Invalid type: Expected number but received "123"]',
+  );
+  expect(res.input).toBe(123);
+
+  await ctx.close();
+});
+
+test('valibot v1 error type', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input(v1.number()).query(({ input }) => {
+      expectTypeOf(input).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const caller = router.createCaller({});
+  const err = await waitError(
+    caller.num(
+      // @ts-expect-error this should only accept a number
+      '123',
+    ),
+    TRPCError,
+  );
+  expect(err).toMatchInlineSnapshot(
+    `[TRPCError: Invalid type: Expected number but received "123"]`,
+  );
+
+  assert(err.cause instanceof StandardSchemaV1Error);
+  expect(err.cause.issues).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "abortEarly": undefined,
+        "abortPipeEarly": undefined,
+        "expected": "number",
+        "input": "123",
+        "issues": undefined,
+        "kind": "schema",
+        "lang": undefined,
+        "message": "Invalid type: Expected number but received "123"",
+        "path": undefined,
+        "received": ""123"",
+        "requirement": undefined,
+        "type": "number",
+      },
+    ]
+  `);
+});
+
+test('valibot v1 async', async () => {
+  const t = initTRPC.create();
+  const input = v1.pipeAsync(
+    v1.string(),
+    v1.checkAsync(async (value) => value === 'foo'),
+  );
+
+  const router = t.router({
+    q: t.procedure.input(input).query(({ input }) => {
+      expectTypeOf(input).toBeString();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const ctx = routerToServerAndClientNew(router);
+
+  await expect(ctx.client.q.query('bar')).rejects.toMatchInlineSnapshot(
+    '[TRPCClientError: Invalid input: Received "bar"]',
+  );
+  const res = await ctx.client.q.query('foo');
+  expect(res).toMatchInlineSnapshot(`
+      Object {
+        "input": "foo",
+      }
+    `);
+  await ctx.close();
+});
+
+test('valibot v1 transform mixed input/output', async () => {
+  const t = initTRPC.create();
+  const input = v1.object({
+    length: v1.pipe(
+      v1.string(),
+      v1.transform((s) => s.length),
+    ),
+  });
+
+  const router = t.router({
+    num: t.procedure.input(input).query(({ input }) => {
+      expectTypeOf(input.length).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const ctx = routerToServerAndClientNew(router);
+
+  await expect(ctx.client.num.query({ length: '123' })).resolves
+    .toMatchInlineSnapshot(`
+            Object {
+              "input": Object {
+                "length": 3,
+              },
+            }
+          `);
+
+  await expect(
+    ctx.client.num.query({
+      // @ts-expect-error this should only accept a string
+      length: 123,
+    }),
+  ).rejects.toMatchInlineSnapshot(
+    '[TRPCClientError: Invalid type: Expected string but received 123]',
+  );
+});
+
 test('superstruct', async () => {
   const t = initTRPC.create();
 
@@ -243,15 +383,15 @@ test('superstruct', async () => {
     }),
   });
 
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query(123);
+  const ctx = routerToServerAndClientNew(router);
+  const res = await ctx.client.num.query(123);
 
   // @ts-expect-error this only accepts a `number`
-  await expect(client.num.query('123')).rejects.toMatchInlineSnapshot(
+  await expect(ctx.client.num.query('123')).rejects.toMatchInlineSnapshot(
     `[TRPCClientError: Expected a number, but received: "123"]`,
   );
   expect(res.input).toBe(123);
-  await close();
+  await ctx.close();
 });
 
 test('yup', async () => {
@@ -321,7 +461,7 @@ test('myzod', async () => {
   await close();
 });
 
-test('arktype v1 schema', async () => {
+test('arktype v2 schema', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
@@ -341,65 +481,16 @@ test('arktype v1 schema', async () => {
 
   // @ts-expect-error this only accepts {text: string}
   await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`
-    [TRPCClientError: text must be a string (was number)]
-  `);
-  await close();
-});
-
-test('arktype v2 schema', async () => {
-  const t = initTRPC.create();
-
-  const router = t.router({
-    num: t.procedure
-      .input(arktype2.type({ text: 'string' }))
-      .query(({ input }) => {
-        expectTypeOf(input).toEqualTypeOf<{ text: string }>();
-        return {
-          input,
-        };
-      }),
-  });
-
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query({ text: '123' });
-  expect(res.input).toMatchObject({ text: '123' });
-
-  // @ts-expect-error this only accepts {text: string}
-  await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`
     [TRPCClientError: text must be a string (was a number)]
   `);
   await close();
 });
 
-test('arktype schema - using .assert', async () => {
-  const t = initTRPC.create();
-
-  const router = t.router({
-    num: t.procedure
-      .input(arktype.type({ text: 'string' }).assert)
-      .query(({ input }) => {
-        expectTypeOf(input).toEqualTypeOf<{ text: string }>();
-        return {
-          input,
-        };
-      }),
-  });
-
-  const { close, client } = routerToServerAndClientNew(router);
-  const res = await client.num.query({ text: '123' });
-  expect(res.input).toMatchObject({ text: '123' });
-
-  // @ts-expect-error this only accepts {text: string}
-  await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`
-    [TRPCClientError: text must be a string (was number)]
-  `);
-  await close();
-});
 test('runtypes', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(T.Record({ text: T.String })).query(({ input }) => {
+    num: t.procedure.input(T.Object({ text: T.String })).query(({ input }) => {
       expectTypeOf(input).toMatchTypeOf<{ text: string }>();
       return {
         input,
@@ -411,10 +502,10 @@ test('runtypes', async () => {
   const res = await client.num.query({ text: '123' });
   expect(res.input).toMatchObject({ text: '123' });
 
-  // @ts-expect-error this only accepts a `number`
+  // @ts-expect-error this only accepts an object with text property
   await expect(client.num.query('13')).rejects.toMatchInlineSnapshot(`
-  [TRPCClientError: Expected { text: string; }, but was string]
-`);
+    [TRPCClientError: Expected { text: string; }, but was string]
+  `);
   await close();
 });
 

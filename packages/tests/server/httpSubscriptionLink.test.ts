@@ -1,9 +1,11 @@
 import { EventEmitter, on } from 'node:events';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import {
-  routerToServerAndClientNew,
   suppressLogs,
   suppressLogsUntil,
-} from './___testHelpers';
+} from '@trpc/server/__tests__/suppressLogs';
 import type {
   OperationResultEnvelope,
   TRPCClientError,
@@ -31,16 +33,18 @@ import { zAsyncIterable } from './zAsyncIterable';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const returnSymbol = Symbol();
+
+type MyEvents = {
+  data: [Error | number | typeof returnSymbol];
+};
 const orderedResults: number[] = [];
 const ctx = konn()
   .beforeEach(() => {
     const onIterableInfiniteSpy =
       vi.fn<(args: { input: { lastEventId?: number } }) => void>();
 
-    const ee = new EventEmitter();
-    const eeEmit = (data: number | Error) => {
-      ee.emit('data', data);
-    };
+    const ee = new IterableEventEmitter<MyEvents>();
 
     const t = initTRPC.create({
       transformer: superjson,
@@ -58,14 +62,16 @@ const ctx = konn()
             }),
           )
           .subscription(async function* (opts) {
-            for await (const data of on(ee, 'data', {
+            for await (const [thing] of ee.toIterable('data', {
               signal: opts.signal,
             })) {
-              const thing = data[0] as number | Error;
-
               if (thing instanceof Error) {
                 throw thing;
               }
+              if (thing === returnSymbol) {
+                return;
+              }
+
               yield thing;
             }
           }),
@@ -105,6 +111,7 @@ const ctx = konn()
               observer.next(value);
             },
             error: observer.error,
+            complete: observer.complete,
           });
           return unsubscribe;
         });
@@ -134,7 +141,6 @@ const ctx = konn()
     return {
       ...opts,
       ee,
-      eeEmit,
       infiniteYields,
       onIterableInfiniteSpy,
     };
@@ -165,8 +171,8 @@ test('iterable event', async () => {
     },
   );
 
-  ctx.eeEmit(1);
-  ctx.eeEmit(2);
+  ctx.ee.emit('data', 1);
+  ctx.ee.emit('data', 2);
 
   await vi.waitFor(() => {
     expect(onData).toHaveBeenCalledTimes(2);
@@ -213,13 +219,13 @@ test(
     await vi.waitFor(() => {
       expect(onStarted).toHaveBeenCalledTimes(1);
     });
-    ctx.eeEmit(1);
+    ctx.ee.emit('data', 1);
 
     await vi.waitFor(() => {
       expect(onData).toHaveBeenCalledTimes(1);
     });
 
-    ctx.eeEmit(new Error('test error'));
+    ctx.ee.emit('data', new Error('test error'));
 
     await suppressLogsUntil(async () => {
       await vi.waitFor(
@@ -232,7 +238,7 @@ test(
       );
     });
 
-    ctx.eeEmit(2);
+    ctx.ee.emit('data', 2);
 
     await vi.waitFor(
       () => {
@@ -303,8 +309,8 @@ test('iterable event with bad yield', async () => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
-  ctx.eeEmit(1);
-  ctx.eeEmit('NOT_A_NUMBER' as never);
+  ctx.ee.emit('data', 1);
+  ctx.ee.emit('data', 'NOT_A_NUMBER' as never);
   await vi.waitFor(() => {
     expect(ctx.onErrorSpy).toHaveBeenCalledTimes(1);
   });
@@ -783,7 +789,7 @@ describe('timeouts', async () => {
   const getCtx = (ctxOpts: CtxOpts) => {
     const results: number[] = [];
 
-    vi.useFakeTimers();
+    const fakeTimers = fakeTimersResource();
 
     const onConnection = vi.fn<() => void>();
 
@@ -841,6 +847,7 @@ describe('timeouts', async () => {
               observer.next(envelope);
             },
             error: observer.error,
+            complete: observer.complete,
           });
           return unsubscribe;
         });
@@ -870,7 +877,6 @@ describe('timeouts', async () => {
       },
       async () => {
         vi.useRealTimers();
-        await opts.close?.();
       },
     );
   };
@@ -963,5 +969,204 @@ describe('timeouts', async () => {
     expect(connectedOpts).toHaveLength(1);
 
     sub.unsubscribe();
+  });
+});
+
+test('cancel subscription by returning on the server', async () => {
+  const onStartedSpy = vi.fn();
+  const onDataSpy = vi.fn();
+  const onCompleteSpy = vi.fn();
+  const onErrorSpy = vi.fn();
+  const onStoppedSpy = vi.fn();
+  const onConnectionStateChangeSpy = vi.fn();
+  const sub = ctx.client.sub.iterableEvent.subscribe(undefined, {
+    onData: onDataSpy,
+    onStarted: onStartedSpy,
+    onComplete: onCompleteSpy,
+    onError: onErrorSpy,
+    onStopped: onStoppedSpy,
+    onConnectionStateChange: onConnectionStateChangeSpy,
+  });
+
+  await vi.waitFor(() => {
+    expect(onStartedSpy).toHaveBeenCalledTimes(1);
+  });
+
+  const es = onStartedSpy.mock.calls[0]![0].context?.eventSource;
+  assert(es instanceof EventSource);
+
+  expect(es.readyState).toBe(EventSource.OPEN);
+
+  // yield
+  ctx.ee.emit('data', 1);
+
+  await vi.waitFor(() => {
+    expect(onDataSpy).toHaveBeenCalledTimes(1);
+  });
+  expect(onDataSpy.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        1,
+      ],
+    ]
+  `);
+  expect(es.readyState).toBe(EventSource.OPEN);
+  ctx.ee.emit('data', returnSymbol);
+
+  await vi.waitFor(() => {
+    expect(onStoppedSpy).toHaveBeenCalledTimes(1);
+  });
+  await vi.waitFor(() => {
+    expect(onCompleteSpy).toHaveBeenCalledTimes(1);
+  });
+
+  expect(onConnectionStateChangeSpy.mock.calls.flat()).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "error": null,
+        "state": "connecting",
+        "type": "state",
+      },
+      Object {
+        "error": null,
+        "state": "pending",
+        "type": "state",
+      },
+      Object {
+        "error": null,
+        "state": "idle",
+        "type": "state",
+      },
+    ]
+  `);
+
+  expect(es.readyState).toBe(EventSource.CLOSED);
+
+  expect(onErrorSpy).not.toHaveBeenCalled();
+
+  sub.unsubscribe();
+});
+
+function createPuller(): PromiseLike<void> & {
+  pull: () => void;
+  reject: (err: unknown) => void;
+} {
+  let deferred = createDeferred();
+
+  return {
+    pull: () => {
+      deferred.resolve();
+    },
+    reject: (err: unknown) => {
+      deferred.reject(err);
+    },
+    then(onFulfilled, onRejected) {
+      return deferred.promise.then(onFulfilled, onRejected).then((res) => {
+        deferred = createDeferred();
+        return res;
+      });
+    },
+  };
+}
+
+test('tracked() without transformer', async () => {
+  /**
+   * Test resource
+   */
+  function getCtxResource() {
+    const t = initTRPC.create({});
+
+    const puller = createPuller();
+    const finallySpy = vi.fn();
+    const onAbortSpy = vi.fn();
+
+    const router = t.router({
+      iterableInfinite: t.procedure
+        .input(
+          z
+            .object({
+              lastEventId: z.coerce.number().min(0).optional(),
+            })
+            .optional(),
+        )
+        .subscription(async function* (opts) {
+          opts.signal?.addEventListener(
+            'abort',
+            (reason) => {
+              onAbortSpy(reason);
+              puller.reject(reason);
+            },
+            { once: true },
+          );
+          try {
+            let idx = opts.input?.lastEventId ?? 0;
+            while (true) {
+              idx++;
+              yield tracked(String(idx), idx);
+              await puller;
+            }
+          } finally {
+            finallySpy();
+          }
+        }),
+    });
+
+    const opts = routerToServerAndClientNew(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            splitLink({
+              condition: (op) => op.type === 'subscription',
+              true: unstable_httpSubscriptionLink({
+                url: opts.httpUrl,
+              }),
+              false: unstable_httpBatchStreamLink({
+                url: opts.httpUrl,
+              }),
+            }),
+          ],
+        };
+      },
+    });
+    return {
+      ...opts,
+      puller,
+      finallySpy,
+      onAbortSpy,
+    };
+  }
+  await using ctx = getCtxResource();
+
+  const results: number[] = [];
+
+  const sub = ctx.client.iterableInfinite.subscribe(undefined, {
+    onData: (envelope) => {
+      expectTypeOf(envelope.data).toBeNumber();
+
+      results.push(envelope.data);
+    },
+  });
+
+  await vi.waitFor(() => {
+    expect(results).toHaveLength(1);
+  });
+
+  ctx.puller.pull();
+
+  await vi.waitFor(() => {
+    expect(results).toHaveLength(2);
+  });
+
+  ctx.puller.pull();
+
+  await vi.waitFor(() => {
+    expect(results).toEqual([1, 2, 3]);
+  });
+
+  sub.unsubscribe();
+
+  await vi.waitFor(() => {
+    expect(ctx.finallySpy).toHaveBeenCalledTimes(1);
   });
 });

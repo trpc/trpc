@@ -16,6 +16,7 @@ export function getCauseFromUnknown(cause: unknown): Error | undefined {
 
   // Primitive types just get wrapped in an error
   if (type !== 'object') {
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return new Error(String(cause));
   }
 

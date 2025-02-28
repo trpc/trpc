@@ -5,9 +5,9 @@
 import type { DehydratedState } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
 import { createTRPCUntypedClient } from '@trpc/client';
+import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import { getTransformer } from '@trpc/client/unstable-internals';
-import type { TRPCClientError, TRPCClientErrorLike } from '@trpc/react-query';
 import { getQueryClient } from '@trpc/react-query/shared';
 import type {
   AnyRouter,

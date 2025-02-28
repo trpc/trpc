@@ -86,3 +86,16 @@ export interface ResponseEsque {
  * @internal
  */
 export type NonEmptyArray<TItem> = [TItem, ...TItem[]];
+
+type ClientContext = Record<string, unknown>;
+
+/**
+ * @public
+ */
+export interface TRPCProcedureOptions {
+  /**
+   * Client-side context
+   */
+  context?: ClientContext;
+  signal?: AbortSignal;
+}

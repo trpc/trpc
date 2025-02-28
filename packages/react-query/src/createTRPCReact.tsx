@@ -10,7 +10,7 @@ import type {
   UseSuspenseInfiniteQueryResult,
   UseSuspenseQueryResult,
 } from '@tanstack/react-query';
-import type { TRPCClientErrorLike } from '@trpc/client';
+import type { createTRPCClient, TRPCClientErrorLike } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -38,7 +38,6 @@ import { createReactDecoration, createReactQueryUtils } from './shared';
 import type { CreateReactQueryHooks } from './shared/hooks/createHooksInternal';
 import { createRootHooks } from './shared/hooks/createHooksInternal';
 import type {
-  CreateClient,
   DefinedUseTRPCQueryOptions,
   DefinedUseTRPCQueryResult,
   TRPCHookResult,
@@ -382,18 +381,9 @@ interface ProcedureUseSubscription<TDef extends ResolverDef> {
       inferAsyncIterableYield<TDef['output']>,
       TRPCClientErrorLike<TDef>
     >,
-  ): Exclude<
-    TRPCSubscriptionResult<
-      inferAsyncIterableYield<TDef['output']>,
-      TRPCClientErrorLike<TDef>
-    >,
-    // The idle state is
-    | {
-        status: 'idle';
-      }
-    | {
-        connectionState: 'idle';
-      }
+  ): TRPCSubscriptionResult<
+    inferAsyncIterableYield<TDef['output']>,
+    TRPCClientErrorLike<TDef>
   >;
 
   // With skip token
@@ -438,18 +428,18 @@ export type DecorateRouterRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? DecorateRouterRecord<TRoot, $Value>
-      : $Value extends AnyProcedure
-        ? DecorateProcedure<
-            $Value['_def']['type'],
-            {
-              input: inferProcedureInput<$Value>;
-              output: inferTransformedProcedureOutput<TRoot, $Value>;
-              transformer: TRoot['transformer'];
-              errorShape: TRoot['errorShape'];
-            }
-          >
+    ? $Value extends AnyProcedure
+      ? DecorateProcedure<
+          $Value['_def']['type'],
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<TRoot, $Value>;
+            transformer: TRoot['transformer'];
+            errorShape: TRoot['errorShape'];
+          }
+        >
+      : $Value extends RouterRecord
+        ? DecorateRouterRecord<TRoot, $Value>
         : never
     : never;
 };
@@ -469,7 +459,7 @@ export type CreateTRPCReactBase<TRouter extends AnyRouter, TSSRContext> = {
    */
   useUtils(): CreateReactUtils<TRouter, TSSRContext>;
   Provider: TRPCProvider<TRouter, TSSRContext>;
-  createClient: CreateClient<TRouter>;
+  createClient: typeof createTRPCClient<TRouter>;
   useQueries: TRPCUseQueries<TRouter>;
   useSuspenseQueries: TRPCUseSuspenseQueries<TRouter>;
 };

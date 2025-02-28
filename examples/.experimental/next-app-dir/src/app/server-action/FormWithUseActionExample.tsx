@@ -9,7 +9,7 @@ export function FormWithUseActionExample() {
     <>
       <p>Check the console for the logger output.</p>
       <form
-        action={testAction}
+        action={testAction as any}
         onSubmit={(e) => {
           e.preventDefault();
           const formData = new FormData(e.currentTarget);

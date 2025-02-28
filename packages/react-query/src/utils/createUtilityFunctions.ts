@@ -5,7 +5,7 @@ import {
   skipToken,
   type QueryClient,
 } from '@tanstack/react-query';
-import type { CreateTRPCClient } from '@trpc/client';
+import type { TRPCClient } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
@@ -21,7 +21,7 @@ export interface CreateQueryUtilsOptions<TRouter extends AnyRouter> {
   /**
    * The `TRPCClient`
    */
-  client: CreateTRPCClient<TRouter> | TRPCUntypedClient<TRouter>;
+  client: TRPCClient<TRouter> | TRPCUntypedClient<TRouter>;
   /**
    * The `QueryClient` from `react-query`
    */

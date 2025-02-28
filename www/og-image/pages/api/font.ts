@@ -3,7 +3,7 @@
  * @see https://github.com/vercel/satori/blob/main/playground/pages/api/font.ts
  */
 import type { NextRequest } from 'next/server';
-import { fontParams } from 'utils/zodParams';
+import { fontParams } from '../../utils/zodParams';
 
 export const config = {
   runtime: 'edge',

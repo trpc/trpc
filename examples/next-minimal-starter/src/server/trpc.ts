@@ -8,8 +8,11 @@
  * @see https://trpc.io/docs/v11/procedures
  */
 import { initTRPC } from '@trpc/server';
+import { transformer } from '../utils/transformer';
 
-const t = initTRPC.create();
+const t = initTRPC.create({
+  transformer,
+});
 
 /**
  * Unprotected procedure

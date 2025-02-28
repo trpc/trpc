@@ -44,23 +44,12 @@ export type CreateTRPCClientOptions<TRouter extends InferrableClientTypes> = {
   transformer?: TypeError<'The transformer property has moved to httpLink/httpBatchLink/wsLink'>;
 };
 
-/** @internal */
-export type UntypedClientProperties =
-  | '$request'
-  | 'links'
-  | 'mutation'
-  | 'query'
-  | 'requestAsPromise'
-  | 'requestId'
-  | 'runtime'
-  | 'subscription';
-
-export class TRPCUntypedClient<TRouter extends AnyRouter> {
-  private readonly links: OperationLink<AnyRouter>[];
+export class TRPCUntypedClient<TInferrable extends InferrableClientTypes> {
+  private readonly links: OperationLink<TInferrable>[];
   public readonly runtime: TRPCClientRuntime;
   private requestId: number;
 
-  constructor(opts: CreateTRPCClientOptions<TRouter>) {
+  constructor(opts: CreateTRPCClientOptions<TInferrable>) {
     this.requestId = 0;
 
     this.runtime = {};

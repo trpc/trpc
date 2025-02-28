@@ -42,18 +42,18 @@ export type NextAppDirDecorateRouterRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? NextAppDirDecorateRouterRecord<TRoot, $Value>
-      : $Value extends AnyProcedure
-        ? DecorateProcedureServer<
-            $Value['_def']['type'],
-            {
-              input: inferProcedureInput<$Value>;
-              output: inferTransformedProcedureOutput<TRoot, $Value>;
-              errorShape: TRoot['errorShape'];
-              transformer: TRoot['transformer'];
-            }
-          >
+    ? $Value extends AnyProcedure
+      ? DecorateProcedureServer<
+          $Value['_def']['type'],
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<TRoot, $Value>;
+            errorShape: TRoot['errorShape'];
+            transformer: TRoot['transformer'];
+          }
+        >
+      : $Value extends RouterRecord
+        ? NextAppDirDecorateRouterRecord<TRoot, $Value>
         : never
     : never;
 };
