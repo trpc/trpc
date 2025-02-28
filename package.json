@@ -89,7 +89,7 @@
   "pnpm": {
     "overrides": {
       "@types/node": "20.17.19",
-      "vitest@3.0.6>expect-type": "https://pkg.pr.new/mmkal/expect-type@126"
+      "vitest@3.0.6>expect-type": "^1.2.0"
     }
   }
 }
