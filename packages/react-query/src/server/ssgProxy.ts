@@ -137,10 +137,8 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
         ...dehydrated,
         queries: dehydrated.queries.map((query) => {
           if (query.promise) {
-            return {
-              ...query,
-              promise: undefined,
-            };
+            const { promise: _, ...rest } = query;
+            return rest;
           }
           return query;
         }),
