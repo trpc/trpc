@@ -2,7 +2,7 @@ import { log } from '@clack/prompts';
 import { execa } from './execa';
 
 function getPackageManager() {
-  const userAgent = process.env.npm_config_user_agent;
+  const userAgent = process.env['npm_config_user_agent'];
   if (userAgent?.startsWith('pnpm')) return 'pnpm';
   if (userAgent?.startsWith('yarn')) return 'yarn';
   if (userAgent?.startsWith('bun')) return 'bun';
@@ -18,7 +18,7 @@ export async function installPackage(packageName: string) {
   if (stderr) {
     log.error(stderr);
   }
-  if (process.env.VERBOSE) {
+  if (process.env['VERBOSE']) {
     log.info(stdout);
   }
 }
@@ -32,7 +32,7 @@ export async function uninstallPackage(packageName: string) {
   if (stderr) {
     log.error(stderr);
   }
-  if (process.env.VERBOSE) {
+  if (process.env['VERBOSE']) {
     log.info(stdout);
   }
 }
