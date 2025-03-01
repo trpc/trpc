@@ -506,6 +506,25 @@ importers:
         specifier: ^5.7.2
         version: 5.7.2
 
+  examples/.test/trpc-tanstack-router-bug-repro:
+    dependencies:
+      '@tanstack/react-query':
+        specifier: ^5.66.0
+        version: 5.66.0(react@19.0.0)
+      '@trpc/client':
+        specifier: npm:@trpc/client@next
+        version: link:../../../packages/client
+      '@trpc/server':
+        specifier: npm:@trpc/server@next
+        version: link:../../../packages/server
+      '@trpc/tanstack-react-query':
+        specifier: npm:@trpc/tanstack-react-query@next
+        version: link:../../../packages/tanstack-react-query
+    devDependencies:
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+
   examples/bun:
     dependencies:
       '@trpc/client':
@@ -16643,6 +16662,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@5.7.3:
+    resolution: {integrity: sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   uc.micro@2.1.0:
     resolution: {integrity: sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==}
 
@@ -27724,8 +27748,8 @@ snapshots:
   docusaurus-preset-shiki-twoslash@1.1.41:
     dependencies:
       copy-text-to-clipboard: 3.0.1
-      remark-shiki-twoslash: 3.1.3(typescript@5.7.2)
-      typescript: 5.7.2
+      remark-shiki-twoslash: 3.1.3(typescript@5.7.3)
+      typescript: 5.7.3
     transitivePeerDependencies:
       - supports-color
 
@@ -30761,7 +30785,7 @@ snapshots:
       strong-log-transformer: 2.1.0
       tar: 6.1.11
       temp-dir: 1.0.0
-      typescript: 5.7.2
+      typescript: 5.7.3
       upath: 2.0.1
       uuid: 9.0.0
       validate-npm-package-license: 3.0.4
@@ -34293,6 +34317,21 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  remark-shiki-twoslash@3.1.3(typescript@5.7.3):
+    dependencies:
+      '@types/unist': 2.0.6
+      '@typescript/twoslash': 3.1.0
+      '@typescript/vfs': 1.3.4
+      fenceparser: 1.1.1
+      regenerator-runtime: 0.13.11
+      shiki: 0.10.1
+      shiki-twoslash: 3.1.2(typescript@5.7.3)
+      tslib: 2.1.0
+      typescript: 5.7.3
+      unist-util-visit: 2.0.3
+    transitivePeerDependencies:
+      - supports-color
+
   remark-stringify@11.0.0:
     dependencies:
       '@types/mdast': 4.0.4
@@ -34930,6 +34969,16 @@ snapshots:
       fenceparser: 1.1.1
       shiki: 0.10.1
       typescript: 5.7.2
+    transitivePeerDependencies:
+      - supports-color
+
+  shiki-twoslash@3.1.2(typescript@5.7.3):
+    dependencies:
+      '@typescript/twoslash': 3.1.0
+      '@typescript/vfs': 1.3.4
+      fenceparser: 1.1.1
+      shiki: 0.10.1
+      typescript: 5.7.3
     transitivePeerDependencies:
       - supports-color
 
@@ -36019,6 +36068,8 @@ snapshots:
       - supports-color
 
   typescript@5.7.2: {}
+
+  typescript@5.7.3: {}
 
   uc.micro@2.1.0: {}
 

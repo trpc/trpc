@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "lib": ["ESNext"],
+    "module": "NodeNext",
+    "target": "ESNext",
+
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "moduleResolution": "NodeNext",
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUncheckedSideEffectImports": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "stripInternal": true
+  },
+  "files": ["index.ts", "index-workaround.ts"]
+}
