@@ -17,6 +17,6 @@
     "typescript": "5.7.3"
   },
   "scripts": {
-    "build": "rm -rf build && tsc"
+    "build": "rm -rf dist && tsc"
   }
 }
