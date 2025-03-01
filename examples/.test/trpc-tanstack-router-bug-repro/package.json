@@ -6,7 +6,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.5.2+sha256.79a98daa90248b50815e31460790f118c56fe099113370826caa0153be6daba5",
   "dependencies": {
     "@tanstack/react-query": "^5.66.0",
     "@trpc/client": "npm:@trpc/client@next",
