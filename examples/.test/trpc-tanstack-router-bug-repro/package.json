@@ -14,7 +14,7 @@
     "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query@next"
   },
   "devDependencies": {
-    "typescript": "5.7.3"
+    "typescript": "^5.7.2"
   },
   "scripts": {
     "build": "rm -rf dist && tsc"
