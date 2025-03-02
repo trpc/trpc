@@ -104,7 +104,7 @@
     "typedoc": "0.27.9",
     "typedoc-plugin-markdown": "4.4.2",
     "typescript": "^5.8.2",
-    "valibot": "1.0.0-rc.2",
+    "valibot": "1.0.0-rc.3",
     "yup": "^1.0.0"
   }
 }
