@@ -76,6 +76,7 @@ jobs:
             .experimental/next-app-dir,
             .test/diagnostics-big-router,
             .test/internal-types-export,
+            .test/trpc-tanstack-router-bug-repro,
             .test/ssg,
             cloudflare-workers,
             express-minimal,

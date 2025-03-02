@@ -506,6 +506,25 @@ importers:
         specifier: ^5.8.2
         version: 5.8.2
 
+  examples/.test/trpc-tanstack-router-bug-repro:
+    dependencies:
+      '@tanstack/react-query':
+        specifier: ^5.66.0
+        version: 5.66.11(react@19.0.0)
+      '@trpc/client':
+        specifier: npm:@trpc/client@next
+        version: link:../../../packages/client
+      '@trpc/server':
+        specifier: npm:@trpc/server@next
+        version: link:../../../packages/server
+      '@trpc/tanstack-react-query':
+        specifier: npm:@trpc/tanstack-react-query@next
+        version: link:../../../packages/tanstack-react-query
+    devDependencies:
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.2
+
   examples/bun:
     dependencies:
       '@trpc/client':
@@ -7398,6 +7417,9 @@ packages:
   '@tanstack/query-core@5.66.0':
     resolution: {integrity: sha512-J+JeBtthiKxrpzUu7rfIPDzhscXF2p5zE/hVdrqkACBP8Yu0M96mwJ5m/8cPPYQE9aRNvXztXHlNwIh4FEeMZw==}
 
+  '@tanstack/query-core@5.66.11':
+    resolution: {integrity: sha512-ZEYxgHUcohj3sHkbRaw0gYwFxjY5O6M3IXOYXEun7E1rqNhsP8fOtqjJTKPZpVHcdIdrmX4lzZctT4+pts0OgA==}
+
   '@tanstack/query-core@5.66.4':
     resolution: {integrity: sha512-skM/gzNX4shPkqmdTCSoHtJAPMTtmIJNS0hE+xwTTUVYwezArCT34NMermABmBVUg5Ls5aiUXEDXfqwR1oVkcA==}
 
@@ -7433,6 +7455,11 @@ packages:
 
   '@tanstack/react-query@5.66.0':
     resolution: {integrity: sha512-z3sYixFQJe8hndFnXgWu7C79ctL+pI0KAelYyW+khaNJ1m22lWrhJU2QrsTcRKMuVPtoZvfBYrTStIdKo+x0Xw==}
+    peerDependencies:
+      react: ^18 || ^19
+
+  '@tanstack/react-query@5.66.11':
+    resolution: {integrity: sha512-uPDiQbZScWkAeihmZ9gAm3wOBA1TmLB1KCB1fJ1hIiEKq3dTT+ja/aYM7wGUD+XiEsY4sDSE7p8VIz/21L2Dow==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -24278,6 +24305,8 @@ snapshots:
 
   '@tanstack/query-core@5.66.0': {}
 
+  '@tanstack/query-core@5.66.11': {}
+
   '@tanstack/query-core@5.66.4': {}
 
   '@tanstack/query-devtools@5.65.0': {}
@@ -24315,6 +24344,11 @@ snapshots:
   '@tanstack/react-query@5.66.0(react@19.0.0)':
     dependencies:
       '@tanstack/query-core': 5.66.0
+      react: 19.0.0
+
+  '@tanstack/react-query@5.66.11(react@19.0.0)':
+    dependencies:
+      '@tanstack/query-core': 5.66.11
       react: 19.0.0
 
   '@tanstack/react-router-with-query@1.109.2(@tanstack/react-query@5.66.0(react@19.0.0))(@tanstack/react-router@1.109.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
@@ -34165,7 +34199,7 @@ snapshots:
 
   regenerator-transform@0.15.2:
     dependencies:
-      '@babel/runtime': 7.26.0
+      '@babel/runtime': 7.26.9
 
   regexp-tree@0.1.27: {}
 
