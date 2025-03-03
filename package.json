@@ -92,8 +92,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/node": "20.17.22",
-      "@tanstack/react-query": "https://pkg.pr.new/@tanstack/react-query@6e2e3e3"
+      "@types/node": "20.17.22"
     }
   }
 }
