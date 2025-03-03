@@ -35,7 +35,7 @@
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@mdx-js/react": "^3.1.0",
-    "@tanstack/react-query": "^5.66.0",
+    "@tanstack/react-query": "^5.67.1",
     "@trpc/client": "workspace:*",
     "@trpc/next": "workspace:*",
     "@trpc/react-query": "workspace:*",
