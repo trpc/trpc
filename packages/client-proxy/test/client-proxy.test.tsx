@@ -49,26 +49,24 @@ describe('client-proxy factory', () => {
           .query(() => '__result' as const),
       }),
     });
-    type AppRouter = typeof appRouter;
 
-    const proxy = createTRPCClientProxy<AppRouter>({
+    const proxy = createTRPCClientProxy({
       router: appRouter,
       ctx: () => ({}),
-      overloads: {
-        queries: {
-          hello(opts) {
-            // opts.path
-            // opts.call()
-            return opts.path;
-          },
-          goodbye(opts) {
-            return 'world';
-          },
+    })({
+      queries: {
+        hello(opts) {
+          // opts.path
+          // opts.call()
+          return () => opts.path;
+        },
+        goodbye(opts) {
+          return () => 'world';
         },
       },
     });
 
-    proxy.post.byId.hello;
+    proxy.post.byId.hello();
 
     // proxy.post.byId
   });
