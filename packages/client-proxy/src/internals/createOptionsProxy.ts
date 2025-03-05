@@ -167,6 +167,7 @@ export function createTRPCClientProxy<TRouter extends AnyTRPCRouter>(
     methods.subscriptions ??= {};
     methods['infinite-queries'] ??= {};
 
+    const typeMap: Record<string, TRPCProcedureType | 'any'> = {};
     const contextMap: Record<string, MethodDef> = {};
     for (const overloader in methods) {
       const thisMethods = methods[overloader as keyof typeof methods];
@@ -177,6 +178,21 @@ export function createTRPCClientProxy<TRouter extends AnyTRPCRouter>(
           );
         }
         contextMap[key] = thisMethods[key] as any;
+
+        switch (overloader as keyof TRPCClientProxyMethods<any>) {
+          case 'queries':
+          case 'infinite-queries':
+            typeMap[key] = 'query';
+            break;
+          case 'mutations':
+            typeMap[key] = 'mutation';
+            break;
+          case 'subscriptions':
+            typeMap[key] = 'subscription';
+            break;
+          case 'paths':
+            typeMap[key] = 'any';
+        }
       }
     }
 
@@ -194,7 +210,7 @@ export function createTRPCClientProxy<TRouter extends AnyTRPCRouter>(
 
         // TODO: sort calling out
         call(input) {
-          callIt('');
+          return callIt(typeMap[utilName] as TRPCProcedureType);
         },
       });
     });

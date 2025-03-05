@@ -67,6 +67,7 @@ describe('client-proxy factory', () => {
     });
 
     proxy.post.byId.hello();
+    //              ^?
 
     // proxy.post.byId
   });
