@@ -48,9 +48,9 @@ export default {
       // searchParameters: {},
     },
     announcementBar: {
-      id: 'tanstack-react-query-integration',
+      id: 'response-and-tanstack-react-query',
       content:
-        "🚀 We just released a new <em>TanStack React Query</em>-integration! Check out <a href='/blog/introducing-tanstack-react-query-client'><strong>the blog post here</strong></a>.",
+        "New post: Return <code>Response</code>-objects directly from tRPC procedures: <a href='/blog/return-Response-objects-in-procedures'><strong>Read the blog post</strong></a> | 🚀 We just released a new <em>TanStack React Query</em>-integration! Check out <a href='/blog/introducing-tanstack-react-query-client'><strong>the blog post here</strong></a>.",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
       isCloseable: true,
@@ -72,12 +72,12 @@ export default {
           label: 'Quickstart',
         },
         {
-          to: 'docs/community/awesome-trpc',
-          label: 'Awesome tRPC Collection',
+          to: 'blog',
+          label: 'Blog',
         },
         {
-          to: 'docs/client/nextjs',
-          label: 'Using Next.js',
+          to: 'docs/community/awesome-trpc',
+          label: 'Awesome tRPC Collection',
         },
         {
           href: 'https://github.com/trpc/trpc',
@@ -90,6 +90,12 @@ export default {
           position: 'right',
           className: 'header-social-link header-twitter-link',
           'aria-label': 'Twitter',
+        },
+        {
+          href: 'https://bsky.app/profile/trpc.io',
+          position: 'right',
+          className: 'header-social-link header-bluesky-link',
+          'aria-label': 'Bluesky',
         },
         {
           href: 'https://trpc.io/discord',

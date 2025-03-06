@@ -67,6 +67,10 @@ export type NodeJSReadableStreamEsque = {
   ): NodeJSReadableStreamEsque;
 };
 
+interface HeadersEsque {
+  get(key: string): string | null;
+}
+
 /**
  * A subset of the standard Response properties needed by tRPC internally.
  * @see Response from lib.dom.d.ts
@@ -80,6 +84,7 @@ export interface ResponseEsque {
    * more type-safe. You do want more type safety, right? 😉
    */
   json(): Promise<unknown>;
+  headers: HeadersEsque;
 }
 
 /**

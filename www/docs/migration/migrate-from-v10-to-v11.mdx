@@ -24,6 +24,10 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### You can now return `Response`-objects from procedures (non-breaking)
+
+See the <a href="/blog/2025/02/12/return-Response-objects-in-procedures">blog post</a> for more information.
+
 ### New TanStack React Query integration! (non-breaking)
 
 We are excited to announce the new TanStack React Query integration for tRPC is now available on tRPC's `next`-release!
@@ -193,11 +197,11 @@ type inferAsyncIterableYield<TOutput> =
 
 This change has been made to ensure the library remains compatible with future updates and allows for the use of the `return` type in subscriptions' `AsyncGenerator`s.
 
-See [subscriptions docs](../server/subscriptions.md#output-validators) for more information.
+See [subscriptions docs](../server/subscriptions.md#output-validation) for more information.
 
 ### Added support for output validators in subscriptions (non-breaking)
 
-See [subscriptions docs](../server/subscriptions.md#output-validators) for more information.
+See [subscriptions docs](../server/subscriptions.md#output-validation) for more information.
 
 ### Deprecation of subscriptions returning `Observable`s (non-breaking)
 

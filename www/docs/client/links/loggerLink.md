@@ -1,6 +1,6 @@
 ---
 id: loggerLink
-title: Logger Link
+title: Logger Link / loggerLink
 sidebar_label: Logger Link
 slug: /client/links/loggerLink
 ---

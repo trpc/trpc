@@ -241,13 +241,21 @@ h5 {
   @apply text-lg;
 }
 
-.markdown ul {
-  @apply list-disc pl-8;
-}
-
 .markdown blockquote,
 .markdown .shiki {
   margin: 0 0 var(--ifm-spacing-vertical);
+}
+
+.markdown ul,
+.markdown ol {
+  @apply pl-8;
+  margin-bottom: var(--ifm-leading);
+}
+.markdown ul {
+  @apply list-disc;
+}
+.markdown ol {
+  @apply list-decimal;
 }
 
 .pagination-nav__label {
@@ -312,23 +320,15 @@ h5 {
   @apply border-zinc-300 bg-zinc-100;
 }
 
-.markdown ul {
-  @apply list-inside list-disc;
-}
-
-.markdown ol {
-  @apply list-inside list-decimal;
-}
-
-.markdown ol li {
-  @apply my-4;
-}
-
 .markdown li > p {
   display: inline;
 }
 
 /** Hide noisy shiki stuff */
+
+.markdown .shiki {
+  @apply my-4;
+}
 
 .shiki data-lsp {
   border-bottom: 0 !important;
@@ -370,6 +370,15 @@ html.v9 .trpcgif--v9 {
   display: block;
 }
 */
+
+#__docusaurus > [role='banner'] code {
+  background: inherit;
+  border: none;
+  padding: inherit;
+  font-family: monospace;
+  font-size: 0.8rem;
+  vertical-align: inherit;
+}
 
 /* Breadcrumbs */
 .breadcrumbs {

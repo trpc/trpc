@@ -7,7 +7,7 @@ import { transformResult } from '@trpc/server/unstable-core-do-not-import';
 import { TRPCClientError } from '../TRPCClientError';
 import type {
   HTTPLinkBaseOptions,
-  HTTPResult,
+  JsonHTTPResult,
   Requester,
 } from './internals/httpUtils';
 import {
@@ -105,9 +105,20 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
             return opts.headers;
           },
         });
-        let meta: HTTPResult['meta'] | undefined = undefined;
+        let meta: JsonHTTPResult['meta'] | undefined = undefined;
         request
           .then((res) => {
+            if (res.type === 'response') {
+              observer.next({
+                result: {
+                  type: 'data',
+                  data: res.response,
+                },
+              });
+              observer.complete();
+              return;
+            }
+
             meta = res.meta;
             const transformed = transformResult(
               res.json,

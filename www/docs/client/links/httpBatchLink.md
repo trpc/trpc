@@ -1,6 +1,6 @@
 ---
 id: httpBatchLink
-title: HTTP Batch Link
+title: HTTP Batch Link / httpBatchLink
 sidebar_label: HTTP Batch Link
 slug: /client/links/httpBatchLink
 ---
