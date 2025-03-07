@@ -128,7 +128,7 @@ export type MiddlewareFunction<
        * Override part of the context with a new object
        * @see https://trpc.io/docs/server/middlewares#context-extension
        */
-      <$ContextOverride>(
+      <$ContextOverride extends object>(
         ctx: $ContextOverride,
       ): Promise<MiddlewareResult<$ContextOverride>>;
       (opts: {
