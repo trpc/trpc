@@ -1,43 +1,12 @@
 import { waitError } from '@trpc/server/__tests__/waitError';
 import type { TRPCError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-
-test('middleware swap', async () => {
-  const t = initTRPC.create();
-  const router = t.router({
-    test: t.procedure
-      .use((opts) =>
-        opts.next({
-          getRawInput: () => Promise.resolve('foo'),
-        }),
-      )
-      .use((opts) => {
-        const raw = opts.getRawInput();
-        return opts.next({
-          input: raw,
-        });
-      })
-      .query((opts) => opts.input),
-  });
-
-  const caller = router.createCaller({});
-
-  const result = await caller.test();
-
-  expect(result).toBe('foo');
-});
+import { z } from 'zod';
 
 test('untyped caller', async () => {
   const t = initTRPC.create();
   const router = t.router({
-    test: t.procedure
-      .use((opts) => {
-        const raw = opts.getRawInput();
-        return opts.next({
-          input: raw,
-        });
-      })
-      .query((opts) => opts.input),
+    test: t.procedure.input(z.string()).query((opts) => opts.input),
   });
 
   const result = await router.test({
@@ -54,14 +23,7 @@ test('untyped caller', async () => {
 test('getRawInput fails', async () => {
   const t = initTRPC.create();
   const router = t.router({
-    test: t.procedure
-      .use((opts) => {
-        const raw = opts.getRawInput();
-        return opts.next({
-          input: raw,
-        });
-      })
-      .query((opts) => opts.input),
+    test: t.procedure.input(z.string()).query((opts) => opts.input),
   });
 
   const result = await waitError<TRPCError>(

@@ -10,6 +10,7 @@ import {
   createInputMiddleware,
   createOutputMiddleware,
   middlewareMarker,
+  nextInputSymbol,
 } from './middleware';
 import type { inferParser, Parser } from './parser';
 import { getParseFn } from './parser';
@@ -585,21 +586,24 @@ async function callRecursive(
       ...opts,
       meta: _def.meta,
       input: opts.input,
-      next(_nextOpts?: any) {
-        const nextOpts = _nextOpts as
-          | {
-              ctx?: Record<string, unknown>;
-              input?: unknown;
-              getRawInput?: GetRawInputFn;
-            }
-          | undefined;
+      next(nextOpts?: object) {
+        if (!nextOpts) {
+          return callRecursive(index + 1, _def, opts);
+        }
+        if (nextInputSymbol in nextOpts) {
+          return callRecursive(index + 1, _def, {
+            ...opts,
+            input: nextOpts[nextInputSymbol],
+          });
+        }
+        if ('ctx' in nextOpts && Object.keys(nextOpts).length === 1) {
+          return callRecursive(index + 1, _def, {
+            ...opts,
+            ctx: nextOpts?.ctx ? { ...opts.ctx, ...nextOpts.ctx } : opts.ctx,
+          });
+        }
 
-        return callRecursive(index + 1, _def, {
-          ...opts,
-          ctx: nextOpts?.ctx ? { ...opts.ctx, ...nextOpts.ctx } : opts.ctx,
-          input: nextOpts && 'input' in nextOpts ? nextOpts.input : opts.input,
-          getRawInput: nextOpts?.getRawInput ?? opts.getRawInput,
-        });
+        throw new Error('Invalid next() call');
       },
     });
     return result;

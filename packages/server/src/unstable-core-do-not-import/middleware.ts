@@ -86,6 +86,11 @@ export interface MiddlewareBuilder<
 /**
  * @internal
  */
+export const nextInputSymbol = Symbol();
+
+/**
+ * @internal
+ */
 export type MiddlewareFunction<
   TContext,
   TMeta,
@@ -104,11 +109,10 @@ export type MiddlewareFunction<
     next: {
       (): Promise<MiddlewareResult<TContextOverridesIn>>;
       <$ContextOverride>(opts: {
-        ctx?: $ContextOverride;
-        input?: unknown;
+        ctx: $ContextOverride;
       }): Promise<MiddlewareResult<$ContextOverride>>;
       (opts: {
-        getRawInput: GetRawInputFn;
+        [nextInputSymbol]: unknown;
       }): Promise<MiddlewareResult<TContextOverridesIn>>;
     };
   }): Promise<MiddlewareResult<$ContextOverridesOut>>;
@@ -203,7 +207,7 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
             }
           : parsedInput;
 
-      return opts.next({ input: combinedInput });
+      return opts.next({ [nextInputSymbol]: combinedInput });
     };
   inputMiddleware._type = 'input';
   return inputMiddleware;
