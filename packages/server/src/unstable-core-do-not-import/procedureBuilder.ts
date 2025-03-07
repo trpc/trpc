@@ -602,9 +602,9 @@ async function callRecursive(
         if ('ctx' in nextOpts) {
           if (Object.keys(nextOpts).length !== 1) {
             throw new Error(
-              `Invalid next call with keys ${Object.keys(nextOpts).join(
+              `Ambiguous next() call with keys ${Object.keys(nextOpts).join(
                 ', ',
-              )} - please don't use the 'ctx' key on the next() call`,
+              )}: 'ctx' key is a reserved property - either **only** use the 'ctx' key or don't include it`,
             );
           }
           return callRecursive(index + 1, _def, {

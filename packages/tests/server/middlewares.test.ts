@@ -1,3 +1,4 @@
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { experimental_trpcMiddleware, initTRPC } from '@trpc/server';
 
 test('decorate independently', () => {
@@ -493,6 +494,27 @@ test('meta', () => {
 
     return next();
   });
+});
+
+test('confusing context', async () => {
+  const t = initTRPC.create();
+  const router = t.router({
+    proc: t.procedure
+      .use(async (opts) => {
+        return opts.next({
+          ctx: {
+            foo: 'bar',
+          },
+          eek: 'beek',
+        });
+      })
+      .query(() => 'nope'),
+  });
+
+  const caller = router.createCaller({});
+
+  const err = await waitError(() => caller.proc());
+  expect(err.message).toMatchInlineSnapshot(`"Ambiguous next() call with keys ctx, eek: 'ctx' key is a reserved property - either **only** use the 'ctx' key or don't include it"`);
 });
 
 /**
