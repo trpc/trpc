@@ -200,10 +200,8 @@ const protectedProcedure = t.procedure.use((opts) => {
   }
 
   return opts.next({
-    ctx: {
-      // Infers that the `user` is non-nullable
-      user: ctx.user,
-    },
+    // Infers that the `user` is non-nullable
+    user: ctx.user,
   });
 });
 

@@ -99,7 +99,7 @@ export const serverActionProcedure = t.procedure
   .use(async (opts) => {
     // Inject user into context
     const user = await currentUser();
-    return opts.next({ ctx: { user } });
+    return opts.next({ user });
   });
 ```
 
@@ -126,7 +126,7 @@ export const serverActionProcedure = t.procedure
     // Inject user into context
     const user = await currentUser();
     //    ^?
-    return opts.next({ ctx: { user } });
+    return opts.next({ user });
   });
 
 export const protectedAction = serverActionProcedure.use((opts) => {
@@ -137,11 +137,8 @@ export const protectedAction = serverActionProcedure.use((opts) => {
   }
 
   return opts.next({
-    ctx: {
-      ...opts.ctx,
-      user: opts.ctx.user, // <-- ensures type is non-nullable
-      //             ^?
-    },
+    user: opts.ctx.user, // <-- ensures type is non-nullable
+    //             ^?
   });
 });
 ```
@@ -234,7 +231,7 @@ You can use `@baselime/node-opentelemtry`'s trpc plugin to add observability in 
     .use(async (opts) => {
       // Inject user into context
       const user = await currentUser();
-      return opts.next({ ctx: { user } });
+      return opts.next({ user });
     })
 +  .use(tracing());
 

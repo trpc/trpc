@@ -32,9 +32,8 @@ export const adminProcedure = publicProcedure.use(async (opts) => {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
   return opts.next({
-    ctx: {
-      user: ctx.user,
-    },
+    // ✅ user value is known to be non-null now
+    user: ctx.user,
   });
 });
 ```
@@ -144,11 +143,9 @@ const protectedProcedure = publicProcedure.use(async function isAuthed(opts) {
   }
 
   return opts.next({
-    ctx: {
-      // ✅ user value is known to be non-null now
-      user: ctx.user,
-      // ^?
-    },
+    // ✅ user value is known to be non-null now
+    user: ctx.user,
+    // ^?
   });
 });
 
@@ -199,9 +196,7 @@ export function createMyPlugin() {
     // you can also add `.input()` if you want your plugin to do input validation
     pluginProc: t.procedure.use((opts) => {
       return opts.next({
-        ctx: {
-          fromPlugin: 'hello from myPlugin' as const,
-        },
+        fromPlugin: 'hello from myPlugin' as const,
       });
     }),
   };
@@ -269,9 +264,7 @@ const middleware = t.middleware;
 
 const fooMiddleware = t.middleware((opts) => {
   return opts.next({
-    ctx: {
-      foo: 'foo' as const,
-    },
+    foo: 'foo' as const,
   });
 });
 
@@ -280,9 +273,7 @@ const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
   ctx.foo;
   //   ^?
   return opts.next({
-    ctx: {
-      bar: 'bar' as const,
-    },
+    bar: 'bar' as const,
   });
 });
 
@@ -309,9 +300,7 @@ const fooMiddleware = t.middleware((opts) => {
   ctx.a; // 👈 fooMiddleware expects `ctx.a` to be an object
   //  ^?
   return opts.next({
-    ctx: {
-      a: 'a' as const, // 👈 `ctx.a` is no longer an object
-    },
+    a: 'a' as const, // 👈 `ctx.a` is no longer an object
   });
 });
 
@@ -320,9 +309,7 @@ const barMiddleware = t.middleware((opts) => {
   ctx.a; // 👈 barMiddleware expects `ctx.a` to be an object
   //  ^?
   return opts.next({
-    ctx: {
-      foo: 'foo' as const,
-    },
+    a: 'a' as const, // 👈 `ctx.a` is no longer an object
   });
 });
 
@@ -414,7 +401,7 @@ const valueAUppercaserMiddleware = experimental_standaloneMiddleware<{
   input: z.infer<typeof schemaA>;
 }>().create((opts) => {
   return opts.next({
-    ctx: { valueAUppercase: opts.input.valueA.toUpperCase() },
+    valueAUppercase: opts.input.valueA.toUpperCase()
   });
 });
 
@@ -422,7 +409,7 @@ const valueBUppercaserMiddleware = experimental_standaloneMiddleware<{
   input: z.infer<typeof schemaB>;
 }>().create((opts) => {
   return opts.next({
-    ctx: { valueBUppercase: opts.input.valueB.toUpperCase() },
+    valueBUppercase: opts.input.valueB.toUpperCase()
   });
 });
 
