@@ -1,5 +1,6 @@
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { experimental_trpcMiddleware, initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
 test('decorate independently', () => {
   type User = {
@@ -496,25 +497,65 @@ test('meta', () => {
   });
 });
 
-test('confusing context', async () => {
-  const t = initTRPC.create();
-  const router = t.router({
-    proc: t.procedure
-      .use(async (opts) => {
-        return opts.next({
-          ctx: {
-            foo: 'bar',
-          },
-          eek: 'beek',
-        });
-      })
-      .query(() => 'nope'),
+/**
+ * @deprecated - delete together with backwards compatibility
+ */
+describe('backwards compatibility', () => {
+  test('ambiguous context', async () => {
+    const t = initTRPC.create();
+    const router = t.router({
+      proc: t.procedure
+        .use(async (opts) => {
+          // @ts-expect-error - ctx is reserved
+          return opts.next({
+            ctx: {
+              foo: 'bar',
+            },
+            eek: 'beek',
+          });
+        })
+        .query(() => 'nope'),
+    });
+
+    const caller = router.createCaller({});
+
+    const err = await waitError(() => caller.proc());
+    expect(err.message).toMatchInlineSnapshot(
+      `"Ambiguous next() call with keys ctx, eek: 'ctx' and 'input' keys are reserved properties due to backwards compatibility"`,
+    );
   });
 
-  const caller = router.createCaller({});
+  test('input and ctx are reserved properties', () => {
+    const t = initTRPC.create();
+    t.procedure.use(async (opts) => {
+      // this is ok
+      opts.next({
+        ctx: {},
+        input: {},
+      });
 
-  const err = await waitError(() => caller.proc());
-  expect(err.message).toMatchInlineSnapshot(`"Ambiguous next() call with keys ctx, eek: 'ctx' key is a reserved property - either **only** use the 'ctx' key or don't include it"`);
+      opts.next({
+        ctx: {},
+        input: {},
+        // @ts-expect-error this is
+        foo: 'bar',
+      });
+
+      // @ts-expect-error - input and ctx are reserved properties
+      opts.next({
+        ctx: {},
+        foo: 'bar',
+      });
+
+      // @ts-expect-error - input and ctx are reserved properties
+      opts.next({
+        input: {},
+        foo: 'bar',
+      });
+
+      return opts.next();
+    });
+  });
 });
 
 /**
@@ -1059,5 +1100,64 @@ describe('calling with ctx: x', () => {
 
       return next();
     });
+  });
+
+  test('override input', async () => {
+    const t = initTRPC
+      .context<{
+        foo: string;
+      }>()
+      .create();
+
+    const router = t.router({
+      onlyInput: t.procedure
+        .input(z.string())
+        .use(async (opts) => {
+          return opts.next({
+            input: '2',
+          });
+        })
+        .query((opts) => {
+          expectTypeOf(opts.ctx).toEqualTypeOf<{
+            foo: string;
+          }>();
+          return opts.input;
+        }),
+
+      inputAndContext: t.procedure
+        .input(z.string())
+        .use(async (opts) => {
+          return opts.next({
+            input: '2',
+            ctx: {
+              foo: 'not-bar' as const,
+            },
+          });
+        })
+        .query((opts) => {
+          return {
+            input: opts.input,
+            ctx: opts.ctx,
+          };
+        }),
+    });
+
+    const caller = router.createCaller({
+      foo: 'foo',
+    });
+
+    {
+      const result = await caller.onlyInput('1');
+      expect(result).toBe('2');
+    }
+    {
+      const result = await caller.inputAndContext('1');
+      expect(result).toEqual({
+        input: '2',
+        ctx: {
+          foo: 'not-bar',
+        },
+      });
+    }
   });
 });

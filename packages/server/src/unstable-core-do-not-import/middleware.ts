@@ -1,7 +1,7 @@
 import { TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
-import type { GetRawInputFn, Overwrite, Simplify } from './types';
+import type { GetRawInputFn, Overwrite, Simplify, TypeError } from './types';
 import { isObject } from './utils';
 
 /** @internal */
@@ -88,6 +88,17 @@ export interface MiddlewareBuilder<
  */
 export const nextInputSymbol = Symbol();
 
+type ProtectedKeys<
+  TType,
+  TKeys extends string,
+  TReason extends string,
+> = keyof TType & TKeys extends never
+  ? TType
+  : Omit<TType, TKeys> & {
+      [K in keyof TType &
+        TKeys]: TypeError<`The property '${K}' is reserved. Reason: ${TReason}`>;
+    };
+
 /**
  * @internal
  */
@@ -113,27 +124,51 @@ export type MiddlewareFunction<
        */
       (): Promise<MiddlewareResult<TContextOverridesIn>>;
       /**
-       * @deprecated
-       * you don't need to use the `ctx`-key on the `next()` anymore, simply call `next()` with an object to override the context
-       *
-       * ```ts
-       * return next({ foo: 'bar' as const })
-       * ```
-       * @see https://trpc.io/docs/server/middlewares#context-extension
+       * @internal
        */
-      <$ContextOverride>(opts: {
-        ctx: $ContextOverride;
-      }): Promise<MiddlewareResult<$ContextOverride>>;
-      /**
-       * Override part of the context with a new object
-       * @see https://trpc.io/docs/server/middlewares#context-extension
-       */
-      <$ContextOverride extends object>(
-        ctx: $ContextOverride,
-      ): Promise<MiddlewareResult<$ContextOverride>>;
       (opts: {
         [nextInputSymbol]: unknown;
       }): Promise<MiddlewareResult<TContextOverridesIn>>;
+      /**
+       * @deprecated
+       * You don't need to use the `ctx`-key on the `next()` anymore, simply call `next()` with an object to override the context
+       *
+       * **Before:**
+       * ```ts
+       * return next({ ctx: { foo: 'bar' } })
+       * ```
+       *
+       * **After:**
+       * ```ts
+       * return next({ foo: 'bar' })
+       * ```
+       * @see https://trpc.io/docs/server/middlewares#context-extension
+       */
+      <$ContextOverride>(
+        opts:
+          | {
+              ctx: $ContextOverride;
+            }
+          | {
+              /**
+               * @deprecated
+               * The ability to override the `input`-key will be removed in v12 - please open an issue if you need this feature
+               */
+              input: unknown;
+              ctx?: $ContextOverride;
+            },
+      ): Promise<MiddlewareResult<$ContextOverride>>;
+      /**
+       * Add new properties on the context
+       * @see https://trpc.io/docs/server/middlewares#context-extension
+       */
+      <$ContextOverride extends object>(
+        ctx: ProtectedKeys<
+          $ContextOverride,
+          'input' | 'ctx',
+          'Backwards compatibility with v10'
+        >,
+      ): Promise<MiddlewareResult<$ContextOverride>>;
     };
   }): Promise<MiddlewareResult<$ContextOverridesOut>>;
   _type?: string | undefined;

@@ -599,17 +599,25 @@ async function callRecursive(
         /**
          * @deprecated
          */
-        if ('ctx' in nextOpts) {
-          if (Object.keys(nextOpts).length !== 1) {
+        if ('ctx' in nextOpts || 'input' in nextOpts) {
+          const keys = Object.keys(nextOpts);
+          if (
+            keys.length > 2 ||
+            keys.some((it) => it !== 'ctx' && it !== 'input')
+          ) {
             throw new Error(
-              `Ambiguous next() call with keys ${Object.keys(nextOpts).join(
+              `Ambiguous next() call with keys ${keys.join(
                 ', ',
-              )}: 'ctx' key is a reserved property - either **only** use the 'ctx' key or don't include it`,
+              )}: 'ctx' and 'input' keys are reserved properties due to backwards compatibility`,
             );
           }
           return callRecursive(index + 1, _def, {
             ...opts,
-            ctx: nextOpts?.ctx ? { ...opts.ctx, ...nextOpts.ctx } : opts.ctx,
+            ctx:
+              'ctx' in nextOpts
+                ? { ...opts.ctx, ...(nextOpts.ctx as object) }
+                : opts.ctx,
+            input: 'input' in nextOpts ? nextOpts.input : opts.input,
           });
         }
 
