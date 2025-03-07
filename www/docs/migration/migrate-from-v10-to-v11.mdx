@@ -38,8 +38,8 @@ const myProcedure = publicProcedure.use(async (opts) => {
     ctx: {
       foo: 'bar',
     },
-  })
-})
+  });
+});
 ```
 
 **After**
@@ -50,8 +50,8 @@ const myProcedure = publicProcedure.use(async (opts) => {
 
   return opts.next({
     foo: 'bar',
-  })
-})
+  });
+});
 ```
 
 ### New TanStack React Query integration! (non-breaking)
