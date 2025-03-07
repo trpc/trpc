@@ -107,15 +107,29 @@ export type MiddlewareFunction<
     meta: TMeta | undefined;
     signal: AbortSignal | undefined;
     next: {
+      /**
+       * Call the next middleware in the chain
+       * @see https://trpc.io/docs/server/middlewares
+       */
       (): Promise<MiddlewareResult<TContextOverridesIn>>;
       /**
-       * @deprecated don't use the `ctx` key on the `next()`, simply call `next()` with an object to override the context
+       * @deprecated
+       * you don't need to use the `ctx`-key on the `next()` anymore, simply call `next()` with an object to override the context
+       *
+       * ```ts
+       * return next({ foo: 'bar' as const })
+       * ```
+       * @see https://trpc.io/docs/server/middlewares#context-extension
        */
       <$ContextOverride>(opts: {
         ctx: $ContextOverride;
       }): Promise<MiddlewareResult<$ContextOverride>>;
+      /**
+       * Override part of the context with a new object
+       * @see https://trpc.io/docs/server/middlewares#context-extension
+       */
       <$ContextOverride>(
-        opts: $ContextOverride,
+        ctx: $ContextOverride,
       ): Promise<MiddlewareResult<$ContextOverride>>;
       (opts: {
         [nextInputSymbol]: unknown;

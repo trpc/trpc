@@ -498,7 +498,7 @@ test('meta', () => {
 /**
  * @deprecated
  */
-describe.skip('calling with ctx: x', () => {
+describe('calling with ctx: x', () => {
   test('decorate independently', () => {
     type User = {
       id: string;

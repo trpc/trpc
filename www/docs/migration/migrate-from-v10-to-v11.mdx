@@ -24,6 +24,36 @@ import { InstallSnippet } from '@site/src/components/InstallSnippet';
 > This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
 > The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
 
+### Simplified `next()`-calls in middlewares (non-breaking)
+
+We have simplified the `next()`-calls in middlewares, this means that you don't need to use the `ctx`-key on the `next()` anymore, simply call `next()` with an object to override the context.
+
+**Before**
+
+```ts
+const myProcedure = publicProcedure.use(async (opts) => {
+  // [...]
+
+  return opts.next({
+    ctx: {
+      foo: 'bar',
+    },
+  })
+})
+```
+
+**After**
+
+```ts
+const myProcedure = publicProcedure.use(async (opts) => {
+  // [...]
+
+  return opts.next({
+    foo: 'bar',
+  })
+})
+```
+
 ### New TanStack React Query integration! (non-breaking)
 
 We are excited to announce the new TanStack React Query integration for tRPC is now available on tRPC's `next`-release!
