@@ -514,7 +514,9 @@ test('confusing context', async () => {
   const caller = router.createCaller({});
 
   const err = await waitError(() => caller.proc());
-  expect(err.message).toMatchInlineSnapshot(`"Ambiguous next() call with keys ctx, eek: 'ctx' key is a reserved property - either **only** use the 'ctx' key or don't include it"`);
+  expect(err.message).toMatchInlineSnapshot(
+    `"Ambiguous next() call with keys ctx, eek: 'ctx' key is a reserved property - either **only** use the 'ctx' key or don't include it"`,
+  );
 });
 
 /**
