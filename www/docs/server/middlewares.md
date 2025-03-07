@@ -401,7 +401,7 @@ const valueAUppercaserMiddleware = experimental_standaloneMiddleware<{
   input: z.infer<typeof schemaA>;
 }>().create((opts) => {
   return opts.next({
-    valueAUppercase: opts.input.valueA.toUpperCase()
+    valueAUppercase: opts.input.valueA.toUpperCase(),
   });
 });
 
@@ -409,7 +409,7 @@ const valueBUppercaserMiddleware = experimental_standaloneMiddleware<{
   input: z.infer<typeof schemaB>;
 }>().create((opts) => {
   return opts.next({
-    valueBUppercase: opts.input.valueB.toUpperCase()
+    valueBUppercase: opts.input.valueB.toUpperCase(),
   });
 });
 
