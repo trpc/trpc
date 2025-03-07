@@ -596,14 +596,27 @@ async function callRecursive(
             input: nextOpts[nextInputSymbol],
           });
         }
-        if ('ctx' in nextOpts && Object.keys(nextOpts).length === 1) {
+        /**
+         * @deprecated
+         */
+        if ('ctx' in nextOpts) {
+          if (Object.keys(nextOpts).length !== 1) {
+            throw new Error(
+              `Invalid next call with keys ${Object.keys(nextOpts).join(
+                ', ',
+              )} - please don't use the 'ctx' key on the next() call`,
+            );
+          }
           return callRecursive(index + 1, _def, {
             ...opts,
             ctx: nextOpts?.ctx ? { ...opts.ctx, ...nextOpts.ctx } : opts.ctx,
           });
         }
 
-        throw new Error('Invalid next() call');
+        return callRecursive(index + 1, _def, {
+          ...opts,
+          ctx: nextOpts ? { ...opts.ctx, ...nextOpts } : opts.ctx,
+        });
       },
     });
     return result;

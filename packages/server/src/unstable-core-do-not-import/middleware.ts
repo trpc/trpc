@@ -108,9 +108,15 @@ export type MiddlewareFunction<
     signal: AbortSignal | undefined;
     next: {
       (): Promise<MiddlewareResult<TContextOverridesIn>>;
+      /**
+       * @deprecated don't use the `ctx` key on the `next()`, simply call `next()` with an object to override the context
+       */
       <$ContextOverride>(opts: {
         ctx: $ContextOverride;
       }): Promise<MiddlewareResult<$ContextOverride>>;
+      <$ContextOverride>(
+        opts: $ContextOverride,
+      ): Promise<MiddlewareResult<$ContextOverride>>;
       (opts: {
         [nextInputSymbol]: unknown;
       }): Promise<MiddlewareResult<TContextOverridesIn>>;
