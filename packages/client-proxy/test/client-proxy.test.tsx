@@ -47,6 +47,13 @@ describe('client-proxy factory', () => {
             }),
           )
           .query(() => '__result' as const),
+        create: t.procedure
+          .input(
+            z.object({
+              name: z.string(),
+            }),
+          )
+          .mutation(() => '__result' as const),
       }),
     });
 
@@ -55,18 +62,22 @@ describe('client-proxy factory', () => {
       ctx: () => ({}),
     })({
       queries: {
-        hello(opts) {
+        query(opts) {
           // opts.path
           // opts.call()
           return () => opts.path;
         },
-        goodbye(opts) {
-          return () => 'world';
+      },
+      mutations: {
+        mutate(opts) {
+          return () => opts.path;
         },
       },
     });
 
-    proxy.post.byId.hello();
+    proxy.post.byId.query();
+    //              ^?
+    proxy.post.create.mutate();
     //              ^?
 
     // proxy.post.byId
