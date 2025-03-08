@@ -1,8 +1,4 @@
-import type {
-  TRPCClient,
-  TRPCClientErrorLike,
-  TRPCRequestOptions,
-} from '@trpc/client';
+import type { TRPCClient, TRPCRequestOptions } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type {
   AnyTRPCProcedure,
@@ -16,7 +12,7 @@ import type {
 } from '@trpc/server';
 import { callTRPCProcedure, createTRPCRecursiveProxy } from '@trpc/server';
 import type { MaybePromise } from '@trpc/server/unstable-core-do-not-import';
-import type { OptionalCursorInput, ResolverDef, WithRequired } from './types';
+import type { OptionalCursorInput, ResolverDef } from './types';
 import { unwrapLazyArg } from './utils';
 
 export interface DecorateRouterKeyable {
@@ -43,16 +39,16 @@ export type inferOutput<TProcedure extends { '~types': { output: any } }> =
 export type DecorateProcedure<
   TType extends TRPCProcedureType,
   TDef extends ResolverDef,
-  TProxy extends TRPCClientProxyMethods<any>,
+  TProxy extends TRPCClientProxyMethods,
 > = TType extends 'query'
-  ? MethodTypes<TProxy['queries']> &
+  ? MethodTypes<TDef, TProxy['queries']> &
       (TDef['input'] extends OptionalCursorInput
         ? TProxy['infinite-queries']
         : Record<string, never>)
   : TType extends 'mutation'
-    ? MethodTypes<TProxy['mutations']>
+    ? MethodTypes<TDef, TProxy['mutations']>
     : TType extends 'subscription'
-      ? MethodTypes<TProxy['subscriptions']>
+      ? MethodTypes<TDef, TProxy['subscriptions']>
       : never;
 
 /**
@@ -61,12 +57,12 @@ export type DecorateProcedure<
 export type DecoratedRouterRecord<
   TRoot extends AnyTRPCRootTypes,
   TRecord extends TRPCRouterRecord,
-  TProxy extends TRPCClientProxyMethods<any>,
+  TProxy extends TRPCClientProxyMethods,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends TRPCRouterRecord
       ? DecoratedRouterRecord<TRoot, $Value, TProxy> &
-          MethodTypes<TProxy['paths']> &
+          MethodTypes<never, TProxy['paths']> &
           DecorateRouterKeyable
       : $Value extends AnyTRPCProcedure
         ? DecorateProcedure<
@@ -83,13 +79,16 @@ export type DecoratedRouterRecord<
     : never;
 };
 
-export type MethodTypes<T extends Record<string, MethodDef> | undefined> = {
+export type MethodTypes<
+  TDef extends ResolverDef,
+  T extends Record<string, MethodDef<TDef>> | undefined,
+> = {
   [K in keyof Exclude<T, undefined>]: ReturnType<Exclude<T, undefined>[K]>;
 };
 
 export type TRPCClientProxy<
   TRouter extends AnyTRPCRouter,
-  TProxy extends TRPCClientProxyMethods<TRouter>,
+  TProxy extends TRPCClientProxyMethods,
 > = DecoratedRouterRecord<
   TRouter['_def']['_config']['$types'],
   TRouter['_def']['record'],
@@ -97,10 +96,12 @@ export type TRPCClientProxy<
 > &
   DecorateRouterKeyable;
 
-type MethodDef = (bag: {
-  path: string[];
-  call(input: unknown): unknown;
-}) => () => unknown;
+type MethodDef<TDef extends ResolverDef> = (
+  opts: {
+    path: string[];
+    call(input: TDef['input']): TDef['output'];
+  } & TypeHelper<TDef>,
+) => (...args: any[]) => unknown;
 
 export interface TRPCClientProxyOptionsInternal<TRouter extends AnyTRPCRouter> {
   router: TRouter;
@@ -113,12 +114,12 @@ export interface TRPCClientProxyOptionsExternal<TRouter extends AnyTRPCRouter> {
   client: TRPCUntypedClient<TRouter> | TRPCClient<TRouter>;
 }
 
-export type TRPCClientProxyMethods<TRouter extends AnyTRPCRouter> = {
-  queries?: Record<string, MethodDef>;
-  mutations?: Record<string, MethodDef>;
-  paths?: Record<string, MethodDef>;
-  subscriptions?: Record<string, MethodDef>;
-  'infinite-queries'?: Record<string, MethodDef>;
+export type TRPCClientProxyMethods = {
+  queries?: Record<string, MethodDef<any>>;
+  mutations?: Record<string, MethodDef<any>>;
+  paths?: Record<string, MethodDef<any>>;
+  subscriptions?: Record<string, MethodDef<any>>;
+  'infinite-queries'?: Record<string, MethodDef<any>>;
 };
 
 export type TRPCClientProxyOuter<TRouter extends AnyTRPCRouter> =
@@ -158,7 +159,7 @@ export function createTRPCClientProxy<TRouter extends AnyTRPCRouter>(
     };
   };
 
-  function create<TMethods extends TRPCClientProxyMethods<TRouter>>(
+  function create<TMethods extends TRPCClientProxyMethods>(
     methods: TMethods,
   ): TRPCClientProxy<TRouter, TMethods> {
     methods.queries ??= {};
@@ -168,7 +169,7 @@ export function createTRPCClientProxy<TRouter extends AnyTRPCRouter>(
     methods['infinite-queries'] ??= {};
 
     const typeMap: Record<string, TRPCProcedureType | 'any'> = {};
-    const contextMap: Record<string, MethodDef> = {};
+    const contextMap: Record<string, MethodDef<any>> = {};
     for (const overloader in methods) {
       const thisMethods = methods[overloader as keyof typeof methods];
       for (const key in thisMethods) {
@@ -179,7 +180,7 @@ export function createTRPCClientProxy<TRouter extends AnyTRPCRouter>(
         }
         contextMap[key] = thisMethods[key] as any;
 
-        switch (overloader as keyof TRPCClientProxyMethods<any>) {
+        switch (overloader as keyof TRPCClientProxyMethods) {
           case 'queries':
           case 'infinite-queries':
             typeMap[key] = 'query';
@@ -202,8 +203,6 @@ export function createTRPCClientProxy<TRouter extends AnyTRPCRouter>(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const utilName = path.pop()!;
 
-      const [arg1, arg2] = args as any[];
-
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return contextMap[utilName]!({
         path,
@@ -212,7 +211,9 @@ export function createTRPCClientProxy<TRouter extends AnyTRPCRouter>(
         call(input) {
           return callIt(typeMap[utilName] as TRPCProcedureType);
         },
-      });
+
+        '~types': null as any,
+      })(...args);
     });
   }
 

@@ -6,6 +6,7 @@ import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
 import { describe, expect, test } from 'vitest';
 import { z } from 'zod';
+import type { inferInput, inferOutput } from '../src';
 import { createTRPCClientProxy } from '../src';
 
 const testContext = () => {
@@ -65,12 +66,16 @@ describe('client-proxy factory', () => {
         query(opts) {
           // opts.path
           // opts.call()
-          return () => opts.path;
+          return function (input: inferInput<typeof opts>) {
+            return null as inferOutput<typeof opts>;
+          };
         },
       },
       mutations: {
         mutate(opts) {
-          return () => opts.path;
+          return function (input: inferInput<typeof opts>) {
+            return null as inferOutput<typeof opts>;
+          };
         },
       },
     });
@@ -78,7 +83,7 @@ describe('client-proxy factory', () => {
     proxy.post.byId.query();
     //              ^?
     proxy.post.create.mutate();
-    //              ^?
+    //                ^?
 
     // proxy.post.byId
   });
