@@ -31,4 +31,7 @@ packages/*/*/
 !packages/tests/*/
 packages/tests/node_modules
 
+# attest cache dir
+.attest/
+
 examples/next-big-router/src/server/routers

@@ -5,6 +5,9 @@
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
     "codegen-tests": "run-p codegen:*",
     "lint": "eslint --cache .",
+    "type-bench": "pnpm type-bench-routes && pnpm type-bench-create",
+    "type-bench-routes": "node --no-warnings ./server/routes.bench.ts",
+    "type-bench-create": "node --no-warnings ./server/create.bench.ts",
     "test-run:tsc": "tsc --noEmit --pretty",
     "ts-watch": "tsc --watch"
   },
