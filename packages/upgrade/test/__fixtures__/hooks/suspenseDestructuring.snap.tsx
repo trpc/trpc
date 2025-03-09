@@ -48,5 +48,16 @@ export function Component() {
     ),
   );
 
+  const {
+    data: { pages },
+  } = useSuspenseInfiniteQuery(
+    trpc.post.infinite.infiniteQueryOptions(
+      { channelId },
+      {
+        getNextPageParam: (d) => d.nextCursor,
+      },
+    ),
+  );
+
   return useQueryClient().isFetching() ? 'loading' : 'loaded';
 }
