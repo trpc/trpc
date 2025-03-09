@@ -4,11 +4,7 @@ import { TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 
 test('happy path', async () => {
-  const t = initTRPC.create({
-    experimental: {
-      outputResponse: true,
-    },
-  });
+  const t = initTRPC.create();
   const router = t.router({
     hello: t.procedure.query(() => {
       return new Response('hello', {
@@ -33,11 +29,7 @@ test('happy path', async () => {
 });
 
 test('does not work with subscriptions', async () => {
-  const t = initTRPC.create({
-    experimental: {
-      outputResponse: true,
-    },
-  });
+  const t = initTRPC.create();
 
   // @ts-expect-error - this should not be allowed
   t.procedure.subscription(async () => {
@@ -47,35 +39,4 @@ test('does not work with subscriptions', async () => {
       },
     });
   });
-});
-
-test('experimental flag', async () => {
-  const t = initTRPC.create({
-    experimental: {
-      outputResponse: false,
-    },
-  });
-
-  const router = t.router({
-    hello: t.procedure.query(() => {
-      return new Response('hello', {
-        headers: {
-          'content-type': 'text/plain',
-        },
-      });
-    }),
-  });
-  await using ctx = testServerAndClientResource(router);
-  const res = await waitError(
-    ctx.client.hello.query(undefined, {
-      context: {
-        batch: false,
-      },
-    }),
-    TRPCClientError,
-  );
-
-  expect(res).toMatchInlineSnapshot(
-    `[TRPCClientError: You need to activate outputResponse in the root config to use this feature - e.g. \`initTRPC.create({ experimental: { outputResponse: true } })\`]`,
-  );
 });

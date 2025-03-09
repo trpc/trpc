@@ -86,9 +86,7 @@ export interface RootConfig<TTypes extends RootTypes> {
    * @see https://trpc.io/docs/client/links/httpBatchStreamLink
    */
   jsonl?: Pick<JSONLProducerOptions, 'pingMs'>;
-  experimental?: {
-    outputResponse?: boolean;
-  };
+  experimental?: {};
 }
 
 /**

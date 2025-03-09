@@ -44,9 +44,7 @@ const client = createTRPCClient<AppRouter>({
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { zfd } from 'zod-form-data';
-export const t = initTRPC.create({
-  experimental: { outputResponse: true }
-});
+export const t = initTRPC.create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
@@ -85,11 +83,11 @@ const result = await client.uploadFile.mutate(formData);
 
 ### Custom Response Types
 
-When your server procedures return `Response` objects (with the `experimental.outputResponse` flag enabled), `httpLink` can handle various response types including:
+When your server procedures return `Response` objects, `httpLink` can handle various response types including:
 
 - File downloads
 - Streams
-- Custom content types
+- Returning custom content types
 - Special headers
 
 ```ts

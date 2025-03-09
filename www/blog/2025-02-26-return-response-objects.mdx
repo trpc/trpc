@@ -106,20 +106,6 @@ When using custom response types, keep in mind:
 
 To use custom response types, you currently need to enable the feature in your tRPC configuration:
 
-### Enable the feature
-
-```ts twoslash
-// @module: esnext
-// @target: esnext
-import { initTRPC } from '@trpc/server';
-
-export const t = initTRPC.create({
-  experimental: {
-    outputResponse: true, // <-- enable the feature
-  },
-});
-```
-
 ### Setting up the client
 
 When returning Response objects, you need to use `httpLink` since responses cannot be batched. However, for optimal performance, you'll likely want to use batching for your other procedures. You can achieve this using `splitLink`:

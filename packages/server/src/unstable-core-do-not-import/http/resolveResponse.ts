@@ -384,11 +384,6 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
       if (!error && result?.data instanceof Response) {
         const response = result.data;
-        if (!config.experimental?.outputResponse) {
-          throw new Error(
-            'You need to activate outputResponse in the root config to use this feature - e.g. `initTRPC.create({ experimental: { outputResponse: true } })`',
-          );
-        }
 
         const headers = new Headers(response.headers);
         headers.set('trpc-response-output', '1');

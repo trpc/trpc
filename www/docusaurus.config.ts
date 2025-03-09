@@ -48,9 +48,9 @@ export default {
       // searchParameters: {},
     },
     announcementBar: {
-      id: 'response-and-tanstack-react-query',
+      id: 'response-objects',
       content:
-        "New post: Return <code>Response</code>-objects directly from tRPC procedures: <a href='/blog/return-Response-objects-in-procedures'><strong>Read the blog post</strong></a> | 🚀 We just released a new <em>TanStack React Query</em>-integration! Check out <a href='/blog/introducing-tanstack-react-query-client'><strong>the blog post here</strong></a>.",
+        "New feature: Return <code>Response</code>-objects directly from tRPC procedures: <a href='/blog/return-Response-objects-in-procedures'><strong>Read the blog post</strong></a>",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
       isCloseable: true,
