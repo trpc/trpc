@@ -260,6 +260,10 @@ const appRouter = router({
 
 The benefit of using tRPC over a custom endpoint API endpoint is that you can use the same [auth logic](/docs/server/authorization) as your other backend procedures.
 
+:::note
+The example below is unsafely typecasting the input passed which most of Vercel's AI SDK examples does as well, but you can build a validator based on the type of `Message` or what you decide to pass using `experimental_prepareRequestBody` in the `useChat()`.
+:::
+
 ```tsx twoslash title="server/_app.ts"
 // @module: esnext
 // @target: esnext
@@ -283,11 +287,9 @@ import { z } from 'zod';
 
 const appRouter = router({
   ai: protectedProcedure
-    .use(async opts => opts.next({
-      ctx: {
-        // Get the raw input from the post body - you can also use an input validator to validate the input
-        rawInput: await opts.getRawInput()
-      }
+    .input(z.unknown().transform(it => {
+      // (unsafely) typecast the raw input
+      return it as Message[]
     }))
     .mutation(async (opts) => {
       // You can access the user from the context as any other procedure
@@ -296,13 +298,13 @@ const appRouter = router({
       const response = streamText({
         model: openai('gpt-4o'),
         system: 'You are a helpful assistant.',
-        messages: opts.ctx.rawInput as Message[],
+        messages: opts.input,
+        //              ^?
       });
 
       return response.toDataStreamResponse();
     }),
 });
-
 
 export type AppRouter = typeof appRouter;
 ```
@@ -330,19 +332,19 @@ import { z } from 'zod';
 
 const appRouter = router({
   ai: protectedProcedure
-    .use(async opts => opts.next({
-      ctx: {
-        // Get the raw input from the post body - you can also use an input validator to validate the input
-        rawInput: await opts.getRawInput()
-      }
+    .input(z.unknown().transform(it => {
+      // (unsafely) typecast the raw input
+      return it as Message[]
     }))
     .mutation(async (opts) => {
       // You can access the user from the context as any other procedure
       opts.ctx.user;
+      //        ^?
       const response = streamText({
         model: openai('gpt-4o'),
         system: 'You are a helpful assistant.',
-        messages: opts.ctx.rawInput as Message[],
+        messages: opts.input,
+        //              ^?
       });
 
       return response.toDataStreamResponse();
