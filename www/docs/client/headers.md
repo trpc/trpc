@@ -5,7 +5,7 @@ sidebar_label: Create Custom Header
 slug: /client/headers
 ---
 
-The headers option can be customized in the config when using the [`httpBatchLink`](./links/httpBatchLink.md) or the [`httpLink`](./links/httpLink.md).
+The headers option can be customized in the config when using the [`httpBatchLink`](./links/httpBatchLink.md) or the [`httpLink`](./links/httpLink.mdx).
 
 `headers` can be both an object or a function. If it's a function it will get called dynamically for every HTTP request.
 

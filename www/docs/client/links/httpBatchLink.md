@@ -115,7 +115,7 @@ export default trpcNext.createNextApiHandler({
 });
 ```
 
-### 2. Replace `httpBatchLink` with [`httpLink`](./httpLink.md) in your tRPC Client
+### 2. Replace `httpBatchLink` with [`httpLink`](./httpLink.mdx) in your tRPC Client
 
 ```ts title="client/index.ts"
 import { createTRPCClient, httpLink } from '@trpc/client';

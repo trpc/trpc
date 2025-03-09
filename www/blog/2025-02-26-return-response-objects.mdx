@@ -108,7 +108,7 @@ To use custom response types, you currently need to enable the feature in your t
 
 ### Setting up the client
 
-When returning `Response`-objects, you need to use [`httpLink`](/docs/client/links/httpLink) since responses cannot be batched. However, for optimal performance, you'll likely want to use batching for your other procedures. You can achieve this using a [`splitLink`](/docs/client/links/splitLink):
+When returning `Response` objects, you need to use [`httpLink`](/docs/client/links/httpLink) since responses cannot be batched. However, for optimal performance, you'll likely want to use batching for your other procedures. You can achieve this using a [`splitLink`](/docs/client/links/splitLink):
 
 ```ts twoslash
 // @module: esnext

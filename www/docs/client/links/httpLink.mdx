@@ -5,6 +5,8 @@ sidebar_label: HTTP Link
 slug: /client/links/httpLink
 ---
 
+import { InstallSnippet } from '@site/src/components/InstallSnippet';
+
 `httpLink` is a [**terminating link**](./overview.md#the-terminating-link) that sends a tRPC operation to a tRPC procedure over HTTP.
 
 `httpLink` supports both POST and GET requests and provides several key capabilities:
@@ -38,6 +40,12 @@ const client = createTRPCClient<AppRouter>({
 ### `FormData` Support {#FormData}
 
 `httpLink` allows you to send `FormData` directly to your procedures, making it ideal for file uploads and form submissions:
+
+:::tip
+**Prerequisites for the example below:** Install `zod` and `zod-form-data`
+
+<InstallSnippet pkgs="zod zod-form-data" />
+:::
 
 ```ts twoslash
 // @filename: server.ts
