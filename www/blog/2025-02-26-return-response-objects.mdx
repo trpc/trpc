@@ -274,7 +274,7 @@ import { z } from 'zod';
 const appRouter = router({
   ai: protectedProcedure
     .input(z.unknown().transform(it => {
-      // (unsafely) typecast the raw input
+      // typecast the raw input (see note above)
       return it as Message[]
     }))
     .mutation(async (opts) => {
@@ -319,7 +319,7 @@ import { z } from 'zod';
 const appRouter = router({
   ai: protectedProcedure
     .input(z.unknown().transform(it => {
-      // (unsafely) typecast the raw input
+      // typecast the raw input (see note above)
       return it as Message[]
     }))
     .mutation(async (opts) => {
