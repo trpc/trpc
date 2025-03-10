@@ -6,9 +6,9 @@
     "codegen-tests": "run-p codegen:*",
     "lint": "eslint --cache .",
     "type-bench": "pnpm type-bench-routes && pnpm type-bench-client && pnpm type-bench-tanstack",
-    "type-bench-routes": "node --no-warnings ./server/routes.bench.ts",
-    "type-bench-client": "node --no-warnings ./server/client.bench.ts",
-    "type-bench-tanstack": "node --no-warnings ./server/tanstack.bench.ts",
+    "type-bench-routes": "node --experimental-strip-types --no-warnings ./types/routes.bench.ts",
+    "type-bench-client": "node --experimental-strip-types --no-warnings ./types/client.bench.ts",
+    "type-bench-tanstack": "node --experimental-strip-types --no-warnings ./types/tanstack.bench.ts",
     "test-run:tsc": "tsc --noEmit --pretty",
     "ts-watch": "tsc --watch"
   },
