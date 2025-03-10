@@ -6,6 +6,8 @@ export function Component() {
 
   const mutation = trpc.post.create.useMutation({
     onSettled: () => {
+      utils.invalidate();
+
       utils.post.invalidate();
       utils.post.list.invalidate();
       utils.post.x.y.z.longPropName.invalidate();
