@@ -1,6 +1,8 @@
 import { bench } from '@ark/attest';
 import { createTRPCClient } from '@trpc/client';
+import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { z } from 'zod';
 
 const t = initTRPC.create();
@@ -20,9 +22,11 @@ bench.baseline(() => {
   // making sure the router we pass to it doesn't have the same shape
   // as the one we're testing.
 
-  return createTRPCClient<typeof router>({
+  createTRPCClient<typeof router>({
     links: [],
   });
+
+  createTRPCReact<typeof router>().createClient({ links: [] });
 });
 
 // now that we're trying to isolate the performance of
@@ -82,6 +86,22 @@ bench('create and query 5 simple routes', async () => {
   // router and most client methods having very
   // efficient types in the repos we traced.
 }).types([1318, 'instantiations']);
+
+bench('create and query 5 simple routes (react)', async () => {
+  const hooks = createTRPCReact<typeof router5>({});
+
+  const client = hooks.createClient({ links: [] });
+
+  await client.arpc.query({ arpc: 'test' });
+  await client.brpc.query({ brpc: 'test' });
+  await client.crpc.query({ crpc: 'test' });
+  await client.drpc.query({ drpc: 'test' });
+  await client.erpc.query({ erpc: 'test' });
+  // the overhead is almost nothing compared to the base
+  // `createTRPCClient` call.
+  // could try adding additional options you believe
+  // are likely to add overhead and retest.
+}).types([1358, 'instantiations']);
 
 const router25 = t.router({
   arpc: t.procedure
