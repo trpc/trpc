@@ -9,14 +9,14 @@
     "@tsconfig/esm": "^1.0.3",
     "@tsconfig/node-lts": "^18.12.2",
     "@tsconfig/strictest": "^2.0.1",
-    "@types/node": "^22.9.0",
-    "typescript": "^5.7.2"
+    "@types/node": "^22.13.5",
+    "typescript": "^5.8.2"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/next": "npm:@trpc/next@next",
     "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
-    "next": "^15.1.3"
+    "next": "^15.1.7"
   }
 }

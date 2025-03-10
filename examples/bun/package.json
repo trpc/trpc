@@ -18,9 +18,9 @@
   },
   "devDependencies": {
     "@types/bun": "^1.1.12",
-    "eslint": "^9.13.0",
+    "eslint": "^9.21.0",
     "start-server-and-test": "^1.12.0",
-    "typescript": "^5.7.2",
+    "typescript": "^5.8.2",
     "wait-port": "^1.0.1"
   }
 }

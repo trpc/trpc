@@ -10,15 +10,15 @@
   "dependencies": {
     "@trpc/client": "npm:@trpc/client@next",
     "@trpc/server": "npm:@trpc/server@next",
-    "zod": "^3.0.0"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
-    "@types/node": "^22.9.0",
-    "eslint": "^9.13.0",
+    "@types/node": "^22.13.5",
+    "eslint": "^9.21.0",
     "start-server-and-test": "^1.12.0",
-    "tsx": "^4.0.0",
-    "typescript": "^5.7.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
     "wrangler": "^2.0.17"
   },
   "publishConfig": {
