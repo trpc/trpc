@@ -530,7 +530,11 @@ test('v1 cookies', async () => {
     responseMeta: () => {
       return {
         headers: {
-          'Set-Cookie': ['cookie1', 'cookie2'],
+          'Set-Cookie': [
+            'cookie1=value1',
+            'cookie2=value2; Expires=Wed, 28 Feb 2025 00:00:00 GMT',
+            'multiCookie1=value1; Domain=example.com; Expires=Wed, 28 Feb 2025 00:00:00 GMT,multiCookie2=value2',
+          ],
         },
       };
     },
@@ -554,8 +558,10 @@ test('v1 cookies', async () => {
       },
       "multiValueHeaders": Object {
         "set-cookie": Array [
-          "cookie1",
-          "cookie2",
+          "cookie1=value1",
+          "cookie2=value2; Expires=Wed, 28 Feb 2025 00:00:00 GMT",
+          "multiCookie1=value1; Domain=example.com; Expires=Wed, 28 Feb 2025 00:00:00 GMT",
+          "multiCookie2=value2",
         ],
       },
       "statusCode": 200,
@@ -588,7 +594,11 @@ test('v2 cookies', async () => {
     responseMeta: () => {
       return {
         headers: {
-          'Set-Cookie': ['cookie1', 'cookie2'],
+          'Set-Cookie': [
+            'cookie1=value1',
+            'cookie2=value2; Expires=Wed, 28 Feb 2025 00:00:00 GMT',
+            'multiCookie1=value1; Domain=example.com; Expires=Wed, 28 Feb 2025 00:00:00 GMT,multiCookie2=value2',
+          ],
         },
       };
     },
@@ -607,8 +617,10 @@ test('v2 cookies', async () => {
   expect(result).toMatchInlineSnapshot(`
     Object {
       "cookies": Array [
-        "cookie1",
-        "cookie2",
+        "cookie1=value1",
+        "cookie2=value2; Expires=Wed, 28 Feb 2025 00:00:00 GMT",
+        "multiCookie1=value1; Domain=example.com; Expires=Wed, 28 Feb 2025 00:00:00 GMT",
+        "multiCookie2=value2",
       ],
       "headers": Object {
         "content-type": "application/json",

@@ -28,7 +28,7 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
     queryClient,
   });
 
-  const { TRPCProvider, useTRPC } = createTRPCContext<TRouter>();
+  const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<TRouter>();
 
   function renderApp(ui: React.ReactNode) {
     return render(
@@ -46,6 +46,7 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
     queryClient,
     renderApp,
     useTRPC,
+    useTRPCClient,
     optionsProxyClient,
     optionsProxyServer,
     /** @deprecated use resource manager instead */

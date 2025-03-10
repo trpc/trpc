@@ -48,7 +48,7 @@
     }
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.62.8",
+    "@tanstack/react-query": "^5.67.1",
     "@trpc/client": "^10.45.1",
     "@trpc/server": "^10.45.1",
     "react": ">=18.2.0",
@@ -56,22 +56,22 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.66.0",
+    "@tanstack/react-query": "^5.67.1",
     "@trpc/client": "^10.45.1",
     "@trpc/server": "^10.45.1",
-    "@types/node": "^20.10.0",
+    "@types/node": "^22.13.5",
     "@types/react": "^19.0.0",
-    "eslint": "^8.57.0",
+    "eslint": "^9.21.0",
     "event-source-polyfill": "^1.0.31",
     "konn": "^0.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "rollup": "^4.9.5",
-    "tsx": "^4.0.0",
-    "typescript": "^5.6.2",
-    "vitest": "^2.0.4",
+    "rollup": "^4.34.8",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.6",
     "ws": "^8.0.0",
-    "zod": "^3.0.0"
+    "zod": "^3.24.2"
   },
   "publishConfig": {
     "access": "public"

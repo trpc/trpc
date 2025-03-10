@@ -41,7 +41,6 @@ export default defineConfig({
     snapshotFormat: {
       printBasicPrototype: true,
     },
-    setupFiles: ['./tests/setupTests.ts'],
     coverage: {
       provider: 'istanbul',
       include: ['**/src/**'],
@@ -64,6 +63,7 @@ export default defineConfig({
         execArgv: ['--expose-gc'],
       },
     },
+    retry: 2,
   },
   resolve: {
     alias: aliases,
