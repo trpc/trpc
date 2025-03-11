@@ -28,7 +28,6 @@ You are likely to use this client in two scenarios:
 - While you _can_ use the client to call procedures from a React component, you should usually use our [React Query Integration](../react/introduction.mdx). It offers many additional features such as the ability to manage loading and error state, caching, and invalidation.
 - We recommend you do not use this client when calling procedures of the same API instance, this is because the invocation has to pass through the network layer. For complete recommendations on invoking a procedure in the current API, you can [read more here](/docs/server/server-side-calls).
 
-
 ## Handling TRPCClientError on the Client
 
 When using tRPC on the client side, you may encounter errors when making API calls. These errors are represented by the `TRPCClientError` class, which differs from `TRPCError`, a server-side error. This section explains how to handle `TRPCClientError` effectively in different client environments.
@@ -108,6 +107,3 @@ try {
 - Gracefully handle network failures: Consider implementing retry logic or fallbacks.
 
 By properly handling `TRPCClientError`, you can improve user experience and make your tRPC-based applications more resilient.
-
-
-
