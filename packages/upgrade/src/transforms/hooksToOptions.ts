@@ -232,7 +232,10 @@ export default function transform(
           root
             .find(j.Identifier, { name: oldIdentifier.name })
             .forEach((path) => {
-              if (j.MemberExpression.check(path.parent?.parent?.node)) {
+              if (
+                j.MemberExpression.check(path.parent?.parent?.node) ||
+                j.CallExpression.check(path.parent?.parent?.node)
+              ) {
                 const callExprPath = findParentOfType<CallExpression>(
                   path.parentPath,
                   j.CallExpression,
@@ -261,7 +264,6 @@ export default function transform(
 
                 if (
                   !(
-                    j.MemberExpression.check(memberExpr.object) &&
                     j.Identifier.check(memberExpr.property) &&
                     memberExpr.property.name in utilMap
                   )
@@ -403,6 +405,12 @@ export default function transform(
           ? tuple.elements[1].name
           : null;
 
+        const deepDestructure =
+          j.ArrayPattern.check(declarator?.id) &&
+          j.ObjectPattern.check(tuple?.elements?.[0])
+            ? tuple?.elements?.[0]
+            : null;
+
         if (queryName) {
           declarator.id = j.identifier(queryName);
           dirtyFlag = true;
@@ -421,6 +429,12 @@ export default function transform(
           // const [dataName] = ... => const { data: dataName } = ...
           declarator.id = j.objectPattern([
             j.property('init', j.identifier('data'), j.identifier(dataName)),
+          ]);
+          dirtyFlag = true;
+        } else if (deepDestructure) {
+          // const [{ dataName }] = ... => const { data: { dataName } } = ...
+          declarator.id = j.objectPattern([
+            j.property('init', j.identifier('data'), deepDestructure),
           ]);
           dirtyFlag = true;
         }

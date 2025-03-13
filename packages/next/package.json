@@ -77,7 +77,7 @@
     "@trpc/client": "workspace:*",
     "@trpc/react-query": "workspace:*",
     "@trpc/server": "^10.45.1",
-    "next": "15.2.1",
+    "next": ">=15.2.2",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
     "typescript": ">=5.7.2"
