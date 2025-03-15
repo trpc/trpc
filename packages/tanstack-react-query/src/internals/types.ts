@@ -1,3 +1,4 @@
+import type { InfiniteData } from '@tanstack/react-query';
 import type { TRPCRequestOptions } from '@trpc/client';
 
 /**
@@ -30,6 +31,14 @@ export type OptionalCursorInput = CursorInput | void;
 export type ExtractCursorType<TInput> = TInput extends CursorInput
   ? TInput['cursor']
   : unknown;
+
+/**
+ * @internal
+ */
+export type TRPCInfiniteData<TInput, TOutput> = InfiniteData<
+  TOutput,
+  NonNullable<ExtractCursorType<TInput>> | null
+>;
 
 /**
  * @public

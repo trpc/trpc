@@ -33,5 +33,12 @@ export function Component() {
     },
   );
 
+  const [{ pages }] = trpc.post.infinite.useSuspenseInfiniteQuery(
+    { channelId },
+    {
+      getNextPageParam: (d) => d.nextCursor,
+    },
+  );
+
   return useQueryClient().isFetching() ? 'loading' : 'loaded';
 }

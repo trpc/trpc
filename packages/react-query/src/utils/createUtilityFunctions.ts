@@ -5,16 +5,18 @@ import {
   skipToken,
   type QueryClient,
 } from '@tanstack/react-query';
-import type { TRPCClient } from '@trpc/client';
+import type { TRPCClient, TRPCClientError } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import { isAsyncIterable } from '@trpc/server/unstable-core-do-not-import';
+import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import/clientish/inferrable';
 import { getClientArgs } from '../internals/getClientArgs';
 import type { TRPCQueryKey } from '../internals/getQueryKey';
 import {
   buildQueryFromAsyncIterable,
   createTRPCOptionsResult,
 } from '../internals/trpcResult';
+import type { DefinedTRPCQueryOptionsOut } from '../shared';
 import { type TRPCQueryUtils } from '../shared';
 
 export interface CreateQueryUtilsOptions<TRouter extends AnyRouter> {
@@ -110,12 +112,16 @@ export function createUtilityFunctions<TRouter extends AnyRouter>(
       return Object.assign(
         queryOptions({
           ...opts,
-          initialData: opts?.initialData as any,
+          initialData: opts?.initialData,
           queryKey,
           queryFn: inputIsSkipToken ? skipToken : queryFn,
         }),
         { trpc: createTRPCOptionsResult({ path }) },
-      );
+      ) as DefinedTRPCQueryOptionsOut<
+        unknown,
+        unknown,
+        TRPCClientError<AnyClientTypes>
+      >;
     },
 
     fetchQuery: (queryKey, opts) => {
