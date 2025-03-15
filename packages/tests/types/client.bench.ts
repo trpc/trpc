@@ -2,7 +2,6 @@ import { bench } from '@ark/attest';
 import { createTRPCClient } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
-import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { z } from 'zod';
 
 const t = initTRPC.create();
@@ -86,6 +85,50 @@ bench('create and query 5 simple routes', async () => {
   // router and most client methods having very
   // efficient types in the repos we traced.
 }).types([1318, 'instantiations']);
+
+const base = z.object({
+  a: z.string(),
+  b: z.string(),
+  c: z.string(),
+});
+
+bench('sequential Zod type', async () => {
+  const nonSequentialRouter = t.router({
+    query1: t.procedure.input(base).query(({ input }) => `hello ${input.a}`),
+    mutation1: t.procedure
+      .input(base)
+      .mutation(({ input }) => `hello ${input.a}`),
+  });
+
+  const hooks = createTRPCReact<typeof nonSequentialRouter>({}).createClient({
+    links: [],
+  });
+
+  await hooks.mutation1.mutate({ a: '', b: '', c: '' });
+  await hooks.query1.query({ a: '', b: '', c: '' });
+}).types([698, 'instantiations']);
+
+// even though sequential is totally equivalent to nonSequential, its
+// Zod representation is not reduced and still includes intermediate operations
+const sequential = base.partial().merge(base).deepPartial().merge(base);
+
+bench('sequential Zod type', async () => {
+  const sequentialRouter = t.router({
+    query1: t.procedure
+      .input(sequential)
+      .query(({ input }) => `hello ${input.a}`),
+    mutation1: t.procedure
+      .input(sequential)
+      .mutation(({ input }) => `hello ${input.a}`),
+  });
+
+  const hooks = createTRPCReact<typeof sequentialRouter>({}).createClient({
+    links: [],
+  });
+
+  await hooks.mutation1.mutate({ a: '', b: '', c: '' });
+  await hooks.query1.query({ a: '', b: '', c: '' });
+}).types([16545, 'instantiations']);
 
 bench('create and query 5 simple routes (react)', async () => {
   const hooks = createTRPCReact<typeof router5>({});
