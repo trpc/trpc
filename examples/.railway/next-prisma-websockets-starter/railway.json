@@ -11,6 +11,7 @@
     "healthcheckTimeout": 100,
     "sleepApplication": true,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "restartPolicyMaxRetries": 10,
+    "startCommand": "pnpm --filter ./examples/next-prisma-starter start"
   }
 }
