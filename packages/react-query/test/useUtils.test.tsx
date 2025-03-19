@@ -491,7 +491,7 @@ test('setData', async () => {
         utils.post.all.setData(undefined, [{ id: 0, text: 'setData1' }]);
       }
 
-      if (allPosts.data) {
+      if (allPosts.data?.length === 1) {
         utils.post.all.setData(undefined, (prev) => [
           ...(prev ?? []), //                ^?
           { id: 1, text: 'setData2' },
@@ -514,22 +514,22 @@ test('setData', async () => {
   await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('setData1');
     expect(utils.container).toHaveTextContent('setData2');
-
-    expect(utils.container).toMatchInlineSnapshot(`
-      <div>
-        [
-          {
-              "id": 0,
-              "text": "setData1"
-          },
-          {
-              "id": 1,
-              "text": "setData2"
-          }
-      ]
-      </div>
-    `);
   });
+
+  expect(utils.container).toMatchInlineSnapshot(`
+    <div>
+      [
+        {
+            "id": 0,
+            "text": "setData1"
+        },
+        {
+            "id": 1,
+            "text": "setData2"
+        }
+    ]
+    </div>
+  `);
 });
 
 test('setInfiniteData', async () => {
@@ -557,7 +557,7 @@ test('setInfiniteData', async () => {
         );
       }
 
-      if (listPosts.data) {
+      if (listPosts.data?.pageParams.length === 1) {
         utils.post.list.setInfiniteData({}, (prev) => {
           const data = prev ?? {
             pageParams: [],
@@ -598,37 +598,38 @@ test('setInfiniteData', async () => {
   await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('setInfiniteData1');
     expect(utils.container).toHaveTextContent('setInfiniteData2');
-    expect(utils.container).toMatchInlineSnapshot(`
-      <div>
-        {
-          "pageParams": [
-              0,
-              1
-          ],
-          "pages": [
-              {
-                  "items": [
-                      {
-                          "id": 0,
-                          "text": "setInfiniteData1"
-                      }
-                  ],
-                  "time": 0
-              },
-              {
-                  "items": [
-                      {
-                          "id": 1,
-                          "text": "setInfiniteData2"
-                      }
-                  ],
-                  "time": 1
-              }
-          ]
-      }
-      </div>
-    `);
   });
+
+  expect(utils.container).toMatchInlineSnapshot(`
+    <div>
+      {
+        "pageParams": [
+            0,
+            1
+        ],
+        "pages": [
+            {
+                "items": [
+                    {
+                        "id": 0,
+                        "text": "setInfiniteData1"
+                    }
+                ],
+                "time": 0
+            },
+            {
+                "items": [
+                    {
+                        "id": 1,
+                        "text": "setInfiniteData2"
+                    }
+                ],
+                "time": 1
+            }
+        ]
+    }
+    </div>
+  `);
 });
 
 test('getData', async () => {

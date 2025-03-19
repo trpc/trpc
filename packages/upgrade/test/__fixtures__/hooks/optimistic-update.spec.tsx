@@ -1,6 +1,6 @@
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
-import { expect } from 'vitest';
+import { expect, vi } from 'vitest';
 import type { SpecRun } from '../../specDef';
 import { ctx, resetFixtureState } from './optimistic-update.trpc';
 
