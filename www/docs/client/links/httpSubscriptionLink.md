@@ -21,9 +21,9 @@ To use `httpSubscriptionLink`, you need to use a [splitLink](./splitLink.mdx) to
 import type { TRPCLink } from '@trpc/client';
 import {
   httpBatchLink,
+  httpSubscriptionLink,
   loggerLink,
   splitLink,
-  httpSubscriptionLink,
 } from '@trpc/client';
 
 const trpcClient = createTRPCClient<AppRouter>({
@@ -87,8 +87,8 @@ You can ponyfill `EventSource` and use the `eventSourceOptions` -callback to pop
 import {
   createTRPCClient,
   httpBatchLink,
-  splitLink,
   httpSubscriptionLink,
+  splitLink,
 } from '@trpc/client';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import type { AppRouter } from '../server/index.js';
@@ -137,9 +137,9 @@ Please note that restarting the connection will result in the `EventSource` bein
 import {
   createTRPCClient,
   httpBatchLink,
+  httpSubscriptionLink,
   retryLink,
   splitLink,
-  httpSubscriptionLink,
 } from '@trpc/client';
 import {
   EventSourcePolyfill,
@@ -220,8 +220,8 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 import {
   createTRPCClient,
   httpBatchLink,
-  splitLink,
   httpSubscriptionLink,
+  splitLink,
 } from '@trpc/client';
 import type { AppRouter } from '../server/index.js';
 
