@@ -496,7 +496,7 @@ describe('concat()', () => {
 
     const proc2 = t.procedure;
 
-    const concatProc = proc1.unstable_concat(proc2).query((opts) => {
+    const concatProc = proc1.concat(proc2).query((opts) => {
       // This type assertion verifies that num is strictly a number, not number | undefined
       expectTypeOf(opts.input).toEqualTypeOf<number>();
       return opts.input;
