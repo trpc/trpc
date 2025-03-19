@@ -3,7 +3,7 @@ import {
   defaultShouldDehydrateQuery,
   QueryClient,
 } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { createHydrationHelpers } from '@trpc/react-query/rsc';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -54,7 +54,7 @@ describe('original regression', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(nonce);
     });
     expect(effectCount).toBe(1);
@@ -184,7 +184,7 @@ describe('RSC regression', () => {
         <Parent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils1.container).toHaveTextContent('__result1');
       expect(utils1.container).toHaveTextContent('__result2');
     });

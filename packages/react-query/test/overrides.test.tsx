@@ -1,6 +1,6 @@
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
@@ -99,7 +99,7 @@ describe('mutation override', () => {
 
     await userEvent.click($.getByTestId('add'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect($.container).toHaveTextContent(nonce);
     });
   });
@@ -138,7 +138,7 @@ describe('mutation override', () => {
 
     await userEvent.click($.getByTestId('add'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(ctx.onSuccessSpy).toHaveBeenCalledTimes(1);
     });
 
@@ -148,7 +148,7 @@ describe('mutation override', () => {
       }
     `);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect($.container).not.toHaveTextContent(nonce);
     });
   });

@@ -1,6 +1,6 @@
 import { createAppRouter } from './__testHelpers';
 import { useQueryClient } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import React, { useEffect, useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -52,7 +52,7 @@ describe('ensureQueryData()', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('updated post');
     });
 

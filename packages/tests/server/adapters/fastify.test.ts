@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import ws from '@fastify/websocket';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import type { HTTPHeaders, TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
@@ -396,7 +396,7 @@ describe('anonymous user', () => {
       },
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onStartedMock).toHaveBeenCalledTimes(1);
       expect(onDataMock).toHaveBeenCalledTimes(2);
     });
@@ -405,7 +405,7 @@ describe('anonymous user', () => {
       id: '3',
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onDataMock).toHaveBeenCalledTimes(3);
     });
 
@@ -431,7 +431,7 @@ describe('anonymous user', () => {
 
     sub.unsubscribe();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(app.ee.listenerCount('server:msg')).toBe(0);
       expect(app.ee.listenerCount('server:error')).toBe(0);
     });

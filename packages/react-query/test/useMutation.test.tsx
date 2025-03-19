@@ -1,5 +1,5 @@
 import { getServerAndReactClient } from './__reactHelpers';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import type { inferReactQueryProcedureOptions } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -77,7 +77,7 @@ test('useMutation', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`__mutationResult`);
   });
 });

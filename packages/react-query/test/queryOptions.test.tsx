@@ -8,7 +8,7 @@ import {
   useSuspenseQuery,
   type InfiniteData,
 } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
@@ -113,7 +113,7 @@ describe('queryOptions', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });
@@ -145,7 +145,7 @@ describe('queryOptions', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`mutated__result`);
     });
   });
@@ -171,7 +171,7 @@ describe('queryOptions', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });
@@ -197,7 +197,7 @@ describe('queryOptions', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`pending`);
     });
   });
@@ -232,7 +232,7 @@ describe('queryOptions', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
 
@@ -284,7 +284,7 @@ describe('queryOptions', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`success:notFetching`);
     });
 
@@ -367,7 +367,7 @@ describe('queryOptions', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });
@@ -448,14 +448,14 @@ describe('infiniteQueryOptions', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`null`);
       expect(utils.container).not.toHaveTextContent(`undefined`);
     });
     await userEvent.click(utils.getByTestId('fetchMore'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
     });
@@ -560,19 +560,19 @@ describe('infiniteQueryOptions', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`null`);
       expect(utils.container).not.toHaveTextContent(`undefined`);
     });
     await userEvent.click(utils.getByTestId('fetchMore'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('__selected');
     });
   });
