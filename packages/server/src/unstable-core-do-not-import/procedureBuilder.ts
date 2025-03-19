@@ -304,7 +304,7 @@ export interface ProcedureBuilder<
     TMeta,
     Overwrite<TContextOverrides, $ContextOverrides>,
     IntersectIfDefined<TInputIn, $InputIn>,
-    IntersectIfDefined<TInputIn, $InputOut>,
+    IntersectIfDefined<TInputOut, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
     IntersectIfDefined<TOutputOut, $OutputOut>,
     TCaller
