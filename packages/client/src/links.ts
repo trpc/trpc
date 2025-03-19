@@ -1,6 +1,6 @@
 export * from './links/types';
 
-export { HTTPBatchLinkOptions } from './links/HTTPBatchLinkOptions';
+export { type HTTPBatchLinkOptions } from './links/HTTPBatchLinkOptions';
 export { httpBatchLink } from './links/httpBatchLink';
 export {
   httpBatchStreamLink,
