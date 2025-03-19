@@ -4,10 +4,10 @@ import { suppressLogsUntil } from '@trpc/server/__tests__/suppressLogs';
 import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
+  httpBatchStreamLink,
+  httpSubscriptionLink,
   retryLink,
   splitLink,
-  unstable_httpBatchStreamLink,
-  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -137,7 +137,7 @@ const ctx = konn()
                     return false;
                   },
                 }),
-                unstable_httpSubscriptionLink({
+                httpSubscriptionLink({
                   url: opts.httpUrl,
                   transformer: superjson,
                   EventSource: EventSourcePolyfill,
@@ -150,7 +150,7 @@ const ctx = konn()
                   },
                 }),
               ],
-              false: unstable_httpBatchStreamLink({
+              false: httpBatchStreamLink({
                 url: opts.httpUrl,
                 transformer: superjson,
               }),

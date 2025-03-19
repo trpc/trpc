@@ -5,10 +5,10 @@ import { waitFor } from '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
   httpBatchLink,
+  httpBatchStreamLink,
+  httpSubscriptionLink,
   splitLink,
   TRPCClientError,
-  unstable_httpBatchStreamLink,
-  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -153,7 +153,7 @@ describe('no transformer', () => {
           return {
             links: [
               linkSpy,
-              unstable_httpBatchStreamLink({
+              httpBatchStreamLink({
                 url: opts.httpUrl,
               }),
             ],
@@ -535,11 +535,11 @@ describe('with transformer', () => {
                 }),
                 false: splitLink({
                   condition: (op) => op.type === 'subscription',
-                  true: unstable_httpSubscriptionLink({
+                  true: httpSubscriptionLink({
                     url: opts.httpUrl,
                     transformer: superjson,
                   }),
-                  false: unstable_httpBatchStreamLink({
+                  false: httpBatchStreamLink({
                     url: opts.httpUrl,
                     transformer: superjson,
                   }),

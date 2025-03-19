@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import { TRPCClientError, unstable_httpBatchStreamLink } from '@trpc/client';
+import { httpBatchStreamLink, TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import {
   makeAsyncResource,
@@ -22,7 +22,7 @@ test('streaming query interruption should throw TRPCClientError', async () => {
   const ctx = routerToServerAndClientNew(appRouter, {
     client(opts) {
       return {
-        links: [unstable_httpBatchStreamLink({ url: opts.httpUrl })],
+        links: [httpBatchStreamLink({ url: opts.httpUrl })],
       };
     },
   });

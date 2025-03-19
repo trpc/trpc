@@ -10,7 +10,7 @@ export {
   httpBatchStreamLink as unstable_httpBatchStreamLink,
 } from './links/httpBatchStreamLink';
 export { httpLink } from './links/httpLink';
-export { loggerLink } from './links/loggerLink';
+export { loggerLink, LoggerLinkOptions } from './links/loggerLink';
 export { splitLink } from './links/splitLink';
 export { wsLink } from './links/wsLink/wsLink';
 export {

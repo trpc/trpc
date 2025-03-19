@@ -1,6 +1,6 @@
 import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew } from './___testHelpers';
-import { unstable_httpSubscriptionLink } from '@trpc/client';
+import { httpSubscriptionLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { sleep } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
@@ -25,7 +25,7 @@ const ctx = konn()
       server: {},
       client(opts) {
         return {
-          links: [unstable_httpSubscriptionLink({ url: opts.httpUrl })],
+          links: [httpSubscriptionLink({ url: opts.httpUrl })],
         };
       },
     });
