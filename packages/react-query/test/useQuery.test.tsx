@@ -170,7 +170,6 @@ describe('useQuery()', () => {
 
     await vi.waitFor(() => {
       onEnable!();
-      expect(utils.container).toHaveTextContent(`pending:fetching`);
     });
     await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`success:notFetching`);

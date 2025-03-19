@@ -506,12 +506,12 @@ describe('infiniteQueryOptions', () => {
 
     const utils = ctx.renderApp(<MyComponent />);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
     });
 
     await userEvent.click(utils.getByTestId('fetchMore'));
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
     });
