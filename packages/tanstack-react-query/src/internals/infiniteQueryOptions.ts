@@ -252,7 +252,7 @@ export function trpcInfiniteQueryOptions(args: {
       ...opts,
       queryKey,
       queryFn: inputIsSkipToken ? skipToken : queryFn,
-      initialPageParam: opts?.initialCursor ?? null,
+      initialPageParam: opts?.initialCursor ?? (input as any)?.cursor,
     }),
     { trpc: createTRPCOptionsResult({ path }) },
   );
