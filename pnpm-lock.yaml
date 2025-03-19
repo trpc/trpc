@@ -1999,8 +1999,8 @@ importers:
         specifier: ^5.8.2
         version: 5.8.2
       valibot:
-        specifier: 1.0.0-rc.4
-        version: 1.0.0-rc.4(typescript@5.8.2)
+        specifier: 1.0.0
+        version: 1.0.0(typescript@5.8.2)
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -2421,8 +2421,8 @@ importers:
         specifier: ^5.8.2
         version: 5.8.2
       valibot:
-        specifier: 1.0.0-rc.4
-        version: 1.0.0-rc.4(typescript@5.8.2)
+        specifier: 1.0.0
+        version: 1.0.0(typescript@5.8.2)
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -17033,16 +17033,16 @@ packages:
       typescript:
         optional: true
 
-  valibot@1.0.0-beta.14:
-    resolution: {integrity: sha512-tLyV2rE5QL6U29MFy3xt4AqMrn+/HErcp2ZThASnQvPMwfSozjV1uBGKIGiegtZIGjinJqn0SlBdannf18wENA==}
+  valibot@1.0.0:
+    resolution: {integrity: sha512-1Hc0ihzWxBar6NGeZv7fPLY0QuxFMyxwYR2sF1Blu7Wq7EnremwY2W02tit2ij2VJT8HcSkHAQqmFfl77f73Yw==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
       typescript:
         optional: true
 
-  valibot@1.0.0-rc.4:
-    resolution: {integrity: sha512-VRaChgFv7Ab0P54AMLu7+GqoexdTPQ54Plj59X9qV0AFozI3j9CGH43skg+TqgMpXnrW8jxlJ2TTHAtAD3t4qA==}
+  valibot@1.0.0-beta.14:
+    resolution: {integrity: sha512-tLyV2rE5QL6U29MFy3xt4AqMrn+/HErcp2ZThASnQvPMwfSozjV1uBGKIGiegtZIGjinJqn0SlBdannf18wENA==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -36425,11 +36425,11 @@ snapshots:
     optionalDependencies:
       typescript: 5.8.2
 
-  valibot@1.0.0-beta.14(typescript@5.8.2):
+  valibot@1.0.0(typescript@5.8.2):
     optionalDependencies:
       typescript: 5.8.2
 
-  valibot@1.0.0-rc.4(typescript@5.8.2):
+  valibot@1.0.0-beta.14(typescript@5.8.2):
     optionalDependencies:
       typescript: 5.8.2
 
