@@ -1979,7 +1979,7 @@ test('url callback and connection params is invoked for every reconnect', async 
     throw new Error();
   }
 
-  await vi.waitForClientState('pending');
+  await waitForClientState('pending');
   expect(urlCalls).toBe(1);
   expect(connectionParamsCalls).toBe(1);
 
@@ -1987,13 +1987,13 @@ test('url callback and connection params is invoked for every reconnect', async 
   ctx.destroyConnections();
 
   // it'll be connecting with an error
-  const state = await vi.waitForClientState('connecting');
+  const state = await waitForClientState('connecting');
   expect(state.error).toMatchInlineSnapshot(
     `[TRPCClientError: WebSocket closed]`,
   );
 
   // it'll reconnect and be pending
-  await vi.waitForClientState('pending');
+  await waitForClientState('pending');
 
   expect(urlCalls).toBe(2);
   expect(connectionParamsCalls).toBe(2);
