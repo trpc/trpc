@@ -15,4 +15,10 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
       | ((opts: {
           opList: NonEmptyArray<Operation>;
         }) => HTTPHeaders | Promise<HTTPHeaders>);
+
+    /**
+     * Maximum number of calls in a single batch request
+     * @default Infinity
+     */
+    maxItems?: number;
   };

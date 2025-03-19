@@ -23,6 +23,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
 ): TRPCLink<TRouter> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
+  const maxItems = opts.maxItems ?? Infinity;
 
   return () => {
     const batchLoader = (
@@ -30,7 +31,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
     ): BatchLoader<Operation, HTTPResult> => {
       return {
         validate(batchOps) {
-          if (maxURLLength === Infinity) {
+          if (maxURLLength === Infinity && maxItems === Infinity) {
             // escape hatch for quick calcs
             return true;
           }
