@@ -17,8 +17,8 @@
   },
   "dependencies": {
     "@fastify/websocket": "^10.0.1",
-    "@trpc/client": "npm:@trpc/client@next",
-    "@trpc/server": "npm:@trpc/server@next",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/server": "npm:@trpc/server",
     "fastify": "^4.16.0",
     "superjson": "^1.12.4",
     "tslib": "^2.8.1",

@@ -14,9 +14,9 @@
     "test-start": "start-server-and-test 'node dist/server' 2021 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "npm:@trpc/client@next",
-    "@trpc/react-query": "npm:@trpc/react-query@next",
-    "@trpc/server": "npm:@trpc/server@next",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/react-query": "npm:@trpc/react-query",
+    "@trpc/server": "npm:@trpc/server",
     "express": "^5.0.0",
     "zod": "^3.24.2"
   },
