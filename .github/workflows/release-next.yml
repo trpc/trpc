@@ -3,7 +3,7 @@ name: Release "@next"-tagged packages
 on:
   push:
     branches:
-      - 'next'
+      - 'main'
     paths:
       - '.github/setup/*'
       - '.github/workflows/release-next.yml'
