@@ -1,0 +1,59 @@
+{
+  "name": "@trpc/upgrade",
+  "version": "10.45.1",
+  "description": "Upgrade scripts for tRPC",
+  "author": "juliusmarminge",
+  "license": "MIT",
+  "type": "module",
+  "bin": "./dist/bin.js",
+  "homepage": "https://trpc.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/upgrade"
+  },
+  "exports": {
+    "./transforms/hooksToOptions": {
+      "require": "./dist/transforms/hooksToOptions.cjs"
+    },
+    "./transforms/provider": {
+      "require": "./dist/transforms/provider.cjs"
+    }
+  },
+  "scripts": {
+    "build": "bunchee"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "package.json",
+    "!**/*.test.*",
+    "!**/__tests__"
+  ],
+  "dependencies": {
+    "@bomb.sh/args": "0.3.1",
+    "@clack/prompts": "0.10.0",
+    "jscodeshift": "17.1.1",
+    "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.67.1",
+    "@trpc/client": "workspace:*",
+    "@trpc/react-query": "workspace:*",
+    "@trpc/server": "workspace:*",
+    "@trpc/tanstack-react-query": "workspace:*",
+    "@types/jscodeshift": "0.12.0",
+    "@types/node": "^22.13.5",
+    "bunchee": "6.5.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
+}

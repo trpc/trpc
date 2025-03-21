@@ -10,7 +10,7 @@ const opts = {
 const config: Config = {
   testDir: './tests',
   reporter: [['line']],
-
+  retries: 3,
   webServer: [
     {
       command: 'NITRO_PRESET=node_server pnpm build && pnpm start --port 3000',

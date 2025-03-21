@@ -5,9 +5,8 @@ import type {
   AnyRouter,
   inferClientTypes,
   inferProcedureInput,
+  InferrableClientTypes,
   inferTransformedProcedureOutput,
-  IntersectionError,
-  ProcedureOptions,
   ProcedureType,
   RouterRecord,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -16,18 +15,37 @@ import {
   createRecursiveProxy,
 } from '@trpc/server/unstable-core-do-not-import';
 import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
-import type {
-  TRPCSubscriptionObserver,
-  UntypedClientProperties,
-} from './internals/TRPCUntypedClient';
+import type { TRPCSubscriptionObserver } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
+import type { TRPCProcedureOptions } from './internals/types';
 import type { TRPCClientError } from './TRPCClientError';
 
 /**
  * @public
+ * @deprecated use {@link TRPCClient} instead, will be removed in v12
  **/
-export type inferRouterClient<TRouter extends AnyRouter> =
-  DecoratedProcedureRecord<TRouter, TRouter['_def']['record']>;
+export type inferRouterClient<TRouter extends AnyRouter> = TRPCClient<TRouter>;
+
+/**
+ * @public
+ * @deprecated use {@link TRPCClient} instead, will be removed in v12
+ **/
+export type CreateTRPCClient<TRouter extends AnyRouter> = TRPCClient<TRouter>;
+
+const untypedClientSymbol = Symbol.for('trpc_untypedClient');
+
+/**
+ * @public
+ **/
+export type TRPCClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
+  {
+    transformer: TRouter['_def']['_config']['$types']['transformer'];
+    errorShape: TRouter['_def']['_config']['$types']['errorShape'];
+  },
+  TRouter['_def']['record']
+> & {
+  [untypedClientSymbol]: TRPCUntypedClient<TRouter>;
+};
 
 type ResolverDef = {
   input: any;
@@ -44,7 +62,7 @@ type coerceAsyncGeneratorToIterable<T> =
 /** @internal */
 export type Resolver<TDef extends ResolverDef> = (
   input: TDef['input'],
-  opts?: ProcedureOptions,
+  opts?: TRPCProcedureOptions,
 ) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
 
 type SubscriptionResolver<TDef extends ResolverDef> = (
@@ -52,7 +70,7 @@ type SubscriptionResolver<TDef extends ResolverDef> = (
   opts: Partial<
     TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
   > &
-    ProcedureOptions,
+    TRPCProcedureOptions,
 ) => Unsubscribable;
 
 type DecorateProcedure<
@@ -76,25 +94,25 @@ type DecorateProcedure<
  * @internal
  */
 type DecoratedProcedureRecord<
-  TRouter extends AnyRouter,
+  TRoot extends InferrableClientTypes,
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? DecoratedProcedureRecord<TRouter, $Value>
-      : $Value extends AnyProcedure
-        ? DecorateProcedure<
-            $Value['_def']['type'],
-            {
-              input: inferProcedureInput<$Value>;
-              output: inferTransformedProcedureOutput<
-                inferClientTypes<TRouter>,
-                $Value
-              >;
-              errorShape: inferClientTypes<TRouter>['errorShape'];
-              transformer: inferClientTypes<TRouter>['transformer'];
-            }
-          >
+    ? $Value extends AnyProcedure
+      ? DecorateProcedure<
+          $Value['_def']['type'],
+          {
+            input: inferProcedureInput<$Value>;
+            output: inferTransformedProcedureOutput<
+              inferClientTypes<TRoot>,
+              $Value
+            >;
+            errorShape: inferClientTypes<TRoot>['errorShape'];
+            transformer: inferClientTypes<TRoot>['transformer'];
+          }
+        >
+      : $Value extends RouterRecord
+        ? DecoratedProcedureRecord<TRoot, $Value>
         : never
     : never;
 };
@@ -116,36 +134,21 @@ export const clientCallTypeToProcedureType = (
 };
 
 /**
- * Creates a proxy client and shows type errors if you have query names that collide with built-in properties
- */
-export type CreateTRPCClient<TRouter extends AnyRouter> =
-  inferRouterClient<TRouter> extends infer $Value
-    ? UntypedClientProperties & keyof $Value extends never
-      ? inferRouterClient<TRouter>
-      : IntersectionError<UntypedClientProperties & keyof $Value>
-    : never;
-
-/**
  * @internal
  */
 export function createTRPCClientProxy<TRouter extends AnyRouter>(
   client: TRPCUntypedClient<TRouter>,
-): CreateTRPCClient<TRouter> {
-  const proxy = createRecursiveProxy<CreateTRPCClient<TRouter>>(
-    ({ path, args }) => {
-      const pathCopy = [...path];
-      const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
+): TRPCClient<TRouter> {
+  const proxy = createRecursiveProxy<TRPCClient<TRouter>>(({ path, args }) => {
+    const pathCopy = [...path];
+    const procedureType = clientCallTypeToProcedureType(pathCopy.pop()!);
 
-      const fullPath = pathCopy.join('.');
+    const fullPath = pathCopy.join('.');
 
-      return (client as any)[procedureType](fullPath, ...args);
-    },
-  );
-  return createFlatProxy<CreateTRPCClient<TRouter>>((key) => {
-    if (client.hasOwnProperty(key)) {
-      return (client as any)[key as any];
-    }
-    if (key === '__untypedClient') {
+    return (client[procedureType] as any)(fullPath, ...(args as any));
+  });
+  return createFlatProxy<TRPCClient<TRouter>>((key) => {
+    if (key === untypedClientSymbol) {
       return client;
     }
     return proxy[key];
@@ -154,7 +157,7 @@ export function createTRPCClientProxy<TRouter extends AnyRouter>(
 
 export function createTRPCClient<TRouter extends AnyRouter>(
   opts: CreateTRPCClientOptions<TRouter>,
-): CreateTRPCClient<TRouter> {
+): TRPCClient<TRouter> {
   const client = new TRPCUntypedClient(opts);
   const proxy = createTRPCClientProxy<TRouter>(client);
   return proxy;
@@ -165,7 +168,7 @@ export function createTRPCClient<TRouter extends AnyRouter>(
  * @internal
  */
 export function getUntypedClient<TRouter extends AnyRouter>(
-  client: inferRouterClient<TRouter>,
+  client: TRPCClient<TRouter>,
 ): TRPCUntypedClient<TRouter> {
-  return (client as any).__untypedClient;
+  return client[untypedClientSymbol];
 }

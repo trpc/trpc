@@ -72,17 +72,17 @@ The rule of thumb is `prefetch` for queries that you know you'll need on the cli
 The functions are all wrappers around react-query functions. Please check out [their docs](https://tanstack.com/query/v5/docs/framework/react/overview) to learn more about them in detail.
 
 :::info
-For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/next/examples/.test/ssg)
+For a full example, see our [E2E SSG test example](https://github.com/trpc/trpc/tree/main/examples/.test/ssg)
 :::
 
 ## Next.js Example
 
 ```tsx title='pages/posts/[id].tsx'
 import { createServerSideHelpers } from '@trpc/react-query/server';
+import { appRouter } from '~/server/routers/_app';
+import { trpc } from '~/utils/trpc';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
-import { appRouter } from 'server/routers/_app';
 import superjson from 'superjson';
-import { trpc } from 'utils/trpc';
 
 export async function getServerSideProps(
   context: GetServerSidePropsContext<{ id: string }>,

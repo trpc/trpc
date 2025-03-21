@@ -1,5 +1,5 @@
-import { serverResource } from './utils/__tests__/serverResource';
-import { waitFor } from '@testing-library/react';
+import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
+import '@testing-library/react';
 import SuperJSON from 'superjson';
 import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
@@ -209,7 +209,7 @@ test('decode - bad data', async () => {
       await writer.write(
         JSON.stringify({
           error: 'bad data',
-        }),
+        }) + '\n',
       );
       await writer.close();
     })().catch(() => {
@@ -222,8 +222,9 @@ test('decode - bad data', async () => {
     });
     expect(true).toBe(false);
   } catch (err) {
+    // console.log('err', err);
     expect(err).toMatchInlineSnapshot(
-      `[Error: Invalid response or stream interrupted]`,
+      `[TypeError: Cannot convert undefined or null to object]`,
     );
   }
 });
@@ -232,7 +233,7 @@ function serverResourceForStream(
   stream: ReadableStream,
   headers: Record<string, string> = {},
 ) {
-  return serverResource(async () => {
+  return fetchServerResource(async () => {
     return new Response(stream, {
       headers,
     });
@@ -365,11 +366,11 @@ test(
       clientAbort.abort();
     }
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(meta.isEmpty()).toBe(true);
     });
     // wait for stopped
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(stopped).toBe(true);
     });
 
@@ -447,11 +448,11 @@ test(
       }
     }
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(meta.isEmpty()).toBe(true);
     });
     // wait for stopped
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(stopped).toBe(true);
     });
 
@@ -553,9 +554,7 @@ test('should work to throw after stream is closed', async () => {
 
   ac.abort();
 
-  await expect(head0.deferred).rejects.toMatchInlineSnapshot(
-    `[Error: Invalid response or stream interrupted]`,
-  );
+  await expect(head0.deferred).rejects.toMatchInlineSnapshot(`DOMException {}`);
 
   deferred.resolve({
     p: Promise.resolve({
@@ -563,7 +562,7 @@ test('should work to throw after stream is closed', async () => {
     }),
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onError).toHaveBeenCalledTimes(1);
   });
 
@@ -578,4 +577,107 @@ test('should work to throw after stream is closed', async () => {
       ],
     }
   `);
+});
+
+test('e2e, withPing', async () => {
+  const deferred = createDeferred();
+  const data = {
+    0: Promise.resolve({
+      slow: run(async () => {
+        await deferred.promise;
+        return 'after';
+      }),
+    }),
+  } as const;
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+    pingMs: 1,
+  });
+
+  await using server = serverResourceForStream(stream);
+
+  const res = await fetch(server.url);
+
+  const [original, tee] = res.body!.tee();
+  const text = tee.pipeThrough(new TextDecoderStream());
+
+  const [head, _meta] = await jsonlStreamConsumer<typeof data>({
+    from: original,
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: new AbortController(),
+  });
+
+  {
+    expect(head[0]).toBeInstanceOf(Promise);
+
+    let allData = '';
+    for await (const chunk of text) {
+      allData += chunk;
+      if (allData.includes('    ')) break;
+    }
+
+    deferred.resolve();
+
+    const value = await head[0];
+    expect(value.slow).toBeInstanceOf(Promise);
+
+    await expect(value.slow).resolves.toBe('after');
+  }
+});
+
+// https://github.com/trpc/trpc/pull/6457
+test('regression: encode/decode with superjson at top level', async () => {
+  const data = {
+    0: Promise.resolve(new Date(1)),
+  } as const;
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+  });
+
+  const [stream1, stream2] = stream.tee();
+
+  const streamEnd = run(async () => {
+    const reader = stream2.pipeThrough(new TextDecoderStream()).getReader();
+    const aggregated: string[] = [];
+    while (true) {
+      const res = await reader.read();
+
+      if (res.value) {
+        aggregated.push(res.value);
+      }
+      if (res.done) {
+        break;
+      }
+    }
+    return aggregated;
+  });
+
+  const aggregated = await streamEnd;
+
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
+    from: stream1,
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: new AbortController(),
+  });
+
+  expect(aggregated).toMatchInlineSnapshot(`
+    Array [
+      "{"json":{"0":[[0],[null,0,0]]}}
+    ",
+      "{"json":[0,0,[["1970-01-01T00:00:00.001Z"]]],"meta":{"values":{"2.0.0":["Date"]}}}
+    ",
+    ]
+  `);
+  {
+    expect(head[0]).toBeInstanceOf(Promise);
+
+    const value = await head[0];
+    expect(value).toBeInstanceOf(Date);
+
+    expect(value.getTime()).toBe(1);
+  }
+
+  expect(meta.isEmpty()).toBe(true);
 });

@@ -55,10 +55,10 @@
       "require": "./dist/links/splitLink.js",
       "default": "./dist/links/splitLink.js"
     },
-    "./links/wsLink": {
-      "import": "./dist/links/wsLink.mjs",
-      "require": "./dist/links/wsLink.js",
-      "default": "./dist/links/wsLink.js"
+    "./links/wsLink/wsLink": {
+      "import": "./dist/links/wsLink/wsLink.mjs",
+      "require": "./dist/links/wsLink/wsLink.js",
+      "default": "./dist/links/wsLink/wsLink.js"
     },
     "./unstable-internals": {
       "import": "./dist/unstable-internals.mjs",
@@ -76,23 +76,24 @@
     "!**/*.test.*",
     "!**/__tests__"
   ],
-  "dependencies": {},
   "peerDependencies": {
     "@trpc/server": "^10.45.1",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@trpc/server": "^10.45.1",
+    "@trpc/server": "workspace:*",
     "@types/isomorphic-fetch": "^0.0.39",
-    "@types/node": "^22.9.0",
-    "eslint": "^9.13.0",
+    "@types/node": "^22.13.5",
+    "dataloader": "^2.2.2",
+    "eslint": "^9.21.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
-    "rollup": "^4.24.4",
+    "rollup": "^4.34.8",
     "tslib": "^2.8.1",
-    "tsx": "^4.0.0",
-    "typescript": "^5.7.2",
-    "undici": "^7.0.0"
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "undici": "^7.0.0",
+    "ws": "^8.0.0"
   },
   "publishConfig": {
     "access": "public"

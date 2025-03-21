@@ -79,7 +79,7 @@ tRPC combines concepts from [REST](https://www.sitepoint.com/rest-api/) and [Gra
 
 ## Installation
 
-tRPC is split between several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, checkout [usage with React](/docs/client/react/setup) and [usage with Next.js](/docs/client/nextjs/setup).
+tRPC is split between several packages, so you can install only what you need. Make sure to install the packages you want in the proper sections of your codebase. For this quickstart guide we'll keep it simple and use the vanilla client only. For framework guides, checkout [usage with React](/docs/client/tanstack-react-query/setup) and [usage with Next.js](/docs/client/nextjs/setup).
 
 :::info Requirements
 - tRPC requires TypeScript >=5.7.2
@@ -288,7 +288,7 @@ const appRouter = router({
 
   </TabItem>
   <TabItem value="valibot" label="Valibot">
-    The input parser can be any Valibot schema wrapped with <code>v.parser</code> or <code>v.parserAsync</code>.
+    The input parser can be any Valibot schema, e.g. <code>v.string()</code> or <code>v.object({})</code>.
 
 <br />
 <br />
@@ -307,7 +307,7 @@ import * as v from 'valibot';
 const appRouter = router({
   // ...
   userById: publicProcedure
-    .input(v.parser(v.string()))
+    .input(v.string())
     .query(async (opts) => {
       const { input } = opts;
       //      ^?

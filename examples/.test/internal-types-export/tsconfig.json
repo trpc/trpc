@@ -1,9 +1,5 @@
 {
-  "extends": [
-    "@tsconfig/node-lts",
-    "@tsconfig/strictest",
-    "@tsconfig/esm",
-  ],
+  "extends": ["@tsconfig/node-lts", "@tsconfig/strictest", "@tsconfig/esm"],
   "compilerOptions": {
     "declaration": true,
     "emitDeclarationOnly": true,
@@ -11,9 +7,7 @@
     "moduleResolution": "nodenext",
     "noEmitOnError": true,
     "outDir": "build",
-    "rootDir": "src",
+    "rootDir": "src"
   },
-  "include": [
-    "src",
-  ],
+  "include": ["src"]
 }

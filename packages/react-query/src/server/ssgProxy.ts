@@ -4,7 +4,7 @@ import type {
   QueryClient,
 } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
-import type { inferRouterClient } from '@trpc/client';
+import type { TRPCClient } from '@trpc/client';
 import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type { CoercedTransformerParameters } from '@trpc/client/unstable-internals';
 import {
@@ -25,6 +25,7 @@ import {
   callProcedure,
   createFlatProxy,
   createRecursiveProxy,
+  run,
 } from '@trpc/server/unstable-core-do-not-import';
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import type {
@@ -41,7 +42,7 @@ type CreateSSGHelpersInternal<TRouter extends AnyRouter> = {
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
 interface CreateSSGHelpersExternal<TRouter extends AnyRouter> {
-  client: inferRouterClient<TRouter> | TRPCUntypedClient<TRouter>;
+  client: TRPCClient<TRouter> | TRPCUntypedClient<TRouter>;
 }
 
 type CreateServerSideHelpersOptions<TRouter extends AnyRouter> =
@@ -64,11 +65,10 @@ type DecoratedProcedureSSGRecord<
   TRecord extends RouterRecord,
 > = {
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
-    ? $Value extends RouterRecord
-      ? DecoratedProcedureSSGRecord<TRoot, $Value>
-      : // utils only apply to queries
-        $Value extends AnyQueryProcedure
-        ? Pick<DecorateQueryProcedure<TRoot, $Value>, SSGFns>
+    ? $Value extends AnyQueryProcedure
+      ? Pick<DecorateQueryProcedure<TRoot, $Value>, SSGFns>
+      : $Value extends RouterRecord
+        ? DecoratedProcedureSSGRecord<TRoot, $Value>
         : never
     : never;
 };
@@ -97,7 +97,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
         serialize: transformer.output.serialize,
         query: (queryOpts) => {
           return callProcedure({
-            procedures: router._def.procedures,
+            router,
             path: queryOpts.path,
             getRawInput: async () => queryOpts.input,
             ctx,
@@ -121,13 +121,29 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
 
   function _dehydrate(
     opts: DehydrateOptions = {
-      shouldDehydrateQuery() {
+      shouldDehydrateQuery(query) {
+        if (query.state.status === 'pending') {
+          return false;
+        }
         // makes sure to serialize errors
         return true;
       },
     },
   ): DehydratedState {
-    const before = dehydrate(queryClient, opts);
+    const before = run(() => {
+      const dehydrated = dehydrate(queryClient, opts);
+
+      return {
+        ...dehydrated,
+        queries: dehydrated.queries.map((query) => {
+          if (query.promise) {
+            const { promise: _, ...rest } = query;
+            return rest;
+          }
+          return query;
+        }),
+      };
+    });
     const after = resolvedOpts.serialize(before);
     return after;
   }

@@ -8,7 +8,7 @@ slug: /client/react/useQuery
 `useQuery` is the primary hook for data fetching, it works similarly to `@tanstack/react-query`'s `useQuery`, but with some `trpc` specific options and additional features like streaming.
 
 :::note
-For in-depth information about options and usage patterns, refer to the Tanstack Query docs on [queries](https://tanstack.com/query/v5/docs/framework/react/guides/queries).
+For in-depth information about options and usage patterns, refer to the TanStack Query docs on [queries](https://tanstack.com/query/v5/docs/framework/react/guides/queries).
 :::
 
 ## Signature

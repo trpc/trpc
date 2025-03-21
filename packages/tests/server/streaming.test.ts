@@ -1,28 +1,29 @@
 import { EventEmitter } from 'node:events';
-import {
-  routerToServerAndClientNew,
-  waitError,
-  waitTRPCClientError,
-} from './___testHelpers';
-import { waitFor } from '@testing-library/react';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
+import '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
   httpBatchLink,
+  httpBatchStreamLink,
+  httpSubscriptionLink,
   splitLink,
   TRPCClientError,
-  unstable_httpBatchStreamLink,
-  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import {
-  createDeferred,
-  isAsyncIterable,
-} from '@trpc/server/unstable-core-do-not-import';
+import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
+import { createDeferred, run } from '@trpc/server/unstable-core-do-not-import';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 import { zAsyncIterable } from './zAsyncIterable';
+
+async function waitTRPCClientError<TRoot extends InferrableClientTypes>(
+  fnOrPromise: Promise<unknown> | (() => unknown),
+) {
+  return waitError<TRPCClientError<TRoot>>(fnOrPromise, TRPCClientError);
+}
 
 describe('no transformer', () => {
   const orderedResults: number[] = [];
@@ -34,7 +35,7 @@ describe('no transformer', () => {
 
       const manualRelease = new Map<number, () => void>();
 
-      let iterableDeferred = createDeferred<void>();
+      let iterableDeferred = createDeferred();
       const nextIterable = () => {
         iterableDeferred.resolve();
       };
@@ -53,6 +54,19 @@ describe('no transformer', () => {
             );
             return opts.input.wait;
           }),
+        embedPromise: t.procedure.query(() => {
+          return {
+            deeply: run(async () => {
+              return {
+                nested: run(async () => {
+                  return {
+                    promise: Promise.resolve('foo'),
+                  };
+                }),
+              };
+            }),
+          };
+        }),
         error: t.procedure.query(() => {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
         }),
@@ -139,7 +153,7 @@ describe('no transformer', () => {
           return {
             links: [
               linkSpy,
-              unstable_httpBatchStreamLink({
+              httpBatchStreamLink({
                 url: opts.httpUrl,
               }),
             ],
@@ -212,13 +226,13 @@ describe('no transformer', () => {
       }),
     ] as const;
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(ctx.manualRelease.size).toBe(3);
     });
 
     // release 1
     ctx.manualRelease.get(1)!();
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(resolved[1]).toBe(true);
       expect(resolved[0]).toBe(false);
       expect(resolved[2]).toBe(false);
@@ -325,7 +339,7 @@ describe('no transformer', () => {
       ctx.nextIterable();
     }
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(ctx.connections.size).toBe(0);
     });
     expect(ctx.yieldSpy.mock.calls.flatMap((it) => it[0]))
@@ -339,11 +353,9 @@ describe('no transformer', () => {
         ]
       `);
     expect(err).toMatchInlineSnapshot(
-      `[Error: Invalid response or stream interrupted]`,
+      `[AbortError: The operation was aborted.]`,
     );
-    expect(err.message).toMatchInlineSnapshot(
-      `"Invalid response or stream interrupted"`,
-    );
+    expect(err.message).toMatchInlineSnapshot(`"The operation was aborted."`);
   });
 
   test('output validation iterable yield error', async () => {
@@ -408,6 +420,29 @@ describe('no transformer', () => {
     const serverError = ctx.onErrorSpy.mock.calls[0]![0].error;
     expect(serverError.code).toBe('INTERNAL_SERVER_ERROR');
     expect(serverError.message).toMatchInlineSnapshot(`""`);
+  });
+
+  test('embed promise', async () => {
+    const { client } = ctx;
+
+    const result = await client.embedPromise.query();
+
+    expectTypeOf(result).toEqualTypeOf<{
+      deeply: Promise<{
+        nested: Promise<{
+          promise: Promise<string>;
+        }>;
+      }>;
+    }>();
+
+    expect(result.deeply).toBeInstanceOf(Promise);
+    const deeply = await result.deeply;
+    expect(deeply.nested).toBeInstanceOf(Promise);
+    const nested = await deeply.nested;
+    expect(nested.promise).toBeInstanceOf(Promise);
+    const promise = await nested.promise;
+
+    expect(promise).toEqual('foo');
   });
 });
 
@@ -500,11 +535,11 @@ describe('with transformer', () => {
                 }),
                 false: splitLink({
                   condition: (op) => op.type === 'subscription',
-                  true: unstable_httpSubscriptionLink({
+                  true: httpSubscriptionLink({
                     url: opts.httpUrl,
                     transformer: superjson,
                   }),
-                  false: unstable_httpBatchStreamLink({
+                  false: httpBatchStreamLink({
                     url: opts.httpUrl,
                     transformer: superjson,
                   }),

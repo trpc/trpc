@@ -9,10 +9,10 @@
     "start": "vite preview"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.62.8",
+    "@tanstack/react-query": "^5.67.1",
     "@trpc/client": "npm:@trpc/client@next",
-    "@trpc/react-query": "npm:@trpc/react-query@next",
     "@trpc/server": "npm:@trpc/server@next",
+    "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query@next",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -20,8 +20,8 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.13.0",
-    "typescript": "^5.7.2",
-    "vite": "^5.3.4"
+    "eslint": "^9.21.0",
+    "typescript": "^5.8.2",
+    "vite": "^6.1.1"
   }
 }

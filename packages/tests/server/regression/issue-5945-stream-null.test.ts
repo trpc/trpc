@@ -1,5 +1,5 @@
 import { routerToServerAndClientNew } from '../___testHelpers';
-import { unstable_httpBatchStreamLink } from '@trpc/client';
+import { httpBatchStreamLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import superjson from 'superjson';
@@ -23,7 +23,7 @@ describe('without transformer', () => {
       return routerToServerAndClientNew(appRouter, {
         client({ httpUrl }) {
           return {
-            links: [unstable_httpBatchStreamLink({ url: httpUrl })],
+            links: [httpBatchStreamLink({ url: httpUrl })],
           };
         },
       });
@@ -68,7 +68,7 @@ describe('with transformer', () => {
         client({ httpUrl }) {
           return {
             links: [
-              unstable_httpBatchStreamLink({
+              httpBatchStreamLink({
                 url: httpUrl,
                 transformer: superjson,
               }),

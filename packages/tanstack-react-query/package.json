@@ -1,0 +1,82 @@
+{
+  "name": "@trpc/tanstack-react-query",
+  "version": "10.45.1",
+  "description": "TanStack React Query Integration for tRPC",
+  "author": "juliusmarminge",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "homepage": "https://trpc.io/docs/client/tanstack-react-query/setup",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trpc/trpc.git",
+    "directory": "packages/tanstack-react-query"
+  },
+  "scripts": {
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "dev": "pnpm build --watch",
+    "codegen-entrypoints": "tsx entrypoints.script.ts",
+    "lint": "eslint --cache src",
+    "test-run:tsc": "tsc --noEmit --pretty",
+    "ts-watch": "tsc --watch"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "package.json",
+    "!**/*.test.*",
+    "!**/__tests__"
+  ],
+  "eslintConfig": {
+    "rules": {
+      "react-hooks/exhaustive-deps": "error",
+      "no-restricted-imports": [
+        "error",
+        "@trpc/tanstack-react-query"
+      ],
+      "@typescript-eslint/prefer-function-type": "off"
+    }
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.67.1",
+    "@trpc/client": "^10.45.1",
+    "@trpc/server": "^10.45.1",
+    "react": ">=18.2.0",
+    "react-dom": ">=18.2.0",
+    "typescript": ">=5.7.2"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.67.1",
+    "@trpc/client": "^10.45.1",
+    "@trpc/server": "^10.45.1",
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.0.0",
+    "eslint": "^9.21.0",
+    "event-source-polyfill": "^1.0.31",
+    "konn": "^0.7.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "rollup": "^4.34.8",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.6",
+    "ws": "^8.0.0",
+    "zod": "^3.24.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": [
+    "https://trpc.io/sponsor"
+  ]
+}

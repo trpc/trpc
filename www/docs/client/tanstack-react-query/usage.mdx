@@ -1,0 +1,292 @@
+---
+id: usage
+title: TanStack React Query
+sidebar_label: Usage
+description: TanStack React Query usage
+slug: /client/tanstack-react-query/usage
+---
+
+Compared to our [classic React Query Integration](/docs/client/react) this client is simpler and more TanStack Query-native, providing factories for common TanStack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. We think it's the future and recommend using this over the classic client, <a href="/blog/introducing-tanstack-react-query-client">read the announcement post</a> for more information about this change.
+
+## Quick example query
+
+```tsx
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from './trpc';
+
+function Users() {
+  const trpc = useTRPC();
+
+  const greetingQuery = useQuery(trpc.greeting.queryOptions({ name: 'Jerry' }));
+
+  // greetingQuery.data === 'Hello Jerry'
+}
+```
+
+## Usage
+
+The philosophy of this client is to provide thin and type-safe factories which work natively and type-safely with Tanstack React Query. This means just by following the autocompletes the client gives you, you can focus on building just with the knowledge the [TanStack React Query docs](https://tanstack.com/query/latest/docs/framework/react/overview) provide.
+
+```tsx
+export default function Basics() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  // Create QueryOptions which can be passed to query hooks
+  const myQueryOptions = trpc.path.to.query.queryOptions({ /** inputs */ })
+  const myQuery = useQuery(myQueryOptions)
+  // or:
+  // useSuspenseQuery(myQueryOptions)
+  // useInfiniteQuery(myQueryOptions)
+
+  // Create MutationOptions which can be passed to useMutation
+  const myMutationOptions = trpc.path.to.mutation.mutationOptions()
+  const myMutation = useMutation(myMutationOptions)
+
+  // Create a QueryKey which can be used to manipulated many methods
+  // on TanStack's QueryClient in a type-safe manner
+  const myQueryKey = trpc.path.to.query.queryKey()
+
+  const invalidateMyQueryKey = () => {
+    queryClient.invalidateQueries({ queryKey: myQueryKey })
+  }
+
+  return (
+    // Your app here
+  )
+}
+```
+
+The `trpc` object is fully type-safe and will provide autocompletes for all the procedures in your `AppRouter`. At the end of the proxy, the following methods are available:
+
+### `queryOptions` - querying data {#queryOptions}
+
+Available for all query procedures. Provides a type-safe wrapper around [Tanstack's `queryOptions` function](https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions). The first argument is the input for the procedure, and the second argument accepts any native Tanstack React Query options.
+
+```ts
+const queryOptions = trpc.path.to.query.queryOptions(
+  {
+    /** input */
+  },
+  {
+    // Any Tanstack React Query options
+    stateTime: 1000,
+  },
+);
+```
+
+You can additionally provide a `trpc` object to the `queryOptions` function to provide tRPC request options to the client.
+
+```ts
+const queryOptions = trpc.path.to.query.queryOptions(
+  {
+    /** input */
+  },
+  {
+    trpc: {
+      // Provide tRPC request options to the client
+      context: {
+        // see https://trpc.io/docs/client/links#managing-context
+      },
+    },
+  },
+);
+```
+
+The result can be passed to `useQuery` or `useSuspenseQuery` hooks or query client methods like `fetchQuery`, `prefetchQuery`, `prefetchInfiniteQuery`, `invalidateQueries`, etc.
+
+### `infiniteQueryOptions` - querying infinite data {#infiniteQueryOptions}
+
+Available for all query procedures that takes a cursor input. Provides a type-safe wrapper around [Tanstack's `infiniteQueryOptions` function](https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions). The first argument is the input for the procedure, and the second argument accepts any native Tanstack React Query options.
+
+```ts
+const infiniteQueryOptions = trpc.path.to.query.infiniteQueryOptions(
+  {
+    /** input */
+  },
+  {
+    // Any Tanstack React Query options
+    getNextPageParam: (lastPage, pages) => lastPage.nextCursor,
+  },
+);
+```
+
+### `queryKey` - getting the query key and performing operations on the query client {#queryKey}
+
+Available for all query procedures. Allows you to access the query key in a type-safe manner.
+
+```ts
+const queryKey = trpc.path.to.query.queryKey();
+```
+
+Since Tanstack React Query uses fuzzy matching for query keys, you can also create a partial query key for any sub-path to match all queries belonging to a router:
+
+```ts
+const queryKey = trpc.router.pathKey();
+```
+
+Or even the root path to match all tRPC queries:
+
+```ts
+const queryKey = trpc.pathKey();
+```
+
+### `queryFilter` - creating query filters {#queryFilter}
+
+Available for all query procedures. Allows creating [query filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters#query-filters) in a type-safe manner.
+
+```ts
+const queryFilter = trpc.path.to.query.queryFilter(
+  {
+    /** input */
+  },
+  {
+    // Any Tanstack React Query filter
+    predicate: (query) => {
+      query.state.data;
+    },
+  },
+);
+```
+
+Like with query keys, if you want to run a filter across a whole router you can use `pathFilter` to target any sub-path.
+
+```ts
+const queryFilter = trpc.path.pathFilter({
+  // Any Tanstack React Query filter
+  predicate: (query) => {
+    query.state.data;
+  },
+});
+```
+
+Useful for creating filters that can be passed to client methods like `queryClient.invalidateQueries` etc.
+
+### `mutationOptions` - creating mutation options {#mutationOptions}
+
+Available for all mutation procedures. Provides a type-safe identify function for constructing options that can be passed to `useMutation`.
+
+```ts
+const mutationOptions = trpc.path.to.mutation.mutationOptions({
+  // Any Tanstack React Query options
+  onSuccess: (data) => {
+    // do something with the data
+  },
+});
+```
+
+### `mutationKey` - getting the mutation key {#mutationKey}
+
+Available for all mutation procedures. Allows you to get the mutation key in a type-safe manner.
+
+```ts
+const mutationKey = trpc.path.to.mutation.mutationKey();
+```
+
+### `subscriptionOptions` - creating subscription options {#subscriptionOptions}
+
+TanStack does not provide a subscription hook, so we continue to expose our own abstraction here which works with a [standard tRPC subscription setup](/docs/server/subscriptions).
+Available for all subscription procedures. Provides a type-safe identify function for constructing options that can be passed to `useSubscription`.
+Note that you need to have either the [`httpSubscriptionLink`](/docs/client/links/httpSubscriptionLink) or [`wsLink`](/docs/client/links/wsLink) configured in your tRPC client to use subscriptions.
+
+```tsx
+function SubscriptionExample() {
+  const trpc = useTRPC();
+  const subscription = useSubscription(
+    trpc.path.to.subscription.subscriptionOptions(
+      {
+        /** input */
+      },
+      {
+        enabled: true,
+        onStarted: () => {
+          // do something when the subscription is started
+        },
+        onData: (data) => {
+          // you can handle the data here
+        },
+        onError: (error) => {
+          // you can handle the error here
+        },
+        onConnectionStateChange: (state) => {
+          // you can handle the connection state here
+        },
+      },
+    ),
+  );
+
+  // Or you can handle the state here
+  subscription.data; // The lastly received data
+  subscription.error; // The lastly received error
+
+  /**
+   * The current status of the subscription.
+   * Will be one of: `'idle'`, `'connecting'`, `'pending'`, or `'error'`.
+   *
+   * - `idle`: subscription is disabled or ended
+   * - `connecting`: trying to establish a connection
+   * - `pending`: connected to the server, receiving data
+   * - `error`: an error occurred and the subscription is stopped
+   */
+  subscription.status;
+
+  // Reset the subscription (if you have an error etc)
+  subscription.reset();
+
+  return <>{/* ... */}</>;
+}
+```
+
+### Inferring Input and Output types
+
+When you need to infer the input and output types for a procedure or router, there are 2 options available depending on the situation.
+
+Infer the input and output types of a full router
+
+```ts
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { AppRouter } from './path/to/server';
+
+export type Inputs = inferRouterInputs<AppRouter>;
+export type Outputs = inferRouterOutputs<AppRouter>;
+```
+
+Infer types for a single procedure
+
+```ts
+import type { inferInput, inferOutput } from '@trpc/tanstack-react-query';
+
+function Component() {
+  const trpc = useTRPC();
+
+  type Input = inferInput<typeof trpc.path.to.procedure>;
+  type Output = inferOutput<typeof trpc.path.to.procedure>;
+}
+```
+
+### Accessing the tRPC client {#useTRPCClient}
+
+If you used the [setup with React Context](/docs/client/tanstack-react-query/setup#3a-setup-the-trpc-context-provider), you can access the tRPC client using the `useTRPCClient` hook.
+
+```tsx
+import { useTRPCClient } from './trpc';
+
+function Component() {
+  const trpcClient = useTRPCClient();
+
+  const result = await trpcClient.path.to.procedure.query({
+    /** input */
+  });
+}
+```
+
+If you [setup without React Context](/docs/client/tanstack-react-query/setup#3b-setup-without-react-context),
+you can import the global client instance directly instead.
+
+```ts
+import { client } from './trpc';
+
+const result = await client.path.to.procedure.query({
+  /** input */
+});
+```

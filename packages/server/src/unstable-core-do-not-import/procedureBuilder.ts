@@ -274,7 +274,7 @@ export interface ProcedureBuilder<
   >;
 
   /**
-   * Combine two procedure builders
+   * @deprecated use {@link concat} instead
    */
   unstable_concat<
     $Context,
@@ -304,7 +304,44 @@ export interface ProcedureBuilder<
     TMeta,
     Overwrite<TContextOverrides, $ContextOverrides>,
     IntersectIfDefined<TInputIn, $InputIn>,
-    IntersectIfDefined<TInputIn, $InputOut>,
+    IntersectIfDefined<TInputOut, $InputOut>,
+    IntersectIfDefined<TOutputIn, $OutputIn>,
+    IntersectIfDefined<TOutputOut, $OutputOut>,
+    TCaller
+  >;
+
+  /**
+   * Combine two procedure builders
+   */
+  concat<
+    $Context,
+    $Meta,
+    $ContextOverrides,
+    $InputIn,
+    $InputOut,
+    $OutputIn,
+    $OutputOut,
+  >(
+    builder: Overwrite<TContext, TContextOverrides> extends $Context
+      ? TMeta extends $Meta
+        ? ProcedureBuilder<
+            $Context,
+            $Meta,
+            $ContextOverrides,
+            $InputIn,
+            $InputOut,
+            $OutputIn,
+            $OutputOut,
+            TCaller
+          >
+        : TypeError<'Meta mismatch'>
+      : TypeError<'Context mismatch'>,
+  ): ProcedureBuilder<
+    TContext,
+    TMeta,
+    Overwrite<TContextOverrides, $ContextOverrides>,
+    IntersectIfDefined<TInputIn, $InputIn>,
+    IntersectIfDefined<TInputOut, $InputOut>,
     IntersectIfDefined<TOutputIn, $OutputIn>,
     IntersectIfDefined<TOutputOut, $OutputOut>,
     TCaller
@@ -487,6 +524,9 @@ export function createBuilder<TContext, TMeta>(
     unstable_concat(builder) {
       return createNewBuilder(_def, (builder as AnyProcedureBuilder)._def);
     },
+    concat(builder) {
+      return createNewBuilder(_def, (builder as AnyProcedureBuilder)._def);
+    },
     query(resolver) {
       return createResolver(
         { ..._def, type: 'query' },
@@ -637,6 +677,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
   }
 
   procedure._def = _def;
+  procedure.procedure = true;
 
   // FIXME typecast shouldn't be needed - fixittt
   return procedure as unknown as AnyProcedure;

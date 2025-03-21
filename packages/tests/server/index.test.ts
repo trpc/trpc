@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { routerToServerAndClientNew, waitError } from './___testHelpers';
-import { waitFor } from '@testing-library/react';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { waitError } from '@trpc/server/__tests__/waitError';
+import '@testing-library/react';
 import type { HTTPHeaders } from '@trpc/client';
 import {
   createTRPCClient,
@@ -503,7 +504,7 @@ describe('AbortError', () => {
     await new Promise((resolve) => setTimeout(resolve, 5));
     ac.abort();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onReject).toHaveBeenCalledTimes(1);
     });
 

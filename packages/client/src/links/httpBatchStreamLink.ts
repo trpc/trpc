@@ -1,7 +1,6 @@
 import type { AnyRouter, ProcedureType } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type { TRPCErrorShape, TRPCResponse } from '@trpc/server/rpc';
-import type { AnyRootTypes } from '@trpc/server/unstable-core-do-not-import';
 import { jsonlStreamConsumer } from '@trpc/server/unstable-core-do-not-import';
 import type { BatchLoader } from '../internals/dataLoader';
 import { dataLoader } from '../internals/dataLoader';
@@ -18,20 +17,11 @@ import {
 } from './internals/httpUtils';
 import type { Operation, TRPCLink } from './types';
 
-export type HTTPBatchStreamLinkOptions<TRoot extends AnyRootTypes> =
-  HTTPBatchLinkOptions<TRoot> & {
-    /**
-     * Maximum number of calls in a single batch request
-     * @default Infinity
-     */
-    maxItems?: number;
-  };
-
 /**
  * @see https://trpc.io/docs/client/links/httpBatchStreamLink
  */
-export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
-  opts: HTTPBatchStreamLinkOptions<TRouter['_def']['_config']['$types']>,
+export function httpBatchStreamLink<TRouter extends AnyRouter>(
+  opts: HTTPBatchLinkOptions<TRouter['_def']['_config']['$types']>,
 ): TRPCLink<TRouter> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   const maxURLLength = opts.maxURLLength ?? Infinity;
@@ -150,7 +140,7 @@ export function unstable_httpBatchStreamLink<TRouter extends AnyRouter>(
         /* istanbul ignore if -- @preserve */
         if (op.type === 'subscription') {
           throw new Error(
-            'Subscriptions are unsupported by `httpLink` - use `httpSubscriptionLink` or `wsLink`',
+            'Subscriptions are unsupported by `httpBatchStreamLink` - use `httpSubscriptionLink` or `wsLink`',
           );
         }
         const loader = loaders[op.type];

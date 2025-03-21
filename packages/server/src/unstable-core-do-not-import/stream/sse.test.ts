@@ -1,5 +1,5 @@
 import { EventEmitter, on } from 'node:events';
-import { serverResource } from './utils/__tests__/serverResource';
+import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
 import { EventSourcePolyfill, NativeEventSource } from 'event-source-polyfill';
 import SuperJSON from 'superjson';
 import type { inferAsyncIterableYield, Maybe } from '../types';
@@ -21,6 +21,7 @@ export const suppressLogs = () => {
     console.error = error;
   };
 };
+
 test('e2e, server-sent events (SSE)', async () => {
   async function* data(lastEventId: string | undefined) {
     let i = lastEventId ? Number(lastEventId) : 0;
@@ -35,7 +36,7 @@ test('e2e, server-sent events (SSE)', async () => {
 
   const written: string[] = [];
 
-  await using server = serverResource(async (request) => {
+  await using server = fetchServerResource(async (request) => {
     const url = new URL(request.url);
 
     const lastEventId: string | null =
@@ -46,16 +47,17 @@ test('e2e, server-sent events (SSE)', async () => {
     const stream = sseStreamProducer({
       data: data(lastEventId ?? undefined),
       serialize: (v) => SuperJSON.serialize(v),
-    }).pipeThrough(
-      // debug stream
-      new TransformStream({
-        transform: (chunk, controller) => {
-          // console.debug('debug', chunk);
-          written.push(chunk);
-          controller.enqueue(chunk);
-        },
-      }),
-    );
+    })
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(
+        // debug stream
+        new TransformStream({
+          transform(chunk, controller) {
+            written.push(chunk);
+            controller.enqueue(chunk);
+          },
+        }),
+      );
 
     return new Response(stream, {
       headers: sseHeaders,
@@ -166,7 +168,7 @@ test('SSE on serverless - emit and disconnect early', async () => {
     written: string[];
   };
   const requests: RequestTrace[] = [];
-  await using server = serverResource(async (request) => {
+  await using server = fetchServerResource(async (request) => {
     const url = new URL(request.url);
 
     const stringToNumber = (v: string | null) => {
@@ -196,14 +198,16 @@ test('SSE on serverless - emit and disconnect early', async () => {
       data: data(asNumber, reqAbortCtrl.signal),
       serialize: (v) => SuperJSON.serialize(v),
       emitAndEndImmediately: true,
-    }).pipeThrough(
-      new TransformStream({
-        transform(chunk, controller) {
-          requestTrace.written.push(chunk);
-          controller.enqueue(chunk);
-        },
-      }),
-    );
+    })
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(
+        new TransformStream({
+          transform(chunk, controller) {
+            requestTrace.written.push(chunk);
+            controller.enqueue(chunk);
+          },
+        }),
+      );
 
     return new Response(stream, {
       headers: sseHeaders,

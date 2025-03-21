@@ -31,19 +31,19 @@ const sandboxes = [
     files: ['src/client/index.ts', 'src/server/index.ts'],
   },
   {
+    id: 'minimal-react',
+    title: 'React',
+    description:
+      'This is a minimal full-stack React application using tRPC and React.',
+    files: ['client/src/Greeting.tsx', 'server/index.ts'],
+  },
+  {
     id: 'next-minimal-starter',
     title: 'Next.js',
     description:
       'This is a minimal full-stack React application using tRPC and Next.js.',
     files: ['src/pages/index.tsx', 'src/pages/api/trpc/[trpc].ts'],
   },
-  // {
-  //   id: 'minimal-react',
-  //   title: 'React',
-  //   description:
-  //     'This is a minimal full-stack React application using tRPC and React.',
-  //   files: ['client/src/App.tsx', 'server/index.ts'],
-  // },
 ] as const;
 
 /**
@@ -169,7 +169,7 @@ function TryItOut() {
               </div>
               {!deviceSupported && (
                 <ErrorOverlay
-                  url={`https://stackblitz.com/github/trpc/trpc/tree/next/examples/${sandbox.id}`}
+                  url={`https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}`}
                   dismiss={() => {
                     setIsSupported(true);
                   }}
@@ -177,7 +177,7 @@ function TryItOut() {
               )}
               <Iframe
                 src={
-                  `https://stackblitz.com/github/trpc/trpc/tree/next/examples/${sandbox.id}?` +
+                  `https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}?` +
                   searchParams({
                     embed: '1',
                     file: sandbox.files,

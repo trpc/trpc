@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 // Don't judge me on this code
 import fs from 'fs';
 import { allSponsors } from './script.output';
@@ -23,13 +24,14 @@ const sections: Def = {
   silver: [
     //
     'calcom',
-    'keenethics',
+    'coderabbitai',
+    'greptileai',
   ],
   bronze: [
     //
     'hidrb',
-    'flylance-apps',
     'ryanmagoon',
+    'jonluca',
   ],
 };
 
@@ -122,10 +124,10 @@ for (const [k, config] of Object.entries(bucketConfig)) {
 
   const rowsMatrix: string[][] = [[]];
   for (const col of cols) {
-    if (rowsMatrix[rowsMatrix.length - 1].length >= config.numCols) {
+    if (rowsMatrix[rowsMatrix.length - 1]!.length >= config.numCols) {
       rowsMatrix.push([]);
     }
-    rowsMatrix[rowsMatrix.length - 1].push(col);
+    rowsMatrix[rowsMatrix.length - 1]!.push(col);
   }
 
   let table = '<table>';

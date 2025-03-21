@@ -51,7 +51,7 @@ A link is a function that follows the `TRPCLink` type. Each link is composed of 
 ```tsx title='utils/customLink.ts'
 import { TRPCLink } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
-import type { AppRouter } from 'server/routers/_app';
+import type { AppRouter } from '~/server/routers/_app';
 
 export const customLink: TRPCLink<AppRouter> = () => {
   // here we just got initialized in the app - this happens once per app
@@ -84,7 +84,7 @@ export const customLink: TRPCLink<AppRouter> = () => {
 
 ### References
 
-If you need a more real reference for creating your custom link, you can check out some of the built-in links tRPC provides on [GitHub](https://github.com/trpc/trpc/tree/next/packages/client/src/links).
+If you need a more real reference for creating your custom link, you can check out some of the built-in links tRPC provides on [GitHub](https://github.com/trpc/trpc/tree/main/packages/client/src/links).
 
 ## The terminating link
 

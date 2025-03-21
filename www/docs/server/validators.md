@@ -385,25 +385,22 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  hello: publicProcedure
-    .input(type({ name: 'string' }).assert)
-    .output(type({ greeting: 'string' }).assert)
-    .query(({ input }) => {
-      //      ^?
-      return {
-        greeting: `hello ${input.name}`,
-      };
-    }),
+  hello: publicProcedure.input(type({ name: 'string' })).query(({ input }) => {
+    //      ^?
+    return {
+      greeting: `hello ${input.name}`,
+    };
+  }),
 });
 
 export type AppRouter = typeof appRouter;
 ```
 
-### With [@effect/schema](https://github.com/Effect-TS/effect/tree/main/packages/schema)
+### With [effect](https://github.com/Effect-TS/effect/tree/main/packages/schema)
 
 ```ts
-import * as Schema from '@effect/schema/Schema';
 import { initTRPC } from '@trpc/server';
+import { Schema } from 'effect';
 
 export const t = initTRPC.create();
 
@@ -411,10 +408,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(Schema.decodeUnknownSync(Schema.Struct({ name: Schema.String })))
-    .output(
-      Schema.decodeUnknownSync(Schema.Struct({ greeting: Schema.String })),
-    )
+    .input(Schema.standardSchemaV1(Schema.Struct({ name: Schema.String })))
+    .output(Schema.standardSchemaV1(Schema.Struct({ greeting: Schema.String })))
     .query(({ input }) => {
       //      ^?
       return {
@@ -426,6 +421,8 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+<!-- runtypes example is broken -->
+<!--
 ### With [runtypes](https://github.com/pelotom/runtypes)
 
 ```ts twoslash
@@ -448,7 +445,7 @@ export const appRouter = t.router({
 });
 
 export type AppRouter = typeof appRouter;
-```
+``` -->
 
 ### With [Valibot](https://github.com/fabian-hiller/valibot)
 
@@ -462,8 +459,8 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure
-    .input(v.parser(v.object({ name: v.string() })))
-    .output(v.parser(v.object({ greeting: v.string() })))
+    .input(v.object({ name: v.string() }))
+    .output(v.object({ greeting: v.string() }))
     .query(({ input }) => {
       //      ^?
       return {

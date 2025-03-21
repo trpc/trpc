@@ -1,7 +1,7 @@
 import type http from 'http';
-import { waitError } from '../___testHelpers';
 import type { Context } from './__router';
 import { router } from './__router';
+import { waitError } from '@trpc/server/__tests__/waitError';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
@@ -132,6 +132,11 @@ test('request info from context should include both calls', async () => {
     t.client.request.info.query(),
   ]);
 
+  // Replace port number in snapshot with <<redacted>>
+  if (res[1].url) {
+    res[1].url = res[1].url.replace(/:\d+\//, ':<<redacted>>/');
+  }
+
   expect(res).toMatchInlineSnapshot(`
     Array [
       Object {
@@ -151,6 +156,7 @@ test('request info from context should include both calls', async () => {
         "isBatchCall": true,
         "signal": Object {},
         "type": "query",
+        "url": "http://localhost:<<redacted>>/hello,request.info?batch=1&input=%7B%220%22%3A%7B%22who%22%3A%22test%22%7D%7D",
       },
     ]
   `);
@@ -160,7 +166,8 @@ test('error query', async () => {
   try {
     await t.client.exampleError.query();
   } catch (e) {
-    expect(e).toStrictEqual(new TRPCClientError('Unexpected error'));
+    expect(e).toBeInstanceOf(TRPCClientError);
+    expect((e as Error).message).toBe('Unexpected error');
   }
 });
 

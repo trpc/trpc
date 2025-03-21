@@ -1,0 +1,25 @@
+{
+  "name": "@monotest/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@monotest/api-router01": "workspace:*",
+    "@monotest/trpc": "workspace:*",
+    "@trpc/server": "npm:@trpc/server@next",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@monotest/tsconfig": "workspace:*"
+  }
+}

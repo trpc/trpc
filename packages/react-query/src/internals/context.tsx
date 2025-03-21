@@ -16,7 +16,7 @@ import type {
   Updater,
 } from '@tanstack/react-query';
 import type {
-  CreateTRPCClient,
+  TRPCClient,
   TRPCClientError,
   TRPCRequestOptions,
   TRPCUntypedClient,
@@ -104,7 +104,7 @@ export type DecoratedTRPCContextProps<
   TRouter extends AnyRouter,
   TSSRContext,
 > = TRPCContextPropsBase<TRouter, TSSRContext> & {
-  client: CreateTRPCClient<TRouter>;
+  client: TRPCClient<TRouter>;
 };
 
 export interface TRPCContextProps<TRouter extends AnyRouter, TSSRContext>
@@ -250,7 +250,12 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
    */
   invalidateQueries: (
     queryKey: TRPCQueryKey,
-    filters?: InvalidateQueryFilters,
+    filters?: InvalidateQueryFilters<
+      unknown,
+      TRPCClientError<TRouter>,
+      unknown,
+      TRPCQueryKey
+    >,
     options?: InvalidateOptions,
   ) => Promise<void>;
 
@@ -259,7 +264,12 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
    */
   resetQueries: (
     queryKey: TRPCQueryKey,
-    filters?: QueryFilters,
+    filters?: QueryFilters<
+      unknown,
+      TRPCClientError<TRouter>,
+      unknown,
+      TRPCQueryKey
+    >,
     options?: ResetOptions,
   ) => Promise<void>;
 
@@ -268,7 +278,12 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
    */
   refetchQueries: (
     queryKey: TRPCQueryKey,
-    filters?: RefetchQueryFilters,
+    filters?: RefetchQueryFilters<
+      unknown,
+      TRPCClientError<TRouter>,
+      unknown,
+      TRPCQueryKey
+    >,
     options?: RefetchOptions,
   ) => Promise<void>;
 

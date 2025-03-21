@@ -1,16 +1,13 @@
 import { EventEmitter } from 'node:events';
-import {
-  routerToServerAndClientNew,
-  suppressLogs,
-  suppressLogsUntil,
-} from './___testHelpers';
-import { waitFor } from '@testing-library/react';
+import { routerToServerAndClientNew } from './___testHelpers';
+import { suppressLogsUntil } from '@trpc/server/__tests__/suppressLogs';
+import '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
+  httpBatchStreamLink,
+  httpSubscriptionLink,
   retryLink,
   splitLink,
-  unstable_httpBatchStreamLink,
-  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -140,7 +137,7 @@ const ctx = konn()
                     return false;
                   },
                 }),
-                unstable_httpSubscriptionLink({
+                httpSubscriptionLink({
                   url: opts.httpUrl,
                   transformer: superjson,
                   EventSource: EventSourcePolyfill,
@@ -153,7 +150,7 @@ const ctx = konn()
                   },
                 }),
               ],
-              false: unstable_httpBatchStreamLink({
+              false: httpBatchStreamLink({
                 url: opts.httpUrl,
                 transformer: superjson,
               }),
@@ -195,7 +192,7 @@ test('disconnect and reconnect with updated headers', async () => {
     },
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
@@ -208,7 +205,7 @@ test('disconnect and reconnect with updated headers', async () => {
     return es;
   }
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onData.mock.calls.length).toBeGreaterThan(5);
   });
 
@@ -224,7 +221,7 @@ test('disconnect and reconnect with updated headers', async () => {
 
   await suppressLogsUntil(async () => {
     ctx.destroyConnections();
-    await waitFor(
+    await vi.waitFor(
       () => {
         expect(onStarted).toHaveBeenCalledTimes(3);
       },
@@ -233,7 +230,7 @@ test('disconnect and reconnect with updated headers', async () => {
       },
     );
 
-    await waitFor(
+    await vi.waitFor(
       () => {
         expect(getES().readyState).toBe(EventSource.OPEN);
       },
@@ -247,7 +244,7 @@ test('disconnect and reconnect with updated headers', async () => {
   expect(getES().readyState).toBe(EventSource.CLOSED);
 
   // const lastEventId = onData.mock.calls.at(-1)[0]![0]!
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
   });
   await sleep(50);

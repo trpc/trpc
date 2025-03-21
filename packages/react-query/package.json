@@ -14,6 +14,8 @@
     "directory": "packages/react"
   },
   "scripts": {
+    "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
+    "codegen-tests": "run-p codegen:*",
     "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
     "dev": "pnpm build --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
@@ -64,7 +66,7 @@
     }
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.62.8",
+    "@tanstack/react-query": "^5.67.1",
     "@trpc/client": "workspace:*",
     "@trpc/server": "^10.45.1",
     "react": ">=18.2.0",
@@ -72,22 +74,29 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.62.8",
+    "@tanstack/query-sync-storage-persister": "^5.66.0",
+    "@tanstack/react-query": "^5.67.1",
+    "@tanstack/react-query-persist-client": "^5.66.0",
+    "@testing-library/dom": "^10.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.4.3",
     "@trpc/client": "workspace:*",
     "@trpc/server": "^10.45.1",
-    "@types/express": "^4.17.17",
-    "@types/node": "^22.9.0",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.5",
     "@types/react": "^19.0.0",
-    "eslint": "^9.13.0",
+    "eslint": "^9.21.0",
     "express": "^5.0.0",
-    "next": "^15.1.3",
+    "next": "^15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "rollup": "^4.24.4",
+    "rollup": "^4.34.8",
     "tslib": "^2.8.1",
-    "tsx": "^4.0.0",
-    "typescript": "^5.7.2",
-    "zod": "^3.0.0"
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "zod": "^3.24.2",
+    "zod-form-data": "^2.0.1"
   },
   "publishConfig": {
     "access": "public"

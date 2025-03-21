@@ -484,4 +484,31 @@ describe('concat()', () => {
     result.ctx.__fromLib2;
     result.input;
   });
+
+  test('concat with default values', async () => {
+    const t = initTRPC.context().create();
+
+    const proc1 = t.procedure.input(z.number().default(1));
+
+    proc1.query((opts) => {
+      expectTypeOf(opts.input).toEqualTypeOf<number>();
+    });
+
+    const proc2 = t.procedure;
+
+    const concatProc = proc1.concat(proc2).query((opts) => {
+      // This type assertion verifies that num is strictly a number, not number | undefined
+      expectTypeOf(opts.input).toEqualTypeOf<number>();
+      return opts.input;
+    });
+
+    const router = t.router({
+      concat: concatProc,
+    });
+    const caller = router.createCaller({});
+
+    const result = await caller.concat(1);
+    expectTypeOf(result).toEqualTypeOf<number>();
+    expect(result).toEqual(1);
+  });
 });

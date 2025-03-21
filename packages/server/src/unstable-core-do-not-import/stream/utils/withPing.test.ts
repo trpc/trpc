@@ -1,48 +1,25 @@
 import EventEmitter, { on } from 'events';
-import { konn } from 'konn';
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import { expect, vi } from 'vitest';
 import { run } from '../../utils';
-import { makeResource } from './disposable';
-import { timerResource } from './timerResource';
 import { withPing } from './withPing';
 
-export interface MyEvents {
-  message: (str: string) => void;
-}
-declare interface MyEventEmitter {
-  on<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  off<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  once<TEv extends keyof MyEvents>(event: TEv, listener: MyEvents[TEv]): this;
-  emit<TEv extends keyof MyEvents>(
-    event: TEv,
-    ...args: Parameters<MyEvents[TEv]>
-  ): boolean;
-}
-
-class MyEventEmitter extends EventEmitter {
-  public toIterable<TEv extends keyof MyEvents>(
-    event: TEv,
-    opts: NonNullable<Parameters<typeof on>[2]>,
-  ): AsyncIterable<Parameters<MyEvents[TEv]>> {
-    return on(this, event, opts) as any;
+type EventMap<T> = Record<keyof T, any[]>;
+class IterableEventEmitter<T extends EventMap<T>> extends EventEmitter<T> {
+  toIterable<TEventName extends keyof T & string>(
+    eventName: TEventName,
+    opts?: NonNullable<Parameters<typeof on>[2]>,
+  ): AsyncIterable<T[TEventName]> {
+    return on(this as any, eventName, opts) as any;
   }
 }
 
-function fakeTimersResource() {
-  vi.useFakeTimers();
-
-  return makeResource(
-    {
-      advanceTimersByTimeAsync: vi.advanceTimersByTimeAsync,
-    },
-    () => {
-      vi.useRealTimers();
-    },
-  );
+interface MyEvents {
+  message: [str: string];
 }
 
 test('yield values from source iterable', async () => {
-  const ee = new MyEventEmitter();
+  const ee = new IterableEventEmitter<MyEvents>();
   using fakeTimers = fakeTimersResource();
   const pingIntervalMs = 1_000;
   const offsetMs = 100;

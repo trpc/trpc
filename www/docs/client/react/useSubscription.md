@@ -40,6 +40,10 @@ interface UseTRPCSubscriptionOptions<TOutput, TError> {
    */
   onError?: (error: TError) => void;
   /**
+   * Callback invoked when the subscription is completed.
+   */
+  onComplete?: () => void;
+  /**
    * @deprecated Use a `skipToken` from `@tanstack/react-query` instead.
    * This will be removed in a future version.
    */
@@ -55,7 +59,7 @@ type TRPCSubscriptionResult<TOutput, TError> = {
    * The current status of the subscription.
    * Will be one of: `'idle'`, `'connecting'`, `'pending'`, or `'error'`.
    *
-   * - `idle`: subscription is disabled
+   * - `idle`: subscription is disabled or ended
    * - `connecting`: trying to establish a connection
    * - `pending`: connected to the server, receiving data
    * - `error`: an error occurred and the subscription is stopped
@@ -96,7 +100,7 @@ export function MyComponent() {
     <div>
       <h1>Subscription Example</h1>
       <p>
-        {status}: <pre>{JSON.stringify(data, null, 2)}</pre>
+        {result.status}: <pre>{JSON.stringify(result.data, null, 2)}</pre>
       </p>
       <h2>Previous numbers:</h2>
       <ul>
