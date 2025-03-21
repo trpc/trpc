@@ -48,9 +48,9 @@ export default {
       // searchParameters: {},
     },
     announcementBar: {
-      id: 'tanstack-react-query-integration',
+      id: 'v11',
       content:
-        "🚀 We just released a new <em>TanStack React Query</em>-integration! Check out <a href='/blog/introducing-tanstack-react-query-client'><strong>the blog post here</strong></a>.",
+        "🎉 tRPC v11 is now released! Check out <a href='/blog/announcing-trpc-11'><strong>the blog post now</strong></a>.",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
       isCloseable: true,
@@ -212,7 +212,7 @@ export default {
               path: 'v10',
               badge: true,
               // className: 'v10',
-              banner: 'none',
+              banner: 'unmaintained',
             },
             '9.x': {
               label: '9.x',

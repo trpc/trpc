@@ -5,31 +5,26 @@ author: tRPC
 author_title: The tRPC Team
 author_url: https://trpc.io/
 author_image_url: /img/logo.svg
+commentDiscussionId: 6621
 ---
 
 import { GithubSponsorButton } from '@site/src/components/GithubSponsorButton';
 
-Although tRPC v11 has been stable for a long time via the `@next` tag, we've been kinda addicted to adding new features and goodies over the last 12 months in preparation for a big release. Today, we're excited to announce the official release of tRPC v11! This release is the result of months of hard work by [Katt](https://twitter.com/alexdotjs), the core team, and the community. We're excited to share all the new features and improvements with you.
+Although tRPC v11 has been production-ready for a long time via the `@next` tag, we've gotten kinda addicted to adding new features without being sticklers to semantic versioning. Today, we're excited to _finally_ ripping off the band-aid and announcing the official release of tRPC v11!
 
 {/* truncate */}
 
 Since our last major version release in November 2022, the tRPC community has seen substantial growth:
 
-- We now have nearly [35,000 stars on GitHub](https://github.com/trpc/trpc)
+- We now have over [35,000 stars on GitHub](https://github.com/trpc/trpc)
 - [A Discord community](https://trpc.io/discord) with over 5,000 members
 - [700k+ weekly npm downloads](https://www.npmjs.com/package/@trpc/server)
 - [100s of contributors](https://github.com/trpc/trpc/graphs/contributors)
 - [An _awesome_ ecosystem of extensions, examples, and content](https://trpc.io/awesome)
 
-**With the launch of tRPC v11**, we're excited to share that v11 is already being used in production by many large TypeScript projects thanks to its stable evolution on our `@next` channel. This official release marks the end of an exciting development cycle which brings support for Tanstack Query v5, Next.js App Router, SSE-based subscriptions, and plenty of other goodies.
+With the launch of tRPC v11, we're excited to share that v11 is already being used in production by many large TypeScript projects thanks to its stable evolution on our `@next` channel
 
 For new projects, you can get up and running with an [example application](https://trpc.io/awesome#-starting-points-example-projects-etc) to learn about tRPC v11. For projects still on tRPC v10, [visit the v11 migration guide](https://trpc.io/docs/v11/migrate-from-v10-to-v11).
-
-## Changes in how we release tRPC
-
-With tRPC v11 we're going to change how we do versioning going forward.
-
-tRPC has always followed the [SemVer](https://semver.org/) versioning scheme, but honestly this is hard work with little benefit to the way that tRPC releases work, and our time on the `@next` tag has taught us a way we prefer. Going forward we'll continue to use major version numbers for breaking changes, but we'll have a single incrementing minor version. This means that patches and enhancements will both be treated equally, allowing us to release with a faster cadence as improvements are ready. For you this means you don't need to consider minor/patch versions, and we'll always aim for 0 breaking changes during a major version so you can always upgrade with confidence.
 
 ## Overview of changes
 
@@ -39,7 +34,11 @@ v11 is a largely backward-compatible release with v10, but it brings a lot of ne
 
 When [TanStack Query v5](https://tanstack.com/blog/announcing-tanstack-query-v5) was released it necessitated some breaking changes within tRPC's react-query integration. This has been available since quite early on via the `@next` tag, but now it's officially released. Many projects have already chosen to upgrade and are enjoying the benefits of full React Suspense support and many other improvements, for advice on migrating your tRPC React client code you can follow [TanStack Query's own migration guide](https://tanstack.com/query/v5/docs/react/guides/migrating-to-v5).
 
-### Non-JSON Content Types
+### New TanStack React Query integration
+
+[See the blog post](./2025-02-17-new-tanstack-react-query-integration.mdx)
+
+### FormData / Non-JSON Content Types support
 
 One of our most requested features is the ability to send and receive more than simply JSON data. With tRPC v11, you can now send and receive data in a variety of [non-json content types](/docs/server/validators#non-json-content-types), `FormData`, and binary types such as `Blob`, `File` and `Uint8Array`. You can find an example of how to use these content types [here](https://github.com/trpc/trpc/tree/next/examples/minimal-content-types)
 
@@ -50,10 +49,12 @@ import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
 
-const publicProcedure = t.procedure;
-const router = t.router;
+export const publicProcedure = t.procedure;
+export const router = t.router;
 
+// @filename: server.ts
 // ---cut---
+import { publicProcedure, router } from './trpc';
 import { octetInputParser } from '@trpc/server/http';
 import { z } from 'zod';
 
@@ -78,7 +79,7 @@ While you have been able to use tRPC with Next.js App Router from day 1, by eith
 - using a server-centric approach using async/await with either [`createCaller`](/docs/server/server-side-calls) or [`createTRPCClient`](/docs/client/vanilla),
 - or a client-centric approach using the [React Query integration](/docs/client/react) and client-side hooks,
 
-the bridge in between has been a bit rough around the edges. Revalidation patterns are mixed when having to maintain different data fetching patterns, resulting in a less than ideal developer experience which does not live up to tRPC's standards.
+The bridge in between has been a bit rough around the edges. Revalidation patterns are mixed when having to maintain different data fetching patterns, resulting in a less than ideal developer experience which does not live up to tRPC's standards.
 
 To fix this, we've improved support for React Server Components (RSC) and added prefetch helpers to make it easier to utilize the power of RSCs running exclusively on the server, in combination with the highly dynamic client-side cache of React Query.
 You can now start executing a procedure on the server in a RSC, pick up the pending promise on the client, and automatically hydrate the React Query cache clientside. This enables you to build highly dynamic applications without suffering from server-client waterfalls. You can read more in our [Server Components documentation](/docs/client/react/server-components).
@@ -108,9 +109,10 @@ import { publicProcedure, router } from './trpc';
 const appRouter = router({
   examples: {
     iterable: publicProcedure.query(async function* () {
-      for (let i = 0; i < 3; i++) {
+      let i = 0;
+      while (true) {
         await new Promise((resolve) => setTimeout(resolve, 500));
-        yield i;
+        yield i++;
       }
     }),
   },
@@ -120,12 +122,12 @@ export type AppRouter = typeof appRouter;
 
 
 // @filename: client.ts
-import { createTRPCClient, unstable_httpBatchStreamLink } from '@trpc/client';
+import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
 const trpc = createTRPCClient<AppRouter>({
   links: [
-    unstable_httpBatchStreamLink({
+    httpBatchStreamLink({
       url: 'http://localhost:3000',
     }),
   ],
@@ -137,20 +139,6 @@ for await (const value of iterable) {
   console.log('Iterable:', value);
   //                         ^?
 }
-```
-
-### useSuspenseQueries
-
-We've introduced a new hook [useSuspenseQueries](/docs/client/react/suspense#usesuspensequeries) which allows you to fetch multiple queries in parallel and suspend until all queries are resolved. When writing `Fetch on Render` style applications, a possible foot-gun is where you need to run several suspense queries at once and you end up with a "waterfall". `useSuspenseQueries` is a way to put this problem further off without need to rewrite to `Render as you Fetch` style with prefetching.
-
-```tsx
-const Component = (props: { postIds: string[] }) => {
-  const [posts, postQueries] = trpc.useSuspenseQueries((t) =>
-    props.postIds.map((id) => t.post.byId({ id })),
-  );
-
-  return <>{/* [...] */}</>;
-};
 ```
 
 ### Shorthand Router Definitions
@@ -182,7 +170,7 @@ In tRPC v10, we introduced the `.interop()`-mode to provide a smooth migration p
 
 ## Migrating to v11
 
-If you're currently using tRPC v10, you can follow the [migration guide](https://trpc.io/docs/v11/migrate-from-v10-to-v11) to upgrade to v11. The migration guide covers all the breaking changes and new features in v11.
+If you're currently using tRPC v10, you can follow the [migration guide](/docs/migrate-from-v10-to-v11) to upgrade to v11. The migration guide covers all the breaking changes and new features in v11.
 
 ## Thank you!
 
