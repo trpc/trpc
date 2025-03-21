@@ -44,5 +44,6 @@
     "typescript-eslint": "^8.24.1",
     "vite": "^6.1.1",
     "vite-tsconfig-paths": "^4.3.2"
-  }
+  },
+  "version": "11.0.0"
 }

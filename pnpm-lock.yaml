@@ -460,16 +460,16 @@ importers:
         specifier: ^5.67.1
         version: 5.67.1(react@19.0.0)
       '@trpc/client':
-        specifier: ^10.35.0
+        specifier: ^11.0.0
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^10.35.0
+        specifier: ^11.0.0
         version: link:../../../packages/next
       '@trpc/react-query':
         specifier: npm:@trpc/react-query@next
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^10.35.0
+        specifier: ^11.0.0
         version: link:../../../packages/server
       next:
         specifier: ^15.1.7
@@ -1756,7 +1756,7 @@ importers:
   packages/client:
     devDependencies:
       '@trpc/server':
-        specifier: workspace:*
+        specifier: 11.0.0
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
@@ -1801,13 +1801,13 @@ importers:
         specifier: ^5.67.1
         version: 5.67.1(react@19.0.0)
       '@trpc/client':
-        specifier: workspace:*
+        specifier: 11.0.0
         version: link:../client
       '@trpc/react-query':
-        specifier: workspace:*
+        specifier: 11.0.0
         version: link:../react-query
       '@trpc/server':
-        specifier: ^10.45.1
+        specifier: 11.0.0
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -1876,10 +1876,10 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@10.0.0)
       '@trpc/client':
-        specifier: workspace:*
+        specifier: 11.0.0
         version: link:../client
       '@trpc/server':
-        specifier: ^10.45.1
+        specifier: 11.0.0
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -2017,10 +2017,10 @@ importers:
         specifier: ^5.67.1
         version: 5.67.1(react@19.0.0)
       '@trpc/client':
-        specifier: ^10.45.1
+        specifier: 11.0.0
         version: link:../client
       '@trpc/server':
-        specifier: ^10.45.1
+        specifier: 11.0.0
         version: link:../server
       '@types/node':
         specifier: 20.17.25
@@ -2080,10 +2080,10 @@ importers:
         specifier: ^2.9.0
         version: 2.11.0
       '@trpc/client':
-        specifier: workspace:*
+        specifier: 11.0.0
         version: link:../client
       '@trpc/server':
-        specifier: ^10.45.1
+        specifier: 11.0.0
         version: link:../server
       '@types/node':
         specifier: 20.17.25
@@ -2180,16 +2180,16 @@ importers:
         specifier: ^5.67.1
         version: 5.67.1(react@19.0.0)
       '@trpc/client':
-        specifier: workspace:*
+        specifier: 11.0.0
         version: link:../client
       '@trpc/react-query':
-        specifier: workspace:*
+        specifier: 11.0.0
         version: link:../react-query
       '@trpc/server':
-        specifier: workspace:*
+        specifier: 11.0.0
         version: link:../server
       '@trpc/tanstack-react-query':
-        specifier: workspace:*
+        specifier: 11.0.0
         version: link:../tanstack-react-query
       '@types/jscodeshift':
         specifier: 0.12.0
@@ -28434,7 +28434,7 @@ snapshots:
       '@typescript-eslint/parser': 8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2)
       eslint: 9.21.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0)(eslint@9.21.0(jiti@2.4.2))
       eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.21.0(jiti@2.4.2))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.21.0(jiti@2.4.2))
       eslint-plugin-react: 7.37.2(eslint@9.21.0(jiti@2.4.2))
@@ -28457,7 +28457,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)):
+  eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0)(eslint@9.21.0(jiti@2.4.2)):
     dependencies:
       debug: 4.4.0(supports-color@9.4.0)
       enhanced-resolve: 5.17.1
@@ -28471,14 +28471,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2)(eslint@9.21.0(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2)
       eslint: 9.21.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0)(eslint@9.21.0(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
@@ -28493,7 +28493,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.21.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2)(eslint@9.21.0(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3

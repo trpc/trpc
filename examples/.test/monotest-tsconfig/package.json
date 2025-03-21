@@ -1,6 +1,6 @@
 {
   "name": "@monotest/tsconfig",
-  "version": "0.0.1",
+  "version": "11.0.0",
   "private": true,
   "type": "module",
   "files": [
