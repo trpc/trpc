@@ -13,9 +13,9 @@ import type {
 } from '@trpc/client';
 import {
   createTRPCClient,
+  httpBatchStreamLink,
+  httpSubscriptionLink,
   splitLink,
-  unstable_httpBatchStreamLink,
-  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
@@ -125,11 +125,11 @@ const ctx = konn()
             linkSpy,
             splitLink({
               condition: (op) => op.type === 'subscription',
-              true: unstable_httpSubscriptionLink({
+              true: httpSubscriptionLink({
                 url: opts.httpUrl,
                 transformer: superjson,
               }),
-              false: unstable_httpBatchStreamLink({
+              false: httpBatchStreamLink({
                 url: opts.httpUrl,
                 transformer: superjson,
               }),
@@ -477,7 +477,7 @@ describe('auth / connectionParams', async () => {
   test('do a call without auth', async () => {
     const client = createTRPCClient<AppRouter>({
       links: [
-        unstable_httpSubscriptionLink({
+        httpSubscriptionLink({
           url: ctx.httpUrl,
         }),
       ],
@@ -512,7 +512,7 @@ describe('auth / connectionParams', async () => {
   test('with auth', async () => {
     const client = createTRPCClient<AppRouter>({
       links: [
-        unstable_httpSubscriptionLink({
+        httpSubscriptionLink({
           url: ctx.httpUrl,
 
           connectionParams: async () => {
@@ -625,7 +625,7 @@ describe('headers / eventSourceOptions', async () => {
   test('do a call without auth', async () => {
     const client = createTRPCClient<AppRouter>({
       links: [
-        unstable_httpSubscriptionLink({
+        httpSubscriptionLink({
           url: ctx.httpUrl,
         }),
       ],
@@ -661,7 +661,7 @@ describe('headers / eventSourceOptions', async () => {
   test('with auth', async () => {
     const client = createTRPCClient<AppRouter>({
       links: [
-        unstable_httpSubscriptionLink({
+        httpSubscriptionLink({
           url: ctx.httpUrl,
 
           eventSourceOptions: async ({ op }) => {
@@ -748,7 +748,7 @@ describe('transformers / different serialize-deserialize', async () => {
   test('serializes correctly', async () => {
     const client = createTRPCClient<AppRouter>({
       links: [
-        unstable_httpSubscriptionLink({
+        httpSubscriptionLink({
           url: ctx.httpUrl,
           transformer,
         }),
@@ -859,7 +859,7 @@ describe('timeouts', async () => {
         return {
           links: [
             linkSpy,
-            unstable_httpSubscriptionLink({
+            httpSubscriptionLink({
               url: opts.httpUrl,
               transformer: superjson,
             }),
@@ -1118,10 +1118,10 @@ test('tracked() without transformer', async () => {
           links: [
             splitLink({
               condition: (op) => op.type === 'subscription',
-              true: unstable_httpSubscriptionLink({
+              true: httpSubscriptionLink({
                 url: opts.httpUrl,
               }),
-              false: unstable_httpBatchStreamLink({
+              false: httpBatchStreamLink({
                 url: opts.httpUrl,
               }),
             }),

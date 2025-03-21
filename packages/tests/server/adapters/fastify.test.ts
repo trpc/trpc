@@ -6,8 +6,8 @@ import {
   createTRPCClient,
   createWSClient,
   httpBatchLink,
+  httpBatchStreamLink,
   splitLink,
-  unstable_httpBatchStreamLink,
   wsLink,
 } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
@@ -226,7 +226,7 @@ function createClient(opts: ClientOptions) {
           return op.type === 'subscription';
         },
         true: wsLink({ client: wsClient }),
-        false: unstable_httpBatchStreamLink({
+        false: httpBatchStreamLink({
           url: `http://${host}`,
           headers: opts.headers,
           fetch: fetch as any,

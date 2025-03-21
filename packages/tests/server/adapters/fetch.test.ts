@@ -13,7 +13,7 @@ import type { TRPCLink } from '@trpc/client';
 import {
   createTRPCProxyClient,
   httpBatchLink,
-  unstable_httpBatchStreamLink,
+  httpBatchStreamLink,
 } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
@@ -191,7 +191,7 @@ describe('with default server', () => {
     const client = createTRPCProxyClient<AppRouter>({
       links: [
         linkSpy,
-        unstable_httpBatchStreamLink({
+        httpBatchStreamLink({
           url: t.url,
           fetch: fetch as any,
         }),

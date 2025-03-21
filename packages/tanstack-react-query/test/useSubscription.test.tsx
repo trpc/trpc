@@ -1,7 +1,7 @@
 import { EventEmitter, on } from 'node:events';
 import { testReactResource } from './__helpers';
 import { fireEvent } from '@testing-library/react';
-import { unstable_httpSubscriptionLink, wsLink } from '@trpc/client';
+import { httpSubscriptionLink, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
@@ -103,7 +103,7 @@ const getCtx = (protocol: 'http' | 'ws') => {
       return {
         links: [
           protocol === 'http'
-            ? unstable_httpSubscriptionLink({
+            ? httpSubscriptionLink({
                 url: opts.httpUrl,
               })
             : wsLink({
