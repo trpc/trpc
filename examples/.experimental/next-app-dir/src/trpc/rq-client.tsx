@@ -5,8 +5,8 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import {
   createTRPCClient,
+  httpBatchStreamLink,
   loggerLink,
-  unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '~/server/routers/_app';
@@ -37,7 +37,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
             process.env.NODE_ENV === 'development' ||
             (op.direction === 'down' && op.result instanceof Error),
         }),
-        unstable_httpBatchStreamLink({
+        httpBatchStreamLink({
           transformer,
           url: getUrl(),
           headers: { 'x-trpc-source': 'react-query' },

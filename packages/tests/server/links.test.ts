@@ -3,11 +3,11 @@ import type { OperationLink, TRPCClientRuntime } from '@trpc/client';
 import {
   createTRPCClient,
   httpBatchLink,
+  httpBatchStreamLink,
   httpLink,
   loggerLink,
   retryLink,
   TRPCClientError,
-  unstable_httpBatchStreamLink,
 } from '@trpc/client';
 import { createChain } from '@trpc/client/links/internals/createChain';
 import type { AnyRouter } from '@trpc/server';
@@ -241,7 +241,7 @@ describe('batching', () => {
       },
     });
     const links = [
-      unstable_httpBatchStreamLink({
+      httpBatchStreamLink({
         url: httpUrl,
       })(mockRuntime),
     ];

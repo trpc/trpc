@@ -11,8 +11,8 @@
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
   "dependencies": {
-    "@trpc/client": "npm:@trpc/client@next",
-    "@trpc/server": "npm:@trpc/server@next",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/server": "npm:@trpc/server",
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -22,5 +22,6 @@
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "wait-port": "^1.0.1"
-  }
+  },
+  "version": "11.0.0"
 }

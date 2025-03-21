@@ -12,8 +12,8 @@
     "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
   },
   "dependencies": {
-    "@trpc/client": "npm:@trpc/client@next",
-    "@trpc/server": "npm:@trpc/server@next",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/server": "npm:@trpc/server",
     "tsx": "^4.19.3",
     "zod": "^3.24.2"
   },
@@ -25,5 +25,6 @@
     "serverless-esbuild": "^1.39.0",
     "serverless-offline": "^12.0.4",
     "typescript": "^5.8.2"
-  }
+  },
+  "version": "11.0.0"
 }

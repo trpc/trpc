@@ -1,4 +1,4 @@
-import { unstable_httpBatchStreamLink, loggerLink } from '@trpc/client';
+import { httpBatchStreamLink, loggerLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
@@ -62,7 +62,7 @@ export const trpc = createTRPCNext<AppRouter, SSRContext>({
             process.env.NODE_ENV === 'development' ||
             (opts.direction === 'down' && opts.result instanceof Error),
         }),
-        unstable_httpBatchStreamLink({
+        httpBatchStreamLink({
           url: `${getBaseUrl()}/api/trpc`,
           /**
            * Set custom request headers on every request from tRPC

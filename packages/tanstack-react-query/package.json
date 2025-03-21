@@ -1,6 +1,6 @@
 {
   "name": "@trpc/tanstack-react-query",
-  "version": "10.45.1",
+  "version": "11.0.0",
   "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
@@ -49,16 +49,16 @@
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.67.1",
-    "@trpc/client": "^10.45.1",
-    "@trpc/server": "^10.45.1",
+    "@trpc/client": "11.0.0",
+    "@trpc/server": "11.0.0",
     "react": ">=18.2.0",
     "react-dom": ">=18.2.0",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.67.1",
-    "@trpc/client": "^10.45.1",
-    "@trpc/server": "^10.45.1",
+    "@trpc/client": "11.0.0",
+    "@trpc/server": "11.0.0",
     "@types/node": "^22.13.5",
     "@types/react": "^19.0.0",
     "eslint": "^9.21.0",

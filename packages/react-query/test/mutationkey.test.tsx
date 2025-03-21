@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { useIsMutating, useQueryClient } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -63,18 +63,18 @@ describe('mutation keys', () => {
     );
 
     // should be mutating due to effect
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('status')).toHaveTextContent('1');
     });
 
     // let the mutation finish
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('status')).toHaveTextContent('0');
     });
 
     // should be mutating after button press
     await userEvent.click(utils.getByTestId('mutate'));
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('status')).toHaveTextContent('1');
     });
   });

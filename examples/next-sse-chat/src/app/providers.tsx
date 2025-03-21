@@ -4,10 +4,10 @@ import type { QueryClient } from '@tanstack/react-query';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import {
+  httpBatchStreamLink,
+  httpSubscriptionLink,
   loggerLink,
   splitLink,
-  unstable_httpBatchStreamLink,
-  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { createQueryClient } from '~/lib/query-client';
 import { trpc } from '~/lib/trpc';
@@ -44,14 +44,14 @@ export function TRPCProviders(props: Readonly<{ children: React.ReactNode }>) {
         loggerLink(),
         splitLink({
           condition: (op) => op.type === 'subscription',
-          true: unstable_httpSubscriptionLink({
+          true: httpSubscriptionLink({
             url: getUrl(),
             /**
              * @see https://trpc.io/docs/v11/data-transformers
              */
             transformer: SuperJSON,
           }),
-          false: unstable_httpBatchStreamLink({
+          false: httpBatchStreamLink({
             url: getUrl(),
             /**
              * @see https://trpc.io/docs/v11/data-transformers

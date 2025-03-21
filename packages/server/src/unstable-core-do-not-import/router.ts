@@ -117,7 +117,7 @@ export function lazy<TRouter extends AnyRouter>(
 
     if (routers.length !== 1 || !isRouter(routers[0])) {
       throw new Error(
-        "Invalid router module - either define exactly 1 export or return the router directly.\nExample: `experimental_lazy(() => import('./slow.js').then((m) => m.slowRouter))`",
+        "Invalid router module - either define exactly 1 export or return the router directly.\nExample: `lazy(() => import('./slow.js').then((m) => m.slowRouter))`",
       );
     }
 

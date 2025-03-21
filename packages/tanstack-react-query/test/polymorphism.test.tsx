@@ -10,7 +10,7 @@
 */
 import { testReactResource } from './__helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import React, { useState } from 'react';
@@ -131,7 +131,7 @@ describe('polymorphism', () => {
 
       await userEvent.click($.getByTestId('startExportBtn'));
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
           'Last Export: `Search for Polymorphism React` (Working)',
         );
@@ -139,7 +139,7 @@ describe('polymorphism', () => {
 
       await userEvent.click($.getByTestId('refreshBtn'));
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
           'Last Export: `Search for Polymorphism React` (Ready!)',
         );
@@ -190,7 +190,7 @@ describe('polymorphism', () => {
 
       await userEvent.click($.getByTestId('startExportBtn'));
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
           'Last Export: `Search for Polymorphism React` (Working)',
         );
@@ -198,7 +198,7 @@ describe('polymorphism', () => {
 
       await userEvent.click($.getByTestId('refreshBtn'));
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
           'Last Export: `Search for Polymorphism React` (Ready!)',
         );

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { createAppRouter } from './__testHelpers';
 import type { DehydratedState } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { withTRPC } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import { konn } from 'konn';
@@ -204,7 +204,7 @@ describe('withTRPC()', () => {
 
       const utils = render(<Wrapped {...props} />);
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(utils.container).toHaveTextContent('first post');
       });
     });
@@ -254,7 +254,7 @@ describe('withTRPC()', () => {
       expect(utils.container).not.toHaveTextContent('first post');
 
       // should eventually be fetched
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(utils.container).toHaveTextContent('first post');
       });
     }, 20000);
@@ -281,7 +281,7 @@ describe('withTRPC()', () => {
 
       const utils = render(<Wrapped {...props} />);
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(utils.container).toHaveTextContent('first post');
       });
       expect(ssrFn).not.toHaveBeenCalled();
@@ -413,7 +413,7 @@ describe('withTRPC()', () => {
 
     const utils = render(<Wrapped {...props} />);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });
   });
@@ -449,7 +449,7 @@ describe('withTRPC()', () => {
       expect(utils.container).not.toHaveTextContent('first post');
 
       // should eventually be fetched
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(utils.container).toHaveTextContent('first post');
       });
     });
@@ -492,7 +492,7 @@ describe('withTRPC()', () => {
       expect(utils.container).not.toHaveTextContent('first post');
 
       // should eventually be fetched
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(utils.container).toHaveTextContent('first post');
       });
     });
@@ -575,7 +575,7 @@ describe('withTRPC()', () => {
         expect(utils.container).toHaveTextContent('first post');
         expect(utils.container).not.toHaveTextContent('second post');
 
-        await waitFor(() => {
+        await vi.waitFor(() => {
           expect(utils.container).toHaveTextContent('first post');
           expect(utils.container).toHaveTextContent('second post');
         });
@@ -674,7 +674,7 @@ describe('withTRPC()', () => {
         expect(utils.container).toHaveTextContent('first post');
         expect(utils.container).toHaveTextContent('second post');
 
-        await waitFor(() => {
+        await vi.waitFor(() => {
           expect(utils.container).toHaveTextContent('first post');
           expect(utils.container).toHaveTextContent('second post');
         });
@@ -730,7 +730,7 @@ describe('withTRPC()', () => {
         expect(utils.container).toHaveTextContent('first post');
         expect(utils.container).not.toHaveTextContent('second post');
 
-        await waitFor(() => {
+        await vi.waitFor(() => {
           expect(utils.container).toHaveTextContent('first post');
           expect(utils.container).toHaveTextContent('second post');
         });
@@ -784,7 +784,7 @@ describe('withTRPC()', () => {
         expect(utils.container).toHaveTextContent('first post');
         expect(utils.container).toHaveTextContent('second post');
 
-        await waitFor(() => {
+        await vi.waitFor(() => {
           expect(utils.container).toHaveTextContent('first post');
           expect(utils.container).toHaveTextContent('second post');
         });
@@ -816,7 +816,7 @@ describe('withTRPC()', () => {
       expect(utils.container).not.toHaveTextContent('first post');
 
       // should eventually be fetched
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(utils.container).toHaveTextContent('first post');
       });
     });
@@ -847,7 +847,7 @@ describe('withTRPC()', () => {
       expect(utils.container).not.toHaveTextContent('first post');
 
       // should eventually be fetched
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(utils.container).toHaveTextContent('first post');
       });
     });

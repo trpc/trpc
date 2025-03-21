@@ -77,7 +77,7 @@ const codes5xx: TRPC_ERROR_CODE_NUMBER[] = [
 /**
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink
  */
-export function unstable_httpSubscriptionLink<
+export function httpSubscriptionLink<
   TInferrable extends InferrableClientTypes,
   TEventSource extends EventSourceLike.AnyConstructor,
 >(

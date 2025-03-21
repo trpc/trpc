@@ -1,5 +1,5 @@
 import { getServerAndReactClient } from './__reactHelpers';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
@@ -81,7 +81,7 @@ describe('custom error formatter', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(queryErrorCallback).toHaveBeenCalled();
     });
 
@@ -164,7 +164,7 @@ describe('no custom formatter', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(queryErrorCallback).toHaveBeenCalled();
     });
 

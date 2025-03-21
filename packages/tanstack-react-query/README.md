@@ -27,14 +27,14 @@ Full documentation can be found at https://trpc.io/docs/client/tanstack-react-qu
 
 ```bash
 # npm
-npm install @trpc/tanstack-react-query@next @tanstack/react-query
+npm install @trpc/tanstack-react-query @tanstack/react-query
 
 # Yarn
-yarn add @trpc/tanstack-react-query@next @tanstack/react-query
+yarn add @trpc/tanstack-react-query @tanstack/react-query
 
 # pnpm
-pnpm add @trpc/tanstack-react-query@next @tanstack/react-query
+pnpm add @trpc/tanstack-react-query @tanstack/react-query
 
 # Bun
-bun add @trpc/tanstack-react-query@next @tanstack/react-query
+bun add @trpc/tanstack-react-query @tanstack/react-query
 ```
