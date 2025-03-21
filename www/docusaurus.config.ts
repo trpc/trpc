@@ -128,7 +128,7 @@ export default {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
+              href: 'https://github.com/trpc/trpc/tree/main',
               className: 'flex items-center',
             },
             {
@@ -152,7 +152,7 @@ export default {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
+              href: 'https://github.com/trpc/trpc/tree/main',
               className: 'flex items-center',
             },
             {
@@ -205,7 +205,7 @@ export default {
               // path: 'v10',
               badge: true,
               // className: 'v11',
-              banner: 'unreleased',
+              banner: 'none',
             },
             '10.x': {
               label: '10.x',
@@ -225,7 +225,7 @@ export default {
           // includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/',
           remarkPlugins: [
             [
               require('remark-shiki-twoslash').default,
@@ -237,7 +237,7 @@ export default {
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/',
           remarkPlugins: [
             [
               require('remark-shiki-twoslash').default,
