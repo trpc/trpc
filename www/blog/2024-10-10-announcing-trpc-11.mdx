@@ -74,6 +74,7 @@ const appRouter = router({
 ### React Server Components / Next.js App Router
 
 While you have been able to use tRPC with Next.js App Router from day 1, by either:
+
 - using a server-centric approach using async/await with either [`createCaller`](/docs/server/server-side-calls) or [`createTRPCClient`](/docs/client/vanilla),
 - or a client-centric approach using the [React Query integration](/docs/client/react) and client-side hooks,
 
@@ -82,7 +83,7 @@ the bridge in between has been a bit rough around the edges. Revalidation patter
 To fix this, we've improved support for React Server Components (RSC) and added prefetch helpers to make it easier to utilize the power of RSCs running exclusively on the server, in combination with the highly dynamic client-side cache of React Query.
 You can now start executing a procedure on the server in a RSC, pick up the pending promise on the client, and automatically hydrate the React Query cache clientside. This enables you to build highly dynamic applications without suffering from server-client waterfalls. You can read more in our [Server Components documentation](/docs/client/react/server-components).
 
-In addition to these new prefetch patterns, we've added experimental support for server functions. You can read more about this in [our blog post](/blog/trpc-actions). We plan to keep iterating on this feature as server functions become a more established pattern in the ecosystem. 
+In addition to these new prefetch patterns, we've added experimental support for server functions. You can read more about this in [our blog post](/blog/trpc-actions). We plan to keep iterating on this feature as server functions become a more established pattern in the ecosystem.
 
 We have also worked with the [TanStack team to help design the APIs for their server functions](https://x.com/tannerlinsley/status/1844500352655335522). Our goal is to split out parts of tRPC's powerful middleware system into a separate package which can be used throughout the ecosystem.
 
@@ -138,7 +139,6 @@ for await (const value of iterable) {
 }
 ```
 
-
 ### useSuspenseQueries
 
 We've introduced a new hook [useSuspenseQueries](/docs/client/react/suspense#usesuspensequeries) which allows you to fetch multiple queries in parallel and suspend until all queries are resolved. When writing `Fetch on Render` style applications, a possible foot-gun is where you need to run several suspense queries at once and you end up with a "waterfall". `useSuspenseQueries` is a way to put this problem further off without need to rewrite to `Render as you Fetch` style with prefetching.
@@ -172,9 +172,9 @@ const appRouter = router({
 
 ### Subscriptions: Server-Sent Events and other Improvements
 
-* tRPC v11 introduces a new way to handle subscriptions using [Server-Sent Events (SSE)](/docs/server/subscriptions#websockets-or-server-sent-events). This is a great way to handle real-time updates in your application without the need for more complex WebSockets. We recommend using this in the first instance going forward.
-* We've added support for JavaScript [generators in subscriptions](/docs/server/subscriptions#cleanup-of-side-effects). This allows you to write more complex subscription handlers which can yield multiple values over time, and clean up when finished, in a very JS-native way.
-* Subscriptions now support [Output validators](/docs/server/subscriptions#output-validation), improving the type-safety of your subscription handlers.
+- tRPC v11 introduces a new way to handle subscriptions using [Server-Sent Events (SSE)](/docs/server/subscriptions#websockets-or-server-sent-events). This is a great way to handle real-time updates in your application without the need for more complex WebSockets. We recommend using this in the first instance going forward.
+- We've added support for JavaScript [generators in subscriptions](/docs/server/subscriptions#cleanup-of-side-effects). This allows you to write more complex subscription handlers which can yield multiple values over time, and clean up when finished, in a very JS-native way.
+- Subscriptions now support [Output validators](/docs/server/subscriptions#output-validation), improving the type-safety of your subscription handlers.
 
 ### Goodbye v9 `.interop()`-mode
 
