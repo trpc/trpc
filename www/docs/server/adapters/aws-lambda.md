@@ -9,7 +9,7 @@ slug: /server/adapters/aws-lambda
 
 The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2) use cases.
 
-> `httpBatchLink` requires the router to work on a single API Gateway Resource (as shown in the [example](https://github.com/trpc/trpc/tree/next/examples/lambda-api-gateway)).
+> `httpBatchLink` requires the router to work on a single API Gateway Resource (as shown in the [example](https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway)).
 > If you'd like to have a Resource per procedure, you can use the `httpLink` instead ([more info](https://github.com/trpc/trpc/issues/5738#issuecomment-2130001522)).
 
 ## Example app
@@ -26,7 +26,7 @@ The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2
       <td>API Gateway with NodeJS client.</td>
       <td>
         <ul>
-          <li><a href="https://github.com/trpc/trpc/tree/next/examples/lambda-api-gateway">Source</a></li>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway">Source</a></li>
         </ul>
       </td>
     </tr>
