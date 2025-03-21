@@ -1,5 +1,5 @@
 import { createAppRouter } from './__testHelpers';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 
@@ -95,7 +95,7 @@ describe('setInfiniteQueryData()', () => {
 
     await userEvent.click(utils.getByTestId('setInfiniteQueryData'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('infinitePosts.title1');
       expect(utils.container).toHaveTextContent('infinitePosts.title2');
     });

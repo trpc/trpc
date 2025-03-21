@@ -1,7 +1,7 @@
 import { createQueryClient } from './__queryClient';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { QueryClientProvider, useIsFetching } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
@@ -140,7 +140,7 @@ test('abortOnUnmount', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.getByText('Loading 1')).toBeInTheDocument();
     expect(utils.getByText('isFetching: 1')).toBeInTheDocument();
   });
@@ -179,7 +179,7 @@ test('abortOnUnmount false', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.getByText('Loading 1')).toBeInTheDocument();
     expect(utils.getByText('isFetching: 1')).toBeInTheDocument();
   });

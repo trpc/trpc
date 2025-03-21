@@ -4,7 +4,7 @@ import {
   ignoreErrors,
   suppressLogsUntil,
 } from '@trpc/server/__tests__/suppressLogs';
-import { fireEvent, render, waitFor } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import type { TRPCSubscriptionResult } from '@trpc/react-query/shared';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -151,20 +151,20 @@ describe.each([
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__connecting`);
     });
     expect(onDataMock).toHaveBeenCalledTimes(0);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__connected`);
     });
     ctx.ee.emit('data', 20);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(onDataMock).toHaveBeenCalledTimes(1);
     });
     expect(onDataMock.mock.calls[0]?.[0]).toEqual(30);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__data:30`);
     });
     expect(onDataMock).toHaveBeenCalledTimes(1);
@@ -173,7 +173,7 @@ describe.each([
       setEnabled(false);
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       if (protocol === 'http') {
         expect(ctx.opts.onReqAborted).toHaveBeenCalledTimes(1);
       } else {
@@ -185,7 +185,7 @@ describe.each([
     // we need to emit data to trigger unsubscribe
     ctx.ee.emit('data', 40);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       // no event listeners
       expect(ctx.ee.listenerCount('data')).toBe(0);
     });
@@ -228,28 +228,28 @@ describe.each([
       </ctx.App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`status:idle`);
     });
 
     ignoreErrors(() => {
       setEnabled(true);
     });
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`status:pending`);
     });
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(ctx.ee.listenerCount('data')).toBe(1);
     });
     ctx.ee.emit('data', 20);
     ctx.ee.emit('data', 30);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`All data: 20,30`);
     });
 
     ctx.ee.emit('data', returnSymbol);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`status:idle`);
     });
 
@@ -303,15 +303,15 @@ describe.each([
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__connecting`);
     });
     expect(onDataMock).toHaveBeenCalledTimes(0);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__connected`);
     });
     ctx.ee.emit('data', 20);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__data:30`);
     });
     expect(onDataMock).toHaveBeenCalledTimes(1);
@@ -321,7 +321,7 @@ describe.each([
       setEnabled(false);
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       // no event listeners
       expect(ctx.ee.listenerCount('data')).toBe(0);
     });
@@ -357,7 +357,7 @@ describe('connection state - http', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`status:pending`);
       expect(ctx.ee.listenerCount('data')).toBe(1);
     });
@@ -365,7 +365,7 @@ describe('connection state - http', () => {
     // emit
     ctx.ee.emit('data', 20);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`data:30`);
     });
 
@@ -390,12 +390,12 @@ describe('connection state - http', () => {
     await suppressLogsUntil(async () => {
       ctx.destroyConnections();
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect(utils.container).toHaveTextContent('status:connecting');
       });
     });
 
-    await waitFor(
+    await vi.waitFor(
       () => {
         expect(utils.container).toHaveTextContent('status:pending');
         expect(ctx.ee.listenerCount('data')).toBe(1);
@@ -424,7 +424,7 @@ describe('connection state - http', () => {
     // emit
     ctx.ee.emit('data', 40);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('data:50');
     });
     expect(diff(queryResult)).toMatchInlineSnapshot(`
@@ -478,7 +478,7 @@ describe('reset - http', () => {
       </ctx.App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`status:pending`);
       expect(ctx.ee.listenerCount('data')).toBe(1);
     });
@@ -486,7 +486,7 @@ describe('reset - http', () => {
     // emit
     ctx.ee.emit('data', 20);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`data:30`);
     });
 
@@ -494,13 +494,13 @@ describe('reset - http', () => {
 
     // click reset
     fireEvent.click(utils.getByTestId('reset'));
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('status:connecting');
     });
 
     expect(queryResult[0]?.data).toBeUndefined();
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('status:pending');
     });
 

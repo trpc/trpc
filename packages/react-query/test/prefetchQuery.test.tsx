@@ -1,6 +1,6 @@
 import { createAppRouter } from './__testHelpers';
 import { dehydrate, useQueryClient } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import React, { useEffect, useState } from 'react';
 
 let factory: ReturnType<typeof createAppRouter>;
@@ -35,7 +35,7 @@ describe('prefetchQuery()', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });
   });
@@ -85,7 +85,7 @@ describe('prefetchInfiniteQuery()', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
       expect(utils.container).not.toHaveTextContent('second post');
     });
@@ -135,7 +135,7 @@ describe('prefetchInfiniteQuery()', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
       expect(utils.container).toHaveTextContent('second post');
     });
@@ -178,7 +178,7 @@ describe('usePrefetchQuery()', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
     });
   });
@@ -227,7 +227,7 @@ describe('usePrefetchInfiniteQuery()', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
       expect(utils.container).not.toHaveTextContent('second post');
     });
@@ -275,7 +275,7 @@ describe('usePrefetchInfiniteQuery()', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('first post');
       expect(utils.container).toHaveTextContent('second post');
     });

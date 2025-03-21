@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { suppressLogsUntil } from '@trpc/server/__tests__/suppressLogs';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
 import {
   httpBatchStreamLink,
@@ -192,7 +192,7 @@ test('disconnect and reconnect with updated headers', async () => {
     },
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onStarted).toHaveBeenCalledTimes(1);
   });
 
@@ -205,7 +205,7 @@ test('disconnect and reconnect with updated headers', async () => {
     return es;
   }
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onData.mock.calls.length).toBeGreaterThan(5);
   });
 
@@ -221,7 +221,7 @@ test('disconnect and reconnect with updated headers', async () => {
 
   await suppressLogsUntil(async () => {
     ctx.destroyConnections();
-    await waitFor(
+    await vi.waitFor(
       () => {
         expect(onStarted).toHaveBeenCalledTimes(3);
       },
@@ -230,7 +230,7 @@ test('disconnect and reconnect with updated headers', async () => {
       },
     );
 
-    await waitFor(
+    await vi.waitFor(
       () => {
         expect(getES().readyState).toBe(EventSource.OPEN);
       },
@@ -244,7 +244,7 @@ test('disconnect and reconnect with updated headers', async () => {
   expect(getES().readyState).toBe(EventSource.CLOSED);
 
   // const lastEventId = onData.mock.calls.at(-1)[0]![0]!
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(ctx.onReqAborted).toHaveBeenCalledTimes(1);
   });
   await sleep(50);

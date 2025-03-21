@@ -95,6 +95,12 @@ export default tseslint.config(
               message: 'Remove the "`/src`" part of this import',
               allowTypeImports: false,
             },
+            {
+              group: ['@testing-library/dom', '@testing-library/react'],
+              importNames: ['waitFor'],
+              message:
+                'Use `vi.waitFor` instead as the Testing Library one does not work with fake timers',
+            },
           ],
         },
       ],

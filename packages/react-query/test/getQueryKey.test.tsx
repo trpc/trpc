@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { useIsFetching } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { getQueryKey } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -87,7 +87,7 @@ describe('getQueryKeys', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('qKey1')).toHaveTextContent(
         JSON.stringify([['post', 'all'], { type: 'query' }]),
       );
@@ -125,7 +125,7 @@ describe('getQueryKeys', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('qKey1')).toHaveTextContent(
         JSON.stringify([['post', 'byId'], { input: { id: 1 }, type: 'query' }]),
       );
@@ -163,7 +163,7 @@ describe('getQueryKeys', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('qKey')).toHaveTextContent(
         JSON.stringify([['post', 'list'], { type: 'infinite' }]),
       );
@@ -195,7 +195,7 @@ describe('getQueryKeys', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('qKey')).toHaveTextContent(
         JSON.stringify([['post', 'list'], { type: 'infinite' }]),
       );
@@ -246,7 +246,7 @@ describe('getQueryKeys', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('qKey')).toHaveTextContent(
         JSON.stringify([
           ['post', 'moreLists'],
@@ -275,7 +275,7 @@ describe('getQueryKeys', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('qKey')).toHaveTextContent(
         JSON.stringify([['post', 'list'], { type: 'infinite' }]),
       );
@@ -304,7 +304,7 @@ describe('getQueryKeys', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('qKey')).toHaveTextContent(
         JSON.stringify([['post', 'update']]),
       );
@@ -333,7 +333,7 @@ describe('getQueryKeys', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('qKey')).toHaveTextContent(
         JSON.stringify([['post']]),
       );
@@ -360,7 +360,7 @@ describe('getQueryKeys', () => {
 
     // should be fetching initially, and then not
     expect(utils.container).toHaveTextContent('1');
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('0');
     });
   });

@@ -1,6 +1,6 @@
 import { testReactResource } from './__helpers';
 import { skipToken, useQuery, useSuspenseQuery } from '@tanstack/react-query';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
@@ -79,7 +79,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });
@@ -109,7 +109,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`mutated__result`);
     });
   });
@@ -133,7 +133,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });
@@ -156,7 +156,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`pending`);
     });
   });
@@ -188,7 +188,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
 
@@ -238,7 +238,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`success:idle`);
     });
 
@@ -319,7 +319,7 @@ describe('queryOptions', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`__result`);
     });
   });
