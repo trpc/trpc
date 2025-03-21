@@ -205,7 +205,7 @@ export default {
               // path: 'v10',
               badge: true,
               // className: 'v11',
-              banner: 'unreleased',
+              banner: 'none',
             },
             '10.x': {
               label: '10.x',
