@@ -35,6 +35,9 @@ export function httpBatchLink<TRouter extends AnyRouter>(
             // escape hatch for quick calcs
             return true;
           }
+          if (batchOps.length > maxItems) {
+            return false;
+          }
           const path = batchOps.map((op) => op.path).join(',');
           const inputs = batchOps.map((op) => op.input);
 
