@@ -13,8 +13,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@trpc/client": "npm:@trpc/client@latest",
-    "@trpc/server": "npm:@trpc/server@latest"
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/server": "npm:@trpc/server"
   },
   "devDependencies": {
     "@types/bun": "^1.1.12",

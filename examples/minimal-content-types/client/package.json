@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.67.1",
-    "@trpc/client": "npm:@trpc/client@latest",
-    "@trpc/react-query": "npm:@trpc/react-query@latest",
-    "@trpc/server": "npm:@trpc/server@latest",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/react-query": "npm:@trpc/react-query",
+    "@trpc/server": "npm:@trpc/server",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

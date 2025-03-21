@@ -13,10 +13,10 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@trpc/client": "npm:@trpc/client@latest",
-    "@trpc/next": "npm:@trpc/next@latest",
-    "@trpc/react-query": "npm:@trpc/react-query@latest",
-    "@trpc/server": "npm:@trpc/server@latest",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/next": "npm:@trpc/next",
+    "@trpc/react-query": "npm:@trpc/react-query",
+    "@trpc/server": "npm:@trpc/server",
     "next": "^15.1.7"
   },
   "version": "11.0.0"

@@ -14,7 +14,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@trpc/server": "npm:@trpc/server@latest"
+    "@trpc/server": "npm:@trpc/server"
   },
   "devDependencies": {
     "@monotest/tsconfig": "workspace:*"

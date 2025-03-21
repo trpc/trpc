@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@monotest/trpc": "workspace:*",
-    "@trpc/server": "npm:@trpc/server@latest",
+    "@trpc/server": "npm:@trpc/server",
     "zod": "^3.24.2"
   },
   "devDependencies": {

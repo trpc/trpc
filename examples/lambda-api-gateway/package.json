@@ -12,8 +12,8 @@
     "http-rest-client": "tsx src/payloadFormatVersionClient.ts"
   },
   "dependencies": {
-    "@trpc/client": "npm:@trpc/client@latest",
-    "@trpc/server": "npm:@trpc/server@latest",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/server": "npm:@trpc/server",
     "tsx": "^4.19.3",
     "zod": "^3.24.2"
   },

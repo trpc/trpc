@@ -8,8 +8,8 @@
     "test-dev": "start-server-and-test 'wrangler dev --local' http://127.0.0.1:8787 'tsx src/client.ts'"
   },
   "dependencies": {
-    "@trpc/client": "npm:@trpc/client@latest",
-    "@trpc/server": "npm:@trpc/server@latest",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/server": "npm:@trpc/server",
     "zod": "^3.24.2"
   },
   "devDependencies": {
