@@ -29,6 +29,36 @@ See [react-query-v5](#react-query-v5) for more information.
 
 ## Full reverse-chronological changelog
 
+### Simplified `next()`-calls in middlewares (non-breaking)
+
+We have simplified the `next()`-calls in middlewares, this means that you don't need to use the `ctx`-key on the `next()` anymore, simply call `next()` with an object to override the context.
+
+**Before**
+
+```ts
+const myProcedure = publicProcedure.use(async (opts) => {
+  // [...]
+
+  return opts.next({
+    ctx: {
+      foo: 'bar',
+    },
+  });
+});
+```
+
+**After**
+
+```ts
+const myProcedure = publicProcedure.use(async (opts) => {
+  // [...]
+
+  return opts.next({
+    foo: 'bar',
+  });
+});
+```
+
 ### New TanStack React Query integration! (non-breaking)
 
 We are excited to announce the new TanStack React Query integration for tRPC is now available on tRPC's `next`-release!

@@ -86,11 +86,9 @@ export const authedProcedure = publicProcedure.use(function isAuthed(opts) {
   }
 
   return opts.next({
-    ctx: {
-      user: {
-        ...user,
-        name: user.name,
-      },
+    user: {
+      ...user,
+      name: user.name,
     },
   });
 });

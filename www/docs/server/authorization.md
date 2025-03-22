@@ -83,11 +83,9 @@ export const protectedProcedure = t.procedure.use(
     }
 
     return opts.next({
-      ctx: {
-        // ✅ user value is known to be non-null now
-        user: ctx.user,
-        // ^?
-      },
+      // ✅ user value is known to be non-null now
+      user: ctx.user,
+      // ^?
     });
   },
 );
