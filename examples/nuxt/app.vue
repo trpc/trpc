@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { $trpc } = useNuxtApp();
 // 💡 Tip: CMD+Click (or CTRL+Click) on `greeting` to go to the server definition
-const { data, status } = $trpc.greeting.useQuery({ name: 'client' });
+const { data } = $trpc.greeting.useQuery({ name: 'client' });
 </script>
 
 <template>
