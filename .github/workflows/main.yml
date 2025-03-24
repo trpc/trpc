@@ -92,7 +92,7 @@ jobs:
             standalone-server,
             tanstack-start,
             vercel-edge-runtime,
-            nuxt
+            nuxt,
           ]
     steps:
       - uses: actions/checkout@v4

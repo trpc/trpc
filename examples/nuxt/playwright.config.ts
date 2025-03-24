@@ -1,4 +1,4 @@
-import type { Config} from '@playwright/test';
+import type { Config } from '@playwright/test';
 import { devices } from '@playwright/test';
 
 const opts = {
