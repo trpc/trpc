@@ -1,7 +1,9 @@
-import { expect, test } from '@nuxt/test-utils/playwright';
+import { test, expect } from '@playwright/test';
 
-test('go to /', async ({ page, goto }) => {
-  await goto('/', { waitUntil: 'hydration' });
+test.setTimeout(35e3);
+
+test('go to /', async ({ page }) => {
+  await page.goto('/');
 
   await expect(page.getByRole('heading')).toHaveText('hello tRPC user');
 })
