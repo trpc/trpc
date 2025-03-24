@@ -92,6 +92,7 @@ jobs:
             standalone-server,
             tanstack-start,
             vercel-edge-runtime,
+            nuxt,
           ]
     steps:
       - uses: actions/checkout@v4
@@ -104,7 +105,7 @@ jobs:
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
         run: |
-          cat ./examples/${{ matrix.dir }}/package.json | 
+          cat ./examples/${{ matrix.dir }}/package.json |
           if grep --silent '"@playwright/test"';
             then cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
           fi
@@ -229,7 +230,7 @@ jobs:
       - name: Install playwright ???
         # Seems like some of playwright's system deps aren't being cached, so we're making sure they are installed
         run: |
-          cat ./examples/${{ matrix.dir }}/package.json | 
+          cat ./examples/${{ matrix.dir }}/package.json |
           if grep --silent '"@playwright/test"';
             then cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
           fi
