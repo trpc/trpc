@@ -45,6 +45,10 @@ export {
   tracked,
   type TrackedEnvelope,
   isTrackedEnvelope,
+  lazy,
+  /**
+   * @deprecated use {@link lazy} instead
+   */
   lazy as experimental_lazy,
   callProcedure as callTRPCProcedure,
 } from '../../unstable-core-do-not-import';

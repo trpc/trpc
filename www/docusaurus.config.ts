@@ -48,9 +48,12 @@ export default {
       // searchParameters: {},
     },
     announcementBar: {
-      id: 'response-objects',
+      // id: 'response-objects',
+      // content:
+      //   "New feature: Return <code>Response</code>-objects directly from tRPC procedures: <a href='/blog/return-Response-objects-in-procedures'><strong>Read the blog post</strong></a>",
+      id: 'v11',
       content:
-        "New feature: Return <code>Response</code>-objects directly from tRPC procedures: <a href='/blog/return-Response-objects-in-procedures'><strong>Read the blog post</strong></a>",
+        "🎉 tRPC v11 is now released! Check out <a href='/blog/announcing-trpc-11'><strong>the blog post now</strong></a>.",
       backgroundColor: 'var(--ifm-color-primary-dark)',
       textColor: '#ffffff',
       isCloseable: true,
@@ -134,7 +137,7 @@ export default {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
+              href: 'https://github.com/trpc/trpc/tree/main',
               className: 'flex items-center',
             },
             {
@@ -158,7 +161,7 @@ export default {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/trpc/trpc/tree/next',
+              href: 'https://github.com/trpc/trpc/tree/main',
               className: 'flex items-center',
             },
             {
@@ -211,14 +214,14 @@ export default {
               // path: 'v10',
               badge: true,
               // className: 'v11',
-              banner: 'unreleased',
+              banner: 'none',
             },
             '10.x': {
               label: '10.x',
               path: 'v10',
               badge: true,
               // className: 'v10',
-              banner: 'none',
+              banner: 'unmaintained',
             },
             '9.x': {
               label: '9.x',
@@ -231,7 +234,7 @@ export default {
           // includeCurrentVersion: false,
           sidebarPath: require.resolve('./sidebars.js'),
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/',
           remarkPlugins: [
             [
               require('remark-shiki-twoslash').default,
@@ -243,7 +246,7 @@ export default {
         blog: {
           showReadingTime: true,
           // Please change this to your repo.
-          editUrl: 'https://github.com/trpc/trpc/tree/next/www/',
+          editUrl: 'https://github.com/trpc/trpc/tree/main/www/',
           remarkPlugins: [
             [
               require('remark-shiki-twoslash').default,

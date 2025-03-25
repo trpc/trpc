@@ -158,10 +158,6 @@ protectedProcedure.query(({ ctx }) => ctx.user);
 
 ## Using `.concat()` to create reusable middlewares and plugins {#concat}
 
-:::info
-We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
-:::
-
 :::tip
 
 - Creating middlewares using `t.middleware` has the limitation that the `Context` type is tied to the `Context` type of the tRPC instance.
@@ -229,7 +225,7 @@ const plugin = createMyPlugin();
 
 // create a base procedure using the plugin
 const procedureWithPlugin = publicProcedure
-  .unstable_concat(
+  .concat(
     plugin.pluginProc,
   )
   .use(opts => {
@@ -337,7 +333,7 @@ barMiddleware.unstable_pipe(fooMiddleware);
 ## Experimental: standalone middlewares
 
 :::info
-This has been deprecated in favor of `.unstable_concat()`
+This has been deprecated in favor of `.concat()`
 :::
 
 tRPC has an experimental API called `experimental_standaloneMiddleware` which allows you to independently define a middleware that can be used with any tRPC instance. Creating middlewares using `t.middleware` has the limitation that

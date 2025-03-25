@@ -1,6 +1,6 @@
 {
   "name": "@monotest/app",
-  "version": "0.0.1",
+  "version": "11.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,9 +9,9 @@
   "dependencies": {
     "@monotest/api": "workspace:*",
     "@tanstack/react-query": "^5.67.1",
-    "@trpc/client": "npm:@trpc/client@next",
-    "@trpc/react-query": "npm:@trpc/react-query@next",
-    "@trpc/server": "npm:@trpc/server@next",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/react-query": "npm:@trpc/react-query",
+    "@trpc/server": "npm:@trpc/server",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

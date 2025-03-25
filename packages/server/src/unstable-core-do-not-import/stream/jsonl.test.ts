@@ -1,5 +1,5 @@
 import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import SuperJSON from 'superjson';
 import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
@@ -366,11 +366,11 @@ test(
       clientAbort.abort();
     }
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(meta.isEmpty()).toBe(true);
     });
     // wait for stopped
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(stopped).toBe(true);
     });
 
@@ -448,11 +448,11 @@ test(
       }
     }
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(meta.isEmpty()).toBe(true);
     });
     // wait for stopped
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(stopped).toBe(true);
     });
 
@@ -562,7 +562,7 @@ test('should work to throw after stream is closed', async () => {
     }),
   });
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(onError).toHaveBeenCalledTimes(1);
   });
 

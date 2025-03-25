@@ -35,13 +35,22 @@ const somePosts = await Promise.all([
 ]);
 ```
 
-## `httpBatchLink` Options
+## `httpBatchLink` Options {#options}
 
 The `httpBatchLink` function takes an options object that has the `HTTPBatchLinkOptions` shape.
 
 ```ts
 export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
+  /**
+   * Maximum length of HTTP URL allowed before operations are split into multiple requests
+   * @default Infinity
+   */
   maxURLLength?: number;
+  /**
+   * Maximum number of operations allowed in a single batch request
+   * @default Infinity
+   */
+  maxItems?: number;
 }
 
 export interface HTTPLinkOptions {

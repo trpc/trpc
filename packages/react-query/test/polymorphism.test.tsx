@@ -15,7 +15,7 @@ import {
   QueryClientProvider,
   useMutation,
 } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
@@ -187,7 +187,7 @@ describe('polymorphism', () => {
 
       await userEvent.click($.getByTestId('startExportBtn'));
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
           'Last Export: `Search for Polymorphism React` (Working)',
         );
@@ -195,7 +195,7 @@ describe('polymorphism', () => {
 
       await userEvent.click($.getByTestId('refreshBtn'));
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
           'Last Export: `Search for Polymorphism React` (Ready!)',
         );
@@ -248,7 +248,7 @@ describe('polymorphism', () => {
 
       await userEvent.click($.getByTestId('startExportBtn'));
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
           'Last Export: `Search for Polymorphism React` (Working)',
         );
@@ -256,7 +256,7 @@ describe('polymorphism', () => {
 
       await userEvent.click($.getByTestId('refreshBtn'));
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
           'Last Export: `Search for Polymorphism React` (Ready!)',
         );
@@ -328,7 +328,7 @@ describe('polymorphism', () => {
 
       await userEvent.click($.getByTestId('startExportBtn'));
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
           'Last Export: `Search for Polymorphism React` (Working)',
         );
@@ -336,7 +336,7 @@ describe('polymorphism', () => {
 
       await userEvent.click($.getByTestId('refreshBtn'));
 
-      await waitFor(() => {
+      await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
           'Last Export: `Search for Polymorphism React` (Ready!)',
         );

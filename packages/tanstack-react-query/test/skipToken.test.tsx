@@ -1,6 +1,6 @@
 import { testReactResource } from './__helpers';
 import { skipToken } from '@tanstack/react-query';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
@@ -58,7 +58,7 @@ describe('skipToken', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent />);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`OK`);
     });
   });

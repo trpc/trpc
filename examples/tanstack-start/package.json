@@ -18,9 +18,9 @@
     "@tanstack/react-router-with-query": "^1.109.2",
     "@tanstack/router-devtools": "^1.109.2",
     "@tanstack/start": "^1.111.2",
-    "@trpc/client": "npm:@trpc/client@next",
-    "@trpc/server": "npm:@trpc/server@next",
-    "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query@next",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/server": "npm:@trpc/server",
+    "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "superjson": "^1.12.4",
@@ -44,5 +44,6 @@
     "typescript-eslint": "^8.24.1",
     "vite": "^6.1.1",
     "vite-tsconfig-paths": "^4.3.2"
-  }
+  },
+  "version": "11.0.0"
 }

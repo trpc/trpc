@@ -84,7 +84,7 @@ export const customLink: TRPCLink<AppRouter> = () => {
 
 ### References
 
-If you need a more real reference for creating your custom link, you can check out some of the built-in links tRPC provides on [GitHub](https://github.com/trpc/trpc/tree/next/packages/client/src/links).
+If you need a more real reference for creating your custom link, you can check out some of the built-in links tRPC provides on [GitHub](https://github.com/trpc/trpc/tree/main/packages/client/src/links).
 
 ## The terminating link
 

@@ -1,6 +1,6 @@
 import { getServerAndReactClient } from '../__reactHelpers';
 import { useQuery } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React from 'react';
@@ -55,7 +55,7 @@ test('destructuring data', async () => {
   );
 
   expect(utils.container).toHaveTextContent('No posts');
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('foo, bar');
   });
 });
@@ -90,7 +90,7 @@ test('using `initialData`', async () => {
   );
 
   expect(utils.container).toHaveTextContent('No posts');
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('foo, bar');
   });
 });
@@ -125,7 +125,7 @@ test('using `placeholderData`', async () => {
   );
 
   expect(utils.container).toHaveTextContent('No posts');
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('foo, bar');
   });
 });

@@ -36,7 +36,9 @@ export function getClientArgs<TOptions>(
   if (infiniteParams) {
     input = {
       ...(input ?? {}),
-      ...(infiniteParams.pageParam ? { cursor: infiniteParams.pageParam } : {}),
+      ...(infiniteParams.pageParam !== undefined
+        ? { cursor: infiniteParams.pageParam }
+        : {}),
       direction: infiniteParams.direction,
     };
   }

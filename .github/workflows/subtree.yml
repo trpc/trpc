@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - next
+      - 'main'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false # true causes the workflow to cancel and look failed on `main` (which is done after a release)

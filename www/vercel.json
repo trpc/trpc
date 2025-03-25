@@ -534,6 +534,11 @@
       "source": "/docs/subscriptions",
       "destination": "/docs/server/subscriptions",
       "permanent": true
+    },
+    {
+      "source": "/blog/announcing-trpc-11",
+      "destination": "/blog/announcing-trpc-v11",
+      "permanent": true
     }
   ]
 }

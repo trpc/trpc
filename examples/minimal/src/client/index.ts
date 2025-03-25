@@ -3,9 +3,9 @@
  */
 import {
   createTRPCClient,
+  httpBatchStreamLink,
+  httpSubscriptionLink,
   splitLink,
-  unstable_httpBatchStreamLink,
-  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 /**
  * We only import the `AppRouter` type from the server - this is not available at runtime
@@ -18,11 +18,11 @@ const trpc = createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
-      true: unstable_httpSubscriptionLink({
+      true: httpSubscriptionLink({
         url: 'http://localhost:3000',
         transformer,
       }),
-      false: unstable_httpBatchStreamLink({
+      false: httpBatchStreamLink({
         url: 'http://localhost:3000',
         transformer,
       }),

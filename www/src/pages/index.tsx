@@ -169,7 +169,7 @@ function TryItOut() {
               </div>
               {!deviceSupported && (
                 <ErrorOverlay
-                  url={`https://stackblitz.com/github/trpc/trpc/tree/next/examples/${sandbox.id}`}
+                  url={`https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}`}
                   dismiss={() => {
                     setIsSupported(true);
                   }}
@@ -177,7 +177,7 @@ function TryItOut() {
               )}
               <Iframe
                 src={
-                  `https://stackblitz.com/github/trpc/trpc/tree/next/examples/${sandbox.id}?` +
+                  `https://stackblitz.com/github/trpc/trpc/tree/main/examples/${sandbox.id}?` +
                   searchParams({
                     embed: '1',
                     file: sandbox.files,
