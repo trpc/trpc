@@ -78,15 +78,16 @@ export type ParseFn<TType> = (value: unknown) => Promise<TType> | TType;
 
 export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
   const parser = procedureParser as any;
+  const isStandardSchema = '~standard' in parser;
 
   if (typeof parser === 'function' && typeof parser.assert === 'function') {
     // ParserArkTypeEsque - arktype schemas shouldn't be called as a function because they return a union type instead of throwing
     return parser.assert.bind(parser);
   }
 
-  if (typeof parser === 'function') {
+  if (typeof parser === 'function' && !isStandardSchema) {
     // ParserValibotEsque (>= v0.31.0)
-    // ParserCustomValidatorEsque
+    // ParserCustomValidatorEsque - note the check for standard-schema conformance - some libraries like `effect` use function schemas which are *not* a "parse" function.
     return parser;
   }
 
@@ -119,7 +120,7 @@ export function getParseFn<TType>(procedureParser: Parser): ParseFn<TType> {
     };
   }
 
-  if ('~standard' in parser) {
+  if (isStandardSchema) {
     // StandardSchemaEsque
     return async (value) => {
       const result = await parser['~standard'].validate(value);
