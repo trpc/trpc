@@ -23,6 +23,7 @@ import type {
   QueryProcedure,
   SubscriptionProcedure,
 } from './procedure';
+import type { RootConfig } from './rootConfig';
 import type { inferTrackedOutput } from './stream/tracked';
 import type {
   GetRawInputFn,
@@ -67,6 +68,7 @@ export type CallerOverride<TContext> = (opts: {
   _def: AnyProcedure['_def'];
 }) => Promise<unknown>;
 type ProcedureBuilderDef<TMeta> = {
+  _config: Partial<Pick<RootConfig<any>, 'experimental'>>;
   procedure: true;
   inputs: Parser[];
   output?: Parser;
@@ -459,7 +461,7 @@ function createNewBuilder(
   def1: AnyProcedureBuilderDef,
   def2: Partial<AnyProcedureBuilderDef>,
 ): AnyProcedureBuilder {
-  const { middlewares = [], inputs, meta, ...rest } = def2;
+  const { middlewares = [], inputs, meta, _config, ...rest } = def2;
 
   // TODO: maybe have a fn here to warn about calls
   return createBuilder({
@@ -467,11 +469,22 @@ function createNewBuilder(
     inputs: [...def1.inputs, ...(inputs ?? [])],
     middlewares: [...def1.middlewares, ...middlewares],
     meta: def1.meta && meta ? { ...def1.meta, ...meta } : (meta ?? def1.meta),
+    _config: !_config
+      ? def1._config
+      : {
+          experimental: {
+            ...def1._config.experimental,
+            ..._config.experimental,
+          },
+        },
   });
 }
 
+type SetRequired<TType, TKey extends keyof TType> = TType &
+  Required<Pick<TType, TKey>>;
+
 export function createBuilder<TContext, TMeta>(
-  initDef: Partial<AnyProcedureBuilderDef> = {},
+  initDef: SetRequired<Partial<ProcedureBuilderDef<TMeta>>, '_config'>,
 ): ProcedureBuilder<
   TContext,
   TMeta,

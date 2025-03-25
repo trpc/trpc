@@ -48,6 +48,9 @@ export default {
       // searchParameters: {},
     },
     announcementBar: {
+      // id: 'response-objects',
+      // content:
+      //   "New feature: Return <code>Response</code>-objects directly from tRPC procedures: <a href='/blog/return-Response-objects-in-procedures'><strong>Read the blog post</strong></a>",
       id: 'v11',
       content:
         "🎉 tRPC v11 is now released! Check out <a href='/blog/announcing-trpc-11'><strong>the blog post now</strong></a>.",
@@ -72,12 +75,12 @@ export default {
           label: 'Quickstart',
         },
         {
-          to: 'docs/community/awesome-trpc',
-          label: 'Awesome tRPC Collection',
+          to: 'blog',
+          label: 'Blog',
         },
         {
-          to: 'docs/client/nextjs',
-          label: 'Using Next.js',
+          to: 'docs/community/awesome-trpc',
+          label: 'Awesome tRPC Collection',
         },
         {
           href: 'https://github.com/trpc/trpc',
@@ -90,6 +93,12 @@ export default {
           position: 'right',
           className: 'header-social-link header-twitter-link',
           'aria-label': 'Twitter',
+        },
+        {
+          href: 'https://bsky.app/profile/trpc.io',
+          position: 'right',
+          className: 'header-social-link header-bluesky-link',
+          'aria-label': 'Bluesky',
         },
         {
           href: 'https://trpc.io/discord',

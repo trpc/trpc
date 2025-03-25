@@ -19,11 +19,17 @@ import type {
   TRPCRequestInfo,
 } from '../../@trpc/server/http';
 
-export type FetchCreateContextFnOptions = {
+export interface FetchCreateContextFnOptions {
   req: Request;
+  /**
+   * Used for setting headers on the `Response`
+   */
   resHeaders: Headers;
+  /**
+   * Info about the request
+   */
   info: TRPCRequestInfo;
-};
+}
 
 export type FetchCreateContextFn<TRouter extends AnyRouter> = (
   opts: FetchCreateContextFnOptions,

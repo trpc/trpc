@@ -1,6 +1,6 @@
 ---
 id: wsLink
-title: WebSocket Link
+title: WebSocket Link / wsLink
 sidebar_label: WebSocket Link
 slug: /client/links/wsLink
 ---

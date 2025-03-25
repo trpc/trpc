@@ -19,9 +19,14 @@ import type { Serialize } from './serialize';
 export type inferTransformedProcedureOutput<
   TInferrable extends InferrableClientTypes,
   TProcedure extends AnyProcedure,
-> = inferClientTypes<TInferrable>['transformer'] extends false
-  ? Serialize<inferProcedureOutput<TProcedure>>
-  : inferProcedureOutput<TProcedure>;
+> =
+  inferProcedureOutput<TProcedure> extends infer $Output
+    ? $Output extends Response
+      ? $Output
+      : inferClientTypes<TInferrable>['transformer'] extends false
+        ? Serialize<$Output>
+        : $Output
+    : inferProcedureOutput<TProcedure>;
 /** @internal */
 
 export type inferTransformedSubscriptionOutput<
