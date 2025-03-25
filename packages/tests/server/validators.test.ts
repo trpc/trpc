@@ -3,7 +3,7 @@ import { routerToServerAndClientNew } from './___testHelpers';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
 import * as arktype from 'arktype';
-import {Schema} from 'effect'
+import { Schema } from 'effect';
 import myzod from 'myzod';
 import * as T from 'runtypes';
 import * as $ from 'scale-codec';
@@ -492,7 +492,7 @@ test('effect schema', async () => {
 
   const router = t.router({
     num: t.procedure
-      .input(Schema.standardSchemaV1(Schema.Struct({text: Schema.String})))
+      .input(Schema.standardSchemaV1(Schema.Struct({ text: Schema.String })))
       .query(({ input }) => {
         expectTypeOf(input).toEqualTypeOf<{ readonly text: string }>();
         return {
@@ -506,9 +506,11 @@ test('effect schema', async () => {
   expect(res.input).toMatchObject({ text: '123' });
 
   // @ts-expect-error this only accepts {text: string}
-  await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(`[TRPCClientError: Expected string, actual 123]`);
+  await expect(client.num.query({ text: 123 })).rejects.toMatchInlineSnapshot(
+    `[TRPCClientError: Expected string, actual 123]`,
+  );
   await close();
-})
+});
 
 test('runtypes', async () => {
   const t = initTRPC.create();
