@@ -107,3 +107,37 @@ try {
 - Gracefully handle network failures: Consider implementing retry logic or fallbacks.
 
 By properly handling `TRPCClientError`, you can improve user experience and make your tRPC-based applications more resilient.
+
+### Type-safe Error Checking with Helper Function
+
+To ensure type safety when checking for `TRPCClientError`, you can create a helper function:
+
+```typescript
+import { TRPCClientError } from '@trpc/client';
+import type { AppRouter } from '~/server/routers/_app'
+
+function isTRPCClientError<TRouter extends AnyRouter>(
+  cause: unknown,
+): cause is TRPCClientError<TRouter> {
+  return cause instanceof TRPCClientError;
+}
+```
+
+This helper function allows you to maintain type information from your router, which is particularly useful when working with error formatting:
+
+```typescript
+try {
+  await client.getUser.query('invalid_id');
+} catch (cause) {
+  if (isTRPCClientError<AppRouter>(cause)) {
+    // cause is now typed as TRPCClientError<AppRouter>
+    // You get full type safety with your error formatter
+    console.error('Error shape:', cause.shape);
+    console.error('Error data:', cause.data);
+  }
+}
+```
+
+When you use custom error formatting as described in [Error Formatting](https://trpc.io/docs/server/error-formatting), this approach ensures you get proper typing for your error structure.
+
+
