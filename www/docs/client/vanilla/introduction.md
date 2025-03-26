@@ -114,7 +114,7 @@ To ensure type safety when checking for `TRPCClientError`, you can create a help
 
 ```typescript
 import { TRPCClientError } from '@trpc/client';
-import type { AppRouter } from '~/server/routers/_app'
+import type { AppRouter } from '~/server/routers/_app';
 
 function isTRPCClientError<TRouter extends AnyRouter>(
   cause: unknown,
@@ -139,5 +139,3 @@ try {
 ```
 
 When you use custom error formatting as described in [Error Formatting](https://trpc.io/docs/server/error-formatting), this approach ensures you get proper typing for your error structure.
-
-
