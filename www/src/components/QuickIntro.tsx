@@ -34,8 +34,8 @@ const Step: FC<StepProps> = ({ num, title, description, code, rightSide }) => {
         {code}
       </div>
       <div className="flex-1">
-        <div className="flex items-center gap-3 ">
-          <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary dark:bg-primary-dark mb-1">
+        <div className="flex items-center gap-3">
+          <div className="mb-1 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary dark:bg-primary-dark">
             <p className="font-bold text-white dark:text-zinc-800">{num}</p>
           </div>
           <h2 className="text-xl font-bold lg:text-2xl">{title}</h2>
