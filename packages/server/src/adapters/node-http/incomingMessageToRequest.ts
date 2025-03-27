@@ -160,3 +160,23 @@ export function incomingMessageToRequest(
 
   return request;
 }
+
+/**
+ * Convert an [`IncomingMessage`](https://nodejs.org/api/http.html#class-httpincomingmessage) to a [`Request`](https://developer.mozilla.org/en-US/docs/Web/API/Request)
+ * This method only parses headers and request method
+ */
+export function incomingMessageToRequestWithoutBody(
+  req: NodeHTTPRequest,
+): Request {
+  // Get host from either regular header or HTTP/2 pseudo-header
+  const url = createURL(req);
+
+  const init: RequestInit = {
+    headers: createHeaders(req.headers),
+    method: req.method,
+  };
+
+  const request = new Request(url, init);
+
+  return request;
+}
