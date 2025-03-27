@@ -24,7 +24,6 @@ import type {
 import { type NodeHTTPCreateContextFnOptions } from '../adapters/node-http';
 import { parseConnectionParamsFromUnknown } from '../http';
 import { isObservable, observableToAsyncIterable } from '../observable';
-// eslint-disable-next-line no-restricted-imports
 import {
   isAsyncIterable,
   isObject,
@@ -32,7 +31,6 @@ import {
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
-// eslint-disable-next-line no-restricted-imports
 import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
 import { Unpromise } from '../vendor/unpromise';
 
