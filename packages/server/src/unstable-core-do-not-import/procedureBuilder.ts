@@ -10,6 +10,7 @@ import {
   createInputMiddleware,
   createOutputMiddleware,
   middlewareMarker,
+  nextInputSymbol,
 } from './middleware';
 import type { inferParser, Parser } from './parser';
 import { getParseFn } from './parser';
@@ -625,20 +626,44 @@ async function callRecursive(
       ...opts,
       meta: _def.meta,
       input: opts.input,
-      next(_nextOpts?: any) {
-        const nextOpts = _nextOpts as
-          | {
-              ctx?: Record<string, unknown>;
-              input?: unknown;
-              getRawInput?: GetRawInputFn;
-            }
-          | undefined;
+      next(nextOpts?: object) {
+        if (!nextOpts) {
+          return callRecursive(index + 1, _def, opts);
+        }
+        if (nextInputSymbol in nextOpts) {
+          return callRecursive(index + 1, _def, {
+            ...opts,
+            input: nextOpts[nextInputSymbol],
+          });
+        }
+        /**
+         * @deprecated
+         */
+        if ('ctx' in nextOpts || 'input' in nextOpts) {
+          const keys = Object.keys(nextOpts);
+          if (
+            keys.length > 2 ||
+            keys.some((it) => it !== 'ctx' && it !== 'input')
+          ) {
+            throw new Error(
+              `Ambiguous next() call with keys ${keys.join(
+                ', ',
+              )}: 'ctx' and 'input' keys are reserved properties due to backwards compatibility`,
+            );
+          }
+          return callRecursive(index + 1, _def, {
+            ...opts,
+            ctx:
+              'ctx' in nextOpts
+                ? { ...opts.ctx, ...(nextOpts.ctx as object) }
+                : opts.ctx,
+            input: 'input' in nextOpts ? nextOpts.input : opts.input,
+          });
+        }
 
         return callRecursive(index + 1, _def, {
           ...opts,
-          ctx: nextOpts?.ctx ? { ...opts.ctx, ...nextOpts.ctx } : opts.ctx,
-          input: nextOpts && 'input' in nextOpts ? nextOpts.input : opts.input,
-          getRawInput: nextOpts?.getRawInput ?? opts.getRawInput,
+          ctx: nextOpts ? { ...opts.ctx, ...nextOpts } : opts.ctx,
         });
       },
     });

@@ -91,10 +91,8 @@ export const authedProcedure = t.procedure.use(async function isAuthed(opts) {
   }
 
   return opts.next({
-    ctx: {
-      // ✅ user value is known to be non-null now
-      user: ctx.user,
-    },
+    // ✅ user value is known to be non-null now
+    user: ctx.user,
   });
 });
 
@@ -111,9 +109,7 @@ export const organizationProcedure = authedProcedure
       });
     }
     return opts.next({
-      ctx: {
-        Organization: membership.Organization,
-      },
+      Organization: membership.Organization,
     });
   });
 
@@ -193,10 +189,8 @@ export const authedProcedure = t.procedure.use(async function isAuthed(opts) {
   }
 
   return opts.next({
-    ctx: {
-      // ✅ user value is known to be non-null now
-      user: ctx.user,
-    },
+    // ✅ user value is known to be non-null now
+    user: ctx.user,
   });
 });
 // mock prisma
@@ -215,9 +209,7 @@ export const organizationProcedure = authedProcedure
       });
     }
     return opts.next({
-      ctx: {
-        Organization: membership.Organization,
-      },
+      Organization: membership.Organization,
     });
   });
 

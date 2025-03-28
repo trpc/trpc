@@ -45,7 +45,7 @@ export const mergeRouters = t.mergeRouters;
 /**
  * Protected base procedure
  */
-export const authedProcedure = t.procedure.use(function isAuthed(opts) {
+export const authedProcedure = publicProcedure.use(function isAuthed(opts) {
   const user = opts.ctx.session?.user;
 
   if (!user?.name) {
@@ -53,11 +53,9 @@ export const authedProcedure = t.procedure.use(function isAuthed(opts) {
   }
 
   return opts.next({
-    ctx: {
-      user: {
-        ...user,
-        name: user.name,
-      },
+    user: {
+      ...user,
+      name: user.name,
     },
   });
 });

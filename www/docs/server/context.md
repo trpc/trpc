@@ -130,10 +130,8 @@ export const protectedProcedure = t.procedure.use(function isAuthed(opts) {
     });
   }
   return opts.next({
-    ctx: {
-      // Infers the `session` as non-nullable
-      session: opts.ctx.session,
-    },
+    // Infers the `session` as non-nullable
+    session: opts.ctx.session,
   });
 });
 ```
@@ -210,11 +208,9 @@ export const apiProcedure = publicProcedure.use((opts) => {
     throw new Error('You are missing `req` or `res` in your call.');
   }
   return opts.next({
-    ctx: {
-      // We overwrite the context with the truthy `req` & `res`, which will also overwrite the types used in your procedure.
-      req: opts.ctx.req,
-      res: opts.ctx.res,
-    },
+    // We overwrite the context with the truthy `req` & `res`, which will also overwrite the types used in your procedure.
+    req: opts.ctx.req,
+    res: opts.ctx.res,
   });
 });
 ```
