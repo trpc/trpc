@@ -12,7 +12,7 @@
     "@cloudflare/workers-types": "^4.0.0",
     "@fastify/busboy": "^3.0.0",
     "@fastify/websocket": "^10.0.1",
-    "@js-temporal/polyfill": "^0.4.4",
+    "@js-temporal/polyfill": "^0.5.0",
     "@miniflare/core": "^2.9.0",
     "@trpc/client": "11.0.0",
     "@trpc/server": "11.0.0",
