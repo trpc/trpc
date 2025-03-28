@@ -224,7 +224,7 @@ export type AppRouter = typeof appRouter;
 
 ## Library integrations
 
-tRPC works out of the box with a number of popular validation and parsing libraries. The below are some examples of usage with validators which we officially maintain support for.
+tRPC works out of the box with a number of popular validation and parsing libraries, including any library conforming to [standard-schema](https://standardschema.dev). The below are some examples of usage with validators which we officially maintain support for.
 
 ### With [Zod](https://github.com/colinhacks/zod)
 
@@ -386,7 +386,7 @@ const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
   hello: publicProcedure.input(type({ name: 'string' })).query(({ input }) => {
-    //      ^?
+    //                                                            ^?
     return {
       greeting: `hello ${input.name}`,
     };
@@ -550,7 +550,4 @@ export type AppRouter = typeof appRouter;
 
 If you work on a validator library which supports tRPC usage, please feel free to open a PR for this page with equivalent usage to the other examples here, and a link to your docs.
 
-Integration with tRPC in most cases is as simple as meeting one of several existing type interfaces, but in some cases we may accept a PR to add a new supported interface. Feel free to open an issue for discussion. You can check the existing supported interfaces here:
-
-- [Types for Inference](https://github.com/trpc/trpc/blob/main/packages/server/src/core/parser.ts)
-- [Functions for parsing/validation](https://github.com/trpc/trpc/blob/main/packages/server/src/core/internals/getParseFn.ts)
+Integration with tRPC in most cases is as simple as meeting one of several existing type interfaces. Conforming to [standard-schema](https://standardschema.dev) is recommended, but in some cases we may accept a PR to add a new supported interface. Feel free to open an issue for discussion. You can check the existing supported interfaces and functions for parsing/validation [in code](https://github.com/trpc/trpc/blob/main/packages/server/src/unstable-core-do-not-import/parser.ts).
