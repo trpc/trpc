@@ -330,12 +330,14 @@ export class WsClient {
       handleCloseOrError(event);
       this.callbacks.onClose?.(event);
 
-      this.reconnect(
-        new TRPCWebSocketClosedError({
-          message: 'WebSocket closed',
-          cause: event,
-        }),
-      );
+      if (!this.lazyMode || (this.lazyMode && this.requestManager.hasPendingRequests())) {
+        this.reconnect(
+          new TRPCWebSocketClosedError({
+            message: 'WebSocket closed',
+            cause: event,
+          }),
+        );
+      }
     });
 
     ws.addEventListener('error', (event) => {
