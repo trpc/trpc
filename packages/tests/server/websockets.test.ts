@@ -1413,7 +1413,7 @@ describe('lazy mode', () => {
     expect(wsClient.connection).toBe(null);
 
     // Start a subscription
-    client.onMessageObservable.subscribe(undefined, {
+    const subscription = client.onMessageObservable.subscribe(undefined, {
       onData: onDataMock,
     });
 
@@ -1456,6 +1456,8 @@ describe('lazy mode', () => {
     await vi.waitFor(() =>
       expect(onDataMock).toHaveBeenCalledWith({ id: '2' }),
     );
+
+    subscription.unsubscribe();
 
     await close();
   });
