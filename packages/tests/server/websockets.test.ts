@@ -1448,7 +1448,7 @@ describe('lazy mode', () => {
 
     expect(onOpenMock).toHaveBeenCalled();
 
-    // verify we can still recieve messages after reconnection
+    // verify we can still receive messages after reconnection
     ee.emit('server:msg', {
       id: '2',
     });
