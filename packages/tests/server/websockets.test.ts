@@ -1391,62 +1391,74 @@ describe('lazy mode', () => {
   });
 
   test('reconnects a lazy websocket if there is an active subscription when the websocket is closed', async () => {
-      const { client, wsClient, onOpenMock, onCloseMock, ee, destroyConnections, close } = factory({
-        wsClient: {
-          lazy: {
-            enabled: true,
-            closeMs: 0,
-          },
+    const {
+      client,
+      wsClient,
+      onOpenMock,
+      onCloseMock,
+      ee,
+      destroyConnections,
+      close,
+    } = factory({
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 0,
         },
-      });
-
-      const onDataMock = vi.fn();
-
-      expect(wsClient.connection).toBe(null);
-
-      // Start a subscription
-      client.onMessageObservable.subscribe(undefined, {
-        onData: onDataMock,
-      });
-
-      await vi.waitFor(() => {
-        expect(wsClient.connection).not.toBe(null);
-      });
-      expect(onOpenMock).toHaveBeenCalledTimes(1);
-
-      // emit a message, check that we receive it
-      ee.emit('server:msg', {
-        id: '1',
-      });
-
-      await vi.waitFor(() => expect(onDataMock).toHaveBeenCalledWith({
-        id: "1"
-      }));
-
-      destroyConnections();
-
-      await vi.waitFor(() => {
-        expect(onCloseMock).toHaveBeenCalledTimes(1);
-      });
-
-      expect(wsClient.connection).toBe(null);
-
-      // Verify the reconnection happens because there was an active subscription
-      await vi.waitFor(() => {
-        expect(wsClient.connection).not.toBe(null);
-      });
-
-      expect(onOpenMock).toHaveBeenCalled();
-
-      // verify we can still recieve messages after reconnection
-      ee.emit('server:msg', {
-        id: '2',
-      });
-
-      await vi.waitFor(() => expect(onDataMock).toHaveBeenCalledWith({ id: '2' }));
-
-      await close();
+      },
     });
+
+    const onDataMock = vi.fn();
+
+    expect(wsClient.connection).toBe(null);
+
+    // Start a subscription
+    client.onMessageObservable.subscribe(undefined, {
+      onData: onDataMock,
+    });
+
+    await vi.waitFor(() => {
+      expect(wsClient.connection).not.toBe(null);
+    });
+    expect(onOpenMock).toHaveBeenCalledTimes(1);
+
+    // emit a message, check that we receive it
+    ee.emit('server:msg', {
+      id: '1',
+    });
+
+    await vi.waitFor(() =>
+      expect(onDataMock).toHaveBeenCalledWith({
+        id: '1',
+      }),
+    );
+
+    destroyConnections();
+
+    await vi.waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(wsClient.connection).toBe(null);
+
+    // Verify the reconnection happens because there was an active subscription
+    await vi.waitFor(() => {
+      expect(wsClient.connection).not.toBe(null);
+    });
+
+    expect(onOpenMock).toHaveBeenCalled();
+
+    // verify we can still recieve messages after reconnection
+    ee.emit('server:msg', {
+      id: '2',
+    });
+
+    await vi.waitFor(() =>
+      expect(onDataMock).toHaveBeenCalledWith({ id: '2' }),
+    );
+
+    await close();
+  });
 
   // https://github.com/trpc/trpc/pull/5152
   test('race condition on dispatching / instant close', async () => {
