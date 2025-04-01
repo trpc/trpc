@@ -1,11 +1,11 @@
 import { bench } from '@ark/attest';
-import { createTRPCReact } from '@trpc/react-query';
 import { initTRPC } from '@trpc/server';
 import { type } from 'arktype';
 import { z } from 'zod';
 
 const t = initTRPC.create();
 
+// avoid pollution from one-time library setup
 bench.baseline(() => {
   const router = t.router({
     baseline: t.procedure
@@ -131,35 +131,3 @@ bench('sequential arktype', async () => {
   // even though hovering arkSequential is identical to hovering arkBase,
   // TS still seems to do a lot of repeated work inferring it somehow (though less than Zod)
 }).types([17906, 'instantiations']);
-
-// If ProcedureBuilder input updated to StandardSchemaV1 only:
-
-//   input<$In, $Out extends object>(
-//     schema: StandardSchemaV1<$In, $Out>,
-//   ): ProcedureBuilder<
-//     TContext,
-//     TMeta,
-//     TContextOverrides,
-//     IntersectIfDefined<TInputIn, $In>,
-//     IntersectIfDefined<TInputOut, $Out>,
-//     TOutputIn,
-//     TOutputOut,
-//     TCaller
-//   >;
-
-// 🏌️  sequential Zod type
-// ⛳ Result: 15127 instantiations
-// 🎯 Baseline: 49173 instantiations
-// 📉 sequential Zod type was under baseline by 69.24%! Consider setting a new baseline.
-
-// 🏌️  sequential arktype
-// ⛳ Result: 10634 instantiations
-// 🎯 Baseline: 17906 instantiations
-// 📉 sequential arktype was under baseline by 40.61%! Consider setting a new baseline.
-
-// This strategy could potentially be expanded to include other schema types while still
-// avoiding some of the additional re-evaluation instantiations.
-
-// This also may be worth bringing up with the TS team, as especially in the ArkType
-// case where the types appear identical on hover, it feels it should not be more
-// expensive to reference than if it were created directly.
