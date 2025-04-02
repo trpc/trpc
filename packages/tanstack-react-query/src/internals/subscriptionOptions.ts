@@ -125,7 +125,7 @@ export const trpcSubscriptionOptions = (args: {
   subscribe: typeof TRPCUntypedClient.prototype.subscription;
   path: readonly string[];
   queryKey: TRPCQueryKey;
-  opts: AnyTRPCSubscriptionOptionsIn;
+  opts?: AnyTRPCSubscriptionOptionsIn;
 }): AnyTRPCSubscriptionOptionsOut => {
   const { subscribe, path, queryKey, opts = {} } = args;
   const input = queryKey[1]?.input;
