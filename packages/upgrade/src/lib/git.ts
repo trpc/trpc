@@ -14,7 +14,17 @@ export async function assertCleanGitTree() {
 }
 
 export async function filterIgnored(files: readonly SourceFile[]) {
-  const { stdout } = await execa('git check-ignore **/*');
+  let stdout = '';
+  let stderr = '';
+  try {
+    const result = await execa('git check-ignore **/*');
+    stdout = result.stdout;
+    stderr = result.stderr;
+  } catch (error) {
+    log.error('Error executing git check-ignore:', error);
+    stdout = '';
+  }
+
   const ignores = stdout.split('\n');
 
   if (process.env['VERBOSE']) {
