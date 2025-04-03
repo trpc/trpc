@@ -77,7 +77,7 @@
     "@trpc/client": "11.0.2",
     "@trpc/react-query": "11.0.2",
     "@trpc/server": "11.0.2",
-    "next": ">=15.2.2",
+    "next": "*",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0",
     "typescript": ">=5.7.2"
