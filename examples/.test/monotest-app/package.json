@@ -12,12 +12,12 @@
     "@trpc/client": "npm:@trpc/client",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@monotest/tsconfig": "workspace:*",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1"
   }
 }

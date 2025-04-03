@@ -14,15 +14,15 @@
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
     "next": "^15.1.7",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "superjson": "^1.12.4",
     "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
     "eslint": "^9.21.0",
     "typescript": "^5.8.2"
   },
