@@ -2126,8 +2126,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       effect:
-        specifier: 3.14.2
-        version: 3.14.2
+        specifier: 3.14.6
+        version: 3.14.6
       eslint:
         specifier: ^9.21.0
         version: 9.21.0(jiti@2.4.2)
@@ -10947,8 +10947,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  effect@3.14.2:
-    resolution: {integrity: sha512-AqLlvhkcWqSgfPnfGO/JdwvEqhtzFLb4qwe43YLwrvnN5ev2dqB4ve2Bv6oq64iplRMYO9lmYRibN0Ig6fK/nQ==}
+  effect@3.14.6:
+    resolution: {integrity: sha512-/QMsBfMw2Gt10x3y2jVqDanLpKFrhc4L/3vqjrD36GWeuOcjN+1mvsvw9+RseAq9hmmkc3MFvLznfiEopqcPuw==}
 
   ejs@3.1.9:
     resolution: {integrity: sha512-rC+QVNMJWv+MtPgkt0y+0rVEIdbtxVADApW9JXrUVlzHetgcyczP/E7DJmWJ4fJCZF2cPcBk0laWO9ZHMG3DmQ==}
@@ -30123,7 +30123,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  effect@3.14.2:
+  effect@3.14.6:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2
