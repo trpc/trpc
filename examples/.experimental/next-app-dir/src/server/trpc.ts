@@ -41,7 +41,7 @@ export const protectedProcedure = publicProcedure.use((opts) => {
     });
   }
 
-  return opts.next({ ctx: { session } });
+  return opts.next({ session });
 });
 
 export const createAction = experimental_createServerActionHandler(t, {
