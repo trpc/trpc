@@ -1,6 +1,6 @@
 export * from './links/types';
 
-export * from './links/HTTPBatchLinkOptions';
+export * from './links/HTTPLinkOptions';
 export * from './links/httpBatchLink';
 export * from './links/httpBatchStreamLink';
 export * from './links/httpLink';
