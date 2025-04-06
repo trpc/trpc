@@ -9,10 +9,6 @@ slug: /client/links/httpSubscriptionLink
 
 SSE is a good option for real-time as it's a bit easier than setting up a WebSockets-server.
 
-:::info
-We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
-:::
-
 ## Setup {#setup}
 
 :::info
@@ -25,9 +21,9 @@ To use `httpSubscriptionLink`, you need to use a [splitLink](./splitLink.mdx) to
 import type { TRPCLink } from '@trpc/client';
 import {
   httpBatchLink,
+  httpSubscriptionLink,
   loggerLink,
   splitLink,
-  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 
 const trpcClient = createTRPCClient<AppRouter>({
@@ -40,7 +36,7 @@ const trpcClient = createTRPCClient<AppRouter>({
     splitLink({
       // uses the httpSubscriptionLink for subscriptions
       condition: (op) => op.type === 'subscription',
-      true: unstable_httpSubscriptionLink({
+      true: httpSubscriptionLink({
         url: `/api/trpc`,
       }),
       false: httpBatchLink({
@@ -71,7 +67,7 @@ If the client and server are not on the same domain, you can use `withCredential
 
 ```tsx
 // [...]
-unstable_httpSubscriptionLink({
+httpSubscriptionLink({
   url: 'https://example.com/api/trpc',
   eventSourceOptions() {
     return {
@@ -91,8 +87,8 @@ You can ponyfill `EventSource` and use the `eventSourceOptions` -callback to pop
 import {
   createTRPCClient,
   httpBatchLink,
+  httpSubscriptionLink,
   splitLink,
-  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import type { AppRouter } from '../server/index.js';
@@ -102,7 +98,7 @@ const trpc = createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
-      true: unstable_httpSubscriptionLink({
+      true: httpSubscriptionLink({
         url: 'http://localhost:3000',
         // ponyfill EventSource
         EventSource: EventSourcePolyfill,
@@ -141,9 +137,9 @@ Please note that restarting the connection will result in the `EventSource` bein
 import {
   createTRPCClient,
   httpBatchLink,
+  httpSubscriptionLink,
   retryLink,
   splitLink,
-  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import {
   EventSourcePolyfill,
@@ -177,7 +173,7 @@ const trpc = createTRPCClient<AppRouter>({
             return false;
           },
         }),
-        unstable_httpSubscriptionLink({
+        httpSubscriptionLink({
           url: async () => {
             // calculate the latest URL if needed...
             return getAuthenticatedUri();
@@ -224,8 +220,8 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 import {
   createTRPCClient,
   httpBatchLink,
+  httpSubscriptionLink,
   splitLink,
-  unstable_httpSubscriptionLink,
 } from '@trpc/client';
 import type { AppRouter } from '../server/index.js';
 
@@ -234,7 +230,7 @@ const trpc = createTRPCClient<AppRouter>({
   links: [
     splitLink({
       condition: (op) => op.type === 'subscription',
-      true: unstable_httpSubscriptionLink({
+      true: httpSubscriptionLink({
         url: 'http://localhost:3000',
         connectionParams: async () => {
           // Will be serialized as part of the URL

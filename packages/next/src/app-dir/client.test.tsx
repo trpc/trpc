@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import React from 'react';
@@ -129,7 +129,7 @@ describe('without transformer', () => {
     userEvent.click(utils.getByRole('trigger'));
 
     // wait to finish
-    await waitFor(() => {
+    await vi.waitFor(() => {
       assert(allStates.at(-1)?.status === 'success');
     });
 
@@ -231,7 +231,7 @@ describe('with transformer', () => {
     userEvent.click(utils.getByRole('trigger'));
 
     // wait to finish
-    await waitFor(() => {
+    await vi.waitFor(() => {
       assert(allStates.at(-1)?.status === 'success');
     });
 
@@ -310,7 +310,7 @@ describe('with transformer', () => {
     userEvent.click(utils.getByRole('trigger'));
 
     // wait to finish
-    await waitFor(() => {
+    await vi.waitFor(() => {
       assert(allStates.at(-1)?.status === 'success');
     });
 

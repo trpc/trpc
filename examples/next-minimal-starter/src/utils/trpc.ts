@@ -1,8 +1,4 @@
-import {
-  httpBatchLink,
-  splitLink,
-  unstable_httpSubscriptionLink,
-} from '@trpc/client';
+import { httpBatchLink, httpSubscriptionLink, splitLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import { ssrPrepass } from '@trpc/next/ssrPrepass';
 import type { AppRouter } from '../pages/api/trpc/[trpc]';
@@ -31,7 +27,7 @@ export const trpc = createTRPCNext<AppRouter>({
       links: [
         splitLink({
           condition: (op) => op.type === 'subscription',
-          true: unstable_httpSubscriptionLink({
+          true: httpSubscriptionLink({
             url,
             transformer,
           }),

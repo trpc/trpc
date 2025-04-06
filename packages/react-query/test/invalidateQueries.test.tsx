@@ -1,7 +1,7 @@
 import { createQueryClient } from './__queryClient';
 import { createAppRouter } from './__testHelpers';
 import { QueryClientProvider, useQueryClient } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getUntypedClient } from '@trpc/client';
 import type { TRPCQueryKey } from '@trpc/react-query/internals/getQueryKey';
@@ -60,7 +60,7 @@ describe('invalidateQueries()', () => {
 
     const utils = render(<App />);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('postByIdQuery:success');
       expect(utils.container).toHaveTextContent('allPostsQuery:success');
 
@@ -73,11 +73,11 @@ describe('invalidateQueries()', () => {
 
     await userEvent.click(utils.getByTestId('refetch'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('postByIdQuery:stale');
       expect(utils.container).toHaveTextContent('allPostsQuery:stale');
     });
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
       expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
     });
@@ -123,7 +123,7 @@ describe('invalidateQueries()', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('postByIdQuery:success');
       expect(utils.container).toHaveTextContent('allPostsQuery:success');
 
@@ -136,11 +136,11 @@ describe('invalidateQueries()', () => {
 
     await userEvent.click(utils.getByTestId('refetch'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('postByIdQuery:stale');
       expect(utils.container).toHaveTextContent('allPostsQuery:stale');
     });
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('postByIdQuery:not-stale');
       expect(utils.container).toHaveTextContent('allPostsQuery:not-stale');
     });
@@ -201,7 +201,7 @@ describe('invalidateQueries()', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('count:test:0');
     });
 
@@ -214,7 +214,7 @@ describe('invalidateQueries()', () => {
       // click button to invalidate
       await userEvent.click(utils.getByTestId(testId));
 
-      await waitFor(async () => {
+      await vi.waitFor(async () => {
         // should become stale straight after the click
         expect(utils.container).toHaveTextContent(`count:test:${index + 1}`);
       });
@@ -283,7 +283,7 @@ describe('invalidateQueries()', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('mockPostQuery1:success');
       expect(utils.container).toHaveTextContent('mockPostQuery2:success');
       expect(utils.container).toHaveTextContent('mockPostQuery3:success');
@@ -293,7 +293,7 @@ describe('invalidateQueries()', () => {
     await userEvent.click(utils.getByTestId('invalidate-with-partial-input'));
 
     // 1 & 2 should become stale straight after the click by fuzzy matching the query, 3 should not
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`mockPostQuery1:stale`);
       expect(utils.container).toHaveTextContent(`mockPostQuery2:stale`);
       expect(utils.container).toHaveTextContent(`mockPostQuery3:not-stale`);

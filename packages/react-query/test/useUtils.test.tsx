@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { getServerAndReactClient } from './__reactHelpers';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -97,7 +97,7 @@ test('client query', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('new post');
   });
 });
@@ -128,7 +128,7 @@ test('client query sad path', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('Query errored');
   });
 });
@@ -164,7 +164,7 @@ test('client mutation', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.getByTestId('initial-post')).toHaveTextContent('new post');
     expect(utils.getByTestId('newpost')).toHaveTextContent('another post');
   });
@@ -200,7 +200,7 @@ test('fetch', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('new post');
   });
 
@@ -251,7 +251,7 @@ test('prefetch', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(renderclient).toHaveBeenNthCalledWith<[Post[]]>(1, [defaultPost]);
   });
 
@@ -311,7 +311,7 @@ test('invalidate', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('done');
   });
 
@@ -320,7 +320,7 @@ test('invalidate', async () => {
   const addPostButton = await utils.findByTestId('add-post');
 
   await userEvent.click(addPostButton);
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('invalidate');
   });
   expect(stableclientSpy).toHaveBeenCalledTimes(2);
@@ -380,7 +380,7 @@ test('invalidate procedure for both query and infinite', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('done');
     expect(utils.container).toHaveTextContent('new post');
     expect(invalidateQuerySpy).toHaveBeenCalledTimes(1);
@@ -391,7 +391,7 @@ test('invalidate procedure for both query and infinite', async () => {
 
   await userEvent.click(invalidateButton);
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('done');
     expect(invalidateQuerySpy).toHaveBeenCalledTimes(2);
     expect(invalidateInfiniteSpy).toHaveBeenCalledTimes(2);
@@ -446,7 +446,7 @@ test('reset', async () => {
   const addPostButton = await utils.findByTestId('add-post');
 
   await userEvent.click(addPostButton);
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('reset');
   });
   expect(stableclientSpy).toHaveBeenCalledTimes(1);
@@ -474,7 +474,7 @@ test('refetch', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(spyLink).toHaveBeenCalledTimes(2);
   });
 });
@@ -491,7 +491,7 @@ test('setData', async () => {
         utils.post.all.setData(undefined, [{ id: 0, text: 'setData1' }]);
       }
 
-      if (allPosts.data) {
+      if (allPosts.data?.length === 1) {
         utils.post.all.setData(undefined, (prev) => [
           ...(prev ?? []), //                ^?
           { id: 1, text: 'setData2' },
@@ -511,25 +511,25 @@ test('setData', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('setData1');
     expect(utils.container).toHaveTextContent('setData2');
-
-    expect(utils.container).toMatchInlineSnapshot(`
-      <div>
-        [
-          {
-              "id": 0,
-              "text": "setData1"
-          },
-          {
-              "id": 1,
-              "text": "setData2"
-          }
-      ]
-      </div>
-    `);
   });
+
+  expect(utils.container).toMatchInlineSnapshot(`
+    <div>
+      [
+        {
+            "id": 0,
+            "text": "setData1"
+        },
+        {
+            "id": 1,
+            "text": "setData2"
+        }
+    ]
+    </div>
+  `);
 });
 
 test('setInfiniteData', async () => {
@@ -557,7 +557,7 @@ test('setInfiniteData', async () => {
         );
       }
 
-      if (listPosts.data) {
+      if (listPosts.data?.pageParams.length === 1) {
         utils.post.list.setInfiniteData({}, (prev) => {
           const data = prev ?? {
             pageParams: [],
@@ -595,40 +595,41 @@ test('setInfiniteData', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('setInfiniteData1');
     expect(utils.container).toHaveTextContent('setInfiniteData2');
-    expect(utils.container).toMatchInlineSnapshot(`
-      <div>
-        {
-          "pageParams": [
-              0,
-              1
-          ],
-          "pages": [
-              {
-                  "items": [
-                      {
-                          "id": 0,
-                          "text": "setInfiniteData1"
-                      }
-                  ],
-                  "time": 0
-              },
-              {
-                  "items": [
-                      {
-                          "id": 1,
-                          "text": "setInfiniteData2"
-                      }
-                  ],
-                  "time": 1
-              }
-          ]
-      }
-      </div>
-    `);
   });
+
+  expect(utils.container).toMatchInlineSnapshot(`
+    <div>
+      {
+        "pageParams": [
+            0,
+            1
+        ],
+        "pages": [
+            {
+                "items": [
+                    {
+                        "id": 0,
+                        "text": "setInfiniteData1"
+                    }
+                ],
+                "time": 0
+            },
+            {
+                "items": [
+                    {
+                        "id": 1,
+                        "text": "setInfiniteData2"
+                    }
+                ],
+                "time": 1
+            }
+        ]
+    }
+    </div>
+  `);
 });
 
 test('getData', async () => {
@@ -665,7 +666,7 @@ test('getData', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('new post');
   });
 });
@@ -702,7 +703,7 @@ describe('cancel', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('data')).toHaveTextContent('undefined');
       expect(utils.getByTestId('isFetching')).toHaveTextContent('idle');
       expect(utils.getByTestId('isPaused')).toHaveTextContent('paused');
@@ -754,7 +755,7 @@ describe('cancel', () => {
       </App>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('data')).toHaveTextContent('undefined');
       expect(utils.getByTestId('isFetching')).toHaveTextContent('idle');
       expect(utils.getByTestId('isPaused')).toHaveTextContent('paused');
@@ -795,7 +796,7 @@ describe('cancel', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('new post');
     });
   });
@@ -830,7 +831,7 @@ describe('query keys are stored separately', () => {
         <MyComponent />
       </App>,
     );
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(data.infinite).not.toBe(unset);
       expect(data.query).not.toBe(unset);
     });
@@ -886,7 +887,7 @@ test('isMutating', async () => {
   const isMutatingHistorySpan = await utils.findByTestId('is-mutating-history');
 
   await userEvent.click(addPostButton);
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(isMutatingHistorySpan).toHaveTextContent('0,1,0');
   });
 });

@@ -1,5 +1,5 @@
 import { createAppRouter } from './__testHelpers';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import React from 'react';
 
@@ -63,7 +63,7 @@ describe('setQueriesData()', () => {
 
     await userEvent.click(utils.getByTestId('setQueriesData'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('allPost.newTitle1');
       expect(utils.container).toHaveTextContent('allPost.newTitle2');
     });

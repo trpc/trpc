@@ -1,7 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { doNotExecute } from '@trpc/server/__tests__/suppressLogs';
 import { skipToken } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React from 'react';
@@ -58,7 +58,7 @@ test('useSuspenseQuery()', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result`);
   });
 

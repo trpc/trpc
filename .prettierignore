@@ -1,6 +1,7 @@
 __generated__/
 .docusaurus/
 **/.next/
+**/.nuxt
 **/www/build/
 **/www/typedoc/
 dist/

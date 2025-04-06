@@ -1,6 +1,6 @@
 import type { Post } from './__testHelpers';
 import { createAppRouter } from './__testHelpers';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import type { inferProcedureInput } from '@trpc/server';
@@ -69,19 +69,19 @@ test('useInfiniteQuery()', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
     expect(utils.container).not.toHaveTextContent('second post');
     expect(utils.container).toHaveTextContent('Load More');
   });
   await userEvent.click(utils.getByTestId('loadMore'));
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('Loading more...');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
     expect(utils.container).toHaveTextContent('second post');
     expect(utils.container).toHaveTextContent('Nothing more to load');
@@ -180,10 +180,10 @@ test('useInfiniteQuery bi-directional', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('second post');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('second post');
     expect(utils.container).not.toHaveTextContent('first post');
     expect(utils.container).toHaveTextContent('Load Previous');
@@ -191,10 +191,10 @@ test('useInfiniteQuery bi-directional', async () => {
     expect(utils.container).toHaveTextContent('Nothing more to load');
   });
   await userEvent.click(utils.getByTestId('loadPrevious'));
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('Loading previous...');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
     expect(utils.container).toHaveTextContent('second post');
     expect(utils.container).toHaveTextContent('Nothing previous to load');
@@ -301,19 +301,19 @@ test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
     expect(utils.container).not.toHaveTextContent('second post');
     expect(utils.container).toHaveTextContent('Load More');
   });
   await userEvent.click(utils.getByTestId('loadMore'));
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('Loading more...');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
     expect(utils.container).toHaveTextContent('second post');
     expect(utils.container).toHaveTextContent('Nothing more to load');
@@ -347,10 +347,10 @@ test('useInfiniteQuery and prefetchInfiniteQuery', async () => {
   `);
 
   await userEvent.click(utils.getByTestId('prefetch'));
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('Fetching...');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).not.toHaveTextContent('Fetching...');
   });
 
@@ -430,19 +430,19 @@ test('useInfiniteQuery and fetchInfiniteQuery', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
     expect(utils.container).not.toHaveTextContent('second post');
     expect(utils.container).toHaveTextContent('Load More');
   });
   await userEvent.click(utils.getByTestId('loadMore'));
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('Loading more...');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('first post');
     expect(utils.container).toHaveTextContent('second post');
     expect(utils.container).toHaveTextContent('Nothing more to load');
@@ -476,10 +476,10 @@ test('useInfiniteQuery and fetchInfiniteQuery', async () => {
   `);
 
   await userEvent.click(utils.getByTestId('fetch'));
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('Fetching...');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).not.toHaveTextContent('Fetching...');
   });
 
@@ -578,16 +578,16 @@ test('regression 5412: invalidating a query', async () => {
 
   // get testid posts
   const posts = utils.getByTestId('posts');
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(posts).toHaveTextContent('first post');
   });
   expect(posts).not.toHaveTextContent('second post');
 
   await userEvent.click(utils.getByTestId('next'));
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('Fetching...');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).not.toHaveTextContent('Fetching...');
   });
 
@@ -598,10 +598,10 @@ test('regression 5412: invalidating a query', async () => {
   // invalidate
   await userEvent.click(utils.getByTestId('invalidate'));
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('Fetching...');
   });
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).not.toHaveTextContent('Fetching...');
   });
 
@@ -644,7 +644,7 @@ test('regression 5809: select()', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('foo:bar');
   });
 });

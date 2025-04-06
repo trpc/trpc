@@ -1,6 +1,6 @@
 {
   "name": "@monotest/trpc",
-  "version": "0.0.1",
+  "version": "11.0.2",
   "private": true,
   "type": "module",
   "exports": {
@@ -14,7 +14,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@trpc/server": "npm:@trpc/server@next"
+    "@trpc/server": "npm:@trpc/server"
   },
   "devDependencies": {
     "@monotest/tsconfig": "workspace:*"

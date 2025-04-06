@@ -5,24 +5,29 @@ sidebar_label: Migrate from v10 to v11
 slug: /migrate-from-v10-to-v11
 ---
 
-:::info
-This is a current work in progress representing **version 11**.
-
-- The functionality is **stable and can be used in production**, but we may do small breaking API-changes between patches until we reach `11.0.0`
-- The packages are published with the `next`-tag on npm
-
-:::
-
-### Installation / upgrading
-
 import { InstallSnippet } from '@site/src/components/InstallSnippet';
 
-<InstallSnippet pkgs="@trpc/server@next @trpc/client@next @trpc/react-query@next @trpc/next@next @tanstack/react-query@latest @tanstack/react-query-devtools@latest" />
+## Migrating from v10 to v11
 
-## Reverse-chronological changelog
+:::tip
+For most users, the migration should be quick & straight-forward.
 
-> This is a draft document. It will be updated to a proper guide as we get closer to the v11 release.
-> The only major thing that will incur work for you is that you will need to do is to update TanStack Query to v5.0.0.
+If the below three steps aren't enough, look through the below document for _"rarely breaking"_.
+:::
+
+### 1. Install new versions
+
+<InstallSnippet pkgs="@trpc/server@^11 @trpc/client@^11 @trpc/react-query@^11 @trpc/next@^11 @tanstack/react-query@^5 @tanstack/react-query-devtools@^5" />
+
+### 2. If you're using `transformer`s, update your links
+
+See [transformers are moved to links](#transformers-moved) for more information.
+
+### 3. If you're using `@trpc/react-query` update your `@tanstack/react-query`-version
+
+See [react-query-v5](#react-query-v5) for more information.
+
+## Full reverse-chronological changelog
 
 ### New TanStack React Query integration! (non-breaking)
 
@@ -231,7 +236,7 @@ The function `resolveHTTPRequest` has been replaced by `resolveRequest` which us
 
 This is a breaking change for HTTP-adapters, but should not affect you as a user.
 
-If you're building an adapter, check out how our adapters work [in the code](https://github.com/trpc/trpc/tree/next/packages/server/src/adapters) and don't be a stranger to ask for help in our [Discord](https://trpc.io/discord).
+If you're building an adapter, check out how our adapters work [in the code](https://github.com/trpc/trpc/tree/main/packages/server/src/adapters) and don't be a stranger to ask for help in our [Discord](https://trpc.io/discord).
 
 ### `TRPCRequestInfo` has been updated (rarely breaking)
 
@@ -281,7 +286,7 @@ Adds a helper to infer the options for a procedure builder resolver. This is use
 
 See test [here](https://github.com/trpc/trpc/blob/743fa6aed8ac889d9c60f321c4b4ad060b56e791/packages/server/src/unstable-core-do-not-import/procedureBuilder.test.ts#L36-L231) for a reference on how to use it
 
-### Transformers are moved to links (breaking)
+### Transformers are moved to links (breaking) - {#transformers-moved}
 
 > TypeScript will guide you through this migration
 >
@@ -365,7 +370,9 @@ While we're not doing anything differently internally (just yet) this is help su
 
 Procedures in your router now only emit their input & output - where before they would also contain the full context object for every procedure, leading to unnecessary complexity in e.g. `.d.ts`.
 
-### React Query peerDep is now v5 (breaking)
+### React Query peerDep is now v5 (breaking) - {#react-query-v5}
+
+> The main thing you'll need to do is to replace a bunch of `isLoading` to `isPending`
 
 Check their migration guide: https://tanstack.com/query/v5/docs/framework/react/guides/migrating-to-v5
 
@@ -381,6 +388,6 @@ The proxy names were due to v9 using the `AbcXyz` names, these have been removed
 - `createProxySSGHelpers` is now deprecated but aliased to `createSSGHelpers` for backwards compatibility.
 - Removed exported type `CreateSSGHelpersOptions`
 
-### `interop`-mode has been removed (rarely breaking)
+### `interop`-mode has been removed (rarely breaking) - {#interop-mode-removed}
 
 We have removed the `interop`-mode from tRPC. This was a mode that allowed you to have an easy transition period from v9 to v10. This mode was never meant to be supported long-term and we have now removed it.

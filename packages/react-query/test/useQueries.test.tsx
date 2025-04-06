@@ -1,5 +1,5 @@
 import { getServerAndReactClient } from './__reactHelpers';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
 import React from 'react';
@@ -62,7 +62,7 @@ test('single query', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result1`);
   });
 });
@@ -89,7 +89,7 @@ test('different queries', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`foo`);
     expect(utils.container).toHaveTextContent(`bar`);
   });
@@ -119,7 +119,7 @@ test('mapping queries', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result1`);
     expect(utils.container).toHaveTextContent(`__result2`);
     expect(utils.container).toHaveTextContent(`__result3`);
@@ -144,7 +144,7 @@ test('single query with options', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result2`);
   });
 });
@@ -176,7 +176,7 @@ test('combine function', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent('foo and bar');
   });
 });
@@ -220,7 +220,7 @@ test('regression #4802: passes context to links', async () => {
       <MyComponent />
     </App>,
   );
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`__result1`);
     expect(utils.container).toHaveTextContent(`__result2`);
   });

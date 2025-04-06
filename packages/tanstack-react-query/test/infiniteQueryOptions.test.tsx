@@ -6,7 +6,7 @@ import {
   useSuspenseInfiniteQuery,
   type InfiniteData,
 } from '@tanstack/react-query';
-import { waitFor } from '@testing-library/react';
+import '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
@@ -179,20 +179,20 @@ describe('infiniteQueryOptions', () => {
 
     const utils = ctx.renderApp(<MyComponent />);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`null`);
       expect(utils.container).not.toHaveTextContent(`undefined`);
     });
 
     await userEvent.click(utils.getByTestId('fetchMore'));
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
     });
 
     await userEvent.click(utils.getByTestId('invalidate'));
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.getByTestId('invalidate')).toBeDisabled();
     });
   });
@@ -309,14 +309,14 @@ describe('infiniteQueryOptions', () => {
       </React.Suspense>,
     );
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`null`);
       expect(utils.container).not.toHaveTextContent(`undefined`);
     });
     await userEvent.click(utils.getByTestId('fetchMore'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
     });
@@ -424,20 +424,96 @@ describe('infiniteQueryOptions', () => {
 
     const utils = ctx.renderApp(<MyComponent />);
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`null`);
       expect(utils.container).not.toHaveTextContent(`undefined`);
     });
     await userEvent.click(utils.getByTestId('fetchMore'));
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(`[ "1" ]`);
       expect(utils.container).toHaveTextContent(`[ "2" ]`);
     });
 
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent('__selected');
+    });
+  });
+
+  // regression: https://github.com/trpc/trpc/issues/6599
+  test('falsy cursor', async () => {
+    const t = initTRPC.create({});
+
+    const appRouter = t.router({
+      post: t.router({
+        list: t.procedure
+          .input(
+            z.object({
+              cursor: z.number(),
+              foo: z.literal('bar'),
+            }),
+          )
+          .query(({ input }) => {
+            return {
+              items: fixtureData.slice(input.cursor, input.cursor + 1),
+              next:
+                input.cursor + 1 > fixtureData.length
+                  ? undefined
+                  : input.cursor + 1,
+            };
+          }),
+      }),
+    });
+
+    await using ctx = testReactResource(appRouter);
+
+    const { useTRPC } = ctx;
+
+    function MyComponent() {
+      const trpc = useTRPC();
+      const queryOptions = trpc.post.list.infiniteQueryOptions(
+        {
+          cursor: 0,
+          foo: 'bar',
+        },
+        {
+          getNextPageParam(lastPage) {
+            return lastPage.next;
+          },
+        },
+      );
+      const query1 = useInfiniteQuery(queryOptions);
+      expect(queryOptions.trpc.path).toBe('post.list');
+      if (!query1.data) {
+        return <>...</>;
+      }
+
+      return (
+        <>
+          <button
+            data-testid="fetchMore"
+            onClick={() => {
+              query1.fetchNextPage();
+            }}
+          >
+            Fetch more
+          </button>
+          <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>
+        </>
+      );
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`[ "1" ]`);
+    });
+
+    await userEvent.click(utils.getByTestId('fetchMore'));
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`[ "1" ]`);
+      expect(utils.container).toHaveTextContent(`[ "2" ]`);
     });
   });
 });

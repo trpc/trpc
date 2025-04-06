@@ -1,4 +1,3 @@
-import { waitFor } from '@testing-library/dom';
 import { observable } from '@trpc/server/observable';
 import type { AnyRouter } from '@trpc/server/unstable-core-do-not-import';
 import type { OperationLink } from '../..';
@@ -61,7 +60,7 @@ test('dedupeLink', async () => {
     call2.subscribe({ next });
 
     expect(endingLinkTriggered).toHaveBeenCalledTimes(1);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(timerTriggered).toHaveBeenCalledTimes(1);
     });
 
@@ -127,7 +126,7 @@ test('dedupe - cancel one does not cancel the other', async () => {
     call1$.unsubscribe();
 
     expect(endingLinkTriggered).toHaveBeenCalledTimes(1);
-    await waitFor(() => {
+    await vi.waitFor(() => {
       expect(timerTriggered).toHaveBeenCalledTimes(1);
 
       expect(next).toHaveBeenCalledTimes(1);

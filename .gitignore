@@ -18,6 +18,7 @@ yarn.lock
 .yalc
 yalc.lock
 
+tests-results/
 coverage/
 __generated__/
 

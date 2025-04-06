@@ -1,7 +1,7 @@
 import { getServerAndReactClient } from './__reactHelpers';
 import { ignoreErrors } from '@trpc/server/__tests__/suppressLogs';
 import { useIsFetching } from '@tanstack/react-query';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
 import { konn } from 'konn';
@@ -269,13 +269,13 @@ test('Check invalidation of Whole router', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`All queries finished fetching!`);
   });
 
   await userEvent.click(utils.getByTestId('invalidate-user-router'));
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`All queries finished fetching!`);
   });
 
@@ -334,13 +334,13 @@ test('Check invalidating at router root invalidates all', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`All queries finished fetching!`);
   });
 
   await userEvent.click(utils.getByTestId('invalidate-all'));
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`All queries finished fetching!`);
   });
 
@@ -392,7 +392,7 @@ test('test TS types of the input variable', async () => {
     </App>,
   );
 
-  await waitFor(() => {
+  await vi.waitFor(() => {
     expect(utils.container).toHaveTextContent(`All queries finished fetching!`);
   });
 

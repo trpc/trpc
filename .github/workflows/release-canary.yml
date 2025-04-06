@@ -6,7 +6,7 @@ on:
       - 'main'
     paths:
       - '.github/setup/*'
-      - '.github/workflows/release.yml'
+      - '.github/workflows/release-canary.yml'
       - 'packages/**'
       - '!packages/**/package.json'
       - '!packages/test/**'
@@ -27,6 +27,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
+      - run: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > $HOME/.npmrc
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
