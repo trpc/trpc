@@ -21,8 +21,8 @@
     "@types/node": "^22.13.5",
     "esbuild": "^0.17.10",
     "eslint": "^9.21.0",
-    "serverless": "^3.18.1",
-    "serverless-esbuild": "^1.39.0",
+    "serverless": "^3.38.0",
+    "serverless-esbuild": "^1.55.0",
     "serverless-offline": "^12.0.4",
     "typescript": "^5.8.2"
   },
