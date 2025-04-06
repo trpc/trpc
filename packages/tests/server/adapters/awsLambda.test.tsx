@@ -1,3 +1,4 @@
+import type { Writable } from 'node:stream';
 import { initTRPC } from '@trpc/server';
 import * as trpcLambda from '@trpc/server/adapters/aws-lambda';
 import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
@@ -7,7 +8,20 @@ import {
   mockAPIGatewayProxyEventBase64Encoded,
   mockAPIGatewayProxyEventV1,
   mockAPIGatewayProxyEventV2,
+  ResponseStream,
 } from './lambda.utils';
+
+globalThis.awslambda = {
+  streamifyResponse: <TEvent,>(handler: awslambda.StreamifyHandler<TEvent>) => {
+    return handler;
+  },
+
+  HttpResponseStream: {
+    from: (writable: Writable, metadata: Record<string, unknown>) => {
+      return writable;
+    },
+  },
+};
 
 const createContext = async ({
   event,
@@ -32,7 +46,7 @@ const router = t.router({
         .nullish(),
     )
     .query(({ input, ctx }) => ({
-      text: `hello ${input?.who ?? ctx.user ?? 'world'}`,
+      text: `hello ${input?.who ?? ctx?.user ?? 'world'}`,
     })),
   echo: t.procedure
     .input(
@@ -58,6 +72,24 @@ const router = t.router({
   request: t.router({
     info: t.procedure.query(({ ctx }) => ctx.info),
   }),
+  iterable: t.procedure.query(async function* () {
+    for (let i = 0; i < 3; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      yield i;
+    }
+  }),
+  deferred: t.procedure
+    .input(
+      z.object({
+        wait: z.number(),
+      }),
+    )
+    .query(async (opts) => {
+      await new Promise<void>((resolve) =>
+        setTimeout(resolve, opts.input.wait * 10),
+      );
+      return opts.input.wait;
+    }),
 });
 
 const tC = initTRPC.create();
@@ -74,6 +106,104 @@ const contextlessApp = tC.router({
 const handler = trpcLambda.awsLambdaRequestHandler({
   router,
   createContext,
+});
+
+const streamingHandler = trpcLambda.awsLambdaStreamingRequestHandler({
+  router,
+});
+
+test('streaming with normal response', async () => {
+  const responseStream = new ResponseStream();
+
+  await streamingHandler(
+    mockAPIGatewayProxyEventV2({
+      headers: {
+        'Content-Type': 'application/json',
+        'trpc-accept': 'application/jsonl',
+      },
+      method: 'GET',
+      path: 'hello',
+      queryStringParameters: { input: '{}', batch: '1' },
+      routeKey: '$default',
+    }),
+    responseStream,
+    mockAPIGatewayContext(),
+  );
+
+  const content = responseStream.getContent().toString();
+
+  expect(content).toMatchInlineSnapshot(`
+    "{"0":[[0],[null,0,0]]}
+    [0,0,[[{"result":0}],["result",0,1]]]
+    [1,0,[[{"data":0}],["data",0,2]]]
+    [2,0,[[{"text":"hello world"}]]]
+    "
+  `);
+});
+
+test('streaming with iterable response', async () => {
+  const responseStream = new ResponseStream();
+
+  await streamingHandler(
+    mockAPIGatewayProxyEventV2({
+      headers: {
+        'Content-Type': 'application/json',
+        'trpc-accept': 'application/jsonl',
+      },
+      method: 'GET',
+      path: 'iterable',
+      queryStringParameters: { input: '{}', batch: '1' },
+      routeKey: '$default',
+    }),
+    responseStream,
+    mockAPIGatewayContext(),
+  );
+
+  const content = responseStream.getContent().toString();
+
+  expect(content).toMatchInlineSnapshot(`
+    "{"0":[[0],[null,0,0]]}
+    [0,0,[[{"result":0}],["result",0,1]]]
+    [1,0,[[{"data":0}],["data",0,2]]]
+    [2,0,[[0],[null,1,3]]]
+    [3,1,[[0]]]
+    [3,1,[[1]]]
+    [3,1,[[2]]]
+    [3,0,[[]]]
+    "
+  `);
+});
+
+test('streaming with deferred response', async () => {
+  const responseStream = new ResponseStream();
+
+  await streamingHandler(
+    mockAPIGatewayProxyEventV2({
+      headers: {
+        'Content-Type': 'application/json',
+        'trpc-accept': 'application/jsonl',
+      },
+      method: 'GET',
+      path: 'deferred',
+      queryStringParameters: {
+        input: '{"0":{"wait":3},"1":{"wait":1},"2":{"wait":2}}',
+        batch: '1',
+      },
+      routeKey: '$default',
+    }),
+    responseStream,
+    mockAPIGatewayContext(),
+  );
+
+  const content = responseStream.getContent().toString();
+
+  expect(content).toMatchInlineSnapshot(`
+    "{"0":[[0],[null,0,0]]}
+    [0,0,[[{"result":0}],["result",0,1]]]
+    [1,0,[[{"data":0}],["data",0,2]]]
+    [2,0,[[3]]]
+    "
+  `);
 });
 
 test('basic test', async () => {

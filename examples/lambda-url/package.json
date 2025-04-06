@@ -1,0 +1,28 @@
+{
+  "name": "examples-lambda-url",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "lint": "eslint --cache src",
+    "type-check": "tsc",
+    "start": "tsx watch src/client.ts",
+    "deploy": "serverless deploy"
+  },
+  "dependencies": {
+    "@trpc/client": "workspace:*",
+    "@trpc/server": "workspace:*",
+    "tsx": "^4.19.3",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.21.0",
+    "serverless": "^3.38.0",
+    "serverless-esbuild": "^1.55.0",
+    "typescript": "^5.8.2"
+  },
+  "version": "11.0.2"
+}

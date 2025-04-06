@@ -1,3 +1,5 @@
+import { Readable, type Writable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventV2,
@@ -39,6 +41,7 @@ interface Processor<TEvent extends LambdaEvent> {
   getHeaders: (event: TEvent) => Headers;
   getMethod: (event: TEvent) => string;
   toResult: (response: Response) => Promise<inferAPIGWReturn<TEvent>>;
+  toStream?: (response: Response, stream: Writable) => Promise<void>;
 }
 
 function getHeadersAndCookiesFromResponse(response: Response) {
@@ -169,6 +172,20 @@ const v2Processor: Processor<APIGatewayProxyEventV2> = {
 
     return result;
   },
+
+  toStream: async (response, stream) => {
+    const { headers, cookies } = getHeadersAndCookiesFromResponse(response);
+
+    const metadata = {
+      statusCode: response.status,
+      headers,
+      cookies,
+    };
+
+    const responseStream = awslambda.HttpResponseStream.from(stream, metadata);
+
+    await pipeline(Readable.fromWeb(response.body as any), responseStream);
+  },
 };
 
 export function getPlanner<TEvent extends LambdaEvent>(event: TEvent) {
@@ -206,5 +223,6 @@ export function getPlanner<TEvent extends LambdaEvent>(event: TEvent) {
     path: processor.getTRPCPath(event),
     request,
     toResult: processor.toResult,
+    toStream: processor.toStream,
   };
 }
