@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 // This is an awful script, don't judge
 import fs from 'fs';
 import type { Node, SponsorEsque } from './script.types';
@@ -184,20 +185,7 @@ async function main() {
     const rawList = parts
       .flat()
       .filter((it) => it.privacyLevel === 'PUBLIC')
-      // overrides
-      .map((sponsor) => {
-        switch (sponsor.login) {
-          case 'dakshgup':
-            return {
-              ...sponsor,
-              name: 'Greptile',
-              imgSrc: 'https://github.com/greptileai.png',
-              link: 'https://greptile.com/?utm_source=opensource&utm_medium=github&utm_campaign=trpc',
-              login: 'greptileai',
-            };
-        }
-        return sponsor;
-      });
+      .sort((a, b) => a.createdAt - b.createdAt);
 
     fs.writeFileSync(
       __dirname + '/script.output.raw.json',
@@ -216,42 +204,36 @@ async function main() {
     //   // 8 months between 1st of sept and 1st of april
     //   createdAt: Date.now() - 8 * 30 * 24 * 60 * 60 * 1000,
     // });
-    const list = rawList.map((sponsor) => {
-      // calculate total value
-      const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
-      const YEAR_MS = 12 * MONTH_MS;
+    const list = rawList
+      .map((sponsor) => {
+        // calculate total value
+        const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+        const YEAR_MS = 12 * MONTH_MS;
 
-      const yearly = yearlySponsors.includes(sponsor.login);
-      const cycles = Math.ceil(
-        (Date.now() - sponsor.createdAt) / (yearly ? YEAR_MS : MONTH_MS),
-      );
+        const yearly = yearlySponsors.includes(sponsor.login);
+        const cycles = Math.ceil(
+          (Date.now() - sponsor.createdAt) / (yearly ? YEAR_MS : MONTH_MS),
+        );
 
-      const base = yearly ? 12 : 1;
-      const githubComission = sponsor.__typename === 'Organization' ? 0.1 : 0;
-      const value =
-        base * cycles * sponsor.monthlyPriceInDollars * (1 - githubComission);
+        const base = yearly ? 12 : 1;
+        const githubComission = sponsor.__typename === 'Organization' ? 0.1 : 0;
+        let value =
+          base * cycles * sponsor.monthlyPriceInDollars * (1 - githubComission);
 
-      return {
-        ...sponsor,
-        value,
-        weight: 0,
-      };
-    });
-
-    // Group by login
-    const sponsorsByLogin: Record<string, (typeof list)[number]> = {};
-    for (const sponsor of list) {
-      const existing = sponsorsByLogin[sponsor.login];
-      if (existing) {
-        sponsorsByLogin[sponsor.login] = {
-          ...existing,
-          value: existing.value + sponsor.value,
+        // overrides
+        if (sponsor.login === 'greptileai') {
+          // sponsored from private account for 3 months
+          value += 500 * 3;
+        }
+        return {
+          ...sponsor,
+          value,
+          weight: 0,
         };
-      } else {
-        sponsorsByLogin[sponsor.login] = sponsor;
-      }
-    }
-    return Object.values(sponsorsByLogin).sort((a, b) => b.value - a.value);
+      })
+      .sort((a, b) => b.value - a.value);
+
+    return list;
   });
 
   const calculateWeight = (sponsors: typeof sortedSponsors) => {
@@ -270,7 +252,7 @@ async function main() {
         pos++;
       }
       groups[pos] ||= [];
-      groups[pos].push({ ...sponsor, weight: pos + 1 });
+      groups[pos]!.push({ ...sponsor, weight: pos + 1 });
     }
 
     return groups

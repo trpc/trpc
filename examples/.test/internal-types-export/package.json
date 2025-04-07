@@ -19,5 +19,5 @@
     "@trpc/server": "npm:@trpc/server",
     "next": "^15.1.7"
   },
-  "version": "11.0.1"
+  "version": "11.0.2"
 }
