@@ -84,7 +84,7 @@
     "@types/oauth": "^0.9.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
-    "arktype": "^2.0.1",
+    "arktype": "^2.1.9",
     "autoprefixer": "^10.4.7",
     "docusaurus-plugin-typedoc": "1.3.0",
     "dotenv": "^16.0.1",

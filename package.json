@@ -19,6 +19,7 @@
     "test-ci": "turbo codegen-tests && conc \"CI=true vitest run --coverage\" \"turbo test-run:tsc\"",
     "test-watch": "vitest",
     "ts-watch": "turbo run ts-watch",
+    "type-stats": "attest stats",
     "lint": "turbo lint",
     "lint-fix": "turbo lint --continue -- --fix && manypkg fix && pnpm format-fix",
     "format": "prettier \"**/*\" --ignore-unknown",
@@ -43,6 +44,7 @@
   "dependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
+    "@ark/attest": "^0.44.7",
     "@eslint/compat": "^1.2.2",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
     "@manypkg/cli": "^0.22.0",
