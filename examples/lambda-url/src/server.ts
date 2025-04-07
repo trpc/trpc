@@ -49,7 +49,9 @@ const appRouter = router({
 
 export type AppRouter = typeof appRouter;
 
-export const handler = awsLambdaStreamingRequestHandler({
-  router: appRouter,
-  createContext,
-});
+export const handler = awslambda.streamifyResponse(
+  awsLambdaStreamingRequestHandler({
+    router: appRouter,
+    createContext,
+  }),
+);

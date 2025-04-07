@@ -50,8 +50,8 @@ export type AWSLambdaCreateContextFn<
   context,
   info,
 }: CreateAWSLambdaContextOptions<TEvent>) =>
-  | inferRouterContext<TRouter>
-  | Promise<inferRouterContext<TRouter>>;
+    | inferRouterContext<TRouter>
+    | Promise<inferRouterContext<TRouter>>;
 
 export function awsLambdaRequestHandler<
   TRouter extends AnyRouter,
@@ -90,35 +90,33 @@ export function awsLambdaStreamingRequestHandler<
   TRouter extends AnyRouter,
   TEvent extends APIGatewayProxyEventV2,
 >(opts: AWSLambdaOptions<TRouter, TEvent>): awslambda.StreamifyHandler<TEvent> {
-  return awslambda.streamifyResponse<TEvent>(
-    async (event, responseStream, context) => {
-      const planner = getPlanner(event);
+  return async (event, responseStream, context) => {
+    const planner = getPlanner(event);
 
-      if (!planner.toStream) {
-        throw new Error('Streaming is not supported for this event version');
-      }
+    if (!planner.toStream) {
+      throw new Error('Streaming is not supported for this event version');
+    }
 
-      const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
-        innerOpts,
-      ) => {
-        return await opts.createContext?.({ event, context, ...innerOpts });
-      };
+    const createContext: ResolveHTTPRequestOptionsContextFn<TRouter> = async (
+      innerOpts,
+    ) => {
+      return await opts.createContext?.({ event, context, ...innerOpts });
+    };
 
-      const response = await resolveResponse({
-        ...opts,
-        createContext,
-        req: planner.request,
-        path: planner.path,
-        error: null,
-        onError(o) {
-          opts?.onError?.({
-            ...o,
-            req: event,
-          });
-        },
-      });
+    const response = await resolveResponse({
+      ...opts,
+      createContext,
+      req: planner.request,
+      path: planner.path,
+      error: null,
+      onError(o) {
+        opts?.onError?.({
+          ...o,
+          req: event,
+        });
+      },
+    });
 
-      await planner.toStream(response, responseStream);
-    },
-  );
+    await planner.toStream(response, responseStream);
+  };
 }

@@ -32,8 +32,8 @@ function determinePayloadFormat(event: LambdaEvent): string {
 export type inferAPIGWReturn<TEvent> = TEvent extends APIGatewayProxyEvent
   ? APIGatewayProxyResult
   : TEvent extends APIGatewayProxyEventV2
-    ? APIGatewayProxyStructuredResultV2
-    : never;
+  ? APIGatewayProxyStructuredResultV2
+  : never;
 
 interface Processor<TEvent extends LambdaEvent> {
   getTRPCPath: (event: TEvent) => string;
@@ -184,7 +184,11 @@ const v2Processor: Processor<APIGatewayProxyEventV2> = {
 
     const responseStream = awslambda.HttpResponseStream.from(stream, metadata);
 
-    await pipeline(Readable.fromWeb(response.body as any), responseStream);
+    if (response.body) {
+      await pipeline(Readable.fromWeb(response.body as any), responseStream);
+    } else {
+      responseStream.end();
+    }
   },
 };
 
