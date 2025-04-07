@@ -50,8 +50,8 @@ export type AWSLambdaCreateContextFn<
   context,
   info,
 }: CreateAWSLambdaContextOptions<TEvent>) =>
-    | inferRouterContext<TRouter>
-    | Promise<inferRouterContext<TRouter>>;
+  | inferRouterContext<TRouter>
+  | Promise<inferRouterContext<TRouter>>;
 
 export function awsLambdaRequestHandler<
   TRouter extends AnyRouter,
