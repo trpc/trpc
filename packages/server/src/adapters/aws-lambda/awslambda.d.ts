@@ -1,5 +1,5 @@
 import type { Writable } from 'node:stream';
-import type { Context, Handler } from 'aws-lambda';
+import type { Context } from 'aws-lambda';
 
 declare global {
   namespace awslambda {

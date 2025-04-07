@@ -2,7 +2,7 @@ import { initTRPC } from '@trpc/server';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { z } from 'zod';
-import { awsLambdaStreamingRequestHandler } from '../../../packages/server/src/adapters/aws-lambda/index';
+import { awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
 
 function createContext({
   event,
@@ -50,6 +50,6 @@ const appRouter = router({
 export type AppRouter = typeof appRouter;
 
 export const handler = awsLambdaStreamingRequestHandler({
-  router: appRouter as any, // TODO should be fixed if we import awsLambdaStreamingRequestHandler from @trpc/server/adapters/aws-lambda
+  router: appRouter,
   createContext,
 });
