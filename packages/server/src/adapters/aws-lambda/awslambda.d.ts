@@ -3,25 +3,22 @@ import type { Context } from 'aws-lambda';
 
 declare global {
   namespace awslambda {
-    export namespace HttpResponseStream {
-      function from(
+    class HttpResponseStream extends Writable {
+      static from(
         writable: Writable,
         metadata: Record<string, unknown>,
-      ): Writable;
-    }
-
-    export class ResponseStream extends Writable {
+      ): HttpResponseStream;
       setContentType: (contentType: string) => void;
     }
 
-    export type StreamifyHandler<TEvent = unknown> = (
+    type StreamifyHandler<TEvent = any, TResult = any> = (
       event: TEvent,
-      responseStream: ResponseStream,
+      responseStream: awslambda.HttpResponseStream,
       context: Context,
-    ) => Promise<void>;
+    ) => TResult | Promise<TResult>;
 
-    export function streamifyResponse<TEvent = unknown>(
-      handler: StreamifyHandler<TEvent>,
-    ): StreamifyHandler<TEvent>;
+    function streamifyResponse<TEvent = any, TResult = void>(
+      handler: StreamifyHandler<TEvent, TResult>,
+    ): StreamifyHandler<TEvent, TResult>;
   }
 }
