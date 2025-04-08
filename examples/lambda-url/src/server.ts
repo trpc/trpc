@@ -1,8 +1,8 @@
+import { Writable } from 'node:stream';
 import { initTRPC } from '@trpc/server';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import { awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
-import { Writable } from 'node:stream';
 import { z } from 'zod';
 
 declare global {

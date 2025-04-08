@@ -55,8 +55,8 @@ function determinePayloadFormat(event: LambdaEvent): string {
 export type inferAPIGWReturn<TEvent> = TEvent extends APIGatewayProxyEvent
   ? APIGatewayProxyResult
   : TEvent extends APIGatewayProxyEventV2
-  ? APIGatewayProxyStructuredResultV2
-  : never;
+    ? APIGatewayProxyStructuredResultV2
+    : never;
 
 interface Processor<TEvent extends LambdaEvent> {
   getTRPCPath: (event: TEvent) => string;
