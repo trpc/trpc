@@ -11,8 +11,7 @@ const client = createTRPCClient<AppRouter>({
       enabled: (opts) => opts.direction === 'down',
     }),
     httpBatchStreamLink({
-      // TODO: only for demonstration purposes, remove URL before merging
-      url: 'https://d3oqthkoqpaw2gp7naefwcuelq0wytmd.lambda-url.us-east-1.on.aws/',
+      url: 'YOUR_LAMBDA_URL', // Insert your Lambda URL after deploying the serverless app
     }),
   ],
 });

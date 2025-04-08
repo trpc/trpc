@@ -2,7 +2,30 @@ import { initTRPC } from '@trpc/server';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import { awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
+import { Writable } from 'node:stream';
 import { z } from 'zod';
+
+declare global {
+  namespace awslambda {
+    class HttpResponseStream extends Writable {
+      static from(
+        writable: Writable,
+        metadata: Record<string, unknown>,
+      ): HttpResponseStream;
+      setContentType: (contentType: string) => void;
+    }
+
+    type StreamifyHandler<TEvent = any, TResult = any> = (
+      event: TEvent,
+      responseStream: awslambda.HttpResponseStream,
+      context: Context,
+    ) => TResult | Promise<TResult>;
+
+    function streamifyResponse<TEvent = any, TResult = void>(
+      handler: StreamifyHandler<TEvent, TResult>,
+    ): StreamifyHandler<TEvent, TResult>;
+  }
+}
 
 function createContext({
   event,
