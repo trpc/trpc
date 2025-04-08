@@ -114,7 +114,7 @@ function createContext({
 
 ## AWS Lambda Response Streaming Adapter
 
-AWS Lambda supports streaming responses to clients. 
+AWS Lambda supports streaming responses to clients.
 
 > Response streaming is only supported for Lambda Function URLs. You can not use API Gateway to stream responses. [Read more here about response streaming](https://aws.amazon.com/blogs/compute/introducing-aws-lambda-response-streaming/).
 
@@ -141,7 +141,7 @@ AWS Lambda supports streaming responses to clients.
 
 ### Response Streaming
 
-The signature of a streaming handler is different from the default handler. The streaming handler additonally receives a writable stream parameter, `responseStream`, besides the default node handler parameters, `event` and `context`. To indicate that Lambda should stream your responses, you must wrap your function handler with the `awslambda.streamifyResponse()` decorator. 
+The signature of a streaming handler is different from the default handler. The streaming handler additonally receives a writable stream parameter, `responseStream`, besides the default node handler parameters, `event` and `context`. To indicate that Lambda should stream your responses, you must wrap your function handler with the `awslambda.streamifyResponse()` decorator.
 
 > Note that the `awslambda` namespace is automatically provided by the Lambda execution environment. You can import the types from `@types/aws-lambda` to augment the global namespace with the `awslambda` namespace.
 
@@ -161,7 +161,7 @@ const appRouter = router({
 export const handler = awslambda.streamifyResponse(
   awsLambdaStreamingRequestHandler({
     router: appRouter,
-  /* ... */
-  })
+    /* ... */
+  }),
 );
 ```
