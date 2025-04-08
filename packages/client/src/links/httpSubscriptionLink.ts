@@ -253,3 +253,8 @@ export function httpSubscriptionLink<
     };
   };
 }
+
+/**
+ * @deprecated use {@link httpSubscriptionLink} instead
+ */
+export const unstable_httpSubscriptionLink = httpSubscriptionLink;
