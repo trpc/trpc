@@ -14,8 +14,8 @@
     "@fastify/websocket": "^10.0.1",
     "@js-temporal/polyfill": "^0.4.4",
     "@miniflare/core": "^2.9.0",
-    "@trpc/client": "11.0.2",
-    "@trpc/server": "11.0.2",
+    "@trpc/client": "11.0.3",
+    "@trpc/server": "11.0.3",
     "@types/node": "^22.13.5",
     "abort-controller": "^3.0.0",
     "arktype": "^2.0.1",
@@ -43,5 +43,5 @@
     "yup": "^1.0.0",
     "zod-form-data": "^2.0.1"
   },
-  "version": "11.0.2"
+  "version": "11.0.3"
 }
