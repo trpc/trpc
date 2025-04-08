@@ -21,8 +21,8 @@
     "@trpc/client": "npm:@trpc/client",
     "@trpc/server": "npm:@trpc/server",
     "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "superjson": "^1.12.4",
     "tailwind-merge": "^2.0.0",
     "vinxi": "0.5.3",
@@ -32,8 +32,8 @@
     "@eslint/js": "^8.57.0",
     "@playwright/test": "^1.50.1",
     "@types/node": "^22.13.5",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint": "^9.21.0",
     "eslint-plugin-react": "^7.37.2",
@@ -45,5 +45,5 @@
     "vite": "^6.1.1",
     "vite-tsconfig-paths": "^4.3.2"
   },
-  "version": "11.0.1"
+  "version": "11.0.2"
 }
