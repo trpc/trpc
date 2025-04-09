@@ -45,15 +45,16 @@ export const client = createTRPCClient<AppRouter>({
   links: [
     httpLink({
       url: 'http://localhost:3000',
-      transformer: superjson
+      transformer: superjson,
     }),
   ],
 });
 ```
 
-
 ## Using [devalue](https://github.com/richharris/devalue)
+
 Devalue works like superjson, but focus in performance and compact payloads, but at the cost of a less human readable body.
+
 ### How to
 
 #### 1. Install
@@ -63,10 +64,12 @@ yarn add superjson devalue
 ```
 
 #### 2. Add to `utils/trpc.ts`
+
 Here we use `parse` and `stringify` as they [mitigate XSS](https://github.com/Rich-Harris/devalue?tab=readme-ov-file#xss-mitigation).
 
 ```ts title='utils/trpc.ts'
 import { parse, stringify } from 'devalue';
+
 // [...]
 
 export const transformer = {
