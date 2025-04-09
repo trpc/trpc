@@ -10,6 +10,8 @@ import type {
 import { splitSetCookieString } from '../../vendor/cookie-es/set-cookie/split';
 
 declare global {
+  // Module augmentation will be removed once the @types/aws-lambda package is updated.
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace awslambda {
     class HttpResponseStream extends Writable {
       static from(
@@ -55,8 +57,8 @@ function determinePayloadFormat(event: LambdaEvent): string {
 export type inferAPIGWReturn<TEvent> = TEvent extends APIGatewayProxyEvent
   ? APIGatewayProxyResult
   : TEvent extends APIGatewayProxyEventV2
-    ? APIGatewayProxyStructuredResultV2
-    : never;
+  ? APIGatewayProxyStructuredResultV2
+  : never;
 
 interface Processor<TEvent extends LambdaEvent> {
   getTRPCPath: (event: TEvent) => string;
