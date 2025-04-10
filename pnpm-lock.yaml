@@ -770,6 +770,9 @@ importers:
         specifier: ^3.24.2
         version: 3.24.2
     devDependencies:
+      '@types/aws-lambda':
+        specifier: ^8.10.149
+        version: 8.10.149
       '@types/node':
         specifier: 20.17.30
         version: 20.17.30
@@ -1992,8 +1995,8 @@ importers:
         specifier: ^5.67.1
         version: 5.67.1(react@19.1.0)
       '@types/aws-lambda':
-        specifier: ^8.10.137
-        version: 8.10.145
+        specifier: ^8.10.149
+        version: 8.10.149
       '@types/express':
         specifier: ^5.0.0
         version: 5.0.0
@@ -8761,8 +8764,8 @@ packages:
   '@types/aria-query@5.0.1':
     resolution: {integrity: sha512-XTIieEY+gvJ39ChLcB4If5zHtPxt3Syj5rgZR+e1ctpmK8NjPf0zFqsz4JpLJT0xla9GFDKjy8Cpu331nrmE1Q==}
 
-  '@types/aws-lambda@8.10.145':
-    resolution: {integrity: sha512-dtByW6WiFk5W5Jfgz1VM+YPA21xMXTuSFoLYIDY0L44jDLLflVPtZkYuu3/YxpGcvjzKFBZLU+GyKjR0HOYtyw==}
+  '@types/aws-lambda@8.10.149':
+    resolution: {integrity: sha512-NXSZIhfJjnXqJgtS7IwutqIF/SOy1Wz5Px4gUY1RWITp3AYTyuJS4xaXr/bIJY1v15XMzrJ5soGnPM+7uigZjA==}
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -28750,7 +28753,7 @@ snapshots:
 
   '@types/aria-query@5.0.1': {}
 
-  '@types/aws-lambda@8.10.145': {}
+  '@types/aws-lambda@8.10.149': {}
 
   '@types/babel__core@7.20.5':
     dependencies:

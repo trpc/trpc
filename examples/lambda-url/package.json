@@ -17,6 +17,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.149",
     "@types/node": "^22.13.5",
     "esbuild": "^0.17.10",
     "eslint": "^9.21.0",
