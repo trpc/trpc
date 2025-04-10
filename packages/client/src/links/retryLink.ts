@@ -12,6 +12,10 @@ interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
    * The retry function
    */
   retry: (opts: RetryFnOptions<TInferrable>) => boolean;
+  /**
+   * The delay between retries in ms (defaults to 0)
+   */
+  retryDelay?: (attempt: number) => number;
 }
 
 interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
@@ -70,7 +74,14 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
                 error,
               });
               if (shouldRetry) {
-                attempt(attempts + 1);
+                const delay = opts.retryDelay?.(attempts) ?? 0;
+                if (delay) {
+                  setTimeout(() => {
+                    attempt(attempts + 1);
+                  }, delay);
+                } else {
+                  attempt(attempts + 1);
+                }
               } else {
                 observer.error(error);
               }
