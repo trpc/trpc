@@ -119,7 +119,7 @@
   "devDependencies": {
     "@fastify/websocket": "^10.0.1",
     "@tanstack/react-query": "^5.67.1",
-    "@types/aws-lambda": "^8.10.137",
+    "@types/aws-lambda": "^8.10.149",
     "@types/express": "^5.0.0",
     "@types/hash-sum": "^1.0.0",
     "@types/node": "^22.13.5",
