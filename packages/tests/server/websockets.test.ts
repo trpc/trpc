@@ -950,11 +950,13 @@ describe('regression test - slow createContext', () => {
       expect(typeof res.error.data.stack).toBe('string');
       res.error.data.stack = '[redacted]';
     }
-    expect(responses).toHaveLength(2);
-    const [first, second] = responses;
+    // the context resolution have failed, therefore a single error is returned
+    // the client is automatically disconnected, so there is no need to send
+    // an error message per each pending request
+    expect(responses).toHaveLength(1);
+    const [first] = responses;
 
     expect(first.id).toBe(null);
-    expect(second.id).toBe(1);
 
     expect(responses).toMatchInlineSnapshot(`
       Array [
@@ -969,19 +971,6 @@ describe('regression test - slow createContext', () => {
             "message": "test",
           },
           "id": null,
-        },
-        Object {
-          "error": Object {
-            "code": -32001,
-            "data": Object {
-              "code": "UNAUTHORIZED",
-              "httpStatus": 401,
-              "path": "greeting",
-              "stack": "[redacted]",
-            },
-            "message": "test",
-          },
-          "id": 1,
         },
       ]
     `);
