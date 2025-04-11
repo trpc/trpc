@@ -90,7 +90,7 @@ export type inferProcedureOutput<TProcedure> =
 export interface ErrorHandlerOptions<TContext> {
   error: TRPCError;
   type: ProcedureType | 'unknown';
-  path: string | undefined;
+  path?: string | undefined;
   input: unknown;
   ctx: TContext | undefined;
 }
