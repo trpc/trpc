@@ -745,9 +745,8 @@ test('recipe: get json schemas for procedure', async () => {
     ]
   `);
 
-  expect(
-    await client.getJsonSchemas.query({ path: 'list' }),
-  ).toMatchInlineSnapshot(`
+  expect(await client.getJsonSchemas.query({ path: 'list' }))
+    .toMatchInlineSnapshot(`
     Array [
       Object {
         "properties": Object {
