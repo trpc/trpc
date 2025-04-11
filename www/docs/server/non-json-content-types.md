@@ -77,6 +77,8 @@ export const appRouter = t.router({
 });
 ```
 
+For a more advanced code sample you can see our [example project here](https://github.com/juliusmarminge/trpc-interop/blob/66aa760141030ffc421cae1a3bda9b5f1ab340b6/src/server.ts#L28-L43)
+
 ## `File` and other Binary Type Inputs
 
 tRPC converts many octet content types to a `ReadableStream` which can be consumed in a procedure. Currently these are `Blob` `Uint8Array` and `File`.
