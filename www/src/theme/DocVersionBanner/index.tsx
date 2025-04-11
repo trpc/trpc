@@ -71,7 +71,7 @@ export default function DocVersionBannerWrapper(
 
   switch (versions.currentVersion.label) {
     case '11.x': {
-      return null
+      return null;
     }
     case '10.x':
     case '9.x':
