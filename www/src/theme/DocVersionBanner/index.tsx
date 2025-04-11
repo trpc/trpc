@@ -1,9 +1,7 @@
-import Link from '@docusaurus/Link';
+import type Link from '@docusaurus/Link';
 import { useLocation } from '@docusaurus/router';
-import { ThemeClassNames } from '@docusaurus/theme-common';
 import useGlobalData from '@docusaurus/useGlobalData';
 import DocVersionBanner from '@theme-original/DocVersionBanner';
-import clsx from 'clsx';
 import React from 'react';
 
 type VersionLabel = '11.x' | '9.x' | '10.x';
@@ -69,45 +67,12 @@ function useTypedVersion() {
 export default function DocVersionBannerWrapper(
   props: React.ComponentProps<typeof DocVersionBanner>,
 ) {
-  const location = useLocation();
-
   const versions = useTypedVersion();
 
   switch (versions.currentVersion.label) {
     case '11.x': {
-      const href = location.pathname.replace('/docs', '/docs/v10');
-      const v10Doc = versions.byLabel['10.x'].docs.find((x) => x.path === href);
-
-      if (location.pathname.startsWith('/docs/migrate-from')) {
-        // skip blob on migration page
-        return null;
-      }
-      return (
-        <div
-          className={clsx(
-            ThemeClassNames.docs.docVersionBanner,
-            'alert alert--info margin-bottom--md space-y-2',
-          )}
-          role="alert"
-        >
-          <p>
-            You are looking at tRPC version <strong>11</strong>.
-          </p>
-          <ul className="list-inside list-disc">
-            <li>
-              To go to the v10 documentation
-              {Boolean(v10Doc) && ' of this document'},{' '}
-              <Link href={v10Doc ? v10Doc.path : '/docs/v10'}>click here</Link>.
-            </li>
-            <li>
-              To see the list of changes for v11,{' '}
-              <Link href="/docs/migrate-from-v10-to-v11">click here</Link>.
-            </li>
-          </ul>
-        </div>
-      );
+      return null
     }
-
     case '10.x':
     case '9.x':
     default: {
