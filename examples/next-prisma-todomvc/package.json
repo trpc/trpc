@@ -50,5 +50,5 @@
   "publishConfig": {
     "access": "restricted"
   },
-  "version": "11.0.4"
+  "version": "11.1.0"
 }
