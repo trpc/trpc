@@ -7,6 +7,7 @@ export function fakeTimersResource() {
     {
       advanceTimersByTimeAsync: vi.advanceTimersByTimeAsync,
       runAllTimersAsync: vi.runAllTimersAsync,
+      runAllTimers: vi.runAllTimers,
     },
     () => {
       vi.useRealTimers();
