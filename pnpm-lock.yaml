@@ -153,8 +153,8 @@ importers:
         specifier: ^2.14.1
         version: 2.14.2(vitest@3.0.6)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
 
   examples/.experimental/next-app-dir:
     dependencies:
@@ -222,8 +222,8 @@ importers:
         specifier: ^5.8.2
         version: 5.8.2
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -262,8 +262,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -330,8 +330,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../../packages/server
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@monotest/tsconfig':
         specifier: workspace:*
@@ -346,8 +346,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../../packages/server
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@monotest/tsconfig':
         specifier: workspace:*
@@ -429,8 +429,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -481,8 +481,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -540,8 +540,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../packages/server
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.0.0
@@ -580,8 +580,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.1
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/express':
         specifier: ^5.0.0
@@ -629,8 +629,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.1
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/express':
         specifier: ^5.0.0
@@ -687,8 +687,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -730,8 +730,8 @@ importers:
         specifier: ^4.19.3
         version: 4.19.3
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -764,8 +764,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../packages/server
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -798,8 +798,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -884,8 +884,8 @@ importers:
         specifier: ^2.8.5
         version: 2.8.5
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/cors':
         specifier: ^2.8.13
@@ -967,8 +967,8 @@ importers:
         specifier: ^2.8.5
         version: 2.8.5
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/cors':
         specifier: ^2.8.13
@@ -1013,8 +1013,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -1062,8 +1062,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -1117,11 +1117,11 @@ importers:
         specifier: ^7.53.2
         version: 7.53.2(react@19.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
       zod-form-data:
         specifier: ^2.0.1
-        version: 2.0.1(zod@3.24.2)
+        version: 2.0.1(zod@4.0.0-beta.20250411T005215)
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -1169,8 +1169,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -1224,8 +1224,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -1330,8 +1330,8 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -1406,8 +1406,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -1524,8 +1524,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -1622,8 +1622,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -1698,8 +1698,8 @@ importers:
         specifier: 0.5.3
         version: 0.5.3(@types/node@20.17.30)(db0@0.2.4(drizzle-orm@0.31.2(@cloudflare/workers-types@4.20230215.0)(@types/better-sqlite3@7.6.2)(@types/react@19.1.0)(bun-types@1.1.32)(postgres@3.4.4)(react@19.1.0)))(drizzle-orm@0.31.2(@cloudflare/workers-types@4.20230215.0)(@types/better-sqlite3@7.6.2)(@types/react@19.1.0)(bun-types@1.1.32)(postgres@3.4.4)(react@19.1.0))(encoding@0.1.13)(ioredis@5.4.1)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(typescript@5.8.2)(webpack-sources@3.2.3)(yaml@2.7.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@eslint/js':
         specifier: ^8.57.0
@@ -1756,8 +1756,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../packages/server
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@edge-runtime/types':
         specifier: ^2.0.2
@@ -1874,8 +1874,8 @@ importers:
         specifier: ^5.8.2
         version: 5.8.2
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
 
   packages/react-query:
     devDependencies:
@@ -1943,11 +1943,11 @@ importers:
         specifier: ^5.8.2
         version: 5.8.2
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
       zod-form-data:
         specifier: ^2.0.1
-        version: 2.0.1(zod@3.24.2)
+        version: 2.0.1(zod@4.0.0-beta.20250411T005215)
 
   packages/server:
     devDependencies:
@@ -2033,8 +2033,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
 
   packages/tanstack-react-query:
     devDependencies:
@@ -2084,8 +2084,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
 
   packages/tests:
     dependencies:
@@ -2187,7 +2187,7 @@ importers:
         version: 1.0.0
       zod-form-data:
         specifier: ^2.0.1
-        version: 2.0.1(zod@3.24.2)
+        version: 2.0.1(zod@4.0.0-beta.20250411T005215)
 
   packages/upgrade:
     dependencies:
@@ -2235,8 +2235,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
 
   www:
     dependencies:
@@ -2358,8 +2358,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@babel/core':
         specifier: ^7.23.2
@@ -2470,8 +2470,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.2
-        version: 3.24.2
+        specifier: next
+        version: 4.0.0-beta.20250411T005215
     devDependencies:
       '@types/node':
         specifier: 20.17.30
@@ -8991,6 +8991,9 @@ packages:
   '@zkochan/js-yaml@0.0.6':
     resolution: {integrity: sha512-nzvgl3VfhcELQ8LyVrYOru+UtAy1nrygk2+AGbTm8a5YcO6o8lSjAT+pfg3vJWxIoZKOUhrK6UU7xW/+00kQrg==}
     hasBin: true
+
+  '@zod/core@0.3.3':
+    resolution: {integrity: sha512-zXp0/K9zynk8ZP5hdUN2i0xePJ6uULX5rvBC/54bWNF4FL9YHxTjQg/zPFNj+WE8g0QTKX+fty7n073bgp6wNw==}
 
   JSONStream@1.3.5:
     resolution: {integrity: sha512-E+iruNOY8VV9s4JEbe1aNEm6MiszPRr/UfcHMz0TQh1BXSxHK+ASV1R6W4HpjBhSeS+54PIsAMCBmwD06LLsqQ==}
@@ -19065,6 +19068,9 @@ packages:
   zod@3.24.2:
     resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
 
+  zod@4.0.0-beta.20250411T005215:
+    resolution: {integrity: sha512-FgvuS7Gb0kzI9Rsd1ihOulGSFT9LVj0JdejbkvjXIski9F/DheDIBV9uZkbAIiS6bOsthAMWHFtSsM1o+hmhig==}
+
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
 
@@ -28102,6 +28108,8 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
+  '@zod/core@0.3.3': {}
+
   JSONStream@1.3.5:
     dependencies:
       jsonparse: 1.3.1
@@ -30950,8 +30958,8 @@ snapshots:
       '@typescript-eslint/parser': 8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2)
       eslint: 9.21.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0)(eslint@9.21.0(jiti@2.4.2))
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.21.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.21.0(jiti@2.4.2))
       eslint-plugin-react: 7.37.2(eslint@9.21.0(jiti@2.4.2))
       eslint-plugin-react-hooks: 5.1.0(eslint@9.21.0(jiti@2.4.2))
@@ -30973,12 +30981,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0)(eslint@9.21.0(jiti@2.4.2)):
+  eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)):
     dependencies:
       debug: 4.4.0(supports-color@9.4.0)
       enhanced-resolve: 5.17.1
       eslint: 9.21.0(jiti@2.4.2)
-      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.21.0(jiti@2.4.2))
+      eslint-plugin-import: 2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2))
       get-tsconfig: 4.8.1
       globby: 13.1.3
       is-core-module: 2.15.1
@@ -30987,18 +30995,18 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2)(eslint@9.21.0(jiti@2.4.2)):
+  eslint-module-utils@2.12.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2)
       eslint: 9.21.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0)(eslint@9.21.0(jiti@2.4.2))
+      eslint-import-resolver-typescript: 3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-typescript@3.5.2)(eslint@9.21.0(jiti@2.4.2)):
+  eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.8
@@ -31009,7 +31017,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.21.0(jiti@2.4.2)
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2)(eslint@9.21.0(jiti@2.4.2))
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.5.2(eslint-plugin-import@2.31.0(@typescript-eslint/parser@8.24.1(eslint@9.21.0(jiti@2.4.2))(typescript@5.8.2))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2)))(eslint@9.21.0(jiti@2.4.2))
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3
@@ -32370,7 +32378,7 @@ snapshots:
 
   history@4.10.1:
     dependencies:
-      '@babel/runtime': 7.26.0
+      '@babel/runtime': 7.27.0
       loose-envify: 1.4.0
       resolve-pathname: 3.0.0
       tiny-invariant: 1.3.3
@@ -40596,10 +40604,14 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.3.0
 
-  zod-form-data@2.0.1(zod@3.24.2):
+  zod-form-data@2.0.1(zod@4.0.0-beta.20250411T005215):
     dependencies:
-      zod: 3.24.2
+      zod: 4.0.0-beta.20250411T005215
 
   zod@3.24.2: {}
+
+  zod@4.0.0-beta.20250411T005215:
+    dependencies:
+      '@zod/core': 0.3.3
 
   zwitch@2.0.4: {}

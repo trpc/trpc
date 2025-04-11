@@ -1,7 +1,10 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
+import type { AnyRouter } from '@trpc/server';
 import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
+import { getProcedureAtPath } from '@trpc/server/unstable-core-do-not-import';
 import * as arktype from 'arktype';
 import { Schema } from 'effect';
 import myzod from 'myzod';
@@ -11,7 +14,9 @@ import * as st from 'superstruct';
 import * as v0 from 'valibot0';
 import * as v1 from 'valibot1';
 import * as yup from 'yup';
+import type { ZodType } from 'zod';
 import { z } from 'zod';
+import type { AnyProcedure } from './../../server/src/unstable-core-do-not-import/procedure';
 
 test('no validator', async () => {
   const t = initTRPC.create();
@@ -659,6 +664,121 @@ test('recipe: summon context in input parser', async () => {
   `);
 
   await ctx.close();
+});
+
+test('recipe: get json schemas for procedure', async () => {
+  const t = initTRPC.create();
+  const publicProcedure = t.procedure;
+
+  function getRouter() {
+    return appRouter as AnyRouter; // Needs to be type-casted to AnyRouter to avoid circular references
+  }
+
+  const appRouter = t.router({
+    single: publicProcedure
+      .input(
+        z.object({
+          foo: z.string(),
+        }),
+      )
+      .query((opts) => {
+        return opts.input;
+        //           ^?
+      }),
+    list: publicProcedure
+      .input(
+        z.object({
+          foo: z.array(z.string()),
+        }),
+      )
+      .input(
+        z.object({
+          bar: z.array(z.string()),
+        }),
+      )
+      .query((opts) => {
+        return opts.input;
+        //           ^?
+      }),
+
+    getJsonSchemas: publicProcedure
+      .input(
+        z.object({
+          path: z.string(),
+        }),
+      )
+      .query(async (opts) => {
+        const proc = await getProcedureAtPath(
+          // Needs to be type-casted to AnyRouter to avoid circular references
+          appRouter as AnyRouter,
+          opts.input.path,
+        );
+
+        expectTypeOf(proc).toMatchTypeOf<AnyProcedure | null>();
+
+        if (!proc) {
+          return null;
+        }
+
+        return proc._def.inputs.map((input) => z.toJSONSchema(input as any));
+      }),
+  });
+
+  await using ctx = testServerAndClientResource(appRouter);
+
+  const client = ctx.client;
+
+  expect(await client.getJsonSchemas.query({ path: 'single' }))
+    .toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "properties": Object {
+          "foo": Object {
+            "type": "string",
+          },
+        },
+        "required": Array [
+          "foo",
+        ],
+        "type": "object",
+      },
+    ]
+  `);
+
+  expect(
+    await client.getJsonSchemas.query({ path: 'list' }),
+  ).toMatchInlineSnapshot(`
+    Array [
+      Object {
+        "properties": Object {
+          "foo": Object {
+            "items": Object {
+              "type": "string",
+            },
+            "type": "array",
+          },
+        },
+        "required": Array [
+          "foo",
+        ],
+        "type": "object",
+      },
+      Object {
+        "properties": Object {
+          "bar": Object {
+            "items": Object {
+              "type": "string",
+            },
+            "type": "array",
+          },
+        },
+        "required": Array [
+          "bar",
+        ],
+        "type": "object",
+      },
+    ]
+  `);
 });
 
 // regerssion: TInputIn / TInputOut

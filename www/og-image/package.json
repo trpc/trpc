@@ -11,7 +11,7 @@
     "next": "^15.1.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.24.2"
+    "zod": "next"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",

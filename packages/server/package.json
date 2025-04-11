@@ -144,7 +144,7 @@
     "valibot": "1.0.0",
     "ws": "^8.0.0",
     "yup": "^1.0.0",
-    "zod": "^3.24.2"
+    "zod": "next"
   },
   "funding": [
     "https://trpc.io/sponsor"
