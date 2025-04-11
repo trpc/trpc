@@ -61,7 +61,6 @@ FormData is natively supported, and for more advanced usage you could also combi
 import { initTRPC } from '@trpc/server';
 // ---cut---
 
-// Our examples use Zod by default, but usage with other libraries is identical
 import { z } from 'zod';
 
 export const t = initTRPC.create();
