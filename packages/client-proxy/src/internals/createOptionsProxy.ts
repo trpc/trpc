@@ -115,11 +115,11 @@ export interface TRPCClientProxyOptionsExternal<TRouter extends AnyTRPCRouter> {
 }
 
 export type TRPCClientProxyMethods = {
-  queries?: Record<string, MethodDef<any>>;
-  mutations?: Record<string, MethodDef<any>>;
-  paths?: Record<string, MethodDef<any>>;
-  subscriptions?: Record<string, MethodDef<any>>;
-  'infinite-queries'?: Record<string, MethodDef<any>>;
+  queries?: Record<string, MethodDef<ResolverDef>>;
+  mutations?: Record<string, MethodDef<ResolverDef>>;
+  paths?: Record<string, MethodDef<ResolverDef>>;
+  subscriptions?: Record<string, MethodDef<ResolverDef>>;
+  'infinite-queries'?: Record<string, MethodDef<ResolverDef>>;
 };
 
 export type TRPCClientProxyOuter<TRouter extends AnyTRPCRouter> =
@@ -207,8 +207,8 @@ export function createTRPCClientProxy<TRouter extends AnyTRPCRouter>(
       return contextMap[utilName]!({
         path,
 
-        // TODO: sort calling out
-        call(input) {
+        // TODO: sort calling out and send inputs etc
+        call(_input) {
           return callIt(typeMap[utilName] as TRPCProcedureType);
         },
 

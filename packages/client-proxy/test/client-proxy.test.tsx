@@ -62,6 +62,11 @@ describe('client-proxy factory', () => {
       router: appRouter,
       ctx: () => ({}),
     })({
+      paths: {
+        path(opts) {
+          return () => opts.path;
+        },
+      },
       queries: {
         query(opts) {
           // opts.path
@@ -80,6 +85,8 @@ describe('client-proxy factory', () => {
       },
     });
 
+    proxy.post.path();
+    //          ^?
     proxy.post.byId.query();
     //              ^?
     proxy.post.create.mutate();
