@@ -1,21 +1,20 @@
 import express from 'express';
 import { fruits } from '../models/fruit.js';
-import {  Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 const router = express.Router();
 
-// 全てのフルーツを取得
 router.get('/', (req, res) => {
   res.json(fruits);
 });
 
-// 特定のフルーツをIDで取得
+// Retrieve specific fruit by ID 
 router.get('/:id', (req: Request, res: Response) => {
   const fruitId = parseInt(req.params.id);
   const fruit = fruits.find(f => f.id === fruitId);
   
   if (!fruit) {
-    return res.status(404).json({ message: '指定されたフルーツが見つかりません' });
+    return res.status(404).json({ message: 'Specified fruit not found' });
   }
   
   res.json(fruit);

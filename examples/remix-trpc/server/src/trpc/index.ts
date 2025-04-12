@@ -1,11 +1,10 @@
-// server/src/trpc/index.ts
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { fruits } from '../models/fruit.js';
 import superjson from "superjson";
 
 const t = initTRPC.create({
-    transformer: superjson, // ✅ superjsonを有効にする
+    transformer: superjson,
   });
   
 export const appRouter = t.router({

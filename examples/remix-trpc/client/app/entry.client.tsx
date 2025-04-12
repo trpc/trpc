@@ -5,14 +5,14 @@ import { hydrateRoot } from "react-dom/client";
 import { trpc } from "./lib/trpc";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
-import superjson from "superjson"; // ← 追加
+import superjson from "superjson"; 
 
 const queryClient = new QueryClient();
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
       url: "http://localhost:3001/trpc",
-      transformer: superjson, // ← これを追加！
+      transformer: superjson,
     }),
   ],
 });
