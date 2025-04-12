@@ -24,7 +24,7 @@ trpc.createClient({
       url: 'http://localhost:2022',
     }),
   ],
-})
+});
 ```
 
 However, not all links support these new content types, if you're using `httpBatchLink` or `httpBatchStreamLink` you will need to include a splitLink and check which link to use depending on the content
@@ -47,9 +47,9 @@ trpc.createClient({
       false: httpBatchLink({
         url,
       }),
-    })
+    }),
   ],
-})
+});
 ```
 
 ## `FormData` Input
