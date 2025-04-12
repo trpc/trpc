@@ -44,7 +44,28 @@ remix-trpc/
    ```bash
    pnpm dev
    ```
-4. Open your browser at `http://localhost:3000`
+4. Open your browser at `http://localhost:5173/`
+
+## Screenshots
+
+### 📦 UI Demo
+
+![UI Demo1](./assets/demo1.png)
+
+![UI Demo2](./assets/demo2.png)
+
+
+### ✅ Type Safety Example (tRPC)
+
+Client-side type error when using wrong type:
+
+![Type Safety](./assets/code1.png)
+
+Type completion powered by server definition:
+
+![Type Safety](./assets/code2.png)
+
+
 
 ## Key Implementation Details
 
