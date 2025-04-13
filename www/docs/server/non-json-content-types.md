@@ -9,7 +9,7 @@ In addition to JSON-serializable data, tRPC can use FormData, File, and other Bi
 
 ## Client Setup
 
-:::warning
+:::info
 While tRPC natively supports several non-json serializable types, your client may need a little link configuration to support them depending on your setup.
 :::
 
