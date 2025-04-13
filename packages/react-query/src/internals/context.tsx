@@ -251,9 +251,6 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   invalidateQueries: (
     queryKey: TRPCQueryKey,
     filters?: InvalidateQueryFilters<
-      unknown,
-      TRPCClientError<TRouter>,
-      unknown,
       TRPCQueryKey
     >,
     options?: InvalidateOptions,
@@ -265,9 +262,6 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   resetQueries: (
     queryKey: TRPCQueryKey,
     filters?: QueryFilters<
-      unknown,
-      TRPCClientError<TRouter>,
-      unknown,
       TRPCQueryKey
     >,
     options?: ResetOptions,
@@ -279,9 +273,6 @@ export interface TRPCQueryUtils<TRouter extends AnyRouter> {
   refetchQueries: (
     queryKey: TRPCQueryKey,
     filters?: RefetchQueryFilters<
-      unknown,
-      TRPCClientError<TRouter>,
-      unknown,
       TRPCQueryKey
     >,
     options?: RefetchOptions,

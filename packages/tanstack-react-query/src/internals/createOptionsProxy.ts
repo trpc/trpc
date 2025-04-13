@@ -61,9 +61,9 @@ export interface DecorateRouterKeyable {
    * @see https://trpc.io/docs/client/tanstack-react-query/usage#queryFilter
    */
   pathFilter: (
-    filters?: QueryFilters<unknown, unknown, unknown, TRPCQueryKey>,
+    filters?: QueryFilters<TRPCQueryKey>,
   ) => WithRequired<
-    QueryFilters<unknown, unknown, unknown, TRPCQueryKey>,
+    QueryFilters<TRPCQueryKey>,
     'queryKey'
   >;
 }
@@ -127,12 +127,6 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
   infiniteQueryFilter: (
     input?: Partial<TDef['input']>,
     filters?: QueryFilters<
-      TRPCInfiniteData<TDef['input'], TDef['output']>,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>,
-      TRPCInfiniteData<TDef['input'], TDef['output']>,
       DataTag<
         TRPCQueryKey,
         TRPCInfiniteData<TDef['input'], TDef['output']>,
@@ -144,12 +138,6 @@ export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
     >,
   ) => WithRequired<
     QueryFilters<
-      TRPCInfiniteData<TDef['input'], TDef['output']>,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>,
-      TRPCInfiniteData<TDef['input'], TDef['output']>,
       DataTag<
         TRPCQueryKey,
         TRPCInfiniteData<TDef['input'], TDef['output']>,
@@ -197,12 +185,6 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
   queryFilter: (
     input?: Partial<TDef['input']>,
     filters?: QueryFilters<
-      TDef['output'],
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>,
-      TDef['output'],
       DataTag<
         TRPCQueryKey,
         TDef['output'],
@@ -214,12 +196,6 @@ export interface DecorateQueryProcedure<TDef extends ResolverDef>
     >,
   ) => WithRequired<
     QueryFilters<
-      TDef['output'],
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>,
-      TDef['output'],
       DataTag<
         TRPCQueryKey,
         TDef['output'],
