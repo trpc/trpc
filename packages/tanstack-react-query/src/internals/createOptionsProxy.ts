@@ -62,10 +62,7 @@ export interface DecorateRouterKeyable {
    */
   pathFilter: (
     filters?: QueryFilters<TRPCQueryKey>,
-  ) => WithRequired<
-    QueryFilters<TRPCQueryKey>,
-    'queryKey'
-  >;
+  ) => WithRequired<QueryFilters<TRPCQueryKey>, 'queryKey'>;
 }
 
 interface TypeHelper<TDef extends ResolverDef> {
