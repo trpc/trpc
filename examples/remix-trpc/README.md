@@ -54,7 +54,6 @@ remix-trpc/
 
 ![UI Demo2](./assets/demo2.png)
 
-
 ### ✅ Type Safety Example (tRPC)
 
 Client-side type error when using wrong type:
@@ -64,8 +63,6 @@ Client-side type error when using wrong type:
 Type completion powered by server definition:
 
 ![Type Safety](./assets/code2.png)
-
-
 
 ## Key Implementation Details
 
@@ -78,6 +75,7 @@ const { data: fruits, isLoading, error } = trpc.getFruits.useQuery();
 ```
 
 This approach is perfect for:
+
 - Interactive dashboards
 - Pages that update frequently
 - When you need React Query's powerful features like caching and refetching
@@ -106,6 +104,7 @@ export default function FruitDetail() {
 ```
 
 SSR is beneficial for:
+
 - SEO-critical pages
 - Initial load performance
 - Pages where immediate data availability is important

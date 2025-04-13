@@ -1,12 +1,12 @@
 import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
 import { z } from 'zod';
 import { fruits } from '../models/fruit.js';
-import superjson from "superjson";
 
 const t = initTRPC.create({
-    transformer: superjson,
-  });
-  
+  transformer: superjson,
+});
+
 export const appRouter = t.router({
   getFruits: t.procedure.query(() => {
     return fruits;
