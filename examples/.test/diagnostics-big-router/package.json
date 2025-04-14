@@ -7,7 +7,7 @@
     "postinstall": "tsx scripts/codegen"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.67.1",
+    "@tanstack/react-query": "^5.74.3",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
