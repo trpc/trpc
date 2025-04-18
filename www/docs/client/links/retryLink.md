@@ -38,7 +38,7 @@ const client = createTRPCClient<AppRouter>({
         return opts.attempts <= 3;
       },
       // Double every attempt, with max of 30 seconds (starting at 1 second)
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retryDelayMs: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     }),
     httpBatchLink({
       url: 'http://localhost:3000',
@@ -65,7 +65,7 @@ interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
   /**
    * The delay between retries in ms (defaults to 0)
    */
-  retryDelay?: (attempt: number) => number;
+  retryDelayMs?: (attempt: number) => number;
 }
 
 interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
