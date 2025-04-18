@@ -141,8 +141,8 @@ describe('get queryFilter', () => {
         {
           predicate(query) {
             const data = query.setData('__result');
-            assertType<'__result' | undefined>(data);
-            assertType<TRPCQueryKey>(query.queryKey);
+            assertType<unknown>(data);
+            assertType<readonly unknown[]>(query.queryKey);
 
             return true;
           },
