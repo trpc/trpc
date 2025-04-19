@@ -183,3 +183,8 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
     };
   };
 }
+
+/**
+ * @deprecated use {@link httpBatchStreamLink} instead
+ */
+export const unstable_httpBatchStreamLink = httpBatchStreamLink;
