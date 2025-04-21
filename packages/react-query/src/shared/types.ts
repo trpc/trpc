@@ -8,6 +8,7 @@ import type {
   UndefinedInitialDataOptions,
   UnusedSkipTokenInfiniteOptions,
   UnusedSkipTokenOptions,
+  TRPCMutationKey,
 } from '@tanstack/react-query';
 import type {
   AnyRouter,
@@ -243,6 +244,7 @@ export interface UseMutationOverride {
      * Meta data passed in from the `useMutation()` hook
      */
     meta: Record<string, unknown>;
+    mutationKey: TRPCMutationKey;
   }) => MaybePromise<unknown>;
 }
 

@@ -2,6 +2,7 @@ import type {
   MutationFunction,
   QueryClient,
   UseMutationOptions,
+  
 } from '@tanstack/react-query';
 import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type {
@@ -123,6 +124,7 @@ export function trpcMutationOptions(args: {
         originalFn,
         queryClient,
         meta: opts?.meta ?? defaultOpts?.meta ?? {},
+        mutationKey
       });
     },
     trpc: createTRPCOptionsResult({ path }),
