@@ -4,11 +4,11 @@ import type {
   DefinedInitialDataOptions,
   InfiniteData,
   QueryClient,
+  TRPCMutationKey,
   UndefinedInitialDataInfiniteOptions,
   UndefinedInitialDataOptions,
   UnusedSkipTokenInfiniteOptions,
   UnusedSkipTokenOptions,
-  TRPCMutationKey,
 } from '@tanstack/react-query';
 import type {
   AnyRouter,
