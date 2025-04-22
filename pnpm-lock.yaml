@@ -460,16 +460,16 @@ importers:
         specifier: ^5.67.1
         version: 5.67.1(react@19.1.0)
       '@trpc/client':
-        specifier: ^11.1.0
+        specifier: ^11.1.1
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^11.1.0
+        specifier: ^11.1.1
         version: link:../../../packages/next
       '@trpc/react-query':
         specifier: npm:@trpc/react-query
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^11.1.0
+        specifier: ^11.1.1
         version: link:../../../packages/server
       next:
         specifier: ^15.1.7
@@ -1781,7 +1781,7 @@ importers:
   packages/client:
     devDependencies:
       '@trpc/server':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
@@ -1826,13 +1826,13 @@ importers:
         specifier: ^5.67.1
         version: 5.67.1(react@19.1.0)
       '@trpc/client':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../client
       '@trpc/react-query':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../react-query
       '@trpc/server':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -1901,10 +1901,10 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@10.0.0)
       '@trpc/client':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../client
       '@trpc/server':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -2042,10 +2042,10 @@ importers:
         specifier: ^5.67.1
         version: 5.67.1(react@19.1.0)
       '@trpc/client':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../client
       '@trpc/server':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../server
       '@types/node':
         specifier: 20.17.30
@@ -2105,10 +2105,10 @@ importers:
         specifier: ^2.9.0
         version: 2.11.0
       '@trpc/client':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../client
       '@trpc/server':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../server
       '@types/node':
         specifier: 20.17.30
@@ -2208,16 +2208,16 @@ importers:
         specifier: ^5.67.1
         version: 5.67.1(react@19.1.0)
       '@trpc/client':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../client
       '@trpc/react-query':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../react-query
       '@trpc/server':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../server
       '@trpc/tanstack-react-query':
-        specifier: 11.1.0
+        specifier: 11.1.1
         version: link:../tanstack-react-query
       '@types/jscodeshift':
         specifier: 0.12.0

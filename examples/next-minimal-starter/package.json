@@ -26,5 +26,5 @@
     "eslint": "^9.21.0",
     "typescript": "^5.8.2"
   },
-  "version": "11.1.0"
+  "version": "11.1.1"
 }
