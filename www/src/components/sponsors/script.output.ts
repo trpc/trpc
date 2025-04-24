@@ -35,12 +35,12 @@ export const topSponsors = [
     "createdAt": 1743099912000
   },
   {
-    "name": "Unkey",
-    "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
-    "weight": 12,
-    "login": "unkeyed",
-    "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1708012798000
+    "name": "CodeRabbit",
+    "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
+    "weight": 13,
+    "login": "coderabbitai",
+    "link": "https://www.coderabbit.ai/?utm_source=github&utm_medium=referral&ref=trpc&utm_campaign=trpc",
+    "createdAt": 1737645299000
   }
 ] as const;
 
@@ -265,7 +265,7 @@ export const allSponsors = [
   {
     "name": "Ryan Magoon",
     "imgSrc": "https://avatars.githubusercontent.com/u/5327290?v=4",
-    "weight": 11,
+    "weight": 13,
     "login": "ryanmagoon",
     "link": "https://github.com/ryanmagoon",
     "createdAt": 1729879193000
@@ -273,7 +273,7 @@ export const allSponsors = [
   {
     "name": "CodeRabbit",
     "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
-    "weight": 10,
+    "weight": 13,
     "login": "coderabbitai",
     "link": "https://www.coderabbit.ai/?utm_source=github&utm_medium=referral&ref=trpc&utm_campaign=trpc",
     "createdAt": 1737645299000
@@ -317,5 +317,13 @@ export const allSponsors = [
     "login": "illarionvk",
     "link": "https://www.illarionvk.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1744831385000
+  },
+  {
+    "name": "BestKru",
+    "imgSrc": "https://avatars.githubusercontent.com/u/159320286?v=4",
+    "weight": 2,
+    "login": "BestKru",
+    "link": "https://bestkru.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1745489411000
   }
 ] as const;
