@@ -134,14 +134,6 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 
-### 🥇 Gold Sponsors
-
-<table>
-  <tr>
-   <td align="center"><a href="https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/33817679?v=4&s=180" width="180" alt="Retool"/><br />Retool</a></td>
-  </tr>
-</table>
-
 ### 🥈 Silver Sponsors
 
 <table>
@@ -171,13 +163,13 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
    <td align="center"><a href="http://ballingt.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/458879?u=4b045ac75d721b6ac2b42a74d7d37f61f0414031&v=4&s=100" width="100" alt="Tom%20Ballinger"/><br />Tom Ballinger</a></td>
    <td align="center"><a href="https://proxidize.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/70805857?v=4&s=100" width="100" alt="Proxidize"/><br />Proxidize</a></td>
    <td align="center"><a href="http://openq.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/28826387?u=34c5f1594ad1ce83b111390b604ed5d26e389815&v=4&s=100" width="100" alt="rickk"/><br />rickk</a></td>
-   <td align="center"><a href="http://brooke.me/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/8385528?u=c617b5f4db2d9696bf2e24fc09ad2626ef08d930&v=4&s=100" width="100" alt="Brooke%20Holmes"/><br />Brooke Holmes</a></td>
+   <td align="center"><a href="http://www.jaronheard.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/7065695?u=127a7eca50605c12366363d6aba3da9e749aeff7&v=4&s=100" width="100" alt="Jaron%20Heard"/><br />Jaron Heard</a></td>
   </tr>
   <tr>
+   <td align="center"><a href="http://brooke.me/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/8385528?u=c617b5f4db2d9696bf2e24fc09ad2626ef08d930&v=4&s=100" width="100" alt="Brooke%20Holmes"/><br />Brooke Holmes</a></td>
    <td align="center"><a href="https://maxgreenwald.me/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/2615374?u=4c1402dd1e4e8ff7514f2e300adfe9b75ae76e85&v=4&s=100" width="100" alt="Max%20Greenwald"/><br />Max Greenwald</a></td>
    <td align="center"><a href="https://github.com/dmaykov"><img src="https://avatars.githubusercontent.com/u/6147048?u=8ae662ac99e91917062164de0d9404002b99cf2e&v=4&s=100" width="100" alt="Dmitry%20Maykov"/><br />Dmitry Maykov</a></td>
    <td align="center"><a href="https://chrisbradley.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/11767079?u=e64f67faffd350af19aa896ff89a0708829e9a2a&v=4&s=100" width="100" alt="Chris%20Bradley"/><br />Chris Bradley</a></td>
-   <td align="center"><a href="http://www.jaronheard.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/7065695?u=127a7eca50605c12366363d6aba3da9e749aeff7&v=4&s=100" width="100" alt="Jaron%20Heard"/><br />Jaron Heard</a></td>
    <td align="center"><a href="https://liminity.se/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/179804668?v=4&s=100" width="100" alt="Liminity%20AB"/><br />Liminity AB</a></td>
    <td align="center"><a href="https://github.com/val-town"><img src="https://avatars.githubusercontent.com/u/114268765?v=4&s=100" width="100" alt="Val%20Town"/><br />Val Town</a></td>
   </tr>
@@ -200,6 +192,9 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
   <tr>
    <td align="center"><a href="https://github.com/infodusha"><img src="https://avatars.githubusercontent.com/u/5677047?u=d503fccc70c9a66524639691b62853994335af0b&v=4&s=100" width="100" alt="Andrei%20Karushev"/><br />Andrei Karushev</a></td>
    <td align="center"><a href="https://venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/67328248?v=4&s=100" width="100" alt="Venue%20Ink"/><br />Venue Ink</a></td>
+   <td align="center"><a href="https://bestkru.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/159320286?v=4&s=100" width="100" alt="BestKru"/><br />BestKru</a></td>
+   <td align="center"><a href="https://github.com/BrianCurliss"><img src="https://avatars.githubusercontent.com/u/1222949?v=4&s=100" width="100" alt="Brian%20Curliss"/><br />Brian Curliss</a></td>
+   <td align="center"><a href="https://www.illarionvk.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/5012724?u=7cfa13652f7ac5fb3c56d880e3eb3fbe40c3ea34&v=4&s=100" width="100" alt="Illarion%20Koperski"/><br />Illarion Koperski</a></td>
   </tr>
 </table>
 

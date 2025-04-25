@@ -1,6 +1,6 @@
 {
   "name": "@trpc/upgrade",
-  "version": "11.0.4",
+  "version": "11.1.1",
   "description": "Upgrade scripts for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
@@ -39,13 +39,13 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.67.1",
-    "@trpc/client": "11.0.4",
-    "@trpc/react-query": "11.0.4",
-    "@trpc/server": "11.0.4",
-    "@trpc/tanstack-react-query": "11.0.4",
+    "@trpc/client": "11.1.1",
+    "@trpc/react-query": "11.1.1",
+    "@trpc/server": "11.1.1",
+    "@trpc/tanstack-react-query": "11.1.1",
     "@types/jscodeshift": "0.12.0",
     "@types/node": "^22.13.5",
-    "bunchee": "6.5.0",
+    "bunchee": "6.5.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^3.24.2"
