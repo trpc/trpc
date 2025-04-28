@@ -8,7 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.74.3",
+    "@tanstack/react-query": "^5.74.7",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
@@ -25,5 +25,5 @@
     "eslint": "^9.21.0",
     "typescript": "^5.8.2"
   },
-  "version": "11.1.0"
+  "version": "11.1.1"
 }

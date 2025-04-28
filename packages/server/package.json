@@ -1,6 +1,6 @@
 {
   "name": "@trpc/server",
-  "version": "11.1.0",
+  "version": "11.1.1",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
@@ -118,7 +118,7 @@
   },
   "devDependencies": {
     "@fastify/websocket": "^10.0.1",
-    "@tanstack/react-query": "^5.74.3",
+    "@tanstack/react-query": "^5.74.7",
     "@types/aws-lambda": "^8.10.137",
     "@types/express": "^5.0.0",
     "@types/hash-sum": "^1.0.0",
