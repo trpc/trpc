@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.74.7",
-    "@tanstack/react-query-devtools": "^5.64.2",
+    "@tanstack/react-query-devtools": "^5.74.7",
     "@tanstack/react-router": "^1.109.2",
     "@tanstack/react-router-with-query": "^1.109.2",
     "@tanstack/router-devtools": "^1.109.2",
