@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.12.1",
-    "@tanstack/react-query": "^5.67.1",
+    "@tanstack/react-query": "^5.74.7",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.50.1",
-    "@tanstack/react-query-devtools": "^5.64.2",
+    "@tanstack/react-query-devtools": "^5.74.7",
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "@types/ws": "^8.2.0",
