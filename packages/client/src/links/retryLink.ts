@@ -12,6 +12,10 @@ interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
    * The retry function
    */
   retry: (opts: RetryFnOptions<TInferrable>) => boolean;
+  /**
+   * The delay between retries in ms (defaults to 0)
+   */
+  retryDelayMs?: (attempt: number) => number;
 }
 
 interface RetryFnOptions<TInferrable extends InferrableClientTypes> {
@@ -42,6 +46,8 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
       // initialized for request
       return observable((observer) => {
         let next$: Unsubscribable;
+        let callNextTimeout: ReturnType<typeof setTimeout> | undefined =
+          undefined;
 
         let lastEventId: string | undefined = undefined;
 
@@ -69,11 +75,20 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
                 attempts,
                 error,
               });
-              if (shouldRetry) {
-                attempt(attempts + 1);
-              } else {
+              if (!shouldRetry) {
                 observer.error(error);
+                return;
               }
+              const delayMs = opts.retryDelayMs?.(attempts) ?? 0;
+
+              if (delayMs <= 0) {
+                attempt(attempts + 1);
+                return;
+              }
+              callNextTimeout = setTimeout(
+                () => attempt(attempts + 1),
+                delayMs,
+              );
             },
             next(envelope) {
               //
@@ -94,6 +109,7 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
         }
         return () => {
           next$.unsubscribe();
+          clearTimeout(callNextTimeout);
         };
       });
     };

@@ -12,7 +12,9 @@ import { observable, observableToAsyncIterable } from '@trpc/server/observable';
 import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
+  TRPCResponse,
 } from '@trpc/server/rpc';
+import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import';
 import {
   createDeferred,
   sleep,
@@ -1827,6 +1829,53 @@ describe('auth / connectionParams', async () => {
       expect(onSubscriptionStarted).toHaveBeenCalledTimes(1);
     });
     expect(ctx.wss.clients.size).toBe(1);
+  });
+
+  test('regression: bad connection params', async () => {
+    async function connect() {
+      const ws = new WebSocket(ctx.wssUrl + '?connectionParams=1');
+      await new Promise((resolve) => {
+        ws.addEventListener('open', resolve);
+      });
+      function request(str: string) {
+        ws.send(str);
+        return new Promise<Res>((resolve, reject) => {
+          ws.addEventListener('message', (it) => {
+            resolve(JSON.parse(it.data as string));
+          });
+          ws.addEventListener('error', reject);
+          ws.addEventListener('close', reject);
+        });
+      }
+      return { request };
+    }
+
+    type Res = TRPCResponse<unknown, DefaultErrorShape>;
+
+    const badConnectionParams = JSON.stringify({
+      method: 'connectionParams',
+      data: { invalidConnectionParams: null },
+    });
+
+    {
+      const client = await connect();
+      const res = await client.request(badConnectionParams);
+
+      assert('error' in res);
+      expect(res.error.message).toMatchInlineSnapshot(
+        `"Invalid connection params shape"`,
+      );
+    }
+
+    {
+      const client = await connect();
+      const res = await client.request(badConnectionParams);
+
+      assert('error' in res);
+      expect(res.error.message).toMatchInlineSnapshot(
+        `"Invalid connection params shape"`,
+      );
+    }
   });
 });
 
