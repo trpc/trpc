@@ -10,7 +10,7 @@
     "tsc": "tsc"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.67.1",
+    "@tanstack/react-query": "^5.74.7",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
@@ -28,5 +28,5 @@
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },
-  "version": "11.1.1"
+  "version": "11.1.2"
 }
