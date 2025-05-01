@@ -215,8 +215,19 @@ describe('mutationOptions', () => {
         mutation: trpc.create.mutationOptions(),
         defaults: {
           a: 'defaultA',
+          doesNotExist: '1', // <-- ideally, this should error
         },
       });
+
+      // @ts-expect-error - this is never used
+      function _ignore() {
+        // @ts-expect-error - this line should error
+        narrowedMutation.mutate({});
+        // @ts-expect-error - this line should error
+        narrowedMutation.mutate({
+          doesNotExist: '1',
+        });
+      }
 
       return (
         <div>
