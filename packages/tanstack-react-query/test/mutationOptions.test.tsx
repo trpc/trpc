@@ -189,7 +189,7 @@ describe('mutationOptions', () => {
       TDefaults extends Partial<TDef['input']>,
     >(props: {
       mutation: ReturnType<TRPCMutationOptions<TDef>>;
-      defaults: TDefaults;
+      defaults: Pick<TDefaults, keyof TDef['input']>;
     }) {
       const narrowMutation = useMutation({
         ...(props.mutation as object),
