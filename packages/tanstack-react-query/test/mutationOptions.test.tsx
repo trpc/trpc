@@ -191,16 +191,12 @@ describe('mutationOptions', () => {
       mutation: ReturnType<TRPCMutationOptions<TDef>>;
       defaults: TDefaults;
     }) {
-      const trpc = useTRPC();
-
-      const mutationOptions = trpc.create.mutationOptions();
-
       const narrowMutation = useMutation({
-        ...(mutationOptions as any),
+        ...(props.mutation as object),
         mutationFn: async (
           input: Omit<TDef['input'], keyof TDefaults> & Partial<TDefaults>,
         ) => {
-          return mutationOptions.mutationFn!({
+          return props.mutation.mutationFn!({
             ...props.defaults,
             ...input,
           } as any);
