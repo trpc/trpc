@@ -346,7 +346,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
           _es = null;
         });
         eventSource.addEventListener('error', (event) => {
-          if (eventSource.readyState === opts.EventSource.CLOSED) {
+          if (eventSource.readyState === eventSource.CLOSED) {
             controller.error(event);
           } else {
             controller.enqueue({
