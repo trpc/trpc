@@ -1,7 +1,12 @@
 import { testReactResource } from './__helpers';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { initTRPC } from '@trpc/server';
+import type {
+  ResolverDef,
+  TRPCMutationOptions,
+} from '@trpc/tanstack-react-query';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { z } from 'zod';
@@ -157,5 +162,89 @@ describe('mutationOptions', () => {
       );
     });
     expect(calls).toEqual(['onMutate', 'onSettled']);
+  });
+
+  test('narrowed mutation options', async () => {
+    const t = initTRPC.create({});
+
+    const appRouter = t.router({
+      create: t.procedure
+        .input(
+          z.object({
+            a: z.string(),
+            b: z.string(),
+          }),
+        )
+        .mutation(async (opts) => {
+          return opts.input;
+        }),
+    });
+
+    await using ctx = testReactResource(appRouter);
+
+    const { useTRPC } = ctx;
+
+    function useNarrowedMutation<
+      TDef extends ResolverDef,
+      TDefaults extends Partial<TDef['input']>,
+    >(props: {
+      mutation: ReturnType<TRPCMutationOptions<TDef>>;
+      defaults: TDefaults;
+    }) {
+      const trpc = useTRPC();
+
+      const mutationOptions = trpc.create.mutationOptions();
+
+      const narrowMutation = useMutation({
+        ...(mutationOptions as any),
+        mutationFn: async (
+          input: Omit<TDef['input'], keyof TDefaults> & Partial<TDefaults>,
+        ) => {
+          return mutationOptions.mutationFn!({
+            ...props.defaults,
+            ...input,
+          } as any);
+        },
+      });
+
+      return narrowMutation;
+    }
+
+    function MyComponent() {
+      const trpc = useTRPC();
+
+      const narrowedMutation = useNarrowedMutation({
+        mutation: trpc.create.mutationOptions(),
+        defaults: {
+          a: 'defaultA',
+        },
+      });
+
+      return (
+        <div>
+          <button
+            data-testid="click-me"
+            onClick={() => narrowedMutation.mutate({ b: 'test' })}
+          >
+            click me
+          </button>
+          {narrowedMutation.status === 'success' && (
+            <pre data-testid="result">
+              {JSON.stringify(narrowedMutation.data)}
+            </pre>
+          )}
+        </div>
+      );
+    }
+
+    const $ = ctx.renderApp(<MyComponent />);
+
+    await userEvent.click($.getByTestId('click-me'));
+
+    await vi.waitFor(() => {
+      expect($.getByTestId('result')).toHaveTextContent(
+        JSON.stringify({ a: 'defaultA', b: 'test' }),
+      );
+    });
   });
 });
