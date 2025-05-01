@@ -213,6 +213,8 @@ describe('mutationOptions', () => {
         mutation: trpc.create.mutationOptions(),
         defaults: {
           a: 'defaultA',
+          // @ts-expect-error - this line should error
+          doesNotExist: 'boo',
         },
       });
 
