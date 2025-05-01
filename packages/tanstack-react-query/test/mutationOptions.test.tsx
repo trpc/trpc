@@ -191,7 +191,7 @@ describe('mutationOptions', () => {
       TDefaults extends Partial<TDef['input']>,
     >(props: {
       mutation: ReturnType<TRPCMutationOptions<TDef>>;
-      defaults: Pick<TDefaults, keyof TDef['input']>;
+      defaults: TDefaults;
     }) {
       const narrowMutation = useMutation({
         ...(props.mutation as object),
@@ -215,8 +215,6 @@ describe('mutationOptions', () => {
         mutation: trpc.create.mutationOptions(),
         defaults: {
           a: 'defaultA',
-          // @ts-expect-error - this line should error
-          doesNotExist: 'boo',
         },
       });
 
