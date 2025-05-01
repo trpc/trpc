@@ -105,7 +105,7 @@ describe('infiniteQueryOptions', () => {
             {},
             {
               predicate(opts) {
-                expectTypeOf<typeof query1.data>(opts.state.data);
+                expectTypeOf<unknown>(opts.state.data);
                 expect(opts.state.data).toEqual(query1.data);
                 return true;
               },
@@ -239,7 +239,7 @@ describe('infiniteQueryOptions', () => {
             {},
             {
               predicate(opts) {
-                expectTypeOf<typeof query1.data>(opts.state.data!);
+                expectTypeOf<unknown>(opts.state.data);
                 expect(opts.state.data).toEqual(query1.data);
                 return true;
               },
