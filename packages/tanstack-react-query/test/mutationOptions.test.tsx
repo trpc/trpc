@@ -184,6 +184,8 @@ describe('mutationOptions', () => {
 
     const { useTRPC } = ctx;
 
+    type SetPartial<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
     function useNarrowedMutation<
       TDef extends ResolverDef,
       TDefaults extends Partial<TDef['input']>,
@@ -194,7 +196,7 @@ describe('mutationOptions', () => {
       const narrowMutation = useMutation({
         ...(props.mutation as object),
         mutationFn: async (
-          input: Omit<TDef['input'], keyof TDefaults> & Partial<TDefaults>,
+          input: SetPartial<TDef['input'], keyof TDefaults>,
         ) => {
           return props.mutation.mutationFn!({
             ...props.defaults,
