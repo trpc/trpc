@@ -35,7 +35,7 @@
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@mdx-js/react": "^3.1.0",
-    "@tanstack/react-query": "^5.67.1",
+    "@tanstack/react-query": "^5.74.7",
     "@trpc/client": "workspace:*",
     "@trpc/next": "workspace:*",
     "@trpc/react-query": "workspace:*",
@@ -86,7 +86,7 @@
     "@types/react-dom": "^19.1.1",
     "arktype": "^2.1.9",
     "autoprefixer": "^10.4.7",
-    "docusaurus-plugin-typedoc": "1.3.0",
+    "docusaurus-plugin-typedoc": "1.3.1",
     "dotenv": "^16.0.1",
     "eslint": "^9.21.0",
     "next": "^15.1.7",
@@ -107,5 +107,5 @@
     "valibot": "1.0.0",
     "yup": "^1.0.0"
   },
-  "version": "11.0.2"
+  "version": "11.1.2"
 }
