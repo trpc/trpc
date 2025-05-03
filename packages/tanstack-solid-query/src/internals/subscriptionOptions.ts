@@ -152,7 +152,7 @@ export function useSubscription<TOutput, TError>(
 ): TRPCSubscriptionResult<TOutput, TError> {
   type $Result = TRPCSubscriptionResult<TOutput, TError>;
 
-  let trackedProps = new Set<keyof $Result>([]);
+  const trackedProps = new Set<keyof $Result>([]);
 
   const addTrackedProp = (key: keyof $Result) => {
     trackedProps.add(key);
@@ -224,8 +224,6 @@ export function useSubscription<TOutput, TError>(
     currentSubscription = () => {
       subscription.unsubscribe();
     };
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   };
 
   createEffect(() => {

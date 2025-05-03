@@ -2,7 +2,8 @@
 import type { QueryClient } from '@tanstack/solid-query';
 import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
-import { Component, createContext, JSX, useContext } from 'solid-js';
+import type { Component, JSX } from 'solid-js';
+import { createContext, useContext } from 'solid-js';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
 import { createTRPCOptionsProxy } from './createOptionsProxy';
 
