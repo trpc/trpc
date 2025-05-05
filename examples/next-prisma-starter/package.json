@@ -31,7 +31,7 @@
     "singleQuote": true
   },
   "dependencies": {
-    "@prisma/client": "^5.12.1",
+    "@prisma/client": "^6.7.0",
     "@tanstack/react-query": "^5.74.7",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/next": "npm:@trpc/next",
@@ -57,7 +57,7 @@
     "npm-run-all": "^4.1.5",
     "postcss": "^8.4.39",
     "prettier": "^3.3.3",
-    "prisma": "^5.12.1",
+    "prisma": "^6.7.0",
     "start-server-and-test": "^1.12.0",
     "tailwindcss": "^3.4.6",
     "tsx": "^4.19.3",
