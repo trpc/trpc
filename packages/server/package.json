@@ -122,7 +122,7 @@
     "@types/aws-lambda": "^8.10.137",
     "@types/express": "^5.0.0",
     "@types/hash-sum": "^1.0.0",
-    "@types/node": "20.17.30",
+    "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
     "@types/ws": "^8.2.0",

@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
-    "@types/node": "20.17.30",
+    "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "esbuild": "^0.17.10",
     "eslint": "^9.26.0",
