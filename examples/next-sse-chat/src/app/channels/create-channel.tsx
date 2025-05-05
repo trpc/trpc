@@ -29,7 +29,7 @@ export function CreateChannelDialog() {
 
   return (
     <>
-      <Button size="icon" className="!size-8" onClick={() => setOpen(true)}>
+      <Button size="icon" className="size-8!" onClick={() => setOpen(true)}>
         <PlusIcon className="size-4" />
       </Button>
       <Dialog open={open} onClose={() => setOpen(false)}>
