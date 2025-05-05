@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["src", "test"],
+  "compilerOptions": {
+    "noErrorTruncation": true,
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "types": ["vite/client", "@testing-library/jest-dom"]
+  }
+}
