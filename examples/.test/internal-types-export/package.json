@@ -9,7 +9,7 @@
     "@tsconfig/esm": "^1.0.3",
     "@tsconfig/node-lts": "^18.12.2",
     "@tsconfig/strictest": "^2.0.1",
-    "@types/node": "^22.13.5",
+    "@types/node": "20.17.30",
     "typescript": "^5.8.2"
   },
   "dependencies": {

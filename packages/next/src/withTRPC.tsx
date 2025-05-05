@@ -134,8 +134,7 @@ export function withTRPC<
         }
 
         return transformer.input.deserialize(trpcState);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [trpcState, trpcClient]);
+      }, [trpcState]);
 
       return (
         <trpc.Provider

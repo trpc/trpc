@@ -19,7 +19,7 @@
     "@trpc/next": "npm:@trpc/next",
     "@trpc/server": "npm:@trpc/server",
     "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query",
-    "@types/node": "^22.13.5",
+    "@types/node": "20.17.30",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
     "next": "^15.3.1",
