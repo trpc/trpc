@@ -61,7 +61,7 @@
     "concurrently": "^9.0.0",
     "eslint": "^9.26.0",
     "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "6.0.0-rc.1",
+    "eslint-plugin-react-hooks": "6.0.0-rc1",
     "eslint-plugin-unicorn": "59.0.0",
     "event-source-polyfill": "^1.0.31",
     "express": "^5.0.0",
