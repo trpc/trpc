@@ -24,14 +24,14 @@
     "class-variance-authority": "^0.7.0",
     "date-fns": "^3.6.0",
     "drizzle-orm": "^0.31.2",
-    "next": "^15.1.7",
+    "next": "^15.3.1",
     "next-auth": "5.0.0-beta.25",
     "postgres": "^3.4.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "superjson": "^1.12.4",
     "tailwind-merge": "^2.0.0",
-    "zod": "^3.24.2"
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
