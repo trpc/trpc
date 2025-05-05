@@ -22,7 +22,7 @@
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
-    "next": "^15.1.7",
+    "next": "^15.3.1",
     "next-auth": "5.0.0-beta.25",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -32,7 +32,7 @@
     "superjson": "^1.12.4",
     "trpc-api": "link:./src/trpc",
     "typescript": "^5.8.2",
-    "zod": "^3.24.2"
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.1",
