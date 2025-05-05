@@ -25,7 +25,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
   const userName = session?.user?.name;
   if (!userName) {
     return (
-      <div className="flex w-full justify-between rounded bg-gray-800 px-3 py-2 text-lg text-gray-200">
+      <div className="flex w-full justify-between rounded-sm bg-gray-800 px-3 py-2 text-lg text-gray-200">
         <p className="font-bold">
           You have to{' '}
           <button
@@ -39,7 +39,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
         <button
           onClick={() => signIn()}
           data-testid="signin"
-          className="h-full rounded bg-indigo-500 px-4"
+          className="h-full rounded-sm bg-indigo-500 px-4"
         >
           Sign In
         </button>
@@ -60,7 +60,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
         }}
       >
         <fieldset disabled={addPost.isPending} className="min-w-0">
-          <div className="flex w-full items-end rounded bg-gray-500 px-3 py-2 text-lg text-gray-200">
+          <div className="flex w-full items-end rounded-sm bg-gray-500 px-3 py-2 text-lg text-gray-200">
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -89,7 +89,7 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
               }}
             />
             <div>
-              <button type="submit" className="rounded bg-indigo-500 px-4 py-1">
+              <button type="submit" className="rounded-sm bg-indigo-500 px-4 py-1">
                 Submit
               </button>
             </div>
@@ -245,7 +245,7 @@ export default function IndexPage() {
                 data-testid="loadMore"
                 onClick={() => fetchNextPage()}
                 disabled={!hasNextPage || isFetchingNextPage}
-                className="rounded bg-indigo-500 px-4 py-2 text-white disabled:opacity-40"
+                className="rounded-sm bg-indigo-500 px-4 py-2 text-white disabled:opacity-40"
               >
                 {isFetchingNextPage
                   ? 'Loading more...'
