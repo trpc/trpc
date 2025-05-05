@@ -91,7 +91,7 @@
   },
   "pnpm": {
     "overrides": {
-      "@types/node": "20.17.30"
+      "@types/node": "20.17.32"
     }
   }
 }
