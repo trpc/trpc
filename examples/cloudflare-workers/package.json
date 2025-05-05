@@ -15,7 +15,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
     "@types/node": "^22.13.5",
-    "eslint": "^9.21.0",
+    "eslint": "^9.26.0",
     "start-server-and-test": "^1.12.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",

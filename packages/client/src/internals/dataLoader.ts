@@ -145,15 +145,11 @@ export function dataLoader<TKey, TValue>(
       item.reject = reject;
       item.resolve = resolve;
 
-      if (!pendingItems) {
-        pendingItems = [];
-      }
+      pendingItems ??= [];
       pendingItems.push(item);
     });
 
-    if (!dispatchTimer) {
-      dispatchTimer = setTimeout(dispatch);
-    }
+    dispatchTimer ??= setTimeout(dispatch);
 
     return promise;
   }

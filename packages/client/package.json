@@ -85,7 +85,7 @@
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "^22.13.5",
     "dataloader": "^2.2.2",
-    "eslint": "^9.21.0",
+    "eslint": "^9.26.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
     "rollup": "^4.34.8",

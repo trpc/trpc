@@ -23,7 +23,7 @@
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
-    "eslint": "^9.21.0",
+    "eslint": "^9.26.0",
     "typescript": "^5.8.2"
   },
   "version": "11.1.2"
