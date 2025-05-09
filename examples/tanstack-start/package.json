@@ -26,22 +26,22 @@
     "superjson": "^1.12.4",
     "tailwind-merge": "^2.0.0",
     "vinxi": "0.5.3",
-    "zod": "^3.24.2"
+    "zod": "^3.24.4"
   },
   "devDependencies": {
-    "@eslint/js": "^8.57.0",
+    "@eslint/js": "^9.26.0",
     "@playwright/test": "^1.50.1",
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
     "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.21.0",
-    "eslint-plugin-react": "^7.37.2",
-    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint": "^9.26.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "6.0.0-rc.1",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.8.2",
-    "typescript-eslint": "^8.24.1",
+    "typescript-eslint": "^8.31.1",
     "vite": "^6.1.1",
     "vite-tsconfig-paths": "^4.3.2"
   },

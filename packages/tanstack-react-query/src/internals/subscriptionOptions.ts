@@ -226,7 +226,7 @@ export function useSubscription<TOutput, TError>(
     currentSubscriptionRef.current = () => {
       subscription.unsubscribe();
     };
-
+    // eslint-disable-next-line react-hooks/react-compiler
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hashKey(opts.queryKey), opts.enabled]);
 

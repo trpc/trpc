@@ -17,7 +17,7 @@
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "next": "^15.1.7"
+    "next": "^15.3.1"
   },
   "version": "11.1.2"
 }
