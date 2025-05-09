@@ -103,7 +103,10 @@ function createAppRouter() {
     }),
     request: router({
       info: publicProcedure.query(({ ctx }) => {
-        return ctx.info;
+        return {
+          ...ctx.info,
+          url: ctx.info.url?.href ?? null,
+        };
       }),
     }),
     deferred: publicProcedure

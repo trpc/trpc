@@ -1,17 +1,6 @@
-// @vitest-environment miniflare
-/// <reference types="@cloudflare/workers-types" />
-
-import {
-  ReadableStream as MiniflareReadableStream,
-  TextDecoderStream as MiniflareTextDecoderStream,
-  TextEncoderStream as MiniflareTextEncoderStream,
-  TransformStream as MiniflareTransformStream,
-  WritableStream as MiniflareWritableStream,
-} from 'stream/web';
-import { Response as MiniflareResponse } from '@miniflare/core';
 import type { TRPCLink } from '@trpc/client';
 import {
-  createTRPCProxyClient,
+  createTRPCClient,
   httpBatchLink,
   httpBatchStreamLink,
 } from '@trpc/client';
@@ -19,17 +8,8 @@ import { initTRPC } from '@trpc/server';
 import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { observable, tap } from '@trpc/server/observable';
-import { Miniflare } from 'miniflare';
+import { serve } from 'srvx';
 import { z } from 'zod';
-
-// miniflare does an instanceof check
-globalThis.Response = MiniflareResponse as any;
-// miniflare must use the web stream "polyfill"
-globalThis.ReadableStream = MiniflareReadableStream as any;
-globalThis.WritableStream = MiniflareWritableStream as any;
-globalThis.TransformStream = MiniflareTransformStream as any;
-globalThis.TextEncoderStream = MiniflareTextEncoderStream as any;
-globalThis.TextDecoderStream = MiniflareTextDecoderStream as any;
 
 const createContext = ({ req, resHeaders }: FetchCreateContextFnOptions) => {
   const getUser = () => {
@@ -95,24 +75,22 @@ type AppRouter = ReturnType<typeof createAppRouter>;
 async function startServer(endpoint = '') {
   const router = createAppRouter();
 
-  const mf = new Miniflare({
-    script: '//',
+  const server = serve({
     port: 0,
-    compatibilityFlags: ['streams_enable_constructors'],
+    fetch: (request) => {
+      const response = fetchRequestHandler({
+        endpoint,
+        req: request,
+        router,
+        createContext,
+      });
+      return response;
+    },
   });
-
-  const globalScope = await mf.getGlobalScope();
-  globalScope['addEventListener']('fetch', (event: FetchEvent) => {
-    const response = fetchRequestHandler({
-      endpoint,
-      req: event.request,
-      router,
-      createContext,
-    });
-    event.respondWith(response);
-  });
-  const server = await mf.startServer();
-  const port = (server.address() as any).port;
+  await server.ready();
+  if (!server.url) {
+    throw new Error('server.url is undefined');
+  }
 
   const trimSlashes = (path: string): string => {
     path = path.startsWith('/') ? path.slice(1) : path;
@@ -121,20 +99,15 @@ async function startServer(endpoint = '') {
     return path;
   };
   const path = trimSlashes(endpoint);
-  const url = `http://localhost:${port}${path && `/${path}`}`;
+  const url = `${trimSlashes(server.url)}${path && `/${path}`}`;
 
-  const client = createTRPCProxyClient<typeof router>({
+  const client = createTRPCClient<typeof router>({
     links: [httpBatchLink({ url, fetch: fetch as any })],
   });
 
   return {
     url,
-    close: () =>
-      new Promise<void>((resolve, reject) =>
-        server.close((err) => {
-          err ? reject(err) : resolve();
-        }),
-      ),
+    close: server.close.bind(server),
     router,
     client,
   };
@@ -188,7 +161,7 @@ describe('with default server', () => {
       };
     };
 
-    const client = createTRPCProxyClient<AppRouter>({
+    const client = createTRPCClient<AppRouter>({
       links: [
         linkSpy,
         httpBatchStreamLink({
@@ -209,7 +182,7 @@ describe('with default server', () => {
   });
 
   test('query with headers', async () => {
-    const client = createTRPCProxyClient<AppRouter>({
+    const client = createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
           url: t.url,
@@ -240,7 +213,7 @@ describe('with default server', () => {
       };
     };
 
-    const client = createTRPCProxyClient<AppRouter>({
+    const client = createTRPCClient<AppRouter>({
       links: [
         customLink,
         httpBatchLink({

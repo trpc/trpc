@@ -1,16 +1,60 @@
 import type http from 'http';
-import type { Context } from './__router';
-import { router } from './__router';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 import * as trpcExpress from '@trpc/server/adapters/express';
 import type { NodeHTTPHandlerOptions } from '@trpc/server/adapters/node-http';
+import type { TRPCRequestInfo } from '@trpc/server/http';
 import express from 'express';
 import fetch from 'node-fetch';
+import { z } from 'zod';
 
 type CreateExpressContextOptions<TRouter extends AnyRouter> =
   NodeHTTPHandlerOptions<TRouter, express.Request, express.Response>;
+
+export type Context = {
+  user: {
+    name: string;
+  } | null;
+  info: TRPCRequestInfo;
+};
+
+const t = initTRPC.context<Context>().create();
+
+export const router = t.router({
+  hello: t.procedure
+    .input(
+      z
+        .object({
+          who: z.string().nullish(),
+        })
+        .nullish(),
+    )
+    .query(({ input, ctx }) => ({
+      text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
+    })),
+  helloMutation: t.procedure
+    .input(z.string())
+    .mutation(({ input }) => `hello ${input}`),
+  request: t.router({
+    info: t.procedure.query(({ ctx }) => {
+      return {
+        ...ctx.info,
+        url: ctx.info.url?.href ?? null,
+      };
+    }),
+  }),
+  exampleError: t.procedure.query(() => {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Unexpected error',
+    });
+  }),
+  exampleMutation: t.procedure
+    .input(z.object({ payload: z.string() }))
+    .mutation(() => 'ok'),
+});
 
 async function startServer(
   opts?: Partial<CreateExpressContextOptions<typeof router>>,
@@ -90,17 +134,17 @@ async function startServer(
   };
 }
 
-let t: Awaited<ReturnType<typeof startServer>>;
+let $: Awaited<ReturnType<typeof startServer>>;
 beforeAll(async () => {
-  t = await startServer();
+  $ = await startServer();
 });
 afterAll(async () => {
-  await t.close();
+  await $.close();
 });
 
 test('simple query', async () => {
   expect(
-    await t.client.hello.query({
+    await $.client.hello.query({
       who: 'test',
     }),
   ).toMatchInlineSnapshot(`
@@ -108,7 +152,7 @@ test('simple query', async () => {
       "text": "hello test",
     }
   `);
-  const res = await t.client.hello.query();
+  const res = await $.client.hello.query();
   expect(res).toMatchInlineSnapshot(`
     Object {
       "text": "hello world",
@@ -118,18 +162,18 @@ test('simple query', async () => {
 
 test('batched requests in body work correctly', async () => {
   const res = await Promise.all([
-    t.client.helloMutation.mutate('world'),
-    t.client.helloMutation.mutate('KATT'),
+    $.client.helloMutation.mutate('world'),
+    $.client.helloMutation.mutate('KATT'),
   ]);
   expect(res).toEqual(['hello world', 'hello KATT']);
 });
 
 test('request info from context should include both calls', async () => {
   const res = await Promise.all([
-    t.client.hello.query({
+    $.client.hello.query({
       who: 'test',
     }),
-    t.client.request.info.query(),
+    $.client.request.info.query(),
   ]);
 
   // Replace port number in snapshot with <<redacted>>
@@ -164,7 +208,7 @@ test('request info from context should include both calls', async () => {
 
 test('error query', async () => {
   try {
-    await t.client.exampleError.query();
+    await $.client.exampleError.query();
   } catch (e) {
     expect(e).toBeInstanceOf(TRPCClientError);
     expect((e as Error).message).toBe('Unexpected error');
