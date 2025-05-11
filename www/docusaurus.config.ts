@@ -412,8 +412,75 @@ export default {
 
             if (tocRecords.length > 0) {
               const tocOutputFilename = `llms${versionSpec.fileSuffix}.txt`;
-              const tocTitle = `${siteConfig.title} - Docs ${versionLabel === '11.x' ? '' : versionLabel}`;
-              const tocFileContent = `${tocTitle}\n\n## Documentation Pages\n\n${tocRecords.join('\n')}`;
+
+              let titleVersionSuffix = versionLabel;
+              if (
+                docsVersionSettings?.current?.label &&
+                versionLabel === docsVersionSettings.current.label
+              ) {
+                titleVersionSuffix = '';
+              } else if (
+                versionSpec.keyInDocusaurusConfig === 'current' &&
+                !docsVersionSettings?.current?.label
+              ) {
+                titleVersionSuffix = '';
+              }
+              const tocTitle =
+                `${siteConfig.title} - Docs ${titleVersionSuffix}`.trim();
+
+              let otherVersionsLinksContent = '';
+              for (const otherVersion of versionsToProcessConfig) {
+                if (
+                  otherVersion.keyInDocusaurusConfig ===
+                  versionSpec.keyInDocusaurusConfig
+                ) {
+                  continue;
+                }
+
+                let rawSourceLabel = otherVersion.keyInDocusaurusConfig;
+                if (docsVersionSettings) {
+                  if (
+                    otherVersion.keyInDocusaurusConfig === 'current' &&
+                    docsVersionSettings.current?.label
+                  ) {
+                    rawSourceLabel = docsVersionSettings.current.label;
+                  } else if (
+                    docsVersionSettings[otherVersion.keyInDocusaurusConfig]
+                      ?.label
+                  ) {
+                    rawSourceLabel =
+                      docsVersionSettings[otherVersion.keyInDocusaurusConfig]
+                        .label;
+                  }
+                } else if (otherVersion.keyInDocusaurusConfig === 'current') {
+                  rawSourceLabel = 'current';
+                }
+
+                let displayTag = rawSourceLabel;
+                if (displayTag.endsWith('.x')) {
+                  displayTag = 'v' + displayTag.slice(0, -2);
+                }
+
+                const linkUrl = new URL(
+                  `llms${otherVersion.fileSuffix}.txt`,
+                  siteConfig.url,
+                ).href;
+                const isOtherVersionActuallyCurrent =
+                  otherVersion.keyInDocusaurusConfig === 'current';
+
+                const linkTextParts = [`For ${displayTag}`];
+                if (isOtherVersionActuallyCurrent) {
+                  linkTextParts.push('(current)');
+                }
+
+                otherVersionsLinksContent += `- ${linkTextParts.join(' ')}: ${linkUrl}\n`;
+              }
+
+              if (otherVersionsLinksContent) {
+                otherVersionsLinksContent += '\n';
+              }
+
+              const tocFileContent = `${tocTitle}\n\n${otherVersionsLinksContent}## Documentation Pages\n\n${tocRecords.join('\n')}`;
               const tocFilePath = path.join(outDir, tocOutputFilename);
               try {
                 fs.writeFileSync(tocFilePath, tocFileContent);
