@@ -1,4 +1,7 @@
+/// <reference types="@docusaurus/module-type-aliases" />
 /* eslint-disable @typescript-eslint/no-require-imports */
+import fs from 'fs';
+import path from 'path';
 import type * as Preset from '@docusaurus/preset-classic';
 import type { Config } from '@docusaurus/types';
 import { generateTypedocDocusaurusPlugins } from './docusaurus.typedoc.js';
@@ -187,6 +190,248 @@ export default {
             postcssOptions.plugins.push(require('cssnano'));
           }
           return postcssOptions;
+        },
+      };
+    },
+    /**
+     * Thank you to prisma docs for this plugin <3
+     * https://github.com/prisma/docs/blob/22208d52e4168028dbbe8b020b10682e6b526e50/docusaurus.config.ts#L95
+     */
+    async function pluginLlmsTxt(context) {
+      const { siteDir, siteConfig } = context;
+
+      // Helper function to get all MDX content from a specific directory (relative to siteDir)
+      const getAllMdxContent = async (
+        docsContentPath: string,
+      ): Promise<string[]> => {
+        const absoluteDocsContentPath = path.join(siteDir, docsContentPath);
+        const mdxFiles: string[] = [];
+
+        // Recursive function to find all .md/.mdx files
+        const findMdxFilesRecursively = async (currentPath: string) => {
+          let entries;
+          try {
+            entries = await fs.promises.readdir(currentPath, {
+              withFileTypes: true,
+            });
+          } catch (error) {
+            if (
+              typeof error === 'object' &&
+              error !== null &&
+              'code' in error &&
+              (error as any).code === 'ENOENT'
+            ) {
+              console.warn(
+                `[llms-txt-plugin] Directory not found: ${currentPath}. Skipping MDX content for this path.`,
+              );
+              return; // Directory does not exist, so no files to add
+            }
+            console.error(
+              `[llms-txt-plugin] Error reading directory ${currentPath}:`,
+              error,
+            );
+            throw error;
+          }
+
+          for (const entry of entries) {
+            const fullPath = path.join(currentPath, entry.name);
+            if (entry.isDirectory()) {
+              if (entry.name === 'typedoc') {
+                continue;
+              }
+              await findMdxFilesRecursively(fullPath);
+            } else if (
+              entry.name.endsWith('.mdx') ||
+              entry.name.endsWith('.md')
+            ) {
+              try {
+                const content = await fs.promises.readFile(fullPath, 'utf8');
+                mdxFiles.push(content);
+              } catch (readError) {
+                console.error(
+                  `[llms-txt-plugin] Error reading file ${fullPath}:`,
+                  readError,
+                );
+              }
+            }
+          }
+        };
+
+        await findMdxFilesRecursively(absoluteDocsContentPath);
+        return mdxFiles;
+      };
+
+      return {
+        name: 'llms-txt-plugin',
+        postBuild: async ({ routes, outDir }) => {
+          const versionsToProcessConfig = [
+            {
+              keyInDocusaurusConfig: 'current',
+              docsPath: 'docs',
+              routePath: '/docs',
+              fileSuffix: '',
+            },
+            {
+              keyInDocusaurusConfig: '10.x',
+              docsPath: 'versioned_docs/version-10.x',
+              routePath: '/docs/v10',
+              fileSuffix: '-v10',
+            },
+            {
+              keyInDocusaurusConfig: '9.x',
+              docsPath: 'versioned_docs/version-9.x',
+              routePath: '/docs/v9',
+              fileSuffix: '-v9',
+            },
+          ];
+
+          let docsVersionSettings: any = null;
+          const docsPresetTuple = siteConfig.presets?.find(
+            (p): p is [string, Record<string, any>] =>
+              Array.isArray(p) && p[0] === '@docusaurus/preset-classic',
+          );
+          if (
+            docsPresetTuple &&
+            typeof docsPresetTuple[1] === 'object' &&
+            docsPresetTuple[1] !== null
+          ) {
+            const presetConfig = docsPresetTuple[1];
+            if (
+              typeof presetConfig.docs === 'object' &&
+              presetConfig.docs !== null &&
+              'versions' in presetConfig.docs
+            ) {
+              docsVersionSettings = presetConfig.docs.versions;
+            }
+          }
+
+          const docsPluginRouteConfig = routes.find(
+            (route) =>
+              route.plugin?.name === 'docusaurus-plugin-content-docs' &&
+              route.plugin?.id === 'default',
+          );
+
+          if (!docsPluginRouteConfig || !docsPluginRouteConfig.routes) {
+            console.error(
+              '[llms-txt-plugin] Critical: Could not find routes from docusaurus-plugin-content-docs. Aborting LLMS file generation.',
+            );
+            return;
+          }
+
+          for (const versionSpec of versionsToProcessConfig) {
+            let versionLabel = versionSpec.keyInDocusaurusConfig;
+            if (docsVersionSettings) {
+              if (
+                versionSpec.keyInDocusaurusConfig === 'current' &&
+                docsVersionSettings.current?.label
+              ) {
+                versionLabel = docsVersionSettings.current.label;
+              } else if (
+                docsVersionSettings[versionSpec.keyInDocusaurusConfig]?.label
+              ) {
+                versionLabel =
+                  docsVersionSettings[versionSpec.keyInDocusaurusConfig].label;
+              }
+            }
+
+            const mdxContents = await getAllMdxContent(versionSpec.docsPath);
+            if (mdxContents.length > 0) {
+              const fullOutputFilename = `llms${versionSpec.fileSuffix}-full.txt`;
+              const concatenatedMdxPath = path.join(outDir, fullOutputFilename);
+              try {
+                await fs.promises.writeFile(
+                  concatenatedMdxPath,
+                  mdxContents.join(
+                    '\n\n--------------------------------------------------\n\n',
+                  ),
+                );
+                console.log(
+                  `[llms-txt-plugin] Generated ${concatenatedMdxPath} for version ${versionLabel}`,
+                );
+              } catch (writeError) {
+                console.error(
+                  `[llms-txt-plugin] Error writing ${concatenatedMdxPath}:`,
+                  writeError,
+                );
+              }
+            } else {
+              console.warn(
+                `[llms-txt-plugin] No MDX content found for version '${versionLabel}' in '${versionSpec.docsPath}'. Skipping ${`llms${versionSpec.fileSuffix}-full.txt`}.`,
+              );
+            }
+
+            const versionSpecificDocsRoute = docsPluginRouteConfig.routes.find(
+              (route) => route.path === versionSpec.routePath,
+            );
+
+            const versionProp = versionSpecificDocsRoute?.props?.version;
+
+            if (
+              !(
+                typeof versionProp === 'object' &&
+                versionProp !== null &&
+                'docs' in versionProp &&
+                typeof (versionProp as any).docs === 'object' &&
+                (versionProp as any).docs !== null
+              )
+            ) {
+              console.warn(
+                `[llms-txt-plugin] No docs data structure found in versionProp for version '${versionLabel}' (route path: ${versionSpec.routePath}). Skipping TOC file llms${versionSpec.fileSuffix}.txt.`,
+              );
+              continue;
+            }
+
+            const docsDataForVersion = versionProp.docs as Record<
+              string,
+              {
+                id: string;
+                title: string;
+                description?: string;
+                [key: string]: any;
+              }
+            >;
+
+            const tocRecords = Object.values(docsDataForVersion)
+              .filter((docItem) => {
+                if (!docItem?.id || !docItem.title) {
+                  return false;
+                }
+                if (
+                  docItem.id.startsWith('typedoc/') ||
+                  docItem.id.includes('/typedoc/')
+                ) {
+                  return false;
+                }
+                return true;
+              })
+              .map((docItem) => {
+                let link = `${versionSpec.routePath}/${docItem.id}`;
+                link = link.replace(new RegExp('([^:])//', 'g'), '$1/');
+                return `- [${docItem.title}](${link}): ${docItem.description ?? 'No description available'}`;
+              });
+
+            if (tocRecords.length > 0) {
+              const tocOutputFilename = `llms${versionSpec.fileSuffix}.txt`;
+              const tocTitle = `${siteConfig.title} - Docs ${versionLabel === '11.x' ? '' : versionLabel}`;
+              const tocFileContent = `${tocTitle}\n\n## Documentation Pages\n\n${tocRecords.join('\n')}`;
+              const tocFilePath = path.join(outDir, tocOutputFilename);
+              try {
+                fs.writeFileSync(tocFilePath, tocFileContent);
+                console.log(
+                  `[llms-txt-plugin] Generated ${tocFilePath} for version ${versionLabel}`,
+                );
+              } catch (err) {
+                console.error(
+                  `[llms-txt-plugin] Error writing TOC file ${tocFilePath}:`,
+                  err,
+                );
+              }
+            } else {
+              console.warn(
+                `[llms-txt-plugin] No document records with id and title (excluding typedoc) found to generate TOC for version '${versionLabel}'. Skipping llms${versionSpec.fileSuffix}.txt.`,
+              );
+            }
+          }
         },
       };
     },
