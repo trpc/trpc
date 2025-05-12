@@ -89,7 +89,10 @@ function AddMessageForm({ onMessagePost }: { onMessagePost: () => void }) {
               }}
             />
             <div>
-              <button type="submit" className="rounded-sm bg-indigo-500 px-4 py-1">
+              <button
+                type="submit"
+                className="rounded-sm bg-indigo-500 px-4 py-1"
+              >
                 Submit
               </button>
             </div>

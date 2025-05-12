@@ -54,7 +54,7 @@ export function Dialog({
                 className={cx(
                   className,
                   sizes[size],
-                  'row-start-2 w-full min-w-0 rounded-t-3xl bg-white p-(--gutter) shadow-lg ring-1 ring-gray-950/10 [--gutter:--spacing(8)] dark:bg-gray-900 dark:ring-white/10 sm:mb-auto sm:rounded-2xl forced-colors:outline',
+                  'p-(--gutter) row-start-2 w-full min-w-0 rounded-t-3xl bg-white shadow-lg ring-1 ring-gray-950/10 [--gutter:--spacing(8)] dark:bg-gray-900 dark:ring-white/10 sm:mb-auto sm:rounded-2xl forced-colors:outline',
                 )}
               >
                 {children}

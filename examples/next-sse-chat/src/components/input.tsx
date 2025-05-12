@@ -39,7 +39,7 @@ export function Label({
       {...props}
       className={cx(
         className,
-        'select-none text-base/6 text-zinc-950 data-disabled:opacity-50 dark:text-white sm:text-sm/6',
+        'data-disabled:opacity-50 select-none text-base/6 text-zinc-950 dark:text-white sm:text-sm/6',
       )}
     />
   );
