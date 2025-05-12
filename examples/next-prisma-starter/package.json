@@ -64,7 +64,7 @@
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.31.1",
     "vite": "^6.1.1",
-    "vitest": "^3.0.6"
+    "vitest": "^3.1.2"
   },
   "publishConfig": {
     "access": "restricted"

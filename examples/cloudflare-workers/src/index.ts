@@ -9,9 +9,10 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { WorkerEntrypoint } from 'cloudflare:workers';
 import { appRouter } from './router';
 
-export default {
+export default class TRPCCloudflareWorkerExample extends WorkerEntrypoint {
   async fetch(request: Request): Promise<Response> {
     return fetchRequestHandler({
       endpoint: '/trpc',
@@ -19,5 +20,5 @@ export default {
       router: appRouter,
       createContext: () => ({}),
     });
-  },
-};
+  }
+}
