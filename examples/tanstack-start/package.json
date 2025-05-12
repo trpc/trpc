@@ -24,7 +24,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "superjson": "^1.12.4",
-    "tailwind-merge": "^2.0.0",
+    "tailwind-merge": "^3.2.0",
     "vinxi": "0.5.3",
     "zod": "^3.24.4"
   },
