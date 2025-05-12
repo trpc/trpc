@@ -87,7 +87,7 @@ function ErrorOverlay(props: { url: string; dismiss: () => void }) {
           </Button>
           <button
             onClick={props.dismiss}
-            className="rounded border border-transparent p-2 text-red-400 transition hover:border-red-400"
+            className="rounded-sm border border-transparent p-2 text-red-400 transition hover:border-red-400"
           >
             Show me the code
           </button>
@@ -136,7 +136,7 @@ function TryItOut() {
                   className={cn(
                     'inline-flex min-w-[100px] items-center justify-center rounded-[0.185rem] px-3 py-1.5 text-sm font-medium text-zinc-700 transition-all disabled:pointer-events-none disabled:opacity-50 dark:text-zinc-200',
                     selectedId === it.id &&
-                      'bg-white text-zinc-900 shadow-sm dark:bg-zinc-900 dark:text-zinc-100',
+                      'shadow-xs bg-white text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100',
                   )}
                 >
                   {it.title}

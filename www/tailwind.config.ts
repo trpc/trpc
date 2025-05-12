@@ -1,4 +1,6 @@
 import type { Config } from 'tailwindcss';
+// @ts-expect-error - no types
+import elevation from 'tailwindcss-elevation';
 import plugin from 'tailwindcss/plugin';
 
 const config: Config = {
@@ -51,17 +53,17 @@ const config: Config = {
   },
   darkMode: ['class', '[data-theme="dark"]'],
   plugins: [
-    plugin(function ({ matchUtilities, theme }) {
-      matchUtilities(
+    plugin(function ($) {
+      $.matchUtilities(
         {
           'animation-delay': (value) => ({
             'animation-delay': value,
           }),
         },
-        { values: theme('transitionDelay') },
+        { values: $.theme('transitionDelay') },
       );
     }),
-    require('tailwindcss-elevation')(['responsive']),
+    elevation(['responsive']),
   ],
 };
 

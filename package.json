@@ -71,7 +71,7 @@
     "lerna": "^8.1.2",
     "npm-run-all2": "^7.0.0",
     "prettier": "^3.3.3",
-    "prettier-plugin-tailwindcss": "^0.6.8",
+    "prettier-plugin-tailwindcss": "^0.6.11",
     "rollup": "^4.34.8",
     "rollup-plugin-analyzer": "^4.0.0",
     "rollup-plugin-delete": "^3.0.0",
