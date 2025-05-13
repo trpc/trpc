@@ -110,7 +110,7 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
-    opts: TRPCInfiniteQueryOptionsIn<
+    opts?: TRPCInfiniteQueryOptionsIn<
       TDef['input'],
       TQueryFnData,
       TData,
@@ -178,8 +178,7 @@ export function trpcInfiniteQueryOptions(args: {
     const finalOpts = {
       ...opts,
       queryKey,
-      // queryFn: inputIsSkipToken ? skipToken : { queryFn },
-      ...(inputIsSkipToken ? {} : { queryFn }),
+      queryFn: inputIsSkipToken ? skipToken : queryFn,
       initialPageParam: opts?.initialCursor ?? (input as any)?.cursor,
       initialData: opts.initialData,
     };
@@ -191,8 +190,7 @@ export function trpcInfiniteQueryOptions(args: {
     const finalOpts = {
       ...opts,
       queryKey,
-      // queryFn: inputIsSkipToken ? skipToken : { queryFn },
-      ...(inputIsSkipToken ? {} : { queryFn }),
+      queryFn: inputIsSkipToken ? skipToken : queryFn,
       initialPageParam: opts?.initialCursor ?? (input as any)?.cursor,
       initialData: undefined,
     };
