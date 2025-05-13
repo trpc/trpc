@@ -146,8 +146,6 @@ export function trpcQueryOptions(args: {
   opts: AnyTRPCQueryOptionsIn;
 }): AnyTRPCQueryOptionsOut {
   const { input, query, path, queryKey, opts } = args;
-  const queryClient = unwrapLazyArg(args.queryClient);
-
   const inputIsSkipToken = input === skipToken;
 
   const queryFn: QueryFunction<unknown, TRPCQueryKey> = async (
@@ -166,6 +164,7 @@ export function trpcQueryOptions(args: {
     const result = await query(...getClientArgs(queryKey, actualOpts));
 
     if (isAsyncIterable(result)) {
+      const queryClient = unwrapLazyArg(args.queryClient);
       return buildQueryFromAsyncIterable(result, queryClient, queryKey);
     }
 
@@ -176,10 +175,9 @@ export function trpcQueryOptions(args: {
     queryOptions({
       ...opts,
       queryKey,
-      queryFn: inputIsSkipToken
-        ? skipToken
-        : (queryFn as unknown as QueryFunction<any, any>),
-    } as SolidQueryOptions<any, any, any, any>),
+      queryFn: inputIsSkipToken ? skipToken : queryFn,
+      initialData: opts.initialData,
+    }),
     { trpc: createTRPCOptionsResult({ path }) },
   );
 }
