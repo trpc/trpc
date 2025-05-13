@@ -3,8 +3,7 @@
   "compilerOptions": {
     "declarationDir": "dist",
     "jsx": "preserve",
-    "jsxImportSource": "solid-js",
-    "types": ["vite/client", "@testing-library/jest-dom"]
+    "jsxImportSource": "solid-js"
   },
   "include": ["src"]
 }
