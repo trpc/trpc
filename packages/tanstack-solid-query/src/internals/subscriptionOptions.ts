@@ -249,7 +249,7 @@ export function useSubscription<TOutput, TError>(
   };
 
   createEffect(() => {
-    reset;
+    const _ = reset;
 
     getInitialState();
   });

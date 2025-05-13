@@ -42,7 +42,7 @@ type BaseInfiniteQueryOptions<
   TQueryFnData,
   TData,
   TError,
-  HasInitial extends boolean,
+  THasInitial extends boolean,
 > = SolidInfiniteQueryOptions<
   TQueryFnData,
   TError,
@@ -51,7 +51,7 @@ type BaseInfiniteQueryOptions<
   TRPCQueryKey,
   PageParam<TInput>
 > & {
-  initialData?: HasInitial extends true
+  initialData?: THasInitial extends true
     ? Exclude<InitialData<TQueryFnData, TInput>, undefined>
     : InitialData<TQueryFnData, TInput>;
 };
@@ -61,9 +61,9 @@ type TRPCInfiniteQueryOptionsIn<
   TQueryFnData,
   TData,
   TError,
-  HasInitial extends boolean,
+  THasInitial extends boolean,
 > = DistributiveOmit<
-  BaseInfiniteQueryOptions<TInput, TQueryFnData, TData, TError, HasInitial>,
+  BaseInfiniteQueryOptions<TInput, TQueryFnData, TData, TError, THasInitial>,
   ReservedOptions
 > &
   TRPCQueryBaseOptions & {
@@ -75,9 +75,9 @@ type TRPCInfiniteQueryOptionsOut<
   TQueryFnData,
   TData,
   TError,
-  HasInitial extends boolean,
+  THasInitial extends boolean,
 > = DistributiveOmit<
-  BaseInfiniteQueryOptions<TInput, TQueryFnData, TData, TError, HasInitial>,
+  BaseInfiniteQueryOptions<TInput, TQueryFnData, TData, TError, THasInitial>,
   'initialPageParam'
 > &
   TRPCQueryOptionsResult & {
