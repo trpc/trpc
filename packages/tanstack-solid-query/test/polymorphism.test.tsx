@@ -136,7 +136,7 @@ describe('polymorphism', () => {
 
       await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
-          'Last Export: `Search for Polymorphism React` (Working)',
+          'Last Export: `Search for Polymorphism Solid` (Working)',
         );
       });
 
@@ -144,7 +144,7 @@ describe('polymorphism', () => {
 
       await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
-          'Last Export: `Search for Polymorphism React` (Ready!)',
+          'Last Export: `Search for Polymorphism Solid` (Ready!)',
         );
       });
     });
@@ -197,7 +197,7 @@ describe('polymorphism', () => {
 
       await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
-          'Last Export: `Search for Polymorphism React` (Working)',
+          'Last Export: `Search for Polymorphism Solid` (Working)',
         );
       });
 
@@ -205,7 +205,7 @@ describe('polymorphism', () => {
 
       await vi.waitFor(() => {
         expect($.container).toHaveTextContent(
-          'Last Export: `Search for Polymorphism React` (Ready!)',
+          'Last Export: `Search for Polymorphism Solid` (Ready!)',
         );
       });
     });
@@ -229,7 +229,7 @@ function StartExportButton(props: {
       async onSuccess(data) {
         props.onExportStarted(data.id);
 
-        await client.invalidateQueries(props.route.pathFilter());
+        return await client.invalidateQueries(props.route.pathFilter());
       },
     }),
   );
@@ -240,7 +240,7 @@ function StartExportButton(props: {
       onClick={() => {
         exportStarter.mutate({
           filter: 'polymorphism react',
-          name: 'Search for Polymorphism React',
+          name: 'Search for Polymorphism Solid',
         });
       }}
     >

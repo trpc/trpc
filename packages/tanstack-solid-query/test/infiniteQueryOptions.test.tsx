@@ -1,7 +1,6 @@
 /** @jsxImportSource solid-js */
 import { testSolidResource } from './__helpers';
 import {
-  infiniteQueryOptions,
   useInfiniteQuery,
   useQueryClient,
   type InfiniteData,
@@ -11,7 +10,7 @@ import userEvent from '@testing-library/user-event';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import type { inferRouterError } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
-import { createSignal, Suspense } from 'solid-js';
+import { createSignal } from 'solid-js';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -224,7 +223,6 @@ describe('infiniteQueryOptions', () => {
       const trpc = useTRPC();
       const queryClient = useQueryClient();
 
-      infiniteQueryOptions;
       const queryOptions = trpc.post.list.infiniteQueryOptions(
         {},
         {
