@@ -39,7 +39,6 @@
   ],
   "eslintConfig": {
     "rules": {
-      "react-hooks/exhaustive-deps": "error",
       "no-restricted-imports": [
         "error",
         "@trpc/tanstack-solid-query"
