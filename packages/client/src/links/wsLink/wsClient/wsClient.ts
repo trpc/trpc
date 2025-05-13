@@ -331,8 +331,7 @@ export class WsClient {
       this.callbacks.onClose?.(event);
 
       if (
-        !this.lazyMode ||
-        (this.lazyMode && this.requestManager.hasPendingRequests())
+        !this.lazyMode || this.requestManager.hasPendingSubscriptions()
       ) {
         this.reconnect(
           new TRPCWebSocketClosedError({

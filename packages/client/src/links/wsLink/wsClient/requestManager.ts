@@ -166,6 +166,13 @@ export class RequestManager {
   }
 
   /**
+   * Checks if there are any pending subscriptions
+   */
+  public hasPendingSubscriptions() {
+    return this.getPendingRequests().some((request) => request.message.method === 'subscription');
+  }
+
+  /**
    * Checks if there are any outgoing requests waiting to be sent.
    */
   public hasOutgoingRequests() {
