@@ -4,7 +4,7 @@ import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { Unsubscribable } from '@trpc/server/observable';
 import type { inferAsyncIterableYield } from '@trpc/server/unstable-core-do-not-import';
-import { createEffect } from 'solid-js';
+import { createEffect, on } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import type {
   ResolverDef,
@@ -248,11 +248,11 @@ export function useSubscription<TOutput, TError>(
         };
   };
 
-  createEffect(() => {
-    const _ = reset;
-
-    getInitialState();
-  });
+  createEffect(
+    on(reset, () => {
+      getInitialState();
+    }),
+  );
 
   let resultRef: $Result = getInitialState();
 
