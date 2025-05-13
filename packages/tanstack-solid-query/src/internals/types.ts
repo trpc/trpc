@@ -43,7 +43,7 @@ export type TRPCInfiniteData<TInput, TOutput> = InfiniteData<
 /**
  * @public
  */
-export interface TRPCReactRequestOptions
+export interface TRPCSolidRequestOptions
   // For RQ, we use their internal AbortSignals instead of letting the user pass their own
   extends Omit<TRPCRequestOptions, 'signal'> {
   /**
@@ -63,7 +63,7 @@ export interface TRPCQueryBaseOptions {
   /**
    * tRPC-related options
    */
-  trpc?: TRPCReactRequestOptions;
+  trpc?: TRPCSolidRequestOptions;
 }
 
 /**
