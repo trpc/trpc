@@ -14,7 +14,7 @@
     "directory": "packages/tanstack-solid-query"
   },
   "scripts": {
-    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
+    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3 --plugin vite-plugin-solid",
     "dev": "pnpm build --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
     "lint": "eslint --cache src",
@@ -69,6 +69,7 @@
     "solid-js": "^1.9.6",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
+    "vite-plugin-solid": "^2.11.6",
     "vitest": "^3.0.6",
     "ws": "^8.0.0",
     "zod": "^3.24.2"
