@@ -41,7 +41,7 @@
     "@trpc/react-query": "workspace:*",
     "@trpc/server": "workspace:*",
     "@trpc/tanstack-react-query": "workspace:*",
-    "@unkey/ratelimit": "^0.5.0",
+    "@unkey/ratelimit": "^2.0.0",
     "@visx/hierarchy": "^3.0.0",
     "@visx/responsive": "^3.0.0",
     "clsx": "^2.0.0",
