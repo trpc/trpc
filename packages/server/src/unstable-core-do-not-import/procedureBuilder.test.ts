@@ -523,6 +523,6 @@ describe('meta exposed', () => {
 
     const proc2 = t.procedure.query(() => {});
     expectTypeOf(proc2.meta).toEqualTypeOf<{ foo?: number }>();
-    expect(proc2.meta).toEqual({});
+    expect(proc2.meta).toEqual(undefined);
   });
 });

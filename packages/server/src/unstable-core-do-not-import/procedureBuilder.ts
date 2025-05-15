@@ -597,6 +597,7 @@ function createResolver(
 
   callerWrapper._def = _def;
   callerWrapper.meta = _def.meta;
+
   return callerWrapper;
 }
 
@@ -647,6 +648,7 @@ async function callRecursive(
         });
       },
     });
+
     return result;
   } catch (cause) {
     return {
@@ -683,6 +685,7 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
 
   procedure._def = _def;
   procedure.procedure = true;
+  procedure.meta = _def.meta;
 
   // FIXME typecast shouldn't be needed - fixittt
   return procedure as unknown as AnyProcedure;
