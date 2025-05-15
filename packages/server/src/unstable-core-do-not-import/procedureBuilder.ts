@@ -366,6 +366,7 @@ export interface ProcedureBuilder<
     : QueryProcedure<{
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;
+        meta: TMeta;
       }>;
 
   /**
@@ -388,6 +389,7 @@ export interface ProcedureBuilder<
     : MutationProcedure<{
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;
+        meta: TMeta;
       }>;
 
   /**
@@ -408,6 +410,7 @@ export interface ProcedureBuilder<
     : SubscriptionProcedure<{
         input: DefaultValue<TInputIn, void>;
         output: inferSubscriptionOutput<DefaultValue<TOutputOut, $Output>>;
+        meta: TMeta;
       }>;
   /**
    * @deprecated Using subscriptions with an observable is deprecated. Use an async generator instead.
@@ -428,6 +431,7 @@ export interface ProcedureBuilder<
     : LegacyObservableSubscriptionProcedure<{
         input: DefaultValue<TInputIn, void>;
         output: inferObservableValue<DefaultValue<TOutputOut, $Output>>;
+        meta: TMeta;
       }>;
   /**
    * Overrides the way a procedure is invoked
@@ -592,6 +596,7 @@ function createResolver(
   };
 
   callerWrapper._def = _def;
+  callerWrapper.meta = _def.meta;
   return callerWrapper;
 }
 

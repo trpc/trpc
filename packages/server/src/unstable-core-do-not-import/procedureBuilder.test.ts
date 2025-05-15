@@ -512,3 +512,17 @@ describe('concat()', () => {
     expect(result).toEqual(1);
   });
 });
+
+describe('meta exposed', () => {
+  test('should be exposed', async () => {
+    const t = initTRPC.meta<{ foo?: number }>().context().create();
+
+    const proc1 = t.procedure.query(() => {});
+    expectTypeOf(proc1.meta).toEqualTypeOf<{ foo?: number }>();
+    expect(proc1.meta).toEqual({ foo: 1 });
+
+    const proc2 = t.procedure.meta({ foo: 1 }).query(() => {});
+    expectTypeOf(proc2.meta).toEqualTypeOf<{ foo?: number }>();
+    expect(proc2.meta).toEqual({});
+  });
+});
