@@ -596,7 +596,6 @@ function createResolver(
   };
 
   callerWrapper._def = _def;
-  callerWrapper.meta = _def.meta;
 
   return callerWrapper;
 }
