@@ -28,7 +28,7 @@ export function createReactDecoration<
     }
 
     const [input, ...rest] = args;
-    const opts = rest[0] || {};
+    const opts = rest[0] ?? {};
 
     return (hooks as any)[lastArg](pathCopy, input, opts);
   });

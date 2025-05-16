@@ -12,16 +12,16 @@
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "next": "^15.1.7",
+    "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.24.2"
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
-    "eslint": "^9.21.0",
+    "eslint": "^9.26.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   },
