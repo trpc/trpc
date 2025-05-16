@@ -1,4 +1,3 @@
-/** @jsxImportSource solid-js */
 /*
   It's common to have a data interface which is used across multiple routes in an API,
   for instance a shared CSV Export system which can be applied to multiple entities in an application.
@@ -86,128 +85,138 @@ describe('polymorphism', () => {
 
   describe('simple factory', () => {
     test('can use a simple factory router with an abstract interface', async () => {
-      await using ctx = testContext();
-      const { useTRPC } = ctx;
+      const ctx = testContext();
+      try {
+        const { useTRPC } = ctx;
 
-      /**
-       * Can now define page components which re-use functionality from components,
-       * and pass the specific backend functionality which is needed need
-       */
-      function IssuesExportPage() {
-        const trpc = useTRPC();
-        const client = useQueryClient();
+        /**
+         * Can now define page components which re-use functionality from components,
+         * and pass the specific backend functionality which is needed need
+         */
+        function IssuesExportPage() {
+          const trpc = useTRPC();
+          const client = useQueryClient();
 
-        const [currentExport, setCurrentExport] = createSignal<number | null>(
-          null,
-        );
-        const invalidate = useMutation(() => ({
-          mutationFn: () => client.invalidateQueries(trpc.github.pathFilter()),
-        }));
+          const [currentExport, setCurrentExport] = createSignal<number | null>(
+            null,
+          );
+          const invalidate = useMutation(() => ({
+            mutationFn: () =>
+              client.invalidateQueries(trpc.github.pathFilter()),
+          }));
 
-        return (
-          <>
-            <StartExportButton
-              route={trpc.github.issues.export}
-              onExportStarted={setCurrentExport}
-            />
+          return (
+            <>
+              <StartExportButton
+                route={trpc.github.issues.export}
+                onExportStarted={setCurrentExport}
+              />
 
-            <RefreshExportsListButton
-              mutate={invalidate.mutate}
-              isPending={invalidate.isPending}
-            />
+              <RefreshExportsListButton
+                mutate={invalidate.mutate}
+                isPending={invalidate.isPending}
+              />
 
-            <ExportStatus
-              status={trpc.github.issues.export.status}
-              currentExport={currentExport()}
-            />
+              <ExportStatus
+                status={trpc.github.issues.export.status}
+                currentExport={currentExport()}
+              />
 
-            <ExportsList list={trpc.github.issues.export.list} />
-          </>
-        );
+              <ExportsList list={trpc.github.issues.export.list} />
+            </>
+          );
+        }
+
+        /**
+         * Test Act & Assertions
+         */
+
+        const $ = ctx.renderApp(<IssuesExportPage />);
+
+        await userEvent.click($.getByTestId('startExportBtn'));
+
+        await vi.waitFor(() => {
+          expect($.container).toHaveTextContent(
+            'Last Export: `Search for Polymorphism Solid` (Working)',
+          );
+        });
+
+        await userEvent.click($.getByTestId('refreshBtn'));
+
+        await vi.waitFor(() => {
+          expect($.container).toHaveTextContent(
+            'Last Export: `Search for Polymorphism Solid` (Ready!)',
+          );
+        });
+      } finally {
+        await ctx[Symbol.asyncDispose]();
       }
-
-      /**
-       * Test Act & Assertions
-       */
-
-      const $ = ctx.renderApp(<IssuesExportPage />);
-
-      await userEvent.click($.getByTestId('startExportBtn'));
-
-      await vi.waitFor(() => {
-        expect($.container).toHaveTextContent(
-          'Last Export: `Search for Polymorphism Solid` (Working)',
-        );
-      });
-
-      await userEvent.click($.getByTestId('refreshBtn'));
-
-      await vi.waitFor(() => {
-        expect($.container).toHaveTextContent(
-          'Last Export: `Search for Polymorphism Solid` (Ready!)',
-        );
-      });
     });
 
     test('can use the abstract interface with a factory instance which has been merged with some extra procedures', async () => {
-      await using ctx = testContext();
-      const { useTRPC } = ctx;
+      const ctx = testContext();
+      try {
+        const { useTRPC } = ctx;
 
-      function DiscussionsExportPage() {
-        const trpc = useTRPC();
-        const client = useQueryClient();
+        function DiscussionsExportPage() {
+          const trpc = useTRPC();
+          const client = useQueryClient();
 
-        const [currentExport, setCurrentExport] = createSignal<number | null>(
-          null,
-        );
+          const [currentExport, setCurrentExport] = createSignal<number | null>(
+            null,
+          );
 
-        const invalidate = useMutation(() => ({
-          mutationFn: () => client.invalidateQueries(trpc.github.pathFilter()),
-        }));
+          const invalidate = useMutation(() => ({
+            mutationFn: () =>
+              client.invalidateQueries(trpc.github.pathFilter()),
+          }));
 
-        return (
-          <>
-            <StartExportButton
-              route={trpc.github.discussions.export}
-              onExportStarted={setCurrentExport}
-            />
+          return (
+            <>
+              <StartExportButton
+                route={trpc.github.discussions.export}
+                onExportStarted={setCurrentExport}
+              />
 
-            <RefreshExportsListButton
-              mutate={invalidate.mutate}
-              isPending={invalidate.isPending}
-            />
+              <RefreshExportsListButton
+                mutate={invalidate.mutate}
+                isPending={invalidate.isPending}
+              />
 
-            <ExportStatus
-              status={trpc.github.discussions.export.status}
-              currentExport={currentExport()}
-            />
+              <ExportStatus
+                status={trpc.github.discussions.export.status}
+                currentExport={currentExport()}
+              />
 
-            <ExportsList list={trpc.github.discussions.export.list} />
-          </>
-        );
+              <ExportsList list={trpc.github.discussions.export.list} />
+            </>
+          );
+        }
+
+        /**
+         * Test Act & Assertions
+         */
+
+        const $ = ctx.renderApp(<DiscussionsExportPage />);
+
+        await userEvent.click($.getByTestId('startExportBtn'));
+
+        await vi.waitFor(() => {
+          expect($.container).toHaveTextContent(
+            'Last Export: `Search for Polymorphism Solid` (Working)',
+          );
+        });
+
+        await userEvent.click($.getByTestId('refreshBtn'));
+
+        await vi.waitFor(() => {
+          expect($.container).toHaveTextContent(
+            'Last Export: `Search for Polymorphism Solid` (Ready!)',
+          );
+        });
+      } finally {
+        await ctx[Symbol.asyncDispose]();
       }
-
-      /**
-       * Test Act & Assertions
-       */
-
-      const $ = ctx.renderApp(<DiscussionsExportPage />);
-
-      await userEvent.click($.getByTestId('startExportBtn'));
-
-      await vi.waitFor(() => {
-        expect($.container).toHaveTextContent(
-          'Last Export: `Search for Polymorphism Solid` (Working)',
-        );
-      });
-
-      await userEvent.click($.getByTestId('refreshBtn'));
-
-      await vi.waitFor(() => {
-        expect($.container).toHaveTextContent(
-          'Last Export: `Search for Polymorphism Solid` (Ready!)',
-        );
-      });
     });
   });
 });

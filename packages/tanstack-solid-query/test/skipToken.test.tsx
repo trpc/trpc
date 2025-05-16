@@ -1,4 +1,3 @@
-/** @jsxImportSource solid-js */
 import { testSolidResource } from './__helpers';
 import { skipToken } from '@tanstack/solid-query';
 import '@solidjs/testing-library';
@@ -42,24 +41,27 @@ const testContext = () => {
 
 describe('skipToken', () => {
   test('various methods honour the skipToken', async () => {
-    await using ctx = testContext();
+    const ctx = testContext();
+    try {
+      const { useTRPC } = ctx;
+      function MyComponent() {
+        const trpc = useTRPC();
 
-    const { useTRPC } = ctx;
-    function MyComponent() {
-      const trpc = useTRPC();
+        const options = trpc.post.byId.queryOptions(skipToken);
+        expect(options.queryFn).toBe(skipToken);
 
-      const options = trpc.post.byId.queryOptions(skipToken);
-      expect(options.queryFn).toBe(skipToken);
+        const options2 = trpc.post.list.infiniteQueryOptions(skipToken);
+        expect(options2.queryFn).toBe(skipToken);
 
-      const options2 = trpc.post.list.infiniteQueryOptions(skipToken);
-      expect(options2.queryFn).toBe(skipToken);
+        return <pre>OK</pre>;
+      }
 
-      return <pre>OK</pre>;
+      const utils = ctx.renderApp(<MyComponent />);
+      await vi.waitFor(() => {
+        expect(utils.container).toHaveTextContent(`OK`);
+      });
+    } finally {
+      await ctx[Symbol.asyncDispose]();
     }
-
-    const utils = ctx.renderApp(<MyComponent />);
-    await vi.waitFor(() => {
-      expect(utils.container).toHaveTextContent(`OK`);
-    });
   });
 });

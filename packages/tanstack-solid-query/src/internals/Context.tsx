@@ -1,4 +1,3 @@
-/** @jsxImportSource solid-js */
 import type { QueryClient } from '@tanstack/solid-query';
 import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';

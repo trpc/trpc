@@ -1,4 +1,3 @@
-/** @jsxImportSource solid-js */
 import '@testing-library/dom';
 import '@testing-library/jest-dom/vitest';
 import type { TestServerAndClientResourceOpts } from '@trpc/client/__tests__/testClientResource';

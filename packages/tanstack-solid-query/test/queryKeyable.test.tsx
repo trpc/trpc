@@ -1,4 +1,3 @@
-/** @jsxImportSource solid-js */
 import { testSolidResource } from './__helpers';
 import { useQueryClient } from '@tanstack/solid-query';
 import type { TRPCClientErrorLike } from '@trpc/client';
@@ -60,19 +59,20 @@ const testContextWithErrorShape = () => {
 
 describe('get queryFilter', () => {
   test('gets various query filters', async () => {
-    await using ctx = testContext();
+    const ctx = testContext();
 
-    const { useTRPC } = ctx;
+    try {
+      const { useTRPC } = ctx;
 
-    function Component() {
-      const trpc = useTRPC();
+      function Component() {
+        const trpc = useTRPC();
 
-      expect(trpc.pathFilter()).toMatchInlineSnapshot(`
+        expect(trpc.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [],
         }
       `);
-      expect(trpc.bluesky.pathFilter()).toMatchInlineSnapshot(`
+        expect(trpc.bluesky.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
             Array [
@@ -81,7 +81,7 @@ describe('get queryFilter', () => {
           ],
         }
       `);
-      expect(trpc.bluesky.post.pathFilter()).toMatchInlineSnapshot(`
+        expect(trpc.bluesky.post.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
             Array [
@@ -91,7 +91,7 @@ describe('get queryFilter', () => {
           ],
         }
       `);
-      expect(trpc.bluesky.post.byId.pathFilter()).toMatchInlineSnapshot(`
+        expect(trpc.bluesky.post.byId.pathFilter()).toMatchInlineSnapshot(`
         Object {
           "queryKey": Array [
             Array [
@@ -102,8 +102,8 @@ describe('get queryFilter', () => {
           ],
         }
       `);
-      expect(trpc.bluesky.post.byId.queryFilter({ id: '1' }))
-        .toMatchInlineSnapshot(`
+        expect(trpc.bluesky.post.byId.queryFilter({ id: '1' }))
+          .toMatchInlineSnapshot(`
           Object {
             "queryKey": Array [
               Array [
@@ -121,70 +121,78 @@ describe('get queryFilter', () => {
           }
         `);
 
-      return 'some text';
-    }
+        return 'some text';
+      }
 
-    ctx.renderApp(<Component />);
+      ctx.renderApp(<Component />);
+    } finally {
+      await ctx[Symbol.asyncDispose]();
+    }
   });
 
   test('type inference for query filters', async () => {
-    await using ctx = testContext();
+    const ctx = testContext();
 
-    const { useTRPC } = ctx;
+    try {
+      const { useTRPC } = ctx;
 
-    function Component() {
-      const trpc = useTRPC();
-      const query = useQueryClient();
+      function Component() {
+        const trpc = useTRPC();
+        const query = useQueryClient();
 
-      const a = trpc.bluesky.post.byId.queryFilter(
-        { id: '1' },
-        {
-          predicate(query) {
-            const data = query.setData('__result');
-            assertType<unknown>(data);
-            assertType<readonly unknown[]>(query.queryKey);
+        const a = trpc.bluesky.post.byId.queryFilter(
+          { id: '1' },
+          {
+            predicate(query) {
+              const data = query.setData('__result');
+              assertType<unknown>(data);
+              assertType<readonly unknown[]>(query.queryKey);
 
-            return true;
+              return true;
+            },
           },
-        },
-      );
-      assertType<TRPCQueryKey>(a.queryKey);
+        );
+        assertType<TRPCQueryKey>(a.queryKey);
 
-      const b = query.getQueryData(a.queryKey);
-      assertType<'__result' | undefined>(b);
+        const b = query.getQueryData(a.queryKey);
+        assertType<'__result' | undefined>(b);
 
-      return 'some text';
+        return 'some text';
+      }
+
+      ctx.renderApp(<Component />);
+    } finally {
+      await ctx[Symbol.asyncDispose]();
     }
-
-    ctx.renderApp(<Component />);
   });
 });
 
 describe('get queryKey', () => {
   test('gets various query keys', async () => {
-    await using ctx = testContext();
+    const ctx = testContext();
 
-    const { useTRPC } = ctx;
+    try {
+      const { useTRPC } = ctx;
 
-    function Component() {
-      const trpc = useTRPC();
-      const query = useQueryClient();
+      function Component() {
+        const trpc = useTRPC();
+        const query = useQueryClient();
 
-      query.setQueryData(
-        trpc.bluesky.post.byId.queryKey({ id: '1' }),
-        '__result',
-      );
+        query.setQueryData(
+          trpc.bluesky.post.byId.queryKey({ id: '1' }),
+          '__result',
+        );
 
-      expect(trpc.pathKey()).toMatchInlineSnapshot(`Array []`);
+        expect(trpc.pathKey()).toMatchInlineSnapshot(`Array []`);
 
-      expect(trpc.bluesky.pathKey()).toMatchInlineSnapshot(`
+        expect(trpc.bluesky.pathKey()).toMatchInlineSnapshot(`
         Array [
           Array [
             "bluesky",
           ],
         ]
       `);
-      expect(trpc.bluesky.post.pathKey()).toMatchInlineSnapshot(`
+        expect(trpc.bluesky.post.pathKey()).toMatchInlineSnapshot(`
         Array [
           Array [
             "bluesky",
@@ -192,7 +200,7 @@ describe('get queryKey', () => {
           ],
         ]
       `);
-      expect(trpc.bluesky.post.byId.pathKey()).toMatchInlineSnapshot(`
+        expect(trpc.bluesky.post.byId.pathKey()).toMatchInlineSnapshot(`
         Array [
           Array [
             "bluesky",
@@ -201,8 +209,8 @@ describe('get queryKey', () => {
           ],
         ]
       `);
-      expect(trpc.bluesky.post.byId.queryKey({ id: '1' }))
-        .toMatchInlineSnapshot(`
+        expect(trpc.bluesky.post.byId.queryKey({ id: '1' }))
+          .toMatchInlineSnapshot(`
           Array [
             Array [
               "bluesky",
@@ -218,122 +226,138 @@ describe('get queryKey', () => {
           ]
         `);
 
-      return 'some text';
-    }
+        return 'some text';
+      }
 
-    ctx.renderApp(<Component />);
+      ctx.renderApp(<Component />);
+    } finally {
+      await ctx[Symbol.asyncDispose]();
+    }
   });
 
   test('type inference for query keys', async () => {
-    await using ctx = testContext();
+    const ctx = testContext();
 
-    const { useTRPC } = ctx;
+    try {
+      const { useTRPC } = ctx;
 
-    function Component() {
-      const trpc = useTRPC();
-      const query = useQueryClient();
+      function Component() {
+        const trpc = useTRPC();
+        const query = useQueryClient();
 
-      const a = query.getQueryData(
-        trpc.bluesky.post.byId.queryKey({ id: '1' }),
-      );
-      assertType<'__result' | undefined>(a);
+        const a = query.getQueryData(
+          trpc.bluesky.post.byId.queryKey({ id: '1' }),
+        );
+        assertType<'__result' | undefined>(a);
 
-      const b = query.setQueryData(
-        trpc.bluesky.post.byId.queryKey({ id: '1' }),
-        '__result',
-      );
-      assertType<'__result' | undefined>(b);
+        const b = query.setQueryData(
+          trpc.bluesky.post.byId.queryKey({ id: '1' }),
+          '__result',
+        );
+        assertType<'__result' | undefined>(b);
 
-      return 'some text';
+        return 'some text';
+      }
+
+      ctx.renderApp(<Component />);
+    } finally {
+      await ctx[Symbol.asyncDispose]();
     }
-
-    ctx.renderApp(<Component />);
   });
 
   test('type inference for getQueryState', async () => {
-    await using ctx = testContext();
+    const ctx = testContext();
 
-    const { useTRPC } = ctx;
+    try {
+      const { useTRPC } = ctx;
 
-    function Component() {
-      const trpc = useTRPC();
-      const query = useQueryClient();
+      function Component() {
+        const trpc = useTRPC();
+        const query = useQueryClient();
 
-      const a = query.getQueryState(
-        trpc.bluesky.post.byId.queryKey({ id: '1' }),
-      );
-      assertType<'__result' | undefined>(a?.data);
-      assertType<
-        | TRPCClientErrorLike<{
-            transformer: false;
-            errorShape: inferRouterError<typeof ctx.router>;
-          }>
-        | null
-        | undefined
-      >(a?.error);
+        const a = query.getQueryState(
+          trpc.bluesky.post.byId.queryKey({ id: '1' }),
+        );
+        assertType<'__result' | undefined>(a?.data);
+        assertType<
+          | TRPCClientErrorLike<{
+              transformer: false;
+              errorShape: inferRouterError<typeof ctx.router>;
+            }>
+          | null
+          | undefined
+        >(a?.error);
 
-      const b = query.setQueryData(
-        trpc.bluesky.post.byId.queryKey({ id: '1' }),
-        '__result',
-      );
-      assertType<'__result' | undefined>(b);
+        const b = query.setQueryData(
+          trpc.bluesky.post.byId.queryKey({ id: '1' }),
+          '__result',
+        );
+        assertType<'__result' | undefined>(b);
 
-      return 'some text';
+        return 'some text';
+      }
+
+      ctx.renderApp(<Component />);
+    } finally {
+      await ctx[Symbol.asyncDispose]();
     }
-
-    ctx.renderApp(<Component />);
   });
 
   test('type inference for getQueryState with defined error shape', async () => {
-    await using ctx = testContextWithErrorShape();
+    const ctx = testContextWithErrorShape();
 
-    const { useTRPC } = ctx;
+    try {
+      const { useTRPC } = ctx;
 
-    function Component() {
-      const trpc = useTRPC();
-      const query = useQueryClient();
+      function Component() {
+        const trpc = useTRPC();
+        const query = useQueryClient();
 
-      const a = query.getQueryState(
-        trpc.bluesky.post.byId.queryKey({ id: '1' }),
-      );
-      assertType<'__result' | undefined>(a?.data);
-      assertType<
-        | TRPCClientErrorLike<{
-            transformer: false;
-            errorShape: inferRouterError<typeof ctx.router>;
-          }>
-        | null
-        | undefined
-      >(a?.error);
+        const a = query.getQueryState(
+          trpc.bluesky.post.byId.queryKey({ id: '1' }),
+        );
+        assertType<'__result' | undefined>(a?.data);
+        assertType<
+          | TRPCClientErrorLike<{
+              transformer: false;
+              errorShape: inferRouterError<typeof ctx.router>;
+            }>
+          | null
+          | undefined
+        >(a?.error);
 
-      const b = query.setQueryData(
-        trpc.bluesky.post.byId.queryKey({ id: '1' }),
-        '__result',
-      );
-      assertType<'__result' | undefined>(b);
+        const b = query.setQueryData(
+          trpc.bluesky.post.byId.queryKey({ id: '1' }),
+          '__result',
+        );
+        assertType<'__result' | undefined>(b);
 
-      return 'some text';
+        return 'some text';
+      }
+
+      ctx.renderApp(<Component />);
+    } finally {
+      await ctx[Symbol.asyncDispose]();
     }
-
-    ctx.renderApp(<Component />);
   });
 });
 
 describe('get mutationKey', () => {
   test('gets various mutation keys', async () => {
-    await using ctx = testContext();
+    const ctx = testContext();
 
-    const { useTRPC } = ctx;
+    try {
+      const { useTRPC } = ctx;
 
-    function Component() {
-      const trpc = useTRPC();
+      function Component() {
+        const trpc = useTRPC();
 
-      // @ts-expect-error - not a mutation
-      trpc.bluesky.post.byId.mutationKey;
-      // @ts-expect-error - not a mutation
-      trpc.bluesky.mutationKey;
+        // @ts-expect-error - not a mutation
+        trpc.bluesky.post.byId.mutationKey;
+        // @ts-expect-error - not a mutation
+        trpc.bluesky.mutationKey;
 
-      expect(trpc.bluesky.post.create.mutationKey()).toMatchInlineSnapshot(`
+        expect(trpc.bluesky.post.create.mutationKey()).toMatchInlineSnapshot(`
         Array [
           Array [
             "bluesky",
@@ -343,9 +367,12 @@ describe('get mutationKey', () => {
         ]
       `);
 
-      return 'some text';
-    }
+        return 'some text';
+      }
 
-    ctx.renderApp(<Component />);
+      ctx.renderApp(<Component />);
+    } finally {
+      await ctx[Symbol.asyncDispose]();
+    }
   });
 });

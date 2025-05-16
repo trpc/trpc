@@ -1,4 +1,3 @@
-/** @jsxImportSource solid-js */
 import { testSolidResource } from './__helpers';
 import { skipToken, useQuery } from '@tanstack/solid-query';
 import '@solidjs/testing-library';
@@ -53,128 +52,146 @@ const testContext = () => {
 
 describe('queryOptions', () => {
   test('basic', async () => {
-    await using ctx = testContext();
+    const ctx = testContext();
+    try {
+      const { useTRPC } = ctx;
+      function MyComponent() {
+        const trpc = useTRPC();
+        const queryOptions = trpc.post.byId.queryOptions({ id: '1' });
+        expect(queryOptions.trpc.path).toBe('post.byId');
+        const query1 = useQuery(() => queryOptions);
 
-    const { useTRPC } = ctx;
-    function MyComponent() {
-      const trpc = useTRPC();
-      const queryOptions = trpc.post.byId.queryOptions({ id: '1' });
-      expect(queryOptions.trpc.path).toBe('post.byId');
-      const query1 = useQuery(() => queryOptions);
+        const query2 = useQuery(() => trpc.post.byId.queryOptions({ id: '1' }));
+        expectTypeOf(query1).toMatchTypeOf(query2);
 
-      const query2 = useQuery(() => trpc.post.byId.queryOptions({ id: '1' }));
-      expectTypeOf(query1).toMatchTypeOf(query2);
+        if (!query1.data) {
+          return <>...</>;
+        }
 
-      if (!query1.data) {
-        return <>...</>;
+        expectTypeOf(query1.data).toMatchTypeOf<'__result'>();
+        expectTypeOf(query1.error).toMatchTypeOf<TRPCClientErrorLike<{
+          transformer: false;
+          errorShape: inferRouterError<typeof ctx.router>;
+        }> | null>();
+
+        return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
       }
 
-      expectTypeOf(query1.data).toMatchTypeOf<'__result'>();
-      expectTypeOf(query1.error).toMatchTypeOf<TRPCClientErrorLike<{
-        transformer: false;
-        errorShape: inferRouterError<typeof ctx.router>;
-      }> | null>();
-
-      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+      const utils = ctx.renderApp(<MyComponent />);
+      await vi.waitFor(() => {
+        expect(utils.container).toHaveTextContent(`__result`);
+      });
+    } finally {
+      await ctx[Symbol.asyncDispose]();
     }
-
-    const utils = ctx.renderApp(<MyComponent />);
-    await vi.waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__result`);
-    });
   });
 
   test('initialData', async () => {
-    await using ctx = testContext();
+    const ctx = testContext();
+    try {
+      const { useTRPC } = ctx;
+      function MyComponent() {
+        const trpc = useTRPC();
+        const queryOptions = trpc.post.byId.queryOptions(
+          { id: '1' },
+          { initialData: '__result' },
+        );
+        expect(queryOptions.trpc.path).toBe('post.byId');
+        const query1 = useQuery(() => queryOptions);
 
-    const { useTRPC } = ctx;
-    function MyComponent() {
-      const trpc = useTRPC();
-      const queryOptions = trpc.post.byId.queryOptions(
-        { id: '1' },
-        { initialData: '__result' },
-      );
-      expect(queryOptions.trpc.path).toBe('post.byId');
-      const query1 = useQuery(() => queryOptions);
+        expectTypeOf(query1.data).toEqualTypeOf<'__result'>();
 
-      expectTypeOf(query1.data).toEqualTypeOf<'__result'>();
+        return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+      }
 
-      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+      const utils = ctx.renderApp(<MyComponent />);
+      await vi.waitFor(() => {
+        expect(utils.container).toHaveTextContent(`__result`);
+      });
+    } finally {
+      await ctx[Symbol.asyncDispose]();
     }
-
-    const utils = ctx.renderApp(<MyComponent />);
-    await vi.waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__result`);
-    });
   });
 
   test('disabling query with skipToken', async () => {
-    await using ctx = testContext();
+    const ctx = testContext();
 
-    const { useTRPC } = ctx;
-    function MyComponent() {
-      const trpc = useTRPC();
-      const options = trpc.post.byId.queryOptions(skipToken);
-      const query1 = useQuery(() => options);
+    try {
+      const { useTRPC } = ctx;
+      function MyComponent() {
+        const trpc = useTRPC();
+        const options = trpc.post.byId.queryOptions(skipToken);
+        const query1 = useQuery(() => options);
 
-      const query2 = useQuery(() => trpc.post.byId.queryOptions(skipToken));
+        const query2 = useQuery(() => trpc.post.byId.queryOptions(skipToken));
 
-      expectTypeOf(query1.data).toMatchTypeOf<'__result' | undefined>();
-      expectTypeOf(query2.data).toMatchTypeOf<'__result' | undefined>();
+        expectTypeOf(query1.data).toMatchTypeOf<'__result' | undefined>();
+        expectTypeOf(query2.data).toMatchTypeOf<'__result' | undefined>();
 
-      return <pre>{query1.status}</pre>;
+        return <pre>{query1.status}</pre>;
+      }
+
+      const utils = ctx.renderApp(<MyComponent />);
+      await vi.waitFor(() => {
+        expect(utils.container).toHaveTextContent(`pending`);
+      });
+    } finally {
+      await ctx[Symbol.asyncDispose]();
     }
-
-    const utils = ctx.renderApp(<MyComponent />);
-    await vi.waitFor(() => {
-      expect(utils.container).toHaveTextContent(`pending`);
-    });
   });
 
   test('with extra `trpc` context', async () => {
-    await using ctx = testContext();
+    const ctx = testContext();
 
-    const context = {
-      __TEST__: true,
-    };
+    try {
+      const context = {
+        __TEST__: true,
+      };
 
-    const { useTRPC } = ctx;
-    function MyComponent() {
-      const trpc = useTRPC();
-      const queryOptions = trpc.post.byId.queryOptions(
-        { id: '1' },
-        { trpc: { context } },
-      );
-      expect(queryOptions.trpc.path).toBe('post.byId');
-      const query1 = useQuery(() => queryOptions);
+      const { useTRPC } = ctx;
+      function MyComponent() {
+        const trpc = useTRPC();
+        const queryOptions = trpc.post.byId.queryOptions(
+          { id: '1' },
+          { trpc: { context } },
+        );
+        expect(queryOptions.trpc.path).toBe('post.byId');
+        const query1 = useQuery(() => queryOptions);
 
-      if (!query1.data) {
-        return <>...</>;
+        if (!query1.data) {
+          return <>...</>;
+        }
+
+        expectTypeOf(query1.data).toMatchTypeOf<'__result'>();
+
+        return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
       }
 
-      expectTypeOf(query1.data).toMatchTypeOf<'__result'>();
+      const utils = ctx.renderApp(<MyComponent />);
+      await vi.waitFor(() => {
+        expect(utils.container).toHaveTextContent(`__result`);
+      });
 
-      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+      expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
+    } finally {
+      await ctx[Symbol.asyncDispose]();
     }
-
-    const utils = ctx.renderApp(<MyComponent />);
-    await vi.waitFor(() => {
-      expect(utils.container).toHaveTextContent(`__result`);
-    });
-
-    expect(ctx.spyLink.mock.calls[0]![0].context).toMatchObject(context);
   });
 
   test('does not fetch if called from router directly', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
-    await using ctx = testContext();
+    const ctx = testContext();
 
-    const post = await ctx.queryClient.fetchQuery(
-      ctx.optionsProxyServer.post.byId.queryOptions({ id: '1' }),
-    );
+    try {
+      const post = await ctx.queryClient.fetchQuery(
+        ctx.optionsProxyServer.post.byId.queryOptions({ id: '1' }),
+      );
 
-    expect(post).toEqual('__result');
+      expect(post).toEqual('__result');
 
-    expect(fetchSpy).toHaveBeenCalledTimes(0);
+      expect(fetchSpy).toHaveBeenCalledTimes(0);
+    } finally {
+      await ctx[Symbol.asyncDispose]();
+    }
   });
 });

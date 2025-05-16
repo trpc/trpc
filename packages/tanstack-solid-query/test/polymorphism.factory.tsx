@@ -1,4 +1,3 @@
-/** @jsxImportSource solid-js */
 //
 // This file contains a useful pattern in tRPC,
 //  building factories which can produce common functionality over a homologous data source.

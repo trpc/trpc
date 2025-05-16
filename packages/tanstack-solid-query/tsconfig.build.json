@@ -10,7 +10,7 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "types": ["vite/client"],
+    "types": ["vite/client", "@testing-library/jest-dom"],
     "noEmit": true,
     "isolatedModules": true
   },
