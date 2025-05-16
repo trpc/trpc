@@ -1,7 +1,6 @@
 import { EventEmitter, on } from 'node:events';
 import { testReactResource } from './__helpers';
 import { fireEvent } from '@testing-library/react';
-import { input } from '@testing-library/user-event/dist/types/event';
 import { httpSubscriptionLink, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
