@@ -419,8 +419,36 @@ describe('http', () => {
     }
 
     const utils = ctx.renderApp(<MyComponent input={1} />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    // emit
+    ctx.ee.emit('data', 10);
+
+    await vi.waitFor(
+      () => {
+        expect(utils.container).toHaveTextContent('data:11');
+      },
+      {
+        timeout: 5_000,
+      },
+    );
 
     ctx.rerenderApp(utils, <MyComponent input={2} />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    // emit
+    ctx.ee.emit('data', 10);
+
+    await vi.waitFor(
+      () => {
+        expect(utils.container).toHaveTextContent('data:12');
+      },
+      {
+        timeout: 5_000,
+      },
+    );
 
     await vi.waitFor(() => {
       expect(ctx.abortState).toEqual({
