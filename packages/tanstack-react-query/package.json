@@ -4,9 +4,9 @@
   "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "typings": "dist/index.d.cts",
   "homepage": "https://trpc.io/docs/client/tanstack-react-query/setup",
   "repository": {
     "type": "git",
@@ -14,8 +14,8 @@
     "directory": "packages/tanstack-react-query"
   },
   "scripts": {
-    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
-    "dev": "pnpm build --watch",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
     "lint": "eslint --cache src",
     "test-run:tsc": "tsc --noEmit --pretty",
@@ -24,9 +24,14 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "default": "./dist/index.mjs",
+        "types": "./dist/index.d.mts"
+      },
+      "require": {
+        "default": "./dist/index.js",
+        "types": "./dist/index.d.ts"
+      }
     }
   },
   "files": [
@@ -66,7 +71,7 @@
     "konn": "^0.7.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "rollup": "^4.34.8",
+    "tsdown": "0.11.9",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "vitest": "^3.1.2",

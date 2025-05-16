@@ -7,7 +7,11 @@ export type PackageJson = {
   name: string;
   exports: Record<
     string,
-    { import: string; require: string; default: string } | string
+    | {
+        import: { default: string; types: string };
+        require: { types: string; default: string };
+      }
+    | string
   >;
   files: string[];
   dependencies: Record<string, string>;
@@ -39,9 +43,8 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.exports = {
     './package.json': './package.json',
     '.': {
-      import: './dist/index.mjs',
-      require: './dist/index.js',
-      default: './dist/index.js',
+      import: { default: './dist/index.mjs', types: './dist/index.d.mts' },
+      require: { default: './dist/index.js', types: './dist/index.d.ts' },
     },
   };
 
@@ -77,9 +80,8 @@ export async function generateEntrypoints(rawInputs: string[]) {
       const esm = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.mjs');
       const cjs = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.js');
       pkgJson.exports[`./${importPath}`] = {
-        import: esm,
-        require: cjs,
-        default: cjs,
+        import: { default: esm, types: esm.replace(/\.mjs$/, '.d.mts') },
+        require: { default: cjs, types: cjs.replace(/\.js$/, '.d.ts') },
       };
 
       // create the barrelfile, linking the declared exports to the compiled files in dist
@@ -89,18 +91,17 @@ export async function generateEntrypoints(rawInputs: string[]) {
       const resolvedImport = [
         ...Array(importDepth).fill('..'),
         'dist',
-        importPath,
+        pathWithoutSrc.replace(/\.(ts|tsx)$/, ''),
       ].join('/');
 
-      // index.js
-      const indexFile = path.resolve(importPath, 'index.js');
-      const indexFileContent = `module.exports = require('${resolvedImport}');\n`;
-      writeFileSyncRecursive(indexFile, indexFileContent);
-
-      // index.d.ts
-      const typeFile = path.resolve(importPath, 'index.d.ts');
-      const typeFileContent = `export * from '${resolvedImport}';\n`;
-      writeFileSyncRecursive(typeFile, typeFileContent);
+      // package.json
+      const packageJson = path.resolve(importPath, 'package.json');
+      const packageJsonContent = JSON.stringify({
+        main: `${resolvedImport}.js`,
+        module: `${resolvedImport}.mjs`,
+        types: `${resolvedImport}.d.ts`,
+      });
+      writeFileSyncRecursive(packageJson, packageJsonContent);
     });
 
   // write top-level directories to package.json 'files' field

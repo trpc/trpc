@@ -4,9 +4,9 @@
   "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "typings": "dist/index.d.cts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -22,8 +22,8 @@
     }
   },
   "scripts": {
-    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
-    "dev": "pnpm build --watch",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
     "lint": "eslint --cache src",
     "ts-watch": "tsc --watch"
@@ -31,39 +31,74 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "default": "./dist/index.mjs",
+        "types": "./dist/index.d.mts"
+      },
+      "require": {
+        "default": "./dist/index.js",
+        "types": "./dist/index.d.ts"
+      }
     },
     "./links/httpBatchLink": {
-      "import": "./dist/links/httpBatchLink.mjs",
-      "require": "./dist/links/httpBatchLink.js",
-      "default": "./dist/links/httpBatchLink.js"
+      "import": {
+        "default": "./dist/links/httpBatchLink.mjs",
+        "types": "./dist/links/httpBatchLink.d.mts"
+      },
+      "require": {
+        "default": "./dist/links/httpBatchLink.js",
+        "types": "./dist/links/httpBatchLink.d.ts"
+      }
     },
     "./links/httpLink": {
-      "import": "./dist/links/httpLink.mjs",
-      "require": "./dist/links/httpLink.js",
-      "default": "./dist/links/httpLink.js"
+      "import": {
+        "default": "./dist/links/httpLink.mjs",
+        "types": "./dist/links/httpLink.d.mts"
+      },
+      "require": {
+        "default": "./dist/links/httpLink.js",
+        "types": "./dist/links/httpLink.d.ts"
+      }
     },
     "./links/loggerLink": {
-      "import": "./dist/links/loggerLink.mjs",
-      "require": "./dist/links/loggerLink.js",
-      "default": "./dist/links/loggerLink.js"
+      "import": {
+        "default": "./dist/links/loggerLink.mjs",
+        "types": "./dist/links/loggerLink.d.mts"
+      },
+      "require": {
+        "default": "./dist/links/loggerLink.js",
+        "types": "./dist/links/loggerLink.d.ts"
+      }
     },
     "./links/splitLink": {
-      "import": "./dist/links/splitLink.mjs",
-      "require": "./dist/links/splitLink.js",
-      "default": "./dist/links/splitLink.js"
+      "import": {
+        "default": "./dist/links/splitLink.mjs",
+        "types": "./dist/links/splitLink.d.mts"
+      },
+      "require": {
+        "default": "./dist/links/splitLink.js",
+        "types": "./dist/links/splitLink.d.ts"
+      }
     },
     "./links/wsLink/wsLink": {
-      "import": "./dist/links/wsLink/wsLink.mjs",
-      "require": "./dist/links/wsLink/wsLink.js",
-      "default": "./dist/links/wsLink/wsLink.js"
+      "import": {
+        "default": "./dist/links/wsLink/wsLink.mjs",
+        "types": "./dist/links/wsLink/wsLink.d.mts"
+      },
+      "require": {
+        "default": "./dist/links/wsLink/wsLink.js",
+        "types": "./dist/links/wsLink/wsLink.d.ts"
+      }
     },
     "./unstable-internals": {
-      "import": "./dist/unstable-internals.mjs",
-      "require": "./dist/unstable-internals.js",
-      "default": "./dist/unstable-internals.js"
+      "import": {
+        "default": "./dist/unstable-internals.mjs",
+        "types": "./dist/unstable-internals.d.mts"
+      },
+      "require": {
+        "default": "./dist/unstable-internals.js",
+        "types": "./dist/unstable-internals.d.ts"
+      }
     }
   },
   "files": [
@@ -88,7 +123,7 @@
     "eslint": "^9.26.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
-    "rollup": "^4.34.8",
+    "tsdown": "0.11.9",
     "tslib": "^2.8.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",

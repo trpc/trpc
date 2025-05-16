@@ -4,9 +4,9 @@
   "description": "The tRPC React library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "typings": "dist/index.d.cts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -16,8 +16,8 @@
   "scripts": {
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
     "codegen-tests": "run-p codegen:*",
-    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
-    "dev": "pnpm build --watch",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "codegen-entrypoints": "tsx entrypoints.script.ts",
     "lint": "eslint --cache src",
     "ts-watch": "tsc --watch"
@@ -25,24 +25,44 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "default": "./dist/index.mjs",
+        "types": "./dist/index.d.mts"
+      },
+      "require": {
+        "default": "./dist/index.js",
+        "types": "./dist/index.d.ts"
+      }
     },
     "./rsc": {
-      "import": "./dist/rsc.mjs",
-      "require": "./dist/rsc.js",
-      "default": "./dist/rsc.js"
+      "import": {
+        "default": "./dist/rsc.mjs",
+        "types": "./dist/rsc.d.mts"
+      },
+      "require": {
+        "default": "./dist/rsc.js",
+        "types": "./dist/rsc.d.ts"
+      }
     },
     "./server": {
-      "import": "./dist/server/index.mjs",
-      "require": "./dist/server/index.js",
-      "default": "./dist/server/index.js"
+      "import": {
+        "default": "./dist/server/index.mjs",
+        "types": "./dist/server/index.d.mts"
+      },
+      "require": {
+        "default": "./dist/server/index.js",
+        "types": "./dist/server/index.d.ts"
+      }
     },
     "./shared": {
-      "import": "./dist/shared/index.mjs",
-      "require": "./dist/shared/index.js",
-      "default": "./dist/shared/index.js"
+      "import": {
+        "default": "./dist/shared/index.mjs",
+        "types": "./dist/shared/index.d.mts"
+      },
+      "require": {
+        "default": "./dist/shared/index.js",
+        "types": "./dist/shared/index.d.ts"
+      }
     }
   },
   "files": [
@@ -91,7 +111,7 @@
     "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "rollup": "^4.34.8",
+    "tsdown": "0.11.9",
     "tslib": "^2.8.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",

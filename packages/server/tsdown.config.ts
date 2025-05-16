@@ -1,6 +1,4 @@
-import { fileURLToPath } from 'url';
-import type { RollupOptions } from 'rollup';
-import { buildConfig } from '../../scripts/getRollupConfig';
+import { defineConfig } from 'tsdown';
 
 export const input = [
   'src/adapters/aws-lambda/index.ts',
@@ -20,10 +18,14 @@ export const input = [
   'src/unstable-core-do-not-import.ts',
 ];
 
-export default function rollup(): RollupOptions[] {
-  return buildConfig({
-    input,
-    packageDir: fileURLToPath(new URL('.', import.meta.url)),
-    externalPackages: [/^next/, /^ws/, /^express/, /^fastify/],
-  });
-}
+export default defineConfig({
+  entry: input,
+  dts: {
+    sourcemap: true,
+  },
+  // outExtensions: ({ format }) => ({
+  //   js: format === 'es' ? '.mjs' : '.cjs',
+  //   dts: format === 'cjs' ? '.mts' : '.cts',
+  // }),
+  format: ['cjs', 'esm'],
+});
