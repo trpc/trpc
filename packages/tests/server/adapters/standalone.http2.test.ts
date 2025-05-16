@@ -84,7 +84,7 @@ const t = initTRPC.context<typeof createContext>().create();
 
 const router = t.router({
   status: t.procedure.query((opts) => {
-    const url = opts.ctx.info.url!;
+    const url = opts.ctx.info.url!.href;
 
     return {
       url,
