@@ -5,6 +5,7 @@ import { httpSubscriptionLink, wsLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { isAbortError } from '@trpc/server/unstable-core-do-not-import/http/abortError';
 import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
@@ -57,6 +58,8 @@ function diff(list: any[]) {
 }
 
 const getCtx = (protocol: 'http' | 'ws') => {
+  const abortState: Record<number, 'aborted'> = {};
+
   const ee = new EventEmitter();
   const t = initTRPC.create({
     errorFormatter({ shape }) {
@@ -73,11 +76,18 @@ const getCtx = (protocol: 'http' | 'ws') => {
     onEventIterable: t.procedure
       .input(z.number())
       .subscription(async function* (opts) {
-        for await (const event of on(ee, 'data', {
-          signal: opts.signal,
-        })) {
-          const data = event[0] as number;
-          yield data + opts.input;
+        try {
+          for await (const event of on(ee, 'data', {
+            signal: opts.signal,
+          })) {
+            const data = event[0] as number;
+            yield data + opts.input;
+          }
+        } catch (err) {
+          if (isAbortError(err)) {
+            abortState[opts.input] = 'aborted';
+          }
+          throw err;
         }
       }),
     /**
@@ -117,6 +127,7 @@ const getCtx = (protocol: 'http' | 'ws') => {
   return {
     ...ctx,
     ee,
+    abortState,
   };
 };
 
@@ -381,8 +392,80 @@ describe('connection state - http', () => {
   });
 });
 
-describe('reset - http', () => {
-  test('iterable', async () => {
+describe('http', () => {
+  test('aborts on useSubscription restarts', async () => {
+    await using ctx = getCtx('http');
+
+    const { useTRPC } = ctx;
+
+    function MyComponent({ input }: { input: number }) {
+      const trpc = useTRPC();
+      const result = useSubscription(
+        trpc.onEventIterable.subscriptionOptions(input, {
+          onData: (data) => {
+            expectTypeOf(data).toMatchTypeOf<number>();
+          },
+        }),
+      );
+
+      return (
+        <>
+          <div>status:{result.status}</div>
+          <div>error:{result.error?.message}</div>
+          <div>data:{result.data ?? 'NO_DATA'}</div>
+        </>
+      );
+    }
+
+    const utils = ctx.renderApp(<MyComponent input={1} />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    // emit
+    ctx.ee.emit('data', 10);
+
+    await vi.waitFor(
+      () => {
+        expect(utils.container).toHaveTextContent('data:11');
+      },
+      {
+        timeout: 5_000,
+      },
+    );
+
+    ctx.rerenderApp(utils, <MyComponent input={2} />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent(`status:pending`);
+    });
+    // emit
+    ctx.ee.emit('data', 10);
+
+    await vi.waitFor(
+      () => {
+        expect(utils.container).toHaveTextContent('data:12');
+      },
+      {
+        timeout: 5_000,
+      },
+    );
+
+    await vi.waitFor(() => {
+      expect(ctx.abortState).toEqual({
+        1: 'aborted',
+      });
+    });
+
+    utils.unmount();
+
+    await vi.waitFor(() => {
+      expect(ctx.abortState).toEqual({
+        1: 'aborted',
+        2: 'aborted',
+      });
+    });
+  });
+
+  test('rset - iterable', async () => {
     await using ctx = getCtx('http');
     const { useTRPC } = ctx;
 
