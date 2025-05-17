@@ -4,6 +4,7 @@ import type {
   DefinedInitialDataOptions,
   InfiniteData,
   QueryClient,
+  TRPCMutationKey,
   UndefinedInitialDataInfiniteOptions,
   UndefinedInitialDataOptions,
   UnusedSkipTokenInfiniteOptions,
@@ -243,6 +244,7 @@ export interface UseMutationOverride {
      * Meta data passed in from the `useMutation()` hook
      */
     meta: Record<string, unknown>;
+    mutationKey: TRPCMutationKey;
   }) => MaybePromise<unknown>;
 }
 
