@@ -96,7 +96,7 @@ If you already use React Query in your application, you **should** re-use the `Q
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import { useState } from 'react';
-import { TRPCProvider, useTRPC } from './utils/trpc';
+import { TRPCProvider } from './utils/trpc';
 
 function makeQueryClient() {
   return new QueryClient({
