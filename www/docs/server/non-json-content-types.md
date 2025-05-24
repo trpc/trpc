@@ -67,13 +67,15 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  hello: publicProcedure.input(z.instanceof(FormData)).query((opts) => {
-    const data = opts.input;
-    //    ^?
-    return {
-      greeting: `Hello ${data.get('name')}`,
-    };
-  }),
+  hello: publicProcedure
+    .input(z.instanceof(FormData))
+    .query((opts) => {
+      const data = opts.input;
+      //    ^?
+      return {
+        greeting: `Hello ${data.get('name')}`,
+      };
+    }),
 });
 ```
 
@@ -94,12 +96,14 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  upload: publicProcedure.input(octetInputParser).query((opts) => {
-    const data = opts.input;
-    //    ^?
-    return {
-      valid: true,
-    };
-  }),
+  upload: publicProcedure
+    .input(octetInputParser)
+    .query((opts) => {
+      const data = opts.input;
+      //    ^?
+      return {
+        valid: true,
+      };
+    }),
 });
 ```
