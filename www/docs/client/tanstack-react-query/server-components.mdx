@@ -273,6 +273,14 @@ we can take advantage of the RSC capabilities by prefetching queries in a server
 concept as "render as you fetch" commonly implemented as loaders. This means the request fires as soon as possible but without suspending until
 the data is needed by using the `useQuery` or `useSuspenseQuery` hooks.
 
+This approach leverages Next.js App Router's streaming capabilities, initiating the query on the server and streaming data to the client as it becomes available.
+It optimizes both the time to first byte in the browser and the data fetch time, resulting in faster page loads.
+However, `greeting.data` may initially be `undefined` before the data streams in.
+
+If you prefer to avoid this initial undefined state, you can `await` the `prefetchQuery` call.
+This ensures the query on the client always has data on first render, but it comes with a tradeoff -
+the page will load more slowly since the server must complete the query before sending HTML to the client.
+
 ```tsx title='app/page.tsx'
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { getQueryClient, trpc } from '~/trpc/server';
