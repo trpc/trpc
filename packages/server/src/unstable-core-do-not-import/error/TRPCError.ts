@@ -22,11 +22,7 @@ export function getCauseFromUnknown(cause: unknown): Error | undefined {
 
   // If it's an object, we'll create a synthetic error
   if (isObject(cause)) {
-    const err = new UnknownCauseError();
-    for (const key in cause) {
-      err[key] = cause[key];
-    }
-    return err;
+    return Object.assign(new UnknownCauseError(), cause);
   }
 
   return undefined;
