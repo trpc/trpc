@@ -1,3 +1,4 @@
+import { Writable } from 'node:stream';
 import type {
   APIGatewayProxyEvent,
   APIGatewayProxyEventPathParameters,
@@ -87,7 +88,7 @@ export const mockAPIGatewayProxyEventV2 = ({
   return {
     version: '2.0',
     routeKey,
-    rawQueryString: path,
+    rawQueryString: new URLSearchParams(queryStringParameters).toString(),
     body,
     headers,
     rawPath: `/${path}`,
@@ -149,3 +150,29 @@ export const mockAPIGatewayProxyEventBase64Encoded = (
     return event;
   }
 };
+
+export class ResponseStream extends Writable {
+  public response: Array<Buffer> = [];
+  private contentType: string | undefined;
+
+  override _write(
+    chunk: unknown,
+    encoding: BufferEncoding,
+    callback: (error?: Error | null) => void,
+  ): void {
+    this.response.push(Buffer.from(chunk as string, encoding));
+    callback();
+  }
+
+  getContentType(): string | undefined {
+    return this.contentType;
+  }
+
+  setContentType(contentType: string) {
+    this.contentType = contentType;
+  }
+
+  getContent(): Buffer {
+    return Buffer.concat(this.response);
+  }
+}
