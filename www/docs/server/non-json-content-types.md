@@ -69,7 +69,7 @@ const publicProcedure = t.procedure;
 export const appRouter = t.router({
   hello: publicProcedure
     .input(z.instanceof(FormData))
-    .query((opts) => {
+    .mutation((opts) => {
       const data = opts.input;
       //    ^?
       return {
@@ -98,7 +98,7 @@ const publicProcedure = t.procedure;
 export const appRouter = t.router({
   upload: publicProcedure
     .input(octetInputParser)
-    .query((opts) => {
+    .mutation((opts) => {
       const data = opts.input;
       //    ^?
       return {
