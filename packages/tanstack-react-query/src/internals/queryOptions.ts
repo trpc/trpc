@@ -193,6 +193,7 @@ export function trpcQueryOptions(args: {
           : { signal: null }),
       },
     };
+    const queryKey = queryFnContext.queryKey;
 
     const result = await query(...getClientArgs(queryKey, actualOpts));
 
