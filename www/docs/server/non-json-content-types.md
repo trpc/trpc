@@ -90,7 +90,7 @@ trpc.createClient({
 
 :::info
 When a request is handled by tRPC, tRPC handles body parsing (based on request header `Content-Type`).  
-If you encounter weird errors like `Failed to parse body as XXX` check that your server (express, next.js...) that mounts tRPC isn't parsing the request body before tRPC.  
+If you encounter weird errors like `Failed to parse body as XXX` check that your server (express, next.js...) that mounts tRPC isn't parsing the request body before tRPC.
 
 ```ts
 // Example in express
