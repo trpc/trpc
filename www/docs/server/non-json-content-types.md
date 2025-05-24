@@ -57,22 +57,24 @@ trpc.createClient({
 :::info
 When a request is handled by tRPC, tRPC handles body parsing (based on request header `Content-Type`).  
 If you encounter weird errors like `Failed to parse body as XXX` check that your server (express, next.js...) that mounts tRPC isn't parsing the request body before tRPC.  
-If yes, exclude the body parsing in routes handled by tRPC.  
+If yes, exclude the body parsing in routes handled by tRPC.
+
 ```ts
 // Example in express
 
 // incorrect
 const app = express();
-app.use(express.json()); // this try to parse body before tRPC. 
+app.use(express.json()); // this try to parse body before tRPC.
 app.post('/express/hello', (req,res) => {/* ... */ }); // normal express route handler
 app.use('/trpc', trpcExpress.createExpressMiddleware({ /* ... */}))// tRPC fails to parse body
 
 // correct
 const app = express();
-app.use('/express', express.json()); // do it only in "/express/*" path 
+app.use('/express', express.json()); // do it only in "/express/*" path
 app.post('/express/hello', (req,res) => {/* ... */ });
 app.use('/trpc', trpcExpress.createExpressMiddleware({ /* ... */}))// tRPC can parse body
 ```
+
 :::
 
 ### `FormData` Input
@@ -90,15 +92,13 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  hello: publicProcedure
-    .input(z.instanceof(FormData))
-    .mutation((opts) => {
-      const data = opts.input;
-      //    ^?
-      return {
-        greeting: `Hello ${data.get('name')}`,
-      };
-    }),
+  hello: publicProcedure.input(z.instanceof(FormData)).mutation((opts) => {
+    const data = opts.input;
+    //    ^?
+    return {
+      greeting: `Hello ${data.get('name')}`,
+    };
+  }),
 });
 ```
 
@@ -119,14 +119,12 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  upload: publicProcedure
-    .input(octetInputParser)
-    .mutation((opts) => {
-      const data = opts.input;
-      //    ^?
-      return {
-        valid: true,
-      };
-    }),
+  upload: publicProcedure.input(octetInputParser).mutation((opts) => {
+    const data = opts.input;
+    //    ^?
+    return {
+      valid: true,
+    };
+  }),
 });
 ```
