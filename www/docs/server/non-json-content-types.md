@@ -52,7 +52,7 @@ trpc.createClient({
 });
 ```
 
-If you are using `transformers` in your server, typescript will requires that your client link has `transformer`.  
+If you are using `transformer` in your tRPC server, typescript requires that your tRPC client link defines `transformer` as well.  
 Use this example as base:
 
 ```ts
@@ -73,7 +73,7 @@ trpc.createClient({
         transformer: {
           // request - convert data before sending to the tRPC server
           serialize: (data) => data,
-          // response - convert the tRPC response before using in client
+          // response - convert the tRPC response before using it in client
           deserialize: superjson.deserialize, // or your other transformer
         },
       }),
@@ -89,8 +89,8 @@ trpc.createClient({
 ## Server Usage
 
 :::info
-When a request is handled by tRPC, tRPC handles body parsing (based on request header `Content-Type`).  
-If you encounter weird errors like `Failed to parse body as XXX` check that your server (express, next.js...) that mounts tRPC isn't parsing the request body before tRPC.
+When a request is handled by tRPC, it takes care of parsing the request body based on the `Content-Type` header of the request.  
+If you encounter errors like `Failed to parse body as XXX`, make sure that your server (e.g., Express, Next.js) isn't parsing the request body before tRPC handles it.  
 
 ```ts
 // Example in express
