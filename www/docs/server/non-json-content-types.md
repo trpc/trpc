@@ -54,6 +54,7 @@ trpc.createClient({
 
 If you are using `transformers` in your server, typescript will requires that your client link has `transformer`.  
 Use this example as base:
+
 ```ts
 import {
   httpBatchLink,
@@ -63,7 +64,6 @@ import {
 } from '@trpc/client';
 import superjson from 'superjson';
 
-
 trpc.createClient({
   links: [
     splitLink({
@@ -72,7 +72,7 @@ trpc.createClient({
         url,
         transformer: {
           // request - convert data before sending to the tRPC server
-          serialize: data => data,
+          serialize: (data) => data,
           // response - convert the tRPC response before using in client
           deserialize: superjson.deserialize, // or your other transformer
         },
