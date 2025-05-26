@@ -1,4 +1,4 @@
-const trackedSymbol = Symbol();
+const trackedSymbol = Symbol.for('trpc.trackedSymbol');
 
 type TrackedId = string & {
   __brand: 'TrackedId';

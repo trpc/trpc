@@ -74,7 +74,7 @@ export type RouterCaller<
   },
 ) => DecorateRouterRecord<TRecord>;
 
-const lazySymbol = Symbol('lazy');
+const lazySymbol = Symbol.for('trpc.lazy');
 export type Lazy<TAny> = (() => Promise<TAny>) & { [lazySymbol]: true };
 
 type LazyLoader<TAny> = {

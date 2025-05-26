@@ -2,7 +2,7 @@ import { Unpromise } from '../../../vendor/unpromise';
 import { iteratorResource } from './asyncIterable';
 import { disposablePromiseTimerResult, timerResource } from './timerResource';
 
-export const PING_SYM = Symbol('ping');
+export const PING_SYM = Symbol.for('trpc.withPing');
 
 /**
  * Derives a new {@link AsyncGenerator} based of {@link iterable}, that yields {@link PING_SYM}

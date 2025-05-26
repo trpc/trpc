@@ -1,6 +1,8 @@
 import { makeResource } from './disposable';
 
-export const disposablePromiseTimerResult = Symbol();
+export const disposablePromiseTimerResult = Symbol.for(
+  'trpc.disposablePromiseTimerResult',
+);
 
 export function timerResource(ms: number) {
   let timer: ReturnType<typeof setTimeout> | null = null;

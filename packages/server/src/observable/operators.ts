@@ -113,7 +113,7 @@ export function tap<TValue, TError>(
   };
 }
 
-const distinctUnsetMarker = Symbol();
+const distinctUnsetMarker = Symbol.for('trpc.distinctUnsetMarker');
 export function distinctUntilChanged<TValue, TError>(
   compare: (a: TValue, b: TValue) => boolean = (a, b) => a === b,
 ): MonoTypeOperatorFunction<TValue, TError> {

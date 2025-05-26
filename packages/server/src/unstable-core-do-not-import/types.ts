@@ -167,7 +167,7 @@ export type ProtectedIntersection<TType, TWith> = keyof TType &
  */
 export type GetRawInputFn = () => Promise<unknown>;
 
-const _errorSymbol = Symbol();
+const _errorSymbol = Symbol.for('trpc.TypeError');
 export type ErrorSymbol = typeof _errorSymbol;
 export type TypeError<TMessage extends string> = TMessage & {
   _: typeof _errorSymbol;

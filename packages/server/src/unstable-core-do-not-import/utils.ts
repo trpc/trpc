@@ -1,5 +1,5 @@
 /** @internal */
-export const unsetMarker = Symbol();
+export const unsetMarker = Symbol.for('trpc.unsetMarker');
 export type UnsetMarker = typeof unsetMarker;
 
 /**
