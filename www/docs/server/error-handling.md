@@ -123,7 +123,7 @@ Results to the following response:
 
 ## Handling errors
 
-All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle or change errors.
+All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle errors (To change errors see [error formatting](error-formatting)).
 
 ```ts title='pages/api/trpc/[trpc].ts'
 export default trpcNext.createNextApiHandler({
