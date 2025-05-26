@@ -1959,6 +1959,7 @@ describe('subscriptions with createCaller', () => {
       SubscriptionProcedure<{
         input: string | null | undefined;
         output: AsyncIterable<Message, void, any>;
+        meta: object;
       }>
     >();
     const abortController = new AbortController();
@@ -2016,6 +2017,7 @@ describe('subscriptions with createCaller', () => {
       LegacyObservableSubscriptionProcedure<{
         input: string | null | undefined;
         output: Message;
+        meta: object;
       }>
     >();
 
