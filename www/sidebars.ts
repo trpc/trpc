@@ -34,6 +34,7 @@ const config: SidebarsConfig = {
         'server/routers',
         'server/procedures',
         'server/validators',
+        'server/non-json-content-types',
         'server/merging-routers',
         'server/context',
         'server/middlewares',

@@ -8,10 +8,10 @@
   },
   "dependencies": {
     "@vercel/og": "^1.0.0",
-    "next": "^15.1.7",
+    "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.24.2"
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
@@ -19,5 +19,5 @@
     "@types/react-dom": "^19.1.1",
     "typescript": "^5.8.2"
   },
-  "version": "11.0.2"
+  "version": "11.1.2"
 }
