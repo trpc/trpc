@@ -1,11 +1,16 @@
 import type { AddressInfo } from 'net';
 import { networkInterfaces } from 'os';
 import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
-import { initTRPC, TRPCError } from '@trpc/server';
-import type { CreateHTTPHandlerOptions } from '@trpc/server/adapters/standalone';
+import { TRPCError } from '@trpc/server';
+import type {
+  CreateHTTPContextOptions,
+  CreateHTTPHandlerOptions,
+} from '@trpc/server/adapters/standalone';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { run } from '@trpc/server/unstable-core-do-not-import/utils';
 import fetch from 'node-fetch';
 import { z } from 'zod';
+import { initTRPC } from './../../../server/src/unstable-core-do-not-import/initTRPC';
 
 const t = initTRPC.create();
 const router = t.router({
@@ -271,4 +276,72 @@ test('bad url does not crash server', async () => {
       "text": "hello test",
     }
   `);
+});
+
+test('recipe: max batch size on the server', async () => {
+  const MAX_BATCH_SIZE = 10;
+
+  // Initialize a context for the server
+  function createContext(opts: CreateHTTPContextOptions) {
+    if (opts.info.calls.length > MAX_BATCH_SIZE) {
+      throw new TRPCError({
+        code: 'TOO_MANY_REQUESTS',
+      });
+    }
+    return {};
+  }
+
+  const t = initTRPC.context<typeof createContext>().create();
+
+  const appRouter = t.router({
+    hello: t.procedure
+      .input(
+        z.object({
+          who: z.string(),
+        }),
+      )
+      .query(({ input }) => `hello ${input.who}`),
+  });
+
+  const server = createHTTPServer({
+    router: appRouter,
+    createContext,
+  });
+
+  server.listen(0);
+
+  const port = (server.address() as AddressInfo).port;
+
+  const client = createTRPCClient<typeof appRouter>({
+    links: [
+      httpBatchLink({
+        url: `http://localhost:${port}`,
+      }),
+    ],
+  });
+
+  // 1 is fine
+  const result = await client.hello.query({ who: 'test' });
+  expect(result).toBe('hello test');
+
+  // 11 is too many
+  const promises = Array.from({ length: MAX_BATCH_SIZE + 1 }, () =>
+    client.hello.query({ who: 'test' }),
+  );
+  const results = await Promise.allSettled(promises);
+
+  expect(
+    results.every((res) => {
+      if (res.status !== 'rejected') {
+        return false;
+      }
+
+      const err = res.reason as TRPCClientError<typeof appRouter>;
+      expect(err.data?.code).toBe('TOO_MANY_REQUESTS');
+
+      return true;
+    }),
+  ).toBe(true);
+
+  server.close();
 });
