@@ -1,5 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
-import type { OperationLink, TRPCClientRuntime } from '@trpc/client';
+import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
+import type { OperationLink, TRPCClientRuntime, TRPCLink } from '@trpc/client';
 import {
   createTRPCClient,
   httpBatchLink,
@@ -13,6 +14,8 @@ import { createChain } from '@trpc/client/links/internals/createChain';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC } from '@trpc/server';
 import { observable, observableToPromise } from '@trpc/server/observable';
+import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
+import type { Mock } from 'vitest';
 import { z } from 'zod';
 
 const mockRuntime: TRPCClientRuntime = {};
@@ -854,4 +857,165 @@ test('init with URL object', async () => {
   expect(serverCall).toHaveBeenCalledTimes(1);
 
   await close();
+});
+
+function createEndingLink<T extends InferrableClientTypes>(config: {
+  failCount: number;
+}): Mock<OperationLink<T>> {
+  const counts = new Map<number, number>();
+
+  return vi.fn((opts) =>
+    observable((observer) => {
+      const opId = opts.op.id;
+      const count = (counts.get(opId) ?? 0) + 1;
+      counts.set(opId, count);
+
+      if (count <= config.failCount) {
+        observer.error(new TRPCClientError('..'));
+      } else {
+        counts.delete(opId);
+        observer.next({
+          result: { type: 'data', data: 'world' },
+        });
+        observer.complete();
+      }
+    }),
+  );
+}
+
+test('retryLink - happy path', async () => {
+  const endingLink = createEndingLink({ failCount: 0 });
+  const chain = createChain({
+    links: [
+      retryLink({ retry: (opts) => opts.attempts <= 3 })(mockRuntime),
+      endingLink,
+    ],
+    op: {
+      id: 1,
+      type: 'query',
+      path: 'hello',
+      input: null,
+      context: {},
+      signal: null,
+    },
+  });
+
+  const result = await observableToPromise(chain);
+
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": "world",
+        "type": "data",
+      },
+    }
+  `);
+
+  expect(endingLink).toHaveBeenCalledTimes(1);
+});
+
+test('retryLink - retries', async () => {
+  const endingLink = createEndingLink({ failCount: 2 });
+  const chain = createChain({
+    links: [
+      retryLink({ retry: (opts) => opts.attempts <= 3 })(mockRuntime),
+      endingLink,
+    ],
+    op: {
+      id: 1,
+      type: 'query',
+      path: 'hello',
+      input: null,
+      context: {},
+      signal: null,
+    },
+  });
+
+  const result = await observableToPromise(chain);
+
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": "world",
+        "type": "data",
+      },
+    }
+  `);
+
+  expect(endingLink).toHaveBeenCalledTimes(3);
+});
+
+test('retryLink - delay', async () => {
+  const endingLink = createEndingLink({ failCount: 2 });
+  using timers = fakeTimersResource();
+
+  const chain = createChain({
+    links: [
+      retryLink({
+        retry: (opts) => opts.attempts <= 3,
+        retryDelayMs: () => {
+          process.nextTick(() => {
+            timers.runAllTimers();
+          });
+          return 5_000;
+        },
+      })(mockRuntime),
+      endingLink,
+    ],
+    op: {
+      id: 1,
+      type: 'query',
+      path: 'hello',
+      input: null,
+      context: {},
+      signal: null,
+    },
+  });
+
+  const result = await observableToPromise(chain);
+
+  expect(result).toMatchInlineSnapshot(`
+    Object {
+      "result": Object {
+        "data": "world",
+        "type": "data",
+      },
+    }
+  `);
+
+  expect(endingLink).toHaveBeenCalledTimes(3);
+});
+
+test('retryLink - unsubscribe during delay', async () => {
+  const endingLink = createEndingLink({ failCount: 2 });
+  using timers = fakeTimersResource();
+
+  const chain = createChain({
+    links: [
+      retryLink({
+        retry: (opts) => opts.attempts <= 3,
+        retryDelayMs: () => {
+          return 5_000;
+        },
+      })(mockRuntime),
+      endingLink,
+    ],
+    op: {
+      id: 1,
+      type: 'query',
+      path: 'hello',
+      input: null,
+      context: {},
+      signal: null,
+    },
+  });
+
+  const obs = chain.subscribe({});
+  obs.unsubscribe();
+
+  expect(endingLink).toHaveBeenCalledTimes(1);
+
+  await timers.runAllTimersAsync();
+
+  expect(endingLink).toHaveBeenCalledTimes(1);
 });

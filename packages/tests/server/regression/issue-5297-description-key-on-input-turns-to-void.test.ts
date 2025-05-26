@@ -44,6 +44,7 @@ describe('Serialization of Record types', () => {
           description: string;
         };
         output: { description: string };
+        meta: object;
       }>
     >(appRouter.withDescriptionKey);
 
@@ -53,6 +54,7 @@ describe('Serialization of Record types', () => {
           description?: string | undefined;
         };
         output: { description?: string | undefined };
+        meta: object;
       }>
     >(appRouter.maybeDescriptionKey);
   });

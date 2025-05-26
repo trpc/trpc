@@ -35,13 +35,13 @@
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@mdx-js/react": "^3.1.0",
-    "@tanstack/react-query": "^5.67.1",
+    "@tanstack/react-query": "^5.74.7",
     "@trpc/client": "workspace:*",
     "@trpc/next": "workspace:*",
     "@trpc/react-query": "workspace:*",
     "@trpc/server": "workspace:*",
     "@trpc/tanstack-react-query": "workspace:*",
-    "@unkey/ratelimit": "^0.5.0",
+    "@unkey/ratelimit": "^2.0.0",
     "@visx/hierarchy": "^3.0.0",
     "@visx/responsive": "^3.0.0",
     "clsx": "^2.0.0",
@@ -60,7 +60,7 @@
     "remark-shiki-twoslash": "^3.1.3",
     "tailwind-merge": "^2.0.0",
     "unist-util-visit": "^5.0.0",
-    "zod": "^3.24.2"
+    "zod": "^3.24.4"
   },
   "browserslist": {
     "production": [
@@ -86,10 +86,10 @@
     "@types/react-dom": "^19.1.1",
     "arktype": "^2.0.1",
     "autoprefixer": "^10.4.7",
-    "docusaurus-plugin-typedoc": "1.3.0",
+    "docusaurus-plugin-typedoc": "1.4.0",
     "dotenv": "^16.0.1",
-    "eslint": "^9.21.0",
-    "next": "^15.1.7",
+    "eslint": "^9.26.0",
+    "next": "^15.3.1",
     "next-auth": "npm:next-auth@^4.24.11",
     "npm-run-all2": "^7.0.0",
     "oauth": "^0.10.0",
@@ -104,8 +104,8 @@
     "typedoc": "0.27.9",
     "typedoc-plugin-markdown": "4.4.2",
     "typescript": "^5.8.2",
-    "valibot": "1.0.0",
+    "valibot": "1.1.0",
     "yup": "^1.0.0"
   },
-  "version": "11.0.4"
+  "version": "11.1.2"
 }
