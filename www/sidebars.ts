@@ -80,8 +80,9 @@ const config: SidebarsConfig = {
           label: 'TanStack React Query (⭐️)',
           collapsed: true,
           link: {
-            type: 'doc',
-            id: 'client/tanstack-react-query/setup',
+            type: 'generated-index',
+            title: 'TanStack React Query',
+            slug: '/client/tanstack-react-query',
           },
           items: [
             'client/tanstack-react-query/setup',
