@@ -25,12 +25,11 @@ export function useThrottledIsTypingMutation(channelId: string) {
       state = nextState;
       if (shouldTriggerImmediately) {
         trigger();
-      } else if (!timeout) {
-        timeout = setTimeout(trigger, 1000);
+      } else {
+        timeout ??= setTimeout(trigger, 1000);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channelId]);
+  }, [isTyping, channelId]);
 }
 
 export function useLivePosts(channelId: string) {

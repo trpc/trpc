@@ -68,8 +68,8 @@ export function fastifyTRPCPlugin<TRouter extends AnyRouter>(
       ...trpcOptions,
     });
 
-    fastify.get(prefix ?? '/', { websocket: true }, async (socket, req) => {
-      await onConnection(socket, req.raw);
+    fastify.get(prefix ?? '/', { websocket: true }, (socket, req) => {
+      onConnection(socket, req.raw);
       if (trpcOptions?.keepAlive?.enabled) {
         const { pingMs, pongWaitMs } = trpcOptions.keepAlive;
         handleKeepAlive(socket, pingMs, pongWaitMs);

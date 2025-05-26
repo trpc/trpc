@@ -71,9 +71,7 @@ export const channelRouter = {
       const { name } = opts.ctx.user;
       const { channelId } = opts.input;
 
-      if (!currentlyTyping[channelId]) {
-        currentlyTyping[channelId] = {};
-      }
+      currentlyTyping[channelId] ??= {};
 
       if (!opts.input.typing) {
         delete currentlyTyping[channelId][name];
