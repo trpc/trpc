@@ -224,7 +224,7 @@ export const apiProcedure = publicProcedure.use((opts) => {
 You can use the context to limit the number of requests that can be batched together.
 
 ```ts twoslash
-import { initTRPC, TRPCError } from '@trpc/server';
+import { TRPCError } from '@trpc/server';
 import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
 
 const MAX_BATCH_SIZE = 10;
