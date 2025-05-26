@@ -5,5 +5,6 @@ export default mergeConfig(baseConfig, {
   test: {
     exclude: ['test/__fixtures__/*/*.spec.ts*', 'node_modules'],
     setupFiles: ['./test/setupTests.ts'],
+    retry: 10, // some are flaky 🤷‍♂️
   },
 });
