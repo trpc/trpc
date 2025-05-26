@@ -4,23 +4,20 @@ interface ConnectionStateBase<TError> {
   error: TError | null;
 }
 
-interface ConnectionIdleState<TError> extends ConnectionStateBase<TError> {
+interface ConnectionIdleState extends ConnectionStateBase<null> {
   state: 'idle';
-  error: null;
 }
 
 interface ConnectionConnectingState<TError>
-  extends ConnectionStateBase<TError> {
+  extends ConnectionStateBase<TError | null> {
   state: 'connecting';
-  error: TError | null;
 }
 
-interface ConnectionPendingState extends ConnectionStateBase<never> {
+interface ConnectionPendingState extends ConnectionStateBase<null> {
   state: 'pending';
-  error: null;
 }
 
 export type TRPCConnectionState<TError> =
-  | ConnectionIdleState<TError>
+  | ConnectionIdleState
   | ConnectionConnectingState<TError>
   | ConnectionPendingState;

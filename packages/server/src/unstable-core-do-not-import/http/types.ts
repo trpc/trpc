@@ -57,7 +57,7 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
 
 export type TRPCAcceptHeader = 'application/jsonl';
 
-interface TRPCRequestInfoProcedureCall {
+export interface TRPCRequestInfoProcedureCall {
   path: string;
   /**
    * Read the raw input (deduped and memoized)
