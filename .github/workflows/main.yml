@@ -213,7 +213,7 @@ jobs:
             next-prisma-websockets-starter,
             next-prisma-todomvc,
           ]
-        node-start: ['18.x', '20.x']
+        node-start: ['18.x', '20.x', '22.x']
     steps:
       - uses: actions/checkout@v4
         with:
