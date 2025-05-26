@@ -7,7 +7,6 @@ import type {
   CreateHTTPHandlerOptions,
 } from '@trpc/server/adapters/standalone';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { run } from '@trpc/server/unstable-core-do-not-import/utils';
 import fetch from 'node-fetch';
 import { z } from 'zod';
 import { initTRPC } from './../../../server/src/unstable-core-do-not-import/initTRPC';
