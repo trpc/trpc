@@ -214,7 +214,7 @@
     "react-dom": "^19.1.0",
     "superjson": "^1.12.4",
     "superstruct": "^2.0.0",
-    "tsdown": "0.11.9",
+    "tsdown": "0.12.3",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "valibot": "1.1.0",

@@ -47,7 +47,7 @@
     "@types/node": "^22.13.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tsdown": "0.11.9",
+    "tsdown": "0.12.3",
     "zod": "^3.24.4"
   },
   "publishConfig": {

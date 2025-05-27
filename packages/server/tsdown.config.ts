@@ -22,10 +22,7 @@ export default defineConfig({
   entry: input,
   dts: {
     sourcemap: true,
+    tsconfig: './tsconfig.build.json',
   },
-  // outExtensions: ({ format }) => ({
-  //   js: format === 'es' ? '.mjs' : '.cjs',
-  //   dts: format === 'cjs' ? '.mts' : '.cts',
-  // }),
   format: ['cjs', 'esm'],
 });
