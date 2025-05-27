@@ -15,5 +15,6 @@ export default defineConfig({
     sourcemap: true,
     tsconfig: './tsconfig.build.json',
   },
+  unbundle: true,
   format: ['cjs', 'esm'],
 });
