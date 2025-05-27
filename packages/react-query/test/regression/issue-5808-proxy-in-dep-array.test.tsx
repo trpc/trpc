@@ -53,7 +53,7 @@ describe('original regression', () => {
         <MyComponent />
       </App>,
     );
-
+    //
     await vi.waitFor(() => {
       expect(utils.container).toHaveTextContent(nonce);
     });
