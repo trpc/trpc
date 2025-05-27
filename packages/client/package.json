@@ -4,9 +4,9 @@
   "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "typings": "dist/index.d.cts",
+  "typings": "dist/index.d.ts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",

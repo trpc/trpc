@@ -4,9 +4,9 @@
   "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
-  "main": "dist/index.cjs",
+  "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "typings": "dist/index.d.cts",
+  "typings": "dist/index.d.ts",
   "homepage": "https://trpc.io/docs/client/tanstack-react-query/setup",
   "repository": {
     "type": "git",
