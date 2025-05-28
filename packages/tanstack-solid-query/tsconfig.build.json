@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.build.json",
+  "compilerOptions": {
+    "declarationDir": "dist",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "strict": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "types": ["vite/client", "@testing-library/jest-dom"],
+    "noEmit": true,
+    "isolatedModules": true
+  },
+  "include": ["src"]
+}
