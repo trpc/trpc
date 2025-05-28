@@ -9,6 +9,11 @@ import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 
+type Post = {
+  id: string;
+  title: string;
+};
+
 const testContext = () => {
   let iterableDeferred = createDeferred<void>();
   const nextIterable = () => {
@@ -16,11 +21,6 @@ const testContext = () => {
     iterableDeferred = createDeferred();
   };
   const t = initTRPC.create({});
-
-  type Post = {
-    id: string;
-    title: string;
-  };
 
   const posts: Post[] = [{ id: '1', title: 'Hello world' }];
 
@@ -352,7 +352,7 @@ describe('queryOptions', () => {
     function MyComponent() {
       const trpc = useTRPC();
       const queryOptions = trpc.post.list.queryOptions(undefined, {
-        initialData: [],
+        // initialData: [],
       });
       expect(queryOptions.trpc.path).toBe('post.list');
       const query1 = useQuery(queryOptions);
