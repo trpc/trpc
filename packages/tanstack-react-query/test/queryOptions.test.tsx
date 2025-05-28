@@ -352,7 +352,7 @@ describe('queryOptions', () => {
     function MyComponent() {
       const trpc = useTRPC();
       const queryOptions = trpc.post.list.queryOptions(undefined, {
-        // initialData: [],
+        initialData: [],
       });
       expect(queryOptions.trpc.path).toBe('post.list');
       const query1 = useQuery(queryOptions);
