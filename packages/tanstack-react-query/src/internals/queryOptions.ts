@@ -55,7 +55,7 @@ interface UndefinedTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
 interface DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TError>
   extends DistributiveOmit<
       DefinedInitialDataOptions<
-        coerceAsyncIterableToArray<TQueryFnData>,
+        coerceAsyncIterableToArray<NoInfer<TQueryFnData>>,
         TError,
         coerceAsyncIterableToArray<TData>,
         TRPCQueryKey
