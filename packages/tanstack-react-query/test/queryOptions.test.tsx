@@ -17,6 +17,13 @@ const testContext = () => {
   };
   const t = initTRPC.create({});
 
+  type Post = {
+    id: string;
+    title: string;
+  };
+
+  const posts: Post[] = [{ id: '1', title: 'Hello world' }];
+
   const appRouter = t.router({
     post: t.router({
       byId: t.procedure
@@ -42,6 +49,7 @@ const testContext = () => {
           yield i + 1;
         }
       }),
+      list: t.procedure.query(() => posts),
     }),
   });
 
@@ -335,5 +343,31 @@ describe('queryOptions', () => {
     expect(post).toEqual('__result');
 
     expect(fetchSpy).toHaveBeenCalledTimes(0);
+  });
+
+  test('initialData inference', async () => {
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+      const queryOptions = trpc.post.list.queryOptions(undefined, {
+        initialData: [],
+      });
+      expect(queryOptions.trpc.path).toBe('post.list');
+      const query1 = useQuery(queryOptions);
+
+      if (!query1.data) {
+        return <>...</>;
+      }
+      expectTypeOf(query1.data).toEqualTypeOf<Post[]>();
+
+      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('Hello world');
+    });
   });
 });
