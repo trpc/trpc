@@ -1,0 +1,12 @@
+{
+  "name": "remix-trpc",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter client dev & pnpm --filter server dev"
+  }
+}
