@@ -200,6 +200,7 @@ export function useSubscription<TOutput, TError>(
         }));
       },
       onConnectionStateChange: (result) => {
+        optsRef.current.onConnectionStateChange?.(result);
         updateState((prev) => {
           switch (result.state) {
             case 'connecting':
