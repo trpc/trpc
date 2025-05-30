@@ -35,6 +35,7 @@ tRPC defines a list of error codes that each represent a different type of error
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------- | --------- |
 | BAD_REQUEST            | The server cannot or will not process the request due to something that is perceived to be a client error.              | 400       |
 | UNAUTHORIZED           | The client request has not been completed because it lacks valid authentication credentials for the requested resource. | 401       |
+| PAYMENT_REQUIRED       | The client request requires payment to access the requested resource.                                                   | 402       |
 | FORBIDDEN              | The server was unauthorized to access a required data source, such as a REST API.                                       | 403       |
 | NOT_FOUND              | The server cannot find the requested resource.                                                                          | 404       |
 | METHOD_NOT_SUPPORTED   | The server knows the request method, but the target resource doesn't support this method.                               | 405       |
