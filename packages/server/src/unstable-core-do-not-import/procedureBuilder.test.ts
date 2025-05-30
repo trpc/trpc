@@ -230,6 +230,44 @@ test('inferProcedureBuilderResolverOptions', async () => {
   }
 });
 
+describe('procedure calling', () => {
+  test('basic', async () => {
+    const t = initTRPC.create();
+
+    const proc = t.procedure
+      .input(
+        z.object({
+          foo: z.string(),
+        }),
+      )
+      .use((opts) => {
+        return opts.next({
+          ctx: { type: opts.type, path: opts.path },
+        });
+      })
+      .query((opts) => {
+        expect(opts.ctx.type).toBe('query');
+
+        return {
+          result: '__result' as const,
+          path: opts.ctx.path,
+        };
+      });
+
+    const result = await proc({
+      ctx: {},
+      getRawInput: async () => ({
+        foo: 'foo',
+      }),
+    });
+
+    expect(result).toEqual({
+      result: '__result',
+      path: undefined,
+    });
+  });
+});
+
 describe('concat()', () => {
   test('basic', async () => {
     const t = initTRPC.context().create();
