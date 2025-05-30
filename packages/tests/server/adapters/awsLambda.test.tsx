@@ -1,7 +1,11 @@
 import type { Writable } from 'node:stream';
 import { initTRPC } from '@trpc/server';
 import * as trpcLambda from '@trpc/server/adapters/aws-lambda';
-import type { APIGatewayProxyEvent, APIGatewayProxyEventV2 } from 'aws-lambda';
+import type {
+  APIGatewayProxyEvent,
+  APIGatewayProxyEventV2,
+  StreamifyHandler,
+} from 'aws-lambda';
 import { z } from 'zod';
 import {
   mockAPIGatewayContext,
@@ -12,11 +16,12 @@ import {
 } from './lambda.utils';
 
 globalThis.awslambda = {
-  streamifyResponse: <TEvent,>(handler: awslambda.StreamifyHandler<TEvent>) => {
+  streamifyResponse(handler) {
     return handler;
   },
 
   HttpResponseStream: {
+    // @ts-expect-error - this is a mock
     from: (writable: Writable, metadata: Record<string, unknown>) => {
       return writable;
     },

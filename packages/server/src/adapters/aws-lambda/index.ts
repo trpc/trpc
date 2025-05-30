@@ -10,6 +10,7 @@
 import type {
   APIGatewayProxyEventV2,
   Context as APIGWContext,
+  StreamifyHandler,
 } from 'aws-lambda';
 // @trpc/server
 import type {
@@ -89,7 +90,7 @@ export function awsLambdaRequestHandler<
 export function awsLambdaStreamingRequestHandler<
   TRouter extends AnyRouter,
   TEvent extends APIGatewayProxyEventV2,
->(opts: AWSLambdaOptions<TRouter, TEvent>): awslambda.StreamifyHandler<TEvent> {
+>(opts: AWSLambdaOptions<TRouter, TEvent>): StreamifyHandler<TEvent> {
   return async (event, responseStream, context) => {
     const planner = getPlanner(event);
 
