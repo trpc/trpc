@@ -282,6 +282,9 @@ describe.each([
 describe('connection state - http', () => {
   test('iterable', async () => {
     await using ctx = getCtx('http');
+
+    const onConnectionStateChangeMock = vi.fn();
+
     const { useTRPC } = ctx;
 
     const queryResult: unknown[] = [];
@@ -293,6 +296,7 @@ describe('connection state - http', () => {
           onData: () => {
             // noop
           },
+          onConnectionStateChange: onConnectionStateChangeMock,
         }),
       );
 
@@ -340,6 +344,8 @@ describe('connection state - http', () => {
 
     await suppressLogsUntil(async () => {
       ctx.destroyConnections();
+
+      expect(onConnectionStateChangeMock).toHaveBeenCalled();
 
       await vi.waitFor(() => {
         expect(utils.container).toHaveTextContent('status:connecting');
