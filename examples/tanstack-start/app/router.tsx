@@ -14,10 +14,11 @@ import { TRPCRouter } from './trpc/router';
 // definitely end up in a more streamlined API in the future. This is just
 // to show what's possible with the current APIs.
 
+// Don't forget to add the url of your app to the environment variables
 function getUrl() {
   const base = (() => {
     if (typeof window !== 'undefined') return '';
-    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+    if (process.env.BASE_URL) return `https://${process.env.BASE_URL}`;
     return `http://localhost:${process.env.PORT ?? 3000}`;
   })();
   return base + '/api/trpc';
