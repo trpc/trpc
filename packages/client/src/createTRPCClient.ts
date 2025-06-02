@@ -65,7 +65,8 @@ export type Resolver<TDef extends ResolverDef> = (
   opts?: TRPCProcedureOptions,
 ) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
 
-type SubscriptionResolver<TDef extends ResolverDef> = (
+/** @internal */
+export type SubscriptionResolver<TDef extends ResolverDef> = (
   input: TDef['input'],
   opts: Partial<
     TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
