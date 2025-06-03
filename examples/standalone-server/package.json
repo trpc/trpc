@@ -18,7 +18,7 @@
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
     "ws": "^8.0.0",
-    "zod": "^3.24.4"
+    "zod": "^3.25.49"
   },
   "alias": {
     "scheduler/tracing": "../../node_modules/scheduler/tracing-profiling"
