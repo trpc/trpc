@@ -12,7 +12,9 @@ import { observable, observableToAsyncIterable } from '@trpc/server/observable';
 import type {
   TRPCClientOutgoingMessage,
   TRPCRequestMessage,
+  TRPCResponse,
 } from '@trpc/server/rpc';
+import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import';
 import {
   createDeferred,
   sleep,
@@ -1390,6 +1392,78 @@ describe('lazy mode', () => {
     await ctx.close();
   });
 
+  test('reconnects a lazy websocket if there is an active subscription when the websocket is closed', async () => {
+    const {
+      client,
+      wsClient,
+      onOpenMock,
+      onCloseMock,
+      ee,
+      destroyConnections,
+      close,
+    } = factory({
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 0,
+        },
+      },
+    });
+
+    const onDataMock = vi.fn();
+
+    expect(wsClient.connection).toBe(null);
+
+    // Start a subscription
+    const subscription = client.onMessageObservable.subscribe(undefined, {
+      onData: onDataMock,
+    });
+
+    await vi.waitFor(() => {
+      expect(wsClient.connection).not.toBe(null);
+    });
+    expect(onOpenMock).toHaveBeenCalledTimes(1);
+
+    // emit a message, check that we receive it
+    ee.emit('server:msg', {
+      id: '1',
+    });
+
+    await vi.waitFor(() =>
+      expect(onDataMock).toHaveBeenCalledWith({
+        id: '1',
+      }),
+    );
+
+    destroyConnections();
+
+    await vi.waitFor(() => {
+      expect(onCloseMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(wsClient.connection).toBe(null);
+
+    // Verify the reconnection happens because there was an active subscription
+    await vi.waitFor(() => {
+      expect(wsClient.connection).not.toBe(null);
+    });
+
+    expect(onOpenMock).toHaveBeenCalled();
+
+    // verify we can still receive messages after reconnection
+    ee.emit('server:msg', {
+      id: '2',
+    });
+
+    await vi.waitFor(() =>
+      expect(onDataMock).toHaveBeenCalledWith({ id: '2' }),
+    );
+
+    subscription.unsubscribe();
+
+    await close();
+  });
+
   // https://github.com/trpc/trpc/pull/5152
   test('race condition on dispatching / instant close', async () => {
     const ctx = factory({
@@ -1828,6 +1902,53 @@ describe('auth / connectionParams', async () => {
     });
     expect(ctx.wss.clients.size).toBe(1);
   });
+
+  test('regression: bad connection params', async () => {
+    async function connect() {
+      const ws = new WebSocket(ctx.wssUrl + '?connectionParams=1');
+      await new Promise((resolve) => {
+        ws.addEventListener('open', resolve);
+      });
+      function request(str: string) {
+        ws.send(str);
+        return new Promise<Res>((resolve, reject) => {
+          ws.addEventListener('message', (it) => {
+            resolve(JSON.parse(it.data as string));
+          });
+          ws.addEventListener('error', reject);
+          ws.addEventListener('close', reject);
+        });
+      }
+      return { request };
+    }
+
+    type Res = TRPCResponse<unknown, DefaultErrorShape>;
+
+    const badConnectionParams = JSON.stringify({
+      method: 'connectionParams',
+      data: { invalidConnectionParams: null },
+    });
+
+    {
+      const client = await connect();
+      const res = await client.request(badConnectionParams);
+
+      assert('error' in res);
+      expect(res.error.message).toMatchInlineSnapshot(
+        `"Invalid connection params shape"`,
+      );
+    }
+
+    {
+      const client = await connect();
+      const res = await client.request(badConnectionParams);
+
+      assert('error' in res);
+      expect(res.error.message).toMatchInlineSnapshot(
+        `"Invalid connection params shape"`,
+      );
+    }
+  });
 });
 
 describe('subscriptions with createCaller', () => {
@@ -1838,6 +1959,7 @@ describe('subscriptions with createCaller', () => {
       SubscriptionProcedure<{
         input: string | null | undefined;
         output: AsyncIterable<Message, void, any>;
+        meta: object;
       }>
     >();
     const abortController = new AbortController();
@@ -1895,6 +2017,7 @@ describe('subscriptions with createCaller', () => {
       LegacyObservableSubscriptionProcedure<{
         input: string | null | undefined;
         output: Message;
+        meta: object;
       }>
     >();
 

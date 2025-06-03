@@ -10,24 +10,24 @@
   "dependencies": {
     "@hookform/error-message": "^2.0.1",
     "@hookform/resolvers": "^3.9.1",
-    "@tanstack/react-query": "^5.67.1",
+    "@tanstack/react-query": "^5.74.7",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "next": "^15.1.7",
+    "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.53.2",
-    "zod": "next",
-    "zod-form-data": "^2.0.1"
+    "zod": "^3.25.49",
+    "zod-form-data": "^3.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.1",
-    "eslint": "^9.21.0",
+    "eslint": "^9.26.0",
     "typescript": "^5.8.2"
   },
-  "version": "11.1.0"
+  "version": "11.2.0"
 }

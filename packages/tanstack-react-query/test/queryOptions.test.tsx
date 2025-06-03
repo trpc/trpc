@@ -9,6 +9,11 @@ import * as React from 'react';
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { z } from 'zod';
 
+type Post = {
+  id: string;
+  title: string;
+};
+
 const testContext = () => {
   let iterableDeferred = createDeferred<void>();
   const nextIterable = () => {
@@ -16,6 +21,8 @@ const testContext = () => {
     iterableDeferred = createDeferred();
   };
   const t = initTRPC.create({});
+
+  const posts: Post[] = [{ id: '1', title: 'Hello world' }];
 
   const appRouter = t.router({
     post: t.router({
@@ -42,6 +49,7 @@ const testContext = () => {
           yield i + 1;
         }
       }),
+      list: t.procedure.query(() => posts),
     }),
   });
 
@@ -335,5 +343,54 @@ describe('queryOptions', () => {
     expect(post).toEqual('__result');
 
     expect(fetchSpy).toHaveBeenCalledTimes(0);
+  });
+
+  // regression test for https://github.com/trpc/trpc/issues/6792
+  test('initialData inference', async () => {
+    await using ctx = testContext();
+
+    const { useTRPC } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+      const queryOptions = trpc.post.list.queryOptions(undefined, {
+        initialData: [],
+      });
+      expect(queryOptions.trpc.path).toBe('post.list');
+      const query1 = useQuery(queryOptions);
+
+      expectTypeOf(query1.data).toEqualTypeOf<Post[]>();
+
+      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('Hello world');
+    });
+  });
+
+  test('initialData inference + select', async () => {
+    await using ctx = testContext();
+    const noPostSymbol = Symbol('noPost');
+
+    const { useTRPC } = ctx;
+    function MyComponent() {
+      const trpc = useTRPC();
+      const queryOptions = trpc.post.list.queryOptions(undefined, {
+        initialData: [],
+        select: (data) => data[0] ?? noPostSymbol,
+      });
+      expect(queryOptions.trpc.path).toBe('post.list');
+      const query1 = useQuery(queryOptions);
+
+      expectTypeOf(query1.data).toEqualTypeOf<Post | typeof noPostSymbol>();
+
+      return <pre>{JSON.stringify(query1.data ?? 'n/a', null, 4)}</pre>;
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('Hello world');
+    });
   });
 });

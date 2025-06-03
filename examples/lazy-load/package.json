@@ -13,7 +13,7 @@
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
     "@trpc/server": "npm:@trpc/server",
-    "zod": "next"
+    "zod": "^3.25.49"
   },
   "devDependencies": {
     "@types/node": "^22.13.5",
@@ -23,5 +23,5 @@
     "typescript": "^5.8.2",
     "wait-port": "^1.0.1"
   },
-  "version": "11.1.0"
+  "version": "11.2.0"
 }

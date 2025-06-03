@@ -1,6 +1,6 @@
 {
   "name": "@monotest/api",
-  "version": "11.1.0",
+  "version": "11.2.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -17,7 +17,7 @@
     "@monotest/api-router01": "workspace:*",
     "@monotest/trpc": "workspace:*",
     "@trpc/server": "npm:@trpc/server",
-    "zod": "next"
+    "zod": "^3.25.49"
   },
   "devDependencies": {
     "@monotest/tsconfig": "workspace:*"

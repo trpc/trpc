@@ -14,8 +14,8 @@ import * as st from 'superstruct';
 import * as v0 from 'valibot0';
 import * as v1 from 'valibot1';
 import * as yup from 'yup';
-import type { ZodType } from 'zod';
 import { z } from 'zod';
+import { z as zod4 } from 'zod/v4';
 import type { AnyProcedure } from './../../server/src/unstable-core-do-not-import/procedure';
 
 test('no validator', async () => {
@@ -703,8 +703,8 @@ test('recipe: get json schemas for procedure', async () => {
 
     getJsonSchemas: publicProcedure
       .input(
-        z.object({
-          path: z.string(),
+        zod4.object({
+          path: zod4.string(),
         }),
       )
       .query(async (opts) => {
@@ -720,7 +720,7 @@ test('recipe: get json schemas for procedure', async () => {
           return null;
         }
 
-        return proc._def.inputs.map((input) => z.toJSONSchema(input as any));
+        return proc._def.inputs.map((input) => zod4.toJSONSchema(input as any));
       }),
   });
 
