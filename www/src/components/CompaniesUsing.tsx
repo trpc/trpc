@@ -16,7 +16,7 @@ export const CompaniesUsing = () => {
         title="As used by"
         description="tRPC is tried and trusted by leading tech teams and many Fortune 500 companies."
       />
-      <div className="my-6 inline-flex w-full flex-nowrap overflow-hidden mask-[linear-gradient(to_right,transparent_0,black_128px,black_calc(100%-200px),transparent_100%)]">
+      <div className="my-6 inline-flex w-full flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-200px),transparent_100%)]">
         {animationRow.map((_, index) => (
           <ul
             key={`animationRow${index}`}

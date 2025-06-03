@@ -22,7 +22,7 @@ export const Preview = () => {
         </video>
         <a
           href="#try-it-out"
-          className="hidden rounded-lg border-20 border-neutral-900 bg-neutral-900 shadow-[0px_-24px_300px_0px_rgba(57,140,203,0.15)] transition hover:shadow-[0px_-24px_150px_0px_rgba(57,140,203,0.3)] md:block"
+          className="hidden rounded-lg border-[20px] border-neutral-900 bg-neutral-900 shadow-[0px_-24px_300px_0px_rgba(57,140,203,0.15)] transition hover:shadow-[0px_-24px_150px_0px_rgba(57,140,203,0.3)] md:block"
           title="Click to try it out"
           onClick={handleSmoothScrollToSection}
         >

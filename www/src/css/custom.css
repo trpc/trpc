@@ -1,65 +1,6 @@
-@import 'tailwindcss';
-
-@config '../../tailwind.config.ts';
-
-@custom-variant dark (&:is([data-theme="dark"] *));
-
-@theme {
-  --color-primary-dark: var(--ifm-color-primary-dark);
-  --color-primary-darker: var(--ifm-color-primary-darker);
-  --color-primary-darkest: var(--ifm-color-primary-darkest);
-  --color-primary: var(--ifm-color-primary);
-  --color-primary-light: var(--ifm-color-primary-light);
-  --color-primary-lighter: var(--ifm-color-primary-lighter);
-  --color-primary-lightest: var(--ifm-color-primary-lightest);
-
-  --animate-pop-in: pop-in 1s ease-out;
-  --animate-loader: loader 0.6s infinite alternate;
-  --animate-infinite-scroll: infinite-scroll 25s linear infinite;
-
-  @keyframes pop-in {
-    0% {
-      opacity: 0;
-      transform: translateY(48px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  @keyframes loader {
-    to {
-      opacity: 0.1;
-      transform: translateY(-1rem);
-    }
-  }
-  @keyframes infinite-scroll {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-100%);
-    }
-  }
-}
-
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
-  }
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* stylelint-disable docusaurus/copyright-header */
 /**
@@ -269,7 +210,7 @@ article {
 }
 
 .container {
-  @apply max-w-(--ifm-container-width-xl) mx-auto w-full;
+  @apply mx-auto w-full max-w-[var(--ifm-container-width-xl)];
 }
 
 .markdown h1,
@@ -348,7 +289,7 @@ h5 {
 }
 
 [data-theme='dark'] .shiki.github-dark .popover {
-  @apply border border-zinc-700 bg-zinc-800 elevation-4;
+  @apply border-[1px] border-zinc-700 bg-zinc-800 elevation-4;
 }
 
 [data-theme='dark'] .shiki.github-dark .popover .arrow {
@@ -364,7 +305,7 @@ h5 {
 }
 
 [data-theme='light'] .shiki.min-light-with-diff .popover {
-  @apply border border-zinc-300 bg-zinc-100;
+  @apply border-[1px] border-zinc-300 bg-zinc-100;
 }
 
 [data-theme='light'] .shiki.min-light-with-diff .popover .arrow {
@@ -509,11 +450,11 @@ details p {
 }
 
 .DocSearch-Button-Keys {
-  @apply mr-1! min-w-auto! gap-1! rounded-xs! border! px-1! dark:border-zinc-600/50! dark:bg-zinc-700/50!;
+  @apply mr-1 min-w-[auto] gap-1 rounded-sm border-[1px] px-1 dark:border-zinc-600/50 dark:bg-zinc-700/50 !important;
 }
 .DocSearch-Button-Key {
   background: transparent !important;
-  @apply top-0! mr-0! h-auto! w-auto! border-none! p-0! text-sm! shadow-none!;
+  @apply top-0 mr-0 h-auto w-auto border-none p-0 text-sm shadow-none !important;
 }
 
 .DocSearch-Button-Container svg {

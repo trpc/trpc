@@ -69,10 +69,10 @@ export default async (req: Request) => {
                     tw="mr-6 rounded-xl"
                   />
                   <div tw="flex flex-col justify-center">
-                    <p tw="text-2xl leading-px font-semibold">
+                    <p tw="text-2xl leading-[1px] font-semibold">
                       {author.name}
                     </p>
-                    <p tw="text-xl leading-px text-zinc-300">
+                    <p tw="text-xl leading-[1px] text-zinc-300">
                       {author.title}
                     </p>
                   </div>

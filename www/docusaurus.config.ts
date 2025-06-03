@@ -184,7 +184,8 @@ export default {
         name: 'docusaurus-tailwindcss',
         configurePostCss(postcssOptions) {
           // Appends TailwindCSS, AutoPrefixer & CSSNano.
-          postcssOptions.plugins.push(require('@tailwindcss/postcss'));
+          postcssOptions.plugins.push(require('tailwindcss'));
+          postcssOptions.plugins.push(require('autoprefixer'));
           if (process.env.NODE_ENV === 'production') {
             postcssOptions.plugins.push(require('cssnano'));
           }

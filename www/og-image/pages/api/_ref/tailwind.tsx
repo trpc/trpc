@@ -26,7 +26,7 @@ export default async function handler() {
               <span tw="text-indigo-600">Start your free trial today.</span>
             </h2>
             <div tw="mt-8 flex md:mt-0">
-              <div tw="flex rounded-md shadow-sm">
+              <div tw="flex rounded-md shadow">
                 <a
                   href="#"
                   tw="flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-5 py-3 text-base font-medium text-white"
@@ -34,7 +34,7 @@ export default async function handler() {
                   Get started
                 </a>
               </div>
-              <div tw="ml-3 flex rounded-md shadow-sm">
+              <div tw="ml-3 flex rounded-md shadow">
                 <a
                   href="#"
                   tw="flex items-center justify-center rounded-md border border-transparent bg-white px-5 py-3 text-base font-medium text-indigo-600"
