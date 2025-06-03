@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import type { AnyRouter } from '@trpc/server';
+import type { AnyRouter, AnyTRPCProcedure } from '@trpc/server';
 import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
 import { getProcedureAtPath } from '@trpc/server/unstable-core-do-not-import';
 import * as arktype from 'arktype';
@@ -16,7 +16,6 @@ import * as v1 from 'valibot1';
 import * as yup from 'yup';
 import { z as zod3 } from 'zod/v3';
 import { z as zod4 } from 'zod/v4';
-import type { AnyProcedure } from './../../server/src/unstable-core-do-not-import/procedure';
 
 test('no validator', async () => {
   const t = initTRPC.create();
@@ -820,7 +819,7 @@ test('recipe: get json schemas for procedure', async () => {
           opts.input.path,
         );
 
-        expectTypeOf(proc).toMatchTypeOf<AnyProcedure | null>();
+        expectTypeOf(proc).toMatchTypeOf<AnyTRPCProcedure | null>();
 
         if (!proc) {
           return null;
