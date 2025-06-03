@@ -47,7 +47,8 @@ export type TRPCClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
   [untypedClientSymbol]: TRPCUntypedClient<TRouter>;
 };
 
-type ResolverDef = {
+/** @internal */
+export type ResolverDef = {
   input: any;
   output: any;
   transformer: boolean;
