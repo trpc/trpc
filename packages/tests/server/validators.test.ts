@@ -14,7 +14,7 @@ import * as st from 'superstruct';
 import * as v0 from 'valibot0';
 import * as v1 from 'valibot1';
 import * as yup from 'yup';
-import { z } from 'zod';
+import { z as zod3 } from 'zod/v3';
 import { z as zod4 } from 'zod/v4';
 import type { AnyProcedure } from './../../server/src/unstable-core-do-not-import/procedure';
 
@@ -34,11 +34,11 @@ test('no validator', async () => {
   await close();
 });
 
-test('zod', async () => {
+test('zod v3', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(z.number()).query(({ input }) => {
+    num: t.procedure.input(zod3.number()).query(({ input }) => {
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -64,9 +64,9 @@ test('zod', async () => {
   await close();
 });
 
-test('zod async', async () => {
+test('zod v3 async', async () => {
   const t = initTRPC.create();
-  const input = z.string().refine(async (value) => value === 'foo');
+  const input = zod3.string().refine(async (value) => value === 'foo');
 
   const router = t.router({
     q: t.procedure.input(input).query(({ input }) => {
@@ -97,10 +97,10 @@ test('zod async', async () => {
   await close();
 });
 
-test('zod transform mixed input/output', async () => {
+test('zod v4 transform mixed input/output', async () => {
   const t = initTRPC.create();
-  const input = z.object({
-    length: z.string().transform((s) => s.length),
+  const input = zod4.object({
+    length: zod4.string().transform((s) => s.length),
   });
 
   const router = t.router({
@@ -127,18 +127,124 @@ test('zod transform mixed input/output', async () => {
     // @ts-expect-error this should only accept a string
     client.num.query({ length: 123 }),
   ).rejects.toMatchInlineSnapshot(`
-            [TRPCClientError: [
-              {
-                "code": "invalid_type",
-                "expected": "string",
-                "received": "number",
-                "path": [
-                  "length"
-                ],
-                "message": "Expected string, received number"
-              }
-            ]]
+    [TRPCClientError: [
+      {
+        "expected": "string",
+        "code": "invalid_type",
+        "path": [
+          "length"
+        ],
+        "message": "Invalid input: expected string, received number"
+      }
+    ]]
+  `);
+
+  await close();
+});
+
+test('zod v4', async () => {
+  const t = initTRPC.create();
+
+  const router = t.router({
+    num: t.procedure.input(zod4.number()).query(({ input }) => {
+      expectTypeOf(input).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, client } = routerToServerAndClientNew(router);
+  const res = await client.num.query(123);
+
+  await expect(client.num.query('123' as any)).rejects.toMatchInlineSnapshot(`
+    [TRPCClientError: [
+      {
+        "expected": "number",
+        "code": "invalid_type",
+        "path": [],
+        "message": "Invalid input: expected number, received string"
+      }
+    ]]
+  `);
+  expect(res.input).toBe(123);
+  await close();
+});
+
+test('zod v4 async', async () => {
+  const t = initTRPC.create();
+  const input = zod4.string().refine(async (value) => value === 'foo');
+
+  const router = t.router({
+    q: t.procedure.input(input).query(({ input }) => {
+      expectTypeOf(input).toBeString();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, client } = routerToServerAndClientNew(router);
+
+  await expect(client.q.query('bar')).rejects.toMatchInlineSnapshot(`
+    [TRPCClientError: [
+      {
+        "code": "custom",
+        "path": [],
+        "message": "Invalid input"
+      }
+    ]]
+  `);
+  const res = await client.q.query('foo');
+  expect(res).toMatchInlineSnapshot(`
+      Object {
+        "input": "foo",
+      }
+    `);
+  await close();
+});
+
+test('zod v4 transform mixed input/output', async () => {
+  const t = initTRPC.create();
+  const input = zod4.object({
+    length: zod4.string().transform((s) => s.length),
+  });
+
+  const router = t.router({
+    num: t.procedure.input(input).query(({ input }) => {
+      expectTypeOf(input.length).toBeNumber();
+      return {
+        input,
+      };
+    }),
+  });
+
+  const { close, client } = routerToServerAndClientNew(router);
+
+  await expect(client.num.query({ length: '123' })).resolves
+    .toMatchInlineSnapshot(`
+            Object {
+              "input": Object {
+                "length": 3,
+              },
+            }
           `);
+
+  await expect(
+    // @ts-expect-error this should only accept a string
+    client.num.query({ length: 123 }),
+  ).rejects.toMatchInlineSnapshot(`
+    [TRPCClientError: [
+      {
+        "expected": "string",
+        "code": "invalid_type",
+        "path": [
+          "length"
+        ],
+        "message": "Invalid input: expected string, received number"
+      }
+    ]]
+  `);
 
   await close();
 });
@@ -626,7 +732,7 @@ test('recipe: summon context in input parser', async () => {
         const ctx = getContext();
         expect(ctx.foo).toBe('bar');
 
-        return z.string().parse(input);
+        return zod3.string().parse(input);
       })
       .query((opts) => {
         expectTypeOf(opts.input).toBeString();
@@ -677,8 +783,8 @@ test('recipe: get json schemas for procedure', async () => {
   const appRouter = t.router({
     single: publicProcedure
       .input(
-        z.object({
-          foo: z.string(),
+        zod4.object({
+          foo: zod4.string(),
         }),
       )
       .query((opts) => {
@@ -687,13 +793,13 @@ test('recipe: get json schemas for procedure', async () => {
       }),
     list: publicProcedure
       .input(
-        z.object({
-          foo: z.array(z.string()),
+        zod4.object({
+          foo: zod4.array(zod4.string()),
         }),
       )
       .input(
-        z.object({
-          bar: z.array(z.string()),
+        zod4.object({
+          bar: zod4.array(zod4.string()),
         }),
       )
       .query((opts) => {
@@ -730,61 +836,67 @@ test('recipe: get json schemas for procedure', async () => {
 
   expect(await client.getJsonSchemas.query({ path: 'single' }))
     .toMatchInlineSnapshot(`
-    Array [
-      Object {
-        "properties": Object {
-          "foo": Object {
-            "type": "string",
+      Array [
+        Object {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": false,
+          "properties": Object {
+            "foo": Object {
+              "type": "string",
+            },
           },
+          "required": Array [
+            "foo",
+          ],
+          "type": "object",
         },
-        "required": Array [
-          "foo",
-        ],
-        "type": "object",
-      },
-    ]
-  `);
+      ]
+    `);
 
   expect(await client.getJsonSchemas.query({ path: 'list' }))
     .toMatchInlineSnapshot(`
-    Array [
-      Object {
-        "properties": Object {
-          "foo": Object {
-            "items": Object {
-              "type": "string",
+      Array [
+        Object {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": false,
+          "properties": Object {
+            "foo": Object {
+              "items": Object {
+                "type": "string",
+              },
+              "type": "array",
             },
-            "type": "array",
           },
+          "required": Array [
+            "foo",
+          ],
+          "type": "object",
         },
-        "required": Array [
-          "foo",
-        ],
-        "type": "object",
-      },
-      Object {
-        "properties": Object {
-          "bar": Object {
-            "items": Object {
-              "type": "string",
+        Object {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": false,
+          "properties": Object {
+            "bar": Object {
+              "items": Object {
+                "type": "string",
+              },
+              "type": "array",
             },
-            "type": "array",
           },
+          "required": Array [
+            "bar",
+          ],
+          "type": "object",
         },
-        "required": Array [
-          "bar",
-        ],
-        "type": "object",
-      },
-    ]
-  `);
+      ]
+    `);
 });
 
 // regerssion: TInputIn / TInputOut
-test('zod default', () => {
+test('zod v3 default', () => {
   const t = initTRPC.create();
-  const input = z.object({
-    users: z.array(z.number()).optional().default([]),
+  const input = zod3.object({
+    users: zod3.array(zod3.number()).optional().default([]),
   });
 
   const router = t.router({
