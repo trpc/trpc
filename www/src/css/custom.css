@@ -348,7 +348,7 @@ h5 {
 }
 
 [data-theme='dark'] .shiki.github-dark .popover {
-  @apply border-[1px] border-zinc-700 bg-zinc-800 elevation-4;
+  @apply border border-zinc-700 bg-zinc-800 elevation-4;
 }
 
 [data-theme='dark'] .shiki.github-dark .popover .arrow {
@@ -364,7 +364,7 @@ h5 {
 }
 
 [data-theme='light'] .shiki.min-light-with-diff .popover {
-  @apply border-[1px] border-zinc-300 bg-zinc-100;
+  @apply border border-zinc-300 bg-zinc-100;
 }
 
 [data-theme='light'] .shiki.min-light-with-diff .popover .arrow {
@@ -509,7 +509,7 @@ details p {
 }
 
 .DocSearch-Button-Keys {
-  @apply mr-1! min-w-[auto]! gap-1! rounded-xs! border-[1px]! px-1! dark:border-zinc-600/50! dark:bg-zinc-700/50!;
+  @apply mr-1! min-w-auto! gap-1! rounded-xs! border! px-1! dark:border-zinc-600/50! dark:bg-zinc-700/50!;
 }
 .DocSearch-Button-Key {
   background: transparent !important;

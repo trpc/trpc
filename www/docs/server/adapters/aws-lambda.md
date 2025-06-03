@@ -7,7 +7,7 @@ slug: /server/adapters/aws-lambda
 
 ## AWS Lambda adapter
 
-The AWS Lambda adapter is supported for API Gateway Rest API(v1) and HTTP API(v2) use cases.
+The AWS Lambda adapter is supported for API Gateway [REST API(v1)](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-rest-api.html) and [HTTP API(v2)](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api.html), and [Lambda Function URL](https://docs.aws.amazon.com/lambda/latest/dg/urls-configuration.html) use cases.
 
 > `httpBatchLink` requires the router to work on a single API Gateway Resource (as shown in the [example](https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway)).
 > If you'd like to have a Resource per procedure, you can use the `httpLink` instead ([more info](https://github.com/trpc/trpc/issues/5738#issuecomment-2130001522)).
@@ -111,3 +111,57 @@ function createContext({
 ```
 
 [Read more here about payload format version](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)
+
+## AWS Lambda Response Streaming Adapter
+
+AWS Lambda supports streaming responses to clients.
+
+> Response streaming is only supported for Lambda Function URLs. You can not use API Gateway to stream responses. [Read more here about response streaming](https://aws.amazon.com/blogs/compute/introducing-aws-lambda-response-streaming/).
+
+## Example app
+
+<table>
+  <thead>
+    <tr>
+      <th>Description</th>
+      <th>Links</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Lambda Function URL with NodeJS client.</td>
+      <td>
+        <ul>
+          <li><a href="https://github.com/trpc/trpc/tree/main/examples/lambda-url">Source</a></li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+### Response Streaming
+
+The signature of a streaming handler is different from the default handler. The streaming handler additonally receives a writable stream parameter, `responseStream`, besides the default node handler parameters, `event` and `context`. To indicate that Lambda should stream your responses, you must wrap your function handler with the `awslambda.streamifyResponse()` decorator.
+
+> Note that the `awslambda` namespace is automatically provided by the Lambda execution environment. You can import the types from `@types/aws-lambda` to augment the global namespace with the `awslambda` namespace.
+
+```ts title='server.ts'
+import { awsLambdaStreamingRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import type { StreamifyHandler } from 'aws-lambda';
+
+const appRouter = router({
+  iterable: publicProcedure.query(async function* () {
+    for (let i = 0; i < 10; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      yield i;
+    }
+  }),
+});
+
+export const handler = awslambda.streamifyResponse(
+  awsLambdaStreamingRequestHandler({
+    router: appRouter,
+    /* ... */
+  }),
+);
+```

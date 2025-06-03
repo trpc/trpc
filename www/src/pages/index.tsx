@@ -356,7 +356,7 @@ const HomeContent: React.FC = () => {
             </>
           }
         />
-        <div className="mx-auto max-w-screen-md">
+        <div className="mx-auto max-w-(--breakpoint-md)">
           <motion.div
             variants={popIn}
             initial="hidden"

@@ -8,6 +8,7 @@ export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 export type ProcedureType = (typeof procedureTypes)[number];
 
 interface BuiltProcedureDef {
+  meta: unknown;
   input: unknown;
   output: unknown;
 }
@@ -38,6 +39,7 @@ export interface Procedure<
     meta: unknown;
     experimental_caller: boolean;
   };
+  meta: TDef['meta'];
   /**
    * @internal
    */

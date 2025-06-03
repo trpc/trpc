@@ -25,9 +25,9 @@ export const Button = ({
     {
       ['bg-primary text-white hover:text-white hover:bg-primary-dark']:
         variant === 'primary',
-      ['bg-gradient-to-r from-sky-50 to-sky-200 text-slate-800 hover:text-primary-darker']:
+      ['bg-linear-to-r from-sky-50 to-sky-200 text-slate-800 hover:text-primary-darker']:
         variant === 'secondary',
-      ['bg-gradient-to-r dark:from-neutral-800 dark:to-neutral-800 text-white from-neutral-200 to-neutral-300 shadow-none']:
+      ['bg-linear-to-r dark:from-neutral-800 dark:to-neutral-800 text-white from-neutral-200 to-neutral-300 shadow-none']:
         variant === 'tertiary',
     },
     _className,
