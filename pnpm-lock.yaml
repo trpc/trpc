@@ -144,8 +144,8 @@ importers:
         specifier: ^3.1.2
         version: 3.1.3(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@20.17.46)(@vitest/ui@3.1.3)(jiti@2.4.2)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.7.0)
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
 
   examples/.experimental/next-app-dir:
     dependencies:
@@ -213,8 +213,8 @@ importers:
         specifier: ^5.8.2
         version: 5.8.2
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -253,8 +253,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -321,8 +321,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../../packages/server
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@monotest/tsconfig':
         specifier: workspace:*
@@ -337,8 +337,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../../packages/server
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@monotest/tsconfig':
         specifier: workspace:*
@@ -420,8 +420,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -472,8 +472,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -531,8 +531,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../packages/server
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@cloudflare/workers-types':
         specifier: 4.20250505.0
@@ -571,8 +571,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.1
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/express':
         specifier: ^5.0.0
@@ -620,8 +620,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.1
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/express':
         specifier: ^5.0.0
@@ -678,8 +678,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -721,8 +721,8 @@ importers:
         specifier: ^4.19.3
         version: 4.19.3
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -758,8 +758,8 @@ importers:
         specifier: ^4.19.3
         version: 4.19.3
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/aws-lambda':
         specifier: ^8.10.149
@@ -792,8 +792,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../packages/server
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -826,8 +826,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -912,8 +912,8 @@ importers:
         specifier: ^2.8.5
         version: 2.8.5
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/cors':
         specifier: ^2.8.13
@@ -995,8 +995,8 @@ importers:
         specifier: ^2.8.5
         version: 2.8.5
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/cors':
         specifier: ^2.8.13
@@ -1041,8 +1041,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -1090,8 +1090,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -1145,11 +1145,11 @@ importers:
         specifier: ^7.53.2
         version: 7.53.2(react@19.1.0)
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
       zod-form-data:
         specifier: ^2.0.1
-        version: 2.0.1(zod@3.24.4)
+        version: 2.0.1(zod@3.25.49)
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -1197,8 +1197,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -1252,8 +1252,8 @@ importers:
         specifier: ^1.12.4
         version: 1.12.4
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -1358,8 +1358,8 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -1434,8 +1434,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@playwright/test':
         specifier: ^1.50.1
@@ -1552,8 +1552,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -1650,8 +1650,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -1726,8 +1726,8 @@ importers:
         specifier: 0.5.3
         version: 0.5.3(@types/node@20.17.46)(db0@0.2.4(drizzle-orm@0.31.2(@cloudflare/workers-types@4.20250505.0)(@types/better-sqlite3@7.6.2)(@types/react@19.1.0)(bun-types@1.1.32)(postgres@3.4.4)(react@19.1.0)))(drizzle-orm@0.31.2(@cloudflare/workers-types@4.20250505.0)(@types/better-sqlite3@7.6.2)(@types/react@19.1.0)(bun-types@1.1.32)(postgres@3.4.4)(react@19.1.0))(encoding@0.1.13)(ioredis@5.4.1)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(typescript@5.8.2)(webpack-sources@3.2.3)(xml2js@0.6.2)(yaml@2.7.0)
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@eslint/js':
         specifier: ^9.26.0
@@ -1784,8 +1784,8 @@ importers:
         specifier: npm:@trpc/server
         version: link:../../packages/server
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@edge-runtime/types':
         specifier: ^2.0.2
@@ -1902,8 +1902,8 @@ importers:
         specifier: ^5.8.2
         version: 5.8.2
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
 
   packages/react-query:
     devDependencies:
@@ -1971,11 +1971,11 @@ importers:
         specifier: ^5.8.2
         version: 5.8.2
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
       zod-form-data:
         specifier: ^2.0.1
-        version: 2.0.1(zod@3.24.4)
+        version: 2.0.1(zod@3.25.49)
 
   packages/server:
     devDependencies:
@@ -2061,8 +2061,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
 
   packages/tanstack-react-query:
     devDependencies:
@@ -2112,8 +2112,8 @@ importers:
         specifier: ^8.0.0
         version: 8.17.1
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
 
   packages/tests:
     dependencies:
@@ -2209,7 +2209,7 @@ importers:
         version: 1.0.0
       zod-form-data:
         specifier: ^2.0.1
-        version: 2.0.1(zod@3.24.4)
+        version: 2.0.1(zod@3.25.49)
 
   packages/upgrade:
     dependencies:
@@ -2257,8 +2257,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
 
   www:
     dependencies:
@@ -2324,7 +2324,7 @@ importers:
         version: link:../packages/tanstack-react-query
       '@unkey/ratelimit':
         specifier: ^2.0.0
-        version: 2.0.0(@modelcontextprotocol/sdk@1.11.3)(zod@3.24.4)
+        version: 2.0.0(@modelcontextprotocol/sdk@1.11.3)(zod@3.25.49)
       '@visx/hierarchy':
         specifier: ^3.0.0
         version: 3.0.0(react@19.1.0)
@@ -2380,8 +2380,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@babel/core':
         specifier: ^7.23.2
@@ -2492,8 +2492,8 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       zod:
-        specifier: ^3.24.4
-        version: 3.24.4
+        specifier: ^3.25.49
+        version: 3.25.49
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -4250,10 +4250,6 @@ packages:
 
   '@babel/runtime@7.26.0':
     resolution: {integrity: sha512-FDSOghenHTiToteC/QRlv2q3DhPZ/oOXTBoirfWNx1Cx3TMVcGWQtMMmQcSvb/JjpNeGzx8Pq/b4fKEJuWm1sw==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/runtime@7.27.0':
-    resolution: {integrity: sha512-VtPOkrdPHZsKc/clNqyi9WUA8TINkZ4cGk63UUE3u4pmB2k+ZMQRDuIOagv8UVd6j7k0T3+RRIb7beKTebNbcw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/runtime@7.27.3':
@@ -19909,8 +19905,8 @@ packages:
   zod@3.22.3:
     resolution: {integrity: sha512-EjIevzuJRiRPbVH4mGc8nApb/lVLKVpmUhAaR5R5doKGfAnGJ6Gr3CViAVjP+4FWSxCsybeWQdcgCtbX+7oZug==}
 
-  zod@3.24.4:
-    resolution: {integrity: sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==}
+  zod@3.25.49:
+    resolution: {integrity: sha512-JMMPMy9ZBk3XFEdbM3iL1brx4NUSejd6xr3ELrrGEfGb355gjhiAWtG3K5o+AViV/3ZfkIrCzXsZn6SbLwTR8Q==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -23537,10 +23533,6 @@ snapshots:
     dependencies:
       regenerator-runtime: 0.14.1
 
-  '@babel/runtime@7.27.0':
-    dependencies:
-      regenerator-runtime: 0.14.1
-
   '@babel/runtime@7.27.3': {}
 
   '@babel/standalone@7.26.9': {}
@@ -26221,8 +26213,8 @@ snapshots:
       express-rate-limit: 7.5.0(express@5.0.1)
       pkce-challenge: 5.0.0
       raw-body: 3.0.0
-      zod: 3.24.4
-      zod-to-json-schema: 3.24.5(zod@3.24.4)
+      zod: 3.25.49
+      zod-to-json-schema: 3.24.5(zod@3.25.49)
     transitivePeerDependencies:
       - supports-color
 
@@ -28523,7 +28515,7 @@ snapshots:
       '@tanstack/virtual-file-routes': 1.99.0
       prettier: 3.5.2
       tsx: 4.19.3
-      zod: 3.24.4
+      zod: 3.25.49
     optionalDependencies:
       '@tanstack/react-router': 1.109.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
 
@@ -28544,7 +28536,7 @@ snapshots:
       babel-dead-code-elimination: 1.0.9
       chokidar: 3.6.0
       unplugin: 2.2.0
-      zod: 3.24.4
+      zod: 3.25.49
     optionalDependencies:
       '@tanstack/react-router': 1.109.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       vite: 6.2.4(@types/node@20.17.46)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.7.0)
@@ -28706,7 +28698,7 @@ snapshots:
       react-dom: 19.1.0(react@19.1.0)
       vinxi: 0.5.3(@types/node@20.17.46)(db0@0.2.4(drizzle-orm@0.31.2(@cloudflare/workers-types@4.20250505.0)(@types/better-sqlite3@7.6.2)(@types/react@19.1.0)(bun-types@1.1.32)(postgres@3.4.4)(react@19.1.0)))(drizzle-orm@0.31.2(@cloudflare/workers-types@4.20250505.0)(@types/better-sqlite3@7.6.2)(@types/react@19.1.0)(bun-types@1.1.32)(postgres@3.4.4)(react@19.1.0))(encoding@0.1.13)(ioredis@5.4.1)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(typescript@5.8.2)(webpack-sources@3.2.3)(xml2js@0.6.2)(yaml@2.7.0)
       vite: 6.2.4(@types/node@20.17.46)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.7.0)
-      zod: 3.24.4
+      zod: 3.25.49
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -29705,15 +29697,15 @@ snapshots:
       unhead: 2.0.0
       vue: 3.5.13(typescript@5.8.2)
 
-  '@unkey/api@2.0.0-alpha.7(@modelcontextprotocol/sdk@1.11.3)(zod@3.24.4)':
+  '@unkey/api@2.0.0-alpha.7(@modelcontextprotocol/sdk@1.11.3)(zod@3.25.49)':
     dependencies:
-      zod: 3.24.4
+      zod: 3.25.49
     optionalDependencies:
       '@modelcontextprotocol/sdk': 1.11.3
 
-  '@unkey/ratelimit@2.0.0(@modelcontextprotocol/sdk@1.11.3)(zod@3.24.4)':
+  '@unkey/ratelimit@2.0.0(@modelcontextprotocol/sdk@1.11.3)(zod@3.25.49)':
     dependencies:
-      '@unkey/api': 2.0.0-alpha.7(@modelcontextprotocol/sdk@1.11.3)(zod@3.24.4)
+      '@unkey/api': 2.0.0-alpha.7(@modelcontextprotocol/sdk@1.11.3)(zod@3.25.49)
     transitivePeerDependencies:
       - '@modelcontextprotocol/sdk'
       - zod
@@ -33167,8 +33159,8 @@ snapshots:
       '@babel/plugin-transform-private-methods': 7.25.9(@babel/core@7.26.9)
       eslint: 9.26.0(jiti@2.4.2)
       hermes-parser: 0.25.1
-      zod: 3.24.4
-      zod-validation-error: 3.4.1(zod@3.24.4)
+      zod: 3.25.49
+      zod-validation-error: 3.4.1(zod@3.25.49)
     transitivePeerDependencies:
       - supports-color
 
@@ -33267,7 +33259,7 @@ snapshots:
       minimatch: 3.1.2
       natural-compare: 1.4.0
       optionator: 0.9.3
-      zod: 3.24.4
+      zod: 3.25.49
     optionalDependencies:
       jiti: 2.4.2
     transitivePeerDependencies:
@@ -34587,7 +34579,7 @@ snapshots:
 
   history@4.10.1:
     dependencies:
-      '@babel/runtime': 7.26.0
+      '@babel/runtime': 7.27.3
       loose-envify: 1.4.0
       resolve-pathname: 3.0.0
       tiny-invariant: 1.3.3
@@ -39635,7 +39627,7 @@ snapshots:
 
   regenerator-transform@0.15.2:
     dependencies:
-      '@babel/runtime': 7.27.0
+      '@babel/runtime': 7.27.3
 
   regexp-tree@0.1.27: {}
 
@@ -42313,7 +42305,7 @@ snapshots:
       unenv: 1.10.0
       unstorage: 1.15.0(db0@0.2.4(drizzle-orm@0.31.2(@cloudflare/workers-types@4.20250505.0)(@types/better-sqlite3@7.6.2)(@types/react@19.1.0)(bun-types@1.1.32)(postgres@3.4.4)(react@19.1.0)))(ioredis@5.4.1)
       vite: 6.2.4(@types/node@20.17.46)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.7.0)
-      zod: 3.24.4
+      zod: 3.25.49
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -43092,20 +43084,20 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.3.0
 
-  zod-form-data@2.0.1(zod@3.24.4):
+  zod-form-data@2.0.1(zod@3.25.49):
     dependencies:
-      zod: 3.24.4
+      zod: 3.25.49
 
-  zod-to-json-schema@3.24.5(zod@3.24.4):
+  zod-to-json-schema@3.24.5(zod@3.25.49):
     dependencies:
-      zod: 3.24.4
+      zod: 3.25.49
 
-  zod-validation-error@3.4.1(zod@3.24.4):
+  zod-validation-error@3.4.1(zod@3.25.49):
     dependencies:
-      zod: 3.24.4
+      zod: 3.25.49
 
   zod@3.22.3: {}
 
-  zod@3.24.4: {}
+  zod@3.25.49: {}
 
   zwitch@2.0.4: {}
