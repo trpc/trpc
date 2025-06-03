@@ -1148,8 +1148,8 @@ importers:
         specifier: ^3.25.49
         version: 3.25.49
       zod-form-data:
-        specifier: ^3.0.0
-        version: 3.0.0(zod@3.25.49)
+        specifier: ^2.0.1
+        version: 2.0.7(zod@3.25.49)
     devDependencies:
       '@types/node':
         specifier: 20.17.46
@@ -1974,8 +1974,8 @@ importers:
         specifier: ^3.25.49
         version: 3.25.49
       zod-form-data:
-        specifier: ^3.0.0
-        version: 3.0.0(zod@3.25.49)
+        specifier: ^2.0.1
+        version: 2.0.7(zod@3.25.49)
 
   packages/server:
     devDependencies:
@@ -19853,6 +19853,11 @@ packages:
   zip-stream@6.0.1:
     resolution: {integrity: sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA==}
     engines: {node: '>= 14'}
+
+  zod-form-data@2.0.7:
+    resolution: {integrity: sha512-O27uzKMx7qc7z51KXER326Fp966jqHGvZX3i18CbvElF/QqVsQQN6Q7BnzepkzeBzTJnU3golibVSagf4dp7RQ==}
+    peerDependencies:
+      zod: '>= 3.11.0'
 
   zod-form-data@3.0.0:
     resolution: {integrity: sha512-jTQbmXQU5wMfI+ERZH6EuATzeD9FEOviPasLL2hCUP+FcLagXLtboUM95PHsSOFseL8Nv91YKlwln3zo1sAS2g==}
@@ -43024,7 +43029,7 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.3.0
 
-  zod-form-data@3.0.0(zod@3.25.49):
+  zod-form-data@2.0.7(zod@3.25.49):
     dependencies:
       '@rvf/set-get': 7.0.1
       zod: 3.25.49

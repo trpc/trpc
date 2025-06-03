@@ -96,7 +96,7 @@
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "zod": "^3.25.49",
-    "zod-form-data": "^3.0.0"
+    "zod-form-data": "^2.0.1"
   },
   "publishConfig": {
     "access": "public"
