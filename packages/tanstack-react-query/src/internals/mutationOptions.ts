@@ -123,6 +123,7 @@ export function trpcMutationOptions(args: {
         originalFn,
         queryClient,
         meta: opts?.meta ?? defaultOpts?.meta ?? {},
+        mutationKey,
       });
     },
     trpc: createTRPCOptionsResult({ path }),
