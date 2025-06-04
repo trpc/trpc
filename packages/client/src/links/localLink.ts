@@ -274,7 +274,6 @@ export function experimental_localLink<TRouter extends AnyRouter>(
 
         return () => {
           ac.abort();
-          // noop
         };
       });
 }
