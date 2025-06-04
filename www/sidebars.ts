@@ -160,6 +160,7 @@ const config: SidebarsConfig = {
             'client/links/httpBatchLink',
             'client/links/httpBatchStreamLink',
             'client/links/httpSubscriptionLink',
+            'client/links/localLink',
             'client/links/wsLink',
             'client/links/splitLink',
             'client/links/loggerLink',
