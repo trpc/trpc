@@ -60,7 +60,7 @@ export function experimental_localLink<TRouter extends AnyRouter>(
         });
 
         let input = op.input;
-        const runProcedure = async (newInput: unknown) => {
+        const runProcedure = async (newInput: unknown): Promise<unknown> => {
           input = newInput;
 
           ctx = await opts.createContext();
