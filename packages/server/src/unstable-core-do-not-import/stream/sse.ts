@@ -72,7 +72,7 @@ const SERIALIZED_ERROR_EVENT = 'serialized-error';
 const CONNECTED_EVENT = 'connected';
 const RETURN_EVENT = 'return';
 
-interface SSEvent {
+export interface SSEvent {
   id?: string;
   data: unknown;
   comment?: string;

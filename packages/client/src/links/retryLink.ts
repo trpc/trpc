@@ -2,6 +2,8 @@
 // We're not actually exporting this link
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
+import type { TRPC_ERROR_CODE_NUMBER } from '@trpc/server/rpc';
+import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
 import type { TRPCClientError } from '../TRPCClientError';
@@ -115,3 +117,14 @@ export function retryLink<TInferrable extends InferrableClientTypes>(
     };
   };
 }
+
+/**
+ * tRPC error codes that are considered retryable
+ * With out of the box SSE, the client will reconnect when these errors are encountered
+ */
+export const retryableRpcCodes: TRPC_ERROR_CODE_NUMBER[] = [
+  TRPC_ERROR_CODES_BY_KEY.BAD_GATEWAY,
+  TRPC_ERROR_CODES_BY_KEY.SERVICE_UNAVAILABLE,
+  TRPC_ERROR_CODES_BY_KEY.GATEWAY_TIMEOUT,
+  TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
+];
