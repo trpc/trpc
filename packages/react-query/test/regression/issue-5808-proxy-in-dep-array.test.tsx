@@ -150,7 +150,7 @@ describe('RSC regression', () => {
     .done();
 
   test('rsc prefetch helpers', async () => {
-    const { client, App, trpc, HydrateClient, getQueryClient } = ctx;
+    const { client, App, trpc, HydrateClient } = ctx;
 
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
