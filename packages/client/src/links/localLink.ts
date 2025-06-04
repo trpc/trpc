@@ -1,13 +1,17 @@
 // import "server-only";
 
 import type { TRPCLink } from '@trpc/client';
-import { TRPCClientError } from '@trpc/client';
+import { isTRPCClientError, TRPCClientError } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import {
   getTransformer,
   type TransformerOptions,
 } from '@trpc/client/unstable-internals';
-import { getTRPCErrorFromUnknown, isTrackedEnvelope } from '@trpc/server';
+import {
+  getTRPCErrorFromUnknown,
+  getTRPCErrorShape,
+  isTrackedEnvelope,
+} from '@trpc/server';
 import { behaviorSubject, observable } from '@trpc/server/observable';
 import { TRPC_ERROR_CODES_BY_KEY, type TRPCResult } from '@trpc/server/rpc';
 import type {
@@ -87,6 +91,26 @@ export function experimental_localLink<TRouter extends AnyRouter>(
             ctx,
           });
         };
+
+        const coerceToTRPCClientError = (cause: unknown) => {
+          if (isTRPCClientError<TRouter>(cause)) {
+            return cause;
+          }
+          const error = getTRPCErrorFromUnknown(cause);
+
+          const shape = getTRPCErrorShape({
+            config: opts.router._def._config,
+            ctx,
+            error,
+            input,
+            path: op.path,
+            type: op.type,
+          });
+          return TRPCClientError.from({
+            error: shape,
+          });
+        };
+
         run(async () => {
           switch (op.type) {
             case 'query':
@@ -120,7 +144,7 @@ export function experimental_localLink<TRouter extends AnyRouter>(
                       }
                     } catch (cause) {
                       onErrorCallback(cause);
-                      throw cause;
+                      throw coerceToTRPCClientError(cause);
                     }
                   })(),
                 },
@@ -181,19 +205,19 @@ export function experimental_localLink<TRouter extends AnyRouter>(
                     const error = getTRPCErrorFromUnknown(cause);
 
                     if (
-                      retryableRpcCodes.includes(
+                      !retryableRpcCodes.includes(
                         TRPC_ERROR_CODES_BY_KEY[error.code],
                       )
                     ) {
-                      onErrorCallback(error);
-                      connectionState.next({
-                        type: 'state',
-                        state: 'connecting',
-                        error: TRPCClientError.from(error),
-                      });
-                    } else {
-                      throw error;
+                      throw coerceToTRPCClientError(error);
                     }
+
+                    onErrorCallback(error);
+                    connectionState.next({
+                      type: 'state',
+                      state: 'connecting',
+                      error: coerceToTRPCClientError(error),
+                    });
 
                     break;
                   }
@@ -231,7 +255,7 @@ export function experimental_localLink<TRouter extends AnyRouter>(
           }
         }).catch((cause) => {
           onErrorCallback(cause);
-          observer.error(TRPCClientError.from(cause));
+          observer.error(coerceToTRPCClientError(cause));
         });
 
         return () => {

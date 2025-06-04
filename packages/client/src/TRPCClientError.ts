@@ -19,7 +19,9 @@ export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
 export type TRPCClientErrorLike<TInferrable extends InferrableClientTypes> =
   TRPCClientErrorBase<inferErrorShape<TInferrable>>;
 
-function isTRPCClientError(cause: unknown): cause is TRPCClientError<any> {
+export function isTRPCClientError<TInferrable extends InferrableClientTypes>(
+  cause: unknown,
+): cause is TRPCClientError<TInferrable> {
   return (
     cause instanceof TRPCClientError ||
     /**

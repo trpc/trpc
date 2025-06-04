@@ -1,8 +1,10 @@
+import { waitError } from '@trpc/server/__tests__/waitError';
 import type { AnyRouter } from '@trpc/server';
-import { initTRPC, tracked } from '@trpc/server';
-import { makeResource } from '@trpc/server/unstable-core-do-not-import';
+import { initTRPC, tracked, TRPCError } from '@trpc/server';
+import { makeResource, run } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 import { createTRPCClient } from '../createTRPCClient';
+import { isTRPCClientError, TRPCClientError } from '../TRPCClientError';
 import type { LocalLinkOptions } from './localLink';
 import { experimental_localLink as localLink } from './localLink';
 
@@ -393,4 +395,90 @@ test('subscription reconnects on errors with the last event id', async () => {
       ],
     ]
   `);
+});
+
+test('error formatting', async () => {
+  const t = initTRPC.create({
+    errorFormatter: (opts) => {
+      return {
+        ...opts.shape,
+        data: {
+          ...opts.shape.data,
+          foo: 'bar' as const,
+          stack: 'redacted',
+        },
+      };
+    },
+  });
+
+  const appRouter = t.router({
+    hello: t.procedure.query(() => {
+      throw new Error('test');
+    }),
+    iterate: t.procedure.query(async function* () {
+      yield 'hello';
+      throw new TRPCError({
+        code: 'BAD_GATEWAY',
+      });
+    }),
+  });
+
+  const ctx = localLinkClient<typeof appRouter>({
+    router: appRouter,
+    createContext: async () => ({}),
+  });
+  const { client } = ctx;
+
+  {
+    const err = await waitError(client.hello.query());
+    if (!isTRPCClientError<typeof appRouter>(err)) {
+      throw 'nah';
+    }
+
+    expect(err.data).toMatchObject({
+      foo: 'bar',
+    });
+    expect(err.shape).toMatchInlineSnapshot(`
+      Object {
+        "code": -32603,
+        "data": Object {
+          "code": "INTERNAL_SERVER_ERROR",
+          "foo": "bar",
+          "httpStatus": 500,
+          "path": "hello",
+          "stack": "redacted",
+        },
+        "message": "test",
+      }
+    `);
+  }
+
+  {
+    const err = await waitError(
+      run(async function () {
+        for await (const _ of await client.iterate.query()) {
+          // ..
+        }
+      }),
+    );
+    if (!isTRPCClientError<typeof appRouter>(err)) {
+      throw err;
+    }
+    expect(err.data).toMatchObject({
+      foo: 'bar',
+    });
+    expect(err.shape).toMatchInlineSnapshot(`
+      Object {
+        "code": -32603,
+        "data": Object {
+          "code": "BAD_GATEWAY",
+          "foo": "bar",
+          "httpStatus": 502,
+          "path": "iterate",
+          "stack": "redacted",
+        },
+        "message": "BAD_GATEWAY",
+      }
+    `);
+  }
 });
