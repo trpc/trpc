@@ -5,7 +5,7 @@ import { makeResource, run } from '@trpc/server/unstable-core-do-not-import';
 import superjson from 'superjson';
 import { z } from 'zod';
 import { createTRPCClient } from '../createTRPCClient';
-import { isTRPCClientError, TRPCClientError } from '../TRPCClientError';
+import { isTRPCClientError } from '../TRPCClientError';
 import type { LocalLinkOptions } from './localLink';
 import { experimental_localLink as localLink } from './localLink';
 
@@ -84,6 +84,7 @@ test('json serialization', async () => {
 
   const appRouter = t.router({
     hello: t.procedure.query(() => date),
+    undef: t.procedure.query(() => undefined),
   });
 
   const client = createTRPCClient<typeof appRouter>({
@@ -95,10 +96,17 @@ test('json serialization', async () => {
     ],
   });
 
-  const result = await client.hello.query();
+  {
+    const result = await client.hello.query();
 
-  expect(typeof result).toBe('string');
-  expect(result).toBe(date.toJSON());
+    expect(typeof result).toBe('string');
+    expect(result).toBe(date.toJSON());
+  }
+  {
+    const result = await client.undef.query();
+
+    expect(result).toBeUndefined();
+  }
 });
 
 test('handles async generator', async () => {

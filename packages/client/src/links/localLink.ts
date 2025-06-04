@@ -49,6 +49,10 @@ export function experimental_localLink<TRouter extends AnyRouter>(
       // assume transformer will do the right thing
       return chunk;
     }
+    // Special case for undefined, because `JSON.stringify(undefined)` throws
+    if (chunk === undefined) {
+      return chunk;
+    }
     const serialized = JSON.stringify(transformer.input.serialize(chunk));
     const deserialized = JSON.parse(transformer.output.deserialize(serialized));
     return deserialized;
@@ -68,7 +72,7 @@ export function experimental_localLink<TRouter extends AnyRouter>(
         });
 
         let input = op.input;
-        const runProcedure = async (newInput: unknown): Promise<unknown> => {
+        async function runProcedure(newInput: unknown): Promise<unknown> {
           input = newInput;
 
           ctx = await opts.createContext();
@@ -81,9 +85,9 @@ export function experimental_localLink<TRouter extends AnyRouter>(
             type: op.type,
             signal,
           });
-        };
+        }
 
-        const onErrorCallback = (cause: unknown) => {
+        function onErrorCallback(cause: unknown) {
           if (isAbortError(cause)) {
             return;
           }
@@ -94,9 +98,9 @@ export function experimental_localLink<TRouter extends AnyRouter>(
             input,
             ctx,
           });
-        };
+        }
 
-        const coerceToTRPCClientError = (cause: unknown) => {
+        function coerceToTRPCClientError(cause: unknown) {
           if (isTRPCClientError<TRouter>(cause)) {
             return cause;
           }
@@ -113,7 +117,7 @@ export function experimental_localLink<TRouter extends AnyRouter>(
           return TRPCClientError.from({
             error: transformChunk(shape),
           });
-        };
+        }
 
         run(async () => {
           switch (op.type) {
