@@ -59,16 +59,32 @@ export function experimental_localLink<TRouter extends AnyRouter>(
           // prevent unhandled rejection
         });
 
-        const runProcedure = async (input: unknown) => {
+        let input = op.input;
+        const runProcedure = async (newInput: unknown) => {
+          input = newInput;
+
           ctx = await opts.createContext();
 
           return callProcedure({
             router: opts.router,
             path: op.path,
-            getRawInput: async () => input,
+            getRawInput: async () => newInput,
             ctx,
             type: op.type,
             signal,
+          });
+        };
+
+        const onErrorCallback = (cause: unknown) => {
+          if (isAbortError(cause)) {
+            return;
+          }
+          opts.onError?.({
+            error: getTRPCErrorFromUnknown(cause),
+            type: op.type,
+            path: op.path,
+            input,
+            ctx,
           });
         };
         run(async () => {
@@ -103,15 +119,7 @@ export function experimental_localLink<TRouter extends AnyRouter>(
                         yield transformChunk(res.value);
                       }
                     } catch (cause) {
-                      if (!isAbortError(cause)) {
-                        opts.onError?.({
-                          error: getTRPCErrorFromUnknown(cause),
-                          type: op.type,
-                          path: op.path,
-                          input: op.input,
-                          ctx,
-                        });
-                      }
+                      onErrorCallback(cause);
                       throw cause;
                     }
                   })(),
@@ -176,13 +184,7 @@ export function experimental_localLink<TRouter extends AnyRouter>(
                         TRPC_ERROR_CODES_BY_KEY[error.code],
                       )
                     ) {
-                      opts.onError?.({
-                        error,
-                        type: op.type,
-                        path: op.path,
-                        input: op.input,
-                        ctx,
-                      });
+                      onErrorCallback(error);
                       connectionState.next({
                         type: 'state',
                         state: 'connecting',
@@ -225,13 +227,7 @@ export function experimental_localLink<TRouter extends AnyRouter>(
               }
           }
         }).catch((cause) => {
-          opts.onError?.({
-            error: getTRPCErrorFromUnknown(cause),
-            type: op.type,
-            path: op.path,
-            input: op.input,
-            ctx,
-          });
+          onErrorCallback(cause);
           observer.error(TRPCClientError.from(cause));
         });
 

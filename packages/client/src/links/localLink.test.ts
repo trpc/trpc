@@ -287,7 +287,7 @@ test('subscription reconnects on errors', async () => {
 test('subscription reconnects on errors with the last event id', async () => {
   const t = initTRPC.create();
 
-  const events = Array.from({ length: 10 }, (_, i) => `event-${i}`);
+  const events = Array.from({ length: 5 }, (_, i) => `event-${i}`);
 
   const appRouter = t.router({
     hello: t.procedure
@@ -303,8 +303,8 @@ test('subscription reconnects on errors with the last event id', async () => {
         for (let i = start; i < events.length; i++) {
           const data = events[i]!;
           yield tracked(String(i), data);
-          // throw an error every 3rd event
-          if (i % 3 === 0) {
+          // throw an error every second event
+          if (i % 2 === 0) {
             throw new Error(`Threw on event ${i}`);
           }
         }
@@ -321,7 +321,7 @@ test('subscription reconnects on errors with the last event id', async () => {
   const result = await new Promise<Data[]>((resolve) => {
     const aggregated: Data[] = [];
     client.hello.subscribe(
-      { lastEventId: '0' },
+      {},
       {
         onData: (data) => {
           aggregated.push(data);
@@ -335,6 +335,10 @@ test('subscription reconnects on errors with the last event id', async () => {
 
   expect(result).toMatchInlineSnapshot(`
     Array [
+      Object {
+        "data": "event-0",
+        "id": "0",
+      },
       Object {
         "data": "event-1",
         "id": "1",
@@ -351,26 +355,42 @@ test('subscription reconnects on errors with the last event id', async () => {
         "data": "event-4",
         "id": "4",
       },
-      Object {
-        "data": "event-5",
-        "id": "5",
-      },
-      Object {
-        "data": "event-6",
-        "id": "6",
-      },
-      Object {
-        "data": "event-7",
-        "id": "7",
-      },
-      Object {
-        "data": "event-8",
-        "id": "8",
-      },
-      Object {
-        "data": "event-9",
-        "id": "9",
-      },
+    ]
+  `);
+  expect(ctx.onError).toHaveBeenCalledTimes(3);
+  expect(ctx.onError.mock.calls).toMatchInlineSnapshot(`
+    Array [
+      Array [
+        Object {
+          "ctx": Object {},
+          "error": [TRPCError: Threw on event 0],
+          "input": Object {},
+          "path": "hello",
+          "type": "subscription",
+        },
+      ],
+      Array [
+        Object {
+          "ctx": Object {},
+          "error": [TRPCError: Threw on event 2],
+          "input": Object {
+            "lastEventId": "0",
+          },
+          "path": "hello",
+          "type": "subscription",
+        },
+      ],
+      Array [
+        Object {
+          "ctx": Object {},
+          "error": [TRPCError: Threw on event 4],
+          "input": Object {
+            "lastEventId": "2",
+          },
+          "path": "hello",
+          "type": "subscription",
+        },
+      ],
     ]
   `);
 });
