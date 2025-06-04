@@ -66,3 +66,14 @@ export const TRPC_ERROR_CODES_BY_NUMBER: InvertKeyValue<
 
 export type TRPC_ERROR_CODE_NUMBER = ValueOf<typeof TRPC_ERROR_CODES_BY_KEY>;
 export type TRPC_ERROR_CODE_KEY = keyof typeof TRPC_ERROR_CODES_BY_KEY;
+
+/**
+ * tRPC error codes that are considered retryable
+ * With out of the box SSE, the client will reconnect when these errors are encountered
+ */
+export const retryableRpcCodes: TRPC_ERROR_CODE_NUMBER[] = [
+  TRPC_ERROR_CODES_BY_KEY.BAD_GATEWAY,
+  TRPC_ERROR_CODES_BY_KEY.SERVICE_UNAVAILABLE,
+  TRPC_ERROR_CODES_BY_KEY.GATEWAY_TIMEOUT,
+  TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
+];
