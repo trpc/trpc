@@ -10,7 +10,7 @@
   "dependencies": {
     "@trpc/server": "npm:@trpc/server",
     "cors": "^2.8.5",
-    "zod": "^3.24.4"
+    "zod": "^3.25.49"
   },
   "devDependencies": {
     "@types/cors": "^2.8.13",

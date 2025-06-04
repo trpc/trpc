@@ -34,7 +34,7 @@
     "superjson": "^1.12.4",
     "todomvc-app-css": "^2.3.0",
     "todomvc-common": "^1.0.5",
-    "zod": "^3.24.4"
+    "zod": "^3.25.49"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.1",

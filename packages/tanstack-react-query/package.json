@@ -71,7 +71,7 @@
     "typescript": "^5.8.2",
     "vitest": "^3.1.2",
     "ws": "^8.0.0",
-    "zod": "^3.24.4"
+    "zod": "^3.25.49"
   },
   "publishConfig": {
     "access": "public"
