@@ -22,14 +22,7 @@ export type TRPCClientErrorLike<TInferrable extends InferrableClientTypes> =
 export function isTRPCClientError<TInferrable extends InferrableClientTypes>(
   cause: unknown,
 ): cause is TRPCClientError<TInferrable> {
-  return (
-    cause instanceof TRPCClientError ||
-    /**
-     * @deprecated
-     * Delete in next major
-     */
-    (cause instanceof Error && cause.name === 'TRPCClientError')
-  );
+  return cause instanceof TRPCClientError;
 }
 
 function isTRPCErrorResponse(obj: unknown): obj is TRPCErrorResponse<any> {
