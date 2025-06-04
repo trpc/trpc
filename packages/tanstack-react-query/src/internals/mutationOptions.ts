@@ -60,13 +60,13 @@ export interface MutationOptionsOverride {
     /**
      * Calls the original function that was defined in the query's `onSuccess` option
      */
-    originalFn: () => MaybePromise<unknown>;
+    originalFn: () => MaybePromise<void>;
     queryClient: QueryClient;
     /**
      * Meta data passed in from the `useMutation()` hook
      */
-    meta: Record<string, unknown>;
-  }) => MaybePromise<unknown>;
+    meta: Record<string, void>;
+  }) => MaybePromise<void>;
 }
 
 type AnyTRPCMutationOptionsIn = TRPCMutationOptionsIn<
