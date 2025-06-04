@@ -104,6 +104,7 @@ export {
    * @deprecated use `getTRPCErrorShape` instead
    */
   getErrorShape,
+  getErrorShape as getTRPCErrorShape,
 } from '../../unstable-core-do-not-import';
 
 /**
