@@ -1,12 +1,3 @@
-// import "server-only";
-
-import type { TRPCLink } from '@trpc/client';
-import { isTRPCClientError, TRPCClientError } from '@trpc/client';
-import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
-import {
-  getTransformer,
-  type TransformerOptions,
-} from '@trpc/client/unstable-internals';
 import {
   getTRPCErrorFromUnknown,
   getTRPCErrorShape,
@@ -31,6 +22,13 @@ import {
 } from '@trpc/server/unstable-core-do-not-import';
 import { inputWithTrackedEventId } from '../internals/inputWithTrackedEventId';
 import { abortSignalToPromise, raceAbortSignals } from '../internals/signals';
+import { isTRPCClientError, TRPCClientError } from '../TRPCClientError';
+import {
+  getTransformer,
+  type TransformerOptions,
+  type TRPCConnectionState,
+} from '../unstable-internals';
+import type { TRPCLink } from './types';
 
 export type LocalLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
