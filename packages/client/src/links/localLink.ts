@@ -91,42 +91,44 @@ export function experimental_localLink<TRouter extends AnyRouter>(
           switch (op.type) {
             case 'query':
             case 'mutation':
-              const result = await runProcedure(op.input);
-              if (!isAsyncIterable(result)) {
-                observer.next({
-                  result: { data: transformChunk(result) },
-                });
-                observer.complete();
-                break;
-              }
+              {
+                const result = await runProcedure(op.input);
+                if (!isAsyncIterable(result)) {
+                  observer.next({
+                    result: { data: transformChunk(result) },
+                  });
+                  observer.complete();
+                  break;
+                }
 
-              observer.next({
-                result: {
-                  data: (async function* () {
-                    await using iterator = iteratorResource(result);
-                    using _finally = makeResource({}, () => {
-                      observer.complete();
-                    });
-                    try {
-                      while (true) {
-                        const res = await Promise.race([
-                          iterator.next(),
-                          signalPromise,
-                        ]);
-                        if (res.done) {
-                          return transformChunk(res.value);
+                observer.next({
+                  result: {
+                    data: (async function* () {
+                      await using iterator = iteratorResource(result);
+                      using _finally = makeResource({}, () => {
+                        observer.complete();
+                      });
+                      try {
+                        while (true) {
+                          const res = await Promise.race([
+                            iterator.next(),
+                            signalPromise,
+                          ]);
+                          if (res.done) {
+                            return transformChunk(res.value);
+                          }
+                          yield transformChunk(res.value);
                         }
-                        yield transformChunk(res.value);
+                      } catch (cause) {
+                        onErrorCallback(cause);
+                        throw cause;
                       }
-                    } catch (cause) {
-                      onErrorCallback(cause);
-                      throw cause;
-                    }
-                  })(),
-                },
-              });
+                    })(),
+                  },
+                });
+              }
               break;
-            case 'subscription':
+            case 'subscription': {
               const connectionState = behaviorSubject<
                 TRPCConnectionState<TRPCClientError<any>>
               >({
@@ -225,6 +227,7 @@ export function experimental_localLink<TRouter extends AnyRouter>(
                   });
                 }
               }
+            }
           }
         }).catch((cause) => {
           onErrorCallback(cause);
