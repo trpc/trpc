@@ -3,16 +3,11 @@ title: localLink
 description: A link for direct procedure calls without HTTP overhead
 ---
 
-The `localLink` is a special link that allows you to make tRPC procedure calls directly in your application without going through HTTP. This is particularly useful in scenarios where you want to run the router in the same process as the client, such as in server components or during development and testing.
+The `localLink` is a special link that allows you to make tRPC procedure calls directly in your application without going through HTTP.
 
 :::info
-We have prefixed this as `experimental_` as it's a new API,! [Read more](/docs/faq#experimental).
+We have prefixed this as `experimental_` as it's a new API! [Read more](/docs/faq#experimental).
 :::
-
-## Use Cases
-
-- **SSR (Server-Side Rendering)**: Make direct procedure calls during server-side rendering
-- **Testing**: Test your client code with the actual server implementation
 
 ## Usage
 
@@ -80,4 +75,3 @@ Optional input/output transformers for serialization/deserialization of data.
 - For most client-side applications, you should use the `httpLink` or other HTTP-based links instead
 - The link supports all tRPC features including queries, mutations, and subscriptions
 - Error handling and transformation are handled automatically, just like with HTTP-based links
-- When using with server components, make sure to handle any server-only code appropriately
