@@ -63,7 +63,7 @@ export default defineConfig({
         execArgv: ['--expose-gc'],
       },
     },
-    retry: 2,
+    retry: process.env['CI'] ? 2 : 0,
   },
   resolve: {
     alias: aliases,
