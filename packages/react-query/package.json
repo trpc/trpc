@@ -66,7 +66,7 @@
     }
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.67.1",
+    "@tanstack/react-query": "^5.80.3",
     "@trpc/client": "11.2.0",
     "@trpc/server": "11.2.0",
     "react": ">=18.2.0",
@@ -74,9 +74,9 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/query-sync-storage-persister": "^5.74.7",
-    "@tanstack/react-query": "^5.74.7",
-    "@tanstack/react-query-persist-client": "^5.74.7",
+    "@tanstack/query-sync-storage-persister": "^5.80.2",
+    "@tanstack/react-query": "^5.80.3",
+    "@tanstack/react-query-persist-client": "^5.80.3",
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^16.1.0",
