@@ -40,7 +40,7 @@ export function localLink<TRouter extends AnyRouter>(
 ): TRPCLink<TRouter> {
   const transformer = getTransformer(opts.transformer);
 
-  const handleChunk = (chunk: unknown) => {
+  const transformChunk = (chunk: unknown) => {
     const serialized = JSON.stringify(transformer.input.serialize(chunk));
     const deserialized = JSON.parse(transformer.output.deserialize(serialized));
     return deserialized;
@@ -78,7 +78,7 @@ export function localLink<TRouter extends AnyRouter>(
               const result = await runProcedure(op.input);
               if (!isAsyncIterable(result)) {
                 observer.next({
-                  result: { data: handleChunk(result) },
+                  result: { data: transformChunk(result) },
                 });
                 observer.complete();
                 break;
@@ -98,9 +98,9 @@ export function localLink<TRouter extends AnyRouter>(
                           signalPromise,
                         ]);
                         if (res.done) {
-                          return handleChunk(res.value);
+                          return transformChunk(res.value);
                         }
-                        yield handleChunk(res.value);
+                        yield transformChunk(res.value);
                       }
                     } catch (cause) {
                       if (!isAbortError(cause)) {
@@ -218,13 +218,11 @@ export function localLink<TRouter extends AnyRouter>(
                   observer.next({
                     result: {
                       ...chunk,
-                      data: handleChunk(chunk.data),
+                      data: transformChunk(chunk.data),
                     },
                   });
                 }
               }
-
-              break;
           }
         }).catch((cause) => {
           opts.onError?.({
