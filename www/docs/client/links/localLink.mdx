@@ -25,7 +25,7 @@ const client = createTRPCClient<AppRouter>({
         return {};
       },
       onError: (opts) => {
-        // Log errors here
+        // Log errors here, similarly to how you would in an API route
         console.error('Error:', opts.error);
       },
     }),

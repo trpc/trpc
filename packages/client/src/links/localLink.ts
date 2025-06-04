@@ -32,6 +32,11 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
   onError?: (opts: ErrorHandlerOptions<inferRouterContext<TRouter>>) => void;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
+/**
+ * localLink is a terminating link that allows you to make tRPC procedure calls directly in your application without going through HTTP.
+ *
+ * @see https://trpc.io/docs/links/localLink
+ */
 export function experimental_localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
