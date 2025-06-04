@@ -1,6 +1,6 @@
 import { routerToServerAndClientNew } from './___testHelpers';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import { TRPCClientError } from '@trpc/client';
+import { isTRPCClientError, TRPCClientError } from '@trpc/client';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
 import type {
@@ -10,12 +10,6 @@ import type {
 import { konn } from 'konn';
 import * as v1 from 'valibot1';
 import { z, ZodError } from 'zod';
-
-function isTRPCClientError<TRouter extends AnyRouter>(
-  cause: unknown,
-): cause is TRPCClientError<TRouter> {
-  return cause instanceof TRPCClientError;
-}
 
 describe('no custom error formatter', () => {
   const t = initTRPC.create();

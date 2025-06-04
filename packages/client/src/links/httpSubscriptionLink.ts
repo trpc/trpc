@@ -1,10 +1,5 @@
 import { behaviorSubject, observable } from '@trpc/server/observable';
-import type {
-  TRPC_ERROR_CODE_NUMBER,
-  TRPCErrorShape,
-  TRPCResult,
-} from '@trpc/server/rpc';
-import { TRPC_ERROR_CODES_BY_KEY } from '@trpc/server/rpc';
+import type { TRPCErrorShape, TRPCResult } from '@trpc/server/rpc';
 import type {
   AnyClientTypes,
   EventSourceLike,
@@ -12,6 +7,7 @@ import type {
   InferrableClientTypes,
 } from '@trpc/server/unstable-core-do-not-import';
 import {
+  retryableRpcCodes,
   run,
   sseStreamConsumer,
 } from '@trpc/server/unstable-core-do-not-import';
@@ -62,17 +58,6 @@ type HTTPSubscriptionLinkOptions<
         | Promise<EventSourceLike.InitDictOf<TEventSource>>);
 } & TransformerOptions<TRoot> &
   UrlOptionsWithConnectionParams;
-
-/**
- * tRPC error codes that are considered retryable
- * With out of the box SSE, the client will reconnect when these errors are encountered
- */
-const codes5xx: TRPC_ERROR_CODE_NUMBER[] = [
-  TRPC_ERROR_CODES_BY_KEY.BAD_GATEWAY,
-  TRPC_ERROR_CODES_BY_KEY.SERVICE_UNAVAILABLE,
-  TRPC_ERROR_CODES_BY_KEY.GATEWAY_TIMEOUT,
-  TRPC_ERROR_CODES_BY_KEY.INTERNAL_SERVER_ERROR,
-];
 
 /**
  * @see https://trpc.io/docs/client/links/httpSubscriptionLink
@@ -190,7 +175,7 @@ export function httpSubscriptionLink<
               case 'serialized-error': {
                 const error = TRPCClientError.from({ error: chunk.error });
 
-                if (codes5xx.includes(chunk.error.code)) {
+                if (retryableRpcCodes.includes(chunk.error.code)) {
                   //
                   connectionState.next({
                     type: 'state',
