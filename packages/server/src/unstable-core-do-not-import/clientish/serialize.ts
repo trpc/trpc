@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import type { Simplify, WithoutIndexSignature } from '../types';
+import type { Simplify, ValueOf, WithoutIndexSignature } from '../types';
 
 /**
  * @see https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
@@ -40,23 +40,50 @@ export type Serialize<T> =
     Simplify<SerializeObject<UndefinedToOptional<T>>> :
   never;
 
-/** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */
-type SerializeTuple<T extends [unknown, ...unknown[]]> = {
-  [K in keyof T]: T[K] extends NonJsonPrimitive ? null : Serialize<T[K]>;
-};
+type TupleKeys<T> = Extract<keyof T, `${number}`>;
 
-// prettier-ignore
-type SerializeObjectKey<T extends Record<any, any>, K> = 
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
+  k: infer I,
+) => void
+  ? I
+  : never;
+type LastOf<T> =
+  UnionToIntersection<T extends any ? () => T : never> extends () => infer R
+    ? R
+    : never;
+type Push<T extends any[], V> = [...T, V];
+
+/**
+ * https://stackoverflow.com/a/55128956/590396
+ */
+type TuplifyUnion<
+  T,
+  L = LastOf<T>,
+  N = [T] extends [never] ? true : false,
+> = true extends N ? [] : Push<TuplifyUnion<Exclude<T, L>>, L>;
+
+type TuplifyRecord<T extends Record<any, any>> = TuplifyUnion<ValueOf<T>>;
+
+/** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */
+export type SerializeTuple<T extends [unknown, ...unknown[]]> = TuplifyRecord<{
+  [K in TupleKeys<T>]: T[K] extends NonJsonPrimitive ? null : Serialize<T[K]>;
+}>;
+
+type SerializeObjectKey<T extends Record<any, any>, K> =
   // never include entries where the key is a symbol
-  K extends symbol ? never : 
-  // always include entries where the value is any
-  IsAny<T[K]> extends true ? K :
-  // always include entries where the value is unknown
-  unknown extends T[K] ? K : 
-  // never include entries where the value is a non-JSON primitive
-  T[K] extends NonJsonPrimitive ? never : 
-  // otherwise serialize the value
-  K;
+  K extends symbol
+    ? never
+    : // always include entries where the value is any
+      IsAny<T[K]> extends true
+      ? K
+      : // always include entries where the value is unknown
+        unknown extends T[K]
+        ? K
+        : // never include entries where the value is a non-JSON primitive
+          T[K] extends NonJsonPrimitive
+          ? never
+          : // otherwise serialize the value
+            K;
 /**
  * JSON serialize objects (not including arrays) and classes
  * @internal
