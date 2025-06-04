@@ -32,7 +32,6 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
   onError?: (opts: ErrorHandlerOptions<inferRouterContext<TRouter>>) => void;
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
-// ts-prune-ignore-next
 export function experimental_localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
