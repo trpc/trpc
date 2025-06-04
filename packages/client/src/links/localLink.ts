@@ -45,6 +45,10 @@ export function experimental_localLink<TRouter extends AnyRouter>(
   const transformer = getTransformer(opts.transformer);
 
   const transformChunk = (chunk: unknown) => {
+    if (opts.transformer) {
+      // assume transformer will do the right thing
+      return chunk;
+    }
     const serialized = JSON.stringify(transformer.input.serialize(chunk));
     const deserialized = JSON.parse(transformer.output.deserialize(serialized));
     return deserialized;
@@ -107,7 +111,7 @@ export function experimental_localLink<TRouter extends AnyRouter>(
             type: op.type,
           });
           return TRPCClientError.from({
-            error: shape,
+            error: transformChunk(shape),
           });
         };
 
