@@ -179,6 +179,12 @@ export function experimental_localLink<TRouter extends AnyRouter>(
 
               using _finally = makeResource({}, async () => {
                 observer.complete();
+
+                connectionState.next({
+                  type: 'state',
+                  state: 'idle',
+                  error: null,
+                });
                 connectionSub.unsubscribe();
               });
               while (true) {
