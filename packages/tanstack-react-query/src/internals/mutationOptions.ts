@@ -65,7 +65,7 @@ export interface MutationOptionsOverride {
     /**
      * Meta data passed in from the `useMutation()` hook
      */
-    meta: Record<string, void>;
+    meta: Record<string, unknown>;
   }) => MaybePromise<void>;
 }
 
