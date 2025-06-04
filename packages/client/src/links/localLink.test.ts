@@ -4,7 +4,7 @@ import { makeResource } from '@trpc/server/unstable-core-do-not-import';
 import { z } from 'zod';
 import { createTRPCClient } from '../createTRPCClient';
 import type { LocalLinkOptions } from './localLink';
-import { localLink } from './localLink';
+import { experimental_localLink as localLink } from './localLink';
 
 async function aggregateAsyncIterable<TYield, TReturn>(
   iterable: AsyncIterable<TYield, TReturn>,

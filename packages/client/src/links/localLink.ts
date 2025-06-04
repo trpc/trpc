@@ -35,7 +35,7 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
 } & TransformerOptions<inferClientTypes<TRouter>>;
 
 // ts-prune-ignore-next
-export function localLink<TRouter extends AnyRouter>(
+export function experimental_localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
   const transformer = getTransformer(opts.transformer);
