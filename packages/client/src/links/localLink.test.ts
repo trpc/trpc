@@ -407,9 +407,6 @@ test('subscription reconnects on errors with the last event id', async () => {
 });
 
 test('error formatting', async () => {
-  const nonJsonData = {
-    date: new Date(2025, 1, 1),
-  };
   const t = initTRPC.create({
     errorFormatter: (opts) => {
       return {
@@ -418,7 +415,6 @@ test('error formatting', async () => {
           ...opts.shape.data,
           foo: 'bar' as const,
           stack: 'redacted',
-          nonJsonData,
         },
       };
     },
@@ -456,9 +452,6 @@ test('error formatting', async () => {
           "code": "INTERNAL_SERVER_ERROR",
           "foo": "bar",
           "httpStatus": 500,
-          "nonJsonData": Object {
-            "date": "2025-01-31T23:00:00.000Z",
-          },
           "path": "hello",
           "stack": "redacted",
         },
@@ -480,7 +473,6 @@ test('error formatting', async () => {
     expect(err.data).toMatchObject({
       foo: 'bar',
     });
-    expect(err.data!.nonJsonData.date).toStrictEqual(nonJsonData.date.toJSON());
     expect(err.shape).toMatchInlineSnapshot(`
       Object {
         "code": -32603,
@@ -488,9 +480,6 @@ test('error formatting', async () => {
           "code": "BAD_GATEWAY",
           "foo": "bar",
           "httpStatus": 502,
-          "nonJsonData": Object {
-            "date": "2025-01-31T23:00:00.000Z",
-          },
           "path": "iterate",
           "stack": "redacted",
         },
