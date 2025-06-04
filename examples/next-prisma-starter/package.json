@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",
-    "@tanstack/react-query": "^5.74.7",
+    "@tanstack/react-query": "^5.80.3",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
