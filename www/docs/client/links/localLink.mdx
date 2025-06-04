@@ -12,8 +12,7 @@ We have prefixed this as `experimental_` as it's a new API! [Read more](/docs/fa
 ## Usage
 
 ```tsx
-import { experimental_localLink } from '@trpc/client';
-import { createTRPCProxyClient } from '@trpc/client';
+import { createTRPCProxyClient, experimental_localLink } from '@trpc/client';
 import type { AppRouter } from '../server';
 
 const client = createTRPCClient<AppRouter>({
