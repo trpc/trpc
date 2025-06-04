@@ -7,6 +7,7 @@ import { ctx, resetFixtureState } from './optimistic-update.trpc';
 export const run: SpecRun = async (Component) => {
   expect(Component).toBeDefined();
 
+  resetFixtureState();
   const utils = ctx.renderApp(<Component />);
 
   await vi.waitFor(() => {
@@ -20,6 +21,5 @@ export const run: SpecRun = async (Component) => {
     expect(utils.container).toHaveTextContent('Posts: 2initialFoo');
   });
 
-  resetFixtureState();
   utils.unmount();
 };
