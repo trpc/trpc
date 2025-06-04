@@ -431,9 +431,7 @@ test('error formatting', async () => {
 
   {
     const err = await waitError(client.hello.query());
-    if (!isTRPCClientError<typeof appRouter>(err)) {
-      throw 'nah';
-    }
+    assert(isTRPCClientError<typeof appRouter>(err));
 
     expect(err.data).toMatchObject({
       foo: 'bar',
@@ -461,9 +459,8 @@ test('error formatting', async () => {
         }
       }),
     );
-    if (!isTRPCClientError<typeof appRouter>(err)) {
-      throw err;
-    }
+    assert(isTRPCClientError<typeof appRouter>(err));
+
     expect(err.data).toMatchObject({
       foo: 'bar',
     });
