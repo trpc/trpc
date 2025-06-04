@@ -37,7 +37,10 @@ describe('original regression', () => {
     let effectCount = 0;
 
     function MyComponent() {
-      const result = client.deeply.nested.greeting.useQuery(undefined);
+      const result = client.deeply.nested.greeting.useQuery(undefined, {
+        enabled: false,
+        initialData: 'hello',
+      });
       const utils = client.useUtils();
 
       React.useEffect(() => {
