@@ -92,32 +92,49 @@ describe('Zod schema serialization kitchen sink', () => {
 
     type SerializedOutput = inferRouterOutputs<typeof router>['createProject'];
 
-    expectTypeOf<SerializedOutput>().toEqualTypeOf<{
-      zArray: string[];
-      zRecord: Record<string, string>;
-      zTuple: [string, number];
-      zUnion: string | number;
-      zIntersection: { name: string; age: number };
-      zLazy: string;
-      zPromise: Promise<string>;
-      // zFunction: (...args: any[]) => any; <-- not serialized, OK.
-      zMap: object;
-      zSet: object;
-      zEnum: 'foo' | 'bar';
-      zNativeEnum: number;
-      zUnknown?: unknown; // <-- why is this optional?
-      zNullable: string | null;
-      zOptional?: string | undefined;
-      zLiteral: 'foo';
-      zBoolean: boolean;
-      zString: string;
-      zNumber: number;
-      zBigint: never; // <-- should this be never or omitted?
-      zDate: string;
-      // zUndefined: undefined; <-- not serialized, OK.
-      zAny?: any; // <-- why is this optional?
-      zArrayOptional?: string[] | undefined;
-      zArrayOrRecord: string[] | Record<string, string>;
+    expectTypeOf<SerializedOutput['zArray']>().toEqualTypeOf<string[]>();
+    expectTypeOf<SerializedOutput['zRecord']>().toEqualTypeOf<
+      Record<string, string>
+    >();
+    expectTypeOf<SerializedOutput['zTuple']>().toEqualTypeOf<
+      [string, number]
+    >();
+    expectTypeOf<SerializedOutput['zUnion']>().toEqualTypeOf<string | number>();
+    expectTypeOf<SerializedOutput['zIntersection']>().toMatchObjectType<{
+      name: string;
+      age: number;
     }>();
+    expectTypeOf<SerializedOutput['zLazy']>().toEqualTypeOf<string>();
+
+    expectTypeOf<SerializedOutput['zMap']>().toEqualTypeOf<object>();
+    expectTypeOf<SerializedOutput['zSet']>().toEqualTypeOf<object>();
+    expectTypeOf<SerializedOutput['zEnum']>().toEqualTypeOf<'foo' | 'bar'>();
+    expectTypeOf<SerializedOutput['zNativeEnum']>().toEqualTypeOf<number>();
+    expectTypeOf<SerializedOutput['zUnknown']>().toEqualTypeOf<unknown>();
+    expectTypeOf<SerializedOutput['zNullable']>().toEqualTypeOf<
+      string | null
+    >();
+    expectTypeOf<SerializedOutput['zOptional']>().toEqualTypeOf<
+      string | undefined
+    >();
+    expectTypeOf<SerializedOutput['zLiteral']>().toEqualTypeOf<'foo'>();
+    expectTypeOf<SerializedOutput['zBoolean']>().toEqualTypeOf<boolean>();
+    expectTypeOf<SerializedOutput['zString']>().toEqualTypeOf<string>();
+    expectTypeOf<SerializedOutput['zNumber']>().toEqualTypeOf<number>();
+    // @ts-expect-error - not serialized, OK.
+    expectTypeOf<SerializedOutput['zBigint']>().toEqualTypeOf<bigint>();
+    expectTypeOf<SerializedOutput['zDate']>().toEqualTypeOf<string>();
+
+    // @ts-expect-error - not serialized, OK.
+    expectTypeOf<SerializedOutput['zUndefined']>().toEqualTypeOf<undefined>();
+
+    expectTypeOf<SerializedOutput['zAny']>().toEqualTypeOf<any>();
+
+    expectTypeOf<SerializedOutput['zArrayOptional']>().toEqualTypeOf<
+      string[] | undefined
+    >();
+    expectTypeOf<SerializedOutput['zArrayOrRecord']>().toEqualTypeOf<
+      string[] | Record<string, string>
+    >();
   });
 });

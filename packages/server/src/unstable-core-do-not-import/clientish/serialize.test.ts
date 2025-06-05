@@ -1,4 +1,4 @@
-import { z as z4 } from 'zod/v4';
+import { z } from 'zod/v4';
 import type { Serialize } from './serialize';
 
 test('Date', () => {
@@ -10,9 +10,210 @@ test('Date', () => {
 
 // regression test for https://github.com/trpc/trpc/issues/6804
 test('zod v4 json', () => {
-  const jsonSchema = z4.json();
+  const jsonSchema = z.json();
   type Source = (typeof jsonSchema)['_zod']['output'];
   type Transformed = Serialize<Source>;
 
   expectTypeOf<Transformed>().branded.toEqualTypeOf<Source>();
+});
+
+// regression test for https://github.com/trpc/trpc/issues/5197
+test('outputWithIndexSignature', () => {
+  type Source = {
+    a: number;
+    b: number;
+    [c: string]: number;
+  };
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed>().toEqualTypeOf<Source>();
+});
+
+test('outputWithRecord', () => {
+  type Source = {
+    a: number;
+    b: number;
+  } & Record<string, number>;
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed>().toEqualTypeOf<Source>();
+});
+
+test('outputWithRecordAndIndexSignature', () => {
+  type Source = {
+    a: number;
+    b: number;
+    [c: string]: number;
+  } & Record<string, number>;
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed>().toEqualTypeOf<Source>();
+});
+
+test('outputWithUndefinedAndUndefinedIndexSignature', () => {
+  type Source = {
+    a: number;
+    b: number | undefined;
+    [c: string]: number | undefined;
+  };
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed>().toEqualTypeOf<{
+    [x: string]: number;
+    [x: number]: number;
+    a: number;
+  }>();
+});
+
+test('outputWithUndefinedAndUndefinedRecord', () => {
+  type Source = {
+    a: number;
+    b: number | undefined;
+  } & Record<string, number | undefined>;
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed>().toEqualTypeOf<{
+    [x: string]: number;
+    a: number;
+  }>();
+});
+
+test('outputWithUndefinedAndUndefinedRecordAndUndefinedIndexSignature', () => {
+  type Source = {
+    a: number;
+    b: number | undefined;
+    [c: string]: number | undefined;
+  } & Record<string, number | undefined>;
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed>().toEqualTypeOf<{
+    [x: string]: number;
+    [x: number]: number;
+    a: number;
+  }>();
+});
+
+test('outputWithUndefinedIndexSignature', () => {
+  type Source = {
+    a: number;
+    b: number;
+    [c: string]: number | undefined;
+  };
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed>().toEqualTypeOf<{
+    [x: string]: number;
+    [x: number]: number;
+    a: number;
+    b: number;
+  }>();
+});
+
+test('outputWithUndefinedRecord', () => {
+  type Source = {
+    a: number;
+    b: number;
+  } & Record<string, number | undefined>;
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed>().toEqualTypeOf<{
+    [x: string]: number;
+    a: number;
+    b: number;
+  }>();
+});
+
+test('outputWithUndefinedRecordAndUndefinedIndexSignature', () => {
+  type Source = {
+    a: number;
+    b: number;
+    [c: string]: number | undefined;
+  } & Record<string, number | undefined>;
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed>().toEqualTypeOf<{
+    [x: string]: number;
+    [x: number]: number;
+    a: number;
+    b: number;
+  }>();
+});
+
+// regression test for https://github.com/trpc/trpc/issues/5075
+test('Test serialization of different zod schemas against z.infer', () => {
+  const mixedSchema = z.object({
+    zArray: z.array(z.string()),
+    zRecord: z.record(z.string(), z.string()),
+    zTuple: z.tuple([z.string(), z.number()]),
+    zUnion: z.union([z.string(), z.number()]),
+    zIntersection: z.intersection(
+      z.object({ name: z.string() }),
+      z.object({ age: z.number() }),
+    ),
+    zLazy: z.lazy(() => z.string()),
+    zPromise: z.promise(z.string()),
+    zFunction: z.function(),
+    zMap: z.map(z.string(), z.number()),
+    zSet: z.set(z.string()),
+    zEnum: z.enum(['foo', 'bar']),
+    zNativeEnum: z.nativeEnum({ foo: 1, bar: 2 }),
+    zUnknown: z.unknown(),
+    zNullable: z.nullable(z.string()),
+    zOptional: z.optional(z.string()),
+    zLiteral: z.literal('foo'),
+    zBoolean: z.boolean(),
+    zString: z.string(),
+    zNumber: z.number(),
+    zBigint: z.bigint(),
+    zDate: z.date(),
+    zUndefined: z.undefined(),
+    zAny: z.any(),
+    zArrayOptional: z.array(z.string()).optional(),
+    zArrayOrRecord: z.union([
+      z.array(z.string()),
+      z.record(z.string(), z.string()),
+    ]),
+  });
+
+  type Source = z.infer<typeof mixedSchema>;
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed['zArray']>().toEqualTypeOf<string[]>();
+  expectTypeOf<Transformed['zRecord']>().toEqualTypeOf<
+    Record<string, string>
+  >();
+  expectTypeOf<Transformed['zTuple']>().toEqualTypeOf<[string, number]>();
+  expectTypeOf<Transformed['zUnion']>().toEqualTypeOf<string | number>();
+  expectTypeOf<Transformed['zIntersection']>().toMatchObjectType<{
+    name: string;
+    age: number;
+  }>();
+  expectTypeOf<Transformed['zLazy']>().toEqualTypeOf<string>();
+
+  expectTypeOf<Transformed['zMap']>().toEqualTypeOf<object>();
+  expectTypeOf<Transformed['zSet']>().toEqualTypeOf<object>();
+  expectTypeOf<Transformed['zEnum']>().toEqualTypeOf<'foo' | 'bar'>();
+  expectTypeOf<Transformed['zNativeEnum']>().toEqualTypeOf<number>();
+  expectTypeOf<Transformed['zUnknown']>().toEqualTypeOf<unknown>();
+  expectTypeOf<Transformed['zNullable']>().toEqualTypeOf<string | null>();
+  expectTypeOf<Transformed['zOptional']>().toEqualTypeOf<string | undefined>();
+  expectTypeOf<Transformed['zLiteral']>().toEqualTypeOf<'foo'>();
+  expectTypeOf<Transformed['zBoolean']>().toEqualTypeOf<boolean>();
+  expectTypeOf<Transformed['zString']>().toEqualTypeOf<string>();
+  expectTypeOf<Transformed['zNumber']>().toEqualTypeOf<number>();
+  // @ts-expect-error - not serialized, OK.
+  expectTypeOf<Transformed['zBigint']>().toEqualTypeOf<bigint>();
+  expectTypeOf<Transformed['zDate']>().toEqualTypeOf<string>();
+
+  // @ts-expect-error - not serialized, OK.
+  expectTypeOf<Transformed['zUndefined']>().toEqualTypeOf<undefined>();
+
+  expectTypeOf<Transformed['zAny']>().toEqualTypeOf<any>();
+
+  expectTypeOf<Transformed['zArrayOptional']>().toEqualTypeOf<
+    string[] | undefined
+  >();
+  expectTypeOf<Transformed['zArrayOrRecord']>().toEqualTypeOf<
+    string[] | Record<string, string>
+  >();
 });
