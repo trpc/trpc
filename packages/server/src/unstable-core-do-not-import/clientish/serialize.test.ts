@@ -34,8 +34,6 @@ test('zod v4 json', () => {
   expectTypeOf<Transformed>().toEqualTypeOf<Source>();
 });
 
-test('arrays', () => {});
-
 // regression test for https://github.com/trpc/trpc/issues/5197
 describe('index signature and record', () => {
   test('outputWithIndexSignature', () => {
@@ -273,16 +271,41 @@ describe('complex zod schema serialization', () => {
 });
 
 test('Symbol keys get erased during serialization', () => {
-  const symbol = Symbol('test');
-  type Source = {
-    [symbol]: string;
-    str: string;
-    num: number;
-  };
-  type Transformed = Serialize<Source>;
+  {
+    const symbol = Symbol('test');
+    const source = {
+      [symbol]: 'symbol',
+      str: 'string',
+      num: 1,
+    };
+    type Source = typeof source;
+    type Transformed = Serialize<Source>;
 
-  expectTypeOf<Transformed>().toEqualTypeOf<{
-    str: string;
-    num: number;
-  }>();
+    expectTypeOf<Transformed>().toEqualTypeOf<{
+      str: string;
+      num: number;
+    }>();
+    expect(JSON.parse(JSON.stringify(source))).toMatchInlineSnapshot(
+      `
+      Object {
+        "num": 1,
+        "str": "string",
+      }
+    `,
+    );
+  }
+
+  {
+    const source = Symbol();
+    type Source = typeof source;
+    type Transformed = Serialize<Source>;
+
+    expectTypeOf<Transformed>().toEqualTypeOf<never>();
+
+    expect(() =>
+      JSON.parse(JSON.stringify(source)),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[SyntaxError: "undefined" is not valid JSON]`,
+    );
+  }
 });
