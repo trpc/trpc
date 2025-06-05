@@ -1,5 +1,3 @@
-import type { inferRouterOutputs } from '@trpc/server';
-import { initTRPC } from '@trpc/server';
 import { z } from 'zod/v4';
 import type { Serialize } from './serialize';
 
@@ -183,6 +181,8 @@ describe('complex zod schema serialization', () => {
     type Source = z.infer<typeof mixedSchema>;
     type Transformed = Serialize<Source>;
 
+    expectTypeOf<Transformed>().not.toBeAny();
+
     expectTypeOf<Transformed['zArray']>().toEqualTypeOf<string[]>();
     expectTypeOf<Transformed['zRecord']>().toEqualTypeOf<
       Record<string, string>
@@ -209,7 +209,6 @@ describe('complex zod schema serialization', () => {
     expectTypeOf<Transformed['zString']>().toEqualTypeOf<string>();
     expectTypeOf<Transformed['zNumber']>().toEqualTypeOf<number>();
 
-    // bigint is not serializable, so it should be never
     expectTypeOf<Transformed['zBigint']>().toBeNever();
     expectTypeOf<Transformed['zDate']>().toEqualTypeOf<string>();
 
@@ -254,4 +253,19 @@ describe('complex zod schema serialization', () => {
 
     expectTypeOf<Transformed>().toEqualTypeOf<Source>();
   });
+});
+
+test('Symbol keys get erased during serialization', () => {
+  const symbol = Symbol('test');
+  type Source = {
+    [symbol]: string;
+    str: string;
+    num: number;
+  };
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed>().toEqualTypeOf<{
+    str: string;
+    num: number;
+  }>();
 });

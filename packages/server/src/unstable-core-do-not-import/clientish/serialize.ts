@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import type { Simplify, WithoutIndexSignature } from '../types';
+import type { Simplify, ValueOf, WithoutIndexSignature } from '../types';
 
 /**
  * @see https://github.com/remix-run/remix/blob/2248669ed59fd716e267ea41df5d665d4781f4a9/packages/remix-server-runtime/serialize.ts
@@ -24,18 +24,74 @@ type IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never
 
 type JsonArray = JsonValue[] | readonly JsonValue[];
 
-// prettier-ignore
-type JsonObject =
-  { [K in string]: JsonValue } &
-  { [K in string]?: JsonValue }
+type JsonObject = { [key: string | number]: JsonValue };
 
 type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+
+type EqEq<T, S> = [T] extends [S] ? ([S] extends [T] ? true : false) : false;
+
+type IsJson<T> = T extends JsonPrimitive
+  ? true
+  : EqEq<T, JsonValue> extends true
+    ? true
+    : T extends object
+      ? symbol extends keyof T
+        ? false
+        : IsJson<Exclude<ValueOf<T>, undefined>>
+      : T extends readonly unknown[]
+        ? T extends readonly (infer U)[]
+          ? IsJson<U>
+          : false
+        : false;
+
+{
+  type Expect<T extends true> = T;
+  type ExpectFalse<T extends false> = T;
+
+  const symbol = Symbol();
+
+  type _tests = [
+    Expect<IsJson<JsonValue>>,
+    Expect<IsJson<JsonPrimitive>>,
+    Expect<IsJson<JsonObject>>,
+    Expect<IsJson<JsonArray>>,
+    Expect<IsJson<{}>>,
+    Expect<
+      IsJson<{
+        foo: 'bar';
+      }>
+    >,
+    Expect<IsJson<Array<string | number>>>,
+    Expect<IsJson<[string, number]>>,
+    Expect<
+      IsJson<{
+        a: number;
+        b: number;
+        [c: string]: number;
+      }>
+    >,
+    Expect<
+      IsJson<{
+        a: number;
+        b: number;
+        [c: string]: number | undefined;
+      }>
+    >,
+    ExpectFalse<IsJson<undefined>>,
+    ExpectFalse<
+      IsJson<{
+        foo: 'bar';
+        [symbol]: string;
+      }>
+    >,
+  ];
+}
 
 /* prettier-ignore */
 export type Serialize<T> =
   IsAny<T> extends true ? any :
   unknown extends T ? unknown :
-  T extends JsonValue ? T :
+  T extends JsonPrimitive ? T :
   T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :
   T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :
   T extends JsonReturnable ? T :

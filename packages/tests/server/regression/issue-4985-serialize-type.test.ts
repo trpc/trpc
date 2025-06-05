@@ -48,13 +48,6 @@ describe('Serialization of Record types', () => {
     expectTypeOf<Output>().toEqualTypeOf<Record<string, unknown>>();
   });
 
-  test('Symbol keys get erased on the client', async () => {
-    type Output = inferRouterOutputs<typeof appRouter>['symbolKey'];
-    expectTypeOf<Output>().toEqualTypeOf<{
-      str: string;
-    }>();
-  });
-
   test('input type with a record, returned as inferred output', async () => {
     type Input = inferRouterInputs<typeof appRouter>['inputWithRecord'];
     type Output = inferRouterOutputs<typeof appRouter>['inputWithRecord'];
