@@ -10,9 +10,19 @@ test('Date', () => {
 
 // regression test for https://github.com/trpc/trpc/issues/6804
 test('zod v4 json', () => {
+  type EqEq<T, S> = [T] extends [S] ? ([S] extends [T] ? true : false) : false;
+
+  type EqEqEq<X, Y> =
+    (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2
+      ? true
+      : false;
+
   const jsonSchema = z.json();
   type Source = (typeof jsonSchema)['_zod']['output'];
   type Transformed = Serialize<Source>;
+
+  expectTypeOf<EqEq<Transformed, Source>>().toEqualTypeOf(true);
+  expectTypeOf<EqEqEq<Transformed, Source>>().toEqualTypeOf(true);
 
   expectTypeOf<Transformed>().toEqualTypeOf<Source>();
 });
