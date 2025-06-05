@@ -8,6 +8,13 @@ test('Date', () => {
   expectTypeOf<Transformed>().toEqualTypeOf<string>();
 });
 
+test('undefined in array', async () => {
+  type Source = [1, undefined, 2];
+  type Transformed = Serialize<Source>;
+
+  expectTypeOf<Transformed>().toEqualTypeOf<[1, null, 2]>();
+});
+
 // regression test for https://github.com/trpc/trpc/issues/6804
 test('zod v4 json', () => {
   type EqEq<T, S> = [T] extends [S] ? ([S] extends [T] ? true : false) : false;
@@ -26,6 +33,8 @@ test('zod v4 json', () => {
 
   expectTypeOf<Transformed>().toEqualTypeOf<Source>();
 });
+
+test('arrays', () => {});
 
 // regression test for https://github.com/trpc/trpc/issues/5197
 describe('index signature and record', () => {
