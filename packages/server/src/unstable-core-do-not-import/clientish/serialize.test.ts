@@ -309,3 +309,36 @@ test('Symbol keys get erased during serialization', () => {
     );
   }
 });
+
+// regression test for https://github.com/trpc/trpc/issues/4985
+describe('Serialization of Record types with tRPC router inference', () => {
+  test('Record<string, any> gets inferred on the client as { [x: string]: any }', () => {
+    type Source = Record<string, any>;
+    type Transformed = Serialize<Source>;
+
+    expectTypeOf<Transformed>().toEqualTypeOf<Record<string, any>>();
+  });
+
+  test('Record<string, unknown> gets inferred on the client as { [x: string]: unknown }', () => {
+    type Source = Record<string, unknown>;
+    type Transformed = Serialize<Source>;
+
+    expectTypeOf<Transformed>().toEqualTypeOf<Record<string, unknown>>();
+  });
+
+  test('input type with a record, returned as inferred output', () => {
+    type Source = Record<string, string>;
+    type Transformed = Serialize<Source>;
+
+    expectTypeOf<Transformed>().toEqualTypeOf<Record<string, string>>();
+  });
+
+  test('input type with a complex record, returned as inferred output', () => {
+    type Source = Record<string, { name: string; age: number; symbol: symbol }>;
+    type Transformed = Serialize<Source>;
+
+    expectTypeOf<Transformed>().toEqualTypeOf<
+      Record<string, { name: string; age: number }>
+    >();
+  });
+});
