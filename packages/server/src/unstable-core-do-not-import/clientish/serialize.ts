@@ -12,7 +12,6 @@ type JsonObject = {
 };
 type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
-// fix this to make the tests pass
 type IsJson<T> = T extends JsonValue ? true : false;
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
