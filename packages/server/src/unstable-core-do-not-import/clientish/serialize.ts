@@ -22,10 +22,20 @@ type IsRecord<T extends object> = keyof WithoutIndexSignature<T> extends never
   ? true
   : false;
 
+type JsonArray = JsonValue[] | readonly JsonValue[];
+
+// prettier-ignore
+type JsonObject =
+  { [K in string]: JsonValue } &
+  { [K in string]?: JsonValue }
+
+type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+
 /* prettier-ignore */
 export type Serialize<T> =
   IsAny<T> extends true ? any :
   unknown extends T ? unknown :
+  T extends JsonValue ? T :
   T extends AsyncIterable<infer $T, infer $Return, infer $Next> ? AsyncIterable<Serialize<$T>, Serialize<$Return>, Serialize<$Next>> :
   T extends PromiseLike<infer $T> ? Promise<Serialize<$T>> :
   T extends JsonReturnable ? T :

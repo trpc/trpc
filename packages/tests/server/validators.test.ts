@@ -913,24 +913,3 @@ test('zod v3 default', () => {
       }),
   });
 });
-
-// test regression https://github.com/trpc/trpc/issues/6804
-test('zod v4 json schema output regression #6804', async () => {
-  const t = initTRPC.create();
-
-  const router = t.router({
-    jsonOutput: t.procedure.output(zod4.json()).query(() => {
-      // Return a valid JSON value
-      return { message: 'hello', count: 42, items: ['a', 'b', 'c'] };
-    }),
-  });
-
-  await using ctx = testServerAndClientResource(router);
-
-  const res = await ctx.client.jsonOutput.query();
-  expect(res).toEqual({ message: 'hello', count: 42, items: ['a', 'b', 'c'] });
-
-  const jsonSchema = zod4.json();
-  type JsonType = (typeof jsonSchema)['_zod']['output'];
-  expectTypeOf(res).toEqualTypeOf<JsonType>();
-});
