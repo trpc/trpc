@@ -9,13 +9,13 @@ test('Date', () => {
 });
 
 // regression test for https://github.com/trpc/trpc/issues/6804
-// test('zod v4 json', () => {
-//   const jsonSchema = z.json();
-//   type Source = (typeof jsonSchema)['_zod']['output'];
-//   type Transformed = Serialize<Source>;
+test('zod v4 json', () => {
+  const jsonSchema = z.json();
+  type Source = (typeof jsonSchema)['_zod']['output'];
+  type Transformed = Serialize<Source>;
 
-//   expectTypeOf<Transformed>().toEqualTypeOf<Source>();
-// });
+  expectTypeOf<Transformed>().toEqualTypeOf<Source>();
+});
 
 // regression test for https://github.com/trpc/trpc/issues/5197
 describe('index signature and record', () => {
