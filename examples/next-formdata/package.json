@@ -19,7 +19,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.53.2",
-    "zod": "^3.25.49",
+    "zod": "^3.25.51",
     "zod-form-data": "^2.0.1"
   },
   "devDependencies": {
