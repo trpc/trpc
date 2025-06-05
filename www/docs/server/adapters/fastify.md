@@ -253,8 +253,8 @@ contentHandlers: {
 ```ts
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import fastify from 'fastify';
+import { js2xml, xml2js } from 'xml-js'; // Example XML library
 import { appRouter } from './router';
-import { xml2js, js2xml } from 'xml-js'; // Example XML library
 
 const server = fastify();
 

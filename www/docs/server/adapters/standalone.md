@@ -256,8 +256,8 @@ contentHandlers: {
 
 ```ts
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { js2xml, xml2js } from 'xml-js'; // Example XML library
 import { appRouter } from './appRouter';
-import { xml2js, js2xml } from 'xml-js'; // Example XML library
 
 createHTTPServer({
   router: appRouter,

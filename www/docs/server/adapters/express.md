@@ -130,8 +130,8 @@ contentHandlers: {
 ```ts
 import * as trpcExpress from '@trpc/server/adapters/express';
 import express from 'express';
+import { js2xml, xml2js } from 'xml-js'; // Example XML library
 import { appRouter } from './appRouter';
-import { xml2js, js2xml } from 'xml-js'; // Example XML library
 
 const app = express();
 

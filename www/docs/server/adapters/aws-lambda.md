@@ -186,8 +186,8 @@ contentHandlers: {
 
 ```ts
 import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import { js2xml, xml2js } from 'xml-js'; // Example XML library
 import { appRouter } from './appRouter';
-import { xml2js, js2xml } from 'xml-js'; // Example XML library
 
 export const handler = awsLambdaRequestHandler({
   router: appRouter,

@@ -136,8 +136,8 @@ contentHandlers: {
 
 ```ts
 import { createNextApiHandler } from '@trpc/server/adapters/next';
+import { js2xml, xml2js } from 'xml-js'; // Example XML library
 import { appRouter } from '../../../server/trpc/router/_app';
-import { xml2js, js2xml } from 'xml-js'; // Example XML library
 
 export default createNextApiHandler({
   router: appRouter,

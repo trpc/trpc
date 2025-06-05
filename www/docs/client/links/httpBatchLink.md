@@ -103,7 +103,7 @@ contentHandlers: {
 ```ts title="client/index.ts"
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../server';
-import { encodeMsgPack, decodeMsgPack } from './msgpack-utils';
+import { decodeMsgPack, encodeMsgPack } from './msgpack-utils';
 
 const client = createTRPCClient<AppRouter>({
   links: [
@@ -122,7 +122,7 @@ const client = createTRPCClient<AppRouter>({
       },
       headers: {
         'content-type': 'application/x-msgpack',
-        'accept': 'application/x-msgpack',
+        accept: 'application/x-msgpack',
       },
     }),
   ],
