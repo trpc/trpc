@@ -773,4 +773,46 @@ test('v2 cookies', async () => {
       },
     }
   `);
+  /**
+   * Custom content-type handler test
+   * Verifies that a custom content-type handler can deserialize and serialize bodies.
+   */
+  test('custom content-type handler', async () => {
+    const customType = 'application/custom';
+    const customHandler = {
+      deserialize: (raw: string | Uint8Array) => {
+        const body =
+          typeof raw === 'string' ? raw : Buffer.from(raw).toString('utf8');
+        const [key, value] = body.split('=');
+        return { [key!]: value };
+      },
+      serialize: (data: unknown) => {
+        if (typeof data === 'object' && data !== null) {
+          const key = Object.keys(data)[0]!;
+          return `${key}=${(data as any)[key]}`;
+        }
+        return '';
+      },
+    };
+
+    const handler = trpcLambda.awsLambdaRequestHandler({
+      router,
+      createContext,
+      contentHandlers: {
+        [customType]: customHandler,
+      },
+    });
+
+    const event = mockAPIGatewayProxyEventV1({
+      headers: { 'Content-Type': customType },
+      method: 'POST',
+      path: 'hello',
+      body: 'who=custom',
+      queryStringParameters: {},
+      resource: '/hello',
+    });
+
+    const result = await handler(event, mockAPIGatewayContext());
+    expect(result.body).toBe('text=hello custom');
+  });
 });

@@ -44,6 +44,28 @@ export type HTTPHeaders =
   | Record<string, string[] | string | undefined>;
 
 /**
+ * Custom content-type handler for serialization/deserialization.
+ * Note: ResponseEsque is used for compatibility with fetch polyfills.
+ */
+import type { ResponseEsque } from '../internals/types';
+
+export type ContentHandler = {
+  serialize: (
+    input: unknown
+  ) =>
+    | string
+    | Blob
+    | FormData
+    | Uint8Array
+    | File
+    | null
+    | undefined;
+  deserialize: (body: ResponseEsque) => Promise<unknown>;
+};
+
+export type ContentHandlers = Record<string, ContentHandler>;
+
+/**
  * The default `fetch` implementation has an overloaded signature. By convention this library
  * only uses the overload taking a string and options object.
  */

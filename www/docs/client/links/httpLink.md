@@ -63,6 +63,60 @@ export interface HTTPLinkOptions {
 }
 ```
 
+## Custom Content Handlers (`contentHandlers`)
+
+The `contentHandlers` option allows you to define custom serialization and deserialization logic for different content types. This is useful if you want to support formats other than JSON, such as MessagePack or custom binary formats.
+
+The `contentHandlers` object should have content-type strings as keys (e.g., `"application/json"`, `"application/x-msgpack"`), and each value should be an object with `serialize` and `deserialize` functions:
+
+```ts
+contentHandlers: {
+  'application/json': {
+    serialize: (body) => JSON.stringify(body),
+    deserialize: (response) => response.json(),
+  },
+  'application/x-msgpack': {
+    serialize: (body) => encodeMsgPack(body), // your custom encoder
+    deserialize: (response) => response.arrayBuffer().then(decodeMsgPack), // your custom decoder
+  },
+  // ...add more handlers as needed
+}
+```
+
+**Example: Using a custom content type**
+
+```ts title="client/index.ts"
+import { createTRPCClient, httpLink } from '@trpc/client';
+import type { AppRouter } from '../server';
+import { encodeMsgPack, decodeMsgPack } from './msgpack-utils';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpLink({
+      url: 'http://localhost:3000',
+      contentHandlers: {
+        'application/x-msgpack': {
+          serialize: (body) => encodeMsgPack(body),
+          deserialize: (response) => response.arrayBuffer().then(decodeMsgPack),
+        },
+        // fallback to JSON
+        'application/json': {
+          serialize: (body) => JSON.stringify(body),
+          deserialize: (response) => response.json(),
+        },
+      },
+      // Optionally set headers to use your custom content type
+      headers: {
+        'content-type': 'application/x-msgpack',
+        'accept': 'application/x-msgpack',
+      },
+    }),
+  ],
+});
+```
+
+The link will use the appropriate handler based on the `content-type` and `accept` headers of the request and response.
+
 ## Reference
 
 You can check out the source code for this link on [GitHub.](https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpLink.ts)

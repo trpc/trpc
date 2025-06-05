@@ -274,4 +274,58 @@ test('batching', async () => {
   ).json();
 
   expect(normalResult).toEqual(urlEncodedResult);
+  /**
+   * Custom content-type handler test
+   * Verifies that a custom content-type handler can deserialize and serialize bodies.
+   */
+  test('custom content-type handler', async () => {
+    const customType = 'application/custom';
+    const customHandler = {
+      deserialize: (raw: string | Uint8Array) => {
+        const body =
+          typeof raw === 'string' ? raw : Buffer.from(raw).toString('utf8');
+        const [key, value] = body.split('=');
+        return { [key!]: value };
+      },
+      serialize: (data: unknown) => {
+        if (typeof data === 'object' && data !== null) {
+          const key = Object.keys(data)[0]!;
+          return `${key}=${(data as any)[key]}`;
+        }
+        return '';
+      },
+    };
+
+    const router = createAppRouter();
+
+    const server = serve({
+      port: 0,
+      fetch: (request) => {
+        return fetchRequestHandler({
+          endpoint: '',
+          req: request,
+          router,
+          createContext,
+          contentHandlers: {
+            [customType]: customHandler,
+          },
+        });
+      },
+    });
+    await server.ready();
+    if (!server.url) throw new Error('server.url is undefined');
+
+    const res = await fetch(server.url + '/hello', {
+      method: 'POST',
+      headers: {
+        'content-type': customType,
+        accept: customType,
+      },
+      body: 'who=custom',
+    });
+    const text = await res.text();
+    expect(text).toBe('text=hello custom');
+
+    await server.close();
+  });
 });

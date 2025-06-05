@@ -452,3 +452,46 @@ Run `edge-runtime --listen server.ts --port 3000` and your endpoints will be ava
 | ------------ | -------------------------------------------------------------------------------------------------------------- |
 | `getUser`    | `GET http://localhost:3000/trpc/getUserById?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
 | `createUser` | `POST http://localhost:3000/trpc/createUser` <br/><br/>with `req.body` of type `User`                          |
+
+## Custom Content Types with `contentHandlers`
+
+The Fetch adapter supports a `contentHandlers` option, allowing you to define custom serialization and deserialization logic for different content types. This is useful if you want to support formats other than JSON, such as XML or binary.
+
+The `contentHandlers` option is an object where each key is a content-type string (e.g., `'application/xml'`), and the value is an object with `serialize` and `deserialize` functions:
+
+```ts
+contentHandlers: {
+  'application/xml': {
+    serialize: (data) => /* convert JS object to XML string */,
+    deserialize: (body) => /* parse XML string to JS object */,
+  },
+  // ...other content types
+}
+```
+
+### Example: Adding XML Support
+
+```ts
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { appRouter } from './router';
+import { xml2js, js2xml } from 'xml-js'; // Example XML library
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    return fetchRequestHandler({
+      endpoint: '/trpc',
+      req: request,
+      router: appRouter,
+      createContext: () => ({}),
+      contentHandlers: {
+        'application/xml': {
+          serialize: (data) => js2xml(data, { compact: true }),
+          deserialize: (body) => xml2js(body, { compact: true }),
+        },
+      },
+    });
+  },
+};
+```
+
+With this configuration, requests and responses with the `Content-Type: application/xml` header will be handled using your custom logic.

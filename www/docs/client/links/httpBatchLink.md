@@ -78,6 +78,59 @@ export interface HTTPLinkOptions {
 }
 ```
 
+## Custom Content Handlers (`contentHandlers`)
+
+The `contentHandlers` option lets you define custom serialization and deserialization logic for different content types. This is useful for supporting formats other than JSON, such as MessagePack or custom binary formats.
+
+The `contentHandlers` object uses content-type strings as keys (e.g., `"application/json"`, `"application/x-msgpack"`), and each value is an object with `serialize` and `deserialize` functions:
+
+```ts
+contentHandlers: {
+  'application/json': {
+    serialize: (body) => JSON.stringify(body),
+    deserialize: (response) => response.json(),
+  },
+  'application/x-msgpack': {
+    serialize: (body) => encodeMsgPack(body), // your custom encoder
+    deserialize: (response) => response.arrayBuffer().then(decodeMsgPack), // your custom decoder
+  },
+  // ...add more handlers as needed
+}
+```
+
+**Example: Using a custom content type**
+
+```ts title="client/index.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../server';
+import { encodeMsgPack, decodeMsgPack } from './msgpack-utils';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+      contentHandlers: {
+        'application/x-msgpack': {
+          serialize: (body) => encodeMsgPack(body),
+          deserialize: (response) => response.arrayBuffer().then(decodeMsgPack),
+        },
+        // fallback to JSON
+        'application/json': {
+          serialize: (body) => JSON.stringify(body),
+          deserialize: (response) => response.json(),
+        },
+      },
+      headers: {
+        'content-type': 'application/x-msgpack',
+        'accept': 'application/x-msgpack',
+      },
+    }),
+  ],
+});
+```
+
+The link will use the appropriate handler based on the `content-type` and `accept` headers of the request and response.
+
 ## Setting a maximum URL length
 
 When sending batch requests, sometimes the URL can become too large causing HTTP errors like [`413 Payload Too Large`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413), [`414 URI Too Long`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414), and [`404 Not Found`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404). The `maxURLLength` option will limit the number of requests that can be sent together in a batch.

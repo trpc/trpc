@@ -61,6 +61,7 @@ export function httpBatchLink<TRouter extends AnyRouter>(
             path,
             inputs,
             type,
+            contentHandlers: opts.contentHandlers,
             headers() {
               if (!opts.headers) {
                 return {};

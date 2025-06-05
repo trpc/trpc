@@ -102,6 +102,16 @@ export type NodeHTTPHandlerOptions<
      */
     middleware?: ConnectMiddleware<TRequest, TResponse>;
     maxBodySize?: number;
+    /**
+     * Custom content-type handlers for request/response serialization.
+     * Keys are content-type strings, values are { serialize, deserialize } functions.
+     */
+    contentHandlers?: {
+      [contentType: string]: {
+        serialize: (data: unknown) => string | Uint8Array;
+        deserialize: (raw: string | Uint8Array) => unknown;
+      };
+    };
   };
 
 export type NodeHTTPRequestHandlerOptions<

@@ -858,6 +858,158 @@ test('init with URL object', async () => {
 
   await close();
 });
+test('httpLink supports custom content-type handlers', async () => {
+  const customContentType = 'application/custom';
+  const serializeSpy = vi.fn((input) => `SERIALIZED:${JSON.stringify(input)}`);
+  const deserializeSpy = vi.fn(async (res) => {
+    const text = await res.text();
+    // Simulate a custom response format
+    return {
+      result: { data: `DESERIALIZED:${text.replace('SERIALIZED:', '')}` },
+      ok: true,
+    };
+  });
+
+  const fetchMock = vi.fn(async (_url, opts) => {
+    // Assert the content-type header is set
+    expect(opts.headers['content-type']).toBe(customContentType);
+    // Assert the body is serialized by the custom handler
+    expect(opts.body).toBe('SERIALIZED:"foo"');
+    return {
+      ok: true,
+      status: 200,
+      headers: {
+        get: (key) => (key === 'content-type' ? customContentType : null),
+      },
+      text: async () => 'SERIALIZED:"foo"',
+      json: async () => {
+        throw new Error('Should not call json()');
+      },
+    };
+  });
+
+  const t = initTRPC.create();
+  const router = t.router({
+    hello: t.procedure.query(() => 'foo'),
+  });
+
+  const { httpUrl, close } = routerToServerAndClientNew(router);
+
+  const chain = createChain({
+    links: [
+      httpLink({
+        url: httpUrl,
+        fetch: fetchMock,
+        contentHandlers: {
+          [customContentType]: {
+            serialize: serializeSpy,
+            deserialize: deserializeSpy,
+          },
+        },
+        headers: { 'content-type': customContentType },
+      })({}),
+    ],
+    op: {
+      id: 1,
+      type: 'query',
+      path: 'hello',
+      input: null,
+      context: {},
+      signal: null,
+    },
+  });
+
+  const result = await observableToPromise(chain);
+  expect(serializeSpy).toHaveBeenCalled();
+  expect(deserializeSpy).toHaveBeenCalled();
+  expect(result.result.data).toBe('DESERIALIZED:"foo"');
+  await close();
+});
+
+test('httpBatchLink supports custom content-type handlers', async () => {
+  const customContentType = 'application/custom-batch';
+  const serializeSpy = vi.fn((input) => `BATCHED:${JSON.stringify(input)}`);
+  const deserializeSpy = vi.fn(async (res) => {
+    const text = await res.text();
+    // Simulate a custom batch response format
+    const arr = JSON.parse(text.replace('BATCHED:', ''));
+    return arr.map((item) => ({
+      result: { data: `BATCH-DESERIALIZED:${item}` },
+      ok: true,
+    }));
+  });
+
+  const fetchMock = vi.fn(async (_url, opts) => {
+    expect(opts.headers['content-type']).toBe(customContentType);
+    expect(opts.body).toBe('BATCHED:["foo","bar"]');
+    return {
+      ok: true,
+      status: 200,
+      headers: {
+        get: (key) => (key === 'content-type' ? customContentType : null),
+      },
+      text: async () => 'BATCHED:["foo","bar"]',
+      json: async () => {
+        throw new Error('Should not call json()');
+      },
+    };
+  });
+
+  const t = initTRPC.create();
+  const router = t.router({
+    foo: t.procedure.query(() => 'foo'),
+    bar: t.procedure.query(() => 'bar'),
+  });
+
+  const { httpUrl, close } = routerToServerAndClientNew(router);
+
+  const links = [
+    httpBatchLink({
+      url: httpUrl,
+      fetch: fetchMock,
+      contentHandlers: {
+        [customContentType]: {
+          serialize: serializeSpy,
+          deserialize: deserializeSpy,
+        },
+      },
+      headers: { 'content-type': customContentType },
+    })({}),
+  ];
+
+  const chain1 = createChain({
+    links,
+    op: {
+      id: 1,
+      type: 'query',
+      path: 'foo',
+      input: null,
+      context: {},
+      signal: null,
+    },
+  });
+  const chain2 = createChain({
+    links,
+    op: {
+      id: 2,
+      type: 'query',
+      path: 'bar',
+      input: null,
+      context: {},
+      signal: null,
+    },
+  });
+
+  const [res1, res2] = await Promise.all([
+    observableToPromise(chain1),
+    observableToPromise(chain2),
+  ]);
+  expect(serializeSpy).toHaveBeenCalled();
+  expect(deserializeSpy).toHaveBeenCalled();
+  expect(res1.result.data).toBe('BATCH-DESERIALIZED:foo');
+  expect(res2.result.data).toBe('BATCH-DESERIALIZED:bar');
+  await close();
+});
 
 function createEndingLink<T extends InferrableClientTypes>(config: {
   failCount: number;

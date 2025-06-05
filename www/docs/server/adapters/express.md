@@ -108,3 +108,48 @@ Your endpoints are now available via HTTP!
 | ------------ | ---------------------------------------------------------------------------------------------------------- |
 | `getUser`    | `GET http://localhost:4000/trpc/getUser?input=INPUT` <br/><br/>where `INPUT` is a URI-encoded JSON string. |
 | `createUser` | `POST http://localhost:4000/trpc/createUser` <br/><br/>with `req.body` of type `{name: string}`            |
+
+## Custom Content Types with `contentHandlers`
+
+The Express adapter supports a `contentHandlers` option, allowing you to define custom serialization and deserialization logic for different content types. This is useful if you want to support formats other than JSON, such as XML or binary.
+
+The `contentHandlers` option is an object where each key is a content-type string (e.g., `'application/xml'`), and the value is an object with `serialize` and `deserialize` functions:
+
+```ts
+contentHandlers: {
+  'application/xml': {
+    serialize: (data) => /* convert JS object to XML string */,
+    deserialize: (body) => /* parse XML string to JS object */,
+  },
+  // ...other content types
+}
+```
+
+### Example: Adding XML Support
+
+```ts
+import * as trpcExpress from '@trpc/server/adapters/express';
+import express from 'express';
+import { appRouter } from './appRouter';
+import { xml2js, js2xml } from 'xml-js'; // Example XML library
+
+const app = express();
+
+app.use(
+  '/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext: () => ({}),
+    contentHandlers: {
+      'application/xml': {
+        serialize: (data) => js2xml(data, { compact: true }),
+        deserialize: (body) => xml2js(body, { compact: true }),
+      },
+    },
+  }),
+);
+
+app.listen(4000);
+```
+
+With this configuration, requests and responses with the `Content-Type: application/xml` header will be handled using your custom logic.

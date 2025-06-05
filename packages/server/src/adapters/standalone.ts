@@ -73,6 +73,7 @@ function createHandler<
 
       await nodeHTTPRequestHandler({
         ...(opts as any),
+        contentHandlers: opts.contentHandlers,
         req,
         res,
         path,

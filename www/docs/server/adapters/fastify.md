@@ -231,3 +231,46 @@ It's alright, you can subscribe to the topic `randomNumber` and you should recei
 | prefix      | `string`                 | `true`   | `"/trpc"` |             |
 | useWSS      | `boolean`                | `true`   | `false`   |             |
 | trpcOptions | `NodeHTTPHandlerOptions` | `false`  | `n/a`     |             |
+
+## Custom Content Types with `contentHandlers`
+
+The Fastify adapter supports a `contentHandlers` option, allowing you to define custom serialization and deserialization logic for different content types. This is useful if you want to support formats other than JSON, such as XML or binary.
+
+The `contentHandlers` option is an object where each key is a content-type string (e.g., `'application/xml'`), and the value is an object with `serialize` and `deserialize` functions:
+
+```ts
+contentHandlers: {
+  'application/xml': {
+    serialize: (data) => /* convert JS object to XML string */,
+    deserialize: (body) => /* parse XML string to JS object */,
+  },
+  // ...other content types
+}
+```
+
+### Example: Adding XML Support
+
+```ts
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import fastify from 'fastify';
+import { appRouter } from './router';
+import { xml2js, js2xml } from 'xml-js'; // Example XML library
+
+const server = fastify();
+
+server.register(fastifyTRPCPlugin, {
+  prefix: '/trpc',
+  trpcOptions: {
+    router: appRouter,
+    createContext: () => ({}),
+    contentHandlers: {
+      'application/xml': {
+        serialize: (data) => js2xml(data, { compact: true }),
+        deserialize: (body) => xml2js(body, { compact: true }),
+      },
+    },
+  },
+});
+```
+
+With this configuration, requests and responses with the `Content-Type: application/xml` header will be handled using your custom logic.
