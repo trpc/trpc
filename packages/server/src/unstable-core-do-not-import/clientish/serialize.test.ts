@@ -208,12 +208,15 @@ describe('complex zod schema serialization', () => {
     expectTypeOf<Transformed['zBoolean']>().toEqualTypeOf<boolean>();
     expectTypeOf<Transformed['zString']>().toEqualTypeOf<string>();
     expectTypeOf<Transformed['zNumber']>().toEqualTypeOf<number>();
-    // @ts-expect-error - not serialized, OK.
-    expectTypeOf<Transformed['zBigint']>().toEqualTypeOf<bigint>();
+
+    // bigint is not serializable, so it should be never
+    expectTypeOf<Transformed['zBigint']>().toBeNever();
     expectTypeOf<Transformed['zDate']>().toEqualTypeOf<string>();
 
-    // @ts-expect-error - not serialized, OK.
-    expectTypeOf<Transformed['zUndefined']>().toEqualTypeOf<undefined>();
+    expectTypeOf<
+      // @ts-expect-error - not serialized, OK.
+      Transformed['zUndefined']
+    >().toEqualTypeOf<undefined>();
 
     expectTypeOf<Transformed['zAny']>().toEqualTypeOf<any>();
 
@@ -225,7 +228,7 @@ describe('complex zod schema serialization', () => {
     >();
   });
 
-  test('Non-records should not erroneously be inferred as Records in serialized types', () => {
+  test('non-records should not erroneously be inferred as Records in serialized types', () => {
     const zChange = z.object({
       status: z
         .tuple([
@@ -245,25 +248,10 @@ describe('complex zod schema serialization', () => {
         .tuple([z.string().nullable(), z.string().nullable()])
         .optional(),
     });
-    type Change = z.infer<typeof zChange>;
 
-    const t = initTRPC.create();
+    type Source = z.infer<typeof zChange>;
+    type Transformed = Serialize<Source>;
 
-    const router = t.router({
-      createProject: t.procedure.output(zChange).query(() => {
-        return zChange.parse(null as any);
-      }),
-      createProjectNoExplicitOutput: t.procedure.query(() => {
-        return zChange.parse(null as any);
-      }),
-    });
-
-    type SerializedOutput = inferRouterOutputs<typeof router>['createProject'];
-    type SerializedOutputNoExplicitOutput = inferRouterOutputs<
-      typeof router
-    >['createProjectNoExplicitOutput'];
-
-    expectTypeOf<SerializedOutput>().toEqualTypeOf<Change>();
-    expectTypeOf<SerializedOutputNoExplicitOutput>().toEqualTypeOf<Change>();
+    expectTypeOf<Transformed>().toEqualTypeOf<Source>();
   });
 });
