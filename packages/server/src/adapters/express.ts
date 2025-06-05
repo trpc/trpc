@@ -32,6 +32,7 @@ export function createExpressMiddleware<TRouter extends AnyRouter>(
 
       await nodeHTTPRequestHandler({
         ...(opts as any),
+        contentHandlers: opts.contentHandlers,
         req,
         res,
         path,

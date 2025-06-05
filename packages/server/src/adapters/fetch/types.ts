@@ -40,6 +40,16 @@ export type FetchHandlerOptions<TRouter extends AnyRouter> =
     HTTPBaseHandlerOptions<TRouter, Request> & {
       req: Request;
       endpoint: string;
+      /**
+       * Custom content-type handlers for request/response serialization.
+       * Keys are content-type strings, values are { serialize, deserialize } functions.
+       */
+      contentHandlers?: {
+        [contentType: string]: {
+          serialize: (data: unknown) => string | Uint8Array;
+          deserialize: (raw: string | Uint8Array) => unknown;
+        };
+      };
     };
 
 export type FetchHandlerRequestOptions<TRouter extends AnyRouter> =

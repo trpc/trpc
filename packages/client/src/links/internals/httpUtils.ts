@@ -14,11 +14,11 @@ import type {
 } from '../../internals/types';
 import type { TransformerOptions } from '../../unstable-internals';
 import { getTransformer } from '../../unstable-internals';
-import type { HTTPHeaders } from '../types';
-
 /**
  * @internal
  */
+import type { ContentHandlers, HTTPHeaders } from '../types';
+
 export type HTTPLinkBaseOptions<
   TRoot extends Pick<AnyClientTypes, 'transformer'>,
 > = {
@@ -33,6 +33,10 @@ export type HTTPLinkBaseOptions<
    * @see https://trpc.io/docs/rpc
    */
   methodOverride?: 'POST';
+  /**
+   * Custom content-type handlers for serialization/deserialization.
+   */
+  contentHandlers?: ContentHandlers;
 } & TransformerOptions<TRoot>;
 
 export interface ResolvedHTTPLinkOptions {
@@ -40,6 +44,7 @@ export interface ResolvedHTTPLinkOptions {
   fetch?: FetchEsque;
   transformer: CombinedDataTransformer;
   methodOverride?: 'POST';
+  contentHandlers?: ContentHandlers;
 }
 
 export function resolveHTTPLinkOptions(
@@ -50,6 +55,7 @@ export function resolveHTTPLinkOptions(
     fetch: opts.fetch,
     transformer: getTransformer(opts.transformer),
     methodOverride: opts.methodOverride,
+    contentHandlers: opts.contentHandlers,
   };
 }
 
@@ -94,6 +100,10 @@ export type HTTPBaseRequestOptions = GetInputOptions &
     type: ProcedureType;
     path: string;
     signal: Maybe<AbortSignal>;
+    /**
+     * The content-type header for the request, if set.
+     */
+    contentTypeHeader?: string;
   };
 
 type GetUrl = (opts: HTTPBaseRequestOptions) => string;
@@ -136,6 +146,18 @@ export const getBody: GetBody = (opts) => {
     return undefined;
   }
   const input = getInput(opts);
+  // Use custom content-type handler if available for serialization
+  if (
+    opts.contentHandlers &&
+    typeof opts.contentTypeHeader === 'string' &&
+    opts.contentHandlers[opts.contentTypeHeader]
+  ) {
+    const handler = opts.contentHandlers[opts.contentTypeHeader];
+    if (handler && typeof handler.serialize === 'function') {
+      // Only allow types accepted by GetBody
+      return handler.serialize(input);
+    }
+  }
   return input !== undefined ? JSON.stringify(input) : undefined;
 };
 
@@ -231,7 +253,18 @@ export async function httpRequest(
   const res = await fetchHTTPResponse(opts);
   meta.response = res;
 
-  const json = await res.json();
+  // Use custom content-type handler if available for deserialization
+  let json: unknown;
+  const contentType = res.headers?.get?.('content-type')?.split(';')[0]?.trim();
+  if (
+    contentType &&
+    opts.contentHandlers?.[contentType] &&
+    typeof opts.contentHandlers[contentType].deserialize === 'function'
+  ) {
+    json = await opts.contentHandlers[contentType].deserialize(res);
+  } else {
+    json = await res.json();
+  }
 
   meta.responseJSON = json;
 

@@ -23,6 +23,7 @@ import {
   type Operation,
   type TRPCLink,
 } from './types';
+import type { ContentHandlers } from './types';
 
 export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
@@ -33,6 +34,10 @@ export type HTTPLinkOptions<TRoot extends AnyClientTypes> =
     headers?:
       | HTTPHeaders
       | ((opts: { op: Operation }) => HTTPHeaders | Promise<HTTPHeaders>);
+    /**
+     * Custom content-type handlers for serialization/deserialization.
+     */
+    contentHandlers?: ContentHandlers;
   };
 
 const universalRequester: Requester = (opts) => {
@@ -93,6 +98,7 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
           path,
           input,
           signal: op.signal,
+          contentHandlers: opts.contentHandlers,
           headers() {
             if (!opts.headers) {
               return {};

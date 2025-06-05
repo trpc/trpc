@@ -343,4 +343,44 @@ test('recipe: max batch size on the server', async () => {
   ).toBe(true);
 
   server.close();
+  /**
+   * Custom content-type handler test
+   * Verifies that a custom content-type handler can deserialize and serialize bodies.
+   */
+  test('custom content-type handler', async () => {
+    const customType = 'application/custom';
+    const customHandler = {
+      deserialize: (raw: string | Uint8Array) => {
+        const body =
+          typeof raw === 'string' ? raw : Buffer.from(raw).toString('utf8');
+        const [key, value] = body.split('=');
+        return { [key!]: value };
+      },
+      serialize: (data: unknown) => {
+        if (typeof data === 'object' && data !== null) {
+          const key = Object.keys(data)[0]!;
+          return `${key}=${(data as any)[key]}`;
+        }
+        return '';
+      },
+    };
+
+    const { port, address } = await startServer({
+      router,
+      contentHandlers: {
+        [customType]: customHandler,
+      },
+    });
+
+    const res = await fetch(`http://${address}:${port}/hello`, {
+      method: 'POST',
+      headers: {
+        'content-type': customType,
+        accept: customType,
+      },
+      body: 'who=custom',
+    });
+    const text = await res.text();
+    expect(text).toBe('text=hello custom');
+  });
 });

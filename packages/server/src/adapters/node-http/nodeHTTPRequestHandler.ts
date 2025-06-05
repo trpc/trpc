@@ -83,9 +83,27 @@ export async function nodeHTTPRequestHandler<
     });
     return handleViaMiddleware(opts.req, opts.res, (err: unknown) => {
       run(async () => {
+        const contentHandlers = opts.contentHandlers ?? {};
+
         const request = incomingMessageToRequest(opts.req, opts.res, {
           maxBodySize: opts.maxBodySize ?? null,
         });
+
+        // Custom deserialization for request body if handler exists
+        const reqContentType =
+          opts.req.headers?.['content-type'] ??
+          opts.req.headers?.['Content-Type'] ??
+          '';
+        const matchedReqType = Object.keys(contentHandlers).find((type) =>
+          reqContentType?.includes(type),
+        );
+        if (matchedReqType && typeof request.text === 'function') {
+          // Patch request.json() to use custom deserializer
+          request.json = async () => {
+            const raw = await request.text();
+            return contentHandlers[matchedReqType]?.deserialize(raw);
+          };
+        }
 
         // Build tRPC dependencies
         const createContext: ResolveHTTPRequestOptionsContextFn<
@@ -109,6 +127,26 @@ export async function nodeHTTPRequestHandler<
             });
           },
         });
+
+        // Custom serialization for response body if handler exists
+        const resContentType = response.headers?.get('content-type') ?? '';
+        const matchedResType = Object.keys(contentHandlers).find((type) =>
+          resContentType?.includes(type),
+        );
+        if (matchedResType && typeof response.text === 'function') {
+          // Patch response.text() to use custom serializer
+          const origText = response.text.bind(response);
+          response.text = async () => {
+            const data = await origText();
+            // Only return string for text()
+            const serialized = contentHandlers[matchedResType]?.serialize(data);
+            return typeof serialized === 'string'
+              ? serialized
+              : typeof Buffer !== 'undefined'
+                ? Buffer.from(serialized!).toString('utf-8')
+                : String(serialized);
+          };
+        }
 
         await writeResponse({
           request,
