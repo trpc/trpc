@@ -37,12 +37,7 @@ describe('index signature and record', () => {
     };
     type Transformed = Serialize<Source>;
 
-    expectTypeOf<Transformed>().toEqualTypeOf<{
-      [x: string]: number;
-      [x: number]: number;
-      a: number;
-      b: number;
-    }>();
+    expectTypeOf<Transformed>().toEqualTypeOf<Source>();
   });
 
   test('outputWithRecord', () => {
@@ -52,11 +47,7 @@ describe('index signature and record', () => {
     } & Record<string, number>;
     type Transformed = Serialize<Source>;
 
-    expectTypeOf<Transformed>().toEqualTypeOf<{
-      [x: string]: number;
-      a: number;
-      b: number;
-    }>();
+    expectTypeOf<Transformed>().toEqualTypeOf<Source>();
   });
 
   test('outputWithRecordAndIndexSignature', () => {
@@ -67,12 +58,7 @@ describe('index signature and record', () => {
     } & Record<string, number>;
     type Transformed = Serialize<Source>;
 
-    expectTypeOf<Transformed>().toEqualTypeOf<{
-      [x: string]: number;
-      [x: number]: number;
-      a: number;
-      b: number;
-    }>();
+    expectTypeOf<Transformed>().toEqualTypeOf<Source>();
   });
 
   test('outputWithUndefinedAndUndefinedIndexSignature', () => {
