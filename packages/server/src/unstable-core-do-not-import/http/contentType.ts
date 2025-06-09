@@ -25,7 +25,7 @@ type ContentTypeHandler = {
  */
 function memo<TReturn>(fn: () => Promise<TReturn>) {
   let promise: Promise<TReturn> | null = null;
-  const sym = Symbol.for("@trpc/server/http/memo");
+  const sym = Symbol.for('@trpc/server/http/memo');
   let value: TReturn | typeof sym = sym;
   return {
     /**

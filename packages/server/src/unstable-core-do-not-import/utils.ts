@@ -1,6 +1,6 @@
 /** @internal */
-export type UnsetMarker = "unsetMarker" & {
-  __brand: "unsetMarker";
+export type UnsetMarker = 'unsetMarker' & {
+  __brand: 'unsetMarker';
 };
 
 /**
