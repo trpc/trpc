@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsdown';
+import { generateEntrypoints } from '../../scripts/entrypoints';
 
 export const input = [
   'src/index.ts',
@@ -14,5 +15,11 @@ export default defineConfig({
     tsconfig: './tsconfig.build.json',
   },
   unbundle: true,
-  format: ['cjs', 'esm'],
+  format: ['cjs', 'esm'], 
+  onSuccess: async () => {
+    const start = Date.now();
+    await generateEntrypoints(input)
+    // eslint-disable-next-line no-console
+    console.log(`Generated entrypoints in ${Date.now() - start}ms`);
+  }
 });

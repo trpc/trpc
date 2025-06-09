@@ -25,7 +25,6 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "codegen-entrypoints": "tsx entrypoints.script.ts",
     "ts-watch": "tsc --project tsconfig.watch.json --watch",
     "lint": "eslint --cache src"
   },
@@ -135,8 +134,7 @@
     "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "tsdown": "0.12.3",
-    "tsx": "^4.19.3",
+    "tsdown": "0.12.7",
     "typescript": "^5.8.2",
     "zod": "^3.25.51"
   },

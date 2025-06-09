@@ -135,7 +135,8 @@ export async function generateEntrypoints(rawInputs: string[]) {
 
   const turboPath = path.resolve('turbo.json');
   const turboJson = JSON.parse(fs.readFileSync(turboPath, 'utf8'));
-  turboJson.tasks['codegen-entrypoints'].outputs = [...scriptOutputs];
+  turboJson.tasks.build ??= {};
+  turboJson.tasks.build.outputs = [...scriptOutputs];
   const formattedTurboJson = await prettier.format(JSON.stringify(turboJson), {
     parser: 'json',
     ...(await prettier.resolveConfig(turboPath)),
