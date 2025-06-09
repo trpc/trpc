@@ -16,7 +16,7 @@ function generateTypedocDocusaurusPlugins(directories) {
     );
 
     /**
-     * @type {Record<string, string | { import: string }>}
+     * @type { Record<string, { import: { default: string; types: string }; require: { default: string; types: string }; } | string> }
      */
     const exports = pkgJson.exports;
 
@@ -26,7 +26,7 @@ function generateTypedocDocusaurusPlugins(directories) {
           return [];
         }
 
-        return [value.import];
+        return [value.import.default];
       })
       .map((it) => it.replace('./dist/', '').replace('.mjs', '.ts'))
       .filter((it) => {
