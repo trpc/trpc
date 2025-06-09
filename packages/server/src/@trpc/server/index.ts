@@ -113,5 +113,3 @@ export {
  */
 export type inferAsyncReturnType<TFunction extends (...args: any[]) => any> =
   Awaited<ReturnType<TFunction>>;
-
-export type { UnsetMarker } from '../../unstable-core-do-not-import/utils';
