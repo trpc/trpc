@@ -1,12 +1,13 @@
 {
   "name": "@trpc/client",
+  "type": "module",
   "version": "11.3.1",
   "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -35,8 +36,8 @@
         "types": "./dist/index.d.mts"
       },
       "require": {
-        "default": "./dist/index.js",
-        "types": "./dist/index.d.ts"
+        "default": "./dist/index.cjs",
+        "types": "./dist/index.d.cts"
       }
     },
     "./links/httpBatchLink": {
@@ -45,8 +46,8 @@
         "types": "./dist/links/httpBatchLink.d.mts"
       },
       "require": {
-        "default": "./dist/links/httpBatchLink.js",
-        "types": "./dist/links/httpBatchLink.d.ts"
+        "default": "./dist/links/httpBatchLink.cjs",
+        "types": "./dist/links/httpBatchLink.d.cts"
       }
     },
     "./links/httpLink": {
@@ -55,8 +56,8 @@
         "types": "./dist/links/httpLink.d.mts"
       },
       "require": {
-        "default": "./dist/links/httpLink.js",
-        "types": "./dist/links/httpLink.d.ts"
+        "default": "./dist/links/httpLink.cjs",
+        "types": "./dist/links/httpLink.d.cts"
       }
     },
     "./links/loggerLink": {
@@ -65,8 +66,8 @@
         "types": "./dist/links/loggerLink.d.mts"
       },
       "require": {
-        "default": "./dist/links/loggerLink.js",
-        "types": "./dist/links/loggerLink.d.ts"
+        "default": "./dist/links/loggerLink.cjs",
+        "types": "./dist/links/loggerLink.d.cts"
       }
     },
     "./links/splitLink": {
@@ -75,8 +76,8 @@
         "types": "./dist/links/splitLink.d.mts"
       },
       "require": {
-        "default": "./dist/links/splitLink.js",
-        "types": "./dist/links/splitLink.d.ts"
+        "default": "./dist/links/splitLink.cjs",
+        "types": "./dist/links/splitLink.d.cts"
       }
     },
     "./links/wsLink/wsLink": {
@@ -85,8 +86,8 @@
         "types": "./dist/links/wsLink/wsLink.d.mts"
       },
       "require": {
-        "default": "./dist/links/wsLink/wsLink.js",
-        "types": "./dist/links/wsLink/wsLink.d.ts"
+        "default": "./dist/links/wsLink/wsLink.cjs",
+        "types": "./dist/links/wsLink/wsLink.d.cts"
       }
     },
     "./unstable-internals": {
@@ -95,8 +96,8 @@
         "types": "./dist/unstable-internals.d.mts"
       },
       "require": {
-        "default": "./dist/unstable-internals.js",
-        "types": "./dist/unstable-internals.d.ts"
+        "default": "./dist/unstable-internals.cjs",
+        "types": "./dist/unstable-internals.d.cts"
       }
     }
   },

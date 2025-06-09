@@ -1,12 +1,14 @@
 {
   "name": "@trpc/server",
+  "type": "module",
+  "sideEffects": false,
   "version": "11.3.1",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -28,8 +30,8 @@
         "types": "./dist/index.d.mts"
       },
       "require": {
-        "default": "./dist/index.js",
-        "types": "./dist/index.d.ts"
+        "default": "./dist/index.cjs",
+        "types": "./dist/index.d.cts"
       }
     },
     "./adapters/aws-lambda": {
@@ -38,8 +40,8 @@
         "types": "./dist/adapters/aws-lambda/index.d.mts"
       },
       "require": {
-        "default": "./dist/adapters/aws-lambda/index.js",
-        "types": "./dist/adapters/aws-lambda/index.d.ts"
+        "default": "./dist/adapters/aws-lambda/index.cjs",
+        "types": "./dist/adapters/aws-lambda/index.d.cts"
       }
     },
     "./adapters/express": {
@@ -48,8 +50,8 @@
         "types": "./dist/adapters/express.d.mts"
       },
       "require": {
-        "default": "./dist/adapters/express.js",
-        "types": "./dist/adapters/express.d.ts"
+        "default": "./dist/adapters/express.cjs",
+        "types": "./dist/adapters/express.d.cts"
       }
     },
     "./adapters/fastify": {
@@ -58,8 +60,8 @@
         "types": "./dist/adapters/fastify/index.d.mts"
       },
       "require": {
-        "default": "./dist/adapters/fastify/index.js",
-        "types": "./dist/adapters/fastify/index.d.ts"
+        "default": "./dist/adapters/fastify/index.cjs",
+        "types": "./dist/adapters/fastify/index.d.cts"
       }
     },
     "./adapters/fetch": {
@@ -68,8 +70,8 @@
         "types": "./dist/adapters/fetch/index.d.mts"
       },
       "require": {
-        "default": "./dist/adapters/fetch/index.js",
-        "types": "./dist/adapters/fetch/index.d.ts"
+        "default": "./dist/adapters/fetch/index.cjs",
+        "types": "./dist/adapters/fetch/index.d.cts"
       }
     },
     "./adapters/next-app-dir": {
@@ -78,8 +80,8 @@
         "types": "./dist/adapters/next-app-dir.d.mts"
       },
       "require": {
-        "default": "./dist/adapters/next-app-dir.js",
-        "types": "./dist/adapters/next-app-dir.d.ts"
+        "default": "./dist/adapters/next-app-dir.cjs",
+        "types": "./dist/adapters/next-app-dir.d.cts"
       }
     },
     "./adapters/next": {
@@ -88,8 +90,8 @@
         "types": "./dist/adapters/next.d.mts"
       },
       "require": {
-        "default": "./dist/adapters/next.js",
-        "types": "./dist/adapters/next.d.ts"
+        "default": "./dist/adapters/next.cjs",
+        "types": "./dist/adapters/next.d.cts"
       }
     },
     "./adapters/node-http": {
@@ -98,8 +100,8 @@
         "types": "./dist/adapters/node-http/index.d.mts"
       },
       "require": {
-        "default": "./dist/adapters/node-http/index.js",
-        "types": "./dist/adapters/node-http/index.d.ts"
+        "default": "./dist/adapters/node-http/index.cjs",
+        "types": "./dist/adapters/node-http/index.d.cts"
       }
     },
     "./adapters/standalone": {
@@ -108,8 +110,8 @@
         "types": "./dist/adapters/standalone.d.mts"
       },
       "require": {
-        "default": "./dist/adapters/standalone.js",
-        "types": "./dist/adapters/standalone.d.ts"
+        "default": "./dist/adapters/standalone.cjs",
+        "types": "./dist/adapters/standalone.d.cts"
       }
     },
     "./adapters/ws": {
@@ -118,8 +120,8 @@
         "types": "./dist/adapters/ws.d.mts"
       },
       "require": {
-        "default": "./dist/adapters/ws.js",
-        "types": "./dist/adapters/ws.d.ts"
+        "default": "./dist/adapters/ws.cjs",
+        "types": "./dist/adapters/ws.d.cts"
       }
     },
     "./http": {
@@ -128,8 +130,8 @@
         "types": "./dist/http.d.mts"
       },
       "require": {
-        "default": "./dist/http.js",
-        "types": "./dist/http.d.ts"
+        "default": "./dist/http.cjs",
+        "types": "./dist/http.d.cts"
       }
     },
     "./observable": {
@@ -138,8 +140,8 @@
         "types": "./dist/observable/index.d.mts"
       },
       "require": {
-        "default": "./dist/observable/index.js",
-        "types": "./dist/observable/index.d.ts"
+        "default": "./dist/observable/index.cjs",
+        "types": "./dist/observable/index.d.cts"
       }
     },
     "./rpc": {
@@ -148,8 +150,8 @@
         "types": "./dist/rpc.d.mts"
       },
       "require": {
-        "default": "./dist/rpc.js",
-        "types": "./dist/rpc.d.ts"
+        "default": "./dist/rpc.cjs",
+        "types": "./dist/rpc.d.cts"
       }
     },
     "./shared": {
@@ -158,8 +160,8 @@
         "types": "./dist/shared.d.mts"
       },
       "require": {
-        "default": "./dist/shared.js",
-        "types": "./dist/shared.d.ts"
+        "default": "./dist/shared.cjs",
+        "types": "./dist/shared.d.cts"
       }
     },
     "./unstable-core-do-not-import": {
@@ -168,8 +170,8 @@
         "types": "./dist/unstable-core-do-not-import.d.mts"
       },
       "require": {
-        "default": "./dist/unstable-core-do-not-import.js",
-        "types": "./dist/unstable-core-do-not-import.d.ts"
+        "default": "./dist/unstable-core-do-not-import.cjs",
+        "types": "./dist/unstable-core-do-not-import.d.cts"
       }
     }
   },

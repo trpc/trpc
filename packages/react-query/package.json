@@ -1,12 +1,13 @@
 {
   "name": "@trpc/react-query",
+  "type": "module",
   "version": "11.3.1",
   "description": "The tRPC React library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -29,8 +30,8 @@
         "types": "./dist/index.d.mts"
       },
       "require": {
-        "default": "./dist/index.js",
-        "types": "./dist/index.d.ts"
+        "default": "./dist/index.cjs",
+        "types": "./dist/index.d.cts"
       }
     },
     "./rsc": {
@@ -39,8 +40,8 @@
         "types": "./dist/rsc.d.mts"
       },
       "require": {
-        "default": "./dist/rsc.js",
-        "types": "./dist/rsc.d.ts"
+        "default": "./dist/rsc.cjs",
+        "types": "./dist/rsc.d.cts"
       }
     },
     "./server": {
@@ -49,8 +50,8 @@
         "types": "./dist/server/index.d.mts"
       },
       "require": {
-        "default": "./dist/server/index.js",
-        "types": "./dist/server/index.d.ts"
+        "default": "./dist/server/index.cjs",
+        "types": "./dist/server/index.d.cts"
       }
     },
     "./shared": {
@@ -59,8 +60,8 @@
         "types": "./dist/shared/index.d.mts"
       },
       "require": {
-        "default": "./dist/shared/index.js",
-        "types": "./dist/shared/index.d.ts"
+        "default": "./dist/shared/index.cjs",
+        "types": "./dist/shared/index.d.cts"
       }
     }
   },

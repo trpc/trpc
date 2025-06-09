@@ -5,6 +5,9 @@ import prettier from 'prettier';
 // minimal version of PackageJson type necessary
 export type PackageJson = {
   name: string;
+  main: string;
+  module: string;
+  types: string;
   exports: Record<
     string,
     | {
@@ -38,13 +41,15 @@ export async function generateEntrypoints(rawInputs: string[]) {
   const pkgJsonPath = path.resolve('package.json');
 
   const pkgJson: PackageJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
-
+  pkgJson.main = './dist/index.cjs';
+  pkgJson.module = './dist/index.mjs';
+  pkgJson.types = './dist/index.d.cts';
   pkgJson.files = ['dist', 'src', 'README.md'];
   pkgJson.exports = {
     './package.json': './package.json',
     '.': {
       import: { default: './dist/index.mjs', types: './dist/index.d.mts' },
-      require: { default: './dist/index.js', types: './dist/index.d.ts' },
+      require: { default: './dist/index.cjs', types: './dist/index.d.cts' },
     },
   };
 
@@ -78,10 +83,10 @@ export async function generateEntrypoints(rawInputs: string[]) {
 
       // write this entrypoint to the package.json exports field
       const esm = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.mjs');
-      const cjs = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.js');
+      const cjs = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.cjs');
       pkgJson.exports[`./${importPath}`] = {
         import: { default: esm, types: esm.replace(/\.mjs$/, '.d.mts') },
-        require: { default: cjs, types: cjs.replace(/\.js$/, '.d.ts') },
+        require: { default: cjs, types: cjs.replace(/\.cjs$/, '.d.cts') },
       };
 
       // create the barrelfile, linking the declared exports to the compiled files in dist
@@ -97,9 +102,9 @@ export async function generateEntrypoints(rawInputs: string[]) {
       // package.json
       const packageJson = path.resolve(importPath, 'package.json');
       const packageJsonContent = JSON.stringify({
-        main: `${resolvedImport}.js`,
+        main: `${resolvedImport}.cjs`,
         module: `${resolvedImport}.mjs`,
-        types: `${resolvedImport}.d.ts`,
+        types: `${resolvedImport}.d.cts`,
       });
       writeFileSyncRecursive(packageJson, packageJsonContent);
     });

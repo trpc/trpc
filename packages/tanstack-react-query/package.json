@@ -1,12 +1,13 @@
 {
   "name": "@trpc/tanstack-react-query",
+  "type": "module",
   "version": "11.3.1",
   "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "homepage": "https://trpc.io/docs/client/tanstack-react-query/setup",
   "repository": {
     "type": "git",
@@ -28,8 +29,8 @@
         "types": "./dist/index.d.mts"
       },
       "require": {
-        "default": "./dist/index.js",
-        "types": "./dist/index.d.ts"
+        "default": "./dist/index.cjs",
+        "types": "./dist/index.d.cts"
       }
     }
   },

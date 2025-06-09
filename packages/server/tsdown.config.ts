@@ -25,8 +25,12 @@ export default defineConfig({
     sourcemap: true,
     tsconfig: './tsconfig.build.json',
   },
-  unbundle: true,
+  // unbundle: true,
   format: ['cjs', 'esm'],
+  outExtensions: (ctx) => ({
+    dts: ctx.format === 'cjs' ? '.d.cts' : '.d.mts',
+    js: ctx.format === 'cjs' ? '.cjs' : '.mjs',
+  }),
   onSuccess: async () => {
     const start = Date.now();
     await generateEntrypoints(input);

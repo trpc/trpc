@@ -1,12 +1,13 @@
 {
+  "type": "module",
   "name": "@trpc/next",
   "version": "11.3.1",
   "description": "The tRPC Next.js library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -36,8 +37,8 @@
         "types": "./dist/index.d.mts"
       },
       "require": {
-        "default": "./dist/index.js",
-        "types": "./dist/index.d.ts"
+        "default": "./dist/index.cjs",
+        "types": "./dist/index.d.cts"
       }
     },
     "./app-dir/client": {
@@ -46,8 +47,8 @@
         "types": "./dist/app-dir/client.d.mts"
       },
       "require": {
-        "default": "./dist/app-dir/client.js",
-        "types": "./dist/app-dir/client.d.ts"
+        "default": "./dist/app-dir/client.cjs",
+        "types": "./dist/app-dir/client.d.cts"
       }
     },
     "./app-dir/links/nextCache": {
@@ -56,8 +57,8 @@
         "types": "./dist/app-dir/links/nextCache.d.mts"
       },
       "require": {
-        "default": "./dist/app-dir/links/nextCache.js",
-        "types": "./dist/app-dir/links/nextCache.d.ts"
+        "default": "./dist/app-dir/links/nextCache.cjs",
+        "types": "./dist/app-dir/links/nextCache.d.cts"
       }
     },
     "./app-dir/links/nextHttp": {
@@ -66,8 +67,8 @@
         "types": "./dist/app-dir/links/nextHttp.d.mts"
       },
       "require": {
-        "default": "./dist/app-dir/links/nextHttp.js",
-        "types": "./dist/app-dir/links/nextHttp.d.ts"
+        "default": "./dist/app-dir/links/nextHttp.cjs",
+        "types": "./dist/app-dir/links/nextHttp.d.cts"
       }
     },
     "./app-dir/server": {
@@ -76,8 +77,8 @@
         "types": "./dist/app-dir/server.d.mts"
       },
       "require": {
-        "default": "./dist/app-dir/server.js",
-        "types": "./dist/app-dir/server.d.ts"
+        "default": "./dist/app-dir/server.cjs",
+        "types": "./dist/app-dir/server.d.cts"
       }
     },
     "./ssrPrepass": {
@@ -86,8 +87,8 @@
         "types": "./dist/ssrPrepass.d.mts"
       },
       "require": {
-        "default": "./dist/ssrPrepass.js",
-        "types": "./dist/ssrPrepass.d.ts"
+        "default": "./dist/ssrPrepass.cjs",
+        "types": "./dist/ssrPrepass.d.cts"
       }
     }
   },
