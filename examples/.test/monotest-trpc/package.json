@@ -1,6 +1,6 @@
 {
   "name": "@monotest/trpc",
-  "version": "11.1.2",
+  "version": "11.3.1",
   "private": true,
   "type": "module",
   "exports": {

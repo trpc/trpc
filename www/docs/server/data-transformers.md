@@ -45,19 +45,17 @@ export const client = createTRPCClient<AppRouter>({
   links: [
     httpLink({
       url: 'http://localhost:3000',
-      // transformer: superjson
+      transformer: superjson,
     }),
   ],
 });
 ```
 
-## Different transformers for upload and download
+## Using [devalue](https://github.com/Rich-Harris/devalue)
 
-If a transformer should only be used for one direction or different transformers should be used for upload and download (e.g., for performance reasons), you can provide individual transformers for upload and download. Make sure you use the same combined transformer everywhere.
+Devalue works like superjson, but focus in performance and compact payloads, but at the cost of a less human readable body.
 
 ### How to
-
-Here [superjson](https://github.com/blitz-js/superjson) is used for uploading and [devalue](https://github.com/Rich-Harris/devalue) for downloading data because devalue is a lot faster but insecure to use on the server.
 
 #### 1. Install
 
@@ -67,23 +65,20 @@ yarn add superjson devalue
 
 #### 2. Add to `utils/trpc.ts`
 
+Here we use `parse` and `stringify` as they [mitigate XSS](https://github.com/Rich-Harris/devalue?tab=readme-ov-file#xss-mitigation).
+
 ```ts title='utils/trpc.ts'
-import { uneval } from 'devalue';
-import superjson from 'superjson';
+import { parse, stringify } from 'devalue';
 
 // [...]
 
 export const transformer = {
-  input: superjson,
-  output: {
-    serialize: (object) => uneval(object),
-    // This `eval` only ever happens on the **client**
-    deserialize: (object) => eval(`(${object})`),
-  },
+  deserialize: (object: any) => parse(object),
+  serialize: (object: any) => stringify(object),
 };
 ```
 
-#### 3. Add to your `AppRouter`
+#### 3. Add to your `initTRPC`
 
 ```ts title='server/routers/_app.ts'
 import { initTRPC } from '@trpc/server';
@@ -92,11 +87,32 @@ import { transformer } from '../../utils/trpc';
 export const t = initTRPC.create({
   transformer,
 });
+```
 
-export const appRouter = t.router({
-  // [...]
+#### 4. Add to `httpLink()`, `wsLink()`, etc
+
+> TypeScript will guide you to where you need to add `transformer` as soon as you've added it on the `initTRPC`-object
+
+`createTRPCClient()`:
+
+```ts title='src/app/_trpc/client.ts'
+import { createTRPCClient } from '@trpc/client';
+import type { AppRouter } from '~/server/routers/_app';
+import { transformer } from '../../utils/trpc';
+
+export const client = createTRPCClient<AppRouter>({
+  links: [
+    httpLink({
+      url: 'http://localhost:3000',
+      transformer,
+    }),
+  ],
 });
 ```
+
+## Different transformers for upload and download
+
+If a transformer should only be used for one direction or different transformers should be used for upload and download (e.g., for performance reasons), you can provide individual transformers for upload and download. Make sure you use the same combined transformer everywhere.
 
 ## `DataTransformer` interface
 
