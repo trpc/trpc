@@ -7,18 +7,18 @@ description: A link for direct procedure calls without HTTP overhead
 `localLink` is a [**terminating link**](./overview.md#the-terminating-link) that allows you to make tRPC procedure calls directly in your application without going through HTTP.
 
 :::info
-We have prefixed this as `experimental_` as it's a new API! [Read more](/docs/faq#experimental).
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
 :::
 
 ## Usage
 
 ```tsx
-import { createTRPCClient, experimental_localLink } from '@trpc/client';
+import { createTRPCClient, unstable_localLink } from '@trpc/client';
 import type { AppRouter } from '../server';
 
 const client = createTRPCClient<AppRouter>({
   links: [
-    experimental_localLink({
+    unstable_localLink({
       router: appRouter,
       createContext: async () => {
         // Create your context here
