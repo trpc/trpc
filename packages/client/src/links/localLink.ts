@@ -275,5 +275,7 @@ export function unstable_localLink<TRouter extends AnyRouter>(
         };
       });
 }
-
-export const experimental_localLink = unstable_localLink;
+/**
+ * @deprecated Renamed to `unstable_localLink`. This alias will be removed in a future major release.
+ */
+export const experimental_localLink: typeof unstable_localLink = unstable_localLink;
