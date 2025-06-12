@@ -11,13 +11,9 @@ import type { AnyRootTypes, CreateRootTypes } from './rootConfig';
 import { isServerDefault, type RootConfig } from './rootConfig';
 import type {
   AnyRouter,
-  BuiltRouter,
-  CreateRouterOptions,
-  DecorateCreateRouterOptions,
   MergeRouters,
-  RouterCaller,
-  RouterDef,
-  RouterRecord,
+  RouterBuilder,
+  RouterCallerFactory,
 } from './router';
 import {
   createCallerFactory,
@@ -59,14 +55,14 @@ export interface TRPCRootObject<
   TContext extends object,
   TMeta extends object,
   TOptions extends RuntimeConfigOptions<TContext, TMeta>,
-  $Root extends AnyRootTypes = CreateRootTypes<{
+  $Root extends AnyRootTypes = {
     ctx: TContext;
     meta: TMeta;
     errorShape: undefined extends TOptions['errorFormatter']
       ? DefaultErrorShape
       : inferErrorFormatterShape<TOptions['errorFormatter']>;
     transformer: undefined extends TOptions['transformer'] ? false : true;
-  }>,
+  },
 > {
   /**
    * Your router config
@@ -101,9 +97,7 @@ export interface TRPCRootObject<
    * Create a router
    * @see https://trpc.io/docs/v11/server/routers
    */
-  router: <TInput extends CreateRouterOptions>(
-    input: TInput,
-  ) => BuiltRouter<$Root, DecorateCreateRouterOptions<TInput>>;
+  router: RouterBuilder<$Root>;
 
   /**
    * Merge Routers
@@ -117,9 +111,7 @@ export interface TRPCRootObject<
    * Create a server-side caller for a router
    * @see https://trpc.io/docs/v11/server/server-side-calls
    */
-  createCallerFactory: <TRecord extends RouterRecord>(router: {
-    _def: RouterDef<$Root, TRecord>;
-  }) => RouterCaller<$Root, TRecord>;
+  createCallerFactory: RouterCallerFactory<$Root>;
 }
 
 class TRPCBuilder<TContext extends object, TMeta extends object> {

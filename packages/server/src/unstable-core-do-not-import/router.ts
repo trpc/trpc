@@ -135,17 +135,17 @@ function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
 /**
  * @internal
  */
-export type RouterDef<
+export interface RouterDef<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
-> = {
+> {
   _config: RootConfig<TRoot>;
   router: true;
   procedure?: never;
   procedures: TRecord;
   record: TRecord;
   lazy: Record<string, LazyLoader<AnyRouter>>;
-};
+}
 
 export interface Router<
   TRoot extends AnyRootTypes,
@@ -162,6 +162,12 @@ export type BuiltRouter<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > = Router<TRoot, TRecord> & TRecord;
+
+export interface RouterBuilder<TRoot extends AnyRootTypes> {
+  <TRecord extends RouterRecord>(
+    _: TRecord,
+  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TRecord>>;
+}
 
 export type AnyRouter = Router<any, any>;
 
@@ -418,7 +424,15 @@ export async function callProcedure(
   return proc(opts);
 }
 
-export function createCallerFactory<TRoot extends AnyRootTypes>() {
+export interface RouterCallerFactory<TRoot extends AnyRootTypes> {
+  <TRecord extends RouterRecord>(
+    router: Pick<Router<TRoot, TRecord>, '_def'>,
+  ): RouterCaller<TRoot, TRecord>;
+}
+
+export function createCallerFactory<
+  TRoot extends AnyRootTypes,
+>(): RouterCallerFactory<TRoot> {
   return function createCallerInner<TRecord extends RouterRecord>(
     router: Pick<Router<TRoot, TRecord>, '_def'>,
   ): RouterCaller<TRoot, TRecord> {

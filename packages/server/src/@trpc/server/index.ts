@@ -25,6 +25,8 @@ export {
   type AnyProcedure as AnyTRPCProcedure,
   type AnyRouter as AnyTRPCRouter,
   type RouterDef as TRPCRouterDef,
+  type RouterBuilder as TRPCRouterBuilder,
+  type RouterCallerFactory as TRPCRouterCallerFactory,
   type AnyRootTypes as AnyTRPCRootTypes,
   type AnyMiddlewareFunction as AnyTRPCMiddlewareFunction,
   type CombinedDataTransformer as TRPCCombinedDataTransformer,
