@@ -24,6 +24,7 @@ export {
   type inferTransformedSubscriptionOutput,
   type AnyProcedure as AnyTRPCProcedure,
   type AnyRouter as AnyTRPCRouter,
+  type RouterDef as TRPCRouterDef,
   type AnyRootTypes as AnyTRPCRootTypes,
   type AnyMiddlewareFunction as AnyTRPCMiddlewareFunction,
   type CombinedDataTransformer as TRPCCombinedDataTransformer,
@@ -38,6 +39,8 @@ export {
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
   type TRPCBuilder,
   type ProcedureBuilder as TRPCProcedureBuilder,
+  type RuntimeConfigOptions as TRPCRuntimeConfigOptions,
+  type TRPCRootObject,
   StandardSchemaV1Error,
   /**
    * @deprecated use `tracked(id, data)` instead

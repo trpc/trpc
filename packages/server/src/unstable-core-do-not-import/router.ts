@@ -132,18 +132,26 @@ function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
   return typeof input === 'function' && lazySymbol in input;
 }
 
+/**
+ * @internal
+ */
+export type RouterDef<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> = {
+  _config: RootConfig<TRoot>;
+  router: true;
+  procedure?: never;
+  procedures: TRecord;
+  record: TRecord;
+  lazy: Record<string, LazyLoader<AnyRouter>>;
+};
+
 export interface Router<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > {
-  _def: {
-    _config: RootConfig<TRoot>;
-    router: true;
-    procedure?: never;
-    procedures: TRecord;
-    record: TRecord;
-    lazy: Record<string, LazyLoader<AnyRouter>>;
-  };
+  _def: RouterDef<TRoot, TRecord>;
   /**
    * @see https://trpc.io/docs/v11/server/server-side-calls
    */
@@ -152,8 +160,8 @@ export interface Router<
 
 export type BuiltRouter<
   TRoot extends AnyRootTypes,
-  TDef extends RouterRecord,
-> = Router<TRoot, TDef> & TDef;
+  TRecord extends RouterRecord,
+> = Router<TRoot, TRecord> & TRecord;
 
 export type AnyRouter = Router<any, any>;
 
@@ -464,7 +472,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
 }
 
 /** @internal */
-type MergeRouters<
+export type MergeRouters<
   TRouters extends AnyRouter[],
   TRoot extends AnyRootTypes = TRouters[0]['_def']['_config']['$types'],
   TRecord extends RouterRecord = {},
