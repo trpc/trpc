@@ -5,9 +5,16 @@ import prettier from 'prettier';
 // minimal version of PackageJson type necessary
 export type PackageJson = {
   name: string;
+  main: string;
+  module: string;
+  types: string;
   exports: Record<
     string,
-    { import: string; require: string; default: string } | string
+    | {
+        import: { default: string; types: string };
+        require: { types: string; default: string };
+      }
+    | string
   >;
   files: string[];
   dependencies: Record<string, string>;
@@ -34,14 +41,15 @@ export async function generateEntrypoints(rawInputs: string[]) {
   const pkgJsonPath = path.resolve('package.json');
 
   const pkgJson: PackageJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
-
+  pkgJson.main = './dist/index.cjs';
+  pkgJson.module = './dist/index.mjs';
+  pkgJson.types = './dist/index.d.cts';
   pkgJson.files = ['dist', 'src', 'README.md'];
   pkgJson.exports = {
     './package.json': './package.json',
     '.': {
-      import: './dist/index.mjs',
-      require: './dist/index.js',
-      default: './dist/index.js',
+      import: { default: './dist/index.mjs', types: './dist/index.d.mts' },
+      require: { default: './dist/index.cjs', types: './dist/index.d.cts' },
     },
   };
 
@@ -75,11 +83,10 @@ export async function generateEntrypoints(rawInputs: string[]) {
 
       // write this entrypoint to the package.json exports field
       const esm = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.mjs');
-      const cjs = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.js');
+      const cjs = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.cjs');
       pkgJson.exports[`./${importPath}`] = {
-        import: esm,
-        require: cjs,
-        default: cjs,
+        import: { default: esm, types: esm.replace(/\.mjs$/, '.d.mts') },
+        require: { default: cjs, types: cjs.replace(/\.cjs$/, '.d.cts') },
       };
 
       // create the barrelfile, linking the declared exports to the compiled files in dist
@@ -89,18 +96,17 @@ export async function generateEntrypoints(rawInputs: string[]) {
       const resolvedImport = [
         ...Array(importDepth).fill('..'),
         'dist',
-        importPath,
+        pathWithoutSrc.replace(/\.(ts|tsx)$/, ''),
       ].join('/');
 
-      // index.js
-      const indexFile = path.resolve(importPath, 'index.js');
-      const indexFileContent = `module.exports = require('${resolvedImport}');\n`;
-      writeFileSyncRecursive(indexFile, indexFileContent);
-
-      // index.d.ts
-      const typeFile = path.resolve(importPath, 'index.d.ts');
-      const typeFileContent = `export * from '${resolvedImport}';\n`;
-      writeFileSyncRecursive(typeFile, typeFileContent);
+      // package.json
+      const packageJson = path.resolve(importPath, 'package.json');
+      const packageJsonContent = JSON.stringify({
+        main: `${resolvedImport}.cjs`,
+        module: `${resolvedImport}.mjs`,
+        types: `${resolvedImport}.d.cts`,
+      });
+      writeFileSyncRecursive(packageJson, packageJsonContent);
     });
 
   // write top-level directories to package.json 'files' field
@@ -134,7 +140,8 @@ export async function generateEntrypoints(rawInputs: string[]) {
 
   const turboPath = path.resolve('turbo.json');
   const turboJson = JSON.parse(fs.readFileSync(turboPath, 'utf8'));
-  turboJson.tasks['codegen-entrypoints'].outputs = [...scriptOutputs];
+  turboJson.tasks.build ??= {};
+  turboJson.tasks.build.outputs = [...scriptOutputs];
   const formattedTurboJson = await prettier.format(JSON.stringify(turboJson), {
     parser: 'json',
     ...(await prettier.resolveConfig(turboPath)),

@@ -27,16 +27,16 @@ export function genericRouter<TSchema extends (value: any) => unknown>(
 
 export type Foo = { x: Foo | number };
 
-const routerA = t.router({
+export const routerA = t.router({
   a: t.procedure.query(() => 'a'),
 });
-const routerB = t.router({
+export const routerB = t.router({
   b: t.procedure.query(() => 'b'),
 });
 
 const toUpperOutputValidator = (value: string) => value.toUpperCase();
 
-const appRouter = t.router({
+export const appRouter = t.router({
   foo: t.procedure.query(() => 'bar'),
   hello: t.procedure.use(someMiddleware).query(() => 'hello'),
   generic: genericRouter(toUpperOutputValidator, () => 'hello'),
