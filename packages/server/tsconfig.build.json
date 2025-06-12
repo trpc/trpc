@@ -2,8 +2,7 @@
   "extends": "../../tsconfig.build.json",
   "compilerOptions": {
     "declarationDir": "dist",
-    "types": ["node"],
-    "declarationMap": false
+    "types": ["node"]
   },
   "include": ["src"]
 }
