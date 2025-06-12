@@ -15,7 +15,6 @@
     "AUTH_GITHUB_SECRET"
   ],
   "tasks": {
-    "codegen-entrypoints": {},
     "codegen-tests": {
       "outputs": ["*/__generated__/bigBoi/**"]
     },
@@ -24,7 +23,7 @@
     },
     "ts-watch": {},
     "build": {
-      "dependsOn": ["^build", "codegen-entrypoints", "prebuild"],
+      "dependsOn": ["^build", "prebuild"],
       "outputs": [
         ".next/**",
         "!.next/cache/**",

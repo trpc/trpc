@@ -1,12 +1,13 @@
 {
   "name": "@trpc/client",
+  "type": "module",
   "version": "11.3.1",
   "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -22,48 +23,82 @@
     }
   },
   "scripts": {
-    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
-    "dev": "pnpm build --watch",
-    "codegen-entrypoints": "tsx entrypoints.script.ts",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "lint": "eslint --cache src",
     "ts-watch": "tsc --watch"
   },
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "default": "./dist/index.mjs",
+        "types": "./dist/index.d.mts"
+      },
+      "require": {
+        "default": "./dist/index.cjs",
+        "types": "./dist/index.d.cts"
+      }
     },
     "./links/httpBatchLink": {
-      "import": "./dist/links/httpBatchLink.mjs",
-      "require": "./dist/links/httpBatchLink.js",
-      "default": "./dist/links/httpBatchLink.js"
+      "import": {
+        "default": "./dist/links/httpBatchLink.mjs",
+        "types": "./dist/links/httpBatchLink.d.mts"
+      },
+      "require": {
+        "default": "./dist/links/httpBatchLink.cjs",
+        "types": "./dist/links/httpBatchLink.d.cts"
+      }
     },
     "./links/httpLink": {
-      "import": "./dist/links/httpLink.mjs",
-      "require": "./dist/links/httpLink.js",
-      "default": "./dist/links/httpLink.js"
+      "import": {
+        "default": "./dist/links/httpLink.mjs",
+        "types": "./dist/links/httpLink.d.mts"
+      },
+      "require": {
+        "default": "./dist/links/httpLink.cjs",
+        "types": "./dist/links/httpLink.d.cts"
+      }
     },
     "./links/loggerLink": {
-      "import": "./dist/links/loggerLink.mjs",
-      "require": "./dist/links/loggerLink.js",
-      "default": "./dist/links/loggerLink.js"
+      "import": {
+        "default": "./dist/links/loggerLink.mjs",
+        "types": "./dist/links/loggerLink.d.mts"
+      },
+      "require": {
+        "default": "./dist/links/loggerLink.cjs",
+        "types": "./dist/links/loggerLink.d.cts"
+      }
     },
     "./links/splitLink": {
-      "import": "./dist/links/splitLink.mjs",
-      "require": "./dist/links/splitLink.js",
-      "default": "./dist/links/splitLink.js"
+      "import": {
+        "default": "./dist/links/splitLink.mjs",
+        "types": "./dist/links/splitLink.d.mts"
+      },
+      "require": {
+        "default": "./dist/links/splitLink.cjs",
+        "types": "./dist/links/splitLink.d.cts"
+      }
     },
     "./links/wsLink/wsLink": {
-      "import": "./dist/links/wsLink/wsLink.mjs",
-      "require": "./dist/links/wsLink/wsLink.js",
-      "default": "./dist/links/wsLink/wsLink.js"
+      "import": {
+        "default": "./dist/links/wsLink/wsLink.mjs",
+        "types": "./dist/links/wsLink/wsLink.d.mts"
+      },
+      "require": {
+        "default": "./dist/links/wsLink/wsLink.cjs",
+        "types": "./dist/links/wsLink/wsLink.d.cts"
+      }
     },
     "./unstable-internals": {
-      "import": "./dist/unstable-internals.mjs",
-      "require": "./dist/unstable-internals.js",
-      "default": "./dist/unstable-internals.js"
+      "import": {
+        "default": "./dist/unstable-internals.mjs",
+        "types": "./dist/unstable-internals.d.mts"
+      },
+      "require": {
+        "default": "./dist/unstable-internals.cjs",
+        "types": "./dist/unstable-internals.d.cts"
+      }
     }
   },
   "files": [
@@ -88,9 +123,8 @@
     "eslint": "^9.26.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
-    "rollup": "^4.34.8",
+    "tsdown": "0.12.7",
     "tslib": "^2.8.1",
-    "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "undici": "^7.0.0",
     "ws": "^8.0.0"

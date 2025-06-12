@@ -1,7 +1,7 @@
 import { TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
-import { isObject, unsetMarker } from '../utils';
+import { isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
 import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
 
@@ -25,13 +25,14 @@ type ContentTypeHandler = {
  */
 function memo<TReturn>(fn: () => Promise<TReturn>) {
   let promise: Promise<TReturn> | null = null;
-  let value: TReturn | typeof unsetMarker = unsetMarker;
+  const sym = Symbol.for('@trpc/server/http/memo');
+  let value: TReturn | typeof sym = sym;
   return {
     /**
      * Lazily read the value
      */
     read: async (): Promise<TReturn> => {
-      if (value !== unsetMarker) {
+      if (value !== sym) {
         return value;
       }
 
@@ -56,7 +57,7 @@ function memo<TReturn>(fn: () => Promise<TReturn>) {
      * Get an already stored result
      */
     result: (): TReturn | undefined => {
-      return value !== unsetMarker ? value : undefined;
+      return value !== sym ? value : undefined;
     },
   };
 }
