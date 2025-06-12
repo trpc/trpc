@@ -22,7 +22,7 @@ export const input = [
 export default defineConfig({
   entry: input,
   dts: {
-    sourcemap: true,
+    // sourcemap: true,
     tsconfig: './tsconfig.build.json',
   },
   // unbundle: true,
