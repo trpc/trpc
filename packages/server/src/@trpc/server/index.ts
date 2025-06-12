@@ -37,6 +37,7 @@ export {
   type QueryProcedure as TRPCQueryProcedure,
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
   type TRPCBuilder,
+  type ProcedureBuilder as TRPCProcedureBuilder,
   StandardSchemaV1Error,
   /**
    * @deprecated use `tracked(id, data)` instead
@@ -55,9 +56,8 @@ export {
   /**
    * @internal
    */
-  type UnsetMarker,
+  type UnsetMarker as TRPCUnsetMarker,
 } from '../../unstable-core-do-not-import';
-
 
 export type {
   /**
