@@ -3,10 +3,18 @@ import {
   type DefaultErrorShape,
   type ErrorFormatter,
 } from './error/formatter';
+import type { MiddlewareBuilder, MiddlewareFunction } from './middleware';
 import { createMiddlewareFactory } from './middleware';
+import type { ProcedureBuilder } from './procedureBuilder';
 import { createBuilder } from './procedureBuilder';
-import type { CreateRootTypes } from './rootConfig';
+import type { AnyRootTypes, CreateRootTypes } from './rootConfig';
 import { isServerDefault, type RootConfig } from './rootConfig';
+import type {
+  AnyRouter,
+  MergeRouters,
+  RouterBuilder,
+  RouterCallerFactory,
+} from './router';
 import {
   createCallerFactory,
   createRouterFactory,
@@ -15,11 +23,15 @@ import {
 import type { DataTransformerOptions } from './transformer';
 import { defaultTransformer, getDataTransformer } from './transformer';
 import type { Unwrap, ValidateShape } from './types';
+import type { UnsetMarker } from './utils';
 
 type inferErrorFormatterShape<TType> =
   TType extends ErrorFormatter<any, infer TShape> ? TShape : DefaultErrorShape;
-interface RuntimeConfigOptions<TContext extends object, TMeta extends object>
-  extends Partial<
+/** @internal */
+export interface RuntimeConfigOptions<
+  TContext extends object,
+  TMeta extends object,
+> extends Partial<
     Omit<
       RootConfig<{
         ctx: TContext;
@@ -38,6 +50,69 @@ interface RuntimeConfigOptions<TContext extends object, TMeta extends object>
 }
 
 type ContextCallback = (...args: any[]) => object | Promise<object>;
+
+export interface TRPCRootObject<
+  TContext extends object,
+  TMeta extends object,
+  TOptions extends RuntimeConfigOptions<TContext, TMeta>,
+  $Root extends AnyRootTypes = {
+    ctx: TContext;
+    meta: TMeta;
+    errorShape: undefined extends TOptions['errorFormatter']
+      ? DefaultErrorShape
+      : inferErrorFormatterShape<TOptions['errorFormatter']>;
+    transformer: undefined extends TOptions['transformer'] ? false : true;
+  },
+> {
+  /**
+   * Your router config
+   * @internal
+   */
+  _config: RootConfig<$Root>;
+
+  /**
+   * Builder object for creating procedures
+   * @see https://trpc.io/docs/v11/server/procedures
+   */
+  procedure: ProcedureBuilder<
+    TContext,
+    TMeta,
+    object,
+    UnsetMarker,
+    UnsetMarker,
+    UnsetMarker,
+    UnsetMarker,
+    false
+  >;
+
+  /**
+   * Create reusable middlewares
+   * @see https://trpc.io/docs/v11/server/middlewares
+   */
+  middleware: <$ContextOverrides>(
+    fn: MiddlewareFunction<TContext, TMeta, object, $ContextOverrides, unknown>,
+  ) => MiddlewareBuilder<TContext, TMeta, $ContextOverrides, unknown>;
+
+  /**
+   * Create a router
+   * @see https://trpc.io/docs/v11/server/routers
+   */
+  router: RouterBuilder<$Root>;
+
+  /**
+   * Merge Routers
+   * @see https://trpc.io/docs/v11/server/merging-routers
+   */
+  mergeRouters: <TRouters extends AnyRouter[]>(
+    ...routerList: [...TRouters]
+  ) => MergeRouters<TRouters>;
+
+  /**
+   * Create a server-side caller for a router
+   * @see https://trpc.io/docs/v11/server/server-side-calls
+   */
+  createCallerFactory: RouterCallerFactory<$Root>;
+}
 
 class TRPCBuilder<TContext extends object, TMeta extends object> {
   /**
@@ -65,7 +140,7 @@ class TRPCBuilder<TContext extends object, TMeta extends object> {
    */
   create<TOptions extends RuntimeConfigOptions<TContext, TMeta>>(
     opts?: ValidateShape<TOptions, RuntimeConfigOptions<TContext, TMeta>>,
-  ) {
+  ): TRPCRootObject<TContext, TMeta, TOptions> {
     type $Root = CreateRootTypes<{
       ctx: TContext;
       meta: TMeta;
