@@ -113,6 +113,10 @@ export interface TRPCRootObject<
     ...routerList: [...TRouters]
   ) => MergeRouters<TRouters>;
 
+  /**
+   * Create a server-side caller for a router
+   * @see https://trpc.io/docs/v11/server/server-side-calls
+   */
   createCallerFactory: <TRecord extends RouterRecord>(router: {
     _def: RouterDef<$Root, TRecord>;
   }) => RouterCaller<$Root, TRecord>;
