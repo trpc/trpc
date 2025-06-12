@@ -27,6 +27,7 @@ export {
   type RouterDef as TRPCRouterDef,
   type RouterBuilder as TRPCRouterBuilder,
   type RouterCallerFactory as TRPCRouterCallerFactory,
+  type RootConfig as TRPCRootConfig,
   type AnyRootTypes as AnyTRPCRootTypes,
   type AnyMiddlewareFunction as AnyTRPCMiddlewareFunction,
   type CombinedDataTransformer as TRPCCombinedDataTransformer,
