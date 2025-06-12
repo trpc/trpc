@@ -51,7 +51,13 @@ export {
    */
   lazy as experimental_lazy,
   callProcedure as callTRPCProcedure,
+
+  /**
+   * @internal
+   */
+  type UnsetMarker,
 } from '../../unstable-core-do-not-import';
+
 
 export type {
   /**
