@@ -149,8 +149,8 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 <table>
   <tr>
    <td align="center"><a href="https://github.com/hidrb"><img src="https://avatars.githubusercontent.com/u/77294655?v=4&s=120" width="120" alt="Dr.%20B"/><br />Dr. B</a></td>
-   <td align="center"><a href="https://github.com/ryanmagoon"><img src="https://avatars.githubusercontent.com/u/5327290?v=4&s=120" width="120" alt="Ryan%20Magoon"/><br />Ryan Magoon</a></td>
    <td align="center"><a href="https://jonlu.ca/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/13029040?u=0c8fb3e7ae09935e8f2cb0637affeddfb98cc4c5&v=4&s=120" width="120" alt="JonLuca%20De%20Caro"/><br />JonLuca De Caro</a></td>
+   <td align="center"><a href="https://github.com/ryanmagoon"><img src="https://avatars.githubusercontent.com/u/5327290?v=4&s=120" width="120" alt="Ryan%20Magoon"/><br />Ryan Magoon</a></td>
   </tr>
 </table>
 
@@ -192,9 +192,9 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
   <tr>
    <td align="center"><a href="https://github.com/infodusha"><img src="https://avatars.githubusercontent.com/u/5677047?u=d503fccc70c9a66524639691b62853994335af0b&v=4&s=100" width="100" alt="Andrei%20Karushev"/><br />Andrei Karushev</a></td>
    <td align="center"><a href="https://venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/67328248?v=4&s=100" width="100" alt="Venue%20Ink"/><br />Venue Ink</a></td>
-   <td align="center"><a href="https://github.com/BrianCurliss"><img src="https://avatars.githubusercontent.com/u/1222949?v=4&s=100" width="100" alt="Brian%20Curliss"/><br />Brian Curliss</a></td>
+   <td align="center"><a href="https://bestkru.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/159320286?v=4&s=100" width="100" alt="BestKru"/><br />BestKru</a></td>
    <td align="center"><a href="https://github.com/enricoros"><img src="https://avatars.githubusercontent.com/u/32999?u=a1321c15b67f0f7de57813ba20be8562e8ffd67b&v=4&s=100" width="100" alt="Enrico%20Ros"/><br />Enrico Ros</a></td>
-   <td align="center"><a href="http://www.vojtechmalek.cz/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/5442796?v=4&s=100" width="100" alt="Vojt%C4%9Bch%20M%C3%A1lek"/><br />Vojtěch Málek</a></td>
+   <td align="center"><a href="https://github.com/BrianCurliss"><img src="https://avatars.githubusercontent.com/u/1222949?v=4&s=100" width="100" alt="Brian%20Curliss"/><br />Brian Curliss</a></td>
   </tr>
 </table>
 

@@ -265,7 +265,7 @@ export const allSponsors = [
   {
     "name": "Ryan Magoon",
     "imgSrc": "https://avatars.githubusercontent.com/u/5327290?v=4",
-    "weight": 14,
+    "weight": 4,
     "login": "ryanmagoon",
     "link": "https://github.com/ryanmagoon",
     "createdAt": 1729879193000
@@ -289,7 +289,7 @@ export const allSponsors = [
   {
     "name": "JonLuca De Caro",
     "imgSrc": "https://avatars.githubusercontent.com/u/13029040?u=0c8fb3e7ae09935e8f2cb0637affeddfb98cc4c5&v=4",
-    "weight": 6,
+    "weight": 8,
     "login": "jonluca",
     "link": "https://jonlu.ca/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1741823766000
@@ -305,18 +305,18 @@ export const allSponsors = [
   {
     "name": "Brian Curliss",
     "imgSrc": "https://avatars.githubusercontent.com/u/1222949?v=4",
-    "weight": 2,
+    "weight": 1,
     "login": "BrianCurliss",
     "link": "https://github.com/BrianCurliss",
     "createdAt": 1744722390000
   },
   {
-    "name": "Vojtěch Málek",
-    "imgSrc": "https://avatars.githubusercontent.com/u/5442796?v=4",
-    "weight": 1,
-    "login": "vojtesaak",
-    "link": "http://www.vojtechmalek.cz/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "createdAt": 1746523118000
+    "name": "BestKru",
+    "imgSrc": "https://avatars.githubusercontent.com/u/159320286?v=4",
+    "weight": 2,
+    "login": "BestKru",
+    "link": "https://bestkru.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "createdAt": 1745489411000
   },
   {
     "name": "Enrico Ros",
