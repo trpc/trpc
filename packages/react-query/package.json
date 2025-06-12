@@ -1,12 +1,13 @@
 {
   "name": "@trpc/react-query",
+  "type": "module",
   "version": "11.3.1",
   "description": "The tRPC React library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -16,33 +17,52 @@
   "scripts": {
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
     "codegen-tests": "run-p codegen:*",
-    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
-    "dev": "pnpm build --watch",
-    "codegen-entrypoints": "tsx entrypoints.script.ts",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "lint": "eslint --cache src",
     "ts-watch": "tsc --watch"
   },
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "default": "./dist/index.mjs",
+        "types": "./dist/index.d.mts"
+      },
+      "require": {
+        "default": "./dist/index.cjs",
+        "types": "./dist/index.d.cts"
+      }
     },
     "./rsc": {
-      "import": "./dist/rsc.mjs",
-      "require": "./dist/rsc.js",
-      "default": "./dist/rsc.js"
+      "import": {
+        "default": "./dist/rsc.mjs",
+        "types": "./dist/rsc.d.mts"
+      },
+      "require": {
+        "default": "./dist/rsc.cjs",
+        "types": "./dist/rsc.d.cts"
+      }
     },
     "./server": {
-      "import": "./dist/server/index.mjs",
-      "require": "./dist/server/index.js",
-      "default": "./dist/server/index.js"
+      "import": {
+        "default": "./dist/server/index.mjs",
+        "types": "./dist/server/index.d.mts"
+      },
+      "require": {
+        "default": "./dist/server/index.cjs",
+        "types": "./dist/server/index.d.cts"
+      }
     },
     "./shared": {
-      "import": "./dist/shared/index.mjs",
-      "require": "./dist/shared/index.js",
-      "default": "./dist/shared/index.js"
+      "import": {
+        "default": "./dist/shared/index.mjs",
+        "types": "./dist/shared/index.d.mts"
+      },
+      "require": {
+        "default": "./dist/shared/index.cjs",
+        "types": "./dist/shared/index.d.cts"
+      }
     }
   },
   "files": [
@@ -91,9 +111,8 @@
     "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "rollup": "^4.34.8",
+    "tsdown": "0.12.7",
     "tslib": "^2.8.1",
-    "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "zod": "^3.25.51",
     "zod-form-data": "^2.0.1"

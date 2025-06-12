@@ -132,18 +132,26 @@ function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
   return typeof input === 'function' && lazySymbol in input;
 }
 
+/**
+ * @internal
+ */
+export interface RouterDef<
+  TRoot extends AnyRootTypes,
+  TRecord extends RouterRecord,
+> {
+  _config: RootConfig<TRoot>;
+  router: true;
+  procedure?: never;
+  procedures: TRecord;
+  record: TRecord;
+  lazy: Record<string, LazyLoader<AnyRouter>>;
+}
+
 export interface Router<
   TRoot extends AnyRootTypes,
   TRecord extends RouterRecord,
 > {
-  _def: {
-    _config: RootConfig<TRoot>;
-    router: true;
-    procedure?: never;
-    procedures: TRecord;
-    record: TRecord;
-    lazy: Record<string, LazyLoader<AnyRouter>>;
-  };
+  _def: RouterDef<TRoot, TRecord>;
   /**
    * @see https://trpc.io/docs/v11/server/server-side-calls
    */
@@ -152,8 +160,14 @@ export interface Router<
 
 export type BuiltRouter<
   TRoot extends AnyRootTypes,
-  TDef extends RouterRecord,
-> = Router<TRoot, TDef> & TDef;
+  TRecord extends RouterRecord,
+> = Router<TRoot, TRecord> & TRecord;
+
+export interface RouterBuilder<TRoot extends AnyRootTypes> {
+  <TIn extends CreateRouterOptions>(
+    _: TIn,
+  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TIn>>;
+}
 
 export type AnyRouter = Router<any, any>;
 
@@ -200,6 +214,7 @@ const reservedWords = [
   'apply',
 ];
 
+/** @internal */
 export type CreateRouterOptions = {
   [key: string]:
     | AnyProcedure
@@ -208,6 +223,7 @@ export type CreateRouterOptions = {
     | Lazy<AnyRouter>;
 };
 
+/** @internal */
 export type DecorateCreateRouterOptions<
   TRouterOptions extends CreateRouterOptions,
 > = {
@@ -410,7 +426,15 @@ export async function callProcedure(
   return proc(opts);
 }
 
-export function createCallerFactory<TRoot extends AnyRootTypes>() {
+export interface RouterCallerFactory<TRoot extends AnyRootTypes> {
+  <TRecord extends RouterRecord>(
+    router: Pick<Router<TRoot, TRecord>, '_def'>,
+  ): RouterCaller<TRoot, TRecord>;
+}
+
+export function createCallerFactory<
+  TRoot extends AnyRootTypes,
+>(): RouterCallerFactory<TRoot> {
   return function createCallerInner<TRecord extends RouterRecord>(
     router: Pick<Router<TRoot, TRecord>, '_def'>,
   ): RouterCaller<TRoot, TRecord> {
@@ -464,7 +488,7 @@ export function createCallerFactory<TRoot extends AnyRootTypes>() {
 }
 
 /** @internal */
-type MergeRouters<
+export type MergeRouters<
   TRouters extends AnyRouter[],
   TRoot extends AnyRootTypes = TRouters[0]['_def']['_config']['$types'],
   TRecord extends RouterRecord = {},
