@@ -9,5 +9,5 @@
     "outDir": "build",
     "rootDir": "src"
   },
-  "include": ["src"]
+  "include": ["**/*.ts"]
 }
