@@ -48,8 +48,8 @@ export async function generateEntrypoints(rawInputs: string[]) {
   pkgJson.exports = {
     './package.json': './package.json',
     '.': {
-      import: { default: './dist/index.mjs', types: './dist/index.d.mts' },
-      require: { default: './dist/index.cjs', types: './dist/index.d.cts' },
+      import: { types: './dist/index.d.mts', default: './dist/index.mjs' },
+      require: { types: './dist/index.d.cts', default: './dist/index.cjs' },
     },
   };
 
@@ -85,8 +85,8 @@ export async function generateEntrypoints(rawInputs: string[]) {
       const esm = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.mjs');
       const cjs = './dist/' + pathWithoutSrc.replace(/\.(ts|tsx)$/, '.cjs');
       pkgJson.exports[`./${importPath}`] = {
-        import: { default: esm, types: esm.replace(/\.mjs$/, '.d.mts') },
-        require: { default: cjs, types: cjs.replace(/\.cjs$/, '.d.cts') },
+        import: { types: esm.replace(/\.mjs$/, '.d.mts'), default: esm },
+        require: { types: cjs.replace(/\.cjs$/, '.d.cts'), default: cjs },
       };
 
       // create the barrelfile, linking the declared exports to the compiled files in dist

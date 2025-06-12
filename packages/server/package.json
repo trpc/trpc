@@ -26,152 +26,152 @@
     "./package.json": "./package.json",
     ".": {
       "import": {
-        "default": "./dist/index.mjs",
-        "types": "./dist/index.d.mts"
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
       },
       "require": {
-        "default": "./dist/index.cjs",
-        "types": "./dist/index.d.cts"
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
       }
     },
     "./adapters/aws-lambda": {
       "import": {
-        "default": "./dist/adapters/aws-lambda/index.mjs",
-        "types": "./dist/adapters/aws-lambda/index.d.mts"
+        "types": "./dist/adapters/aws-lambda/index.d.mts",
+        "default": "./dist/adapters/aws-lambda/index.mjs"
       },
       "require": {
-        "default": "./dist/adapters/aws-lambda/index.cjs",
-        "types": "./dist/adapters/aws-lambda/index.d.cts"
+        "types": "./dist/adapters/aws-lambda/index.d.cts",
+        "default": "./dist/adapters/aws-lambda/index.cjs"
       }
     },
     "./adapters/express": {
       "import": {
-        "default": "./dist/adapters/express.mjs",
-        "types": "./dist/adapters/express.d.mts"
+        "types": "./dist/adapters/express.d.mts",
+        "default": "./dist/adapters/express.mjs"
       },
       "require": {
-        "default": "./dist/adapters/express.cjs",
-        "types": "./dist/adapters/express.d.cts"
+        "types": "./dist/adapters/express.d.cts",
+        "default": "./dist/adapters/express.cjs"
       }
     },
     "./adapters/fastify": {
       "import": {
-        "default": "./dist/adapters/fastify/index.mjs",
-        "types": "./dist/adapters/fastify/index.d.mts"
+        "types": "./dist/adapters/fastify/index.d.mts",
+        "default": "./dist/adapters/fastify/index.mjs"
       },
       "require": {
-        "default": "./dist/adapters/fastify/index.cjs",
-        "types": "./dist/adapters/fastify/index.d.cts"
+        "types": "./dist/adapters/fastify/index.d.cts",
+        "default": "./dist/adapters/fastify/index.cjs"
       }
     },
     "./adapters/fetch": {
       "import": {
-        "default": "./dist/adapters/fetch/index.mjs",
-        "types": "./dist/adapters/fetch/index.d.mts"
+        "types": "./dist/adapters/fetch/index.d.mts",
+        "default": "./dist/adapters/fetch/index.mjs"
       },
       "require": {
-        "default": "./dist/adapters/fetch/index.cjs",
-        "types": "./dist/adapters/fetch/index.d.cts"
+        "types": "./dist/adapters/fetch/index.d.cts",
+        "default": "./dist/adapters/fetch/index.cjs"
       }
     },
     "./adapters/next-app-dir": {
       "import": {
-        "default": "./dist/adapters/next-app-dir.mjs",
-        "types": "./dist/adapters/next-app-dir.d.mts"
+        "types": "./dist/adapters/next-app-dir.d.mts",
+        "default": "./dist/adapters/next-app-dir.mjs"
       },
       "require": {
-        "default": "./dist/adapters/next-app-dir.cjs",
-        "types": "./dist/adapters/next-app-dir.d.cts"
+        "types": "./dist/adapters/next-app-dir.d.cts",
+        "default": "./dist/adapters/next-app-dir.cjs"
       }
     },
     "./adapters/next": {
       "import": {
-        "default": "./dist/adapters/next.mjs",
-        "types": "./dist/adapters/next.d.mts"
+        "types": "./dist/adapters/next.d.mts",
+        "default": "./dist/adapters/next.mjs"
       },
       "require": {
-        "default": "./dist/adapters/next.cjs",
-        "types": "./dist/adapters/next.d.cts"
+        "types": "./dist/adapters/next.d.cts",
+        "default": "./dist/adapters/next.cjs"
       }
     },
     "./adapters/node-http": {
       "import": {
-        "default": "./dist/adapters/node-http/index.mjs",
-        "types": "./dist/adapters/node-http/index.d.mts"
+        "types": "./dist/adapters/node-http/index.d.mts",
+        "default": "./dist/adapters/node-http/index.mjs"
       },
       "require": {
-        "default": "./dist/adapters/node-http/index.cjs",
-        "types": "./dist/adapters/node-http/index.d.cts"
+        "types": "./dist/adapters/node-http/index.d.cts",
+        "default": "./dist/adapters/node-http/index.cjs"
       }
     },
     "./adapters/standalone": {
       "import": {
-        "default": "./dist/adapters/standalone.mjs",
-        "types": "./dist/adapters/standalone.d.mts"
+        "types": "./dist/adapters/standalone.d.mts",
+        "default": "./dist/adapters/standalone.mjs"
       },
       "require": {
-        "default": "./dist/adapters/standalone.cjs",
-        "types": "./dist/adapters/standalone.d.cts"
+        "types": "./dist/adapters/standalone.d.cts",
+        "default": "./dist/adapters/standalone.cjs"
       }
     },
     "./adapters/ws": {
       "import": {
-        "default": "./dist/adapters/ws.mjs",
-        "types": "./dist/adapters/ws.d.mts"
+        "types": "./dist/adapters/ws.d.mts",
+        "default": "./dist/adapters/ws.mjs"
       },
       "require": {
-        "default": "./dist/adapters/ws.cjs",
-        "types": "./dist/adapters/ws.d.cts"
+        "types": "./dist/adapters/ws.d.cts",
+        "default": "./dist/adapters/ws.cjs"
       }
     },
     "./http": {
       "import": {
-        "default": "./dist/http.mjs",
-        "types": "./dist/http.d.mts"
+        "types": "./dist/http.d.mts",
+        "default": "./dist/http.mjs"
       },
       "require": {
-        "default": "./dist/http.cjs",
-        "types": "./dist/http.d.cts"
+        "types": "./dist/http.d.cts",
+        "default": "./dist/http.cjs"
       }
     },
     "./observable": {
       "import": {
-        "default": "./dist/observable/index.mjs",
-        "types": "./dist/observable/index.d.mts"
+        "types": "./dist/observable/index.d.mts",
+        "default": "./dist/observable/index.mjs"
       },
       "require": {
-        "default": "./dist/observable/index.cjs",
-        "types": "./dist/observable/index.d.cts"
+        "types": "./dist/observable/index.d.cts",
+        "default": "./dist/observable/index.cjs"
       }
     },
     "./rpc": {
       "import": {
-        "default": "./dist/rpc.mjs",
-        "types": "./dist/rpc.d.mts"
+        "types": "./dist/rpc.d.mts",
+        "default": "./dist/rpc.mjs"
       },
       "require": {
-        "default": "./dist/rpc.cjs",
-        "types": "./dist/rpc.d.cts"
+        "types": "./dist/rpc.d.cts",
+        "default": "./dist/rpc.cjs"
       }
     },
     "./shared": {
       "import": {
-        "default": "./dist/shared.mjs",
-        "types": "./dist/shared.d.mts"
+        "types": "./dist/shared.d.mts",
+        "default": "./dist/shared.mjs"
       },
       "require": {
-        "default": "./dist/shared.cjs",
-        "types": "./dist/shared.d.cts"
+        "types": "./dist/shared.d.cts",
+        "default": "./dist/shared.cjs"
       }
     },
     "./unstable-core-do-not-import": {
       "import": {
-        "default": "./dist/unstable-core-do-not-import.mjs",
-        "types": "./dist/unstable-core-do-not-import.d.mts"
+        "types": "./dist/unstable-core-do-not-import.d.mts",
+        "default": "./dist/unstable-core-do-not-import.mjs"
       },
       "require": {
-        "default": "./dist/unstable-core-do-not-import.cjs",
-        "types": "./dist/unstable-core-do-not-import.d.cts"
+        "types": "./dist/unstable-core-do-not-import.d.cts",
+        "default": "./dist/unstable-core-do-not-import.cjs"
       }
     }
   },
