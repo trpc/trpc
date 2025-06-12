@@ -42,6 +42,7 @@ export {
   type CreateContextCallback,
   type MutationProcedure as TRPCMutationProcedure,
   type QueryProcedure as TRPCQueryProcedure,
+  type BuiltRouter as TRPCBuiltRouter,
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
   type TRPCBuilder,
   type ProcedureBuilder as TRPCProcedureBuilder,
@@ -53,6 +54,8 @@ export {
   type DefaultErrorData as TRPCDefaultErrorData,
   type TRPC_ERROR_CODE_KEY,
   type TRPC_ERROR_CODE_NUMBER,
+  type DecorateCreateRouterOptions as TRPCDecorateCreateRouterOptions,
+  type CreateRouterOptions as TRPCCreateRouterOptions,
   StandardSchemaV1Error,
   /**
    * @deprecated use `tracked(id, data)` instead

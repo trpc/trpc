@@ -164,9 +164,9 @@ export type BuiltRouter<
 > = Router<TRoot, TRecord> & TRecord;
 
 export interface RouterBuilder<TRoot extends AnyRootTypes> {
-  <TRecord extends RouterRecord>(
-    _: TRecord,
-  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TRecord>>;
+  <TIn extends CreateRouterOptions>(
+    _: TIn,
+  ): BuiltRouter<TRoot, DecorateCreateRouterOptions<TIn>>;
 }
 
 export type AnyRouter = Router<any, any>;
@@ -214,6 +214,7 @@ const reservedWords = [
   'apply',
 ];
 
+/** @internal */
 export type CreateRouterOptions = {
   [key: string]:
     | AnyProcedure
@@ -222,6 +223,7 @@ export type CreateRouterOptions = {
     | Lazy<AnyRouter>;
 };
 
+/** @internal */
 export type DecorateCreateRouterOptions<
   TRouterOptions extends CreateRouterOptions,
 > = {
