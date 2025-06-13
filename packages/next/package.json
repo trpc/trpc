@@ -33,62 +33,62 @@
     "./package.json": "./package.json",
     ".": {
       "import": {
-        "default": "./dist/index.mjs",
-        "types": "./dist/index.d.mts"
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
       },
       "require": {
-        "default": "./dist/index.cjs",
-        "types": "./dist/index.d.cts"
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
       }
     },
     "./app-dir/client": {
       "import": {
-        "default": "./dist/app-dir/client.mjs",
-        "types": "./dist/app-dir/client.d.mts"
+        "types": "./dist/app-dir/client.d.mts",
+        "default": "./dist/app-dir/client.mjs"
       },
       "require": {
-        "default": "./dist/app-dir/client.cjs",
-        "types": "./dist/app-dir/client.d.cts"
+        "types": "./dist/app-dir/client.d.cts",
+        "default": "./dist/app-dir/client.cjs"
       }
     },
     "./app-dir/links/nextCache": {
       "import": {
-        "default": "./dist/app-dir/links/nextCache.mjs",
-        "types": "./dist/app-dir/links/nextCache.d.mts"
+        "types": "./dist/app-dir/links/nextCache.d.mts",
+        "default": "./dist/app-dir/links/nextCache.mjs"
       },
       "require": {
-        "default": "./dist/app-dir/links/nextCache.cjs",
-        "types": "./dist/app-dir/links/nextCache.d.cts"
+        "types": "./dist/app-dir/links/nextCache.d.cts",
+        "default": "./dist/app-dir/links/nextCache.cjs"
       }
     },
     "./app-dir/links/nextHttp": {
       "import": {
-        "default": "./dist/app-dir/links/nextHttp.mjs",
-        "types": "./dist/app-dir/links/nextHttp.d.mts"
+        "types": "./dist/app-dir/links/nextHttp.d.mts",
+        "default": "./dist/app-dir/links/nextHttp.mjs"
       },
       "require": {
-        "default": "./dist/app-dir/links/nextHttp.cjs",
-        "types": "./dist/app-dir/links/nextHttp.d.cts"
+        "types": "./dist/app-dir/links/nextHttp.d.cts",
+        "default": "./dist/app-dir/links/nextHttp.cjs"
       }
     },
     "./app-dir/server": {
       "import": {
-        "default": "./dist/app-dir/server.mjs",
-        "types": "./dist/app-dir/server.d.mts"
+        "types": "./dist/app-dir/server.d.mts",
+        "default": "./dist/app-dir/server.mjs"
       },
       "require": {
-        "default": "./dist/app-dir/server.cjs",
-        "types": "./dist/app-dir/server.d.cts"
+        "types": "./dist/app-dir/server.d.cts",
+        "default": "./dist/app-dir/server.cjs"
       }
     },
     "./ssrPrepass": {
       "import": {
-        "default": "./dist/ssrPrepass.mjs",
-        "types": "./dist/ssrPrepass.d.mts"
+        "types": "./dist/ssrPrepass.d.mts",
+        "default": "./dist/ssrPrepass.mjs"
       },
       "require": {
-        "default": "./dist/ssrPrepass.cjs",
-        "types": "./dist/ssrPrepass.d.cts"
+        "types": "./dist/ssrPrepass.d.cts",
+        "default": "./dist/ssrPrepass.cjs"
       }
     }
   },

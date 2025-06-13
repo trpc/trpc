@@ -32,72 +32,72 @@
     "./package.json": "./package.json",
     ".": {
       "import": {
-        "default": "./dist/index.mjs",
-        "types": "./dist/index.d.mts"
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
       },
       "require": {
-        "default": "./dist/index.cjs",
-        "types": "./dist/index.d.cts"
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
       }
     },
     "./links/httpBatchLink": {
       "import": {
-        "default": "./dist/links/httpBatchLink.mjs",
-        "types": "./dist/links/httpBatchLink.d.mts"
+        "types": "./dist/links/httpBatchLink.d.mts",
+        "default": "./dist/links/httpBatchLink.mjs"
       },
       "require": {
-        "default": "./dist/links/httpBatchLink.cjs",
-        "types": "./dist/links/httpBatchLink.d.cts"
+        "types": "./dist/links/httpBatchLink.d.cts",
+        "default": "./dist/links/httpBatchLink.cjs"
       }
     },
     "./links/httpLink": {
       "import": {
-        "default": "./dist/links/httpLink.mjs",
-        "types": "./dist/links/httpLink.d.mts"
+        "types": "./dist/links/httpLink.d.mts",
+        "default": "./dist/links/httpLink.mjs"
       },
       "require": {
-        "default": "./dist/links/httpLink.cjs",
-        "types": "./dist/links/httpLink.d.cts"
+        "types": "./dist/links/httpLink.d.cts",
+        "default": "./dist/links/httpLink.cjs"
       }
     },
     "./links/loggerLink": {
       "import": {
-        "default": "./dist/links/loggerLink.mjs",
-        "types": "./dist/links/loggerLink.d.mts"
+        "types": "./dist/links/loggerLink.d.mts",
+        "default": "./dist/links/loggerLink.mjs"
       },
       "require": {
-        "default": "./dist/links/loggerLink.cjs",
-        "types": "./dist/links/loggerLink.d.cts"
+        "types": "./dist/links/loggerLink.d.cts",
+        "default": "./dist/links/loggerLink.cjs"
       }
     },
     "./links/splitLink": {
       "import": {
-        "default": "./dist/links/splitLink.mjs",
-        "types": "./dist/links/splitLink.d.mts"
+        "types": "./dist/links/splitLink.d.mts",
+        "default": "./dist/links/splitLink.mjs"
       },
       "require": {
-        "default": "./dist/links/splitLink.cjs",
-        "types": "./dist/links/splitLink.d.cts"
+        "types": "./dist/links/splitLink.d.cts",
+        "default": "./dist/links/splitLink.cjs"
       }
     },
     "./links/wsLink/wsLink": {
       "import": {
-        "default": "./dist/links/wsLink/wsLink.mjs",
-        "types": "./dist/links/wsLink/wsLink.d.mts"
+        "types": "./dist/links/wsLink/wsLink.d.mts",
+        "default": "./dist/links/wsLink/wsLink.mjs"
       },
       "require": {
-        "default": "./dist/links/wsLink/wsLink.cjs",
-        "types": "./dist/links/wsLink/wsLink.d.cts"
+        "types": "./dist/links/wsLink/wsLink.d.cts",
+        "default": "./dist/links/wsLink/wsLink.cjs"
       }
     },
     "./unstable-internals": {
       "import": {
-        "default": "./dist/unstable-internals.mjs",
-        "types": "./dist/unstable-internals.d.mts"
+        "types": "./dist/unstable-internals.d.mts",
+        "default": "./dist/unstable-internals.mjs"
       },
       "require": {
-        "default": "./dist/unstable-internals.cjs",
-        "types": "./dist/unstable-internals.d.cts"
+        "types": "./dist/unstable-internals.d.cts",
+        "default": "./dist/unstable-internals.cjs"
       }
     }
   },

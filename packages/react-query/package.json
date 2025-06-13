@@ -26,42 +26,42 @@
     "./package.json": "./package.json",
     ".": {
       "import": {
-        "default": "./dist/index.mjs",
-        "types": "./dist/index.d.mts"
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
       },
       "require": {
-        "default": "./dist/index.cjs",
-        "types": "./dist/index.d.cts"
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
       }
     },
     "./rsc": {
       "import": {
-        "default": "./dist/rsc.mjs",
-        "types": "./dist/rsc.d.mts"
+        "types": "./dist/rsc.d.mts",
+        "default": "./dist/rsc.mjs"
       },
       "require": {
-        "default": "./dist/rsc.cjs",
-        "types": "./dist/rsc.d.cts"
+        "types": "./dist/rsc.d.cts",
+        "default": "./dist/rsc.cjs"
       }
     },
     "./server": {
       "import": {
-        "default": "./dist/server/index.mjs",
-        "types": "./dist/server/index.d.mts"
+        "types": "./dist/server/index.d.mts",
+        "default": "./dist/server/index.mjs"
       },
       "require": {
-        "default": "./dist/server/index.cjs",
-        "types": "./dist/server/index.d.cts"
+        "types": "./dist/server/index.d.cts",
+        "default": "./dist/server/index.cjs"
       }
     },
     "./shared": {
       "import": {
-        "default": "./dist/shared/index.mjs",
-        "types": "./dist/shared/index.d.mts"
+        "types": "./dist/shared/index.d.mts",
+        "default": "./dist/shared/index.mjs"
       },
       "require": {
-        "default": "./dist/shared/index.cjs",
-        "types": "./dist/shared/index.d.cts"
+        "types": "./dist/shared/index.d.cts",
+        "default": "./dist/shared/index.cjs"
       }
     }
   },
