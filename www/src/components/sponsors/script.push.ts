@@ -19,6 +19,7 @@ const sections: Def = {
   diamond: [],
   gold: [
     //
+    'withgraphite',
     'tryretool',
   ],
   silver: [
