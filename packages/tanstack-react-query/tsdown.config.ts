@@ -4,6 +4,7 @@ import { generateEntrypoints } from '../../scripts/entrypoints';
 export const input = ['src/index.ts'];
 
 export default defineConfig({
+  target: ['node18', 'es2017'],
   entry: input,
   dts: {
     sourcemap: true,
