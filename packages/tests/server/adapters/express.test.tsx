@@ -273,4 +273,48 @@ test('bad url does not crash server', async () => {
       "text": "hello world",
     }
   `);
+  /**
+   * Custom content-type handler test
+   * Verifies that a custom content-type handler can deserialize and serialize bodies.
+   */
+  test('custom content-type handler', async () => {
+    const customType = 'application/custom';
+    const customHandler = {
+      deserialize: (raw: string | Uint8Array) => {
+        const body =
+          typeof raw === 'string' ? raw : Buffer.from(raw).toString('utf8');
+        // Simple custom format: key=value
+        const [key, value] = body.split('=');
+        return { [key!]: value };
+      },
+      serialize: (data: unknown) => {
+        // Serialize as key=value for the first key
+        if (typeof data === 'object' && data !== null) {
+          const key = Object.keys(data)[0]!;
+          return `${key}=${(data as any)[key]}`;
+        }
+        return '';
+      },
+    };
+
+    const t = await startServer({
+      contentHandlers: {
+        [customType]: customHandler,
+      },
+    });
+
+    const res = await fetch(`${t.url}/hello`, {
+      method: 'POST',
+      headers: {
+        'content-type': customType,
+        accept: customType,
+      },
+      body: 'who=custom',
+    });
+    const text = await res.text();
+    // The response should be serialized using the custom handler
+    expect(text).toBe('text=hello custom');
+
+    await t.close();
+  });
 });

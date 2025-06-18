@@ -7,6 +7,7 @@ import * as trpcNext from '@trpc/server/adapters/next';
 import type { TRPCErrorResponse, TRPCSuccessResponse } from '@trpc/server/rpc';
 import type { DefaultErrorShape } from '@trpc/server/unstable-core-do-not-import';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import';
+import { z } from 'zod';
 
 function createHttpServer(opts: {
   handler: trpcNext.NextApiHandler;
@@ -269,4 +270,64 @@ test('middleware passes the request', async () => {
   `);
 
   await server.close();
+  /**
+   * Custom content-type handler test
+   * Verifies that a custom content-type handler can deserialize and serialize bodies.
+   */
+  test('custom content-type handler', async () => {
+    const customType = 'application/custom';
+    const customHandler = {
+      deserialize: (raw: string | Uint8Array) => {
+        const body =
+          typeof raw === 'string' ? raw : Buffer.from(raw).toString('utf8');
+        const [key, value] = body.split('=');
+        return { [key!]: value };
+      },
+      serialize: (data: unknown) => {
+        if (typeof data === 'object' && data !== null) {
+          const key = Object.keys(data)[0]!;
+          return `${key}=${(data as any)[key]}`;
+        }
+        return '';
+      },
+    };
+
+    const t = initTRPC.create();
+    const router = t.router({
+      hello: t.procedure
+        .input(
+          z
+            .object({
+              who: z.string().nullish(),
+            })
+            .nullish(),
+        )
+        .query(({ input }) => ({
+          text: `hello ${input?.who ?? 'world'}`,
+        })),
+    });
+
+    const server = createHttpServer({
+      handler: trpcNext.createNextApiHandler({
+        router,
+        contentHandlers: {
+          [customType]: customHandler,
+        },
+      }),
+      query: {},
+    });
+
+    const res = await fetch(server.httpUrl, {
+      method: 'POST',
+      headers: {
+        'content-type': customType,
+        accept: customType,
+      },
+      body: 'who=custom',
+    });
+    const text = await res.text();
+    expect(text).toBe('text=hello custom');
+
+    await server.close();
+  });
 });

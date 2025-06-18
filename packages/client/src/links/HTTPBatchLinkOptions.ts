@@ -1,7 +1,7 @@
 import type { AnyClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import type { NonEmptyArray } from '../internals/types';
 import type { HTTPLinkBaseOptions } from './internals/httpUtils';
-import type { HTTPHeaders, Operation } from './types';
+import type { ContentHandlers, HTTPHeaders, Operation } from './types';
 
 export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
   HTTPLinkBaseOptions<TRoot> & {
@@ -15,7 +15,10 @@ export type HTTPBatchLinkOptions<TRoot extends AnyClientTypes> =
       | ((opts: {
           opList: NonEmptyArray<Operation>;
         }) => HTTPHeaders | Promise<HTTPHeaders>);
-
+    /**
+     * Custom content-type handlers for serialization/deserialization.
+     */
+    contentHandlers?: ContentHandlers;
     /**
      * Maximum number of calls in a single batch request
      * @default Infinity
