@@ -20,6 +20,7 @@ export const input = [
 ];
 
 export default defineConfig({
+  target: ['node18', 'es2017'],
   entry: input,
   dts: {
     sourcemap: true,
