@@ -32,6 +32,16 @@ export type DefaultErrorData = {
    * Stack trace of the error (only in development)
    */
   stack?: string;
+  /**
+   * Code from user-defined errors specified in the `.errors` method of the
+   * procedure builder.
+   */
+  customCode?: undefined;
+  /**
+   * Data sent when throwing user-defined errors specified in the `.errors`
+   * method of the procedure builder.
+   */
+  customData?: undefined;
 };
 
 /**

@@ -1959,6 +1959,7 @@ describe('subscriptions with createCaller', () => {
       SubscriptionProcedure<{
         input: string | null | undefined;
         output: AsyncIterable<Message, void, any>;
+        errors: void;
         meta: object;
       }>
     >();
@@ -2017,6 +2018,7 @@ describe('subscriptions with createCaller', () => {
       LegacyObservableSubscriptionProcedure<{
         input: string | null | undefined;
         output: Message;
+        errors: void;
         meta: object;
       }>
     >();

@@ -73,3 +73,36 @@ export class TRPCError extends Error {
     this.cause ??= cause;
   }
 }
+
+/** @internal */
+export type CustomTRPCErrorParams<TData> = {
+  message?: string;
+  cause?: unknown;
+  data: TData;
+};
+
+/** @internal */
+export class CustomTRPCError<
+  TTRPCErrorCode extends TRPC_ERROR_CODE_KEY,
+  TCustomCode extends string,
+  TData,
+> extends TRPCError {
+  public readonly customCode: TCustomCode;
+  public readonly customData: TData;
+
+  constructor(
+    opts: CustomTRPCErrorParams<TData> & {
+      code: TTRPCErrorCode;
+      customCode: TCustomCode;
+    },
+  ) {
+    super({
+      message: opts.message ?? opts.customCode,
+      code: opts.code,
+      cause: opts.cause,
+    });
+
+    this.customCode = opts.customCode;
+    this.customData = opts.data;
+  }
+}
