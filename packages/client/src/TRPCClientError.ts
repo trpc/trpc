@@ -1,13 +1,16 @@
 import type {
+  CustomTRPCError,
+  DefaultErrorData,
+  DefaultErrorShape,
   inferClientTypes,
+  inferProcedureErrors,
   InferrableClientTypes,
   Maybe,
+  Overwrite,
+  TRPC_ERROR_CODE_KEY,
   TRPCErrorResponse,
 } from '@trpc/server/unstable-core-do-not-import';
-import {
-  isObject,
-  type DefaultErrorShape,
-} from '@trpc/server/unstable-core-do-not-import';
+import { isObject } from '@trpc/server/unstable-core-do-not-import';
 
 type inferErrorShape<TInferrable extends InferrableClientTypes> =
   inferClientTypes<TInferrable>['errorShape'];
@@ -18,6 +21,20 @@ export interface TRPCClientErrorBase<TShape extends DefaultErrorShape> {
 }
 export type TRPCClientErrorLike<TInferrable extends InferrableClientTypes> =
   TRPCClientErrorBase<inferErrorShape<TInferrable>>;
+
+/**
+ * Utility type to ensure that the error data is overwritten correctly
+ */
+type overwriteErrorData<
+  TInferrable extends InferrableClientTypes,
+  // Adapted from type-fest's OverrideProperties type
+  // https://github.com/sindresorhus/type-fest/blob/main/source/override-properties.d.ts
+  TErrorData extends Partial<Record<keyof DefaultErrorData, unknown>> & {
+    [K in keyof TErrorData]: K extends keyof DefaultErrorData
+      ? TErrorData[K]
+      : never;
+  },
+> = Maybe<Overwrite<inferErrorShape<TInferrable>['data'], TErrorData>>;
 
 export function isTRPCClientError<TInferrable extends InferrableClientTypes>(
   cause: unknown,
@@ -42,6 +59,40 @@ function getMessageFromUnknownError(err: unknown, fallback: string): string {
     return err['message'];
   }
   return fallback;
+}
+
+/** @internal */
+export type attachError<T, TError> = T & {
+  /**
+   * These are just types, they can't be used at runtime
+   * @internal
+   */
+  $types: {
+    error: TError;
+  };
+};
+
+export async function safe<TOutput, TError>(
+  promise: attachError<Promise<TOutput>, TError>,
+): Promise<[Awaited<TOutput>, undefined] | [undefined, TError]> {
+  try {
+    const value = await promise;
+    return [value, undefined];
+  } catch (error) {
+    return [undefined, error as TError];
+  }
+}
+
+export async function* safeAsyncIterable<TOutput, TError>(
+  asyncIterable: attachError<AsyncIterable<TOutput, void, undefined>, TError>,
+): AsyncGenerator<[TOutput, undefined] | [undefined, TError], void, undefined> {
+  try {
+    for await (const value of asyncIterable) {
+      yield [value, undefined];
+    }
+  } catch (error) {
+    yield [undefined, error as TError];
+  }
 }
 
 export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
@@ -115,3 +166,34 @@ export class TRPCClientError<TRouterOrProcedure extends InferrableClientTypes>
     );
   }
 }
+
+interface CustomTRPCClientError<
+  TRouterOrProcedure extends InferrableClientTypes,
+  TTRPCErrorCode extends TRPC_ERROR_CODE_KEY,
+  TCustomCode extends string,
+  TData,
+> extends TRPCClientError<TRouterOrProcedure> {
+  readonly data: overwriteErrorData<
+    TRouterOrProcedure,
+    {
+      code: TTRPCErrorCode;
+      customCode: TCustomCode;
+      customData: TData;
+    }
+  >;
+}
+
+/** @internal */
+export type inferProcedureClientErrors<
+  TRoot extends InferrableClientTypes,
+  TProcedure,
+> =
+  inferProcedureErrors<TProcedure> extends Record<string, infer $Error>
+    ? $Error extends new (
+        opts: any,
+      ) => CustomTRPCError<infer $TRPCErrorCode, infer $CustomCode, infer $Data>
+      ?
+          | CustomTRPCClientError<TRoot, $TRPCErrorCode, $CustomCode, $Data>
+          | TRPCClientError<TRoot>
+      : TRPCClientError<TRoot>
+    : TRPCClientError<TRoot>;

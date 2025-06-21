@@ -18,7 +18,10 @@ import type { CreateTRPCClientOptions } from './createTRPCUntypedClient';
 import type { TRPCSubscriptionObserver } from './internals/TRPCUntypedClient';
 import { TRPCUntypedClient } from './internals/TRPCUntypedClient';
 import type { TRPCProcedureOptions } from './internals/types';
-import type { TRPCClientError } from './TRPCClientError';
+import type {
+  attachError,
+  inferProcedureClientErrors,
+} from './TRPCClientError';
 
 /**
  * @public
@@ -52,6 +55,7 @@ type ResolverDef = {
   output: any;
   transformer: boolean;
   errorShape: any;
+  error: any;
 };
 
 type coerceAsyncGeneratorToIterable<T> =
@@ -59,17 +63,23 @@ type coerceAsyncGeneratorToIterable<T> =
     ? AsyncIterable<$T, $Return, $Next>
     : T;
 
+type ResolverResult<TOutput, TError> =
+  TOutput extends Promise<AsyncIterable<infer $T, infer $Return, infer $Next>>
+    ? Promise<attachError<AsyncIterable<$T, $Return, $Next>, TError>>
+    : attachError<TOutput, TError>;
+
 /** @internal */
 export type Resolver<TDef extends ResolverDef> = (
   input: TDef['input'],
   opts?: TRPCProcedureOptions,
-) => Promise<coerceAsyncGeneratorToIterable<TDef['output']>>;
+) => ResolverResult<
+  Promise<coerceAsyncGeneratorToIterable<TDef['output']>>,
+  TDef['error']
+>;
 
 type SubscriptionResolver<TDef extends ResolverDef> = (
   input: TDef['input'],
-  opts: Partial<
-    TRPCSubscriptionObserver<TDef['output'], TRPCClientError<TDef>>
-  > &
+  opts: Partial<TRPCSubscriptionObserver<TDef['output'], TDef['error']>> &
     TRPCProcedureOptions,
 ) => Unsubscribable;
 
@@ -108,6 +118,7 @@ type DecoratedProcedureRecord<
               $Value
             >;
             errorShape: inferClientTypes<TRoot>['errorShape'];
+            error: inferProcedureClientErrors<TRoot, $Value>;
             transformer: inferClientTypes<TRoot>['transformer'];
           }
         >

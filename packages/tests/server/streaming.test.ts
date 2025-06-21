@@ -274,9 +274,7 @@ describe('no transformer', () => {
 
     const iterable = await client.iterable.query();
 
-    expectTypeOf(iterable).toEqualTypeOf<
-      AsyncIterable<number, string, unknown>
-    >();
+    expectTypeOf(iterable).toExtend<AsyncIterable<number, string, unknown>>();
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
       aggregated.push(value);
@@ -603,9 +601,7 @@ describe('with transformer', () => {
 
     const iterable = await client.iterable.query();
 
-    expectTypeOf(iterable).toEqualTypeOf<
-      AsyncIterable<number, string, unknown>
-    >();
+    expectTypeOf(iterable).toExtend<AsyncIterable<number, string, unknown>>();
 
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
