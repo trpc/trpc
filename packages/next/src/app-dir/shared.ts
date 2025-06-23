@@ -1,5 +1,6 @@
 import type {
   CreateTRPCClientOptions,
+  inferProcedureClientErrors,
   Resolver,
   TRPCClient,
 } from '@trpc/client';
@@ -31,6 +32,7 @@ export type UseProcedureRecord<
           input: inferProcedureInput<$Value>;
           output: inferTransformedProcedureOutput<TRoot, $Value>;
           errorShape: TRoot['errorShape'];
+          error: inferProcedureClientErrors<TRoot, $Value>;
           transformer: TRoot['transformer'];
         }>
       : $Value extends RouterRecord
