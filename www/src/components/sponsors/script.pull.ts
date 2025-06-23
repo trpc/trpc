@@ -224,6 +224,12 @@ async function main() {
           // sponsored from private account for 3 months
           value += 500 * 3;
         }
+        if (sponsor.login === 'madisonredtfeldt') {
+          sponsor.name = 'Mobb';
+          sponsor.login = 'mobb-dev';
+          sponsor.imgSrc = 'https://github.com/mobb-dev.png';
+          sponsor.link = 'https://mobb.ai';
+        }
         return {
           ...sponsor,
           value,
