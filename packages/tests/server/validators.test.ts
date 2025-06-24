@@ -2,7 +2,6 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import { createTRPCClient } from '@trpc/client';
 import type {
   AnyRouter,
   AnyTRPCProcedure,
