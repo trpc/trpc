@@ -13,7 +13,7 @@ export const topSponsors = [
   {
     "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 68,
+    "weight": 66,
     "login": "tryretool",
     "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
@@ -37,7 +37,7 @@ export const topSponsors = [
   {
     "name": "CodeRabbit",
     "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
-    "weight": 15,
+    "weight": 18,
     "login": "coderabbitai",
     "link": "https://www.coderabbit.ai/?utm_source=github&utm_medium=referral&ref=trpc&utm_campaign=trpc",
     "createdAt": 1737645299000
@@ -233,7 +233,7 @@ export const allSponsors = [
   {
     "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 68,
+    "weight": 66,
     "login": "tryretool",
     "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
@@ -281,7 +281,7 @@ export const allSponsors = [
   {
     "name": "CodeRabbit",
     "imgSrc": "https://avatars.githubusercontent.com/u/132028505?v=4",
-    "weight": 15,
+    "weight": 18,
     "login": "coderabbitai",
     "link": "https://www.coderabbit.ai/?utm_source=github&utm_medium=referral&ref=trpc&utm_campaign=trpc",
     "createdAt": 1737645299000
@@ -297,7 +297,7 @@ export const allSponsors = [
   {
     "name": "JonLuca De Caro",
     "imgSrc": "https://avatars.githubusercontent.com/u/13029040?u=0c8fb3e7ae09935e8f2cb0637affeddfb98cc4c5&v=4",
-    "weight": 8,
+    "weight": 7,
     "login": "jonluca",
     "link": "https://jonlu.ca/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1741823766000
@@ -313,7 +313,7 @@ export const allSponsors = [
   {
     "name": "Brian Curliss",
     "imgSrc": "https://avatars.githubusercontent.com/u/1222949?v=4",
-    "weight": 1,
+    "weight": 2,
     "login": "BrianCurliss",
     "link": "https://github.com/BrianCurliss",
     "createdAt": 1744722390000
@@ -341,5 +341,21 @@ export const allSponsors = [
     "login": "withgraphite",
     "link": "https://graphite.dev",
     "createdAt": 1749679200000
+  },
+  {
+    "name": "Augusto Zanoni",
+    "imgSrc": "https://avatars.githubusercontent.com/u/14273641?u=5c4aca9fe047360ae17627694be4e43ad1105f15&v=4",
+    "weight": 1,
+    "login": "balataca",
+    "link": "https://github.com/balataca",
+    "createdAt": 1750518485000
+  },
+  {
+    "name": "Mobb",
+    "imgSrc": "https://github.com/mobb-dev.png",
+    "weight": 7,
+    "login": "mobb-dev",
+    "link": "https://mobb.ai",
+    "createdAt": 1750601889000
   }
 ] as const;
