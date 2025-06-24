@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
+import { createTRPCClient } from '@trpc/client';
 import type { AnyRouter, AnyTRPCProcedure } from '@trpc/server';
 import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
 import { getProcedureAtPath } from '@trpc/server/unstable-core-do-not-import';
@@ -912,4 +913,36 @@ test('zod v3 default', () => {
         };
       }),
   });
+});
+
+test('zod branded types', async () => {
+  const t = initTRPC.create();
+
+  const AccountId = zod4.cuid2().brand<'EmailAccount'>();
+  type Types = NonNullable<(typeof AccountId)['~standard']['types']>;
+  const router = t.router({
+    num: t.procedure
+      .input(
+        zod4.object({
+          accountId: AccountId,
+        }),
+      )
+      .query((opts) => {
+        expectTypeOf(opts.input.accountId).toEqualTypeOf<Types['output']>();
+        return opts.input;
+      }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  const client = ctx.client;
+
+  const res = await client.num.query({ accountId: '123' });
+
+  expectTypeOf(res.accountId).toEqualTypeOf<Types['output']>();
+  expect(res).toMatchInlineSnapshot(`
+    Object {
+      "accountId": "123",
+    }
+  `);
 });
