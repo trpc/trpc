@@ -2,7 +2,12 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
-import type { AnyRouter, AnyTRPCProcedure } from '@trpc/server';
+import type {
+  AnyRouter,
+  AnyTRPCProcedure,
+  inferRouterInputs,
+  inferRouterOutputs,
+} from '@trpc/server';
 import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
 import { getProcedureAtPath } from '@trpc/server/unstable-core-do-not-import';
 import * as arktype from 'arktype';
@@ -912,4 +917,34 @@ test('zod v3 default', () => {
         };
       }),
   });
+});
+
+test('zod4 branded types', () => {
+  const t = initTRPC.create();
+
+  const AccountId = zod4.cuid2().brand<'EmailAccount'>();
+  type Types = NonNullable<(typeof AccountId)['~standard']['types']>;
+  const router = t.router({
+    num: t.procedure
+      .input(
+        zod4.object({
+          accountId: AccountId,
+        }),
+      )
+      .query((opts) => {
+        expectTypeOf(opts.input.accountId).toEqualTypeOf<Types['output']>();
+        return opts.input;
+      }),
+  });
+
+  type RouterInput = inferRouterInputs<typeof router>;
+  type RouterOutput = inferRouterOutputs<typeof router>;
+
+  type AccountIdInput = RouterInput['num']['accountId'];
+  //     ^?
+  type AccountIdOutput = RouterOutput['num']['accountId'];
+  //    ^?
+
+  expectTypeOf<AccountIdInput>().toEqualTypeOf<Types['input']>();
+  expectTypeOf<AccountIdOutput>().toEqualTypeOf<Types['output']>();
 });
