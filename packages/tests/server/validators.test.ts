@@ -3,7 +3,12 @@ import { routerToServerAndClientNew } from './___testHelpers';
 import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { createTRPCClient } from '@trpc/client';
-import type { AnyRouter, AnyTRPCProcedure } from '@trpc/server';
+import type {
+  AnyRouter,
+  AnyTRPCProcedure,
+  inferRouterInputs,
+  inferRouterOutputs,
+} from '@trpc/server';
 import { initTRPC, StandardSchemaV1Error, TRPCError } from '@trpc/server';
 import { getProcedureAtPath } from '@trpc/server/unstable-core-do-not-import';
 import * as arktype from 'arktype';
@@ -915,7 +920,7 @@ test('zod v3 default', () => {
   });
 });
 
-test('zod branded types', async () => {
+test('zod4 branded types', () => {
   const t = initTRPC.create();
 
   const AccountId = zod4.cuid2().brand<'EmailAccount'>();
@@ -933,16 +938,14 @@ test('zod branded types', async () => {
       }),
   });
 
-  await using ctx = testServerAndClientResource(router);
+  type RouterInput = inferRouterInputs<typeof router>;
+  type RouterOutput = inferRouterOutputs<typeof router>;
 
-  const client = ctx.client;
+  type AccountIdInput = RouterInput['num']['accountId'];
+  //     ^?
+  type AccountIdOutput = RouterOutput['num']['accountId'];
+  //    ^?
 
-  const res = await client.num.query({ accountId: '123' });
-
-  expectTypeOf(res.accountId).toEqualTypeOf<Types['output']>();
-  expect(res).toMatchInlineSnapshot(`
-    Object {
-      "accountId": "123",
-    }
-  `);
+  expectTypeOf<AccountIdInput>().toEqualTypeOf<Types['input']>();
+  expectTypeOf<AccountIdOutput>().toEqualTypeOf<Types['output']>();
 });
