@@ -31,6 +31,8 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
 export function HydrateClient(props: { children: React.ReactNode }) {
   const dehydratedState = dehydrate(getQueryClient());
 
+  console.dir(dehydratedState, { depth: null });
+
   return (
     <HydrationBoundary state={dehydratedState}>
       {props.children}
