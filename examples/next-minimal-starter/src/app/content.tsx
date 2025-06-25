@@ -11,13 +11,6 @@ function QueryExample() {
   const options = trpc.greeting.queryOptions();
   const result = useSuspenseQuery(options);
 
-  if (!result.data) {
-    return (
-      <div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
   return (
     <div>
       {/**
