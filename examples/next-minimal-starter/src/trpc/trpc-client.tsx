@@ -7,6 +7,9 @@ import {
   createTRPCClient,
   httpBatchLink,
   httpBatchStreamLink,
+  httpSubscriptionLink,
+  loggerLink,
+  splitLink,
 } from '@trpc/client';
 import { createTRPCContext } from '@trpc/tanstack-react-query';
 import { useState } from 'react';
@@ -15,6 +18,7 @@ import type { AppRouter } from './server/routers/_app';
 import { transformer } from './transformer';
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+
 let browserQueryClient: QueryClient;
 function getQueryClient() {
   if (typeof window === 'undefined') {
@@ -27,14 +31,6 @@ function getQueryClient() {
   // have a suspense boundary BELOW the creation of the query client
   if (!browserQueryClient) browserQueryClient = makeQueryClient();
   return browserQueryClient;
-}
-function getUrl() {
-  const base = (() => {
-    if (typeof window !== 'undefined') return '';
-    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-    return 'http://localhost:3000';
-  })();
-  return `${base}/api/trpc`;
 }
 
 export function TRPCReactProvider(
@@ -50,9 +46,19 @@ export function TRPCReactProvider(
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
       links: [
-        httpBatchStreamLink({
-          transformer,
-          url: getUrl(),
+        // adds pretty logs to your console in development and logs errors in production
+        loggerLink(),
+        splitLink({
+          // uses the httpSubscriptionLink for subscriptions
+          condition: (op) => op.type === 'subscription',
+          true: httpSubscriptionLink({
+            url: `/api/trpc`,
+            transformer,
+          }),
+          false: httpBatchLink({
+            url: `/api/trpc`,
+            transformer,
+          }),
         }),
       ],
     }),

@@ -21,6 +21,7 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
   queryOptions: T,
 ) {
   const queryClient = getQueryClient();
+
   if (queryOptions.queryKey[1]?.type === 'infinite') {
     void queryClient.prefetchInfiniteQuery(queryOptions as any);
   } else {
@@ -30,8 +31,6 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
 
 export function HydrateClient(props: { children: React.ReactNode }) {
   const dehydratedState = dehydrate(getQueryClient());
-
-  console.dir(dehydratedState, { depth: null });
 
   return (
     <HydrationBoundary state={dehydratedState}>

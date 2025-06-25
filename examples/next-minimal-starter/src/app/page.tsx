@@ -1,8 +1,8 @@
-import { HydrateClient, trpc } from '../trpc/server/server';
+import { HydrateClient, prefetch, trpc } from '../trpc/server/server';
 import { Content } from './content';
 
 export default function Page() {
-  void trpc.greeting.queryOptions();
+  void prefetch(trpc.greeting.queryOptions());
 
   return (
     <HydrateClient>
