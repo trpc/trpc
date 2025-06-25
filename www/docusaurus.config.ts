@@ -79,10 +79,6 @@ export default {
           label: 'Awesome tRPC Collection',
         },
         {
-          to: 'docs/client/nextjs',
-          label: 'Using Next.js',
-        },
-        {
           href: 'https://github.com/trpc/trpc',
           position: 'right',
           className: 'header-social-link header-github-link',
