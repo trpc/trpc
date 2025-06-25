@@ -56,6 +56,7 @@ export {
   type TRPC_ERROR_CODE_NUMBER,
   type DecorateCreateRouterOptions as TRPCDecorateCreateRouterOptions,
   type CreateRouterOptions as TRPCCreateRouterOptions,
+  type RouterCaller as TRPCRouterCaller,
   StandardSchemaV1Error,
   /**
    * @deprecated use `tracked(id, data)` instead
