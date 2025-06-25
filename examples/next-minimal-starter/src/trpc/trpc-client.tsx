@@ -55,7 +55,7 @@ export function TRPCReactProvider(
             url: `/api/trpc`,
             transformer,
           }),
-          false: httpBatchLink({
+          false: httpBatchStreamLink({
             url: `/api/trpc`,
             transformer,
           }),
