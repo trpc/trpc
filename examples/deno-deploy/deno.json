@@ -2,9 +2,9 @@
   "lock": false,
   "imports": {
     "std/": "https://deno.land/std@0.192.0/",
-    "@trpc/server": "https://esm.sh/@trpc/server@10.32.0",
-    "@trpc/server/": "https://esm.sh/@trpc/server@10.32.0/",
-    "@trpc/client": "https://esm.sh/@trpc/client@10.32.0",
+    "@trpc/server": "workspace:*",
+    "@trpc/server/": "workspace:*",
+    "@trpc/client": "workspace:*",
     "zod": "https://esm.sh/zod@3.21.4"
   },
   "tasks": {

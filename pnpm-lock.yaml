@@ -135,16 +135,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(@tanstack/react-query@5.80.3(react@19.1.0))(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next
+        specifier: workspace:*
         version: link:../../../packages/next
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
       '@trpc/tanstack-react-query':
-        specifier: npm:@trpc/tanstack-react-query
+        specifier: workspace:*
         version: link:../../../packages/tanstack-react-query
       '@types/node':
         specifier: 20.17.46
@@ -205,16 +205,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next
+        specifier: workspace:*
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
       next:
         specifier: ^15.3.1
@@ -251,16 +251,16 @@ importers:
   examples/.test/internal-types-export:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next
+        specifier: workspace:*
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
       next:
         specifier: ^15.3.1
@@ -294,7 +294,7 @@ importers:
         specifier: workspace:*
         version: link:../monotest-trpc
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
       zod:
         specifier: ^3.25.51
@@ -310,7 +310,7 @@ importers:
         specifier: workspace:*
         version: link:../monotest-trpc
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
       zod:
         specifier: ^3.25.51
@@ -329,13 +329,13 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../../packages/client
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
       react:
         specifier: ^19.1.0
@@ -357,7 +357,7 @@ importers:
   examples/.test/monotest-trpc:
     dependencies:
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
     devDependencies:
       '@monotest/tsconfig':
@@ -372,16 +372,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next
+        specifier: workspace:*
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
       next:
         specifier: ^15.3.1
@@ -427,16 +427,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: ^11.4.2
+        specifier: workspace:*
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^11.4.2
+        specifier: workspace:*
         version: link:../../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^11.4.2
+        specifier: workspace:*
         version: link:../../../packages/server
       next:
         specifier: ^15.3.1
@@ -476,10 +476,10 @@ importers:
   examples/bun:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
     devDependencies:
       '@types/bun':
@@ -501,10 +501,10 @@ importers:
   examples/cloudflare-workers:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       zod:
         specifier: ^3.25.51
@@ -535,13 +535,13 @@ importers:
   examples/express-minimal:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       express:
         specifier: ^5.0.0
@@ -584,13 +584,13 @@ importers:
   examples/express-server:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       express:
         specifier: ^5.0.0
@@ -636,10 +636,10 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       fastify:
         specifier: ^4.16.0
@@ -688,10 +688,10 @@ importers:
   examples/lambda-api-gateway:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       tsx:
         specifier: ^4.19.3
@@ -762,10 +762,10 @@ importers:
   examples/lazy-load:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       zod:
         specifier: ^3.25.51
@@ -793,10 +793,10 @@ importers:
   examples/minimal:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       superjson:
         specifier: ^1.12.4
@@ -845,13 +845,13 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../../packages/client
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
       react:
         specifier: ^19.1.0
@@ -882,7 +882,7 @@ importers:
   examples/minimal-content-types/server:
     dependencies:
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
       cors:
         specifier: ^2.8.5
@@ -928,13 +928,13 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
       '@trpc/tanstack-react-query':
-        specifier: npm:@trpc/tanstack-react-query
+        specifier: workspace:*
         version: link:../../../packages/tanstack-react-query
       react:
         specifier: ^19.1.0
@@ -965,7 +965,7 @@ importers:
   examples/minimal-react/server:
     dependencies:
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../../packages/server
       cors:
         specifier: ^2.8.5
@@ -996,16 +996,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next
+        specifier: workspace:*
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       next:
         specifier: ^15.3.1
@@ -1045,16 +1045,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next
+        specifier: workspace:*
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       next:
         specifier: ^15.3.1
@@ -1097,16 +1097,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next
+        specifier: workspace:*
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       next:
         specifier: ^15.3.1
@@ -1149,16 +1149,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next
+        specifier: workspace:*
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       next:
         specifier: ^15.3.1
@@ -1201,16 +1201,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next
+        specifier: workspace:*
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1301,16 +1301,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next
+        specifier: workspace:*
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1374,16 +1374,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/next':
-        specifier: npm:@trpc/next
+        specifier: workspace:*
         version: link:../../packages/next
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       clsx:
         specifier: ^2.0.0
@@ -1489,13 +1489,13 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(@tanstack/react-query@5.80.3(react@19.1.0))(react@19.1.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       class-variance-authority:
         specifier: ^0.7.0
@@ -1562,10 +1562,10 @@ importers:
   examples/nuxt:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       nuxt:
         specifier: ^3.16.1
@@ -1587,10 +1587,10 @@ importers:
   examples/soa:
     devDependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       '@types/node':
         specifier: 20.17.46
@@ -1614,13 +1614,13 @@ importers:
   examples/standalone-server:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/react-query':
-        specifier: npm:@trpc/react-query
+        specifier: workspace:*
         version: link:../../packages/react-query
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       ws:
         specifier: ^8.0.0
@@ -1678,13 +1678,13 @@ importers:
         specifier: ^1.120.15
         version: 1.120.15(@types/node@20.17.46)(db0@0.2.4(drizzle-orm@0.31.2(@cloudflare/workers-types@4.20250505.0)(@types/better-sqlite3@7.6.2)(@types/react@19.1.0)(bun-types@1.1.32)(postgres@3.4.4)(react@19.1.0)))(drizzle-orm@0.31.2(@cloudflare/workers-types@4.20250505.0)(@types/better-sqlite3@7.6.2)(@types/react@19.1.0)(bun-types@1.1.32)(postgres@3.4.4)(react@19.1.0))(encoding@0.1.13)(ioredis@5.4.1)(jiti@2.4.2)(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(terser@5.34.0)(tsx@4.19.4)(typescript@5.8.2)(vite@6.2.4(@types/node@20.17.46)(jiti@2.4.2)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.4)(yaml@2.7.0))(webpack-sources@3.2.3)(webpack@5.95.0(@swc/core@1.11.21))(xml2js@0.6.2)(yaml@2.7.0)
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       '@trpc/tanstack-react-query':
-        specifier: npm:@trpc/tanstack-react-query
+        specifier: workspace:*
         version: link:../../packages/tanstack-react-query
       react:
         specifier: ^19.1.0
@@ -1754,10 +1754,10 @@ importers:
   examples/vercel-edge-runtime:
     dependencies:
       '@trpc/client':
-        specifier: npm:@trpc/client
+        specifier: workspace:*
         version: link:../../packages/client
       '@trpc/server':
-        specifier: npm:@trpc/server
+        specifier: workspace:*
         version: link:../../packages/server
       zod:
         specifier: ^3.25.51

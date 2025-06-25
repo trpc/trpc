@@ -16,7 +16,7 @@
   "dependencies": {
     "@monotest/api-router01": "workspace:*",
     "@monotest/trpc": "workspace:*",
-    "@trpc/server": "npm:@trpc/server",
+    "@trpc/server": "workspace:*",
     "zod": "^3.25.51"
   },
   "devDependencies": {

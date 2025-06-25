@@ -13,8 +13,8 @@
     "test-start": "playwright test --project=prod"
   },
   "dependencies": {
-    "@trpc/client": "npm:@trpc/client",
-    "@trpc/server": "npm:@trpc/server",
+    "@trpc/client": "workspace:*",
+    "@trpc/server": "workspace:*",
     "nuxt": "^3.16.1",
     "trpc-nuxt": "^1.0.2",
     "vue": "^3.5.13",
