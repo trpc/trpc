@@ -272,6 +272,8 @@ async function createApp(opts: AppOptions = {}) {
 
   const { client } = createClient({ ...opts.clientOptions, port: url.port });
 
+  console.log({ instance });
+
   return { server: instance, stop, client, ee, url, opts };
 }
 
@@ -280,6 +282,7 @@ let app: Awaited<ReturnType<typeof createApp>>;
 describe('anonymous user', () => {
   beforeEach(async () => {
     orderedResults.length = 0;
+
     app = await createApp();
   });
 
@@ -287,7 +290,7 @@ describe('anonymous user', () => {
     await app.stop();
   });
 
-  test('fetch POST', async () => {
+  test.only('fetch POST', async () => {
     const data = { text: 'life', life: 42 };
     const req = await fetch(`http://localhost:${app.url.port}/hello`, {
       method: 'POST',

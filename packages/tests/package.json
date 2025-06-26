@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@fastify/busboy": "^3.0.0",
-    "@fastify/websocket": "^10.0.1",
+    "@fastify/websocket": "^11.0.0",
     "@js-temporal/polyfill": "^0.4.4",
     "@trpc/client": "11.4.2",
     "@trpc/server": "11.4.2",

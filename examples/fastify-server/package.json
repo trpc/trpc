@@ -16,7 +16,7 @@
     "test-start": "start-server-and-test 'node dist/server' http-get://localhost:2022 'node dist/client'"
   },
   "dependencies": {
-    "@fastify/websocket": "^10.0.1",
+    "@fastify/websocket": "^11.0.0",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/server": "npm:@trpc/server",
     "fastify": "^5.0.0",

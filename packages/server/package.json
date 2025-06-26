@@ -193,7 +193,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@fastify/websocket": "^10.0.1",
+    "@fastify/websocket": "^11.0.0",
     "@oxc-project/runtime": "0.69.0",
     "@tanstack/react-query": "^5.80.3",
     "@types/aws-lambda": "^8.10.149",
