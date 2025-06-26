@@ -272,8 +272,6 @@ async function createApp(opts: AppOptions = {}) {
 
   const { client } = createClient({ ...opts.clientOptions, port: url.port });
 
-  console.log({ instance });
-
   return { server: instance, stop, client, ee, url, opts };
 }
 
@@ -290,7 +288,7 @@ describe('anonymous user', () => {
     await app.stop();
   });
 
-  test.only('fetch POST', async () => {
+  test('fetch POST', async () => {
     const data = { text: 'life', life: 42 };
     const req = await fetch(`http://localhost:${app.url.port}/hello`, {
       method: 'POST',
