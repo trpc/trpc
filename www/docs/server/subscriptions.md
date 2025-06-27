@@ -115,6 +115,61 @@ export const subRouter = router({
 });
 ```
 
+## Pull data in a loop
+
+This recipe is useful when you want to periodically check for new data from a source like a database and push it to the client.
+
+```ts title="server.ts"
+import type { Post } from '@prisma/client';
+import { tracked } from '@trpc/server';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
+
+export const subRouter = router({
+  onPostAdd: publicProcedure
+    .input(
+      z.object({
+        // lastEventId is the last event id that the client has received
+        // On the first call, it will be whatever was passed in the initial setup
+        // If the client reconnects, it will be the last event id that the client received
+        // The id is the createdAt of the post
+        lastEventId: z.coerce.date().nullish(),
+      }),
+    )
+    .subscription(async function* (opts) {
+      // `opts.signal` is an AbortSignal that will be aborted when the client disconnects.
+      let lastEventId = opts.input?.lastEventId ?? null;
+
+      // We use a `while` loop that checks `!opts.signal.aborted`
+      while (!opts.signal!.aborted) {
+        const posts = await db.post.findMany({
+          // If we have a `lastEventId`, we only fetch posts created after it.
+          where: lastEventId
+            ? {
+                createdAt: {
+                  gt: lastEventId,
+                },
+              }
+            : undefined,
+          orderBy: {
+            createdAt: 'asc',
+          },
+        });
+
+        for (const post of posts) {
+          // `tracked` is a helper that sends an `id` with each event.
+          // This allows the client to resume from the last received event upon reconnection.
+          yield tracked(post.createdAt.toJSON(), post);
+          lastEventId = post.createdAt;
+        }
+
+        // Wait for a bit before polling again to avoid hammering the database.
+        await sleep(1_000);
+      }
+    }),
+});
+```
+
 ## Stopping a subscription from the server {#stopping-from-server}
 
 If you need to stop a subscription from the server, simply `return` in the generator function.
@@ -131,7 +186,7 @@ export const subRouter = router({
     )
     .subscription(async function* (opts) {
       let index = opts.input.lastEventId ?? 0;
-      while (true) {
+      while (!opts.signal!.aborted) {
         const idx = index++;
         if (idx > 100) {
           // With this, the subscription will stop and the client will disconnect
