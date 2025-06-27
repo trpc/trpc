@@ -27,6 +27,7 @@ import {
   makeAsyncResource,
   run,
 } from '@trpc/server/unstable-core-do-not-import';
+import type { TrackedData } from '@trpc/server/unstable-core-do-not-import';
 import type { RootConfig } from '@trpc/server/unstable-core-do-not-import/rootConfig';
 import type { Deferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
@@ -34,6 +35,7 @@ import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
+import type { Serialize } from './../../server/src/unstable-core-do-not-import/clientish/serialize';
 import { zAsyncIterable } from './zAsyncIterable';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -1105,7 +1107,7 @@ test('tracked() without transformer', async () => {
           );
           try {
             let idx = opts.input?.lastEventId ?? 0;
-            while (!opts.signal.aborted) {
+            while (!opts.signal!.aborted) {
               idx++;
               yield tracked(String(idx), idx);
               await puller;
@@ -1246,14 +1248,13 @@ test('server should not hang when client cancels subscription', async () => {
 });
 
 test('recipe: pull data in a loop', async () => {
+  type Post = {
+    id: string;
+    title: string;
+    createdAt: Date;
+  };
   await using ctx = run(() => {
     const t = initTRPC.create();
-
-    type Post = {
-      id: string;
-      title: string;
-      createdAt: Date;
-    };
 
     const posts: Post[] = [
       {
@@ -1315,21 +1316,13 @@ test('recipe: pull data in a loop', async () => {
     };
   });
 
-  type ReceivedPost = {
-    id: string;
-    data: {
-      id: string;
-      title: string;
-      createdAt: string;
-    };
-  };
-  const receivedPosts: ReceivedPost[] = [];
+  const receivedPosts: TrackedData<Serialize<Post>>[] = [];
 
   const sub = ctx.client.sub.subscribe(
     {} /* initial input */,
     {
       onData: (data) => {
-        receivedPosts.push(data as ReceivedPost);
+        receivedPosts.push(data);
       },
     },
   );
