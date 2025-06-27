@@ -1185,16 +1185,21 @@ test('server should not hang when client cancels subscription', async () => {
     const onError = vi.fn();
     const router = t.router({
       sub: t.procedure.subscription(async function* (opts) {
+        assert(opts.signal, 'no signal received');
         try {
           let idx = 0;
           while (true) {
             yield `hi ${idx++}`;
+            // Yield to the event loop.
+            // Without this, the `while (true)` loop will block the event loop,
+            // preventing the server from processing the client's disconnect event (`req.on('close')`),
+            // which is needed to abort the subscription's AbortSignal.
             await sleep(0);
           }
         } catch (err) {
           onError(err);
         } finally {
-          expect(opts.signal!.aborted).toBe(true);
+          expect(opts.signal.aborted).toBe(true);
           onFinally();
         }
       }),
@@ -1214,7 +1219,7 @@ test('server should not hang when client cancels subscription', async () => {
     const sub = ctx.client.sub.subscribe(undefined, {
       onData: (data) => {
         results.push(data);
-        if (results.length === 10) {
+        if (results.length === 3) {
           sub.unsubscribe();
           resolve(results);
         }
@@ -1222,7 +1227,6 @@ test('server should not hang when client cancels subscription', async () => {
     });
   });
 
-  expect(results).toHaveLength(10);
   await vi.waitFor(() => {
     expect(ctx.onFinally).toHaveBeenCalledTimes(1);
   });
@@ -1233,13 +1237,6 @@ test('server should not hang when client cancels subscription', async () => {
       "hi 0",
       "hi 1",
       "hi 2",
-      "hi 3",
-      "hi 4",
-      "hi 5",
-      "hi 6",
-      "hi 7",
-      "hi 8",
-      "hi 9",
     ]
   `);
 });
