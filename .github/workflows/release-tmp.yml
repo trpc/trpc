@@ -5,7 +5,7 @@ on:
     branches:
       # Replace this with the branch you want to release from
       # 👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇
-      - 'issues/6785'
+      - 'issues/6837-fast'
       # 👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆👆
     paths:
       - '.github/setup/*'
