@@ -128,14 +128,13 @@ import { publicProcedure, router } from '../trpc';
 export const subRouter = router({
   onPostAdd: publicProcedure
     .input(
-      z
-        .object({
-          // lastEventId is the last event id that the client has received
-          // On the first call, it will be whatever was passed in the initial setup
-          // If the client reconnects, it will be the last event id that the client received
-          // The id is the createdAt of the post
-          lastEventId: z.coerce.date().nullish(),
-        })
+      z.object({
+        // lastEventId is the last event id that the client has received
+        // On the first call, it will be whatever was passed in the initial setup
+        // If the client reconnects, it will be the last event id that the client received
+        // The id is the createdAt of the post
+        lastEventId: z.coerce.date().nullish(),
+      }),
     )
     .subscription(async function* (opts) {
       // `opts.signal` is an AbortSignal that will be aborted when the client disconnects.
