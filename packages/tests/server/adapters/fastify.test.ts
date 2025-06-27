@@ -280,7 +280,6 @@ let app: Awaited<ReturnType<typeof createApp>>;
 describe('anonymous user', () => {
   beforeEach(async () => {
     orderedResults.length = 0;
-
     app = await createApp();
   });
 
