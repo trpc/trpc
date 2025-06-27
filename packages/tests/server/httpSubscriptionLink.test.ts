@@ -1105,7 +1105,7 @@ test('tracked() without transformer', async () => {
           );
           try {
             let idx = opts.input?.lastEventId ?? 0;
-            while (true) {
+            while (!opts.signal.aborted) {
               idx++;
               yield tracked(String(idx), idx);
               await puller;
@@ -1188,7 +1188,7 @@ test('server should not hang when client cancels subscription', async () => {
         assert(opts.signal, 'no signal received');
         try {
           let idx = 0;
-          while (true) {
+          while (!opts.signal.aborted) {
             yield `hi ${idx++}`;
             // We must yield to the event loop to allow I/O events to be processed.
             // `await sleep(0)` uses `setTimeout(..., 0)`, which schedules a "macrotask".
@@ -1241,6 +1241,126 @@ test('server should not hang when client cancels subscription', async () => {
       "hi 0",
       "hi 1",
       "hi 2",
+    ]
+  `);
+});
+
+test('recipe: pull data in a loop', async () => {
+  await using ctx = run(() => {
+    const t = initTRPC.create();
+
+    type Post = {
+      id: string;
+      title: string;
+      createdAt: Date;
+    };
+
+    const posts: Post[] = [
+      {
+        id: '1',
+        title: 'Post 1',
+        createdAt: new Date('2021-01-01'),
+      },
+    ];
+
+    function addPost(post: Post) {
+      posts.push(post);
+    }
+
+    async function getPosts(lastEventId: Date | null): Promise<Post[]> {
+      if (!lastEventId) {
+        return posts;
+      }
+      return posts.filter((post) => post.createdAt > lastEventId);
+    }
+
+    const onFinally = vi.fn();
+    const onError = vi.fn();
+    const router = t.router({
+      sub: t.procedure
+        .input(
+          z.object({
+            lastEventId: z.coerce.date().nullish(),
+          }),
+        )
+        .subscription(async function* (opts) {
+          assert(opts.signal, 'no signal received');
+          try {
+            let lastEventId = opts.input.lastEventId ?? null;
+            while (!opts.signal.aborted) {
+              const posts = await getPosts(lastEventId);
+              for (const post of posts) {
+                yield tracked(post.createdAt.toJSON(), post);
+                lastEventId = post.createdAt;
+              }
+              // Sleep to allow I/O events to be processed.
+              // In a real app, it'd prob be `sleep(1000)` or similar
+              await sleep(0);
+            }
+          } catch (err) {
+            onError(err);
+          } finally {
+            expect(opts.signal.aborted).toBe(true);
+            onFinally();
+          }
+        }),
+    });
+
+    const opts = testServerAndClientResource(router);
+    return {
+      ...opts,
+      onFinally,
+      onError,
+      addPost,
+    };
+  });
+
+  type ReceivedPost = {
+    id: string;
+    data: {
+      id: string;
+      title: string;
+      createdAt: string;
+    };
+  };
+  const receivedPosts: ReceivedPost[] = [];
+
+  const sub = ctx.client.sub.subscribe(
+    {} /* initial input */,
+    {
+      onData: (data) => {
+        receivedPosts.push(data as ReceivedPost);
+      },
+    },
+  );
+
+  // wait for initial post
+  await vi.waitFor(() => {
+    expect(receivedPosts).toHaveLength(1);
+  });
+
+  // add a new post and wait for it to be received
+  ctx.addPost({
+    id: '2',
+    title: 'Post 2',
+    createdAt: new Date('2021-01-02'),
+  });
+
+  await vi.waitFor(() => {
+    expect(receivedPosts).toHaveLength(2);
+  });
+
+  sub.unsubscribe();
+
+  await vi.waitFor(() => {
+    expect(ctx.onFinally).toHaveBeenCalledTimes(1);
+  });
+  expect(ctx.onError).not.toHaveBeenCalled();
+
+  expect(receivedPosts.map((p) => p.data.title)).toMatchInlineSnapshot(`
+    Array [
+      "Post 1",
+      "Post 2",
     ]
   `);
 });
