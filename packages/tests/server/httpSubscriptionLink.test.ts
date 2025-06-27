@@ -7,7 +7,6 @@ import {
   suppressLogs,
   suppressLogsUntil,
 } from '@trpc/server/__tests__/suppressLogs';
-import { trpcServerResource } from '@trpc/server/__tests__/trpcServerResource';
 import type {
   OperationResultEnvelope,
   TRPCClientError,
@@ -23,19 +22,21 @@ import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
+import type {
+  Deferred,
+  RootConfig,
+  Serialize,
+  TrackedData,
+} from '@trpc/server/unstable-core-do-not-import';
 import {
+  createDeferred,
   makeAsyncResource,
   run,
 } from '@trpc/server/unstable-core-do-not-import';
-import type { TrackedData } from '@trpc/server/unstable-core-do-not-import';
-import type { RootConfig } from '@trpc/server/unstable-core-do-not-import/rootConfig';
-import type { Deferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
-import type { Serialize } from './../../server/src/unstable-core-do-not-import/clientish/serialize';
 import { zAsyncIterable } from './zAsyncIterable';
 
 const sleep = (ms = 1) => new Promise((resolve) => setTimeout(resolve, ms));
