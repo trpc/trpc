@@ -1,11 +1,13 @@
 import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import {
   suppressLogs,
   suppressLogsUntil,
 } from '@trpc/server/__tests__/suppressLogs';
+import { trpcServerResource } from '@trpc/server/__tests__/trpcServerResource';
 import type {
   OperationResultEnvelope,
   TRPCClientError,
@@ -21,7 +23,10 @@ import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
+import {
+  makeAsyncResource,
+  run,
+} from '@trpc/server/unstable-core-do-not-import';
 import type { RootConfig } from '@trpc/server/unstable-core-do-not-import/rootConfig';
 import type { Deferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
 import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
@@ -1169,4 +1174,72 @@ test('tracked() without transformer', async () => {
   await vi.waitFor(() => {
     expect(ctx.finallySpy).toHaveBeenCalledTimes(1);
   });
+});
+
+// regression test for https://github.com/trpc/trpc/issues/6193
+test('server should not hang when client cancels subscription', async () => {
+  await using ctx = run(() => {
+    const t = initTRPC.create();
+
+    const onFinally = vi.fn();
+    const onError = vi.fn();
+    const router = t.router({
+      sub: t.procedure.subscription(async function* (opts) {
+        try {
+          let idx = 0;
+          while (true) {
+            yield `hi ${idx++}`;
+            await sleep(0);
+          }
+        } catch (err) {
+          onError(err);
+        } finally {
+          expect(opts.signal!.aborted).toBe(true);
+          onFinally();
+        }
+      }),
+    });
+
+    const opts = testServerAndClientResource(router);
+    return {
+      ...opts,
+      onFinally,
+      onError,
+    };
+  });
+
+  const results = await new Promise<string[]>((resolve) => {
+    const results: string[] = [];
+
+    const sub = ctx.client.sub.subscribe(undefined, {
+      onData: (data) => {
+        results.push(data);
+        if (results.length === 10) {
+          sub.unsubscribe();
+          resolve(results);
+        }
+      },
+    });
+  });
+
+  expect(results).toHaveLength(10);
+  await vi.waitFor(() => {
+    expect(ctx.onFinally).toHaveBeenCalledTimes(1);
+  });
+  expect(ctx.onError).not.toHaveBeenCalled();
+
+  expect(results).toMatchInlineSnapshot(`
+    Array [
+      "hi 0",
+      "hi 1",
+      "hi 2",
+      "hi 3",
+      "hi 4",
+      "hi 5",
+      "hi 6",
+      "hi 7",
+      "hi 8",
+      "hi 9",
+    ]
+  `);
 });
