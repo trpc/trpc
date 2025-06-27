@@ -36,6 +36,22 @@ type overwriteErrorData<
   },
 > = Maybe<Overwrite<inferErrorShape<TInferrable>['data'], TErrorData>>;
 
+export interface CustomTRPCClientErrorLike<
+  TInferrable extends InferrableClientTypes,
+  TTRPCErrorCode extends TRPC_ERROR_CODE_KEY,
+  TCustomCode extends string,
+  TData,
+> extends TRPCClientErrorLike<TInferrable> {
+  readonly data: overwriteErrorData<
+    TInferrable,
+    {
+      code: TTRPCErrorCode;
+      customCode: TCustomCode;
+      customData: TData;
+    }
+  >;
+}
+
 export function isTRPCClientError<TInferrable extends InferrableClientTypes>(
   cause: unknown,
 ): cause is TRPCClientError<TInferrable> {
@@ -197,3 +213,18 @@ export type inferProcedureClientErrors<
           | TRPCClientError<TRoot>
       : TRPCClientError<TRoot>
     : TRPCClientError<TRoot>;
+
+/** @internal */
+export type inferProcedureClientErrorsLike<
+  TRoot extends InferrableClientTypes,
+  TProcedure,
+> =
+  inferProcedureErrors<TProcedure> extends Record<string, infer $Error>
+    ? $Error extends new (
+        opts: any,
+      ) => CustomTRPCError<infer $TRPCErrorCode, infer $CustomCode, infer $Data>
+      ?
+          | CustomTRPCClientErrorLike<TRoot, $TRPCErrorCode, $CustomCode, $Data>
+          | TRPCClientErrorLike<TRoot>
+      : TRPCClientErrorLike<TRoot>
+    : TRPCClientErrorLike<TRoot>;
