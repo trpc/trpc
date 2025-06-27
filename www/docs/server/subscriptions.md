@@ -136,7 +136,6 @@ export const subRouter = router({
           // The id is the createdAt of the post
           lastEventId: z.coerce.date().nullish(),
         })
-        .optional(),
     )
     .subscription(async function* (opts) {
       // `opts.signal` is an AbortSignal that will be aborted when the client disconnects.

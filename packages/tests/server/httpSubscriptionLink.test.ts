@@ -1090,11 +1090,9 @@ test('tracked() without transformer', async () => {
     const router = t.router({
       iterableInfinite: t.procedure
         .input(
-          z
-            .object({
-              lastEventId: z.coerce.number().min(0).optional(),
-            })
-            .optional(),
+          z.object({
+            lastEventId: z.coerce.number().min(0).optional(),
+          }),
         )
         .subscription(async function* (opts) {
           opts.signal?.addEventListener(
@@ -1106,7 +1104,7 @@ test('tracked() without transformer', async () => {
             { once: true },
           );
           try {
-            let idx = opts.input?.lastEventId ?? 0;
+            let idx = opts.input.lastEventId ?? 0;
             while (!opts.signal!.aborted) {
               idx++;
               yield tracked(String(idx), idx);
@@ -1147,13 +1145,16 @@ test('tracked() without transformer', async () => {
 
   const results: number[] = [];
 
-  const sub = ctx.client.iterableInfinite.subscribe(undefined, {
-    onData: (envelope) => {
-      expectTypeOf(envelope.data).toBeNumber();
+  const sub = ctx.client.iterableInfinite.subscribe(
+    {},
+    {
+      onData: (envelope) => {
+        expectTypeOf(envelope.data).toBeNumber();
 
-      results.push(envelope.data);
+        results.push(envelope.data);
+      },
     },
-  });
+  );
 
   await vi.waitFor(() => {
     expect(results).toHaveLength(1);
