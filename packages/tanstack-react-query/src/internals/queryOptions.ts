@@ -8,7 +8,7 @@ import type {
   UnusedSkipTokenOptions,
 } from '@tanstack/react-query';
 import { queryOptions, skipToken } from '@tanstack/react-query';
-import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
+import type { TRPCUntypedClient } from '@trpc/client';
 import type {
   coerceAsyncIterableToArray,
   DistributiveOmit,
@@ -101,58 +101,20 @@ interface UnusedSkipTokenTRPCQueryOptionsOut<TQueryFnData, TOutput, TError>
 export interface TRPCQueryOptions<TDef extends ResolverDef> {
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
-    opts: DefinedTRPCQueryOptionsIn<
-      TQueryFnData,
-      TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>
-    >,
-  ): DefinedTRPCQueryOptionsOut<
-    TQueryFnData,
-    TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>
-  >;
+    opts: DefinedTRPCQueryOptionsIn<TQueryFnData, TData, TDef['error']>,
+  ): DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TDef['error']>;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'],
     opts?: UnusedSkipTokenTRPCQueryOptionsIn<
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>
+      TDef['error']
     >,
-  ): UnusedSkipTokenTRPCQueryOptionsOut<
-    TQueryFnData,
-    TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>
-  >;
+  ): UnusedSkipTokenTRPCQueryOptionsOut<TQueryFnData, TData, TDef['error']>;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
-    opts?: UndefinedTRPCQueryOptionsIn<
-      TQueryFnData,
-      TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>
-    >,
-  ): UndefinedTRPCQueryOptionsOut<
-    TQueryFnData,
-    TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>
-  >;
+    opts?: UndefinedTRPCQueryOptionsIn<TQueryFnData, TData, TDef['error']>,
+  ): UndefinedTRPCQueryOptionsOut<TQueryFnData, TData, TDef['error']>;
 }
 
 type AnyTRPCQueryOptionsIn =

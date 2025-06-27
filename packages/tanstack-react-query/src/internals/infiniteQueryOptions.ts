@@ -8,7 +8,7 @@ import type {
   UnusedSkipTokenInfiniteOptions,
 } from '@tanstack/react-query';
 import { infiniteQueryOptions, skipToken } from '@tanstack/react-query';
-import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
+import type { TRPCUntypedClient } from '@trpc/client';
 import type { DistributiveOmit } from '@trpc/server/unstable-core-do-not-import';
 import type {
   ExtractCursorType,
@@ -147,19 +147,13 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>
+      TDef['error']
     >,
   ): DefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>
+    TDef['error']
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'],
@@ -167,19 +161,13 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>
+      TDef['error']
     >,
   ): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
     TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>
+    TDef['error']
   >;
   <TQueryFnData extends TDef['output'], TData = TQueryFnData>(
     input: TDef['input'] | SkipToken,
@@ -187,19 +175,13 @@ export interface TRPCInfiniteQueryOptions<TDef extends ResolverDef> {
       TDef['input'],
       TQueryFnData,
       TData,
-      TRPCClientErrorLike<{
-        transformer: TDef['transformer'];
-        errorShape: TDef['errorShape'];
-      }>
+      TDef['error']
     >,
   ): UndefinedTRPCInfiniteQueryOptionsOut<
     TDef['input'],
     TQueryFnData,
     TData,
-    TRPCClientErrorLike<{
-      transformer: TDef['transformer'];
-      errorShape: TDef['errorShape'];
-    }>
+    TDef['error']
   >;
 }
 
