@@ -1190,10 +1190,14 @@ test('server should not hang when client cancels subscription', async () => {
           let idx = 0;
           while (true) {
             yield `hi ${idx++}`;
-            // Yield to the event loop.
-            // Without this, the `while (true)` loop will block the event loop,
-            // preventing the server from processing the client's disconnect event (`req.on('close')`),
-            // which is needed to abort the subscription's AbortSignal.
+            // We must yield to the event loop to allow I/O events to be processed.
+            // `await sleep(0)` uses `setTimeout(..., 0)`, which schedules a "macrotask".
+            // This allows the event loop to complete its current work, process I/O (like a client disconnect),
+            // and then resume the generator.
+            //
+            // Using `await new Promise(resolve => process.nextTick(resolve))` or `await Promise.resolve()` would not work.
+            // They schedule "microtasks" which would execute before the next event loop phase,
+            // creating a "hot loop" that starves I/O and prevents the disconnect event from being processed.
             await sleep(0);
           }
         } catch (err) {
