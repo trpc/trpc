@@ -67,7 +67,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
             signal: raceAbortSignals(batchSignals, abortController.signal),
             type,
             contentTypeHeader: 'application/json',
-            trpcAcceptHeader: 'application/jsonl',
+            trpcAcceptHeader: 'text/event-stream',
             getUrl,
             getBody,
             inputs,
@@ -100,6 +100,7 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
               });
             },
             abortController,
+            contentType: 'text/event-stream',
           });
           const promises = Object.keys(batchOps).map(
             async (key): Promise<HTTPResult> => {

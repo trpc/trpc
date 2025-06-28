@@ -110,6 +110,8 @@ export type ProducerOnError = (opts: {
   error: unknown;
   path: PathArray;
 }) => void;
+
+type ProducerVariant = 'application/jsonl' | 'text/event-stream';
 export interface JSONLProducerOptions {
   serialize?: Serialize;
   data: Record<string, unknown> | unknown[];
@@ -122,6 +124,7 @@ export interface JSONLProducerOptions {
    * @default undefined
    */
   pingMs?: number;
+  variant: ProducerVariant;
 }
 
 class MaxDepthError extends Error {
@@ -277,11 +280,11 @@ async function* createBatchStreamProducer(
  * @see https://jsonlines.org/
  */
 export function jsonlStreamProducer(opts: JSONLProducerOptions) {
-  let stream = readableStreamFrom(createBatchStreamProducer(opts));
+  let sourceStream = readableStreamFrom(createBatchStreamProducer(opts));
 
   const { serialize } = opts;
   if (serialize) {
-    stream = stream.pipeThrough(
+    sourceStream = sourceStream.pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
           if (chunk === PING_SYM) {
@@ -294,19 +297,43 @@ export function jsonlStreamProducer(opts: JSONLProducerOptions) {
     );
   }
 
-  return stream
-    .pipeThrough(
-      new TransformStream({
-        transform(chunk, controller) {
-          if (chunk === PING_SYM) {
-            controller.enqueue(' ');
-          } else {
-            controller.enqueue(JSON.stringify(chunk) + '\n');
-          }
-        },
-      }),
-    )
-    .pipeThrough(new TextEncoderStream());
+  switch (opts.variant) {
+    case 'application/jsonl': {
+      return sourceStream
+        .pipeThrough(
+          new TransformStream({
+            transform(chunk, controller) {
+              if (chunk === PING_SYM) {
+                controller.enqueue(' ');
+              } else {
+                controller.enqueue(JSON.stringify(chunk) + '\n');
+              }
+            },
+          }),
+        )
+        .pipeThrough(new TextEncoderStream());
+    }
+    case 'text/event-stream': {
+      type EventStreamEvent = `data:${string}\n\n` | 'ping:\n\n';
+
+      return sourceStream
+        .pipeThrough(
+          new TransformStream({
+            transform(
+              chunk,
+              controller: TransformStreamDefaultController<EventStreamEvent>,
+            ) {
+              if (chunk === PING_SYM) {
+                controller.enqueue('ping:\n\n');
+              } else {
+                controller.enqueue(`data:${JSON.stringify(chunk)}\n\n`);
+              }
+            },
+          }),
+        )
+        .pipeThrough(new TextEncoderStream());
+    }
+  }
 }
 
 class AsyncError extends Error {
@@ -509,10 +536,16 @@ export async function jsonlStreamConsumer<THead>(opts: {
    * This `AbortController` will be triggered when there are no more listeners to the stream.
    */
   abortController: AbortController;
+  contentType: string;
 }) {
   const { deserialize = (v) => v } = opts;
 
-  let source = createConsumerStream<Head>(opts.from);
+  const variant: ProducerVariant =
+    opts.contentType === 'text/event-stream'
+      ? 'text/event-stream'
+      : 'application/jsonl';
+
+  let source = createConsumerStream<Head>(opts.from, variant);
   if (deserialize) {
     source = source.pipeThrough(
       new TransformStream({

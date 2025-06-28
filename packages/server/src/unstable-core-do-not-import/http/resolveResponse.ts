@@ -502,10 +502,21 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     }
 
     // batch response handlers
-    if (info.accept === 'application/jsonl') {
+    if (
+      info.accept === 'application/jsonl' ||
+      info.accept === 'text/event-stream'
+    ) {
       // httpBatchStreamLink
-      headers.set('content-type', 'text/event-stream+json');
+      headers.set('content-type', info.accept);
       headers.set('transfer-encoding', 'chunked');
+      headers.set('cache-control', 'no-cache, no-transform');
+      headers.set('x-accel-buffering', 'no');
+      headers.set('connection', 'keep-alive');
+
+      // 'Content-Type': 'text/event-stream',
+      // 'Cache-Control': 'no-cache, no-transform',
+      // 'X-Accel-Buffering': 'no',
+      // Connection: 'keep-alive',
       const headResponse = initResponse({
         ctx: ctxManager.valueOrUndefined(),
         info,
@@ -516,6 +527,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       });
       const stream = jsonlStreamProducer({
         ...config.jsonl,
+        variant: info.accept,
         /**
          * Example structure for `maxDepth: 4`:
          * {

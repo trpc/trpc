@@ -55,7 +55,7 @@ export interface HTTPBaseHandlerOptions<TRouter extends AnyRouter, TRequest>
   responseMeta?: ResponseMetaFn<TRouter>;
 }
 
-export type TRPCAcceptHeader = 'application/jsonl';
+export type TRPCAcceptHeader = 'application/jsonl' | 'text/event-stream';
 
 export interface TRPCRequestInfoProcedureCall {
   path: string;
