@@ -1,0 +1,90 @@
+---
+title: Typescript
+description: Generate docs from Typescript definitions
+---
+
+## Usage
+
+```package-install
+fumadocs-typescript
+```
+
+### UI Integration
+
+It comes with the `AutoTypeTable` component. Learn more about [Auto Type Table](/docs/ui/components/auto-type-table).
+
+### MDX Integration
+
+You can use it as a remark plugin:
+
+```ts title="source.config.ts" tab="Fumadocs MDX"
+import { remarkAutoTypeTable, createGenerator } from 'fumadocs-typescript';
+import { defineConfig } from 'fumadocs-mdx/config';
+
+const generator = createGenerator();
+
+export default defineConfig({
+  mdxOptions: {
+    remarkPlugins: [[remarkAutoTypeTable, { generator }]],
+  },
+});
+```
+
+```ts tab="MDX Compiler"
+import { remarkAutoTypeTable, createGenerator } from 'fumadocs-typescript';
+import { compile } from '@mdx-js/mdx';
+
+const generator = createGenerator();
+
+await compile('...', {
+  remarkPlugins: [[remarkAutoTypeTable, { generator }]],
+});
+```
+
+It gives you a `auto-type-table` component.
+
+You can use it like [Auto Type Table](/docs/ui/components/auto-type-table), but with additional rules:
+
+- The value of attributes must be string.
+- `path` accepts a path relative to the MDX file itself.
+- You also need to add [`TypeTable`](/docs/ui/components/type-table) to MDX components.
+
+```ts title="path/to/file.ts"
+export interface MyInterface {
+  name: string;
+}
+```
+
+```mdx title="page.mdx"
+<auto-type-table path="./path/to/file.ts" name="MyInterface" />
+```
+
+## Annotations
+
+### Hide
+
+Hide a field by adding `@internal` tsdoc tag.
+
+```ts
+interface MyInterface {
+  /**
+   * @internal
+   */
+  cache: number;
+}
+```
+
+### Specify Type Name
+
+You can specify the name of a type with the `@remarks` tsdoc tag.
+
+```ts
+interface MyInterface {
+  /**
+   * @remarks `timestamp` Returned by API. // [!code highlight]
+   */
+  time: number;
+}
+```
+
+This will make the type of `time` property to be shown as `timestamp`.

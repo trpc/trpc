@@ -1,0 +1,74 @@
+---
+title: Comparisons
+description: How is Fumadocs different from other existing frameworks?
+icon: GitCompareArrows
+---
+
+## Nextra
+
+Fumadocs is highly inspired by Nextra. For example, the Routing Conventions. That is why
+`meta.json` also exists in Fumadocs.
+
+Nextra is more opinionated than Fumadocs. Fumadocs is accelerated by App Router. As a result, It provides many server-side functions, and you have to
+configure things manually compared to simply editing a configuration file.
+
+Fumadocs works great if you want more control over everything, such as
+adding it to an existing codebase or implementing advanced routing.
+
+### Feature Table
+
+| Feature             | Fumadocs     | Nextra                    |
+| ------------------- | ------------ | ------------------------- |
+| Static Generation   | Yes          | Yes                       |
+| Cached              | Yes          | Yes                       |
+| Light/Dark Mode     | Yes          | Yes                       |
+| Syntax Highlighting | Yes          | Yes                       |
+| Table of Contents   | Yes          | Yes                       |
+| Full-text Search    | Yes          | Yes                       |
+| i18n                | Yes          | Yes                       |
+| Last Git Edit Time  | Yes          | Yes                       |
+| Page Icons          | Yes          | Yes, via `_meta.js` files |
+| RSC                 | Yes          | Yes                       |
+| Remote Source       | Yes          | Yes                       |
+| SEO                 | Via Metadata | Yes                       |
+| Built-in Components | Yes          | Yes                       |
+| RTL Layout          | Yes          | Yes                       |
+
+### Additional Features
+
+Features supported via 3rd party libraries like [TypeDoc](https://typedoc.org) will not be listed here.
+
+| Feature                    | Fumadocs | Nextra |
+| -------------------------- | -------- | ------ |
+| OpenAPI Integration        | Yes      | No     |
+| TypeScript Docs Generation | Yes      | No     |
+| TypeScript Twoslash        | Yes      | Yes    |
+
+## Mintlify
+
+Mintlify is a documentation service, as compared to Fumadocs, it offers a free tier but isn't completely free and open source.
+
+Fumadocs is not as powerful as Mintlify, for example, the OpenAPI integration of Mintlify.
+As the creator of Fumadocs, I wouldn't recommend switching to Fumadocs from Mintlify if you're satisfied with the current way you build docs.
+However, I believe Fumadocs is a suitable tool for all Next.js developers who want to have elegant docs.
+
+## Docusaurus
+
+Docusaurus is a powerful framework based on React.js. It offers many cool
+features with plugins and custom themes.
+
+### Better DX
+
+Since Fumadocs is built on the top of Next.js, you'll have to start the Next.js dev
+server every time to review changes, and initial boilerplate code is relatively more
+compared to Docusaurus.
+
+For a simple docs, Docusaurus might be a better choice if you don't need any Next.js specific functionality.
+
+However, when you want to use Next.js, or seek extra customizability like tuning default UI components, Fumadocs could be a better choice.
+
+### Plugins
+
+You can easily achieve many things with plugins, their ecosystem is indeed larger and maintained by many contributors.
+
+In comparison, the flexibility of Fumadocs allows you to implement them on your own, it may take longer to tune it to your satisfaction.

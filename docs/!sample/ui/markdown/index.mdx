@@ -1,0 +1,407 @@
+---
+title: Markdown
+description: How to write documents
+---
+
+## Introduction
+
+Fumadocs provides many useful extensions to MDX, a markup language. Here is a brief introduction to the default MDX syntax of Fumadocs.
+
+> MDX is not the only supported format of Fumadocs. In fact, you can use any renderers such as `next-mdx-remote` or CMS.
+
+## MDX
+
+We recommend MDX, a superset of Markdown with JSX syntax.
+It allows you to import components, and use them in the document, or even writing JavaScript.
+
+See:
+
+- [MDX Syntax](https://mdxjs.com/docs/what-is-mdx/#mdx-syntax).
+- GFM (GitHub Flavored Markdown) is also supported, see [GFM Specification](https://github.github.com/gfm).
+
+```mdx
+---
+title: This is a document
+---
+
+import { Component } from './component';
+
+<Component name="Hello" />
+
+# Heading
+
+## Heading
+
+### Heading
+
+#### Heading
+
+Hello World, **Bold**, _Italic_, ~~Hidden~~
+
+1. First
+2. Second
+3. Third
+
+- Item 1
+- Item 2
+
+> Quote here
+
+![alt](/image.png)
+
+| Table | Description |
+| ----- | ----------- |
+| Hello | World       |
+```
+
+Images are automatically optimized for `next/image`.
+
+### Auto Links
+
+Internal links use the `next/link` component to allow prefetching and avoid hard-reload.
+
+External links will get the default `rel="noreferrer noopener" target="_blank"` attributes for security.
+
+```mdx
+[My Link](https://github.github.com/gfm)
+
+This also works: https://github.github.com/gfm.
+```
+
+### Cards
+
+Useful for adding links.
+
+```mdx
+import { HomeIcon } from 'lucide-react';
+
+<Cards>
+  <Card
+    href="https://nextjs.org/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating"
+    title="Fetching, Caching, and Revalidating"
+  >
+    Learn more about caching in Next.js
+  </Card>
+  <Card title="href is optional">Learn more about `fetch` in Next.js.</Card>
+  <Card icon={<HomeIcon />} href="/" title="Home">
+    You can include icons too.
+  </Card>
+</Cards>
+```
+
+<Cards>
+  <Card
+    href="https://nextjs.org/docs/app/building-your-application/data-fetching/fetching-caching-and-revalidating"
+    title="Fetching, Caching, and Revalidating"
+  >
+    Learn more about caching in Next.js
+  </Card>
+  <Card title="href is optional">Learn more about `fetch` in Next.js.</Card>
+  <Card icon={<HomeIcon />} href="/" title="Home">
+    You can include icons too.
+  </Card>
+</Cards>
+
+#### "Further Reading" Section
+
+You can do something like:
+
+```tsx title="page.tsx"
+import { getPageTreePeers } from 'fumadocs-core/server';
+import { source } from '@/lib/source';
+
+<Cards>
+  {getPageTreePeers(source.pageTree, '/docs/my-page').map((peer) => (
+    <Card key={peer.url} title={peer.name} href={peer.url}>
+      {peer.description}
+    </Card>
+  ))}
+</Cards>;
+```
+
+This will show the other pages in the same folder as cards.
+
+<DocsCategory url="/docs/ui/navigation" />
+
+### Callouts
+
+Useful for adding tips/warnings, it is included by default. You can specify the type of callout:
+
+- `info` (default)
+- `warn`/`warning`
+- `error`
+- `success`
+
+```mdx
+<Callout>Hello World</Callout>
+
+<Callout title="Title">Hello World</Callout>
+
+<Callout title="Title" type="error">
+  Hello World
+</Callout>
+```
+
+<Callout>Hello World</Callout>
+
+<Callout title="Title" type="warn">
+  Hello World
+</Callout>
+
+<Callout title="Title" type="error">
+  Hello World
+</Callout>
+
+### Headings
+
+An anchor is automatically applied to each heading, it sanitizes invalid characters like spaces. (e.g. `Hello World` to `hello-world`)
+
+```md
+# Hello `World`
+```
+
+#### TOC Settings
+
+The table of contents (TOC) will be generated based on headings, you can also customise the effects of headings:
+
+```md
+# Heading [!toc]
+
+This heading will be hidden from TOC.
+
+# Another Heading [toc]
+
+This heading will **only** be visible in TOC, you can use it to add additional TOC items.
+Like headings rendered in a React component:
+
+<MyComp />
+```
+
+#### Custom Anchor
+
+You can add `[#slug]` to customise heading anchors.
+
+```md
+# heading [#my-heading-id]
+```
+
+You can also chain it with TOC settings like:
+
+```md
+# heading [toc] [#my-heading-id]
+```
+
+To link people to a specific heading, add the heading id to hash fragment: `/page#my-heading-id`.
+
+### Codeblock
+
+Syntax Highlighting is supported by default using [Rehype Code](/docs/headless/mdx/rehype-code).
+
+````mdx
+```js
+console.log('Hello World');
+```
+
+```js title="My Title"
+console.log('Hello World');
+```
+````
+
+#### Line Numbers
+
+Show line numbers, it also works with Twoslash and other transformers.
+
+````mdx tab="Input"
+```ts twoslash lineNumbers
+const a = 'Hello World';
+//    ^?
+console.log(a); // [!code highlight]
+```
+````
+
+```ts twoslash lineNumbers tab="Output"
+const a = 'Hello World';
+//    ^?
+console.log(a); // [!code highlight]
+```
+
+You can set the initial value of line numbers.
+
+````mdx tab="Input"
+```js lineNumbers=4
+function main() {
+  console.log('starts from 4');
+
+  return 0;
+}
+```
+````
+
+```js lineNumbers=4 tab="Output"
+function main() {
+  console.log('starts from 4');
+
+  return 0;
+}
+```
+
+#### Shiki Transformers
+
+We support some of the [Shiki Transformers](https://shiki.style/packages/transformers), allowing you to highlight/style specific lines.
+
+````md tab="Input"
+```tsx
+// highlight a line
+<div>Hello World</div> // [\!code highlight]
+
+// highlight a word
+// [\!code word:Fumadocs]
+<div>Fumadocs</div>
+
+// diff styles
+console.log('hewwo'); // [\!code --]
+console.log('hello'); // [\!code ++]
+
+// focus
+return new ResizeObserver(() => {}) // [\!code focus]
+```
+````
+
+```tsx tab="Output"
+// highlight a line
+<div>Hello World</div> // [!code highlight]
+
+// highlight a word
+// [!code word:Fumadocs]
+<div>Fumadocs</div>
+
+// diff styles:
+console.log('hewwo'); // [!code --]
+console.log('hello'); // [!code ++]
+
+// focus
+return new ResizeObserver(() => {}) // [!code focus]
+```
+
+#### Tab Groups
+
+Make sure to add the required MDX components first:
+
+```tsx title="mdx-components.tsx"
+import defaultMdxComponents from 'fumadocs-ui/mdx';
+import * as TabsComponents from 'fumadocs-ui/components/tabs';
+import type { MDXComponents } from 'mdx/types';
+
+export function getMDXComponents(components?: MDXComponents): MDXComponents {
+  return {
+    ...defaultMdxComponents,
+    ...TabsComponents, // [!code ++]
+    ...components,
+  };
+}
+```
+
+````mdx
+```ts tab="Tab 1"
+console.log('A');
+```
+
+```ts tab="Tab 2"
+console.log('B');
+```
+````
+
+```ts tab="Tab 1"
+console.log('A');
+```
+
+```ts tab="Tab 2"
+console.log('B');
+```
+
+While disabled by default, you use MDX in tab values by configuring the remark plugin:
+
+```ts tab="Fumadocs MDX" title="source.config.ts"
+import { defineConfig } from 'fumadocs-mdx/config';
+
+export default defineConfig({
+  mdxOptions: {
+    remarkCodeTabOptions: {
+      parseMdx: true, // [!code ++]
+    },
+  },
+});
+```
+
+```ts tab="MDX Compiler"
+import { compile } from '@mdx-js/mdx';
+import { remarkCodeTab } from 'fumadocs-core/mdx-plugins';
+
+await compile('...', {
+  remarkPlugins: [
+    [
+      remarkCodeTab,
+      {
+        parseMdx: true, // [!code ++]
+      },
+    ],
+  ],
+});
+```
+
+````mdx
+```ts tab="<Building /> Tab 1"
+console.log('A');
+```
+
+```ts tab="<Rocket /> Tab 2"
+console.log('B');
+```
+````
+
+```ts tab="<Building /> Tab 1"
+console.log('A');
+```
+
+```ts tab="<Rocket /> Tab 2"
+console.log('B');
+```
+
+### Include
+
+> This is only available on **Fumadocs MDX**.
+
+Reference another file (can also be a Markdown/MDX document).
+Specify the target file path in `<include>` tag (relative to the MDX file itself).
+
+```mdx title="page.mdx"
+<include>./another.mdx</include>
+```
+
+See [other usages of include](/docs/mdx/include).
+
+### Other Components
+
+You can configure & use the [built-in components](/docs/ui/components) in your MDX document, such as Tabs, Accordions and Zoomable Image.
+
+## Additional Features
+
+You may be interested:
+
+<DocsCategory />
+
+### Package Install
+
+Generate commands for installing packages via package managers.
+
+````md tab="Input"
+```package-install
+npm i next -D
+```
+````
+
+```package-install tab="Output"
+npm i next -D
+```
+
+To enable, see [Remark Install](/docs/headless/mdx/install).

@@ -1,0 +1,112 @@
+---
+title: Content Collections
+description: Use Content Collections for Fumadocs
+---
+
+[Content Collections](https://www.content-collections.dev) is a library that transforms your content into type-safe data collections.
+
+## Setup
+
+Install the required packages.
+
+```package-install
+@fumadocs/content-collections @content-collections/core @content-collections/mdx @content-collections/next
+```
+
+After the installation, add a path alias for the generated collections to the `tsconfig.json`.
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"],
+      "content-collections": ["./.content-collections/generated"]
+    }
+  }
+}
+```
+
+In the Next.js configuration file, apply the plugin.
+
+```js title="next.config.mjs"
+import { withContentCollections } from '@content-collections/next';
+
+/** @type {import('next').NextConfig} */
+const config = {
+  reactStrictMode: true,
+};
+
+export default withContentCollections(config);
+```
+
+To integrate with Fumadocs, add the following to your `content-collections.ts`.
+
+<include cwd meta='title="content-collections.ts"'>
+  ../../examples/content-collections/content-collections.ts
+</include>
+
+And pass it to Source API.
+
+<include cwd meta='title="lib/source.ts"'>
+  ../../examples/content-collections/lib/source.ts
+</include>
+
+Done! You can access the pages and generated page tree from Source API.
+
+```ts
+import { getPage } from '@/lib/source';
+
+const page = getPage(slugs);
+
+// MDX output
+page?.data.body;
+
+// Table of contents
+page?.data.toc;
+
+// Structured Data, for Search API
+page?.data.structuredData;
+```
+
+### MDX Options
+
+You can customise MDX options in the `transformMDX` function.
+
+```ts
+import { defineCollection } from '@content-collections/core';
+import { transformMDX } from '@fumadocs/content-collections/configuration';
+
+const docs = defineCollection({
+  transform: (document, context) =>
+    transformMDX(document, context, {
+      // options here
+    }),
+});
+```
+
+### Import Components
+
+To use components from other packages like Fumadocs UI, pass them to your `<MDXContent />` component.
+
+```tsx
+import { MDXContent } from '@content-collections/mdx/react';
+import { getMDXComponents } from '@/mdx-components';
+
+<MDXContent code="..." components={getMDXComponents()} />;
+```
+
+You can also import them in MDX Files, but it is not recommended.
+
+<Callout title='Deep Dive: Why?'>
+    Content Collections uses `mdx-bundler` to bundle MDX files.
+
+    To support importing a package from node modules, Fumadocs added a default value to the `cwd` option of MDX Bundler.
+    It works good, but we still **do not** recommend importing components in MDX files.
+
+    Reasons:
+
+    - It requires esbuild to bundle these components, while it should be done by the Next.js bundler (for features of Server Components)
+    - You can refactor the import path of components without changing your MDX files.
+    - With Remote Sources, it doesn't make sense to add an import in MDX files.
+
+</Callout>

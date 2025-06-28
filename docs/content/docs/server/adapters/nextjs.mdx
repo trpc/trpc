@@ -1,0 +1,647 @@
+---
+title: Next.js Adapter
+description: Build full-stack applications with tRPC and Next.js
+icon: IconBrandNextjs
+---
+
+The Next.js adapter provides seamless integration between tRPC and Next.js, supporting both the App Router and Pages Router. It's the most popular choice for full-stack TypeScript applications.
+
+<Callout title="App Router Recommended">
+  While both App Router and Pages Router are supported, App Router is
+  recommended for new projects as it provides better performance and developer
+  experience.
+</Callout>
+
+## Installation
+
+Install tRPC server and Next.js dependencies:
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash npm install @trpc/server next zod npm install -D @types/node
+    typescript ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash pnpm add @trpc/server next zod pnpm add -D @types/node typescript
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash yarn add @trpc/server next zod yarn add -D @types/node typescript
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash bun add @trpc/server next zod bun add -D @types/node typescript ```
+  </Tab>
+</Tabs>
+
+Ensure your `tsconfig.json` is configured for strict mode:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  }
+}
+```
+
+## App Router Setup
+
+### 1. Create Your Router
+
+```typescript title="src/server/api/router.ts"
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(z.object({ name: z.string().optional() }))
+    .query(({ input }) => {
+      return {
+        greeting: `Hello ${input.name ?? 'World'}!`,
+      };
+    }),
+
+  createPost: t.procedure
+    .input(z.object({
+      title: z.string().min(1),
+      content: z.string().min(1),
+    }))
+    .mutation(({ input }) => {
+      // Database logic here
+      return {
+        id: Math.random().toString(36),
+        ...input,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### 2. Create Context
+
+```typescript title="src/server/api/context.ts"
+import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
+
+export function createContext(opts: CreateNextContextOptions) {
+  return {
+    req: opts.req,
+    res: opts.res,
+    // Add your context here (db, auth, etc.)
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+### 3. Create API Route
+
+<Tabs items={['App Router', 'Pages Router']}>
+<Tab value="App Router">
+```typescript title="src/app/api/trpc/[trpc]/route.ts"
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { type NextRequest } from 'next/server';
+import { appRouter } from '~/server/api/router';
+import { createContext } from '~/server/api/context';
+
+const handler = (req: NextRequest) =>
+fetchRequestHandler({
+endpoint: '/api/trpc',
+req,
+router: appRouter,
+createContext: (opts) => createContext({
+req: opts.req as any,
+res: opts.res as any,
+}),
+});
+
+export { handler as GET, handler as POST };
+```
+</Tab>
+
+<Tab value="Pages Router">
+```typescript title="src/pages/api/trpc/[trpc].ts"
+import { createNextApiHandler } from '@trpc/server/adapters/next';
+import { appRouter } from '~/server/api/router';
+import { createContext } from '~/server/api/context';
+
+export default createNextApiHandler({
+  router: appRouter,
+  createContext,
+  onError:
+    process.env.NODE_ENV === 'development'
+      ? ({ path, error }) => {
+          console.error(
+            `❌ tRPC failed on ${path ?? '<no-path>'}: ${error.message}`
+          );
+        }
+      : undefined,
+});
+```
+</Tab>
+</Tabs>
+
+## Testing Your Setup
+
+Now let's test that everything is working correctly:
+
+### Manual Testing
+
+Create a simple test page to verify your tRPC setup:
+
+<Tabs items={['App Router', 'Pages Router']}>
+<Tab value="App Router">
+```typescript title="src/app/test/page.tsx"
+import { createCallerFactory } from '@trpc/server';
+import { appRouter } from '~/server/api/router';
+import { createContext } from '~/server/api/context';
+
+const createCaller = createCallerFactory(appRouter);
+
+export default async function TestPage() {
+  // Test server-side calling
+  const caller = createCaller(await createContext({} as any));
+  
+  try {
+    const result = await caller.hello({ name: 'Server Test' });
+    
+    return (
+      <div className="p-8">
+        <h1 className="text-2xl font-bold mb-4">tRPC Server Test</h1>
+        <div className="bg-green-100 p-4 rounded">
+          <p className="text-green-800">✅ Server-side call successful!</p>
+          <p className="font-mono">{result.greeting}</p>
+        </div>
+      </div>
+    );
+  } catch (error) {
+    return (
+      <div className="p-8">
+        <h1 className="text-2xl font-bold mb-4">tRPC Server Test</h1>
+        <div className="bg-red-100 p-4 rounded">
+          <p className="text-red-800">❌ Server-side call failed!</p>
+          <p className="font-mono">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+}
+```
+</Tab>
+
+<Tab value="Pages Router">
+```typescript title="src/pages/test.tsx"
+import { GetServerSideProps } from 'next';
+import { createCallerFactory } from '@trpc/server';
+import { appRouter } from '~/server/api/router';
+import { createContext } from '~/server/api/context';
+
+const createCaller = createCallerFactory(appRouter);
+
+export default function TestPage({ result, error }: { result?: any; error?: string }) {
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-4">tRPC Server Test</h1>
+      {result ? (
+        <div className="bg-green-100 p-4 rounded">
+          <p className="text-green-800">✅ Server-side call successful!</p>
+          <p className="font-mono">{result.greeting}</p>
+        </div>
+      ) : (
+        <div className="bg-red-100 p-4 rounded">
+          <p className="text-red-800">❌ Server-side call failed!</p>
+          <p className="font-mono">{error}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
+  try {
+    const context = await createContext({ req, res });
+    const caller = createCaller(context);
+    const result = await caller.hello({ name: 'Server Test' });
+    
+    return { props: { result } };
+  } catch (error) {
+    return { props: { error: error.message } };
+  }
+};
+```
+</Tab>
+</Tabs>
+
+### HTTP Testing
+
+Test your API endpoints directly:
+
+```bash
+# Test the hello endpoint
+curl -X POST http://localhost:3000/api/trpc/hello \
+  -H "Content-Type: application/json" \
+  -d '{"name":"HTTP Test"}'
+
+# Expected response:
+# {"result":{"data":{"greeting":"Hello HTTP Test!"}}}
+```
+
+### Unit Testing
+
+Create comprehensive tests for your procedures:
+
+```typescript title="src/server/api/__tests__/router.test.ts"
+import { describe, it, expect } from 'vitest';
+import { createCallerFactory } from '@trpc/server';
+import { appRouter } from '../router';
+
+const createCaller = createCallerFactory(appRouter);
+
+describe('tRPC Router', () => {
+  const caller = createCaller({
+    req: {} as any,
+    res: {} as any,
+  });
+
+  it('should greet with default name', async () => {
+    const result = await caller.hello({});
+    expect(result.greeting).toBe('Hello World!');
+  });
+
+  it('should greet with custom name', async () => {
+    const result = await caller.hello({ name: 'Test' });
+    expect(result.greeting).toBe('Hello Test!');
+  });
+
+  it('should create a post', async () => {
+    const result = await caller.createPost({
+      title: 'Test Post',
+      content: 'This is a test post',
+    });
+
+    expect(result.title).toBe('Test Post');
+    expect(result.content).toBe('This is a test post');
+    expect(result.id).toBeDefined();
+  });
+});
+```
+
+## Advanced Configuration
+
+### Error Handling
+
+Add comprehensive error handling to your API:
+
+```typescript title="src/app/api/trpc/[trpc]/route.ts"
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { type NextRequest } from 'next/server';
+
+const handler = (req: NextRequest) =>
+  fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req,
+    router: appRouter,
+    createContext,
+    onError: ({ error, type, path, input, ctx, req }) => {
+      console.error(`❌ tRPC Error (${type}):`, {
+        path,
+        error: error.message,
+        input,
+      });
+
+      // Send to error reporting service
+      if (error.code === 'INTERNAL_SERVER_ERROR') {
+        // reportError(error, { path, input, req });
+      }
+    },
+  });
+
+export { handler as GET, handler as POST };
+```
+
+### Response Caching
+
+Implement response caching for better performance:
+
+```typescript title="src/app/api/trpc/[trpc]/route.ts"
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+
+const handler = (req: NextRequest) =>
+  fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req,
+    router: appRouter,
+    createContext,
+    responseMeta: ({ ctx, paths, errors, type }) => {
+      const allPublic = paths?.every((path) => path.includes('public'));
+      const allOk = errors.length === 0;
+      const isQuery = type === 'query';
+
+      if (allPublic && allOk && isQuery) {
+        // Cache for 1 hour
+        return {
+          headers: new Headers([
+            ['Cache-Control', 's-maxage=3600, stale-while-revalidate=86400'],
+          ]),
+        };
+      }
+
+      return {};
+    },
+  });
+```
+
+### CORS Configuration
+
+Enable CORS for cross-origin requests:
+
+```typescript title="src/app/api/trpc/[trpc]/route.ts"
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { NextRequest, NextResponse } from 'next/server';
+
+// Handle CORS preflight requests
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
+
+const handler = (req: NextRequest) =>
+  fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req,
+    router: appRouter,
+    createContext,
+  });
+
+export { handler as GET, handler as POST };
+```
+
+## Authentication Integration
+
+### With NextAuth.js
+
+```typescript title="src/server/api/context.ts"
+import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '~/pages/api/auth/[...nextauth]';
+
+export async function createContext(opts: CreateNextContextOptions) {
+  const session = await getServerSession(opts.req, opts.res, authOptions);
+
+  return {
+    session,
+    prisma, // Your database client
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+### With Clerk
+
+```typescript title="src/server/api/context.ts"
+import { getAuth } from '@clerk/nextjs/server';
+import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
+
+export function createContext(opts: CreateNextContextOptions) {
+  const auth = getAuth(opts.req);
+
+  return {
+    auth,
+    userId: auth.userId,
+    prisma,
+  };
+}
+```
+
+### Protected Procedures
+
+```typescript title="src/server/api/trpc.ts"
+import { initTRPC, TRPCError } from '@trpc/server';
+import type { Context } from './context';
+
+const t = initTRPC.context<Context>().create();
+
+// Public procedure
+export const publicProcedure = t.procedure;
+
+// Protected procedure
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.session.user,
+    },
+  });
+});
+```
+
+## Server-Side Rendering
+
+### Pre-populate Data with SSR
+
+For App Router:
+
+```typescript title="src/app/page.tsx"
+import { createCallerFactory } from '@trpc/server';
+import { appRouter } from '~/server/api/router';
+import { createContext } from '~/server/api/context';
+
+const createCaller = createCallerFactory(appRouter);
+
+export default async function HomePage() {
+  const caller = createCaller(await createContext({} as any));
+  const greeting = await caller.hello({ name: 'Server' });
+
+  return (
+    <main>
+      <h1>{greeting.greeting}</h1>
+    </main>
+  );
+}
+```
+
+For Pages Router with SSG:
+
+```typescript title="src/pages/index.tsx"
+import { createServerSideHelpers } from '@trpc/react-query/server';
+import { GetStaticProps } from 'next';
+import { appRouter } from '~/server/api/router';
+
+export const getStaticProps: GetStaticProps = async () => {
+  const helpers = createServerSideHelpers({
+    router: appRouter,
+    ctx: await createContext({} as any),
+  });
+
+  await helpers.hello.prefetch({ name: 'SSG' });
+
+  return {
+    props: {
+      trpcState: helpers.dehydrate(),
+    },
+    revalidate: 60, // ISR
+  };
+};
+```
+
+## Performance Optimizations
+
+### Enable Request Batching
+
+```typescript title="src/app/api/trpc/[trpc]/route.ts"
+const handler = (req: NextRequest) =>
+  fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req,
+    router: appRouter,
+    createContext,
+    batching: {
+      enabled: true,
+    },
+  });
+```
+
+### Compress Responses
+
+```typescript title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  compress: true,
+  experimental: {
+    serverComponentsExternalPackages: ['@trpc/server'],
+  },
+};
+
+module.exports = nextConfig;
+```
+
+## Deployment
+
+### Vercel Deployment
+
+```json title="vercel.json"
+{
+  "functions": {
+    "src/pages/api/trpc/[trpc].ts": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
+}
+```
+
+### Environment Variables
+
+```bash title=".env.local"
+# Database
+DATABASE_URL="postgresql://..."
+
+# NextAuth
+NEXTAUTH_SECRET="your-secret-here"
+NEXTAUTH_URL="http://localhost:3000"
+
+# tRPC
+TRPC_ENDPOINT="http://localhost:3000/api/trpc"
+```
+
+## Troubleshooting
+
+<Accordions>
+<Accordion title="CORS Issues">
+If you're getting CORS errors, ensure you've added the OPTIONS handler and proper headers:
+
+```typescript
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
+```
+
+</Accordion>
+
+<Accordion title="Type Errors">
+Make sure you're properly exporting and importing your router type:
+
+```typescript
+// server/api/router.ts
+export type AppRouter = typeof appRouter;
+
+// client code
+import type { AppRouter } from '~/server/api/router';
+```
+
+</Accordion>
+
+<Accordion title="Build Errors">
+Ensure your TypeScript configuration is correct and all dependencies are installed:
+
+```bash
+npm install @types/node --save-dev
+```
+
+</Accordion>
+</Accordions>
+
+## Best Practices
+
+<Cards>
+  <Card title="Use Server Components" icon="⚡">
+    Leverage App Router's server components for better performance and SEO
+  </Card>
+  <Card title="Implement Error Boundaries" icon="🛡️">
+    Add error boundaries to handle tRPC errors gracefully in your UI
+  </Card>
+  <Card title="Enable Caching" icon="🚀">
+    Use responseMeta to cache frequently accessed data
+  </Card>
+  <Card title="Type Safety" icon="🎯">
+    Always export your router type for end-to-end type safety
+  </Card>
+</Cards>
+
+## Next Steps
+
+<Cards>
+  <Card title="Client Setup" href="/docs/client/nextjs">
+    Connect your Next.js frontend to your tRPC API
+  </Card>
+  <Card title="Authentication" href="/docs/server/authorization">
+    Add authentication and authorization to your API
+  </Card>
+  <Card title="Database Integration" href="/docs/server/context">
+    Integrate your database with tRPC context
+  </Card>
+  <Card title="Testing Guide" href="/docs/server/testing">
+    Learn how to test your tRPC procedures
+  </Card>
+</Cards>

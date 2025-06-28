@@ -1,0 +1,613 @@
+---
+title: Cloudflare Workers Adapter
+description: Deploy tRPC on Cloudflare Workers with edge computing performance
+icon: IconCloud
+---
+
+Deploy your tRPC server on Cloudflare Workers for ultra-fast global edge computing. Cloudflare Workers run your code at 275+ locations worldwide for minimal latency.
+
+<Callout title="Edge Computing Excellence">
+  Cloudflare Workers provide sub-10ms response times globally with automatic
+  scaling and zero cold starts.
+</Callout>
+
+## Example Apps
+
+<Cards>
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/cloudflare-workers"
+    title="Cloudflare Workers Example"
+  >
+    Complete Cloudflare Workers setup with tRPC integration
+  </Card>
+</Cards>
+
+## Installation
+
+Install the required dependencies:
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash npm install @trpc/server npm install -D wrangler ```
+  </Tab>
+  <Tab value="pnpm">```bash pnpm add @trpc/server pnpm add -D wrangler ```</Tab>
+  <Tab value="yarn">```bash yarn add @trpc/server yarn add -D wrangler ```</Tab>
+  <Tab value="bun">```bash bun add @trpc/server bun add -D wrangler ```</Tab>
+</Tabs>
+
+<Callout title="Wrangler CLI" type="info">
+  Wrangler is Cloudflare's official CLI for managing Workers. It's required for
+  development and deployment.
+</Callout>
+
+## Quick Start
+
+### 1. Create your tRPC router
+
+```typescript title="router.ts"
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+type User = {
+  id: string;
+  name: string;
+  bio?: string;
+};
+
+const users: Record<string, User> = {};
+
+export const t = initTRPC.create();
+
+export const appRouter = t.router({
+  getUserById: t.procedure
+    .input(z.string())
+    .query(({ input }) => {
+      return users[input]; // input type is string
+    }),
+
+  createUser: t.procedure
+    .input(z.object({
+      name: z.string().min(3),
+      bio: z.string().max(142).optional(),
+    }))
+    .mutation(({ input }) => {
+      const id = Date.now().toString();
+      const user: User = { id, ...input };
+      users[user.id] = user;
+      return user;
+    }),
+});
+
+// Export type definition of API
+export type AppRouter = typeof appRouter;
+```
+
+### 2. Create context
+
+```typescript title="context.ts"
+import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+
+export function createContext({
+  req,
+  resHeaders,
+}: FetchCreateContextFnOptions) {
+  const user = { name: req.headers.get('username') ?? 'anonymous' };
+  return { req, resHeaders, user };
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+### 3. Set up Cloudflare Worker
+
+```typescript title="worker.ts"
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { createContext } from './context';
+import { appRouter } from './router';
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    return fetchRequestHandler({
+      endpoint: '/trpc',
+      req: request,
+      router: appRouter,
+      createContext,
+    });
+  },
+};
+```
+
+### 4. Configure wrangler.toml
+
+```toml title="wrangler.toml"
+name = "trpc-worker"
+main = "dist/worker.js"
+compatibility_date = "2024-01-01"
+
+[build]
+command = "npm run build"
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[env.staging]
+vars = { ENVIRONMENT = "staging" }
+```
+
+### 5. Build and deploy
+
+<Tabs items={['Development', 'Production']}>
+  <Tab value="Development">
+    ```bash # Start local development server wrangler dev worker.ts # Your API
+    is now available at: #
+    http://localhost:8787/trpc/getUserById?input="user_123" ```
+  </Tab>
+  <Tab value="Production">
+    ```bash # Deploy to Cloudflare Workers wrangler deploy # Your API is now
+    available at: #
+    https://trpc-worker.your-subdomain.workers.dev/trpc/getUserById?input="user_123"
+    ```
+  </Tab>
+</Tabs>
+
+## API Endpoints
+
+Your tRPC procedures are available as HTTP endpoints:
+
+| Procedure     | HTTP Method | Endpoint                        | Description                              |
+| ------------- | ----------- | ------------------------------- | ---------------------------------------- |
+| `getUserById` | GET         | `/trpc/getUserById?input=INPUT` | Where INPUT is a URI-encoded JSON string |
+| `createUser`  | POST        | `/trpc/createUser`              | With JSON body containing the input data |
+
+### Example requests
+
+<Tabs items={['Query Example', 'Mutation Example']}>
+  <Tab value="Query Example">
+    ```bash
+    # GET request for queries
+    curl "https://trpc-worker.your-subdomain.workers.dev/trpc/getUserById?input=\"user_123\""
+    ```
+    
+    Response:
+    ```json
+    {
+      "result": {
+        "data": {
+          "id": "user_123",
+          "name": "Bilbo",
+          "bio": "A hobbit from the Shire"
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab value="Mutation Example">
+    ```bash
+    # POST request for mutations
+    curl -X POST https://trpc-worker.your-subdomain.workers.dev/trpc/createUser \
+      -H "Content-Type: application/json" \
+      -d '{"name": "Frodo Baggins", "bio": "Ring bearer"}'
+    ```
+    
+    Response:
+    ```json
+    {
+      "result": {
+        "data": {
+          "id": "1701234567890",
+          "name": "Frodo Baggins",
+          "bio": "Ring bearer"
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Advanced Features
+
+### Environment Variables
+
+Access environment variables in your Worker:
+
+```typescript title="worker-with-env.ts"
+interface Env {
+  DATABASE_URL: string;
+  API_KEY: string;
+  KV_NAMESPACE: KVNamespace;
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    return fetchRequestHandler({
+      endpoint: '/trpc',
+      req: request,
+      router: appRouter,
+      createContext: ({ req, resHeaders }) => ({
+        req,
+        resHeaders,
+        env, // Pass environment to context
+        kv: env.KV_NAMESPACE,
+      }),
+    });
+  },
+};
+```
+
+### KV Storage Integration
+
+Use Cloudflare KV for data persistence:
+
+```typescript title="kv-router.ts"
+export const kvRouter = t.router({
+  getValue: t.procedure
+    .input(z.string())
+    .query(async ({ input, ctx }) => {
+      const value = await ctx.kv.get(input);
+      return { key: input, value };
+    }),
+
+  setValue: t.procedure
+    .input(z.object({
+      key: z.string(),
+      value: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await ctx.kv.put(input.key, input.value);
+      return { success: true };
+    }),
+});
+```
+
+### Durable Objects Integration
+
+Use Durable Objects for stateful operations:
+
+```typescript title="durable-objects.ts"
+export class UserSession {
+  constructor(private state: DurableObjectState) {}
+
+  async fetch(request: Request): Promise<Response> {
+    return fetchRequestHandler({
+      endpoint: '/trpc',
+      req: request,
+      router: sessionRouter,
+      createContext: () => ({
+        state: this.state,
+        storage: this.state.storage,
+      }),
+    });
+  }
+}
+
+// Export Durable Object
+export { UserSession as SessionDO };
+```
+
+### Custom Headers and CORS
+
+Handle CORS and custom headers:
+
+```typescript title="cors-worker.ts"
+export default {
+  async fetch(request: Request): Promise<Response> {
+    // Handle CORS preflight
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+      });
+    }
+
+    const response = await fetchRequestHandler({
+      endpoint: '/trpc',
+      req: request,
+      router: appRouter,
+      createContext,
+    });
+
+    // Add CORS headers to all responses
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    return response;
+  },
+};
+```
+
+## Database Integration
+
+### D1 Database
+
+Use Cloudflare D1 for SQL database operations:
+
+```typescript title="d1-integration.ts"
+interface Env {
+  DB: D1Database;
+}
+
+const createContextWithD1 = ({ req, resHeaders }, env: Env) => ({
+  req,
+  resHeaders,
+  db: env.DB,
+});
+
+export const userRouter = t.router({
+  getUser: t.procedure
+    .input(z.string())
+    .query(async ({ input, ctx }) => {
+      const result = await ctx.db
+        .prepare('SELECT * FROM users WHERE id = ?')
+        .bind(input)
+        .first();
+      return result;
+    }),
+
+  createUser: t.procedure
+    .input(z.object({
+      name: z.string(),
+      email: z.string().email(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const result = await ctx.db
+        .prepare('INSERT INTO users (name, email) VALUES (?, ?) RETURNING *')
+        .bind(input.name, input.email)
+        .first();
+      return result;
+    }),
+});
+```
+
+### External Database Connections
+
+Connect to external databases:
+
+```typescript title="external-db.ts"
+import { drizzle } from 'drizzle-orm/planetscale-serverless';
+import { connect } from '@planetscale/database';
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    // Create database connection
+    const connection = connect({
+      host: env.DATABASE_HOST,
+      username: env.DATABASE_USERNAME,
+      password: env.DATABASE_PASSWORD,
+    });
+
+    const db = drizzle(connection);
+
+    return fetchRequestHandler({
+      endpoint: '/trpc',
+      req: request,
+      router: appRouter,
+      createContext: ({ req, resHeaders }) => ({
+        req,
+        resHeaders,
+        db,
+      }),
+    });
+  },
+};
+```
+
+## Error Handling
+
+Add comprehensive error handling:
+
+```typescript title="error-handling.ts"
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    try {
+      return await fetchRequestHandler({
+        endpoint: '/trpc',
+        req: request,
+        router: appRouter,
+        createContext,
+        onError: ({ error, path, input }) => {
+          console.error(`Error in ${path}:`, error);
+
+          // Log to Cloudflare Analytics or external service
+          // analytics.track('trpc_error', { path, error: error.message });
+        },
+      });
+    } catch (error) {
+      console.error('Unhandled error:', error);
+      return new Response('Internal Server Error', { status: 500 });
+    }
+  },
+};
+```
+
+## Performance Optimization
+
+<Accordions>
+  <Accordion title="Caching Strategies">
+    Implement caching for better performance:
+    
+    ```typescript
+    export const cachedRouter = t.router({
+      getUser: t.procedure
+        .input(z.string())
+        .query(async ({ input, ctx }) => {
+          // Check cache first
+          const cached = await ctx.kv.get(`user:${input}`);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+          
+          // Fetch from database
+          const user = await fetchUserFromDB(input);
+          
+          // Cache for 1 hour
+          await ctx.kv.put(`user:${input}`, JSON.stringify(user), {
+            expirationTtl: 3600,
+          });
+          
+          return user;
+        }),
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Resource Limits">
+    Be aware of Cloudflare Workers limits:
+    
+    - **CPU time**: 50ms per request (paid plans: 50ms-5000ms)
+    - **Memory**: 128MB
+    - **Request size**: 100MB
+    - **Response size**: 100MB
+    - **Subrequests**: 50 per request
+  </Accordion>
+  
+  <Accordion title="Bundle Optimization">
+    Optimize your bundle size:
+    
+    ```typescript
+    // Use dynamic imports for large dependencies
+    const processLargeData = async (data: unknown) => {
+      const { processData } = await import('./large-module');
+      return processData(data);
+    };
+    ```
+  </Accordion>
+</Accordions>
+
+## Testing
+
+### Local Testing
+
+```bash
+# Install dependencies
+npm install -D wrangler @cloudflare/workers-types
+
+# Start local development
+wrangler dev worker.ts
+
+# Test your endpoints
+curl "http://localhost:8787/trpc/getUserById?input=\"test\""
+```
+
+### Unit Testing
+
+```typescript title="worker.test.ts"
+import { unstable_dev } from 'wrangler';
+import type { UnstableDevWorker } from 'wrangler';
+
+describe('Worker', () => {
+  let worker: UnstableDevWorker;
+
+  beforeAll(async () => {
+    worker = await unstable_dev('worker.ts', {
+      experimental: { disableExperimentalWarning: true },
+    });
+  });
+
+  afterAll(async () => {
+    await worker.stop();
+  });
+
+  it('should handle queries', async () => {
+    const response = await worker.fetch('/trpc/getUserById?input="test"');
+    expect(response.status).toBe(200);
+
+    const body = await response.json();
+    expect(body.result).toBeDefined();
+  });
+});
+```
+
+## Deployment
+
+### Production Deployment
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "wrangler dev worker.ts",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging"
+  }
+}
+```
+
+### Custom Domains
+
+```toml title="wrangler.toml"
+[[routes]]
+pattern = "api.yourdomain.com/*"
+zone_name = "yourdomain.com"
+
+[triggers]
+crons = ["0 0 * * *"] # Daily cleanup job
+```
+
+### CI/CD with GitHub Actions
+
+```yaml title=".github/workflows/deploy.yml"
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+```
+
+## Why Choose Cloudflare Workers?
+
+<Cards>
+  <Card title="Global Performance" icon="⚡">
+    275+ locations worldwide with sub-10ms response times
+  </Card>
+  <Card title="Zero Cold Starts" icon="🚀">
+    Workers start instantly with V8 isolates, not containers
+  </Card>
+  <Card title="Automatic Scaling" icon="📈">
+    Handle millions of requests without configuration
+  </Card>
+  <Card title="Cost Effective" icon="💰">
+    Pay only for what you use with generous free tier
+  </Card>
+</Cards>
+
+## Next Steps
+
+<Cards>
+  <Card href="/docs/server/procedures" title="Define Procedures">
+    Learn how to create queries, mutations, and subscriptions
+  </Card>
+  <Card href="/docs/server/context" title="Add Context">
+    Share data like database connections and user sessions
+  </Card>
+  <Card href="/docs/server/middlewares" title="Add Middleware">
+    Implement authentication, logging, and custom logic
+  </Card>
+  <Card href="/docs/client" title="Connect Your Frontend">
+    Integrate tRPC with your React, Next.js, or other frontend
+  </Card>
+</Cards>

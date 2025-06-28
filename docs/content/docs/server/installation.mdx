@@ -1,0 +1,243 @@
+---
+title: Server Installation
+description: Install and set up tRPC server for your backend
+icon: IconDownload
+---
+
+This guide covers installing and setting up tRPC on the server side to build your API endpoints.
+
+## Quick Install
+
+<Steps>
+  <Step title="Install tRPC Server">
+    Install the core server package:
+    <Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+      <Tab value="npm">```bash npm install @trpc/server ```</Tab>
+      <Tab value="pnpm">```bash pnpm add @trpc/server ```</Tab>
+      <Tab value="yarn">```bash yarn add @trpc/server ```</Tab>
+      <Tab value="bun">```bash bun add @trpc/server ```</Tab>
+    </Tabs>
+  </Step>
+  <Step title="Install Validation Library">
+    Install a validation library (Zod recommended):
+    <Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+      <Tab value="npm">```bash npm install zod ```</Tab>
+      <Tab value="pnpm">```bash pnpm add zod ```</Tab>
+      <Tab value="yarn">```bash yarn add zod ```</Tab>
+      <Tab value="bun">```bash bun add zod ```</Tab>
+    </Tabs>
+  </Step>
+  <Step title="Install Server Adapter">
+    Choose an adapter for your platform:
+    <Tabs items={['Next.js', 'Express', 'Fastify', 'Standalone']}>
+      <Tab value="Next.js">
+        ```bash # Already included with @trpc/server npm install @trpc/server
+        ```
+      </Tab>
+      <Tab value="Express">
+        ```bash npm install express npm install @types/express -D ```
+      </Tab>
+      <Tab value="Fastify">
+        ```bash npm install fastify npm install @types/fastify -D ```
+      </Tab>
+      <Tab value="Standalone">
+        ```bash # Already included with @trpc/server npm install @trpc/server
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+## TypeScript Configuration
+
+Ensure your `tsconfig.json` has strict mode enabled for the best experience:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true
+  }
+}
+```
+
+## Basic Server Setup
+
+<Tabs items={['Next.js API Route', 'Express Server', 'Fastify Server', 'Standalone Server']}>
+  <Tab value="Next.js API Route">
+    ```typescript title="pages/api/trpc/[trpc].ts"
+    import { createNextApiHandler } from '@trpc/server/adapters/next';
+    import { appRouter } from '../../../server/router';
+    import { createContext } from '../../../server/context';
+
+    export default createNextApiHandler({
+      router: appRouter,
+      createContext,
+    });
+    ```
+
+  </Tab>
+  <Tab value="Express Server">
+    ```typescript title="server.ts"
+    import express from 'express';
+    import { createExpressMiddleware } from '@trpc/server/adapters/express';
+    import { appRouter } from './router';
+    import { createContext } from './context';
+
+    const app = express();
+
+    app.use(
+      '/trpc',
+      createExpressMiddleware({
+        router: appRouter,
+        createContext,
+      })
+    );
+
+    app.listen(3000, () => {
+      console.log('Server running on http://localhost:3000');
+    });
+    ```
+
+  </Tab>
+  <Tab value="Fastify Server">
+    ```typescript title="server.ts"
+    import Fastify from 'fastify';
+    import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+    import { appRouter } from './router';
+    import { createContext } from './context';
+
+    const fastify = Fastify({ logger: true });
+
+    await fastify.register(fastifyTRPCPlugin, {
+      prefix: '/trpc',
+      trpcOptions: {
+        router: appRouter,
+        createContext,
+      },
+    });
+
+    await fastify.listen({ port: 3000 });
+    ```
+
+  </Tab>
+  <Tab value="Standalone Server">
+    ```typescript title="server.ts"
+    import { createHTTPServer } from '@trpc/server/adapters/standalone';
+    import { appRouter } from './router';
+    import { createContext } from './context';
+
+    const server = createHTTPServer({
+      router: appRouter,
+      createContext,
+    });
+
+    server.listen(3000);
+    console.log('Server running on http://localhost:3000');
+    ```
+
+  </Tab>
+</Tabs>
+
+## Create Your First Router
+
+```typescript title="server/router.ts"
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(z.object({ name: z.string() }))
+    .query(({ input }) => {
+      return { greeting: `Hello, ${input.name}!` };
+    }),
+
+  createPost: t.procedure
+    .input(z.object({
+      title: z.string(),
+      content: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      // Save to database
+      const post = await db.post.create({ data: input });
+      return post;
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+## Add Context (Optional)
+
+```typescript title="server/context.ts"
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+
+export function createContext(opts: CreateNextContextOptions) {
+  return {
+    req: opts.req,
+    res: opts.res,
+    // Add your context here (database, auth, etc.)
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+## Common Package Combinations
+
+### For Web APIs
+
+```bash
+npm install @trpc/server zod
+# Choose one adapter:
+# npm install express @types/express
+# npm install fastify @types/fastify
+```
+
+### For Next.js Apps
+
+```bash
+npm install @trpc/server zod
+# Adapter included with @trpc/server
+```
+
+### For Real-time Apps
+
+```bash
+npm install @trpc/server zod ws @types/ws
+```
+
+### For Database Integration
+
+```bash
+npm install @trpc/server zod
+# Choose your database tools:
+# npm install prisma @prisma/client
+# npm install drizzle-orm
+# npm install mongoose
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="Define Procedures" href="/docs/server/procedures">
+    Learn how to create queries, mutations, and subscriptions
+  </Card>
+  <Card title="Server Quickstart" href="/docs/server/quickstart">
+    Build your first tRPC server with a complete example
+  </Card>
+  <Card title="Add Validation" href="/docs/server/validators">
+    Validate inputs and outputs with Zod and other libraries
+  </Card>
+  <Card title="Deploy Your API" href="/docs/server/adapters">
+    Choose the right adapter for your deployment platform
+  </Card>
+</Cards>
+
+<Callout title="Need client integration?">
+  Once your server is set up, head to [tRPC Client](/docs/client) to connect
+  your frontend.
+</Callout>

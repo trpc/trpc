@@ -1,0 +1,230 @@
+---
+title: loader()
+description: Turn a content source into a unified interface
+---
+
+## Usage
+
+`loader()` provides an interface for Fumadocs to integrate with file-system based content sources.
+
+### What it does?
+
+- Generate page trees based on file system.
+- Assign URL and slugs to each page.
+- Output useful utilities to interact with content.
+
+It doesn't rely on the real file system (zero `node:fs` usage), a virtual storage is also allowed.
+
+You can use it with built-in content sources like Fumadocs MDX.
+
+```ts
+import { loader } from 'fumadocs-core/source';
+import { docs } from '@/.source';
+
+export const source = loader({
+  source: docs.toFumadocsSource(),
+});
+```
+
+### URL
+
+You can override the base URL, or specify a function to generate URL for each page.
+
+```ts
+import { loader } from 'fumadocs-core/source';
+
+loader({
+  baseUrl: '/docs',
+  // or you can customise it with function
+  url(slugs, locale) {
+    if (locale) return '/' + [locale, 'docs', ...slugs].join('/');
+    return '/' + ['docs', ...slugs].join('/');
+  },
+});
+```
+
+### Icons
+
+Load the [icon](/docs/headless/page-conventions#icons) property specified by pages and meta files.
+
+```ts
+import { loader } from 'fumadocs-core/source';
+import { icons } from 'lucide-react';
+import { createElement } from 'react';
+
+loader({
+  icon(icon) {
+    if (!icon) {
+      // You may set a default icon
+      return;
+    }
+
+    if (icon in icons) return createElement(icons[icon as keyof typeof icons]);
+  },
+});
+```
+
+### I18n
+
+Pass the `i18n` config to loader.
+
+```ts title="lib/source.ts"
+import { i18n } from '@/lib/i18n';
+import { loader } from 'fumadocs-core/source';
+
+export const source = loader({
+  i18n, // [!code highlight]
+});
+```
+
+With i18n enabled, loader will generate a page tree for every locale.
+
+When looking for a page, it fallbacks to default locale if the page doesn't exist for specified locale.
+
+## Output
+
+The loader outputs a source object.
+
+### Get Page
+
+Get page with slugs.
+
+```ts
+import { source } from '@/lib/source';
+
+source.getPage(['slug', 'of', 'page']);
+
+// with i18n
+source.getPage(['slug', 'of', 'page'], 'locale');
+```
+
+### Get Pages
+
+Get a list of page available for locale.
+
+```ts
+import { source } from '@/lib/source';
+
+// from default locale
+source.getPages();
+
+// for a specific locale
+source.getPages('locale');
+```
+
+### Page Tree
+
+```ts
+import { source } from '@/lib/source';
+
+// without i18n
+source.pageTree;
+
+// with i18n
+source.pageTree['locale'];
+```
+
+### Get from Node
+
+The page tree nodes contain references to their original file path.
+You can find their original page or meta file from the tree nodes.
+
+```ts
+import { source } from '@/lib/source';
+
+source.getNodePage(pageNode);
+source.getNodeMeta(folderNode);
+```
+
+### Params
+
+A function to generate output for Next.js `generateStaticParams`.
+The generated parameter names will be `slug: string[]` and `lang: string` (i18n only).
+
+```ts title="app/[[...slug]]/page.tsx"
+import { source } from '@/lib/source';
+
+export function generateStaticParams() {
+  return source.generateParams();
+}
+```
+
+### Language Entries
+
+Get available languages and its pages.
+
+```ts
+import { source } from '@/lib/source';
+
+// language -> pages
+const entries = source.getLanguages();
+```
+
+## Deep Dive
+
+As mentioned, Source API doesn't rely on real file systems.
+During the process, your input source files will be parsed and form a virtual storage to avoid inconsistent behaviour between different OS.
+
+### Transformer
+
+To perform virtual file-system operations before processing, you can add a transformer.
+
+```ts
+import { loader } from 'fumadocs-core/source';
+
+loader({
+  transformers: [
+    ({ storage }) => {
+      storage.makeDir();
+    },
+  ],
+});
+```
+
+### Page Tree
+
+The page tree is generated from your file system, some unnecessary information (e.g. unused frontmatter properties) will be filtered.
+
+You can customise it using the `pageTree` option, such as attaching custom properties to nodes, or customising the display name of pages.
+
+```tsx
+import React from 'react';
+import { loader } from 'fumadocs-core/source';
+
+loader({
+  pageTree: {
+    attachFile(node, file) {
+      // you can access its file information
+      console.log(file?.data);
+      // JSX nodes are allowed
+      node.name = <>Some JSX Nodes here</>;
+
+      return node;
+    },
+  },
+});
+```
+
+### Custom Source
+
+To plug your own content source, create a `Source` object.
+
+It includes a `files` property which is an array of virtual files.
+Each virtual file must contain its file path and corresponding data.
+You can check type definitions for more info.
+
+Since Source API doesn't rely on file system, file paths cannot be absolute or relative (for example, `./file.mdx` and `D://content/file.mdx` are not allowed).
+Instead, pass the file paths like `file.mdx` and `content/file.mdx`.
+
+```ts
+import { Source } from 'fumadocs-core/source';
+
+export function createMySource(): Source<{
+  metaData: { title: string; pages: string[] }; // Your custom type
+  pageData: { title: string; description: string }; // Your custom type
+}> {
+  return {
+    files: [],
+  };
+}
+```

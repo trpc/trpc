@@ -1,0 +1,51 @@
+---
+title: TOC
+description: Table of Contents
+---
+
+A Table of Contents with active anchor observer and auto scroll.
+
+## Usage
+
+```tsx
+import * as Base from 'fumadocs-core/toc';
+
+return (
+  <Base.AnchorProvider>
+    <Base.ScrollProvider>
+      <Base.TOCItem />
+      <Base.TOCItem />
+    </Base.ScrollProvider>
+  </Base.AnchorProvider>
+);
+```
+
+### Anchor Provider
+
+Watches for the active anchor using the Intersection Observer API.
+
+<AutoTypeTable
+  path="./content/docs/headless/props.ts"
+  name="AnchorProviderProps"
+/>
+
+### Scroll Provider
+
+Scrolls the scroll container to the active anchor.
+
+<AutoTypeTable
+  path="./content/docs/headless/props.ts"
+  name="ScrollProviderProps"
+/>
+
+### TOC Item
+
+An anchor item for jumping to the target anchor.
+
+| Data Attribute | Values        | Description          |
+| -------------- | ------------- | -------------------- |
+| `data-active`  | `true, false` | Is the anchor active |
+
+## Example
+
+<include>./toc-example.tsx</include>

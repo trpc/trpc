@@ -1,0 +1,94 @@
+---
+title: Orama Cloud
+description: Integrate with Orama Cloud
+---
+
+To begin, create an account on Orama Cloud.
+
+## REST API
+
+REST API integration requires your docs to upload the indexes.
+
+1. Create a new REST API index from Dashboard.
+2. Use the following schema:
+
+   ```json
+   {
+     "id": "string",
+     "title": "string",
+     "url": "string",
+     "tag": "string",
+     "page_id": "string",
+     "section": "string",
+     "section_id": "string",
+     "content": "string"
+   }
+   ```
+
+3. Then, using the private API key and index ID from dashboard, create a script to sync search indexes.
+
+   <include cwd meta='title="sync-index.mjs"' lang="js">
+     ../../examples/next-mdx/scripts/sync-orama-cloud.mjs
+   </include>
+
+4. Create a route handler in your Next.js app to export search indexes.
+
+   <include cwd meta='title="app/static.json/route.ts"'>
+     ../../examples/next-mdx/app/static.json/orama-cloud.ts
+   </include>
+
+5. Run the script after `next build`.
+
+### Search Client
+
+To search documents on the client side, consider:
+
+- Using [Fumadocs UI search dialog](/docs/ui/search/orama-cloud).
+- Custom search UI using the built-in hook of Fumadocs:
+
+  ```ts
+  import { useDocsSearch } from 'fumadocs-core/search/client';
+  import { OramaClient } from '@oramacloud/client';
+
+  const client = new OramaClient();
+
+  const { search, setSearch, query } = useDocsSearch({
+    type: 'orama-cloud',
+    client,
+    params: {
+      // search params
+    },
+  });
+  ```
+
+- Use their search client directly.
+
+## Web Crawler
+
+1. Create a Crawler index from dashboard, and configure it correctly with the "Documentation" preset.
+2. Copy the public API key and index ID from dashboard
+
+### Search Client
+
+Same as REST API integration, but make sure to set `index` to `crawler`.
+
+```ts
+import { useDocsSearch } from 'fumadocs-core/search/client';
+import { OramaClient } from '@oramacloud/client';
+
+const client = new OramaClient({
+  endpoint: '<endpoint_url>',
+  api_key: '<api_key>',
+});
+
+const { search, setSearch, query } = useDocsSearch({
+  type: 'orama-cloud',
+  index: 'crawler',
+  client,
+  params: {
+    // optional search params
+  },
+});
+```
+
+It's same for Fumadocs UI.

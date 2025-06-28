@@ -1,0 +1,114 @@
+---
+title: Mermaid
+description: Rendering diagrams in your docs
+---
+
+Fumadocs doesn't have a built-in Mermaid wrapper provided, we recommend using `mermaid` directly.
+
+## Setup
+
+Install the required dependencies, `next-themes` is used with Fumadocs to manage the light/dark mode.
+
+```package-install
+mermaid next-themes
+```
+
+Create the Mermaid component:
+
+<include cwd meta='title="components/mdx/mermaid.tsx"'>
+  ./components/mdx/mermaid.tsx
+</include>
+
+> This is originally inspired by [remark-mermaid](https://github.com/the-guild-org/docs/blob/main/packages/remark-mermaid/src/mermaid.tsx).
+
+Add the component as a MDX component:
+
+```tsx title="mdx-components.tsx"
+import defaultMdxComponents from 'fumadocs-ui/mdx';
+import { Mermaid } from '@/components/mdx/mermaid';
+import type { MDXComponents } from 'mdx/types';
+
+export function getMDXComponents(components?: MDXComponents): MDXComponents {
+  return {
+    ...defaultMdxComponents,
+    Mermaid,
+    ...components,
+  };
+}
+```
+
+## Usage
+
+Use it in MDX files.
+
+```mdx
+<Mermaid
+  chart="
+graph TD;
+subgraph AA [Consumers]
+A[Mobile app];
+B[Web app];
+C[Node.js client];
+end
+subgraph BB [Services]
+E[REST API];
+F[GraphQL API];
+G[SOAP API];
+end
+Z[GraphQL API];
+A --> Z;
+B --> Z;
+C --> Z;
+Z --> E;
+Z --> F;
+Z --> G;"
+/>
+```
+
+<Tabs items={['Diagram', 'User Journey']}>
+
+    <Tab>
+    <Mermaid
+        chart="
+
+graph TD;
+subgraph AA [Consumers]
+A[Mobile app];
+B[Web app];
+C[Node.js client];
+end
+subgraph BB [Services]
+E[REST API];
+F[GraphQL API];
+G[SOAP API];
+end
+Z[GraphQL API];
+A --> Z;
+B --> Z;
+C --> Z;
+Z --> E;
+Z --> F;
+Z --> G;"
+/>
+
+</Tab>
+
+    <Tab>
+        <Mermaid
+            chart="
+
+journey
+title My working day
+section Go to work
+Make tea: 5: Me
+Go upstairs: 3: Me
+Do work: 1: Me, Cat
+section Go home
+Go downstairs: 5: Me
+Sit down: 5: Me
+"
+/>
+
+    </Tab>
+
+</Tabs>

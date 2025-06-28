@@ -1,0 +1,142 @@
+---
+title: Auto Type Table
+description: Auto-generated type table
+---
+
+<Wrapper>
+
+<div className="bg-fd-background p-4 rounded-xl">
+
+<AutoTypeTable name="AutoTypeTableExample" type={`export interface AutoTypeTableExample {
+    /**
+     * Markdown syntax like links, \`code\` are supported.
+     *
+     * See https://fumadocs.vercel.app/docs/ui/components/type-table
+     */
+    name: string;
+
+    /**
+    * We love Shiki.
+    *
+    * \`\`\`ts
+    * console.log("Hello World, powered by Shiki");
+    * \`\`\`
+    */
+    options: Partial<{ a: unknown }>;
+
+}`} />
+
+</div>
+
+</Wrapper>
+
+It generates a table for your docs based on TypeScript definitions.
+
+## Usage
+
+```package-install
+fumadocs-typescript
+```
+
+Initialize the TypeScript compiler and add it as a MDX component.
+
+```tsx title="mdx-components.tsx"
+import defaultComponents from 'fumadocs-ui/mdx';
+import type { MDXComponents } from 'mdx/types';
+import { createGenerator } from 'fumadocs-typescript';
+import { AutoTypeTable } from 'fumadocs-typescript/ui';
+
+const generator = createGenerator();
+
+export function getMDXComponents(components?: MDXComponents): MDXComponents {
+  return {
+    ...defaultComponents,
+    AutoTypeTable: (props) => (
+      <AutoTypeTable {...props} generator={generator} />
+    ),
+    ...components,
+  };
+}
+```
+
+### From File
+
+It accepts a `path` prop that points to a typescript file, and `name` for the exported type name.
+
+```ts title="path/to/file.ts"
+export interface MyInterface {
+  name: string;
+}
+```
+
+```mdx
+<AutoTypeTable path="./path/to/file.ts" name="MyInterface" />
+```
+
+The path is relative to your project directory (`cwd`), because `AutoTypeTable` is a React Server Component, it cannot access build-time information like MDX file path.
+
+<Callout title="Server Component only" type="warn">
+
+You cannot use this in a client component.
+
+</Callout>
+
+### From Type
+
+You can specify the type to generate, without an actual TypeScript file.
+
+```mdx
+import { AutoTypeTable } from 'fumadocs-typescript/ui';
+
+<AutoTypeTable type="{ hello: string }" />
+```
+
+When a `path` is given, it shares the same context as the TypeScript file.
+
+```ts title="file.ts"
+export type A = { hello: string };
+```
+
+```mdx
+<AutoTypeTable path="file.ts" type="A & { world: string }" />
+```
+
+When `type` has multiple lines, the export statement and `name` prop are required.
+
+```mdx
+<AutoTypeTable
+  path="file.ts"
+  name="B"
+  type={`
+import { ReactNode } from "react"
+export type B = ReactNode | { world: string }
+`}
+/>
+```
+
+### Functions
+
+Notice that only object type is allowed. For functions, you should wrap them into an object instead.
+
+```ts
+export interface MyInterface {
+  myFn: (input: string) => void;
+}
+```
+
+### References
+
+<auto-type-table path="../props.ts" name="AutoTypeTableProps" />
+
+### File System
+
+It relies on the file system, hence, the page referencing this component must be built in **build time**. Rendering the component on serverless runtime may cause problems.
+
+### Deep Dive
+
+Under the hood, it uses the [Typescript Compiler API](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API) to extract type information.
+Your `tsconfig.json` file in the current working directory will be loaded.
+
+To change the compiler settings, pass a `options` prop to the component.
+
+Learn more about [Typescript Docs Generation](/docs/ui/typescript).

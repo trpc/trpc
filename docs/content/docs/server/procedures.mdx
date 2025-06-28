@@ -1,0 +1,715 @@
+---
+title: Define Procedures
+description: Create queries, mutations, and subscriptions with full type safety
+icon: IconCode
+---
+
+Procedures are the core building blocks of your tRPC API. They are functions exposed to the client that can be one of three types: **queries** (for fetching data), **mutations** (for changing data), or **subscriptions** (for real-time updates).
+
+<Callout title="Type-Safe by Design">
+  tRPC procedures provide automatic TypeScript inference from server to client,
+  eliminating the need for manual type definitions or code generation.
+</Callout>
+
+## Procedure Types
+
+<Cards>
+  <Card title="Query" icon="📖">
+    **Read operations** - Used to fetch data, generally doesn't change server
+    state
+  </Card>
+  <Card title="Mutation" icon="✏️">
+    **Write operations** - Used to create, update, or delete data on the server
+  </Card>
+  <Card title="Subscription" icon="🔄">
+    **Real-time updates** - Used for live data streams and real-time
+    functionality
+  </Card>
+</Cards>
+
+## Basic Procedures
+
+### Query Procedures
+
+Use queries for reading data without side effects:
+
+```typescript title="server/router.ts"
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+export const appRouter = t.router({
+  // Simple query without input
+  hello: t.procedure.query(() => {
+    return { message: 'Hello World!' };
+  }),
+
+  // Query with input validation
+  getUser: t.procedure
+    .input(z.string())
+    .query(async ({ input }) => {
+      // input is automatically typed as string
+      const user = await db.user.findUnique({
+        where: { id: input },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        });
+      }
+
+      return user;
+    }),
+
+  // Query with complex input
+  getUserPosts: t.procedure
+    .input(z.object({
+      userId: z.string(),
+      limit: z.number().min(1).max(100).default(10),
+      cursor: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const posts = await db.post.findMany({
+        where: { authorId: input.userId },
+        take: input.limit + 1,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const hasMore = posts.length > input.limit;
+      const items = hasMore ? posts.slice(0, -1) : posts;
+
+      return {
+        items,
+        nextCursor: hasMore ? items[items.length - 1].id : undefined,
+      };
+    }),
+});
+```
+
+### Mutation Procedures
+
+Use mutations for operations that change server state:
+
+```typescript title="server/mutations.ts"
+export const mutationRouter = t.router({
+  // Simple mutation
+  createPost: t.procedure
+    .input(z.object({
+      title: z.string().min(1),
+      content: z.string(),
+      authorId: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const post = await db.post.create({
+        data: input,
+        include: { author: true },
+      });
+
+      return post;
+    }),
+
+  // Mutation with conditional logic
+  updatePost: t.procedure
+    .input(z.object({
+      id: z.string(),
+      title: z.string().optional(),
+      content: z.string().optional(),
+      published: z.boolean().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, ...updates } = input;
+
+      // Only update fields that were provided
+      const post = await db.post.update({
+        where: { id },
+        data: Object.fromEntries(
+          Object.entries(updates).filter(([, value]) => value !== undefined)
+        ),
+      });
+
+      return post;
+    }),
+
+  // Mutation with side effects
+  deletePost: t.procedure
+    .input(z.string())
+    .mutation(async ({ input }) => {
+      // Delete associated data first
+      await db.comment.deleteMany({
+        where: { postId: input },
+      });
+
+      // Delete the post
+      const deletedPost = await db.post.delete({
+        where: { id: input },
+      });
+
+      // Trigger side effects (notifications, cache invalidation, etc.)
+      await notificationService.notifyPostDeleted(deletedPost);
+      await cacheService.invalidatePost(input);
+
+      return { success: true, deletedId: input };
+    }),
+});
+```
+
+### Subscription Procedures
+
+Use subscriptions for real-time data streams:
+
+```typescript title="server/subscriptions.ts"
+import { observable } from '@trpc/server/observable';
+import EventEmitter from 'events';
+
+const eventEmitter = new EventEmitter();
+
+export const subscriptionRouter = t.router({
+  // Simple subscription
+  onPostAdd: t.procedure.subscription(() => {
+    return observable<Post>((emit) => {
+      const handler = (post: Post) => {
+        emit.next(post);
+      };
+
+      eventEmitter.on('postAdded', handler);
+
+      // Cleanup when subscription ends
+      return () => {
+        eventEmitter.off('postAdded', handler);
+      };
+    });
+  }),
+
+  // Subscription with input
+  onUserPostAdd: t.procedure
+    .input(z.object({ userId: z.string() }))
+    .subscription(({ input }) => {
+      return observable<Post>((emit) => {
+        const handler = (post: Post) => {
+          if (post.authorId === input.userId) {
+            emit.next(post);
+          }
+        };
+
+        eventEmitter.on('postAdded', handler);
+
+        return () => {
+          eventEmitter.off('postAdded', handler);
+        };
+      });
+    }),
+
+  // Subscription with periodic updates
+  serverStats: t.procedure.subscription(() => {
+    return observable<ServerStats>((emit) => {
+      const interval = setInterval(async () => {
+        const stats = await getServerStats();
+        emit.next(stats);
+      }, 5000); // Every 5 seconds
+
+      return () => {
+        clearInterval(interval);
+      };
+    });
+  }),
+});
+```
+
+## Input & Output Validation
+
+### Input Validation
+
+Always validate inputs to ensure type safety and security:
+
+```typescript title="server/validation.ts"
+export const validatedRouter = t.router({
+  createUser: t.procedure
+    .input(z.object({
+      email: z.string().email('Invalid email format'),
+      name: z.string().min(2, 'Name must be at least 2 characters'),
+      age: z.number().int().min(13, 'Must be at least 13 years old'),
+      role: z.enum(['user', 'admin']).default('user'),
+      preferences: z.object({
+        theme: z.enum(['light', 'dark']).default('light'),
+        notifications: z.boolean().default(true),
+      }).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      // input is fully typed and validated
+      return await db.user.create({ data: input });
+    }),
+
+  // Complex validation with custom logic
+  updateUserProfile: t.procedure
+    .input(z.object({
+      userId: z.string(),
+      updates: z.object({
+        bio: z.string().max(500).optional(),
+        website: z.string().url().optional(),
+        location: z.string().max(100).optional(),
+      }),
+    }))
+    .mutation(async ({ input }) => {
+      // Custom validation logic
+      if (input.updates.website &&
+          !input.updates.website.startsWith('https://')) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Website must use HTTPS',
+        });
+      }
+
+      return await db.user.update({
+        where: { id: input.userId },
+        data: input.updates,
+      });
+    }),
+});
+```
+
+### Output Validation
+
+While optional, output validation can catch bugs and ensure consistency:
+
+```typescript title="server/output-validation.ts"
+const UserSchema = z.object({
+  id: z.string(),
+  email: z.string().email(),
+  name: z.string(),
+  createdAt: z.date(),
+});
+
+export const outputValidatedRouter = t.router({
+  getUser: t.procedure
+    .input(z.string())
+    .output(UserSchema)
+    .query(async ({ input }) => {
+      const user = await db.user.findUnique({ where: { id: input } });
+      if (!user) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
+      // Output will be validated against UserSchema
+      return user;
+    }),
+
+  // Array output validation
+  getUserList: t.procedure
+    .output(z.array(UserSchema))
+    .query(async () => {
+      return await db.user.findMany();
+    }),
+});
+```
+
+## Reusable Base Procedures
+
+Create reusable base procedures for common patterns:
+
+```typescript title="server/base-procedures.ts"
+import { initTRPC, TRPCError } from '@trpc/server';
+
+const t = initTRPC.context<Context>().create();
+
+// Public procedure (anyone can call)
+export const publicProcedure = t.procedure;
+
+// Authenticated procedure
+export const authedProcedure = t.procedure.use(async ({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.session.user, // User is guaranteed to exist
+    },
+  });
+});
+
+// Admin procedure
+export const adminProcedure = authedProcedure.use(async ({ ctx, next }) => {
+  if (ctx.user.role !== 'admin') {
+    throw new TRPCError({ code: 'FORBIDDEN' });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user, // Admin user
+    },
+  });
+});
+
+// Rate limited procedure
+export const rateLimitedProcedure = publicProcedure.use(async ({ ctx, next }) => {
+  const clientId = ctx.req.ip || 'unknown';
+  const isAllowed = await rateLimiter.check(clientId);
+
+  if (!isAllowed) {
+    throw new TRPCError({
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Rate limit exceeded',
+    });
+  }
+
+  return next();
+});
+
+// Organization-specific procedure
+export const organizationProcedure = authedProcedure
+  .input(z.object({ organizationId: z.string() }))
+  .use(async ({ input, ctx, next }) => {
+    const membership = await db.membership.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: ctx.user.id,
+          organizationId: input.organizationId,
+        },
+      },
+      include: { organization: true },
+    });
+
+    if (!membership) {
+      throw new TRPCError({ code: 'FORBIDDEN' });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        organization: membership.organization,
+        membership,
+      },
+    });
+  });
+```
+
+### Using Base Procedures
+
+```typescript title="server/user-router.ts"
+export const userRouter = t.router({
+  // Public endpoint
+  getPublicProfile: publicProcedure
+    .input(z.string())
+    .query(async ({ input }) => {
+      return await db.user.findUnique({
+        where: { id: input },
+        select: { id: true, name: true, bio: true }, // Only public fields
+      });
+    }),
+
+  // Authenticated endpoint
+  getProfile: authedProcedure
+    .query(async ({ ctx }) => {
+      return await db.user.findUnique({
+        where: { id: ctx.user.id },
+        include: { preferences: true },
+      });
+    }),
+
+  // Admin endpoint
+  getAllUsers: adminProcedure
+    .input(z.object({
+      page: z.number().default(1),
+      limit: z.number().min(1).max(100).default(20),
+    }))
+    .query(async ({ input }) => {
+      const skip = (input.page - 1) * input.limit;
+
+      const [users, total] = await Promise.all([
+        db.user.findMany({
+          skip,
+          take: input.limit,
+          orderBy: { createdAt: 'desc' },
+        }),
+        db.user.count(),
+      ]);
+
+      return {
+        users,
+        pagination: {
+          page: input.page,
+          limit: input.limit,
+          total,
+          totalPages: Math.ceil(total / input.limit),
+        },
+      };
+    }),
+
+  // Organization-specific endpoint
+  getOrganizationMembers: organizationProcedure
+    .query(async ({ ctx }) => {
+      return await db.membership.findMany({
+        where: { organizationId: ctx.organization.id },
+        include: { user: true },
+      });
+    }),
+});
+```
+
+## Advanced Patterns
+
+### Conditional Procedures
+
+Use middleware to create conditional logic:
+
+```typescript title="server/conditional.ts"
+const withPostAccess = t.procedure
+  .input(z.object({ postId: z.string() }))
+  .use(async ({ input, ctx, next }) => {
+    const post = await db.post.findUnique({
+      where: { id: input.postId },
+      include: { author: true },
+    });
+
+    if (!post) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Post not found' });
+    }
+
+    // Check access permissions
+    const hasAccess = post.published ||
+                     post.authorId === ctx.user?.id ||
+                     ctx.user?.role === 'admin';
+
+    if (!hasAccess) {
+      throw new TRPCError({ code: 'FORBIDDEN' });
+    }
+
+    return next({
+      ctx: { ...ctx, post }, // Add post to context
+    });
+  });
+
+export const postRouter = t.router({
+  getPost: withPostAccess.query(({ ctx }) => {
+    // ctx.post is guaranteed to exist and user has access
+    return ctx.post;
+  }),
+
+  updatePost: withPostAccess
+    .input(z.object({
+      postId: z.string(),
+      updates: z.object({
+        title: z.string().optional(),
+        content: z.string().optional(),
+      }),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // Only allow author or admin to update
+      if (ctx.post.authorId !== ctx.user?.id && ctx.user?.role !== 'admin') {
+        throw new TRPCError({ code: 'FORBIDDEN' });
+      }
+
+      return await db.post.update({
+        where: { id: input.postId },
+        data: input.updates,
+      });
+    }),
+});
+```
+
+### Batch Operations
+
+Handle multiple operations efficiently:
+
+```typescript title="server/batch.ts"
+export const batchRouter = t.router({
+  createMultiplePosts: t.procedure
+    .input(z.array(z.object({
+      title: z.string(),
+      content: z.string(),
+      authorId: z.string(),
+    })))
+    .mutation(async ({ input }) => {
+      // Use database transaction for atomicity
+      return await db.$transaction(
+        input.map((post) => db.post.create({ data: post }))
+      );
+    }),
+
+  getMultipleUsers: t.procedure
+    .input(z.array(z.string()))
+    .query(async ({ input }) => {
+      const users = await db.user.findMany({
+        where: { id: { in: input } },
+      });
+
+      // Return in same order as requested
+      return input.map(id => users.find(user => user.id === id) || null);
+    }),
+});
+```
+
+### File Upload Procedures
+
+Handle file uploads with proper validation:
+
+```typescript title="server/upload.ts"
+export const uploadRouter = t.router({
+  uploadImage: t.procedure
+    .input(z.instanceof(FormData))
+    .mutation(async ({ input }) => {
+      const file = input.get('image') as File;
+
+      if (!file) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'No file provided',
+        });
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'File must be an image',
+        });
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'File size must be less than 5MB',
+        });
+      }
+
+      // Process and store file
+      const fileName = `${Date.now()}-${file.name}`;
+      const url = await fileStorage.upload(fileName, file);
+
+      return { url, fileName };
+    }),
+});
+```
+
+## Error Handling
+
+Implement comprehensive error handling:
+
+```typescript title="server/errors.ts"
+export const errorHandlingRouter = t.router({
+  riskyOperation: t.procedure
+    .input(z.string())
+    .mutation(async ({ input }) => {
+      try {
+        const result = await externalAPI.processData(input);
+        return result;
+      } catch (error) {
+        // Handle different error types
+        if (error instanceof ValidationError) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Invalid input data',
+            cause: error,
+          });
+        }
+
+        if (error instanceof NetworkError) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'External service unavailable',
+            cause: error,
+          });
+        }
+
+        // Unknown error
+        console.error('Unexpected error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'An unexpected error occurred',
+        });
+      }
+    }),
+});
+```
+
+## Testing Procedures
+
+Test your procedures effectively:
+
+```typescript title="server/procedures.test.ts"
+import { createCallerFactory } from '@trpc/server';
+import { appRouter } from './router';
+
+const createCaller = createCallerFactory(appRouter);
+
+describe('User Procedures', () => {
+  const caller = createCaller({
+    user: { id: 'user1', role: 'user' },
+    db: mockDb,
+  });
+
+  it('should get user profile', async () => {
+    const profile = await caller.user.getProfile();
+    expect(profile.id).toBe('user1');
+  });
+
+  it('should create a post', async () => {
+    const post = await caller.post.create({
+      title: 'Test Post',
+      content: 'This is a test',
+      authorId: 'user1',
+    });
+
+    expect(post.title).toBe('Test Post');
+    expect(post.authorId).toBe('user1');
+  });
+
+  it('should throw error for unauthorized access', async () => {
+    const unauthorizedCaller = createCaller({});
+
+    await expect(
+      unauthorizedCaller.user.getProfile()
+    ).rejects.toThrow('UNAUTHORIZED');
+  });
+});
+```
+
+## Best Practices
+
+<Accordions>
+  <Accordion title="Input Validation">
+    - Always validate inputs with Zod or similar - Use specific error messages
+    for better UX - Set reasonable limits on string lengths and array sizes -
+    Validate business rules in procedures, not just types
+  </Accordion>
+
+<Accordion title="Error Handling">
+  - Use appropriate tRPC error codes - Provide helpful error messages - Log
+  errors for debugging - Don't expose sensitive information in error messages
+</Accordion>
+
+<Accordion title="Performance">
+  - Use database indexes for query procedures - Implement pagination for large
+  datasets - Consider caching for frequently accessed data - Use database
+  transactions for related mutations
+</Accordion>
+
+  <Accordion title="Security">
+    - Always authenticate sensitive procedures - Validate user permissions
+    before data access - Rate limit public endpoints - Sanitize user inputs
+  </Accordion>
+</Accordions>
+
+## Next Steps
+
+<Cards>
+  <Card href="/docs/server/routers" title="Define Routers">
+    Learn how to organize procedures into routers and merge them
+  </Card>
+  <Card href="/docs/server/context" title="Add Context">
+    Share data like database connections and user sessions
+  </Card>
+  <Card href="/docs/server/middlewares" title="Add Middleware">
+    Implement authentication, logging, and custom logic
+  </Card>
+  <Card href="/docs/server/error-handling" title="Error Handling">
+    Master error handling and debugging techniques
+  </Card>
+</Cards>

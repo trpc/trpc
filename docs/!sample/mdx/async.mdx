@@ -1,0 +1,87 @@
+---
+title: Async Mode
+description: Runtime compilation of content files.
+---
+
+## Introduction
+
+By default, all Markdown and MDX files need to be pre-compiled first. The same constraint also applies to the development server.
+
+This may result in longer dev server start times for large docs sites. You can enable Async Mode on `doc` collections to improve this.
+
+### Setup
+
+Install required dependencies.
+
+```package-install
+@fumadocs/mdx-remote shiki
+```
+
+Enable Async Mode.
+
+```ts tab="Docs Collection"
+import { defineDocs } from 'fumadocs-mdx/config';
+
+export const docs = defineDocs({
+  dir: 'content/docs',
+  docs: {
+    async: true,
+  },
+});
+```
+
+```ts tab="Doc Collection"
+import { defineCollections } from 'fumadocs-mdx/config';
+
+export const doc = defineCollections({
+  type: 'doc',
+  dir: 'content/docs',
+  async: true,
+});
+```
+
+### Usage
+
+Async Mode allows on-demand compilation of Markdown and MDX content by moving the compilation process from build time to Next.js runtime.
+
+However, you need to invoke the `load()` async function to load and compile content.
+
+For example:
+
+```tsx title="lib/source.ts"
+import { loader } from 'fumadocs-core/source';
+import { docs } from '@/.source';
+
+export const source = loader({
+  baseUrl: '/docs',
+  source: docs.toFumadocsSource(),
+});
+```
+
+```tsx title="page.tsx"
+import { source } from '@/lib/source';
+import { getMDXComponents } from '@/mdx-components';
+
+const page = source.getPage(['...']);
+
+if (page) {
+  // frontmatter properties are available
+  console.log(page.data);
+
+  // Markdown content requires await
+  const { body: MdxContent, toc } = await page.data.load();
+
+  console.log(toc);
+
+  return <MdxContent components={getMDXComponents()} />;
+}
+```
+
+When using Async Mode, we highly recommend to use third-party services to implement search, which usually have better capability to handle massive amount of content to index.
+
+### Constraints
+
+It comes with some limitations on MDX features.
+
+- No import/export allowed in MDX files. For MDX components, pass them from the `components` prop instead.
+- Images must be referenced with URL (e.g. `/images/test.png`). Don't use **file paths** like `./image.png`. You should locate your images in the `public` folder and reference them with URLs.

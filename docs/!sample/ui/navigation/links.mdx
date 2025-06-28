@@ -1,0 +1,228 @@
+---
+title: Layout Links
+description: Customise the shared navigation links on all layouts.
+---
+
+## Overview
+
+Fumadocs allows adding additional links to your layouts with a `links` prop, like linking to your "showcase" page.
+
+<div className="not-prose grid gap-2 *:border max-sm:*:last:hidden sm:grid-cols-[2fr_1fr]">
+
+<>![Nav](/docs/nav-layout-home.png)</>
+
+<>![Nav](/docs/nav-layout-docs.png)</>
+
+</div>
+
+```tsx tab="Shared Options" title="app/layout.config.tsx"
+import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+
+export const baseOptions: BaseLayoutProps = {
+  links: [], // [!code highlight]
+  // other options
+};
+```
+
+```tsx tab="Docs Layout" title="app/docs/layout.tsx"
+import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+import { baseOptions } from '@/app/layout.config';
+import { source } from '@/lib/source';
+import type { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <DocsLayout
+      {...baseOptions}
+      tree={source.pageTree}
+      links={[]} // [!code highlight]
+    >
+      {children}
+    </DocsLayout>
+  );
+}
+```
+
+```tsx tab="Home Layout" title="app/(home)/layout.tsx"
+import { HomeLayout } from 'fumadocs-ui/layouts/home';
+import { baseOptions } from '@/app/layout.config';
+import type { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <HomeLayout
+      {...baseOptions}
+      links={[]} // [!code highlight]
+    >
+      {children}
+    </HomeLayout>
+  );
+}
+```
+
+You can see all supported items below:
+
+### Link Item
+
+A link to navigate to a URL/href, can be external.
+
+```tsx title="app/layout.config.tsx"
+import { BookIcon } from 'lucide-react';
+import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+
+export const baseOptions: BaseLayoutProps = {
+  links: [
+    {
+      icon: <BookIcon />,
+      text: 'Blog',
+      url: '/blog',
+      // secondary items will be displayed differently on navbar
+      secondary: false,
+    },
+  ],
+};
+```
+
+#### Active Mode
+
+The conditions to be marked as active.
+
+| Mode         | Description                                                 |
+| ------------ | ----------------------------------------------------------- |
+| `url`        | When browsing the specified url                             |
+| `nested-url` | When browsing the url and its child pages like `/blog/post` |
+| `none`       | Never be active                                             |
+
+```tsx title="app/layout.config.tsx"
+import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+
+export const baseOptions: BaseLayoutProps = {
+  links: [
+    {
+      text: 'Blog',
+      url: '/blog',
+      active: 'nested-url',
+    },
+  ],
+};
+```
+
+### Icon Item
+
+Same as link item, but is shown as an icon button.
+Icon items are secondary by default.
+
+```tsx title="app/layout.config.tsx"
+import { BookIcon } from 'lucide-react';
+import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+
+export const baseOptions: BaseLayoutProps = {
+  links: [
+    {
+      type: 'icon',
+      label: 'Visit Blog', // `aria-label`
+      icon: <BookIcon />,
+      text: 'Blog',
+      url: '/blog',
+    },
+  ],
+};
+```
+
+### Custom Item
+
+Display a custom component.
+
+```tsx title="app/layout.config.tsx"
+import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+
+export const baseOptions: BaseLayoutProps = {
+  links: [
+    {
+      type: 'custom',
+      children: <Button variant="primary">Login</Button>,
+      secondary: true,
+    },
+  ],
+};
+```
+
+### GitHub URL
+
+There's also a shortcut for adding GitHub repository link item.
+
+```tsx twoslash title="app/layout.config.tsx"
+import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+
+export const baseOptions: BaseLayoutProps = {
+  githubUrl: 'https://github.com',
+};
+```
+
+### Normal Menu
+
+A menu containing multiple link items.
+
+```tsx title="app/layout.config.tsx"
+import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+
+export const baseOptions: BaseLayoutProps = {
+  links: [
+    {
+      type: 'menu',
+      text: 'Guide',
+      items: [
+        {
+          text: 'Getting Started',
+          description: 'Learn to use Fumadocs',
+          url: '/docs',
+        },
+      ],
+    },
+  ],
+};
+```
+
+### Navigation Menu
+
+In Home Layout, you can add navigation menu (fully animated) to the navbar.
+
+![Nav](/docs/nav-layout-menu.png)
+
+```tsx title="app/(home)/layout.tsx"
+import { baseOptions } from '@/app/layout.config';
+import type { ReactNode } from 'react';
+import { HomeLayout } from 'fumadocs-ui/layouts/home';
+import {
+  NavbarMenu,
+  NavbarMenuContent,
+  NavbarMenuLink,
+  NavbarMenuTrigger,
+} from 'fumadocs-ui/layouts/home/navbar';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <HomeLayout
+      {...baseOptions}
+      links={[
+        {
+          type: 'custom',
+          // only displayed on navbar, not mobile menu
+          on: 'nav',
+          children: (
+            <NavbarMenu>
+              <NavbarMenuTrigger>Documentation</NavbarMenuTrigger>
+              <NavbarMenuContent>
+                <NavbarMenuLink href="/docs">Hello World</NavbarMenuLink>
+              </NavbarMenuContent>
+            </NavbarMenu>
+          ),
+        },
+        // other items
+      ]}
+    >
+      {children}
+    </HomeLayout>
+  );
+}
+```

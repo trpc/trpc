@@ -1,0 +1,420 @@
+---
+title: Server Quickstart
+description: Get up and running with tRPC server in minutes
+icon: IconRocket
+---
+
+Get your tRPC server up and running in under 5 minutes. This guide will walk you through creating a complete API with queries, mutations, and proper type safety.
+
+## Prerequisites
+
+- Node.js 18+ installed
+- Basic TypeScript knowledge
+- A code editor (VS Code recommended)
+
+## Step 1: Project Setup
+
+<Steps>
+  <Step title="Initialize your project">
+    Create a new directory and initialize a Node.js project:
+    
+    <Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+      <Tab value="npm">
+        ```bash
+        mkdir my-trpc-server
+        cd my-trpc-server
+        npm init -y
+        npm install typescript @types/node tsx --save-dev
+        ```
+      </Tab>
+      <Tab value="pnpm">
+        ```bash
+        mkdir my-trpc-server
+        cd my-trpc-server
+        pnpm init
+        pnpm add typescript @types/node tsx -D
+        ```
+      </Tab>
+      <Tab value="yarn">
+        ```bash
+        mkdir my-trpc-server
+        cd my-trpc-server
+        yarn init -y
+        yarn add typescript @types/node tsx --dev
+        ```
+      </Tab>
+      <Tab value="bun">
+        ```bash
+        mkdir my-trpc-server
+        cd my-trpc-server
+        bun init
+        bun add typescript @types/node tsx --dev
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+<Step title="Install tRPC dependencies">
+  Install the core tRPC packages:
+  <Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+    <Tab value="npm">```bash npm install @trpc/server zod ```</Tab>
+    <Tab value="pnpm">```bash pnpm add @trpc/server zod ```</Tab>
+    <Tab value="yarn">```bash yarn add @trpc/server zod ```</Tab>
+    <Tab value="bun">```bash bun add @trpc/server zod ```</Tab>
+  </Tabs>
+</Step>
+
+  <Step title="Setup TypeScript">
+    Create a `tsconfig.json` file:
+    
+    ```json title="tsconfig.json"
+    {
+      "compilerOptions": {
+        "target": "ES2022",
+        "module": "commonjs",
+        "lib": ["ES2022"],
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true
+      },
+      "include": ["src/**/*"],
+      "exclude": ["node_modules", "dist"]
+    }
+    ```
+  </Step>
+</Steps>
+
+## Step 2: Create Your First tRPC Router
+
+<Steps>
+  <Step title="Initialize tRPC">
+    Create the tRPC configuration:
+    
+    ```typescript title="src/trpc.ts"
+    import { initTRPC } from '@trpc/server';
+    import { z } from 'zod';
+    
+    // Initialize tRPC
+    const t = initTRPC.create();
+    
+    // Export reusable router and procedure helpers
+    export const router = t.router;
+    export const publicProcedure = t.procedure;
+    ```
+  </Step>
+
+  <Step title="Create your app router">
+    Build your API with queries and mutations:
+    
+    ```typescript title="src/router.ts"
+    import { z } from 'zod';
+    import { router, publicProcedure } from './trpc';
+    
+    // Mock database
+    const users: Array<{ id: string; name: string; email: string }> = [
+      { id: '1', name: 'Alice', email: 'alice@example.com' },
+      { id: '2', name: 'Bob', email: 'bob@example.com' },
+    ];
+    
+    export const appRouter = router({
+      // Query procedures
+      getUsers: publicProcedure.query(() => {
+        return users;
+      }),
+      
+      getUserById: publicProcedure
+        .input(z.object({ id: z.string() }))
+        .query(({ input }) => {
+          const user = users.find(u => u.id === input.id);
+          if (!user) {
+            throw new Error('User not found');
+          }
+          return user;
+        }),
+      
+      // Mutation procedures  
+      createUser: publicProcedure
+        .input(z.object({
+          name: z.string().min(2),
+          email: z.string().email(),
+        }))
+        .mutation(({ input }) => {
+          const newUser = {
+            id: Math.random().toString(36),
+            name: input.name,
+            email: input.email,
+          };
+          users.push(newUser);
+          return newUser;
+        }),
+      
+      deleteUser: publicProcedure
+        .input(z.object({ id: z.string() }))
+        .mutation(({ input }) => {
+          const index = users.findIndex(u => u.id === input.id);
+          if (index === -1) {
+            throw new Error('User not found');
+          }
+          const deletedUser = users.splice(index, 1)[0];
+          return deletedUser;
+        }),
+    });
+    
+    // Export type router type signature for client inference
+    export type AppRouter = typeof appRouter;
+    ```
+  </Step>
+
+  <Step title="Create a standalone server">
+    Set up a simple HTTP server:
+    
+    ```typescript title="src/server.ts"
+    import { createHTTPServer } from '@trpc/server/adapters/standalone';
+    import { appRouter } from './router';
+    
+    const server = createHTTPServer({
+      router: appRouter,
+      createContext() {
+        return {};
+      },
+    });
+    
+    const port = 3000;
+    server.listen(port);
+    
+    console.log(`🚀 Server ready at http://localhost:${port}`);
+    ```
+  </Step>
+
+  <Step title="Add run scripts">
+    Update your `package.json`:
+    
+    ```json title="package.json"
+    {
+      "scripts": {
+        "dev": "tsx watch src/server.ts",
+        "build": "tsc",
+        "start": "node dist/server.js"
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Step 3: Test Your API
+
+Start your server:
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">```bash npm run dev ```</Tab>
+  <Tab value="pnpm">```bash pnpm dev ```</Tab>
+  <Tab value="yarn">```bash yarn dev ```</Tab>
+  <Tab value="bun">```bash bun run dev ```</Tab>
+</Tabs>
+
+Test your endpoints with curl or any HTTP client:
+
+<Tabs items={['Get Users', 'Get User by ID', 'Create User']}>
+  <Tab value="Get Users">
+    ```bash
+    curl "http://localhost:3000/getUsers"
+    ```
+    
+    Response:
+    ```json
+    {
+      "result": {
+        "data": [
+          { "id": "1", "name": "Alice", "email": "alice@example.com" },
+          { "id": "2", "name": "Bob", "email": "bob@example.com" }
+        ]
+      }
+    }
+    ```
+  </Tab>
+  
+  <Tab value="Get User by ID">
+    ```bash
+    curl "http://localhost:3000/getUserById?input=%7B%22id%22%3A%221%22%7D"
+    ```
+    
+    Response:
+    ```json
+    {
+      "result": {
+        "data": { "id": "1", "name": "Alice", "email": "alice@example.com" }
+      }
+    }
+    ```
+  </Tab>
+  
+  <Tab value="Create User">
+    ```bash
+    curl -X POST "http://localhost:3000/createUser" \
+      -H "Content-Type: application/json" \
+      -d '{"name": "Charlie", "email": "charlie@example.com"}'
+    ```
+    
+    Response:
+    ```json
+    {
+      "result": {
+        "data": { "id": "abc123", "name": "Charlie", "email": "charlie@example.com" }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Step 4: Add Context (Optional)
+
+Add shared data like database connections or user sessions:
+
+```typescript title="src/context.ts"
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+
+export function createContext(opts: CreateHTTPContextOptions) {
+  // Mock authentication
+  const authHeader = opts.req.headers.authorization;
+  const user = authHeader ? { id: 'user1', name: 'Authenticated User' } : null;
+
+  return {
+    user,
+    req: opts.req,
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+Update your tRPC initialization:
+
+```typescript title="src/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import type { Context } from './context';
+
+const t = initTRPC.context<Context>().create();
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+// Protected procedure example
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new Error('Not authenticated');
+  }
+  return next({ ctx: { user: ctx.user } });
+});
+```
+
+## What's Next?
+
+<Cards>
+  <Card title="Add Validation" href="/docs/server/validators">
+    Learn how to validate inputs and outputs with Zod and other libraries
+  </Card>
+  <Card title="Deploy Your API" href="/docs/server/adapters">
+    Deploy to Express, Next.js, Vercel, or other platforms
+  </Card>
+  <Card title="Add Middleware" href="/docs/server/middlewares">
+    Implement authentication, logging, and custom logic
+  </Card>
+  <Card title="Error Handling" href="/docs/server/error-handling">
+    Handle errors gracefully with proper HTTP status codes
+  </Card>
+</Cards>
+
+<Callout title="Need a client?">
+  Once your server is running, check out our [client
+  documentation](/docs/client) to connect your frontend.
+</Callout>
+
+## Full Example
+
+Here's the complete working example:
+
+<Accordions>
+  <Accordion title="package.json">
+    ```json
+    {
+      "name": "my-trpc-server",
+      "version": "1.0.0",
+      "scripts": {
+        "dev": "tsx watch src/server.ts",
+        "build": "tsc",
+        "start": "node dist/server.js"
+      },
+      "dependencies": {
+        "@trpc/server": "^11.0.0",
+        "zod": "^3.22.0"
+      },
+      "devDependencies": {
+        "@types/node": "^20.0.0",
+        "tsx": "^4.0.0",
+        "typescript": "^5.0.0"
+      }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Complete Server Code">
+    ```typescript title="src/server.ts"
+    import { createHTTPServer } from '@trpc/server/adapters/standalone';
+    import { initTRPC } from '@trpc/server';
+    import { z } from 'zod';
+    
+    const t = initTRPC.create();
+    const router = t.router;
+    const publicProcedure = t.procedure;
+    
+    // Mock data
+    const users: Array<{ id: string; name: string; email: string }> = [
+      { id: '1', name: 'Alice', email: 'alice@example.com' },
+      { id: '2', name: 'Bob', email: 'bob@example.com' },
+    ];
+    
+    const appRouter = router({
+      getUsers: publicProcedure.query(() => users),
+      
+      getUserById: publicProcedure
+        .input(z.object({ id: z.string() }))
+        .query(({ input }) => {
+          const user = users.find(u => u.id === input.id);
+          if (!user) throw new Error('User not found');
+          return user;
+        }),
+      
+      createUser: publicProcedure
+        .input(z.object({
+          name: z.string().min(2),
+          email: z.string().email(),
+        }))
+        .mutation(({ input }) => {
+          const newUser = {
+            id: Math.random().toString(36),
+            ...input,
+          };
+          users.push(newUser);
+          return newUser;
+        }),
+    });
+    
+    const server = createHTTPServer({
+      router: appRouter,
+      createContext: () => ({}),
+    });
+    
+    server.listen(3000);
+    console.log('🚀 Server ready at http://localhost:3000');
+    
+    export type AppRouter = typeof appRouter;
+    ```
+  </Accordion>
+</Accordions>

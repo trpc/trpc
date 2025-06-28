@@ -1,0 +1,70 @@
+---
+title: RSS
+description: Generate a RSS feed for your docs/blog.
+---
+
+## Overview
+
+You can implement the feed using a route handler like:
+
+```ts title="app/rss.xml/route.ts"
+import { Feed } from 'feed';
+import { source } from '@/lib/source';
+import { NextResponse } from 'next/server';
+
+export const revalidate = false;
+
+const baseUrl = 'https://fumadocs.dev';
+
+export function GET() {
+  const feed = new Feed({
+    title: 'Fumadocs Blog',
+    id: `${baseUrl}/blog`,
+    link: `${baseUrl}/blog`,
+    language: 'en',
+
+    image: `${baseUrl}/banner.png`,
+    favicon: `${baseUrl}/icon.png`,
+    copyright: 'All rights reserved 2025, Fuma Nama',
+  });
+
+  for (const page of source.getPages().sort((a, b) => {
+    return new Date(b.data.date).getTime() - new Date(a.data.date).getTime();
+  })) {
+    feed.addItem({
+      id: page.url,
+      title: page.data.title,
+      description: page.data.description,
+      link: `${baseUrl}${page.url}`,
+      date: new Date(page.data.date),
+
+      author: [
+        {
+          name: 'Fuma',
+        },
+      ],
+    });
+  }
+
+  return new NextResponse(feed.rss2());
+}
+```
+
+You can add an alternates object to the metadata object with your feed’s title and URL.
+
+```ts title="app/layout.tsx"
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  alternates: {
+    types: {
+      'application/rss+xml': [
+        {
+          title: 'Fumadocs Blog',
+          url: 'https://fumadocs.dev/blog/index.xml',
+        },
+      ],
+    },
+  },
+};
+```

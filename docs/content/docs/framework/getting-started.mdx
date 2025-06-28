@@ -1,0 +1,595 @@
+---
+title: Getting Started
+description: Learn the fundamentals of building APIs with tRPC
+icon: IconPlayCircle
+---
+
+Welcome to tRPC! This guide will walk you through the fundamentals of building type-safe APIs with tRPC, from basic concepts to building your first application.
+
+## What is tRPC?
+
+tRPC (TypeScript Remote Procedure Call) is a library that lets you build fully type-safe APIs without any code generation or runtime bloat. You write functions on your server, and call them directly from your client - all with complete TypeScript type safety.
+
+### Key Benefits
+
+**End-to-End Type Safety**: Your client automatically knows the exact shape of your server's data
+**No Code Generation**: Types are inferred directly from your server code
+**Excellent DX**: Autocomplete, go-to-definition, and refactoring work across your entire stack
+**React Query Integration**: Built on top of TanStack React Query for optimal data fetching
+
+## Before You Start
+
+To follow this guide, you'll need:
+
+- Basic TypeScript knowledge
+- Understanding of React (for frontend examples)
+- Node.js 18+ installed
+- A code editor with TypeScript support
+
+## Your First tRPC Application
+
+Let's build a simple blog API to understand tRPC fundamentals.
+
+### Step 1: Set Up Your Project
+
+Create a new project and install dependencies:
+
+```bash
+mkdir my-trpc-app
+cd my-trpc-app
+npm init -y
+npm install typescript @types/node tsx
+npm install @trpc/server @trpc/client zod
+```
+
+### Step 2: Create Your Server
+
+First, initialize tRPC:
+
+```typescript title="src/server/trpc.ts"
+import { initTRPC } from '@trpc/server';
+
+// Initialize tRPC
+const t = initTRPC.create();
+
+// Export reusable router and procedure helpers
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+Create your first router:
+
+```typescript title="src/server/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+// Mock database
+const posts = [
+  { id: 1, title: 'Hello World', content: 'This is my first post!' },
+  { id: 2, title: 'TypeScript Tips', content: 'Learn TypeScript with tRPC' },
+];
+
+export const appRouter = router({
+  // Simple greeting
+  hello: publicProcedure
+    .input(z.object({ name: z.string() }))
+    .query(({ input }) => {
+      return { message: `Hello, ${input.name}!` };
+    }),
+
+  // Get all posts
+  posts: publicProcedure
+    .query(() => {
+      return posts;
+    }),
+
+  // Get post by ID
+  post: publicProcedure
+    .input(z.number())
+    .query(({ input }) => {
+      const post = posts.find(p => p.id === input);
+      if (!post) throw new Error('Post not found');
+      return post;
+    }),
+
+  // Create a new post
+  createPost: publicProcedure
+    .input(z.object({
+      title: z.string(),
+      content: z.string(),
+    }))
+    .mutation(({ input }) => {
+      const newPost = {
+        id: posts.length + 1,
+        ...input,
+      };
+      posts.push(newPost);
+      return newPost;
+    }),
+});
+
+// Export type definition of API
+export type AppRouter = typeof appRouter;
+```
+
+### Step 3: Create HTTP Server
+
+Let's serve our tRPC router with Express:
+
+```bash
+npm install express cors
+npm install -D @types/express @types/cors
+```
+
+```typescript title="src/server/index.ts"
+import express from 'express';
+import cors from 'cors';
+import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import { appRouter } from './router';
+
+const app = express();
+const port = 3001;
+
+// Enable CORS
+app.use(cors());
+
+// Create tRPC middleware
+app.use('/api/trpc', createExpressMiddleware({
+  router: appRouter,
+  createContext: () => ({}), // We'll add context later
+}));
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
+```
+
+Start your server:
+
+```bash
+npx tsx src/server/index.ts
+```
+
+Your API is now running at `http://localhost:3001/api/trpc`!
+
+### Step 4: Test Your API
+
+You can test your endpoints directly:
+
+- `GET http://localhost:3001/api/trpc/posts` - Get all posts
+- `GET http://localhost:3001/api/trpc/hello?input={"name":"World"}` - Say hello
+
+## Understanding the Architecture
+
+### Routers vs Procedures
+
+**Router**: A collection of procedures grouped together
+**Procedure**: A single API endpoint (query, mutation, or subscription)
+
+```typescript
+const appRouter = router({
+  // This is a procedure
+  hello: publicProcedure.query(() => 'Hello'),
+
+  // This is a nested router
+  posts: router({
+    list: publicProcedure.query(() => posts),
+    create: publicProcedure.mutation(() => {/* ... */}),
+  }),
+});
+
+// Usage: trpc.hello.query()
+// Usage: trpc.posts.list.query()
+// Usage: trpc.posts.create.mutate()
+```
+
+### Query vs Mutation vs Subscription
+
+**Query**: For reading data (idempotent, cacheable)
+
+```typescript
+getPosts: publicProcedure.query(() => posts)
+```
+
+**Mutation**: For writing data (side effects)
+
+```typescript
+createPost: publicProcedure
+  .input(PostSchema)
+  .mutation(({ input }) => createPost(input))
+```
+
+**Subscription**: For real-time data (advanced)
+
+```typescript
+onPostCreated: publicProcedure
+  .subscription(() => observable)
+```
+
+### Input Validation
+
+tRPC uses Zod for runtime validation and TypeScript inference:
+
+```typescript
+const createUser = publicProcedure
+  .input(z.object({
+    name: z.string().min(1, 'Name is required'),
+    email: z.string().email('Invalid email'),
+    age: z.number().min(13).max(120),
+  }))
+  .mutation(({ input }) => {
+    // input is fully typed and validated
+    return createUser(input);
+  });
+```
+
+## Building the Frontend
+
+Now let's create a React frontend that uses our API.
+
+### Step 1: Set Up React Client
+
+```bash
+npm install react react-dom @tanstack/react-query
+npm install -D @types/react @types/react-dom
+```
+
+### Step 2: Create tRPC Client
+
+```typescript title="src/client/trpc.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../server/router';
+
+// Vanilla client (for Node.js, testing, etc.)
+export const trpcClient = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3001/api/trpc',
+    }),
+  ],
+});
+```
+
+### Step 3: Set Up React Query Integration
+
+```bash
+npm install @trpc/tanstack-react-query
+```
+
+```typescript title="src/client/trpc-react.ts"
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/router';
+
+// Create React Query context
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+```
+
+### Step 4: Create React App
+
+```typescript title="src/client/App.tsx"
+import React, { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { TRPCProvider } from './trpc-react';
+import { PostsList } from './components/PostsList';
+
+const queryClient = new QueryClient();
+
+const trpcClient = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3001/api/trpc',
+    }),
+  ],
+});
+
+export function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+        <div style={{ padding: '2rem' }}>
+          <h1>My tRPC Blog</h1>
+          <PostsList />
+        </div>
+      </TRPCProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
+### Step 5: Use tRPC in Components
+
+```typescript title="src/client/components/PostsList.tsx"
+import React, { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTRPC } from '../trpc-react';
+
+export function PostsList() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+
+  // Fetch posts with React Query
+  const postsQuery = useQuery(trpc.posts.queryOptions());
+
+  // Create post mutation
+  const createPostMutation = useMutation(trpc.createPost.mutationOptions({
+    onSuccess: () => {
+      // Refetch posts after creating
+      queryClient.invalidateQueries(trpc.posts.queryKey());
+      setTitle('');
+      setContent('');
+    },
+  }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (title && content) {
+      createPostMutation.mutate({ title, content });
+    }
+  };
+
+  if (postsQuery.isLoading) return <div>Loading...</div>;
+  if (postsQuery.error) return <div>Error: {postsQuery.error.message}</div>;
+
+  return (
+    <div>
+      <h2>Posts</h2>
+
+      {/* Create Post Form */}
+      <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '1rem' }}>
+          <input
+            type="text"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            style={{ width: '100%', padding: '0.5rem', marginBottom: '0.5rem' }}
+          />
+          <textarea
+            placeholder="Content"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            style={{ width: '100%', padding: '0.5rem', minHeight: '100px' }}
+          />
+        </div>
+        <button type="submit" disabled={createPostMutation.isPending}>
+          {createPostMutation.isPending ? 'Creating...' : 'Create Post'}
+        </button>
+      </form>
+
+      {/* Posts List */}
+      <div>
+        {postsQuery.data?.map((post) => (
+          <div key={post.id} style={{ border: '1px solid #ccc', padding: '1rem', marginBottom: '1rem' }}>
+            <h3>{post.title}</h3>
+            <p>{post.content}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## Key Features Explained
+
+### Automatic Type Safety
+
+Notice how you get full type safety without any manual type definitions:
+
+```typescript
+// On the client, this is fully typed!
+const postsQuery = useQuery(trpc.posts.queryOptions());
+// postsQuery.data is typed as Post[] | undefined
+
+const post = await trpc.post.query(1);
+// post is typed as Post
+
+const newPost = await trpc.createPost.mutate({
+  title: 'Hello',
+  content: 'World'
+});
+// newPost is typed as Post
+```
+
+### Request Batching
+
+Multiple tRPC calls are automatically batched:
+
+```typescript
+// These three queries will be sent as a single HTTP request
+const user = useQuery(trpc.user.query());
+const posts = useQuery(trpc.posts.query());
+const comments = useQuery(trpc.comments.query());
+```
+
+### Error Handling
+
+tRPC provides structured error handling:
+
+```typescript
+// Server
+if (!user) {
+  throw new TRPCError({
+    code: 'NOT_FOUND',
+    message: 'User not found',
+  });
+}
+
+// Client
+const mutation = useMutation(trpc.createPost.mutationOptions({
+  onError: (error) => {
+    if (error.data?.code === 'NOT_FOUND') {
+      // Handle not found error
+    }
+  },
+}));
+```
+
+## Adding Context & Authentication
+
+Real applications need context for database connections, user sessions, etc.
+
+### Server Context
+
+```typescript title="src/server/context.ts"
+import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
+
+export function createContext({ req, res }: CreateExpressContextOptions) {
+  // Get user from JWT token, session, etc.
+  const user = getUserFromRequest(req);
+
+  return {
+    user,
+    db, // Database connection
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+### Protected Procedures
+
+```typescript title="src/server/trpc.ts"
+import { initTRPC, TRPCError } from '@trpc/server';
+import type { Context } from './context';
+
+const t = initTRPC.context<Context>().create();
+
+export const publicProcedure = t.procedure;
+
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user, // Now user is guaranteed to exist
+    },
+  });
+});
+```
+
+## Common Patterns
+
+### Pagination
+
+```typescript
+const getPosts = publicProcedure
+  .input(z.object({
+    limit: z.number().min(1).max(100).default(10),
+    cursor: z.string().optional(),
+  }))
+  .query(async ({ input }) => {
+    const posts = await db.post.findMany({
+      take: input.limit + 1,
+      cursor: input.cursor ? { id: input.cursor } : undefined,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      posts: posts.slice(0, input.limit),
+      nextCursor: posts.length > input.limit ? posts[input.limit].id : undefined,
+    };
+  });
+```
+
+### Nested Resources
+
+```typescript
+const appRouter = router({
+  users: router({
+    list: publicProcedure.query(() => getUsers()),
+    byId: publicProcedure
+      .input(z.string())
+      .query(({ input }) => getUserById(input)),
+    posts: publicProcedure
+      .input(z.string())
+      .query(({ input }) => getPostsByUserId(input)),
+  }),
+});
+
+// Usage: trpc.users.byId.query('123')
+// Usage: trpc.users.posts.query('123')
+```
+
+### Optimistic Updates
+
+```typescript
+const createPostMutation = useMutation(trpc.posts.create.mutationOptions({
+  onMutate: async (newPost) => {
+    // Cancel outgoing refetches
+    await queryClient.cancelQueries(trpc.posts.list.queryKey());
+
+    // Snapshot the previous value
+    const previousPosts = queryClient.getQueryData(trpc.posts.list.queryKey());
+
+    // Optimistically update to the new value
+    queryClient.setQueryData(trpc.posts.list.queryKey(), (old) => [
+      ...(old || []),
+      { ...newPost, id: Date.now() }, // Temporary ID
+    ]);
+
+    return { previousPosts };
+  },
+  onError: (err, newPost, context) => {
+    // Rollback to previous value on error
+    queryClient.setQueryData(
+      trpc.posts.list.queryKey(),
+      context?.previousPosts
+    );
+  },
+  onSettled: () => {
+    // Always refetch after error or success
+    queryClient.invalidateQueries(trpc.posts.list.queryKey());
+  },
+}));
+```
+
+## Next Steps
+
+Now that you understand the basics, you can:
+
+<Cards>
+  <Card
+    href="/docs/framework/concepts"
+    title="Learn Core Concepts"
+    icon={<IconBrain />}
+  >
+    Deep dive into routers, procedures, context, and middleware
+  </Card>
+  <Card
+    href="/docs/framework/quickstart"
+    title="Follow the Quickstart"
+    icon={<IconRocket />}
+  >
+    Build a complete application step-by-step
+  </Card>
+  <Card
+    href="/docs/framework/example-apps"
+    title="Explore Examples"
+    icon={<IconApps />}
+  >
+    See real-world applications and patterns
+  </Card>
+  <Card
+    href="/docs/server/introduction"
+    title="Server Documentation"
+    icon={<IconServer />}
+  >
+    Learn about server-specific features and adapters
+  </Card>
+</Cards>
+
+## Best Practices
+
+**Project Structure**: Organize routers by domain (users, posts, auth)
+**Type Safety**: Always export your router type for client consumption
+**Error Handling**: Use tRPC's structured error system
+**Validation**: Validate inputs with Zod schemas
+**Caching**: Leverage React Query's caching strategies
+
+Remember: tRPC's power comes from its simplicity. You write TypeScript functions on the server, and call them type-safely from the client. Everything else is just optimization and organization.

@@ -1,0 +1,146 @@
+---
+title: Custom Source
+description: Build your own content source
+---
+
+## Introduction
+
+**Fumadocs is very flexible.** You can integrate with any content source, even without an official adapter.
+
+> This guide assumes you are experienced with Next.js App Router.
+
+### Examples
+
+You can see examples to use Fumadocs with a CMS, which allows a nice experience on publishing content, and real-time update without re-building the app.
+
+- [BaseHub](https://github.com/fuma-nama/fumadocs-basehub)
+- [Sanity](https://github.com/fuma-nama/fumadocs-sanity)
+
+For a custom content source implementation, you will need:
+
+### Page Tree
+
+You can either hardcode the page tree, or write some code to generate one.
+See [Definitions of Page Tree](/docs/headless/page-tree).
+
+Pass your Page Tree to `DocsLayout` (usually in a `layout.tsx`).
+
+```tsx title="layout.tsx"
+import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+import type { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <DocsLayout
+      nav={{ title: 'Example Docs' }}
+      tree={
+        {
+          /// your own tree
+        }
+      }
+    >
+      {children}
+    </DocsLayout>
+  );
+}
+```
+
+The page tree is like a smarter "sidebar items", they will be referenced everywhere in the UI for navigation elements, such as the page footer.
+
+### Docs Page
+
+Same as a normal Next.js app, the code of your docs page is located in `[[...slug]]/page.tsx`.
+
+#### SSG
+
+Define the [`generateStaticParams`](https://nextjs.org/docs/app/api-reference/functions/generate-static-params) function.
+It should return a list of parameters (`params`) to populate the `[[...slug]]` catch-all route.
+
+#### Body
+
+In the main body of page, find the corresponding page according to the slug and render its content inside the `DocsPage` component.
+
+You also need table of contents, which can be generated with your own implementation, or using the [`getTableOfContents`](/docs/headless/utils/get-toc) utility (Markdown/MDX only).
+
+```tsx
+import { DocsPage, DocsBody } from 'fumadocs-ui/page';
+import { getPage } from './my-content-source';
+import { notFound } from 'next/navigation';
+
+export default function Page({ params }: { params: { slug?: string[] } }) {
+  const page = getPage(params.slug);
+  if (!page) notFound();
+
+  return (
+    <DocsPage toc={page.tableOfContents}>
+      <DocsBody>{page.render()}</DocsBody>
+    </DocsPage>
+  );
+}
+```
+
+#### Metadata
+
+Next.js offers a Metadata API for SEO, you can configure it with `generateMetadata` (similar as the code above).
+
+### Document Search
+
+This can be difficult considering your content may not be necessarily Markdown/MDX.
+For Markdown and MDX, the built-in [Search API](/docs/headless/search/orama) is adequate for most use cases.
+Otherwise, you will have to bring your own implementation.
+
+We recommend 3rd party solutions like Algolia Search. They are more flexible than the built-in Search API, and is easier to integrate with remote sources.
+Fumadocs offers a simple [Algolia Search Adapter](/docs/headless/search/algolia), which includes a search client to integrate with Fumadocs UI.
+
+## MDX Remote
+
+Fumadocs offers the **MDX Remote** package, it is a helper to integrate Markdown-based content sources with Fumadocs.
+You can think it as a `next-mdx-remote` with built-in plugins for Fumadocs.
+
+### Setup
+
+```package-install
+@fumadocs/mdx-remote
+```
+
+The main feature it offers is the MDX Compiler, it can compile MDX content to JSX nodes.
+Since it doesn't use a bundler, there's some limitations:
+
+- No imports and exports in MDX files.
+
+It's compatible with Server Components. For example:
+
+```tsx
+import { compileMDX } from '@fumadocs/mdx-remote';
+import { getPage } from './my-content-source';
+import { DocsBody, DocsPage } from 'fumadocs-ui/page';
+import { getMDXComponents } from '@/mdx-components';
+
+export default async function Page({
+  params,
+}: {
+  params: { slug?: string[] };
+}) {
+  const page = getPage(params.slug);
+  const compiled = await compileMDX({
+    source: page.content,
+  });
+
+  const MdxContent = compiled.body;
+
+  return (
+    <DocsPage toc={compiled.toc}>
+      <DocsBody>
+        <MdxContent components={getMDXComponents()} />
+      </DocsBody>
+    </DocsPage>
+  );
+}
+```
+
+#### Images
+
+On some platforms like Vercel, the original `public` folder (including static assets like images) will be removed after `next build`.
+`compileMDX` might no longer be able to access local images in `public`.
+
+When referencing images, make sure to use a URL.

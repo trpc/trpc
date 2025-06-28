@@ -1,0 +1,86 @@
+---
+title: Headings
+description: Process headings from your document
+---
+
+## Remark Heading
+
+Applies ids to headings.
+
+```ts title="MDX Compiler"
+import { compile } from '@mdx-js/mdx';
+import { remarkHeading } from 'fumadocs-core/mdx-plugins';
+
+await compile('...', {
+  remarkPlugins: [remarkHeading],
+});
+```
+
+> This plugin is included by default on Fumadocs MDX.
+
+### Extract TOC
+
+By default, it extracts the headings (table of contents) of a document to `vfile.data.toc`.
+You can disable it with:
+
+```ts
+import { remarkHeading } from 'fumadocs-core/mdx-plugins';
+
+export default {
+  remarkPlugins: [[remarkHeading, { generateToc: false }]],
+};
+```
+
+### Custom Ids [#custom-heading-id]
+
+You can customise the heading id with `[#slug]`.
+
+```md
+# heading [#slug]
+```
+
+### Output
+
+An array of `TOCItemType`.
+
+<AutoTypeTable path="./content/docs/headless/props.ts" name="TOCItemType" />
+
+## Rehype TOC
+
+Exports table of contents (an array of `TOCItemType`), it allows JSX nodes which is not possible with a Remark plugin.
+
+> It requires MDX.js.
+
+### Usage
+
+```ts
+import { rehypeToc } from 'fumadocs-core/mdx-plugins';
+
+export default {
+  rehypePlugins: [rehypeToc],
+};
+```
+
+### Output
+
+For a Markdown document:
+
+```md
+## Hello `code`
+```
+
+An export will be created:
+
+```jsx
+export const toc = [
+  {
+    title: (
+      <>
+        Hello <code>code</code>
+      </>
+    ),
+    depth: 2,
+    url: '#hello-code',
+  },
+];
+```

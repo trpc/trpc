@@ -1,0 +1,67 @@
+---
+title: Feedback
+description: Receive feedback from your users
+---
+
+## Overview
+
+Feedback is crucial for knowing what your reader thinks, and help you to further improve documentation content.
+
+## Installation
+
+Add dependencies:
+
+```package-install
+class-variance-authority lucide-react
+```
+
+Copy the component:
+
+<include cwd meta='title="components/rate.tsx"'>
+  ./src/components/rate.tsx
+</include>
+
+The `@/lib/cn` import specifier may be different for your project, change it to import your `cn()` function if needed. (e.g. like `@/lib/utils`)
+
+### How to Use
+
+Now add the `<Rate />` component to your docs page:
+
+```tsx
+import { DocsPage } from 'fumadocs-ui/page';
+import { Rate } from '@/components/rate';
+import posthog from 'posthog-js';
+
+export default async function Page() {
+  return (
+    <DocsPage toc={toc} full={page.data.full}>
+      {/* at the bottom of page */}
+      <Rate
+        onRateAction={async (url, feedback) => {
+          'use server';
+
+          await posthog.capture('on_rate_docs', feedback);
+        }}
+      />
+    </DocsPage>
+  );
+}
+```
+
+On above example, it reports user feedback by capturing a `on_rate_docs` event on PostHog.
+
+You can specify your own server action to `onRateAction`, and report the feedback to different destinations like database, or GitHub Discussions via their API.
+
+### Linking to GitHub Discussion
+
+To report your feedback to GitHub Discussion, make a custom `onRateAction`.
+
+You can copy this example as a starting point:
+
+<include cwd meta="lib/github.ts">
+  ./src/lib/github.ts
+</include>
+
+- Create your own GitHub App and obtain its app ID and private key.
+- Fill required environment variables.
+- Replace constants like `owner`, `repo`, and `DocsCategory`.

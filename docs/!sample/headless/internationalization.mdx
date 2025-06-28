@@ -1,0 +1,52 @@
+---
+title: Internationalization
+description: Support multiple languages in your documentation
+---
+
+## Introduction
+
+Fumadocs core provides necessary middleware and options for i18n support.
+
+You can define a config to share between utilities.
+
+<include cwd meta='title="lib/i18n.ts"'>
+  ../../examples/i18n/lib/i18n.ts
+</include>
+
+### Hide Locale Prefix
+
+To hide the locale prefix (e.g. `/en/page` -> `/page`), use the `hideLocale` option.
+
+```ts
+import type { I18nConfig } from 'fumadocs-core/i18n';
+
+export const i18n: I18nConfig = {
+  defaultLanguage: 'en',
+  languages: ['en', 'cn'],
+  hideLocale: 'default-locale',
+};
+```
+
+| Mode             | Description                                        |
+| ---------------- | -------------------------------------------------- |
+| `always`         | Always hide the prefix, detect locale from cookies |
+| `default-locale` | Only hide the default locale                       |
+| `never`          | Never hide the prefix (default)                    |
+
+<Callout type='warn' title={<>Using <code>always</code></>}>
+
+On `always` mode, locale is stored as a cookie (set by the middleware), which isn't optimal for static sites.
+
+This may cause undesired cache problems, and need to pay extra attention on SEO to ensure search engines can index your pages correctly.
+
+</Callout>
+
+### Middleware
+
+Redirects users to appropriate locale, it can be customised from `i18n.ts`.
+
+<include cwd meta='title="middleware.ts"'>
+  ../../examples/i18n/middleware.ts
+</include>
+
+> When `hideLocale` is enabled, it uses `NextResponse.rewrite` to hide locale prefixes.

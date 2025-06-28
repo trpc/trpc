@@ -1,0 +1,91 @@
+---
+title: Introduction
+description: Getting started with core library
+icon: Album
+---
+
+## What is this?
+
+Fumadocs Core offers server-side functions and headless components to build docs on any React.js frameworks like Next.js.
+
+- Search (built-in: Orama, Algolia Search)
+- Breadcrumb, Sidebar, TOC Components
+- Remark/Rehype Plugins
+- Additional utilities
+
+<Callout title="Tip">
+
+    It can be used without Fumadocs UI, in other words, it's headless.
+
+    For beginners and normal usages, use [Fumadocs UI](/docs/ui).
+
+</Callout>
+
+## Installation
+
+No other dependencies required.
+
+```package-install
+fumadocs-core
+```
+
+For some components, a framework provider is needed:
+
+```tsx tab="Next.js"
+import type { ReactNode } from 'react';
+import { NextProvider } from 'fumadocs-core/framework/next';
+
+export function RootLayout({ children }: { children: ReactNode }) {
+  // or if you're using Fumadocs UI, use `<RootProvider />`
+  return <NextProvider>{children}</NextProvider>;
+}
+```
+
+```tsx tab="React Router"
+import type { ReactNode } from 'react';
+import { ReactRouterProvider } from 'fumadocs-core/framework/react-router';
+
+export function Root({ children }: { children: ReactNode }) {
+  return <ReactRouterProvider>{children}</ReactRouterProvider>;
+}
+```
+
+```tsx tab="Tanstack Start/Router"
+import type { ReactNode } from 'react';
+import { TanstackProvider } from 'fumadocs-core/framework/tanstack';
+
+export function Root({ children }: { children: ReactNode }) {
+  return <TanstackProvider>{children}</TanstackProvider>;
+}
+```
+
+It offers simple document searching as well as components for building a
+good docs.
+
+<Cards>
+
+<Card
+  title="Breadcrumb"
+  href="/docs/headless/components/breadcrumb"
+  description="The navigation component at the top of screen"
+/>
+
+<Card
+  title="TOC"
+  href="/docs/headless/components/toc"
+  description="A Table of Contents with active anchor observer"
+/>
+
+<Card
+  title="Sidebar"
+  href="/docs/headless/components/sidebar"
+  description="The navigation bar at aside of viewport"
+/>
+
+<Card
+  title="Search"
+  href="/docs/headless/search"
+  description="Implement document searching"
+/>
+
+</Cards>

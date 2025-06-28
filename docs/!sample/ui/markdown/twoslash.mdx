@@ -1,0 +1,138 @@
+---
+title: Twoslash
+description: Use Typescript Twoslash in your docs
+---
+
+## Usage
+
+Thanks to the Twoslash integration of [Shiki](https://github.com/shikijs/shiki), the default code syntax highlighter, it is as simple as adding a transformer.
+
+```package-install
+fumadocs-twoslash twoslash
+```
+
+Update your `serverExternalPackages` in Next.js config:
+
+```js
+import { createMDX } from 'fumadocs-mdx/next';
+
+const config = {
+  reactStrictMode: true,
+  serverExternalPackages: ['typescript', 'twoslash'],
+};
+
+const withMDX = createMDX();
+
+export default withMDX(config);
+```
+
+Add to your Shiki transformers.
+
+```ts twoslash title="source.config.ts (Fumadocs MDX)"
+import { defineConfig } from 'fumadocs-mdx/config';
+import { transformerTwoslash } from 'fumadocs-twoslash';
+import { rehypeCodeDefaultOptions } from 'fumadocs-core/mdx-plugins';
+
+export default defineConfig({
+  mdxOptions: {
+    rehypeCodeOptions: {
+      themes: {
+        light: 'github-light',
+        dark: 'github-dark',
+      },
+      transformers: [
+        ...(rehypeCodeDefaultOptions.transformers ?? []),
+        transformerTwoslash(),
+      ],
+    },
+  },
+});
+```
+
+Add styles, Tailwind CSS v4 is required.
+
+```css title="Tailwind CSS"
+@import 'fumadocs-twoslash/twoslash.css';
+```
+
+Add MDX components.
+
+```tsx title="mdx-components.tsx"
+import * as Twoslash from 'fumadocs-twoslash/ui';
+import defaultComponents from 'fumadocs-ui/mdx';
+import type { MDXComponents } from 'mdx/types';
+
+export function getMDXComponents(components?: MDXComponents): MDXComponents {
+  return {
+    ...defaultComponents,
+    ...Twoslash,
+    ...components,
+  };
+}
+```
+
+Now you can add `twoslash` meta string to codeblocks.
+
+````md
+```ts twoslash
+console.log('Hello World');
+```
+````
+
+### Example
+
+Learn more about [Twoslash notations](https://twoslash.netlify.app/refs/notations).
+
+```ts twoslash title="Test" lineNumbers
+type Player = {
+  /**
+   * The player name
+   * @default 'user'
+   */
+  name: string;
+};
+
+// ---cut---
+// @noErrors
+console.g;
+//       ^|
+
+const player: Player = { name: 'Hello World' };
+//    ^?
+```
+
+```ts twoslash
+const a = '123';
+
+console.log(a);
+//      ^^^
+```
+
+```ts twoslash
+import { generateFiles } from 'fumadocs-openapi';
+
+void generateFiles({
+  input: ['./museum.yaml'],
+  output: './content/docs/ui',
+});
+```
+
+```ts twoslash
+// @errors: 2588
+const a = '123';
+
+a = 132;
+```
+
+## Cache
+
+You can enable filesystem cache with `typesCache` option:
+
+```ts twoslash title="source.config.ts"
+import { transformerTwoslash } from 'fumadocs-twoslash';
+import { createFileSystemTypesCache } from 'fumadocs-twoslash/cache-fs';
+
+transformerTwoslash({
+  typesCache: createFileSystemTypesCache(),
+});
+```

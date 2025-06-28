@@ -1,0 +1,155 @@
+---
+title: Algolia Search
+description: Integrate Algolia Search with Fumadocs
+---
+
+<Callout title="Notice">
+  If you're using Algolia's free tier, you have to [display their logo on your
+  search dialog](https://algolia.com/policies/free-services-terms).
+</Callout>
+
+## Introduction
+
+The Algolia Integration automatically configures Algolia Search for document search.
+
+It creates a record for **each paragraph** in your document, it is also recommended by Algolia.
+
+Each record contains searchable attributes:
+
+| Attribute | Description           |
+| --------- | --------------------- |
+| `title`   | Page Title            |
+| `section` | Heading ID (nullable) |
+| `content` | Paragraph content     |
+
+The `section` field only exists in paragraphs under a heading. Headings and
+paragraphs are indexed as an individual record, grouped by their page ID.
+
+Notice that it expects the `url` property of a page to be unique, you shouldn't have two pages with the same
+url.
+
+## Setup
+
+Install dependencies:
+
+```package-install
+algoliasearch
+```
+
+### Sign up on Algolia
+
+Sign up and obtain the app id and API keys for your search. Store these
+credentials in environment variables.
+
+### Sync Search Indexes
+
+Export the search indexes from Next.js using a route handler, this way we can access the search indexes after production build:
+
+```ts title="app/static.json/route.ts"
+import { NextResponse } from 'next/server';
+import { type DocumentRecord } from 'fumadocs-core/search/algolia';
+import { source } from '@/lib/source';
+
+export const revalidate = false;
+
+export function GET() {
+  const results: DocumentRecord[] = [];
+
+  for (const page of source.getPages()) {
+    results.push({
+      _id: page.url,
+      structured: page.data.structuredData,
+      url: page.url,
+      title: page.data.title,
+      description: page.data.description,
+    });
+  }
+
+  return NextResponse.json(results);
+}
+```
+
+Make a script to sync search indexes:
+
+<include lang="js" meta='title="update-index.mjs"'>
+  ./sync-algolia.mjs
+</include>
+
+The `sync` function will update the index settings and sync search indexes.
+
+Now run the script after build:
+
+```json title="package.json"
+{
+  "scripts": {
+    "build": "next build && node ./update-index.mjs"
+  }
+}
+```
+
+### Workflow
+
+You may make it a script and manually sync with `node ./update-index.mjs`, or
+integrate it with your CI/CD pipeline.
+
+<Callout type="warn" title="Typescript Usage">
+  If you are running the script with [TSX](https://github.com/privatenumber/tsx)
+  or other similar Typescript executors, ensure to name it `.mts` for best ESM
+  compatibility.
+</Callout>
+
+### Search UI
+
+You can consider different options for implementing the UI:
+
+- Using [Fumadocs UI search dialog](/docs/ui/search/algolia).
+- Build your own using the built-in search client hook:
+
+  ```ts twoslash
+  import { liteClient } from 'algoliasearch/lite';
+  import { useDocsSearch } from 'fumadocs-core/search/client';
+
+  const client = liteClient('id', 'key');
+
+  const { search, setSearch, query } = useDocsSearch({
+    type: 'algolia',
+    indexName: 'document',
+    client,
+  });
+  ```
+
+- Use their official clients directly.
+
+## Options
+
+### Tag Filter
+
+To configure tag filtering, add a `tag` value to indexes.
+
+```js
+import { sync } from 'fumadocs-core/search/algolia';
+
+void sync(client, {
+  indexName: 'document',
+  documents: records.map((index) => ({
+    ...index,
+    tag: 'value', // [!code ++]
+  })),
+});
+```
+
+And update your search client:
+
+- **Fumadocs UI**: Enable [Tag Filter](/docs/ui/search/algolia#tag-filter) on Search UI.
+- **Search Client**: You can add the tag filter like:
+
+  ```ts
+  import { useDocsSearch } from 'fumadocs-core/search/client';
+
+  const { search, setSearch, query } = useDocsSearch({
+    tag: '<your tag value>',
+    // ...
+  });
+  ```
+
+The `tag` field is an attribute for faceting. You can also use the filter `tag:value` on Algolia search clients.

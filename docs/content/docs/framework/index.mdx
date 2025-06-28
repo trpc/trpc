@@ -1,0 +1,191 @@
+---
+title: tRPC
+description: End-to-end typesafe APIs made easy
+icon: IconBrandTypescript
+---
+
+## What is tRPC?
+
+**tRPC** <span className='text-muted-foreground text-sm'>(TypeScript Remote Procedure Call)</span> enables you to build fully typesafe APIs without schemas or code generation. You write TypeScript functions on your server, and call them directly from your client with complete type safety and IDE support.
+
+<Callout title="The magic of tRPC">
+  With traditional REST APIs, you define endpoints and hope your client matches
+  the expected types. With tRPC, your client automatically knows exactly what
+  your server returns - and TypeScript will catch any breaking changes at build
+  time.
+</Callout>
+
+## How it works
+
+tRPC creates a bridge between your TypeScript server and client through three simple steps:
+
+1. **Define procedures** on your server with full TypeScript types
+2. **Export your router type** (just the type, not the implementation)
+3. **Import the type** on your client for automatic type inference
+
+```typescript
+// 1. Server: Define your API
+export const appRouter = t.router({
+  getUser: t.procedure
+    .input(z.string())
+    .query(({ input }) => getUserById(input))
+});
+
+// 2. Export the type
+export type AppRouter = typeof appRouter;
+
+// 3. Client: Fully typed automatically
+const user = await trpc.getUser.query('123');
+//    ^? User | null - TypeScript knows the exact return type
+```
+
+## Server vs Client
+
+tRPC is split into two main parts that work together:
+
+<Cards>
+  <Card 
+    href="/docs/server" 
+    title="tRPC Server" 
+    icon={<IconServer className="text-blue-500" />}
+  >
+    Build your API with procedures, routers, middleware, and validation. This is where you define your backend logic.
+  </Card>
+
+  <Card 
+    href="/docs/client" 
+    title="tRPC Client" 
+    icon={<IconDeviceDesktop className="text-green-500" />}
+  >
+    Connect your frontend to your tRPC server with React, Next.js, or vanilla JavaScript. Get full type safety and great DX.
+  </Card>
+</Cards>
+
+<Callout title="Start with the right section">
+  **Building an API?** Start with [tRPC Server](/docs/server) to define your
+  procedures and routers. **Integrating with a frontend?** Jump to [tRPC
+  Client](/docs/client) to set up your React, Next.js, or vanilla client.
+</Callout>
+
+## Quick Example
+
+Here's what a complete tRPC setup looks like:
+
+<Tabs items={['Server', 'Client', 'React Component']}>
+<Tab value="Server">
+
+```typescript title="server/router.ts"
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+export const appRouter = t.router({
+  getPosts: t.procedure
+    .query(async () => {
+      return await db.post.findMany();
+    }),
+
+  createPost: t.procedure
+    .input(z.object({
+      title: z.string(),
+      content: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      return await db.post.create({ data: input });
+    })
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+</Tab>
+
+<Tab value="Client">
+```typescript title="client/trpc.ts"
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/router';
+
+export const trpc = createTRPCReact<AppRouter>();
+```
+</Tab>
+
+<Tab value="React Component">
+```typescript title="components/blog.tsx"
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { trpc } from '../client/trpc';
+
+export function Blog() {
+  const utils = trpc.useUtils();
+
+// Fetch posts with full type safety
+const postsQuery = useQuery(trpc.getPosts.queryOptions());
+
+// Create post mutation with optimistic updates
+const createPost = useMutation(trpc.createPost.mutationOptions({
+onSuccess: () => {
+utils.getPosts.invalidate();
+}
+}));
+
+if (postsQuery.isLoading) return <div>Loading...</div>;
+
+return (
+
+<div>
+  {postsQuery.data?.map((post) => (
+    <article key={post.id}>
+      <h2>{post.title}</h2>
+      <p>{post.content}</p>
+    </article>
+  ))}
+</div>
+); }
+
+```
+
+</Tab>
+</Tabs>
+
+## Get Started
+
+Ready to experience end-to-end type safety? Choose your path:
+
+<Cards>
+  <Card
+    href="/docs/framework/installation"
+    title="Installation"
+    icon={<IconDownload />}
+  >
+    Install tRPC and set up your first project in minutes
+  </Card>
+
+<Card
+  href="/docs/framework/quickstart"
+  title="Quickstart Guide"
+  icon={<IconRocket />}
+>
+  Build your first tRPC API with step-by-step instructions
+</Card>
+
+<Card
+  href="/docs/framework/concepts"
+  title="Core Concepts"
+  icon={<IconBrain />}
+>
+  Understand routers, procedures, and the tRPC architecture
+</Card>
+
+  <Card
+    href="/docs/framework/example-apps"
+    title="Example Apps"
+    icon={<IconApps />}
+  >
+    Explore complete applications built with tRPC
+  </Card>
+</Cards>
+
+---
+
+tRPC transforms how you build TypeScript applications by eliminating the gap between your client and server. Start with our [installation guide](/docs/framework/installation) to experience the magic of end-to-end type safety.
+```

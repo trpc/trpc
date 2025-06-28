@@ -1,0 +1,613 @@
+---
+title: Context
+description: Share request-scoped data across all tRPC procedures
+icon: IconSettings
+---
+
+Context holds data that all of your tRPC procedures will have access to, and is a great place to put things like database connections, authentication information, and request metadata. Setting up context is done in two steps: defining the type during initialization and creating the runtime context for each request.
+
+<Callout title="Request-Scoped Data">
+  Context is created for each request, allowing you to include request-specific
+  data like user sessions, request headers, and database connections.
+</Callout>
+
+## Basic Context Setup
+
+### 1. Define Context Type
+
+When initializing tRPC, use `.context<TContext>()` to define your context type:
+
+```typescript title="server/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { getServerSession } from 'next-auth';
+
+// Define the context creation function
+export const createContext = async (opts: CreateNextContextOptions) => {
+  const session = await getServerSession(opts.req, opts.res, authOptions);
+
+  return {
+    session,
+    req: opts.req,
+    res: opts.res,
+  };
+};
+
+// Infer the context type
+export type Context = Awaited<ReturnType<typeof createContext>>;
+
+// Initialize tRPC with context type
+const t = initTRPC.context<Context>().create();
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+### 2. Use Context in Procedures
+
+Access context data in your procedures:
+
+```typescript title="server/router.ts"
+export const appRouter = router({
+  getProfile: publicProcedure.query(({ ctx }) => {
+    // Access session from context
+    if (!ctx.session?.user) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    return {
+      user: ctx.session.user,
+      requestUrl: ctx.req.url,
+    };
+  }),
+
+  updateProfile: publicProcedure
+    .input(z.object({ name: z.string() }))
+    .mutation(({ input, ctx }) => {
+      // Use context data in mutations
+      console.log(`User ${ctx.session?.user?.id} updating profile`);
+
+      return updateUserProfile(ctx.session.user.id, input);
+    }),
+});
+```
+
+## Context Creation Patterns
+
+### Database Integration
+
+Include database connections in context:
+
+```typescript title="server/context.ts"
+import { PrismaClient } from '@prisma/client';
+import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
+
+// Create Prisma client (ideally as a singleton)
+const prisma = new PrismaClient();
+
+export const createContext = ({ req, res }: CreateExpressContextOptions) => {
+  return {
+    req,
+    res,
+    prisma, // Available in all procedures
+  };
+};
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+### Authentication Context
+
+Add user authentication to context:
+
+```typescript title="server/auth-context.ts"
+import jwt from 'jsonwebtoken';
+import type { CreateHTTPContextOptions } from '@trpc/server/adapters/standalone';
+
+interface User {
+  id: string;
+  email: string;
+  role: 'user' | 'admin';
+}
+
+export const createContext = async ({ req }: CreateHTTPContextOptions) => {
+  // Extract token from Authorization header
+  const token = req.headers.authorization?.replace('Bearer ', '');
+
+  let user: User | null = null;
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+      user = await getUserById(decoded.userId);
+    } catch (error) {
+      // Invalid token - user remains null
+      console.log('Invalid token:', error.message);
+    }
+  }
+
+  return {
+    req,
+    user,
+    isAuthenticated: !!user,
+  };
+};
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+### Request Metadata
+
+Include useful request information:
+
+```typescript title="server/metadata-context.ts"
+export const createContext = ({ req, res }: CreateExpressContextOptions) => {
+  return {
+    req,
+    res,
+    // Request metadata
+    userAgent: req.headers['user-agent'],
+    ip: req.ip || req.connection.remoteAddress,
+    origin: req.headers.origin,
+
+    // Timing
+    requestStartTime: Date.now(),
+
+    // Custom headers
+    traceId: req.headers['x-trace-id'] || generateTraceId(),
+  };
+};
+```
+
+## Advanced Context Patterns
+
+### Inner and Outer Context
+
+Split context into inner (always available) and outer (request-dependent) parts:
+
+```typescript title="server/inner-outer-context.ts"
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { getServerSession, type Session } from 'next-auth';
+
+// Inner context - always available (useful for testing and SSR helpers)
+interface CreateInnerContextOptions {
+  session: Session | null;
+}
+
+export async function createContextInner(opts: CreateInnerContextOptions) {
+  return {
+    session: opts.session,
+    prisma, // Database connection
+    // Add other services that don't depend on the request
+  };
+}
+
+// Outer context - request-dependent
+export async function createContext(opts: CreateNextContextOptions) {
+  const session = await getServerSession(opts.req, opts.res, authOptions);
+
+  const contextInner = await createContextInner({ session });
+
+  return {
+    ...contextInner,
+    req: opts.req,
+    res: opts.res,
+    // Request-specific data
+  };
+}
+
+// Always infer from inner context for consistency
+export type Context = Awaited<ReturnType<typeof createContextInner>>;
+```
+
+### Environment-Based Context
+
+Create different contexts for different environments:
+
+```typescript title="server/env-context.ts"
+const isDev = process.env.NODE_ENV === 'development';
+const isProd = process.env.NODE_ENV === 'production';
+
+export const createContext = ({ req, res }: CreateExpressContextOptions) => {
+  const baseContext = {
+    req,
+    res,
+    prisma,
+  };
+
+  if (isDev) {
+    return {
+      ...baseContext,
+      // Development-only context
+      debug: true,
+      mockUser: process.env.MOCK_USER_ID ?
+        { id: process.env.MOCK_USER_ID, role: 'admin' } : null,
+    };
+  }
+
+  if (isProd) {
+    return {
+      ...baseContext,
+      // Production-only context
+      analytics: analyticsClient,
+      monitoring: monitoringClient,
+    };
+  }
+
+  return baseContext;
+};
+```
+
+### Multi-Tenant Context
+
+Handle multi-tenant applications:
+
+```typescript title="server/tenant-context.ts"
+export const createContext = async ({ req, res }: CreateExpressContextOptions) => {
+  // Extract tenant from subdomain or header
+  const host = req.headers.host || '';
+  const subdomain = host.split('.')[0];
+
+  // Or from custom header
+  const tenantId = req.headers['x-tenant-id'] || subdomain;
+
+  // Load tenant configuration
+  const tenant = await getTenantConfig(tenantId);
+
+  if (!tenant) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Tenant not found',
+    });
+  }
+
+  // Create tenant-specific database connection
+  const tenantDb = createTenantDatabase(tenant.databaseUrl);
+
+  return {
+    req,
+    res,
+    tenant,
+    db: tenantDb,
+    tenantId,
+  };
+};
+```
+
+## Context with Different Adapters
+
+### Next.js App Router
+
+```typescript title="app/api/trpc/[trpc]/context.ts"
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+
+export async function createContext(opts: CreateNextContextOptions) {
+  return {
+    req: opts.req,
+    res: opts.res,
+    // Next.js specific
+    cookies: opts.req.cookies,
+    headers: opts.req.headers,
+  };
+}
+```
+
+### Cloudflare Workers
+
+```typescript title="worker/context.ts"
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+
+interface Env {
+  KV_NAMESPACE: KVNamespace;
+  DATABASE_URL: string;
+}
+
+export function createContext(
+  { req, resHeaders }: FetchCreateContextFnOptions,
+  env: Env
+) {
+  return {
+    req,
+    resHeaders,
+    env,
+    kv: env.KV_NAMESPACE,
+    // Worker-specific context
+  };
+}
+```
+
+### AWS Lambda
+
+```typescript title="lambda/context.ts"
+import type {
+  CreateAWSLambdaContextOptions
+} from '@trpc/server/adapters/aws-lambda';
+import type { APIGatewayProxyEventV2 } from 'aws-lambda';
+
+export const createContext = ({
+  event,
+  context
+}: CreateAWSLambdaContextOptions<APIGatewayProxyEventV2>) => {
+  return {
+    event,
+    context,
+    // Lambda-specific data
+    requestId: event.requestContext.requestId,
+    userAgent: event.headers['user-agent'],
+    sourceIp: event.requestContext.http.sourceIp,
+  };
+};
+```
+
+## Context in Middleware
+
+Use context to create reusable middleware:
+
+```typescript title="server/middleware.ts"
+// Authentication middleware using context
+export const requireAuth = t.middleware(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user, // Now guaranteed to be non-null
+    },
+  });
+});
+
+// Role-based middleware
+export const requireRole = (role: string) =>
+  t.middleware(({ ctx, next }) => {
+    if (!ctx.user || ctx.user.role !== role) {
+      throw new TRPCError({ code: 'FORBIDDEN' });
+    }
+
+    return next();
+  });
+
+// Logging middleware using context
+export const withLogging = t.middleware(({ ctx, path, type, next }) => {
+  const start = Date.now();
+
+  console.log(`${type.toUpperCase()} ${path} - User: ${ctx.user?.id || 'anonymous'}`);
+
+  return next().then((result) => {
+    const duration = Date.now() - start;
+    console.log(`Completed in ${duration}ms`);
+    return result;
+  });
+});
+```
+
+## Context Extensions
+
+Extend context in middleware for specific use cases:
+
+```typescript title="server/context-extensions.ts"
+// Organization context middleware
+export const withOrganization = t.middleware(async ({ ctx, input, next }) => {
+  const organizationId = (input as any)?.organizationId;
+
+  if (!organizationId) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Organization ID required',
+    });
+  }
+
+  const organization = await ctx.prisma.organization.findUnique({
+    where: { id: organizationId },
+  });
+
+  if (!organization) {
+    throw new TRPCError({ code: 'NOT_FOUND' });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      organization, // Add organization to context
+    },
+  });
+});
+
+// Rate limiting context
+export const withRateLimit = (limit: number, windowMs: number) =>
+  t.middleware(async ({ ctx, next }) => {
+    const identifier = ctx.user?.id || ctx.ip || 'anonymous';
+
+    const isAllowed = await rateLimiter.check(identifier, limit, windowMs);
+
+    if (!isAllowed) {
+      throw new TRPCError({
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Rate limit exceeded',
+      });
+    }
+
+    return next();
+  });
+```
+
+## Testing with Context
+
+Create mock contexts for testing:
+
+```typescript title="server/test-context.ts"
+import { createCallerFactory } from '@trpc/server';
+import type { Context } from './context';
+
+// Create mock context for testing
+export const createMockContext = (overrides: Partial<Context> = {}): Context => {
+  return {
+    req: {} as any,
+    res: {} as any,
+    prisma: mockPrisma,
+    user: null,
+    ...overrides,
+  };
+};
+
+// Test with authenticated user
+const mockAuthContext = createMockContext({
+  user: { id: 'user1', email: 'test@example.com', role: 'user' },
+});
+
+const createCaller = createCallerFactory(appRouter);
+const caller = createCaller(mockAuthContext);
+
+// Use in tests
+describe('User Router', () => {
+  it('should get user profile', async () => {
+    const profile = await caller.user.getProfile();
+    expect(profile.user.id).toBe('user1');
+  });
+});
+```
+
+## Context Best Practices
+
+<Accordions>
+  <Accordion title="Performance Considerations">
+    - Avoid expensive operations in context creation
+    - Reuse database connections across requests
+    - Cache frequently accessed data
+    - Use connection pooling for databases
+    
+    ```typescript
+    // Good: Reuse connection
+    const prisma = new PrismaClient();
+    
+    export const createContext = () => ({
+      prisma, // Reused across requests
+    });
+    
+    // Bad: New connection per request
+    export const createContext = () => ({
+      prisma: new PrismaClient(), // Creates new connection each time
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Security">
+    - Validate authentication tokens in context
+    - Don't expose sensitive data unnecessarily  
+    - Use least privilege principle
+    - Sanitize user inputs early
+    
+    ```typescript
+    export const createContext = async ({ req }) => {
+      const user = await validateAuthToken(req.headers.authorization);
+      
+      return {
+        // Only expose what's needed
+        user: user ? { 
+          id: user.id, 
+          role: user.role 
+        } : null,
+        // Don't expose: passwords, tokens, etc.
+      };
+    };
+    ```
+  </Accordion>
+  
+  <Accordion title="Type Safety">
+    - Always type your context properly
+    - Use inner/outer context pattern for complex apps
+    - Make authentication status clear in types
+    - Use discriminated unions for different user types
+    
+    ```typescript
+    type Context = {
+      prisma: PrismaClient;
+    } & (
+      | { user: User; isAuthenticated: true }
+      | { user: null; isAuthenticated: false }
+    );
+    ```
+  </Accordion>
+</Accordions>
+
+## Error Handling in Context
+
+Handle errors gracefully during context creation:
+
+```typescript title="server/error-context.ts"
+export const createContext = async ({ req, res }: CreateExpressContextOptions) => {
+  try {
+    // Attempt to get user session
+    const session = await getSession({ req });
+
+    return {
+      req,
+      res,
+      session,
+      user: session?.user || null,
+    };
+  } catch (error) {
+    // Log error but don't fail - return anonymous context
+    console.error('Failed to create authenticated context:', error);
+
+    return {
+      req,
+      res,
+      session: null,
+      user: null,
+    };
+  }
+};
+```
+
+## Context with Batch Requests
+
+Handle batched requests properly:
+
+```typescript title="server/batch-context.ts"
+export const createContext = ({ req, res }: CreateExpressContextOptions) => {
+  return {
+    req,
+    res,
+    // Batch-aware context
+    isBatch: Array.isArray(req.body),
+    batchSize: Array.isArray(req.body) ? req.body.length : 1,
+  };
+};
+
+// Limit batch size in context
+export const createContextWithBatchLimit = ({ req, res, info }: CreateHTTPContextOptions) => {
+  const MAX_BATCH_SIZE = 10;
+
+  if (info.calls.length > MAX_BATCH_SIZE) {
+    throw new TRPCError({
+      code: 'TOO_MANY_REQUESTS',
+      message: `Batch size limit of ${MAX_BATCH_SIZE} exceeded`,
+    });
+  }
+
+  return {
+    req,
+    res,
+    batchSize: info.calls.length,
+  };
+};
+```
+
+## Next Steps
+
+<Cards>
+  <Card href="/docs/server/middlewares" title="Middleware">
+    Learn how to create reusable middleware with context
+  </Card>
+  <Card href="/docs/server/procedures" title="Procedures">
+    See how to use context in your procedures
+  </Card>
+  <Card href="/docs/server/error-handling" title="Error Handling">
+    Handle errors that occur during context creation
+  </Card>
+  <Card href="/docs/server/authorization" title="Authorization">
+    Implement authentication and authorization with context
+  </Card>
+</Cards>

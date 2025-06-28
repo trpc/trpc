@@ -1,0 +1,555 @@
+---
+title: Quickstart Guide
+description: Set up your first tRPC API with React Query in 5 minutes
+icon: IconRocket
+---
+
+Get up and running with tRPC and TanStack React Query in just a few minutes. This guide will walk you through creating a simple but complete tRPC application.
+
+## Prerequisites
+
+Before you start, make sure you have:
+
+- **Node.js 18+** installed
+- **TypeScript 5.7.2+** knowledge
+- **React 18+** for the frontend
+- A new or existing TypeScript project
+
+## 1. Installation
+
+Install the required packages:
+
+<Tabs groupId='package-manager' persist items={['npm', 'pnpm', 'yarn', 'bun']} label='Install Dependencies'>
+```bash tab="npm"
+npm install @trpc/server @trpc/client @trpc/tanstack-react-query @tanstack/react-query zod
+```
+
+```bash tab="pnpm"
+pnpm add @trpc/server @trpc/client @trpc/tanstack-react-query @tanstack/react-query zod
+```
+
+```bash tab="yarn"
+yarn add @trpc/server @trpc/client @trpc/tanstack-react-query @tanstack/react-query zod
+```
+
+```bash tab="bun"
+bun add @trpc/server @trpc/client @trpc/tanstack-react-query @tanstack/react-query zod
+```
+
+</Tabs>
+
+## 2. Create Your tRPC Server
+
+First, let's create a simple tRPC server with some example procedures:
+
+```typescript title="server/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+// Initialize tRPC - this is done once per application
+const t = initTRPC.create();
+
+// Export reusable router and procedure helpers
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+```typescript title="server/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+// Mock database
+const posts = [
+  { id: '1', title: 'Hello tRPC!', content: 'This is my first tRPC post.' },
+  { id: '2', title: 'TypeScript is awesome', content: 'Type safety everywhere!' },
+];
+
+let postIdCounter = 3;
+
+export const appRouter = router({
+  // Query to get all posts
+  getPosts: publicProcedure
+    .query(async () => {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return posts;
+    }),
+
+  // Query to get a single post by ID
+  getPost: publicProcedure
+    .input(z.string())
+    .query(async ({ input }) => {
+      const post = posts.find(p => p.id === input);
+      if (!post) throw new Error('Post not found');
+      return post;
+    }),
+
+  // Mutation to create a new post
+  createPost: publicProcedure
+    .input(z.object({
+      title: z.string().min(1, 'Title is required'),
+      content: z.string().min(1, 'Content is required')
+    }))
+    .mutation(async ({ input }) => {
+      const newPost = {
+        id: postIdCounter.toString(),
+        title: input.title,
+        content: input.content,
+      };
+      postIdCounter++;
+      posts.push(newPost);
+      return newPost;
+    }),
+
+  // Mutation to delete a post
+  deletePost: publicProcedure
+    .input(z.string())
+    .mutation(async ({ input }) => {
+      const index = posts.findIndex(p => p.id === input);
+      if (index === -1) throw new Error('Post not found');
+
+      const deletedPost = posts[index];
+      posts.splice(index, 1);
+      return deletedPost;
+    }),
+});
+
+// Export the router type - this is important!
+export type AppRouter = typeof appRouter;
+```
+
+## 3. Create HTTP Server
+
+Now let's serve our tRPC router over HTTP. Choose your preferred method:
+
+<Tabs items={['Next.js API Routes', 'Express Server', 'Standalone Server']}>
+<Tab value="Next.js API Routes">
+If you're using Next.js, create an API route:
+
+```typescript title="pages/api/trpc/[trpc].ts"
+import { createNextApiHandler } from '@trpc/server/adapters/next';
+import { appRouter } from '../../../server/router';
+
+// Export API handler
+export default createNextApiHandler({
+  router: appRouter,
+  createContext: () => ({}), // No context for this example
+});
+```
+
+For Next.js App Router, create:
+
+```typescript title="app/api/trpc/[trpc]/route.ts"
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { appRouter } from '../../../../server/router';
+
+const handler = (req: Request) =>
+  fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req,
+    router: appRouter,
+    createContext: () => ({}),
+  });
+
+export { handler as GET, handler as POST };
+```
+
+</Tab>
+
+<Tab value="Express Server">
+If you're using Express:
+
+```typescript title="server/server.ts"
+import express from 'express';
+import cors from 'cors';
+import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import { appRouter } from './router';
+
+const app = express();
+const port = 3001;
+
+// Enable CORS for your frontend
+app.use(cors({
+  origin: 'http://localhost:3000', // Your frontend URL
+}));
+
+// Create tRPC middleware
+app.use('/api/trpc', createExpressMiddleware({
+  router: appRouter,
+  createContext: () => ({}),
+}));
+
+app.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+});
+```
+
+</Tab>
+
+<Tab value="Standalone Server">
+For a standalone HTTP server:
+
+```typescript title="server/server.ts"
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
+
+const server = createHTTPServer({
+  router: appRouter,
+  createContext: () => ({}),
+});
+
+const port = 3001;
+server.listen(port, () => {
+  console.log(`Server running on http://localhost:${port}`);
+});
+```
+
+</Tab>
+</Tabs>
+
+## 4. Set Up the Client
+
+Now let's create the client-side setup with React Query integration:
+
+```typescript title="utils/trpc.ts"
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/router'; // Import the router type
+
+// Create tRPC context with full type safety
+export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<AppRouter>();
+```
+
+## 5. Configure Your App
+
+Wrap your app with the necessary providers:
+
+```typescript title="App.tsx"
+import React, { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { TRPCProvider } from './utils/trpc';
+import { PostsList } from './components/PostsList';
+
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000, // 1 minute
+        retry: 3,
+      },
+      mutations: {
+        retry: 1,
+      },
+    },
+  });
+}
+
+let browserQueryClient: QueryClient | undefined = undefined;
+
+function getQueryClient() {
+  if (typeof window === 'undefined') {
+    // Server: always make a new query client
+    return makeQueryClient();
+  } else {
+    // Browser: make a new query client if we don't already have one
+    if (!browserQueryClient) browserQueryClient = makeQueryClient();
+    return browserQueryClient;
+  }
+}
+
+export default function App() {
+  const queryClient = getQueryClient();
+
+  const [trpcClient] = useState(() =>
+    createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: 'http://localhost:3001/api/trpc', // Your tRPC server URL
+        }),
+      ],
+    }),
+  );
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+        <div className="min-h-screen bg-gray-50 py-8">
+          <div className="max-w-4xl mx-auto px-4">
+            <h1 className="text-3xl font-bold mb-8">My tRPC Blog</h1>
+            <PostsList />
+          </div>
+        </div>
+      </TRPCProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
+## 6. Use tRPC in Your Components
+
+Finally, let's create components that use our tRPC procedures:
+
+```typescript title="components/PostsList.tsx"
+import React, { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTRPC } from '../utils/trpc';
+
+export function PostsList() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+
+  // Fetch all posts
+  const postsQuery = useQuery(trpc.getPosts.queryOptions());
+
+  // Create post mutation
+  const createPostMutation = useMutation(trpc.createPost.mutationOptions({
+    onSuccess: () => {
+      // Invalidate and refetch posts after creating
+      queryClient.invalidateQueries(trpc.getPosts.queryKey());
+      setTitle('');
+      setContent('');
+    },
+  }));
+
+  // Delete post mutation
+  const deletePostMutation = useMutation(trpc.deletePost.mutationOptions({
+    onSuccess: () => {
+      // Invalidate and refetch posts after deleting
+      queryClient.invalidateQueries(trpc.getPosts.queryKey());
+    },
+  }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (title.trim() && content.trim()) {
+      createPostMutation.mutate({ title, content });
+    }
+  };
+
+  if (postsQuery.isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="text-lg">Loading posts...</div>
+      </div>
+    );
+  }
+
+  if (postsQuery.error) {
+    return (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        Error: {postsQuery.error.message}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Create Post Form */}
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-4">Create New Post</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium mb-1">
+              Title
+            </label>
+            <input
+              id="title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter post title..."
+            />
+          </div>
+          <div>
+            <label htmlFor="content" className="block text-sm font-medium mb-1">
+              Content
+            </label>
+            <textarea
+              id="content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={4}
+              placeholder="Enter post content..."
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={createPostMutation.isPending || !title.trim() || !content.trim()}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            {createPostMutation.isPending ? 'Creating...' : 'Create Post'}
+          </button>
+        </form>
+      </div>
+
+      {/* Posts List */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Posts ({postsQuery.data?.length || 0})</h2>
+        {postsQuery.data?.length === 0 ? (
+          <div className="text-gray-500 text-center py-8">
+            No posts yet. Create your first post above!
+          </div>
+        ) : (
+          postsQuery.data?.map((post) => (
+            <div key={post.id} className="bg-white p-6 rounded-lg shadow">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
+                  <p className="text-gray-600">{post.content}</p>
+                </div>
+                <button
+                  onClick={() => deletePostMutation.mutate(post.id)}
+                  disabled={deletePostMutation.isPending}
+                  className="ml-4 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 disabled:bg-gray-300"
+                >
+                  {deletePostMutation.isPending ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+## 7. Run Your Application
+
+Start your development servers:
+
+<Tabs items={['Next.js', 'Separate Frontend/Backend']}>
+<Tab value="Next.js">
+If everything is in a Next.js app:
+
+```bash
+npm run dev
+```
+
+Your app will be available at `http://localhost:3000`
+
+</Tab>
+
+<Tab value="Separate Frontend/Backend">
+Start your backend server:
+
+```bash
+# Terminal 1 - Backend
+npm run server
+# or
+node server/server.ts
+```
+
+Start your frontend:
+
+```bash
+# Terminal 2 - Frontend
+npm start
+# or
+npm run dev
+```
+
+</Tab>
+</Tabs>
+
+## What You've Built
+
+Congratulations! You now have a working tRPC application with:
+
+✅ **Type-safe API** - Full TypeScript coverage from server to client  
+✅ **React Query Integration** - Automatic caching, background refetching, and error handling  
+✅ **Real-time Updates** - Optimistic updates and cache invalidation  
+✅ **Error Handling** - Graceful error states and validation  
+✅ **Developer Experience** - Autocomplete, type checking, and refactoring support
+
+## Next Steps
+
+Now that you have a working tRPC setup, here are some great next steps:
+
+<Cards>
+  <Card
+    href="/docs/framework/concepts"
+    title="Learn Core Concepts"
+    icon={<IconBrain />}
+  >
+    Understand routers, procedures, context, middleware, and error handling
+  </Card>
+  <Card
+    href="/docs/framework/best-practices"
+    title="Best Practices"
+    icon={<IconListCheck />}
+  >
+    Patterns for organizing code, error handling, and scaling your application
+  </Card>
+  <Card
+    href="/docs/framework/nextjs"
+    title="Next.js Integration"
+    icon={<IconBrandNextjs />}
+  >
+    Advanced Next.js patterns with App Router and Server Components
+  </Card>
+  <Card
+    href="/docs/framework/react"
+    title="Advanced React Query"
+    icon={<IconBrandReact />}
+  >
+    Infinite queries, optimistic updates, and advanced caching strategies
+  </Card>
+</Cards>
+
+## Common Issues
+
+<Accordions>
+<Accordion id='cors-issues' title="CORS Issues">
+If you're getting CORS errors, make sure to:
+
+1. **Install CORS middleware** for Express/Standalone servers
+2. **Configure allowed origins** to include your frontend URL
+3. **Enable credentials** if you're using authentication
+
+```typescript
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true,
+}));
+```
+
+</Accordion>
+
+<Accordion id='type-errors' title="TypeScript Type Errors">
+If you're seeing type errors:
+
+1. **Check TypeScript version** - tRPC requires TypeScript 5.7.2+
+2. **Enable strict mode** in `tsconfig.json`
+3. **Verify router type export** - Make sure you're exporting `AppRouter` type
+4. **Restart TypeScript server** in your IDE
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "strict": true,
+    "strictNullChecks": true
+  }
+}
+```
+
+</Accordion>
+
+<Accordion id='network-errors' title="Network Connection Issues">
+If queries are failing:
+
+1. **Check server URL** in your tRPC client configuration
+2. **Verify server is running** on the correct port
+3. **Check network tab** in browser DevTools for actual error responses
+4. **Test endpoint directly** - Try accessing `/api/trpc/getPosts` in your browser
+   </Accordion>
+</Accordions>
+
+---
+
+You're now ready to build amazing type-safe applications with tRPC! The combination of end-to-end type safety and React Query's powerful data fetching capabilities will dramatically improve your development experience.
+</rewritten_file>

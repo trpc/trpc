@@ -1,0 +1,42 @@
+---
+title: Accordion
+description: Add Accordions to your documentation
+preview: accordion
+---
+
+## Usage
+
+Based on
+[Radix UI Accordion](https://www.radix-ui.com/primitives/docs/components/accordion), useful for FAQ sections.
+
+```mdx
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+<Accordions type="single">
+  <Accordion title="My Title">My Content</Accordion>
+</Accordions>
+```
+
+### Accordions
+
+<AutoTypeTable path="./content/docs/ui/props.ts" name="AccordionsProps" />
+
+### Accordion
+
+<AutoTypeTable path="./content/docs/ui/props.ts" name="AccordionProps" />
+
+### Linking to Accordion
+
+You can specify an `id` for accordion. The accordion will automatically open when the user is navigating to the page with the specified `id` in hash parameter.
+
+```mdx
+<Accordions>
+<Accordion title="My Title" id="my-title">
+
+My Content
+
+</Accordion>
+</Accordions>
+```
+
+> The value of accordion is same as title by default. When an id presents, it will be used as the value instead.
