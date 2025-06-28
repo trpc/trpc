@@ -977,7 +977,7 @@ export const tweets = {
                     "tweet_count": 16524,
                     "listed_count": 279
                 },
-                "name": "Theo - ping.gg"
+                "name": "Theo - t3.gg"
             },
             {
                 "id": "2451223458",
