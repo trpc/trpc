@@ -3,7 +3,7 @@ import type { ProcedureType } from '../procedure';
 import { getProcedureAtPath, type AnyRouter } from '../router';
 import { isObject } from '../utils';
 import { parseConnectionParamsFromString } from './parseConnectionParams';
-import type { TRPCAcceptHeader, TRPCRequestInfo } from './types';
+import type { TRPCRequestInfo } from './types';
 
 type GetRequestInfoOptions = {
   path: string;
