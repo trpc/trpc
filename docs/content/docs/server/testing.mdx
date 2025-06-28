@@ -1,0 +1,910 @@
+---
+title: Testing
+description: Test your tRPC procedures with confidence using server-side callers
+icon: IconTestPipe
+---
+
+Testing is crucial for maintaining reliable tRPC applications. This guide covers testing strategies for procedures, routers, middleware, and integration testing patterns.
+
+## Overview
+
+tRPC provides excellent testing capabilities through:
+
+- **Server-side calls** for unit testing procedures
+- **createCallerFactory** for isolated testing
+- **Integration testing** with real HTTP requests
+- **Type-safe mocking** with TypeScript
+
+## Unit Testing Procedures
+
+### Basic Procedure Testing
+
+Use `createCallerFactory` to test procedures in isolation:
+
+```ts title="tests/posts.test.ts"
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createCallerFactory } from '../server/trpc';
+import { postsRouter } from '../server/routers/posts';
+
+const createCaller = createCallerFactory(postsRouter);
+
+describe('Posts Router', () => {
+  let caller: ReturnType<typeof createCaller>;
+
+  beforeEach(() => {
+    caller = createCaller({
+      user: { id: '1', name: 'Test User' },
+      db: mockDb,
+    });
+  });
+
+  it('should create a new post', async () => {
+    const input = {
+      title: 'Test Post',
+      content: 'This is a test post',
+    };
+
+    const result = await caller.create(input);
+
+    expect(result).toMatchObject({
+      id: expect.any(String),
+      title: input.title,
+      content: input.content,
+      authorId: '1',
+    });
+  });
+
+  it('should list posts', async () => {
+    const posts = await caller.list();
+
+    expect(Array.isArray(posts)).toBe(true);
+    expect(posts.length).toBeGreaterThan(0);
+  });
+});
+```
+
+### Testing with Database
+
+Use real database connections or in-memory databases for integration testing:
+
+<Tabs items={['Prisma', 'Drizzle', 'In-Memory']}>
+
+```ts tab="Prisma" title="tests/setup.ts"
+import { PrismaClient } from '@prisma/client';
+import { execSync } from 'child_process';
+
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: 'file:./test.db',
+    },
+  },
+});
+
+export async function setupTestDb() {
+  // Run migrations
+  execSync('npx prisma migrate deploy', {
+    env: { ...process.env, DATABASE_URL: 'file:./test.db' },
+  });
+
+  return prisma;
+}
+
+export async function cleanupTestDb() {
+  await prisma.$disconnect();
+}
+
+// Test helper
+export function createTestContext() {
+  return {
+    prisma,
+    user: null,
+  };
+}
+```
+
+```ts tab="Drizzle" title="tests/setup.ts"
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import Database from 'better-sqlite3';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+
+const sqlite = new Database(':memory:');
+const db = drizzle(sqlite);
+
+export async function setupTestDb() {
+  await migrate(db, { migrationsFolder: './drizzle' });
+  return db;
+}
+
+export function createTestContext() {
+  return {
+    db,
+    user: null,
+  };
+}
+```
+
+```ts tab="In-Memory" title="tests/setup.ts"
+// Simple in-memory store for testing
+class InMemoryStore {
+  private data = new Map<string, any[]>();
+
+  get(table: string) {
+    return this.data.get(table) || [];
+  }
+
+  add(table: string, item: any) {
+    const items = this.get(table);
+    const newItem = { ...item, id: Math.random().toString() };
+    items.push(newItem);
+    this.data.set(table, items);
+    return newItem;
+  }
+
+  clear() {
+    this.data.clear();
+  }
+}
+
+export const testDb = new InMemoryStore();
+
+export function createTestContext() {
+  return {
+    db: testDb,
+    user: null,
+  };
+}
+```
+
+</Tabs>
+
+### Testing Error Cases
+
+Test error scenarios and validation:
+
+```ts title="tests/posts.test.ts"
+import { describe, it, expect } from 'vitest';
+import { TRPCError } from '@trpc/server';
+
+describe('Posts Router - Error Cases', () => {
+  it('should throw UNAUTHORIZED when user is not logged in', async () => {
+    const caller = createCaller({ user: null, db: mockDb });
+
+    await expect(
+      caller.create({
+        title: 'Test Post',
+        content: 'Content',
+      })
+    ).rejects.toThrow(TRPCError);
+  });
+
+  it('should validate input properly', async () => {
+    const caller = createCaller(createTestContext());
+
+    await expect(
+      caller.create({
+        title: '', // Empty title should fail
+        content: 'Content',
+      })
+    ).rejects.toThrow('String must contain at least 1 character(s)');
+  });
+
+  it('should handle not found errors', async () => {
+    const caller = createCaller(createTestContext());
+
+    await expect(
+      caller.byId({ id: 'non-existent-id' })
+    ).rejects.toThrow('Post not found');
+  });
+});
+```
+
+## Testing Middleware
+
+### Authentication Middleware
+
+Test middleware behavior in isolation:
+
+```ts title="tests/middleware.test.ts"
+import { describe, it, expect } from 'vitest';
+import { TRPCError } from '@trpc/server';
+import { authMiddleware } from '../server/middleware/auth';
+
+describe('Auth Middleware', () => {
+  it('should pass through when user is authenticated', async () => {
+    const mockNext = vi.fn().mockResolvedValue({ ok: true, data: 'success' });
+
+    const result = await authMiddleware({
+      ctx: { user: { id: '1', role: 'user' } },
+      next: mockNext,
+      path: 'test',
+      type: 'query',
+    });
+
+    expect(mockNext).toHaveBeenCalled();
+    expect(result.data).toBe('success');
+  });
+
+  it('should throw UNAUTHORIZED when user is not authenticated', async () => {
+    const mockNext = vi.fn();
+
+    await expect(
+      authMiddleware({
+        ctx: { user: null },
+        next: mockNext,
+        path: 'test',
+        type: 'query',
+      })
+    ).rejects.toThrow(TRPCError);
+
+    expect(mockNext).not.toHaveBeenCalled();
+  });
+
+  it('should throw FORBIDDEN for insufficient role', async () => {
+    const mockNext = vi.fn();
+
+    await expect(
+      adminMiddleware({
+        ctx: { user: { id: '1', role: 'user' } },
+        next: mockNext,
+        path: 'test',
+        type: 'query',
+        meta: { requiresAdmin: true },
+      })
+    ).rejects.toThrow(TRPCError);
+  });
+});
+```
+
+### Rate Limiting Middleware
+
+Test rate limiting logic:
+
+```ts title="tests/rateLimit.test.ts"
+import { describe, it, expect, beforeEach } from 'vitest';
+import { rateLimitMiddleware } from '../server/middleware/rateLimit';
+
+describe('Rate Limit Middleware', () => {
+  beforeEach(() => {
+    // Clear rate limit cache
+    rateLimitMiddleware.clearCache();
+  });
+
+  it('should allow requests under the limit', async () => {
+    const mockNext = vi.fn().mockResolvedValue({ ok: true });
+
+    // First request should pass
+    await rateLimitMiddleware({
+      ctx: { ip: '127.0.0.1' },
+      next: mockNext,
+      path: 'test',
+      type: 'query',
+      meta: { rateLimit: 5 },
+    });
+
+    expect(mockNext).toHaveBeenCalled();
+  });
+
+  it('should block requests over the limit', async () => {
+    const mockNext = vi.fn().mockResolvedValue({ ok: true });
+
+    // Make 5 requests (the limit)
+    for (let i = 0; i < 5; i++) {
+      await rateLimitMiddleware({
+        ctx: { ip: '127.0.0.1' },
+        next: mockNext,
+        path: 'test',
+        type: 'query',
+        meta: { rateLimit: 5 },
+      });
+    }
+
+    // 6th request should fail
+    await expect(
+      rateLimitMiddleware({
+        ctx: { ip: '127.0.0.1' },
+        next: mockNext,
+        path: 'test',
+        type: 'query',
+        meta: { rateLimit: 5 },
+      })
+    ).rejects.toThrow('TOO_MANY_REQUESTS');
+  });
+});
+```
+
+## Integration Testing
+
+### HTTP Integration Tests
+
+Test the complete HTTP flow:
+
+```ts title="tests/integration.test.ts"
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from '../server/routers/_app';
+import { createContext } from '../server/context';
+
+describe('tRPC Integration Tests', () => {
+  let server: any;
+  let serverUrl: string;
+
+  beforeAll(async () => {
+    server = createHTTPServer({
+      router: appRouter,
+      createContext,
+    });
+
+    await new Promise<void>((resolve) => {
+      server.listen(0, () => {
+        const port = server.address()?.port;
+        serverUrl = `http://localhost:${port}`;
+        resolve();
+      });
+    });
+  });
+
+  afterAll(() => {
+    server?.close();
+  });
+
+  it('should handle HTTP requests', async () => {
+    const response = await fetch(
+      `${serverUrl}/posts.list`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    expect(response.ok).toBe(true);
+    const data = await response.json();
+    expect(data.result).toBeDefined();
+  });
+
+  it('should handle authentication', async () => {
+    const response = await fetch(
+      `${serverUrl}/posts.create`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer invalid-token',
+        },
+        body: JSON.stringify({
+          title: 'Test Post',
+          content: 'Content',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(401);
+  });
+});
+```
+
+### Next.js API Route Testing
+
+Test Next.js API routes with tRPC:
+
+```ts title="tests/api.test.ts"
+import { createMocks } from 'node-mocks-http';
+import handler from '../pages/api/trpc/[trpc]';
+
+describe('/api/trpc', () => {
+  it('should handle GET requests', async () => {
+    const { req, res } = createMocks({
+      method: 'GET',
+      url: '/api/trpc/posts.list',
+    });
+
+    await handler(req, res);
+
+    expect(res._getStatusCode()).toBe(200);
+    const data = JSON.parse(res._getData());
+    expect(data.result).toBeDefined();
+  });
+
+  it('should handle POST requests', async () => {
+    const { req, res } = createMocks({
+      method: 'POST',
+      url: '/api/trpc/posts.create',
+      body: {
+        title: 'Test Post',
+        content: 'Content',
+      },
+      headers: {
+        'content-type': 'application/json',
+      },
+    });
+
+    await handler(req, res);
+
+    expect(res._getStatusCode()).toBe(200);
+  });
+});
+```
+
+## Testing Patterns
+
+### Test Factories
+
+Create reusable test data factories:
+
+```ts title="tests/factories.ts"
+import { faker } from '@faker-js/faker';
+
+export const userFactory = (overrides?: Partial<User>) => ({
+  id: faker.string.uuid(),
+  email: faker.internet.email(),
+  name: faker.person.fullName(),
+  role: 'user' as const,
+  createdAt: new Date(),
+  ...overrides,
+});
+
+export const postFactory = (overrides?: Partial<Post>) => ({
+  id: faker.string.uuid(),
+  title: faker.lorem.sentence(),
+  content: faker.lorem.paragraphs(3),
+  authorId: faker.string.uuid(),
+  published: false,
+  createdAt: new Date(),
+  ...overrides,
+});
+
+// Usage in tests
+describe('Posts', () => {
+  it('should create post with valid data', async () => {
+    const user = userFactory();
+    const postData = postFactory({ authorId: user.id });
+
+    const caller = createCaller({ user, db: mockDb });
+    const result = await caller.create(postData);
+
+    expect(result).toMatchObject(postData);
+  });
+});
+```
+
+### Mock Services
+
+Mock external dependencies:
+
+```ts title="tests/mocks.ts"
+import { vi } from 'vitest';
+
+// Mock email service
+export const mockEmailService = {
+  send: vi.fn().mockResolvedValue({ id: 'email-123' }),
+  verify: vi.fn().mockResolvedValue(true),
+};
+
+// Mock storage service
+export const mockStorageService = {
+  upload: vi.fn().mockResolvedValue({ url: 'https://example.com/file.jpg' }),
+  delete: vi.fn().mockResolvedValue(true),
+};
+
+// Mock external API
+export const mockExternalApi = {
+  get: vi.fn(),
+  post: vi.fn(),
+};
+
+// Use in tests
+describe('User Registration', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should send welcome email after registration', async () => {
+    const caller = createCaller({
+      emailService: mockEmailService,
+      db: testDb,
+    });
+
+    await caller.register({
+      email: 'test@example.com',
+      password: 'password123',
+    });
+
+    expect(mockEmailService.send).toHaveBeenCalledWith({
+      to: 'test@example.com',
+      template: 'welcome',
+      data: expect.any(Object),
+    });
+  });
+});
+```
+
+### Advanced Test Factories
+
+Create reusable test factories for complex scenarios:
+
+**1. Create Test Factory System**
+
+```typescript title="tests/factories/index.ts"
+interface TestUser {
+  id: string;
+  email: string;
+  role: 'user' | 'admin';
+  createdAt: Date;
+}
+
+interface TestPost {
+  id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  published: boolean;
+}
+
+export class TestFactory {
+  private userCounter = 0;
+  private postCounter = 0;
+
+  createUser(overrides: Partial<TestUser> = {}): TestUser {
+    this.userCounter++;
+    return {
+      id: `user-${this.userCounter}`,
+      email: `user${this.userCounter}@example.com`,
+      role: 'user',
+      createdAt: new Date(),
+      ...overrides,
+    };
+  }
+
+  createPost(authorId: string, overrides: Partial<TestPost> = {}): TestPost {
+    this.postCounter++;
+    return {
+      id: `post-${this.postCounter}`,
+      title: `Test Post ${this.postCounter}`,
+      content: `Content for post ${this.postCounter}`,
+      authorId,
+      published: false,
+      ...overrides,
+    };
+  }
+
+  async seedDatabase(db: Database) {
+    const users = [
+      this.createUser({ role: 'admin' }),
+      this.createUser(),
+      this.createUser(),
+    ];
+
+    const posts = [
+      this.createPost(users[1].id, { published: true }),
+      this.createPost(users[1].id),
+      this.createPost(users[2].id, { published: true }),
+    ];
+
+    await db.user.createMany({ data: users });
+    await db.post.createMany({ data: posts });
+
+    return { users, posts };
+  }
+}
+```
+
+**2. Setup Database Test Utilities**
+
+```typescript title="tests/utils/db.ts"
+import { PrismaClient } from '@prisma/client';
+import { execSync } from 'child_process';
+
+let prisma: PrismaClient;
+
+export async function setupTestDatabase() {
+  // Generate unique database URL for this test run
+  const testId = Math.random().toString(36).substring(7);
+  const databaseUrl = `file:./test-${testId}.db`;
+
+  process.env.DATABASE_URL = databaseUrl;
+
+  // Run migrations
+  execSync('npx prisma migrate deploy', {
+    env: { ...process.env, DATABASE_URL: databaseUrl },
+    stdio: 'ignore'
+  });
+
+  prisma = new PrismaClient();
+  await prisma.$connect();
+
+  return prisma;
+}
+
+export async function teardownTestDatabase() {
+  await prisma.$disconnect();
+
+  // Clean up test database file
+  const fs = await import('fs');
+  const path = require('path');
+  const dbPath = process.env.DATABASE_URL?.replace('file:', '');
+  if (dbPath && fs.existsSync(dbPath)) {
+    fs.unlinkSync(dbPath);
+  }
+}
+
+export { prisma };
+```
+
+**3. Create Comprehensive Test Suite**
+
+```typescript title="tests/integration/posts.test.ts"
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { setupTestDatabase, teardownTestDatabase } from '../utils/db';
+import { TestFactory } from '../factories';
+import { createCaller } from '../../src/server/trpc';
+
+describe('Posts Integration Tests', () => {
+  let caller: ReturnType<typeof createCaller>;
+  let factory: TestFactory;
+  let testData: Awaited<ReturnType<typeof factory.seedDatabase>>;
+
+  beforeEach(async () => {
+    const db = await setupTestDatabase();
+    factory = new TestFactory();
+    testData = await factory.seedDatabase(db);
+
+    caller = createCaller({
+      user: testData.users[0], // Admin user
+      db,
+    });
+  });
+
+  afterEach(async () => {
+    await teardownTestDatabase();
+  });
+
+  describe('Post Creation', () => {
+    it('should create a post successfully', async () => {
+      const newPost = await caller.posts.create({
+        title: 'Integration Test Post',
+        content: 'This is a test post content',
+      });
+
+      expect(newPost).toMatchObject({
+        id: expect.any(String),
+        title: 'Integration Test Post',
+        content: 'This is a test post content',
+        authorId: testData.users[0].id,
+        published: false,
+      });
+    });
+
+    it('should handle validation errors', async () => {
+      await expect(
+        caller.posts.create({
+          title: '', // Invalid empty title
+          content: 'Valid content',
+        })
+      ).rejects.toThrow('Title cannot be empty');
+    });
+  });
+
+  describe('Post Querying', () => {
+    it('should return published posts only for non-authors', async () => {
+      // Create caller as regular user
+      const userCaller = createCaller({
+        user: testData.users[1],
+        db: prisma,
+      });
+
+      const posts = await userCaller.posts.list();
+
+      expect(posts.every(p => p.published)).toBe(true);
+      expect(posts).toHaveLength(2); // Only published posts
+    });
+
+    it('should return all posts for admin users', async () => {
+      const posts = await caller.posts.list();
+
+      expect(posts).toHaveLength(3); // All posts including unpublished
+    });
+  });
+
+  describe('Post Updates', () => {
+    it('should allow authors to update their posts', async () => {
+      const authorCaller = createCaller({
+        user: testData.users[1],
+        db: prisma,
+      });
+
+      const updatedPost = await authorCaller.posts.update({
+        id: testData.posts[0].id,
+        title: 'Updated Title',
+      });
+
+      expect(updatedPost.title).toBe('Updated Title');
+    });
+
+    it('should prevent non-authors from updating posts', async () => {
+      const otherUserCaller = createCaller({
+        user: testData.users[2],
+        db: prisma,
+      });
+
+      await expect(
+        otherUserCaller.posts.update({
+          id: testData.posts[0].id, // Post by users[1]
+          title: 'Hacked Title',
+        })
+      ).rejects.toThrow('Unauthorized');
+    });
+  });
+});
+```
+
+## Best Practices
+
+<Steps>
+
+### Use Type-Safe Testing
+
+Leverage TypeScript for better test safety:
+
+```ts
+import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
+import type { AppRouter } from '../server/routers/_app';
+
+type PostCreateInput = inferProcedureInput<AppRouter['posts']['create']>;
+type PostCreateOutput = inferProcedureOutput<AppRouter['posts']['create']>;
+
+const validInput: PostCreateInput = {
+  title: 'Test',
+  content: 'Content',
+};
+```
+
+### Test Error Boundaries
+
+Always test both success and failure cases:
+
+```ts
+describe('Error Handling', () => {
+  it('should handle validation errors', async () => {
+    await expect(caller.create({})).rejects.toThrow(ZodError);
+  });
+
+  it('should handle authorization errors', async () => {
+    const unauthorizedCaller = createCaller({ user: null });
+    await expect(unauthorizedCaller.create(validInput))
+      .rejects.toThrow('UNAUTHORIZED');
+  });
+
+  it('should handle not found errors', async () => {
+    await expect(caller.byId({ id: 'invalid' }))
+      .rejects.toThrow('NOT_FOUND');
+  });
+});
+```
+
+### Use Test Utilities
+
+Create reusable test utilities:
+
+```ts title="tests/utils.ts"
+export function createAuthedCaller(user?: Partial<User>) {
+  return createCaller({
+    user: userFactory(user),
+    db: testDb,
+  });
+}
+
+export function createAnonCaller() {
+  return createCaller({
+    user: null,
+    db: testDb,
+  });
+}
+
+export async function expectTRPCError(
+  promise: Promise<any>,
+  code: string
+) {
+  try {
+    await promise;
+    throw new Error('Expected promise to reject');
+  } catch (error) {
+    expect(error).toBeInstanceOf(TRPCError);
+    expect(error.code).toBe(code);
+  }
+}
+```
+
+### Test Performance
+
+Monitor procedure performance:
+
+```ts
+describe('Performance Tests', () => {
+  it('should complete list query within time limit', async () => {
+    const start = Date.now();
+
+    await caller.list();
+
+    const duration = Date.now() - start;
+    expect(duration).toBeLessThan(1000); // Should complete in under 1s
+  });
+
+  it('should handle concurrent requests', async () => {
+    const promises = Array(10).fill(null).map(() =>
+      caller.list()
+    );
+
+    const results = await Promise.all(promises);
+
+    expect(results).toHaveLength(10);
+    results.forEach(result => {
+      expect(Array.isArray(result)).toBe(true);
+    });
+  });
+});
+```
+
+</Steps>
+
+## Testing Tools
+
+### Recommended Testing Stack
+
+<TypeTable
+  type={{
+    Vitest: {
+      description: 'Fast test runner with great TypeScript support',
+      type: 'Test Runner',
+    },
+    Jest: {
+      description: 'Popular testing framework with extensive ecosystem',
+      type: 'Test Runner',
+    },
+    '@faker-js/faker': {
+      description: 'Generate realistic test data',
+      type: 'Test Data',
+    },
+    'node-mocks-http': {
+      description: 'Mock HTTP requests for Next.js API testing',
+      type: 'Mocking',
+    },
+    supertest: {
+      description: 'HTTP assertion library for integration tests',
+      type: 'HTTP Testing',
+    },
+    msw: {
+      description: 'Mock external API calls',
+      type: 'API Mocking',
+    },
+  }}
+/>
+
+### Configuration Example
+
+```ts title="vitest.config.ts"
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'node',
+    setupFiles: ['./tests/setup.ts'],
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'tests/',
+        '**/*.d.ts',
+      ],
+    },
+  },
+});
+```
+
+<Callout type="info">
+  Remember to test both the happy path and edge cases. Good tests give you
+  confidence to refactor and add new features without breaking existing
+  functionality.
+</Callout>

@@ -1,0 +1,499 @@
+---
+title: Metadata
+description: Add custom metadata to procedures for enhanced functionality
+icon: IconTag
+---
+
+Procedure metadata allows you to add custom information to procedures that can be accessed throughout your middleware chain. This is perfect for adding annotations, configuration, or any other procedure-specific data.
+
+<Callout type="info">
+  Use metadata together with
+  [`trpc-openapi`](https://github.com/jlalmes/trpc-openapi) if you want to
+  expose REST-compatible endpoints for your tRPC procedures.
+</Callout>
+
+## Creating a Router with Typed Metadata
+
+First, define your metadata interface and create a tRPC instance with typed metadata:
+
+```ts title="server/trpc.ts"
+import { initTRPC } from '@trpc/server';
+
+interface Meta {
+  authRequired: boolean;
+  role?: 'user' | 'admin';
+  rateLimit?: number;
+}
+
+export const t = initTRPC.context<Context>().meta<Meta>().create();
+
+export const publicProcedure = t.procedure;
+export const router = t.router;
+```
+
+## Basic Usage
+
+### Adding Metadata to Procedures
+
+Add metadata to individual procedures using the `.meta()` method:
+
+```ts title="server/routers/posts.ts"
+import { publicProcedure, router } from '../trpc';
+import { z } from 'zod';
+
+export const postsRouter = router({
+  // Public endpoint - no auth required
+  list: publicProcedure
+    .meta({ authRequired: false })
+    .query(() => {
+      return getPosts();
+    }),
+
+  // Protected endpoint - auth required
+  create: publicProcedure
+    .meta({ authRequired: true, role: 'user' })
+    .input(z.object({ title: z.string() }))
+    .mutation(({ input }) => {
+      return createPost(input);
+    }),
+
+  // Admin-only endpoint
+  delete: publicProcedure
+    .meta({ authRequired: true, role: 'admin' })
+    .input(z.object({ id: z.string() }))
+    .mutation(({ input }) => {
+      return deletePost(input.id);
+    }),
+});
+```
+
+### Accessing Metadata in Middleware
+
+Use metadata to create conditional middleware:
+
+```ts title="server/middleware/auth.ts"
+import { TRPCError } from '@trpc/server';
+import { publicProcedure } from '../trpc';
+
+export const authMiddleware = publicProcedure.use(async (opts) => {
+  const { meta, ctx } = opts;
+
+  // Only check authorization if enabled in metadata
+  if (meta?.authRequired && !ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  // Check role if specified
+  if (meta?.role && ctx.user?.role !== meta.role) {
+    throw new TRPCError({ code: 'FORBIDDEN' });
+  }
+
+  return opts.next();
+});
+```
+
+## Advanced Patterns
+
+### Per-Route Authentication Settings
+
+Create a flexible authentication system using metadata:
+
+```ts title="server/trpc.ts"
+import { initTRPC, TRPCError } from '@trpc/server';
+
+interface Meta {
+  authRequired: boolean;
+  roles?: string[];
+  permissions?: string[];
+}
+
+export const t = initTRPC.context<Context>().meta<Meta>().create();
+
+export const authProcedure = t.procedure.use(async (opts) => {
+  const { meta, ctx } = opts;
+
+  // Skip auth check if not required
+  if (!meta?.authRequired) {
+    return opts.next();
+  }
+
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  // Check roles if specified
+  if (meta.roles && !meta.roles.includes(ctx.user.role)) {
+    throw new TRPCError({ code: 'FORBIDDEN' });
+  }
+
+  // Check permissions if specified
+  if (meta.permissions) {
+    const hasPermission = meta.permissions.every(permission =>
+      ctx.user.permissions.includes(permission)
+    );
+
+    if (!hasPermission) {
+      throw new TRPCError({ code: 'FORBIDDEN' });
+    }
+  }
+
+  return opts.next({
+    ctx: {
+      user: ctx.user, // User is guaranteed to exist
+    },
+  });
+});
+
+export const appRouter = t.router({
+  // Public endpoint
+  hello: authProcedure
+    .meta({ authRequired: false })
+    .query(() => 'Hello world'),
+
+  // User endpoint
+  profile: authProcedure
+    .meta({
+      authRequired: true,
+      roles: ['user', 'admin']
+    })
+    .query(({ ctx }) => ctx.user),
+
+  // Admin endpoint with specific permissions
+  users: authProcedure
+    .meta({
+      authRequired: true,
+      roles: ['admin'],
+      permissions: ['users:read']
+    })
+    .query(() => getAllUsers()),
+});
+```
+
+### Rate Limiting with Metadata
+
+Implement rate limiting based on procedure metadata:
+
+```ts title="server/middleware/rateLimit.ts"
+import { TRPCError } from '@trpc/server';
+import { publicProcedure } from '../trpc';
+
+const rateLimitMap = new Map<string, number[]>();
+
+export const rateLimitMiddleware = publicProcedure.use(async (opts) => {
+  const { meta, ctx } = opts;
+
+  // Skip rate limiting if not specified
+  if (!meta?.rateLimit) {
+    return opts.next();
+  }
+
+  const key = `${ctx.ip}-${opts.path}`;
+  const now = Date.now();
+  const windowMs = 60 * 1000; // 1 minute window
+
+  const requests = rateLimitMap.get(key) || [];
+  const recentRequests = requests.filter(time => now - time < windowMs);
+
+  if (recentRequests.length >= meta.rateLimit) {
+    throw new TRPCError({
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Rate limit exceeded',
+    });
+  }
+
+  recentRequests.push(now);
+  rateLimitMap.set(key, recentRequests);
+
+  return opts.next();
+});
+
+// Usage in procedures
+export const apiRouter = router({
+  search: rateLimitMiddleware
+    .meta({ rateLimit: 10 }) // 10 requests per minute
+    .input(z.object({ query: z.string() }))
+    .query(({ input }) => search(input.query)),
+
+  upload: rateLimitMiddleware
+    .meta({ rateLimit: 5 }) // 5 uploads per minute
+    .input(z.object({ file: z.string() }))
+    .mutation(({ input }) => uploadFile(input.file)),
+});
+```
+
+## Default Meta and Chaining
+
+### Setting Default Values
+
+You can set default metadata values when creating the tRPC instance:
+
+```ts title="server/trpc.ts"
+interface Meta {
+  authRequired: boolean;
+  role?: 'user' | 'admin';
+  cached?: boolean;
+}
+
+export const t = initTRPC
+  .context<Context>()
+  .meta<Meta>()
+  .create({
+    // Set default metadata
+    defaultMeta: {
+      authRequired: false,
+      cached: true
+    }
+  });
+```
+
+### Metadata Merging
+
+When chaining procedures, metadata is shallow merged:
+
+```ts title="server/procedures.ts"
+const baseProcedure = publicProcedure
+  .meta({
+    authRequired: true,
+    role: 'user'
+  });
+
+const adminProcedure = baseProcedure
+  .meta({
+    role: 'admin', // Overrides 'user'
+    permissions: ['admin:read'] // Adds new field
+  });
+// Final meta: { authRequired: true, role: 'admin', permissions: ['admin:read'] }
+```
+
+## OpenAPI Integration
+
+### REST Endpoint Generation
+
+Use metadata to generate REST endpoints with `trpc-openapi`:
+
+```ts title="server/routers/api.ts"
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
+
+export const apiRouter = router({
+  getUser: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/users/{id}',
+        tags: ['users'],
+        summary: 'Get user by ID',
+      }
+    })
+    .input(z.object({ id: z.string() }))
+    .output(z.object({
+      id: z.string(),
+      name: z.string(),
+      email: z.string(),
+    }))
+    .query(({ input }) => getUserById(input.id)),
+
+  createUser: publicProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/users',
+        tags: ['users'],
+        summary: 'Create a new user',
+      }
+    })
+    .input(z.object({
+      name: z.string(),
+      email: z.string().email(),
+    }))
+    .output(z.object({
+      id: z.string(),
+      name: z.string(),
+      email: z.string(),
+    }))
+    .mutation(({ input }) => createUser(input)),
+});
+```
+
+## Best Practices
+
+<Steps>
+
+### Keep Metadata Simple
+
+Don't overload metadata with complex objects. Keep it simple and focused:
+
+```ts
+// ✅ Good - simple, focused metadata
+interface Meta {
+  authRequired: boolean;
+  rateLimit?: number;
+  cacheTime?: number;
+}
+
+// ❌ Avoid - complex nested objects
+interface Meta {
+  auth: {
+    required: boolean;
+    roles: string[];
+    permissions: {
+      read: boolean;
+      write: boolean;
+      admin: boolean;
+    };
+  };
+}
+```
+
+### Use Consistent Naming
+
+Establish consistent naming conventions for your metadata:
+
+```ts
+interface Meta {
+  // Use consistent boolean naming
+  authRequired: boolean;    // not needsAuth
+  cacheEnabled: boolean;    // not shouldCache
+
+  // Use consistent array naming
+  requiredRoles: string[];  // not roles
+  allowedMethods: string[]; // not methods
+}
+```
+
+### Document Your Metadata
+
+Create clear documentation for your metadata schema:
+
+```ts
+/**
+ * Metadata interface for tRPC procedures
+ */
+interface Meta {
+  /** Whether authentication is required for this procedure */
+  authRequired: boolean;
+
+  /** Required user roles (user must have at least one) */
+  requiredRoles?: ('user' | 'admin' | 'moderator')[];
+
+  /** Rate limit per minute for this procedure */
+  rateLimit?: number;
+
+  /** Cache time in seconds (0 = no cache) */
+  cacheTime?: number;
+}
+```
+
+### Validate Metadata
+
+Consider validating metadata at build time:
+
+```ts
+import { z } from 'zod';
+
+const metaSchema = z.object({
+  authRequired: z.boolean(),
+  requiredRoles: z.array(z.enum(['user', 'admin'])).optional(),
+  rateLimit: z.number().positive().optional(),
+});
+
+// Use in development to validate metadata
+const validateMeta = (meta: unknown) => {
+  return metaSchema.parse(meta);
+};
+```
+
+</Steps>
+
+## Common Use Cases
+
+### API Documentation
+
+Generate API documentation based on metadata:
+
+```ts
+interface Meta {
+  description?: string;
+  deprecated?: boolean;
+  version?: string;
+  tags?: string[];
+}
+
+export const apiRouter = router({
+  getPost: publicProcedure
+    .meta({
+      description: 'Retrieve a blog post by ID',
+      tags: ['posts', 'public'],
+      version: '1.0'
+    })
+    .input(z.object({ id: z.string() }))
+    .query(({ input }) => getPost(input.id)),
+});
+```
+
+### Feature Flags
+
+Control feature availability with metadata:
+
+```ts
+interface Meta {
+  feature?: string;
+  beta?: boolean;
+}
+
+const featureMiddleware = publicProcedure.use(async (opts) => {
+  const { meta, ctx } = opts;
+
+  if (meta?.feature && !ctx.features?.includes(meta.feature)) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Feature not available'
+    });
+  }
+
+  if (meta?.beta && !ctx.user?.betaAccess) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Beta access required'
+    });
+  }
+
+  return opts.next();
+});
+```
+
+### Logging and Analytics
+
+Add tracking information with metadata:
+
+```ts
+interface Meta {
+  trackingEvent?: string;
+  sensitive?: boolean;
+}
+
+const analyticsMiddleware = publicProcedure.use(async (opts) => {
+  const { meta, path } = opts;
+
+  // Track API usage
+  if (meta?.trackingEvent) {
+    analytics.track(meta.trackingEvent, {
+      procedure: path,
+      userId: opts.ctx.user?.id,
+    });
+  }
+
+  // Skip logging sensitive procedures
+  if (!meta?.sensitive) {
+    logger.info(`Procedure called: ${path}`);
+  }
+
+  return opts.next();
+});
+```
+
+<Callout type="info">
+  Metadata is a powerful feature that enables many advanced use cases. Start
+  simple and gradually add more sophisticated metadata as your application
+  grows.
+</Callout>

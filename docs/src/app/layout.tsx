@@ -8,8 +8,8 @@ import { Provider } from './provider';
 
 export const metadata = createMetadata({
   title: {
-    template: '%s | Fumadocs',
-    default: 'Fumadocs',
+    template: '%s | tRPC Documentation',
+    default: 'tRPC Documentation',
   },
   description: 'The Next.js framework for building documentation sites',
   metadataBase: baseUrl,

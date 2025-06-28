@@ -1,0 +1,454 @@
+---
+title: Next.js Setup
+description: Get started with tRPC in Next.js with App Router and Pages Router support
+icon: IconBrandNextjs
+---
+
+tRPC works seamlessly with Next.js, supporting both App Router and Pages Router. This guide will get you up and running in minutes.
+
+<Callout title="App Router Recommended">
+  While both App Router and Pages Router are supported, App Router is
+  recommended for new projects.
+</Callout>
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash npm install @trpc/server @trpc/client @trpc/next zod ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash pnpm add @trpc/server @trpc/client @trpc/next zod ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash yarn add @trpc/server @trpc/client @trpc/next zod ```
+  </Tab>
+  <Tab value="bun">
+    ```bash bun add @trpc/server @trpc/client @trpc/next zod ```
+  </Tab>
+</Tabs>
+
+## Setup Guide
+
+### 1. Create tRPC Instance
+
+```typescript title="src/server/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import { ZodError } from 'zod';
+
+const t = initTRPC.create({
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.cause instanceof ZodError ? error.cause.flatten() : null,
+      },
+    };
+  },
+});
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+### 2. Create Your API Router
+
+```typescript title="src/server/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+export const appRouter = router({
+  hello: publicProcedure
+    .input(z.object({ name: z.string().optional() }))
+    .query(({ input }) => {
+      return {
+        greeting: `Hello ${input.name ?? 'World'}!`,
+      };
+    }),
+
+  createPost: publicProcedure
+    .input(z.object({
+      title: z.string().min(1),
+      content: z.string().min(1),
+    }))
+    .mutation(({ input }) => {
+      // Here you would save to your database
+      return {
+        id: Date.now().toString(),
+        ...input,
+        createdAt: new Date(),
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### 3. Setup API Route
+
+<Tabs items={['App Router', 'Pages Router']}>
+<Tab value="App Router">
+```typescript title="src/app/api/trpc/[trpc]/route.ts"
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { appRouter } from '../../../../server/router';
+
+const handler = (req: Request) =>
+fetchRequestHandler({
+endpoint: '/api/trpc',
+req,
+router: appRouter,
+createContext: () => ({}),
+});
+
+export { handler as GET, handler as POST };
+```
+</Tab>
+<Tab value="Pages Router">
+```typescript title="src/pages/api/trpc/[trpc].ts"
+import { createNextApiHandler } from '@trpc/server/adapters/next';
+import { appRouter } from '../../../server/router';
+
+export default createNextApiHandler({
+  router: appRouter,
+  createContext: () => ({}),
+});
+```
+</Tab>
+</Tabs>
+
+### 4. Setup tRPC Client
+
+```typescript title="src/utils/trpc.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../server/router';
+
+export const trpc = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: '/api/trpc',
+    }),
+  ],
+});
+```
+
+### 5. Use in Your Components
+
+<Tabs items={['App Router', 'Pages Router', 'Client Component']}>
+<Tab value="App Router">
+```typescript title="src/app/page.tsx"
+import { trpc } from '../utils/trpc';
+
+export default async function HomePage() {
+  const hello = await trpc.hello.query({ name: 'tRPC' });
+
+return (
+
+<div>
+  <h1>{hello.greeting}</h1>
+</div>
+); }
+
+````
+</Tab>
+<Tab value="Pages Router">
+```typescript title="src/pages/index.tsx"
+import { useEffect, useState } from 'react';
+import { trpc } from '../utils/trpc';
+
+export default function HomePage() {
+  const [greeting, setGreeting] = useState('');
+
+  useEffect(() => {
+    trpc.hello.query({ name: 'tRPC' }).then(setGreeting);
+  }, []);
+
+  return (
+    <div>
+      <h1>{greeting}</h1>
+    </div>
+  );
+}
+````
+
+</Tab>
+<Tab value="Client Component">
+```typescript title="src/components/CreatePost.tsx"
+'use client';
+
+import { useState } from 'react';
+import { trpc } from '../utils/trpc';
+
+export default function CreatePost() {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+
+const handleSubmit = async (e: React.FormEvent) => {
+e.preventDefault();
+
+    try {
+      const post = await trpc.createPost.mutate({ title, content });
+      console.log('Created post:', post);
+
+      // Reset form
+      setTitle('');
+      setContent('');
+    } catch (error) {
+      console.error('Error creating post:', error);
+    }
+
+};
+
+return (
+
+<form onSubmit={handleSubmit}>
+  <input
+    type="text"
+    value={title}
+    onChange={(e) => setTitle(e.target.value)}
+    placeholder="Post title"
+    required
+  />
+  <textarea
+    value={content}
+    onChange={(e) => setContent(e.target.value)}
+    placeholder="Post content"
+    required
+  />
+  <button type="submit">Create Post</button>
+</form>
+); }
+
+````
+</Tab>
+</Tabs>
+
+## Test Your Setup
+
+Start your Next.js development server:
+
+```bash
+npm run dev
+````
+
+Test your API by visiting:
+
+- `http://localhost:3000/api/trpc/hello?input={"name":"World"}`
+
+You should see:
+
+```json
+{ "result": { "data": { "greeting": "Hello World!" } } }
+```
+
+## Add React Query Integration (Optional)
+
+For a better client experience with caching and mutations:
+
+### Install React Query
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash npm install @trpc/react-query @tanstack/react-query ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash pnpm add @trpc/react-query @tanstack/react-query ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash yarn add @trpc/react-query @tanstack/react-query ```
+  </Tab>
+  <Tab value="bun">
+    ```bash bun add @trpc/react-query @tanstack/react-query ```
+  </Tab>
+</Tabs>
+
+### Setup React Query Client
+
+```typescript title="src/utils/trpc.ts"
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/router';
+
+export const trpc = createTRPCReact<AppRouter>();
+```
+
+### Setup Providers
+
+<Tabs items={['App Router', 'Pages Router']}>
+<Tab value="App Router">
+```typescript title="src/app/providers.tsx"
+'use client';
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { httpBatchLink } from '@trpc/client';
+import { useState } from 'react';
+import { trpc } from '../utils/trpc';
+
+export default function Providers({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+  const [trpcClient] = useState(() =>
+    trpc.createClient({
+      links: [
+        httpBatchLink({
+          url: '/api/trpc',
+        }),
+      ],
+    }),
+  );
+
+return (
+
+<trpc.Provider client={trpcClient} queryClient={queryClient}>
+  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+</trpc.Provider>
+); }
+
+````
+
+```typescript title="src/app/layout.tsx"
+import Providers from './providers';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
+    </html>
+  );
+}
+````
+
+</Tab>
+<Tab value="Pages Router">
+```typescript title="src/pages/_app.tsx"
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { httpBatchLink } from '@trpc/client';
+import { useState } from 'react';
+import { trpc } from '../utils/trpc';
+import type { AppType } from 'next/app';
+
+const MyApp: AppType = ({ Component, pageProps }) => {
+const [queryClient] = useState(() => new QueryClient());
+const [trpcClient] = useState(() =>
+trpc.createClient({
+links: [
+httpBatchLink({
+url: '/api/trpc',
+}),
+],
+}),
+);
+
+return (
+
+<trpc.Provider client={trpcClient} queryClient={queryClient}>
+  <QueryClientProvider client={queryClient}>
+    <Component {...pageProps} />
+  </QueryClientProvider>
+</trpc.Provider>
+); };
+
+export default trpc.withTRPC(MyApp);
+```
+</Tab>
+</Tabs>
+
+### Use React Query Hooks
+
+```typescript title="src/components/PostList.tsx"
+'use client';
+
+import { trpc } from '../utils/trpc';
+
+export default function PostList() {
+  const { data: hello, isLoading } = trpc.hello.useQuery({ name: 'tRPC' });
+  const createPost = trpc.createPost.useMutation();
+
+  if (isLoading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h1>{hello?.greeting}</h1>
+      <button
+        onClick={() =>
+          createPost.mutate({
+            title: 'My Post',
+            content: 'Hello World!'
+          })
+        }
+        disabled={createPost.isLoading}
+      >
+        {createPost.isLoading ? 'Creating...' : 'Create Post'}
+      </button>
+    </div>
+  );
+}
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="Add Database" href="/docs/server/quickstart">
+    Learn to connect your database with Prisma, Drizzle, or raw SQL
+  </Card>
+  <Card title="Authentication" href="/docs/server/authorization">
+    Add user authentication and authorization to your API
+  </Card>
+  <Card title="Validation" href="/docs/server/validators">
+    Learn advanced input and output validation with Zod
+  </Card>
+  <Card title="Error Handling" href="/docs/server/error-handling">
+    Handle errors gracefully with proper HTTP status codes
+  </Card>
+</Cards>
+
+## Common Issues
+
+<Accordions>
+<Accordion title="Module not found errors">
+Make sure you've installed all required dependencies and your TypeScript configuration is correct.
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "strict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  }
+}
+```
+
+</Accordion>
+
+<Accordion title="CORS issues">
+If you're calling your API from a different domain, you may need to configure CORS:
+
+```typescript title="src/pages/api/trpc/[trpc].ts"
+import { createNextApiHandler } from '@trpc/server/adapters/next';
+import { appRouter } from '../../../server/router';
+
+export default createNextApiHandler({
+  router: appRouter,
+  createContext: () => ({}),
+  responseMeta() {
+    return {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET,OPTIONS,PATCH,DELETE,POST,PUT',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+    };
+  },
+});
+```
+
+</Accordion>
+</Accordions>

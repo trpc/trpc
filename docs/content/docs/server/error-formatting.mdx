@@ -1,0 +1,361 @@
+---
+title: Error Formatting
+description: Customize how errors are formatted and sent to the client
+icon: IconAlertTriangle
+---
+
+The error formatting in your router will be inferred all the way to your client (&&nbsp;React&nbsp;components), giving you end-to-end type safety for error handling.
+
+## Usage Example
+
+### Adding Custom Formatting
+
+You can customize how errors are formatted by adding an `errorFormatter` to your tRPC initialization:
+
+```ts title="server/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import { ZodError } from 'zod';
+
+export const t = initTRPC.context<Context>().create({
+  errorFormatter(opts) {
+    const { shape, error } = opts;
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+            ? error.cause.flatten()
+            : null,
+      },
+    };
+  },
+});
+```
+
+### Usage in React
+
+With custom error formatting, you get full type inference on the client:
+
+```tsx title="components/MyComponent.tsx"
+export function MyComponent() {
+  const mutation = trpc.addPost.useMutation();
+
+  useEffect(() => {
+    mutation.mutate({ title: 'example' });
+  }, []);
+
+  if (mutation.error?.data?.zodError) {
+    // zodError will be inferred and fully typed
+    return (
+      <pre>Error: {JSON.stringify(mutation.error.data.zodError, null, 2)}</pre>
+    );
+  }
+  return <>[...]</>;
+}
+```
+
+## Error Formatter Properties
+
+The `errorFormatter` function receives an object with all the information about the error:
+
+<TypeTable
+  type={{
+    error: {
+      description: 'The TRPCError that was thrown',
+      type: 'TRPCError',
+    },
+    type: {
+      description: 'The type of procedure that threw the error',
+      type: 'ProcedureType | "unknown"',
+    },
+    path: {
+      description: 'Path to the procedure that threw the error',
+      type: 'string | undefined',
+    },
+    input: {
+      description: 'The input that was passed to the procedure',
+      type: 'unknown',
+    },
+    ctx: {
+      description: 'The context for the request',
+      type: 'TContext | undefined',
+    },
+    shape: {
+      description: 'The default error shape',
+      type: 'DefaultErrorShape',
+    },
+  }}
+/>
+
+## Default Error Shape
+
+Since tRPC v8.x, we comply with [JSON-RPC 2.0](https://www.jsonrpc.org/specification) specification:
+
+```ts
+type DefaultErrorData = {
+  code: TRPC_ERROR_CODE_KEY;
+  httpStatus: number;
+  /**
+   * Path to the procedure that threw the error
+   */
+  path?: string;
+  /**
+   * Stack trace of the error (only in development)
+   */
+  stack?: string;
+};
+
+interface DefaultErrorShape {
+  message: string;
+  code: TRPC_ERROR_CODE_NUMBER;
+  data: DefaultErrorData;
+}
+```
+
+<Callout type="info">
+  The stack trace is only included in development environments for security
+  reasons.
+</Callout>
+
+## Advanced Error Formatting
+
+### Multiple Error Types
+
+You can handle different error types in your formatter:
+
+```ts title="server/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import { ZodError } from 'zod';
+
+export const t = initTRPC.context<Context>().create({
+  errorFormatter(opts) {
+    const { shape, error } = opts;
+
+    let formattedError = {
+      ...shape,
+      data: {
+        ...shape.data,
+      },
+    };
+
+    // Handle Zod validation errors
+    if (error.code === 'BAD_REQUEST' && error.cause instanceof ZodError) {
+      formattedError.data.zodError = error.cause.flatten();
+    }
+
+    // Handle custom application errors
+    if (error.cause instanceof CustomApplicationError) {
+      formattedError.data.customError = {
+        type: error.cause.type,
+        details: error.cause.details,
+      };
+    }
+
+    return formattedError;
+  },
+});
+```
+
+### Advanced Context-Aware Formatting
+
+Create sophisticated error formatting based on request context:
+
+**1. Define Context-Aware Formatter**
+
+```typescript title="src/lib/error-formatter.ts"
+import { TRPCError } from '@trpc/server';
+import type { DefaultErrorShape } from '@trpc/server';
+
+interface ErrorContext {
+  userId?: string;
+  userRole?: string;
+  requestId: string;
+  clientVersion?: string;
+}
+
+export const contextAwareFormatter = ({
+  error,
+  type,
+  path,
+  input,
+  ctx
+}: {
+  error: TRPCError;
+  type: 'query' | 'mutation' | 'subscription' | 'unknown';
+  path: string | undefined;
+  input: unknown;
+  ctx: ErrorContext;
+}): DefaultErrorShape => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isDeveloper = ctx.userRole === 'developer';
+
+  // Base error shape
+  const baseError = {
+    message: error.message,
+    code: error.code as any,
+    data: {
+      code: error.code,
+      httpStatus: getHTTPStatusCodeFromError(error),
+      path,
+      requestId: ctx.requestId,
+    },
+  };
+
+  // Add debug info for developers or non-production
+  if (!isProduction || isDeveloper) {
+    baseError.data = {
+      ...baseError.data,
+      stack: error.stack,
+      input: JSON.stringify(input),
+      cause: error.cause,
+    };
+  }
+
+  // Customize by user role
+  if (ctx.userRole === 'admin') {
+    baseError.data.adminDetails = {
+      userId: ctx.userId,
+      timestamp: new Date().toISOString(),
+      serverVersion: process.env.VERSION,
+    };
+  }
+
+  return baseError;
+};
+```
+
+**2. Create Role-Based Error Handler**
+
+```typescript title="src/middleware/error-handler.ts"
+export const roleBasedErrorHandler = t.middleware(async ({ ctx, next }) => {
+  try {
+    return await next();
+  } catch (error) {
+    // Log errors with context
+    logger.error('tRPC Error', {
+      userId: ctx.user?.id,
+      role: ctx.user?.role,
+      error: error.message,
+      requestId: ctx.requestId,
+    });
+
+    // Re-throw for error formatter
+    throw error;
+  }
+});
+```
+
+**3. Apply to Router**
+
+```typescript title="src/trpc.ts"
+const t = initTRPC.context<Context>().create({
+  errorFormatter: contextAwareFormatter,
+});
+
+export const protectedProcedure = t.procedure
+  .use(authMiddleware)
+  .use(roleBasedErrorHandler);
+```
+
+## Best Practices
+
+1. Keep Error Messages User-Friendly
+
+Don't expose internal system details in production error messages:
+
+```ts
+// ❌ Don't do this
+throw new TRPCError({
+  code: 'INTERNAL_SERVER_ERROR',
+  message: `Database connection failed: ${dbError.message}`,
+});
+
+// ✅ Do this instead
+throw new TRPCError({
+  code: 'INTERNAL_SERVER_ERROR',
+  message: 'Unable to process request. Please try again later.',
+  cause: dbError, // Only exposed in development
+});
+```
+
+2. Use Consistent Error Codes
+
+Map your application errors to appropriate HTTP status codes:
+
+```ts
+const errorCodeMap = {
+  VALIDATION_ERROR: 'BAD_REQUEST',
+  NOT_AUTHENTICATED: 'UNAUTHORIZED',
+  ACCESS_DENIED: 'FORBIDDEN',
+  RESOURCE_NOT_FOUND: 'NOT_FOUND',
+} as const;
+```
+
+3. Log Errors for Debugging
+
+Always log errors on the server side for debugging:
+
+```ts
+export const t = initTRPC.context<Context>().create({
+  errorFormatter(opts) {
+    const { error, path, input } = opts;
+
+    // Log all errors for debugging
+    console.error(`tRPC Error at ${path}:`, {
+      error: error.message,
+      code: error.code,
+      input,
+      stack: error.stack,
+    });
+
+    return opts.shape;
+  },
+});
+```
+
+## Common Patterns
+
+### Validation Error Formatting
+
+Perfect for form validation with Zod:
+
+```ts
+// This formatter makes Zod errors easy to handle in forms
+errorFormatter(opts) {
+  const { shape, error } = opts;
+  if (error.code === 'BAD_REQUEST' && error.cause instanceof ZodError) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError: error.cause.flatten(),
+        fieldErrors: error.cause.formErrors,
+      },
+    };
+  }
+  return shape;
+}
+```
+
+### Internationalization Support
+
+Add error message translations:
+
+```ts
+errorFormatter(opts) {
+  const { shape, error, ctx } = opts;
+  const locale = ctx?.locale || 'en';
+
+  return {
+    ...shape,
+    message: translateError(error.message, locale),
+    data: {
+      ...shape.data,
+      locale,
+    },
+  };
+}
+```
+
+</rewritten_file>

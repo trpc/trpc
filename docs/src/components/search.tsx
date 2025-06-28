@@ -1,6 +1,8 @@
 'use client';
 
+import { cn } from '@/lib/cn';
 import { OramaClient } from '@oramacloud/client';
+import { useDocsSearch } from 'fumadocs-core/search/client';
 import {
   SearchDialog,
   SearchDialogClose,
@@ -13,16 +15,14 @@ import {
   SearchDialogOverlay,
   type SharedProps,
 } from 'fumadocs-ui/components/dialog/search';
-import { useDocsSearch } from 'fumadocs-core/search/client';
-import { useState } from 'react';
+import { buttonVariants } from 'fumadocs-ui/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from 'fumadocs-ui/components/ui/popover';
 import { ChevronDown } from 'lucide-react';
-import { buttonVariants } from 'fumadocs-ui/components/ui/button';
-import { cn } from '@/lib/cn';
+import { useState } from 'react';
 
 const client = new OramaClient({
   endpoint: 'https://cloud.orama.run/v1/indexes/docs-fk97oe',
@@ -36,23 +36,18 @@ const items = [
   },
   {
     name: 'Framework',
-    description: 'Only results about Fumadocs UI & guides',
-    value: 'ui',
+    description: 'Only results about tRPC Framework & guides',
+    value: 'framework',
   },
   {
-    name: 'Core',
-    description: 'Only results about headless features',
-    value: 'headless',
+    name: 'Server',
+    description: 'Only results about tRPC Server',
+    value: 'server',
   },
   {
-    name: 'MDX',
-    description: 'Only results about Fumadocs MDX',
-    value: 'mdx',
-  },
-  {
-    name: 'CLI',
-    description: 'Only results about Fumadocs CLI',
-    value: 'cli',
+    name: 'Client',
+    description: 'Only results about tRPC Client',
+    value: 'client',
   },
 ];
 
@@ -60,8 +55,9 @@ export default function CustomSearchDialog(props: SharedProps) {
   const [open, setOpen] = useState(false);
   const [tag, setTag] = useState<string | undefined>();
   const { search, setSearch, query } = useDocsSearch({
-    type: 'orama-cloud',
-    client,
+    // type: 'orama-cloud',
+    // client,
+    type: 'fetch',
     tag,
   });
 
@@ -80,7 +76,7 @@ export default function CustomSearchDialog(props: SharedProps) {
           <SearchDialogClose />
         </SearchDialogHeader>
         <SearchDialogList items={query.data !== 'empty' ? query.data : null} />
-        <SearchDialogFooter className="flex flex-row flex-wrap gap-2 items-center">
+        <SearchDialogFooter className="flex flex-row flex-wrap items-center gap-2">
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger
               className={buttonVariants({
@@ -91,9 +87,9 @@ export default function CustomSearchDialog(props: SharedProps) {
             >
               <span className="text-fd-muted-foreground/80 me-2">Filter</span>
               {items.find((item) => item.value === tag)?.name}
-              <ChevronDown className="size-3.5 text-fd-muted-foreground" />
+              <ChevronDown className="text-fd-muted-foreground size-3.5" />
             </PopoverTrigger>
-            <PopoverContent className="flex flex-col p-1 gap-1" align="start">
+            <PopoverContent className="flex flex-col gap-1 p-1" align="start">
               {items.map((item, i) => {
                 const isSelected = item.value === tag;
 
@@ -105,13 +101,13 @@ export default function CustomSearchDialog(props: SharedProps) {
                       setOpen(false);
                     }}
                     className={cn(
-                      'rounded-lg text-start px-2 py-1.5',
+                      'rounded-lg px-2 py-1.5 text-start',
                       isSelected
                         ? 'text-fd-primary bg-fd-primary/10'
                         : 'hover:text-fd-accent-foreground hover:bg-fd-accent',
                     )}
                   >
-                    <p className="font-medium mb-0.5">{item.name}</p>
+                    <p className="mb-0.5 font-medium">{item.name}</p>
                     <p className="text-xs opacity-70">{item.description}</p>
                   </button>
                 );
@@ -121,7 +117,7 @@ export default function CustomSearchDialog(props: SharedProps) {
           <a
             href="https://orama.com"
             rel="noreferrer noopener"
-            className="text-xs text-nowrap text-fd-muted-foreground"
+            className="text-fd-muted-foreground text-nowrap text-xs"
           >
             Powered by Orama
           </a>

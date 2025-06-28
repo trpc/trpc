@@ -6,9 +6,9 @@ export function createMetadata(override: Metadata): Metadata {
     openGraph: {
       title: override.title ?? undefined,
       description: override.description ?? undefined,
-      url: 'https://fumadocs.dev',
+      url: 'https://docs.trpc.io',
       images: '/banner.png',
-      siteName: 'Fumadocs',
+      siteName: 'TRPC',
       ...override.openGraph,
     },
     twitter: {
@@ -18,17 +18,6 @@ export function createMetadata(override: Metadata): Metadata {
       description: override.description ?? undefined,
       images: '/banner.png',
       ...override.twitter,
-    },
-    alternates: {
-      types: {
-        'application/rss+xml': [
-          {
-            title: 'Fumadocs Blog',
-            url: 'https://fumadocs.dev/blog/rss.xml',
-          },
-        ],
-      },
-      ...override.alternates,
     },
   };
 }

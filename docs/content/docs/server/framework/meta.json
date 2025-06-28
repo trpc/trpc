@@ -1,0 +1,13 @@
+{
+  "title": "Framework Setup",
+  "description": "Get started with tRPC in your preferred framework",
+  "icon": "IconCode",
+  "pages": [
+    "nextjs",
+    "express",
+    "fastify",
+    "standalone",
+    "cloudflare-workers",
+    "aws-lambda"
+  ]
+}

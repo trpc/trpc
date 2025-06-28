@@ -4,7 +4,6 @@ import { createFromSource } from 'fumadocs-core/search/server';
 
 export const { GET } = createFromSource(source, {
   buildIndex(page) {
-    console.log(page.slugs);
     return {
       title: page.data.title,
       description: page.data.description,
@@ -12,7 +11,7 @@ export const { GET } = createFromSource(source, {
       id: page.url,
       structuredData: structure(page.data.content),
       // use your desired value, like page.slugs[0]
-      tag: page.slugs[0],
+      tag: '<value>',
     };
   },
 });

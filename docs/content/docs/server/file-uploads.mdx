@@ -1,497 +1,324 @@
 ---
 title: File Uploads
-description: Handle file uploads with tRPC using FormData and binary content
+description: Handle file uploads efficiently with tRPC procedures
 icon: IconUpload
 ---
 
-tRPC supports file uploads through FormData and binary content types, allowing you to handle file uploads alongside your regular API procedures while maintaining type safety.
+tRPC supports various file upload patterns, from simple base64 encoding to advanced streaming uploads. Choose the approach that best fits your application's needs and constraints.
 
-<Callout title="File Upload Support">
-  tRPC v11 includes native support for non-JSON content types including
-  FormData, File, Blob, and other binary types without additional configuration.
+<Callout type="warn">
+  File uploads can consume significant server resources. Always implement proper
+  validation, size limits, and security measures.
 </Callout>
 
-## Quick Overview
+## Upload Strategies
 
-<Cards>
-  <Card title="FormData" icon="📋">
-    Handle form submissions with files using the native FormData API
-  </Card>
-  <Card title="Binary Types" icon="📦">
-    Support for File, Blob, Uint8Array, and other binary content
-  </Card>
-  <Card title="Type Safety" icon="🎯">
-    Full TypeScript support for file upload procedures
-  </Card>
-  <Card title="Validation" icon="🛡️">
-    Validate file types, sizes, and other constraints
-  </Card>
-</Cards>
+<Tabs items={['Base64 (Simple)', 'FormData (Recommended)', 'Streaming (Advanced)']}>
 
-## Client Configuration
+```mdx tab="Base64 (Simple)"
+**Best for:** Small files, simple implementations
 
-When using file uploads, your client needs proper link configuration:
+**Pros:**
 
-### With httpBatchLink
+- Easy to implement
+- Works with standard JSON
+- No special handling needed
 
-If you're using `httpBatchLink`, you need to split requests based on content type:
+**Cons:**
 
-```typescript title="src/client.ts"
-import {
-  createTRPCClient,
-  httpBatchLink,
-  httpLink,
-  isNonJsonSerializable,
-  splitLink,
-} from '@trpc/client';
-import type { AppRouter } from './server/router';
-
-const client = createTRPCClient<AppRouter>({
-  links: [
-    splitLink({
-      condition: (op) => isNonJsonSerializable(op.input),
-      true: httpLink({
-        url: '/api/trpc',
-      }),
-      false: httpBatchLink({
-        url: '/api/trpc',
-      }),
-    }),
-  ],
-});
+- ~33% size overhead
+- Memory intensive
+- Size limitations
 ```
 
-### With httpLink Only
+```mdx tab="FormData (Recommended)"
+**Best for:** Most applications
 
-If you only use `httpLink`, no additional configuration is needed:
+**Pros:**
 
-```typescript title="src/client.ts"
-import { createTRPCClient, httpLink } from '@trpc/client';
+- Efficient for binary data
+- Built-in browser support
+- Progress tracking
+- Multiple files
 
-const client = createTRPCClient<AppRouter>({
-  links: [
-    httpLink({
-      url: '/api/trpc',
-    }),
-  ],
-});
+**Cons:**
+
+- Requires custom handling
+- More complex setup
 ```
 
-### With Data Transformers
+```mdx tab="Streaming (Advanced)"
+**Best for:** Large files, high performance
 
-If you're using transformers, configure them properly for file uploads:
+**Pros:**
 
-```typescript title="src/client.ts"
-import {
-  httpBatchLink,
-  httpLink,
-  isNonJsonSerializable,
-  splitLink,
-} from '@trpc/client';
-import superjson from 'superjson';
+- Memory efficient
+- Real-time processing
+- Minimal server footprint
 
-const client = createTRPCClient<AppRouter>({
-  links: [
-    splitLink({
-      condition: (op) => isNonJsonSerializable(op.input),
-      true: httpLink({
-        url: '/api/trpc',
-        transformer: {
-          serialize: (data) => data,
-          deserialize: superjson.deserialize,
-        },
-      }),
-      false: httpBatchLink({
-        url: '/api/trpc',
-        transformer: superjson,
-      }),
-    }),
-  ],
-});
+**Cons:**
+
+- Complex implementation
+- Requires streaming setup
 ```
 
-## FormData Uploads
+</Tabs>
 
-### Basic FormData Procedure
+## Base64 Upload (Simple)
 
-```typescript title="src/server/router.ts"
-import { initTRPC } from '@trpc/server';
+### Server Implementation
+
+Perfect for small files like profile pictures:
+
+```ts title="server/routers/uploads.ts"
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
 
-const t = initTRPC.create();
-
-export const appRouter = t.router({
-  uploadImage: t.procedure
-    .input(z.instanceof(FormData))
-    .mutation(async ({ input }) => {
-      const file = input.get('image') as File;
-      const name = input.get('name') as string;
-
-      if (!file) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'No file provided',
-        });
-      }
-
-      // Process the file
-      const buffer = await file.arrayBuffer();
-      const fileName = `${Date.now()}-${file.name}`;
-
-      // Save to storage (example)
-      await saveToStorage(fileName, buffer);
-
-      return {
-        fileName,
-        size: file.size,
-        type: file.type,
-        name,
-        url: `/uploads/${fileName}`,
-      };
-    }),
-});
-```
-
-### Advanced FormData with Validation
-
-```typescript title="src/server/router.ts"
-import { initTRPC, TRPCError } from '@trpc/server';
-import { z } from 'zod';
-
-const t = initTRPC.create();
-
-// Define allowed file types
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-export const appRouter = t.router({
-  uploadProfileImage: t.procedure
-    .input(z.instanceof(FormData))
+export const uploadsRouter = t.router({
+  uploadAvatar: t.procedure
+    .input(z.object({
+      name: z.string(),
+      type: z.string(),
+      data: z.string(), // base64 encoded
+    }))
     .mutation(async ({ input, ctx }) => {
-      const file = input.get('profileImage') as File;
-      const userId = input.get('userId') as string;
-
-      // Validate file presence
-      if (!file) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Profile image is required',
-        });
-      }
-
       // Validate file type
-      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(input.type)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Invalid file type. Only JPEG, PNG, and WebP are allowed.',
+          message: 'Invalid file type',
         });
       }
 
-      // Validate file size
-      if (file.size > MAX_FILE_SIZE) {
+      // Decode and validate size
+      const buffer = Buffer.from(input.data, 'base64');
+      if (buffer.length > MAX_FILE_SIZE) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'File size must be less than 5MB',
+          code: 'PAYLOAD_TOO_LARGE',
+          message: 'File too large',
         });
       }
 
-      // Validate user ownership
-      if (!ctx.user || ctx.user.id !== userId) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only upload images for your own profile',
-        });
-      }
+      // Generate unique filename
+      const filename = `${Date.now()}-${Math.random().toString(36)}.${input.type.split('/')[1]}`;
+      const filepath = join(process.cwd(), 'uploads', filename);
 
-      // Process and save the image
-      const optimizedImage = await optimizeImage(file);
-      const fileName = `profile-${userId}-${Date.now()}.webp`;
-
-      await uploadToCloudStorage(fileName, optimizedImage);
+      // Save file
+      await writeFile(filepath, buffer);
 
       // Update user profile
       await ctx.db.user.update({
-        where: { id: userId },
-        data: { profileImageUrl: `/images/${fileName}` },
+        where: { id: ctx.user.id },
+        data: { avatar: `/uploads/${filename}` },
       });
 
       return {
-        success: true,
-        imageUrl: `/images/${fileName}`,
-        fileName,
+        url: `/uploads/${filename}`,
+        size: buffer.length,
       };
     }),
 });
 ```
 
-### Client-Side FormData Usage
+### Client Usage
 
-```typescript title="src/components/FileUpload.tsx"
-'use client';
+```tsx title="components/AvatarUpload.tsx"
+import { trpc } from '../lib/trpc';
 
-import { useState } from 'react';
-import { trpc } from '~/trpc/client';
+export function AvatarUpload() {
+  const uploadMutation = trpc.uploads.uploadAvatar.useMutation();
 
-export function ProfileImageUpload({ userId }: { userId: string }) {
-  const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-
-  const uploadMutation = trpc.uploadProfileImage.useMutation({
-    onSuccess: (data) => {
-      console.log('Upload successful:', data);
-      setPreview(data.imageUrl);
-    },
-    onError: (error) => {
-      console.error('Upload failed:', error.message);
-    },
-    onSettled: () => {
-      setUploading(false);
-    },
-  });
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
+    // Validate file size on client
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File too large. Maximum size is 5MB.');
+      return;
+    }
 
-    const formData = new FormData();
-    formData.append('profileImage', file);
-    formData.append('userId', userId);
+    // Convert to base64
+    const base64 = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
 
-    uploadMutation.mutate(formData);
-  };
+    // Remove data URL prefix
+    const data = base64.split(',')[1];
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center space-x-4">
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          onChange={handleFileChange}
-          disabled={uploading}
-          className="file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-        />
-        {uploading && <span className="text-gray-500">Uploading...</span>}
-      </div>
+    try {
+      const result = await uploadMutation.mutateAsync({
+        name: file.name,
+        type: file.type,
+        data,
+      });
 
-      {preview && (
-        <div className="mt-4">
-          <img
-            src={preview}
-            alt="Profile preview"
-            className="w-32 h-32 object-cover rounded-full"
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-## Binary File Uploads
-
-### Using octetInputParser
-
-For direct binary file uploads, use the `octetInputParser`:
-
-```typescript title="src/server/router.ts"
-import { initTRPC } from '@trpc/server';
-import { octetInputParser } from '@trpc/server/http';
-
-const t = initTRPC.create();
-
-export const appRouter = t.router({
-  uploadDocument: t.procedure
-    .input(octetInputParser)
-    .mutation(async ({ input }) => {
-      // input is a ReadableStream
-      const chunks: Uint8Array[] = [];
-      const reader = input.getReader();
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-        }
-
-        // Combine chunks into single buffer
-        const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-        const buffer = new Uint8Array(totalLength);
-        let offset = 0;
-
-        for (const chunk of chunks) {
-          buffer.set(chunk, offset);
-          offset += chunk.length;
-        }
-
-        // Save the file
-        const fileName = `document-${Date.now()}.pdf`;
-        await saveDocument(fileName, buffer);
-
-        return {
-          success: true,
-          fileName,
-          size: buffer.length,
-        };
-      } finally {
-        reader.releaseLock();
-      }
-    }),
-});
-```
-
-### Client-Side Binary Upload
-
-```typescript title="src/components/DocumentUpload.tsx"
-'use client';
-
-import { useState } from 'react';
-import { trpc } from '~/trpc/client';
-
-export function DocumentUpload() {
-  const [uploading, setUploading] = useState(false);
-
-  const uploadMutation = trpc.uploadDocument.useMutation({
-    onSuccess: (data) => {
-      console.log('Document uploaded:', data);
-    },
-    onError: (error) => {
+      console.log('Upload successful:', result);
+    } catch (error) {
       console.error('Upload failed:', error);
-    },
-    onSettled: () => {
-      setUploading(false);
-    },
-  });
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-
-    // Convert file to blob for binary upload
-    const blob = new Blob([file]);
-    uploadMutation.mutate(blob);
+    }
   };
 
   return (
     <div>
       <input
         type="file"
-        accept=".pdf,.doc,.docx"
-        onChange={handleFileUpload}
-        disabled={uploading}
+        accept="image/*"
+        onChange={handleFileSelect}
+        disabled={uploadMutation.isLoading}
       />
-      {uploading && <p>Uploading document...</p>}
+      {uploadMutation.isLoading && <p>Uploading...</p>}
     </div>
   );
 }
 ```
 
-## Multiple File Uploads
+## FormData Upload (Recommended)
 
-### Handling Multiple Files
+### Custom Upload Endpoint
 
-```typescript title="src/server/router.ts"
-export const appRouter = t.router({
-  uploadMultipleImages: t.procedure
-    .input(z.instanceof(FormData))
-    .mutation(async ({ input }) => {
-      const files = input.getAll('images') as File[];
+Create a dedicated upload endpoint alongside tRPC:
 
-      if (files.length === 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'No files provided',
-        });
-      }
+```ts title="pages/api/upload.ts"
+import { NextApiRequest, NextApiResponse } from 'next';
+import formidable from 'formidable';
+import { createHash } from 'crypto';
+import { promises as fs } from 'fs';
+import { join } from 'path';
 
-      if (files.length > 10) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Maximum 10 files allowed',
-        });
-      }
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
-      const uploadResults = await Promise.all(
-        files.map(async (file, index) => {
-          // Validate each file
-          if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `File ${index + 1}: Invalid file type`,
-            });
-          }
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-          if (file.size > MAX_FILE_SIZE) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `File ${index + 1}: File too large`,
-            });
-          }
-
-          // Process and save
-          const fileName = `image-${Date.now()}-${index}.webp`;
-          const optimized = await optimizeImage(file);
-          await uploadToStorage(fileName, optimized);
-
-          return {
-            originalName: file.name,
-            fileName,
-            size: file.size,
-            url: `/images/${fileName}`,
-          };
-        })
-      );
-
-      return {
-        success: true,
-        files: uploadResults,
-        count: uploadResults.length,
-      };
-    }),
-});
-```
-
-### Client-Side Multiple Upload
-
-```typescript title="src/components/MultipleFileUpload.tsx"
-'use client';
-
-import { useState } from 'react';
-import { trpc } from '~/trpc/client';
-
-export function MultipleImageUpload() {
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-
-  const uploadMutation = trpc.uploadMultipleImages.useMutation({
-    onSuccess: (data) => {
-      setUploadedImages(data.files.map(f => f.url));
-      setSelectedFiles(null);
-    },
-    onError: (error) => {
-      console.error('Upload failed:', error);
-    },
-    onSettled: () => {
-      setUploading(false);
-    },
-  });
-
-  const handleUpload = () => {
-    if (!selectedFiles) return;
-
-    setUploading(true);
-
-    const formData = new FormData();
-    Array.from(selectedFiles).forEach(file => {
-      formData.append('images', file);
+  try {
+    const form = formidable({
+      maxFileSize: 50 * 1024 * 1024, // 50MB
+      maxFiles: 5,
+      allowEmptyFiles: false,
     });
 
-    uploadMutation.mutate(formData);
+    const [fields, files] = await form.parse(req);
+    const uploadedFiles = [];
+
+    for (const [fieldName, fileArray] of Object.entries(files)) {
+      for (const file of fileArray || []) {
+        // Generate secure filename
+        const hash = createHash('sha256')
+          .update(`${file.originalFilename}-${Date.now()}`)
+          .digest('hex')
+          .substring(0, 16);
+
+        const ext = file.originalFilename?.split('.').pop() || '';
+        const filename = `${hash}.${ext}`;
+        const uploadPath = join(process.cwd(), 'public', 'uploads', filename);
+
+        // Move file to permanent location
+        await fs.rename(file.filepath, uploadPath);
+
+        uploadedFiles.push({
+          fieldName,
+          filename: file.originalFilename,
+          url: `/uploads/${filename}`,
+          size: file.size,
+          type: file.mimetype,
+        });
+      }
+    }
+
+    res.status(200).json({ files: uploadedFiles });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+}
+```
+
+### Client with Progress Tracking
+
+```tsx title="components/FileUpload.tsx"
+import { useState } from 'react';
+
+interface UploadProgress {
+  loaded: number;
+  total: number;
+  percentage: number;
+}
+
+export function FileUpload() {
+  const [progress, setProgress] = useState<UploadProgress | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+
+  const uploadFiles = async (files: FileList) => {
+    const formData = new FormData();
+
+    Array.from(files).forEach((file, index) => {
+      formData.append(`file-${index}`, file);
+    });
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      setUploadedFiles(result.files);
+      setProgress(null);
+    } catch (error) {
+      console.error('Upload error:', error);
+      setProgress(null);
+    }
+  };
+
+  const uploadWithProgress = async (files: FileList) => {
+    const formData = new FormData();
+    Array.from(files).forEach((file, index) => {
+      formData.append(`file-${index}`, file);
+    });
+
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        setProgress({
+          loaded: event.loaded,
+          total: event.total,
+          percentage: Math.round((event.loaded / event.total) * 100),
+        });
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const result = JSON.parse(xhr.responseText);
+        setUploadedFiles(result.files);
+        setProgress(null);
+      }
+    };
+
+    xhr.open('POST', '/api/upload');
+    xhr.send(formData);
   };
 
   return (
@@ -499,33 +326,35 @@ export function MultipleImageUpload() {
       <input
         type="file"
         multiple
-        accept="image/*"
-        onChange={(e) => setSelectedFiles(e.target.files)}
-        disabled={uploading}
+        onChange={(e) => {
+          if (e.target.files?.length) {
+            uploadWithProgress(e.target.files);
+          }
+        }}
       />
 
-      {selectedFiles && (
-        <div>
-          <p>{selectedFiles.length} files selected</p>
-          <button
-            onClick={handleUpload}
-            disabled={uploading}
-            className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
-          >
-            {uploading ? 'Uploading...' : 'Upload Files'}
-          </button>
+      {progress && (
+        <div className="space-y-2">
+          <div className="bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all"
+              style={{ width: `${progress.percentage}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-600">
+            {progress.percentage}% ({progress.loaded} / {progress.total} bytes)
+          </p>
         </div>
       )}
 
-      {uploadedImages.length > 0 && (
-        <div className="grid grid-cols-3 gap-4">
-          {uploadedImages.map((url, index) => (
-            <img
-              key={index}
-              src={url}
-              alt={`Uploaded ${index + 1}`}
-              className="w-full h-32 object-cover rounded"
-            />
+      {uploadedFiles.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="font-semibold">Uploaded Files:</h3>
+          {uploadedFiles.map((file, index) => (
+            <div key={index} className="flex items-center space-x-2">
+              <span>{file.filename}</span>
+              <span className="text-sm text-gray-500">({file.size} bytes)</span>
+            </div>
           ))}
         </div>
       )}
@@ -534,46 +363,90 @@ export function MultipleImageUpload() {
 }
 ```
 
-## Advanced Patterns
+## Streaming Upload (Advanced)
 
-### Progress Tracking
+### Server Streaming Handler
 
-```typescript title="src/components/UploadWithProgress.tsx"
-'use client';
+For handling large files efficiently:
 
-import { useState } from 'react';
+```ts title="pages/api/stream-upload.ts"
+import { NextApiRequest, NextApiResponse } from 'next';
+import { createWriteStream } from 'fs';
+import { pipeline } from 'stream/promises';
+import { join } from 'path';
 
-export function UploadWithProgress() {
-  const [progress, setProgress] = useState(0);
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const filename = req.headers['x-filename'] as string;
+  const contentLength = parseInt(req.headers['content-length'] || '0');
+
+  if (!filename) {
+    return res.status(400).json({ error: 'Filename required' });
+  }
+
+  // Validate file size
+  if (contentLength > 100 * 1024 * 1024) { // 100MB
+    return res.status(413).json({ error: 'File too large' });
+  }
+
+  try {
+    const uploadPath = join(process.cwd(), 'uploads', filename);
+    const writeStream = createWriteStream(uploadPath);
+
+    // Stream the request body directly to file
+    await pipeline(req, writeStream);
+
+    res.status(200).json({
+      message: 'Upload successful',
+      filename,
+      size: contentLength,
+    });
+  } catch (error) {
+    console.error('Streaming upload error:', error);
+    res.status(500).json({ error: 'Upload failed' });
+  }
+}
+```
+
+### Client Streaming Upload
+
+```tsx title="components/StreamingUpload.tsx"
+export function StreamingUpload() {
   const [uploading, setUploading] = useState(false);
 
-  const handleUpload = async (file: File) => {
+  const streamUpload = async (file: File) => {
     setUploading(true);
-    setProgress(0);
-
-    const formData = new FormData();
-    formData.append('file', file);
 
     try {
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const percentComplete = (e.loaded / e.total) * 100;
-          setProgress(percentComplete);
-        }
+      const response = await fetch('/api/stream-upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'X-Filename': file.name,
+        },
+        body: file, // Stream the file directly
       });
 
-      xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
-          console.log('Upload successful');
-        }
-      });
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
 
-      xhr.open('POST', '/api/trpc/uploadFile');
-      xhr.send(formData);
+      const result = await response.json();
+      console.log('Upload successful:', result);
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error('Upload error:', error);
     } finally {
       setUploading(false);
     }
@@ -585,226 +458,603 @@ export function UploadWithProgress() {
         type="file"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) handleUpload(file);
+          if (file) streamUpload(file);
         }}
         disabled={uploading}
       />
-
-      {uploading && (
-        <div className="mt-4">
-          <div className="bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="text-sm text-gray-600 mt-1">{Math.round(progress)}%</p>
-        </div>
-      )}
+      {uploading && <p>Streaming upload in progress...</p>}
     </div>
   );
 }
 ```
 
-### File Validation Helpers
+## Cloud Storage Integration
 
-```typescript title="src/utils/fileValidation.ts"
-export const FILE_VALIDATION = {
-  IMAGE: {
-    types: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
-    maxSize: 5 * 1024 * 1024, // 5MB
-    extensions: ['.jpg', '.jpeg', '.png', '.webp', '.gif'],
+### AWS S3 Upload
+
+```ts title="server/routers/s3-uploads.ts"
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+const s3 = new S3Client({
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
-  DOCUMENT: {
-    types: ['application/pdf', 'application/msword'],
-    maxSize: 10 * 1024 * 1024, // 10MB
-    extensions: ['.pdf', '.doc', '.docx'],
-  },
-  VIDEO: {
-    types: ['video/mp4', 'video/webm', 'video/ogg'],
-    maxSize: 100 * 1024 * 1024, // 100MB
-    extensions: ['.mp4', '.webm', '.ogg'],
-  },
-};
+});
 
-export function validateFile(
-  file: File,
-  validation: typeof FILE_VALIDATION.IMAGE
-): { valid: boolean; error?: string } {
-  if (!validation.types.includes(file.type)) {
-    return {
-      valid: false,
-      error: `Invalid file type. Allowed: ${validation.extensions.join(', ')}`,
-    };
-  }
+export const s3Router = t.router({
+  getSignedUploadUrl: t.procedure
+    .input(z.object({
+      filename: z.string(),
+      contentType: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const key = `uploads/${ctx.user.id}/${Date.now()}-${input.filename}`;
 
-  if (file.size > validation.maxSize) {
-    const maxSizeMB = validation.maxSize / (1024 * 1024);
-    return {
-      valid: false,
-      error: `File too large. Maximum size: ${maxSizeMB}MB`,
-    };
-  }
+      const command = new PutObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME!,
+        Key: key,
+        ContentType: input.contentType,
+      });
 
-  return { valid: true };
-}
+      const signedUrl = await getSignedUrl(s3, command, {
+        expiresIn: 3600, // 1 hour
+      });
 
-// Usage in procedures
-export const appRouter = t.router({
-  uploadImage: t.procedure
-    .input(z.instanceof(FormData))
-    .mutation(async ({ input }) => {
-      const file = input.get('image') as File;
+      return {
+        signedUrl,
+        key,
+        bucket: process.env.S3_BUCKET_NAME!,
+      };
+    }),
 
-      const validation = validateFile(file, FILE_VALIDATION.IMAGE);
-      if (!validation.valid) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: validation.error,
-        });
-      }
+  confirmUpload: t.procedure
+    .input(z.object({
+      key: z.string(),
+      size: z.number(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // Store file metadata in database
+      const file = await ctx.db.file.create({
+        data: {
+          key: input.key,
+          size: input.size,
+          userId: ctx.user.id,
+          url: `https://${process.env.S3_BUCKET_NAME}.s3.amazonaws.com/${input.key}`,
+        },
+      });
 
-      // Process valid file...
+      return file;
     }),
 });
 ```
 
-## Server Configuration
+### Client S3 Upload
 
-### Express/Node.js Setup
+```tsx title="components/S3Upload.tsx"
+import { trpc } from '../lib/trpc';
 
-If you're using Express, ensure it doesn't parse the body before tRPC:
+export function S3Upload() {
+  const getSignedUrl = trpc.s3.getSignedUploadUrl.useMutation();
+  const confirmUpload = trpc.s3.confirmUpload.useMutation();
 
-```typescript title="src/server.ts"
-import express from 'express';
-import { createExpressMiddleware } from '@trpc/server/adapters/express';
+  const uploadToS3 = async (file: File) => {
+    try {
+      // Get signed URL
+      const { signedUrl, key } = await getSignedUrl.mutateAsync({
+        filename: file.name,
+        contentType: file.type,
+      });
 
-const app = express();
+      // Upload directly to S3
+      const uploadResponse = await fetch(signedUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
 
-// ❌ Don't do this - it will parse all bodies
-// app.use(express.json());
+      if (!uploadResponse.ok) {
+        throw new Error('S3 upload failed');
+      }
 
-// ✅ Do this - only parse specific routes
-app.use('/api/other', express.json());
+      // Confirm upload in our database
+      const result = await confirmUpload.mutateAsync({
+        key,
+        size: file.size,
+      });
 
-// tRPC handles its own body parsing
-app.use('/api/trpc', createExpressMiddleware({
-  router: appRouter,
-  createContext,
-}));
-```
-
-### Next.js Configuration
-
-For Next.js, ensure proper body parsing configuration:
-
-```typescript title="next.config.js"
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@trpc/server'],
-  },
-  // Increase upload limits if needed
-  serverRuntimeConfig: {
-    maxFileSize: '10mb',
-  },
-};
-
-module.exports = nextConfig;
-```
-
-## Best Practices
-
-<Accordions>
-<Accordion title="Security">
-- Always validate file types and sizes
-- Sanitize file names to prevent path traversal
-- Scan files for malware before processing
-- Use signed URLs for private file access
-- Implement rate limiting for upload endpoints
-
-```typescript
-// Sanitize file names
-function sanitizeFileName(fileName: string): string {
-  return fileName
-    .replace(/[^a-zA-Z0-9.-]/g, '_')
-    .replace(/\.+/g, '.')
-    .substring(0, 100);
-}
-```
-
-</Accordion>
-
-<Accordion title="Performance">
-- Use streaming for large files
-- Implement file compression
-- Consider chunked uploads for very large files
-- Use CDN for file serving
-- Clean up temporary files
-
-```typescript
-// Stream processing example
-async function processLargeFile(stream: ReadableStream) {
-  const reader = stream.getReader();
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      // Process chunk
-      await processChunk(value);
+      console.log('Upload complete:', result);
+    } catch (error) {
+      console.error('Upload failed:', error);
     }
-  } finally {
-    reader.releaseLock();
-  }
+  };
+
+  return (
+    <input
+      type="file"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) uploadToS3(file);
+      }}
+    />
+  );
 }
 ```
 
-</Accordion>
+## Security Best Practices
 
-<Accordion title="Error Handling">
-- Provide clear error messages
-- Handle different failure scenarios
-- Implement retry logic for network failures
-- Log upload failures for debugging
+### Validate File Types
 
-```typescript
-try {
-  await uploadFile(file);
-} catch (error) {
-  if (error.code === 'PAYLOAD_TOO_LARGE') {
+Always validate file types on both client and server:
+
+```ts
+const ALLOWED_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+] as const;
+
+const validateFileType = (file: { type: string; name: string }) => {
+  // Check MIME type
+  if (!ALLOWED_TYPES.includes(file.type as any)) {
     throw new TRPCError({
       code: 'BAD_REQUEST',
-      message: 'File is too large. Please choose a smaller file.',
+      message: 'Invalid file type',
     });
   }
 
-  // Log for debugging
-  console.error('Upload failed:', error);
-  throw new TRPCError({
-    code: 'INTERNAL_SERVER_ERROR',
-    message: 'Upload failed. Please try again.',
-  });
+  // Double-check with file extension
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
+
+  if (!ext || !validExtensions.includes(ext)) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Invalid file extension',
+    });
+  }
+};
+```
+
+### Scan Files for Malware
+
+```ts
+import ClamScan from 'clamscan';
+
+const clamscan = await new ClamScan().init();
+
+const scanFile = async (filePath: string) => {
+  const { isInfected, file, viruses } = await clamscan.scanFile(filePath);
+
+  if (isInfected) {
+    await fs.unlink(filePath); // Delete infected file
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: `Malware detected: ${viruses.join(', ')}`,
+    });
+  }
+};
+```
+
+### Implement Rate Limiting
+
+```ts
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 uploads per window
+  message: 'Too many uploads, please try again later',
+});
+
+// Use in your upload handler
+export default uploadLimiter(handler);
+```
+
+### Generate Secure Filenames
+
+```ts
+import { randomUUID } from 'crypto';
+
+const generateSecureFilename = (originalName: string) => {
+  const ext = originalName.split('.').pop();
+  const uuid = randomUUID();
+  return `${uuid}.${ext}`;
+};
+```
+
+### Advanced Security Implementation
+
+Implement comprehensive file upload security:
+
+**1. Setup File Validation Pipeline**
+
+```typescript title="src/lib/file-security.ts"
+import crypto from 'crypto';
+import { promises as fs } from 'fs';
+import path from 'path';
+
+interface FileValidationResult {
+  isValid: boolean;
+  errors: string[];
+  metadata: {
+    size: number;
+    mimeType: string;
+    hash: string;
+    extension: string;
+  };
+}
+
+export class FileValidator {
+  private readonly allowedMimeTypes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'application/pdf',
+    'text/plain',
+  ];
+
+  private readonly maxSizes = {
+    'image/*': 5 * 1024 * 1024,    // 5MB for images
+    'application/pdf': 10 * 1024 * 1024, // 10MB for PDFs
+    'text/plain': 1 * 1024 * 1024, // 1MB for text
+  };
+
+  async validateFile(buffer: Buffer, originalName: string): Promise<FileValidationResult> {
+    const errors: string[] = [];
+
+    // Detect actual MIME type (don't trust client)
+    const mimeType = await this.detectMimeType(buffer);
+    const extension = path.extname(originalName).toLowerCase();
+    const size = buffer.length;
+    const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+
+    // Validate MIME type
+    if (!this.allowedMimeTypes.includes(mimeType)) {
+      errors.push(`File type ${mimeType} not allowed`);
+    }
+
+    // Validate size
+    const maxSize = this.getMaxSize(mimeType);
+    if (size > maxSize) {
+      errors.push(`File size ${size} exceeds limit ${maxSize}`);
+    }
+
+    // Validate extension matches MIME type
+    if (!this.extensionMatchesMimeType(extension, mimeType)) {
+      errors.push(`File extension ${extension} doesn't match type ${mimeType}`);
+    }
+
+    // Scan for malware (placeholder - use actual antivirus)
+    const hasMalware = await this.scanForMalware(buffer);
+    if (hasMalware) {
+      errors.push('File contains malware');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      metadata: { size, mimeType, hash, extension },
+    };
+  }
+
+  private async detectMimeType(buffer: Buffer): Promise<string> {
+    // Use file-type library or similar for accurate detection
+    const { fileTypeFromBuffer } = await import('file-type');
+    const result = await fileTypeFromBuffer(buffer);
+    return result?.mime || 'application/octet-stream';
+  }
+
+  private getMaxSize(mimeType: string): number {
+    for (const [pattern, size] of Object.entries(this.maxSizes)) {
+      if (mimeType.match(pattern.replace('*', '.*'))) {
+        return size;
+      }
+    }
+    return 1024 * 1024; // Default 1MB
+  }
+
+  private extensionMatchesMimeType(extension: string, mimeType: string): boolean {
+    const validCombinations: Record<string, string[]> = {
+      '.jpg': ['image/jpeg'],
+      '.jpeg': ['image/jpeg'],
+      '.png': ['image/png'],
+      '.gif': ['image/gif'],
+      '.pdf': ['application/pdf'],
+      '.txt': ['text/plain'],
+    };
+
+    return validCombinations[extension]?.includes(mimeType) || false;
+  }
+
+  private async scanForMalware(buffer: Buffer): Promise<boolean> {
+    // Integrate with ClamAV or similar service
+    // This is a placeholder implementation
+    try {
+      // Example: send to malware scanning service
+      const response = await fetch('https://api.malware-scanner.com/scan', {
+        method: 'POST',
+        body: buffer,
+        headers: {
+          'Authorization': `Bearer ${process.env.MALWARE_SCANNER_KEY}`,
+          'Content-Type': 'application/octet-stream',
+        },
+      });
+
+      const result = await response.json();
+      return result.isMalware || false;
+    } catch (error) {
+      console.error('Malware scan failed:', error);
+      // Fail secure - reject if scan fails
+      return true;
+    }
+  }
 }
 ```
 
-</Accordion>
-</Accordions>
+**2. Implement Secure Upload Router**
 
-## Next Steps
+```typescript title="src/routers/secure-upload.ts"
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { FileValidator } from '../lib/file-security';
+import { uploadToS3 } from '../lib/storage';
 
-<Cards>
-  <Card title="Storage Integration" href="/docs/server/storage">
-    Learn how to integrate with cloud storage providers
-  </Card>
-  <Card title="Image Processing" href="/docs/server/image-processing">
-    Process and optimize images on upload
-  </Card>
-  <Card title="Authentication" href="/docs/server/authorization">
-    Secure file uploads with proper authentication
-  </Card>
-  <Card title="Testing" href="/docs/server/testing">
-    Test file upload procedures effectively
-  </Card>
-</Cards>
+const fileValidator = new FileValidator();
+
+export const secureUploadRouter = t.router({
+  uploadFile: t.procedure
+    .input(z.object({
+      filename: z.string().min(1).max(255),
+      contentType: z.string(),
+      base64Data: z.string(),
+      checksum: z.string(), // Client-provided checksum for integrity
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        // Decode base64 data
+        const buffer = Buffer.from(input.base64Data, 'base64');
+
+        // Verify integrity
+        const actualChecksum = crypto
+          .createHash('sha256')
+          .update(buffer)
+          .digest('hex');
+
+        if (actualChecksum !== input.checksum) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'File integrity check failed',
+          });
+        }
+
+        // Validate file
+        const validation = await fileValidator.validateFile(buffer, input.filename);
+
+        if (!validation.isValid) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `File validation failed: ${validation.errors.join(', ')}`,
+          });
+        }
+
+        // Generate secure filename
+        const secureFilename = `${ctx.user.id}/${Date.now()}-${crypto
+          .randomBytes(8)
+          .toString('hex')}${validation.metadata.extension}`;
+
+        // Upload to secure storage
+        const uploadResult = await uploadToS3({
+          bucket: process.env.S3_BUCKET!,
+          key: secureFilename,
+          body: buffer,
+          contentType: validation.metadata.mimeType,
+          metadata: {
+            userId: ctx.user.id,
+            originalName: input.filename,
+            hash: validation.metadata.hash,
+            uploadedAt: new Date().toISOString(),
+          },
+        });
+
+        // Log upload for audit
+        await ctx.db.fileUpload.create({
+          data: {
+            id: crypto.randomUUID(),
+            userId: ctx.user.id,
+            filename: input.filename,
+            secureFilename,
+            mimeType: validation.metadata.mimeType,
+            size: validation.metadata.size,
+            hash: validation.metadata.hash,
+            s3Key: uploadResult.key,
+            uploadedAt: new Date(),
+          },
+        });
+
+        return {
+          id: uploadResult.key,
+          filename: input.filename,
+          size: validation.metadata.size,
+          mimeType: validation.metadata.mimeType,
+          url: uploadResult.url,
+        };
+
+      } catch (error) {
+        // Log security incidents
+        console.error('File upload security incident:', {
+          userId: ctx.user.id,
+          filename: input.filename,
+          error: error.message,
+          timestamp: new Date().toISOString(),
+        });
+
+        throw error;
+      }
+    }),
+});
+```
+
+**3. Client-Side Secure Upload Component**
+
+```tsx title="components/SecureFileUpload.tsx"
+import React, { useState } from 'react';
+import { trpc } from '../lib/trpc';
+import crypto from 'crypto-js';
+
+export function SecureFileUpload() {
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const uploadMutation = trpc.upload.uploadFile.useMutation({
+    onSuccess: (data) => {
+      console.log('Upload successful:', data);
+      setUploading(false);
+      setProgress(0);
+    },
+    onError: (error) => {
+      console.error('Upload failed:', error);
+      setUploading(false);
+      setProgress(0);
+      alert(`Upload failed: ${error.message}`);
+    },
+  });
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size on client first
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File too large. Maximum size is 10MB.');
+      return;
+    }
+
+    setUploading(true);
+    setProgress(0);
+
+    try {
+      // Read file as array buffer
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = new Uint8Array(arrayBuffer);
+
+      // Calculate checksum
+      const checksum = crypto.SHA256(crypto.lib.WordArray.create(buffer)).toString();
+
+      // Convert to base64
+      const base64Data = btoa(String.fromCharCode(...buffer));
+
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + 10, 90));
+      }, 100);
+
+      // Upload file
+      await uploadMutation.mutateAsync({
+        filename: file.name,
+        contentType: file.type,
+        base64Data,
+        checksum,
+      });
+
+      clearInterval(progressInterval);
+      setProgress(100);
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="upload-container">
+      <input
+        type="file"
+        onChange={handleFileSelect}
+        disabled={uploading}
+        accept=".jpg,.jpeg,.png,.gif,.pdf,.txt"
+      />
+
+      {uploading && (
+        <div className="upload-progress">
+          <div className="progress-bar">
+            <div
+              className="progress-fill"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span>{progress}% uploading...</span>
+        </div>
+      )}
+
+      <div className="upload-guidelines">
+        <h4>Upload Guidelines:</h4>
+        <ul>
+          <li>Maximum file size: 10MB</li>
+          <li>Allowed types: Images, PDFs, Text files</li>
+          <li>Files are scanned for malware</li>
+          <li>All uploads are logged for security</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+```
+
+## Error Handling
+
+### Comprehensive Error Types
+
+```ts
+export class UploadError extends Error {
+  constructor(
+    public code: 'SIZE_LIMIT' | 'TYPE_INVALID' | 'MALWARE' | 'STORAGE_FULL',
+    message: string,
+    public originalError?: Error
+  ) {
+    super(message);
+    this.name = 'UploadError';
+  }
+}
+
+const handleUploadError = (error: unknown) => {
+  if (error instanceof UploadError) {
+    switch (error.code) {
+      case 'SIZE_LIMIT':
+        throw new TRPCError({
+          code: 'PAYLOAD_TOO_LARGE',
+          message: error.message,
+        });
+      case 'TYPE_INVALID':
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: error.message,
+        });
+      case 'MALWARE':
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'File contains malware',
+        });
+      case 'STORAGE_FULL':
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Storage capacity exceeded',
+        });
+    }
+  }
+
+  throw new TRPCError({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'Upload failed',
+  });
+};
+```
+
+<Callout type="info">
+  Choose the upload strategy that matches your needs. Base64 for simplicity,
+  FormData for most cases, and streaming for large files or high-performance
+  requirements.
+</Callout>

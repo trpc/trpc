@@ -1,0 +1,402 @@
+---
+title: Fastify Setup
+description: Get started with tRPC in Fastify for high-performance APIs
+icon: IconBolt
+---
+
+Fastify is a high-performance Node.js framework. This guide shows you how to integrate tRPC with Fastify for blazing-fast APIs.
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash npm install @trpc/server fastify zod npm install -D @types/node tsx
+    typescript ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash pnpm add @trpc/server fastify zod pnpm add -D @types/node tsx
+    typescript ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash yarn add @trpc/server fastify zod yarn add -D @types/node tsx
+    typescript ```
+  </Tab>
+  <Tab value="bun">
+    ```bash bun add @trpc/server fastify zod bun add -D @types/node tsx
+    typescript ```
+  </Tab>
+</Tabs>
+
+## Setup Guide
+
+### 1. Create tRPC Instance
+
+```typescript title="src/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import { ZodError } from 'zod';
+
+const t = initTRPC.create({
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.cause instanceof ZodError ? error.cause.flatten() : null,
+      },
+    };
+  },
+});
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+### 2. Create Your API Router
+
+```typescript title="src/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+// Mock database
+const posts: Array<{
+  id: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+}> = [];
+
+export const appRouter = router({
+  hello: publicProcedure
+    .input(z.object({ name: z.string().optional() }))
+    .query(({ input }) => {
+      return {
+        greeting: `Hello ${input.name ?? 'World'}!`,
+      };
+    }),
+
+  getPosts: publicProcedure.query(() => {
+    return posts;
+  }),
+
+  createPost: publicProcedure
+    .input(z.object({
+      title: z.string().min(1),
+      content: z.string().min(1),
+    }))
+    .mutation(({ input }) => {
+      const post = {
+        id: Date.now().toString(),
+        ...input,
+        createdAt: new Date(),
+      };
+      posts.push(post);
+      return post;
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### 3. Setup Fastify Server
+
+```typescript title="src/server.ts"
+import Fastify from 'fastify';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import { appRouter } from './router';
+
+const fastify = Fastify({
+  maxParamLength: 5000,
+  logger: true,
+});
+
+// Create context
+function createContext({ req, res }: { req: any; res: any }) {
+  return {
+    req,
+    res,
+    // Add user info, database connections, etc.
+  };
+}
+
+// Register tRPC plugin
+await fastify.register(fastifyTRPCPlugin, {
+  prefix: '/api/trpc',
+  trpcOptions: {
+    router: appRouter,
+    createContext,
+    onError({ path, error }) {
+      console.error(`❌ tRPC failed on ${path ?? '<no-path>'}:`, error);
+    },
+  },
+});
+
+// Health check route
+fastify.get('/health', async () => {
+  return { status: 'ok', timestamp: new Date().toISOString() };
+});
+
+// Start server
+const start = async () => {
+  try {
+    const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+    await fastify.listen({ port, host: '0.0.0.0' });
+
+    console.log(`🚀 Server running at http://localhost:${port}`);
+    console.log(`📡 tRPC endpoint at http://localhost:${port}/api/trpc`);
+  } catch (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+};
+
+start();
+```
+
+### 4. Add Scripts to package.json
+
+```json title="package.json"
+{
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  }
+}
+```
+
+### 5. Create TypeScript Config
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+## Test Your Setup
+
+Start your server:
+
+```bash
+npm run dev
+```
+
+Test your endpoints:
+
+<Tabs items={['Hello Query', 'Get Posts', 'Create Post']}>
+<Tab value="Hello Query">
+```bash
+curl "http://localhost:3000/api/trpc/hello?input=%7B%22name%22%3A%22Fastify%22%7D"
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "greeting": "Hello Fastify!"
+    }
+  }
+}
+```
+
+</Tab>
+<Tab value="Get Posts">
+```bash
+curl "http://localhost:3000/api/trpc/getPosts"
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": []
+  }
+}
+```
+
+</Tab>
+<Tab value="Create Post">
+```bash
+curl -X POST "http://localhost:3000/api/trpc/createPost" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Fast Post", "content": "Hello Fastify!"}'
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "id": "1234567890",
+      "title": "Fast Post",
+      "content": "Hello Fastify!",
+      "createdAt": "2024-01-15T10:30:00.000Z"
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+## Add Authentication
+
+```typescript title="src/auth.ts"
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+export function verifyToken(token: string) {
+  try {
+    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+  } catch {
+    return null;
+  }
+}
+```
+
+```typescript title="src/context.ts"
+import { FastifyRequest, FastifyReply } from 'fastify';
+import { verifyToken } from './auth';
+
+export function createContext({ req, res }: { req: FastifyRequest; res: FastifyReply }) {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const user = token ? verifyToken(token) : null;
+
+  return {
+    req,
+    res,
+    user,
+  };
+}
+
+export type Context = ReturnType<typeof createContext>;
+```
+
+```typescript title="src/trpc.ts"
+import { initTRPC, TRPCError } from '@trpc/server';
+import type { Context } from './context';
+
+const t = initTRPC.context<Context>().create();
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next({
+    ctx: {
+      user: ctx.user,
+    },
+  });
+});
+```
+
+## Add CORS Support
+
+```typescript title="src/server.ts"
+import Fastify from 'fastify';
+
+const fastify = Fastify({ logger: true });
+
+// Register CORS
+await fastify.register(import('@fastify/cors'), {
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+});
+
+// Register tRPC plugin
+await fastify.register(fastifyTRPCPlugin, {
+  prefix: '/api/trpc',
+  trpcOptions: { router: appRouter, createContext },
+});
+```
+
+## Client Usage
+
+```typescript title="client.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './src/router';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/api/trpc',
+    }),
+  ],
+});
+
+// Usage
+async function examples() {
+  const hello = await client.hello.query({ name: 'Fastify' });
+  console.log(hello.greeting);
+
+  const post = await client.createPost.mutate({
+    title: 'My Post',
+    content: 'Hello World!',
+  });
+  console.log('Created post:', post);
+}
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="Add Database" href="/docs/server/quickstart">
+    Integrate with Prisma, Drizzle, or your preferred database
+  </Card>
+  <Card title="Authentication" href="/docs/server/authorization">
+    Add user authentication and authorization
+  </Card>
+  <Card title="Validation" href="/docs/server/validators">
+    Learn advanced input and output validation
+  </Card>
+  <Card title="Error Handling" href="/docs/server/error-handling">
+    Handle errors gracefully with proper HTTP status codes
+  </Card>
+</Cards>
+
+## Common Issues
+
+<Accordions>
+<Accordion title="ESM Issues">
+Make sure your package.json has `"type": "module"` and use ESM imports:
+
+```json
+{
+  "type": "module"
+}
+```
+
+</Accordion>
+
+<Accordion title="Plugin Registration">
+Fastify plugins must be registered with `await`:
+
+```typescript
+await fastify.register(fastifyTRPCPlugin, options);
+```
+
+</Accordion>
+</Accordions>

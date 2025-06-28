@@ -1,23 +1,12 @@
 {
   "title": "tRPC Server",
-  "description": "Build typesafe backend APIs with tRPC server",
-  "icon": "IconServer",
+  "description": "Build end-to-end typesafe APIs with tRPC server",
+  "icon": "Server",
   "root": true,
   "pages": [
     "---Getting Started---",
     "index",
-    {
-      "title": "Framework Setup",
-      "type": "folder",
-      "pages": [
-        "framework/nextjs",
-        "framework/express",
-        "framework/fastify",
-        "framework/standalone",
-        "framework/cloudflare-workers",
-        "framework/aws-lambda"
-      ]
-    },
+    "framework",
     "quickstart",
     "---Core Concepts---",
     "procedures",
@@ -31,10 +20,14 @@
     "authorization",
     "---Error Handling---",
     "error-handling",
+    "error-formatting",
     "---Advanced---",
     "file-uploads",
     "server-side-calls",
     "subscriptions",
-    "testing"
+    "websockets",
+    "caching",
+    "testing",
+    "metadata"
   ]
 }

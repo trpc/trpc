@@ -1,0 +1,945 @@
+---
+title: Response Caching
+description: Optimize performance with intelligent response caching strategies
+icon: IconClock
+---
+
+Response caching is crucial for building high-performance tRPC applications. By implementing smart caching strategies, you can significantly reduce server load and improve response times for your users.
+
+<Callout type="warn">
+  Always be careful with caching, especially when handling personal information.
+  Since batching is enabled by default, make sure concurrent calls don't leak
+  personal data through cache headers.
+</Callout>
+
+## Getting Started
+
+The examples below use [Vercel's edge caching](https://vercel.com/docs/edge-network/caching) to serve data as fast as possible. The concepts apply to other CDN providers as well.
+
+## API Response Caching
+
+Since all tRPC queries are standard HTTP `GET` requests, you can use normal HTTP headers to cache responses, reduce server load, and scale your API effortlessly.
+
+### Using `responseMeta` to Cache Responses
+
+Perfect for serverless deployments that support `stale-while-revalidate` cache headers:
+
+```ts title="server/api/trpc/[trpc].ts"
+import { initTRPC } from '@trpc/server';
+import * as trpcNext from '@trpc/server/adapters/next';
+
+export const createContext = async ({
+  req,
+  res,
+}: trpcNext.CreateNextContextOptions) => {
+  return {
+    req,
+    res,
+    prisma,
+  };
+};
+
+type Context = Awaited<ReturnType<typeof createContext>>;
+export const t = initTRPC.context<Context>().create();
+
+const waitFor = async (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+export const appRouter = t.router({
+  public: t.router({
+    slowQueryCached: t.procedure.query(async (opts) => {
+      await waitFor(5000); // Simulate slow query
+
+      return {
+        lastUpdated: new Date().toJSON(),
+      };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+
+// Export API handler with caching
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { ctx, paths, errors, type } = opts;
+
+    // Check if all routes are public (contain 'public' in path)
+    const allPublic = paths && paths.every((path) => path.includes('public'));
+    // Check that no procedures errored
+    const allOk = errors.length === 0;
+    // Check we're doing a query request
+    const isQuery = type === 'query';
+
+    if (ctx?.res && allPublic && allOk && isQuery) {
+      // Cache for 1 day + revalidate once every second
+      const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+      return {
+        headers: new Headers([
+          [
+            'cache-control',
+            `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+          ],
+        ]),
+      };
+    }
+    return {};
+  },
+});
+```
+
+## Client-Side Caching
+
+Enable SSR caching for your entire application:
+
+```tsx title="lib/trpc.ts"
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
+import type { AppRouter } from '../server/routers/_app';
+
+export const trpc = createTRPCNext<AppRouter>({
+  config(opts) {
+    if (typeof window !== 'undefined') {
+      // Client-side
+      return {
+        links: [
+          httpBatchLink({
+            url: '/api/trpc',
+          }),
+        ],
+      };
+    }
+
+    // Server-side
+    const url = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}/api/trpc`
+      : 'http://localhost:3000/api/trpc';
+
+    return {
+      links: [
+        httpBatchLink({
+          url,
+        }),
+      ],
+    };
+  },
+  ssr: true,
+  responseMeta(opts) {
+    const { clientErrors } = opts;
+
+    if (clientErrors.length) {
+      // Propagate HTTP first error from API calls
+      return {
+        status: clientErrors[0].data?.httpStatus ?? 500,
+      };
+    }
+
+    // Cache request for 1 day + revalidate once every second
+    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+    return {
+      headers: new Headers([
+        [
+          'cache-control',
+          `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+        ],
+      ]),
+    };
+  },
+});
+```
+
+## Advanced Caching Strategies
+
+### Conditional Caching
+
+Cache only specific routes or conditions:
+
+```ts title="server/api/trpc/[trpc].ts"
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { ctx, paths, errors, type, data } = opts;
+
+    // Only cache specific routes
+    const cachableRoutes = ['posts.list', 'users.public', 'content.static'];
+    const isCachable = paths?.some(path =>
+      cachableRoutes.some(route => path.includes(route))
+    );
+
+    // Don't cache if there are errors or it's not a query
+    if (!isCachable || errors.length > 0 || type !== 'query') {
+      return {};
+    }
+
+    // Don't cache if user is authenticated (personal data)
+    if (ctx?.user) {
+      return {};
+    }
+
+    const ONE_HOUR = 60 * 60;
+    return {
+      headers: new Headers([
+        ['cache-control', `public, s-maxage=${ONE_HOUR}, max-age=${ONE_HOUR}`],
+      ]),
+    };
+  },
+});
+```
+
+### Dynamic Cache Duration
+
+Set different cache durations based on data type:
+
+```ts title="server/api/trpc/[trpc].ts"
+function getCacheDuration(path: string): number {
+  // Static content - cache for 1 day
+  if (path.includes('static') || path.includes('content')) {
+    return 60 * 60 * 24;
+  }
+
+  // User posts - cache for 1 hour
+  if (path.includes('posts')) {
+    return 60 * 60;
+  }
+
+  // User data - cache for 5 minutes
+  if (path.includes('users')) {
+    return 5 * 60;
+  }
+
+  // Default - cache for 1 minute
+  return 60;
+}
+
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { paths, errors, type } = opts;
+
+    if (errors.length > 0 || type !== 'query' || !paths?.length) {
+      return {};
+    }
+
+    const maxAge = Math.min(...paths.map(getCacheDuration));
+
+    return {
+      headers: new Headers([
+        [
+          'cache-control',
+          `public, s-maxage=${maxAge}, max-age=${maxAge}, stale-while-revalidate=${maxAge * 2}`,
+        ],
+      ]),
+    };
+  },
+});
+```
+
+### Advanced Conditional Caching
+
+Implement sophisticated caching logic based on data characteristics:
+
+**1. Setup Conditional Cache**
+
+```typescript title="src/lib/cache.ts"
+interface CacheConfig {
+  duration: number;
+  condition: (data: any) => boolean;
+  key: (input: any) => string;
+}
+
+const conditionalCache: CacheConfig[] = [
+  {
+    duration: 3600, // 1 hour for static data
+    condition: (data) => data.type === 'static',
+    key: (input) => `static:${JSON.stringify(input)}`,
+  },
+  {
+    duration: 300, // 5 minutes for user data
+    condition: (data) => data.type === 'user',
+    key: (input) => `user:${input.userId}:${input.action}`,
+  },
+  {
+    duration: 60, // 1 minute for realtime data
+    condition: (data) => data.type === 'realtime',
+    key: (input) => `realtime:${Date.now()}`,
+  },
+];
+```
+
+**2. Implement Smart Caching Middleware**
+
+```typescript title="src/middleware/smart-cache.ts"
+import { TRPCError } from '@trpc/server';
+import { cache } from './cache';
+
+export const smartCacheMiddleware = t.middleware(async ({ next, input }) => {
+  const result = await next();
+
+  if (!result.ok) return result;
+
+  // Find matching cache config
+  const config = conditionalCache.find(c => c.condition(result.data));
+
+  if (config) {
+    const cacheKey = config.key(input);
+    await cache.set(cacheKey, result.data, config.duration);
+  }
+
+  return result;
+});
+```
+
+**3. Use in Procedures**
+
+```typescript title="src/routers/smart-cache.ts"
+export const smartCacheRouter = t.router({
+  getContent: t.procedure
+    .use(smartCacheMiddleware)
+    .input(z.object({
+      contentId: z.string(),
+      type: z.enum(['static', 'user', 'realtime']),
+    }))
+    .query(async ({ input }) => {
+      // Data will be cached based on type
+      return {
+        id: input.contentId,
+        type: input.type,
+        content: await fetchContent(input.contentId),
+        timestamp: new Date(),
+      };
+    }),
+});
+```
+
+## Best Practices
+
+### Use splitLink for Mixed Caching
+
+Separate public and private requests using `splitLink`:
+
+```ts title="lib/trpc.ts"
+import {
+  createTRPCClient,
+  httpBatchLink,
+  splitLink
+} from '@trpc/client';
+
+export const trpc = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition(op) {
+        // Route public queries to cached endpoint
+        return op.path.includes('public') || op.path.includes('static');
+      },
+      true: httpBatchLink({
+        url: '/api/trpc/public', // Cached endpoint
+      }),
+      false: httpBatchLink({
+        url: '/api/trpc/private', // Non-cached endpoint
+      }),
+    }),
+  ],
+});
+```
+
+### Implement Cache Invalidation
+
+Use cache tags for precise invalidation:
+
+```ts title="server/api/trpc/[trpc].ts"
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { paths, errors, type } = opts;
+
+    if (errors.length > 0 || type !== 'query') {
+      return {};
+    }
+
+    const tags = paths?.map(path => {
+      // Generate cache tags based on route
+      if (path.includes('posts')) return 'posts';
+      if (path.includes('users')) return 'users';
+      return 'general';
+    });
+
+    return {
+      headers: new Headers([
+        ['cache-control', 'public, s-maxage=3600, max-age=3600'],
+        ['cache-tag', tags?.join(',') || ''],
+      ]),
+    };
+  },
+});
+```
+
+### Monitor Cache Performance
+
+Add cache hit/miss logging:
+
+```ts title="server/api/trpc/[trpc].ts"
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { ctx, paths, type } = opts;
+
+    // Log cache decisions
+    if (type === 'query') {
+      const cacheDecision = shouldCache(opts) ? 'HIT' : 'MISS';
+      console.log(`Cache ${cacheDecision}: ${paths?.join(', ')}`);
+    }
+
+    return getCacheHeaders(opts);
+  },
+});
+```
+
+### Handle Authentication
+
+Never cache authenticated requests:
+
+```ts title="server/api/trpc/[trpc].ts"
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { ctx, req } = opts;
+
+    // Never cache if there's an auth header or cookie
+    const hasAuth = req?.headers.authorization ||
+                   req?.headers.cookie?.includes('auth');
+
+    if (hasAuth || ctx?.user) {
+      return {
+        headers: new Headers([
+          ['cache-control', 'private, no-cache, must-revalidate'],
+        ]),
+      };
+    }
+
+    return getPublicCacheHeaders(opts);
+  },
+});
+```
+
+## Cache Headers Reference
+
+### Common Cache-Control Values
+
+<TypeTable
+  type={{
+    public: {
+      description: 'Response can be cached by any cache',
+      type: 'Cache Directive',
+    },
+    private: {
+      description: 'Response is intended for single user only',
+      type: 'Cache Directive',
+    },
+    'no-cache': {
+      description: 'Must revalidate with server before using cached version',
+      type: 'Cache Directive',
+    },
+    'no-store': {
+      description: 'Response should not be cached anywhere',
+      type: 'Cache Directive',
+    },
+    'max-age': {
+      description: 'Maximum age in seconds for browser cache',
+      type: 'number',
+    },
+    's-maxage': {
+      description: 'Maximum age in seconds for shared caches (CDN)',
+      type: 'number',
+    },
+    'stale-while-revalidate': {
+      description:
+        'Serve stale content while fetching fresh content in background',
+      type: 'number',
+    },
+  }}
+/>
+
+### Example Cache Strategies
+
+```ts
+// Short-term caching for dynamic content
+'public, max-age=60, s-maxage=60'
+
+// Long-term caching with background refresh
+'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
+
+// No caching for sensitive data
+'private, no-cache, no-store, must-revalidate'
+
+// CDN-only caching (browser always revalidates)
+'public, max-age=0, s-maxage=3600'
+```
+
+## Framework-Specific Examples
+
+### Next.js App Router
+
+```ts title="app/api/trpc/[trpc]/route.ts"
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { appRouter } from '~/server/api/root';
+
+const handler = (req: Request) =>
+  fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req,
+    router: appRouter,
+    createContext: () => ({}),
+    responseMeta(opts) {
+      // Next.js App Router caching
+      return {
+        headers: new Headers([
+          ['cache-control', 'public, max-age=3600'],
+        ]),
+      };
+    },
+  });
+
+export { handler as GET, handler as POST };
+```
+
+### Vercel Edge Runtime
+
+```ts title="api/trpc/[trpc].ts"
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(req: Request) {
+  return fetchRequestHandler({
+    endpoint: '/api/trpc',
+    req,
+    router: appRouter,
+    createContext: () => ({}),
+    responseMeta(opts) {
+      const { paths, type } = opts;
+
+      // Edge-optimized caching
+      if (type === 'query' && paths?.every(p => p.includes('public'))) {
+        return {
+          headers: new Headers([
+            ['cache-control', 'public, s-maxage=86400, max-age=3600'],
+            ['cdn-cache-control', 'public, s-maxage=31536000'],
+          ]),
+        };
+      }
+
+      return {};
+    },
+  });
+}
+```
+
+<Callout type="info">
+  Remember that caching is a powerful optimization tool, but it requires careful
+  consideration of your application's data sensitivity and update patterns.
+</Callout>
+
+<Callout type="warn">
+  Always be careful with caching, especially when handling personal information.
+  Since batching is enabled by default, make sure concurrent calls don't leak
+  personal data through cache headers.
+</Callout>
+
+## Getting Started
+
+The examples below use [Vercel's edge caching](https://vercel.com/docs/edge-network/caching) to serve data as fast as possible. The concepts apply to other CDN providers as well.
+
+## API Response Caching
+
+Since all tRPC queries are standard HTTP `GET` requests, you can use normal HTTP headers to cache responses, reduce server load, and scale your API effortlessly.
+
+### Using `responseMeta` to Cache Responses
+
+Perfect for serverless deployments that support `stale-while-revalidate` cache headers:
+
+```ts title="server/api/trpc/[trpc].ts"
+import { initTRPC } from '@trpc/server';
+import * as trpcNext from '@trpc/server/adapters/next';
+
+export const createContext = async ({
+  req,
+  res,
+}: trpcNext.CreateNextContextOptions) => {
+  return {
+    req,
+    res,
+    prisma,
+  };
+};
+
+type Context = Awaited<ReturnType<typeof createContext>>;
+export const t = initTRPC.context<Context>().create();
+
+const waitFor = async (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+export const appRouter = t.router({
+  public: t.router({
+    slowQueryCached: t.procedure.query(async (opts) => {
+      await waitFor(5000); // Simulate slow query
+
+      return {
+        lastUpdated: new Date().toJSON(),
+      };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+
+// Export API handler with caching
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { ctx, paths, errors, type } = opts;
+
+    // Check if all routes are public (contain 'public' in path)
+    const allPublic = paths && paths.every((path) => path.includes('public'));
+    // Check that no procedures errored
+    const allOk = errors.length === 0;
+    // Check we're doing a query request
+    const isQuery = type === 'query';
+
+    if (ctx?.res && allPublic && allOk && isQuery) {
+      // Cache for 1 day + revalidate once every second
+      const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+      return {
+        headers: new Headers([
+          [
+            'cache-control',
+            `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+          ],
+        ]),
+      };
+    }
+    return {};
+  },
+});
+```
+
+## Client-Side Caching
+
+Enable SSR caching for your entire application:
+
+```tsx title="lib/trpc.ts"
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
+import type { AppRouter } from '../server/routers/_app';
+
+export const trpc = createTRPCNext<AppRouter>({
+  config(opts) {
+    if (typeof window !== 'undefined') {
+      // Client-side
+      return {
+        links: [
+          httpBatchLink({
+            url: '/api/trpc',
+          }),
+        ],
+      };
+    }
+
+    // Server-side
+    const url = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}/api/trpc`
+      : 'http://localhost:3000/api/trpc';
+
+    return {
+      links: [
+        httpBatchLink({
+          url,
+        }),
+      ],
+    };
+  },
+  ssr: true,
+  responseMeta(opts) {
+    const { clientErrors } = opts;
+
+    if (clientErrors.length) {
+      // Propagate HTTP first error from API calls
+      return {
+        status: clientErrors[0].data?.httpStatus ?? 500,
+      };
+    }
+
+    // Cache request for 1 day + revalidate once every second
+    const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+    return {
+      headers: new Headers([
+        [
+          'cache-control',
+          `s-maxage=1, stale-while-revalidate=${ONE_DAY_IN_SECONDS}`,
+        ],
+      ]),
+    };
+  },
+});
+```
+
+## Advanced Caching Strategies
+
+### Conditional Caching
+
+Cache only specific routes or conditions:
+
+```ts title="server/api/trpc/[trpc].ts"
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { ctx, paths, errors, type, data } = opts;
+
+    // Only cache specific routes
+    const cachableRoutes = ['posts.list', 'users.public', 'content.static'];
+    const isCachable = paths?.some(path =>
+      cachableRoutes.some(route => path.includes(route))
+    );
+
+    // Don't cache if there are errors or it's not a query
+    if (!isCachable || errors.length > 0 || type !== 'query') {
+      return {};
+    }
+
+    // Don't cache if user is authenticated (personal data)
+    if (ctx?.user) {
+      return {};
+    }
+
+    const ONE_HOUR = 60 * 60;
+    return {
+      headers: new Headers([
+        ['cache-control', `public, s-maxage=${ONE_HOUR}, max-age=${ONE_HOUR}`],
+      ]),
+    };
+  },
+});
+```
+
+### Dynamic Cache Duration
+
+Set different cache durations based on data type:
+
+```ts title="server/api/trpc/[trpc].ts"
+function getCacheDuration(path: string): number {
+  // Static content - cache for 1 day
+  if (path.includes('static') || path.includes('content')) {
+    return 60 * 60 * 24;
+  }
+
+  // User posts - cache for 1 hour
+  if (path.includes('posts')) {
+    return 60 * 60;
+  }
+
+  // User data - cache for 5 minutes
+  if (path.includes('users')) {
+    return 5 * 60;
+  }
+
+  // Default - cache for 1 minute
+  return 60;
+}
+
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { paths, errors, type } = opts;
+
+    if (errors.length > 0 || type !== 'query' || !paths?.length) {
+      return {};
+    }
+
+    const maxAge = Math.min(...paths.map(getCacheDuration));
+
+    return {
+      headers: new Headers([
+        [
+          'cache-control',
+          `public, s-maxage=${maxAge}, max-age=${maxAge}, stale-while-revalidate=${maxAge * 2}`,
+        ],
+      ]),
+    };
+  },
+});
+```
+
+### Advanced Conditional Caching
+
+Implement sophisticated caching logic based on data characteristics:
+
+**1. Setup Conditional Cache**
+
+```typescript title="src/lib/cache.ts"
+interface CacheConfig {
+  duration: number;
+  condition: (data: any) => boolean;
+  key: (input: any) => string;
+}
+
+const conditionalCache: CacheConfig[] = [
+  {
+    duration: 3600, // 1 hour for static data
+    condition: (data) => data.type === 'static',
+    key: (input) => `static:${JSON.stringify(input)}`,
+  },
+  {
+    duration: 300, // 5 minutes for user data
+    condition: (data) => data.type === 'user',
+    key: (input) => `user:${input.userId}:${input.action}`,
+  },
+  {
+    duration: 60, // 1 minute for realtime data
+    condition: (data) => data.type === 'realtime',
+    key: (input) => `realtime:${Date.now()}`,
+  },
+];
+```
+
+**2. Implement Smart Caching Middleware**
+
+```typescript title="src/middleware/smart-cache.ts"
+import { TRPCError } from '@trpc/server';
+import { cache } from './cache';
+
+export const smartCacheMiddleware = t.middleware(async ({ next, input }) => {
+  const result = await next();
+
+  if (!result.ok) return result;
+
+  // Find matching cache config
+  const config = conditionalCache.find(c => c.condition(result.data));
+
+  if (config) {
+    const cacheKey = config.key(input);
+    await cache.set(cacheKey, result.data, config.duration);
+  }
+
+  return result;
+});
+```
+
+**3. Use in Procedures**
+
+```typescript title="src/routers/smart-cache.ts"
+export const smartCacheRouter = t.router({
+  getContent: t.procedure
+    .use(smartCacheMiddleware)
+    .input(z.object({
+      contentId: z.string(),
+      type: z.enum(['static', 'user', 'realtime']),
+    }))
+    .query(async ({ input }) => {
+      // Data will be cached based on type
+      return {
+        id: input.contentId,
+        type: input.type,
+        content: await fetchContent(input.contentId),
+        timestamp: new Date(),
+      };
+    }),
+});
+```
+
+## Best Practices
+
+<Steps>
+
+### Use splitLink for Mixed Caching
+
+Separate public and private requests using `splitLink`:
+
+```ts title="lib/trpc.ts"
+import {
+  createTRPCClient,
+  httpBatchLink,
+  splitLink
+} from '@trpc/client';
+
+export const trpc = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition(op) {
+        // Route public queries to cached endpoint
+        return op.path.includes('public') || op.path.includes('static');
+      },
+      true: httpBatchLink({
+        url: '/api/trpc/public', // Cached endpoint
+      }),
+      false: httpBatchLink({
+        url: '/api/trpc/private', // Non-cached endpoint
+      }),
+    }),
+  ],
+});
+```
+
+### Implement Cache Invalidation
+
+Use cache tags for precise invalidation:
+
+```ts title="server/api/trpc/[trpc].ts"
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { paths, errors, type } = opts;
+
+    if (errors.length > 0 || type !== 'query') {
+      return {};
+    }
+
+    const tags = paths?.map(path => {
+      // Generate cache tags based on route
+      if (path.includes('posts')) return 'posts';
+      if (path.includes('users')) return 'users';
+      return 'general';
+    });
+
+    return {
+      headers: new Headers([
+        ['cache-control', 'public, s-maxage=3600, max-age=3600'],
+        ['cache-tag', tags?.join(',') || ''],
+      ]),
+    };
+  },
+});
+```
+
+### Monitor Cache Performance
+
+Add cache hit/miss logging:
+
+```ts title="server/api/trpc/[trpc].ts"
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext,
+  responseMeta(opts) {
+    const { ctx, paths, type } = opts;
+
+    // Log cache decisions
+    if (type === 'query') {
+      const cacheDecision = shouldCache(opts) ? 'HIT' : 'MISS';
+      console.log(`Cache ${cacheDecision}: ${paths?.join(', ')}`);
+    }
+
+    return getCacheHeaders(opts);
+  },
+});
+```

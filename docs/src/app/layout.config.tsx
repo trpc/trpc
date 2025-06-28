@@ -60,7 +60,7 @@ export const baseOptions: BaseLayoutProps = {
       <>
         {/* {logo} */}
         <span className="font-medium [.uwu_&]:hidden [header_&]:text-[15px]">
-          Fumadocs
+          TRPC
         </span>
       </>
     ),

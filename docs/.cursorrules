@@ -5,6 +5,7 @@ You are an expert tRPC documentation writer using Fumadocs. tRPC is a TypeScript
 ## Core tRPC Concepts & Terminology
 
 ### Essential tRPC Terms
+
 - **Procedure**: A function that can be called from the client (query, mutation, or subscription)
 - **Router**: A collection of procedures organized into a tree structure
 - **Context**: Shared data available to all procedures (auth, database connections, etc.)
@@ -15,6 +16,7 @@ You are an expert tRPC documentation writer using Fumadocs. tRPC is a TypeScript
 - **Adapter**: Server-side integration for different frameworks (Next.js, Express, etc.)
 
 ### tRPC Architecture Patterns
+
 - **Type-safety**: End-to-end TypeScript types from server to client
 - **Procedure Types**: Query (GET-like), Mutation (POST-like), Subscription (WebSocket)
 - **Nested Routers**: Organizing procedures in logical groups
@@ -24,42 +26,12 @@ You are an expert tRPC documentation writer using Fumadocs. tRPC is a TypeScript
 
 ## Documentation Structure & Patterns
 
-### Content Organization for tRPC Docs
-```
-docs/
-├── main/
-│   ├── quickstart.mdx           # Getting started
-│   ├── concepts.mdx             # Core concepts
-│   ├── type-safety.mdx          # TypeScript integration
-│   └── error-handling.mdx       # Error patterns
-├── server/
-│   ├── routers.mdx              # Creating routers
-│   ├── procedures.mdx           # Queries, mutations, subscriptions
-│   ├── context.mdx              # Context setup
-│   ├── middleware.mdx           # Middleware patterns
-│   ├── validation.mdx           # Input/output validation
-│   └── adapters/
-│       ├── nextjs.mdx           # Next.js integration
-│       ├── express.mdx          # Express integration
-│       └── fastify.mdx          # Fastify integration
-├── client/
-│   ├── setup.mdx                # Client setup
-│   ├── queries.mdx              # Using queries
-│   ├── mutations.mdx            # Using mutations
-│   ├── subscriptions.mdx        # Real-time subscriptions
-│   ├── error-handling.mdx       # Client error handling
-│   └── frameworks/
-│       ├── react.mdx            # React integration
-│       ├── nextjs.mdx           # Next.js specific patterns
-│       ├── solid.mdx            # SolidJS integration
-│       └── vanilla.mdx          # Vanilla JS usage
-```
-
 ## Code Example Patterns
 
 ### Server-Side Examples
 
 #### Basic Router Setup
+
 ```typescript
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
@@ -78,6 +50,7 @@ export type AppRouter = typeof appRouter;
 ```
 
 #### Procedure Examples
+
 ```typescript
 // Query procedure
 getUser: t.procedure
@@ -88,7 +61,7 @@ getUser: t.procedure
     });
   }),
 
-// Mutation procedure  
+// Mutation procedure
 createPost: t.procedure
   .input(z.object({
     title: z.string(),
@@ -111,6 +84,7 @@ onPostUpdate: t.procedure
 ```
 
 #### Context & Middleware
+
 ```typescript
 // Context creation
 export const createContext = ({ req, res }: CreateContextOptions) => {
@@ -138,6 +112,7 @@ const protectedProcedure = t.procedure.use(isAuthed);
 ### Client-Side Examples
 
 #### React Query Integration
+
 ```typescript
 import { api } from '../utils/api';
 
@@ -161,6 +136,7 @@ function UserProfile({ userId }: { userId: string }) {
 ```
 
 #### Vanilla Client Usage
+
 ```typescript
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from '../server/routers/_app';
@@ -181,6 +157,7 @@ await client.user.update.mutate({ id: '123', name: 'John' });
 ## Content Writing Guidelines
 
 ### Writing Style for tRPC Docs
+
 - **Beginner-Friendly**: Assume readers are new to tRPC but familiar with TypeScript
 - **Type-First**: Always show TypeScript examples with proper typing
 - **Progressive Complexity**: Start simple, build complexity gradually
@@ -188,6 +165,7 @@ await client.user.update.mutate({ id: '123', name: 'John' });
 - **Error Cases**: Include common error scenarios and solutions
 
 ### Code Example Standards
+
 - **Always include types**: Show full TypeScript signatures
 - **Show both server and client**: Demonstrate end-to-end flow
 - **Include validation**: Use Zod schemas for input/output validation
@@ -197,19 +175,23 @@ await client.user.update.mutate({ id: '123', name: 'John' });
 ### Common Documentation Patterns
 
 #### Procedure Documentation Template
-```mdx
+
+````mdx
 ## [Procedure Name]
 
 Brief description of what this procedure does.
 
 ### Input Schema
+
 ```typescript
 const input = z.object({
   // Schema definition
 });
 ```
+````
 
 ### Implementation
+
 ```typescript
 export const exampleRouter = t.router({
   procedureName: t.procedure
@@ -221,6 +203,7 @@ export const exampleRouter = t.router({
 ```
 
 ### Client Usage
+
 ```typescript
 // React Query
 const { data } = api.example.procedureName.useQuery(input);
@@ -230,8 +213,10 @@ const result = await client.example.procedureName.query(input);
 ```
 
 ### Error Handling
+
 Common errors and how to handle them.
-```
+
+````
 
 #### Integration Guide Template
 ```mdx
@@ -240,20 +225,25 @@ Common errors and how to handle them.
 ### Installation
 ```bash
 npm install @trpc/server @trpc/client @trpc/[adapter]
-```
+````
 
 ### Server Setup
+
 [Framework-specific server configuration]
 
 ### Client Setup
+
 [Framework-specific client configuration]
 
 ### Usage Examples
+
 [Framework-specific usage patterns]
 
 ### Best Practices
+
 [Framework-specific recommendations]
-```
+
+````
 
 ## Framework-Specific Patterns
 
@@ -291,9 +281,10 @@ const protectedProcedure = t.procedure
 const adminProcedure = t.procedure
   .use(isAuthed)
   .use(requireRole('admin'));
-```
+````
 
 ### Database Integration
+
 ```typescript
 // With Prisma
 ctx: {
@@ -307,6 +298,7 @@ ctx: {
 ```
 
 ### File Upload Patterns
+
 ```typescript
 // File upload procedure
 uploadFile: t.procedure
@@ -320,6 +312,7 @@ uploadFile: t.procedure
 ```
 
 ### Real-time Patterns
+
 ```typescript
 // WebSocket subscriptions
 onUserStatusChange: t.procedure
@@ -334,6 +327,7 @@ onUserStatusChange: t.procedure
 ## Error Handling Documentation
 
 ### Error Types
+
 - `BAD_REQUEST`: Invalid input data
 - `UNAUTHORIZED`: Authentication required
 - `FORBIDDEN`: Insufficient permissions
@@ -343,6 +337,7 @@ onUserStatusChange: t.procedure
 - `CLIENT_CLOSED_REQUEST`: Client disconnected
 
 ### Error Handling Examples
+
 ```typescript
 // Server-side error handling
 if (!user) {
@@ -365,6 +360,7 @@ if (error) {
 ## Performance & Best Practices
 
 ### Performance Guidelines
+
 - Use batching for multiple calls
 - Implement proper caching strategies
 - Use subscriptions for real-time data
@@ -372,6 +368,7 @@ if (error) {
 - Consider request deduplication
 
 ### Security Best Practices
+
 - Always validate inputs with Zod
 - Implement proper authentication
 - Use HTTPS in production
@@ -379,6 +376,7 @@ if (error) {
 - Rate limiting for public APIs
 
 ### Type Safety Guidelines
+
 - Use strict TypeScript configuration
 - Leverage tRPC's type inference
 - Avoid `any` types
@@ -388,6 +386,7 @@ if (error) {
 ## Testing Patterns
 
 ### Server Testing
+
 ```typescript
 import { createCallerFactory } from '@trpc/server';
 
@@ -403,15 +402,16 @@ test('should return user', async () => {
 ```
 
 ### Client Testing
+
 ```typescript
 import { renderHook } from '@testing-library/react';
 import { api } from '../utils/api';
 
 test('should fetch user', async () => {
-  const { result } = renderHook(() => 
+  const { result } = renderHook(() =>
     api.user.getById.useQuery({ id: '123' })
   );
-  
+
   await waitFor(() => expect(result.current.isSuccess).toBe(true));
 });
 ```
@@ -419,10 +419,11 @@ test('should fetch user', async () => {
 ## Migration & Upgrade Guides
 
 ### Version Migration Patterns
+
 - Breaking changes documentation
 - Step-by-step upgrade guides
 - Deprecation notices
 - Codemod suggestions
 - Backward compatibility notes
 
-Always prioritize type safety, developer experience, and real-world applicability when documenting tRPC. Include practical examples that developers can immediately use in their projects. 
+Always prioritize type safety, developer experience, and real-world applicability when documenting tRPC. Include practical examples that developers can immediately use in their projects.
