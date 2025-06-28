@@ -83,13 +83,13 @@ It's also useful to infer the error type for your `AppRouter`
 // @include: server
 
 // @filename: trpc.ts
-import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
-import type { AppRouter } from "./server";
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
 
 export const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
-      url: "http://localhost:3000/api/trpc",
+      url: 'http://localhost:3000/api/trpc',
     }),
   ],
 });

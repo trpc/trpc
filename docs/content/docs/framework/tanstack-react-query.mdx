@@ -210,25 +210,24 @@ export function CreatePost() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
 
-  const createPostMutation = useMutation(trpc.posts.create.mutationOptions({
-    onSuccess: (newPost) => {
-      // Invalidate and refetch posts list
-      queryClient.invalidateQueries(trpc.posts.list.queryKey());
+  const createPostMutation = useMutation(
+    trpc.posts.create.mutationOptions({
+      onSuccess: (newPost) => {
+        // Invalidate and refetch posts list
+        queryClient.invalidateQueries(trpc.posts.list.queryKey());
 
-      // Optionally add the new post to the cache immediately
-      queryClient.setQueryData(
-        trpc.posts.byId.queryKey(newPost.id),
-        newPost
-      );
+        // Optionally add the new post to the cache immediately
+        queryClient.setQueryData(trpc.posts.byId.queryKey(newPost.id), newPost);
 
-      // Reset form
-      setTitle('');
-      setContent('');
-    },
-    onError: (error) => {
-      console.error('Failed to create post:', error);
-    },
-  }));
+        // Reset form
+        setTitle('');
+        setContent('');
+      },
+      onError: (error) => {
+        console.error('Failed to create post:', error);
+      },
+    }),
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,16 +270,22 @@ export function InfinitePosts() {
   const trpc = useTRPC();
 
   const infinitePostsQuery = useInfiniteQuery(
-    trpc.posts.infinite.infiniteQueryOptions({
-      limit: 10,
-    }, {
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
-      getPreviousPageParam: (firstPage) => firstPage.prevCursor,
-    })
+    trpc.posts.infinite.infiniteQueryOptions(
+      {
+        limit: 10,
+      },
+      {
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
+        getPreviousPageParam: (firstPage) => firstPage.prevCursor,
+      },
+    ),
   );
 
   const loadMore = () => {
-    if (infinitePostsQuery.hasNextPage && !infinitePostsQuery.isFetchingNextPage) {
+    if (
+      infinitePostsQuery.hasNextPage &&
+      !infinitePostsQuery.isFetchingNextPage
+    ) {
       infinitePostsQuery.fetchNextPage();
     }
   };
@@ -300,13 +305,16 @@ export function InfinitePosts() {
 
       <button
         onClick={loadMore}
-        disabled={!infinitePostsQuery.hasNextPage || infinitePostsQuery.isFetchingNextPage}
+        disabled={
+          !infinitePostsQuery.hasNextPage ||
+          infinitePostsQuery.isFetchingNextPage
+        }
       >
         {infinitePostsQuery.isFetchingNextPage
           ? 'Loading more...'
           : infinitePostsQuery.hasNextPage
-          ? 'Load More'
-          : 'No more posts'}
+            ? 'Load More'
+            : 'No more posts'}
       </button>
     </div>
   );
@@ -325,41 +333,45 @@ export function LikeButton({ postId }: { postId: string }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const likeMutation = useMutation(trpc.posts.like.mutationOptions({
-    onMutate: async (variables) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries(trpc.posts.byId.queryKey(postId));
+  const likeMutation = useMutation(
+    trpc.posts.like.mutationOptions({
+      onMutate: async (variables) => {
+        // Cancel outgoing refetches
+        await queryClient.cancelQueries(trpc.posts.byId.queryKey(postId));
 
-      // Snapshot the previous value
-      const previousPost = queryClient.getQueryData(trpc.posts.byId.queryKey(postId));
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(trpc.posts.byId.queryKey(postId), (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          likes: old.likes + 1,
-          isLiked: true,
-        };
-      });
-
-      // Return context with snapshot
-      return { previousPost };
-    },
-    onError: (err, variables, context) => {
-      // Rollback to previous value on error
-      if (context?.previousPost) {
-        queryClient.setQueryData(
+        // Snapshot the previous value
+        const previousPost = queryClient.getQueryData(
           trpc.posts.byId.queryKey(postId),
-          context.previousPost
         );
-      }
-    },
-    onSettled: () => {
-      // Always refetch after error or success
-      queryClient.invalidateQueries(trpc.posts.byId.queryKey(postId));
-    },
-  }));
+
+        // Optimistically update to the new value
+        queryClient.setQueryData(trpc.posts.byId.queryKey(postId), (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            likes: old.likes + 1,
+            isLiked: true,
+          };
+        });
+
+        // Return context with snapshot
+        return { previousPost };
+      },
+      onError: (err, variables, context) => {
+        // Rollback to previous value on error
+        if (context?.previousPost) {
+          queryClient.setQueryData(
+            trpc.posts.byId.queryKey(postId),
+            context.previousPost,
+          );
+        }
+      },
+      onSettled: () => {
+        // Always refetch after error or success
+        queryClient.invalidateQueries(trpc.posts.byId.queryKey(postId));
+      },
+    }),
+  );
 
   return (
     <button
@@ -387,12 +399,9 @@ export function UserWithPosts({ userId }: { userId: string }) {
   const userQuery = useQuery(trpc.users.byId.queryOptions(userId));
 
   // Second query: get user's posts (depends on user existing)
-  const userPostsQuery = useQuery(
-    trpc.posts.byUserId.queryOptions(userId),
-    {
-      enabled: !!userQuery.data, // Only run if user exists
-    }
-  );
+  const userPostsQuery = useQuery(trpc.posts.byUserId.queryOptions(userId), {
+    enabled: !!userQuery.data, // Only run if user exists
+  });
 
   if (userQuery.isLoading) return <div>Loading user...</div>;
   if (userQuery.error) return <div>User not found</div>;
@@ -439,11 +448,14 @@ export function LiveDashboard() {
   });
 
   // Real-time notifications (refetch on mount and window focus)
-  const notificationsQuery = useQuery(trpc.notifications.unread.queryOptions(), {
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: 'always',
-    staleTime: 0, // Always considered stale
-  });
+  const notificationsQuery = useQuery(
+    trpc.notifications.unread.queryOptions(),
+    {
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: 'always',
+      staleTime: 0, // Always considered stale
+    },
+  );
 
   return (
     <div>
@@ -453,7 +465,10 @@ export function LiveDashboard() {
           <div>
             <p>Users: {metricsQuery.data.userCount}</p>
             <p>Posts: {metricsQuery.data.postCount}</p>
-            <p>Last updated: {new Date(metricsQuery.dataUpdatedAt).toLocaleTimeString()}</p>
+            <p>
+              Last updated:{' '}
+              {new Date(metricsQuery.dataUpdatedAt).toLocaleTimeString()}
+            </p>
           </div>
         )}
       </div>
@@ -461,7 +476,9 @@ export function LiveDashboard() {
       <div>
         <h2>Notifications</h2>
         {notificationsQuery.data?.length > 0 && (
-          <div>You have {notificationsQuery.data.length} unread notifications</div>
+          <div>
+            You have {notificationsQuery.data.length} unread notifications
+          </div>
         )}
       </div>
     </div>
@@ -543,9 +560,7 @@ export function PostWithErrorHandling({ postId }: { postId: string }) {
     return (
       <div>
         <p>Failed to load post: {postQuery.error.message}</p>
-        <button onClick={() => postQuery.refetch()}>
-          Try Again
-        </button>
+        <button onClick={() => postQuery.refetch()}>Try Again</button>
       </div>
     );
   }
@@ -716,7 +731,7 @@ queryClient.invalidateQueries(trpc.posts.list.queryKey());
 
 // Good: Strategic invalidation
 queryClient.invalidateQueries({
-  predicate: (query) => query.queryKey[0] === 'posts'
+  predicate: (query) => query.queryKey[0] === 'posts',
 });
 ```
 

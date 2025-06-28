@@ -1,5 +1,14 @@
 'use client';
-import { useState } from 'react';
+
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/cn';
+import { cva } from 'class-variance-authority';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from 'fumadocs-ui/components/ui/popover';
+import { useCopyButton } from 'fumadocs-ui/utils/use-copy-button';
 import {
   Check,
   ChevronDown,
@@ -7,15 +16,7 @@ import {
   ExternalLinkIcon,
   MessageCircleIcon,
 } from 'lucide-react';
-import { cn } from '@/lib/cn';
-import { useCopyButton } from 'fumadocs-ui/utils/use-copy-button';
-import { buttonVariants } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from 'fumadocs-ui/components/ui/popover';
-import { cva } from 'class-variance-authority';
+import { useState } from 'react';
 
 const cache = new Map<string, string>();
 
@@ -54,7 +55,7 @@ export function LLMCopyButton({ slug }: { slug: string[] }) {
         buttonVariants({
           variant: 'secondary',
           size: 'xs',
-          className: 'gap-2 [&_svg]:size-3.5 [&_svg]:text-fd-muted-foreground',
+          className: '[&_svg]:text-fd-muted-foreground gap-2 [&_svg]:size-3.5',
         }),
       )}
       onClick={onClick}
@@ -96,7 +97,7 @@ export function ViewOptions(props: { markdownUrl: string; githubUrl: string }) {
         )}
       >
         Open
-        <ChevronDown className="size-3.5 text-fd-muted-foreground" />
+        <ChevronDown className="text-fd-muted-foreground size-3.5" />
       </PopoverTrigger>
       <PopoverContent className="flex flex-col overflow-auto">
         {[
@@ -155,7 +156,7 @@ export function ViewOptions(props: { markdownUrl: string; githubUrl: string }) {
           >
             {item.icon}
             {item.title}
-            <ExternalLinkIcon className="text-fd-muted-foreground size-3.5 ms-auto" />
+            <ExternalLinkIcon className="text-fd-muted-foreground ms-auto size-3.5" />
           </a>
         ))}
       </PopoverContent>

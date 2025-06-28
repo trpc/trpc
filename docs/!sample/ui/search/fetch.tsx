@@ -1,4 +1,5 @@
 'use client';
+
 import { useDocsSearch } from 'fumadocs-core/search/client';
 import {
   SearchDialog,

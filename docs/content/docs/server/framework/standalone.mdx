@@ -53,7 +53,7 @@ export const publicProcedure = t.procedure;
 
 ```typescript title="src/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 // Mock database
 const users: Array<{
@@ -62,8 +62,18 @@ const users: Array<{
   email: string;
   createdAt: Date;
 }> = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', createdAt: new Date() },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', createdAt: new Date() },
+  {
+    id: '1',
+    name: 'John Doe',
+    email: 'john@example.com',
+    createdAt: new Date(),
+  },
+  {
+    id: '2',
+    name: 'Jane Smith',
+    email: 'jane@example.com',
+    createdAt: new Date(),
+  },
 ];
 
 export const appRouter = router({
@@ -83,7 +93,7 @@ export const appRouter = router({
   getUser: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(({ input }) => {
-      const user = users.find(u => u.id === input.id);
+      const user = users.find((u) => u.id === input.id);
       if (!user) {
         throw new Error('User not found');
       }
@@ -91,10 +101,12 @@ export const appRouter = router({
     }),
 
   createUser: publicProcedure
-    .input(z.object({
-      name: z.string().min(2),
-      email: z.string().email(),
-    }))
+    .input(
+      z.object({
+        name: z.string().min(2),
+        email: z.string().email(),
+      }),
+    )
     .mutation(({ input }) => {
       const user = {
         id: Date.now().toString(),
@@ -106,13 +118,15 @@ export const appRouter = router({
     }),
 
   updateUser: publicProcedure
-    .input(z.object({
-      id: z.string(),
-      name: z.string().optional(),
-      email: z.string().email().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().optional(),
+        email: z.string().email().optional(),
+      }),
+    )
     .mutation(({ input }) => {
-      const userIndex = users.findIndex(u => u.id === input.id);
+      const userIndex = users.findIndex((u) => u.id === input.id);
       if (userIndex === -1) {
         throw new Error('User not found');
       }
@@ -126,7 +140,7 @@ export const appRouter = router({
   deleteUser: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(({ input }) => {
-      const userIndex = users.findIndex(u => u.id === input.id);
+      const userIndex = users.findIndex((u) => u.id === input.id);
       if (userIndex === -1) {
         throw new Error('User not found');
       }
@@ -316,9 +330,9 @@ curl -X POST "http://localhost:3000/deleteUser" \
 The standalone server gives you full control over HTTP handling:
 
 ```typescript title="src/custom-server.ts"
+import { IncomingMessage, ServerResponse } from 'http';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { appRouter } from './router';
-import { IncomingMessage, ServerResponse } from 'http';
 
 const server = createHTTPServer({
   router: appRouter,
@@ -352,10 +366,12 @@ server.requestListener = (req: IncomingMessage, res: ServerResponse) => {
   // Handle health check
   if (req.url === '/health' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      status: 'ok',
-      timestamp: new Date().toISOString()
-    }));
+    res.end(
+      JSON.stringify({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+      }),
+    );
     return;
   }
 
@@ -382,8 +398,8 @@ console.log(`🚀 Custom server running at http://localhost:${port}`);
 ## Add Authentication
 
 ```typescript title="src/auth.ts"
-import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { TRPCError } from '@trpc/server';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
 
 // Simple API key authentication
 function createContext({ req }: { req: any }) {

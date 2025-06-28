@@ -38,16 +38,14 @@ export const router = t.router;
 Add metadata to individual procedures using the `.meta()` method:
 
 ```ts title="server/routers/posts.ts"
-import { publicProcedure, router } from '../trpc';
 import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
 
 export const postsRouter = router({
   // Public endpoint - no auth required
-  list: publicProcedure
-    .meta({ authRequired: false })
-    .query(() => {
-      return getPosts();
-    }),
+  list: publicProcedure.meta({ authRequired: false }).query(() => {
+    return getPosts();
+  }),
 
   // Protected endpoint - auth required
   create: publicProcedure
@@ -128,8 +126,8 @@ export const authProcedure = t.procedure.use(async (opts) => {
 
   // Check permissions if specified
   if (meta.permissions) {
-    const hasPermission = meta.permissions.every(permission =>
-      ctx.user.permissions.includes(permission)
+    const hasPermission = meta.permissions.every((permission) =>
+      ctx.user.permissions.includes(permission),
     );
 
     if (!hasPermission) {
@@ -146,15 +144,13 @@ export const authProcedure = t.procedure.use(async (opts) => {
 
 export const appRouter = t.router({
   // Public endpoint
-  hello: authProcedure
-    .meta({ authRequired: false })
-    .query(() => 'Hello world'),
+  hello: authProcedure.meta({ authRequired: false }).query(() => 'Hello world'),
 
   // User endpoint
   profile: authProcedure
     .meta({
       authRequired: true,
-      roles: ['user', 'admin']
+      roles: ['user', 'admin'],
     })
     .query(({ ctx }) => ctx.user),
 
@@ -163,7 +159,7 @@ export const appRouter = t.router({
     .meta({
       authRequired: true,
       roles: ['admin'],
-      permissions: ['users:read']
+      permissions: ['users:read'],
     })
     .query(() => getAllUsers()),
 });
@@ -192,7 +188,7 @@ export const rateLimitMiddleware = publicProcedure.use(async (opts) => {
   const windowMs = 60 * 1000; // 1 minute window
 
   const requests = rateLimitMap.get(key) || [];
-  const recentRequests = requests.filter(time => now - time < windowMs);
+  const recentRequests = requests.filter((time) => now - time < windowMs);
 
   if (recentRequests.length >= meta.rateLimit) {
     throw new TRPCError({
@@ -241,8 +237,8 @@ export const t = initTRPC
     // Set default metadata
     defaultMeta: {
       authRequired: false,
-      cached: true
-    }
+      cached: true,
+    },
   });
 ```
 
@@ -251,17 +247,15 @@ export const t = initTRPC
 When chaining procedures, metadata is shallow merged:
 
 ```ts title="server/procedures.ts"
-const baseProcedure = publicProcedure
-  .meta({
-    authRequired: true,
-    role: 'user'
-  });
+const baseProcedure = publicProcedure.meta({
+  authRequired: true,
+  role: 'user',
+});
 
-const adminProcedure = baseProcedure
-  .meta({
-    role: 'admin', // Overrides 'user'
-    permissions: ['admin:read'] // Adds new field
-  });
+const adminProcedure = baseProcedure.meta({
+  role: 'admin', // Overrides 'user'
+  permissions: ['admin:read'], // Adds new field
+});
 // Final meta: { authRequired: true, role: 'admin', permissions: ['admin:read'] }
 ```
 
@@ -283,14 +277,16 @@ export const apiRouter = router({
         path: '/users/{id}',
         tags: ['users'],
         summary: 'Get user by ID',
-      }
+      },
     })
     .input(z.object({ id: z.string() }))
-    .output(z.object({
-      id: z.string(),
-      name: z.string(),
-      email: z.string(),
-    }))
+    .output(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        email: z.string(),
+      }),
+    )
     .query(({ input }) => getUserById(input.id)),
 
   createUser: publicProcedure
@@ -300,17 +296,21 @@ export const apiRouter = router({
         path: '/users',
         tags: ['users'],
         summary: 'Create a new user',
-      }
+      },
     })
-    .input(z.object({
-      name: z.string(),
-      email: z.string().email(),
-    }))
-    .output(z.object({
-      id: z.string(),
-      name: z.string(),
-      email: z.string(),
-    }))
+    .input(
+      z.object({
+        name: z.string(),
+        email: z.string().email(),
+      }),
+    )
+    .output(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        email: z.string(),
+      }),
+    )
     .mutation(({ input }) => createUser(input)),
 });
 ```
@@ -352,11 +352,11 @@ Establish consistent naming conventions for your metadata:
 ```ts
 interface Meta {
   // Use consistent boolean naming
-  authRequired: boolean;    // not needsAuth
-  cacheEnabled: boolean;    // not shouldCache
+  authRequired: boolean; // not needsAuth
+  cacheEnabled: boolean; // not shouldCache
 
   // Use consistent array naming
-  requiredRoles: string[];  // not roles
+  requiredRoles: string[]; // not roles
   allowedMethods: string[]; // not methods
 }
 ```
@@ -424,7 +424,7 @@ export const apiRouter = router({
     .meta({
       description: 'Retrieve a blog post by ID',
       tags: ['posts', 'public'],
-      version: '1.0'
+      version: '1.0',
     })
     .input(z.object({ id: z.string() }))
     .query(({ input }) => getPost(input.id)),
@@ -447,14 +447,14 @@ const featureMiddleware = publicProcedure.use(async (opts) => {
   if (meta?.feature && !ctx.features?.includes(meta.feature)) {
     throw new TRPCError({
       code: 'NOT_FOUND',
-      message: 'Feature not available'
+      message: 'Feature not available',
     });
   }
 
   if (meta?.beta && !ctx.user?.betaAccess) {
     throw new TRPCError({
       code: 'FORBIDDEN',
-      message: 'Beta access required'
+      message: 'Beta access required',
     });
   }
 

@@ -60,9 +60,9 @@ export type Context = Awaited<ReturnType<typeof createTRPCContext>>;
 ### Advanced Context with External Services
 
 ```typescript title="server/context.ts"
+import { S3Client } from '@aws-sdk/client-s3';
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { Redis } from 'ioredis';
-import { S3Client } from '@aws-sdk/client-s3';
 import { getServerSession } from 'next-auth';
 
 // Initialize external services
@@ -119,9 +119,9 @@ export type Context = Awaited<ReturnType<typeof createTRPCContext>>;
 
 ```typescript title="server/context.ts"
 import { Container } from 'typedi';
-import { UserService } from './services/user-service';
 import { EmailService } from './services/email-service';
 import { PaymentService } from './services/payment-service';
+import { UserService } from './services/user-service';
 
 export async function createTRPCContext(opts: CreateNextContextOptions) {
   const { req, res } = opts;
@@ -157,28 +157,29 @@ export async function createTRPCContext(opts: CreateNextContextOptions) {
 ```typescript title="server/routers/users.ts"
 export const usersRouter = t.router({
   // Get current user profile
-  profile: t.procedure
-    .query(async ({ ctx }) => {
-      // Access user from context
-      if (!ctx.session?.user) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'You must be logged in'
-        });
-      }
-
-      return await ctx.prisma.user.findUnique({
-        where: { id: ctx.session.user.id },
-        include: { posts: true, followers: true }
+  profile: t.procedure.query(async ({ ctx }) => {
+    // Access user from context
+    if (!ctx.session?.user) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'You must be logged in',
       });
-    }),
+    }
+
+    return await ctx.prisma.user.findUnique({
+      where: { id: ctx.session.user.id },
+      include: { posts: true, followers: true },
+    });
+  }),
 
   // Update profile with logging
   updateProfile: t.procedure
-    .input(z.object({
-      name: z.string().optional(),
-      bio: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        name: z.string().optional(),
+        bio: z.string().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       if (!ctx.user) {
         throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -197,29 +198,27 @@ export const usersRouter = t.router({
     }),
 
   // Cache user data
-  byId: t.procedure
-    .input(z.string())
-    .query(async ({ input, ctx }) => {
-      const cacheKey = `user:${input}`;
+  byId: t.procedure.input(z.string()).query(async ({ input, ctx }) => {
+    const cacheKey = `user:${input}`;
 
-      // Try cache first
-      const cached = await ctx.redis.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
-      }
+    // Try cache first
+    const cached = await ctx.redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
 
-      // Fetch from database
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: input },
-      });
+    // Fetch from database
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: input },
+    });
 
-      if (user) {
-        // Cache for 5 minutes
-        await ctx.redis.setex(cacheKey, 300, JSON.stringify(user));
-      }
+    if (user) {
+      // Cache for 5 minutes
+      await ctx.redis.setex(cacheKey, 300, JSON.stringify(user));
+    }
 
-      return user;
-    }),
+    return user;
+  }),
 });
 ```
 
@@ -560,7 +559,10 @@ function sanitizeObject(obj: any): any {
 
   if (typeof obj === 'string') {
     // Remove potential XSS
-    return obj.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    return obj.replace(
+      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+      '',
+    );
   }
 
   return obj;
@@ -599,18 +601,16 @@ export const withFileValidation = (options: {
 ### Creating Procedure Builders
 
 ```typescript title="server/procedures.ts"
-import { t } from './trpc';
 import { requireAuth, requireRole } from './middleware/auth';
 import { withLogging } from './middleware/logging';
 import { withRateLimit } from './middleware/rate-limit';
+import { t } from './trpc';
 
 // Base procedure with logging
 export const publicProcedure = t.procedure.use(withLogging);
 
 // Authenticated procedure
-export const protectedProcedure = t.procedure
-  .use(withLogging)
-  .use(requireAuth);
+export const protectedProcedure = t.procedure.use(withLogging).use(requireAuth);
 
 // Admin procedure
 export const adminProcedure = t.procedure
@@ -637,10 +637,12 @@ export const premiumProcedure = t.procedure
 export const fileUploadProcedure = t.procedure
   .use(withLogging)
   .use(requireAuth)
-  .use(withFileValidation({
-    maxSize: 10 * 1024 * 1024, // 10MB
-    allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
-  }))
+  .use(
+    withFileValidation({
+      maxSize: 10 * 1024 * 1024, // 10MB
+      allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    }),
+  )
   .use(withRateLimit({ max: 5, windowMs: 60 * 1000 }))
   .use(withAuditLog('file_upload'));
 
@@ -730,7 +732,7 @@ describe('Authentication Middleware', () => {
     const caller = t.createCallerFactory(t.router({ test: procedure }));
     const ctx = {
       session: { user: { id: '1', role: 'user' } },
-      user: { id: '1', role: 'user' }
+      user: { id: '1', role: 'user' },
     } as Context;
 
     const result = await caller(ctx).test();
@@ -742,8 +744,8 @@ describe('Authentication Middleware', () => {
 ### Integration Testing
 
 ```typescript title="__tests__/integration.test.ts"
-import { createTRPCMockContext } from '../test-utils';
 import { appRouter } from '../routers/_app';
+import { createTRPCMockContext } from '../test-utils';
 
 describe('User Router Integration', () => {
   it('should update user profile', async () => {
@@ -784,7 +786,7 @@ export type Context = {
   prisma: PrismaClient;
   user: User | null;
   logger: Logger;
-}
+};
 
 // Avoid: Kitchen sink context
 export type Context = {
@@ -795,7 +797,7 @@ export type Context = {
   stripe: Stripe;
   sendgrid: SendGridAPI;
   // ... many more services
-}
+};
 ```
 
 </Accordion>
@@ -810,8 +812,8 @@ export type Context = {
 ```typescript
 // Good: Clear middleware chain
 export const sensitiveActionProcedure = t.procedure
-  .use(withLogging)        // Log everything
-  .use(requireAuth)        // Ensure authenticated
+  .use(withLogging) // Log everything
+  .use(requireAuth) // Ensure authenticated
   .use(requireRole('admin')) // Check permissions
   .use(withAuditLog('sensitive_action')) // Audit trail
   .use(withRateLimit({ max: 5, windowMs: 60000 })); // Rate limit

@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
-import { cn } from '@/lib/cn';
 import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/cn';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { useEffect, useState } from 'react';
 
 export function UrlBar() {
   const [url, setUrl] = useState('');
@@ -17,7 +17,7 @@ export function UrlBar() {
     };
   }, []);
 
-  return <pre className="rounded-lg border bg-card p-2 text-sm">{url}</pre>;
+  return <pre className="bg-card rounded-lg border p-2 text-sm">{url}</pre>;
 }
 
 export function WithoutValueTest() {

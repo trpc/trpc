@@ -28,7 +28,7 @@ tRPC creates a bridge between your TypeScript server and client through three si
 export const appRouter = t.router({
   getUser: t.procedure
     .input(z.string())
-    .query(({ input }) => getUserById(input))
+    .query(({ input }) => getUserById(input)),
 });
 
 // 2. Export the type
@@ -81,19 +81,20 @@ import { z } from 'zod';
 const t = initTRPC.create();
 
 export const appRouter = t.router({
-  getPosts: t.procedure
-    .query(async () => {
-      return await db.post.findMany();
-    }),
+  getPosts: t.procedure.query(async () => {
+    return await db.post.findMany();
+  }),
 
   createPost: t.procedure
-    .input(z.object({
-      title: z.string(),
-      content: z.string()
-    }))
+    .input(
+      z.object({
+        title: z.string(),
+        content: z.string(),
+      }),
+    )
     .mutation(async ({ input }) => {
       return await db.post.create({ data: input });
-    })
+    }),
 });
 
 export type AppRouter = typeof appRouter;

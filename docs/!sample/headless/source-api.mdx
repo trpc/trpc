@@ -18,8 +18,8 @@ It doesn't rely on the real file system (zero `node:fs` usage), a virtual storag
 You can use it with built-in content sources like Fumadocs MDX.
 
 ```ts
-import { loader } from 'fumadocs-core/source';
 import { docs } from '@/.source';
+import { loader } from 'fumadocs-core/source';
 
 export const source = loader({
   source: docs.toFumadocsSource(),
@@ -188,8 +188,8 @@ The page tree is generated from your file system, some unnecessary information (
 You can customise it using the `pageTree` option, such as attaching custom properties to nodes, or customising the display name of pages.
 
 ```tsx
-import React from 'react';
 import { loader } from 'fumadocs-core/source';
+import React from 'react';
 
 loader({
   pageTree: {

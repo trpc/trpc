@@ -41,7 +41,7 @@ Define a router with procedures to expose as API endpoints:
 
 ```typescript title="src/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   // Simple query
@@ -58,10 +58,12 @@ export const appRouter = router({
 
   // Mutation example
   createPost: publicProcedure
-    .input(z.object({
-      title: z.string(),
-      content: z.string(),
-    }))
+    .input(
+      z.object({
+        title: z.string(),
+        content: z.string(),
+      }),
+    )
     .mutation(({ input }) => {
       // Database logic here
       return { id: '1', ...input };
@@ -78,13 +80,13 @@ Organize your API into logical groups using nested routers:
 
 ```typescript title="src/routers/index.ts"
 import { router } from '../trpc';
-import { userRouter } from './user';
-import { postRouter } from './post';
 import { commentRouter } from './comment';
+import { postRouter } from './post';
+import { userRouter } from './user';
 
 export const appRouter = router({
-  user: userRouter,     // All user procedures under /user.*
-  post: postRouter,     // All post procedures under /post.*
+  user: userRouter, // All user procedures under /user.*
+  post: postRouter, // All post procedures under /post.*
   comment: commentRouter, // All comment procedures under /comment.*
 });
 
@@ -259,7 +261,7 @@ export type AppRouter = typeof appRouter;
 You can define routers inline using plain objects:
 
 ```typescript title="src/router.ts"
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   // Inline sub-router using plain object
@@ -299,7 +301,7 @@ export const appRouter = router({
 Include shared context like database connections:
 
 ```typescript title="src/router-with-context.ts"
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 // Assuming context includes database and user
 export const appRouter = router({
@@ -328,9 +330,9 @@ export const appRouter = router({
 Load routers conditionally based on environment or features:
 
 ```typescript title="src/conditional-router.ts"
-import { router } from './trpc';
-import { userRouter } from './routers/user';
 import { postRouter } from './routers/post';
+import { userRouter } from './routers/user';
+import { router } from './trpc';
 
 const baseRouter = router({
   user: userRouter,
@@ -349,12 +351,13 @@ const adminRouter = router({
   }),
 });
 
-export const appRouter = process.env.NODE_ENV === 'development'
-  ? router({
-      ...baseRouter._def.procedures,
-      ...adminRouter._def.procedures,
-    })
-  : baseRouter;
+export const appRouter =
+  process.env.NODE_ENV === 'development'
+    ? router({
+        ...baseRouter._def.procedures,
+        ...adminRouter._def.procedures,
+      })
+    : baseRouter;
 ```
 
 ### Router with Middleware
@@ -362,7 +365,7 @@ export const appRouter = process.env.NODE_ENV === 'development'
 Apply middleware to entire router branches:
 
 ```typescript title="src/middleware-router.ts"
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 // Protected procedure with auth middleware
 const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
@@ -517,7 +520,7 @@ describe('User Router', () => {
 
   it('should throw on invalid input', async () => {
     await expect(
-      caller.user.create({ name: '', email: 'invalid' })
+      caller.user.create({ name: '', email: 'invalid' }),
     ).rejects.toThrow();
   });
 });

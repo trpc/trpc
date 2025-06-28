@@ -14,9 +14,9 @@ remark-math rehype-katex katex
 Add the required remark/rehype plugins, the code might be vary depending on your content source.
 
 ```ts title="source.config.ts" tab="Fumadocs MDX"
+import { defineConfig } from 'fumadocs-mdx/config';
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
-import { defineConfig } from 'fumadocs-mdx/config';
 
 export default defineConfig({
   mdxOptions: {

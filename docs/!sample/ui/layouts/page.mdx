@@ -10,10 +10,10 @@ Footer, and Breadcrumb.
 
 ```tsx title="page.tsx"
 import {
-  DocsPage,
-  DocsDescription,
-  DocsTitle,
   DocsBody,
+  DocsDescription,
+  DocsPage,
+  DocsTitle,
 } from 'fumadocs-ui/page';
 
 <DocsPage>
@@ -45,7 +45,7 @@ import { DocsBody } from 'fumadocs-ui/page';
     href={`https://github.com/fuma-nama/fumadocs/blob/main/content/docs/${page.path}`}
     rel="noreferrer noopener"
     target="_blank"
-    className="w-fit border rounded-xl p-2 font-medium text-sm text-fd-secondary-foreground bg-fd-secondary transition-colors hover:text-fd-accent-foreground hover:bg-fd-accent"
+    className="text-fd-secondary-foreground bg-fd-secondary hover:text-fd-accent-foreground hover:bg-fd-accent w-fit rounded-xl border p-2 text-sm font-medium transition-colors"
   >
     Edit on GitHub
   </a>
@@ -126,8 +126,9 @@ default.
 You can enable [`lastModifiedTime`](/docs/mdx/last-modified).
 
 ```tsx
-import { DocsPage } from 'fumadocs-ui/page';
 import { source } from '@/lib/source';
+import { DocsPage } from 'fumadocs-ui/page';
+
 const page = source.getPage(['...']);
 
 <DocsPage lastUpdate={new Date(page.data.lastModified)} />;
@@ -141,8 +142,8 @@ For Github hosted documents, you can use
 the [`getGithubLastEdit`](/docs/headless/utils/git-last-edit) utility.
 
 ```tsx
-import { DocsPage } from 'fumadocs-ui/page';
 import { getGithubLastEdit } from 'fumadocs-core/server';
+import { DocsPage } from 'fumadocs-ui/page';
 
 const time = await getGithubLastEdit({
   owner: 'fuma-nama',
@@ -164,7 +165,7 @@ Footer is a navigation element that has two buttons to jump to the next and prev
 Customise the footer with the `footer` option.
 
 ```tsx
-import { DocsPage, DocsBody } from 'fumadocs-ui/page';
+import { DocsBody, DocsPage } from 'fumadocs-ui/page';
 
 <DocsPage footer={options}>
   <DocsBody>...</DocsBody>

@@ -276,7 +276,7 @@ Perfect for pagination and infinite scrolling:
 const postsQuery = useInfiniteQuery(
   trpc.posts.infiniteList.infiniteQueryOptions({
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-  })
+  }),
 );
 ```
 
@@ -291,7 +291,7 @@ const subscription = trpc.messages.onAdd.useSubscription(
     onData: (message) => {
       console.log('New message:', message);
     },
-  }
+  },
 );
 ```
 

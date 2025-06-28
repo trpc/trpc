@@ -28,8 +28,8 @@ Please note that you must have Tailwind CSS v4 configured.
 Create an OpenAPI instance on the server. Fumadocs OpenAPI renders the pages on server-side.
 
 ```ts title="lib/source.ts"
-import { createOpenAPI, attachFile } from 'fumadocs-openapi/server';
 import { loader } from 'fumadocs-core/source';
+import { attachFile, createOpenAPI } from 'fumadocs-openapi/server';
 
 export const source = loader({
   pageTree: {
@@ -45,9 +45,9 @@ export const openapi = createOpenAPI();
 Add `APIPage` to your MDX Components, so that you can use it in MDX files.
 
 ```tsx title="mdx-components.tsx"
-import defaultComponents from 'fumadocs-ui/mdx';
-import { APIPage } from 'fumadocs-openapi/ui';
 import { openapi } from '@/lib/source';
+import { APIPage } from 'fumadocs-openapi/ui';
+import defaultComponents from 'fumadocs-ui/mdx';
 import type { MDXComponents } from 'mdx/types';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {

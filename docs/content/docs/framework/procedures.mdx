@@ -12,11 +12,9 @@ A **procedure** is a function on your tRPC server that can be called from your c
 
 ```typescript
 // Server: Define a procedure
-const getUserById = t.procedure
-  .input(z.string())
-  .query(({ input }) => {
-    return db.user.findUnique({ where: { id: input } });
-  });
+const getUserById = t.procedure.input(z.string()).query(({ input }) => {
+  return db.user.findUnique({ where: { id: input } });
+});
 
 // Client: Call it with full type safety
 const user = await trpc.getUserById.query('user_123');
@@ -53,32 +51,29 @@ import { t } from '../trpc';
 
 export const postsRouter = t.router({
   // Get all posts
-  list: t.procedure
-    .query(async () => {
-      return await db.post.findMany({
-        orderBy: { createdAt: 'desc' },
-        include: { author: true }
-      });
-    }),
+  list: t.procedure.query(async () => {
+    return await db.post.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { author: true },
+    });
+  }),
 
   // Get post by ID
-  byId: t.procedure
-    .input(z.string())
-    .query(async ({ input }) => {
-      const post = await db.post.findUnique({
-        where: { id: input },
-        include: { author: true, comments: true }
+  byId: t.procedure.input(z.string()).query(async ({ input }) => {
+    const post = await db.post.findUnique({
+      where: { id: input },
+      include: { author: true, comments: true },
+    });
+
+    if (!post) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Post not found',
       });
+    }
 
-      if (!post) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Post not found'
-        });
-      }
-
-      return post;
-    }),
+    return post;
+  }),
 });
 ```
 
@@ -94,26 +89,24 @@ const searchSchema = z.object({
 });
 
 export const searchRouter = t.router({
-  search: t.procedure
-    .input(searchSchema)
-    .query(async ({ input }) => {
-      const { query, category, limit, offset, sortBy } = input;
+  search: t.procedure.input(searchSchema).query(async ({ input }) => {
+    const { query, category, limit, offset, sortBy } = input;
 
-      // Build dynamic search query
-      const results = await searchService.search({
-        query,
-        category,
-        limit,
-        offset,
-        sortBy,
-      });
+    // Build dynamic search query
+    const results = await searchService.search({
+      query,
+      category,
+      limit,
+      offset,
+      sortBy,
+    });
 
-      return {
-        results,
-        totalCount: results.length,
-        hasMore: results.length === limit,
-      };
-    }),
+    return {
+      results,
+      totalCount: results.length,
+      hasMore: results.length === limit,
+    };
+  }),
 });
 ```
 
@@ -131,7 +124,7 @@ export function PostsList() {
 
   // Query with input
   const featuredPostQuery = useQuery(
-    trpc.posts.byId.queryOptions('featured-post-id')
+    trpc.posts.byId.queryOptions('featured-post-id'),
   );
 
   // Complex search query
@@ -140,13 +133,13 @@ export function PostsList() {
       query: 'react hooks',
       category: 'posts',
       limit: 10,
-      sortBy: 'relevance'
-    })
+      sortBy: 'relevance',
+    }),
   );
 
   return (
     <div>
-      {postsQuery.data?.map(post => (
+      {postsQuery.data?.map((post) => (
         <article key={post.id}>
           <h2>{post.title}</h2>
           <p>By {post.author.name}</p>
@@ -167,18 +160,20 @@ Use `.mutation()` for operations that **modify** server state:
 export const postsRouter = t.router({
   // Create a new post
   create: t.procedure
-    .input(z.object({
-      title: z.string().min(1).max(200),
-      content: z.string().min(1),
-      tags: z.array(z.string()).max(10).default([]),
-      published: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1).max(200),
+        content: z.string().min(1),
+        tags: z.array(z.string()).max(10).default([]),
+        published: z.boolean().default(false),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       // Check if user is authenticated
       if (!ctx.user) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
-          message: 'You must be logged in to create a post'
+          message: 'You must be logged in to create a post',
         });
       }
 
@@ -187,7 +182,7 @@ export const postsRouter = t.router({
           ...input,
           authorId: ctx.user.id,
         },
-        include: { author: true }
+        include: { author: true },
       });
 
       // Optionally trigger side effects
@@ -198,40 +193,42 @@ export const postsRouter = t.router({
 
   // Update existing post
   update: t.procedure
-    .input(z.object({
-      id: z.string(),
-      title: z.string().min(1).max(200).optional(),
-      content: z.string().min(1).optional(),
-      tags: z.array(z.string()).max(10).optional(),
-      published: z.boolean().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        title: z.string().min(1).max(200).optional(),
+        content: z.string().min(1).optional(),
+        tags: z.array(z.string()).max(10).optional(),
+        published: z.boolean().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const { id, ...updateData } = input;
 
       // Check ownership
       const existingPost = await db.post.findUnique({
         where: { id },
-        select: { authorId: true }
+        select: { authorId: true },
       });
 
       if (!existingPost) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: 'Post not found'
+          message: 'Post not found',
         });
       }
 
       if (existingPost.authorId !== ctx.user?.id) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: 'You can only edit your own posts'
+          message: 'You can only edit your own posts',
         });
       }
 
       return await db.post.update({
         where: { id },
         data: updateData,
-        include: { author: true }
+        include: { author: true },
       });
     }),
 
@@ -241,20 +238,20 @@ export const postsRouter = t.router({
     .mutation(async ({ input: postId, ctx }) => {
       const post = await db.post.findUnique({
         where: { id: postId },
-        select: { authorId: true, title: true }
+        select: { authorId: true, title: true },
       });
 
       if (!post) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: 'Post not found'
+          message: 'Post not found',
         });
       }
 
       if (post.authorId !== ctx.user?.id) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: 'You can only delete your own posts'
+          message: 'You can only delete your own posts',
         });
       }
 
@@ -271,25 +268,31 @@ export const postsRouter = t.router({
 export const batchRouter = t.router({
   // Bulk create posts
   createMany: t.procedure
-    .input(z.array(z.object({
-      title: z.string().min(1),
-      content: z.string().min(1),
-      tags: z.array(z.string()).default([])
-    })).max(10)) // Limit batch size
+    .input(
+      z
+        .array(
+          z.object({
+            title: z.string().min(1),
+            content: z.string().min(1),
+            tags: z.array(z.string()).default([]),
+          }),
+        )
+        .max(10),
+    ) // Limit batch size
     .mutation(async ({ input, ctx }) => {
       if (!ctx.user) {
         throw new TRPCError({ code: 'UNAUTHORIZED' });
       }
 
       const posts = await db.$transaction(
-        input.map(post =>
+        input.map((post) =>
           db.post.create({
             data: {
               ...post,
-              authorId: ctx.user.id
-            }
-          })
-        )
+              authorId: ctx.user.id,
+            },
+          }),
+        ),
       );
 
       return posts;
@@ -297,33 +300,35 @@ export const batchRouter = t.router({
 
   // Bulk update
   updateMany: t.procedure
-    .input(z.object({
-      ids: z.array(z.string()).min(1).max(50),
-      data: z.object({
-        published: z.boolean().optional(),
-        tags: z.array(z.string()).optional(),
-      })
-    }))
+    .input(
+      z.object({
+        ids: z.array(z.string()).min(1).max(50),
+        data: z.object({
+          published: z.boolean().optional(),
+          tags: z.array(z.string()).optional(),
+        }),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       // Verify user owns all posts
       const posts = await db.post.findMany({
         where: {
           id: { in: input.ids },
-          authorId: ctx.user?.id
+          authorId: ctx.user?.id,
         },
-        select: { id: true }
+        select: { id: true },
       });
 
       if (posts.length !== input.ids.length) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: 'You can only update your own posts'
+          message: 'You can only update your own posts',
         });
       }
 
       await db.post.updateMany({
         where: { id: { in: input.ids } },
-        data: input.data
+        data: input.data,
       });
 
       return { updated: input.ids.length };
@@ -342,38 +347,39 @@ export function PostForm() {
   const queryClient = useQueryClient();
 
   // Create post mutation
-  const createPost = useMutation(trpc.posts.create.mutationOptions({
-    onSuccess: (newPost) => {
-      // Update the posts list cache
-      queryClient.invalidateQueries(trpc.posts.list.queryKey());
+  const createPost = useMutation(
+    trpc.posts.create.mutationOptions({
+      onSuccess: (newPost) => {
+        // Update the posts list cache
+        queryClient.invalidateQueries(trpc.posts.list.queryKey());
 
-      // Add new post to cache
-      queryClient.setQueryData(
-        trpc.posts.byId.queryKey(newPost.id),
-        newPost
-      );
+        // Add new post to cache
+        queryClient.setQueryData(trpc.posts.byId.queryKey(newPost.id), newPost);
 
-      // Show success message
-      toast.success(`Post "${newPost.title}" created!`);
-    },
-    onError: (error) => {
-      toast.error(error.message);
-    }
-  }));
+        // Show success message
+        toast.success(`Post "${newPost.title}" created!`);
+      },
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    }),
+  );
 
   // Update post mutation
-  const updatePost = useMutation(trpc.posts.update.mutationOptions({
-    onSuccess: (updatedPost) => {
-      // Update specific post in cache
-      queryClient.setQueryData(
-        trpc.posts.byId.queryKey(updatedPost.id),
-        updatedPost
-      );
+  const updatePost = useMutation(
+    trpc.posts.update.mutationOptions({
+      onSuccess: (updatedPost) => {
+        // Update specific post in cache
+        queryClient.setQueryData(
+          trpc.posts.byId.queryKey(updatedPost.id),
+          updatedPost,
+        );
 
-      // Optionally invalidate list to reorder
-      queryClient.invalidateQueries(trpc.posts.list.queryKey());
-    }
-  }));
+        // Optionally invalidate list to reorder
+        queryClient.invalidateQueries(trpc.posts.list.queryKey());
+      },
+    }),
+  );
 
   const handleSubmit = (data: PostFormData) => {
     if (editingPost) {
@@ -404,8 +410,8 @@ Use `.subscription()` for real-time data streams:
 ### Basic Subscription
 
 ```typescript title="server/routers/realtime.ts"
-import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
+import { observable } from '@trpc/server/observable';
 
 // Global event emitter for this example
 const ee = new EventEmitter();
@@ -466,34 +472,35 @@ export const realtimeRouter = t.router({
 ```typescript title="server/routers/notifications.ts"
 export const notificationsRouter = t.router({
   // User-specific notifications
-  onNotification: protectedProcedure
-    .subscription(({ ctx }) => {
-      return observable<Notification>((emit) => {
-        const userId = ctx.user.id;
+  onNotification: protectedProcedure.subscription(({ ctx }) => {
+    return observable<Notification>((emit) => {
+      const userId = ctx.user.id;
 
-        const onNotification = (notification: Notification) => {
-          if (notification.userId === userId) {
-            emit.next(notification);
-          }
-        };
+      const onNotification = (notification: Notification) => {
+        if (notification.userId === userId) {
+          emit.next(notification);
+        }
+      };
 
-        ee.on('notification:new', onNotification);
+      ee.on('notification:new', onNotification);
 
-        // Send existing unread notifications
-        db.notification.findMany({
+      // Send existing unread notifications
+      db.notification
+        .findMany({
           where: { userId, read: false },
-          orderBy: { createdAt: 'desc' }
-        }).then(notifications => {
-          notifications.forEach(notification => {
+          orderBy: { createdAt: 'desc' },
+        })
+        .then((notifications) => {
+          notifications.forEach((notification) => {
             emit.next(notification);
           });
         });
 
-        return () => {
-          ee.off('notification:new', onNotification);
-        };
-      });
-    }),
+      return () => {
+        ee.off('notification:new', onNotification);
+      };
+    });
+  }),
 });
 ```
 
@@ -511,18 +518,18 @@ export function LiveComments({ postId }: { postId: string }) {
     { postId },
     {
       onData: (comment) => {
-        setComments(prev => [comment, ...prev]);
+        setComments((prev) => [comment, ...prev]);
       },
       onError: (error) => {
         console.error('Subscription error:', error);
       },
-    }
+    },
   );
 
   return (
     <div>
       <h3>Live Comments</h3>
-      {comments.map(comment => (
+      {comments.map((comment) => (
         <div key={comment.id}>
           <strong>{comment.author.name}</strong>: {comment.content}
         </div>
@@ -542,24 +549,19 @@ tRPC works perfectly with Zod for input validation:
 import { z } from 'zod';
 
 export const createPostSchema = z.object({
-  title: z.string()
-    .min(1, 'Title is required')
-    .max(200, 'Title too long'),
-  content: z.string()
+  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
+  content: z
+    .string()
     .min(10, 'Content must be at least 10 characters')
     .max(50000, 'Content too long'),
-  tags: z.array(z.string())
-    .max(10, 'Too many tags')
-    .default([]),
+  tags: z.array(z.string()).max(10, 'Too many tags').default([]),
   published: z.boolean().default(false),
   scheduledFor: z.date().optional(),
 });
 
-export const updatePostSchema = createPostSchema
-  .partial()
-  .extend({
-    id: z.string(),
-  });
+export const updatePostSchema = createPostSchema.partial().extend({
+  id: z.string(),
+});
 
 export const postFiltersSchema = z.object({
   author: z.string().optional(),
@@ -577,33 +579,35 @@ export const postFiltersSchema = z.object({
 ```typescript title="server/routers/posts.ts"
 export const postsRouter = t.router({
   create: t.procedure
-    .input(createPostSchema.refine(
-      (data) => {
-        // Custom validation: if scheduled, must be in future
-        if (data.scheduledFor && data.scheduledFor <= new Date()) {
-          return false;
-        }
-        return true;
-      },
-      {
-        message: 'Scheduled date must be in the future',
-        path: ['scheduledFor']
-      }
-    ))
+    .input(
+      createPostSchema.refine(
+        (data) => {
+          // Custom validation: if scheduled, must be in future
+          if (data.scheduledFor && data.scheduledFor <= new Date()) {
+            return false;
+          }
+          return true;
+        },
+        {
+          message: 'Scheduled date must be in the future',
+          path: ['scheduledFor'],
+        },
+      ),
+    )
     .mutation(async ({ input, ctx }) => {
       // Additional validation in the procedure
       if (input.published && !ctx.user?.canPublish) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: 'You do not have permission to publish posts'
+          message: 'You do not have permission to publish posts',
         });
       }
 
       return await db.post.create({
         data: {
           ...input,
-          authorId: ctx.user.id
-        }
+          authorId: ctx.user.id,
+        },
       });
     }),
 });
@@ -615,46 +619,44 @@ export const postsRouter = t.router({
 
 ```typescript title="server/routers/users.ts"
 export const usersRouter = t.router({
-  profile: t.procedure
-    .input(z.string())
-    .query(async ({ input }) => {
-      const user = await db.user.findUnique({
-        where: { id: input },
-        include: {
-          posts: {
-            select: { id: true, title: true, createdAt: true },
-            orderBy: { createdAt: 'desc' },
-            take: 5
-          },
-          _count: {
-            select: {
-              posts: true,
-              followers: true,
-              following: true
-            }
-          }
-        }
-      });
-
-      if (!user) {
-        throw new TRPCError({ code: 'NOT_FOUND' });
-      }
-
-      // Transform output
-      return {
-        id: user.id,
-        name: user.name,
-        bio: user.bio,
-        avatar: user.avatar,
-        joinedAt: user.createdAt,
-        stats: {
-          posts: user._count.posts,
-          followers: user._count.followers,
-          following: user._count.following
+  profile: t.procedure.input(z.string()).query(async ({ input }) => {
+    const user = await db.user.findUnique({
+      where: { id: input },
+      include: {
+        posts: {
+          select: { id: true, title: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
         },
-        recentPosts: user.posts
-      };
-    }),
+        _count: {
+          select: {
+            posts: true,
+            followers: true,
+            following: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new TRPCError({ code: 'NOT_FOUND' });
+    }
+
+    // Transform output
+    return {
+      id: user.id,
+      name: user.name,
+      bio: user.bio,
+      avatar: user.avatar,
+      joinedAt: user.createdAt,
+      stats: {
+        posts: user._count.posts,
+        followers: user._count.followers,
+        following: user._count.following,
+      },
+      recentPosts: user.posts,
+    };
+  }),
 });
 ```
 
@@ -663,11 +665,13 @@ export const usersRouter = t.router({
 ```typescript title="server/routers/posts.ts"
 export const postsRouter = t.router({
   byId: t.procedure
-    .input(z.object({
-      id: z.string(),
-      includeComments: z.boolean().default(false),
-      includeAnalytics: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        includeComments: z.boolean().default(false),
+        includeAnalytics: z.boolean().default(false),
+      }),
+    )
     .query(async ({ input, ctx }) => {
       const { id, includeComments, includeAnalytics } = input;
 
@@ -675,13 +679,15 @@ export const postsRouter = t.router({
         where: { id },
         include: {
           author: true,
-          comments: includeComments ? {
-            include: { author: true },
-            orderBy: { createdAt: 'desc' }
-          } : false,
+          comments: includeComments
+            ? {
+                include: { author: true },
+                orderBy: { createdAt: 'desc' },
+              }
+            : false,
           // Only include analytics for post author
-          analytics: includeAnalytics && ctx.user?.id === post?.authorId
-        }
+          analytics: includeAnalytics && ctx.user?.id === post?.authorId,
+        },
       });
 
       if (!post) {
@@ -705,7 +711,7 @@ export class ValidationError extends TRPCError {
     super({
       code: 'BAD_REQUEST',
       message,
-      cause: { field }
+      cause: { field },
     });
   }
 }
@@ -715,7 +721,7 @@ export class NotFoundError extends TRPCError {
     super({
       code: 'NOT_FOUND',
       message: `${resource} not found`,
-      cause: { resource, id }
+      cause: { resource, id },
     });
   }
 }
@@ -725,7 +731,7 @@ export class ForbiddenError extends TRPCError {
     super({
       code: 'FORBIDDEN',
       message: `You are not allowed to ${action}`,
-      cause: { action }
+      cause: { action },
     });
   }
 }
@@ -744,7 +750,7 @@ export const postsRouter = t.router({
         // Check if post exists
         const existingPost = await db.post.findUnique({
           where: { id },
-          select: { authorId: true, published: true }
+          select: { authorId: true, published: true },
         });
 
         if (!existingPost) {
@@ -760,16 +766,15 @@ export const postsRouter = t.router({
         if (existingPost.published && updateData.published === false) {
           throw new ValidationError(
             'Cannot unpublish a published post',
-            'published'
+            'published',
           );
         }
 
         return await db.post.update({
           where: { id },
           data: updateData,
-          include: { author: true }
+          include: { author: true },
         });
-
       } catch (error) {
         // Log error for debugging
         console.error('Post update failed:', error);
@@ -783,7 +788,7 @@ export const postsRouter = t.router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'An unexpected error occurred',
-          cause: error
+          cause: error,
         });
       }
     }),
@@ -802,14 +807,16 @@ export const postsRouter = t.router({
 
 ```typescript
 // Good: Comprehensive validation
-const schema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string()
-}).refine(data => data.password === data.confirmPassword, {
-  message: 'Passwords must match',
-  path: ['confirmPassword']
-});
+const schema = z
+  .object({
+    email: z.string().email('Invalid email format'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords must match',
+    path: ['confirmPassword'],
+  });
 ```
 
 </Accordion>
@@ -826,14 +833,14 @@ const schema = z.object({
 if (!user) {
   throw new TRPCError({
     code: 'NOT_FOUND',
-    message: 'User not found'
+    message: 'User not found',
   });
 }
 
 if (user.id !== ctx.user?.id) {
   throw new TRPCError({
     code: 'FORBIDDEN',
-    message: 'You can only edit your own profile'
+    message: 'You can only edit your own profile',
   });
 }
 ```
@@ -855,9 +862,9 @@ const posts = await db.post.findMany({
   orderBy: { createdAt: 'desc' },
   include: {
     author: {
-      select: { id: true, name: true, avatar: true }
-    }
-  }
+      select: { id: true, name: true, avatar: true },
+    },
+  },
 });
 ```
 

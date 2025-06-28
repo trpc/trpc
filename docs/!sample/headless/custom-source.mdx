@@ -63,9 +63,9 @@ In the main body of page, find the corresponding page according to the slug and 
 You also need table of contents, which can be generated with your own implementation, or using the [`getTableOfContents`](/docs/headless/utils/get-toc) utility (Markdown/MDX only).
 
 ```tsx
-import { DocsPage, DocsBody } from 'fumadocs-ui/page';
-import { getPage } from './my-content-source';
+import { DocsBody, DocsPage } from 'fumadocs-ui/page';
 import { notFound } from 'next/navigation';
+import { getPage } from './my-content-source';
 
 export default function Page({ params }: { params: { slug?: string[] } }) {
   const page = getPage(params.slug);
@@ -111,10 +111,10 @@ Since it doesn't use a bundler, there's some limitations:
 It's compatible with Server Components. For example:
 
 ```tsx
-import { compileMDX } from '@fumadocs/mdx-remote';
-import { getPage } from './my-content-source';
-import { DocsBody, DocsPage } from 'fumadocs-ui/page';
 import { getMDXComponents } from '@/mdx-components';
+import { compileMDX } from '@fumadocs/mdx-remote';
+import { DocsBody, DocsPage } from 'fumadocs-ui/page';
+import { getPage } from './my-content-source';
 
 export default async function Page({
   params,

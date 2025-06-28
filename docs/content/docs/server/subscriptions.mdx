@@ -58,9 +58,9 @@ See our [WebSocket guide](./websockets) and [WebSocket example](https://github.c
 Create a simple subscription that yields data over time:
 
 ```ts title="server/routers/posts.ts"
+import { EventEmitter } from 'events';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { EventEmitter } from 'events';
 
 const t = initTRPC.create();
 const ee = new EventEmitter();
@@ -82,10 +82,12 @@ export const postsRouter = t.router({
   }),
 
   create: t.procedure
-    .input(z.object({
-      title: z.string(),
-      content: z.string(),
-    }))
+    .input(
+      z.object({
+        title: z.string(),
+        content: z.string(),
+      }),
+    )
     .mutation(async ({ input }) => {
       const post = await createPost(input);
       // Emit the new post to all subscribers
@@ -118,7 +120,7 @@ export function PostList() {
   return (
     <div>
       {posts.map((post) => (
-        <div key={post.id} className="border rounded p-4 mb-2">
+        <div key={post.id} className="mb-2 rounded border p-4">
           <h3>{post.title}</h3>
           <p>{post.content}</p>
         </div>
@@ -140,9 +142,13 @@ import { z } from 'zod';
 
 export const chatRouter = t.router({
   onMessage: t.procedure
-    .input(z.object({
-      lastEventId: z.string().nullish(),
-    }).optional())
+    .input(
+      z
+        .object({
+          lastEventId: z.string().nullish(),
+        })
+        .optional(),
+    )
     .subscription(async function* (opts) {
       if (opts.input?.lastEventId) {
         // Send missed messages since last event ID
@@ -162,10 +168,12 @@ export const chatRouter = t.router({
     }),
 
   sendMessage: t.procedure
-    .input(z.object({
-      content: z.string(),
-      channelId: z.string(),
-    }))
+    .input(
+      z.object({
+        content: z.string(),
+        channelId: z.string(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const message = await createMessage({
         ...input,
@@ -193,7 +201,7 @@ export function ChatRoom({ channelId }: { channelId: string }) {
       onError: (err) => {
         console.error('Chat subscription error:', err);
       },
-    }
+    },
   );
 
   return (
@@ -220,17 +228,21 @@ Periodically check for new data instead of using events:
 ```ts title="server/routers/notifications.ts"
 export const notificationsRouter = t.router({
   onNotification: t.procedure
-    .input(z.object({
-      lastEventId: z.coerce.date().nullish(),
-    }))
+    .input(
+      z.object({
+        lastEventId: z.coerce.date().nullish(),
+      }),
+    )
     .subscription(async function* (opts) {
       let lastEventId = opts.input?.lastEventId ?? null;
 
       while (!opts.signal!.aborted) {
         const notifications = await db.notification.findMany({
-          where: lastEventId ? {
-            createdAt: { gt: lastEventId },
-          } : undefined,
+          where: lastEventId
+            ? {
+                createdAt: { gt: lastEventId },
+              }
+            : undefined,
           orderBy: { createdAt: 'asc' },
           take: 10,
         });
@@ -254,10 +266,12 @@ Create subscriptions that accept input parameters:
 ```ts title="server/routers/live.ts"
 export const liveRouter = t.router({
   onChannelMessage: t.procedure
-    .input(z.object({
-      channelId: z.string(),
-      lastEventId: z.string().nullish(),
-    }))
+    .input(
+      z.object({
+        channelId: z.string(),
+        lastEventId: z.string().nullish(),
+      }),
+    )
     .subscription(async function* (opts) {
       const { channelId, lastEventId } = opts.input;
 
@@ -268,7 +282,10 @@ export const liveRouter = t.router({
       }
 
       if (lastEventId) {
-        const missedMessages = await getChannelMessagesSince(channelId, lastEventId);
+        const missedMessages = await getChannelMessagesSince(
+          channelId,
+          lastEventId,
+        );
         for (const message of missedMessages) {
           yield tracked(message.id, message);
         }
@@ -345,10 +362,10 @@ export const resilientRouter = t.router({
           // Log error but continue subscription
           console.error('Error processing data:', error);
           // Optionally yield error information
-          yield tracked(
-            `error-${Date.now()}`,
-            { error: 'Processing failed', timestamp: Date.now() }
-          );
+          yield tracked(`error-${Date.now()}`, {
+            error: 'Processing failed',
+            timestamp: Date.now(),
+          });
         }
       }
     } finally {
@@ -371,7 +388,7 @@ export function useResilientSubscription<T>(
     onData?: (data: T) => void;
     onError?: (error: Error) => void;
     maxRetries?: number;
-  }
+  },
 ) {
   const [retryCount, setRetryCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
@@ -388,9 +405,12 @@ export function useResilientSubscription<T>(
       console.error('Subscription error:', error);
 
       if (retryCount < maxRetries) {
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-        }, Math.pow(2, retryCount) * 1000); // Exponential backoff
+        setTimeout(
+          () => {
+            setRetryCount((prev) => prev + 1);
+          },
+          Math.pow(2, retryCount) * 1000,
+        ); // Exponential backoff
       }
 
       options?.onError?.(error);
@@ -413,7 +433,7 @@ import { z } from 'zod';
 
 // Helper for validating async iterables
 export function validateAsyncIterable<TInput, TOutput>(
-  schema: z.ZodType<TInput, any, TOutput>
+  schema: z.ZodType<TInput, any, TOutput>,
 ) {
   return function* (iterable: AsyncIterable<TOutput>) {
     for await (const item of iterable) {
@@ -431,12 +451,14 @@ export function validateAsyncIterable<TInput, TOutput>(
 // Usage in procedures
 export const validatedRouter = t.router({
   onMessage: t.procedure
-    .output(z.object({
-      id: z.string(),
-      content: z.string(),
-      userId: z.string(),
-      createdAt: z.date(),
-    }))
+    .output(
+      z.object({
+        id: z.string(),
+        content: z.string(),
+        userId: z.string(),
+        createdAt: z.date(),
+      }),
+    )
     .subscription(async function* (opts) {
       const messageStream = getMessageStream();
       yield* validateAsyncIterable(messageSchema)(messageStream);
@@ -454,7 +476,7 @@ Batch multiple events to reduce client updates:
 export async function* batchEvents<T>(
   eventStream: AsyncIterable<T>,
   batchSize: number = 10,
-  maxWaitMs: number = 100
+  maxWaitMs: number = 100,
 ) {
   let batch: T[] = [];
   let lastFlush = Date.now();
@@ -463,8 +485,7 @@ export async function* batchEvents<T>(
     batch.push(event);
 
     const shouldFlush =
-      batch.length >= batchSize ||
-      Date.now() - lastFlush >= maxWaitMs;
+      batch.length >= batchSize || Date.now() - lastFlush >= maxWaitMs;
 
     if (shouldFlush) {
       yield batch;
@@ -533,9 +554,12 @@ export const registerSubscription = (id: string, unsubscribe: () => void) => {
   subscriptionManager.subscriptions.set(id, unsubscribe);
 
   // Set cleanup timer
-  const timer = setTimeout(() => {
-    subscriptionManager.cleanup(id);
-  }, 60 * 60 * 1000); // 1 hour
+  const timer = setTimeout(
+    () => {
+      subscriptionManager.cleanup(id);
+    },
+    60 * 60 * 1000,
+  ); // 1 hour
 
   subscriptionManager.timers.set(id, timer);
 };
@@ -546,10 +570,12 @@ export const registerSubscription = (id: string, unsubscribe: () => void) => {
 ```typescript title="src/routers/managed-subscription.ts"
 export const managedSubscriptionRouter = t.router({
   onDataUpdates: t.procedure
-    .input(z.object({
-      subscriptionId: z.string(),
-      dataType: z.enum(['posts', 'comments', 'users']),
-    }))
+    .input(
+      z.object({
+        subscriptionId: z.string(),
+        dataType: z.enum(['posts', 'comments', 'users']),
+      }),
+    )
     .subscription(async function* ({ input, signal }) {
       const { subscriptionId, dataType } = input;
 
@@ -563,9 +589,12 @@ export const managedSubscriptionRouter = t.router({
         for await (const [data] of on(ee, dataType, { signal })) {
           // Reset cleanup timer on activity
           subscriptionManager.timers.delete(subscriptionId);
-          const timer = setTimeout(() => {
-            subscriptionManager.cleanup(subscriptionId);
-          }, 60 * 60 * 1000);
+          const timer = setTimeout(
+            () => {
+              subscriptionManager.cleanup(subscriptionId);
+            },
+            60 * 60 * 1000,
+          );
           subscriptionManager.timers.set(subscriptionId, timer);
 
           yield data;
@@ -600,7 +629,7 @@ export function ManagedSubscription() {
         fetch('/api/cleanup-subscription', {
           method: 'POST',
           body: JSON.stringify({
-            subscriptionId: subscriptionIdRef.current
+            subscriptionId: subscriptionIdRef.current,
           }),
         });
       }
@@ -619,7 +648,7 @@ export function ManagedSubscription() {
       onError: (error) => {
         console.error('Subscription error:', error);
       },
-    }
+    },
   );
 
   return <div>Managed subscription active</div>;
@@ -653,9 +682,9 @@ subscription(async function* (opts) {
     // ... subscription logic
   } finally {
     // Clean up resources
-    resources.forEach(cleanup => cleanup());
+    resources.forEach((cleanup) => cleanup());
   }
-})
+});
 ```
 
 ### Implement Proper Error Boundaries
@@ -690,7 +719,7 @@ subscription(async function* (opts) {
   } finally {
     activeSubscriptions.delete(subId);
   }
-})
+});
 ```
 
 </Steps>

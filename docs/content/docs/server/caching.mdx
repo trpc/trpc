@@ -165,8 +165,8 @@ export default trpcNext.createNextApiHandler({
 
     // Only cache specific routes
     const cachableRoutes = ['posts.list', 'users.public', 'content.static'];
-    const isCachable = paths?.some(path =>
-      cachableRoutes.some(route => path.includes(route))
+    const isCachable = paths?.some((path) =>
+      cachableRoutes.some((route) => path.includes(route)),
     );
 
     // Don't cache if there are errors or it's not a query
@@ -282,7 +282,7 @@ export const smartCacheMiddleware = t.middleware(async ({ next, input }) => {
   if (!result.ok) return result;
 
   // Find matching cache config
-  const config = conditionalCache.find(c => c.condition(result.data));
+  const config = conditionalCache.find((c) => c.condition(result.data));
 
   if (config) {
     const cacheKey = config.key(input);
@@ -299,10 +299,12 @@ export const smartCacheMiddleware = t.middleware(async ({ next, input }) => {
 export const smartCacheRouter = t.router({
   getContent: t.procedure
     .use(smartCacheMiddleware)
-    .input(z.object({
-      contentId: z.string(),
-      type: z.enum(['static', 'user', 'realtime']),
-    }))
+    .input(
+      z.object({
+        contentId: z.string(),
+        type: z.enum(['static', 'user', 'realtime']),
+      }),
+    )
     .query(async ({ input }) => {
       // Data will be cached based on type
       return {
@@ -322,11 +324,7 @@ export const smartCacheRouter = t.router({
 Separate public and private requests using `splitLink`:
 
 ```ts title="lib/trpc.ts"
-import {
-  createTRPCClient,
-  httpBatchLink,
-  splitLink
-} from '@trpc/client';
+import { createTRPCClient, httpBatchLink, splitLink } from '@trpc/client';
 
 export const trpc = createTRPCClient<AppRouter>({
   links: [
@@ -361,7 +359,7 @@ export default trpcNext.createNextApiHandler({
       return {};
     }
 
-    const tags = paths?.map(path => {
+    const tags = paths?.map((path) => {
       // Generate cache tags based on route
       if (path.includes('posts')) return 'posts';
       if (path.includes('users')) return 'users';
@@ -412,8 +410,8 @@ export default trpcNext.createNextApiHandler({
     const { ctx, req } = opts;
 
     // Never cache if there's an auth header or cookie
-    const hasAuth = req?.headers.authorization ||
-                   req?.headers.cookie?.includes('auth');
+    const hasAuth =
+      req?.headers.authorization || req?.headers.cookie?.includes('auth');
 
     if (hasAuth || ctx?.user) {
       return {
@@ -470,16 +468,16 @@ export default trpcNext.createNextApiHandler({
 
 ```ts
 // Short-term caching for dynamic content
-'public, max-age=60, s-maxage=60'
+'public, max-age=60, s-maxage=60';
 
 // Long-term caching with background refresh
-'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400'
+'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400';
 
 // No caching for sensitive data
-'private, no-cache, no-store, must-revalidate'
+'private, no-cache, no-store, must-revalidate';
 
 // CDN-only caching (browser always revalidates)
-'public, max-age=0, s-maxage=3600'
+'public, max-age=0, s-maxage=3600';
 ```
 
 ## Framework-Specific Examples
@@ -499,9 +497,7 @@ const handler = (req: Request) =>
     responseMeta(opts) {
       // Next.js App Router caching
       return {
-        headers: new Headers([
-          ['cache-control', 'public, max-age=3600'],
-        ]),
+        headers: new Headers([['cache-control', 'public, max-age=3600']]),
       };
     },
   });
@@ -528,7 +524,7 @@ export default async function handler(req: Request) {
       const { paths, type } = opts;
 
       // Edge-optimized caching
-      if (type === 'query' && paths?.every(p => p.includes('public'))) {
+      if (type === 'query' && paths?.every((p) => p.includes('public'))) {
         return {
           headers: new Headers([
             ['cache-control', 'public, s-maxage=86400, max-age=3600'],
@@ -707,8 +703,8 @@ export default trpcNext.createNextApiHandler({
 
     // Only cache specific routes
     const cachableRoutes = ['posts.list', 'users.public', 'content.static'];
-    const isCachable = paths?.some(path =>
-      cachableRoutes.some(route => path.includes(route))
+    const isCachable = paths?.some((path) =>
+      cachableRoutes.some((route) => path.includes(route)),
     );
 
     // Don't cache if there are errors or it's not a query
@@ -824,7 +820,7 @@ export const smartCacheMiddleware = t.middleware(async ({ next, input }) => {
   if (!result.ok) return result;
 
   // Find matching cache config
-  const config = conditionalCache.find(c => c.condition(result.data));
+  const config = conditionalCache.find((c) => c.condition(result.data));
 
   if (config) {
     const cacheKey = config.key(input);
@@ -841,10 +837,12 @@ export const smartCacheMiddleware = t.middleware(async ({ next, input }) => {
 export const smartCacheRouter = t.router({
   getContent: t.procedure
     .use(smartCacheMiddleware)
-    .input(z.object({
-      contentId: z.string(),
-      type: z.enum(['static', 'user', 'realtime']),
-    }))
+    .input(
+      z.object({
+        contentId: z.string(),
+        type: z.enum(['static', 'user', 'realtime']),
+      }),
+    )
     .query(async ({ input }) => {
       // Data will be cached based on type
       return {
@@ -866,11 +864,7 @@ export const smartCacheRouter = t.router({
 Separate public and private requests using `splitLink`:
 
 ```ts title="lib/trpc.ts"
-import {
-  createTRPCClient,
-  httpBatchLink,
-  splitLink
-} from '@trpc/client';
+import { createTRPCClient, httpBatchLink, splitLink } from '@trpc/client';
 
 export const trpc = createTRPCClient<AppRouter>({
   links: [
@@ -905,7 +899,7 @@ export default trpcNext.createNextApiHandler({
       return {};
     }
 
-    const tags = paths?.map(path => {
+    const tags = paths?.map((path) => {
       // Generate cache tags based on route
       if (path.includes('posts')) return 'posts';
       if (path.includes('users')) return 'users';

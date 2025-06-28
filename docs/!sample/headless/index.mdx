@@ -32,8 +32,8 @@ fumadocs-core
 For some components, a framework provider is needed:
 
 ```tsx tab="Next.js"
-import type { ReactNode } from 'react';
 import { NextProvider } from 'fumadocs-core/framework/next';
+import type { ReactNode } from 'react';
 
 export function RootLayout({ children }: { children: ReactNode }) {
   // or if you're using Fumadocs UI, use `<RootProvider />`
@@ -42,8 +42,8 @@ export function RootLayout({ children }: { children: ReactNode }) {
 ```
 
 ```tsx tab="React Router"
-import type { ReactNode } from 'react';
 import { ReactRouterProvider } from 'fumadocs-core/framework/react-router';
+import type { ReactNode } from 'react';
 
 export function Root({ children }: { children: ReactNode }) {
   return <ReactRouterProvider>{children}</ReactRouterProvider>;
@@ -51,8 +51,8 @@ export function Root({ children }: { children: ReactNode }) {
 ```
 
 ```tsx tab="Tanstack Start/Router"
-import type { ReactNode } from 'react';
 import { TanstackProvider } from 'fumadocs-core/framework/tanstack';
+import type { ReactNode } from 'react';
 
 export function Root({ children }: { children: ReactNode }) {
   return <TanstackProvider>{children}</TanstackProvider>;

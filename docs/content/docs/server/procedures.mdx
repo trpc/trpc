@@ -46,31 +46,31 @@ export const appRouter = t.router({
   }),
 
   // Query with input validation
-  getUser: t.procedure
-    .input(z.string())
-    .query(async ({ input }) => {
-      // input is automatically typed as string
-      const user = await db.user.findUnique({
-        where: { id: input },
+  getUser: t.procedure.input(z.string()).query(async ({ input }) => {
+    // input is automatically typed as string
+    const user = await db.user.findUnique({
+      where: { id: input },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'User not found',
       });
+    }
 
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found',
-        });
-      }
-
-      return user;
-    }),
+    return user;
+  }),
 
   // Query with complex input
   getUserPosts: t.procedure
-    .input(z.object({
-      userId: z.string(),
-      limit: z.number().min(1).max(100).default(10),
-      cursor: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        userId: z.string(),
+        limit: z.number().min(1).max(100).default(10),
+        cursor: z.string().optional(),
+      }),
+    )
     .query(async ({ input }) => {
       const posts = await db.post.findMany({
         where: { authorId: input.userId },
@@ -98,11 +98,13 @@ Use mutations for operations that change server state:
 export const mutationRouter = t.router({
   // Simple mutation
   createPost: t.procedure
-    .input(z.object({
-      title: z.string().min(1),
-      content: z.string(),
-      authorId: z.string(),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        content: z.string(),
+        authorId: z.string(),
+      }),
+    )
     .mutation(async ({ input }) => {
       const post = await db.post.create({
         data: input,
@@ -114,12 +116,14 @@ export const mutationRouter = t.router({
 
   // Mutation with conditional logic
   updatePost: t.procedure
-    .input(z.object({
-      id: z.string(),
-      title: z.string().optional(),
-      content: z.string().optional(),
-      published: z.boolean().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        title: z.string().optional(),
+        content: z.string().optional(),
+        published: z.boolean().optional(),
+      }),
+    )
     .mutation(async ({ input }) => {
       const { id, ...updates } = input;
 
@@ -127,7 +131,7 @@ export const mutationRouter = t.router({
       const post = await db.post.update({
         where: { id },
         data: Object.fromEntries(
-          Object.entries(updates).filter(([, value]) => value !== undefined)
+          Object.entries(updates).filter(([, value]) => value !== undefined),
         ),
       });
 
@@ -135,25 +139,23 @@ export const mutationRouter = t.router({
     }),
 
   // Mutation with side effects
-  deletePost: t.procedure
-    .input(z.string())
-    .mutation(async ({ input }) => {
-      // Delete associated data first
-      await db.comment.deleteMany({
-        where: { postId: input },
-      });
+  deletePost: t.procedure.input(z.string()).mutation(async ({ input }) => {
+    // Delete associated data first
+    await db.comment.deleteMany({
+      where: { postId: input },
+    });
 
-      // Delete the post
-      const deletedPost = await db.post.delete({
-        where: { id: input },
-      });
+    // Delete the post
+    const deletedPost = await db.post.delete({
+      where: { id: input },
+    });
 
-      // Trigger side effects (notifications, cache invalidation, etc.)
-      await notificationService.notifyPostDeleted(deletedPost);
-      await cacheService.invalidatePost(input);
+    // Trigger side effects (notifications, cache invalidation, etc.)
+    await notificationService.notifyPostDeleted(deletedPost);
+    await cacheService.invalidatePost(input);
 
-      return { success: true, deletedId: input };
-    }),
+    return { success: true, deletedId: input };
+  }),
 });
 ```
 
@@ -162,8 +164,8 @@ export const mutationRouter = t.router({
 Use subscriptions for real-time data streams:
 
 ```typescript title="server/subscriptions.ts"
-import { observable } from '@trpc/server/observable';
 import EventEmitter from 'events';
+import { observable } from '@trpc/server/observable';
 
 const eventEmitter = new EventEmitter();
 
@@ -228,16 +230,20 @@ Always validate inputs to ensure type safety and security:
 ```typescript title="server/validation.ts"
 export const validatedRouter = t.router({
   createUser: t.procedure
-    .input(z.object({
-      email: z.string().email('Invalid email format'),
-      name: z.string().min(2, 'Name must be at least 2 characters'),
-      age: z.number().int().min(13, 'Must be at least 13 years old'),
-      role: z.enum(['user', 'admin']).default('user'),
-      preferences: z.object({
-        theme: z.enum(['light', 'dark']).default('light'),
-        notifications: z.boolean().default(true),
-      }).optional(),
-    }))
+    .input(
+      z.object({
+        email: z.string().email('Invalid email format'),
+        name: z.string().min(2, 'Name must be at least 2 characters'),
+        age: z.number().int().min(13, 'Must be at least 13 years old'),
+        role: z.enum(['user', 'admin']).default('user'),
+        preferences: z
+          .object({
+            theme: z.enum(['light', 'dark']).default('light'),
+            notifications: z.boolean().default(true),
+          })
+          .optional(),
+      }),
+    )
     .mutation(async ({ input }) => {
       // input is fully typed and validated
       return await db.user.create({ data: input });
@@ -245,18 +251,22 @@ export const validatedRouter = t.router({
 
   // Complex validation with custom logic
   updateUserProfile: t.procedure
-    .input(z.object({
-      userId: z.string(),
-      updates: z.object({
-        bio: z.string().max(500).optional(),
-        website: z.string().url().optional(),
-        location: z.string().max(100).optional(),
+    .input(
+      z.object({
+        userId: z.string(),
+        updates: z.object({
+          bio: z.string().max(500).optional(),
+          website: z.string().url().optional(),
+          location: z.string().max(100).optional(),
+        }),
       }),
-    }))
+    )
     .mutation(async ({ input }) => {
       // Custom validation logic
-      if (input.updates.website &&
-          !input.updates.website.startsWith('https://')) {
+      if (
+        input.updates.website &&
+        !input.updates.website.startsWith('https://')
+      ) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Website must use HTTPS',
@@ -298,11 +308,9 @@ export const outputValidatedRouter = t.router({
     }),
 
   // Array output validation
-  getUserList: t.procedure
-    .output(z.array(UserSchema))
-    .query(async () => {
-      return await db.user.findMany();
-    }),
+  getUserList: t.procedure.output(z.array(UserSchema)).query(async () => {
+    return await db.user.findMany();
+  }),
 });
 ```
 
@@ -347,19 +355,21 @@ export const adminProcedure = authedProcedure.use(async ({ ctx, next }) => {
 });
 
 // Rate limited procedure
-export const rateLimitedProcedure = publicProcedure.use(async ({ ctx, next }) => {
-  const clientId = ctx.req.ip || 'unknown';
-  const isAllowed = await rateLimiter.check(clientId);
+export const rateLimitedProcedure = publicProcedure.use(
+  async ({ ctx, next }) => {
+    const clientId = ctx.req.ip || 'unknown';
+    const isAllowed = await rateLimiter.check(clientId);
 
-  if (!isAllowed) {
-    throw new TRPCError({
-      code: 'TOO_MANY_REQUESTS',
-      message: 'Rate limit exceeded',
-    });
-  }
+    if (!isAllowed) {
+      throw new TRPCError({
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Rate limit exceeded',
+      });
+    }
 
-  return next();
-});
+    return next();
+  },
+);
 
 // Organization-specific procedure
 export const organizationProcedure = authedProcedure
@@ -404,20 +414,21 @@ export const userRouter = t.router({
     }),
 
   // Authenticated endpoint
-  getProfile: authedProcedure
-    .query(async ({ ctx }) => {
-      return await db.user.findUnique({
-        where: { id: ctx.user.id },
-        include: { preferences: true },
-      });
-    }),
+  getProfile: authedProcedure.query(async ({ ctx }) => {
+    return await db.user.findUnique({
+      where: { id: ctx.user.id },
+      include: { preferences: true },
+    });
+  }),
 
   // Admin endpoint
   getAllUsers: adminProcedure
-    .input(z.object({
-      page: z.number().default(1),
-      limit: z.number().min(1).max(100).default(20),
-    }))
+    .input(
+      z.object({
+        page: z.number().default(1),
+        limit: z.number().min(1).max(100).default(20),
+      }),
+    )
     .query(async ({ input }) => {
       const skip = (input.page - 1) * input.limit;
 
@@ -442,13 +453,12 @@ export const userRouter = t.router({
     }),
 
   // Organization-specific endpoint
-  getOrganizationMembers: organizationProcedure
-    .query(async ({ ctx }) => {
-      return await db.membership.findMany({
-        where: { organizationId: ctx.organization.id },
-        include: { user: true },
-      });
-    }),
+  getOrganizationMembers: organizationProcedure.query(async ({ ctx }) => {
+    return await db.membership.findMany({
+      where: { organizationId: ctx.organization.id },
+      include: { user: true },
+    });
+  }),
 });
 ```
 
@@ -472,9 +482,10 @@ const withPostAccess = t.procedure
     }
 
     // Check access permissions
-    const hasAccess = post.published ||
-                     post.authorId === ctx.user?.id ||
-                     ctx.user?.role === 'admin';
+    const hasAccess =
+      post.published ||
+      post.authorId === ctx.user?.id ||
+      ctx.user?.role === 'admin';
 
     if (!hasAccess) {
       throw new TRPCError({ code: 'FORBIDDEN' });
@@ -492,13 +503,15 @@ export const postRouter = t.router({
   }),
 
   updatePost: withPostAccess
-    .input(z.object({
-      postId: z.string(),
-      updates: z.object({
-        title: z.string().optional(),
-        content: z.string().optional(),
+    .input(
+      z.object({
+        postId: z.string(),
+        updates: z.object({
+          title: z.string().optional(),
+          content: z.string().optional(),
+        }),
       }),
-    }))
+    )
     .mutation(async ({ input, ctx }) => {
       // Only allow author or admin to update
       if (ctx.post.authorId !== ctx.user?.id && ctx.user?.role !== 'admin') {
@@ -520,15 +533,19 @@ Handle multiple operations efficiently:
 ```typescript title="server/batch.ts"
 export const batchRouter = t.router({
   createMultiplePosts: t.procedure
-    .input(z.array(z.object({
-      title: z.string(),
-      content: z.string(),
-      authorId: z.string(),
-    })))
+    .input(
+      z.array(
+        z.object({
+          title: z.string(),
+          content: z.string(),
+          authorId: z.string(),
+        }),
+      ),
+    )
     .mutation(async ({ input }) => {
       // Use database transaction for atomicity
       return await db.$transaction(
-        input.map((post) => db.post.create({ data: post }))
+        input.map((post) => db.post.create({ data: post })),
       );
     }),
 
@@ -540,7 +557,7 @@ export const batchRouter = t.router({
       });
 
       // Return in same order as requested
-      return input.map(id => users.find(user => user.id === id) || null);
+      return input.map((id) => users.find((user) => user.id === id) || null);
     }),
 });
 ```
@@ -594,38 +611,36 @@ Implement comprehensive error handling:
 
 ```typescript title="server/errors.ts"
 export const errorHandlingRouter = t.router({
-  riskyOperation: t.procedure
-    .input(z.string())
-    .mutation(async ({ input }) => {
-      try {
-        const result = await externalAPI.processData(input);
-        return result;
-      } catch (error) {
-        // Handle different error types
-        if (error instanceof ValidationError) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Invalid input data',
-            cause: error,
-          });
-        }
-
-        if (error instanceof NetworkError) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'External service unavailable',
-            cause: error,
-          });
-        }
-
-        // Unknown error
-        console.error('Unexpected error:', error);
+  riskyOperation: t.procedure.input(z.string()).mutation(async ({ input }) => {
+    try {
+      const result = await externalAPI.processData(input);
+      return result;
+    } catch (error) {
+      // Handle different error types
+      if (error instanceof ValidationError) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'An unexpected error occurred',
+          code: 'BAD_REQUEST',
+          message: 'Invalid input data',
+          cause: error,
         });
       }
-    }),
+
+      if (error instanceof NetworkError) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'External service unavailable',
+          cause: error,
+        });
+      }
+
+      // Unknown error
+      console.error('Unexpected error:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'An unexpected error occurred',
+      });
+    }
+  }),
 });
 ```
 
@@ -664,9 +679,9 @@ describe('User Procedures', () => {
   it('should throw error for unauthorized access', async () => {
     const unauthorizedCaller = createCaller({});
 
-    await expect(
-      unauthorizedCaller.user.getProfile()
-    ).rejects.toThrow('UNAUTHORIZED');
+    await expect(unauthorizedCaller.user.getProfile()).rejects.toThrow(
+      'UNAUTHORIZED',
+    );
   });
 });
 ```

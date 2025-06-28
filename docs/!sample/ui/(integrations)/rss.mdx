@@ -8,8 +8,8 @@ description: Generate a RSS feed for your docs/blog.
 You can implement the feed using a route handler like:
 
 ```ts title="app/rss.xml/route.ts"
-import { Feed } from 'feed';
 import { source } from '@/lib/source';
+import { Feed } from 'feed';
 import { NextResponse } from 'next/server';
 
 export const revalidate = false;

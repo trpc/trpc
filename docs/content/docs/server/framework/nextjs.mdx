@@ -57,7 +57,7 @@ export const publicProcedure = t.procedure;
 
 ```typescript title="src/server/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   hello: publicProcedure
@@ -69,10 +69,12 @@ export const appRouter = router({
     }),
 
   createPost: publicProcedure
-    .input(z.object({
-      title: z.string().min(1),
-      content: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        content: z.string().min(1),
+      }),
+    )
     .mutation(({ input }) => {
       // Here you would save to your database
       return {

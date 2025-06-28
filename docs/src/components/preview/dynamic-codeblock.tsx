@@ -1,4 +1,5 @@
 'use client';
+
 import { DynamicCodeBlock } from 'fumadocs-ui/components/dynamic-codeblock';
 import { useState } from 'react';
 import { bundledLanguages } from 'shiki';
@@ -8,8 +9,8 @@ export default function Example() {
   const [code, setCode] = useState('console.log("This is pre-rendered")');
 
   return (
-    <div className="prose flex flex-col gap-4 rounded-lg bg-fd-background p-4">
-      <div className="not-prose flex flex-col rounded-lg bg-fd-secondary text-fd-secondary-foreground">
+    <div className="prose bg-fd-background flex flex-col gap-4 rounded-lg p-4">
+      <div className="not-prose bg-fd-secondary text-fd-secondary-foreground flex flex-col rounded-lg">
         <select
           value={lang}
           onChange={(e) => setLang(e.target.value)}

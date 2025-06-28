@@ -22,9 +22,9 @@ tRPC provides excellent testing capabilities through:
 Use `createCallerFactory` to test procedures in isolation:
 
 ```ts title="tests/posts.test.ts"
-import { describe, it, expect, beforeEach } from 'vitest';
-import { createCallerFactory } from '../server/trpc';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { postsRouter } from '../server/routers/posts';
+import { createCallerFactory } from '../server/trpc';
 
 const createCaller = createCallerFactory(postsRouter);
 
@@ -70,8 +70,8 @@ Use real database connections or in-memory databases for integration testing:
 <Tabs items={['Prisma', 'Drizzle', 'In-Memory']}>
 
 ```ts tab="Prisma" title="tests/setup.ts"
-import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient({
   datasources: {
@@ -104,8 +104,8 @@ export function createTestContext() {
 ```
 
 ```ts tab="Drizzle" title="tests/setup.ts"
-import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 
 const sqlite = new Database(':memory:');
@@ -163,8 +163,8 @@ export function createTestContext() {
 Test error scenarios and validation:
 
 ```ts title="tests/posts.test.ts"
-import { describe, it, expect } from 'vitest';
 import { TRPCError } from '@trpc/server';
+import { describe, expect, it } from 'vitest';
 
 describe('Posts Router - Error Cases', () => {
   it('should throw UNAUTHORIZED when user is not logged in', async () => {
@@ -174,7 +174,7 @@ describe('Posts Router - Error Cases', () => {
       caller.create({
         title: 'Test Post',
         content: 'Content',
-      })
+      }),
     ).rejects.toThrow(TRPCError);
   });
 
@@ -185,16 +185,16 @@ describe('Posts Router - Error Cases', () => {
       caller.create({
         title: '', // Empty title should fail
         content: 'Content',
-      })
+      }),
     ).rejects.toThrow('String must contain at least 1 character(s)');
   });
 
   it('should handle not found errors', async () => {
     const caller = createCaller(createTestContext());
 
-    await expect(
-      caller.byId({ id: 'non-existent-id' })
-    ).rejects.toThrow('Post not found');
+    await expect(caller.byId({ id: 'non-existent-id' })).rejects.toThrow(
+      'Post not found',
+    );
   });
 });
 ```
@@ -206,8 +206,8 @@ describe('Posts Router - Error Cases', () => {
 Test middleware behavior in isolation:
 
 ```ts title="tests/middleware.test.ts"
-import { describe, it, expect } from 'vitest';
 import { TRPCError } from '@trpc/server';
+import { describe, expect, it } from 'vitest';
 import { authMiddleware } from '../server/middleware/auth';
 
 describe('Auth Middleware', () => {
@@ -234,7 +234,7 @@ describe('Auth Middleware', () => {
         next: mockNext,
         path: 'test',
         type: 'query',
-      })
+      }),
     ).rejects.toThrow(TRPCError);
 
     expect(mockNext).not.toHaveBeenCalled();
@@ -250,7 +250,7 @@ describe('Auth Middleware', () => {
         path: 'test',
         type: 'query',
         meta: { requiresAdmin: true },
-      })
+      }),
     ).rejects.toThrow(TRPCError);
   });
 });
@@ -261,7 +261,7 @@ describe('Auth Middleware', () => {
 Test rate limiting logic:
 
 ```ts title="tests/rateLimit.test.ts"
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { rateLimitMiddleware } from '../server/middleware/rateLimit';
 
 describe('Rate Limit Middleware', () => {
@@ -307,7 +307,7 @@ describe('Rate Limit Middleware', () => {
         path: 'test',
         type: 'query',
         meta: { rateLimit: 5 },
-      })
+      }),
     ).rejects.toThrow('TOO_MANY_REQUESTS');
   });
 });
@@ -320,10 +320,10 @@ describe('Rate Limit Middleware', () => {
 Test the complete HTTP flow:
 
 ```ts title="tests/integration.test.ts"
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { appRouter } from '../server/routers/_app';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createContext } from '../server/context';
+import { appRouter } from '../server/routers/_app';
 
 describe('tRPC Integration Tests', () => {
   let server: any;
@@ -349,15 +349,12 @@ describe('tRPC Integration Tests', () => {
   });
 
   it('should handle HTTP requests', async () => {
-    const response = await fetch(
-      `${serverUrl}/posts.list`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await fetch(`${serverUrl}/posts.list`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
     expect(response.ok).toBe(true);
     const data = await response.json();
@@ -365,20 +362,17 @@ describe('tRPC Integration Tests', () => {
   });
 
   it('should handle authentication', async () => {
-    const response = await fetch(
-      `${serverUrl}/posts.create`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer invalid-token',
-        },
-        body: JSON.stringify({
-          title: 'Test Post',
-          content: 'Content',
-        }),
-      }
-    );
+    const response = await fetch(`${serverUrl}/posts.create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer invalid-token',
+      },
+      body: JSON.stringify({
+        title: 'Test Post',
+        content: 'Content',
+      }),
+    });
 
     expect(response.status).toBe(401);
   });
@@ -593,8 +587,8 @@ export class TestFactory {
 **2. Setup Database Test Utilities**
 
 ```typescript title="tests/utils/db.ts"
-import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
+import { PrismaClient } from '@prisma/client';
 
 let prisma: PrismaClient;
 
@@ -608,7 +602,7 @@ export async function setupTestDatabase() {
   // Run migrations
   execSync('npx prisma migrate deploy', {
     env: { ...process.env, DATABASE_URL: databaseUrl },
-    stdio: 'ignore'
+    stdio: 'ignore',
   });
 
   prisma = new PrismaClient();
@@ -635,10 +629,10 @@ export { prisma };
 **3. Create Comprehensive Test Suite**
 
 ```typescript title="tests/integration/posts.test.ts"
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { setupTestDatabase, teardownTestDatabase } from '../utils/db';
-import { TestFactory } from '../factories';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createCaller } from '../../src/server/trpc';
+import { TestFactory } from '../factories';
+import { setupTestDatabase, teardownTestDatabase } from '../utils/db';
 
 describe('Posts Integration Tests', () => {
   let caller: ReturnType<typeof createCaller>;
@@ -681,7 +675,7 @@ describe('Posts Integration Tests', () => {
         caller.posts.create({
           title: '', // Invalid empty title
           content: 'Valid content',
-        })
+        }),
       ).rejects.toThrow('Title cannot be empty');
     });
   });
@@ -696,7 +690,7 @@ describe('Posts Integration Tests', () => {
 
       const posts = await userCaller.posts.list();
 
-      expect(posts.every(p => p.published)).toBe(true);
+      expect(posts.every((p) => p.published)).toBe(true);
       expect(posts).toHaveLength(2); // Only published posts
     });
 
@@ -732,7 +726,7 @@ describe('Posts Integration Tests', () => {
         otherUserCaller.posts.update({
           id: testData.posts[0].id, // Post by users[1]
           title: 'Hacked Title',
-        })
+        }),
       ).rejects.toThrow('Unauthorized');
     });
   });
@@ -772,13 +766,13 @@ describe('Error Handling', () => {
 
   it('should handle authorization errors', async () => {
     const unauthorizedCaller = createCaller({ user: null });
-    await expect(unauthorizedCaller.create(validInput))
-      .rejects.toThrow('UNAUTHORIZED');
+    await expect(unauthorizedCaller.create(validInput)).rejects.toThrow(
+      'UNAUTHORIZED',
+    );
   });
 
   it('should handle not found errors', async () => {
-    await expect(caller.byId({ id: 'invalid' }))
-      .rejects.toThrow('NOT_FOUND');
+    await expect(caller.byId({ id: 'invalid' })).rejects.toThrow('NOT_FOUND');
   });
 });
 ```
@@ -802,10 +796,7 @@ export function createAnonCaller() {
   });
 }
 
-export async function expectTRPCError(
-  promise: Promise<any>,
-  code: string
-) {
+export async function expectTRPCError(promise: Promise<any>, code: string) {
   try {
     await promise;
     throw new Error('Expected promise to reject');
@@ -832,14 +823,14 @@ describe('Performance Tests', () => {
   });
 
   it('should handle concurrent requests', async () => {
-    const promises = Array(10).fill(null).map(() =>
-      caller.list()
-    );
+    const promises = Array(10)
+      .fill(null)
+      .map(() => caller.list());
 
     const results = await Promise.all(promises);
 
     expect(results).toHaveLength(10);
-    results.forEach(result => {
+    results.forEach((result) => {
       expect(Array.isArray(result)).toBe(true);
     });
   });
@@ -893,11 +884,7 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     coverage: {
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'tests/',
-        '**/*.d.ts',
-      ],
+      exclude: ['node_modules/', 'tests/', '**/*.d.ts'],
     },
   },
 });

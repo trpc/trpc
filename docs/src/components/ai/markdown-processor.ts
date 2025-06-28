@@ -1,9 +1,9 @@
+import { toJsxRuntime, type Components } from 'hast-util-to-jsx-runtime';
+import { type ReactNode } from 'react';
+import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 import { remark } from 'remark';
 import remarkGfm from 'remark-gfm';
 import remarkRehype from 'remark-rehype';
-import { type Components, toJsxRuntime } from 'hast-util-to-jsx-runtime';
-import { type ReactNode } from 'react';
-import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 
 export interface Processor {
   process: (

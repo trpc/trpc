@@ -1,17 +1,17 @@
 ```tsx
 'use client';
 
+import { useDocsSearch } from 'fumadocs-core/search/client';
 import {
   SearchDialog,
   SearchDialogContent,
   SearchDialogFooter,
   SearchDialogOverlay,
-  type SharedProps,
   TagsList,
   TagsListItem,
+  type SharedProps,
 } from 'fumadocs-ui/components/dialog/search';
 import { useState } from 'react';
-import { useDocsSearch } from 'fumadocs-core/search/client';
 
 export default function CustomSearchDialog(props: SharedProps) {
   // [!code ++]

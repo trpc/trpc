@@ -30,7 +30,9 @@ const loggerMiddleware = t.middleware(({ path, type, next }) => {
 
   return next().finally(() => {
     const duration = Date.now() - start;
-    console.log(`⬅️ ${type.toUpperCase()} ${path} - Completed in ${duration}ms`);
+    console.log(
+      `⬅️ ${type.toUpperCase()} ${path} - Completed in ${duration}ms`,
+    );
   });
 });
 
@@ -134,8 +136,12 @@ const requireRole = (allowedRoles: string[]) => {
 
 // Create different procedure types
 export const adminProcedure = t.procedure.use(requireRole(['admin']));
-export const moderatorProcedure = t.procedure.use(requireRole(['admin', 'moderator']));
-export const userProcedure = t.procedure.use(requireRole(['admin', 'moderator', 'user']));
+export const moderatorProcedure = t.procedure.use(
+  requireRole(['admin', 'moderator']),
+);
+export const userProcedure = t.procedure.use(
+  requireRole(['admin', 'moderator', 'user']),
+);
 
 // Usage in router
 export const appRouter = t.router({
@@ -310,8 +316,7 @@ const rateLimit = (limit: number, windowMs: number) => {
 };
 
 // Usage
-export const rateLimitedProcedure = t.procedure
-  .use(rateLimit(10, 60000)); // 10 requests per minute
+export const rateLimitedProcedure = t.procedure.use(rateLimit(10, 60000)); // 10 requests per minute
 ```
 
 ### Caching Middleware
@@ -386,21 +391,19 @@ Combine multiple middlewares for complex behavior:
 ```typescript title="src/chained-middleware.ts"
 // Create a base procedure with multiple middlewares
 export const fullProcedure = t.procedure
-  .use(loggerMiddleware)           // 1. Log the request
-  .use(performanceMiddleware)      // 2. Time the execution
-  .use(authMiddleware)             // 3. Authenticate user
-  .use(rateLimit(100, 60000))      // 4. Apply rate limiting
-  .use(withCache(60000));          // 5. Check cache
+  .use(loggerMiddleware) // 1. Log the request
+  .use(performanceMiddleware) // 2. Time the execution
+  .use(authMiddleware) // 3. Authenticate user
+  .use(rateLimit(100, 60000)) // 4. Apply rate limiting
+  .use(withCache(60000)); // 5. Check cache
 
 // Specific procedure types
-export const adminProcedure = fullProcedure
-  .use(requireRole(['admin']));
+export const adminProcedure = fullProcedure.use(requireRole(['admin']));
 
-export const organizationProcedure = fullProcedure
-  .use(withOrganization);
+export const organizationProcedure = fullProcedure.use(withOrganization);
 
-export const transactionalOrganizationProcedure = organizationProcedure
-  .use(withTransaction);
+export const transactionalOrganizationProcedure =
+  organizationProcedure.use(withTransaction);
 ```
 
 ### Conditional Middleware
@@ -451,8 +454,12 @@ const ipAllowlist = (allowedIPs: string[]) => {
 
 // Usage
 export const devProcedure = t.procedure.use(devOnlyMiddleware);
-export const betaFeatureProcedure = t.procedure.use(withFeatureFlag('beta-features'));
-export const adminIPProcedure = t.procedure.use(ipAllowlist(['10.0.0.1', '10.0.0.2']));
+export const betaFeatureProcedure = t.procedure.use(
+  withFeatureFlag('beta-features'),
+);
+export const adminIPProcedure = t.procedure.use(
+  ipAllowlist(['10.0.0.1', '10.0.0.2']),
+);
 ```
 
 ## Middleware Piping
@@ -477,25 +484,27 @@ const adminAuth = baseAuth.unstable_pipe(({ ctx, next }) => {
 });
 
 // Extend admin auth with audit logging
-const auditedAdminAuth = adminAuth.unstable_pipe(async ({ ctx, path, next }) => {
-  // Log admin action
-  await auditLog({
-    userId: ctx.user.id,
-    action: path,
-    timestamp: new Date(),
-  });
+const auditedAdminAuth = adminAuth.unstable_pipe(
+  async ({ ctx, path, next }) => {
+    // Log admin action
+    await auditLog({
+      userId: ctx.user.id,
+      action: path,
+      timestamp: new Date(),
+    });
 
-  const result = await next();
+    const result = await next();
 
-  // Log completion
-  await auditLog({
-    userId: ctx.user.id,
-    action: `${path}_completed`,
-    timestamp: new Date(),
-  });
+    // Log completion
+    await auditLog({
+      userId: ctx.user.id,
+      action: `${path}_completed`,
+      timestamp: new Date(),
+    });
 
-  return result;
-});
+    return result;
+  },
+);
 
 export const auditedAdminProcedure = t.procedure.use(auditedAdminAuth);
 ```
@@ -554,8 +563,10 @@ const withRetry = (maxRetries: number = 3) => {
         lastError = error as Error;
 
         // Don't retry client errors
-        if (error instanceof TRPCError &&
-            ['BAD_REQUEST', 'UNAUTHORIZED', 'FORBIDDEN'].includes(error.code)) {
+        if (
+          error instanceof TRPCError &&
+          ['BAD_REQUEST', 'UNAUTHORIZED', 'FORBIDDEN'].includes(error.code)
+        ) {
           throw error;
         }
 
@@ -564,8 +575,8 @@ const withRetry = (maxRetries: number = 3) => {
         }
 
         // Exponential backoff
-        await new Promise(resolve =>
-          setTimeout(resolve, Math.pow(2, attempt) * 100)
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.pow(2, attempt) * 100),
         );
       }
     }
@@ -582,8 +593,8 @@ export const resilientProcedure = t.procedure
 ## Testing Middleware
 
 ```typescript title="src/middleware.test.ts"
-import { describe, it, expect, vi } from 'vitest';
 import { createCallerFactory } from '@trpc/server';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('Authentication Middleware', () => {
   const createCaller = createCallerFactory(appRouter);
@@ -602,9 +613,7 @@ describe('Authentication Middleware', () => {
       user: null,
     });
 
-    await expect(
-      caller.protected.getProfile()
-    ).rejects.toThrow('UNAUTHORIZED');
+    await expect(caller.protected.getProfile()).rejects.toThrow('UNAUTHORIZED');
   });
 
   it('should enforce role-based access', async () => {
@@ -612,9 +621,9 @@ describe('Authentication Middleware', () => {
       user: { id: 'user1', role: 'user' },
     });
 
-    await expect(
-      userCaller.admin.deleteUser({ id: 'user2' })
-    ).rejects.toThrow('FORBIDDEN');
+    await expect(userCaller.admin.deleteUser({ id: 'user2' })).rejects.toThrow(
+      'FORBIDDEN',
+    );
   });
 });
 
@@ -637,9 +646,9 @@ describe('Rate Limiting Middleware', () => {
     }
 
     // Next request should fail
-    await expect(
-      caller.rateLimited.hello()
-    ).rejects.toThrow('TOO_MANY_REQUESTS');
+    await expect(caller.rateLimited.hello()).rejects.toThrow(
+      'TOO_MANY_REQUESTS',
+    );
   });
 });
 ```

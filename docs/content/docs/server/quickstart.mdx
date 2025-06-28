@@ -81,8 +81,18 @@ const t = initTRPC.create();
 
 // In-memory database (use a real database in production)
 const posts = [
-  { id: '1', title: 'Hello World', content: 'This is my first post!', createdAt: new Date() },
-  { id: '2', title: 'tRPC is Awesome', content: 'Building APIs has never been easier.', createdAt: new Date() },
+  {
+    id: '1',
+    title: 'Hello World',
+    content: 'This is my first post!',
+    createdAt: new Date(),
+  },
+  {
+    id: '2',
+    title: 'tRPC is Awesome',
+    content: 'Building APIs has never been easier.',
+    createdAt: new Date(),
+  },
 ];
 
 // Create your API router
@@ -90,7 +100,9 @@ const appRouter = t.router({
   // Query: Get all posts
   getPosts: t.procedure.query(() => {
     return {
-      posts: posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+      posts: posts.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      ),
       total: posts.length,
     };
   }),
@@ -99,7 +111,7 @@ const appRouter = t.router({
   getPost: t.procedure
     .input(z.object({ id: z.string() }))
     .query(({ input }) => {
-      const post = posts.find(p => p.id === input.id);
+      const post = posts.find((p) => p.id === input.id);
       if (!post) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -111,10 +123,15 @@ const appRouter = t.router({
 
   // Mutation: Create a new post
   createPost: t.procedure
-    .input(z.object({
-      title: z.string().min(1, 'Title is required').max(100, 'Title too long'),
-      content: z.string().min(1, 'Content is required'),
-    }))
+    .input(
+      z.object({
+        title: z
+          .string()
+          .min(1, 'Title is required')
+          .max(100, 'Title too long'),
+        content: z.string().min(1, 'Content is required'),
+      }),
+    )
     .mutation(({ input }) => {
       const newPost = {
         id: String(posts.length + 1),
@@ -130,7 +147,7 @@ const appRouter = t.router({
   deletePost: t.procedure
     .input(z.object({ id: z.string() }))
     .mutation(({ input }) => {
-      const index = posts.findIndex(p => p.id === input.id);
+      const index = posts.findIndex((p) => p.id === input.id);
       if (index === -1) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -314,7 +331,7 @@ async function main() {
     console.log('📖 Getting all posts...');
     const { posts, total } = await client.getPosts.query();
     console.log(`Found ${total} posts:`);
-    posts.forEach(post => {
+    posts.forEach((post) => {
       console.log(`  - ${post.title}`);
     });
 
@@ -330,7 +347,6 @@ async function main() {
     console.log('\n🔍 Getting the new post...');
     const post = await client.getPost.query({ id: newPost.id });
     console.log(`Post content: ${post.content}`);
-
   } catch (error) {
     console.error('❌ Error:', error);
   }
@@ -411,9 +427,7 @@ const appRouter = t.router({
   getPosts: t.procedure.query(/* ... */),
 
   // Protected route
-  createPost: protectedProcedure
-    .input(/* ... */)
-    .mutation(/* ... */),
+  createPost: protectedProcedure.input(/* ... */).mutation(/* ... */),
 });
 ```
 
@@ -433,10 +447,12 @@ const appRouter = t.router({
   }),
 
   createPost: t.procedure
-    .input(z.object({
-      title: z.string().min(1),
-      content: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        content: z.string().min(1),
+      }),
+    )
     .mutation(async ({ input }) => {
       return await prisma.post.create({
         data: input,

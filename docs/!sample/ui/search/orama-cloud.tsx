@@ -1,5 +1,7 @@
 'use client';
 
+import { OramaClient } from '@oramacloud/client';
+import { useDocsSearch } from 'fumadocs-core/search/client';
 import {
   SearchDialog,
   SearchDialogClose,
@@ -12,8 +14,6 @@ import {
   SearchDialogOverlay,
   type SharedProps,
 } from 'fumadocs-ui/components/dialog/search';
-import { useDocsSearch } from 'fumadocs-core/search/client';
-import { OramaClient } from '@oramacloud/client';
 import { useI18n } from 'fumadocs-ui/contexts/i18n';
 
 const client = new OramaClient({
@@ -48,7 +48,7 @@ export default function CustomSearchDialog(props: SharedProps) {
           <a
             href="https://orama.com"
             rel="noreferrer noopener"
-            className="ms-auto text-xs text-fd-muted-foreground"
+            className="text-fd-muted-foreground ms-auto text-xs"
           >
             Search powered by Orama
           </a>

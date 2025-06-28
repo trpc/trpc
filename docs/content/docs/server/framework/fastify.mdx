@@ -56,7 +56,7 @@ export const publicProcedure = t.procedure;
 
 ```typescript title="src/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 // Mock database
 const posts: Array<{
@@ -80,10 +80,12 @@ export const appRouter = router({
   }),
 
   createPost: publicProcedure
-    .input(z.object({
-      title: z.string().min(1),
-      content: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        content: z.string().min(1),
+      }),
+    )
     .mutation(({ input }) => {
       const post = {
         id: Date.now().toString(),
@@ -101,8 +103,8 @@ export type AppRouter = typeof appRouter;
 ### 3. Setup Fastify Server
 
 ```typescript title="src/server.ts"
-import Fastify from 'fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import Fastify from 'fastify';
 import { appRouter } from './router';
 
 const fastify = Fastify({
@@ -275,10 +277,16 @@ export function verifyToken(token: string) {
 ```
 
 ```typescript title="src/context.ts"
-import { FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { verifyToken } from './auth';
 
-export function createContext({ req, res }: { req: FastifyRequest; res: FastifyReply }) {
+export function createContext({
+  req,
+  res,
+}: {
+  req: FastifyRequest;
+  res: FastifyReply;
+}) {
   const token = req.headers.authorization?.replace('Bearer ', '');
   const user = token ? verifyToken(token) : null;
 

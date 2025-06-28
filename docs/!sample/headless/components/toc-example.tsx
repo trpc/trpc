@@ -1,6 +1,6 @@
-import { AnchorProvider, ScrollProvider, TOCItem } from 'fumadocs-core/toc';
-import { type ReactNode, useRef } from 'react';
 import type { TOCItemType } from 'fumadocs-core/server';
+import { AnchorProvider, ScrollProvider, TOCItem } from 'fumadocs-core/toc';
+import { useRef, type ReactNode } from 'react';
 
 export function Page({
   items,

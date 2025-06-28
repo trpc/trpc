@@ -1,7 +1,7 @@
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { type Registry } from '@fumadocs/cli/build';
 import * as ui from '../../../packages/ui/src/_registry';
-import { fileURLToPath } from 'node:url';
-import * as path from 'node:path';
 
 export const registry: Registry = {
   dir: path.dirname(fileURLToPath(import.meta.url)),

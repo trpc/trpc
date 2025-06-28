@@ -61,7 +61,7 @@ Create your first router:
 
 ```typescript title="src/server/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 // Mock database
 const posts = [
@@ -78,26 +78,25 @@ export const appRouter = router({
     }),
 
   // Get all posts
-  posts: publicProcedure
-    .query(() => {
-      return posts;
-    }),
+  posts: publicProcedure.query(() => {
+    return posts;
+  }),
 
   // Get post by ID
-  post: publicProcedure
-    .input(z.number())
-    .query(({ input }) => {
-      const post = posts.find(p => p.id === input);
-      if (!post) throw new Error('Post not found');
-      return post;
-    }),
+  post: publicProcedure.input(z.number()).query(({ input }) => {
+    const post = posts.find((p) => p.id === input);
+    if (!post) throw new Error('Post not found');
+    return post;
+  }),
 
   // Create a new post
   createPost: publicProcedure
-    .input(z.object({
-      title: z.string(),
-      content: z.string(),
-    }))
+    .input(
+      z.object({
+        title: z.string(),
+        content: z.string(),
+      }),
+    )
     .mutation(({ input }) => {
       const newPost = {
         id: posts.length + 1,
@@ -122,9 +121,9 @@ npm install -D @types/express @types/cors
 ```
 
 ```typescript title="src/server/index.ts"
-import express from 'express';
-import cors from 'cors';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import cors from 'cors';
+import express from 'express';
 import { appRouter } from './router';
 
 const app = express();
@@ -134,10 +133,13 @@ const port = 3001;
 app.use(cors());
 
 // Create tRPC middleware
-app.use('/api/trpc', createExpressMiddleware({
-  router: appRouter,
-  createContext: () => ({}), // We'll add context later
-}));
+app.use(
+  '/api/trpc',
+  createExpressMiddleware({
+    router: appRouter,
+    createContext: () => ({}), // We'll add context later
+  }),
+);
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
@@ -174,7 +176,9 @@ const appRouter = router({
   // This is a nested router
   posts: router({
     list: publicProcedure.query(() => posts),
-    create: publicProcedure.mutation(() => {/* ... */}),
+    create: publicProcedure.mutation(() => {
+      /* ... */
+    }),
   }),
 });
 
@@ -188,7 +192,7 @@ const appRouter = router({
 **Query**: For reading data (idempotent, cacheable)
 
 ```typescript
-getPosts: publicProcedure.query(() => posts)
+getPosts: publicProcedure.query(() => posts);
 ```
 
 **Mutation**: For writing data (side effects)
@@ -196,14 +200,13 @@ getPosts: publicProcedure.query(() => posts)
 ```typescript
 createPost: publicProcedure
   .input(PostSchema)
-  .mutation(({ input }) => createPost(input))
+  .mutation(({ input }) => createPost(input));
 ```
 
 **Subscription**: For real-time data (advanced)
 
 ```typescript
-onPostCreated: publicProcedure
-  .subscription(() => observable)
+onPostCreated: publicProcedure.subscription(() => observable);
 ```
 
 ### Input Validation
@@ -212,11 +215,13 @@ tRPC uses Zod for runtime validation and TypeScript inference:
 
 ```typescript
 const createUser = publicProcedure
-  .input(z.object({
-    name: z.string().min(1, 'Name is required'),
-    email: z.string().email('Invalid email'),
-    age: z.number().min(13).max(120),
-  }))
+  .input(
+    z.object({
+      name: z.string().min(1, 'Name is required'),
+      email: z.string().email('Invalid email'),
+      age: z.number().min(13).max(120),
+    }),
+  )
   .mutation(({ input }) => {
     // input is fully typed and validated
     return createUser(input);
@@ -389,7 +394,7 @@ const post = await trpc.post.query(1);
 
 const newPost = await trpc.createPost.mutate({
   title: 'Hello',
-  content: 'World'
+  content: 'World',
 });
 // newPost is typed as Post
 ```
@@ -419,13 +424,15 @@ if (!user) {
 }
 
 // Client
-const mutation = useMutation(trpc.createPost.mutationOptions({
-  onError: (error) => {
-    if (error.data?.code === 'NOT_FOUND') {
-      // Handle not found error
-    }
-  },
-}));
+const mutation = useMutation(
+  trpc.createPost.mutationOptions({
+    onError: (error) => {
+      if (error.data?.code === 'NOT_FOUND') {
+        // Handle not found error
+      }
+    },
+  }),
+);
 ```
 
 ## Adding Context & Authentication
@@ -479,10 +486,12 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 
 ```typescript
 const getPosts = publicProcedure
-  .input(z.object({
-    limit: z.number().min(1).max(100).default(10),
-    cursor: z.string().optional(),
-  }))
+  .input(
+    z.object({
+      limit: z.number().min(1).max(100).default(10),
+      cursor: z.string().optional(),
+    }),
+  )
   .query(async ({ input }) => {
     const posts = await db.post.findMany({
       take: input.limit + 1,
@@ -492,7 +501,8 @@ const getPosts = publicProcedure
 
     return {
       posts: posts.slice(0, input.limit),
-      nextCursor: posts.length > input.limit ? posts[input.limit].id : undefined,
+      nextCursor:
+        posts.length > input.limit ? posts[input.limit].id : undefined,
     };
   });
 ```
@@ -519,34 +529,38 @@ const appRouter = router({
 ### Optimistic Updates
 
 ```typescript
-const createPostMutation = useMutation(trpc.posts.create.mutationOptions({
-  onMutate: async (newPost) => {
-    // Cancel outgoing refetches
-    await queryClient.cancelQueries(trpc.posts.list.queryKey());
+const createPostMutation = useMutation(
+  trpc.posts.create.mutationOptions({
+    onMutate: async (newPost) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries(trpc.posts.list.queryKey());
 
-    // Snapshot the previous value
-    const previousPosts = queryClient.getQueryData(trpc.posts.list.queryKey());
+      // Snapshot the previous value
+      const previousPosts = queryClient.getQueryData(
+        trpc.posts.list.queryKey(),
+      );
 
-    // Optimistically update to the new value
-    queryClient.setQueryData(trpc.posts.list.queryKey(), (old) => [
-      ...(old || []),
-      { ...newPost, id: Date.now() }, // Temporary ID
-    ]);
+      // Optimistically update to the new value
+      queryClient.setQueryData(trpc.posts.list.queryKey(), (old) => [
+        ...(old || []),
+        { ...newPost, id: Date.now() }, // Temporary ID
+      ]);
 
-    return { previousPosts };
-  },
-  onError: (err, newPost, context) => {
-    // Rollback to previous value on error
-    queryClient.setQueryData(
-      trpc.posts.list.queryKey(),
-      context?.previousPosts
-    );
-  },
-  onSettled: () => {
-    // Always refetch after error or success
-    queryClient.invalidateQueries(trpc.posts.list.queryKey());
-  },
-}));
+      return { previousPosts };
+    },
+    onError: (err, newPost, context) => {
+      // Rollback to previous value on error
+      queryClient.setQueryData(
+        trpc.posts.list.queryKey(),
+        context?.previousPosts,
+      );
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries(trpc.posts.list.queryKey());
+    },
+  }),
+);
 ```
 
 ## Next Steps

@@ -37,7 +37,7 @@
     "katex": "^0.16.22",
     "lucide-react": "^0.523.0",
     "mermaid": "^11.7.0",
-    "next": "15.3.4",
+    "next": "^15.3.1",
     "next-themes": "^0.4.6",
     "octokit": "^5.0.3",
     "oxc-transform": "^0.72.3",
@@ -51,10 +51,10 @@
     "remark-rehype": "^11.1.2",
     "scroll-into-view-if-needed": "^3.1.0",
     "shiki": "^3.7.0",
-    "tailwind-merge": "^3.3.1",
+    "tailwind-merge": "^2.0.0",
     "twoslash": "^0.3.1",
     "unist-util-visit": "^5.0.0",
-    "zod": "^3.25.67"
+    "zod": "^3.25.51"
   },
   "devDependencies": {
     "@fumadocs/cli": "^0.2.1",
@@ -64,20 +64,20 @@
     "@tailwindcss/postcss": "^4.1.10",
     "@types/hast": "^3.0.4",
     "@types/mdx": "^2.0.13",
-    "@types/node": "24.0.3",
-    "@types/react": "^19.1.8",
-    "@types/react-dom": "^19.1.6",
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
     "algoliasearch": "5.29.0",
     "eslint-config-custom": "^0.0.0",
     "gray-matter": "^4.0.3",
     "next-validate-link": "^1.5.2",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.11",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.6",
     "tailwindcss-animate": "^1.0.7",
     "tinyglobby": "^0.2.14",
     "ts-morph": "^26.0.0",
     "tsconfig": "^7.0.0",
-    "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
   }
 }

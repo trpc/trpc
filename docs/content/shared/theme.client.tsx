@@ -1,7 +1,8 @@
 'use client';
-import { type ReactElement, useState } from 'react';
-import { cn } from '@/lib/cn';
+
 import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/cn';
+import { useState, type ReactElement } from 'react';
 
 export function WidthTrigger(): ReactElement {
   const [enabled, setEnabled] = useState(false);
@@ -16,7 +17,7 @@ export function WidthTrigger(): ReactElement {
     >
       {enabled ? <style>{`:root { --fd-layout-width: 1400px; }`}</style> : null}
       Trigger Width:
-      <span className="ms-1.5 text-fd-muted-foreground">
+      <span className="text-fd-muted-foreground ms-1.5">
         {enabled ? '1400px' : 'default'}
       </span>
     </button>

@@ -46,9 +46,9 @@ credentials in environment variables.
 Export the search indexes from Next.js using a route handler, this way we can access the search indexes after production build:
 
 ```ts title="app/static.json/route.ts"
-import { NextResponse } from 'next/server';
-import { type DocumentRecord } from 'fumadocs-core/search/algolia';
 import { source } from '@/lib/source';
+import { type DocumentRecord } from 'fumadocs-core/search/algolia';
+import { NextResponse } from 'next/server';
 
 export const revalidate = false;
 

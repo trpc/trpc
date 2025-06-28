@@ -16,8 +16,8 @@ Sidebar items are rendered from the page tree you passed to `<DocsLayout />`.
 For `source.pageTree`, it generates the tree from your file structure, you can see [Routing](/docs/ui/page-conventions) for available patterns.
 
 ```tsx title="layout.tsx"
-import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import { source } from '@/lib/source';
+import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import type { ReactNode } from 'react';
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -110,10 +110,10 @@ import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 You can specify a `banner` to the [Docs Layout](/docs/ui/layouts/docs) component.
 
 ```tsx
-import { DocsLayout, type DocsLayoutProps } from 'fumadocs-ui/layouts/docs';
-import type { ReactNode } from 'react';
 import { baseOptions } from '@/app/layout.config';
 import { source } from '@/lib/source';
+import { DocsLayout, type DocsLayoutProps } from 'fumadocs-ui/layouts/docs';
+import type { ReactNode } from 'react';
 
 const docsOptions: DocsLayoutProps = {
   ...baseOptions,

@@ -56,7 +56,7 @@ export const publicProcedure = t.procedure;
 
 ```typescript title="src/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   hello: publicProcedure
@@ -80,10 +80,12 @@ export const appRouter = router({
   }),
 
   processData: publicProcedure
-    .input(z.object({
-      data: z.array(z.number()),
-      operation: z.enum(['sum', 'average', 'max', 'min']),
-    }))
+    .input(
+      z.object({
+        data: z.array(z.number()),
+        operation: z.enum(['sum', 'average', 'max', 'min']),
+      }),
+    )
     .mutation(({ input }) => {
       const { data, operation } = input;
 
@@ -119,7 +121,11 @@ export type AppRouter = typeof appRouter;
 
 ```typescript title="src/lambda.ts"
 import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
-import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import type {
+  APIGatewayProxyEvent,
+  APIGatewayProxyResult,
+  Context,
+} from 'aws-lambda';
 import { appRouter } from './router';
 
 // Create context from Lambda event
@@ -318,7 +324,12 @@ npm install @aws-sdk/client-dynamodb @aws-sdk/lib-dynamodb
 
 ```typescript title="src/dynamodb.ts"
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  GetCommand,
+  PutCommand,
+  ScanCommand,
+} from '@aws-sdk/lib-dynamodb';
 
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION || 'us-east-1',
@@ -328,10 +339,12 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 export const dynamoRouter = router({
   createUser: publicProcedure
-    .input(z.object({
-      name: z.string(),
-      email: z.string().email(),
-    }))
+    .input(
+      z.object({
+        name: z.string(),
+        email: z.string().email(),
+      }),
+    )
     .mutation(async ({ input }) => {
       const user = {
         id: Date.now().toString(),
@@ -339,10 +352,12 @@ export const dynamoRouter = router({
         createdAt: new Date().toISOString(),
       };
 
-      await docClient.send(new PutCommand({
-        TableName: 'Users',
-        Item: user,
-      }));
+      await docClient.send(
+        new PutCommand({
+          TableName: 'Users',
+          Item: user,
+        }),
+      );
 
       return user;
     }),
@@ -350,10 +365,12 @@ export const dynamoRouter = router({
   getUser: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
-      const result = await docClient.send(new GetCommand({
-        TableName: 'Users',
-        Key: { id: input.id },
-      }));
+      const result = await docClient.send(
+        new GetCommand({
+          TableName: 'Users',
+          Key: { id: input.id },
+        }),
+      );
 
       if (!result.Item) {
         throw new Error('User not found');
@@ -363,9 +380,11 @@ export const dynamoRouter = router({
     }),
 
   listUsers: publicProcedure.query(async () => {
-    const result = await docClient.send(new ScanCommand({
-      TableName: 'Users',
-    }));
+    const result = await docClient.send(
+      new ScanCommand({
+        TableName: 'Users',
+      }),
+    );
 
     return result.Items || [];
   }),
@@ -397,7 +416,10 @@ npm install @aws-sdk/client-rds-data
 ```
 
 ```typescript title="src/rds.ts"
-import { RDSDataClient, ExecuteStatementCommand } from '@aws-sdk/client-rds-data';
+import {
+  ExecuteStatementCommand,
+  RDSDataClient,
+} from '@aws-sdk/client-rds-data';
 
 const rdsClient = new RDSDataClient({
   region: process.env.AWS_REGION || 'us-east-1',
@@ -405,23 +427,30 @@ const rdsClient = new RDSDataClient({
 
 export const rdsRouter = router({
   createPost: publicProcedure
-    .input(z.object({
-      title: z.string(),
-      content: z.string(),
-    }))
+    .input(
+      z.object({
+        title: z.string(),
+        content: z.string(),
+      }),
+    )
     .mutation(async ({ input }) => {
-      const result = await rdsClient.send(new ExecuteStatementCommand({
-        resourceArn: process.env.RDS_CLUSTER_ARN,
-        secretArn: process.env.RDS_SECRET_ARN,
-        database: process.env.RDS_DATABASE,
-        sql: 'INSERT INTO posts (title, content) VALUES (:title, :content)',
-        parameters: [
-          { name: 'title', value: { stringValue: input.title } },
-          { name: 'content', value: { stringValue: input.content } },
-        ],
-      }));
+      const result = await rdsClient.send(
+        new ExecuteStatementCommand({
+          resourceArn: process.env.RDS_CLUSTER_ARN,
+          secretArn: process.env.RDS_SECRET_ARN,
+          database: process.env.RDS_DATABASE,
+          sql: 'INSERT INTO posts (title, content) VALUES (:title, :content)',
+          parameters: [
+            { name: 'title', value: { stringValue: input.title } },
+            { name: 'content', value: { stringValue: input.content } },
+          ],
+        }),
+      );
 
-      return { success: true, insertId: result.generatedFields?.[0]?.longValue };
+      return {
+        success: true,
+        insertId: result.generatedFields?.[0]?.longValue,
+      };
     }),
 });
 ```
@@ -459,7 +488,13 @@ const verifier = CognitoJwtVerifier.create({
   clientId: process.env.COGNITO_CLIENT_ID!,
 });
 
-const createContext = async ({ event, context }: { event: APIGatewayProxyEvent; context: Context }) => {
+const createContext = async ({
+  event,
+  context,
+}: {
+  event: APIGatewayProxyEvent;
+  context: Context;
+}) => {
   let user = null;
 
   const authHeader = event.headers.Authorization || event.headers.authorization;
@@ -532,7 +567,10 @@ export const monitoredRouter = router({
         const result = processData(input.data);
 
         const duration = Date.now() - startTime;
-        console.log('Processing completed:', { duration, resultSize: result.length });
+        console.log('Processing completed:', {
+          duration,
+          resultSize: result.length,
+        });
 
         return result;
       } catch (error) {

@@ -27,10 +27,9 @@ export const appRouter = t.router({
     }),
 
   // Get current time
-  time: t.procedure
-    .query(() => {
-      return { timestamp: new Date().toISOString() };
-    }),
+  time: t.procedure.query(() => {
+    return { timestamp: new Date().toISOString() };
+  }),
 });
 
 export type AppRouter = typeof appRouter;
@@ -42,9 +41,9 @@ Organize complex APIs with nested routers for better maintainability:
 
 ```typescript title="server/routers/_app.ts"
 import { t } from '../trpc';
-import { userRouter } from './users';
-import { postRouter } from './posts';
 import { authRouter } from './auth';
+import { postRouter } from './posts';
+import { userRouter } from './users';
 
 export const appRouter = t.router({
   // Nested routers for organization
@@ -58,21 +57,21 @@ export const appRouter = t.router({
 ```
 
 ```typescript title="server/routers/users.ts"
-import { t } from '../trpc';
 import { z } from 'zod';
+import { t } from '../trpc';
 
 export const userRouter = t.router({
-  getById: t.procedure
-    .input(z.string())
-    .query(async ({ input }) => {
-      return await db.user.findUnique({ where: { id: input } });
-    }),
+  getById: t.procedure.input(z.string()).query(async ({ input }) => {
+    return await db.user.findUnique({ where: { id: input } });
+  }),
 
   list: t.procedure
-    .input(z.object({
-      limit: z.number().min(1).max(100).default(10),
-      cursor: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(10),
+        cursor: z.string().optional(),
+      }),
+    )
     .query(async ({ input }) => {
       const users = await db.user.findMany({
         take: input.limit + 1,
@@ -82,15 +81,18 @@ export const userRouter = t.router({
 
       return {
         users: users.slice(0, input.limit),
-        nextCursor: users.length > input.limit ? users[input.limit].id : undefined,
+        nextCursor:
+          users.length > input.limit ? users[input.limit].id : undefined,
       };
     }),
 
   create: t.procedure
-    .input(z.object({
-      email: z.string().email(),
-      name: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        email: z.string().email(),
+        name: z.string().min(1),
+      }),
+    )
     .mutation(async ({ input }) => {
       return await db.user.create({ data: input });
     }),
@@ -106,13 +108,11 @@ export const userRouter = t.router({
 Use `query` for reading data (GET-like operations):
 
 ```typescript
-const getUser = t.procedure
-  .input(z.string())
-  .query(async ({ input }) => {
-    const user = await db.user.findUnique({ where: { id: input } });
-    if (!user) throw new TRPCError({ code: 'NOT_FOUND' });
-    return user;
-  });
+const getUser = t.procedure.input(z.string()).query(async ({ input }) => {
+  const user = await db.user.findUnique({ where: { id: input } });
+  if (!user) throw new TRPCError({ code: 'NOT_FOUND' });
+  return user;
+});
 ```
 
 **Client usage:**
@@ -128,11 +128,13 @@ Use `mutation` for creating, updating, or deleting data:
 
 ```typescript
 const createPost = t.procedure
-  .input(z.object({
-    title: z.string().min(1),
-    content: z.string(),
-    authorId: z.string(),
-  }))
+  .input(
+    z.object({
+      title: z.string().min(1),
+      content: z.string(),
+      authorId: z.string(),
+    }),
+  )
   .mutation(async ({ input }) => {
     return await db.post.create({
       data: input,
@@ -144,12 +146,14 @@ const createPost = t.procedure
 **Client usage:**
 
 ```typescript
-const createPostMutation = useMutation(trpc.createPost.mutationOptions({
-  onSuccess: (newPost) => {
-    // Invalidate relevant queries
-    queryClient.invalidateQueries(trpc.posts.list.queryKey());
-  },
-}));
+const createPostMutation = useMutation(
+  trpc.createPost.mutationOptions({
+    onSuccess: (newPost) => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries(trpc.posts.list.queryKey());
+    },
+  }),
+);
 ```
 
 ### Subscription Procedures
@@ -179,12 +183,14 @@ tRPC uses schema validation to ensure type safety and runtime validation:
 
 ```typescript
 const createUser = t.procedure
-  .input(z.object({
-    email: z.string().email('Invalid email format'),
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    age: z.number().int().min(13, 'Must be at least 13 years old'),
-    role: z.enum(['user', 'admin']).default('user'),
-  }))
+  .input(
+    z.object({
+      email: z.string().email('Invalid email format'),
+      name: z.string().min(2, 'Name must be at least 2 characters'),
+      age: z.number().int().min(13, 'Must be at least 13 years old'),
+      role: z.enum(['user', 'admin']).default('user'),
+    }),
+  )
   .mutation(async ({ input }) => {
     // input is fully typed and validated
     return await db.user.create({ data: input });
@@ -270,13 +276,12 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 
 ```typescript
 // Using context in procedures
-const getCurrentUser = protectedProcedure
-  .query(async ({ ctx }) => {
-    // ctx.user is available and typed
-    return await ctx.prisma.user.findUnique({
-      where: { id: ctx.user.id },
-    });
+const getCurrentUser = protectedProcedure.query(async ({ ctx }) => {
+  // ctx.user is available and typed
+  return await ctx.prisma.user.findUnique({
+    where: { id: ctx.user.id },
   });
+});
 ```
 
 ## Middleware
@@ -344,7 +349,9 @@ export const withLogging = t.middleware(async ({ path, type, next }) => {
   const duration = Date.now() - start;
 
   if (result.ok) {
-    console.log(`✅ ${type.toUpperCase()} ${path} - completed in ${duration}ms`);
+    console.log(
+      `✅ ${type.toUpperCase()} ${path} - completed in ${duration}ms`,
+    );
   } else {
     console.log(`❌ ${type.toUpperCase()} ${path} - failed in ${duration}ms`);
   }
@@ -359,9 +366,7 @@ export const withLogging = t.middleware(async ({ path, type, next }) => {
 // Create reusable procedure builders
 export const publicProcedure = t.procedure.use(withLogging);
 
-export const protectedProcedure = t.procedure
-  .use(withLogging)
-  .use(requireAuth);
+export const protectedProcedure = t.procedure.use(withLogging).use(requireAuth);
 
 export const adminProcedure = t.procedure
   .use(withLogging)
@@ -424,21 +429,23 @@ export const t = initTRPC.context<Context>().create({
 
 ```typescript
 // In React components
-const createPostMutation = useMutation(trpc.posts.create.mutationOptions({
-  onError: (error) => {
-    switch (error.data?.code) {
-      case 'UNAUTHORIZED':
-        router.push('/login');
-        break;
-      case 'BAD_REQUEST':
-        // Handle validation errors
-        setFormErrors(error.data.zodError?.fieldErrors);
-        break;
-      default:
-        toast.error('Something went wrong');
-    }
-  },
-}));
+const createPostMutation = useMutation(
+  trpc.posts.create.mutationOptions({
+    onError: (error) => {
+      switch (error.data?.code) {
+        case 'UNAUTHORIZED':
+          router.push('/login');
+          break;
+        case 'BAD_REQUEST':
+          // Handle validation errors
+          setFormErrors(error.data.zodError?.fieldErrors);
+          break;
+        default:
+          toast.error('Something went wrong');
+      }
+    },
+  }),
+);
 
 // With React Query's error boundaries
 const postsQuery = useQuery(trpc.posts.list.queryOptions(), {

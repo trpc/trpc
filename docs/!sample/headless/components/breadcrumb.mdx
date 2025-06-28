@@ -12,10 +12,11 @@ A hook for implementing Breadcrumb in your documentation. It returns breadcrumb 
 It exports a `useBreadcrumb` hook:
 
 ```ts twoslash
-declare const tree: any;
 // ---cut---
-import { usePathname } from 'next/navigation';
 import { useBreadcrumb } from 'fumadocs-core/breadcrumb';
+import { usePathname } from 'next/navigation';
+
+declare const tree: any;
 
 const pathname = usePathname();
 const items = useBreadcrumb(pathname, tree);
@@ -28,12 +29,13 @@ A styled example.
 
 ```tsx
 'use client';
-import { usePathname } from 'next/navigation';
+
 import { useBreadcrumb } from 'fumadocs-core/breadcrumb';
 import type { PageTree } from 'fumadocs-core/server';
-import { Fragment } from 'react';
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Fragment } from 'react';
 
 export function Breadcrumb({ tree }: { tree: PageTree.Root }) {
   const pathname = usePathname();
@@ -42,7 +44,7 @@ export function Breadcrumb({ tree }: { tree: PageTree.Root }) {
   if (items.length === 0) return null;
 
   return (
-    <div className="-mb-3 flex flex-row items-center gap-1 text-sm font-medium text-fd-muted-foreground">
+    <div className="text-fd-muted-foreground -mb-3 flex flex-row items-center gap-1 text-sm font-medium">
       {items.map((item, i) => (
         <Fragment key={i}>
           {i !== 0 && (
@@ -51,7 +53,7 @@ export function Breadcrumb({ tree }: { tree: PageTree.Root }) {
           {item.url ? (
             <Link
               href={item.url}
-              className="truncate hover:text-fd-accent-foreground"
+              className="hover:text-fd-accent-foreground truncate"
             >
               {item.name}
             </Link>

@@ -64,8 +64,7 @@ export const publicProcedure = t.procedure;
 **3. Add to Client**
 
 ```typescript title="src/client.ts"
-import { createTRPCClient } from '@trpc/client';
-import { httpBatchLink } from '@trpc/client';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import superjson from 'superjson';
 import type { AppRouter } from './server';
 
@@ -85,46 +84,46 @@ Once configured, you can use rich JavaScript types seamlessly:
 
 ```typescript title="src/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   // Using Date objects
   createPost: publicProcedure
-    .input(z.object({
-      title: z.string(),
-      publishDate: z.date(),
-    }))
+    .input(
+      z.object({
+        title: z.string(),
+        publishDate: z.date(),
+      }),
+    )
     .mutation(({ input }) => {
       return {
         id: '1',
         title: input.title,
         publishDate: input.publishDate, // Date object
-        createdAt: new Date(),          // Date object
+        createdAt: new Date(), // Date object
       };
     }),
 
   // Using Map and Set
-  getUserStats: publicProcedure
-    .query(() => {
-      return {
-        visitsByDay: new Map([
-          ['2024-01-01', 100],
-          ['2024-01-02', 150],
-        ]),
-        uniqueVisitors: new Set(['user1', 'user2', 'user3']),
-        lastUpdated: new Date(),
-      };
-    }),
+  getUserStats: publicProcedure.query(() => {
+    return {
+      visitsByDay: new Map([
+        ['2024-01-01', 100],
+        ['2024-01-02', 150],
+      ]),
+      uniqueVisitors: new Set(['user1', 'user2', 'user3']),
+      lastUpdated: new Date(),
+    };
+  }),
 
   // Using BigInt
-  getFinancialData: publicProcedure
-    .query(() => {
-      return {
-        totalRevenue: BigInt('9007199254740991000'),
-        transactionCount: 1000n,
-        lastCalculated: new Date(),
-      };
-    }),
+  getFinancialData: publicProcedure.query(() => {
+    return {
+      totalRevenue: BigInt('9007199254740991000'),
+      transactionCount: 1000n,
+      lastCalculated: new Date(),
+    };
+  }),
 });
 ```
 
@@ -140,9 +139,9 @@ const post = await client.createPost.mutate({
 console.log(post.createdAt instanceof Date); // true
 
 const stats = await client.getUserStats.query();
-console.log(stats.visitsByDay instanceof Map);    // true
+console.log(stats.visitsByDay instanceof Map); // true
 console.log(stats.uniqueVisitors instanceof Set); // true
-console.log(typeof stats.totalRevenue);           // bigint
+console.log(typeof stats.totalRevenue); // bigint
 ```
 
 ## Advanced Transformers
@@ -211,8 +210,8 @@ bun add devalue
 **2. Create Transformer**
 
 ```typescript title="src/devalue-transformer.ts"
-import { parse, stringify } from 'devalue';
 import type { DataTransformer } from '@trpc/server';
+import { parse, stringify } from 'devalue';
 
 export const devalueTransformer: DataTransformer = {
   serialize: (value) => stringify(value),
@@ -237,8 +236,8 @@ Use different transformers for input and output when needed:
 
 ```typescript title="src/directional-transformers.ts"
 import { initTRPC } from '@trpc/server';
-import superjson from 'superjson';
 import { parse, stringify } from 'devalue';
+import superjson from 'superjson';
 
 const t = initTRPC.create({
   transformer: {
@@ -289,7 +288,10 @@ const router = t.router({
 ```typescript tab="Complex Types"
 // Complex nested structures and circular references
 class User {
-  constructor(public name: string, public friends: User[] = []) {}
+  constructor(
+    public name: string,
+    public friends: User[] = [],
+  ) {}
 }
 
 const router = t.router({
@@ -389,13 +391,13 @@ const effectTransformer = {
   serialize: (value: unknown) => {
     return pipe(
       Effect.try(() => JSON.stringify(value)),
-      Effect.getOrElse(() => '{}')
+      Effect.getOrElse(() => '{}'),
     );
   },
   deserialize: (value: string) => {
     return pipe(
       Effect.try(() => JSON.parse(value)),
-      Effect.getOrElse(() => ({}))
+      Effect.getOrElse(() => ({})),
     );
   },
 };
@@ -491,9 +493,10 @@ Use different strategies for different environments:
 import superjson from 'superjson';
 import { devalueTransformer } from './devalue-transformer';
 
-export const transformer = process.env.NODE_ENV === 'production'
-  ? devalueTransformer // Smaller bundle, better performance
-  : superjson;         // Better DX, more features
+export const transformer =
+  process.env.NODE_ENV === 'production'
+    ? devalueTransformer // Smaller bundle, better performance
+    : superjson; // Better DX, more features
 ```
 
 ### Type Safety

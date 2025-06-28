@@ -59,8 +59,8 @@ Provide UI translations and other config to `<RootProvider />`.
 Note that only English translations are provided by default.
 
 ```tsx title="app/[lang]/layout.tsx"
-import { RootProvider } from 'fumadocs-ui/provider';
 import type { Translations } from 'fumadocs-ui/i18n';
+import { RootProvider } from 'fumadocs-ui/provider';
 
 // translations
 const cn: Partial<Translations> = {
@@ -125,9 +125,9 @@ export function baseOptions(locale: string): BaseLayoutProps {
 ```
 
 ```tsx title="/app/[lang]/(home)/layout.tsx" tab="Home Layout"
-import type { ReactNode } from 'react';
-import { HomeLayout } from 'fumadocs-ui/layouts/home';
 import { baseOptions } from '@/app/layout.config';
+import { HomeLayout } from 'fumadocs-ui/layouts/home';
+import type { ReactNode } from 'react';
 
 export default async function Layout({
   params,
@@ -143,10 +143,10 @@ export default async function Layout({
 ```
 
 ```tsx title="/app/[lang]/docs/layout.tsx" tab="Docs Layout"
-import type { ReactNode } from 'react';
+import { baseOptions } from '@/app/layout.config';
 import { source } from '@/lib/source';
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
-import { baseOptions } from '@/app/layout.config';
+import type { ReactNode } from 'react';
 
 export default async function Layout({
   params,

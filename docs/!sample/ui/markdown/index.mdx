@@ -107,8 +107,8 @@ import { HomeIcon } from 'lucide-react';
 You can do something like:
 
 ```tsx title="page.tsx"
-import { getPageTreePeers } from 'fumadocs-core/server';
 import { source } from '@/lib/source';
+import { getPageTreePeers } from 'fumadocs-core/server';
 
 <Cards>
   {getPageTreePeers(source.pageTree, '/docs/my-page').map((peer) => (
@@ -288,8 +288,8 @@ return new ResizeObserver(() => {}) // [!code focus]
 Make sure to add the required MDX components first:
 
 ```tsx title="mdx-components.tsx"
-import defaultMdxComponents from 'fumadocs-ui/mdx';
 import * as TabsComponents from 'fumadocs-ui/components/tabs';
+import defaultMdxComponents from 'fumadocs-ui/mdx';
 import type { MDXComponents } from 'mdx/types';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {

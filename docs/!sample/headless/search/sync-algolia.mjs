@@ -1,7 +1,7 @@
 // @ts-check
+import * as fs from 'node:fs';
 import { algoliasearch } from 'algoliasearch';
 import { sync } from 'fumadocs-core/search/algolia';
-import * as fs from 'node:fs';
 
 const content = fs.readFileSync('.next/server/app/static.json.body');
 

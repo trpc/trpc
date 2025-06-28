@@ -41,8 +41,8 @@ export default defineConfig({
 ```
 
 ```ts tab="MDX Compiler"
-import { remarkTypeScriptToJavaScript } from 'fumadocs-docgen/remark-ts2js';
 import { compile } from '@mdx-js/mdx';
+import { remarkTypeScriptToJavaScript } from 'fumadocs-docgen/remark-ts2js';
 
 await compile('...', {
   remarkPlugins: [remarkTypeScriptToJavaScript],

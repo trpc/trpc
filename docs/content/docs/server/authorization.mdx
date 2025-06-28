@@ -83,15 +83,13 @@ Check authorization directly in procedure handlers:
 ```typescript title="src/resolver-auth.ts"
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   // Public endpoint
-  hello: publicProcedure
-    .input(z.string().nullish())
-    .query(({ input, ctx }) => {
-      return `Hello ${input ?? ctx.user?.name ?? 'World'}`;
-    }),
+  hello: publicProcedure.input(z.string().nullish()).query(({ input, ctx }) => {
+    return `Hello ${input ?? ctx.user?.name ?? 'World'}`;
+  }),
 
   // Protected endpoint
   getSecret: publicProcedure.query(({ ctx }) => {
@@ -130,7 +128,7 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
     throw new TRPCError({
       code: 'FORBIDDEN',
-      message: 'Admin access required'
+      message: 'Admin access required',
     });
   }
 
@@ -211,7 +209,10 @@ const requireOrganizationMember = t.middleware(async ({ ctx, input, next }) => {
   }
 
   const organizationId = (input as any)?.organizationId;
-  const membership = await getOrganizationMembership(ctx.user.id, organizationId);
+  const membership = await getOrganizationMembership(
+    ctx.user.id,
+    organizationId,
+  );
 
   if (!membership) {
     throw new TRPCError({
@@ -231,7 +232,9 @@ const requireOrganizationMember = t.middleware(async ({ ctx, input, next }) => {
 
 // Usage
 export const postOwnerProcedure = protectedProcedure.use(requirePostOwnership);
-export const organizationMemberProcedure = protectedProcedure.use(requireOrganizationMember);
+export const organizationMemberProcedure = protectedProcedure.use(
+  requireOrganizationMember,
+);
 ```
 
 ## Advanced Authorization Patterns
@@ -298,7 +301,8 @@ const authorize = (action: string) => {
 
     // Get resource if ID is provided
     let resource = null;
-    const resourceId = (input as any)?.id || (input as any)?.postId || (input as any)?.userId;
+    const resourceId =
+      (input as any)?.id || (input as any)?.postId || (input as any)?.userId;
     if (resourceId) {
       resource = await getResource(action.split(':')[0], resourceId);
     }
@@ -331,9 +335,15 @@ const authorize = (action: string) => {
 };
 
 // Usage
-export const readPostProcedure = protectedProcedure.use(authorize('posts:read'));
-export const editPostProcedure = protectedProcedure.use(authorize('posts:edit'));
-export const deleteUserProcedure = protectedProcedure.use(authorize('users:delete'));
+export const readPostProcedure = protectedProcedure.use(
+  authorize('posts:read'),
+);
+export const editPostProcedure = protectedProcedure.use(
+  authorize('posts:edit'),
+);
+export const deleteUserProcedure = protectedProcedure.use(
+  authorize('users:delete'),
+);
 ```
 
 ### Organization-Based Authorization
@@ -373,7 +383,11 @@ const withOrganizationAccess = (requiredRole?: string) => {
     }
 
     // Check role requirement
-    if (requiredRole && membership.role !== requiredRole && membership.role !== 'owner') {
+    if (
+      requiredRole &&
+      membership.role !== requiredRole &&
+      membership.role !== 'owner'
+    ) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: `${requiredRole} role required in this organization`,
@@ -391,9 +405,15 @@ const withOrganizationAccess = (requiredRole?: string) => {
 };
 
 // Create organization-specific procedures
-export const orgMemberProcedure = protectedProcedure.use(withOrganizationAccess());
-export const orgAdminProcedure = protectedProcedure.use(withOrganizationAccess('admin'));
-export const orgOwnerProcedure = protectedProcedure.use(withOrganizationAccess('owner'));
+export const orgMemberProcedure = protectedProcedure.use(
+  withOrganizationAccess(),
+);
+export const orgAdminProcedure = protectedProcedure.use(
+  withOrganizationAccess('admin'),
+);
+export const orgOwnerProcedure = protectedProcedure.use(
+  withOrganizationAccess('owner'),
+);
 
 // Usage in router
 export const organizationRouter = t.router({
@@ -406,13 +426,15 @@ export const organizationRouter = t.router({
 
   // Only admins can update settings
   updateSettings: orgAdminProcedure
-    .input(z.object({
-      organizationId: z.string(),
-      settings: z.object({
-        name: z.string().optional(),
-        description: z.string().optional(),
+    .input(
+      z.object({
+        organizationId: z.string(),
+        settings: z.object({
+          name: z.string().optional(),
+          description: z.string().optional(),
+        }),
       }),
-    }))
+    )
     .mutation(({ input, ctx }) => {
       return updateOrganizationSettings(input.organizationId, input.settings);
     }),
@@ -526,7 +548,8 @@ export const apiKeyAuth = t.middleware(async ({ ctx, next }) => {
 ```typescript title="src/session-auth.ts"
 // Session middleware with refresh
 export const sessionAuth = t.middleware(async ({ ctx, next }) => {
-  const sessionId = ctx.req.headers['x-session-id'] || ctx.req.cookies?.sessionId;
+  const sessionId =
+    ctx.req.headers['x-session-id'] || ctx.req.cookies?.sessionId;
 
   if (!sessionId) {
     throw new TRPCError({
@@ -545,7 +568,8 @@ export const sessionAuth = t.middleware(async ({ ctx, next }) => {
   }
 
   // Refresh session if close to expiry
-  if (session.expiresAt.getTime() - Date.now() < 15 * 60 * 1000) { // 15 minutes
+  if (session.expiresAt.getTime() - Date.now() < 15 * 60 * 1000) {
+    // 15 minutes
     await refreshSession(sessionId);
   }
 
@@ -570,8 +594,8 @@ export const sessionAuth = t.middleware(async ({ ctx, next }) => {
 ## Testing Authorization
 
 ```typescript title="src/auth.test.ts"
-import { describe, it, expect } from 'vitest';
 import { createCallerFactory } from '@trpc/server';
+import { describe, expect, it } from 'vitest';
 import { appRouter } from './router';
 
 const createCaller = createCallerFactory(appRouter);
@@ -590,7 +614,9 @@ describe('Authorization', () => {
     it('should reject unauthenticated requests', async () => {
       const caller = createCaller({ user: null });
 
-      await expect(caller.protected.getProfile()).rejects.toThrow('UNAUTHORIZED');
+      await expect(caller.protected.getProfile()).rejects.toThrow(
+        'UNAUTHORIZED',
+      );
     });
 
     it('should allow authenticated requests', async () => {
@@ -646,7 +672,7 @@ describe('Authorization', () => {
         caller.posts.update({
           postId: 'post-owned-by-user2',
           title: 'Updated title',
-        })
+        }),
       ).rejects.toThrow('FORBIDDEN');
     });
   });

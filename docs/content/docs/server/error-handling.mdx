@@ -79,7 +79,7 @@ tRPC defines standardized error codes that map to HTTP status codes:
 ```typescript title="src/error-examples.ts"
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   getUser: publicProcedure
@@ -100,15 +100,18 @@ export const appRouter = router({
     }),
 
   createUser: publicProcedure
-    .input(z.object({
-      email: z.string().email(),
-      name: z.string(),
-    }))
+    .input(
+      z.object({
+        email: z.string().email(),
+        name: z.string(),
+      }),
+    )
     .mutation(async ({ input }) => {
       try {
         return await db.user.create({ data: input });
       } catch (error) {
-        if (error.code === 'P2002') { // Unique constraint violation
+        if (error.code === 'P2002') {
+          // Unique constraint violation
           throw new TRPCError({
             code: 'CONFLICT',
             message: 'A user with this email already exists',
@@ -164,11 +167,13 @@ export const appRouter = router({
 // Include additional error context
 export const paymentRouter = router({
   processPayment: publicProcedure
-    .input(z.object({
-      amount: z.number().positive(),
-      currency: z.string(),
-      paymentMethodId: z.string(),
-    }))
+    .input(
+      z.object({
+        amount: z.number().positive(),
+        currency: z.string(),
+        paymentMethodId: z.string(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       try {
         const result = await stripe.paymentIntents.create({
@@ -221,8 +226,8 @@ export const paymentRouter = router({
 
 ```typescript title="src/server.ts"
 import { createNextApiHandler } from '@trpc/server/adapters/next';
-import { appRouter } from './router';
 import { createContext } from './context';
+import { appRouter } from './router';
 
 export default createNextApiHandler({
   router: appRouter,
@@ -286,7 +291,9 @@ export const createValidationError = (message: string, field?: string) => {
   });
 };
 
-export const createAuthError = (message: string = 'Authentication required') => {
+export const createAuthError = (
+  message: string = 'Authentication required',
+) => {
   return new TRPCError({
     code: 'UNAUTHORIZED',
     message,
@@ -474,13 +481,16 @@ const retryMiddleware = (maxRetries: number = 3) => {
         lastError = error as Error;
 
         // Don't retry client errors
-        if (error instanceof TRPCError && [
-          'BAD_REQUEST',
-          'UNAUTHORIZED',
-          'FORBIDDEN',
-          'NOT_FOUND',
-          'CONFLICT',
-        ].includes(error.code)) {
+        if (
+          error instanceof TRPCError &&
+          [
+            'BAD_REQUEST',
+            'UNAUTHORIZED',
+            'FORBIDDEN',
+            'NOT_FOUND',
+            'CONFLICT',
+          ].includes(error.code)
+        ) {
           throw error;
         }
 
@@ -491,7 +501,7 @@ const retryMiddleware = (maxRetries: number = 3) => {
 
         // Exponential backoff
         const delay = Math.pow(2, attempt) * 100;
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
 
         console.log(`Retrying ${path} (attempt ${attempt + 1}/${maxRetries})`);
       }
@@ -565,18 +575,20 @@ const transformError = (error: Error): TRPCError => {
 // Usage in procedures
 export const walletRouter = router({
   transfer: publicProcedure
-    .input(z.object({
-      fromUserId: z.string(),
-      toUserId: z.string(),
-      amount: z.number().positive(),
-    }))
+    .input(
+      z.object({
+        fromUserId: z.string(),
+        toUserId: z.string(),
+        amount: z.number().positive(),
+      }),
+    )
     .mutation(async ({ input }) => {
       try {
         // Business logic that throws custom errors
         const result = await transferFunds(
           input.fromUserId,
           input.toUserId,
-          input.amount
+          input.amount,
         );
         return result;
       } catch (error) {
@@ -589,9 +601,8 @@ export const walletRouter = router({
 ## Testing Error Handling
 
 ```typescript title="src/error-handling.test.ts"
-import { describe, it, expect } from 'vitest';
-import { createCallerFactory } from '@trpc/server';
-import { TRPCError } from '@trpc/server';
+import { createCallerFactory, TRPCError } from '@trpc/server';
+import { describe, expect, it } from 'vitest';
 import { appRouter } from './router';
 
 const createCaller = createCallerFactory(appRouter);
@@ -601,13 +612,12 @@ describe('Error Handling', () => {
     it('should throw UNAUTHORIZED for missing auth', async () => {
       const caller = createCaller({ user: null });
 
-      await expect(
-        caller.protected.getProfile()
-      ).rejects.toThrow(TRPCError);
+      await expect(caller.protected.getProfile()).rejects.toThrow(TRPCError);
 
-      await expect(
-        caller.protected.getProfile()
-      ).rejects.toHaveProperty('code', 'UNAUTHORIZED');
+      await expect(caller.protected.getProfile()).rejects.toHaveProperty(
+        'code',
+        'UNAUTHORIZED',
+      );
     });
   });
 
@@ -617,12 +627,12 @@ describe('Error Handling', () => {
         user: { id: 'user1', role: 'user' },
       });
 
-      await expect(
-        caller.admin.deleteUser({ id: 'user2' })
-      ).rejects.toThrow(TRPCError);
+      await expect(caller.admin.deleteUser({ id: 'user2' })).rejects.toThrow(
+        TRPCError,
+      );
 
       await expect(
-        caller.admin.deleteUser({ id: 'user2' })
+        caller.admin.deleteUser({ id: 'user2' }),
       ).rejects.toHaveProperty('code', 'FORBIDDEN');
     });
   });
@@ -635,7 +645,7 @@ describe('Error Handling', () => {
         caller.user.create({
           email: 'invalid-email',
           name: '', // Too short
-        })
+        }),
       ).rejects.toThrow();
     });
   });
@@ -645,7 +655,7 @@ describe('Error Handling', () => {
       const caller = createCaller({});
 
       await expect(
-        caller.user.getById({ id: 'nonexistent' })
+        caller.user.getById({ id: 'nonexistent' }),
       ).rejects.toHaveProperty('code', 'NOT_FOUND');
     });
   });
@@ -660,7 +670,7 @@ describe('Error Handling', () => {
         caller.wallet.transfer({
           toUserId: 'user2',
           amount: 100, // More than balance
-        })
+        }),
       ).rejects.toHaveProperty('code', 'BAD_REQUEST');
     });
   });
@@ -706,13 +716,16 @@ export function isTRPCError(error: unknown): error is TRPCError {
 
 export function isTRPCErrorWithCode(
   error: unknown,
-  code: TRPCError['code']
+  code: TRPCError['code'],
 ): error is TRPCError {
   return isTRPCError(error) && error.code === code;
 }
 
 // Usage in API routes
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   try {
     const result = await caller.someOperation();
     res.status(200).json(result);

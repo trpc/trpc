@@ -1,6 +1,7 @@
 'use client';
-import { type ButtonHTMLAttributes, useState } from 'react';
+
 import dynamic from 'next/dynamic';
+import { useState, type ButtonHTMLAttributes } from 'react';
 
 // lazy load the dialog
 const SearchAI = dynamic(() => import('./search'), { ssr: false });

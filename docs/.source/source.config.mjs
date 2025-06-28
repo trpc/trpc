@@ -1,22 +1,23 @@
 // source.config.ts
 import {
   rehypeCodeDefaultOptions,
-  remarkSteps
-} from "fumadocs-core/mdx-plugins";
-import { remarkInstall } from "fumadocs-docgen";
-import { remarkTypeScriptToJavaScript } from "fumadocs-docgen/remark-ts2js";
+  remarkSteps,
+} from 'fumadocs-core/mdx-plugins';
+import { remarkInstall } from 'fumadocs-docgen';
+import { remarkTypeScriptToJavaScript } from 'fumadocs-docgen/remark-ts2js';
 import {
   defineConfig,
   defineDocs,
   frontmatterSchema,
-  metaSchema
-} from "fumadocs-mdx/config";
-import { transformerTwoslash } from "fumadocs-twoslash";
-import { createFileSystemTypesCache } from "fumadocs-twoslash/cache-fs";
-import { remarkAutoTypeTable } from "fumadocs-typescript";
-import rehypeKatex from "rehype-katex";
-import remarkMath from "remark-math";
-import { z } from "zod";
+  metaSchema,
+} from 'fumadocs-mdx/config';
+import { transformerTwoslash } from 'fumadocs-twoslash';
+import { createFileSystemTypesCache } from 'fumadocs-twoslash/cache-fs';
+import { remarkAutoTypeTable } from 'fumadocs-typescript';
+import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math';
+import { z } from 'zod';
+
 var docs = defineDocs({
   docs: {
     async: true,
@@ -26,39 +27,39 @@ var docs = defineDocs({
       /**
        * API routes only
        */
-      method: z.string().optional()
-    })
+      method: z.string().optional(),
+    }),
   },
   meta: {
     schema: metaSchema.extend({
-      description: z.string().optional()
-    })
-  }
+      description: z.string().optional(),
+    }),
+  },
 });
 var source_config_default = defineConfig({
-  lastModifiedTime: "git",
+  lastModifiedTime: 'git',
   mdxOptions: {
     rehypeCodeOptions: {
       lazy: true,
       experimentalJSEngine: true,
-      langs: ["ts", "js", "html", "tsx", "mdx"],
-      inline: "tailing-curly-colon",
+      langs: ['ts', 'js', 'html', 'tsx', 'mdx'],
+      inline: 'tailing-curly-colon',
       themes: {
-        light: "catppuccin-latte",
-        dark: "catppuccin-mocha"
+        light: 'catppuccin-latte',
+        dark: 'catppuccin-mocha',
       },
       transformers: [
-        ...rehypeCodeDefaultOptions.transformers ?? [],
+        ...(rehypeCodeDefaultOptions.transformers ?? []),
         transformerTwoslash({
-          typesCache: createFileSystemTypesCache()
+          typesCache: createFileSystemTypesCache(),
         }),
         {
-          name: "@shikijs/transformers:remove-notation-escape",
+          name: '@shikijs/transformers:remove-notation-escape',
           code(hast) {
             function replace(node) {
-              if (node.type === "text") {
-                node.value = node.value.replace("[\\!code", "[!code");
-              } else if ("children" in node) {
+              if (node.type === 'text') {
+                node.value = node.value.replace('[\\!code', '[!code');
+              } else if ('children' in node) {
                 for (const child of node.children) {
                   replace(child);
                 }
@@ -66,24 +67,21 @@ var source_config_default = defineConfig({
             }
             replace(hast);
             return hast;
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
     remarkCodeTabOptions: {
-      parseMdx: true
+      parseMdx: true,
     },
     remarkPlugins: [
       remarkSteps,
       remarkMath,
       remarkAutoTypeTable,
-      [remarkInstall, { persist: { id: "package-manager" } }],
-      remarkTypeScriptToJavaScript
+      [remarkInstall, { persist: { id: 'package-manager' } }],
+      remarkTypeScriptToJavaScript,
     ],
-    rehypePlugins: (v) => [rehypeKatex, ...v]
-  }
+    rehypePlugins: (v) => [rehypeKatex, ...v],
+  },
 });
-export {
-  source_config_default as default,
-  docs
-};
+export { source_config_default as default, docs };

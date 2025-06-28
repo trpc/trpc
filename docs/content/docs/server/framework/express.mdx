@@ -56,7 +56,7 @@ export const publicProcedure = t.procedure;
 
 ```typescript title="src/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 // Mock database
 const posts: Array<{
@@ -80,10 +80,12 @@ export const appRouter = router({
   }),
 
   createPost: publicProcedure
-    .input(z.object({
-      title: z.string().min(1),
-      content: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        content: z.string().min(1),
+      }),
+    )
     .mutation(({ input }) => {
       const post = {
         id: Date.now().toString(),
@@ -97,7 +99,7 @@ export const appRouter = router({
   deletePost: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(({ input }) => {
-      const index = posts.findIndex(p => p.id === input.id);
+      const index = posts.findIndex((p) => p.id === input.id);
       if (index === -1) {
         throw new Error('Post not found');
       }
@@ -112,15 +114,21 @@ export type AppRouter = typeof appRouter;
 ### 3. Setup Express Server
 
 ```typescript title="src/server.ts"
-import express from 'express';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import express from 'express';
 import { appRouter } from './router';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Create context
-const createContext = ({ req, res }: { req: express.Request; res: express.Response }) => {
+const createContext = ({
+  req,
+  res,
+}: {
+  req: express.Request;
+  res: express.Response;
+}) => {
   return {
     req,
     res,
@@ -134,7 +142,7 @@ app.use(
   createExpressMiddleware({
     router: appRouter,
     createContext,
-  })
+  }),
 );
 
 // Health check endpoint
@@ -274,7 +282,13 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const createContext = ({ req, res }: { req: express.Request; res: express.Response }) => {
+export const createContext = ({
+  req,
+  res,
+}: {
+  req: express.Request;
+  res: express.Response;
+}) => {
   return {
     req,
     res,
@@ -287,7 +301,7 @@ export type Context = ReturnType<typeof createContext>;
 
 ```typescript title="src/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   getPosts: publicProcedure.query(async ({ ctx }) => {
@@ -297,10 +311,12 @@ export const appRouter = router({
   }),
 
   createPost: publicProcedure
-    .input(z.object({
-      title: z.string().min(1),
-      content: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        content: z.string().min(1),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       return await ctx.prisma.post.create({
         data: input,
@@ -338,7 +354,13 @@ const pool = new Pool({
 
 const db = drizzle(pool, { schema });
 
-export const createContext = ({ req, res }: { req: express.Request; res: express.Response }) => {
+export const createContext = ({
+  req,
+  res,
+}: {
+  req: express.Request;
+  res: express.Response;
+}) => {
   return {
     req,
     res,
@@ -361,7 +383,13 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-export const createContext = ({ req, res }: { req: express.Request; res: express.Response }) => {
+export const createContext = ({
+  req,
+  res,
+}: {
+  req: express.Request;
+  res: express.Response;
+}) => {
   return {
     req,
     res,
@@ -376,20 +404,22 @@ export type Context = ReturnType<typeof createContext>;
 export const appRouter = router({
   getPosts: publicProcedure.query(async ({ ctx }) => {
     const result = await ctx.db.query(
-      'SELECT * FROM posts ORDER BY created_at DESC'
+      'SELECT * FROM posts ORDER BY created_at DESC',
     );
     return result.rows;
   }),
 
   createPost: publicProcedure
-    .input(z.object({
-      title: z.string().min(1),
-      content: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        content: z.string().min(1),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const result = await ctx.db.query(
         'INSERT INTO posts (title, content) VALUES ($1, $2) RETURNING *',
-        [input.title, input.content]
+        [input.title, input.content],
       );
       return result.rows[0];
     }),
@@ -425,7 +455,13 @@ export function signToken(payload: { userId: string; email: string }) {
 import express from 'express';
 import { verifyToken } from './auth';
 
-export const createContext = ({ req, res }: { req: express.Request; res: express.Response }) => {
+export const createContext = ({
+  req,
+  res,
+}: {
+  req: express.Request;
+  res: express.Response;
+}) => {
   // Extract token from Authorization header
   const token = req.headers.authorization?.replace('Bearer ', '');
   const user = token ? verifyToken(token) : null;
@@ -476,10 +512,12 @@ export const appRouter = router({
   }),
 
   createPost: protectedProcedure
-    .input(z.object({
-      title: z.string().min(1),
-      content: z.string().min(1),
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        content: z.string().min(1),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       // User is guaranteed to exist here
       return await createPost({
@@ -539,18 +577,20 @@ npm install -D @types/cors
 ```
 
 ```typescript title="src/server.ts"
-import express from 'express';
-import cors from 'cors';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import cors from 'cors';
+import express from 'express';
 import { appRouter } from './router';
 
 const app = express();
 
 // Add CORS middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  }),
+);
 
 // Add tRPC middleware
 app.use(
@@ -558,7 +598,7 @@ app.use(
   createExpressMiddleware({
     router: appRouter,
     createContext,
-  })
+  }),
 );
 
 // ... rest of server setup
@@ -588,10 +628,12 @@ app.use(
 If your frontend can't connect to your API, make sure CORS is properly configured:
 
 ```typescript
-app.use(cors({
-  origin: ['http://localhost:3000', 'https://yourapp.com'],
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: ['http://localhost:3000', 'https://yourapp.com'],
+    credentials: true,
+  }),
+);
 ```
 
 </Accordion>

@@ -29,9 +29,9 @@ export default withMDX(config);
 Add to your Shiki transformers.
 
 ```ts twoslash title="source.config.ts (Fumadocs MDX)"
+import { rehypeCodeDefaultOptions } from 'fumadocs-core/mdx-plugins';
 import { defineConfig } from 'fumadocs-mdx/config';
 import { transformerTwoslash } from 'fumadocs-twoslash';
-import { rehypeCodeDefaultOptions } from 'fumadocs-core/mdx-plugins';
 
 export default defineConfig({
   mdxOptions: {

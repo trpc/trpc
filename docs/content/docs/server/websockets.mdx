@@ -119,8 +119,8 @@ import {
   createTRPCClient,
   createWSClient,
   httpBatchLink,
+  splitLink,
   wsLink,
-  splitLink
 } from '@trpc/client';
 import type { AppRouter } from '../server/routers/_app';
 
@@ -202,10 +202,10 @@ export const trpc = createTRPCClient<AppRouter>({
 Create a subscription that sends real-time updates:
 
 ```ts title="server/routers/posts.ts"
+import { EventEmitter } from 'events';
 import { observable } from '@trpc/server/observable';
 import { z } from 'zod';
 import { publicProcedure, router } from '../trpc';
-import { EventEmitter } from 'events';
 
 const ee = new EventEmitter();
 
@@ -245,9 +245,13 @@ import { publicProcedure, router } from '../trpc';
 
 export const postsRouter = router({
   onPostAdd: publicProcedure
-    .input(z.object({
-      lastEventId: z.string().nullish(),
-    }).optional())
+    .input(
+      z
+        .object({
+          lastEventId: z.string().nullish(),
+        })
+        .optional(),
+    )
     .subscription(async function* (opts) {
       if (opts.input?.lastEventId) {
         // Get posts since last event ID
@@ -416,7 +420,7 @@ const handler = applyWSSHandler({
   createContext,
   keepAlive: {
     enabled: true,
-    pingMs: 30000,    // Send ping every 30 seconds
+    pingMs: 30000, // Send ping every 30 seconds
     pongWaitMs: 5000, // Wait 5 seconds for pong response
   },
 });
@@ -523,11 +527,13 @@ export class WebSocketHeartbeat {
   private intervals = new Map<string, NodeJS.Timeout>();
   private missedPings = new Map<string, number>();
 
-  constructor(private config: HeartbeatConfig = {
-    interval: 30000,  // 30 seconds
-    timeout: 5000,    // 5 seconds
-    maxMissed: 3,     // 3 missed pings
-  }) {}
+  constructor(
+    private config: HeartbeatConfig = {
+      interval: 30000, // 30 seconds
+      timeout: 5000, // 5 seconds
+      maxMissed: 3, // 3 missed pings
+    },
+  ) {}
 
   start(connectionId: string, ws: WebSocket) {
     const interval = setInterval(() => {
@@ -540,7 +546,9 @@ export class WebSocketHeartbeat {
           this.missedPings.set(connectionId, missed);
 
           if (missed >= this.config.maxMissed) {
-            console.log(`Connection ${connectionId} missed ${missed} pings, closing`);
+            console.log(
+              `Connection ${connectionId} missed ${missed} pings, closing`,
+            );
             ws.close(1000, 'Heartbeat timeout');
             this.stop(connectionId);
           }
@@ -608,7 +616,7 @@ export class WebSocketManager {
     const connection = this.connections.get(connectionId);
     if (connection) {
       // Clean up subscriptions
-      connection.subscriptions.forEach(subId => {
+      connection.subscriptions.forEach((subId) => {
         this.unsubscribe(connectionId, subId);
       });
 
@@ -649,15 +657,18 @@ export class WebSocketManager {
   getConnectionStats() {
     return {
       total: this.connections.size,
-      authenticated: Array.from(this.connections.values())
-        .filter(c => c.userId).length,
-      byUser: Array.from(this.connections.values())
-        .reduce((acc, c) => {
+      authenticated: Array.from(this.connections.values()).filter(
+        (c) => c.userId,
+      ).length,
+      byUser: Array.from(this.connections.values()).reduce(
+        (acc, c) => {
           if (c.userId) {
             acc[c.userId] = (acc[c.userId] || 0) + 1;
           }
           return acc;
-        }, {} as Record<string, number>),
+        },
+        {} as Record<string, number>,
+      ),
     };
   }
 }
@@ -694,7 +705,7 @@ export class GracefulShutdown {
     });
 
     // Wait for clients to receive the message
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Close all connections gracefully
     const connections = Array.from(this.wsManager['connections'].values());
@@ -704,7 +715,7 @@ export class GracefulShutdown {
         if (connection.ws.readyState === WebSocket.OPEN) {
           connection.ws.close(1001, 'Server restart');
         }
-      })
+      }),
     );
 
     console.log('All WebSocket connections closed gracefully');

@@ -15,9 +15,15 @@ A **router** is a collection of procedures grouped together under a common names
 const userRouter = t.router({
   list: t.procedure.query(() => getUsers()),
   byId: t.procedure.input(z.string()).query(({ input }) => getUserById(input)),
-  create: t.procedure.input(CreateUserSchema).mutation(({ input }) => createUser(input)),
-  update: t.procedure.input(UpdateUserSchema).mutation(({ input }) => updateUser(input)),
-  delete: t.procedure.input(z.string()).mutation(({ input }) => deleteUser(input)),
+  create: t.procedure
+    .input(CreateUserSchema)
+    .mutation(({ input }) => createUser(input)),
+  update: t.procedure
+    .input(UpdateUserSchema)
+    .mutation(({ input }) => updateUser(input)),
+  delete: t.procedure
+    .input(z.string())
+    .mutation(({ input }) => deleteUser(input)),
 });
 
 // Client usage: trpc.user.list.query()
@@ -32,63 +38,66 @@ const userRouter = t.router({
 Start with a simple router containing related procedures:
 
 ```typescript title="server/routers/posts.ts"
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 import { t } from '../trpc';
-import { TRPCError } from '@trpc/server';
 
 export const postsRouter = t.router({
   // List all posts
   list: t.procedure
-    .input(z.object({
-      limit: z.number().min(1).max(100).default(10),
-      cursor: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(10),
+        cursor: z.string().optional(),
+      }),
+    )
     .query(async ({ input }) => {
       const posts = await db.post.findMany({
         take: input.limit + 1,
         cursor: input.cursor ? { id: input.cursor } : undefined,
         orderBy: { createdAt: 'desc' },
-        include: { author: true }
+        include: { author: true },
       });
 
       return {
         posts: posts.slice(0, input.limit),
-        nextCursor: posts.length > input.limit ? posts[input.limit].id : undefined
+        nextCursor:
+          posts.length > input.limit ? posts[input.limit].id : undefined,
       };
     }),
 
   // Get single post
-  byId: t.procedure
-    .input(z.string())
-    .query(async ({ input }) => {
-      const post = await db.post.findUnique({
-        where: { id: input },
-        include: { author: true, comments: true }
+  byId: t.procedure.input(z.string()).query(async ({ input }) => {
+    const post = await db.post.findUnique({
+      where: { id: input },
+      include: { author: true, comments: true },
+    });
+
+    if (!post) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Post not found',
       });
+    }
 
-      if (!post) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Post not found'
-        });
-      }
-
-      return post;
-    }),
+    return post;
+  }),
 
   // Create new post
   create: t.procedure
-    .input(z.object({
-      title: z.string().min(1),
-      content: z.string().min(1),
-      tags: z.array(z.string()).default([])
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1),
+        content: z.string().min(1),
+        tags: z.array(z.string()).default([]),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       return await db.post.create({
         data: {
           ...input,
-          authorId: ctx.user.id
-        }
+          authorId: ctx.user.id,
+        },
       });
     }),
 });
@@ -100,25 +109,25 @@ Organize routers by business domain:
 
 ```typescript title="server/routers/users.ts"
 export const usersRouter = t.router({
-  profile: t.procedure
-    .input(z.string())
-    .query(async ({ input }) => {
-      return await db.user.findUnique({
-        where: { id: input },
-        include: { posts: true, followers: true }
-      });
-    }),
+  profile: t.procedure.input(z.string()).query(async ({ input }) => {
+    return await db.user.findUnique({
+      where: { id: input },
+      include: { posts: true, followers: true },
+    });
+  }),
 
   updateProfile: protectedProcedure
-    .input(z.object({
-      name: z.string().optional(),
-      bio: z.string().optional(),
-      avatar: z.string().url().optional()
-    }))
+    .input(
+      z.object({
+        name: z.string().optional(),
+        bio: z.string().optional(),
+        avatar: z.string().url().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       return await db.user.update({
         where: { id: ctx.user.id },
-        data: input
+        data: input,
       });
     }),
 
@@ -128,8 +137,8 @@ export const usersRouter = t.router({
       return await db.follow.create({
         data: {
           followerId: ctx.user.id,
-          followingId: targetUserId
-        }
+          followingId: targetUserId,
+        },
       });
     }),
 
@@ -140,9 +149,9 @@ export const usersRouter = t.router({
         where: {
           followerId_followingId: {
             followerId: ctx.user.id,
-            followingId: targetUserId
-          }
-        }
+            followingId: targetUserId,
+          },
+        },
       });
     }),
 });
@@ -160,40 +169,42 @@ const contentRouter = t.router({
   posts: postsRouter,
 
   comments: t.router({
-    byPost: t.procedure
-      .input(z.string())
-      .query(async ({ input }) => {
-        return await db.comment.findMany({
-          where: { postId: input },
-          include: { author: true },
-          orderBy: { createdAt: 'desc' }
-        });
-      }),
+    byPost: t.procedure.input(z.string()).query(async ({ input }) => {
+      return await db.comment.findMany({
+        where: { postId: input },
+        include: { author: true },
+        orderBy: { createdAt: 'desc' },
+      });
+    }),
 
     create: protectedProcedure
-      .input(z.object({
-        postId: z.string(),
-        content: z.string().min(1)
-      }))
+      .input(
+        z.object({
+          postId: z.string(),
+          content: z.string().min(1),
+        }),
+      )
       .mutation(async ({ input, ctx }) => {
         return await db.comment.create({
           data: {
             ...input,
-            authorId: ctx.user.id
-          }
+            authorId: ctx.user.id,
+          },
         });
       }),
 
     update: protectedProcedure
-      .input(z.object({
-        id: z.string(),
-        content: z.string().min(1)
-      }))
+      .input(
+        z.object({
+          id: z.string(),
+          content: z.string().min(1),
+        }),
+      )
       .mutation(async ({ input, ctx }) => {
         // Check ownership
         const comment = await db.comment.findUnique({
           where: { id: input.id },
-          select: { authorId: true }
+          select: { authorId: true },
         });
 
         if (comment?.authorId !== ctx.user.id) {
@@ -202,27 +213,24 @@ const contentRouter = t.router({
 
         return await db.comment.update({
           where: { id: input.id },
-          data: { content: input.content }
+          data: { content: input.content },
         });
       }),
   }),
 
   categories: t.router({
-    list: t.procedure
-      .query(async () => {
-        return await db.category.findMany({
-          include: { _count: { select: { posts: true } } }
-        });
-      }),
+    list: t.procedure.query(async () => {
+      return await db.category.findMany({
+        include: { _count: { select: { posts: true } } },
+      });
+    }),
 
-    bySlug: t.procedure
-      .input(z.string())
-      .query(async ({ input }) => {
-        return await db.category.findUnique({
-          where: { slug: input },
-          include: { posts: true }
-        });
-      }),
+    bySlug: t.procedure.input(z.string()).query(async ({ input }) => {
+      return await db.category.findUnique({
+        where: { slug: input },
+        include: { posts: true },
+      });
+    }),
   }),
 });
 
@@ -238,10 +246,10 @@ Combine multiple routers into a single router:
 
 ```typescript title="server/routers/_app.ts"
 import { t } from '../trpc';
-import { authRouter } from './auth';
-import { usersRouter } from './users';
-import { postsRouter } from './posts';
 import { adminRouter } from './admin';
+import { authRouter } from './auth';
+import { postsRouter } from './posts';
+import { usersRouter } from './users';
 
 export const appRouter = t.router({
   // Direct router inclusion
@@ -259,11 +267,11 @@ export const appRouter = t.router({
   }),
 
   // Direct procedures
-  health: t.procedure
-    .query(() => ({ status: 'ok', timestamp: new Date() })),
+  health: t.procedure.query(() => ({ status: 'ok', timestamp: new Date() })),
 
-  version: t.procedure
-    .query(() => ({ version: process.env.API_VERSION || '1.0.0' })),
+  version: t.procedure.query(() => ({
+    version: process.env.API_VERSION || '1.0.0',
+  })),
 });
 
 export type AppRouter = typeof appRouter;
@@ -286,29 +294,26 @@ const developmentRouter = t.router({
   ...baseRouter,
   // Development-only routes
   dev: t.router({
-    seedDatabase: t.procedure
-      .mutation(async () => {
-        if (process.env.NODE_ENV !== 'development') {
-          throw new TRPCError({ code: 'FORBIDDEN' });
-        }
-        await seedDatabase();
-        return { success: true };
-      }),
+    seedDatabase: t.procedure.mutation(async () => {
+      if (process.env.NODE_ENV !== 'development') {
+        throw new TRPCError({ code: 'FORBIDDEN' });
+      }
+      await seedDatabase();
+      return { success: true };
+    }),
 
-    resetDatabase: t.procedure
-      .mutation(async () => {
-        if (process.env.NODE_ENV !== 'development') {
-          throw new TRPCError({ code: 'FORBIDDEN' });
-        }
-        await resetDatabase();
-        return { success: true };
-      }),
+    resetDatabase: t.procedure.mutation(async () => {
+      if (process.env.NODE_ENV !== 'development') {
+        throw new TRPCError({ code: 'FORBIDDEN' });
+      }
+      await resetDatabase();
+      return { success: true };
+    }),
   }),
 });
 
-export const appRouter = process.env.NODE_ENV === 'development'
-  ? developmentRouter
-  : baseRouter;
+export const appRouter =
+  process.env.NODE_ENV === 'development' ? developmentRouter : baseRouter;
 ```
 
 ### Feature-Based Organization
@@ -321,8 +326,12 @@ const authFeatureRouter = t.router({
   login: publicProcedure.input(LoginSchema).mutation(login),
   logout: protectedProcedure.mutation(logout),
   register: publicProcedure.input(RegisterSchema).mutation(register),
-  resetPassword: publicProcedure.input(z.string().email()).mutation(resetPassword),
-  changePassword: protectedProcedure.input(ChangePasswordSchema).mutation(changePassword),
+  resetPassword: publicProcedure
+    .input(z.string().email())
+    .mutation(resetPassword),
+  changePassword: protectedProcedure
+    .input(ChangePasswordSchema)
+    .mutation(changePassword),
 });
 
 // Social Features
@@ -360,62 +369,59 @@ const adminProcedure = t.procedure.use(requireAdminRole);
 
 export const adminRouter = t.router({
   users: t.router({
-    list: adminProcedure
-      .query(async () => {
-        return await db.user.findMany({
-          include: { _count: { select: { posts: true } } }
-        });
-      }),
+    list: adminProcedure.query(async () => {
+      return await db.user.findMany({
+        include: { _count: { select: { posts: true } } },
+      });
+    }),
 
-    ban: adminProcedure
-      .input(z.string())
-      .mutation(async ({ input }) => {
-        return await db.user.update({
-          where: { id: input },
-          data: { status: 'banned' }
-        });
-      }),
+    ban: adminProcedure.input(z.string()).mutation(async ({ input }) => {
+      return await db.user.update({
+        where: { id: input },
+        data: { status: 'banned' },
+      });
+    }),
 
-    unban: adminProcedure
-      .input(z.string())
-      .mutation(async ({ input }) => {
-        return await db.user.update({
-          where: { id: input },
-          data: { status: 'active' }
-        });
-      }),
+    unban: adminProcedure.input(z.string()).mutation(async ({ input }) => {
+      return await db.user.update({
+        where: { id: input },
+        data: { status: 'active' },
+      });
+    }),
   }),
 
   posts: t.router({
-    flagged: adminProcedure
-      .query(async () => {
-        return await db.post.findMany({
-          where: { flagged: true },
-          include: { author: true, reports: true }
-        });
-      }),
+    flagged: adminProcedure.query(async () => {
+      return await db.post.findMany({
+        where: { flagged: true },
+        include: { author: true, reports: true },
+      });
+    }),
 
     moderate: adminProcedure
-      .input(z.object({
-        postId: z.string(),
-        action: z.enum(['approve', 'remove', 'flag'])
-      }))
+      .input(
+        z.object({
+          postId: z.string(),
+          action: z.enum(['approve', 'remove', 'flag']),
+        }),
+      )
       .mutation(async ({ input }) => {
         return await moderatePost(input.postId, input.action);
       }),
   }),
 
   analytics: t.router({
-    overview: adminProcedure
-      .query(async () => {
-        return await getAnalyticsOverview();
-      }),
+    overview: adminProcedure.query(async () => {
+      return await getAnalyticsOverview();
+    }),
 
     userGrowth: adminProcedure
-      .input(z.object({
-        startDate: z.date(),
-        endDate: z.date()
-      }))
+      .input(
+        z.object({
+          startDate: z.date(),
+          endDate: z.date(),
+        }),
+      )
       .query(async ({ input }) => {
         return await getUserGrowthData(input.startDate, input.endDate);
       }),
@@ -516,7 +522,7 @@ export function createCrudRouter<T extends { id: string }>(
     create: (data: any) => Promise<T>;
     update: (id: string, data: any) => Promise<T>;
     delete: (id: string) => Promise<void>;
-  }
+  },
 ) {
   return t.router({
     list: t.procedure
@@ -525,18 +531,16 @@ export function createCrudRouter<T extends { id: string }>(
         return await operations.list(input);
       }),
 
-    byId: t.procedure
-      .input(z.string())
-      .query(async ({ input }) => {
-        const item = await operations.byId(input);
-        if (!item) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `${entity} not found`
-          });
-        }
-        return item;
-      }),
+    byId: t.procedure.input(z.string()).query(async ({ input }) => {
+      const item = await operations.byId(input);
+      if (!item) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `${entity} not found`,
+        });
+      }
+      return item;
+    }),
 
     create: protectedProcedure
       .input(schema.create)
@@ -551,12 +555,10 @@ export function createCrudRouter<T extends { id: string }>(
         return await operations.update(id, data);
       }),
 
-    delete: protectedProcedure
-      .input(z.string())
-      .mutation(async ({ input }) => {
-        await operations.delete(input);
-        return { success: true };
-      }),
+    delete: protectedProcedure.input(z.string()).mutation(async ({ input }) => {
+      await operations.delete(input);
+      return { success: true };
+    }),
   });
 }
 
@@ -574,7 +576,7 @@ export const productsRouter = createCrudRouter(
     create: createProduct,
     update: updateProduct,
     delete: deleteProduct,
-  }
+  },
 );
 ```
 
@@ -594,19 +596,15 @@ export function BlogComponent() {
 
   // Complex nested calls
   const postCommentsQuery = useQuery(
-    trpc.content.comments.byPost.queryOptions('post-123')
+    trpc.content.comments.byPost.queryOptions('post-123'),
   );
 
   // Mutations on nested routes
   const createCommentMutation = useMutation(
-    trpc.content.comments.create.mutationOptions()
+    trpc.content.comments.create.mutationOptions(),
   );
 
-  return (
-    <div>
-      {/* Component implementation */}
-    </div>
-  );
+  return <div>{/* Component implementation */}</div>;
 }
 ```
 
@@ -650,10 +648,10 @@ export function useAdminActions() {
 ```typescript
 // Good: Domain-based organization
 export const appRouter = t.router({
-  auth: authRouter,      // Authentication
-  users: usersRouter,    // User management
-  posts: postsRouter,    // Content management
-  admin: adminRouter,    // Administrative functions
+  auth: authRouter, // Authentication
+  users: usersRouter, // User management
+  posts: postsRouter, // Content management
+  admin: adminRouter, // Administrative functions
 });
 ```
 

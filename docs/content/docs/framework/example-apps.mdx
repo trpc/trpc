@@ -20,23 +20,23 @@ Explore real-world tRPC applications that demonstrate best practices, common pat
     Query, and modern patterns.
   </Card>
 
-  <Card
-    href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter"
-    title="Next.js + Prisma"
-    icon={<IconDatabase />}
-  >
-    Full-stack blog with Prisma ORM, authentication, CRUD operations, and
-    type-safe database access.
-  </Card>
+<Card
+  href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter"
+  title="Next.js + Prisma"
+  icon={<IconDatabase />}
+>
+  Full-stack blog with Prisma ORM, authentication, CRUD operations, and
+  type-safe database access.
+</Card>
 
-  <Card
-    href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-websockets-starter"
-    title="Real-time Chat App"
-    icon={<IconMessage />}
-  >
-    WebSocket subscriptions, real-time messaging, user presence, and live
-    notifications.
-  </Card>
+<Card
+  href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-websockets-starter"
+  title="Real-time Chat App"
+  icon={<IconMessage />}
+>
+  WebSocket subscriptions, real-time messaging, user presence, and live
+  notifications.
+</Card>
 
   <Card
     href="https://github.com/trpc/trpc/tree/main/examples/next-sse-chat"
@@ -59,21 +59,21 @@ Explore real-world tRPC applications that demonstrate best practices, common pat
     Edge runtime deployment with Fetch API adapter and serverless patterns.
   </Card>
 
-  <Card
-    href="https://github.com/trpc/trpc/tree/main/examples/deno-deploy"
-    title="Deno Deploy"
-    icon={<IconBrandDeno />}
-  >
-    Modern TypeScript runtime with native Fetch API and edge deployment.
-  </Card>
+<Card
+  href="https://github.com/trpc/trpc/tree/main/examples/deno-deploy"
+  title="Deno Deploy"
+  icon={<IconBrandDeno />}
+>
+  Modern TypeScript runtime with native Fetch API and edge deployment.
+</Card>
 
-  <Card
-    href="https://github.com/trpc/trpc/tree/main/examples/bun"
-    title="Bun Runtime"
-    icon={<IconZap />}
-  >
-    Ultra-fast JavaScript runtime with built-in bundler and package manager.
-  </Card>
+<Card
+  href="https://github.com/trpc/trpc/tree/main/examples/bun"
+  title="Bun Runtime"
+  icon={<IconZap />}
+>
+  Ultra-fast JavaScript runtime with built-in bundler and package manager.
+</Card>
 
   <Card
     href="https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway"
@@ -96,21 +96,21 @@ Explore real-world tRPC applications that demonstrate best practices, common pat
     Traditional Node.js server with middleware, CORS, and API documentation.
   </Card>
 
-  <Card
-    href="https://github.com/trpc/trpc/tree/main/examples/fastify-server"
-    title="Fastify"
-    icon={<IconBolt />}
-  >
-    High-performance server with plugins, WebSocket support, and validation.
-  </Card>
+<Card
+  href="https://github.com/trpc/trpc/tree/main/examples/fastify-server"
+  title="Fastify"
+  icon={<IconBolt />}
+>
+  High-performance server with plugins, WebSocket support, and validation.
+</Card>
 
-  <Card
-    href="https://github.com/trpc/trpc/tree/main/examples/tanstack-start"
-    title="TanStack Start"
-    icon={<IconStack />}
-  >
-    Modern full-stack framework with file-based routing and server functions.
-  </Card>
+<Card
+  href="https://github.com/trpc/trpc/tree/main/examples/tanstack-start"
+  title="TanStack Start"
+  icon={<IconStack />}
+>
+  Modern full-stack framework with file-based routing and server functions.
+</Card>
 
   <Card
     href="https://github.com/trpc/trpc/tree/main/examples/standalone-server"
@@ -168,7 +168,7 @@ posts: router({
 const postsQuery = useInfiniteQuery(
   trpc.posts.infinite.infiniteQueryOptions({
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-  })
+  }),
 );
 
 // Load more posts
@@ -223,9 +223,9 @@ trpc.documents.onUpdate.useSubscription(
       applyOperation(update);
 
       // Update editor state
-      setEditorState(prev => applyUpdate(prev, update));
+      setEditorState((prev) => applyUpdate(prev, update));
     },
-  }
+  },
 );
 ```
 
@@ -361,11 +361,9 @@ Demonstrates service-oriented architecture:
 ```typescript title="Service Communication"
 // User service
 export const userRouter = router({
-  getProfile: publicProcedure
-    .input(z.string())
-    .query(async ({ input }) => {
-      return await userService.getProfile(input);
-    }),
+  getProfile: publicProcedure.input(z.string()).query(async ({ input }) => {
+    return await userService.getProfile(input);
+  }),
 });
 
 // Order service calling user service
@@ -526,7 +524,7 @@ describe('User procedures', () => {
       caller.users.create({
         email: 'invalid-email',
         name: 'Test User',
-      })
+      }),
     ).rejects.toThrow('Invalid email');
   });
 });
@@ -536,7 +534,7 @@ describe('User procedures', () => {
 
 ```typescript title="End-to-End Testing"
 // Playwright test
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('user can create and view posts', async ({ page }) => {
   // Login
@@ -658,24 +656,24 @@ const getPostWithDetails = publicProcedure
       where: { id: input },
       include: {
         author: {
-          select: { id: true, name: true, avatar: true }
+          select: { id: true, name: true, avatar: true },
         },
         comments: {
           take: 10,
           orderBy: { createdAt: 'desc' },
           include: {
             author: {
-              select: { id: true, name: true, avatar: true }
-            }
-          }
+              select: { id: true, name: true, avatar: true },
+            },
+          },
         },
         _count: {
           select: {
             likes: true,
-            comments: true
-          }
-        }
-      }
+            comments: true,
+          },
+        },
+      },
     });
   });
 ```

@@ -71,20 +71,22 @@ tRPC supports various file upload patterns, from simple base64 encoding to advan
 Perfect for small files like profile pictures:
 
 ```ts title="server/routers/uploads.ts"
-import { z } from 'zod';
-import { TRPCError } from '@trpc/server';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export const uploadsRouter = t.router({
   uploadAvatar: t.procedure
-    .input(z.object({
-      name: z.string(),
-      type: z.string(),
-      data: z.string(), // base64 encoded
-    }))
+    .input(
+      z.object({
+        name: z.string(),
+        type: z.string(),
+        data: z.string(), // base64 encoded
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -133,7 +135,9 @@ import { trpc } from '../lib/trpc';
 export function AvatarUpload() {
   const uploadMutation = trpc.uploads.uploadAvatar.useMutation();
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -187,11 +191,11 @@ export function AvatarUpload() {
 Create a dedicated upload endpoint alongside tRPC:
 
 ```ts title="pages/api/upload.ts"
-import { NextApiRequest, NextApiResponse } from 'next';
-import formidable from 'formidable';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import formidable from 'formidable';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 export const config = {
   api: {
@@ -201,7 +205,7 @@ export const config = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -335,9 +339,9 @@ export function FileUpload() {
 
       {progress && (
         <div className="space-y-2">
-          <div className="bg-gray-200 rounded-full h-2">
+          <div className="h-2 rounded-full bg-gray-200">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all"
+              className="h-2 rounded-full bg-blue-600 transition-all"
               style={{ width: `${progress.percentage}%` }}
             />
           </div>
@@ -370,10 +374,10 @@ export function FileUpload() {
 For handling large files efficiently:
 
 ```ts title="pages/api/stream-upload.ts"
-import { NextApiRequest, NextApiResponse } from 'next';
 import { createWriteStream } from 'fs';
-import { pipeline } from 'stream/promises';
 import { join } from 'path';
+import { pipeline } from 'stream/promises';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 export const config = {
   api: {
@@ -383,7 +387,7 @@ export const config = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -397,7 +401,8 @@ export default async function handler(
   }
 
   // Validate file size
-  if (contentLength > 100 * 1024 * 1024) { // 100MB
+  if (contentLength > 100 * 1024 * 1024) {
+    // 100MB
     return res.status(413).json({ error: 'File too large' });
   }
 
@@ -473,7 +478,7 @@ export function StreamingUpload() {
 ### AWS S3 Upload
 
 ```ts title="server/routers/s3-uploads.ts"
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const s3 = new S3Client({
@@ -486,10 +491,12 @@ const s3 = new S3Client({
 
 export const s3Router = t.router({
   getSignedUploadUrl: t.procedure
-    .input(z.object({
-      filename: z.string(),
-      contentType: z.string(),
-    }))
+    .input(
+      z.object({
+        filename: z.string(),
+        contentType: z.string(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const key = `uploads/${ctx.user.id}/${Date.now()}-${input.filename}`;
 
@@ -511,10 +518,12 @@ export const s3Router = t.router({
     }),
 
   confirmUpload: t.procedure
-    .input(z.object({
-      key: z.string(),
-      size: z.number(),
-    }))
+    .input(
+      z.object({
+        key: z.string(),
+        size: z.number(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       // Store file metadata in database
       const file = await ctx.db.file.create({
@@ -698,12 +707,15 @@ export class FileValidator {
   ];
 
   private readonly maxSizes = {
-    'image/*': 5 * 1024 * 1024,    // 5MB for images
+    'image/*': 5 * 1024 * 1024, // 5MB for images
     'application/pdf': 10 * 1024 * 1024, // 10MB for PDFs
     'text/plain': 1 * 1024 * 1024, // 1MB for text
   };
 
-  async validateFile(buffer: Buffer, originalName: string): Promise<FileValidationResult> {
+  async validateFile(
+    buffer: Buffer,
+    originalName: string,
+  ): Promise<FileValidationResult> {
     const errors: string[] = [];
 
     // Detect actual MIME type (don't trust client)
@@ -757,7 +769,10 @@ export class FileValidator {
     return 1024 * 1024; // Default 1MB
   }
 
-  private extensionMatchesMimeType(extension: string, mimeType: string): boolean {
+  private extensionMatchesMimeType(
+    extension: string,
+    mimeType: string,
+  ): boolean {
     const validCombinations: Record<string, string[]> = {
       '.jpg': ['image/jpeg'],
       '.jpeg': ['image/jpeg'],
@@ -779,7 +794,7 @@ export class FileValidator {
         method: 'POST',
         body: buffer,
         headers: {
-          'Authorization': `Bearer ${process.env.MALWARE_SCANNER_KEY}`,
+          Authorization: `Bearer ${process.env.MALWARE_SCANNER_KEY}`,
           'Content-Type': 'application/octet-stream',
         },
       });
@@ -798,8 +813,8 @@ export class FileValidator {
 **2. Implement Secure Upload Router**
 
 ```typescript title="src/routers/secure-upload.ts"
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
 import { FileValidator } from '../lib/file-security';
 import { uploadToS3 } from '../lib/storage';
 
@@ -807,12 +822,14 @@ const fileValidator = new FileValidator();
 
 export const secureUploadRouter = t.router({
   uploadFile: t.procedure
-    .input(z.object({
-      filename: z.string().min(1).max(255),
-      contentType: z.string(),
-      base64Data: z.string(),
-      checksum: z.string(), // Client-provided checksum for integrity
-    }))
+    .input(
+      z.object({
+        filename: z.string().min(1).max(255),
+        contentType: z.string(),
+        base64Data: z.string(),
+        checksum: z.string(), // Client-provided checksum for integrity
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       try {
         // Decode base64 data
@@ -832,7 +849,10 @@ export const secureUploadRouter = t.router({
         }
 
         // Validate file
-        const validation = await fileValidator.validateFile(buffer, input.filename);
+        const validation = await fileValidator.validateFile(
+          buffer,
+          input.filename,
+        );
 
         if (!validation.isValid) {
           throw new TRPCError({
@@ -882,7 +902,6 @@ export const secureUploadRouter = t.router({
           mimeType: validation.metadata.mimeType,
           url: uploadResult.url,
         };
-
       } catch (error) {
         // Log security incidents
         console.error('File upload security incident:', {
@@ -901,9 +920,9 @@ export const secureUploadRouter = t.router({
 **3. Client-Side Secure Upload Component**
 
 ```tsx title="components/SecureFileUpload.tsx"
+import crypto from 'crypto-js';
 import React, { useState } from 'react';
 import { trpc } from '../lib/trpc';
-import crypto from 'crypto-js';
 
 export function SecureFileUpload() {
   const [uploading, setUploading] = useState(false);
@@ -923,7 +942,9 @@ export function SecureFileUpload() {
     },
   });
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -942,14 +963,16 @@ export function SecureFileUpload() {
       const buffer = new Uint8Array(arrayBuffer);
 
       // Calculate checksum
-      const checksum = crypto.SHA256(crypto.lib.WordArray.create(buffer)).toString();
+      const checksum = crypto
+        .SHA256(crypto.lib.WordArray.create(buffer))
+        .toString();
 
       // Convert to base64
       const base64Data = btoa(String.fromCharCode(...buffer));
 
       // Simulate upload progress
       const progressInterval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 10, 90));
+        setProgress((prev) => Math.min(prev + 10, 90));
       }, 100);
 
       // Upload file
@@ -962,7 +985,6 @@ export function SecureFileUpload() {
 
       clearInterval(progressInterval);
       setProgress(100);
-
     } catch (error) {
       console.error('Upload error:', error);
       setUploading(false);
@@ -981,10 +1003,7 @@ export function SecureFileUpload() {
       {uploading && (
         <div className="upload-progress">
           <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${progress}%` }}
-            />
+            <div className="progress-fill" style={{ width: `${progress}%` }} />
           </div>
           <span>{progress}% uploading...</span>
         </div>
@@ -1013,7 +1032,7 @@ export class UploadError extends Error {
   constructor(
     public code: 'SIZE_LIMIT' | 'TYPE_INVALID' | 'MALWARE' | 'STORAGE_FULL',
     message: string,
-    public originalError?: Error
+    public originalError?: Error,
   ) {
     super(message);
     this.name = 'UploadError';

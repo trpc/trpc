@@ -21,8 +21,8 @@ You will need a route handler to get started.
 In your docs page, add the image to metadata.
 
 ```tsx title="app/docs/[[...slug]]/page.tsx"
-import { notFound } from 'next/navigation';
 import { source } from '@/lib/source';
+import { notFound } from 'next/navigation';
 
 export async function generateMetadata({
   params,

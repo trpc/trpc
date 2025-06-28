@@ -21,15 +21,17 @@ Input validation checks that procedure calls are correct and returns structured 
 
 ```typescript title="src/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 export const appRouter = router({
   createUser: publicProcedure
-    .input(z.object({
-      name: z.string().min(2, 'Name must be at least 2 characters'),
-      email: z.string().email('Must be a valid email'),
-      age: z.number().int().min(13, 'Must be at least 13 years old'),
-    }))
+    .input(
+      z.object({
+        name: z.string().min(2, 'Name must be at least 2 characters'),
+        email: z.string().email('Must be a valid email'),
+        age: z.number().int().min(13, 'Must be at least 13 years old'),
+      }),
+    )
     .mutation(({ input }) => {
       // input is fully typed and validated
       const { name, email, age } = input;
@@ -46,13 +48,15 @@ Stack multiple `.input()` calls to build complex validation schemas:
 
 ```typescript title="src/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 // Base procedure with common validation
 const baseProcedure = publicProcedure
-  .input(z.object({
-    organizationId: z.string().uuid()
-  }))
+  .input(
+    z.object({
+      organizationId: z.string().uuid(),
+    }),
+  )
   .use(({ input, next }) => {
     console.log(`Request for organization: ${input.organizationId}`);
     return next();
@@ -60,10 +64,12 @@ const baseProcedure = publicProcedure
 
 export const appRouter = router({
   createProject: baseProcedure
-    .input(z.object({
-      name: z.string().min(1),
-      description: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+      }),
+    )
     .mutation(({ input }) => {
       // input contains both organizationId and project data
       const { organizationId, name, description } = input;
@@ -73,11 +79,13 @@ export const appRouter = router({
     }),
 
   updateProject: baseProcedure
-    .input(z.object({
-      projectId: z.string().uuid(),
-      name: z.string().min(1).optional(),
-      description: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        projectId: z.string().uuid(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+      }),
+    )
     .mutation(({ input }) => {
       // input has organizationId + update data
       const { organizationId, projectId, ...updates } = input;
@@ -98,7 +106,7 @@ Output validation ensures your procedures return the expected data structure:
 
 ```typescript title="src/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 const UserSchema = z.object({
   id: z.string(),
@@ -125,14 +133,18 @@ export const appRouter = router({
     }),
 
   getUserList: publicProcedure
-    .input(z.object({
-      limit: z.number().min(1).max(100).default(10),
-    }))
-    .output(z.object({
-      users: z.array(UserSchema),
-      total: z.number(),
-      hasMore: z.boolean(),
-    }))
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(10),
+      }),
+    )
+    .output(
+      z.object({
+        users: z.array(UserSchema),
+        total: z.number(),
+        hasMore: z.boolean(),
+      }),
+    )
     .query(async ({ input }) => {
       const { users, total } = await getUserList(input.limit);
 
@@ -389,23 +401,32 @@ export const appRouter = router({
 import { z } from 'zod';
 
 const SanitizedUserSchema = z.object({
-  name: z.string()
+  name: z
+    .string()
     .trim()
-    .transform(name => name.split(' ').map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join(' ')),
+    .transform((name) =>
+      name
+        .split(' ')
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+        )
+        .join(' '),
+    ),
 
-  email: z.string()
+  email: z
+    .string()
     .email()
-    .transform(email => email.toLowerCase()),
+    .transform((email) => email.toLowerCase()),
 
-  phone: z.string()
-    .transform(phone => phone.replace(/\D/g, ''))
-    .refine(phone => phone.length === 10, 'Must be 10 digits'),
+  phone: z
+    .string()
+    .transform((phone) => phone.replace(/\D/g, ''))
+    .refine((phone) => phone.length === 10, 'Must be 10 digits'),
 
-  tags: z.array(z.string())
-    .transform(tags => [...new Set(tags.map(tag => tag.toLowerCase()))])
-    .refine(tags => tags.length <= 10, 'Too many tags'),
+  tags: z
+    .array(z.string())
+    .transform((tags) => [...new Set(tags.map((tag) => tag.toLowerCase()))])
+    .refine((tags) => tags.length <= 10, 'Too many tags'),
 });
 
 export const appRouter = router({

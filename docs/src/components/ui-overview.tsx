@@ -5,54 +5,54 @@ export function UiOverview() {
     <Tabs items={['Docs Layout', 'Docs Layout (Mobile)']}>
       <Tab
         value="Docs Layout"
-        className="not-prose text-sm text-center text-fd-muted-foreground overflow-auto"
+        className="not-prose text-fd-muted-foreground overflow-auto text-center text-sm"
       >
-        <div className="flex flex-row gap-4 min-w-[600px] min-h-[400px]">
-          <div className="flex flex-col gap-2 w-1/4">
+        <div className="flex min-h-[400px] min-w-[600px] flex-row gap-4">
+          <div className="flex w-1/4 flex-col gap-2">
             <p className="text-xs">Sidebar</p>
-            <div className="border p-2 bg-fd-muted">Title</div>
-            <div className="border p-2 bg-fd-muted">Sidebar Tabs</div>
-            <div className="border p-2 bg-fd-muted">Search</div>
-            <div className="flex items-center justify-center border p-2 flex-1 bg-fd-muted">
+            <div className="bg-fd-muted border p-2">Title</div>
+            <div className="bg-fd-muted border p-2">Sidebar Tabs</div>
+            <div className="bg-fd-muted border p-2">Search</div>
+            <div className="bg-fd-muted flex flex-1 items-center justify-center border p-2">
               Page Tree
             </div>
-            <div className="border p-2 mt-auto bg-fd-muted">Footer</div>
+            <div className="bg-fd-muted mt-auto border p-2">Footer</div>
           </div>
-          <div className="flex flex-col gap-2 flex-1">
+          <div className="flex flex-1 flex-col gap-2">
             <p className="text-xs">Docs Page</p>
             <div className="bg-fd-muted border p-2">Article Title</div>
             <div className="bg-fd-muted border p-2">Description</div>
-            <div className="bg-fd-muted border flex items-center justify-center flex-1 py-2">
+            <div className="bg-fd-muted flex flex-1 items-center justify-center border py-2">
               Body
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div className="border p-2 bg-fd-muted">Edit on GitHub</div>
-              <div className="border p-2 bg-fd-muted">Last Updated</div>
+              <div className="bg-fd-muted border p-2">Edit on GitHub</div>
+              <div className="bg-fd-muted border p-2">Last Updated</div>
             </div>
             <div className="border p-2">
-              <p className="text-xs mb-2">Footer</p>
+              <p className="mb-2 text-xs">Footer</p>
               <div className="grid grid-cols-2 gap-2">
-                <div className="border p-2 bg-fd-muted">Previous</div>
-                <div className="border p-2 bg-fd-muted">Next</div>
+                <div className="bg-fd-muted border p-2">Previous</div>
+                <div className="bg-fd-muted border p-2">Next</div>
               </div>
             </div>
           </div>
-          <div className="flex flex-col gap-2 w-1/4">
+          <div className="flex w-1/4 flex-col gap-2">
             <p className="text-xs">TOC</p>
-            <div className="border p-2 bg-fd-muted">Banner</div>
-            <div className="flex items-center justify-center border p-2 flex-1 bg-fd-muted">
+            <div className="bg-fd-muted border p-2">Banner</div>
+            <div className="bg-fd-muted flex flex-1 items-center justify-center border p-2">
               Items
             </div>
-            <div className="border p-2 bg-fd-muted">Footer</div>
+            <div className="bg-fd-muted border p-2">Footer</div>
           </div>
         </div>
       </Tab>
       <Tab
         value="Docs Layout (Mobile)"
-        className="not-prose text-sm text-center text-fd-muted-foreground overflow-auto"
+        className="not-prose text-fd-muted-foreground overflow-auto text-center text-sm"
       >
-        <div className="flex flex-row gap-4 min-w-[600px]">
-          <div className="flex flex-col gap-2 p-2 border">
+        <div className="flex min-w-[600px] flex-row gap-4">
+          <div className="flex flex-col gap-2 border p-2">
             <div className="border p-2">
               <p className="text-xs">Nav</p>
               <div className="grid grid-cols-3 gap-2">
@@ -66,23 +66,23 @@ export function UiOverview() {
             <p className="text-xs">Docs Page</p>
             <div className="bg-fd-muted border p-2">Article Title</div>
             <div className="bg-fd-muted border p-2">Description</div>
-            <div className="bg-fd-muted border flex items-center justify-center flex-1 py-2">
+            <div className="bg-fd-muted flex flex-1 items-center justify-center border py-2">
               Body
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div className="border p-2 bg-fd-muted">Edit on GitHub</div>
-              <div className="border p-2 bg-fd-muted">Last Updated</div>
+              <div className="bg-fd-muted border p-2">Edit on GitHub</div>
+              <div className="bg-fd-muted border p-2">Last Updated</div>
             </div>
             <div className="border p-2">
-              <p className="text-xs mb-2">Footer</p>
+              <p className="mb-2 text-xs">Footer</p>
               <div className="grid grid-cols-2 gap-2">
-                <div className="border p-2 bg-fd-muted">Previous</div>
-                <div className="border p-2 bg-fd-muted">Next</div>
+                <div className="bg-fd-muted border p-2">Previous</div>
+                <div className="bg-fd-muted border p-2">Next</div>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 p-2 border">
+          <div className="flex flex-col gap-2 border p-2">
             <div className="border p-2">
               <p className="text-xs">Nav</p>
               <div className="grid grid-cols-3 gap-2">
@@ -91,14 +91,14 @@ export function UiOverview() {
                 <div className="bg-fd-muted border p-2">Menu</div>
               </div>
             </div>
-            <div className="flex flex-col gap-2 p-2 border h-full">
+            <div className="flex h-full flex-col gap-2 border p-2">
               <p className="text-xs">Sidebar</p>
-              <div className="border p-2 bg-fd-muted">Sidebar Tabs</div>
-              <div className="border p-2 bg-fd-muted">Search</div>
-              <div className="flex items-center justify-center border p-2 flex-1 bg-fd-muted">
+              <div className="bg-fd-muted border p-2">Sidebar Tabs</div>
+              <div className="bg-fd-muted border p-2">Search</div>
+              <div className="bg-fd-muted flex flex-1 items-center justify-center border p-2">
                 Page Tree
               </div>
-              <div className="border p-2 mt-auto bg-fd-muted">Footer</div>
+              <div className="bg-fd-muted mt-auto border p-2">Footer</div>
             </div>
           </div>
         </div>

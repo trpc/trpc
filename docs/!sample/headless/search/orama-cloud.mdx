@@ -47,8 +47,8 @@ To search documents on the client side, consider:
 - Custom search UI using the built-in hook of Fumadocs:
 
   ```ts
-  import { useDocsSearch } from 'fumadocs-core/search/client';
   import { OramaClient } from '@oramacloud/client';
+  import { useDocsSearch } from 'fumadocs-core/search/client';
 
   const client = new OramaClient();
 
@@ -73,8 +73,8 @@ To search documents on the client side, consider:
 Same as REST API integration, but make sure to set `index` to `crawler`.
 
 ```ts
-import { useDocsSearch } from 'fumadocs-core/search/client';
 import { OramaClient } from '@oramacloud/client';
+import { useDocsSearch } from 'fumadocs-core/search/client';
 
 const client = new OramaClient({
   endpoint: '<endpoint_url>',

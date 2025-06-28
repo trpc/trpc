@@ -56,40 +56,43 @@ export const publicProcedure = t.procedure;
 
 ```typescript title="server/router.ts"
 import { z } from 'zod';
-import { router, publicProcedure } from './trpc';
+import { publicProcedure, router } from './trpc';
 
 // Mock database
 const posts = [
   { id: '1', title: 'Hello tRPC!', content: 'This is my first tRPC post.' },
-  { id: '2', title: 'TypeScript is awesome', content: 'Type safety everywhere!' },
+  {
+    id: '2',
+    title: 'TypeScript is awesome',
+    content: 'Type safety everywhere!',
+  },
 ];
 
 let postIdCounter = 3;
 
 export const appRouter = router({
   // Query to get all posts
-  getPosts: publicProcedure
-    .query(async () => {
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 100));
-      return posts;
-    }),
+  getPosts: publicProcedure.query(async () => {
+    // Simulate network delay
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return posts;
+  }),
 
   // Query to get a single post by ID
-  getPost: publicProcedure
-    .input(z.string())
-    .query(async ({ input }) => {
-      const post = posts.find(p => p.id === input);
-      if (!post) throw new Error('Post not found');
-      return post;
-    }),
+  getPost: publicProcedure.input(z.string()).query(async ({ input }) => {
+    const post = posts.find((p) => p.id === input);
+    if (!post) throw new Error('Post not found');
+    return post;
+  }),
 
   // Mutation to create a new post
   createPost: publicProcedure
-    .input(z.object({
-      title: z.string().min(1, 'Title is required'),
-      content: z.string().min(1, 'Content is required')
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1, 'Title is required'),
+        content: z.string().min(1, 'Content is required'),
+      }),
+    )
     .mutation(async ({ input }) => {
       const newPost = {
         id: postIdCounter.toString(),
@@ -102,16 +105,14 @@ export const appRouter = router({
     }),
 
   // Mutation to delete a post
-  deletePost: publicProcedure
-    .input(z.string())
-    .mutation(async ({ input }) => {
-      const index = posts.findIndex(p => p.id === input);
-      if (index === -1) throw new Error('Post not found');
+  deletePost: publicProcedure.input(z.string()).mutation(async ({ input }) => {
+    const index = posts.findIndex((p) => p.id === input);
+    if (index === -1) throw new Error('Post not found');
 
-      const deletedPost = posts[index];
-      posts.splice(index, 1);
-      return deletedPost;
-    }),
+    const deletedPost = posts[index];
+    posts.splice(index, 1);
+    return deletedPost;
+  }),
 });
 
 // Export the router type - this is important!
@@ -160,24 +161,29 @@ export { handler as GET, handler as POST };
 If you're using Express:
 
 ```typescript title="server/server.ts"
-import express from 'express';
-import cors from 'cors';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import cors from 'cors';
+import express from 'express';
 import { appRouter } from './router';
 
 const app = express();
 const port = 3001;
 
 // Enable CORS for your frontend
-app.use(cors({
-  origin: 'http://localhost:3000', // Your frontend URL
-}));
+app.use(
+  cors({
+    origin: 'http://localhost:3000', // Your frontend URL
+  }),
+);
 
 // Create tRPC middleware
-app.use('/api/trpc', createExpressMiddleware({
-  router: appRouter,
-  createContext: () => ({}),
-}));
+app.use(
+  '/api/trpc',
+  createExpressMiddleware({
+    router: appRouter,
+    createContext: () => ({}),
+  }),
+);
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
@@ -216,7 +222,8 @@ import { createTRPCContext } from '@trpc/tanstack-react-query';
 import type { AppRouter } from '../server/router'; // Import the router type
 
 // Create tRPC context with full type safety
-export const { TRPCProvider, useTRPC, useTRPCClient } = createTRPCContext<AppRouter>();
+export const { TRPCProvider, useTRPC, useTRPCClient } =
+  createTRPCContext<AppRouter>();
 ```
 
 ## 5. Configure Your App
@@ -512,10 +519,12 @@ If you're getting CORS errors, make sure to:
 3. **Enable credentials** if you're using authentication
 
 ```typescript
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    credentials: true,
+  }),
+);
 ```
 
 </Accordion>
@@ -546,7 +555,7 @@ If queries are failing:
 2. **Verify server is running** on the correct port
 3. **Check network tab** in browser DevTools for actual error responses
 4. **Test endpoint directly** - Try accessing `/api/trpc/getPosts` in your browser
-   </Accordion>
+      </Accordion>
 </Accordions>
 
 ---

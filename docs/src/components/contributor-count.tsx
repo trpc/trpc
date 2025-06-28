@@ -1,7 +1,7 @@
-import type { HTMLAttributes } from 'react';
-import Image from 'next/image';
 import { cn } from '@/lib/cn';
 import { fetchContributors } from '@/lib/get-contributors';
+import Image from 'next/image';
+import type { HTMLAttributes } from 'react';
 
 export interface ContributorCounterProps
   extends HTMLAttributes<HTMLDivElement> {
@@ -33,7 +33,7 @@ export default async function ContributorCounter({
             href={`https://github.com/${contributor.login}`}
             rel="noreferrer noopener"
             target="_blank"
-            className="size-10 overflow-hidden rounded-full border-4 border-fd-background bg-fd-background md:-mr-4 md:size-12"
+            className="border-fd-background bg-fd-background size-10 overflow-hidden rounded-full border-4 md:-mr-4 md:size-12"
             style={{
               zIndex: topContributors.length - i,
             }}
@@ -48,12 +48,12 @@ export default async function ContributorCounter({
           </a>
         ))}
         {displayCount < contributors.length ? (
-          <div className="size-12 content-center rounded-full bg-fd-secondary text-center">
+          <div className="bg-fd-secondary size-12 content-center rounded-full text-center">
             +{contributors.length - displayCount}
           </div>
         ) : null}
       </div>
-      <div className="text-center text-sm text-fd-muted-foreground">
+      <div className="text-fd-muted-foreground text-center text-sm">
         Some of our best contributors.
       </div>
     </div>

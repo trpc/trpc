@@ -25,9 +25,9 @@ export const baseOptions: BaseLayoutProps = {
 ```
 
 ```tsx tab="Docs Layout" title="app/docs/layout.tsx"
-import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import { baseOptions } from '@/app/layout.config';
 import { source } from '@/lib/source';
+import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import type { ReactNode } from 'react';
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -44,8 +44,8 @@ export default function Layout({ children }: { children: ReactNode }) {
 ```
 
 ```tsx tab="Home Layout" title="app/(home)/layout.tsx"
-import { HomeLayout } from 'fumadocs-ui/layouts/home';
 import { baseOptions } from '@/app/layout.config';
+import { HomeLayout } from 'fumadocs-ui/layouts/home';
 import type { ReactNode } from 'react';
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -67,8 +67,8 @@ You can see all supported items below:
 A link to navigate to a URL/href, can be external.
 
 ```tsx title="app/layout.config.tsx"
-import { BookIcon } from 'lucide-react';
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+import { BookIcon } from 'lucide-react';
 
 export const baseOptions: BaseLayoutProps = {
   links: [
@@ -113,8 +113,8 @@ Same as link item, but is shown as an icon button.
 Icon items are secondary by default.
 
 ```tsx title="app/layout.config.tsx"
-import { BookIcon } from 'lucide-react';
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
+import { BookIcon } from 'lucide-react';
 
 export const baseOptions: BaseLayoutProps = {
   links: [
@@ -191,7 +191,6 @@ In Home Layout, you can add navigation menu (fully animated) to the navbar.
 
 ```tsx title="app/(home)/layout.tsx"
 import { baseOptions } from '@/app/layout.config';
-import type { ReactNode } from 'react';
 import { HomeLayout } from 'fumadocs-ui/layouts/home';
 import {
   NavbarMenu,
@@ -199,6 +198,7 @@ import {
   NavbarMenuLink,
   NavbarMenuTrigger,
 } from 'fumadocs-ui/layouts/home/navbar';
+import type { ReactNode } from 'react';
 
 export default function Layout({ children }: { children: ReactNode }) {
   return (

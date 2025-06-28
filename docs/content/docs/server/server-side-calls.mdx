@@ -64,19 +64,19 @@ const appRouter = router({
   post: router({
     list: t.procedure.query(() => posts),
 
-    byId: t.procedure
-      .input(z.object({ id: z.string() }))
-      .query(({ input }) => {
-        const post = posts.find(p => p.id === input.id);
-        if (!post) throw new Error('Post not found');
-        return post;
-      }),
+    byId: t.procedure.input(z.object({ id: z.string() })).query(({ input }) => {
+      const post = posts.find((p) => p.id === input.id);
+      if (!post) throw new Error('Post not found');
+      return post;
+    }),
 
     create: t.procedure
-      .input(z.object({
-        title: z.string().min(1),
-        content: z.string().min(1),
-      }))
+      .input(
+        z.object({
+          title: z.string().min(1),
+          content: z.string().min(1),
+        }),
+      )
       .mutation(({ input }) => {
         const post: Post = {
           id: `${posts.length + 1}`,
@@ -113,8 +113,8 @@ const allPosts = await caller.post.list();
 Perfect for testing your procedures without HTTP overhead:
 
 ```ts title="tests/posts.test.ts"
-import { describe, it, expect } from 'vitest';
 import { inferProcedureInput } from '@trpc/server';
+import { describe, expect, it } from 'vitest';
 import { createContextInner } from '../server/context';
 import { AppRouter, createCaller } from '../server/routers/_app';
 
@@ -142,7 +142,7 @@ describe('Posts API', () => {
       caller.post.create({
         title: '', // Empty title should fail
         content: 'Content',
-      })
+      }),
     ).rejects.toThrow('String must contain at least 1 character(s)');
   });
 });
@@ -153,8 +153,8 @@ describe('Posts API', () => {
 Use server-side calls to populate your database:
 
 ```ts title="scripts/seed.ts"
-import { createCaller } from '../server/routers/_app';
 import { createContext } from '../server/context';
+import { createCaller } from '../server/routers/_app';
 
 async function seedDatabase() {
   const ctx = await createContext();
@@ -162,7 +162,7 @@ async function seedDatabase() {
 
   const posts = [
     { title: 'Welcome to our blog', content: 'This is our first post...' },
-    { title: 'Getting started', content: 'Here\'s how to begin...' },
+    { title: 'Getting started', content: "Here's how to begin..." },
     { title: 'Advanced tips', content: 'For experienced users...' },
   ];
 
@@ -254,9 +254,9 @@ describe('Protected Procedures', () => {
       db: mockDb,
     });
 
-    await expect(
-      unauthenticatedCaller.protected.profile()
-    ).rejects.toThrow('UNAUTHORIZED');
+    await expect(unauthenticatedCaller.protected.profile()).rejects.toThrow(
+      'UNAUTHORIZED',
+    );
   });
 });
 ```
@@ -270,7 +270,7 @@ import { TRPCError } from '@trpc/server';
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
 
 export async function callProcedureWithErrorHandling<T>(
-  procedureCall: Promise<T>
+  procedureCall: Promise<T>,
 ): Promise<{ data?: T; error?: string; status?: number }> {
   try {
     const data = await procedureCall;
@@ -280,19 +280,19 @@ export async function callProcedureWithErrorHandling<T>(
       const status = getHTTPStatusCodeFromError(cause);
       return {
         error: cause.message,
-        status
+        status,
       };
     }
     return {
       error: 'Internal server error',
-      status: 500
+      status: 500,
     };
   }
 }
 
 // Usage
 const result = await callProcedureWithErrorHandling(
-  caller.post.byId({ id: 'invalid-id' })
+  caller.post.byId({ id: 'invalid-id' }),
 );
 
 if (result.error) {
@@ -307,11 +307,11 @@ if (result.error) {
 Use server-side calls in Next.js API routes for custom endpoints:
 
 ```ts title="pages/api/custom/posts/[id].ts"
-import { NextApiRequest, NextApiResponse } from 'next';
 import { TRPCError } from '@trpc/server';
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
-import { appRouter } from '~/server/routers/_app';
 import { createContext } from '~/server/context';
+import { appRouter } from '~/server/routers/_app';
+import { NextApiRequest, NextApiResponse } from 'next';
 
 type ResponseData = {
   data?: {
@@ -325,13 +325,13 @@ type ResponseData = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ResponseData>
+  res: NextApiResponse<ResponseData>,
 ) {
   const { id } = req.query;
 
   if (typeof id !== 'string') {
     return res.status(400).json({
-      error: { message: 'Invalid post ID' }
+      error: { message: 'Invalid post ID' },
     });
   }
 
@@ -346,13 +346,13 @@ export default async function handler(
     ]);
 
     res.status(200).json({
-      data: { post, relatedPosts }
+      data: { post, relatedPosts },
     });
   } catch (cause) {
     if (cause instanceof TRPCError) {
       const httpStatusCode = getHTTPStatusCodeFromError(cause);
       res.status(httpStatusCode).json({
-        error: { message: cause.message }
+        error: { message: cause.message },
       });
     } else {
       res.status(500).json({
@@ -372,26 +372,23 @@ Add custom error handling to caller creation:
 ```ts title="server/caller.ts"
 const createCaller = createCallerFactory(appRouter);
 
-const callerWithErrorHandling = createCaller(
-  context,
-  {
-    onError: (opts) => {
-      console.error('Server call error:', {
-        path: opts.path,
-        error: opts.error.message,
-        input: opts.input,
-      });
+const callerWithErrorHandling = createCaller(context, {
+  onError: (opts) => {
+    console.error('Server call error:', {
+      path: opts.path,
+      error: opts.error.message,
+      input: opts.input,
+    });
 
-      // Send to error reporting service
-      errorReporter.captureException(opts.error, {
-        tags: {
-          procedure: opts.path,
-          type: opts.type
-        },
-      });
-    },
-  }
-);
+    // Send to error reporting service
+    errorReporter.captureException(opts.error, {
+      tags: {
+        procedure: opts.path,
+        type: opts.type,
+      },
+    });
+  },
+});
 ```
 
 ### Graceful Error Recovery
@@ -402,7 +399,7 @@ Implement fallback strategies for failed server calls:
 export async function callWithFallback<T>(
   primaryCall: () => Promise<T>,
   fallbackCall: () => Promise<T>,
-  logger?: (error: Error) => void
+  logger?: (error: Error) => void,
 ): Promise<T> {
   try {
     return await primaryCall();
@@ -416,7 +413,7 @@ export async function callWithFallback<T>(
 const posts = await callWithFallback(
   () => caller.post.fromCache(),
   () => caller.post.fromDatabase(),
-  (error) => console.warn('Cache miss:', error.message)
+  (error) => console.warn('Cache miss:', error.message),
 );
 ```
 
@@ -475,21 +472,21 @@ Use server-side calls for efficient batch operations:
 ```ts title="server/batch-operations.ts"
 export async function bulkCreatePosts(
   postsData: PostCreateInput[],
-  context: Context
+  context: Context,
 ) {
   const caller = createCaller(context);
 
   const results = await Promise.allSettled(
-    postsData.map(data => caller.post.create(data))
+    postsData.map((data) => caller.post.create(data)),
   );
 
   const successful = results
     .filter((r): r is PromiseFulfilledResult<Post> => r.status === 'fulfilled')
-    .map(r => r.value);
+    .map((r) => r.value);
 
   const failed = results
     .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-    .map(r => r.reason);
+    .map((r) => r.reason);
 
   return { successful, failed };
 }
@@ -502,7 +499,7 @@ Track performance of server-side calls:
 ```ts title="server/monitoring.ts"
 export function withPerformanceTracking<T extends any[], R>(
   fn: (...args: T) => Promise<R>,
-  operationName: string
+  operationName: string,
 ) {
   return async (...args: T): Promise<R> => {
     const start = performance.now();
@@ -515,7 +512,10 @@ export function withPerformanceTracking<T extends any[], R>(
       return result;
     } catch (error) {
       const duration = performance.now() - start;
-      console.error(`${operationName} failed after ${duration.toFixed(2)}ms:`, error);
+      console.error(
+        `${operationName} failed after ${duration.toFixed(2)}ms:`,
+        error,
+      );
       throw error;
     }
   };
@@ -524,14 +524,8 @@ export function withPerformanceTracking<T extends any[], R>(
 // Usage
 const trackedCaller = {
   post: {
-    create: withPerformanceTracking(
-      caller.post.create,
-      'post.create'
-    ),
-    list: withPerformanceTracking(
-      caller.post.list,
-      'post.list'
-    ),
+    create: withPerformanceTracking(caller.post.create, 'post.create'),
+    list: withPerformanceTracking(caller.post.list, 'post.list'),
   },
 };
 ```

@@ -149,8 +149,8 @@ If your language is not on the Orama [Supported Languages](https://docs.orama.co
 
 ```ts title="app/api/search/route.ts" tab="Without I18n"
 import { source } from '@/lib/source';
-import { createFromSource } from 'fumadocs-core/search/server';
 import { createTokenizer } from '@orama/tokenizers/mandarin';
+import { createFromSource } from 'fumadocs-core/search/server';
 
 // example for Mandarin
 export const { GET } = createFromSource(source, {
@@ -170,8 +170,8 @@ export const { GET } = createFromSource(source, {
 You can customise it in the client-side `initOrama()` function.
 
 ```tsx
-import { useDocsSearch } from 'fumadocs-core/search/client';
 import { createTokenizer } from '@orama/tokenizers/mandarin';
+import { useDocsSearch } from 'fumadocs-core/search/client';
 
 function initOrama(locale?: string) {
   return create({
