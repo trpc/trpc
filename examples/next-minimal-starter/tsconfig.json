@@ -22,9 +22,7 @@
     "incremental": true,
 
     /* Path aliases */
-    "paths": {
-      "~/*": ["./src/*"]
-    }
+    "paths": {}
   },
   "include": [
     "next-env.d.ts",
