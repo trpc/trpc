@@ -1,0 +1,198 @@
+---
+title: Routing
+description: A shared convention for organizing your documents
+---
+
+<Callout title='Before reading'>
+
+    This guide only applies for content sources that uses `loader()` API, such as Fumadocs MDX.
+
+</Callout>
+
+## Overview
+
+While Next.js handles routing, Fumadocs generates **page slugs** and **sidebar items** (page tree) from your content directory using [`loader()`](/docs/headless/source-api).
+
+You can define folders and pages similar to the file-system based routing of Next.js.
+
+<Files>
+  <Folder name="content/docs (content directory)" defaultOpen>
+    <File name="index.mdx" />
+    <File name="getting-started.mdx" />
+  </Folder>
+</Files>
+
+## File
+
+A [MDX](https://mdxjs.com) or Markdown file, you can customise its frontmatter.
+
+```mdx
+---
+title: My Page
+description: Best document ever
+icon: HomeIcon
+full: true
+---
+
+## Learn More
+```
+
+| name          | description                                        |
+| ------------- | -------------------------------------------------- |
+| `title`       | The title of page                                  |
+| `description` | The description of page                            |
+| `icon`        | The name of icon, see [Icons](#icons)              |
+| `full`        | Fill all available space on the page (Fumadocs UI) |
+
+<Callout title='Fumadocs MDX'>
+
+    You can use the [`schema`](/docs/mdx/collections#schema-1) option to add frontmatter properties.
+
+</Callout>
+
+### Slugs
+
+The slugs of a page are generated from its file path.
+
+| path (relative to content folder) | slugs             |
+| --------------------------------- | ----------------- |
+| `./dir/page.mdx`                  | `['dir', 'page']` |
+| `./dir/index.mdx`                 | `['dir']`         |
+
+## Folder
+
+Organize multiple pages, you can create a [Meta file](#meta) to customise folders.
+
+### Folder Group
+
+By default, putting a file into folder will change its slugs.
+You can wrap the folder name in parentheses to avoid impacting the slugs of child files.
+
+| path (relative to content folder) | slugs      |
+| --------------------------------- | ---------- |
+| `./(group-name)/page.mdx`         | `['page']` |
+
+## Meta
+
+Customise folders by creating a `meta.json` file in the folder.
+
+```json title="meta.json"
+{
+  "title": "Display Name",
+  "icon": "MyIcon",
+  "pages": ["index", "getting-started"],
+  "defaultOpen": true
+}
+```
+
+| name          | description                           |
+| ------------- | ------------------------------------- |
+| `title`       | Display name                          |
+| `icon`        | The name of icon, see [Icons](#icons) |
+| `pages`       | Folder items (see below)              |
+| `defaultOpen` | Open the folder by default            |
+
+### Pages
+
+By default, folder items are sorted alphabetically.
+
+You can add or control the order of items using `pages`, items are not included unless they are listed inside.
+
+```json title="meta.json"
+{
+  "title": "Name of Folder",
+  "pages": ["guide", "components", "---My Separator---", "./nested/page"]
+}
+```
+
+<Files>
+  <File name="meta.json" />
+  <File name="guide.mdx" />
+  <File name="components.mdx" />
+  <File name="nested/page.mdx" />
+</Files>
+
+#### Rest
+
+Add a `...` item to include remaining pages (sorted alphabetically), or `z...a` for descending order.
+
+```json title="meta.json"
+{
+  "pages": ["guide", "..."]
+}
+```
+
+You can add `!name` to prevent an item from being included.
+
+```json title="meta.json"
+{
+  "pages": ["guide", "...", "!components"]
+}
+```
+
+#### Extract
+
+You can extract the items from a folder with `...folder_name`.
+
+```json title="meta.json"
+{
+  "pages": ["guide", "...nested"]
+}
+```
+
+#### Link
+
+Use the syntax `[Text](url)` to insert links, or `[Icon][Text](url)` to add icon.
+
+```json title="meta.json"
+{
+  "pages": [
+    "[Vercel](https://vercel.com)",
+    "[Triangle][Vercel](https://vercel.com)"
+  ]
+}
+```
+
+## Icons
+
+Since Fumadocs doesn't include an icon library, you have to convert the icon names to JSX elements in runtime, and render it as a component.
+
+You can add an [`icon` handler](/docs/headless/source-api#icons) to `loader()`.
+
+## Root Folder
+
+Marks the folder as a root folder, only items in the opened root folder will be considered.
+
+```json title="meta.json"
+{
+  "title": "Name of Folder",
+  "description": "The description of root folder (optional)",
+  "root": true
+}
+```
+
+For example, when you are opening a root folder `framework`, the other folders (e.g. `headless`) are not shown on the sidebar and other navigation elements.
+
+<Files>
+  <Folder name="framework" defaultOpen>
+    <File name="index.mdx" />
+    <File
+      name="current-page.mdx"
+      className="!text-fd-primary !bg-fd-primary/10"
+    />
+    <File name="other-pages.mdx" />
+  </Folder>
+  <Folder name="headless (hidden)" className="opacity-50" disabled defaultOpen>
+    <File name="my-page.mdx" />
+  </Folder>
+</Files>
+
+<Callout title='Fumadocs UI'>
+
+    Fumadocs UI renders root folders as [Sidebar Tabs](/docs/ui/navigation/sidebar#sidebar-tabs), which allows user to switch between them.
+
+</Callout>
+
+## Internationalization
+
+<include>../../shared/page-conventions.i18n.mdx</include>

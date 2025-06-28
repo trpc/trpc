@@ -21,7 +21,7 @@
     "@trpc/client": "npm:@trpc/client",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "class-variance-authority": "^0.7.0",
+    "class-variance-authority": "^0.7.1",
     "date-fns": "^3.6.0",
     "drizzle-orm": "^0.31.2",
     "next": "^15.3.1",

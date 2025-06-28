@@ -1,0 +1,37 @@
+---
+title: Static Export
+description: Enable static export with Fumadocs
+---
+
+## Overview
+
+Fumadocs is fully compatible with Next.js static export, allowing you to export the app as a static HTML site without a Node.js server.
+
+```js title="next.config.mjs"
+/**
+ * @type {import('next').NextConfig}
+ */
+const nextConfig = {
+  output: 'export',
+
+  // Optional: Change links `/me` -> `/me/` and emit `/me.html` -> `/me/index.html`
+  // trailingSlash: true,
+
+  // Optional: Prevent automatic `/me` -> `/me/`, instead preserve `href`
+  // skipTrailingSlashRedirect: true,
+};
+```
+
+See [Next.js docs](https://nextjs.org/docs/app/guides/static-exports) for limitations and details.
+
+## Search
+
+### Cloud Solutions
+
+Since the search functionality is powered by remote servers, static export works without configuration.
+
+### Built-in Search
+
+Learn how to [enable static mode](/docs/ui/search/orama#static) on search client.
+
+This enables the route handler to be statically cached into a single file, and search will be computed on browser instead.

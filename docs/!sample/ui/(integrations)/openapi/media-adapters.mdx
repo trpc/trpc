@@ -1,0 +1,54 @@
+---
+title: Media Adapters
+description: Support other media types
+---
+
+## Overview
+
+A media adapter in Fumadocs handle:
+
+- Encode: convert form data into `fetch()` body with corresponding media type.
+- Example: generate code example based on different programming language/tool.
+
+Put your media adapters in a separate file with `use client` directive.
+
+```ts title="lib/media-adapters.ts" twoslash
+'use client';
+
+import type { MediaAdapter } from 'fumadocs-openapi';
+
+export const myAdapter: MediaAdapter = {
+  encode(data) {
+    return JSON.stringify(data.body);
+  },
+  // returns code that inits a `body` variable, used for request body
+  generateExample(data, ctx) {
+    if (ctx.lang === 'js') {
+      return `const body = "hello world"`;
+    }
+
+    if (ctx.lang === 'python') {
+      return `body = "hello world"`;
+    }
+
+    if (ctx.lang === 'go' && 'addImport' in ctx) {
+      ctx.addImport('strings');
+
+      return `body := strings.NewReader("hello world")`;
+    }
+  },
+};
+```
+
+```ts title="lib/source.ts"
+import { createOpenAPI } from 'fumadocs-openapi/server';
+import { myAdapter } from './media-adapters';
+
+export const openapi = createOpenAPI({
+  proxyUrl: '/api/proxy',
+  mediaAdapters: {
+    // [!code ++] override the default adapter of `application/json`
+    'application/json': myAdapter,
+  },
+});
+```

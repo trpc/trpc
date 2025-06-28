@@ -1,0 +1,248 @@
+---
+title: Manual Installation
+description: Add Fumadocs to existing projects.
+---
+
+Before continuing, make sure:
+
+- Next.js 15 and Tailwind CSS 4 are configured.
+
+## Getting Started
+
+```package-install
+fumadocs-ui fumadocs-core
+```
+
+### MDX Components
+
+<include cwd meta='title="mdx-components.tsx"'>
+  ../../examples/next-mdx/mdx-components.tsx
+</include>
+
+### Content Source
+
+Fumadocs supports different content sources, including Fumadocs MDX and [Content Collections](/docs/headless/content-collections).
+
+Fumadocs MDX is our official content source, you can configure it with:
+
+```package-install
+fumadocs-mdx @types/mdx
+```
+
+```js tab="next.config.mjs"
+import { createMDX } from 'fumadocs-mdx/next';
+
+const withMDX = createMDX();
+
+/** @type {import('next').NextConfig} */
+const config = {
+  reactStrictMode: true,
+};
+
+export default withMDX(config);
+```
+
+```ts tab="source.config.ts"
+import { defineDocs } from 'fumadocs-mdx/config';
+
+export const docs = defineDocs({
+  dir: 'content/docs',
+});
+```
+
+```json tab="package.json"
+{
+  "scripts": {
+    "postinstall": "fumadocs-mdx" // [!code ++]
+  }
+}
+```
+
+Finally, to access your content:
+
+```ts title="lib/source.ts"
+// .source folder will be generated when you run `next dev`
+import { docs } from '@/.source';
+import { loader } from 'fumadocs-core/source';
+
+export const source = loader({
+  baseUrl: '/docs',
+  source: docs.toFumadocsSource(),
+});
+```
+
+### Root Layout
+
+Wrap the entire application inside [Root Provider](/docs/ui/layouts/root-provider), and add required styles to `body`.
+
+```tsx title="app/layout.tsx"
+import { RootProvider } from 'fumadocs-ui/provider';
+import type { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body
+        // you can use Tailwind CSS too
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+        }}
+      >
+        <RootProvider>{children}</RootProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+### Styles
+
+Add the following Tailwind CSS styles to `global.css`.
+
+```css title="global.css"
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+```
+
+> It doesn't come with a default font, you may choose one from `next/font`.
+
+### Layout
+
+Create a `app/layout.config.tsx` file to put the shared options for our layouts.
+
+<include cwd meta='title="app/layout.config.tsx"'>
+  ../../examples/next-mdx/app/layout.config.tsx
+</include>
+
+Create a folder `/app/docs` for our docs, and give it a proper layout.
+
+<include cwd meta='title="app/docs/layout.tsx"'>
+  ../../examples/next-mdx/app/docs/layout.tsx
+</include>
+
+> `pageTree` refers to Page Tree, it should be provided by your content source.
+
+### Page
+
+Create a catch-all route `/app/docs/[[...slug]]` for docs pages.
+
+In the page, wrap your content in the [Page](/docs/ui/layouts/page) component.
+
+<Tabs groupId='content-source' items={['Fumadocs MDX', 'Content Collections']}>
+
+    <include cwd meta='title="app/docs/[[...slug]]/page.tsx" tab="Fumadocs MDX"'>../../examples/next-mdx/app/docs/[[...slug]]/page.tsx</include>
+
+    <include cwd meta='title="app/docs/[[...slug]]/page.tsx" tab="Content Collections"'>../../examples/content-collections/app/docs/[[...slug]]/page.tsx</include>
+
+</Tabs>
+
+### Search
+
+Use the default document search based on Orama.
+
+<include cwd meta='title="app/api/search/route.ts"'>
+  ../../examples/next-mdx/app/api/search/route.ts
+</include>
+
+Learn more about [Document Search](/docs/headless/search).
+
+### Done
+
+You can start the dev server and create MDX files.
+
+```mdx title="content/docs/index.mdx"
+---
+title: Hello World
+---
+
+## Introduction
+
+I love Anime.
+```
+
+## Deploying
+
+It should work out-of-the-box with Vercel & Netlify.
+
+### Cloudflare
+
+Use https://opennext.js.org/cloudflare, Fumadocs doesn't work on Edge runtime.
+
+### Docker Deployment
+
+If you want to deploy your Fumadocs app using Docker with **Fumadocs MDX configured**, make sure to add the `source.config.ts` file to the `WORKDIR` in the Dockerfile.
+The following snippet is taken from the official [Next.js Dockerfile Example](https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile):
+
+```zsh title="Dockerfile"
+# syntax=docker.io/docker/dockerfile:1
+
+FROM node:18-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install dependencies based on the preferred package manager [!code highlight]
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* source.config.ts ./
+RUN \
+  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
+
+
+# Rebuild the source code only when needed
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Next.js collects completely anonymous telemetry data about general usage.
+# Learn more here: https://nextjs.org/telemetry
+# Uncomment the following line in case you want to disable telemetry during the build.
+# ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN \
+  if [ -f yarn.lock ]; then yarn run build; \
+  elif [ -f package-lock.json ]; then npm run build; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
+
+# Production image, copy all the files and run next
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+# Uncomment the following line in case you want to disable telemetry during runtime.
+# ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+
+# Automatically leverage output traces to reduce image size
+# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+
+# server.js is created by next build from the standalone output
+# https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
+ENV HOSTNAME="0.0.0.0"
+CMD ["node", "server.js"]
+```
+
+This ensures Fumadocs MDX can access your configuration file during builds.

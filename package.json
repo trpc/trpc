@@ -65,6 +65,7 @@
     "konn": "^0.7.0",
     "lerna": "^8.1.2",
     "npm-run-all2": "^7.0.0",
+    "pnpm": "^9.12.2",
     "prettier": "^3.3.3",
     "prettier-plugin-tailwindcss": "^0.6.8",
     "superjson": "^1.12.4",

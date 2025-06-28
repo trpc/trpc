@@ -1,0 +1,417 @@
+---
+title: Client Installation
+description: Install and set up tRPC client for your frontend
+icon: IconDownload
+---
+
+This guide covers installing and setting up tRPC on the client side to connect your frontend to your tRPC server.
+
+## Quick Install
+
+<Steps>
+  <Step title="Install tRPC Client">
+    Install the core client package and TanStack Query integration:
+    
+    <Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+      <Tab value="npm">
+        ```bash
+        npm install @trpc/client @trpc/react-query @tanstack/react-query
+        ```
+      </Tab>
+      <Tab value="pnpm">
+        ```bash
+        pnpm add @trpc/client @trpc/react-query @tanstack/react-query
+        ```
+      </Tab>
+      <Tab value="yarn">
+        ```bash
+        yarn add @trpc/client @trpc/react-query @tanstack/react-query
+        ```
+      </Tab>
+      <Tab value="bun">
+        ```bash
+        bun add @trpc/client @trpc/react-query @tanstack/react-query
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+<Step title="Install React (if needed)">
+  If you're using React or Next.js, ensure you have React installed:
+  <Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+    <Tab value="npm">
+      ```bash npm install react react-dom @types/react @types/react-dom ```
+    </Tab>
+    <Tab value="pnpm">
+      ```bash pnpm add react react-dom @types/react @types/react-dom ```
+    </Tab>
+    <Tab value="yarn">
+      ```bash yarn add react react-dom @types/react @types/react-dom ```
+    </Tab>
+    <Tab value="bun">
+      ```bash bun add react react-dom @types/react @types/react-dom ```
+    </Tab>
+  </Tabs>
+</Step>
+
+  <Step title="Framework-specific packages (optional)">
+    Install additional packages based on your framework:
+    
+    <Tabs items={['Next.js', 'Vite/CRA', 'Vanilla JS']}>
+      <Tab value="Next.js">
+        ```bash
+        # Next.js integration (optional for enhanced features)
+        npm install @trpc/next
+        ```
+      </Tab>
+      <Tab value="Vite/CRA">
+        ```bash
+        # No additional packages needed for standard React setups
+        ```
+      </Tab>
+      <Tab value="Vanilla JS">
+        ```bash
+        # Use vanilla client without React dependencies
+        npm install @trpc/client
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+## Framework-Specific Setup
+
+<Tabs items={['React with TanStack Query', 'Next.js App Router', 'Next.js Pages Router', 'Vanilla JavaScript']}>
+  <Tab value="React with TanStack Query">
+    ```typescript title="utils/trpc.ts"
+    import { createTRPCReact } from '@trpc/react-query';
+    import type { AppRouter } from '../server/router'; // Import your server router type
+
+    export const trpc = createTRPCReact<AppRouter>();
+    ```
+
+    ```typescript title="App.tsx"
+    import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+    import { httpBatchLink } from '@trpc/client';
+    import { useState } from 'react';
+    import { trpc } from './utils/trpc';
+
+    export default function App() {
+      const [queryClient] = useState(() => new QueryClient());
+      const [trpcClient] = useState(() =>
+        trpc.createClient({
+          links: [
+            httpBatchLink({
+              url: 'http://localhost:3000/api/trpc',
+            }),
+          ],
+        })
+      );
+
+      return (
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <YourApp />
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+    ```
+
+  </Tab>
+
+  <Tab value="Next.js App Router">
+    ```typescript title="utils/trpc.ts"
+    import { createTRPCReact } from '@trpc/react-query';
+    import type { AppRouter } from '../server/router';
+
+    export const trpc = createTRPCReact<AppRouter>();
+    ```
+
+    ```typescript title="app/providers.tsx"
+    'use client';
+    import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+    import { httpBatchLink } from '@trpc/client';
+    import { useState } from 'react';
+    import { trpc } from '../utils/trpc';
+
+    export function TRPCProvider({ children }: { children: React.ReactNode }) {
+      const [queryClient] = useState(() => new QueryClient());
+      const [trpcClient] = useState(() =>
+        trpc.createClient({
+          links: [
+            httpBatchLink({
+              url: '/api/trpc',
+            }),
+          ],
+        })
+      );
+
+      return (
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </trpc.Provider>
+      );
+    }
+    ```
+
+    ```typescript title="app/layout.tsx"
+    import { TRPCProvider } from './providers';
+
+    export default function RootLayout({
+      children,
+    }: {
+      children: React.ReactNode;
+    }) {
+      return (
+        <html>
+          <body>
+            <TRPCProvider>{children}</TRPCProvider>
+          </body>
+        </html>
+      );
+    }
+    ```
+
+  </Tab>
+
+  <Tab value="Next.js Pages Router">
+    ```typescript title="utils/trpc.ts"
+    import { createTRPCNext } from '@trpc/next';
+    import { httpBatchLink } from '@trpc/client';
+    import type { AppRouter } from '../server/router';
+
+    export const trpc = createTRPCNext<AppRouter>({
+      config() {
+        return {
+          links: [
+            httpBatchLink({
+              url: '/api/trpc',
+            }),
+          ],
+        };
+      },
+      ssr: false, // Set to true for SSR
+    });
+    ```
+
+    ```typescript title="pages/_app.tsx"
+    import type { AppType } from 'next/app';
+    import { trpc } from '../utils/trpc';
+
+    const MyApp: AppType = ({ Component, pageProps }) => {
+      return <Component {...pageProps} />;
+    };
+
+    export default trpc.withTRPC(MyApp);
+    ```
+
+  </Tab>
+
+  <Tab value="Vanilla JavaScript">
+    ```typescript title="client.ts"
+    import { createTRPCClient, httpBatchLink } from '@trpc/client';
+    import type { AppRouter } from '../server/router';
+
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: 'http://localhost:3000/api/trpc',
+        }),
+      ],
+    });
+
+    // Use the client
+    async function fetchUser(id: string) {
+      const user = await client.user.getById.query(id);
+      return user;
+    }
+
+    async function createUser(data: { name: string; email: string }) {
+      const user = await client.user.create.mutate(data);
+      return user;
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+## Usage Examples
+
+Once installed, you can use tRPC in your components:
+
+<Tabs items={['Queries', 'Mutations', 'Infinite Queries']}>
+  <Tab value="Queries">
+    ```typescript title="components/UserProfile.tsx"
+    import { useQuery } from '@tanstack/react-query';
+    import { trpc } from '../utils/trpc';
+
+    export function UserProfile({ userId }: { userId: string }) {
+      const userQuery = useQuery(
+        trpc.user.getById.queryOptions(userId)
+      );
+
+      if (userQuery.isLoading) return <div>Loading...</div>;
+      if (userQuery.error) return <div>Error: {userQuery.error.message}</div>;
+
+      return (
+        <div>
+          <h1>{userQuery.data.name}</h1>
+          <p>{userQuery.data.email}</p>
+        </div>
+      );
+    }
+    ```
+
+  </Tab>
+
+  <Tab value="Mutations">
+    ```typescript title="components/CreateUser.tsx"
+    import { useMutation } from '@tanstack/react-query';
+    import { trpc } from '../utils/trpc';
+
+    export function CreateUser() {
+      const utils = trpc.useUtils();
+
+      const createUserMutation = useMutation(
+        trpc.user.create.mutationOptions({
+          onSuccess: () => {
+            utils.user.list.invalidate();
+          },
+        })
+      );
+
+      const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+
+        createUserMutation.mutate({
+          name: formData.get('name') as string,
+          email: formData.get('email') as string,
+        });
+      };
+
+      return (
+        <form onSubmit={handleSubmit}>
+          <input name="name" placeholder="Name" required />
+          <input name="email" type="email" placeholder="Email" required />
+          <button type="submit" disabled={createUserMutation.isPending}>
+            {createUserMutation.isPending ? 'Creating...' : 'Create User'}
+          </button>
+        </form>
+      );
+    }
+    ```
+
+  </Tab>
+
+  <Tab value="Infinite Queries">
+    ```typescript title="components/PostList.tsx"
+    import { useInfiniteQuery } from '@tanstack/react-query';
+    import { trpc } from '../utils/trpc';
+
+    export function PostList() {
+      const postsQuery = useInfiniteQuery(
+        trpc.post.infiniteList.infiniteQueryOptions({
+          getNextPageParam: (lastPage) => lastPage.nextCursor,
+        })
+      );
+
+      return (
+        <div>
+          {postsQuery.data?.pages.map((page) =>
+            page.posts.map((post) => (
+              <article key={post.id}>
+                <h2>{post.title}</h2>
+                <p>{post.content}</p>
+              </article>
+            ))
+          )}
+
+          {postsQuery.hasNextPage && (
+            <button
+              onClick={() => postsQuery.fetchNextPage()}
+              disabled={postsQuery.isFetchingNextPage}
+            >
+              {postsQuery.isFetchingNextPage ? 'Loading...' : 'Load More'}
+            </button>
+          )}
+        </div>
+      );
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+## Common Package Combinations
+
+### React Applications
+
+```bash
+npm install @trpc/client @trpc/react-query @tanstack/react-query
+```
+
+### Next.js Applications
+
+```bash
+npm install @trpc/client @trpc/react-query @tanstack/react-query @trpc/next
+```
+
+### Vanilla JavaScript
+
+```bash
+npm install @trpc/client
+```
+
+### With Real-time Features
+
+```bash
+npm install @trpc/client @trpc/react-query @tanstack/react-query ws
+```
+
+## TypeScript Requirements
+
+Ensure your `tsconfig.json` includes:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "strict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx" // for React projects
+  }
+}
+```
+
+## Next Steps
+
+<Cards>
+  <Card
+    title="TanStack Query Integration"
+    href="/docs/client/tanstack-react-query"
+  >
+    Learn how to use tRPC with TanStack Query for optimal React integration
+  </Card>
+
+<Card title="Client Setup Guide" href="/docs/client/setup">
+  Complete setup guide for different frameworks and scenarios
+</Card>
+
+<Card title="React Hooks" href="/docs/client/react-hooks">
+  Explore all available React hooks for queries, mutations, and utilities
+</Card>
+
+  <Card title="Error Handling" href="/docs/client/error-handling">
+    Handle errors gracefully with proper TypeScript types
+  </Card>
+</Cards>
+
+<Callout title="Need server setup?">
+  Before setting up the client, make sure you have a tRPC server running. Check
+  out [tRPC Server](/docs/server) for setup instructions.
+</Callout>

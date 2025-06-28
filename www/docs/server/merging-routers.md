@@ -47,8 +47,6 @@ const appRouter = router({
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
 
-
-
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
@@ -68,7 +66,6 @@ const appRouter = router({
 // http://localhost:3000/trpc/<NAMESPACE>.<PROCEDURE>
 
 export type AppRouter = typeof appRouter;
-
 
 // @filename: routers/post.ts
 import { router, publicProcedure } from '../trpc';
@@ -100,7 +97,6 @@ export const userRouter = router({
     return [];
   }),
 });
-
 ```
 
 ## Merging with `t.mergeRouters`
@@ -111,7 +107,6 @@ If you prefer having all procedures flat in one single namespace, you can instea
 // @filename: trpc.ts
 import { initTRPC } from '@trpc/server';
 const t = initTRPC.create();
-
 
 export const router = t.router;
 export const publicProcedure = t.procedure;
@@ -124,7 +119,7 @@ import { z } from 'zod';
 import { userRouter } from './user';
 import { postRouter } from './post';
 
-const appRouter = mergeRouters(userRouter, postRouter)
+const appRouter = mergeRouters(userRouter, postRouter);
 
 export type AppRouter = typeof appRouter;
 
@@ -149,7 +144,6 @@ export const postRouter = router({
   }),
 });
 
-
 // @filename: routers/user.ts
 import { router, publicProcedure } from '../trpc';
 import { z } from 'zod';
@@ -159,7 +153,6 @@ export const userRouter = router({
     return [];
   }),
 });
-
 ```
 
 ## Dynamically load routers {#lazy-load}

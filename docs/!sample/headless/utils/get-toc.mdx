@@ -1,0 +1,22 @@
+---
+title: Get TOC
+description: Parse Table of contents from markdown/mdx content
+---
+
+Parse Table of contents from markdown/mdx content.
+
+> [You can use the remark plugin directly](/docs/headless/mdx/headings)
+
+## Usage
+
+Note: If you're using a CMS, you should use the API provided by the CMS instead.
+
+```ts
+import { getTableOfContents } from 'fumadocs-core/server';
+
+const toc = getTableOfContents('## markdown content');
+```
+
+### Output
+
+An array of [`TOCItemType`](/docs/headless/mdx/headings#output) is returned.

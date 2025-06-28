@@ -1,0 +1,81 @@
+---
+title: Remark Structure
+description: Extract information from your documents, useful for implementing document search
+---
+
+## Usage
+
+Add it as a remark plugin.
+
+```ts title="MDX Compiler"
+import { compile } from '@mdx-js/mdx';
+import { remarkStructure } from 'fumadocs-core/mdx-plugins';
+
+const vfile = await compile('...', {
+  remarkPlugins: [remarkStructure],
+});
+```
+
+> This plugin is included by default on Fumadocs MDX.
+
+Extracted information could be found in `vfile.data.structuredData`, you may
+write your own plugin to convert it into a MDX export.
+
+### Options
+
+<AutoTypeTable
+  path="./content/docs/headless/props.ts"
+  name="StructureOptions"
+/>
+
+### Output
+
+A list of headings and contents. Paragraphs will be extracted to the `contents`
+array, each item contains a `heading` prop indicating the heading of paragraph.
+
+<Callout title="Note">A heading can have multiple paragraphs.</Callout>
+
+#### Heading
+
+| Prop      |                                      |
+| --------- | ------------------------------------ |
+| `id`      | unique identifier or slug of heading |
+| `content` | Text content                         |
+
+#### Content
+
+| Prop      |                                 |
+| --------- | ------------------------------- |
+| `heading` | Heading of paragraph (nullable) |
+| `content` | Text content                    |
+
+## As a Function
+
+Accepts MDX/markdown content and return structurized data.
+
+```ts
+import { structure } from 'fumadocs-core/mdx-plugins';
+
+structure(page.body.raw);
+```
+
+<Callout title="Tip" className="mt-4">
+If you have custom remark plugins enabled, such as
+`remark-math`, you have to pass these plugins to the function. This avoids unreadable content on paragraphs.
+
+```ts
+import { structure } from 'fumadocs-core/mdx-plugins';
+import remarkMath from 'remark-math';
+
+structure(page.body.raw, [remarkMath]);
+```
+
+</Callout>
+
+### Parameters
+
+| Parameter       |                        |
+| --------------- | ---------------------- |
+| `content`       | MDX/markdown content   |
+| `remarkPlugins` | List of remark plugins |
+| `options`       | Custom options         |

@@ -1,0 +1,38 @@
+```tsx
+'use client';
+
+import { useDocsSearch } from 'fumadocs-core/search/client';
+import {
+  SearchDialog,
+  SearchDialogContent,
+  SearchDialogFooter,
+  SearchDialogOverlay,
+  TagsList,
+  TagsListItem,
+  type SharedProps,
+} from 'fumadocs-ui/components/dialog/search';
+import { useState } from 'react';
+
+export default function CustomSearchDialog(props: SharedProps) {
+  // [!code ++]
+  const [tag, setTag] = useState<string | undefined>();
+  const { search, setSearch, query } = useDocsSearch({
+    tag, // [!code ++]
+  });
+
+  return (
+    <SearchDialog>
+      <SearchDialogOverlay />
+      <SearchDialogContent>
+        ...
+        <SearchDialogFooter className="flex flex-row">
+          {/* [!code ++:3] */}
+          <TagsList tag={tag} onTagChange={setTag}>
+            <TagsListItem value="my-value">My Value</TagsListItem>
+          </TagsList>
+        </SearchDialogFooter>
+      </SearchDialogContent>
+    </SearchDialog>
+  );
+}
+```

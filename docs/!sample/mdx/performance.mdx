@@ -1,0 +1,61 @@
+---
+title: Performance
+description: The performance of Fumadocs MDX
+icon: Rocket
+---
+
+## Overview
+
+Fumadocs MDX is a bundler plugin, in other words, it has a higher performance bottleneck.
+With bundlers like Webpack and Turbopack, it is enough for large docs sites with nearly 500+ MDX files, which is sufficient for almost all use cases.
+
+Since Fumadocs MDX works with your bundler, you can import any files including client components in your MDX files.
+This allows high flexibility and ensures everything is optimized by default.
+
+### Image Optimization
+
+Fumadocs MDX resolves images into static imports with [Remark Image](/docs/headless/mdx/remark-image).
+Therefore, your images will be optimized automatically by the Next.js Image API.
+
+```mdx
+![Hello](./hello.png)
+
+or in public folder
+
+![Hello](/hello.png)
+```
+
+Yields:
+
+```mdx
+import HelloImage from './hello.png';
+
+<img alt="Hello" src={HelloImage} />
+```
+
+![Banner](/banner.png)
+
+## Caveats
+
+Although Fumadocs MDX can handle nearly 500+ files, it could be slow and inefficient.
+A huge amount of MDX files can cause extremely high memory usage during build and development mode.
+
+This is because of:
+
+- Bundlers do a lot of work under the hood to bundle MDX and JavaScript files and optimize performance.
+- Bundlers are not supposed to compile hundreds of MDX files.
+
+### Solutions
+
+The main solution is to make the compilation on-demand, such that content is only loaded when it's being requested.
+
+#### Remote Source
+
+Remote sources don't need to pre-compile MDX files, it can compile them on-demand with SSG which can **highly increase your build speed.**
+However, you cannot use import in MDX files anymore.
+
+See [Custom Source](/docs/headless/custom-source) for configuring remote sources.
+
+#### Async Mode
+
+See [Async Mode](/docs/mdx/async).

@@ -1,0 +1,45 @@
+---
+title: Use as Page
+description: Use MDX file as a page
+---
+
+## Setup
+
+You can use `page.mdx` instead of `page.tsx` for creating a new page under the app directory.
+
+However, it doesn't have MDX components by default, so you have to provide them:
+
+```tsx title="mdx-components.tsx"
+import defaultMdxComponents from 'fumadocs-ui/mdx';
+import type { MDXComponents } from 'mdx/types';
+
+export function getMDXComponents(components?: MDXComponents): MDXComponents {
+  return {
+    ...defaultMdxComponents, // for Fumadocs UI
+    ...components,
+  };
+}
+
+// export a `useMDXComponents()` that returns MDX components
+export const useMDXComponents = getMDXComponents; // [!code ++]
+```
+
+```ts title="source.config.ts"
+import { defineConfig } from 'fumadocs-mdx/config';
+
+export default defineConfig({
+  mdxOptions: {
+    // Path to import your `mdx-components.tsx` above. [!code ++]
+    providerImportSource: '@/mdx-components',
+  },
+});
+```
+
+### Usage
+
+```mdx title="app/test/page.mdx"
+{/* this will enable Typography styles of Fumadocs UI */}
+export { withArticle as default } from 'fumadocs-ui/page';
+
+## Hello World
+```
