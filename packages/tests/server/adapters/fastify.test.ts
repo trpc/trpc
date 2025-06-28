@@ -597,4 +597,60 @@ describe('issue #5530 - cannot receive new WebSocket messages after receiving 16
       expect(await app.client.echo.query(data)).toBe(data);
     }
   });
+  /**
+   * Custom content-type handler test
+   * Verifies that a custom content-type handler can deserialize and serialize bodies.
+   */
+  test('custom content-type handler', async () => {
+    const customType = 'application/custom';
+    const customHandler = {
+      deserialize: (raw: string | Uint8Array) => {
+        const body =
+          typeof raw === 'string' ? raw : Buffer.from(raw).toString('utf8');
+        const [key, value] = body.split('=');
+        return { [key!]: value };
+      },
+      serialize: (data: unknown) => {
+        if (typeof data === 'object' && data !== null) {
+          const key = Object.keys(data)[0]!;
+          return `${key}=${(data as any)[key]}`;
+        }
+        return '';
+      },
+    };
+
+    const { appRouter } = createAppRouter();
+    const { instance, stop } = createServer({
+      appRouter,
+    });
+
+    // Register plugin with custom contentHandlers
+    await instance.register(fastifyTRPCPlugin, {
+      prefix: '/trpc',
+      trpcOptions: {
+        router: appRouter,
+        createContext,
+        contentHandlers: {
+          [customType]: customHandler,
+        },
+      },
+    });
+
+    await instance.listen({ port: 0 });
+    const address = instance.server.address();
+    const port = typeof address === 'object' && address ? address.port : 0;
+
+    const res = await fetch(`http://localhost:${port}/trpc/hello`, {
+      method: 'POST',
+      headers: {
+        'content-type': customType,
+        accept: customType,
+      },
+      body: 'username=custom',
+    });
+    const text = await res.text();
+    expect(text).toBe('text=hello custom');
+
+    await stop();
+  });
 });
