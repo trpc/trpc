@@ -4,8 +4,8 @@ export const tweets = [
   [
     {
       id: '1549812970594545664',
-      name: 'Theo - ping.gg',
-      handle: '@t3dotgg',
+      name: 'Theo - t3.gg',
+      handle: '@theo',
       date: 'Jul 20',
       avatar:
         'https://pbs.twimg.com/profile_images/1475643465069301763/FUR05HHs_400x400.jpg',

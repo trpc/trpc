@@ -14,7 +14,7 @@ export const tweets = {
                     {
                         "start": 8,
                         "end": 16,
-                        "username": "t3dotgg",
+                        "username": "theo",
                         "id": "786375418685165568"
                     },
                     {
@@ -60,7 +60,7 @@ export const tweets = {
             "conversation_id": "1603224872208908288",
             "lang": "en",
             "author_id": "14904098",
-            "text": "Hearing @t3dotgg and @mxstbr #tRPC and @GraphQL and find they agree that both are awesome and there’s a time and a place for each 💖 https://t.co/CxM04pGhrP",
+            "text": "Hearing @theo and @mxstbr #tRPC and @GraphQL and find they agree that both are awesome and there’s a time and a place for each 💖 https://t.co/CxM04pGhrP",
             "attachments": {
                 "media_keys": [
                     "3_1603224865959399424"
@@ -207,7 +207,7 @@ export const tweets = {
                     {
                         "start": 0,
                         "end": 8,
-                        "username": "t3dotgg",
+                        "username": "theo",
                         "id": "786375418685165568"
                     },
                     {
@@ -227,7 +227,7 @@ export const tweets = {
             ],
             "lang": "en",
             "author_id": "1029051636",
-            "text": "@t3dotgg @trpcio Totally. I am literally smiling every time I write a procedure, because it reminds of how hard it used to be in the past. Built-in errors, typed middleware (that can alter context), input validation. It's just massive!",
+            "text": "@theo @trpcio Totally. I am literally smiling every time I write a procedure, because it reminds of how hard it used to be in the past. Built-in errors, typed middleware (that can alter context), input validation. It's just massive!",
             "source": "Twitter Web App",
             "id": "1571988844152786946",
             "created_at": "2022-09-19T22:25:21.000Z",
@@ -262,8 +262,8 @@ export const tweets = {
                         "start": 173,
                         "end": 196,
                         "url": "https://t.co/iqjDaOVbGX",
-                        "expanded_url": "https://twitter.com/t3dotgg/status/1571922456239284224",
-                        "display_url": "twitter.com/t3dotgg/status…"
+                        "expanded_url": "https://twitter.com/theo/status/1571922456239284224",
+                        "display_url": "twitter.com/theo/status…"
                     }
                 ]
             },
@@ -969,8 +969,8 @@ export const tweets = {
             },
             {
                 "id": "786375418685165568",
-                "username": "t3dotgg",
-                "profile_image_url": "https://github.com/t3dotgg.png",
+                "username": "theo",
+                "profile_image_url": "https://github.com/theo.png",
                 "public_metrics": {
                     "followers_count": 41941,
                     "following_count": 2007,
@@ -1365,7 +1365,7 @@ export const tweets = {
                         {
                             "start": 8,
                             "end": 16,
-                            "username": "t3dotgg",
+                            "username": "theo",
                             "id": "786375418685165568"
                         },
                         {
@@ -1411,7 +1411,7 @@ export const tweets = {
                 "conversation_id": "1603224872208908288",
                 "lang": "en",
                 "author_id": "14904098",
-                "text": "Hearing @t3dotgg and @mxstbr #tRPC and @GraphQL and find they agree that both are awesome and there’s a time and a place for each 💖 https://t.co/CxM04pGhrP",
+                "text": "Hearing @theo and @mxstbr #tRPC and @GraphQL and find they agree that both are awesome and there’s a time and a place for each 💖 https://t.co/CxM04pGhrP",
                 "attachments": {
                     "media_keys": [
                         "3_1603224865959399424"
@@ -1594,7 +1594,7 @@ export const tweets = {
                         {
                             "start": 0,
                             "end": 8,
-                            "username": "t3dotgg",
+                            "username": "theo",
                             "id": "786375418685165568"
                         },
                         {
@@ -1614,7 +1614,7 @@ export const tweets = {
                 ],
                 "lang": "en",
                 "author_id": "1029051636",
-                "text": "@t3dotgg @trpcio Totally. I am literally smiling every time I write a procedure, because it reminds of how hard it used to be in the past. Built-in errors, typed middleware (that can alter context), input validation. It's just massive!",
+                "text": "@theo @trpcio Totally. I am literally smiling every time I write a procedure, because it reminds of how hard it used to be in the past. Built-in errors, typed middleware (that can alter context), input validation. It's just massive!",
                 "source": "Twitter Web App",
                 "id": "1571988844152786946",
                 "created_at": "2022-09-19T22:25:21.000Z",
@@ -1686,8 +1686,8 @@ export const tweets = {
                             "start": 173,
                             "end": 196,
                             "url": "https://t.co/iqjDaOVbGX",
-                            "expanded_url": "https://twitter.com/t3dotgg/status/1571922456239284224",
-                            "display_url": "twitter.com/t3dotgg/status…"
+                            "expanded_url": "https://twitter.com/theo/status/1571922456239284224",
+                            "display_url": "twitter.com/theo/status…"
                         }
                     ]
                 },
