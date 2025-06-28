@@ -1,0 +1,82 @@
+---
+title: Notebook
+description: A more compact version of Docs Layout
+---
+
+![Notebook](/docs/notebook.png)
+
+## Usage
+
+Enable the notebook layout with `fumadocs-ui/layouts/notebook`, it's a more compact layout than the default one.
+
+```tsx title="layout.tsx"
+import { DocsLayout } from 'fumadocs-ui/layouts/notebook'; // [!code highlight]
+import { baseOptions } from '@/app/layout.config';
+import { source } from '@/lib/source';
+import type { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <DocsLayout {...baseOptions} tree={source.pageTree}>
+      {children}
+    </DocsLayout>
+  );
+}
+```
+
+## Configurations
+
+The options are inherited from [Docs Layout](/docs/ui/layouts/docs), with minor differences:
+
+- sidebar/navbar cannot be replaced, Notebook layout is more opinionated than the default one.
+- additional options (see below).
+
+### Tab Mode
+
+Configure the style of sidebar tabs.
+
+![Notebook](/docs/notebook-tab-mode.png)
+
+```tsx title="layout.tsx"
+import { DocsLayout } from 'fumadocs-ui/layouts/notebook';
+import { baseOptions } from '@/app/layout.config';
+import { source } from '@/lib/source';
+import type { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <DocsLayout
+      {...baseOptions}
+      tabMode="navbar" // [!code ++]
+      tree={source.pageTree}
+    >
+      {children}
+    </DocsLayout>
+  );
+}
+```
+
+### Nav Mode
+
+Configure the style of navbar.
+
+![Notebook](/docs/notebook-nav-mode.png)
+
+```tsx title="layout.tsx"
+import { DocsLayout } from 'fumadocs-ui/layouts/notebook';
+import { baseOptions } from '@/app/layout.config';
+import { source } from '@/lib/source';
+import type { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <DocsLayout
+      {...baseOptions}
+      nav={{ ...baseOptions.nav, mode: 'top' }} // [!code ++]
+      tree={source.pageTree}
+    >
+      {children}
+    </DocsLayout>
+  );
+}
+```

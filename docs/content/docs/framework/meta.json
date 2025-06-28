@@ -1,0 +1,19 @@
+{
+  "title": "tRPC Framework",
+  "description": "End-to-end typesafe APIs made easy",
+  "icon": "IconBrandTypescript",
+  "root": true,
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "installation",
+    "quickstart",
+    "---Core Concepts---",
+    "concepts",
+    "---Learning Resources---",
+    "getting-started",
+    "example-apps",
+    "---Community---",
+    "videos-and-community-resources"
+  ]
+}

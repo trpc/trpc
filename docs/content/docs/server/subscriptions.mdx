@@ -1,0 +1,721 @@
+---
+title: Subscriptions
+description: Build real-time features with tRPC subscriptions and event streams
+icon: IconRadio
+---
+
+Subscriptions are a powerful way to create real-time connections between your client and server. They enable you to push updates to clients as soon as data changes, perfect for chat applications, live feeds, or any real-time feature.
+
+<Callout type="info">
+  tRPC subscriptions work over WebSockets or Server-Sent Events (SSE). If you're
+  unsure which to use, we recommend SSE for most applications as it's easier to
+  set up and doesn't require a WebSocket server.
+</Callout>
+
+## Overview
+
+With tRPC subscriptions:
+
+- **Persistent connections** are maintained between client and server
+- **Automatic reconnection** handles connection drops gracefully
+- **Type safety** is preserved end-to-end
+- **Event tracking** enables reliable message delivery
+
+## Getting Started
+
+### Choose Your Transport
+
+<Tabs items={['Server-Sent Events', 'WebSockets']}>
+
+```mdx tab="Server-Sent Events"
+**Recommended for most applications**
+
+- Easier to setup and deploy
+- Works through firewalls and proxies
+- Automatic reconnection built-in
+- Unidirectional (server to client)
+
+See our [SSE example](https://github.com/trpc/examples-next-sse-chat) for a complete implementation.
+```
+
+```mdx tab="WebSockets"
+**For bidirectional communication**
+
+- Bidirectional communication
+- Lower latency
+- More complex setup
+- Requires WebSocket server
+
+See our [WebSocket guide](./websockets) and [WebSocket example](https://github.com/trpc/examples-next-prisma-starter-websockets).
+```
+
+</Tabs>
+
+## Basic Subscription
+
+### Server Setup
+
+Create a simple subscription that yields data over time:
+
+```ts title="server/routers/posts.ts"
+import { initTRPC } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
+import { EventEmitter } from 'events';
+
+const t = initTRPC.create();
+const ee = new EventEmitter();
+
+export const postsRouter = t.router({
+  onPostAdd: t.procedure.subscription(() => {
+    return observable<Post>((emit) => {
+      const onAdd = (data: Post) => {
+        emit.next(data);
+      };
+
+      ee.on('add', onAdd);
+
+      // Cleanup function
+      return () => {
+        ee.off('add', onAdd);
+      };
+    });
+  }),
+
+  create: t.procedure
+    .input(z.object({
+      title: z.string(),
+      content: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const post = await createPost(input);
+      // Emit the new post to all subscribers
+      ee.emit('add', post);
+      return post;
+    }),
+});
+```
+
+### Client Usage
+
+Subscribe to real-time updates on the client:
+
+```tsx title="components/PostList.tsx"
+import { trpc } from '../lib/trpc';
+
+export function PostList() {
+  const [posts, setPosts] = useState<Post[]>([]);
+
+  // Subscribe to new posts
+  trpc.posts.onPostAdd.useSubscription(undefined, {
+    onData: (post) => {
+      setPosts((prev) => [post, ...prev]);
+    },
+    onError: (err) => {
+      console.error('Subscription error:', err);
+    },
+  });
+
+  return (
+    <div>
+      {posts.map((post) => (
+        <div key={post.id} className="border rounded p-4 mb-2">
+          <h3>{post.title}</h3>
+          <p>{post.content}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Tracked Subscriptions (Recommended)
+
+Use the `tracked()` helper for automatic reconnection with last known ID. This ensures reliable message delivery even if the connection drops.
+
+### Server Implementation
+
+```ts title="server/routers/chat.ts"
+import { tracked } from '@trpc/server';
+import { z } from 'zod';
+
+export const chatRouter = t.router({
+  onMessage: t.procedure
+    .input(z.object({
+      lastEventId: z.string().nullish(),
+    }).optional())
+    .subscription(async function* (opts) {
+      if (opts.input?.lastEventId) {
+        // Send missed messages since last event ID
+        const missedMessages = await getMessagesSince(opts.input.lastEventId);
+        for (const message of missedMessages) {
+          yield tracked(message.id, message);
+        }
+      }
+
+      // Listen for new messages
+      for await (const [data] of on(ee, 'message', {
+        signal: opts.signal,
+      })) {
+        const message = data as Message;
+        yield tracked(message.id, message);
+      }
+    }),
+
+  sendMessage: t.procedure
+    .input(z.object({
+      content: z.string(),
+      channelId: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const message = await createMessage({
+        ...input,
+        userId: ctx.user.id,
+      });
+
+      ee.emit('message', message);
+      return message;
+    }),
+});
+```
+
+### Client with Reconnection
+
+```tsx title="components/ChatRoom.tsx"
+export function ChatRoom({ channelId }: { channelId: string }) {
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  trpc.chat.onMessage.useSubscription(
+    { lastEventId: null }, // Will be automatically updated
+    {
+      onData: (message) => {
+        setMessages((prev) => [...prev, message]);
+      },
+      onError: (err) => {
+        console.error('Chat subscription error:', err);
+      },
+    }
+  );
+
+  return (
+    <div className="chat-container">
+      <div className="messages">
+        {messages.map((message) => (
+          <div key={message.id} className="message">
+            <strong>{message.user.name}: </strong>
+            {message.content}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## Advanced Patterns
+
+### Pull-Based Subscriptions
+
+Periodically check for new data instead of using events:
+
+```ts title="server/routers/notifications.ts"
+export const notificationsRouter = t.router({
+  onNotification: t.procedure
+    .input(z.object({
+      lastEventId: z.coerce.date().nullish(),
+    }))
+    .subscription(async function* (opts) {
+      let lastEventId = opts.input?.lastEventId ?? null;
+
+      while (!opts.signal!.aborted) {
+        const notifications = await db.notification.findMany({
+          where: lastEventId ? {
+            createdAt: { gt: lastEventId },
+          } : undefined,
+          orderBy: { createdAt: 'asc' },
+          take: 10,
+        });
+
+        for (const notification of notifications) {
+          yield tracked(notification.createdAt.toJSON(), notification);
+          lastEventId = notification.createdAt;
+        }
+
+        // Wait before checking again
+        await sleep(1000);
+      }
+    }),
+});
+```
+
+### Input-Based Subscriptions
+
+Create subscriptions that accept input parameters:
+
+```ts title="server/routers/live.ts"
+export const liveRouter = t.router({
+  onChannelMessage: t.procedure
+    .input(z.object({
+      channelId: z.string(),
+      lastEventId: z.string().nullish(),
+    }))
+    .subscription(async function* (opts) {
+      const { channelId, lastEventId } = opts.input;
+
+      // Check permissions
+      const canAccess = await checkChannelAccess(channelId, opts.ctx.user.id);
+      if (!canAccess) {
+        throw new TRPCError({ code: 'FORBIDDEN' });
+      }
+
+      if (lastEventId) {
+        const missedMessages = await getChannelMessagesSince(channelId, lastEventId);
+        for (const message of missedMessages) {
+          yield tracked(message.id, message);
+        }
+      }
+
+      // Listen for new messages in this channel
+      const eventName = `channel:${channelId}:message`;
+      for await (const [data] of on(ee, eventName, {
+        signal: opts.signal,
+      })) {
+        const message = data as Message;
+        yield tracked(message.id, message);
+      }
+    }),
+});
+```
+
+### Connection Limits
+
+Limit the number of concurrent subscriptions:
+
+```ts title="server/middleware/connectionLimit.ts"
+const connectionCounts = new Map<string, number>();
+
+export const connectionLimitMiddleware = t.middleware(async (opts) => {
+  const userId = opts.ctx.user?.id;
+  if (!userId) return opts.next();
+
+  const currentConnections = connectionCounts.get(userId) || 0;
+  const maxConnections = 5;
+
+  if (currentConnections >= maxConnections) {
+    throw new TRPCError({
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Too many active connections',
+    });
+  }
+
+  // Increment connection count
+  connectionCounts.set(userId, currentConnections + 1);
+
+  try {
+    return await opts.next();
+  } finally {
+    // Decrement on cleanup
+    const count = connectionCounts.get(userId) || 0;
+    if (count <= 1) {
+      connectionCounts.delete(userId);
+    } else {
+      connectionCounts.set(userId, count - 1);
+    }
+  }
+});
+```
+
+## Error Handling
+
+### Server-Side Error Recovery
+
+Handle errors gracefully in subscriptions:
+
+```ts title="server/routers/resilient.ts"
+export const resilientRouter = t.router({
+  onData: t.procedure.subscription(async function* (opts) {
+    try {
+      for await (const [data] of on(ee, 'data', {
+        signal: opts.signal,
+      })) {
+        try {
+          // Process data with potential failure
+          const processedData = await processData(data);
+          yield tracked(processedData.id, processedData);
+        } catch (error) {
+          // Log error but continue subscription
+          console.error('Error processing data:', error);
+          // Optionally yield error information
+          yield tracked(
+            `error-${Date.now()}`,
+            { error: 'Processing failed', timestamp: Date.now() }
+          );
+        }
+      }
+    } finally {
+      // Cleanup resources
+      await cleanupResources();
+    }
+  }),
+});
+```
+
+### Client-Side Error Handling
+
+Handle connection issues on the client:
+
+```tsx title="hooks/useResilientSubscription.ts"
+export function useResilientSubscription<T>(
+  subscription: any,
+  input: any,
+  options?: {
+    onData?: (data: T) => void;
+    onError?: (error: Error) => void;
+    maxRetries?: number;
+  }
+) {
+  const [retryCount, setRetryCount] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
+  const maxRetries = options?.maxRetries ?? 5;
+
+  subscription.useSubscription(input, {
+    onData: (data: T) => {
+      setIsConnected(true);
+      setRetryCount(0); // Reset retry count on successful data
+      options?.onData?.(data);
+    },
+    onError: (error: Error) => {
+      setIsConnected(false);
+      console.error('Subscription error:', error);
+
+      if (retryCount < maxRetries) {
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+        }, Math.pow(2, retryCount) * 1000); // Exponential backoff
+      }
+
+      options?.onError?.(error);
+    },
+  });
+
+  return { isConnected, retryCount };
+}
+```
+
+## Output Validation
+
+### Validate Subscription Outputs
+
+Use Zod to validate subscription outputs:
+
+```ts title="server/utils/validation.ts"
+import { tracked, type TrackedEnvelope } from '@trpc/server';
+import { z } from 'zod';
+
+// Helper for validating async iterables
+export function validateAsyncIterable<TInput, TOutput>(
+  schema: z.ZodType<TInput, any, TOutput>
+) {
+  return function* (iterable: AsyncIterable<TOutput>) {
+    for await (const item of iterable) {
+      if (isTrackedEnvelope(item)) {
+        const [id, data] = item;
+        const validatedData = schema.parse(data);
+        yield tracked(id, validatedData);
+      } else {
+        yield schema.parse(item);
+      }
+    }
+  };
+}
+
+// Usage in procedures
+export const validatedRouter = t.router({
+  onMessage: t.procedure
+    .output(z.object({
+      id: z.string(),
+      content: z.string(),
+      userId: z.string(),
+      createdAt: z.date(),
+    }))
+    .subscription(async function* (opts) {
+      const messageStream = getMessageStream();
+      yield* validateAsyncIterable(messageSchema)(messageStream);
+    }),
+});
+```
+
+## Performance Optimization
+
+### Subscription Batching
+
+Batch multiple events to reduce client updates:
+
+```ts title="server/utils/batching.ts"
+export async function* batchEvents<T>(
+  eventStream: AsyncIterable<T>,
+  batchSize: number = 10,
+  maxWaitMs: number = 100
+) {
+  let batch: T[] = [];
+  let lastFlush = Date.now();
+
+  for await (const event of eventStream) {
+    batch.push(event);
+
+    const shouldFlush =
+      batch.length >= batchSize ||
+      Date.now() - lastFlush >= maxWaitMs;
+
+    if (shouldFlush) {
+      yield batch;
+      batch = [];
+      lastFlush = Date.now();
+    }
+  }
+
+  // Flush remaining events
+  if (batch.length > 0) {
+    yield batch;
+  }
+}
+
+// Usage
+export const batchedRouter = t.router({
+  onBatchedEvents: t.procedure.subscription(async function* (opts) {
+    const eventStream = getEventStream();
+    const batchedStream = batchEvents(eventStream, 5, 200);
+
+    for await (const batch of batchedStream) {
+      yield tracked(`batch-${Date.now()}`, batch);
+    }
+  }),
+});
+```
+
+### Memory Management
+
+Prevent memory leaks in long-running subscriptions:
+
+**1. Implement Subscription Cleanup**
+
+```typescript title="src/lib/subscription-manager.ts"
+interface SubscriptionManager {
+  subscriptions: Map<string, () => void>;
+  timers: Map<string, NodeJS.Timeout>;
+  cleanup: (id: string) => void;
+}
+
+export const subscriptionManager: SubscriptionManager = {
+  subscriptions: new Map(),
+  timers: new Map(),
+
+  cleanup(id: string) {
+    // Cleanup subscription
+    const unsubscribe = this.subscriptions.get(id);
+    if (unsubscribe) {
+      unsubscribe();
+      this.subscriptions.delete(id);
+    }
+
+    // Clear any associated timers
+    const timer = this.timers.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      this.timers.delete(id);
+    }
+
+    console.log(`Cleaned up subscription: ${id}`);
+  },
+};
+
+// Auto-cleanup after 1 hour of inactivity
+export const registerSubscription = (id: string, unsubscribe: () => void) => {
+  subscriptionManager.subscriptions.set(id, unsubscribe);
+
+  // Set cleanup timer
+  const timer = setTimeout(() => {
+    subscriptionManager.cleanup(id);
+  }, 60 * 60 * 1000); // 1 hour
+
+  subscriptionManager.timers.set(id, timer);
+};
+```
+
+**2. Create Memory-Safe Subscription**
+
+```typescript title="src/routers/managed-subscription.ts"
+export const managedSubscriptionRouter = t.router({
+  onDataUpdates: t.procedure
+    .input(z.object({
+      subscriptionId: z.string(),
+      dataType: z.enum(['posts', 'comments', 'users']),
+    }))
+    .subscription(async function* ({ input, signal }) {
+      const { subscriptionId, dataType } = input;
+
+      // Register for cleanup
+      registerSubscription(subscriptionId, () => {
+        console.log(`Subscription ${subscriptionId} cleaned up`);
+      });
+
+      try {
+        // Listen for data updates
+        for await (const [data] of on(ee, dataType, { signal })) {
+          // Reset cleanup timer on activity
+          subscriptionManager.timers.delete(subscriptionId);
+          const timer = setTimeout(() => {
+            subscriptionManager.cleanup(subscriptionId);
+          }, 60 * 60 * 1000);
+          subscriptionManager.timers.set(subscriptionId, timer);
+
+          yield data;
+        }
+      } catch (error) {
+        console.error(`Subscription error: ${subscriptionId}`, error);
+      } finally {
+        // Ensure cleanup on exit
+        subscriptionManager.cleanup(subscriptionId);
+      }
+    }),
+});
+```
+
+**3. Client-Side Memory Management**
+
+```tsx title="components/ManagedSubscription.tsx"
+import { useEffect, useRef } from 'react';
+import { trpc } from '../lib/trpc';
+
+export function ManagedSubscription() {
+  const subscriptionIdRef = useRef<string>();
+
+  useEffect(() => {
+    // Generate unique subscription ID
+    subscriptionIdRef.current = `sub-${Date.now()}-${Math.random()}`;
+
+    return () => {
+      // Cleanup on unmount
+      if (subscriptionIdRef.current) {
+        // Send cleanup signal to server if needed
+        fetch('/api/cleanup-subscription', {
+          method: 'POST',
+          body: JSON.stringify({
+            subscriptionId: subscriptionIdRef.current
+          }),
+        });
+      }
+    };
+  }, []);
+
+  trpc.subscriptions.onDataUpdates.useSubscription(
+    {
+      subscriptionId: subscriptionIdRef.current!,
+      dataType: 'posts',
+    },
+    {
+      onData: (data) => {
+        console.log('Received data:', data);
+      },
+      onError: (error) => {
+        console.error('Subscription error:', error);
+      },
+    }
+  );
+
+  return <div>Managed subscription active</div>;
+}
+```
+
+## Best Practices
+
+<Steps>
+
+### Use Tracked Events
+
+Always use `tracked()` for production subscriptions to enable automatic reconnection:
+
+```ts
+// ✅ Good - with tracking
+yield tracked(event.id, event);
+
+// ❌ Avoid - no reconnection support
+yield event;
+```
+
+### Handle Cleanup Properly
+
+Always clean up resources in the finally block:
+
+```ts
+subscription(async function* (opts) {
+  const resources = [];
+  try {
+    // ... subscription logic
+  } finally {
+    // Clean up resources
+    resources.forEach(cleanup => cleanup());
+  }
+})
+```
+
+### Implement Proper Error Boundaries
+
+Don't let one bad event kill the entire subscription:
+
+```ts
+for await (const [data] of eventStream) {
+  try {
+    const processed = await processData(data);
+    yield tracked(processed.id, processed);
+  } catch (error) {
+    // Log but continue
+    console.error('Processing error:', error);
+  }
+}
+```
+
+### Monitor Performance
+
+Track subscription performance and connection counts:
+
+```ts
+const activeSubscriptions = new Map();
+
+subscription(async function* (opts) {
+  const subId = Math.random().toString();
+  activeSubscriptions.set(subId, Date.now());
+
+  try {
+    // Subscription logic
+  } finally {
+    activeSubscriptions.delete(subId);
+  }
+})
+```
+
+</Steps>
+
+## Reference Projects
+
+<TypeTable
+  type={{
+    'SSE Chat': {
+      description: 'Complete chat application using Server-Sent Events',
+      type: 'github.com/trpc/examples-next-sse-chat',
+    },
+    'WebSocket Starter': {
+      description: 'Full-stack WebSocket implementation with Prisma',
+      type: 'github.com/trpc/examples-next-prisma-websockets-starter',
+    },
+    'Standalone Server': {
+      description: 'Minimal WebSocket server example',
+      type: '/examples/standalone-server',
+    },
+  }}
+/>
+
+<Callout type="info">
+  Subscriptions are powerful but should be used thoughtfully. For many use
+  cases, regular queries with polling or refetching may be simpler and more
+  efficient.
+</Callout>

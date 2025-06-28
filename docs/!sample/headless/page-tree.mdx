@@ -1,0 +1,90 @@
+---
+title: Page Tree
+description: The structure of page tree.
+---
+
+Page tree is a tree structure that describes all navigation links, with other items like separator and folders.
+
+It will be sent to the client and being referenced in navigation elements including the sidebar and breadcrumb.
+Hence, you shouldn't store any sensitive or large data in page tree.
+
+<Callout title="Note">
+
+By design, page tree only contains necessary information of all pages and folders.
+
+Unserializable data such as functions can't be passed to page tree.
+
+</Callout>
+
+## Conventions
+
+The type definitions of page tree, for people who want to hardcode/generate it.
+You can also import the type from Fumadocs.
+
+```ts
+import type { PageTree } from 'fumadocs-core/server';
+
+const tree: PageTree.Root = {
+  // props
+};
+```
+
+Certain nodes contain a `$ref` property, they are internal and not used when hardcoding it.
+
+### Root
+
+The initial root of page trees.
+
+<AutoTypeTable path="./content/docs/headless/props.ts" name="PageTreeRoot" />
+
+### Page
+
+```json
+{
+  "type": "page",
+  "name": "Quick Start",
+  "url": "/docs"
+}
+```
+
+> External urls are also supported
+
+<AutoTypeTable path="./content/docs/headless/props.ts" name="PageTreeItem" />
+
+### Folder
+
+```json
+{
+    "type": "folder",
+    "name": "Guide",
+    "index": {
+        "type": "page",
+        ...
+    }
+    "children": [
+        ...
+    ]
+}
+```
+
+<AutoTypeTable path="./content/docs/headless/props.ts" name="PageTreeFolder" />
+
+### Separator
+
+A label between items.
+
+```json
+{
+  "type": "separator",
+  "name": "Components"
+}
+```
+
+<AutoTypeTable
+  path="./content/docs/headless/props.ts"
+  name="PageTreeSeparator"
+/>
+
+## Icons
+
+Icon is a `ReactElement`, supported by pages and folders.

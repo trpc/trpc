@@ -1,0 +1,266 @@
+---
+title: Configurations
+description: Customise Fumadocs OpenAPI
+---
+
+## File Generator
+
+Pass options to the `generateFiles` function.
+
+### Input
+
+An array of input files.
+Allowed:
+
+- File Paths
+- External URLs
+- Wildcard
+
+```ts
+import { generateFiles } from 'fumadocs-openapi';
+
+void generateFiles({
+  input: ['./unkey.json'],
+});
+```
+
+### Output
+
+The output directory.
+
+```ts
+import { generateFiles } from 'fumadocs-openapi';
+
+void generateFiles({
+  output: '/content/docs',
+});
+```
+
+### Per
+
+Customise how the page is generated, default to `operation`.
+
+> Operation in OpenAPI schema refers to an API endpoint with specific method like `/api/weather:GET`.
+
+| mode      |                             | output                                |
+| --------- | --------------------------- | ------------------------------------- |
+| tag       | operations with same tag    | `{tag_name}.mdx`                      |
+| file      | operations in schema schema | `{file_name}.mdx`                     |
+| operation | each operation              | `{operationId ?? endpoint_path}.mdx`) |
+
+```ts
+import { generateFiles } from 'fumadocs-openapi';
+
+void generateFiles({
+  per: 'tag',
+});
+```
+
+### Group By
+
+In `operation` mode, you can group output files with folders.
+
+| value | output                                                 |
+| ----- | ------------------------------------------------------ |
+| tag   | `{tag}/{operationId ?? endpoint_path}.mdx`             |
+| route | `{endpoint_path}/{method}.mdx` (ignores `name` option) |
+| none  | `{operationId ?? endpoint_path}.mdx` (default)         |
+
+```ts
+import { generateFiles } from 'fumadocs-openapi';
+
+void generateFiles({
+  per: 'operation',
+  groupBy: 'tag',
+});
+```
+
+### Name
+
+A function that controls the output path of MDX pages.
+
+```ts
+import { generateFiles } from 'fumadocs-openapi';
+
+void generateFiles({
+  name: (output, document) => {
+    if (output.type === 'operation') {
+      const operation = document.paths![output.item.path]![output.item.method]!;
+      // operation object
+      console.log(operation);
+
+      return 'my-dir/filename';
+    }
+
+    const hook = document.webhooks![output.item.name][output.item.method]!;
+    // webhook object
+    console.log(hook);
+    return 'my-dir/filename';
+  },
+});
+```
+
+### Frontmatter
+
+Customise the frontmatter of MDX files.
+
+By default, it includes:
+
+| property      | description                                      |
+| ------------- | ------------------------------------------------ |
+| `title`       | Page title                                       |
+| `description` | Page description                                 |
+| `full`        | Always true, added for Fumadocs UI               |
+| `method`      | Available method of operation (`operation` mode) |
+| `route`       | Route of operation (`operation` mode)            |
+
+```ts
+import { generateFiles } from 'fumadocs-openapi';
+
+void generateFiles({
+  input: ['./petstore.yaml'],
+  output: './content/docs',
+  frontmatter: (title, description) => ({
+    myProperty: 'hello',
+  }),
+});
+```
+
+### Add Generated Comment
+
+Add a comment to the top of generated files indicating they are auto-generated.
+
+```ts
+import { generateFiles } from 'fumadocs-openapi';
+
+void generateFiles({
+  input: ['./petstore.yaml'],
+  output: './content/docs',
+  // Add default comment
+  addGeneratedComment: true,
+
+  // Or provide a custom comment
+  addGeneratedComment: 'Custom auto-generated comment',
+
+  // Or disable comments
+  addGeneratedComment: false,
+});
+```
+
+### Tag Display Name
+
+Adding `x-displayName` to OpenAPI Schema can control the display name of your tags.
+
+```yaml title="openapi.yaml"
+tags:
+  - name: test
+    description: this is a tag.
+    x-displayName: My Test Name
+```
+
+## OpenAPI Server
+
+The server to render pages.
+
+### Generate Code Samples
+
+Generate custom code samples for each API endpoint. Make sure to install the types package to give you type-safety when customising it:
+
+```package-install
+openapi-types -D
+```
+
+```ts
+import { createOpenAPI } from 'fumadocs-openapi/server';
+
+export const openapi = createOpenAPI({
+  generateCodeSamples(endpoint) {
+    return [
+      {
+        lang: 'js',
+        label: 'JavaScript SDK',
+        source: "console.log('hello')",
+      },
+    ];
+  },
+});
+```
+
+In addition, you can also specify code samples via OpenAPI schema.
+
+```yaml
+paths:
+  /plants:
+    get:
+      x-codeSamples:
+        - lang: js
+          label: JavaScript SDK
+          source: |
+            const planter = require('planter');
+            planter.list({ unwatered: true });
+```
+
+#### Disable Code Sample
+
+You can disable the code sample for a specific language, for example, to disable cURL:
+
+```ts
+import { createOpenAPI } from 'fumadocs-openapi/server';
+
+export const openapi = createOpenAPI({
+  generateCodeSamples(endpoint) {
+    return [
+      {
+        lang: 'curl',
+        label: 'cURL',
+        source: false,
+      },
+    ];
+  },
+});
+```
+
+### Renderer
+
+Customise components in the page.
+
+```ts
+import { createOpenAPI } from 'fumadocs-openapi/server';
+
+export const openapi = createOpenAPI({
+  renderer: {
+    Root(props) {
+      // your own (server) component
+    },
+  },
+});
+```
+
+## Advanced
+
+### Using API Page
+
+> This is not a public API, use it carefully.
+
+To use the `APIPage` component in your MDX files:
+
+```mdx
+---
+title: Delete Api
+full: true
+---
+
+<APIPage
+  document="./unkey.json"
+  operations={[{ path: '/v1/apis.deleteApi', method: 'post' }]}
+  hasHead={false}
+/>
+```
+
+Unlike using the `generateFiles()` function, this supports revalidation of the OpenAPI schema if given an URL.
+
+| Prop         | Description                               |
+| ------------ | ----------------------------------------- |
+| `document`   | OpenAPI Schema                            |
+| `operations` | Operations (API endpoints) to be rendered |
+| `hasHead`    | Enable to render the heading of operation |

@@ -1,0 +1,87 @@
+---
+title: Remark TS to JS
+description: A remark plugin to transform TypeScript codeblocks into two tabs of codeblock with its JavaScript variant.
+---
+
+## Usage
+
+Install dependencies:
+
+```package-install
+fumadocs-docgen oxc-transform
+```
+
+Add `oxc-transform` to `serverExternalPackages` in `next.config.mjs`:
+
+```js title="next.config.mjs"
+import { createMDX } from 'fumadocs-mdx/next';
+
+/** @type {import('next').NextConfig} */
+const config = {
+  reactStrictMode: true,
+  serverExternalPackages: ['oxc-transform'],
+};
+
+const withMDX = createMDX();
+
+export default withMDX(config);
+```
+
+Add the remark plugin:
+
+```ts title="source.config.ts" tab="Fumadocs MDX"
+import { remarkTypeScriptToJavaScript } from 'fumadocs-docgen/remark-ts2js';
+import { defineConfig } from 'fumadocs-mdx/config';
+
+export default defineConfig({
+  mdxOptions: {
+    remarkPlugins: [remarkTypeScriptToJavaScript],
+  },
+});
+```
+
+```ts tab="MDX Compiler"
+import { remarkTypeScriptToJavaScript } from 'fumadocs-docgen/remark-ts2js';
+import { compile } from '@mdx-js/mdx';
+
+await compile('...', {
+  remarkPlugins: [remarkTypeScriptToJavaScript],
+});
+```
+
+Finally, make sure to define the required MDX components: `Tabs` and `Tab`.
+
+```tsx title="mdx-components.tsx (Fumadocs UI)"
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import defaultComponents from 'fumadocs-ui/mdx';
+import type { MDXComponents } from 'mdx/types';
+
+export function getMDXComponents(components?: MDXComponents): MDXComponents {
+  return {
+    ...defaultComponents,
+    Tab,
+    Tabs,
+    ...components,
+  };
+}
+```
+
+You can now enable it on TypeScript/TSX codeblocks, like:
+
+````md
+```tsx ts2js
+import { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return <div>{children}</div>;
+}
+```
+````
+
+```tsx ts2js
+import { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return <div>{children}</div>;
+}
+```

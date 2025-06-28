@@ -1,0 +1,23 @@
+---
+title: Find Neighbours
+description: Find the neighbours of a page from the page tree
+---
+
+Find the neighbours of a page from the page tree, it returns the next and
+previous page of a given page. It is useful for implementing a footer.
+
+## Usage
+
+It requires a page tree and the url of page.
+
+```ts
+import { findNeighbour } from 'fumadocs-core/server';
+import { pageTree } from '@/lib/source';
+
+const neighbours = findNeighbour(pageTree, '/url/to/page');
+```
+
+| Parameter | Type       | Description     |
+| --------- | ---------- | --------------- |
+| tree      | `PageTree` | The page tree   |
+| url       | `string`   | The url of page |

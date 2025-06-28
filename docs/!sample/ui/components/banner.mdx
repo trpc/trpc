@@ -1,0 +1,77 @@
+---
+title: Banner
+description: Add a banner to your site
+preview: banner
+---
+
+## Usage
+
+Put the element at the top of your root layout, you can use it for displaying announcements.
+
+```tsx
+import { Banner } from 'fumadocs-ui/components/banner';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <html lang="en">
+      <body>
+        <Banner>Hello World</Banner>
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
+### Variant
+
+Change the default variant.
+
+```tsx
+import { Banner } from 'fumadocs-ui/components/banner';
+
+<Banner variant="rainbow">Hello World</Banner>;
+
+// customise colors
+<Banner
+  variant="rainbow"
+  rainbowColors={[
+    'rgba(255,100,0, 0.5)',
+    'rgba(255,100,0, 0.5)',
+    'transparent',
+    'rgba(255,100,0, 0.5)',
+    'transparent',
+    'rgba(255,100,0, 0.5)',
+    'transparent',
+  ]}
+>
+  Hello World
+</Banner>;
+```
+
+### Change Layout
+
+By default, the banner uses a `style` tag to modify Fumadocs layouts (e.g. reduce the sidebar height).
+You can disable it with:
+
+```tsx
+import { Banner } from 'fumadocs-ui/components/banner';
+
+<Banner changeLayout={false}>Hello World</Banner>;
+```
+
+### Close
+
+To allow users to close the banner, give the banner an ID.
+
+```tsx
+import { Banner } from 'fumadocs-ui/components/banner';
+
+<Banner id="hello-world">Hello World</Banner>;
+```
+
+The state will be automatically persisted.

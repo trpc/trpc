@@ -1,0 +1,844 @@
+---
+title: Context & Middleware
+description: Master request context and middleware patterns for powerful tRPC APIs
+icon: IconSettings
+---
+
+Context and middleware are powerful features that enable you to share data across procedures and implement cross-cutting concerns like authentication, logging, and validation in your tRPC API.
+
+## Understanding Context
+
+**Context** is request-scoped data that's available to all procedures. It's created once per request and provides access to things like user sessions, database connections, request metadata, and more.
+
+<Cards>
+  <Card icon={<IconUser />} title="User Sessions">
+    Access authenticated user data across all procedures
+  </Card>
+
+<Card icon={<IconDatabase />} title="Database Connections">
+  Share database instances and transaction contexts
+</Card>
+
+<Card icon={<IconGlobe />} title="Request Metadata">
+  Access headers, IP addresses, and request information
+</Card>
+
+  <Card icon={<IconKey />} title="External Services">
+    Inject API clients, caches, and external service connections
+  </Card>
+</Cards>
+
+## Creating Context
+
+### Basic Context Setup
+
+Define your context creation function:
+
+```typescript title="server/context.ts"
+import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth';
+import { prisma } from './db';
+
+export async function createTRPCContext(opts: CreateNextContextOptions) {
+  const { req, res } = opts;
+
+  // Get the session from the request
+  const session = await getServerSession(req, res, authOptions);
+
+  return {
+    prisma,
+    session,
+    req,
+    res,
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createTRPCContext>>;
+```
+
+### Advanced Context with External Services
+
+```typescript title="server/context.ts"
+import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { Redis } from 'ioredis';
+import { S3Client } from '@aws-sdk/client-s3';
+import { getServerSession } from 'next-auth';
+
+// Initialize external services
+const redis = new Redis(process.env.REDIS_URL);
+const s3 = new S3Client({ region: process.env.AWS_REGION });
+
+export async function createTRPCContext(opts: CreateNextContextOptions) {
+  const { req, res } = opts;
+
+  // Extract request information
+  const userAgent = req.headers['user-agent'];
+  const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+  // Get authentication
+  const session = await getServerSession(req, res, authOptions);
+
+  // Create logger with request context
+  const logger = createLogger({
+    requestId: crypto.randomUUID(),
+    userAgent,
+    ip,
+    userId: session?.user?.id,
+  });
+
+  return {
+    // Database
+    prisma,
+
+    // Caching
+    redis,
+
+    // File storage
+    s3,
+
+    // Authentication
+    session,
+    user: session?.user || null,
+
+    // Request data
+    req,
+    res,
+    userAgent,
+    ip,
+
+    // Utilities
+    logger,
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createTRPCContext>>;
+```
+
+### Context with Dependency Injection
+
+```typescript title="server/context.ts"
+import { Container } from 'typedi';
+import { UserService } from './services/user-service';
+import { EmailService } from './services/email-service';
+import { PaymentService } from './services/payment-service';
+
+export async function createTRPCContext(opts: CreateNextContextOptions) {
+  const { req, res } = opts;
+
+  // Get services from DI container
+  const userService = Container.get(UserService);
+  const emailService = Container.get(EmailService);
+  const paymentService = Container.get(PaymentService);
+
+  const session = await getServerSession(req, res, authOptions);
+
+  return {
+    // Core
+    prisma,
+    session,
+    req,
+    res,
+
+    // Services
+    services: {
+      user: userService,
+      email: emailService,
+      payment: paymentService,
+    },
+  };
+}
+```
+
+## Using Context in Procedures
+
+### Accessing Context Data
+
+```typescript title="server/routers/users.ts"
+export const usersRouter = t.router({
+  // Get current user profile
+  profile: t.procedure
+    .query(async ({ ctx }) => {
+      // Access user from context
+      if (!ctx.session?.user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in'
+        });
+      }
+
+      return await ctx.prisma.user.findUnique({
+        where: { id: ctx.session.user.id },
+        include: { posts: true, followers: true }
+      });
+    }),
+
+  // Update profile with logging
+  updateProfile: t.procedure
+    .input(z.object({
+      name: z.string().optional(),
+      bio: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.user) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
+      }
+
+      // Log the action
+      ctx.logger.info('User updating profile', {
+        userId: ctx.user.id,
+        changes: input,
+      });
+
+      return await ctx.prisma.user.update({
+        where: { id: ctx.user.id },
+        data: input,
+      });
+    }),
+
+  // Cache user data
+  byId: t.procedure
+    .input(z.string())
+    .query(async ({ input, ctx }) => {
+      const cacheKey = `user:${input}`;
+
+      // Try cache first
+      const cached = await ctx.redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+
+      // Fetch from database
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: input },
+      });
+
+      if (user) {
+        // Cache for 5 minutes
+        await ctx.redis.setex(cacheKey, 300, JSON.stringify(user));
+      }
+
+      return user;
+    }),
+});
+```
+
+## Understanding Middleware
+
+**Middleware** runs before procedures and can:
+
+- Authenticate requests
+- Log operations
+- Transform input/output
+- Add data to context
+- Implement rate limiting
+- Handle CORS
+
+### Middleware Execution Flow
+
+```
+Request → Context Creation → Middleware Chain → Procedure → Response
+                              ↓
+                          [Auth] → [Logging] → [Validation] → [Procedure]
+```
+
+## Authentication Middleware
+
+### Basic Authentication
+
+```typescript title="server/middleware/auth.ts"
+import { TRPCError } from '@trpc/server';
+import { t } from '../trpc';
+
+// Require authentication
+export const requireAuth = t.middleware(({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'You must be logged in to access this resource',
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      // Ensure user is typed as non-null
+      user: ctx.session.user,
+    },
+  });
+});
+
+// Require specific role
+export const requireRole = (role: string) =>
+  t.middleware(({ ctx, next }) => {
+    if (!ctx.session?.user) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    if (ctx.session.user.role !== role) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: `This action requires ${role} privileges`,
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.session.user,
+      },
+    });
+  });
+
+// Multiple roles
+export const requireAnyRole = (roles: string[]) =>
+  t.middleware(({ ctx, next }) => {
+    if (!ctx.session?.user) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    if (!roles.includes(ctx.session.user.role)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: `This action requires one of: ${roles.join(', ')}`,
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.session.user,
+      },
+    });
+  });
+```
+
+### Advanced Authentication
+
+```typescript title="server/middleware/auth.ts"
+// Resource ownership check
+export const requireOwnership = (getOwnerId: (input: any) => string) =>
+  t.middleware(async ({ ctx, input, next }) => {
+    if (!ctx.user) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    const ownerId = getOwnerId(input);
+
+    if (ctx.user.id !== ownerId) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You can only access your own resources',
+      });
+    }
+
+    return next({ ctx });
+  });
+
+// API key authentication
+export const requireApiKey = t.middleware(({ ctx, next }) => {
+  const apiKey = ctx.req.headers['x-api-key'];
+
+  if (!apiKey) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'API key required',
+    });
+  }
+
+  // Validate API key
+  const validKey = validateApiKey(apiKey);
+  if (!validKey) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Invalid API key',
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      apiKey: validKey,
+    },
+  });
+});
+```
+
+## Logging Middleware
+
+### Request Logging
+
+```typescript title="server/middleware/logging.ts"
+export const withLogging = t.middleware(async ({ path, type, next, ctx }) => {
+  const start = Date.now();
+
+  ctx.logger.info('Request started', {
+    path,
+    type,
+    userId: ctx.user?.id,
+    userAgent: ctx.userAgent,
+    ip: ctx.ip,
+  });
+
+  const result = await next();
+
+  const duration = Date.now() - start;
+
+  if (result.ok) {
+    ctx.logger.info('Request completed', {
+      path,
+      type,
+      duration,
+      userId: ctx.user?.id,
+    });
+  } else {
+    ctx.logger.error('Request failed', {
+      path,
+      type,
+      duration,
+      error: result.error,
+      userId: ctx.user?.id,
+    });
+  }
+
+  return result;
+});
+
+// Detailed operation logging
+export const withOperationLogging = (operation: string) =>
+  t.middleware(async ({ next, ctx, input }) => {
+    ctx.logger.info(`${operation} started`, {
+      operation,
+      input,
+      userId: ctx.user?.id,
+    });
+
+    const result = await next();
+
+    if (result.ok) {
+      ctx.logger.info(`${operation} completed`, {
+        operation,
+        userId: ctx.user?.id,
+      });
+    } else {
+      ctx.logger.error(`${operation} failed`, {
+        operation,
+        error: result.error.message,
+        userId: ctx.user?.id,
+      });
+    }
+
+    return result;
+  });
+```
+
+### Audit Logging
+
+```typescript title="server/middleware/audit.ts"
+export const withAuditLog = (action: string) =>
+  t.middleware(async ({ next, ctx, input }) => {
+    const result = await next();
+
+    if (result.ok && ctx.user) {
+      // Log successful actions for audit trail
+      await ctx.prisma.auditLog.create({
+        data: {
+          action,
+          userId: ctx.user.id,
+          input: JSON.stringify(input),
+          timestamp: new Date(),
+          ip: ctx.ip,
+          userAgent: ctx.userAgent,
+        },
+      });
+    }
+
+    return result;
+  });
+```
+
+## Rate Limiting Middleware
+
+### Simple Rate Limiting
+
+```typescript title="server/middleware/rate-limit.ts"
+export const withRateLimit = (options: {
+  max: number;
+  windowMs: number;
+  keyGenerator?: (ctx: Context) => string;
+}) =>
+  t.middleware(async ({ ctx, next }) => {
+    const key = options.keyGenerator
+      ? options.keyGenerator(ctx)
+      : ctx.user?.id || ctx.ip || 'anonymous';
+
+    const rateLimitKey = `rate_limit:${key}`;
+
+    const current = await ctx.redis.incr(rateLimitKey);
+
+    if (current === 1) {
+      // First request in window
+      await ctx.redis.expire(rateLimitKey, Math.ceil(options.windowMs / 1000));
+    }
+
+    if (current > options.max) {
+      throw new TRPCError({
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Rate limit exceeded',
+      });
+    }
+
+    return next();
+  });
+
+// Usage with different limits for different actions
+export const withUserRateLimit = withRateLimit({
+  max: 100,
+  windowMs: 60 * 1000, // 1 minute
+  keyGenerator: (ctx) => `user:${ctx.user?.id || ctx.ip}`,
+});
+
+export const withStrictRateLimit = withRateLimit({
+  max: 10,
+  windowMs: 60 * 1000,
+  keyGenerator: (ctx) => `strict:${ctx.user?.id || ctx.ip}`,
+});
+```
+
+### Advanced Rate Limiting
+
+```typescript title="server/middleware/advanced-rate-limit.ts"
+// Different limits for different user tiers
+export const withTieredRateLimit = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.user) {
+    // Anonymous users: 10 requests per minute
+    return withRateLimit({ max: 10, windowMs: 60 * 1000 })({ ctx, next });
+  }
+
+  const limits = {
+    basic: { max: 100, windowMs: 60 * 1000 },
+    premium: { max: 500, windowMs: 60 * 1000 },
+    enterprise: { max: 2000, windowMs: 60 * 1000 },
+  };
+
+  const userLimit = limits[ctx.user.tier] || limits.basic;
+
+  return withRateLimit({
+    ...userLimit,
+    keyGenerator: () => `user:${ctx.user.id}`,
+  })({ ctx, next });
+});
+```
+
+## Validation Middleware
+
+### Input Sanitization
+
+```typescript title="server/middleware/validation.ts"
+// Sanitize string inputs
+export const withInputSanitization = t.middleware(({ input, next }) => {
+  if (typeof input === 'object' && input !== null) {
+    const sanitized = sanitizeObject(input);
+    return next({ input: sanitized });
+  }
+
+  return next();
+});
+
+function sanitizeObject(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeObject);
+  }
+
+  if (typeof obj === 'object' && obj !== null) {
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      sanitized[key] = sanitizeObject(value);
+    }
+    return sanitized;
+  }
+
+  if (typeof obj === 'string') {
+    // Remove potential XSS
+    return obj.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  }
+
+  return obj;
+}
+
+// File upload validation
+export const withFileValidation = (options: {
+  maxSize: number;
+  allowedTypes: string[];
+}) =>
+  t.middleware(({ input, next }) => {
+    if (input && typeof input === 'object' && 'file' in input) {
+      const file = input.file as any;
+
+      if (file.size > options.maxSize) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `File too large. Maximum size: ${options.maxSize} bytes`,
+        });
+      }
+
+      if (!options.allowedTypes.includes(file.type)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Invalid file type. Allowed: ${options.allowedTypes.join(', ')}`,
+        });
+      }
+    }
+
+    return next();
+  });
+```
+
+## Composing Middleware
+
+### Creating Procedure Builders
+
+```typescript title="server/procedures.ts"
+import { t } from './trpc';
+import { requireAuth, requireRole } from './middleware/auth';
+import { withLogging } from './middleware/logging';
+import { withRateLimit } from './middleware/rate-limit';
+
+// Base procedure with logging
+export const publicProcedure = t.procedure.use(withLogging);
+
+// Authenticated procedure
+export const protectedProcedure = t.procedure
+  .use(withLogging)
+  .use(requireAuth);
+
+// Admin procedure
+export const adminProcedure = t.procedure
+  .use(withLogging)
+  .use(requireAuth)
+  .use(requireRole('admin'));
+
+// Rate-limited procedure
+export const rateLimitedProcedure = t.procedure
+  .use(withLogging)
+  .use(withRateLimit({ max: 10, windowMs: 60 * 1000 }));
+
+// Premium feature procedure
+export const premiumProcedure = t.procedure
+  .use(withLogging)
+  .use(requireAuth)
+  .use(requireAnyRole(['premium', 'enterprise']));
+```
+
+### Complex Middleware Chains
+
+```typescript title="server/procedures/complex.ts"
+// File upload procedure
+export const fileUploadProcedure = t.procedure
+  .use(withLogging)
+  .use(requireAuth)
+  .use(withFileValidation({
+    maxSize: 10 * 1024 * 1024, // 10MB
+    allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+  }))
+  .use(withRateLimit({ max: 5, windowMs: 60 * 1000 }))
+  .use(withAuditLog('file_upload'));
+
+// Sensitive data procedure
+export const sensitiveDataProcedure = t.procedure
+  .use(withLogging)
+  .use(requireAuth)
+  .use(requireRole('admin'))
+  .use(withStrictRateLimit)
+  .use(withInputSanitization)
+  .use(withAuditLog('sensitive_data_access'));
+
+// Public API procedure
+export const publicApiProcedure = t.procedure
+  .use(withLogging)
+  .use(requireApiKey)
+  .use(withTieredRateLimit)
+  .use(withInputSanitization);
+```
+
+## Error Handling in Middleware
+
+### Graceful Error Handling
+
+```typescript title="server/middleware/error-handling.ts"
+export const withErrorHandling = t.middleware(async ({ next, ctx, path }) => {
+  try {
+    return await next();
+  } catch (error) {
+    // Log the error
+    ctx.logger.error('Procedure error', {
+      path,
+      error: error.message,
+      stack: error.stack,
+      userId: ctx.user?.id,
+    });
+
+    // Handle specific error types
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'Resource already exists',
+          cause: error,
+        });
+      }
+    }
+
+    // Re-throw tRPC errors
+    if (error instanceof TRPCError) {
+      throw error;
+    }
+
+    // Handle unexpected errors
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'An unexpected error occurred',
+      cause: error,
+    });
+  }
+});
+```
+
+## Testing Context and Middleware
+
+### Unit Testing
+
+```typescript title="__tests__/middleware.test.ts"
+import { initTRPC, TRPCError } from '@trpc/server';
+import { requireAuth } from '../middleware/auth';
+
+const t = initTRPC.context<Context>().create();
+
+describe('Authentication Middleware', () => {
+  it('should throw UNAUTHORIZED when no user', async () => {
+    const procedure = t.procedure.use(requireAuth).query(() => 'success');
+
+    const caller = t.createCallerFactory(t.router({ test: procedure }));
+    const ctx = { session: null, user: null } as Context;
+
+    await expect(caller(ctx).test()).rejects.toThrow(TRPCError);
+  });
+
+  it('should pass through when user exists', async () => {
+    const procedure = t.procedure.use(requireAuth).query(() => 'success');
+
+    const caller = t.createCallerFactory(t.router({ test: procedure }));
+    const ctx = {
+      session: { user: { id: '1', role: 'user' } },
+      user: { id: '1', role: 'user' }
+    } as Context;
+
+    const result = await caller(ctx).test();
+    expect(result).toBe('success');
+  });
+});
+```
+
+### Integration Testing
+
+```typescript title="__tests__/integration.test.ts"
+import { createTRPCMockContext } from '../test-utils';
+import { appRouter } from '../routers/_app';
+
+describe('User Router Integration', () => {
+  it('should update user profile', async () => {
+    const mockCtx = createTRPCMockContext({
+      user: { id: '1', role: 'user' },
+      prisma: mockPrisma,
+    });
+
+    const caller = appRouter.createCaller(mockCtx);
+
+    const result = await caller.users.updateProfile({
+      name: 'John Doe',
+      bio: 'Software developer',
+    });
+
+    expect(result.name).toBe('John Doe');
+    expect(mockPrisma.user.update).toHaveBeenCalledWith({
+      where: { id: '1' },
+      data: { name: 'John Doe', bio: 'Software developer' },
+    });
+  });
+});
+```
+
+## Best Practices
+
+<Accordions>
+<Accordion id='context-design' title="Context Design">
+
+- **Keep context lean**: Only include data that's needed across multiple procedures
+- **Use factories**: Create context factories for different environments (test, dev, prod)
+- **Type safety**: Always type your context for better DX
+- **Lazy loading**: Only initialize expensive services when needed
+
+```typescript
+// Good: Focused context
+export type Context = {
+  prisma: PrismaClient;
+  user: User | null;
+  logger: Logger;
+}
+
+// Avoid: Kitchen sink context
+export type Context = {
+  // Too many responsibilities
+  prisma: PrismaClient;
+  redis: Redis;
+  s3: S3Client;
+  stripe: Stripe;
+  sendgrid: SendGridAPI;
+  // ... many more services
+}
+```
+
+</Accordion>
+
+<Accordion id='middleware-composition' title="Middleware Composition">
+
+- **Single responsibility**: Each middleware should have one clear purpose
+- **Composable**: Design middleware to work well together
+- **Order matters**: Be intentional about middleware execution order
+- **Error handling**: Handle errors gracefully and consistently
+
+```typescript
+// Good: Clear middleware chain
+export const sensitiveActionProcedure = t.procedure
+  .use(withLogging)        // Log everything
+  .use(requireAuth)        // Ensure authenticated
+  .use(requireRole('admin')) // Check permissions
+  .use(withAuditLog('sensitive_action')) // Audit trail
+  .use(withRateLimit({ max: 5, windowMs: 60000 })); // Rate limit
+```
+
+</Accordion>
+
+<Accordion id='security' title="Security Considerations">
+
+- **Input validation**: Always validate and sanitize inputs
+- **Rate limiting**: Implement rate limiting for all public endpoints
+- **Audit logging**: Log sensitive operations for compliance
+- **Error information**: Don't leak sensitive data in error messages
+
+```typescript
+// Good: Secure error handling
+if (!user) {
+  throw new TRPCError({
+    code: 'NOT_FOUND',
+    message: 'Resource not found', // Don't reveal if user exists
+  });
+}
+```
+
+</Accordion>
+</Accordions>
+
+---
+
+Context and middleware are essential for building robust, secure, and maintainable tRPC APIs. They enable you to implement cross-cutting concerns while keeping your procedure logic focused and clean.

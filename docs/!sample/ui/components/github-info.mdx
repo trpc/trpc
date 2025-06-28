@@ -1,0 +1,45 @@
+---
+title: GitHub Info
+description: Display your GitHub repository information
+preview: githubInfo
+---
+
+## Usage
+
+```tsx
+import { GithubInfo } from 'fumadocs-ui/components/github-info';
+
+<GithubInfo
+  owner="fuma-nama"
+  repo="fumadocs"
+  // your own GitHub access token (optional)
+  token={process.env.GITHUB_TOKEN}
+/>;
+```
+
+It's recommended to add it to your docs layout with `links` option:
+
+```tsx title="app/docs/layout.tsx"
+import { DocsLayout, type DocsLayoutProps } from 'fumadocs-ui/layouts/notebook';
+import type { ReactNode } from 'react';
+import { baseOptions } from '@/app/layout.config';
+import { source } from '@/lib/source';
+import { GithubInfo } from 'fumadocs-ui/components/github-info';
+
+const docsOptions: DocsLayoutProps = {
+  ...baseOptions,
+  tree: source.pageTree,
+  links: [
+    {
+      type: 'custom',
+      children: (
+        <GithubInfo owner="fuma-nama" repo="fumadocs" className="lg:-mx-2" />
+      ),
+    },
+  ],
+};
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return <DocsLayout {...docsOptions}>{children}</DocsLayout>;
+}
+```

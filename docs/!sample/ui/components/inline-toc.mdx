@@ -1,0 +1,31 @@
+---
+title: Inline TOC
+description: Add Inline TOC into your documentation
+preview: inlineTOC
+---
+
+## Usage
+
+Pass TOC items to the component.
+
+```mdx
+import { InlineTOC } from 'fumadocs-ui/components/inline-toc';
+
+<InlineTOC items={toc} />
+```
+
+### Use in Pages
+
+You can add inline TOC into every page.
+
+```tsx
+<DocsPage>
+  ...
+  <InlineTOC items={toc} />
+  ...
+</DocsPage>
+```
+
+## Reference
+
+<AutoTypeTable path="./content/docs/ui/props.ts" name="InlineTOCProps" />

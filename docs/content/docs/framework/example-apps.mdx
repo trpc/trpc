@@ -1,0 +1,685 @@
+---
+title: Example Applications
+description: Complete working examples for different frameworks and use cases
+icon: IconApps
+---
+
+Explore real-world tRPC applications that demonstrate best practices, common patterns, and integration with popular frameworks. Each example includes complete source code, setup instructions, and key learning points.
+
+## Featured Examples
+
+### Next.js Full-Stack Applications
+
+<Cards>
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/next-minimal-starter"
+    title="Next.js Minimal Starter"
+    icon={<IconBrandNextjs />}
+  >
+    Clean starting point for Next.js projects with App Router, TanStack React
+    Query, and modern patterns.
+  </Card>
+
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-starter"
+    title="Next.js + Prisma"
+    icon={<IconDatabase />}
+  >
+    Full-stack blog with Prisma ORM, authentication, CRUD operations, and
+    type-safe database access.
+  </Card>
+
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/next-prisma-websockets-starter"
+    title="Real-time Chat App"
+    icon={<IconMessage />}
+  >
+    WebSocket subscriptions, real-time messaging, user presence, and live
+    notifications.
+  </Card>
+
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/next-sse-chat"
+    title="Server-Sent Events Chat"
+    icon={<IconBroadcast />}
+  >
+    Real-time chat using Server-Sent Events, Drizzle ORM, and modern streaming
+    patterns.
+  </Card>
+</Cards>
+
+### Server Runtime Examples
+
+<Cards>
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/cloudflare-workers"
+    title="Cloudflare Workers"
+    icon={<IconCloud />}
+  >
+    Edge runtime deployment with Fetch API adapter and serverless patterns.
+  </Card>
+
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/deno-deploy"
+    title="Deno Deploy"
+    icon={<IconBrandDeno />}
+  >
+    Modern TypeScript runtime with native Fetch API and edge deployment.
+  </Card>
+
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/bun"
+    title="Bun Runtime"
+    icon={<IconZap />}
+  >
+    Ultra-fast JavaScript runtime with built-in bundler and package manager.
+  </Card>
+
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/lambda-api-gateway"
+    title="AWS Lambda"
+    icon={<IconCloud />}
+  >
+    Serverless deployment with API Gateway integration and infrastructure as
+    code.
+  </Card>
+</Cards>
+
+### Framework Integrations
+
+<Cards>
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/express-server"
+    title="Express.js"
+    icon={<IconServer />}
+  >
+    Traditional Node.js server with middleware, CORS, and API documentation.
+  </Card>
+
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/fastify-server"
+    title="Fastify"
+    icon={<IconBolt />}
+  >
+    High-performance server with plugins, WebSocket support, and validation.
+  </Card>
+
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/tanstack-start"
+    title="TanStack Start"
+    icon={<IconStack />}
+  >
+    Modern full-stack framework with file-based routing and server functions.
+  </Card>
+
+  <Card
+    href="https://github.com/trpc/trpc/tree/main/examples/standalone-server"
+    title="Standalone Server"
+    icon={<IconTerminal />}
+  >
+    Pure Node.js HTTP server without additional frameworks or dependencies.
+  </Card>
+</Cards>
+
+## Detailed Examples
+
+### 1. Blog Application with Authentication
+
+**Stack**: Next.js, Prisma, NextAuth.js, TailwindCSS
+
+A complete blog platform showcasing:
+
+- User authentication and authorization
+- CRUD operations with optimistic updates
+- Pagination and infinite scrolling
+- Image uploads and file handling
+- SEO optimization and meta tags
+
+```typescript title="Key Features"
+// Protected procedures with user context
+export const protectedProcedure = publicProcedure.use(requireAuth);
+
+// Paginated posts with cursor-based pagination
+posts: router({
+  infinite: publicProcedure
+    .input(z.object({
+      limit: z.number().min(1).max(100).default(10),
+      cursor: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const posts = await db.post.findMany({
+        take: input.limit + 1,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+        orderBy: { createdAt: 'desc' },
+        include: { author: true, _count: { select: { comments: true } } },
+      });
+
+      return {
+        posts: posts.slice(0, input.limit),
+        nextCursor: posts.length > input.limit ? posts[input.limit].id : undefined,
+      };
+    }),
+}),
+```
+
+**Client-side infinite scrolling**:
+
+```typescript
+const postsQuery = useInfiniteQuery(
+  trpc.posts.infinite.infiniteQueryOptions({
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+  })
+);
+
+// Load more posts
+const loadMore = () => postsQuery.fetchNextPage();
+```
+
+### 2. Real-time Collaboration Tool
+
+**Stack**: Next.js, WebSockets, Redis, Prisma
+
+Features real-time collaboration with:
+
+- Live document editing
+- User presence indicators
+- Conflict resolution
+- Operational transforms
+- History and versioning
+
+```typescript title="Real-time Subscriptions"
+// Server-side subscription
+onDocumentUpdate: publicProcedure
+  .input(z.object({ documentId: z.string() }))
+  .subscription(async function* ({ input }) {
+    const channel = `document:${input.documentId}`;
+
+    // Subscribe to Redis pub/sub
+    const subscription = redis.subscribe(channel);
+
+    try {
+      for await (const message of subscription) {
+        yield {
+          type: message.type,
+          data: JSON.parse(message.data),
+          timestamp: Date.now(),
+        };
+      }
+    } finally {
+      subscription.unsubscribe();
+    }
+  }),
+```
+
+**Client-side real-time updates**:
+
+```typescript
+// Subscribe to document changes
+trpc.documents.onUpdate.useSubscription(
+  { documentId },
+  {
+    onData: (update) => {
+      // Apply operational transform
+      applyOperation(update);
+
+      // Update editor state
+      setEditorState(prev => applyUpdate(prev, update));
+    },
+  }
+);
+```
+
+### 3. E-commerce API with Complex Queries
+
+**Stack**: Express, Prisma, Stripe, Redis
+
+Demonstrates advanced patterns:
+
+- Complex database relationships
+- Payment processing integration
+- Inventory management
+- Order processing workflows
+- Performance optimization
+
+```typescript title="Complex Business Logic"
+// Order processing with transactions
+createOrder: protectedProcedure
+  .input(CreateOrderSchema)
+  .mutation(async ({ input, ctx }) => {
+    return await ctx.db.$transaction(async (tx) => {
+      // Check inventory
+      const items = await tx.product.findMany({
+        where: { id: { in: input.items.map(i => i.productId) } },
+      });
+
+      // Validate availability
+      for (const orderItem of input.items) {
+        const product = items.find(p => p.id === orderItem.productId);
+        if (!product || product.stock < orderItem.quantity) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Insufficient stock for ${product?.name}`,
+          });
+        }
+      }
+
+      // Update inventory
+      await Promise.all(
+        input.items.map(item =>
+          tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { decrement: item.quantity } },
+          })
+        )
+      );
+
+      // Create order
+      const order = await tx.order.create({
+        data: {
+          userId: ctx.user.id,
+          items: {
+            create: input.items.map(item => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              price: items.find(p => p.id === item.productId)!.price,
+            })),
+          },
+        },
+        include: { items: { include: { product: true } } },
+      });
+
+      return order;
+    });
+  }),
+```
+
+### 4. File Upload and Processing Service
+
+**Stack**: Fastify, S3, ImageMagick, Bull Queue
+
+Shows file handling patterns:
+
+- Multipart file uploads
+- Image processing pipelines
+- Background job processing
+- Cloud storage integration
+- Progress tracking
+
+```typescript title="File Upload Pipeline"
+// File upload with processing
+uploadImage: protectedProcedure
+  .input(z.object({
+    filename: z.string(),
+    contentType: z.string(),
+    size: z.number().max(10 * 1024 * 1024), // 10MB max
+  }))
+  .mutation(async ({ input, ctx }) => {
+    // Generate signed upload URL
+    const uploadUrl = await generateSignedUploadUrl({
+      key: `uploads/${ctx.user.id}/${input.filename}`,
+      contentType: input.contentType,
+    });
+
+    // Create processing job
+    const job = await imageProcessingQueue.add('process-image', {
+      userId: ctx.user.id,
+      filename: input.filename,
+      operations: ['resize', 'watermark', 'optimize'],
+    });
+
+    return {
+      uploadUrl,
+      jobId: job.id,
+    };
+  }),
+
+// Check processing status
+getProcessingStatus: protectedProcedure
+  .input(z.string())
+  .query(async ({ input }) => {
+    const job = await imageProcessingQueue.getJob(input);
+    return {
+      status: job?.finishedOn ? 'completed' : job?.processedOn ? 'processing' : 'pending',
+      progress: job?.progress || 0,
+      result: job?.returnvalue,
+    };
+  }),
+```
+
+### 5. Microservices Architecture
+
+**Stack**: Multiple services, Docker, nginx, Redis
+
+Demonstrates service-oriented architecture:
+
+- Inter-service communication
+- Service discovery
+- Shared type definitions
+- Gateway pattern
+- Load balancing
+
+```typescript title="Service Communication"
+// User service
+export const userRouter = router({
+  getProfile: publicProcedure
+    .input(z.string())
+    .query(async ({ input }) => {
+      return await userService.getProfile(input);
+    }),
+});
+
+// Order service calling user service
+const createOrder = protectedProcedure
+  .input(CreateOrderSchema)
+  .mutation(async ({ input, ctx }) => {
+    // Call user service to validate user
+    const user = await userServiceClient.getProfile.query(ctx.userId);
+    if (!user) {
+      throw new TRPCError({ code: 'NOT_FOUND' });
+    }
+
+    // Process order...
+    return await orderService.create(input);
+  });
+```
+
+## Pattern Examples
+
+### Advanced Authentication Patterns
+
+```typescript title="Role-based Access Control"
+// Middleware for role-based access
+const requireRole = (roles: string[]) =>
+  t.middleware(({ ctx, next }) => {
+    if (!ctx.user || !roles.includes(ctx.user.role)) {
+      throw new TRPCError({ code: 'FORBIDDEN' });
+    }
+    return next({ ctx });
+  });
+
+// Admin-only procedures
+export const adminProcedure = protectedProcedure.use(requireRole(['admin']));
+
+// Multi-tenant access control
+export const tenantProcedure = protectedProcedure.use(({ ctx, next }) => {
+  return next({
+    ctx: {
+      ...ctx,
+      // Add tenant-scoped database queries
+      db: ctx.db.tenant(ctx.user.tenantId),
+    },
+  });
+});
+```
+
+### Caching Strategies
+
+```typescript title="Intelligent Caching"
+// Server-side caching with Redis
+const getCachedUser = publicProcedure
+  .input(z.string())
+  .query(async ({ input }) => {
+    const cacheKey = `user:${input}`;
+
+    // Try cache first
+    let user = await redis.get(cacheKey);
+    if (user) return JSON.parse(user);
+
+    // Fetch from database
+    user = await db.user.findUnique({ where: { id: input } });
+
+    // Cache for 5 minutes
+    if (user) {
+      await redis.setex(cacheKey, 300, JSON.stringify(user));
+    }
+
+    return user;
+  });
+
+// Client-side with React Query
+const userQuery = useQuery(trpc.users.getById.queryOptions(userId), {
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  cacheTime: 10 * 60 * 1000, // 10 minutes
+  refetchOnWindowFocus: false,
+});
+```
+
+### Error Handling Patterns
+
+```typescript title="Structured Error Handling"
+// Custom error types
+class ValidationError extends TRPCError {
+  constructor(issues: z.ZodIssue[]) {
+    super({
+      code: 'BAD_REQUEST',
+      message: 'Validation failed',
+      cause: { issues },
+    });
+  }
+}
+
+// Global error handler
+const t = initTRPC.create({
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        validationErrors: error.cause?.issues || null,
+        timestamp: new Date().toISOString(),
+      },
+    };
+  },
+});
+
+// Client-side error boundary
+function AppErrorBoundary({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary
+      FallbackComponent={({ error, resetErrorBoundary }) => (
+        <div className="error-boundary">
+          <h2>Something went wrong</h2>
+          <details>
+            <summary>Error details</summary>
+            <pre>{error.message}</pre>
+          </details>
+          <button onClick={resetErrorBoundary}>Try again</button>
+        </div>
+      )}
+    >
+      {children}
+    </ErrorBoundary>
+  );
+}
+```
+
+## Testing Examples
+
+### Unit Testing
+
+```typescript title="Testing tRPC Procedures"
+// Test setup
+import { createCallerFactory } from '@trpc/server';
+import { appRouter } from '../src/router';
+
+const createCaller = createCallerFactory(appRouter);
+
+describe('User procedures', () => {
+  it('should create a user', async () => {
+    const caller = createCaller({ user: null, db: mockDb });
+
+    const result = await caller.users.create({
+      email: 'test@example.com',
+      name: 'Test User',
+    });
+
+    expect(result).toMatchObject({
+      email: 'test@example.com',
+      name: 'Test User',
+    });
+  });
+
+  it('should throw error for invalid email', async () => {
+    const caller = createCaller({ user: null, db: mockDb });
+
+    await expect(
+      caller.users.create({
+        email: 'invalid-email',
+        name: 'Test User',
+      })
+    ).rejects.toThrow('Invalid email');
+  });
+});
+```
+
+### Integration Testing
+
+```typescript title="End-to-End Testing"
+// Playwright test
+import { test, expect } from '@playwright/test';
+
+test('user can create and view posts', async ({ page }) => {
+  // Login
+  await page.goto('/login');
+  await page.fill('[data-testid=email]', 'test@example.com');
+  await page.fill('[data-testid=password]', 'password');
+  await page.click('[data-testid=submit]');
+
+  // Create post
+  await page.goto('/posts/new');
+  await page.fill('[data-testid=title]', 'Test Post');
+  await page.fill('[data-testid=content]', 'This is a test post');
+  await page.click('[data-testid=publish]');
+
+  // Verify post appears
+  await expect(page.locator('text=Test Post')).toBeVisible();
+});
+```
+
+## Deployment Examples
+
+### Docker Deployment
+
+```dockerfile title="Dockerfile"
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy source code
+COPY . .
+
+# Build application
+RUN npm run build
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+# Start application
+CMD ["npm", "start"]
+```
+
+### Kubernetes Configuration
+
+```yaml title="k8s-deployment.yaml"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trpc-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: trpc-app
+  template:
+    metadata:
+      labels:
+        app: trpc-app
+    spec:
+      containers:
+        - name: app
+          image: trpc-app:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: url
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+```
+
+## Performance Optimization Examples
+
+### Request Batching
+
+```typescript title="Optimized Batching"
+// Client configuration for optimal batching
+const trpc = createTRPCContext<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: '/api/trpc',
+      // Batch requests that occur within 10ms
+      maxBatchSize: 10,
+      // Custom batching logic
+      batchCondition: (requests) => requests.length <= 5,
+    }),
+  ],
+});
+
+// These queries will be batched automatically
+const user = useQuery(trpc.users.getById.queryOptions('1'));
+const posts = useQuery(trpc.posts.getByUserId.queryOptions('1'));
+const comments = useQuery(trpc.comments.getByUserId.queryOptions('1'));
+```
+
+### Database Optimization
+
+```typescript title="Efficient Database Queries"
+// Optimized queries with proper includes
+const getPostWithDetails = publicProcedure
+  .input(z.string())
+  .query(async ({ input }) => {
+    return await db.post.findUnique({
+      where: { id: input },
+      include: {
+        author: {
+          select: { id: true, name: true, avatar: true }
+        },
+        comments: {
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            author: {
+              select: { id: true, name: true, avatar: true }
+            }
+          }
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true
+          }
+        }
+      }
+    });
+  });
+```
+
+---
+
+These examples demonstrate tRPC's flexibility and power across different use cases. Each example is production-ready and follows best practices for scalability, maintainability, and performance.

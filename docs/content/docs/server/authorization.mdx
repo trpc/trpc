@@ -1,0 +1,752 @@
+---
+title: Authorization
+description: Implement authentication and role-based access control in tRPC
+icon: IconLock
+---
+
+Authorization ensures that users can only access resources and perform actions they're permitted to. tRPC provides flexible patterns for implementing authentication and authorization through context and middleware.
+
+<Callout title="Authorization Concepts">
+  - **Authentication**: Verifying who the user is (login) - **Authorization**:
+  Determining what the user can do (permissions) - **Context**: Share user data
+  across procedures - **Middleware**: Enforce access controls consistently
+</Callout>
+
+## Basic Authentication
+
+### Creating Context from Headers
+
+Extract user information from request headers in your context:
+
+```typescript title="src/context.ts"
+import { TRPCError } from '@trpc/server';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { verifyJWT } from './auth-utils';
+
+export async function createContext({ req, res }: CreateNextContextOptions) {
+  async function getUserFromHeader() {
+    if (req.headers.authorization) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const user = await verifyJWT(token);
+        return user;
+      } catch (error) {
+        console.warn('Invalid token:', error.message);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  const user = await getUserFromHeader();
+
+  return {
+    req,
+    res,
+    user,
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+### Session-Based Authentication
+
+For session-based auth (cookies):
+
+```typescript title="src/session-context.ts"
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth-config';
+
+export async function createContext({ req, res }: CreateNextContextOptions) {
+  // Get session from next-auth
+  const session = await getServerSession(req, res, authOptions);
+
+  return {
+    req,
+    res,
+    session,
+    user: session?.user || null,
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+## Authorization Patterns
+
+### Option 1: Authorize in Resolvers
+
+Check authorization directly in procedure handlers:
+
+```typescript title="src/resolver-auth.ts"
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+export const appRouter = router({
+  // Public endpoint
+  hello: publicProcedure
+    .input(z.string().nullish())
+    .query(({ input, ctx }) => {
+      return `Hello ${input ?? ctx.user?.name ?? 'World'}`;
+    }),
+
+  // Protected endpoint
+  getSecret: publicProcedure.query(({ ctx }) => {
+    if (!ctx.user) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    return { secret: 'This is a protected secret!' };
+  }),
+});
+```
+
+### Option 2: Authorize with Middleware (Recommended)
+
+Create reusable middleware for authorization:
+
+```typescript title="src/auth-middleware.ts"
+import { TRPCError } from '@trpc/server';
+
+// Protected procedure - requires authentication
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user, // User is now guaranteed to be non-null
+    },
+  });
+});
+
+// Admin procedure
+export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== 'admin') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Admin access required'
+    });
+  }
+
+  return next();
+});
+```
+
+## Role-Based Access Control (RBAC)
+
+### Flexible Role Middleware
+
+```typescript title="src/rbac.ts"
+// Role middleware factory
+export const requireRole = (requiredRole: string) => {
+  return t.middleware(({ ctx, next }) => {
+    if (!ctx.user) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    if (ctx.user.role !== requiredRole) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: `${requiredRole} role required`,
+      });
+    }
+
+    return next();
+  });
+};
+
+// Create role-specific procedures
+export const userProcedure = t.procedure.use(requireRole('user'));
+export const adminProcedure = t.procedure.use(requireRole('admin'));
+```
+
+### Resource-Based Authorization
+
+```typescript title="src/resource-auth.ts"
+// Post ownership middleware
+const requirePostOwnership = t.middleware(async ({ ctx, input, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  const postId = (input as any)?.postId;
+  if (!postId) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Post ID required',
+    });
+  }
+
+  const post = await getPost(postId);
+  if (!post) {
+    throw new TRPCError({ code: 'NOT_FOUND' });
+  }
+
+  // Check ownership or admin role
+  if (post.authorId !== ctx.user.id && ctx.user.role !== 'admin') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'You can only modify your own posts',
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      post, // Add post to context
+    },
+  });
+});
+
+// Organization membership middleware
+const requireOrganizationMember = t.middleware(async ({ ctx, input, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  const organizationId = (input as any)?.organizationId;
+  const membership = await getOrganizationMembership(ctx.user.id, organizationId);
+
+  if (!membership) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Not a member of this organization',
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      organization: membership.organization,
+      membershipRole: membership.role,
+    },
+  });
+});
+
+// Usage
+export const postOwnerProcedure = protectedProcedure.use(requirePostOwnership);
+export const organizationMemberProcedure = protectedProcedure.use(requireOrganizationMember);
+```
+
+## Advanced Authorization Patterns
+
+### Attribute-Based Access Control (ABAC)
+
+```typescript title="src/abac.ts"
+interface AuthorizationContext {
+  user: User;
+  resource?: any;
+  action: string;
+  environment: {
+    time: Date;
+    ip: string;
+    userAgent: string;
+  };
+}
+
+type Policy = (context: AuthorizationContext) => boolean;
+
+// Define policies
+const policies: Record<string, Policy> = {
+  'posts:read': ({ user, resource }) => {
+    // Anyone can read published posts
+    if (resource?.published) return true;
+    // Authors can read their own drafts
+    if (resource?.authorId === user.id) return true;
+    // Admins can read everything
+    if (user.role === 'admin') return true;
+    return false;
+  },
+
+  'posts:edit': ({ user, resource }) => {
+    // Only authors or admins can edit
+    return resource?.authorId === user.id || user.role === 'admin';
+  },
+
+  'users:delete': ({ user, resource, environment }) => {
+    // Only admins can delete users
+    if (user.role !== 'admin') return false;
+    // Can't delete yourself
+    if (resource?.id === user.id) return false;
+    // Can't delete during business hours (example)
+    const hour = environment.time.getHours();
+    if (hour >= 9 && hour <= 17) return false;
+    return true;
+  },
+};
+
+// Authorization middleware
+const authorize = (action: string) => {
+  return t.middleware(async ({ ctx, input, next }) => {
+    if (!ctx.user) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    const policy = policies[action];
+    if (!policy) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `No policy defined for action: ${action}`,
+      });
+    }
+
+    // Get resource if ID is provided
+    let resource = null;
+    const resourceId = (input as any)?.id || (input as any)?.postId || (input as any)?.userId;
+    if (resourceId) {
+      resource = await getResource(action.split(':')[0], resourceId);
+    }
+
+    const authContext: AuthorizationContext = {
+      user: ctx.user,
+      resource,
+      action,
+      environment: {
+        time: new Date(),
+        ip: ctx.req.ip || 'unknown',
+        userAgent: ctx.req.headers['user-agent'] || 'unknown',
+      },
+    };
+
+    if (!policy(authContext)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: `Not authorized to ${action}`,
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        resource,
+      },
+    });
+  });
+};
+
+// Usage
+export const readPostProcedure = protectedProcedure.use(authorize('posts:read'));
+export const editPostProcedure = protectedProcedure.use(authorize('posts:edit'));
+export const deleteUserProcedure = protectedProcedure.use(authorize('users:delete'));
+```
+
+### Organization-Based Authorization
+
+```typescript title="src/organization-auth.ts"
+// Multi-tenant authorization
+const withOrganizationAccess = (requiredRole?: string) => {
+  return t.middleware(async ({ ctx, input, next }) => {
+    if (!ctx.user) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    const organizationId = (input as any)?.organizationId;
+    if (!organizationId) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Organization ID required',
+      });
+    }
+
+    // Check user's role in the organization
+    const membership = await db.organizationMember.findFirst({
+      where: {
+        userId: ctx.user.id,
+        organizationId,
+      },
+      include: {
+        organization: true,
+      },
+    });
+
+    if (!membership) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Not a member of this organization',
+      });
+    }
+
+    // Check role requirement
+    if (requiredRole && membership.role !== requiredRole && membership.role !== 'owner') {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: `${requiredRole} role required in this organization`,
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        organization: membership.organization,
+        organizationRole: membership.role,
+      },
+    });
+  });
+};
+
+// Create organization-specific procedures
+export const orgMemberProcedure = protectedProcedure.use(withOrganizationAccess());
+export const orgAdminProcedure = protectedProcedure.use(withOrganizationAccess('admin'));
+export const orgOwnerProcedure = protectedProcedure.use(withOrganizationAccess('owner'));
+
+// Usage in router
+export const organizationRouter = t.router({
+  // Any member can view organization
+  getInfo: orgMemberProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .query(({ ctx }) => {
+      return ctx.organization;
+    }),
+
+  // Only admins can update settings
+  updateSettings: orgAdminProcedure
+    .input(z.object({
+      organizationId: z.string(),
+      settings: z.object({
+        name: z.string().optional(),
+        description: z.string().optional(),
+      }),
+    }))
+    .mutation(({ input, ctx }) => {
+      return updateOrganizationSettings(input.organizationId, input.settings);
+    }),
+
+  // Only owners can delete organization
+  delete: orgOwnerProcedure
+    .input(z.object({ organizationId: z.string() }))
+    .mutation(({ input }) => {
+      return deleteOrganization(input.organizationId);
+    }),
+});
+```
+
+## Authentication Strategies
+
+### JWT Authentication
+
+```typescript title="src/jwt-auth.ts"
+import jwt from 'jsonwebtoken';
+
+// JWT middleware
+export const jwtAuth = t.middleware(async ({ ctx, next }) => {
+  const authHeader = ctx.req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Missing or invalid authorization header',
+    });
+  }
+
+  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: string;
+      role: string;
+      permissions: string[];
+    };
+
+    // Optionally fetch fresh user data
+    const user = await getUserById(payload.userId);
+    if (!user) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'User not found',
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user,
+        token: payload,
+      },
+    });
+  } catch (error) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Invalid or expired token',
+      cause: error,
+    });
+  }
+});
+```
+
+### API Key Authentication
+
+```typescript title="src/api-key-auth.ts"
+// API key middleware
+export const apiKeyAuth = t.middleware(async ({ ctx, next }) => {
+  const apiKey = ctx.req.headers['x-api-key'] || ctx.req.query.apiKey;
+
+  if (!apiKey) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'API key required',
+    });
+  }
+
+  const keyRecord = await db.apiKey.findUnique({
+    where: { key: apiKey as string },
+    include: { user: true },
+  });
+
+  if (!keyRecord || !keyRecord.active) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Invalid API key',
+    });
+  }
+
+  // Check rate limits
+  await checkApiKeyRateLimit(keyRecord.id);
+
+  // Log usage
+  await logApiKeyUsage(keyRecord.id, ctx.req.url);
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: keyRecord.user,
+      apiKey: keyRecord,
+    },
+  });
+});
+```
+
+### Session-Based Auth with Refresh
+
+```typescript title="src/session-auth.ts"
+// Session middleware with refresh
+export const sessionAuth = t.middleware(async ({ ctx, next }) => {
+  const sessionId = ctx.req.headers['x-session-id'] || ctx.req.cookies?.sessionId;
+
+  if (!sessionId) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Session required',
+    });
+  }
+
+  const session = await getSession(sessionId);
+
+  if (!session || session.expiresAt < new Date()) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Session expired',
+    });
+  }
+
+  // Refresh session if close to expiry
+  if (session.expiresAt.getTime() - Date.now() < 15 * 60 * 1000) { // 15 minutes
+    await refreshSession(sessionId);
+  }
+
+  const user = await getUserById(session.userId);
+  if (!user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'User not found',
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user,
+      session,
+    },
+  });
+});
+```
+
+## Testing Authorization
+
+```typescript title="src/auth.test.ts"
+import { describe, it, expect } from 'vitest';
+import { createCallerFactory } from '@trpc/server';
+import { appRouter } from './router';
+
+const createCaller = createCallerFactory(appRouter);
+
+describe('Authorization', () => {
+  describe('Public endpoints', () => {
+    it('should allow anonymous access', async () => {
+      const caller = createCaller({ user: null });
+
+      const result = await caller.hello();
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('Protected endpoints', () => {
+    it('should reject unauthenticated requests', async () => {
+      const caller = createCaller({ user: null });
+
+      await expect(caller.protected.getProfile()).rejects.toThrow('UNAUTHORIZED');
+    });
+
+    it('should allow authenticated requests', async () => {
+      const caller = createCaller({
+        user: { id: 'user1', role: 'user' },
+      });
+
+      const result = await caller.protected.getProfile();
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('Role-based access', () => {
+    it('should allow admin access', async () => {
+      const caller = createCaller({
+        user: { id: 'admin1', role: 'admin' },
+      });
+
+      const result = await caller.admin.getSystemStats();
+      expect(result).toBeDefined();
+    });
+
+    it('should reject non-admin access', async () => {
+      const caller = createCaller({
+        user: { id: 'user1', role: 'user' },
+      });
+
+      await expect(caller.admin.getSystemStats()).rejects.toThrow('FORBIDDEN');
+    });
+  });
+
+  describe('Resource ownership', () => {
+    it('should allow access to own resources', async () => {
+      const caller = createCaller({
+        user: { id: 'user1', role: 'user' },
+      });
+
+      // Mock the post to be owned by user1
+      const result = await caller.posts.update({
+        postId: 'post-owned-by-user1',
+        title: 'Updated title',
+      });
+
+      expect(result).toBeDefined();
+    });
+
+    it('should reject access to others resources', async () => {
+      const caller = createCaller({
+        user: { id: 'user1', role: 'user' },
+      });
+
+      await expect(
+        caller.posts.update({
+          postId: 'post-owned-by-user2',
+          title: 'Updated title',
+        })
+      ).rejects.toThrow('FORBIDDEN');
+    });
+  });
+});
+```
+
+## Best Practices
+
+<Accordions>
+  <Accordion title="Security">
+    - **Use HTTPS**: Always use HTTPS in production
+    - **Validate tokens**: Check token expiry and signatures
+    - **Principle of least privilege**: Grant minimal necessary permissions
+    - **Audit trails**: Log authentication and authorization events
+    
+    ```typescript
+    // Secure token validation
+    const validateToken = async (token: string) => {
+      try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET!);
+        
+        // Check token blacklist
+        const isBlacklisted = await isTokenBlacklisted(token);
+        if (isBlacklisted) {
+          throw new Error('Token revoked');
+        }
+        
+        return payload;
+      } catch (error) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid token',
+        });
+      }
+    };
+    ```
+  </Accordion>
+
+  <Accordion title="Performance">
+    - **Cache user data**: Avoid repeated database queries
+    - **Use middleware efficiently**: Check auth early
+    - **Optimize role checks**: Use indexed database fields
+    - **Consider token lifetime**: Balance security and performance
+    
+    ```typescript
+    // Cache user data in middleware
+    const cachedAuth = t.middleware(async ({ ctx, next }) => {
+      if (ctx.user) {
+        // User already loaded in context
+        return next();
+      }
+      
+      const token = getTokenFromRequest(ctx.req);
+      const user = await getUserFromCache(token) || await getUserFromDB(token);
+      
+      return next({ ctx: { ...ctx, user } });
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Error Handling">
+    - **Don't leak information**: Avoid exposing sensitive data in errors
+    - **Use consistent error codes**: Standardize error responses
+    - **Log security events**: Track failed authentication attempts
+    - **Rate limit auth attempts**: Prevent brute force attacks
+    
+    ```typescript
+    // Safe error handling
+    const safeAuth = t.middleware(async ({ ctx, next }) => {
+      try {
+        const user = await authenticateUser(ctx.req);
+        return next({ ctx: { ...ctx, user } });
+      } catch (error) {
+        // Log the real error
+        console.error('Auth error:', error);
+        
+        // Return generic error to client
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Authentication failed',
+        });
+      }
+    });
+    ```
+  </Accordion>
+</Accordions>
+
+## Next Steps
+
+<Cards>
+  <Card title="Middleware" href="/docs/server/middlewares">
+    Learn more about creating reusable middleware
+  </Card>
+  <Card title="Context" href="/docs/server/context">
+    Understand how to structure your context
+  </Card>
+  <Card title="Error Handling" href="/docs/server/error-handling">
+    Handle authentication and authorization errors
+  </Card>
+  <Card title="Server-Side Calls" href="/docs/server/server-side-calls">
+    Test your authorization logic
+  </Card>
+</Cards>

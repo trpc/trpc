@@ -1,0 +1,573 @@
+---
+title: Core Concepts
+description: Deep dive into routers, procedures, context, middleware, and error handling
+icon: IconBrain
+---
+
+Understanding tRPC's core concepts is essential for building robust, type-safe APIs. This guide covers the fundamental building blocks that make tRPC powerful and easy to use.
+
+## Router
+
+A **router** defines your API structure and groups related procedures together. Think of it as your API's blueprint that organizes endpoints logically.
+
+### Basic Router
+
+```typescript title="server/router.ts"
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+export const appRouter = t.router({
+  // Simple greeting procedure
+  hello: t.procedure
+    .input(z.object({ name: z.string() }))
+    .query(({ input }) => {
+      return { message: `Hello, ${input.name}!` };
+    }),
+
+  // Get current time
+  time: t.procedure
+    .query(() => {
+      return { timestamp: new Date().toISOString() };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### Nested Routers
+
+Organize complex APIs with nested routers for better maintainability:
+
+```typescript title="server/routers/_app.ts"
+import { t } from '../trpc';
+import { userRouter } from './users';
+import { postRouter } from './posts';
+import { authRouter } from './auth';
+
+export const appRouter = t.router({
+  // Nested routers for organization
+  users: userRouter,
+  posts: postRouter,
+  auth: authRouter,
+
+  // Root-level procedures
+  health: t.procedure.query(() => ({ status: 'ok' })),
+});
+```
+
+```typescript title="server/routers/users.ts"
+import { t } from '../trpc';
+import { z } from 'zod';
+
+export const userRouter = t.router({
+  getById: t.procedure
+    .input(z.string())
+    .query(async ({ input }) => {
+      return await db.user.findUnique({ where: { id: input } });
+    }),
+
+  list: t.procedure
+    .input(z.object({
+      limit: z.number().min(1).max(100).default(10),
+      cursor: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const users = await db.user.findMany({
+        take: input.limit + 1,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return {
+        users: users.slice(0, input.limit),
+        nextCursor: users.length > input.limit ? users[input.limit].id : undefined,
+      };
+    }),
+
+  create: t.procedure
+    .input(z.object({
+      email: z.string().email(),
+      name: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      return await db.user.create({ data: input });
+    }),
+});
+```
+
+## Procedures
+
+**Procedures** are the individual endpoints of your API. There are three types, each serving different purposes:
+
+### Query Procedures
+
+Use `query` for reading data (GET-like operations):
+
+```typescript
+const getUser = t.procedure
+  .input(z.string())
+  .query(async ({ input }) => {
+    const user = await db.user.findUnique({ where: { id: input } });
+    if (!user) throw new TRPCError({ code: 'NOT_FOUND' });
+    return user;
+  });
+```
+
+**Client usage:**
+
+```typescript
+// Automatically typed as User | undefined
+const userQuery = useQuery(trpc.getUser.queryOptions('user_123'));
+```
+
+### Mutation Procedures
+
+Use `mutation` for creating, updating, or deleting data:
+
+```typescript
+const createPost = t.procedure
+  .input(z.object({
+    title: z.string().min(1),
+    content: z.string(),
+    authorId: z.string(),
+  }))
+  .mutation(async ({ input }) => {
+    return await db.post.create({
+      data: input,
+      include: { author: true },
+    });
+  });
+```
+
+**Client usage:**
+
+```typescript
+const createPostMutation = useMutation(trpc.createPost.mutationOptions({
+  onSuccess: (newPost) => {
+    // Invalidate relevant queries
+    queryClient.invalidateQueries(trpc.posts.list.queryKey());
+  },
+}));
+```
+
+### Subscription Procedures
+
+Use `subscription` for real-time data streams:
+
+```typescript
+const onPostUpdate = t.procedure
+  .input(z.object({ postId: z.string() }))
+  .subscription(async function* ({ input }) {
+    // Set up your real-time source (WebSocket, Server-Sent Events, etc.)
+    const unsubscribe = subscribeToPostUpdates(input.postId, (update) => {
+      // Yield updates to the client
+      yield update;
+    });
+
+    // Cleanup when subscription ends
+    return () => unsubscribe();
+  });
+```
+
+## Input & Output Validation
+
+tRPC uses schema validation to ensure type safety and runtime validation:
+
+### Input Validation with Zod
+
+```typescript
+const createUser = t.procedure
+  .input(z.object({
+    email: z.string().email('Invalid email format'),
+    name: z.string().min(2, 'Name must be at least 2 characters'),
+    age: z.number().int().min(13, 'Must be at least 13 years old'),
+    role: z.enum(['user', 'admin']).default('user'),
+  }))
+  .mutation(async ({ input }) => {
+    // input is fully typed and validated
+    return await db.user.create({ data: input });
+  });
+```
+
+### Output Validation
+
+While output validation is optional, it can catch bugs and ensure consistency:
+
+```typescript
+const UserSchema = z.object({
+  id: z.string(),
+  email: z.string().email(),
+  name: z.string(),
+  createdAt: z.date(),
+});
+
+const getUser = t.procedure
+  .input(z.string())
+  .output(UserSchema)
+  .query(async ({ input }) => {
+    const user = await db.user.findUnique({ where: { id: input } });
+    if (!user) throw new TRPCError({ code: 'NOT_FOUND' });
+
+    // Output will be validated against UserSchema
+    return user;
+  });
+```
+
+## Context
+
+**Context** provides request-scoped data to all procedures, such as user sessions, database connections, and request metadata.
+
+### Creating Context
+
+```typescript title="server/context.ts"
+import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth';
+import { prisma } from '../db';
+
+export async function createTRPCContext(opts: CreateNextContextOptions) {
+  const { req, res } = opts;
+
+  // Get user session
+  const session = await getServerSession(req, res, authOptions);
+
+  return {
+    prisma,
+    session,
+    req,
+    res,
+  };
+}
+
+export type Context = Awaited<ReturnType<typeof createTRPCContext>>;
+```
+
+### Using Context in Procedures
+
+```typescript title="server/trpc.ts"
+import { initTRPC, TRPCError } from '@trpc/server';
+import type { Context } from './context';
+
+const t = initTRPC.context<Context>().create();
+
+export const publicProcedure = t.procedure;
+
+// Middleware to check authentication
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.session.user, // Authenticated user
+    },
+  });
+});
+```
+
+```typescript
+// Using context in procedures
+const getCurrentUser = protectedProcedure
+  .query(async ({ ctx }) => {
+    // ctx.user is available and typed
+    return await ctx.prisma.user.findUnique({
+      where: { id: ctx.user.id },
+    });
+  });
+```
+
+## Middleware
+
+**Middleware** runs before procedures and can:
+
+- Authenticate users
+- Log requests
+- Rate limit
+- Transform input/output
+- Add additional context
+
+### Authentication Middleware
+
+```typescript title="server/middleware/auth.ts"
+import { TRPCError } from '@trpc/server';
+import { t } from '../trpc';
+
+export const requireAuth = t.middleware(({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'You must be logged in to access this resource',
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.session.user,
+    },
+  });
+});
+
+export const requireAdmin = t.middleware(({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  if (ctx.session.user.role !== 'admin') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Admin access required',
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.session.user,
+    },
+  });
+});
+```
+
+### Logging Middleware
+
+```typescript title="server/middleware/logging.ts"
+export const withLogging = t.middleware(async ({ path, type, next }) => {
+  const start = Date.now();
+  console.log(`📞 ${type.toUpperCase()} ${path} - started`);
+
+  const result = await next();
+
+  const duration = Date.now() - start;
+
+  if (result.ok) {
+    console.log(`✅ ${type.toUpperCase()} ${path} - completed in ${duration}ms`);
+  } else {
+    console.log(`❌ ${type.toUpperCase()} ${path} - failed in ${duration}ms`);
+  }
+
+  return result;
+});
+```
+
+### Composing Middleware
+
+```typescript
+// Create reusable procedure builders
+export const publicProcedure = t.procedure.use(withLogging);
+
+export const protectedProcedure = t.procedure
+  .use(withLogging)
+  .use(requireAuth);
+
+export const adminProcedure = t.procedure
+  .use(withLogging)
+  .use(requireAuth)
+  .use(requireAdmin);
+```
+
+## Error Handling
+
+tRPC provides structured error handling with specific error codes and custom messages:
+
+### Built-in Error Codes
+
+```typescript
+import { TRPCError } from '@trpc/server';
+
+// Throw specific errors
+throw new TRPCError({
+  code: 'NOT_FOUND',
+  message: 'User not found',
+});
+
+throw new TRPCError({
+  code: 'UNAUTHORIZED',
+  message: 'Please log in to continue',
+});
+
+throw new TRPCError({
+  code: 'FORBIDDEN',
+  message: 'You do not have permission to perform this action',
+});
+
+throw new TRPCError({
+  code: 'BAD_REQUEST',
+  message: 'Invalid input provided',
+  cause: validationError,
+});
+```
+
+### Global Error Handler
+
+```typescript title="server/trpc.ts"
+export const t = initTRPC.context<Context>().create({
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+            ? error.cause.flatten()
+            : null,
+      },
+    };
+  },
+});
+```
+
+### Client-Side Error Handling
+
+```typescript
+// In React components
+const createPostMutation = useMutation(trpc.posts.create.mutationOptions({
+  onError: (error) => {
+    switch (error.data?.code) {
+      case 'UNAUTHORIZED':
+        router.push('/login');
+        break;
+      case 'BAD_REQUEST':
+        // Handle validation errors
+        setFormErrors(error.data.zodError?.fieldErrors);
+        break;
+      default:
+        toast.error('Something went wrong');
+    }
+  },
+}));
+
+// With React Query's error boundaries
+const postsQuery = useQuery(trpc.posts.list.queryOptions(), {
+  throwOnError: true, // Throws to nearest error boundary
+});
+```
+
+## Advanced Patterns
+
+### Conditional Procedures
+
+Use middleware to create conditional logic:
+
+```typescript
+const getPostByIdOrThrow = t.procedure
+  .input(z.string())
+  .use(async ({ input, next }) => {
+    const post = await db.post.findUnique({ where: { id: input } });
+    if (!post) {
+      throw new TRPCError({ code: 'NOT_FOUND', message: 'Post not found' });
+    }
+
+    return next({
+      ctx: { post }, // Add post to context
+    });
+  })
+  .query(({ ctx }) => {
+    // ctx.post is guaranteed to exist
+    return ctx.post;
+  });
+```
+
+### Reusable Input Schemas
+
+```typescript title="server/schemas.ts"
+import { z } from 'zod';
+
+export const PaginationSchema = z.object({
+  limit: z.number().min(1).max(100).default(10),
+  cursor: z.string().optional(),
+});
+
+export const UserCreateSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(2),
+  role: z.enum(['user', 'admin']).default('user'),
+});
+
+export const PostCreateSchema = z.object({
+  title: z.string().min(1).max(200),
+  content: z.string().min(1),
+  tags: z.array(z.string()).max(10).default([]),
+});
+```
+
+### Procedure Composition
+
+```typescript
+// Base procedures with common middleware
+const baseMutation = t.procedure.use(withLogging).use(requireAuth);
+
+// Specialized procedures
+const userMutation = baseMutation.input(UserCreateSchema);
+const postMutation = baseMutation.input(PostCreateSchema);
+
+// Use in router
+export const appRouter = t.router({
+  users: t.router({
+    create: userMutation.mutation(async ({ input, ctx }) => {
+      return await ctx.prisma.user.create({ data: input });
+    }),
+  }),
+  posts: t.router({
+    create: postMutation.mutation(async ({ input, ctx }) => {
+      return await ctx.prisma.post.create({
+        data: { ...input, authorId: ctx.user.id },
+      });
+    }),
+  }),
+});
+```
+
+## Best Practices
+
+<Callout title="Organizing Your Code">
+  - **Group related procedures** in nested routers - **Reuse middleware** for
+  common functionality - **Create typed context** for request-scoped data -
+  **Use consistent naming** conventions - **Validate inputs** with Zod schemas
+</Callout>
+
+### Folder Structure
+
+```
+server/
+├── routers/
+│   ├── _app.ts          # Main router
+│   ├── users.ts         # User procedures
+│   ├── posts.ts         # Post procedures
+│   └── auth.ts          # Auth procedures
+├── middleware/
+│   ├── auth.ts          # Authentication
+│   ├── logging.ts       # Request logging
+│   └── rateLimit.ts     # Rate limiting
+├── schemas/
+│   ├── user.ts          # User schemas
+│   ├── post.ts          # Post schemas
+│   └── common.ts        # Shared schemas
+├── context.ts           # Context creation
+└── trpc.ts             # tRPC initialization
+```
+
+### Type Safety Tips
+
+1. **Always export router types** for client consumption
+2. **Use strict TypeScript** configuration
+3. **Leverage inference** - let TypeScript infer types when possible
+4. **Validate at boundaries** - server input/output and client data
+
+```typescript
+// Good: Let TypeScript infer
+const result = await trpc.users.getById.query('user_123');
+// result is typed as User | null
+
+// Good: Use query options for additional React Query features
+const userQuery = useQuery(trpc.users.getById.queryOptions('user_123'), {
+  staleTime: 5 * 60 * 1000, // 5 minutes
+});
+```
+
+---
+
+Understanding these core concepts will help you build robust, type-safe APIs with tRPC. The combination of routers, procedures, context, and middleware provides a powerful foundation for any application.

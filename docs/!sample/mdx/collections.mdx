@@ -1,0 +1,178 @@
+---
+title: Collections
+description: Collection of content data for your app
+---
+
+## Define Collections
+
+Define a collection to parse a certain set of files.
+
+```ts
+import { defineCollections } from 'fumadocs-mdx/config';
+import { z } from 'zod';
+
+export const blog = defineCollections({
+  type: 'doc',
+  dir: './content/blog',
+  schema: z.object({
+    // schema
+  }),
+  // other options
+});
+```
+
+### `type`
+
+The accepted type of collection.
+
+```ts
+import { defineCollections } from 'fumadocs-mdx/config';
+
+// only scan for json/yaml files
+export const metaFiles = defineCollections({
+  type: 'meta',
+  // options
+});
+```
+
+- `type: meta`
+
+  Accept JSON/YAML files, available options:
+
+  <AutoTypeTable path="./content/docs/mdx/props.ts" name="MetaCollection" />
+
+- `type: doc`
+
+  Markdown/MDX documents, available options:
+
+  <AutoTypeTable path="./content/docs/mdx/props.ts" name="DocCollection" />
+
+### `dir`
+
+Directories to scan for input files.
+
+### `schema`
+
+The schema to validate file data (frontmatter on `doc` type, content on `meta` type).
+
+```ts
+import { defineCollections } from 'fumadocs-mdx/config';
+import { z } from 'zod';
+
+export const blog = defineCollections({
+  type: 'doc',
+  dir: './content/blog',
+  schema: z.object({
+    name: z.string(),
+  }),
+});
+```
+
+> [Standard Schema](https://standardschema.dev) compatible libraries, including Zod, are supported.
+
+Note that the validation is done at build time, hence the output must be serializable.
+You can also pass a function that receives the transform context.
+
+```ts
+import { defineCollections } from 'fumadocs-mdx/config';
+import { z } from 'zod';
+
+export const blog = defineCollections({
+  type: 'doc',
+  dir: './content/blog',
+  schema: (ctx) => {
+    return z.object({
+      name: z.string(),
+      testPath: z.string().default(
+        // original file path
+        ctx.path,
+      ),
+    });
+  },
+});
+```
+
+### `mdxOptions`
+
+Customise MDX options at the collection level.
+
+```ts title="source.config.ts"
+import { defineCollections, getDefaultMDXOptions } from 'fumadocs-mdx/config';
+
+export const blog = defineCollections({
+  type: 'doc',
+  mdxOptions: {
+    // mdx options
+  },
+});
+```
+
+By design, this will remove all default settings applied by your global config and Fumadocs MDX.
+You have full control over MDX options.
+
+You can use `getDefaultMDXOptions` to apply default configurations, it accepts the [extended MDX Options](/docs/mdx/mdx#extended).
+
+```ts title="source.config.ts"
+import { defineCollections, getDefaultMDXOptions } from 'fumadocs-mdx/config';
+
+export const blog = defineCollections({
+  type: 'doc',
+  mdxOptions: getDefaultMDXOptions({
+    // extended mdx options
+  }),
+});
+```
+
+> This API is only available on `doc` type.
+
+## Define Docs
+
+Define a collection for Fumadocs.
+
+```ts
+import { defineDocs } from 'fumadocs-mdx/config';
+
+export const docs = defineDocs({
+  dir: '/my/content/dir',
+  docs: {
+    // optional, options of `doc` collection
+  },
+  meta: {
+    // optional, options of `meta` collection
+  },
+});
+```
+
+### `dir`
+
+Instead of per collection, you should customise `dir` from `defineDocs`:
+
+```ts
+import { defineDocs } from 'fumadocs-mdx/config';
+
+export const docs = defineDocs({
+  dir: 'my/content/dir',
+});
+```
+
+### `schema`
+
+You can extend the default Zod schema of `docs` and `meta`.
+
+```ts
+import { frontmatterSchema, metaSchema, defineDocs } from 'fumadocs-mdx/config';
+import { z } from 'zod';
+
+export const docs = defineDocs({
+  docs: {
+    schema: frontmatterSchema.extend({
+      index: z.boolean().default(false),
+    }),
+  },
+  meta: {
+    schema: metaSchema.extend({
+      // other props
+    }),
+  },
+});
+```

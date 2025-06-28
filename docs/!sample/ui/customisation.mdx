@@ -1,0 +1,66 @@
+---
+title: Overview
+description: An overview of Fumadocs UI
+---
+
+## Architecture
+
+<UiOverview />
+
+|               |                                                         |
+| ------------- | ------------------------------------------------------- |
+| **Sidebar**   | Display site title and navigation elements.             |
+| **Page Tree** | Passed by you, mainly rendered as the items of sidebar. |
+| **Docs Page** | All content of the page.                                |
+| **TOC**       | Navigation within the article.                          |
+
+## Customisation
+
+### Layouts
+
+You can use the exposed options of different layouts:
+
+<Cards>
+  <Card title="Docs Layout" href="/docs/ui/layouts/docs">
+    Layout for docs
+  </Card>
+  <Card title="Docs Page" href="/docs/ui/layouts/page">
+    Layout for docs content
+  </Card>
+  <Card title="Notebook Layout" href="/docs/ui/layouts/notebook">
+    A more compact version of Docs Layout
+  </Card>
+  <Card title="Home Layout" href="/docs/ui/layouts/home-layout">
+    Layout for other pages
+  </Card>
+</Cards>
+
+### Components
+
+Fumadocs UI also offers styled components for interactive examples to enhance your docs, you can customise them with exposed props like `style` and `className`.
+
+See [Components](/docs/ui/components).
+
+### Design System
+
+Since the design system is built on Tailwind CSS, you can customise it [with CSS Variables](/docs/ui/theme#colors).
+
+### CLI
+
+Fumadocs CLI is a tool that installs components to your codebase, similar to Shadcn UI.
+
+```package-install
+npx @fumadocs/cli
+```
+
+Use it to install Fumadocs UI components:
+
+```package-install
+npx @fumadocs/cli add
+```
+
+Or customise layouts:
+
+```package-install
+npx @fumadocs/cli customise
+```

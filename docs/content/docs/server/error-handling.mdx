@@ -1,0 +1,838 @@
+---
+title: Error Handling
+description: Handle errors gracefully with proper HTTP status codes and structured responses
+icon: IconAlertTriangle
+---
+
+Proper error handling is crucial for building robust APIs. tRPC provides structured error handling with appropriate HTTP status codes, error messages, and type safety.
+
+<Callout title="Error Handling Benefits">
+  - **Structured Responses**: Consistent error format across your API - **HTTP
+  Status Codes**: Proper status codes for different error types - **Type
+  Safety**: Errors are typed and can be handled properly on the client -
+  **Debugging Info**: Stack traces and error context in development
+</Callout>
+
+## tRPC Error Codes
+
+tRPC defines standardized error codes that map to HTTP status codes:
+
+<Tabs items={['Client Errors', 'Server Errors', 'All Codes']}>
+  <Tab value="Client Errors">
+    | Code | HTTP Status | Description |
+    |------|-------------|-------------|
+    | `BAD_REQUEST` | 400 | Invalid request data or parameters |
+    | `UNAUTHORIZED` | 401 | Authentication required |
+    | `PAYMENT_REQUIRED` | 402 | Payment required for this resource |
+    | `FORBIDDEN` | 403 | User lacks permission for this action |
+    | `NOT_FOUND` | 404 | Resource or endpoint not found |
+    | `METHOD_NOT_SUPPORTED` | 405 | HTTP method not allowed |
+    | `TIMEOUT` | 408 | Request timeout |
+    | `CONFLICT` | 409 | Resource conflict (e.g., duplicate data) |
+    | `PRECONDITION_FAILED` | 412 | Precondition not met |
+    | `PAYLOAD_TOO_LARGE` | 413 | Request payload too large |
+    | `UNSUPPORTED_MEDIA_TYPE` | 415 | Unsupported content type |
+    | `UNPROCESSABLE_CONTENT` | 422 | Validation errors |
+    | `TOO_MANY_REQUESTS` | 429 | Rate limit exceeded |
+    | `CLIENT_CLOSED_REQUEST` | 499 | Client closed connection |
+  </Tab>
+
+<Tab value="Server Errors">
+  | Code | HTTP Status | Description | |------|-------------|-------------| |
+  `INTERNAL_SERVER_ERROR` | 500 | Unexpected server error | | `NOT_IMPLEMENTED`
+  | 501 | Feature not implemented | | `BAD_GATEWAY` | 502 | Bad response from
+  upstream server | | `SERVICE_UNAVAILABLE` | 503 | Service temporarily
+  unavailable | | `GATEWAY_TIMEOUT` | 504 | Upstream server timeout |
+</Tab>
+
+  <Tab value="All Codes">
+    ```typescript
+    // Complete list of tRPC error codes
+    type TRPCErrorCode = 
+      | 'BAD_REQUEST'
+      | 'UNAUTHORIZED' 
+      | 'PAYMENT_REQUIRED'
+      | 'FORBIDDEN'
+      | 'NOT_FOUND'
+      | 'METHOD_NOT_SUPPORTED'
+      | 'TIMEOUT'
+      | 'CONFLICT'
+      | 'PRECONDITION_FAILED'
+      | 'PAYLOAD_TOO_LARGE'
+      | 'UNSUPPORTED_MEDIA_TYPE'
+      | 'UNPROCESSABLE_CONTENT'
+      | 'TOO_MANY_REQUESTS'
+      | 'CLIENT_CLOSED_REQUEST'
+      | 'INTERNAL_SERVER_ERROR'
+      | 'NOT_IMPLEMENTED'
+      | 'BAD_GATEWAY'
+      | 'SERVICE_UNAVAILABLE'
+      | 'GATEWAY_TIMEOUT';
+    ```
+  </Tab>
+</Tabs>
+
+## Throwing Errors
+
+### Basic Error Throwing
+
+```typescript title="src/error-examples.ts"
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+export const appRouter = router({
+  getUser: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      const user = await db.user.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `User with ID ${input.id} not found`,
+        });
+      }
+
+      return user;
+    }),
+
+  createUser: publicProcedure
+    .input(z.object({
+      email: z.string().email(),
+      name: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        return await db.user.create({ data: input });
+      } catch (error) {
+        if (error.code === 'P2002') { // Unique constraint violation
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'A user with this email already exists',
+            cause: error,
+          });
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create user',
+          cause: error,
+        });
+      }
+    }),
+
+  deletePost: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to delete posts',
+        });
+      }
+
+      const post = await db.post.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!post) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Post not found',
+        });
+      }
+
+      if (post.authorId !== ctx.user.id && ctx.user.role !== 'admin') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You can only delete your own posts',
+        });
+      }
+
+      await db.post.delete({ where: { id: input.id } });
+      return { success: true };
+    }),
+});
+```
+
+### Error with Additional Context
+
+```typescript title="src/detailed-errors.ts"
+// Include additional error context
+export const paymentRouter = router({
+  processPayment: publicProcedure
+    .input(z.object({
+      amount: z.number().positive(),
+      currency: z.string(),
+      paymentMethodId: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const result = await stripe.paymentIntents.create({
+          amount: input.amount,
+          currency: input.currency,
+          payment_method: input.paymentMethodId,
+          confirm: true,
+        });
+
+        return result;
+      } catch (error) {
+        if (error.type === 'StripeCardError') {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Payment failed: ' + error.message,
+            cause: error,
+          });
+        }
+
+        if (error.type === 'StripeRateLimitError') {
+          throw new TRPCError({
+            code: 'TOO_MANY_REQUESTS',
+            message: 'Too many requests to payment processor',
+            cause: error,
+          });
+        }
+
+        if (error.type === 'StripeConnectionError') {
+          throw new TRPCError({
+            code: 'SERVICE_UNAVAILABLE',
+            message: 'Payment service temporarily unavailable',
+            cause: error,
+          });
+        }
+
+        // Unknown Stripe error
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Payment processing failed',
+          cause: error,
+        });
+      }
+    }),
+});
+```
+
+## Global Error Handling
+
+### Using onError Handler
+
+```typescript title="src/server.ts"
+import { createNextApiHandler } from '@trpc/server/adapters/next';
+import { appRouter } from './router';
+import { createContext } from './context';
+
+export default createNextApiHandler({
+  router: appRouter,
+  createContext,
+  onError: ({ error, type, path, input, ctx, req }) => {
+    // Log all errors for debugging
+    console.error(`❌ tRPC Error on ${type} ${path}:`, {
+      error: error.message,
+      code: error.code,
+      input,
+      stack: error.stack,
+    });
+
+    // Report critical errors to monitoring service
+    if (error.code === 'INTERNAL_SERVER_ERROR') {
+      // Send to Sentry, DataDog, etc.
+      errorReporting.captureException(error, {
+        tags: {
+          trpcPath: path,
+          trpcType: type,
+        },
+        user: ctx?.user ? { id: ctx.user.id } : undefined,
+        extra: {
+          input,
+          path,
+          type,
+        },
+      });
+    }
+
+    // Log security events
+    if (error.code === 'UNAUTHORIZED' || error.code === 'FORBIDDEN') {
+      securityLog.warn('Access denied', {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+        path,
+        userId: ctx?.user?.id,
+      });
+    }
+  },
+});
+```
+
+### Centralized Error Processing
+
+```typescript title="src/error-utils.ts"
+import { TRPCError } from '@trpc/server';
+
+// Error factory functions
+export const createNotFoundError = (resource: string, id: string) => {
+  return new TRPCError({
+    code: 'NOT_FOUND',
+    message: `${resource} with ID "${id}" not found`,
+  });
+};
+
+export const createValidationError = (message: string, field?: string) => {
+  return new TRPCError({
+    code: 'BAD_REQUEST',
+    message: field ? `${field}: ${message}` : message,
+  });
+};
+
+export const createAuthError = (message: string = 'Authentication required') => {
+  return new TRPCError({
+    code: 'UNAUTHORIZED',
+    message,
+  });
+};
+
+export const createPermissionError = (action: string, resource?: string) => {
+  const message = resource
+    ? `You don't have permission to ${action} ${resource}`
+    : `You don't have permission to ${action}`;
+
+  return new TRPCError({
+    code: 'FORBIDDEN',
+    message,
+  });
+};
+
+// Database error handler
+export const handleDatabaseError = (error: any, operation: string) => {
+  console.error(`Database error during ${operation}:`, error);
+
+  // Prisma-specific error handling
+  if (error.code === 'P2002') {
+    const field = error.meta?.target?.[0] || 'field';
+    throw new TRPCError({
+      code: 'CONFLICT',
+      message: `${field} already exists`,
+      cause: error,
+    });
+  }
+
+  if (error.code === 'P2025') {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Record not found',
+      cause: error,
+    });
+  }
+
+  // Generic database error
+  throw new TRPCError({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: `Database operation failed: ${operation}`,
+    cause: error,
+  });
+};
+
+// Usage in procedures
+export const userRouter = router({
+  getUser: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        const user = await db.user.findUnique({
+          where: { id: input.id },
+        });
+
+        if (!user) {
+          throw createNotFoundError('User', input.id);
+        }
+
+        return user;
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        handleDatabaseError(error, 'get user');
+      }
+    }),
+});
+```
+
+## Error Response Format
+
+### Standard Error Response
+
+```json title="error-response.json"
+{
+  "error": {
+    "json": {
+      "message": "User with ID \"invalid-id\" not found",
+      "code": -32603,
+      "data": {
+        "code": "NOT_FOUND",
+        "httpStatus": 404,
+        "stack": "Error: User with ID \"invalid-id\" not found\n    at ...",
+        "path": "user.getById"
+      }
+    }
+  }
+}
+```
+
+### Validation Error Response
+
+```json title="validation-error.json"
+{
+  "error": {
+    "json": {
+      "message": "Validation failed",
+      "code": -32600,
+      "data": {
+        "code": "BAD_REQUEST",
+        "httpStatus": 400,
+        "path": "user.create",
+        "zodError": {
+          "fieldErrors": {
+            "email": ["Invalid email format"],
+            "name": ["Name must be at least 2 characters"]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+## Error Middleware
+
+### Error Catching Middleware
+
+```typescript title="src/error-middleware.ts"
+// Catch and transform errors in middleware
+const errorCatchingMiddleware = t.middleware(async ({ next, path, type }) => {
+  try {
+    return await next();
+  } catch (error) {
+    // Transform known error types
+    if (error instanceof ValidationError) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: error.message,
+        cause: error,
+      });
+    }
+
+    if (error instanceof DatabaseConnectionError) {
+      throw new TRPCError({
+        code: 'SERVICE_UNAVAILABLE',
+        message: 'Database temporarily unavailable',
+        cause: error,
+      });
+    }
+
+    if (error instanceof RateLimitError) {
+      throw new TRPCError({
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Rate limit exceeded',
+        cause: error,
+      });
+    }
+
+    // Log unknown errors
+    console.error(`Unknown error in ${type} ${path}:`, error);
+
+    // Re-throw tRPC errors as-is
+    if (error instanceof TRPCError) {
+      throw error;
+    }
+
+    // Wrap unknown errors
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'An unexpected error occurred',
+      cause: error,
+    });
+  }
+});
+
+export const safeProcedure = t.procedure.use(errorCatchingMiddleware);
+```
+
+### Retry Middleware
+
+```typescript title="src/retry-middleware.ts"
+// Retry failed operations
+const retryMiddleware = (maxRetries: number = 3) => {
+  return t.middleware(async ({ next, path }) => {
+    let lastError: Error;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await next();
+      } catch (error) {
+        lastError = error as Error;
+
+        // Don't retry client errors
+        if (error instanceof TRPCError && [
+          'BAD_REQUEST',
+          'UNAUTHORIZED',
+          'FORBIDDEN',
+          'NOT_FOUND',
+          'CONFLICT',
+        ].includes(error.code)) {
+          throw error;
+        }
+
+        // Don't retry on last attempt
+        if (attempt === maxRetries) {
+          break;
+        }
+
+        // Exponential backoff
+        const delay = Math.pow(2, attempt) * 100;
+        await new Promise(resolve => setTimeout(resolve, delay));
+
+        console.log(`Retrying ${path} (attempt ${attempt + 1}/${maxRetries})`);
+      }
+    }
+
+    throw lastError!;
+  });
+};
+
+export const resilientProcedure = t.procedure.use(retryMiddleware(3));
+```
+
+## Custom Error Classes
+
+```typescript title="src/custom-errors.ts"
+// Create custom error classes for your domain
+export class UserNotFoundError extends Error {
+  constructor(userId: string) {
+    super(`User with ID "${userId}" not found`);
+    this.name = 'UserNotFoundError';
+  }
+}
+
+export class InsufficientFundsError extends Error {
+  constructor(available: number, required: number) {
+    super(`Insufficient funds: available ${available}, required ${required}`);
+    this.name = 'InsufficientFundsError';
+  }
+}
+
+export class BusinessHoursError extends Error {
+  constructor() {
+    super('This operation is only available during business hours');
+    this.name = 'BusinessHoursError';
+  }
+}
+
+// Transform custom errors to tRPC errors
+const transformError = (error: Error): TRPCError => {
+  if (error instanceof UserNotFoundError) {
+    return new TRPCError({
+      code: 'NOT_FOUND',
+      message: error.message,
+      cause: error,
+    });
+  }
+
+  if (error instanceof InsufficientFundsError) {
+    return new TRPCError({
+      code: 'BAD_REQUEST',
+      message: error.message,
+      cause: error,
+    });
+  }
+
+  if (error instanceof BusinessHoursError) {
+    return new TRPCError({
+      code: 'SERVICE_UNAVAILABLE',
+      message: error.message,
+      cause: error,
+    });
+  }
+
+  return new TRPCError({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'An unexpected error occurred',
+    cause: error,
+  });
+};
+
+// Usage in procedures
+export const walletRouter = router({
+  transfer: publicProcedure
+    .input(z.object({
+      fromUserId: z.string(),
+      toUserId: z.string(),
+      amount: z.number().positive(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // Business logic that throws custom errors
+        const result = await transferFunds(
+          input.fromUserId,
+          input.toUserId,
+          input.amount
+        );
+        return result;
+      } catch (error) {
+        throw transformError(error as Error);
+      }
+    }),
+});
+```
+
+## Testing Error Handling
+
+```typescript title="src/error-handling.test.ts"
+import { describe, it, expect } from 'vitest';
+import { createCallerFactory } from '@trpc/server';
+import { TRPCError } from '@trpc/server';
+import { appRouter } from './router';
+
+const createCaller = createCallerFactory(appRouter);
+
+describe('Error Handling', () => {
+  describe('Authentication Errors', () => {
+    it('should throw UNAUTHORIZED for missing auth', async () => {
+      const caller = createCaller({ user: null });
+
+      await expect(
+        caller.protected.getProfile()
+      ).rejects.toThrow(TRPCError);
+
+      await expect(
+        caller.protected.getProfile()
+      ).rejects.toHaveProperty('code', 'UNAUTHORIZED');
+    });
+  });
+
+  describe('Authorization Errors', () => {
+    it('should throw FORBIDDEN for insufficient permissions', async () => {
+      const caller = createCaller({
+        user: { id: 'user1', role: 'user' },
+      });
+
+      await expect(
+        caller.admin.deleteUser({ id: 'user2' })
+      ).rejects.toThrow(TRPCError);
+
+      await expect(
+        caller.admin.deleteUser({ id: 'user2' })
+      ).rejects.toHaveProperty('code', 'FORBIDDEN');
+    });
+  });
+
+  describe('Validation Errors', () => {
+    it('should throw BAD_REQUEST for invalid input', async () => {
+      const caller = createCaller({});
+
+      await expect(
+        caller.user.create({
+          email: 'invalid-email',
+          name: '', // Too short
+        })
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('Not Found Errors', () => {
+    it('should throw NOT_FOUND for missing resources', async () => {
+      const caller = createCaller({});
+
+      await expect(
+        caller.user.getById({ id: 'nonexistent' })
+      ).rejects.toHaveProperty('code', 'NOT_FOUND');
+    });
+  });
+
+  describe('Business Logic Errors', () => {
+    it('should handle insufficient funds', async () => {
+      const caller = createCaller({
+        user: { id: 'user1', balance: 10 },
+      });
+
+      await expect(
+        caller.wallet.transfer({
+          toUserId: 'user2',
+          amount: 100, // More than balance
+        })
+      ).rejects.toHaveProperty('code', 'BAD_REQUEST');
+    });
+  });
+});
+```
+
+## Error Utilities
+
+```typescript title="src/error-utils.ts"
+import { TRPCError } from '@trpc/server';
+
+// Extract HTTP status code from tRPC error
+export function getHTTPStatusCodeFromError(error: TRPCError): number {
+  const httpStatusCodes: Record<string, number> = {
+    BAD_REQUEST: 400,
+    UNAUTHORIZED: 401,
+    PAYMENT_REQUIRED: 402,
+    FORBIDDEN: 403,
+    NOT_FOUND: 404,
+    METHOD_NOT_SUPPORTED: 405,
+    TIMEOUT: 408,
+    CONFLICT: 409,
+    PRECONDITION_FAILED: 412,
+    PAYLOAD_TOO_LARGE: 413,
+    UNSUPPORTED_MEDIA_TYPE: 415,
+    UNPROCESSABLE_CONTENT: 422,
+    TOO_MANY_REQUESTS: 429,
+    CLIENT_CLOSED_REQUEST: 499,
+    INTERNAL_SERVER_ERROR: 500,
+    NOT_IMPLEMENTED: 501,
+    BAD_GATEWAY: 502,
+    SERVICE_UNAVAILABLE: 503,
+    GATEWAY_TIMEOUT: 504,
+  };
+
+  return httpStatusCodes[error.code] || 500;
+}
+
+// Check if error is a specific tRPC error
+export function isTRPCError(error: unknown): error is TRPCError {
+  return error instanceof TRPCError;
+}
+
+export function isTRPCErrorWithCode(
+  error: unknown,
+  code: TRPCError['code']
+): error is TRPCError {
+  return isTRPCError(error) && error.code === code;
+}
+
+// Usage in API routes
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const result = await caller.someOperation();
+    res.status(200).json(result);
+  } catch (error) {
+    if (isTRPCError(error)) {
+      const statusCode = getHTTPStatusCodeFromError(error);
+      res.status(statusCode).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+}
+```
+
+## Best Practices
+
+<Accordions>
+  <Accordion title="Error Messages">
+    - **Be specific**: Provide clear, actionable error messages
+    - **Don't leak secrets**: Avoid exposing sensitive information
+    - **Include context**: Help users understand what went wrong
+    - **Suggest solutions**: Guide users on how to fix the issue
+    
+    ```typescript
+    // Good error messages
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Email must be a valid email address. Received: "invalid@"',
+    });
+    
+    // Bad error messages
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Invalid input',
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Error Codes">
+    - **Use appropriate codes**: Choose the most specific error code
+    - **Be consistent**: Use the same codes for similar errors
+    - **Document error codes**: Help API consumers understand errors
+    - **Map to HTTP status**: Ensure proper HTTP response codes
+    
+    ```typescript
+    // Appropriate error codes
+    if (!user) throw new TRPCError({ code: 'NOT_FOUND' });
+    if (!authorized) throw new TRPCError({ code: 'FORBIDDEN' });
+    if (validation.failed) throw new TRPCError({ code: 'BAD_REQUEST' });
+    ```
+  </Accordion>
+
+  <Accordion title="Security">
+    - **Log security events**: Track authentication failures
+    - **Rate limit error responses**: Prevent abuse
+    - **Sanitize error data**: Don't expose internal details
+    - **Monitor error patterns**: Detect attacks or issues
+    
+    ```typescript
+    // Secure error handling
+    const handleAuthError = (error: Error, ctx: Context) => {
+      // Log security event
+      securityLogger.warn('Authentication failed', {
+        ip: ctx.req.ip,
+        userAgent: ctx.req.headers['user-agent'],
+        timestamp: new Date(),
+      });
+      
+      // Return generic error to client
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Authentication failed',
+        // Don't include error details
+      });
+    };
+    ```
+  </Accordion>
+
+  <Accordion title="Debugging">
+    - **Include stack traces**: Only in development
+    - **Log error context**: Include request details
+    - **Use error IDs**: Help track specific errors
+    - **Monitor error rates**: Set up alerts for high error rates
+    
+    ```typescript
+    // Debugging-friendly error handling
+    const debugError = (error: Error, context: any) => {
+      const errorId = generateErrorId();
+      
+      logger.error('Operation failed', {
+        errorId,
+        message: error.message,
+        stack: error.stack,
+        context,
+        timestamp: new Date(),
+      });
+      
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: `Operation failed (Error ID: ${errorId})`,
+        cause: process.env.NODE_ENV === 'development' ? error : undefined,
+      });
+    };
+    ```
+  </Accordion>
+</Accordions>
+
+## Next Steps
+
+<Cards>
+  <Card title="Error Formatting" href="/docs/server/error-formatting">
+    Customize how errors are formatted and returned to clients
+  </Card>
+  <Card title="Middleware" href="/docs/server/middlewares">
+    Learn how to handle errors in middleware
+  </Card>
+  <Card title="Authorization" href="/docs/server/authorization">
+    Implement proper authentication and authorization
+  </Card>
+  <Card title="Server-Side Calls" href="/docs/server/server-side-calls">
+    Test your error handling with server-side callers
+  </Card>
+</Cards>

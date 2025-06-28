@@ -1,0 +1,439 @@
+---
+title: Input & Output Validators
+description: Validate inputs and outputs with type-safe schema validation libraries
+icon: IconShield
+---
+
+tRPC procedures can define validation logic for their input and/or output, ensuring data integrity and providing automatic TypeScript type inference. We support many popular validation libraries out of the box.
+
+<Callout title="Validation Benefits">
+  - **Type Safety**: Automatic TypeScript inference for inputs and outputs -
+  **Data Integrity**: Ensure data matches expected schemas before processing -
+  **Error Prevention**: Catch validation errors before they reach your business
+  logic - **Documentation**: Schemas serve as living documentation of your API
+</Callout>
+
+## Input Validation
+
+Input validation checks that procedure calls are correct and returns structured validation errors if not.
+
+### Basic Input Validation
+
+```typescript title="src/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+export const appRouter = router({
+  createUser: publicProcedure
+    .input(z.object({
+      name: z.string().min(2, 'Name must be at least 2 characters'),
+      email: z.string().email('Must be a valid email'),
+      age: z.number().int().min(13, 'Must be at least 13 years old'),
+    }))
+    .mutation(({ input }) => {
+      // input is fully typed and validated
+      const { name, email, age } = input;
+      //      ^? string, string, number
+
+      return createUserInDatabase({ name, email, age });
+    }),
+});
+```
+
+### Input Merging
+
+Stack multiple `.input()` calls to build complex validation schemas:
+
+```typescript title="src/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+// Base procedure with common validation
+const baseProcedure = publicProcedure
+  .input(z.object({
+    organizationId: z.string().uuid()
+  }))
+  .use(({ input, next }) => {
+    console.log(`Request for organization: ${input.organizationId}`);
+    return next();
+  });
+
+export const appRouter = router({
+  createProject: baseProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      description: z.string().optional(),
+    }))
+    .mutation(({ input }) => {
+      // input contains both organizationId and project data
+      const { organizationId, name, description } = input;
+      //      ^? string, string, string | undefined
+
+      return createProject({ organizationId, name, description });
+    }),
+
+  updateProject: baseProcedure
+    .input(z.object({
+      projectId: z.string().uuid(),
+      name: z.string().min(1).optional(),
+      description: z.string().optional(),
+    }))
+    .mutation(({ input }) => {
+      // input has organizationId + update data
+      const { organizationId, projectId, ...updates } = input;
+      return updateProject(projectId, updates);
+    }),
+});
+```
+
+## Output Validation
+
+Output validation ensures your procedures return the expected data structure:
+
+<Callout title="When to use output validation">
+  - Validating data from untrusted sources (external APIs, databases) - Ensuring
+  you don't expose sensitive information - Catching bugs in your business logic
+  - Creating consistent response formats
+</Callout>
+
+```typescript title="src/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+const UserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  createdAt: z.date(),
+  // Explicitly omit sensitive fields like password hashes
+});
+
+export const appRouter = router({
+  getUser: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .output(UserSchema)
+    .query(async ({ input }) => {
+      const user = await getUserFromDatabase(input.id);
+
+      if (!user) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
+      // Output will be validated against UserSchema
+      // TypeScript will enforce the return type matches
+      return user;
+    }),
+
+  getUserList: publicProcedure
+    .input(z.object({
+      limit: z.number().min(1).max(100).default(10),
+    }))
+    .output(z.object({
+      users: z.array(UserSchema),
+      total: z.number(),
+      hasMore: z.boolean(),
+    }))
+    .query(async ({ input }) => {
+      const { users, total } = await getUserList(input.limit);
+
+      return {
+        users,
+        total,
+        hasMore: total > input.limit,
+      };
+    }),
+});
+```
+
+## Library Integrations
+
+tRPC works with many popular validation libraries:
+
+### Zod (Recommended)
+
+Zod is our default recommendation with excellent TypeScript integration:
+
+<Tabs items={['Basic', 'Advanced', 'Nested Objects']}>
+  <Tab value="Basic">
+    ```typescript title="zod-basic.ts"
+    import { z } from 'zod';
+    
+    const CreateUserSchema = z.object({
+      name: z.string().min(2).max(50),
+      email: z.string().email(),
+      age: z.number().int().min(13).max(120),
+      role: z.enum(['user', 'admin']).default('user'),
+    });
+    
+    export const appRouter = router({
+      createUser: publicProcedure
+        .input(CreateUserSchema)
+        .mutation(({ input }) => {
+          // Fully typed and validated
+          return createUser(input);
+        }),
+    });
+    ```
+  </Tab>
+  
+  <Tab value="Advanced">
+    ```typescript title="zod-advanced.ts"
+    import { z } from 'zod';
+    
+    const AdvancedUserSchema = z.object({
+      name: z.string()
+        .min(2, 'Name too short')
+        .max(50, 'Name too long')
+        .regex(/^[a-zA-Z\s]+$/, 'Name can only contain letters'),
+      
+      email: z.string()
+        .email('Invalid email format')
+        .transform(email => email.toLowerCase()),
+      
+      password: z.string()
+        .min(8, 'Password must be at least 8 characters')
+        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 
+               'Password must contain uppercase, lowercase, and number'),
+      
+      preferences: z.object({
+        theme: z.enum(['light', 'dark']).default('light'),
+        notifications: z.boolean().default(true),
+        language: z.string().default('en'),
+      }).optional(),
+      
+      tags: z.array(z.string()).max(10, 'Too many tags'),
+    });
+    
+    export const appRouter = router({
+      createUser: publicProcedure
+        .input(AdvancedUserSchema)
+        .mutation(({ input }) => {
+          // email is automatically lowercased
+          // preferences has defaults applied
+          return createUser(input);
+        }),
+    });
+    ```
+  </Tab>
+  
+  <Tab value="Nested Objects">
+    ```typescript title="zod-nested.ts"
+    import { z } from 'zod';
+    
+    const AddressSchema = z.object({
+      street: z.string().min(1),
+      city: z.string().min(1),
+      state: z.string().length(2),
+      zipCode: z.string().regex(/^\d{5}(-\d{4})?$/),
+      country: z.string().default('US'),
+    });
+    
+    const ContactSchema = z.object({
+      phone: z.string().regex(/^\+?[\d\s\-\(\)]+$/),
+      email: z.string().email(),
+      preferredMethod: z.enum(['phone', 'email']),
+    });
+    
+    const CreateBusinessSchema = z.object({
+      name: z.string().min(1).max(100),
+      description: z.string().optional(),
+      address: AddressSchema,
+      contact: ContactSchema,
+      employees: z.array(z.object({
+        name: z.string(),
+        role: z.string(),
+        email: z.string().email(),
+      })).min(1, 'At least one employee required'),
+      established: z.date().max(new Date(), 'Cannot be in the future'),
+    });
+    
+    export const appRouter = router({
+      createBusiness: publicProcedure
+        .input(CreateBusinessSchema)
+        .mutation(({ input }) => {
+          // Fully typed nested object
+          return createBusiness(input);
+        }),
+    });
+    ```
+  </Tab>
+</Tabs>
+
+### Other Libraries
+
+<Tabs items={['Yup', 'Valibot', 'ArkType', 'Effect']}>
+  <Tab value="Yup">
+    ```typescript title="yup-example.ts"
+    import * as yup from 'yup';
+
+    const userSchema = yup.object({
+      name: yup.string().required().min(2).max(50),
+      email: yup.string().email().required(),
+      age: yup.number().integer().min(13).max(120).required(),
+    });
+
+    export const appRouter = router({
+      createUser: publicProcedure
+        .input(userSchema)
+        .mutation(({ input }) => {
+          return createUser(input);
+        }),
+    });
+    ```
+
+  </Tab>
+
+  <Tab value="Valibot">
+    ```typescript title="valibot-example.ts"
+    import * as v from 'valibot';
+
+    const UserSchema = v.object({
+      name: v.pipe(v.string(), v.minLength(2), v.maxLength(50)),
+      email: v.pipe(v.string(), v.email()),
+      age: v.pipe(v.number(), v.integer(), v.minValue(13)),
+    });
+
+    export const appRouter = router({
+      createUser: publicProcedure
+        .input(UserSchema)
+        .mutation(({ input }) => {
+          return createUser(input);
+        }),
+    });
+    ```
+
+  </Tab>
+
+  <Tab value="ArkType">
+    ```typescript title="arktype-example.ts"
+    import { type } from 'arktype';
+
+    const UserType = type({
+      name: 'string>2',
+      email: 'string.email',
+      age: 'number.integer>=13',
+    });
+
+    export const appRouter = router({
+      createUser: publicProcedure
+        .input(UserType)
+        .mutation(({ input }) => {
+          return createUser(input);
+        }),
+    });
+    ```
+
+  </Tab>
+
+  <Tab value="Effect">
+    ```typescript title="effect-example.ts"
+    import { Schema } from 'effect';
+
+    const UserSchema = Schema.Struct({
+      name: Schema.String,
+      email: Schema.String,
+      age: Schema.Number,
+    });
+
+    export const appRouter = router({
+      createUser: publicProcedure
+        .input(Schema.standardSchemaV1(UserSchema))
+        .mutation(({ input }) => {
+          return createUser(input);
+        }),
+    });
+    ```
+
+  </Tab>
+</Tabs>
+
+## Advanced Validation Patterns
+
+### Conditional Validation
+
+```typescript title="conditional-validation.ts"
+import { z } from 'zod';
+
+const CreateAccountSchema = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('personal'),
+    name: z.string(),
+    email: z.string().email(),
+  }),
+  z.object({
+    type: z.literal('business'),
+    companyName: z.string(),
+    taxId: z.string(),
+    contactEmail: z.string().email(),
+  }),
+]);
+
+export const appRouter = router({
+  createAccount: publicProcedure
+    .input(CreateAccountSchema)
+    .mutation(({ input }) => {
+      if (input.type === 'personal') {
+        // input.name and input.email are available
+        return createPersonalAccount(input);
+      } else {
+        // input.companyName and input.taxId are available
+        return createBusinessAccount(input);
+      }
+    }),
+});
+```
+
+### Transform and Sanitize
+
+```typescript title="transform-sanitize.ts"
+import { z } from 'zod';
+
+const SanitizedUserSchema = z.object({
+  name: z.string()
+    .trim()
+    .transform(name => name.split(' ').map(word =>
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ')),
+
+  email: z.string()
+    .email()
+    .transform(email => email.toLowerCase()),
+
+  phone: z.string()
+    .transform(phone => phone.replace(/\D/g, ''))
+    .refine(phone => phone.length === 10, 'Must be 10 digits'),
+
+  tags: z.array(z.string())
+    .transform(tags => [...new Set(tags.map(tag => tag.toLowerCase()))])
+    .refine(tags => tags.length <= 10, 'Too many tags'),
+});
+
+export const appRouter = router({
+  createUser: publicProcedure
+    .input(SanitizedUserSchema)
+    .mutation(({ input }) => {
+      // input.name is properly capitalized
+      // input.email is lowercase
+      // input.phone contains only digits
+      // input.tags are unique and lowercase
+      return createUser(input);
+    }),
+});
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="Error Handling" href="/docs/server/error-handling">
+    Learn how to handle validation errors gracefully
+  </Card>
+  <Card title="Middleware" href="/docs/server/middlewares">
+    Add validation middleware for reusable patterns
+  </Card>
+  <Card title="Data Transformers" href="/docs/server/data-transformers">
+    Transform data between client and server
+  </Card>
+  <Card title="Authorization" href="/docs/server/authorization">
+    Combine validation with authorization checks
+  </Card>
+</Cards>

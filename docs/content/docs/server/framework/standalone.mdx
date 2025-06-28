@@ -1,0 +1,598 @@
+---
+title: Standalone Server
+description: Run tRPC as a standalone HTTP server without any framework
+icon: IconServer2
+---
+
+The standalone adapter lets you run tRPC as a plain HTTP server without any framework dependencies. Perfect for microservices, simple APIs, or when you want maximum control.
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash npm install @trpc/server zod npm install -D @types/node tsx
+    typescript ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash pnpm add @trpc/server zod pnpm add -D @types/node tsx typescript ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash yarn add @trpc/server zod yarn add -D @types/node tsx typescript ```
+  </Tab>
+  <Tab value="bun">
+    ```bash bun add @trpc/server zod bun add -D @types/node tsx typescript ```
+  </Tab>
+</Tabs>
+
+## Setup Guide
+
+### 1. Create tRPC Instance
+
+```typescript title="src/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import { ZodError } from 'zod';
+
+const t = initTRPC.create({
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.cause instanceof ZodError ? error.cause.flatten() : null,
+      },
+    };
+  },
+});
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+### 2. Create Your API Router
+
+```typescript title="src/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+// Mock database
+const users: Array<{
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+}> = [
+  { id: '1', name: 'John Doe', email: 'john@example.com', createdAt: new Date() },
+  { id: '2', name: 'Jane Smith', email: 'jane@example.com', createdAt: new Date() },
+];
+
+export const appRouter = router({
+  hello: publicProcedure
+    .input(z.object({ name: z.string().optional() }))
+    .query(({ input }) => {
+      return {
+        greeting: `Hello ${input.name ?? 'World'}!`,
+        timestamp: new Date(),
+      };
+    }),
+
+  getUsers: publicProcedure.query(() => {
+    return users;
+  }),
+
+  getUser: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(({ input }) => {
+      const user = users.find(u => u.id === input.id);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      return user;
+    }),
+
+  createUser: publicProcedure
+    .input(z.object({
+      name: z.string().min(2),
+      email: z.string().email(),
+    }))
+    .mutation(({ input }) => {
+      const user = {
+        id: Date.now().toString(),
+        ...input,
+        createdAt: new Date(),
+      };
+      users.push(user);
+      return user;
+    }),
+
+  updateUser: publicProcedure
+    .input(z.object({
+      id: z.string(),
+      name: z.string().optional(),
+      email: z.string().email().optional(),
+    }))
+    .mutation(({ input }) => {
+      const userIndex = users.findIndex(u => u.id === input.id);
+      if (userIndex === -1) {
+        throw new Error('User not found');
+      }
+
+      const { id, ...updates } = input;
+      Object.assign(users[userIndex], updates);
+
+      return users[userIndex];
+    }),
+
+  deleteUser: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(({ input }) => {
+      const userIndex = users.findIndex(u => u.id === input.id);
+      if (userIndex === -1) {
+        throw new Error('User not found');
+      }
+
+      const deletedUser = users.splice(userIndex, 1)[0];
+      return deletedUser;
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### 3. Create Standalone Server
+
+```typescript title="src/server.ts"
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
+
+// Create context
+function createContext(opts: any) {
+  return {
+    req: opts.req,
+    res: opts.res,
+    // Add user info, database connections, etc.
+  };
+}
+
+// Create HTTP server
+const server = createHTTPServer({
+  router: appRouter,
+  createContext,
+  onError({ path, error }) {
+    console.error(`❌ tRPC failed on ${path ?? '<no-path>'}:`, error);
+  },
+});
+
+const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+
+server.listen(port);
+
+console.log(`🚀 Server running at http://localhost:${port}`);
+console.log(`📡 tRPC endpoint at http://localhost:${port}`);
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\n🛑 Shutting down server...');
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
+});
+```
+
+### 4. Add Scripts to package.json
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  }
+}
+```
+
+### 5. Create TypeScript Config
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+## Test Your Setup
+
+Start your server:
+
+```bash
+npm run dev
+```
+
+Test your endpoints:
+
+<Tabs items={['Hello', 'Get Users', 'Create User', 'Update User', 'Delete User']}>
+<Tab value="Hello">
+```bash
+curl "http://localhost:3000/hello?input=%7B%22name%22%3A%22tRPC%22%7D"
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "greeting": "Hello tRPC!",
+      "timestamp": "2024-01-15T10:30:00.000Z"
+    }
+  }
+}
+```
+
+</Tab>
+<Tab value="Get Users">
+```bash
+curl "http://localhost:3000/getUsers"
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": [
+      {
+        "id": "1",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "createdAt": "2024-01-15T10:30:00.000Z"
+      },
+      {
+        "id": "2",
+        "name": "Jane Smith",
+        "email": "jane@example.com",
+        "createdAt": "2024-01-15T10:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+</Tab>
+<Tab value="Create User">
+```bash
+curl -X POST "http://localhost:3000/createUser" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Alice Johnson", "email": "alice@example.com"}'
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "id": "1234567890",
+      "name": "Alice Johnson",
+      "email": "alice@example.com",
+      "createdAt": "2024-01-15T10:30:00.000Z"
+    }
+  }
+}
+```
+
+</Tab>
+<Tab value="Update User">
+```bash
+curl -X POST "http://localhost:3000/updateUser" \
+  -H "Content-Type: application/json" \
+  -d '{"id": "1", "name": "John Updated"}'
+```
+</Tab>
+<Tab value="Delete User">
+```bash
+curl -X POST "http://localhost:3000/deleteUser" \
+  -H "Content-Type: application/json" \
+  -d '{"id": "1"}'
+```
+</Tab>
+</Tabs>
+
+## Add Custom HTTP Handling
+
+The standalone server gives you full control over HTTP handling:
+
+```typescript title="src/custom-server.ts"
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
+import { IncomingMessage, ServerResponse } from 'http';
+
+const server = createHTTPServer({
+  router: appRouter,
+  createContext,
+
+  // Custom request handling
+  onError({ path, error, req }) {
+    console.error(`❌ Error on ${req.method} ${req.url}:`, error);
+  },
+
+  // Custom response headers
+  responseMeta({ ctx, path, type, errors }) {
+    const headers: Record<string, string> = {
+      'X-Custom-Header': 'tRPC-Standalone',
+    };
+
+    // Add CORS headers
+    if (ctx?.req) {
+      headers['Access-Control-Allow-Origin'] = '*';
+      headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+      headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+    }
+
+    return { headers };
+  },
+});
+
+// Add health check endpoint manually
+const originalListener = server.requestListener;
+server.requestListener = (req: IncomingMessage, res: ServerResponse) => {
+  // Handle health check
+  if (req.url === '/health' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'ok',
+      timestamp: new Date().toISOString()
+    }));
+    return;
+  }
+
+  // Handle OPTIONS for CORS
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    });
+    res.end();
+    return;
+  }
+
+  // Default tRPC handling
+  originalListener(req, res);
+};
+
+const port = 3000;
+server.listen(port);
+console.log(`🚀 Custom server running at http://localhost:${port}`);
+```
+
+## Add Authentication
+
+```typescript title="src/auth.ts"
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { TRPCError } from '@trpc/server';
+
+// Simple API key authentication
+function createContext({ req }: { req: any }) {
+  const apiKey = req.headers['x-api-key'];
+
+  // Check if API key is valid (in real app, check against database)
+  const validApiKeys = ['demo-key-123', 'admin-key-456'];
+  const isAuthenticated = validApiKeys.includes(apiKey);
+
+  return {
+    req,
+    apiKey,
+    isAuthenticated,
+    isAdmin: apiKey === 'admin-key-456',
+  };
+}
+
+// Create protected procedure
+const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
+  if (!ctx.isAuthenticated) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'API key required',
+    });
+  }
+  return next();
+});
+
+// Create admin procedure
+const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!ctx.isAdmin) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Admin access required',
+    });
+  }
+  return next();
+});
+
+// Update router with auth
+export const authRouter = router({
+  // Public endpoints
+  hello: publicProcedure.query(() => ({ message: 'Hello World!' })),
+
+  // Protected endpoints
+  getUsers: protectedProcedure.query(() => users),
+
+  // Admin endpoints
+  deleteAllUsers: adminProcedure.mutation(() => {
+    const count = users.length;
+    users.splice(0);
+    return { deletedCount: count };
+  }),
+});
+```
+
+## Client Usage
+
+```typescript title="client.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './src/router';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+      headers() {
+        return {
+          'x-api-key': 'demo-key-123',
+        };
+      },
+    }),
+  ],
+});
+
+// Usage examples
+async function examples() {
+  // Query
+  const hello = await client.hello.query({ name: 'Standalone' });
+  console.log(hello.greeting);
+
+  // Get all users
+  const users = await client.getUsers.query();
+  console.log('Users:', users);
+
+  // Create a user
+  const newUser = await client.createUser.mutate({
+    name: 'Bob Wilson',
+    email: 'bob@example.com',
+  });
+  console.log('Created user:', newUser);
+
+  // Update a user
+  const updatedUser = await client.updateUser.mutate({
+    id: newUser.id,
+    name: 'Bob Wilson Updated',
+  });
+  console.log('Updated user:', updatedUser);
+}
+
+examples().catch(console.error);
+```
+
+## Docker Support
+
+Create a Dockerfile for easy deployment:
+
+```dockerfile title="Dockerfile"
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy source code
+COPY dist ./dist
+
+# Expose port
+EXPOSE 3000
+
+# Set environment
+ENV NODE_ENV=production
+
+# Start server
+CMD ["node", "dist/server.js"]
+```
+
+```yaml title="docker-compose.yml"
+version: '3.8'
+services:
+  trpc-server:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="Add Database" href="/docs/server/quickstart">
+    Integrate with your preferred database solution
+  </Card>
+  <Card title="Authentication" href="/docs/server/authorization">
+    Add JWT or session-based authentication
+  </Card>
+  <Card title="Validation" href="/docs/server/validators">
+    Learn advanced input and output validation
+  </Card>
+  <Card title="Error Handling" href="/docs/server/error-handling">
+    Handle errors gracefully with proper HTTP status codes
+  </Card>
+</Cards>
+
+## Common Issues
+
+<Accordions>
+<Accordion title="Port Already in Use">
+Change the port in your server.ts file or use an environment variable:
+
+```typescript
+const port = process.env.PORT ? Number(process.env.PORT) : 3001;
+```
+
+</Accordion>
+
+<Accordion title="CORS Issues">
+Add CORS headers manually or use the responseMeta option:
+
+```typescript
+const server = createHTTPServer({
+  router: appRouter,
+  createContext,
+  responseMeta() {
+    return {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
+    };
+  },
+});
+```
+
+</Accordion>
+
+<Accordion title="Request Body Parsing">
+The standalone adapter handles JSON parsing automatically. For custom parsing, implement your own server:
+
+```typescript
+import { createServer } from 'http';
+import { createFetchHandler } from '@trpc/server/adapters/fetch';
+
+const server = createServer(async (req, res) => {
+  const handler = createFetchHandler({
+    endpoint: '/',
+    req: new Request(`http://localhost${req.url}`, {
+      method: req.method,
+      headers: req.headers as any,
+      body: req.readable ? req : undefined,
+    }),
+    router: appRouter,
+    createContext,
+  });
+});
+```
+
+</Accordion>
+</Accordions>

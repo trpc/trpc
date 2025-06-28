@@ -1,0 +1,138 @@
+---
+title: Remark Image
+description: Make images compatible with Next.js Image Optimization
+---
+
+## Usage
+
+Add it to your Remark plugins.
+
+```ts title="MDX Compiler"
+import { compile } from '@mdx-js/mdx';
+import { remarkImage } from 'fumadocs-core/mdx-plugins';
+
+await compile('...', {
+  remarkPlugins: [remarkImage],
+});
+```
+
+> This plugin is included by default on Fumadocs MDX.
+
+Supported:
+
+- Local Images
+- External URLs
+- Next.js static imports
+
+### How It Works
+
+It transforms your `![image](/test.png)` into Next.js Image usage, and add required props like `width` and `height`.
+
+By default, it uses **static imports** to import local images, which supports the `placeholder` option of Next.js Image.
+Next.js can handle image imports with its built-in image loader.
+
+Otherwise, it uses the file system or an HTTP request to download the image and obtain its size.
+
+### Options
+
+<AutoTypeTable
+  path="./content/docs/headless/props.ts"
+  name="RemarkImageOptions"
+/>
+
+### Example: With Imports
+
+```mdx
+![Hello](/hello.png)
+![Test](https://example.com/image.png)
+```
+
+Yields:
+
+```mdx
+import HelloImage from './public/hello.png';
+
+<img alt="Hello" src={HelloImage} />
+<img
+  alt="Test"
+  src="https://example.com/image.png"
+  width="1980"
+  height="1080"
+/>
+```
+
+Where `./public/hello.png` points to the image in public directory.
+
+### Example: Without Imports
+
+You can disable Next.js static imports on local images.
+
+```ts
+import { remarkImage } from 'fumadocs-core/mdx-plugins';
+
+export default {
+  remarkPlugins: [[remarkImage, { useImport: false }]],
+};
+```
+
+```mdx
+![Hello](/hello.png)
+![Test](https://example.com/image.png)
+```
+
+Yields:
+
+```mdx
+<img alt="Hello" src="/hello.png" width="1980" height="1080" />
+<img
+  alt="Test"
+  src="https://example.com/image.png"
+  width="1980"
+  height="1080"
+/>
+```
+
+### Example: Relative Paths
+
+When `useImport` is enabled, you can reference local images using relative paths.
+
+```mdx
+![Hello](./hello.png)
+```
+
+Be careful that using it with `useImport` disabled **doesn't work**.
+Next.js will not add the image to public assets unless you have imported it in code.
+For images in public directory, you can just reference them without relative paths.
+
+### Example: Public Directory
+
+Customise the path of public directory
+
+```ts
+import { remarkImage } from 'fumadocs-core/mdx-plugins';
+import path from 'node:path';
+
+export default {
+  remarkPlugins: [
+    remarkImage,
+    {
+      publicDir: path.join(process.cwd(), 'dir'),
+    },
+  ],
+};
+```
+
+You can pass a URL too.
+
+```ts
+import { remarkImage } from 'fumadocs-core/mdx-plugins';
+
+export default {
+  remarkPlugins: [
+    remarkImage,
+    {
+      publicDir: 'http://localhost:3000/images',
+    },
+  ],
+};
+```

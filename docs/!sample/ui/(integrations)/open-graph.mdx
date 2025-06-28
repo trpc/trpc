@@ -1,0 +1,69 @@
+---
+title: Metadata
+description: Usage with Next.js Metadata API
+---
+
+## Introduction
+
+Next.js provides an useful set of utilities, allowing a flexible experience with Fumadocs.
+Fumadocs uses the Next.js Metadata API for SEO.
+
+Make sure to read their [Metadata section](https://nextjs.org/docs/app/building-your-application/optimizing/metadata) for the fundamentals of Metadata API.
+
+## Open Graph Image
+
+For docs pages, Fumadocs has a built-in metadata image generator.
+
+You will need a route handler to get started.
+
+> We need to append `image.png` to the end of slugs so that we can access it via `/docs-og/my-page/image.png`.
+
+In your docs page, add the image to metadata.
+
+```tsx title="app/docs/[[...slug]]/page.tsx"
+import { notFound } from 'next/navigation';
+import { source } from '@/lib/source';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug?: string[] }>;
+}) {
+  const { slug = [] } = await params;
+  const page = source.getPage(slug);
+  if (!page) notFound();
+
+  const image = ['/docs-og', ...slug, 'image.png'].join('/');
+  return {
+    title: page.data.title,
+    description: page.data.description,
+    openGraph: {
+      images: image,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      images: image,
+    },
+  };
+}
+```
+
+### Font
+
+You can also customise the font, options for Satori are also available on the built-in generator.
+
+```ts
+import { generateOGImage } from 'fumadocs-ui/og';
+
+generateOGImage({
+  fonts: [
+    {
+      name: 'Roboto',
+      // Use `fs` (Node.js only) or `fetch` to read the font as Buffer/ArrayBuffer and provide `data` here.
+      data: robotoArrayBuffer,
+      weight: 400,
+      style: 'normal',
+    },
+  ],
+});
+```

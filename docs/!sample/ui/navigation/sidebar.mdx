@@ -1,0 +1,150 @@
+---
+title: Sidebar Links
+description: Customise sidebar navigation links on Docs Layout.
+---
+
+## Overview
+
+<div className='flex justify-center items-center *:max-w-[200px] bg-gradient-to-br from-fd-primary/10 rounded-xl border'>
+
+    ![Sidebar](/docs/sidebar.png)
+
+</div>
+
+Sidebar items are rendered from the page tree you passed to `<DocsLayout />`.
+
+For `source.pageTree`, it generates the tree from your file structure, you can see [Routing](/docs/ui/page-conventions) for available patterns.
+
+```tsx title="layout.tsx"
+import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+import { source } from '@/lib/source';
+import type { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <DocsLayout
+      tree={source.pageTree}
+      // other props
+    >
+      {children}
+    </DocsLayout>
+  );
+}
+```
+
+You may hardcode it too:
+
+```tsx title="layout.tsx"
+import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+import type { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <DocsLayout
+      tree={{
+        name: 'docs',
+        children: [],
+      }}
+      // other props
+    >
+      {children}
+    </DocsLayout>
+  );
+}
+```
+
+### Sidebar Tabs (Dropdown)
+
+Sidebar Tabs are folders with tab-like behaviours, only the content of opened tab will be visible.
+
+<div className='flex justify-center items-center *:max-w-[360px] bg-gradient-to-br from-fd-primary/10 rounded-xl border'>
+
+    ![Sidebar Tabs](/docs/sidebar-tabs.png)
+
+</div>
+
+By default, the tab trigger will be displayed as a **Dropdown** component (hidden unless one of its items is active).
+
+You can add items by marking folders as [Root Folders](/docs/ui/page-conventions#root-folder), create a `meta.json` file in the folder:
+
+```json title="content/docs/my-folder/meta.json"
+{
+  "title": "Name of Folder",
+  "description": "The description of root folder (optional)",
+  "root": true
+}
+```
+
+Or specify them explicitly:
+
+```tsx title="/app/docs/layout.tsx"
+import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+
+<DocsLayout
+  sidebar={{
+    tabs: [
+      {
+        title: 'Components',
+        description: 'Hello World!',
+        // active for `/docs/components` and sub routes like `/docs/components/button`
+        url: '/docs/components',
+
+        // optionally, you can specify a set of urls which activates the item
+        // urls: new Set(['/docs/test', '/docs/components']),
+      },
+    ],
+  }}
+/>;
+```
+
+Set it to `false` to disable:
+
+```tsx
+import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+
+<DocsLayout sidebar={{ tabs: false }} />;
+```
+
+<Callout title="Want further customisations?">
+
+You can specify a `banner` to the [Docs Layout](/docs/ui/layouts/docs) component.
+
+```tsx
+import { DocsLayout, type DocsLayoutProps } from 'fumadocs-ui/layouts/docs';
+import type { ReactNode } from 'react';
+import { baseOptions } from '@/app/layout.config';
+import { source } from '@/lib/source';
+
+const docsOptions: DocsLayoutProps = {
+  ...baseOptions,
+  tree: source.pageTree,
+  sidebar: {
+    banner: <div>Hello World</div>,
+  },
+};
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return <DocsLayout {...docsOptions}>{children}</DocsLayout>;
+}
+```
+
+</Callout>
+
+#### Decoration
+
+Change the icon/styles of tabs.
+
+```tsx
+import { DocsLayout } from 'fumadocs-ui/layouts/docs';
+
+<DocsLayout
+  sidebar={{
+    tabs: {
+      transform: (option, node) => ({
+        ...option,
+        icon: <MyIcon />,
+      }),
+    },
+  }}
+/>;
+```

@@ -1,0 +1,33 @@
+{
+  "title": "tRPC Server",
+  "description": "Build end-to-end typesafe APIs with tRPC server",
+  "icon": "Server",
+  "root": true,
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "framework",
+    "quickstart",
+    "---Core Concepts---",
+    "procedures",
+    "routers",
+    "context",
+    "---Input & Output---",
+    "validators",
+    "data-transformers",
+    "---Logic & Security---",
+    "middlewares",
+    "authorization",
+    "---Error Handling---",
+    "error-handling",
+    "error-formatting",
+    "---Advanced---",
+    "file-uploads",
+    "server-side-calls",
+    "subscriptions",
+    "websockets",
+    "caching",
+    "testing",
+    "metadata"
+  ]
+}

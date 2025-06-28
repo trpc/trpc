@@ -1,0 +1,257 @@
+---
+title: Built-in Search
+description: Built-in document search of Fumadocs
+---
+
+Fumadocs supports document search with Orama, It is the default but also the recommended option since it can be self-hosted and totally free.
+
+## Search Server
+
+You can create the search route handler from the source object, or search indexes.
+
+<Accordions>
+
+    <Accordion title='From Source'>
+
+Create a route handler from source object.
+
+<include cwd meta='title="app/api/search/route.ts"'>
+  ../../examples/next-mdx/app/api/search/route.ts
+</include>
+
+    </Accordion>
+    <Accordion title="From Search Indexes">
+
+Pass search indexes to the function.
+
+<Tabs items={['Structured Data', 'Raw Content']}>
+
+    <Tab>
+
+        Each index needs a `structuredData` field.
+        Usually, it is provided by your content source (e.g. Fumadocs MDX). You can also extract it from Markdown/MDX document using the [Remark Structure](/docs/headless/mdx/structure) plugin.
+
+        <include cwd meta='title="app/api/search/route.ts"'>
+            ../../examples/next-mdx/app/api/search/route-full.ts
+        </include>
+
+    </Tab>
+
+    <Tab>
+
+Index with the raw content of document (unrecommended).
+
+```ts title="app/api/search/route.ts"
+import { allDocs } from 'content-collections';
+import { createSearchAPI } from 'fumadocs-core/search/server';
+
+export const { GET } = createSearchAPI('simple', {
+  indexes: allDocs.map((docs) => ({
+    title: docs.title,
+    content: docs.content, // Raw Content
+    url: docs.url,
+  })),
+});
+```
+
+    </Tab>
+
+</Tabs>
+
+    </Accordion>
+
+</Accordions>
+
+## Search Client
+
+You can search documents using:
+
+- **Fumadocs UI**: Supported out-of-the-box, see [Search UI](/docs/ui/search/orama) for details.
+- **Search Client**:
+
+```ts twoslash
+import { useDocsSearch } from 'fumadocs-core/search/client';
+
+const client = useDocsSearch({
+  type: 'fetch',
+});
+```
+
+<auto-type-table type='Extract<import("fumadocs-core/search/client").Client, { type: "fetch" }>' />
+
+## Configurations
+
+### Tag Filter
+
+Support filtering results by tag, it's useful for implementing multi-docs similar to this documentation.
+
+<include meta='title="app/api/search/route.ts"' cwd>
+  ../../examples/next-mdx/app/api/search/route-tag.ts
+</include>
+
+and update your search client:
+
+- **Fumadocs UI**: Configure [Tag Filter](/docs/ui/search/orama#tag-filter) on Search UI.
+- **Search Client**: pass a tag to the hook.
+
+```ts
+import { useDocsSearch } from 'fumadocs-core/search/client';
+
+// Pass `tag` in your custom search dialog
+const client = useDocsSearch({
+  type: 'fetch',
+  tag: '<value>',
+});
+```
+
+### Internationalization
+
+```ts title="lib/source.ts" tab="createFromSource"
+import { i18n } from '@/lib/i18n';
+import { loader } from 'fumadocs-core/source';
+
+// You only need i18n option on source object.
+export const source = loader({
+  i18n, // [!code highlight]
+});
+```
+
+<include cwd meta='title="app/api/search/route.ts" tab="createI18nSearchAPI"'>
+  ../../examples/i18n/app/api/search/route-full.ts
+</include>
+
+and update your search clients:
+
+- **Fumadocs UI**: No changes needed, Fumadocs UI handles this when you have i18n configured correctly.
+- **Search Client**:
+  Add `locale` to the search client, this will only allow pages with specified locale to be searchable by the user.
+
+```ts
+import { useDocsSearch } from 'fumadocs-core/search/client';
+
+const { search, setSearch, query } = useDocsSearch({
+  type: 'fetch',
+  locale: 'cn',
+});
+```
+
+### Special Languages
+
+If your language is not on the Orama [Supported Languages](https://docs.orama.com/open-source/supported-languages#officially-supported-languages) list, you have to configure them manually:
+
+<Accordions>
+
+    <Accordion title='Fetch mode'>
+
+        <include cwd meta='title="app/api/search/route.ts" tab="With I18n"'>
+            ../../examples/i18n/app/api/search/route.ts
+        </include>
+
+```ts title="app/api/search/route.ts" tab="Without I18n"
+import { source } from '@/lib/source';
+import { createFromSource } from 'fumadocs-core/search/server';
+import { createTokenizer } from '@orama/tokenizers/mandarin';
+
+// example for Mandarin
+export const { GET } = createFromSource(source, {
+  components: {
+    tokenizer: createTokenizer(),
+  },
+  search: {
+    threshold: 0,
+    tolerance: 0,
+  },
+});
+```
+
+    </Accordion>
+    <Accordion title='Static mode'>
+
+You can customise it in the client-side `initOrama()` function.
+
+```tsx
+import { useDocsSearch } from 'fumadocs-core/search/client';
+import { createTokenizer } from '@orama/tokenizers/mandarin';
+
+function initOrama(locale?: string) {
+  return create({
+    schema: { _: 'string' },
+    components: {
+      // for users with i18n enabled, you can pass it conditionally based on `locale`
+      tokenizer: locale === 'cn' ? createTokenizer() : undefined,
+      // or if all documents are written in Chinese
+      tokenizer: createTokenizer(),
+    },
+  });
+}
+
+function Search() {
+  const client = useDocsSearch({
+    type: 'static',
+    initOrama,
+  });
+  // ...
+}
+```
+
+    </Accordion>
+
+</Accordions>
+
+### Static Export
+
+To work with Next.js static export, use `staticGET` from search server.
+
+```ts title="app/api/search/route.ts"
+import { source } from '@/lib/source';
+import { createFromSource } from 'fumadocs-core/search/server';
+
+// it should be cached forever
+export const revalidate = false;
+
+// [!code highlight]
+export const { staticGET: GET } = createFromSource(source);
+```
+
+> `staticGET` is also available on `createSearchAPI`.
+
+and update your search clients:
+
+- **Fumadocs UI**: use [static client](/docs/ui/search/orama#static) on Search UI.
+
+- **Search Client**: use `static` instead of `fetch`.
+
+  ```ts
+  import { useDocsSearch } from 'fumadocs-core/search/client';
+
+  const client = useDocsSearch({
+    type: 'static',
+  });
+  ```
+
+  <AutoTypeTable type='Extract<import("fumadocs-core/search/client").Client, { type: "static" }>' />
+
+<Callout type='warn' title="Be Careful">
+
+    Static Search requires clients to download the exported search indexes.
+    For large docs sites, it can be expensive.
+
+    You should use cloud solutions like Orama Cloud or Algolia for these cases.
+
+</Callout>
+
+## Headless
+
+You can host the search server on other backend such as Express and Elysia.
+
+```ts
+import { initAdvancedSearch } from 'fumadocs-core/search/server';
+
+const server = initAdvancedSearch({
+  // you still have to pass indexes
+});
+
+server.search('query', {
+  // you can specify `locale` and `tag` here
+});
+```

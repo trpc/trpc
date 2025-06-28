@@ -1,0 +1,33 @@
+---
+title: Link
+description: A Link component that handles external links
+---
+
+A component that wraps `next/link` and automatically handles external links in the document.
+When an external URL is detected, it uses `<a>` instead of the Next.js Link
+Component. The `rel` property is automatically generated.
+
+## Usage
+
+Usage is the same as using `<a>`.
+
+```mdx
+import Link from 'fumadocs-core/link';
+
+<Link href="/docs/components">Click Me</Link>
+```
+
+### External
+
+You can force a URL to be external by passing an `external` prop.
+
+### Dynamic hrefs
+
+Dynamic hrefs are no longer supported in Next.js App Router. You can enable
+dynamic hrefs by importing `dynamic-link` instead.
+
+```mdx
+import { DynamicLink } from 'fumadocs-core/dynamic-link';
+
+<DynamicLink href="/[lang]/components">Click Me</DynamicLink>
+```

@@ -1,0 +1,718 @@
+---
+title: WebSockets
+description: Set up real-time communication with WebSocket support in tRPC
+icon: IconBolt
+---
+
+You can use WebSockets for all or some of the communication with your server, enabling real-time bidirectional communication between client and server.
+
+<Callout type="info">
+  This document outlines the specific details of using WebSockets. For general
+  usage of subscriptions, see our [subscriptions guide](../subscriptions).
+</Callout>
+
+## Getting Started
+
+### Installation
+
+First, install the WebSocket dependency:
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+
+```bash tab="npm"
+npm install ws
+npm install -D @types/ws
+```
+
+```bash tab="pnpm"
+pnpm add ws
+pnpm add -D @types/ws
+```
+
+```bash tab="yarn"
+yarn add ws
+yarn add -D @types/ws
+```
+
+```bash tab="bun"
+bun add ws
+bun add -D @types/ws
+```
+
+</Tabs>
+
+### Creating a WebSocket Server
+
+Create a WebSocket server that works alongside your HTTP server:
+
+```ts title="server/wsServer.ts"
+import { applyWSSHandler } from '@trpc/server/adapters/ws';
+import ws from 'ws';
+import { appRouter } from './routers/app';
+import { createContext } from './trpc';
+
+const wss = new ws.Server({
+  port: 3001,
+});
+
+const handler = applyWSSHandler({
+  wss,
+  router: appRouter,
+  createContext,
+  // Enable heartbeat messages to keep connection open (disabled by default)
+  keepAlive: {
+    enabled: true,
+    // server ping message interval in milliseconds
+    pingMs: 30000,
+    // connection is terminated if pong message is not received in this many milliseconds
+    pongWaitMs: 5000,
+  },
+});
+
+wss.on('connection', (ws) => {
+  console.log(`➕➕ Connection (${wss.clients.size})`);
+  ws.once('close', () => {
+    console.log(`➖➖ Connection (${wss.clients.size})`);
+  });
+});
+
+console.log('✅ WebSocket Server listening on ws://localhost:3001');
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM');
+  handler.broadcastReconnectNotification();
+  wss.close();
+});
+```
+
+## Client Setup
+
+### Using WebSocket Link
+
+Configure your tRPC client to use WebSockets:
+
+```ts title="lib/trpc.ts"
+import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import type { AppRouter } from '../server/routers/_app';
+
+// Create persistent WebSocket connection
+const wsClient = createWSClient({
+  url: `ws://localhost:3001`,
+});
+
+// Configure TRPCClient to use WebSockets transport
+const client = createTRPCClient<AppRouter>({
+  links: [
+    wsLink({
+      client: wsClient,
+    }),
+  ],
+});
+```
+
+### Hybrid HTTP + WebSocket Setup
+
+You can use [Links](../../client/links/overview) to route queries and mutations to HTTP transport and subscriptions over WebSockets:
+
+```ts title="lib/trpc.ts"
+import {
+  createTRPCClient,
+  createWSClient,
+  httpBatchLink,
+  wsLink,
+  splitLink
+} from '@trpc/client';
+import type { AppRouter } from '../server/routers/_app';
+
+const wsClient = createWSClient({
+  url: `ws://localhost:3001`,
+});
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition(op) {
+        return op.type === 'subscription';
+      },
+      true: wsLink({
+        client: wsClient,
+      }),
+      false: httpBatchLink({
+        url: 'http://localhost:3000/api/trpc',
+      }),
+    }),
+  ],
+});
+```
+
+## Authentication
+
+### Connection Parameters
+
+For authentication, you can define `connectionParams` that will be sent when establishing the WebSocket connection:
+
+<Tabs items={['Server Context', 'Client Setup']}>
+
+```ts tab="Server Context" title="server/context.ts"
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+
+export const createContext = async (opts: CreateWSSContextFnOptions) => {
+  const token = opts.info.connectionParams?.token;
+
+  // Authenticate the user
+  const user = token ? await getUserFromToken(token) : null;
+
+  return {
+    user,
+  };
+};
+
+export type Context = Awaited<ReturnType<typeof createContext>>;
+```
+
+```ts tab="Client Setup" title="lib/trpc.ts"
+import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import type { AppRouter } from '../server/routers/_app';
+
+const wsClient = createWSClient({
+  url: `ws://localhost:3001`,
+  connectionParams: async () => {
+    return {
+      token: localStorage.getItem('authToken'),
+    };
+  },
+});
+
+export const trpc = createTRPCClient<AppRouter>({
+  links: [wsLink({ client: wsClient })],
+});
+```
+
+</Tabs>
+
+<Callout type="info">
+  If you're building a web application, cookies are automatically sent as part
+  of the WebSocket handshake, so you might not need connection parameters.
+</Callout>
+
+## Subscriptions with WebSockets
+
+### Basic Subscription
+
+Create a subscription that sends real-time updates:
+
+```ts title="server/routers/posts.ts"
+import { observable } from '@trpc/server/observable';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
+import { EventEmitter } from 'events';
+
+const ee = new EventEmitter();
+
+export const postsRouter = router({
+  onPostAdd: publicProcedure.subscription(() => {
+    return observable<Post>((emit) => {
+      const onAdd = (data: Post) => {
+        emit.next(data);
+      };
+
+      ee.on('add', onAdd);
+
+      return () => {
+        ee.off('add', onAdd);
+      };
+    });
+  }),
+
+  add: publicProcedure
+    .input(z.object({ title: z.string() }))
+    .mutation(async ({ input }) => {
+      const post = await createPost(input);
+      ee.emit('add', post);
+      return post;
+    }),
+});
+```
+
+### Tracked Subscriptions
+
+Use the `tracked()` helper for automatic reconnection with last known ID:
+
+```ts title="server/routers/posts.ts"
+import { tracked } from '@trpc/server';
+import { z } from 'zod';
+import { publicProcedure, router } from '../trpc';
+
+export const postsRouter = router({
+  onPostAdd: publicProcedure
+    .input(z.object({
+      lastEventId: z.string().nullish(),
+    }).optional())
+    .subscription(async function* (opts) {
+      if (opts.input?.lastEventId) {
+        // Get posts since last event ID
+        const posts = await getPostsSince(opts.input.lastEventId);
+        for (const post of posts) {
+          yield tracked(post.id, post);
+        }
+      }
+
+      // Listen for new events
+      for await (const [data] of on(ee, 'add', {
+        signal: opts.signal,
+      })) {
+        const post = data as Post;
+        yield tracked(post.id, post);
+      }
+    }),
+});
+```
+
+## WebSocket RPC Specification
+
+tRPC WebSockets follow a specific RPC specification for message format:
+
+### Query/Mutation Request
+
+```ts
+{
+  id: number | string;
+  jsonrpc?: '2.0'; // optional
+  method: 'query' | 'mutation';
+  params: {
+    path: string;
+    input?: unknown; // procedure input, serialized by transformer
+  };
+}
+```
+
+### Query/Mutation Response
+
+```ts
+{
+  id: number | string;
+  jsonrpc?: '2.0'; // only defined if included in request
+  result: {
+    type: 'data'; // always 'data' for mutation / queries
+    data: TOutput; // output from procedure
+  }
+}
+```
+
+### Subscription Messages
+
+#### Start Subscription
+
+```ts
+{
+  id: number | string;
+  jsonrpc?: '2.0';
+  method: 'subscription';
+  params: {
+    path: string;
+    input?: unknown;
+  };
+}
+```
+
+#### Stop Subscription
+
+```ts
+{
+  id: number | string; // id of your created subscription
+  jsonrpc?: '2.0';
+  method: 'subscription.stop';
+}
+```
+
+#### Subscription Response
+
+```ts
+{
+  id: number | string;
+  jsonrpc?: '2.0';
+  result: (
+    | {
+        type: 'data';
+        data: TData; // subscription emitted data
+      }
+    | {
+        type: 'started'; // subscription started
+      }
+    | {
+        type: 'stopped'; // subscription stopped
+      }
+  )
+}
+```
+
+## Error Handling
+
+WebSocket errors follow the [JSON-RPC 2.0 error specification](https://www.jsonrpc.org/specification#error_object):
+
+```ts
+{
+  id: number | string;
+  jsonrpc?: '2.0';
+  error: {
+    code: number;
+    message: string;
+    data?: {
+      code: string;
+      httpStatus: number;
+      path: string;
+      stack?: string; // only in development
+    };
+  };
+}
+```
+
+## Advanced Features
+
+### Connection Lifecycle
+
+Handle connection events for better user experience:
+
+```ts title="lib/trpc.ts"
+const wsClient = createWSClient({
+  url: 'ws://localhost:3001',
+  onOpen() {
+    console.log('WebSocket connected');
+  },
+  onClose() {
+    console.log('WebSocket disconnected');
+  },
+  onError(err) {
+    console.error('WebSocket error:', err);
+  },
+});
+```
+
+### Graceful Shutdown
+
+Properly handle server shutdown with reconnection notifications:
+
+```ts title="server/wsServer.ts"
+// Broadcast reconnect notification before shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, broadcasting reconnect notification');
+  handler.broadcastReconnectNotification();
+
+  setTimeout(() => {
+    wss.close();
+    process.exit(0);
+  }, 1000);
+});
+```
+
+### Heartbeat Configuration
+
+Keep connections alive with heartbeat messages:
+
+```ts title="server/wsServer.ts"
+const handler = applyWSSHandler({
+  wss,
+  router: appRouter,
+  createContext,
+  keepAlive: {
+    enabled: true,
+    pingMs: 30000,    // Send ping every 30 seconds
+    pongWaitMs: 5000, // Wait 5 seconds for pong response
+  },
+});
+```
+
+## Best Practices
+
+<Steps>
+
+### Use Subscriptions Sparingly
+
+Only use subscriptions for data that needs real-time updates. For most data, regular queries with polling or refetching work better.
+
+### Handle Connection States
+
+Always handle WebSocket connection states in your UI:
+
+```tsx
+function useConnectionState() {
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    const ws = wsClient.getConnection();
+
+    ws.addEventListener('open', () => setIsConnected(true));
+    ws.addEventListener('close', () => setIsConnected(false));
+
+    return () => {
+      // Cleanup listeners
+    };
+  }, []);
+
+  return isConnected;
+}
+```
+
+### Implement Reconnection Logic
+
+The WebSocket client automatically reconnects, but you should handle this in your UI:
+
+```tsx
+function MyComponent() {
+  const isConnected = useConnectionState();
+
+  if (!isConnected) {
+    return <div className="banner">Reconnecting...</div>;
+  }
+
+  return <div>{/* Your content */}</div>;
+}
+```
+
+### Clean Up Subscriptions
+
+Always unsubscribe when components unmount:
+
+```tsx
+useEffect(() => {
+  const subscription = trpc.posts.onAdd.subscribe(undefined, {
+    onData: (post) => {
+      // Handle new post
+    },
+  });
+
+  return () => {
+    subscription.unsubscribe();
+  };
+}, []);
+```
+
+</Steps>
+
+## Notifications from Server
+
+### Reconnect Notification
+
+The server can send reconnect notifications to all clients:
+
+```ts
+{
+  id: null,
+  type: 'reconnect'
+}
+```
+
+This tells clients to reconnect before the server shuts down. You can trigger this with:
+
+```ts
+handler.broadcastReconnectNotification();
+```
+
+### Advanced WebSocket Features
+
+**1. Implement Heartbeat System**
+
+```typescript title="src/lib/websocket-heartbeat.ts"
+interface HeartbeatConfig {
+  interval: number;
+  timeout: number;
+  maxMissed: number;
+}
+
+export class WebSocketHeartbeat {
+  private intervals = new Map<string, NodeJS.Timeout>();
+  private missedPings = new Map<string, number>();
+
+  constructor(private config: HeartbeatConfig = {
+    interval: 30000,  // 30 seconds
+    timeout: 5000,    // 5 seconds
+    maxMissed: 3,     // 3 missed pings
+  }) {}
+
+  start(connectionId: string, ws: WebSocket) {
+    const interval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.ping();
+
+        // Set timeout for pong response
+        const timeout = setTimeout(() => {
+          const missed = (this.missedPings.get(connectionId) || 0) + 1;
+          this.missedPings.set(connectionId, missed);
+
+          if (missed >= this.config.maxMissed) {
+            console.log(`Connection ${connectionId} missed ${missed} pings, closing`);
+            ws.close(1000, 'Heartbeat timeout');
+            this.stop(connectionId);
+          }
+        }, this.config.timeout);
+
+        ws.once('pong', () => {
+          clearTimeout(timeout);
+          this.missedPings.set(connectionId, 0);
+        });
+      }
+    }, this.config.interval);
+
+    this.intervals.set(connectionId, interval);
+  }
+
+  stop(connectionId: string) {
+    const interval = this.intervals.get(connectionId);
+    if (interval) {
+      clearInterval(interval);
+      this.intervals.delete(connectionId);
+    }
+    this.missedPings.delete(connectionId);
+  }
+}
+```
+
+**2. Create Connection Manager**
+
+```typescript title="src/lib/websocket-manager.ts"
+interface Connection {
+  id: string;
+  ws: WebSocket;
+  userId?: string;
+  subscriptions: Set<string>;
+  lastActivity: Date;
+}
+
+export class WebSocketManager {
+  private connections = new Map<string, Connection>();
+  private heartbeat = new WebSocketHeartbeat();
+
+  addConnection(ws: WebSocket, userId?: string): string {
+    const connectionId = crypto.randomUUID();
+
+    const connection: Connection = {
+      id: connectionId,
+      ws,
+      userId,
+      subscriptions: new Set(),
+      lastActivity: new Date(),
+    };
+
+    this.connections.set(connectionId, connection);
+    this.heartbeat.start(connectionId, ws);
+
+    // Handle connection close
+    ws.on('close', () => {
+      this.removeConnection(connectionId);
+    });
+
+    return connectionId;
+  }
+
+  removeConnection(connectionId: string) {
+    const connection = this.connections.get(connectionId);
+    if (connection) {
+      // Clean up subscriptions
+      connection.subscriptions.forEach(subId => {
+        this.unsubscribe(connectionId, subId);
+      });
+
+      this.heartbeat.stop(connectionId);
+      this.connections.delete(connectionId);
+
+      console.log(`Connection ${connectionId} removed`);
+    }
+  }
+
+  subscribe(connectionId: string, subscriptionId: string) {
+    const connection = this.connections.get(connectionId);
+    if (connection) {
+      connection.subscriptions.add(subscriptionId);
+      connection.lastActivity = new Date();
+    }
+  }
+
+  unsubscribe(connectionId: string, subscriptionId: string) {
+    const connection = this.connections.get(connectionId);
+    if (connection) {
+      connection.subscriptions.delete(subscriptionId);
+      // Clean up subscription logic here
+    }
+  }
+
+  broadcast(message: any, filter?: (connection: Connection) => boolean) {
+    this.connections.forEach((connection) => {
+      if (!filter || filter(connection)) {
+        if (connection.ws.readyState === WebSocket.OPEN) {
+          connection.ws.send(JSON.stringify(message));
+          connection.lastActivity = new Date();
+        }
+      }
+    });
+  }
+
+  getConnectionStats() {
+    return {
+      total: this.connections.size,
+      authenticated: Array.from(this.connections.values())
+        .filter(c => c.userId).length,
+      byUser: Array.from(this.connections.values())
+        .reduce((acc, c) => {
+          if (c.userId) {
+            acc[c.userId] = (acc[c.userId] || 0) + 1;
+          }
+          return acc;
+        }, {} as Record<string, number>),
+    };
+  }
+}
+```
+
+**3. Implement Graceful Shutdown**
+
+```typescript title="src/lib/graceful-shutdown.ts"
+import { WebSocketManager } from './websocket-manager';
+
+export class GracefulShutdown {
+  private isShuttingDown = false;
+
+  constructor(private wsManager: WebSocketManager) {
+    // Handle process signals
+    process.on('SIGTERM', () => this.shutdown('SIGTERM'));
+    process.on('SIGINT', () => this.shutdown('SIGINT'));
+  }
+
+  private async shutdown(signal: string) {
+    if (this.isShuttingDown) return;
+
+    console.log(`Received ${signal}, starting graceful shutdown...`);
+    this.isShuttingDown = true;
+
+    // Stop accepting new connections
+    // (This would be handled at the server level)
+
+    // Notify all connected clients
+    this.wsManager.broadcast({
+      type: 'server_shutdown',
+      message: 'Server is shutting down, please reconnect shortly',
+      reconnectAfter: 5000, // 5 seconds
+    });
+
+    // Wait for clients to receive the message
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Close all connections gracefully
+    const connections = Array.from(this.wsManager['connections'].values());
+
+    await Promise.all(
+      connections.map(async (connection) => {
+        if (connection.ws.readyState === WebSocket.OPEN) {
+          connection.ws.close(1001, 'Server restart');
+        }
+      })
+    );
+
+    console.log('All WebSocket connections closed gracefully');
+    process.exit(0);
+  }
+}
+
+// Usage in your server setup
+const wsManager = new WebSocketManager();
+const gracefulShutdown = new GracefulShutdown(wsManager);
+```

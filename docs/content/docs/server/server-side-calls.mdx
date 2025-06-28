@@ -1,0 +1,545 @@
+---
+title: Server-Side Calls
+description: Call your tRPC procedures directly on the server without HTTP
+icon: IconServer2
+---
+
+You may need to call your tRPC procedures directly from server code for testing, server-side rendering, or internal operations. tRPC provides `createCallerFactory()` to enable this pattern safely and efficiently.
+
+<Callout type="warn">
+  **Important:** `createCaller` should not be used to call procedures from
+  within other procedures. This creates unnecessary overhead by recreating
+  context and re-executing middleware. Instead, extract shared logic into
+  separate functions.
+</Callout>
+
+<div className="flex w-full justify-between gap-2 pt-2">
+  <div className="w-[49.5%]">
+    <h3 className="mb-2 text-sm font-medium text-red-600">❌ Don't do this</h3>
+    <img
+      src="https://assets.trpc.io/www/docs/server/server-side-calls/bad.png"
+      className="w-full rounded border"
+    />
+  </div>
+  <div className="w-[49.5%]">
+    <h3 className="mb-2 text-sm font-medium text-green-600">
+      ✅ Do this instead
+    </h3>
+    <img
+      src="https://assets.trpc.io/www/docs/server/server-side-calls/good.png"
+      className="w-full rounded border"
+    />
+  </div>
+</div>
+
+## Creating a Caller
+
+Use `t.createCallerFactory` to create a server-side caller for any router. This returns a function that accepts a context and returns a caller instance.
+
+### Basic Example
+
+```ts title="server/caller.ts"
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+type Context = {
+  user?: { id: string; name: string };
+  db: Database;
+};
+
+const t = initTRPC.context<Context>().create();
+const { createCallerFactory, router } = t;
+
+interface Post {
+  id: string;
+  title: string;
+  content: string;
+}
+
+const posts: Post[] = [
+  { id: '1', title: 'Hello world', content: 'First post content' },
+];
+
+const appRouter = router({
+  post: router({
+    list: t.procedure.query(() => posts),
+
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => {
+        const post = posts.find(p => p.id === input.id);
+        if (!post) throw new Error('Post not found');
+        return post;
+      }),
+
+    create: t.procedure
+      .input(z.object({
+        title: z.string().min(1),
+        content: z.string().min(1),
+      }))
+      .mutation(({ input }) => {
+        const post: Post = {
+          id: `${posts.length + 1}`,
+          ...input,
+        };
+        posts.push(post);
+        return post;
+      }),
+  }),
+});
+
+// 1. Create a caller factory for your router
+const createCaller = createCallerFactory(appRouter);
+
+// 2. Create a caller using your Context
+const caller = createCaller({
+  user: { id: '1', name: 'Test User' },
+  db: mockDatabase,
+});
+
+// 3. Use the caller to call procedures
+const newPost = await caller.post.create({
+  title: 'Server-side post',
+  content: 'Created from server code',
+});
+
+const allPosts = await caller.post.list();
+```
+
+## Testing Use Cases
+
+### Integration Testing
+
+Perfect for testing your procedures without HTTP overhead:
+
+```ts title="tests/posts.test.ts"
+import { describe, it, expect } from 'vitest';
+import { inferProcedureInput } from '@trpc/server';
+import { createContextInner } from '../server/context';
+import { AppRouter, createCaller } from '../server/routers/_app';
+
+describe('Posts API', () => {
+  it('should create and retrieve a post', async () => {
+    const ctx = await createContextInner({});
+    const caller = createCaller(ctx);
+
+    const input: inferProcedureInput<AppRouter['post']['create']> = {
+      title: 'Test Post',
+      content: 'This is a test post',
+    };
+
+    const createdPost = await caller.post.create(input);
+    const retrievedPost = await caller.post.byId({ id: createdPost.id });
+
+    expect(retrievedPost).toMatchObject(input);
+  });
+
+  it('should handle validation errors', async () => {
+    const ctx = await createContextInner({});
+    const caller = createCaller(ctx);
+
+    await expect(
+      caller.post.create({
+        title: '', // Empty title should fail
+        content: 'Content',
+      })
+    ).rejects.toThrow('String must contain at least 1 character(s)');
+  });
+});
+```
+
+### Seeding Data
+
+Use server-side calls to populate your database:
+
+```ts title="scripts/seed.ts"
+import { createCaller } from '../server/routers/_app';
+import { createContext } from '../server/context';
+
+async function seedDatabase() {
+  const ctx = await createContext();
+  const caller = createCaller(ctx);
+
+  const posts = [
+    { title: 'Welcome to our blog', content: 'This is our first post...' },
+    { title: 'Getting started', content: 'Here\'s how to begin...' },
+    { title: 'Advanced tips', content: 'For experienced users...' },
+  ];
+
+  for (const postData of posts) {
+    const post = await caller.post.create(postData);
+    console.log(`Created post: ${post.id}`);
+  }
+
+  console.log('Database seeded successfully!');
+}
+
+seedDatabase().catch(console.error);
+```
+
+## Router.createCaller() (Legacy)
+
+<Callout type="warn">
+  This method is deprecated. Use `createCallerFactory()` instead for better type
+  safety and performance.
+</Callout>
+
+The legacy `router.createCaller({})` method is still supported but not recommended:
+
+```ts title="legacy-example.ts"
+// ❌ Legacy method (still works but not recommended)
+const legacyCaller = router.createCaller({
+  user: { id: '1', name: 'User' },
+});
+
+// ✅ Preferred method
+const createCaller = createCallerFactory(router);
+const caller = createCaller({
+  user: { id: '1', name: 'User' },
+});
+```
+
+## Advanced Patterns
+
+### Context with Middleware
+
+Handle complex context creation with middleware:
+
+```ts title="server/context.ts"
+import { TRPCError } from '@trpc/server';
+
+type Context = {
+  user?: { id: string; role: string };
+  db: Database;
+};
+
+const protectedProcedure = t.procedure.use(async (opts) => {
+  const { ctx } = opts;
+
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  return opts.next({
+    ctx: {
+      ...ctx,
+      user: ctx.user, // User is now guaranteed to exist
+    },
+  });
+});
+
+export const appRouter = t.router({
+  protected: t.router({
+    profile: protectedProcedure.query(({ ctx }) => {
+      return getUserProfile(ctx.user.id);
+    }),
+  }),
+});
+
+// Testing protected procedures
+describe('Protected Procedures', () => {
+  it('should work with authenticated user', async () => {
+    const authenticatedCaller = createCaller({
+      user: { id: '1', role: 'user' },
+      db: mockDb,
+    });
+
+    const profile = await authenticatedCaller.protected.profile();
+    expect(profile).toBeDefined();
+  });
+
+  it('should fail without authentication', async () => {
+    const unauthenticatedCaller = createCaller({
+      user: null,
+      db: mockDb,
+    });
+
+    await expect(
+      unauthenticatedCaller.protected.profile()
+    ).rejects.toThrow('UNAUTHORIZED');
+  });
+});
+```
+
+### Error Handling in Server Calls
+
+Handle and transform errors from server-side calls:
+
+```ts title="server/utils.ts"
+import { TRPCError } from '@trpc/server';
+import { getHTTPStatusCodeFromError } from '@trpc/server/http';
+
+export async function callProcedureWithErrorHandling<T>(
+  procedureCall: Promise<T>
+): Promise<{ data?: T; error?: string; status?: number }> {
+  try {
+    const data = await procedureCall;
+    return { data };
+  } catch (cause) {
+    if (cause instanceof TRPCError) {
+      const status = getHTTPStatusCodeFromError(cause);
+      return {
+        error: cause.message,
+        status
+      };
+    }
+    return {
+      error: 'Internal server error',
+      status: 500
+    };
+  }
+}
+
+// Usage
+const result = await callProcedureWithErrorHandling(
+  caller.post.byId({ id: 'invalid-id' })
+);
+
+if (result.error) {
+  console.error(`Error ${result.status}: ${result.error}`);
+} else {
+  console.log('Post:', result.data);
+}
+```
+
+## Next.js API Route Example
+
+Use server-side calls in Next.js API routes for custom endpoints:
+
+```ts title="pages/api/custom/posts/[id].ts"
+import { NextApiRequest, NextApiResponse } from 'next';
+import { TRPCError } from '@trpc/server';
+import { getHTTPStatusCodeFromError } from '@trpc/server/http';
+import { appRouter } from '~/server/routers/_app';
+import { createContext } from '~/server/context';
+
+type ResponseData = {
+  data?: {
+    post: Post;
+    relatedPosts: Post[];
+  };
+  error?: {
+    message: string;
+  };
+};
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ResponseData>
+) {
+  const { id } = req.query;
+
+  if (typeof id !== 'string') {
+    return res.status(400).json({
+      error: { message: 'Invalid post ID' }
+    });
+  }
+
+  try {
+    const ctx = await createContext({ req, res });
+    const caller = appRouter.createCaller(ctx);
+
+    // Get the main post and related posts in parallel
+    const [post, relatedPosts] = await Promise.all([
+      caller.post.byId({ id }),
+      caller.post.related({ id, limit: 5 }),
+    ]);
+
+    res.status(200).json({
+      data: { post, relatedPosts }
+    });
+  } catch (cause) {
+    if (cause instanceof TRPCError) {
+      const httpStatusCode = getHTTPStatusCodeFromError(cause);
+      res.status(httpStatusCode).json({
+        error: { message: cause.message }
+      });
+    } else {
+      res.status(500).json({
+        error: { message: 'Internal server error' },
+      });
+    }
+  }
+}
+```
+
+## Error Handling
+
+### Custom Error Handler
+
+Add custom error handling to caller creation:
+
+```ts title="server/caller.ts"
+const createCaller = createCallerFactory(appRouter);
+
+const callerWithErrorHandling = createCaller(
+  context,
+  {
+    onError: (opts) => {
+      console.error('Server call error:', {
+        path: opts.path,
+        error: opts.error.message,
+        input: opts.input,
+      });
+
+      // Send to error reporting service
+      errorReporter.captureException(opts.error, {
+        tags: {
+          procedure: opts.path,
+          type: opts.type
+        },
+      });
+    },
+  }
+);
+```
+
+### Graceful Error Recovery
+
+Implement fallback strategies for failed server calls:
+
+```ts title="server/utils.ts"
+export async function callWithFallback<T>(
+  primaryCall: () => Promise<T>,
+  fallbackCall: () => Promise<T>,
+  logger?: (error: Error) => void
+): Promise<T> {
+  try {
+    return await primaryCall();
+  } catch (error) {
+    logger?.(error as Error);
+    return await fallbackCall();
+  }
+}
+
+// Usage
+const posts = await callWithFallback(
+  () => caller.post.fromCache(),
+  () => caller.post.fromDatabase(),
+  (error) => console.warn('Cache miss:', error.message)
+);
+```
+
+## Best Practices
+
+<Steps>
+
+### Use Type Inference
+
+Leverage TypeScript's type inference for better type safety:
+
+```ts
+import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
+import type { AppRouter } from '../server/routers/_app';
+
+// Infer input and output types
+type PostCreateInput = inferProcedureInput<AppRouter['post']['create']>;
+type PostCreateOutput = inferProcedureOutput<AppRouter['post']['create']>;
+
+const validInput: PostCreateInput = {
+  title: 'Valid title',
+  content: 'Valid content',
+};
+```
+
+### Create Context Helpers
+
+Build utilities for different contexts:
+
+```ts title="server/test-utils.ts"
+export function createTestContext(overrides?: Partial<Context>) {
+  return {
+    user: null,
+    db: testDatabase,
+    ...overrides,
+  };
+}
+
+export function createAuthedContext(userId: string) {
+  return createTestContext({
+    user: { id: userId, name: 'Test User' },
+  });
+}
+
+export function createAdminContext() {
+  return createTestContext({
+    user: { id: 'admin', name: 'Admin', role: 'admin' },
+  });
+}
+```
+
+### Batch Operations
+
+Use server-side calls for efficient batch operations:
+
+```ts title="server/batch-operations.ts"
+export async function bulkCreatePosts(
+  postsData: PostCreateInput[],
+  context: Context
+) {
+  const caller = createCaller(context);
+
+  const results = await Promise.allSettled(
+    postsData.map(data => caller.post.create(data))
+  );
+
+  const successful = results
+    .filter((r): r is PromiseFulfilledResult<Post> => r.status === 'fulfilled')
+    .map(r => r.value);
+
+  const failed = results
+    .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+    .map(r => r.reason);
+
+  return { successful, failed };
+}
+```
+
+### Performance Monitoring
+
+Track performance of server-side calls:
+
+```ts title="server/monitoring.ts"
+export function withPerformanceTracking<T extends any[], R>(
+  fn: (...args: T) => Promise<R>,
+  operationName: string
+) {
+  return async (...args: T): Promise<R> => {
+    const start = performance.now();
+
+    try {
+      const result = await fn(...args);
+      const duration = performance.now() - start;
+
+      console.log(`${operationName} completed in ${duration.toFixed(2)}ms`);
+      return result;
+    } catch (error) {
+      const duration = performance.now() - start;
+      console.error(`${operationName} failed after ${duration.toFixed(2)}ms:`, error);
+      throw error;
+    }
+  };
+}
+
+// Usage
+const trackedCaller = {
+  post: {
+    create: withPerformanceTracking(
+      caller.post.create,
+      'post.create'
+    ),
+    list: withPerformanceTracking(
+      caller.post.list,
+      'post.list'
+    ),
+  },
+};
+```
+
+</Steps>
+
+<Callout type="info">
+  Server-side calls are powerful for testing, data seeding, and internal
+  operations. Use them judiciously and always prefer extracting shared logic
+  into utilities rather than calling procedures from within other procedures.
+</Callout>

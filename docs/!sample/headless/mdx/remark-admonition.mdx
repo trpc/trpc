@@ -1,0 +1,61 @@
+---
+title: Remark Admonition
+description: Use Admonition in Fumadocs
+---
+
+In Docusaurus, there's an [Admonition syntax](https://docusaurus.io/docs/markdown-features/admonitions).
+
+For people migrating from Docusaurus, you can enable this remark plugin to support the Admonition syntax.
+
+## Usage
+
+```ts title="source.config.ts" tab="Fumadocs MDX"
+import { remarkAdmonition } from 'fumadocs-core/mdx-plugins';
+import { defineConfig } from 'fumadocs-mdx/config';
+
+export default defineConfig({
+  mdxOptions: {
+    remarkPlugins: [remarkAdmonition],
+  },
+});
+```
+
+```ts tab="MDX Compiler"
+import { compile } from '@mdx-js/mdx';
+import { remarkAdmonition } from 'fumadocs-core/mdx-plugins';
+
+await compile('...', {
+  remarkPlugins: [remarkAdmonition],
+});
+```
+
+### Input
+
+```md
+:::warning
+Hello World
+:::
+```
+
+### Output
+
+```mdx
+<Callout type='warn'>
+
+Hello World
+
+</Callout>
+```
+
+### When to use
+
+We highly recommend using the JSX syntax of MDX instead.
+It's more flexible, some editors support IntelliSense in MDX files.
+
+```mdx
+<Callout type='warn'>
+
+Hello World
+
+</Callout>
+```

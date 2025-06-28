@@ -1,0 +1,646 @@
+---
+title: AWS Lambda
+description: Deploy tRPC on AWS Lambda for serverless APIs
+icon: IconCloud
+---
+
+AWS Lambda lets you run tRPC serverlessly with automatic scaling and pay-per-request pricing. This guide shows you how to deploy tRPC on Lambda.
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash npm install @trpc/server zod npm install -D @types/aws-lambda
+    serverless typescript ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash pnpm add @trpc/server zod pnpm add -D @types/aws-lambda serverless
+    typescript ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash yarn add @trpc/server zod yarn add -D @types/aws-lambda serverless
+    typescript ```
+  </Tab>
+  <Tab value="bun">
+    ```bash bun add @trpc/server zod bun add -D @types/aws-lambda serverless
+    typescript ```
+  </Tab>
+</Tabs>
+
+## Setup Guide
+
+### 1. Create tRPC Instance
+
+```typescript title="src/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import { ZodError } from 'zod';
+
+const t = initTRPC.create({
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.cause instanceof ZodError ? error.cause.flatten() : null,
+      },
+    };
+  },
+});
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+### 2. Create Your API Router
+
+```typescript title="src/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+export const appRouter = router({
+  hello: publicProcedure
+    .input(z.object({ name: z.string().optional() }))
+    .query(({ input }) => {
+      return {
+        greeting: `Hello ${input.name ?? 'World'} from Lambda!`,
+        region: process.env.AWS_REGION || 'unknown',
+        timestamp: new Date(),
+      };
+    }),
+
+  getEnvironment: publicProcedure.query(() => {
+    return {
+      nodeVersion: process.version,
+      region: process.env.AWS_REGION,
+      functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
+      memorySize: process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE,
+      runtime: process.env.AWS_EXECUTION_ENV,
+    };
+  }),
+
+  processData: publicProcedure
+    .input(z.object({
+      data: z.array(z.number()),
+      operation: z.enum(['sum', 'average', 'max', 'min']),
+    }))
+    .mutation(({ input }) => {
+      const { data, operation } = input;
+
+      let result: number;
+      switch (operation) {
+        case 'sum':
+          result = data.reduce((a, b) => a + b, 0);
+          break;
+        case 'average':
+          result = data.reduce((a, b) => a + b, 0) / data.length;
+          break;
+        case 'max':
+          result = Math.max(...data);
+          break;
+        case 'min':
+          result = Math.min(...data);
+          break;
+      }
+
+      return {
+        operation,
+        input: data,
+        result,
+        processedAt: new Date(),
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### 3. Create Lambda Handler
+
+```typescript title="src/lambda.ts"
+import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
+import type { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
+import { appRouter } from './router';
+
+// Create context from Lambda event
+const createContext = ({
+  event,
+  context,
+}: {
+  event: APIGatewayProxyEvent;
+  context: Context;
+}) => {
+  return {
+    event,
+    context,
+    user: null, // Add your auth logic here
+  };
+};
+
+export const handler = awsLambdaRequestHandler({
+  router: appRouter,
+  createContext,
+  onError: ({ error, path }) => {
+    console.error(`❌ tRPC failed on ${path}:`, error);
+  },
+});
+```
+
+### 4. Configure Serverless Framework
+
+```yaml title="serverless.yml"
+service: trpc-lambda-api
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+
+  environment:
+    NODE_ENV: ${self:provider.stage}
+
+  iam:
+    role:
+      statements:
+        # Add DynamoDB permissions if needed
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource: '*'
+
+functions:
+  api:
+    handler: src/lambda.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+      - http:
+          path: /
+          method: ANY
+          cors: true
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3000
+```
+
+### 5. Add Build Configuration
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "serverless offline",
+    "deploy": "serverless deploy",
+    "deploy:prod": "serverless deploy --stage prod",
+    "build": "tsc"
+  }
+}
+```
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+## Test Your Setup
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Test your endpoints:
+
+<Tabs items={['Hello', 'Environment Info', 'Process Data']}>
+<Tab value="Hello">
+```bash
+curl "http://localhost:3000/hello?input=%7B%22name%22%3A%22Lambda%22%7D"
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "greeting": "Hello Lambda from Lambda!",
+      "region": "us-east-1",
+      "timestamp": "2024-01-15T10:30:00.000Z"
+    }
+  }
+}
+```
+
+</Tab>
+<Tab value="Environment Info">
+```bash
+curl "http://localhost:3000/getEnvironment"
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "nodeVersion": "v18.18.0",
+      "region": "us-east-1",
+      "functionName": "trpc-lambda-api-dev-api",
+      "memorySize": "1024",
+      "runtime": "AWS_Lambda_nodejs18.x"
+    }
+  }
+}
+```
+
+</Tab>
+<Tab value="Process Data">
+```bash
+curl -X POST "http://localhost:3000/processData" \
+  -H "Content-Type: application/json" \
+  -d '{"data": [1, 2, 3, 4, 5], "operation": "average"}'
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "operation": "average",
+      "input": [1, 2, 3, 4, 5],
+      "result": 3,
+      "processedAt": "2024-01-15T10:30:00.000Z"
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+## Add Database Integration
+
+### With DynamoDB
+
+```bash
+npm install @aws-sdk/client-dynamodb @aws-sdk/lib-dynamodb
+```
+
+```typescript title="src/dynamodb.ts"
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+
+const client = new DynamoDBClient({
+  region: process.env.AWS_REGION || 'us-east-1',
+});
+
+const docClient = DynamoDBDocumentClient.from(client);
+
+export const dynamoRouter = router({
+  createUser: publicProcedure
+    .input(z.object({
+      name: z.string(),
+      email: z.string().email(),
+    }))
+    .mutation(async ({ input }) => {
+      const user = {
+        id: Date.now().toString(),
+        ...input,
+        createdAt: new Date().toISOString(),
+      };
+
+      await docClient.send(new PutCommand({
+        TableName: 'Users',
+        Item: user,
+      }));
+
+      return user;
+    }),
+
+  getUser: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      const result = await docClient.send(new GetCommand({
+        TableName: 'Users',
+        Key: { id: input.id },
+      }));
+
+      if (!result.Item) {
+        throw new Error('User not found');
+      }
+
+      return result.Item;
+    }),
+
+  listUsers: publicProcedure.query(async () => {
+    const result = await docClient.send(new ScanCommand({
+      TableName: 'Users',
+    }));
+
+    return result.Items || [];
+  }),
+});
+```
+
+Add DynamoDB table to serverless.yml:
+
+```yaml title="serverless.yml"
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Users-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+```
+
+### With RDS/Aurora
+
+```bash
+npm install @aws-sdk/client-rds-data
+```
+
+```typescript title="src/rds.ts"
+import { RDSDataClient, ExecuteStatementCommand } from '@aws-sdk/client-rds-data';
+
+const rdsClient = new RDSDataClient({
+  region: process.env.AWS_REGION || 'us-east-1',
+});
+
+export const rdsRouter = router({
+  createPost: publicProcedure
+    .input(z.object({
+      title: z.string(),
+      content: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const result = await rdsClient.send(new ExecuteStatementCommand({
+        resourceArn: process.env.RDS_CLUSTER_ARN,
+        secretArn: process.env.RDS_SECRET_ARN,
+        database: process.env.RDS_DATABASE,
+        sql: 'INSERT INTO posts (title, content) VALUES (:title, :content)',
+        parameters: [
+          { name: 'title', value: { stringValue: input.title } },
+          { name: 'content', value: { stringValue: input.content } },
+        ],
+      }));
+
+      return { success: true, insertId: result.generatedFields?.[0]?.longValue };
+    }),
+});
+```
+
+## Deploy to AWS
+
+Deploy to development:
+
+```bash
+npm run deploy
+```
+
+Deploy to production:
+
+```bash
+npm run deploy:prod
+```
+
+Your API will be available at:
+
+```
+https://your-api-id.execute-api.region.amazonaws.com/stage/
+```
+
+## Add Authentication
+
+### With AWS Cognito
+
+```typescript title="src/auth.ts"
+import { CognitoJwtVerifier } from 'aws-jwt-verify';
+
+const verifier = CognitoJwtVerifier.create({
+  userPoolId: process.env.COGNITO_USER_POOL_ID!,
+  tokenUse: 'access',
+  clientId: process.env.COGNITO_CLIENT_ID!,
+});
+
+const createContext = async ({ event, context }: { event: APIGatewayProxyEvent; context: Context }) => {
+  let user = null;
+
+  const authHeader = event.headers.Authorization || event.headers.authorization;
+  if (authHeader) {
+    try {
+      const token = authHeader.replace('Bearer ', '');
+      const payload = await verifier.verify(token);
+      user = {
+        id: payload.sub,
+        email: payload.email,
+        username: payload.username,
+      };
+    } catch (error) {
+      console.warn('Invalid token:', error);
+    }
+  }
+
+  return {
+    event,
+    context,
+    user,
+  };
+};
+
+// Protected procedure
+export const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next({
+    ctx: {
+      user: ctx.user,
+    },
+  });
+});
+```
+
+### With API Gateway Authorizers
+
+```yaml title="serverless.yml"
+functions:
+  api:
+    handler: src/lambda.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors: true
+          authorizer:
+            name: cognitoAuthorizer
+            type: COGNITO_USER_POOLS
+            arn: arn:aws:cognito-idp:region:account:userpool/pool-id
+```
+
+## Monitoring and Logging
+
+### With CloudWatch
+
+```typescript title="src/monitoring.ts"
+export const monitoredRouter = router({
+  processLargeData: publicProcedure
+    .input(z.object({ data: z.array(z.number()) }))
+    .mutation(async ({ input }) => {
+      const startTime = Date.now();
+
+      console.log('Processing data:', { count: input.data.length });
+
+      try {
+        // Your processing logic
+        const result = processData(input.data);
+
+        const duration = Date.now() - startTime;
+        console.log('Processing completed:', { duration, resultSize: result.length });
+
+        return result;
+      } catch (error) {
+        console.error('Processing failed:', error);
+        throw error;
+      }
+    }),
+});
+```
+
+### With X-Ray Tracing
+
+Add to serverless.yml:
+
+```yaml
+provider:
+  tracing:
+    lambda: true
+    apiGateway: true
+```
+
+## Client Usage
+
+```typescript title="client.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './src/router';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'https://your-api-id.execute-api.us-east-1.amazonaws.com/dev',
+      headers() {
+        const token = localStorage.getItem('auth-token');
+        return token ? { authorization: `Bearer ${token}` } : {};
+      },
+    }),
+  ],
+});
+
+// Usage
+async function examples() {
+  const hello = await client.hello.query({ name: 'Lambda User' });
+  console.log(hello.greeting);
+
+  const env = await client.getEnvironment.query();
+  console.log('Running on:', env.runtime);
+}
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="DynamoDB" href="https://docs.aws.amazon.com/dynamodb/">
+    Learn about AWS's NoSQL database
+  </Card>
+  <Card title="API Gateway" href="https://docs.aws.amazon.com/apigateway/">
+    Advanced API Gateway configuration
+  </Card>
+  <Card title="CloudWatch" href="https://docs.aws.amazon.com/cloudwatch/">
+    Monitor your Lambda functions
+  </Card>
+  <Card title="Cognito" href="https://docs.aws.amazon.com/cognito/">
+    Add user authentication and management
+  </Card>
+</Cards>
+
+## Common Issues
+
+<Accordions>
+<Accordion title="Cold Starts">
+Lambda cold starts can be reduced by:
+- Keeping bundle size small
+- Using provisioned concurrency for critical functions
+- Implementing proper connection pooling
+
+```yaml
+functions:
+  api:
+    handler: src/lambda.handler
+    provisionedConcurrency: 5 # Keep 5 instances warm
+```
+
+</Accordion>
+
+<Accordion title="Bundle Size">
+Optimize Lambda bundle size:
+- Use webpack or esbuild
+- Exclude dev dependencies
+- Use AWS SDK v3 with selective imports
+
+```javascript title="webpack.config.js"
+module.exports = {
+  externals: ['aws-sdk'],
+  target: 'node',
+  mode: 'production',
+};
+```
+
+</Accordion>
+
+<Accordion title="Environment Variables">
+Use AWS Systems Manager for sensitive data:
+
+```yaml
+provider:
+  environment:
+    DB_PASSWORD: ${ssm:/myapp/db/password}
+```
+
+</Accordion>
+</Accordions>

@@ -1,0 +1,770 @@
+---
+title: Middlewares
+description: Add authentication, logging, and custom logic to your tRPC procedures
+icon: IconStack3
+---
+
+Middlewares allow you to add reusable logic that runs before your procedure handlers. They're perfect for authentication, logging, validation, rate limiting, and other cross-cutting concerns.
+
+<Callout title="Middleware Benefits">
+  - **Reusability**: Share logic across multiple procedures - **Composability**:
+  Chain middlewares to build complex behavior - **Type Safety**: Maintain full
+  TypeScript inference - **Context Extension**: Add data to context for
+  downstream procedures
+</Callout>
+
+## Basic Middleware
+
+### Simple Logging Middleware
+
+```typescript title="src/middleware.ts"
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+
+// Basic logging middleware
+const loggerMiddleware = t.middleware(({ path, type, next }) => {
+  const start = Date.now();
+
+  console.log(`➡️ ${type.toUpperCase()} ${path} - Started`);
+
+  return next().finally(() => {
+    const duration = Date.now() - start;
+    console.log(`⬅️ ${type.toUpperCase()} ${path} - Completed in ${duration}ms`);
+  });
+});
+
+// Create procedure with middleware
+export const loggedProcedure = t.procedure.use(loggerMiddleware);
+
+// Usage in router
+export const appRouter = t.router({
+  hello: loggedProcedure.query(() => {
+    return { message: 'Hello World!' };
+  }),
+
+  createUser: loggedProcedure
+    .input(z.object({ name: z.string() }))
+    .mutation(({ input }) => {
+      return { id: '1', name: input.name };
+    }),
+});
+```
+
+### Timing and Performance Middleware
+
+```typescript title="src/performance-middleware.ts"
+const performanceMiddleware = t.middleware(async ({ path, type, next }) => {
+  const start = performance.now();
+
+  const result = await next();
+
+  const duration = performance.now() - start;
+
+  // Log slow queries
+  if (duration > 1000) {
+    console.warn(`🐌 Slow ${type}: ${path} took ${duration.toFixed(2)}ms`);
+  }
+
+  // Add performance headers
+  if (result.ok) {
+    // You could add duration to response or headers here
+    console.log(`⚡ ${type} ${path}: ${duration.toFixed(2)}ms`);
+  }
+
+  return result;
+});
+
+export const timedProcedure = t.procedure.use(performanceMiddleware);
+```
+
+## Authentication Middleware
+
+### Basic Authentication
+
+```typescript title="src/auth-middleware.ts"
+import { TRPCError } from '@trpc/server';
+
+const authMiddleware = t.middleware(({ ctx, next }) => {
+  // Check if user is authenticated
+  if (!ctx.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Authentication required',
+    });
+  }
+
+  return next({
+    ctx: {
+      // Extend context with verified user
+      ...ctx,
+      user: ctx.user, // Now guaranteed to be non-null
+    },
+  });
+});
+
+export const protectedProcedure = t.procedure.use(authMiddleware);
+```
+
+### Role-Based Authorization
+
+```typescript title="src/rbac-middleware.ts"
+// Create role-based middleware
+const requireRole = (allowedRoles: string[]) => {
+  return t.middleware(({ ctx, next }) => {
+    if (!ctx.user) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    if (!allowedRoles.includes(ctx.user.role)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: `Required roles: ${allowedRoles.join(', ')}`,
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.user, // TypeScript knows user exists
+      },
+    });
+  });
+};
+
+// Create different procedure types
+export const adminProcedure = t.procedure.use(requireRole(['admin']));
+export const moderatorProcedure = t.procedure.use(requireRole(['admin', 'moderator']));
+export const userProcedure = t.procedure.use(requireRole(['admin', 'moderator', 'user']));
+
+// Usage in router
+export const appRouter = t.router({
+  // Admin only
+  deleteAllUsers: adminProcedure.mutation(() => {
+    return deleteAllUsers();
+  }),
+
+  // Moderator or admin
+  banUser: moderatorProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(({ input }) => {
+      return banUser(input.userId);
+    }),
+
+  // Any authenticated user
+  updateProfile: userProcedure
+    .input(z.object({ name: z.string() }))
+    .mutation(({ input, ctx }) => {
+      return updateUserProfile(ctx.user.id, input);
+    }),
+});
+```
+
+### JWT Authentication
+
+```typescript title="src/jwt-middleware.ts"
+import jwt from 'jsonwebtoken';
+
+const jwtMiddleware = t.middleware(async ({ ctx, next }) => {
+  const token = ctx.req.headers.authorization?.replace('Bearer ', '');
+
+  if (!token) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'No token provided',
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: string;
+      role: string;
+    };
+
+    // Fetch full user data
+    const user = await getUserById(decoded.userId);
+
+    if (!user) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Invalid token',
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user,
+        token: decoded,
+      },
+    });
+  } catch (error) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Invalid or expired token',
+    });
+  }
+});
+
+export const jwtProcedure = t.procedure.use(jwtMiddleware);
+```
+
+## Advanced Middleware Patterns
+
+### Context Extension
+
+Middleware can extend the context with additional data:
+
+```typescript title="src/context-extension.ts"
+// Organization middleware
+const withOrganization = t.middleware(async ({ ctx, input, next }) => {
+  const organizationId = (input as any)?.organizationId;
+
+  if (!organizationId) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Organization ID required',
+    });
+  }
+
+  const organization = await getOrganization(organizationId);
+
+  if (!organization) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Organization not found',
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      organization,
+    },
+  });
+});
+
+// Database transaction middleware
+const withTransaction = t.middleware(async ({ ctx, next }) => {
+  return await db.transaction(async (tx) => {
+    return next({
+      ctx: {
+        ...ctx,
+        db: tx, // Replace db with transaction instance
+      },
+    });
+  });
+});
+
+// Usage
+export const organizationProcedure = t.procedure
+  .use(authMiddleware)
+  .use(withOrganization);
+
+export const transactionalProcedure = t.procedure
+  .use(authMiddleware)
+  .use(withTransaction);
+```
+
+### Validation Middleware
+
+```typescript title="src/validation-middleware.ts"
+// Input validation middleware
+const validateSchema = <T>(schema: z.ZodSchema<T>) => {
+  return t.middleware(({ input, next }) => {
+    const validated = schema.parse(input);
+
+    return next({
+      ctx: {
+        validatedInput: validated,
+      },
+    });
+  });
+};
+
+// Rate limiting middleware
+const rateLimit = (limit: number, windowMs: number) => {
+  const attempts = new Map<string, { count: number; resetTime: number }>();
+
+  return t.middleware(({ ctx, next }) => {
+    const identifier = ctx.user?.id || ctx.req.ip || 'anonymous';
+    const now = Date.now();
+
+    const userAttempts = attempts.get(identifier);
+
+    if (!userAttempts || now > userAttempts.resetTime) {
+      attempts.set(identifier, { count: 1, resetTime: now + windowMs });
+    } else {
+      userAttempts.count++;
+
+      if (userAttempts.count > limit) {
+        throw new TRPCError({
+          code: 'TOO_MANY_REQUESTS',
+          message: 'Rate limit exceeded',
+        });
+      }
+    }
+
+    return next();
+  });
+};
+
+// Usage
+export const rateLimitedProcedure = t.procedure
+  .use(rateLimit(10, 60000)); // 10 requests per minute
+```
+
+### Caching Middleware
+
+```typescript title="src/cache-middleware.ts"
+// Simple in-memory cache middleware
+const cache = new Map<string, { data: any; expiry: number }>();
+
+const withCache = (ttlMs: number = 60000) => {
+  return t.middleware(async ({ path, input, next }) => {
+    const cacheKey = `${path}:${JSON.stringify(input)}`;
+    const cached = cache.get(cacheKey);
+
+    if (cached && Date.now() < cached.expiry) {
+      console.log(`🎯 Cache hit: ${cacheKey}`);
+      return { ok: true, data: cached.data };
+    }
+
+    const result = await next();
+
+    if (result.ok) {
+      cache.set(cacheKey, {
+        data: result.data,
+        expiry: Date.now() + ttlMs,
+      });
+      console.log(`💾 Cached: ${cacheKey}`);
+    }
+
+    return result;
+  });
+};
+
+// Redis cache middleware
+const withRedisCache = (ttlSeconds: number = 60) => {
+  return t.middleware(async ({ path, input, next }) => {
+    const cacheKey = `trpc:${path}:${JSON.stringify(input)}`;
+
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        console.log(`🎯 Redis cache hit: ${cacheKey}`);
+        return { ok: true, data: JSON.parse(cached) };
+      }
+    } catch (error) {
+      console.warn('Cache read error:', error);
+    }
+
+    const result = await next();
+
+    if (result.ok) {
+      try {
+        await redis.setex(cacheKey, ttlSeconds, JSON.stringify(result.data));
+        console.log(`💾 Redis cached: ${cacheKey}`);
+      } catch (error) {
+        console.warn('Cache write error:', error);
+      }
+    }
+
+    return result;
+  });
+};
+
+// Usage
+export const cachedProcedure = t.procedure.use(withCache(300000)); // 5 minutes
+export const redisCachedProcedure = t.procedure.use(withRedisCache(600)); // 10 minutes
+```
+
+## Middleware Chaining
+
+Combine multiple middlewares for complex behavior:
+
+```typescript title="src/chained-middleware.ts"
+// Create a base procedure with multiple middlewares
+export const fullProcedure = t.procedure
+  .use(loggerMiddleware)           // 1. Log the request
+  .use(performanceMiddleware)      // 2. Time the execution
+  .use(authMiddleware)             // 3. Authenticate user
+  .use(rateLimit(100, 60000))      // 4. Apply rate limiting
+  .use(withCache(60000));          // 5. Check cache
+
+// Specific procedure types
+export const adminProcedure = fullProcedure
+  .use(requireRole(['admin']));
+
+export const organizationProcedure = fullProcedure
+  .use(withOrganization);
+
+export const transactionalOrganizationProcedure = organizationProcedure
+  .use(withTransaction);
+```
+
+### Conditional Middleware
+
+```typescript title="src/conditional-middleware.ts"
+// Development-only middleware
+const devOnlyMiddleware = t.middleware(({ next }) => {
+  if (process.env.NODE_ENV !== 'development') {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Endpoint not available in production',
+    });
+  }
+  return next();
+});
+
+// Feature flag middleware
+const withFeatureFlag = (flagName: string) => {
+  return t.middleware(async ({ ctx, next }) => {
+    const isEnabled = await checkFeatureFlag(flagName, ctx.user?.id);
+
+    if (!isEnabled) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Feature not available',
+      });
+    }
+
+    return next();
+  });
+};
+
+// IP allowlist middleware
+const ipAllowlist = (allowedIPs: string[]) => {
+  return t.middleware(({ ctx, next }) => {
+    const clientIP = ctx.req.ip || ctx.req.connection.remoteAddress;
+
+    if (!allowedIPs.includes(clientIP)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'IP not allowed',
+      });
+    }
+
+    return next();
+  });
+};
+
+// Usage
+export const devProcedure = t.procedure.use(devOnlyMiddleware);
+export const betaFeatureProcedure = t.procedure.use(withFeatureFlag('beta-features'));
+export const adminIPProcedure = t.procedure.use(ipAllowlist(['10.0.0.1', '10.0.0.2']));
+```
+
+## Middleware Piping
+
+Use `.unstable_pipe()` to extend existing middlewares:
+
+```typescript title="src/piped-middleware.ts"
+// Base authentication middleware
+const baseAuth = t.middleware(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next({ ctx: { ...ctx, user: ctx.user } });
+});
+
+// Extend base auth with role checking
+const adminAuth = baseAuth.unstable_pipe(({ ctx, next }) => {
+  if (ctx.user.role !== 'admin') {
+    throw new TRPCError({ code: 'FORBIDDEN' });
+  }
+  return next();
+});
+
+// Extend admin auth with audit logging
+const auditedAdminAuth = adminAuth.unstable_pipe(async ({ ctx, path, next }) => {
+  // Log admin action
+  await auditLog({
+    userId: ctx.user.id,
+    action: path,
+    timestamp: new Date(),
+  });
+
+  const result = await next();
+
+  // Log completion
+  await auditLog({
+    userId: ctx.user.id,
+    action: `${path}_completed`,
+    timestamp: new Date(),
+  });
+
+  return result;
+});
+
+export const auditedAdminProcedure = t.procedure.use(auditedAdminAuth);
+```
+
+## Error Handling in Middleware
+
+```typescript title="src/error-middleware.ts"
+// Error handling middleware
+const errorHandler = t.middleware(async ({ next, path, type }) => {
+  try {
+    return await next();
+  } catch (error) {
+    // Log error
+    console.error(`Error in ${type} ${path}:`, error);
+
+    // Transform known errors
+    if (error instanceof DatabaseError) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Database operation failed',
+        cause: error,
+      });
+    }
+
+    if (error instanceof ValidationError) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: error.message,
+        cause: error,
+      });
+    }
+
+    // Re-throw tRPC errors as-is
+    if (error instanceof TRPCError) {
+      throw error;
+    }
+
+    // Unknown error
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'An unexpected error occurred',
+      cause: error,
+    });
+  }
+});
+
+// Retry middleware for idempotent operations
+const withRetry = (maxRetries: number = 3) => {
+  return t.middleware(async ({ next }) => {
+    let lastError: Error | undefined;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await next();
+      } catch (error) {
+        lastError = error as Error;
+
+        // Don't retry client errors
+        if (error instanceof TRPCError &&
+            ['BAD_REQUEST', 'UNAUTHORIZED', 'FORBIDDEN'].includes(error.code)) {
+          throw error;
+        }
+
+        if (attempt === maxRetries) {
+          break;
+        }
+
+        // Exponential backoff
+        await new Promise(resolve =>
+          setTimeout(resolve, Math.pow(2, attempt) * 100)
+        );
+      }
+    }
+
+    throw lastError;
+  });
+};
+
+export const resilientProcedure = t.procedure
+  .use(errorHandler)
+  .use(withRetry(3));
+```
+
+## Testing Middleware
+
+```typescript title="src/middleware.test.ts"
+import { describe, it, expect, vi } from 'vitest';
+import { createCallerFactory } from '@trpc/server';
+
+describe('Authentication Middleware', () => {
+  const createCaller = createCallerFactory(appRouter);
+
+  it('should allow authenticated users', async () => {
+    const caller = createCaller({
+      user: { id: 'user1', role: 'user' },
+    });
+
+    const result = await caller.protected.getProfile();
+    expect(result).toBeDefined();
+  });
+
+  it('should reject unauthenticated users', async () => {
+    const caller = createCaller({
+      user: null,
+    });
+
+    await expect(
+      caller.protected.getProfile()
+    ).rejects.toThrow('UNAUTHORIZED');
+  });
+
+  it('should enforce role-based access', async () => {
+    const userCaller = createCaller({
+      user: { id: 'user1', role: 'user' },
+    });
+
+    await expect(
+      userCaller.admin.deleteUser({ id: 'user2' })
+    ).rejects.toThrow('FORBIDDEN');
+  });
+});
+
+describe('Rate Limiting Middleware', () => {
+  it('should allow requests within limit', async () => {
+    const caller = createCaller({});
+
+    // Should succeed for requests within limit
+    for (let i = 0; i < 5; i++) {
+      await expect(caller.rateLimited.hello()).resolves.toBeDefined();
+    }
+  });
+
+  it('should reject requests exceeding limit', async () => {
+    const caller = createCaller({});
+
+    // Exhaust rate limit
+    for (let i = 0; i < 10; i++) {
+      await caller.rateLimited.hello().catch(() => {});
+    }
+
+    // Next request should fail
+    await expect(
+      caller.rateLimited.hello()
+    ).rejects.toThrow('TOO_MANY_REQUESTS');
+  });
+});
+```
+
+## Best Practices
+
+<Accordions>
+  <Accordion title="Performance">
+    - **Minimize middleware overhead**: Keep middleware logic lightweight
+    - **Cache expensive operations**: Don't repeat work in each middleware
+    - **Use early returns**: Fail fast when validation fails
+    - **Optimize middleware order**: Put cheap validations first
+    
+    ```typescript
+    // Good: Fast checks first
+    const optimizedProcedure = t.procedure
+      .use(simpleAuthCheck)       // Fast
+      .use(rateLimitCheck)        // Medium
+      .use(expensiveValidation);  // Slow
+    
+    // Bad: Expensive operations first
+    const badProcedure = t.procedure
+      .use(expensiveValidation)   // Slow first
+      .use(simpleAuthCheck);      // Fast last
+    ```
+  </Accordion>
+
+  <Accordion title="Error Handling">
+    - **Use appropriate error codes**: Return correct HTTP status codes
+    - **Provide helpful messages**: Help developers debug issues
+    - **Log errors appropriately**: Don't lose important error information
+    - **Handle async errors**: Always await or catch async operations
+    
+    ```typescript
+    const safeMiddleware = t.middleware(async ({ next }) => {
+      try {
+        return await next();
+      } catch (error) {
+        // Log for debugging
+        console.error('Middleware error:', error);
+        
+        // Re-throw with context
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Middleware failed',
+          cause: error,
+        });
+      }
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Security">
+    - **Validate all inputs**: Don't trust middleware inputs
+    - **Sanitize context data**: Clean user-provided data
+    - **Use least privilege**: Only add necessary permissions
+    - **Audit sensitive operations**: Log important actions
+    
+    ```typescript
+    const secureMiddleware = t.middleware(({ ctx, input, next }) => {
+      // Validate context
+      if (!ctx.user || !ctx.user.id) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
+      }
+      
+      // Sanitize inputs
+      const sanitizedInput = sanitizeInput(input);
+      
+      return next({
+        ctx: {
+          ...ctx,
+          user: {
+            id: ctx.user.id,
+            role: ctx.user.role,
+            // Don't pass sensitive data
+          },
+        },
+      });
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Type Safety">
+    - **Extend context properly**: Maintain type inference
+    - **Use generic middleware**: Make middleware reusable
+    - **Type middleware inputs**: Ensure type safety
+    - **Document middleware behavior**: Help other developers
+    
+    ```typescript
+    // Generic typed middleware
+    const withValidation = <T>(schema: z.ZodSchema<T>) => {
+      return t.middleware(({ input, next }) => {
+        const validated = schema.parse(input);
+        return next({
+          ctx: {
+            validatedInput: validated,
+          },
+        });
+      });
+    };
+    
+    // Usage maintains types
+    const typedProcedure = t.procedure
+      .use(withValidation(UserSchema))
+      .mutation(({ ctx }) => {
+        // ctx.validatedInput is properly typed
+        return processUser(ctx.validatedInput);
+      });
+    ```
+  </Accordion>
+</Accordions>
+
+## Next Steps
+
+<Cards>
+  <Card title="Authorization" href="/docs/server/authorization">
+    Learn advanced authentication and authorization patterns
+  </Card>
+  <Card title="Context" href="/docs/server/context">
+    Understand how to create and extend context
+  </Card>
+  <Card title="Error Handling" href="/docs/server/error-handling">
+    Master error handling in middleware and procedures
+  </Card>
+  <Card title="Server-Side Calls" href="/docs/server/server-side-calls">
+    Test your middleware with server-side callers
+  </Card>
+</Cards>

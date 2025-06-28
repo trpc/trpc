@@ -1,0 +1,541 @@
+---
+title: Define Routers
+description: Organize your tRPC procedures into structured, reusable routers
+icon: IconRoute
+---
+
+Routers are the foundation of your tRPC API structure. They allow you to organize procedures into logical groups, create nested hierarchies, and build scalable APIs that are easy to maintain and understand.
+
+<Callout title="Router Benefits">
+  - **Organization**: Group related procedures together - **Nesting**: Create
+  hierarchical API structures - **Reusability**: Share routers across different
+  parts of your application - **Type Safety**: Maintain full type inference
+  across your entire API
+</Callout>
+
+## Basic Router Setup
+
+### Initialize tRPC
+
+You should initialize tRPC **exactly once** per application. Multiple instances will cause issues.
+
+```typescript title="src/trpc.ts"
+import { initTRPC } from '@trpc/server';
+
+// Initialize tRPC
+const t = initTRPC.create();
+
+// Export reusable helpers
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+<Callout title="Naming Convention">
+  Export specific methods rather than the entire `t` object to establish
+  consistent patterns across your codebase.
+</Callout>
+
+### Create Your First Router
+
+Define a router with procedures to expose as API endpoints:
+
+```typescript title="src/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+export const appRouter = router({
+  // Simple query
+  hello: publicProcedure.query(() => {
+    return { message: 'Hello from tRPC!' };
+  }),
+
+  // Query with input validation
+  greet: publicProcedure
+    .input(z.object({ name: z.string() }))
+    .query(({ input }) => {
+      return { message: `Hello, ${input.name}!` };
+    }),
+
+  // Mutation example
+  createPost: publicProcedure
+    .input(z.object({
+      title: z.string(),
+      content: z.string(),
+    }))
+    .mutation(({ input }) => {
+      // Database logic here
+      return { id: '1', ...input };
+    }),
+});
+
+// Export type definition for client inference
+export type AppRouter = typeof appRouter;
+```
+
+## Nested Routers
+
+Organize your API into logical groups using nested routers:
+
+```typescript title="src/routers/index.ts"
+import { router } from '../trpc';
+import { userRouter } from './user';
+import { postRouter } from './post';
+import { commentRouter } from './comment';
+
+export const appRouter = router({
+  user: userRouter,     // All user procedures under /user.*
+  post: postRouter,     // All post procedures under /post.*
+  comment: commentRouter, // All comment procedures under /comment.*
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### Individual Router Files
+
+<Tabs items={['User Router', 'Post Router', 'Comment Router']}>
+  <Tab value="User Router">
+    ```typescript title="src/routers/user.ts"
+    import { z } from 'zod';
+    import { router, publicProcedure } from '../trpc';
+
+    export const userRouter = router({
+      // GET /user.list
+      list: publicProcedure.query(async () => {
+        return await db.user.findMany();
+      }),
+
+      // GET /user.getById
+      getById: publicProcedure
+        .input(z.object({ id: z.string() }))
+        .query(async ({ input }) => {
+          return await db.user.findUnique({
+            where: { id: input.id }
+          });
+        }),
+
+      // POST /user.create
+      create: publicProcedure
+        .input(z.object({
+          name: z.string().min(2),
+          email: z.string().email(),
+        }))
+        .mutation(async ({ input }) => {
+          return await db.user.create({ data: input });
+        }),
+
+      // POST /user.update
+      update: publicProcedure
+        .input(z.object({
+          id: z.string(),
+          name: z.string().optional(),
+          email: z.string().email().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { id, ...data } = input;
+          return await db.user.update({
+            where: { id },
+            data,
+          });
+        }),
+
+      // POST /user.delete
+      delete: publicProcedure
+        .input(z.object({ id: z.string() }))
+        .mutation(async ({ input }) => {
+          return await db.user.delete({
+            where: { id: input.id }
+          });
+        }),
+    });
+    ```
+
+  </Tab>
+
+  <Tab value="Post Router">
+    ```typescript title="src/routers/post.ts"
+    import { z } from 'zod';
+    import { router, publicProcedure } from '../trpc';
+
+    export const postRouter = router({
+      // GET /post.list
+      list: publicProcedure
+        .input(z.object({
+          limit: z.number().min(1).max(100).default(10),
+          cursor: z.string().optional(),
+        }))
+        .query(async ({ input }) => {
+          const posts = await db.post.findMany({
+            take: input.limit + 1,
+            cursor: input.cursor ? { id: input.cursor } : undefined,
+            orderBy: { createdAt: 'desc' },
+            include: { author: true },
+          });
+
+          const hasNextPage = posts.length > input.limit;
+          const items = hasNextPage ? posts.slice(0, -1) : posts;
+
+          return {
+            items,
+            nextCursor: hasNextPage ? items[items.length - 1].id : undefined,
+          };
+        }),
+
+      // GET /post.getById
+      getById: publicProcedure
+        .input(z.object({ id: z.string() }))
+        .query(async ({ input }) => {
+          return await db.post.findUnique({
+            where: { id: input.id },
+            include: { author: true, comments: true },
+          });
+        }),
+
+      // POST /post.create
+      create: publicProcedure
+        .input(z.object({
+          title: z.string().min(1).max(200),
+          content: z.string().min(1),
+          authorId: z.string(),
+        }))
+        .mutation(async ({ input }) => {
+          return await db.post.create({
+            data: input,
+            include: { author: true },
+          });
+        }),
+    });
+    ```
+
+  </Tab>
+
+  <Tab value="Comment Router">
+    ```typescript title="src/routers/comment.ts"
+    import { z } from 'zod';
+    import { router, publicProcedure } from '../trpc';
+
+    export const commentRouter = router({
+      // GET /comment.listByPost
+      listByPost: publicProcedure
+        .input(z.object({ postId: z.string() }))
+        .query(async ({ input }) => {
+          return await db.comment.findMany({
+            where: { postId: input.postId },
+            include: { author: true },
+            orderBy: { createdAt: 'asc' },
+          });
+        }),
+
+      // POST /comment.create
+      create: publicProcedure
+        .input(z.object({
+          content: z.string().min(1).max(500),
+          postId: z.string(),
+          authorId: z.string(),
+        }))
+        .mutation(async ({ input }) => {
+          return await db.comment.create({
+            data: input,
+            include: { author: true },
+          });
+        }),
+
+      // POST /comment.delete
+      delete: publicProcedure
+        .input(z.object({ id: z.string() }))
+        .mutation(async ({ input }) => {
+          return await db.comment.delete({
+            where: { id: input.id },
+          });
+        }),
+    });
+    ```
+
+  </Tab>
+</Tabs>
+
+## Inline Sub-routers
+
+You can define routers inline using plain objects:
+
+```typescript title="src/router.ts"
+import { router, publicProcedure } from './trpc';
+
+export const appRouter = router({
+  // Inline sub-router using plain object
+  auth: {
+    login: publicProcedure
+      .input(z.object({ email: z.string(), password: z.string() }))
+      .mutation(({ input }) => {
+        // Login logic
+        return { token: 'jwt-token' };
+      }),
+
+    logout: publicProcedure.mutation(() => {
+      // Logout logic
+      return { success: true };
+    }),
+  },
+
+  // Equivalent using router() function
+  profile: router({
+    get: publicProcedure.query(() => {
+      return { id: '1', name: 'John' };
+    }),
+
+    update: publicProcedure
+      .input(z.object({ name: z.string() }))
+      .mutation(({ input }) => {
+        return { id: '1', ...input };
+      }),
+  }),
+});
+```
+
+## Advanced Router Patterns
+
+### Router with Context
+
+Include shared context like database connections:
+
+```typescript title="src/router-with-context.ts"
+import { router, publicProcedure } from './trpc';
+
+// Assuming context includes database and user
+export const appRouter = router({
+  posts: router({
+    list: publicProcedure.query(async ({ ctx }) => {
+      return await ctx.db.post.findMany({
+        where: { published: true },
+      });
+    }),
+
+    myPosts: publicProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) {
+        throw new Error('Unauthorized');
+      }
+
+      return await ctx.db.post.findMany({
+        where: { authorId: ctx.user.id },
+      });
+    }),
+  }),
+});
+```
+
+### Conditional Router Loading
+
+Load routers conditionally based on environment or features:
+
+```typescript title="src/conditional-router.ts"
+import { router } from './trpc';
+import { userRouter } from './routers/user';
+import { postRouter } from './routers/post';
+
+const baseRouter = router({
+  user: userRouter,
+  post: postRouter,
+});
+
+// Add admin routes only in development or for admin users
+const adminRouter = router({
+  admin: router({
+    deleteAllPosts: publicProcedure.mutation(async () => {
+      if (process.env.NODE_ENV !== 'development') {
+        throw new Error('Not allowed in production');
+      }
+      return await db.post.deleteMany();
+    }),
+  }),
+});
+
+export const appRouter = process.env.NODE_ENV === 'development'
+  ? router({
+      ...baseRouter._def.procedures,
+      ...adminRouter._def.procedures,
+    })
+  : baseRouter;
+```
+
+### Router with Middleware
+
+Apply middleware to entire router branches:
+
+```typescript title="src/middleware-router.ts"
+import { router, publicProcedure } from './trpc';
+
+// Protected procedure with auth middleware
+const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next({ ctx: { user: ctx.user } });
+});
+
+export const appRouter = router({
+  // Public routes
+  public: router({
+    health: publicProcedure.query(() => ({ status: 'ok' })),
+    posts: publicProcedure.query(() => getPublicPosts()),
+  }),
+
+  // Protected routes - all require authentication
+  protected: router({
+    profile: protectedProcedure.query(({ ctx }) => {
+      return getUserProfile(ctx.user.id);
+    }),
+
+    settings: protectedProcedure
+      .input(z.object({ theme: z.enum(['light', 'dark']) }))
+      .mutation(({ input, ctx }) => {
+        return updateUserSettings(ctx.user.id, input);
+      }),
+  }),
+});
+```
+
+## Router Best Practices
+
+<Accordions>
+  <Accordion title="Organization">
+    - **Group by domain**: Organize routers by business domains (users, posts, orders)
+    - **Keep files focused**: Each router file should handle one main entity
+    - **Use consistent naming**: Follow consistent patterns for procedure names
+    - **Separate concerns**: Keep business logic separate from route definitions
+    
+    ```typescript
+    // Good structure
+    src/
+      routers/
+        user.ts      // User-related procedures
+        post.ts      // Post-related procedures  
+        comment.ts   // Comment-related procedures
+        index.ts     // Main router combining all
+    ```
+  </Accordion>
+
+  <Accordion title="Performance">
+    - **Lazy load large routers**: Use dynamic imports for optional functionality
+    - **Paginate large datasets**: Always implement pagination for list endpoints
+    - **Cache frequently accessed data**: Use appropriate caching strategies
+    - **Optimize database queries**: Include necessary relations, avoid N+1 queries
+    
+    ```typescript
+    // Pagination example
+    list: publicProcedure
+      .input(z.object({
+        cursor: z.string().optional(),
+        limit: z.number().min(1).max(100).default(10),
+      }))
+      .query(async ({ input }) => {
+        const items = await db.post.findMany({
+          take: input.limit + 1,
+          cursor: input.cursor ? { id: input.cursor } : undefined,
+        });
+        
+        const hasMore = items.length > input.limit;
+        return {
+          items: hasMore ? items.slice(0, -1) : items,
+          nextCursor: hasMore ? items[items.length - 1].id : undefined,
+        };
+      });
+    ```
+  </Accordion>
+
+<Accordion title="Type Safety">
+  - **Export router types**: Always export `AppRouter` type for client inference
+  - **Use input validation**: Validate all inputs with Zod or similar libraries
+  - **Define output types**: Use output validation for critical data -
+  **Leverage inference**: Let TypeScript infer types from your schemas
+  ```typescript // Always export the router type export const appRouter =
+  router(
+  {
+    // ... procedures
+  }
+  ); export type AppRouter = typeof appRouter; ```
+</Accordion>
+
+  <Accordion title="Error Handling">
+    - **Use proper error codes**: Return appropriate HTTP status codes
+    - **Provide helpful messages**: Include actionable error messages
+    - **Log errors appropriately**: Log server errors for debugging
+    - **Handle edge cases**: Account for missing data, network issues, etc.
+    
+    ```typescript
+    getUser: publicProcedure
+      .input(z.object({ id: z.string() }))
+      .query(async ({ input }) => {
+        const user = await db.user.findUnique({ where: { id: input.id } });
+        
+        if (!user) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: `User with ID ${input.id} not found`,
+          });
+        }
+        
+        return user;
+      });
+    ```
+  </Accordion>
+</Accordions>
+
+## Testing Routers
+
+Test your routers effectively with server-side callers:
+
+```typescript title="src/routers/__tests__/user.test.ts"
+import { createCallerFactory } from '@trpc/server';
+import { appRouter } from '../index';
+
+const createCaller = createCallerFactory(appRouter);
+
+describe('User Router', () => {
+  const caller = createCaller({
+    // Mock context
+    db: mockDb,
+    user: { id: 'test-user', role: 'user' },
+  });
+
+  it('should create a user', async () => {
+    const input = {
+      name: 'John Doe',
+      email: 'john@example.com',
+    };
+
+    const result = await caller.user.create(input);
+
+    expect(result).toMatchObject(input);
+    expect(result.id).toBeDefined();
+  });
+
+  it('should list users', async () => {
+    const users = await caller.user.list();
+
+    expect(Array.isArray(users)).toBe(true);
+  });
+
+  it('should throw on invalid input', async () => {
+    await expect(
+      caller.user.create({ name: '', email: 'invalid' })
+    ).rejects.toThrow();
+  });
+});
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="Add Procedures" href="/docs/server/procedures">
+    Learn how to create queries, mutations, and subscriptions
+  </Card>
+  <Card title="Context Setup" href="/docs/server/context">
+    Share data like database connections across procedures
+  </Card>
+  <Card title="Middleware" href="/docs/server/middlewares">
+    Add authentication, logging, and validation logic
+  </Card>
+  <Card title="Merge Routers" href="/docs/server/merging-routers">
+    Learn advanced patterns for combining multiple routers
+  </Card>
+</Cards>

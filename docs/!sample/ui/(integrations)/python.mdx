@@ -1,0 +1,91 @@
+---
+title: Python
+description: Generate docs from Python
+---
+
+<Callout type="warn" title="Experiemntal">
+  Support for Python docgen is still experimental, please use it in caution.
+</Callout>
+
+## Setup
+
+```package-install
+fumadocs-python shiki
+```
+
+### Generate Docs
+
+Install the Python command first, we need it to collect docs from your Python package.
+
+```bash
+pip install ./node_modules/fumadocs-python
+```
+
+Generate the docs as a JSON:
+
+```bash
+fumapy-generate your-package-name
+# for example
+fumapy-generate httpx
+```
+
+Use the following script to convert JSON into MDX:
+
+```js title="scripts/generate-docs.mjs"
+import { rimraf } from 'rimraf';
+import * as Python from 'fumadocs-python';
+import * as fs from 'node:fs/promises';
+
+// output JSON file path
+const jsonPath = './httpx.json';
+
+async function generate() {
+  const out = 'content/docs/(api)';
+  // clean previous output
+  await rimraf(out);
+
+  const content = JSON.parse((await fs.readFile(jsonPath)).toString());
+  const converted = Python.convert(content, {
+    baseUrl: '/docs',
+  });
+
+  await Python.write(converted, {
+    outDir: out,
+  });
+}
+
+void generate();
+```
+
+<Callout type="warn" title="Be careful">
+  While most docgens use Markdown or reStructuredText, Fumadocs uses **MDX**.
+  Make sure your doc is valid in MDX syntax before running.
+</Callout>
+
+### MDX Components
+
+Add the components.
+
+```tsx
+import defaultMdxComponents from 'fumadocs-ui/mdx';
+import type { MDXComponents } from 'mdx/types';
+import * as Python from 'fumadocs-python/components';
+
+export function getMDXComponents(components?: MDXComponents): MDXComponents {
+  return {
+    ...defaultMdxComponents,
+    ...Python,
+    ...components,
+  };
+}
+```
+
+Add styles:
+
+```css title="Tailwind CSS"
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+/* [!code ++] */
+@import 'fumadocs-python/preset.css';
+```

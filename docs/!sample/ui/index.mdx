@@ -1,0 +1,249 @@
+---
+title: Quick Start
+description: Getting Started with Fumadocs
+icon: Album
+---
+
+## Introduction
+
+Fumadocs <span className='text-fd-muted-foreground text-sm'>(Foo-ma docs)</span> is a **documentation framework** based on Next.js, designed to be fast, flexible,
+and composes seamlessly into Next.js App Router.
+
+Fumadocs has different parts:
+
+<Cards>
+
+<Card icon={<CpuIcon className="text-purple-300" />} title='Fumadocs Core'>
+
+Handles most of the logic, including document search, content source adapters, and Markdown extensions.
+
+</Card>
+
+<Card icon={<PanelsTopLeft className="text-blue-300" />} title='Fumadocs UI'>
+
+The default theme of Fumadocs offers a beautiful look for documentation sites and interactive components.
+
+</Card>
+
+<Card icon={<Database />} title='Content Source'>
+
+The source of your content, can be a CMS or local data layers like [Fumadocs MDX](/docs/mdx) (the official content source).
+
+</Card>
+
+<Card icon={<Terminal />} title='Fumadocs CLI'>
+
+A command line tool to install UI components and automate things, useful for customizing layouts.
+
+</Card>
+
+</Cards>
+
+<Callout title="Want to learn more?">
+  Read our in-depth [What is Fumadocs](/docs/ui/what-is-fumadocs) introduction.
+</Callout>
+
+### Terminology
+
+**Markdown/MDX:** Markdown is a markup language for creating formatted text. Fumadocs supports Markdown and MDX (superset of Markdown) out-of-the-box.
+
+Although not required, some basic knowledge of Next.js App Router would be useful for further customisations.
+
+## Automatic Installation
+
+A minimum version of Node.js 18 required, note that Node.js 23.1 might have problems with Next.js production build.
+
+<Tabs groupId='package-manager' persist items={['npm', 'pnpm', 'yarn', 'bun']} label='Initialize Fumadocs'>
+
+```bash tab="npm"
+npm create fumadocs-app
+```
+
+```bash tab="pnpm"
+pnpm create fumadocs-app
+```
+
+```bash tab="yarn"
+yarn create fumadocs-app
+```
+
+```bash tab="bun"
+bun create fumadocs-app
+```
+
+</Tabs>
+
+It will ask you:
+
+- the React.js framework to use (the docs is only written for Next.js).
+- the content source to use.
+
+A new fumadocs app should be initialized. Now you can start hacking!
+
+<Callout title='From Existing Codebase?'>
+
+    You can follow the [Manual Installation](/docs/ui/manual-installation) guide to get started.
+
+</Callout>
+
+### Enjoy!
+
+Create your first MDX file in the docs folder.
+
+```mdx title="content/docs/index.mdx"
+---
+title: Hello World
+---
+
+## Yo what's up
+```
+
+Run the app in development mode and see http://localhost:3000/docs.
+
+```package-install
+npm run dev
+```
+
+## FAQ
+
+Some common questions you may encounter.
+
+<Accordions>
+    <Accordion id='change-base-url' title="How to change the base route of docs?">
+
+Since Fumadocs uses Next.js App Router, you can change the base route of docs (e.g. from `/docs/page` to `/info/page`) by renaming the route:
+
+<Files>
+  <Folder name="app/docs" defaultOpen className="opacity-50" disabled>
+    <File name="layout.tsx" />
+  </Folder>
+  <Folder name="app/info" defaultOpen>
+    <File name="layout.tsx" />
+  </Folder>
+</Files>
+
+And update the base URL of pages in `source.ts`:
+
+```ts title="lib/source.ts"
+import { loader } from 'fumadocs-core/source';
+
+export const source = loader({
+  baseUrl: '/info', // [!code highlight]
+});
+```
+
+If you want to remove the entire base route (docs start at `/` instead of `/docs`), it's the same logic.
+
+Make your docs folder a route group.
+
+<Files>
+  <Folder name="app/(docs)" defaultOpen>
+    <File name="layout.tsx" />
+  </Folder>
+</Files>
+
+And update `baseUrl`:
+
+```ts title="lib/source.ts"
+import { loader } from 'fumadocs-core/source';
+
+export const source = loader({
+  baseUrl: '/', // [!code highlight]
+});
+```
+
+    </Accordion>
+    <Accordion id='dynamic-route' title="It uses Dynamic Route, will it be poor in performance?">
+
+Next.js turns dynamic route into static routes when `generateStaticParams` is configured.
+Hence, it is as fast as static pages.
+
+You can enable Static Exports on Next.js to get a static build output. (Notice that Route Handler doesn't work with static export, you have to configure static search)
+
+    </Accordion>
+    <Accordion id='custom-layout-docs-page' title='How to create a page in /docs without docs layout?'>
+
+Same as managing layouts in Next.js App Router, remove the original MDX file from content directory (`/content/docs`).
+This ensures duplicated pages will not cause errors.
+
+Now, You can add the page to another route group, which isn't a descendant of docs layout.
+
+For example, to replace `/docs/test`:
+
+<Files>
+  <File name="(home)/docs/test/page.tsx" />
+  <Folder name="docs">
+    <File name="layout.tsx" />
+    <File name="[[...slug]]/page.tsx" />
+  </Folder>
+</Files>
+
+For `/docs`, you need to change the catch-all route to be non-optional:
+
+<Files>
+  <File name="(home)/docs/page.tsx" />
+  <Folder name="docs" defaultOpen>
+    <File name="layout.tsx" />
+    <File name="[...slug]/page.tsx" />
+  </Folder>
+</Files>
+
+    </Accordion>
+
+    <Accordion id='multi-docs' title="How to implement multi-docs?">
+        We recommend to use [Sidebar Tabs](/docs/ui/navigation/sidebar#sidebar-tabs).
+    </Accordion>
+
+</Accordions>
+
+## Learn More
+
+New to here? Don't worry, we are welcome for your questions.
+
+If you find anything confusing, please give your feedback on [Github Discussion](https://github.com/fuma-nama/fumadocs/discussions)!
+
+### Writing Content
+
+For authoring docs, make sure to read:
+
+<Cards>
+  <Card href="/docs/ui/markdown" title="Markdown">
+    Fumadocs has some additional features for authoring content.
+  </Card>
+  <Card href="/docs/ui/navigation" title="Navigation">
+    Learn how to customise navigation links and sidebar items.
+  </Card>
+  <Card href="/docs/ui/page-conventions" title="Routing">
+    Learn how to organise content.
+  </Card>
+  <Card
+    href="/docs/ui/components"
+    title="Components"
+    description="See all available components to enhance your docs"
+  />
+</Cards>
+
+### Special Needs
+
+<Cards>
+  <Card
+    href="/docs/ui/static-export"
+    title="Configure Static Export"
+    description="Learn how to enable static export on your docs"
+  />
+  <Card
+    href="/docs/ui/internationalization"
+    title="Internationalization"
+    description="Learn how to enable i18n"
+  />
+  <Card
+    href="/docs/ui/theme"
+    title="Color Themes"
+    description="Add themes to Fumadocs UI"
+  />
+  <Card
+    href="/docs/ui/customisation"
+    title="Customise UI"
+    description="A detailed guide on how to customise UI"
+  />
+</Cards>

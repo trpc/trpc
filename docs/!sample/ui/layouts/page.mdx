@@ -1,0 +1,180 @@
+---
+title: Docs Page
+description: A page in your documentation
+---
+
+Page is the base element of a documentation, it includes Table of contents,
+Footer, and Breadcrumb.
+
+## Usage
+
+```tsx title="page.tsx"
+import {
+  DocsPage,
+  DocsDescription,
+  DocsTitle,
+  DocsBody,
+} from 'fumadocs-ui/page';
+
+<DocsPage>
+  <DocsTitle>title</DocsTitle>
+  <DocsDescription>description</DocsDescription>
+  <DocsBody>
+    <h2>This heading looks good!</h2>
+    It applies the Typography styles, wrap your content here.
+  </DocsBody>
+</DocsPage>;
+```
+
+<Callout type='info' title='Good to know'>
+
+Instead of rendering the title with `DocsTitle` in `page.tsx`, you can put the title into MDX file.
+This will render the title in the MDX body.
+
+</Callout>
+
+### Edit on GitHub
+
+You can also add your own component.
+
+```tsx
+import { DocsBody } from 'fumadocs-ui/page';
+
+<DocsBody>
+  <a
+    href={`https://github.com/fuma-nama/fumadocs/blob/main/content/docs/${page.path}`}
+    rel="noreferrer noopener"
+    target="_blank"
+    className="w-fit border rounded-xl p-2 font-medium text-sm text-fd-secondary-foreground bg-fd-secondary transition-colors hover:text-fd-accent-foreground hover:bg-fd-accent"
+  >
+    Edit on GitHub
+  </a>
+</DocsBody>;
+```
+
+## Configurations
+
+### Full Mode
+
+To extend the page to fill up all available space, pass `full` to the page component.
+This will force TOC to be shown as a popover.
+
+```tsx
+import { DocsPage } from 'fumadocs-ui/page';
+
+<DocsPage full>...</DocsPage>;
+```
+
+### Table of Contents
+
+An overview of all the headings in your article, it requires an array of headings.
+
+For Markdown and MDX documents, You can obtain it using the
+[TOC Utility](/docs/headless/utils/get-toc). Content sources like Fumadocs MDX offer this out-of-the-box.
+
+```tsx
+import { DocsPage } from 'fumadocs-ui/page';
+
+<DocsPage toc={headings}>...</DocsPage>;
+```
+
+You can customise or disable it with the `tableOfContent` option, or with `tableOfContentPopover` on smaller devices.
+
+```tsx
+import { DocsPage } from 'fumadocs-ui/page';
+
+<DocsPage tableOfContent={options} tableOfContentPopover={options}>
+  ...
+</DocsPage>;
+```
+
+<AutoTypeTable path="./content/docs/ui/props.ts" name="TOCProps" />
+
+#### Style
+
+You can choose another style for TOC, like `clerk` inspired by https://clerk.com:
+
+```tsx
+import { DocsPage } from 'fumadocs-ui/page';
+
+<DocsPage
+  tableOfContent={{
+    style: 'clerk',
+  }}
+>
+  ...
+</DocsPage>;
+```
+
+### Last Updated Time
+
+Display last updated time of the page.
+
+```tsx
+import { DocsPage } from 'fumadocs-ui/page';
+
+<DocsPage lastUpdate={new Date(lastModifiedTime)} />;
+```
+
+Since you might use different version controls (e.g. Github) or CMS like Sanity, Fumadocs UI doesn't display the last updated time by
+default.
+
+<Tabs items={['Fumadocs MDX', 'GitHub API']}>
+
+    <Tab>
+
+You can enable [`lastModifiedTime`](/docs/mdx/last-modified).
+
+```tsx
+import { DocsPage } from 'fumadocs-ui/page';
+import { source } from '@/lib/source';
+const page = source.getPage(['...']);
+
+<DocsPage lastUpdate={new Date(page.data.lastModified)} />;
+```
+
+    </Tab>
+
+    <Tab>
+
+For Github hosted documents, you can use
+the [`getGithubLastEdit`](/docs/headless/utils/git-last-edit) utility.
+
+```tsx
+import { DocsPage } from 'fumadocs-ui/page';
+import { getGithubLastEdit } from 'fumadocs-core/server';
+
+const time = await getGithubLastEdit({
+  owner: 'fuma-nama',
+  repo: 'fumadocs',
+  path: `content/docs/${page.path}`,
+});
+
+<DocsPage lastUpdate={new Date(time)} />;
+```
+
+    </Tab>
+
+</Tabs>
+
+### Footer
+
+Footer is a navigation element that has two buttons to jump to the next and previous pages. When not specified, it shows the neighbour pages found from page tree.
+
+Customise the footer with the `footer` option.
+
+```tsx
+import { DocsPage, DocsBody } from 'fumadocs-ui/page';
+
+<DocsPage footer={options}>
+  <DocsBody>...</DocsBody>
+</DocsPage>;
+```
+
+<AutoTypeTable path="./content/docs/ui/props.ts" name="FooterProps" />
+
+### Breadcrumb
+
+A navigation element, shown only when user is navigating in folders.
+
+<AutoTypeTable path="./content/docs/ui/props.ts" name="BreadcrumbProps" />

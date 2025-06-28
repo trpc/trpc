@@ -1,0 +1,587 @@
+---
+title: Data Transformers
+description: Serialize complex JavaScript types across the client-server boundary
+icon: IconArrowsRightLeft
+---
+
+Data transformers in tRPC allow you to serialize complex JavaScript types like `Date`, `Map`, `Set`, `BigInt`, and others across the client-server boundary. Without transformers, only JSON-serializable data can be sent.
+
+<Callout type="info">
+  All transformers must be configured on both client and server to work
+  properly. The same transformer instance should be used in both places.
+</Callout>
+
+## Overview
+
+tRPC supports these data transformers:
+
+- **SuperJSON** - Most popular, handles many JS types out of the box
+- **Devalue** - Smaller, faster, handles circular references
+- **Custom** - Build your own for specific needs
+
+## SuperJSON (Recommended)
+
+SuperJSON is the most popular choice as it handles many JavaScript types out of the box:
+
+### Installation and Setup
+
+**1. Install SuperJSON**
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+
+```bash tab="npm"
+npm install superjson
+```
+
+```bash tab="pnpm"
+pnpm add superjson
+```
+
+```bash tab="yarn"
+yarn add superjson
+```
+
+```bash tab="bun"
+bun add superjson
+```
+
+</Tabs>
+
+**2. Add to Server**
+
+```typescript title="src/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+
+const t = initTRPC.create({
+  transformer: superjson,
+});
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+**3. Add to Client**
+
+```typescript title="src/client.ts"
+import { createTRPCClient } from '@trpc/client';
+import { httpBatchLink } from '@trpc/client';
+import superjson from 'superjson';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/trpc',
+      transformer: superjson,
+    }),
+  ],
+});
+```
+
+### Usage with Rich Types
+
+Once configured, you can use rich JavaScript types seamlessly:
+
+```typescript title="src/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+export const appRouter = router({
+  // Using Date objects
+  createPost: publicProcedure
+    .input(z.object({
+      title: z.string(),
+      publishDate: z.date(),
+    }))
+    .mutation(({ input }) => {
+      return {
+        id: '1',
+        title: input.title,
+        publishDate: input.publishDate, // Date object
+        createdAt: new Date(),          // Date object
+      };
+    }),
+
+  // Using Map and Set
+  getUserStats: publicProcedure
+    .query(() => {
+      return {
+        visitsByDay: new Map([
+          ['2024-01-01', 100],
+          ['2024-01-02', 150],
+        ]),
+        uniqueVisitors: new Set(['user1', 'user2', 'user3']),
+        lastUpdated: new Date(),
+      };
+    }),
+
+  // Using BigInt
+  getFinancialData: publicProcedure
+    .query(() => {
+      return {
+        totalRevenue: BigInt('9007199254740991000'),
+        transactionCount: 1000n,
+        lastCalculated: new Date(),
+      };
+    }),
+});
+```
+
+Client usage remains type-safe:
+
+```typescript title="client.ts"
+// All types are automatically preserved
+const post = await client.createPost.mutate({
+  title: 'My Post',
+  publishDate: new Date('2024-12-25'), // Date object
+});
+
+console.log(post.createdAt instanceof Date); // true
+
+const stats = await client.getUserStats.query();
+console.log(stats.visitsByDay instanceof Map);    // true
+console.log(stats.uniqueVisitors instanceof Set); // true
+console.log(typeof stats.totalRevenue);           // bigint
+```
+
+## Advanced Transformers
+
+### Custom Transformers
+
+Create custom transformers for specific needs:
+
+```typescript title="src/custom-transformer.ts"
+import type { DataTransformer } from '@trpc/server';
+
+// Custom transformer for performance optimization
+export const customTransformer: DataTransformer = {
+  serialize: (value) => {
+    // Custom serialization logic
+    if (value instanceof Date) {
+      return { __type: 'Date', value: value.toISOString() };
+    }
+    if (value instanceof Map) {
+      return { __type: 'Map', value: Array.from(value.entries()) };
+    }
+    return value;
+  },
+
+  deserialize: (value) => {
+    // Custom deserialization logic
+    if (value && typeof value === 'object' && '__type' in value) {
+      switch (value.__type) {
+        case 'Date':
+          return new Date(value.value);
+        case 'Map':
+          return new Map(value.value);
+      }
+    }
+    return value;
+  },
+};
+```
+
+### Devalue Transformer
+
+For smaller payloads and better performance:
+
+**1. Install Devalue**
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+
+```bash tab="npm"
+npm install devalue
+```
+
+```bash tab="pnpm"
+pnpm add devalue
+```
+
+```bash tab="yarn"
+yarn add devalue
+```
+
+```bash tab="bun"
+bun add devalue
+```
+
+</Tabs>
+
+**2. Create Transformer**
+
+```typescript title="src/devalue-transformer.ts"
+import { parse, stringify } from 'devalue';
+import type { DataTransformer } from '@trpc/server';
+
+export const devalueTransformer: DataTransformer = {
+  serialize: (value) => stringify(value),
+  deserialize: (value) => parse(value),
+};
+```
+
+**3. Use in tRPC**
+
+```typescript title="src/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import { devalueTransformer } from './devalue-transformer';
+
+const t = initTRPC.create({
+  transformer: devalueTransformer,
+});
+```
+
+## Input vs Output Transformers
+
+Use different transformers for input and output when needed:
+
+```typescript title="src/directional-transformers.ts"
+import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+import { parse, stringify } from 'devalue';
+
+const t = initTRPC.create({
+  transformer: {
+    // Use devalue for inputs (smaller, faster)
+    input: {
+      serialize: stringify,
+      deserialize: parse,
+    },
+    // Use superjson for outputs (more feature-rich)
+    output: superjson,
+  },
+});
+```
+
+## Supported Types
+
+<Tabs items={['Primitives', 'Built-ins', 'Complex Types']}>
+
+```typescript tab="Primitives"
+// Basic JavaScript primitives work without transformers
+const router = t.router({
+  example: t.procedure.query(() => ({
+    string: 'hello',
+    number: 42,
+    boolean: true,
+    null: null,
+    undefined: undefined,
+    array: [1, 2, 3],
+    object: { key: 'value' },
+  })),
+});
+```
+
+```typescript tab="Built-ins"
+// Built-in JavaScript objects require transformers
+const router = t.router({
+  richTypes: t.procedure.query(() => ({
+    date: new Date(),
+    regexp: /hello/gi,
+    map: new Map([['key', 'value']]),
+    set: new Set([1, 2, 3]),
+    bigint: BigInt('123456789'),
+    error: new Error('Something went wrong'),
+  })),
+});
+```
+
+```typescript tab="Complex Types"
+// Complex nested structures and circular references
+class User {
+  constructor(public name: string, public friends: User[] = []) {}
+}
+
+const router = t.router({
+  complexData: t.procedure.query(() => {
+    const user1 = new User('Alice');
+    const user2 = new User('Bob');
+
+    // Circular reference
+    user1.friends.push(user2);
+    user2.friends.push(user1);
+
+    return {
+      users: [user1, user2],
+      metadata: {
+        createdAt: new Date(),
+        tags: new Set(['social', 'networking']),
+        stats: new Map([
+          ['totalUsers', 2],
+          ['connections', 2],
+        ]),
+      },
+    };
+  }),
+});
+```
+
+</Tabs>
+
+## Alternative Transformers
+
+### Popular Third-Party Options
+
+<Tabs items={['Yup', 'Valibot', 'ArkType', 'Effect']}>
+
+```typescript tab="Yup"
+// Using Yup for validation and transformation
+import * as yup from 'yup';
+
+const transformSchema = yup.object({
+  serialize: yup.mixed().required(),
+  deserialize: yup.mixed().required(),
+});
+
+const yupTransformer = {
+  serialize: (value: unknown) => {
+    return JSON.stringify(value);
+  },
+  deserialize: (value: string) => {
+    return JSON.parse(value);
+  },
+};
+```
+
+```typescript tab="Valibot"
+// Using Valibot for schema validation
+import * as v from 'valibot';
+
+const TransformSchema = v.object({
+  serialize: v.function(),
+  deserialize: v.function(),
+});
+
+const valibotTransformer = {
+  serialize: (value: unknown) => {
+    return v.parse(v.string(), JSON.stringify(value));
+  },
+  deserialize: (value: string) => {
+    return JSON.parse(value);
+  },
+};
+```
+
+```typescript tab="ArkType"
+// Using ArkType for runtime validation
+import { type } from 'arktype';
+
+const TransformType = type({
+  serialize: 'Function',
+  deserialize: 'Function',
+});
+
+const arkTransformer = {
+  serialize: (value: unknown) => {
+    return JSON.stringify(value);
+  },
+  deserialize: (value: string) => {
+    return JSON.parse(value);
+  },
+};
+```
+
+```typescript tab="Effect"
+// Using Effect for functional programming approach
+import { Effect, pipe } from 'effect';
+
+const effectTransformer = {
+  serialize: (value: unknown) => {
+    return pipe(
+      Effect.try(() => JSON.stringify(value)),
+      Effect.getOrElse(() => '{}')
+    );
+  },
+  deserialize: (value: string) => {
+    return pipe(
+      Effect.try(() => JSON.parse(value)),
+      Effect.getOrElse(() => ({}))
+    );
+  },
+};
+```
+
+</Tabs>
+
+## Performance Considerations
+
+### Benchmark Results
+
+Different transformers have different performance characteristics:
+
+| Transformer | Serialize | Deserialize | Bundle Size | Features          |
+| ----------- | --------- | ----------- | ----------- | ----------------- |
+| None (JSON) | 100%      | 100%        | 0KB         | Basic types only  |
+| SuperJSON   | 85%       | 90%         | 25KB        | Most JS types     |
+| Devalue     | 95%       | 95%         | 8KB         | Smaller, faster   |
+| Custom      | Varies    | Varies      | Varies      | Tailored to needs |
+
+### Optimization Tips
+
+**1. Use Conditional Transformation**
+
+Only transform when necessary:
+
+```typescript
+const conditionalTransformer = {
+  serialize: (value: unknown) => {
+    // Only transform if needed
+    if (needsTransformation(value)) {
+      return superjson.serialize(value);
+    }
+    return value;
+  },
+  deserialize: (value: unknown) => {
+    if (isTransformed(value)) {
+      return superjson.deserialize(value);
+    }
+    return value;
+  },
+};
+```
+
+**2. Lazy Loading**
+
+Load transformers only when needed:
+
+```typescript
+const lazyTransformer = {
+  serialize: async (value: unknown) => {
+    const { default: superjson } = await import('superjson');
+    return superjson.serialize(value);
+  },
+  deserialize: async (value: unknown) => {
+    const { default: superjson } = await import('superjson');
+    return superjson.deserialize(value);
+  },
+};
+```
+
+**3. Caching**
+
+Cache transformation results for repeated data:
+
+```typescript
+const cache = new Map();
+
+const cachedTransformer = {
+  serialize: (value: unknown) => {
+    const key = JSON.stringify(value);
+    if (cache.has(key)) {
+      return cache.get(key);
+    }
+    const result = superjson.serialize(value);
+    cache.set(key, result);
+    return result;
+  },
+  deserialize: (value: unknown) => {
+    // Similar caching logic for deserialization
+    return superjson.deserialize(value);
+  },
+};
+```
+
+## Best Practices
+
+### Development vs Production
+
+Use different strategies for different environments:
+
+```typescript title="src/transformer.ts"
+import superjson from 'superjson';
+import { devalueTransformer } from './devalue-transformer';
+
+export const transformer = process.env.NODE_ENV === 'production'
+  ? devalueTransformer // Smaller bundle, better performance
+  : superjson;         // Better DX, more features
+```
+
+### Type Safety
+
+Ensure type safety across transformations:
+
+```typescript
+import type { DataTransformer } from '@trpc/server';
+
+// Type-safe transformer interface
+interface TypedTransformer<T> extends DataTransformer {
+  serialize(object: T): string;
+  deserialize(object: string): T;
+}
+
+const dateTransformer: TypedTransformer<Date> = {
+  serialize: (date: Date) => date.toISOString(),
+  deserialize: (str: string) => new Date(str),
+};
+```
+
+### Error Handling
+
+Handle transformation errors gracefully:
+
+```typescript
+const safeTransformer = {
+  serialize: (value: unknown) => {
+    try {
+      return superjson.serialize(value);
+    } catch (error) {
+      console.error('Serialization failed:', error);
+      return JSON.stringify(value); // Fallback
+    }
+  },
+  deserialize: (value: unknown) => {
+    try {
+      return superjson.deserialize(value);
+    } catch (error) {
+      console.error('Deserialization failed:', error);
+      return value; // Return as-is
+    }
+  },
+};
+```
+
+## Common Issues
+
+### Circular References
+
+Handle circular references properly:
+
+```typescript
+// This will cause issues without proper transformer
+const circular = { name: 'test' };
+circular.self = circular;
+
+// Use devalue or custom transformer for circular refs
+const devalueTransformer = {
+  serialize: stringify, // Handles circular refs
+  deserialize: parse,
+};
+```
+
+### Large Objects
+
+Optimize for large data sets:
+
+```typescript
+const optimizedTransformer = {
+  serialize: (value: unknown) => {
+    // Stream large objects
+    if (isLargeObject(value)) {
+      return streamSerialize(value);
+    }
+    return superjson.serialize(value);
+  },
+  deserialize: (value: unknown) => {
+    if (isStreamedData(value)) {
+      return streamDeserialize(value);
+    }
+    return superjson.deserialize(value);
+  },
+};
+```
+
+<Callout type="info">
+  Choose the transformer that best fits your needs. SuperJSON for most use
+  cases, Devalue for performance-critical applications, or custom transformers
+  for specific requirements.
+</Callout>

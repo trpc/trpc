@@ -1,0 +1,616 @@
+---
+title: Express Setup
+description: Get started with tRPC in Express.js for traditional server APIs
+icon: IconServer
+---
+
+Express.js is one of the most popular Node.js frameworks. This guide will show you how to integrate tRPC with Express to build type-safe APIs.
+
+## Installation
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash npm install @trpc/server express zod npm install -D @types/express
+    @types/node tsx typescript ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash pnpm add @trpc/server express zod pnpm add -D @types/express
+    @types/node tsx typescript ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash yarn add @trpc/server express zod yarn add -D @types/express
+    @types/node tsx typescript ```
+  </Tab>
+  <Tab value="bun">
+    ```bash bun add @trpc/server express zod bun add -D @types/express
+    @types/node tsx typescript ```
+  </Tab>
+</Tabs>
+
+## Setup Guide
+
+### 1. Create tRPC Instance
+
+```typescript title="src/trpc.ts"
+import { initTRPC } from '@trpc/server';
+import { ZodError } from 'zod';
+
+const t = initTRPC.create({
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.cause instanceof ZodError ? error.cause.flatten() : null,
+      },
+    };
+  },
+});
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+```
+
+### 2. Create Your API Router
+
+```typescript title="src/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+// Mock database
+const posts: Array<{
+  id: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+}> = [];
+
+export const appRouter = router({
+  hello: publicProcedure
+    .input(z.object({ name: z.string().optional() }))
+    .query(({ input }) => {
+      return {
+        greeting: `Hello ${input.name ?? 'World'}!`,
+      };
+    }),
+
+  getPosts: publicProcedure.query(() => {
+    return posts;
+  }),
+
+  createPost: publicProcedure
+    .input(z.object({
+      title: z.string().min(1),
+      content: z.string().min(1),
+    }))
+    .mutation(({ input }) => {
+      const post = {
+        id: Date.now().toString(),
+        ...input,
+        createdAt: new Date(),
+      };
+      posts.push(post);
+      return post;
+    }),
+
+  deletePost: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(({ input }) => {
+      const index = posts.findIndex(p => p.id === input.id);
+      if (index === -1) {
+        throw new Error('Post not found');
+      }
+      const deleted = posts.splice(index, 1)[0];
+      return deleted;
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+### 3. Setup Express Server
+
+```typescript title="src/server.ts"
+import express from 'express';
+import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import { appRouter } from './router';
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Create context
+const createContext = ({ req, res }: { req: express.Request; res: express.Response }) => {
+  return {
+    req,
+    res,
+    // Add user info, database connections, etc.
+  };
+};
+
+// Add tRPC middleware
+app.use(
+  '/api/trpc',
+  createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  })
+);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.listen(port, () => {
+  console.log(`🚀 Server running at http://localhost:${port}`);
+  console.log(`📡 tRPC endpoint at http://localhost:${port}/api/trpc`);
+});
+```
+
+### 4. Add Scripts to package.json
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  }
+}
+```
+
+### 5. Create TypeScript Config
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+## Test Your Setup
+
+Start your server:
+
+```bash
+npm run dev
+```
+
+Test your endpoints:
+
+<Tabs items={['Hello Query', 'Get Posts', 'Create Post', 'Delete Post']}>
+<Tab value="Hello Query">
+```bash
+curl "http://localhost:3000/api/trpc/hello?input=%7B%22name%22%3A%22World%22%7D"
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "greeting": "Hello World!"
+    }
+  }
+}
+```
+
+</Tab>
+<Tab value="Get Posts">
+```bash
+curl "http://localhost:3000/api/trpc/getPosts"
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": []
+  }
+}
+```
+
+</Tab>
+<Tab value="Create Post">
+```bash
+curl -X POST "http://localhost:3000/api/trpc/createPost" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "My First Post", "content": "Hello tRPC!"}'
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "id": "1234567890",
+      "title": "My First Post",
+      "content": "Hello tRPC!",
+      "createdAt": "2024-01-15T10:30:00.000Z"
+    }
+  }
+}
+```
+
+</Tab>
+<Tab value="Delete Post">
+```bash
+curl -X POST "http://localhost:3000/api/trpc/deletePost" \
+  -H "Content-Type: application/json" \
+  -d '{"id": "1234567890"}'
+```
+</Tab>
+</Tabs>
+
+## Add Database Integration
+
+Here's how to integrate with popular databases:
+
+<Tabs items={['Prisma', 'Drizzle', 'Raw SQL']}>
+<Tab value="Prisma">
+```bash
+npm install prisma @prisma/client
+npx prisma init
+```
+
+```typescript title="src/context.ts"
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+export const createContext = ({ req, res }: { req: express.Request; res: express.Response }) => {
+  return {
+    req,
+    res,
+    prisma,
+  };
+};
+
+export type Context = ReturnType<typeof createContext>;
+```
+
+```typescript title="src/router.ts"
+import { z } from 'zod';
+import { router, publicProcedure } from './trpc';
+
+export const appRouter = router({
+  getPosts: publicProcedure.query(async ({ ctx }) => {
+    return await ctx.prisma.post.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }),
+
+  createPost: publicProcedure
+    .input(z.object({
+      title: z.string().min(1),
+      content: z.string().min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      return await ctx.prisma.post.create({
+        data: input,
+      });
+    }),
+});
+```
+
+</Tab>
+<Tab value="Drizzle">
+```bash
+npm install drizzle-orm
+npm install -D drizzle-kit
+```
+
+```typescript title="src/db/schema.ts"
+import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+
+export const posts = pgTable('posts', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+```
+
+```typescript title="src/context.ts"
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
+import * as schema from './db/schema';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const db = drizzle(pool, { schema });
+
+export const createContext = ({ req, res }: { req: express.Request; res: express.Response }) => {
+  return {
+    req,
+    res,
+    db,
+  };
+};
+```
+
+</Tab>
+<Tab value="Raw SQL">
+```bash
+npm install pg
+npm install -D @types/pg
+```
+
+```typescript title="src/context.ts"
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+export const createContext = ({ req, res }: { req: express.Request; res: express.Response }) => {
+  return {
+    req,
+    res,
+    db: pool,
+  };
+};
+
+export type Context = ReturnType<typeof createContext>;
+```
+
+```typescript title="src/router.ts"
+export const appRouter = router({
+  getPosts: publicProcedure.query(async ({ ctx }) => {
+    const result = await ctx.db.query(
+      'SELECT * FROM posts ORDER BY created_at DESC'
+    );
+    return result.rows;
+  }),
+
+  createPost: publicProcedure
+    .input(z.object({
+      title: z.string().min(1),
+      content: z.string().min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const result = await ctx.db.query(
+        'INSERT INTO posts (title, content) VALUES ($1, $2) RETURNING *',
+        [input.title, input.content]
+      );
+      return result.rows[0];
+    }),
+});
+```
+
+</Tab>
+</Tabs>
+
+## Add Authentication
+
+Here's how to add JWT authentication:
+
+```typescript title="src/auth.ts"
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+export function verifyToken(token: string) {
+  try {
+    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string };
+  } catch {
+    return null;
+  }
+}
+
+export function signToken(payload: { userId: string; email: string }) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+}
+```
+
+```typescript title="src/context.ts"
+import express from 'express';
+import { verifyToken } from './auth';
+
+export const createContext = ({ req, res }: { req: express.Request; res: express.Response }) => {
+  // Extract token from Authorization header
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const user = token ? verifyToken(token) : null;
+
+  return {
+    req,
+    res,
+    user,
+  };
+};
+
+export type Context = ReturnType<typeof createContext>;
+```
+
+```typescript title="src/trpc.ts"
+import { initTRPC, TRPCError } from '@trpc/server';
+import type { Context } from './context';
+
+const t = initTRPC.context<Context>().create();
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+// Protected procedure
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next({
+    ctx: {
+      user: ctx.user,
+    },
+  });
+});
+```
+
+```typescript title="src/router.ts"
+export const appRouter = router({
+  // Public routes
+  hello: publicProcedure.query(() => ({ message: 'Hello World!' })),
+
+  // Protected routes
+  getProfile: protectedProcedure.query(({ ctx }) => {
+    return {
+      userId: ctx.user.userId,
+      email: ctx.user.email,
+    };
+  }),
+
+  createPost: protectedProcedure
+    .input(z.object({
+      title: z.string().min(1),
+      content: z.string().min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // User is guaranteed to exist here
+      return await createPost({
+        ...input,
+        authorId: ctx.user.userId,
+      });
+    }),
+});
+```
+
+## Client Usage
+
+Create a client to consume your API:
+
+```typescript title="client.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './src/router';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/api/trpc',
+      headers() {
+        const token = localStorage.getItem('auth-token');
+        return token ? { authorization: `Bearer ${token}` } : {};
+      },
+    }),
+  ],
+});
+
+// Usage examples
+async function examples() {
+  // Query
+  const hello = await client.hello.query({ name: 'tRPC' });
+  console.log(hello.greeting);
+
+  // Mutation
+  const post = await client.createPost.mutate({
+    title: 'My Post',
+    content: 'Hello World!',
+  });
+  console.log('Created post:', post);
+
+  // Get all posts
+  const posts = await client.getPosts.query();
+  console.log('All posts:', posts);
+}
+```
+
+## Add CORS Support
+
+For frontend applications on different domains:
+
+```bash
+npm install cors
+npm install -D @types/cors
+```
+
+```typescript title="src/server.ts"
+import express from 'express';
+import cors from 'cors';
+import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import { appRouter } from './router';
+
+const app = express();
+
+// Add CORS middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+}));
+
+// Add tRPC middleware
+app.use(
+  '/api/trpc',
+  createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  })
+);
+
+// ... rest of server setup
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="Add Database" href="/docs/server/quickstart">
+    Integrate with Prisma, Drizzle, or your preferred database
+  </Card>
+  <Card title="Authentication" href="/docs/server/authorization">
+    Add user authentication and role-based access control
+  </Card>
+  <Card title="Validation" href="/docs/server/validators">
+    Learn advanced input and output validation
+  </Card>
+  <Card title="Error Handling" href="/docs/server/error-handling">
+    Handle errors gracefully with proper HTTP status codes
+  </Card>
+</Cards>
+
+## Common Issues
+
+<Accordions>
+<Accordion title="CORS Issues">
+If your frontend can't connect to your API, make sure CORS is properly configured:
+
+```typescript
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://yourapp.com'],
+  credentials: true,
+}));
+```
+
+</Accordion>
+
+<Accordion title="Type Errors">
+Make sure your TypeScript configuration is correct and all dependencies are installed:
+
+```bash
+npm install -D typescript @types/node @types/express
+```
+
+</Accordion>
+
+<Accordion title="Port Already in Use">
+If port 3000 is already in use, change it in your server.ts file or use an environment variable:
+
+```typescript
+const port = process.env.PORT || 3001;
+```
+
+</Accordion>
+</Accordions>

@@ -1,0 +1,103 @@
+---
+title: OpenAPI
+description: Generating docs for OpenAPI schema
+---
+
+## Manual Setup
+
+Install the required packages.
+
+```package-install
+fumadocs-openapi shiki
+```
+
+### Generate Styles
+
+Please note that you must have Tailwind CSS v4 configured.
+
+```css title="Tailwind CSS"
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+/* [!code ++] */
+@import 'fumadocs-openapi/css/preset.css';
+```
+
+### Configure Pages
+
+Create an OpenAPI instance on the server. Fumadocs OpenAPI renders the pages on server-side.
+
+```ts title="lib/source.ts"
+import { createOpenAPI, attachFile } from 'fumadocs-openapi/server';
+import { loader } from 'fumadocs-core/source';
+
+export const source = loader({
+  pageTree: {
+    // [!code ++] adds a badge to each page item in page tree
+    attachFile,
+  },
+});
+
+// [!code ++]
+export const openapi = createOpenAPI();
+```
+
+Add `APIPage` to your MDX Components, so that you can use it in MDX files.
+
+```tsx title="mdx-components.tsx"
+import defaultComponents from 'fumadocs-ui/mdx';
+import { APIPage } from 'fumadocs-openapi/ui';
+import { openapi } from '@/lib/source';
+import type { MDXComponents } from 'mdx/types';
+
+export function getMDXComponents(components?: MDXComponents): MDXComponents {
+  return {
+    ...defaultComponents,
+    APIPage: (props) => <APIPage {...openapi.getAPIPageProps(props)} />,
+    ...components,
+  };
+}
+```
+
+> It is a React Server Component.
+
+### Generate Files
+
+You can generate MDX files directly from your OpenAPI schema.
+
+Create a script:
+
+```js title="scripts/generate-docs.mjs"
+import { generateFiles } from 'fumadocs-openapi';
+
+void generateFiles({
+  // the OpenAPI schema, you can also give it an external URL.
+  input: ['./unkey.json'],
+  output: './content/docs',
+  // we recommend to enable it
+  // make sure your endpoint description doesn't break MDX syntax.
+  includeDescription: true,
+});
+```
+
+> Only OpenAPI 3.0 and 3.1 are supported.
+
+Generate docs with the script:
+
+```bash
+node ./scripts/generate-docs.mjs
+```
+
+## Features
+
+The official OpenAPI integration supports:
+
+- Basic API endpoint information
+- Interactive API playground
+- Example code to send request (in different programming languages)
+- Response samples and TypeScript definitions
+- Request parameters and body generated from schemas
+
+### Demo
+
+[View demo](/docs/openapi).

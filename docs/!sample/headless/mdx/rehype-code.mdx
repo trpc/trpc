@@ -1,0 +1,64 @@
+---
+title: Rehype Code
+description: Code syntax highlighter
+---
+
+A wrapper of [Shiki](https://shiki.style), the built-in syntax highlighter.
+
+## Usage
+
+Add the rehype plugin.
+
+```ts title="MDX Compiler"
+import { compile } from '@mdx-js/mdx';
+import { rehypeCode } from 'fumadocs-core/mdx-plugins';
+
+await compile('...', {
+  rehypePlugins: [rehypeCode],
+});
+```
+
+> This plugin is included by default on Fumadocs MDX.
+
+### Output
+
+A codeblock wrapped in `<pre />` element.
+
+```html
+<pre>
+<code>...</code>
+</pre>
+```
+
+### Meta
+
+It parses the `title` meta string, and adds it to the `pre` element as an attribute.
+
+````mdx
+```js title="Title"
+console.log('Hello');
+```
+````
+
+You may filter the meta string before processing it with the `filterMetaString` option.
+
+### Inline Code
+
+`console.log("hello world"){:js}` works.
+
+See https://shiki.style/packages/rehype#inline-code.
+
+### Icon
+
+Adds an icon according to the language of the codeblock.
+It outputs HTML, you might need to render it with React `dangerouslySetInnerHTML`.
+
+```jsx
+<pre icon="<svg />">...</pre>
+```
+
+Disable or customise icons with the `icon` option.
+
+### More Options
+
+See [Shiki](https://shiki.style).

@@ -1,0 +1,764 @@
+---
+title: TanStack React Query Integration
+description: Master tRPC with TanStack React Query for powerful data fetching
+icon: IconBrandReact
+---
+
+Learn how to use tRPC with TanStack React Query for the ultimate data fetching experience. This integration provides powerful caching, background synchronization, optimistic updates, and more.
+
+## Why TanStack React Query?
+
+The `@trpc/tanstack-react-query` integration is the **recommended** way to use tRPC in React applications:
+
+<Cards>
+  <Card icon={<IconCache />} title="Intelligent Caching">
+    Automatic caching with smart invalidation and background refetching
+  </Card>
+
+<Card icon={<IconRefresh />} title="Background Sync">
+  Keep data fresh with automatic background updates and refetch strategies
+</Card>
+
+<Card icon={<IconZap />} title="Optimistic Updates">
+  Update UI immediately while mutations are in flight, with automatic rollback
+  on errors
+</Card>
+
+  <Card icon={<IconStack />} title="Request Deduplication">
+    Identical requests are automatically merged to reduce network traffic
+  </Card>
+</Cards>
+
+## Installation
+
+Install the required packages:
+
+<Tabs groupId='package-manager' persist items={['npm', 'pnpm', 'yarn', 'bun']}>
+
+```bash tab="npm"
+npm install @trpc/tanstack-react-query @tanstack/react-query
+```
+
+```bash tab="pnpm"
+pnpm add @trpc/tanstack-react-query @tanstack/react-query
+```
+
+```bash tab="yarn"
+yarn add @trpc/tanstack-react-query @tanstack/react-query
+```
+
+```bash tab="bun"
+bun add @trpc/tanstack-react-query @tanstack/react-query
+```
+
+</Tabs>
+
+## Setup
+
+### 1. Create Query Client
+
+Set up a shared query client with optimal defaults:
+
+```typescript title="lib/query-client.ts"
+import { QueryClient } from '@tanstack/react-query';
+
+export function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000, // 1 minute
+        gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+        retry: (failureCount, error) => {
+          // Don't retry on 4xx errors
+          if (error.data?.httpStatus >= 400 && error.data?.httpStatus < 500) {
+            return false;
+          }
+          return failureCount < 3;
+        },
+      },
+      mutations: {
+        retry: 1,
+      },
+    },
+  });
+}
+
+let browserQueryClient: QueryClient | undefined = undefined;
+
+export function getQueryClient() {
+  if (typeof window === 'undefined') {
+    // Server: always make a new query client
+    return makeQueryClient();
+  } else {
+    // Browser: make a new query client if we don't already have one
+    if (!browserQueryClient) browserQueryClient = makeQueryClient();
+    return browserQueryClient;
+  }
+}
+```
+
+### 2. Create tRPC Context
+
+Set up the tRPC React context:
+
+```typescript title="lib/trpc-react.ts"
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { AppRouter } from '../server/router';
+
+// Create the tRPC React context
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+```
+
+### 3. Configure Provider
+
+Wrap your app with the necessary providers:
+
+```tsx title="app/providers.tsx"
+'use client';
+
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import { useState } from 'react';
+import { getQueryClient } from './lib/query-client';
+import { TRPCProvider } from './lib/trpc-react';
+import type { AppRouter } from './server/router';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  const queryClient = getQueryClient();
+
+  const [trpcClient] = useState(() =>
+    createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: '/api/trpc',
+          // Optional: Add headers, credentials, etc.
+          headers() {
+            return {
+              // Add auth headers, etc.
+            };
+          },
+        }),
+      ],
+    }),
+  );
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TRPCProvider client={trpcClient} queryClient={queryClient}>
+        {children}
+        <ReactQueryDevtools initialIsOpen={false} />
+      </TRPCProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
+## Basic Usage
+
+### Queries
+
+Use `useQuery` with tRPC query options for type-safe data fetching:
+
+```tsx title="components/posts-list.tsx"
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from '../lib/trpc-react';
+
+export function PostsList() {
+  const trpc = useTRPC();
+
+  // Basic query
+  const postsQuery = useQuery(trpc.posts.list.queryOptions());
+
+  // Query with input
+  const userQuery = useQuery(trpc.users.byId.queryOptions('user_123'));
+
+  // Query with React Query options
+  const popularPostsQuery = useQuery(trpc.posts.popular.queryOptions(), {
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
+
+  if (postsQuery.isLoading) return <div>Loading posts...</div>;
+  if (postsQuery.error) return <div>Error: {postsQuery.error.message}</div>;
+
+  return (
+    <div>
+      {postsQuery.data?.map((post) => (
+        <article key={post.id}>
+          <h2>{post.title}</h2>
+          <p>{post.excerpt}</p>
+        </article>
+      ))}
+    </div>
+  );
+}
+```
+
+### Mutations
+
+Use `useMutation` with tRPC mutation options:
+
+```tsx title="components/create-post.tsx"
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useTRPC } from '../lib/trpc-react';
+
+export function CreatePost() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+
+  const createPostMutation = useMutation(trpc.posts.create.mutationOptions({
+    onSuccess: (newPost) => {
+      // Invalidate and refetch posts list
+      queryClient.invalidateQueries(trpc.posts.list.queryKey());
+
+      // Optionally add the new post to the cache immediately
+      queryClient.setQueryData(
+        trpc.posts.byId.queryKey(newPost.id),
+        newPost
+      );
+
+      // Reset form
+      setTitle('');
+      setContent('');
+    },
+    onError: (error) => {
+      console.error('Failed to create post:', error);
+    },
+  }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createPostMutation.mutate({ title, content });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Post title"
+        required
+      />
+      <textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Post content"
+        required
+      />
+      <button type="submit" disabled={createPostMutation.isPending}>
+        {createPostMutation.isPending ? 'Creating...' : 'Create Post'}
+      </button>
+    </form>
+  );
+}
+```
+
+## Advanced Patterns
+
+### Infinite Queries
+
+Perfect for pagination and infinite scrolling:
+
+```tsx title="components/infinite-posts.tsx"
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useTRPC } from '../lib/trpc-react';
+
+export function InfinitePosts() {
+  const trpc = useTRPC();
+
+  const infinitePostsQuery = useInfiniteQuery(
+    trpc.posts.infinite.infiniteQueryOptions({
+      limit: 10,
+    }, {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      getPreviousPageParam: (firstPage) => firstPage.prevCursor,
+    })
+  );
+
+  const loadMore = () => {
+    if (infinitePostsQuery.hasNextPage && !infinitePostsQuery.isFetchingNextPage) {
+      infinitePostsQuery.fetchNextPage();
+    }
+  };
+
+  return (
+    <div>
+      {infinitePostsQuery.data?.pages.map((page, pageIndex) => (
+        <div key={pageIndex}>
+          {page.posts.map((post) => (
+            <article key={post.id}>
+              <h3>{post.title}</h3>
+              <p>{post.excerpt}</p>
+            </article>
+          ))}
+        </div>
+      ))}
+
+      <button
+        onClick={loadMore}
+        disabled={!infinitePostsQuery.hasNextPage || infinitePostsQuery.isFetchingNextPage}
+      >
+        {infinitePostsQuery.isFetchingNextPage
+          ? 'Loading more...'
+          : infinitePostsQuery.hasNextPage
+          ? 'Load More'
+          : 'No more posts'}
+      </button>
+    </div>
+  );
+}
+```
+
+### Optimistic Updates
+
+Update the UI immediately while mutations are in flight:
+
+```tsx title="components/optimistic-updates.tsx"
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTRPC } from '../lib/trpc-react';
+
+export function LikeButton({ postId }: { postId: string }) {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  const likeMutation = useMutation(trpc.posts.like.mutationOptions({
+    onMutate: async (variables) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries(trpc.posts.byId.queryKey(postId));
+
+      // Snapshot the previous value
+      const previousPost = queryClient.getQueryData(trpc.posts.byId.queryKey(postId));
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(trpc.posts.byId.queryKey(postId), (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          likes: old.likes + 1,
+          isLiked: true,
+        };
+      });
+
+      // Return context with snapshot
+      return { previousPost };
+    },
+    onError: (err, variables, context) => {
+      // Rollback to previous value on error
+      if (context?.previousPost) {
+        queryClient.setQueryData(
+          trpc.posts.byId.queryKey(postId),
+          context.previousPost
+        );
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries(trpc.posts.byId.queryKey(postId));
+    },
+  }));
+
+  return (
+    <button
+      onClick={() => likeMutation.mutate({ postId })}
+      disabled={likeMutation.isPending}
+    >
+      ❤️ Like {likeMutation.isPending && '(saving...)'}
+    </button>
+  );
+}
+```
+
+### Dependent Queries
+
+Chain queries that depend on each other:
+
+```tsx title="components/dependent-queries.tsx"
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from '../lib/trpc-react';
+
+export function UserWithPosts({ userId }: { userId: string }) {
+  const trpc = useTRPC();
+
+  // First query: get user
+  const userQuery = useQuery(trpc.users.byId.queryOptions(userId));
+
+  // Second query: get user's posts (depends on user existing)
+  const userPostsQuery = useQuery(
+    trpc.posts.byUserId.queryOptions(userId),
+    {
+      enabled: !!userQuery.data, // Only run if user exists
+    }
+  );
+
+  if (userQuery.isLoading) return <div>Loading user...</div>;
+  if (userQuery.error) return <div>User not found</div>;
+
+  return (
+    <div>
+      <h1>{userQuery.data.name}</h1>
+      <p>{userQuery.data.bio}</p>
+
+      {userPostsQuery.isLoading ? (
+        <div>Loading posts...</div>
+      ) : (
+        <div>
+          <h2>Posts by {userQuery.data.name}</h2>
+          {userPostsQuery.data?.map((post) => (
+            <article key={post.id}>
+              <h3>{post.title}</h3>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Background Synchronization
+
+Keep data fresh with intelligent refetching:
+
+```tsx title="components/live-data.tsx"
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from '../lib/trpc-react';
+
+export function LiveDashboard() {
+  const trpc = useTRPC();
+
+  // Refetch every 30 seconds when window is focused
+  const metricsQuery = useQuery(trpc.analytics.metrics.queryOptions(), {
+    refetchInterval: 30 * 1000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    staleTime: 20 * 1000, // Consider data stale after 20 seconds
+  });
+
+  // Real-time notifications (refetch on mount and window focus)
+  const notificationsQuery = useQuery(trpc.notifications.unread.queryOptions(), {
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: 'always',
+    staleTime: 0, // Always considered stale
+  });
+
+  return (
+    <div>
+      <div>
+        <h2>Metrics</h2>
+        {metricsQuery.data && (
+          <div>
+            <p>Users: {metricsQuery.data.userCount}</p>
+            <p>Posts: {metricsQuery.data.postCount}</p>
+            <p>Last updated: {new Date(metricsQuery.dataUpdatedAt).toLocaleTimeString()}</p>
+          </div>
+        )}
+      </div>
+
+      <div>
+        <h2>Notifications</h2>
+        {notificationsQuery.data?.length > 0 && (
+          <div>You have {notificationsQuery.data.length} unread notifications</div>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+## Error Handling
+
+### Global Error Handling
+
+Set up global error handling in your Query Client:
+
+```typescript title="lib/query-client.ts"
+import { QueryClient } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
+
+export function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: (failureCount, error) => {
+          // Don't retry on client errors
+          if (error.data?.httpStatus >= 400 && error.data?.httpStatus < 500) {
+            return false;
+          }
+          return failureCount < 3;
+        },
+      },
+      mutations: {
+        onError: (error) => {
+          // Global error handling for mutations
+          if (error.data?.code === 'UNAUTHORIZED') {
+            // Redirect to login
+            window.location.href = '/login';
+          } else {
+            toast.error(error.message || 'Something went wrong');
+          }
+        },
+      },
+    },
+  });
+}
+```
+
+### Component-Level Error Handling
+
+Handle errors gracefully in components:
+
+```tsx title="components/error-handling.tsx"
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from '../lib/trpc-react';
+
+export function PostWithErrorHandling({ postId }: { postId: string }) {
+  const trpc = useTRPC();
+
+  const postQuery = useQuery(trpc.posts.byId.queryOptions(postId), {
+    throwOnError: false, // Don't throw to error boundary
+    retry: (failureCount, error) => {
+      // Custom retry logic
+      if (error.data?.code === 'NOT_FOUND') {
+        return false; // Don't retry on 404
+      }
+      return failureCount < 2;
+    },
+  });
+
+  if (postQuery.isLoading) {
+    return <div>Loading post...</div>;
+  }
+
+  if (postQuery.error) {
+    if (postQuery.error.data?.code === 'NOT_FOUND') {
+      return <div>Post not found</div>;
+    }
+    if (postQuery.error.data?.code === 'UNAUTHORIZED') {
+      return <div>You need to log in to view this post</div>;
+    }
+    return (
+      <div>
+        <p>Failed to load post: {postQuery.error.message}</p>
+        <button onClick={() => postQuery.refetch()}>
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <article>
+      <h1>{postQuery.data.title}</h1>
+      <p>{postQuery.data.content}</p>
+    </article>
+  );
+}
+```
+
+## Performance Optimization
+
+### Query Key Management
+
+Efficiently manage cache invalidation:
+
+```typescript title="lib/query-keys.ts"
+import { useTRPC } from './trpc-react';
+
+export function useInvalidateQueries() {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return {
+    // Invalidate all posts
+    invalidateAllPosts: () => {
+      queryClient.invalidateQueries({
+        queryKey: trpc.posts.list.queryKey(),
+      });
+    },
+
+    // Invalidate specific post
+    invalidatePost: (postId: string) => {
+      queryClient.invalidateQueries({
+        queryKey: trpc.posts.byId.queryKey(postId),
+      });
+    },
+
+    // Invalidate posts by user
+    invalidateUserPosts: (userId: string) => {
+      queryClient.invalidateQueries({
+        queryKey: trpc.posts.byUserId.queryKey(userId),
+      });
+    },
+
+    // Invalidate all user-related data
+    invalidateUser: (userId: string) => {
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          // Invalidate any query that includes this user ID
+          return query.queryKey.includes(userId);
+        },
+      });
+    },
+  };
+}
+```
+
+### Selective Queries
+
+Only fetch what you need:
+
+```tsx title="components/selective-queries.tsx"
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from '../lib/trpc-react';
+
+export function UserPreview({ userId }: { userId: string }) {
+  const trpc = useTRPC();
+
+  // Only fetch basic user info, not full profile
+  const userQuery = useQuery(trpc.users.preview.queryOptions(userId));
+
+  return (
+    <div>
+      <img src={userQuery.data?.avatar} alt={userQuery.data?.name} />
+      <span>{userQuery.data?.name}</span>
+    </div>
+  );
+}
+
+export function UserFullProfile({ userId }: { userId: string }) {
+  const trpc = useTRPC();
+
+  // Fetch complete user profile
+  const userQuery = useQuery(trpc.users.fullProfile.queryOptions(userId));
+
+  return (
+    <div>
+      <h1>{userQuery.data?.name}</h1>
+      <p>{userQuery.data?.bio}</p>
+      <div>
+        <h2>Recent Activity</h2>
+        {userQuery.data?.recentActivity?.map((activity) => (
+          <div key={activity.id}>{activity.description}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## Testing
+
+### Mock tRPC Calls
+
+Test components that use tRPC:
+
+```typescript title="__tests__/posts-list.test.tsx"
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen } from '@testing-library/react';
+import { createTRPCMsw } from 'msw-trpc';
+import { rest } from 'msw';
+import { setupServer } from 'msw/node';
+import { PostsList } from '../components/posts-list';
+import type { AppRouter } from '../server/router';
+
+const trpcMsw = createTRPCMsw<AppRouter>();
+
+const server = setupServer(
+  trpcMsw.posts.list.query((req, res, ctx) => {
+    return res(
+      ctx.status(200),
+      ctx.data([
+        { id: '1', title: 'Test Post', content: 'Test content' },
+      ])
+    );
+  })
+);
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
+test('renders posts list', async () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  render(
+    <QueryClientProvider client={queryClient}>
+      <PostsList />
+    </QueryClientProvider>
+  );
+
+  expect(await screen.findByText('Test Post')).toBeInTheDocument();
+});
+```
+
+## Best Practices
+
+<Accordions>
+<Accordion id='query-keys' title="Query Key Management">
+
+- Use tRPC's built-in `queryKey()` functions for consistency
+- Invalidate queries strategically to avoid unnecessary refetches
+- Use query predicates for complex invalidation patterns
+- Consider query key hierarchies for related data
+
+```typescript
+// Good: Use tRPC query keys
+queryClient.invalidateQueries(trpc.posts.list.queryKey());
+
+// Good: Strategic invalidation
+queryClient.invalidateQueries({
+  predicate: (query) => query.queryKey[0] === 'posts'
+});
+```
+
+</Accordion>
+
+<Accordion id='error-handling' title="Error Handling Strategy">
+
+- Set up global error handling in your Query Client
+- Use specific error handling for expected error cases
+- Implement retry logic based on error types
+- Provide helpful error messages to users
+
+```typescript
+// Good: Error-specific handling
+if (error.data?.code === 'NOT_FOUND') {
+  return <NotFoundPage />;
+}
+```
+
+</Accordion>
+
+<Accordion id='performance' title="Performance Optimization">
+
+- Use appropriate `staleTime` values for different data types
+- Implement proper loading states
+- Consider request deduplication for frequently accessed data
+- Use infinite queries for large datasets
+
+```typescript
+// Good: Appropriate stale times
+const userQuery = useQuery(trpc.users.profile.queryOptions(), {
+  staleTime: 5 * 60 * 1000, // User data changes infrequently
+});
+
+const notificationsQuery = useQuery(trpc.notifications.list.queryOptions(), {
+  staleTime: 0, // Notifications should always be fresh
+});
+```
+
+</Accordion>
+</Accordions>
+
+---
+
+The TanStack React Query integration makes tRPC incredibly powerful for building modern React applications. With intelligent caching, background synchronization, and optimistic updates, you get a superior data fetching experience with full type safety.

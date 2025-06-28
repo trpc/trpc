@@ -1,0 +1,60 @@
+---
+title: Installation
+description: Get started with tRPC installation for your project
+icon: IconDownload
+---
+
+tRPC is split into server and client packages. Choose the installation path based on what you're building:
+
+## Choose Your Path
+
+<Cards>
+  <Card 
+    href="/docs/server/installation" 
+    title="Server Installation" 
+    icon={<IconServer className="text-blue-500" />}
+  >
+    **Building an API?** Install tRPC server to create your backend procedures and routers.
+  </Card>
+
+  <Card 
+    href="/docs/client/installation" 
+    title="Client Installation" 
+    icon={<IconDeviceDesktop className="text-green-500" />}
+  >
+    **Building a frontend?** Install tRPC client to connect your React, Next.js, or vanilla JS app.
+  </Card>
+</Cards>
+
+## Full-Stack Setup
+
+For complete full-stack applications, you'll need both:
+
+<Steps>
+  <Step title="Server Setup">
+    Start with the server to define your API:
+    
+    ```bash
+    npm install @trpc/server zod
+    ```
+    
+    [Complete server setup guide →](/docs/server/installation)
+  </Step>
+
+  <Step title="Client Setup">
+    Then add the client to connect your frontend:
+    
+    ```bash
+    npm install @trpc/client @trpc/react-query @tanstack/react-query
+    ```
+    
+    [Complete client setup guide →](/docs/client/installation)
+  </Step>
+</Steps>
+
+<Callout title="Need help choosing?">
+  **New to tRPC?** Start with our [quickstart guide](/docs/framework/quickstart)
+  for a complete walkthrough. **Building an API?** Go to [Server
+  Installation](/docs/server/installation). **Connecting a frontend?** Go to
+  [Client Installation](/docs/client/installation).
+</Callout>

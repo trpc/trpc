@@ -1,0 +1,513 @@
+---
+title: Server Quickstart
+description: Build your first tRPC server in 5 minutes
+icon: IconRocket
+---
+
+Build a complete tRPC server with queries, mutations, and type safety in under 5 minutes. This guide uses a standalone server that works everywhere.
+
+<Callout title="Framework-Specific Guides">
+  For production apps, see our [framework-specific
+  guides](/docs/server/framework) for Next.js, Express, Fastify, and more.
+</Callout>
+
+## What You'll Build
+
+A blog API server with:
+
+- ✅ **Get all posts** (query)
+- ✅ **Create new post** (mutation)
+- ✅ **Full type safety** (TypeScript)
+- ✅ **Input validation** (Zod)
+- ✅ **Testable endpoints** (HTTP)
+
+## Setup
+
+Initialize a new project:
+
+<Tabs items={['npm', 'pnpm', 'yarn', 'bun']}>
+  <Tab value="npm">
+    ```bash mkdir my-trpc-server && cd my-trpc-server npm init -y npm install
+    @trpc/server zod npm install -D typescript @types/node tsx ```
+  </Tab>
+  <Tab value="pnpm">
+    ```bash mkdir my-trpc-server && cd my-trpc-server pnpm init pnpm add
+    @trpc/server zod pnpm add -D typescript @types/node tsx ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash mkdir my-trpc-server && cd my-trpc-server yarn init -y yarn add
+    @trpc/server zod yarn add -D typescript @types/node tsx ```
+  </Tab>
+  <Tab value="bun">
+    ```bash mkdir my-trpc-server && cd my-trpc-server bun init bun add
+    @trpc/server zod bun add -D typescript @types/node tsx ```
+  </Tab>
+</Tabs>
+
+Add TypeScript config:
+
+```json title="tsconfig.json"
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
+```
+
+Add scripts:
+
+```json title="package.json"
+{
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "start": "tsx server.ts"
+  }
+}
+```
+
+## Step 1: Create Your API
+
+```typescript title="server.ts"
+import { initTRPC, TRPCError } from '@trpc/server';
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { z } from 'zod';
+
+// Initialize tRPC
+const t = initTRPC.create();
+
+// In-memory database (use a real database in production)
+const posts = [
+  { id: '1', title: 'Hello World', content: 'This is my first post!', createdAt: new Date() },
+  { id: '2', title: 'tRPC is Awesome', content: 'Building APIs has never been easier.', createdAt: new Date() },
+];
+
+// Create your API router
+const appRouter = t.router({
+  // Query: Get all posts
+  getPosts: t.procedure.query(() => {
+    return {
+      posts: posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+      total: posts.length,
+    };
+  }),
+
+  // Query: Get a specific post
+  getPost: t.procedure
+    .input(z.object({ id: z.string() }))
+    .query(({ input }) => {
+      const post = posts.find(p => p.id === input.id);
+      if (!post) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Post not found',
+        });
+      }
+      return post;
+    }),
+
+  // Mutation: Create a new post
+  createPost: t.procedure
+    .input(z.object({
+      title: z.string().min(1, 'Title is required').max(100, 'Title too long'),
+      content: z.string().min(1, 'Content is required'),
+    }))
+    .mutation(({ input }) => {
+      const newPost = {
+        id: String(posts.length + 1),
+        title: input.title,
+        content: input.content,
+        createdAt: new Date(),
+      };
+      posts.push(newPost);
+      return newPost;
+    }),
+
+  // Mutation: Delete a post
+  deletePost: t.procedure
+    .input(z.object({ id: z.string() }))
+    .mutation(({ input }) => {
+      const index = posts.findIndex(p => p.id === input.id);
+      if (index === -1) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Post not found',
+        });
+      }
+      const deletedPost = posts.splice(index, 1)[0];
+      return { success: true, deletedPost };
+    }),
+});
+
+// Create HTTP server
+const server = createHTTPServer({
+  router: appRouter,
+  createContext: () => ({}),
+});
+
+// Start the server
+const port = 3000;
+server.listen(port);
+
+console.log(`🚀 tRPC server running on http://localhost:${port}`);
+console.log('📋 Available endpoints:');
+console.log('  GET  /getPosts');
+console.log('  GET  /getPost?input={"id":"1"}');
+console.log('  POST /createPost');
+console.log('  POST /deletePost');
+
+// Export the router type for the client
+export type AppRouter = typeof appRouter;
+```
+
+## Step 2: Start Your Server
+
+```bash
+npm run dev
+```
+
+You should see:
+
+```
+🚀 tRPC server running on http://localhost:3000
+📋 Available endpoints:
+  GET  /getPosts
+  GET  /getPost?input={"id":"1"}
+  POST /createPost
+  POST /deletePost
+```
+
+## Step 3: Test Your API
+
+<Tabs items={['Get Posts', 'Get Single Post', 'Create Post', 'Delete Post']}>
+<Tab value="Get Posts">
+```bash
+curl http://localhost:3000/getPosts
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "posts": [
+        {
+          "id": "2",
+          "title": "tRPC is Awesome",
+          "content": "Building APIs has never been easier.",
+          "createdAt": "2024-01-15T10:30:00.000Z"
+        },
+        {
+          "id": "1",
+          "title": "Hello World",
+          "content": "This is my first post!",
+          "createdAt": "2024-01-15T10:30:00.000Z"
+        }
+      ],
+      "total": 2
+    }
+  }
+}
+```
+
+</Tab>
+
+<Tab value="Get Single Post">
+```bash
+curl "http://localhost:3000/getPost?input=%7B%22id%22%3A%221%22%7D"
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "id": "1",
+      "title": "Hello World",
+      "content": "This is my first post!",
+      "createdAt": "2024-01-15T10:30:00.000Z"
+    }
+  }
+}
+```
+
+</Tab>
+
+<Tab value="Create Post">
+```bash
+curl -X POST http://localhost:3000/createPost \
+  -H "Content-Type: application/json" \
+  -d '{"title": "My New Post", "content": "This is the content of my new post."}'
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "id": "3",
+      "title": "My New Post",
+      "content": "This is the content of my new post.",
+      "createdAt": "2024-01-15T10:35:00.000Z"
+    }
+  }
+}
+```
+
+</Tab>
+
+<Tab value="Delete Post">
+```bash
+curl -X POST http://localhost:3000/deletePost \
+  -H "Content-Type: application/json" \
+  -d '{"id": "1"}'
+```
+
+Response:
+
+```json
+{
+  "result": {
+    "data": {
+      "success": true,
+      "deletedPost": {
+        "id": "1",
+        "title": "Hello World",
+        "content": "This is my first post!",
+        "createdAt": "2024-01-15T10:30:00.000Z"
+      }
+    }
+  }
+}
+```
+
+</Tab>
+</Tabs>
+
+## Step 4: Add a Client
+
+Create a simple client to consume your API:
+
+```typescript title="client.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+// Create the client
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+    }),
+  ],
+});
+
+// Use the client
+async function main() {
+  try {
+    // Get all posts
+    console.log('📖 Getting all posts...');
+    const { posts, total } = await client.getPosts.query();
+    console.log(`Found ${total} posts:`);
+    posts.forEach(post => {
+      console.log(`  - ${post.title}`);
+    });
+
+    // Create a new post
+    console.log('\n✏️ Creating a new post...');
+    const newPost = await client.createPost.mutate({
+      title: 'Client Created Post',
+      content: 'This post was created using the tRPC client!',
+    });
+    console.log(`Created post: ${newPost.title}`);
+
+    // Get the specific post
+    console.log('\n🔍 Getting the new post...');
+    const post = await client.getPost.query({ id: newPost.id });
+    console.log(`Post content: ${post.content}`);
+
+  } catch (error) {
+    console.error('❌ Error:', error);
+  }
+}
+
+main();
+```
+
+Run the client:
+
+```bash
+npx tsx client.ts
+```
+
+Output:
+
+```
+📖 Getting all posts...
+Found 2 posts:
+  - tRPC is Awesome
+  - Hello World
+
+✏️ Creating a new post...
+Created post: Client Created Post
+
+🔍 Getting the new post...
+Post content: This post was created using the tRPC client!
+```
+
+## What Just Happened?
+
+🎉 **Congratulations!** You just built a complete type-safe API with:
+
+1. **Automatic Type Inference**: Your client knows exactly what data each endpoint returns
+2. **Input Validation**: Zod schemas validate all inputs automatically
+3. **Error Handling**: Proper HTTP status codes and error messages
+4. **No Code Generation**: Everything works with pure TypeScript
+
+## Key Concepts
+
+<Cards>
+  <Card title="Procedures" icon="🔧">
+    **Queries** fetch data, **Mutations** change data. Both are fully typed
+    functions.
+  </Card>
+  <Card title="Input Validation" icon="🛡️">
+    Zod schemas validate inputs and provide automatic TypeScript types.
+  </Card>
+  <Card title="Type Export" icon="📤">
+    Export your `AppRouter` type to get full type safety on the client.
+  </Card>
+  <Card title="Error Handling" icon="⚠️">
+    `TRPCError` provides structured errors with proper HTTP status codes.
+  </Card>
+</Cards>
+
+## Add Features
+
+Now that you have the basics, try adding:
+
+<Accordions>
+<Accordion title="Authentication">
+Add a simple API key check:
+
+```typescript
+// Add middleware for protected routes
+const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  const apiKey = ctx.req.headers['x-api-key'];
+  if (apiKey !== 'secret-key') {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next();
+});
+
+// Use in your router
+const appRouter = t.router({
+  // Public route
+  getPosts: t.procedure.query(/* ... */),
+
+  // Protected route
+  createPost: protectedProcedure
+    .input(/* ... */)
+    .mutation(/* ... */),
+});
+```
+
+</Accordion>
+
+<Accordion title="Database Integration">
+Replace the in-memory array with a real database:
+
+```typescript
+// With Prisma
+const appRouter = t.router({
+  getPosts: t.procedure.query(async () => {
+    const posts = await prisma.post.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    return { posts, total: posts.length };
+  }),
+
+  createPost: t.procedure
+    .input(z.object({
+      title: z.string().min(1),
+      content: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      return await prisma.post.create({
+        data: input,
+      });
+    }),
+});
+```
+
+</Accordion>
+
+<Accordion title="Nested Routers">
+Organize your API into logical groups:
+
+```typescript
+const postsRouter = t.router({
+  getAll: t.procedure.query(/* ... */),
+  getById: t.procedure.input(/* ... */).query(/* ... */),
+  create: t.procedure.input(/* ... */).mutation(/* ... */),
+  delete: t.procedure.input(/* ... */).mutation(/* ... */),
+});
+
+const usersRouter = t.router({
+  getAll: t.procedure.query(/* ... */),
+  create: t.procedure.input(/* ... */).mutation(/* ... */),
+});
+
+const appRouter = t.router({
+  posts: postsRouter,
+  users: usersRouter,
+});
+
+// Client usage:
+// client.posts.getAll.query()
+// client.users.create.mutate({...})
+```
+
+</Accordion>
+</Accordions>
+
+## Production Ready
+
+For production apps, choose a framework:
+
+<Cards>
+  <Card title="Next.js" href="/docs/server/framework/nextjs">
+    Full-stack React with SSR and API routes
+  </Card>
+  <Card title="Express" href="/docs/server/framework/express">
+    Traditional Node.js server with middleware support
+  </Card>
+  <Card title="Fastify" href="/docs/server/framework/fastify">
+    High-performance server with plugins
+  </Card>
+  <Card title="Serverless" href="/docs/server/framework/aws-lambda">
+    AWS Lambda, Cloudflare Workers, and more
+  </Card>
+</Cards>
+
+## Next Steps
+
+<Cards>
+  <Card title="Learn Core Concepts" href="/docs/server/procedures">
+    Deep dive into procedures, routers, and middleware
+  </Card>
+  <Card title="Add Authentication" href="/docs/server/authorization">
+    Implement user authentication and authorization
+  </Card>
+  <Card title="Handle Errors" href="/docs/server/error-handling">
+    Master error handling and debugging
+  </Card>
+  <Card title="Connect a Client" href="/docs/client">
+    Build a frontend with React, Vue, or vanilla TypeScript
+  </Card>
+</Cards>
