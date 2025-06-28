@@ -170,8 +170,11 @@ const jsonContentTypeHandler: ContentTypeHandler = {
 
     const info: TRPCRequestInfo = {
       isBatchCall,
-      accept: (req.headers.get('trpc-accept') ??
-        opts.searchParams.get('accept')) as TRPCAcceptHeader | null,
+      accept: (() => {
+        const raw =
+          req.headers.get('trpc-accept') ?? opts.searchParams.get('accept');
+        return raw === 'application/jsonl' ? raw : null;
+      })(),
       calls,
       type,
       connectionParams:
