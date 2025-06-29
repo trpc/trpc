@@ -1,0 +1,28 @@
+{
+  "name": "examples-minimal-react-typesafe-errors-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint --cache src",
+    "start": "vite preview"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.80.3",
+    "@trpc/client": "npm:@trpc/client",
+    "@trpc/server": "npm:@trpc/server",
+    "@trpc/tanstack-react-query": "npm:@trpc/tanstack-react-query",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "eslint": "^9.26.0",
+    "typescript": "^5.8.2",
+    "vite": "^6.1.1"
+  },
+  "version": "11.4.3"
+}
