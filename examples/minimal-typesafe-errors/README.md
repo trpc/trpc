@@ -1,4 +1,4 @@
-# A minimal working tRPC example
+# A minimal working tRPC example with type-safe errors
 
 Requires node 18 (for global fetch).
 

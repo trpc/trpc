@@ -1,4 +1,4 @@
-# A minimal React tRPC example
+# A minimal React tRPC example with type-safe errors
 
 Requires node 18 (for global fetch).
 
