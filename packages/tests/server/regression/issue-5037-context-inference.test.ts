@@ -102,6 +102,7 @@ describe('context inference w/ middlewares', () => {
         TInputOut,
         TOutputIn,
         TOutputOut,
+        TErrors,
       >(
         builder: ProcedureBuilder<
           TContext,
@@ -111,6 +112,7 @@ describe('context inference w/ middlewares', () => {
           TInputOut,
           TOutputIn,
           TOutputOut,
+          TErrors,
           false
         >,
       ) {

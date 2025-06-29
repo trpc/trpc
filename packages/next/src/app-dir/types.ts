@@ -1,4 +1,4 @@
-import type { Resolver } from '@trpc/client';
+import type { inferProcedureClientErrors, Resolver } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -13,6 +13,7 @@ type ResolverDef = {
   output: any;
   transformer: boolean;
   errorShape: any;
+  error: any;
 };
 
 export type DecorateProcedureServer<
@@ -49,6 +50,7 @@ export type NextAppDirDecorateRouterRecord<
             input: inferProcedureInput<$Value>;
             output: inferTransformedProcedureOutput<TRoot, $Value>;
             errorShape: TRoot['errorShape'];
+            error: inferProcedureClientErrors<TRoot, $Value>;
             transformer: TRoot['transformer'];
           }
         >

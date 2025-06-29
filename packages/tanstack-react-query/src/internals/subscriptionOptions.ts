@@ -1,6 +1,6 @@
 import type { SkipToken } from '@tanstack/react-query';
 import { hashKey, skipToken } from '@tanstack/react-query';
-import type { TRPCClientErrorLike, TRPCUntypedClient } from '@trpc/client';
+import type { TRPCUntypedClient } from '@trpc/client';
 import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { Unsubscribable } from '@trpc/server/observable';
 import type { inferAsyncIterableYield } from '@trpc/server/unstable-core-do-not-import';
@@ -42,21 +42,21 @@ export interface TRPCSubscriptionOptions<TDef extends ResolverDef> {
     input: TDef['input'],
     opts?: UnusedSkipTokenTRPCSubscriptionOptionsIn<
       inferAsyncIterableYield<TDef['output']>,
-      TRPCClientErrorLike<TDef>
+      TDef['error']
     >,
   ): TRPCSubscriptionOptionsOut<
     inferAsyncIterableYield<TDef['output']>,
-    TRPCClientErrorLike<TDef>
+    TDef['error']
   >;
   (
     input: TDef['input'] | SkipToken,
     opts?: BaseTRPCSubscriptionOptionsIn<
       inferAsyncIterableYield<TDef['output']>,
-      TRPCClientErrorLike<TDef>
+      TDef['error']
     >,
   ): TRPCSubscriptionOptionsOut<
     inferAsyncIterableYield<TDef['output']>,
-    TRPCClientErrorLike<TDef>
+    TDef['error']
   >;
 }
 export type TRPCSubscriptionStatus =

@@ -17,6 +17,7 @@ export type ResolverDef = {
   output: any;
   transformer: boolean;
   errorShape: any;
+  error: any;
 };
 
 /**

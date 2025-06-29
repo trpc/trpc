@@ -1,4 +1,4 @@
-import type { TRPCClientErrorLike } from '@trpc/client';
+import type { inferProcedureClientErrorsLike } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyRootTypes,
@@ -30,7 +30,7 @@ export type QueryLike<
     opts?: InferQueryOptions<TRoot, TProcedure, any>,
   ) => UseTRPCSuspenseQueryResult<
     inferProcedureOutput<TProcedure>,
-    TRPCClientErrorLike<TRoot>
+    inferProcedureClientErrorsLike<TRoot, TProcedure>
   >;
 };
 

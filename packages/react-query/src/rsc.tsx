@@ -5,7 +5,7 @@ import {
   HydrationBoundary,
   type QueryClient,
 } from '@tanstack/react-query';
-import type { TRPCClientError } from '@trpc/client';
+import type { inferProcedureClientErrors } from '@trpc/client';
 import type { inferTransformedProcedureOutput } from '@trpc/server';
 import {
   createRecursiveProxy,
@@ -42,7 +42,7 @@ type DecorateProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
   ) => Promise<void>;
   prefetchInfinite: (
@@ -50,7 +50,7 @@ type DecorateProcedure<
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
       inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
   ) => Promise<void>;
 };

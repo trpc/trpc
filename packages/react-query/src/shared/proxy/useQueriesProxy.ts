@@ -1,10 +1,6 @@
 import type { QueryOptions } from '@tanstack/react-query';
-import type { TRPCClient } from '@trpc/client';
-import {
-  getUntypedClient,
-  TRPCUntypedClient,
-  type TRPCClientError,
-} from '@trpc/client';
+import type { inferProcedureClientErrors, TRPCClient } from '@trpc/client';
+import { getUntypedClient, TRPCUntypedClient } from '@trpc/client';
 import type {
   AnyProcedure,
   AnyQueryProcedure,
@@ -30,12 +26,12 @@ type GetQueryOptions<
   opts?: TrpcQueryOptionsForUseQueries<
     inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData,
-    TRPCClientError<TRoot>
+    inferProcedureClientErrors<TRoot, TProcedure>
   >,
 ) => TrpcQueryOptionsForUseQueries<
   inferTransformedProcedureOutput<TRoot, TProcedure>,
   TData,
-  TRPCClientError<TRoot>
+  inferProcedureClientErrors<TRoot, TProcedure>
 >;
 
 /**
@@ -62,12 +58,12 @@ type GetSuspenseQueryOptions<
   opts?: TrpcQueryOptionsForUseSuspenseQueries<
     inferTransformedProcedureOutput<TRoot, TProcedure>,
     TData,
-    TRPCClientError<TRoot>
+    inferProcedureClientErrors<TRoot, TProcedure>
   >,
 ) => TrpcQueryOptionsForUseSuspenseQueries<
   inferTransformedProcedureOutput<TRoot, TProcedure>,
   TData,
-  TRPCClientError<TRoot>
+  inferProcedureClientErrors<TRoot, TProcedure>
 >;
 
 /**

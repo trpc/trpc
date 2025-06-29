@@ -3,7 +3,7 @@ import type { ProcedureType } from '../procedure';
 import type { AnyRootTypes, RootConfig } from '../rootConfig';
 import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
 import type { DefaultErrorShape } from './formatter';
-import type { TRPCError } from './TRPCError';
+import { CustomTRPCError, type TRPCError } from './TRPCError';
 
 /**
  * @internal
@@ -31,6 +31,12 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   }
   if (typeof path === 'string') {
     shape.data.path = path;
+  }
+  if (error instanceof CustomTRPCError) {
+    shape.data.customCode = error.customCode;
+    if (error.customData) {
+      shape.data.customData = error.customData;
+    }
   }
   return config.errorFormatter({ ...opts, shape });
 }

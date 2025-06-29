@@ -13,7 +13,7 @@ import type {
   SkipToken,
   Updater,
 } from '@tanstack/react-query';
-import type { TRPCClientError } from '@trpc/client';
+import type { attachError, inferProcedureClientErrors } from '@trpc/client';
 import { createTRPCClientProxy } from '@trpc/client';
 import type {
   AnyMutationProcedure,
@@ -76,9 +76,13 @@ export type DecorateQueryProcedure<
     opts: DefinedTRPCQueryOptionsIn<
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
-  ): DefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientError<TRoot>>;
+  ): DefinedTRPCQueryOptionsOut<
+    TQueryFnData,
+    TData,
+    inferProcedureClientErrors<TRoot, TProcedure>
+  >;
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
    */
@@ -90,12 +94,12 @@ export type DecorateQueryProcedure<
     opts?: UnusedSkipTokenTRPCQueryOptionsIn<
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
   ): UnusedSkipTokenTRPCQueryOptionsOut<
     TQueryFnData,
     TData,
-    TRPCClientError<TRoot>
+    inferProcedureClientErrors<TRoot, TProcedure>
   >;
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/queryOptions#queryoptions
@@ -108,9 +112,13 @@ export type DecorateQueryProcedure<
     opts?: UndefinedTRPCQueryOptionsIn<
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
-  ): UndefinedTRPCQueryOptionsOut<TQueryFnData, TData, TRPCClientError<TRoot>>;
+  ): UndefinedTRPCQueryOptionsOut<
+    TQueryFnData,
+    TData,
+    inferProcedureClientErrors<TRoot, TProcedure>
+  >;
 
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
@@ -124,13 +132,13 @@ export type DecorateQueryProcedure<
       inferProcedureInput<TProcedure>,
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
   ): DefinedTRPCInfiniteQueryOptionsOut<
     inferProcedureInput<TProcedure>,
     TQueryFnData,
     TData,
-    TRPCClientError<TRoot>
+    inferProcedureClientErrors<TRoot, TProcedure>
   >;
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
@@ -144,13 +152,13 @@ export type DecorateQueryProcedure<
       inferProcedureInput<TProcedure>,
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
   ): UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
     inferProcedureInput<TProcedure>,
     TQueryFnData,
     TData,
-    TRPCClientError<TRoot>
+    inferProcedureClientErrors<TRoot, TProcedure>
   >;
   /**
    * @see https://tanstack.com/query/latest/docs/framework/react/reference/infiniteQueryOptions#infinitequeryoptions
@@ -164,13 +172,13 @@ export type DecorateQueryProcedure<
       inferProcedureInput<TProcedure>,
       TQueryFnData,
       TData,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
   ): UndefinedTRPCInfiniteQueryOptionsOut<
     inferProcedureInput<TProcedure>,
     TQueryFnData,
     TData,
-    TRPCClientError<TRoot>
+    inferProcedureClientErrors<TRoot, TProcedure>
   >;
 
   /**
@@ -180,9 +188,12 @@ export type DecorateQueryProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
-  ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
+  ): attachError<
+    Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>,
+    inferProcedureClientErrors<TRoot, TProcedure>
+  >;
 
   /**
    * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientfetchinfinitequery
@@ -192,13 +203,16 @@ export type DecorateQueryProcedure<
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
       inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
-  ): Promise<
-    InfiniteData<
-      inferTransformedProcedureOutput<TRoot, TProcedure>,
-      NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
-    >
+  ): attachError<
+    Promise<
+      InfiniteData<
+        inferTransformedProcedureOutput<TRoot, TProcedure>,
+        NonNullable<ExtractCursorType<inferProcedureInput<TProcedure>>> | null
+      >
+    >,
+    inferProcedureClientErrors<TRoot, TProcedure>
   >;
 
   /**
@@ -208,7 +222,7 @@ export type DecorateQueryProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
   ): Promise<void>;
 
@@ -220,7 +234,7 @@ export type DecorateQueryProcedure<
     opts?: TRPCFetchInfiniteQueryOptions<
       inferProcedureInput<TProcedure>,
       inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
   ): Promise<void>;
 
@@ -231,9 +245,12 @@ export type DecorateQueryProcedure<
     input: inferProcedureInput<TProcedure>,
     opts?: TRPCFetchQueryOptions<
       inferTransformedProcedureOutput<TRoot, TProcedure>,
-      TRPCClientError<TRoot>
+      inferProcedureClientErrors<TRoot, TProcedure>
     >,
-  ): Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>;
+  ): attachError<
+    Promise<inferTransformedProcedureOutput<TRoot, TProcedure>>,
+    inferProcedureClientErrors<TRoot, TProcedure>
+  >;
 
   /**
    * @see https://tanstack.com/query/v5/docs/reference/QueryClient#queryclientinvalidatequeries
@@ -244,7 +261,7 @@ export type DecorateQueryProcedure<
       predicate?: (
         query: Query<
           inferProcedureOutput<TProcedure>,
-          TRPCClientError<TRoot>,
+          inferProcedureClientErrors<TRoot, TProcedure>,
           inferTransformedProcedureOutput<TRoot, TProcedure>,
           QueryKeyKnown<
             inferProcedureInput<TProcedure>,

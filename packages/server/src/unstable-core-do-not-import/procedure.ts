@@ -12,6 +12,7 @@ interface BuiltProcedureDef {
   meta: unknown;
   input: unknown;
   output: unknown;
+  errors: unknown;
 }
 
 /**
@@ -30,6 +31,7 @@ export interface Procedure<
     $types: {
       input: TDef['input'];
       output: TDef['output'];
+      errors: TDef['errors'];
     };
     procedure: true;
     type: TType;
@@ -90,6 +92,9 @@ export type inferProcedureParams<TProcedure> = TProcedure extends AnyProcedure
   : never;
 export type inferProcedureOutput<TProcedure> =
   inferProcedureParams<TProcedure>['$types']['output'];
+
+export type inferProcedureErrors<TProcedure> =
+  inferProcedureParams<TProcedure>['$types']['errors'];
 
 /**
  * @internal

@@ -45,6 +45,7 @@ export interface MiddlewareBuilder<
   TMeta,
   TContextOverrides,
   TInputOut,
+  TErrors,
 > {
   /**
    * Create a new builder based on the current middleware builder
@@ -56,19 +57,22 @@ export interface MiddlewareBuilder<
           TMeta,
           TContextOverrides,
           $ContextOverridesOut,
-          TInputOut
+          TInputOut,
+          TErrors
         >
       | MiddlewareBuilder<
           Overwrite<TContext, TContextOverrides>,
           TMeta,
           $ContextOverridesOut,
-          TInputOut
+          TInputOut,
+          TErrors
         >,
   ): MiddlewareBuilder<
     TContext,
     TMeta,
     Overwrite<TContextOverrides, $ContextOverridesOut>,
-    TInputOut
+    TInputOut,
+    TErrors
   >;
 
   /**
@@ -79,7 +83,8 @@ export interface MiddlewareBuilder<
     TMeta,
     TContextOverrides,
     object,
-    TInputOut
+    TInputOut,
+    TErrors
   >[];
 }
 
@@ -92,6 +97,7 @@ export type MiddlewareFunction<
   TContextOverridesIn,
   $ContextOverridesOut,
   TInputOut,
+  TErrors,
 > = {
   (opts: {
     ctx: Simplify<Overwrite<TContext, TContextOverridesIn>>;
@@ -99,6 +105,7 @@ export type MiddlewareFunction<
     path: string;
     input: TInputOut;
     getRawInput: GetRawInputFn;
+    errors: TErrors;
     meta: TMeta | undefined;
     signal: AbortSignal | undefined;
     next: {
@@ -115,8 +122,15 @@ export type MiddlewareFunction<
   _type?: string | undefined;
 };
 
-export type AnyMiddlewareFunction = MiddlewareFunction<any, any, any, any, any>;
-export type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any>;
+export type AnyMiddlewareFunction = MiddlewareFunction<
+  any,
+  any,
+  any,
+  any,
+  any,
+  any
+>;
+export type AnyMiddlewareBuilder = MiddlewareBuilder<any, any, any, any, any>;
 /**
  * @internal
  */
@@ -124,6 +138,7 @@ export function createMiddlewareFactory<
   TContext,
   TMeta,
   TInputOut = unknown,
+  TErrors = unknown,
 >() {
   function createMiddlewareInner(
     middlewares: AnyMiddlewareFunction[],
@@ -147,9 +162,10 @@ export function createMiddlewareFactory<
       TMeta,
       object,
       $ContextOverrides,
-      TInputOut
+      TInputOut,
+      TErrors
     >,
-  ): MiddlewareBuilder<TContext, TMeta, $ContextOverrides, TInputOut> {
+  ): MiddlewareBuilder<TContext, TMeta, $ContextOverrides, TInputOut, TErrors> {
     return createMiddlewareInner([fn]);
   }
 

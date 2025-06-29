@@ -82,6 +82,7 @@ export interface TRPCRootObject<
     UnsetMarker,
     UnsetMarker,
     UnsetMarker,
+    UnsetMarker,
     false
   >;
 
@@ -90,8 +91,15 @@ export interface TRPCRootObject<
    * @see https://trpc.io/docs/v11/server/middlewares
    */
   middleware: <$ContextOverrides>(
-    fn: MiddlewareFunction<TContext, TMeta, object, $ContextOverrides, unknown>,
-  ) => MiddlewareBuilder<TContext, TMeta, $ContextOverrides, unknown>;
+    fn: MiddlewareFunction<
+      TContext,
+      TMeta,
+      object,
+      $ContextOverrides,
+      unknown,
+      unknown
+    >,
+  ) => MiddlewareBuilder<TContext, TMeta, $ContextOverrides, unknown, unknown>;
 
   /**
    * Create a router
