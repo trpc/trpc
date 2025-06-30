@@ -1,0 +1,32 @@
+{
+  "title": "tRPC Client",
+  "description": "Integrate tRPC with your frontend applications",
+  "icon": "IconDeviceDesktop",
+  "root": true,
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "installation",
+    "setup",
+    "---React Integration---",
+    "tanstack-react-query",
+    "react-hooks",
+    "server-components",
+    "error-handling",
+    "typescript",
+    "---Framework Integrations---",
+    "nextjs",
+    "react",
+    "vanilla",
+    "---Configuration---",
+    "links",
+    "cors",
+    "headers",
+    "aborting-requests",
+    "---Advanced---",
+    "optimistic-updates",
+    "infinite-queries",
+    "subscriptions",
+    "testing"
+  ]
+}

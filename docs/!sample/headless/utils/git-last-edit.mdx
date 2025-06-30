@@ -1,0 +1,43 @@
+---
+title: Last Modified Time
+description: Get the last edit time of a file in Github repository
+---
+
+## Usage
+
+Pass your repository name, and the path to file.
+
+```ts
+import { getGithubLastEdit } from 'fumadocs-core/server';
+
+const time = await getGithubLastEdit({
+  owner: 'fuma-nama',
+  repo: 'fumadocs',
+  // example: "content/docs/index.mdx"
+  path: `content/docs/${page.path}`,
+});
+```
+
+### Github Token
+
+Notice that you may easily reach the rate limit in development mode. Hence, you
+should pass a Github token for a higher rate limit.
+
+Learn more about
+[Authenticating to the REST API](https://docs.github.com/en/rest/overview/authenticating-to-the-rest-api).
+
+```ts
+import { getGithubLastEdit } from 'fumadocs-core/server'
+
+ const time = await getGithubLastEdit({
+    ...,
+    token: `Bearer ${process.env.GIT_TOKEN}`
+  })
+```
+
+Also, you can skip this in development mode if you don't need that
+functionality.
+
+```ts
+process.env.NODE_ENV === 'development'? null : getGithubLastEdit(...)
+```

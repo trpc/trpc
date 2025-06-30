@@ -1,0 +1,319 @@
+---
+title: tRPC Server
+description: Build typesafe backend APIs with tRPC server
+icon: IconServer
+---
+
+tRPC Server allows you to build fully typesafe APIs without schemas or code generation. Define your API procedures once, and get end-to-end type safety from server to client.
+
+<Callout title="Framework-First Approach">
+  Start with your framework of choice and get up and running in minutes. tRPC
+  integrates seamlessly with Next.js, Express, Fastify, and more.
+</Callout>
+
+## Choose Your Framework
+
+Get started quickly with your preferred framework:
+
+<Cards>
+  <Card title="Next.js" href="/docs/server/framework/nextjs" icon="⚡">
+    Full-stack framework with App Router and Pages Router support
+  </Card>
+  <Card title="Express" href="/docs/server/framework/express" icon="🚂">
+    Most popular Node.js framework for traditional APIs
+  </Card>
+  <Card title="Fastify" href="/docs/server/framework/fastify" icon="⚡">
+    High-performance framework for blazing-fast APIs
+  </Card>
+  <Card title="Standalone" href="/docs/server/framework/standalone" icon="🏭">
+    Pure HTTP server without framework dependencies
+  </Card>
+  <Card
+    title="Cloudflare Workers"
+    href="/docs/server/framework/cloudflare-workers"
+    icon="☁️"
+  >
+    Deploy at the edge for global performance
+  </Card>
+  <Card title="AWS Lambda" href="/docs/server/framework/aws-lambda" icon="☁️">
+    Serverless APIs with automatic scaling
+  </Card>
+</Cards>
+
+## Core Features
+
+<Cards>
+  <Card icon={<IconCode />} title="Type-Safe Procedures">
+    Define queries and mutations with automatic TypeScript inference for inputs
+    and outputs.
+  </Card>
+  <Card icon={<IconShield />} title="Input Validation">
+    Built-in support for Zod, Yup, and other validation libraries to ensure data
+    integrity.
+  </Card>
+  <Card icon={<IconPuzzle />} title="Flexible Middleware">
+    Add authentication, logging, rate limiting, and custom logic with composable
+    middleware.
+  </Card>
+  <Card icon={<IconPlug />} title="Framework Agnostic">
+    Deploy on any platform with framework-specific adapters and optimizations.
+  </Card>
+</Cards>
+
+## Quick Example
+
+<Tabs items={['Router Definition', 'Client Usage', 'Type Inference']}>
+  <Tab value="Router Definition">
+    ```typescript title="server/router.ts"
+    import { initTRPC } from '@trpc/server';
+    import { z } from 'zod';
+    
+    const t = initTRPC.create();
+    
+    export const appRouter = t.router({
+      hello: t.procedure
+        .input(z.object({ name: z.string() }))
+        .query(({ input }) => {
+          return { greeting: `Hello, ${input.name}!` };
+        }),
+      
+      createUser: t.procedure
+        .input(z.object({
+          name: z.string().min(2),
+          email: z.string().email(),
+        }))
+        .mutation(async ({ input }) => {
+          const user = await db.user.create({ data: input });
+          return user;
+        }),
+    });
+    
+    export type AppRouter = typeof appRouter;
+    ```
+  </Tab>
+  <Tab value="Client Usage">
+    ```typescript title="client.ts"
+    import { createTRPCClient, httpBatchLink } from '@trpc/client';
+    import type { AppRouter } from './server/router';
+    
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({ url: '/api/trpc' }),
+      ],
+    });
+    
+    // Fully typed client calls
+    const greeting = await client.hello.query({ name: 'tRPC' });
+    const user = await client.createUser.mutate({
+      name: 'John Doe',
+      email: 'john@example.com',
+    });
+    ```
+  </Tab>
+  <Tab value="Type Inference">
+    ```typescript
+    // All types are automatically inferred:
+    
+    // ✅ Valid - TypeScript knows name is required
+    client.hello.query({ name: 'World' });
+    
+    // ❌ Type error - name is missing
+    client.hello.query({});
+    
+    // ✅ Valid - email format is correct
+    client.createUser.mutate({
+      name: 'Alice',
+      email: 'alice@example.com'
+    });
+    
+    // ❌ Type error - invalid email format
+    client.createUser.mutate({
+      name: 'Alice',
+      email: 'not-an-email'
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Why tRPC Server?
+
+<Accordions>
+  <Accordion title="No Code Generation">
+    Unlike GraphQL or traditional REST APIs, tRPC doesn't require code generation. Your types are inferred directly from your TypeScript code.
+    
+    ```typescript
+    // ✅ tRPC - Direct type inference
+    export const router = t.router({
+      getUser: t.procedure.query(() => ({ id: 1, name: 'John' }))
+    });
+    
+    // ❌ GraphQL - Requires codegen
+    // type User { id: ID!, name: String! }
+    // query GetUser { user { id name } }
+    ```
+  </Accordion>
+  
+  <Accordion title="End-to-End Type Safety">
+    Changes to your server automatically propagate to your client without any build steps or manual updates.
+    
+    ```typescript
+    // Server change: Add 'age' field
+    const getUser = t.procedure.query(() => ({ 
+      id: 1, 
+      name: 'John',
+      age: 25 // New field
+    }));
+    
+    // Client automatically knows about 'age'
+    const user = await client.getUser.query();
+    console.log(user.age); // ✅ TypeScript knows this exists
+    ```
+  </Accordion>
+  
+  <Accordion title="Lightweight & Fast">
+    tRPC has minimal runtime overhead and small bundle size. Perfect for performance-critical applications.
+    
+    - **Server**: ~2KB runtime overhead
+    - **Client**: ~5KB for full React Query integration
+    - **No schema parsing**: Direct JavaScript function calls
+    - **Optimized bundling**: Tree-shakeable procedures
+  </Accordion>
+  
+  <Accordion title="Developer Experience">
+    Built-in TypeScript support, excellent error messages, and great IDE integration.
+    
+    ```typescript
+    // Hover over any client call to see:
+    // - Parameter types
+    // - Return types  
+    // - JSDoc comments
+    // - Validation errors
+    
+    client.createUser.mutate({
+      name: '', // ❌ IDE shows: "String must contain at least 2 character(s)"
+      email: 'invalid' // ❌ IDE shows: "Invalid email"
+    });
+    ```
+  </Accordion>
+</Accordions>
+
+## Common Patterns
+
+<Tabs items={['Authentication', 'Database Integration', 'Error Handling', 'File Uploads']}>
+  <Tab value="Authentication">
+    ```typescript
+    // Protected procedure with middleware
+    const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+      if (!ctx.user) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
+      }
+      return next({ ctx: { user: ctx.user } });
+    });
+    
+    export const router = t.router({
+      getProfile: protectedProcedure.query(({ ctx }) => {
+        return ctx.user; // TypeScript knows user exists
+      }),
+    });
+    ```
+  </Tab>
+  
+  <Tab value="Database Integration">
+    ```typescript
+    export const router = t.router({
+      getPosts: t.procedure
+        .input(z.object({
+          limit: z.number().min(1).max(100).default(10),
+          cursor: z.string().optional(),
+        }))
+        .query(async ({ input }) => {
+          const posts = await db.post.findMany({
+            take: input.limit + 1,
+            cursor: input.cursor ? { id: input.cursor } : undefined,
+            orderBy: { createdAt: 'desc' },
+          });
+          
+          const hasMore = posts.length > input.limit;
+          return {
+            items: hasMore ? posts.slice(0, -1) : posts,
+            nextCursor: hasMore ? posts[posts.length - 1].id : undefined,
+          };
+        }),
+    });
+    ```
+  </Tab>
+  
+  <Tab value="Error Handling">
+    ```typescript
+    export const router = t.router({
+      createUser: t.procedure
+        .input(z.object({
+          email: z.string().email(),
+          name: z.string().min(2),
+        }))
+        .mutation(async ({ input }) => {
+          try {
+            return await db.user.create({ data: input });
+          } catch (error) {
+            if (error.code === 'P2002') { // Unique constraint
+              throw new TRPCError({
+                code: 'CONFLICT',
+                message: 'User with this email already exists',
+              });
+            }
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Failed to create user',
+            });
+          }
+        }),
+    });
+    ```
+  </Tab>
+  
+  <Tab value="File Uploads">
+    ```typescript
+    export const router = t.router({
+      uploadImage: t.procedure
+        .input(z.instanceof(FormData))
+        .mutation(async ({ input }) => {
+          const file = input.get('image') as File;
+          
+          if (!file || !file.type.startsWith('image/')) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Valid image file required',
+            });
+          }
+          
+          const fileName = `${Date.now()}-${file.name}`;
+          const url = await uploadToStorage(fileName, file);
+          
+          return { fileName, url };
+        }),
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Next Steps
+
+<Cards>
+  <Card title="Framework Setup" href="/docs/server/framework">
+    Choose your framework and get started in minutes
+  </Card>
+  <Card title="Quick Tutorial" href="/docs/server/quickstart">
+    Build your first tRPC API step by step
+  </Card>
+  <Card title="Core Concepts" href="/docs/server/procedures">
+    Learn about procedures, routers, and middleware
+  </Card>
+  <Card title="Best Practices" href="/docs/server/authorization">
+    Authentication, validation, and error handling patterns
+  </Card>
+</Cards>
+
+<Callout title="Ready to deploy?">
+  Once you've built your API locally, each framework guide includes deployment
+  instructions for production environments.
+</Callout>

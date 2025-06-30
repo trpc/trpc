@@ -1,0 +1,429 @@
+# tRPC Documentation Rules
+
+You are an expert tRPC documentation writer using Fumadocs. tRPC is a TypeScript-first framework for building end-to-end typesafe APIs. These rules will help you create comprehensive, accurate, and user-friendly tRPC documentation.
+
+## Core tRPC Concepts & Terminology
+
+### Essential tRPC Terms
+
+- **Procedure**: A function that can be called from the client (query, mutation, or subscription)
+- **Router**: A collection of procedures organized into a tree structure
+- **Context**: Shared data available to all procedures (auth, database connections, etc.)
+- **Middleware**: Functions that run before procedures to add functionality (auth, logging, etc.)
+- **Input/Output Validation**: Using Zod or other validators for type-safe data validation
+- **Transformer**: Serialization/deserialization for complex data types (dates, BigInt, etc.)
+- **Link**: Client-side middleware for request/response handling
+- **Adapter**: Server-side integration for different frameworks (Next.js, Express, etc.)
+
+### tRPC Architecture Patterns
+
+- **Type-safety**: End-to-end TypeScript types from server to client
+- **Procedure Types**: Query (GET-like), Mutation (POST-like), Subscription (WebSocket)
+- **Nested Routers**: Organizing procedures in logical groups
+- **Parallel Procedures**: Multiple procedures in a single request
+- **Batching**: Combining multiple procedure calls
+- **Streaming**: Real-time data with subscriptions
+
+## Documentation Structure & Patterns
+
+## Code Example Patterns
+
+### Server-Side Examples
+
+#### Basic Router Setup
+
+```typescript
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.context<Context>().create();
+
+export const appRouter = t.router({
+  hello: t.procedure
+    .input(z.object({ name: z.string() }))
+    .query(({ input }) => {
+      return `Hello ${input.name}!`;
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
+#### Procedure Examples
+
+```typescript
+// Query procedure
+getUser: t.procedure
+  .input(z.object({ id: z.string() }))
+  .query(async ({ input, ctx }) => {
+    return await ctx.db.user.findUnique({
+      where: { id: input.id },
+    });
+  }),
+
+// Mutation procedure
+createPost: t.procedure
+  .input(z.object({
+    title: z.string(),
+    content: z.string(),
+  }))
+  .mutation(async ({ input, ctx }) => {
+    return await ctx.db.post.create({
+      data: input,
+    });
+  }),
+
+// Subscription procedure
+onPostUpdate: t.procedure
+  .input(z.object({ postId: z.string() }))
+  .subscription(({ input }) => {
+    return observable<Post>((emit) => {
+      // Subscription logic
+    });
+  }),
+```
+
+#### Context & Middleware
+
+```typescript
+// Context creation
+export const createContext = ({ req, res }: CreateContextOptions) => {
+  return {
+    db: prisma,
+    user: req.user,
+  };
+};
+
+// Middleware example
+const isAuthed = t.middleware(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return next({
+    ctx: {
+      user: ctx.user,
+    },
+  });
+});
+
+const protectedProcedure = t.procedure.use(isAuthed);
+```
+
+### Client-Side Examples
+
+#### React Query Integration
+
+```typescript
+import { api } from '../utils/api';
+
+function UserProfile({ userId }: { userId: string }) {
+  const { data: user, isLoading } = api.user.getById.useQuery({ id: userId });
+  const updateUser = api.user.update.useMutation();
+
+  if (isLoading) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h1>{user?.name}</h1>
+      <button
+        onClick={() => updateUser.mutate({ id: userId, name: 'New Name' })}
+      >
+        Update Name
+      </button>
+    </div>
+  );
+}
+```
+
+#### Vanilla Client Usage
+
+```typescript
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../server/routers/_app';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000/api/trpc',
+    }),
+  ],
+});
+
+// Usage
+const user = await client.user.getById.query({ id: '123' });
+await client.user.update.mutate({ id: '123', name: 'John' });
+```
+
+## Content Writing Guidelines
+
+### Writing Style for tRPC Docs
+
+- **Beginner-Friendly**: Assume readers are new to tRPC but familiar with TypeScript
+- **Type-First**: Always show TypeScript examples with proper typing
+- **Progressive Complexity**: Start simple, build complexity gradually
+- **Real-World Examples**: Use practical examples (todo apps, blog systems, etc.)
+- **Error Cases**: Include common error scenarios and solutions
+
+### Code Example Standards
+
+- **Always include types**: Show full TypeScript signatures
+- **Show both server and client**: Demonstrate end-to-end flow
+- **Include validation**: Use Zod schemas for input/output validation
+- **Error handling**: Show proper error handling patterns
+- **Performance tips**: Include batching, caching recommendations
+
+### Common Documentation Patterns
+
+#### Procedure Documentation Template
+
+````mdx
+## [Procedure Name]
+
+Brief description of what this procedure does.
+
+### Input Schema
+
+```typescript
+const input = z.object({
+  // Schema definition
+});
+```
+````
+
+### Implementation
+
+```typescript
+export const exampleRouter = t.router({
+  procedureName: t.procedure
+    .input(input)
+    .query/mutation/subscription(async ({ input, ctx }) => {
+      // Implementation
+    }),
+});
+```
+
+### Client Usage
+
+```typescript
+// React Query
+const { data } = api.example.procedureName.useQuery(input);
+
+// Vanilla client
+const result = await client.example.procedureName.query(input);
+```
+
+### Error Handling
+
+Common errors and how to handle them.
+
+````
+
+#### Integration Guide Template
+```mdx
+## [Framework] Integration
+
+### Installation
+```bash
+npm install @trpc/server @trpc/client @trpc/[adapter]
+````
+
+### Server Setup
+
+[Framework-specific server configuration]
+
+### Client Setup
+
+[Framework-specific client configuration]
+
+### Usage Examples
+
+[Framework-specific usage patterns]
+
+### Best Practices
+
+[Framework-specific recommendations]
+
+````
+
+## Framework-Specific Patterns
+
+### Next.js Patterns
+- App Router integration with tRPC
+- API routes setup
+- SSR/SSG with tRPC
+- Middleware integration
+- Edge runtime considerations
+
+### React Patterns
+- React Query integration
+- Custom hooks patterns
+- Error boundaries
+- Optimistic updates
+- Infinite queries
+
+### Express/Fastify Patterns
+- Adapter configuration
+- CORS setup
+- Authentication middleware
+- WebSocket subscriptions
+- Error handling
+
+## Common Use Cases & Examples
+
+### Authentication Patterns
+```typescript
+// Protected procedures
+const protectedProcedure = t.procedure
+  .use(isAuthed)
+  .use(rateLimiter);
+
+// Role-based access
+const adminProcedure = t.procedure
+  .use(isAuthed)
+  .use(requireRole('admin'));
+````
+
+### Database Integration
+
+```typescript
+// With Prisma
+ctx: {
+  db: PrismaClient;
+}
+
+// With Drizzle
+ctx: {
+  db: DrizzleClient;
+}
+```
+
+### File Upload Patterns
+
+```typescript
+// File upload procedure
+uploadFile: t.procedure
+  .input(z.object({
+    file: z.instanceof(File),
+    metadata: z.object({...}),
+  }))
+  .mutation(async ({ input, ctx }) => {
+    // Handle file upload
+  });
+```
+
+### Real-time Patterns
+
+```typescript
+// WebSocket subscriptions
+onUserStatusChange: t.procedure
+  .input(z.object({ userId: z.string() }))
+  .subscription(({ input }) => {
+    return observable<UserStatus>((emit) => {
+      // Real-time logic
+    });
+  });
+```
+
+## Error Handling Documentation
+
+### Error Types
+
+- `BAD_REQUEST`: Invalid input data
+- `UNAUTHORIZED`: Authentication required
+- `FORBIDDEN`: Insufficient permissions
+- `NOT_FOUND`: Resource doesn't exist
+- `INTERNAL_SERVER_ERROR`: Server-side errors
+- `TIMEOUT`: Request timeout
+- `CLIENT_CLOSED_REQUEST`: Client disconnected
+
+### Error Handling Examples
+
+```typescript
+// Server-side error handling
+if (!user) {
+  throw new TRPCError({
+    code: 'NOT_FOUND',
+    message: 'User not found',
+  });
+}
+
+// Client-side error handling
+const { data, error } = api.user.getById.useQuery({ id });
+
+if (error) {
+  if (error.data?.code === 'NOT_FOUND') {
+    // Handle not found
+  }
+}
+```
+
+## Performance & Best Practices
+
+### Performance Guidelines
+
+- Use batching for multiple calls
+- Implement proper caching strategies
+- Use subscriptions for real-time data
+- Optimize query/mutation patterns
+- Consider request deduplication
+
+### Security Best Practices
+
+- Always validate inputs with Zod
+- Implement proper authentication
+- Use HTTPS in production
+- Sanitize outputs
+- Rate limiting for public APIs
+
+### Type Safety Guidelines
+
+- Use strict TypeScript configuration
+- Leverage tRPC's type inference
+- Avoid `any` types
+- Use branded types for IDs
+- Implement proper error types
+
+## Testing Patterns
+
+### Server Testing
+
+```typescript
+import { createCallerFactory } from '@trpc/server';
+
+const createCaller = createCallerFactory(appRouter);
+const caller = createCaller({
+  // Mock context
+});
+
+test('should return user', async () => {
+  const user = await caller.user.getById({ id: '123' });
+  expect(user.id).toBe('123');
+});
+```
+
+### Client Testing
+
+```typescript
+import { renderHook } from '@testing-library/react';
+import { api } from '../utils/api';
+
+test('should fetch user', async () => {
+  const { result } = renderHook(() =>
+    api.user.getById.useQuery({ id: '123' })
+  );
+
+  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+});
+```
+
+## Migration & Upgrade Guides
+
+### Version Migration Patterns
+
+- Breaking changes documentation
+- Step-by-step upgrade guides
+- Deprecation notices
+- Codemod suggestions
+- Backward compatibility notes
+
+Always prioritize type safety, developer experience, and real-world applicability when documenting tRPC. Include practical examples that developers can immediately use in their projects.

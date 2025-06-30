@@ -1,0 +1,66 @@
+---
+title: Search
+description: Implement document search in your docs
+---
+
+## Search UI
+
+You can customise some configurations from root provider.
+
+For example, to disable search UI:
+
+```tsx title="app/layout.tsx"
+import { RootProvider } from 'fumadocs-ui/provider';
+import type { ReactNode } from 'react';
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return (
+    <html>
+      <body>
+        <RootProvider
+          search={{
+            enabled: false, // [!code ++]
+          }}
+        >
+          {children}
+        </RootProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+For further customisations, you can see [Search Client](#search-client).
+
+### Hot Keys
+
+Customise the hot keys to trigger search dialog, by default it's <kbd>⌘</kbd> <kbd>K</kbd> or <kbd>Ctrl</kbd> <kbd>K</kbd>.
+
+```tsx
+import { RootProvider } from 'fumadocs-ui/provider';
+
+<RootProvider
+  search={{
+    hotKey: [
+      {
+        display: 'K',
+        key: 'k', // key code, or a function determining whether the key is pressed
+      },
+    ],
+  }}
+>
+  {children}
+</RootProvider>;
+```
+
+## Search Client
+
+You can choose & configure the search client according to your search engine, it defaults to Orama search.
+
+<DocsCategory />
+
+### Community Integrations
+
+A list of integrations maintained by community.
+
+- [Trieve Search](/docs/headless/search/trieve)

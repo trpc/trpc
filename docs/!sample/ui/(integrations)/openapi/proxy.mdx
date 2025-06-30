@@ -1,0 +1,40 @@
+---
+title: Creating Proxy
+description: Avoid CORS problem
+---
+
+## Introduction
+
+A proxy server is useful for executing HTTP (`fetch`) requests, as it doesn't have CORS constraints like on the browser.
+We can use it for executing HTTP requests on the OpenAPI playground, when the target API endpoints do not have CORS configured correctly.
+
+<Callout type="warn" title="Warning">
+  Do not use this on unreliable sites and API endpoints, the proxy server will
+  forward all received headers & body, including HTTP-only `Cookies` and
+  `Authorization` header.
+</Callout>
+
+### Setup
+
+Create a route handler for proxy server.
+
+```ts title="/api/proxy/route.ts"
+import { openapi } from '@/lib/source';
+
+export const { GET, HEAD, PUT, POST, PATCH, DELETE } = openapi.createProxy({
+  // optional, we recommend to set a list of allowed origins for proxied requests
+  allowedOrigins: ['https://example.com'],
+});
+```
+
+> Follow the [Getting Started](/docs/ui/openapi) guide if `openapi` server is not yet configured.
+
+And enable the proxy from `createOpenAPI`.
+
+```ts title="lib/source.ts"
+import { createOpenAPI } from 'fumadocs-openapi/server';
+
+export const openapi = createOpenAPI({
+  proxyUrl: '/api/proxy', // [!code ++]
+});
+```

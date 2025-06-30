@@ -1,0 +1,46 @@
+---
+title: Orama (default)
+description: The default search engine powered by Orama.
+---
+
+## Overview
+
+Fumadocs configures [Orama search engine](/docs/headless/search/orama) out-of-the-box.
+
+It works through a API endpoint (route handler), or a statically cached file for Next.js apps using Static Export.
+
+## Setup
+
+Create a search dialog.
+
+<Tabs items={['fetch (default)', 'static']}>
+
+    <Tab>
+
+The UI has been configured by default, you can also re-create it for further customisations:
+
+<include meta='title="components/search.tsx"'>fetch.tsx</include>
+
+    </Tab>
+
+    <Tab id='static'>
+
+For Static Export, you can configure [static mode](/docs/headless/search/orama#static-export) on search server, and use the `static` client:
+
+```package-install
+@orama/orama
+```
+
+<include meta='title="components/search.tsx"'>./static.tsx</include>
+
+    </Tab>
+
+</Tabs>
+
+<include>.shared.mdx</include>
+
+### Tag Filter
+
+Optionally, you can add UI for filtering results by tags. Configure [Tag Filter](/docs/headless/search/orama#tag-filter) on search server and add the following:
+
+<include>.tag-filter.mdx</include>
