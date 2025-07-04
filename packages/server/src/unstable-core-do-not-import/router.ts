@@ -8,6 +8,7 @@ import type {
   inferProcedureInput,
   inferProcedureOutput,
   LegacyObservableSubscriptionProcedure,
+  ProcedureType,
 } from './procedure';
 import type { ProcedureCallOptions } from './procedureBuilder';
 import type { AnyRootTypes, RootConfig } from './rootConfig';
@@ -394,6 +395,8 @@ export async function getProcedureAtPath(
  */
 export async function callProcedure(
   opts: ProcedureCallOptions<unknown> & {
+    type: ProcedureType;
+    path: string;
     router: AnyRouter;
     allowMethodOverride?: boolean;
   },
@@ -468,7 +471,6 @@ export function createCallerFactory<
               path: fullPath,
               getRawInput: async () => args[0],
               ctx,
-              type: procedure._def.type,
               signal: opts?.signal,
             });
           } catch (cause) {
