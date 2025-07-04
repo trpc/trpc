@@ -93,6 +93,26 @@ const queryOptions = trpc.path.to.query.queryOptions(
 );
 ```
 
+If you want to disable a query in a type safe way, you can use `skipToken`:
+
+```ts
+import { skipToken } from '@tanstack/react-query';
+
+const query = useQuery(
+  trpc.user.details.queryOptions(
+    user?.id && project?.id
+      ? {
+          userId: user.id,
+          projectId: project.id,
+        }
+      : skipToken,
+    {
+      staleTime: 1000,
+    }
+  )
+);
+```
+
 The result can be passed to `useQuery` or `useSuspenseQuery` hooks or query client methods like `fetchQuery`, `prefetchQuery`, `prefetchInfiniteQuery`, `invalidateQueries`, etc.
 
 ### `infiniteQueryOptions` - querying infinite data {#infiniteQueryOptions}
