@@ -13,7 +13,7 @@ export const topSponsors = [
   {
     "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 66,
+    "weight": 72,
     "login": "tryretool",
     "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
@@ -29,7 +29,7 @@ export const topSponsors = [
   {
     "name": "Greptile",
     "imgSrc": "https://avatars.githubusercontent.com/u/140149887?v=4",
-    "weight": 19,
+    "weight": 21,
     "login": "greptileai",
     "link": "https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1743099912000
@@ -233,14 +233,14 @@ export const allSponsors = [
   {
     "name": "Retool",
     "imgSrc": "https://avatars.githubusercontent.com/u/33817679?v=4",
-    "weight": 66,
+    "weight": 72,
     "login": "tryretool",
     "link": "https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1720565283000
   },
   {
     "name": "Leo Jace",
-    "imgSrc": "https://avatars.githubusercontent.com/u/5610115?u=be201750effeb8826a788dea206e594008cfe3f2&v=4",
+    "imgSrc": "https://avatars.githubusercontent.com/u/5610115?u=76c96d0001baca5587d3f833f126ac23e91ff488&v=4",
     "weight": 3,
     "login": "cerjs",
     "link": "https://github.com/cerjs",
@@ -305,7 +305,7 @@ export const allSponsors = [
   {
     "name": "Greptile",
     "imgSrc": "https://avatars.githubusercontent.com/u/140149887?v=4",
-    "weight": 19,
+    "weight": 21,
     "login": "greptileai",
     "link": "https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1743099912000
@@ -327,19 +327,11 @@ export const allSponsors = [
     "createdAt": 1745489411000
   },
   {
-    "name": "Enrico Ros",
-    "imgSrc": "https://avatars.githubusercontent.com/u/32999?u=a1321c15b67f0f7de57813ba20be8562e8ffd67b&v=4",
-    "weight": 2,
-    "login": "enricoros",
-    "link": "https://github.com/enricoros",
-    "createdAt": 1748302641000
-  },
-  {
     "name": "Graphite",
     "imgSrc": "https://github.com/withgraphite.png",
     "weight": 7,
     "login": "withgraphite",
-    "link": "https://graphite.dev",
+    "link": "https://graphite.dev/?utm_source=github&utm_medium=repo&utm_campaign=neovim",
     "createdAt": 1749679200000
   },
   {
