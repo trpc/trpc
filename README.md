@@ -139,7 +139,7 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 <table>
   <tr>
    <td align="center"><a href="https://retool.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc"><img src="https://avatars.githubusercontent.com/u/33817679?v=4&s=180" width="180" alt="Retool"/><br />Retool</a></td>
-   <td align="center"><a href="https://graphite.dev/?utm_source=github&utm_medium=repo&utm_campaign=neovim"><img src="https://github.com/withgraphite.png?s=180" width="180" alt="Graphite"/><br />Graphite</a></td>
+   <td align="center"><a href="https://graphite.dev/?utm_source=github&utm_medium=repo&utm_campaign=trpc"><img src="https://github.com/withgraphite.png?s=180" width="180" alt="Graphite"/><br />Graphite</a></td>
    <td align="center"><a href="https://mobb.ai"><img src="https://github.com/mobb-dev.png?s=180" width="180" alt="Mobb"/><br />Mobb</a></td>
   </tr>
 </table>

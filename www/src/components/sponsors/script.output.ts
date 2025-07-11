@@ -193,7 +193,7 @@ export const allSponsors = [
   {
     "name": "Unkey",
     "imgSrc": "https://avatars.githubusercontent.com/u/138932600?v=4",
-    "weight": 13,
+    "weight": 14,
     "login": "unkeyed",
     "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1708012798000
@@ -297,7 +297,7 @@ export const allSponsors = [
   {
     "name": "JonLuca De Caro",
     "imgSrc": "https://avatars.githubusercontent.com/u/13029040?u=0c8fb3e7ae09935e8f2cb0637affeddfb98cc4c5&v=4",
-    "weight": 7,
+    "weight": 9,
     "login": "jonluca",
     "link": "https://jonlu.ca/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "createdAt": 1741823766000
@@ -331,7 +331,7 @@ export const allSponsors = [
     "imgSrc": "https://github.com/withgraphite.png",
     "weight": 7,
     "login": "withgraphite",
-    "link": "https://graphite.dev/?utm_source=github&utm_medium=repo&utm_campaign=neovim",
+    "link": "https://graphite.dev/?utm_source=github&utm_medium=repo&utm_campaign=trpc",
     "createdAt": 1749679200000
   },
   {
