@@ -26,7 +26,7 @@ It's also not uncommon, where the deployed adapter is hard to run on local machi
       <td>
         <ul>
           <li><a href="https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal">StackBlitz</a></li>
-          <li><a href="https://github.com/trpc/trpc/blob/main/examples/minimal/server/index.ts">Source</a></li>
+          <li><a href="https://github.com/trpc/trpc/blob/main/examples/minimal/src/server/index.ts">Source</a></li>
         </ul>
       </td>
     </tr>
