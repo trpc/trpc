@@ -24,19 +24,39 @@ export {
   type inferTransformedSubscriptionOutput,
   type AnyProcedure as AnyTRPCProcedure,
   type AnyRouter as AnyTRPCRouter,
+  type RouterDef as TRPCRouterDef,
+  type RouterBuilder as TRPCRouterBuilder,
+  type RouterCallerFactory as TRPCRouterCallerFactory,
+  type RootConfig as TRPCRootConfig,
   type AnyRootTypes as AnyTRPCRootTypes,
+  type MiddlewareFunction as TRPCMiddlewareFunction,
+  type MiddlewareBuilder as TRPCMiddlewareBuilder,
   type AnyMiddlewareFunction as AnyTRPCMiddlewareFunction,
   type CombinedDataTransformer as TRPCCombinedDataTransformer,
   type ProcedureType as TRPCProcedureType,
   type AnyMutationProcedure as AnyTRPCMutationProcedure,
   type AnyQueryProcedure as AnyTRPCQueryProcedure,
   type RouterRecord as TRPCRouterRecord,
+  type MergeRouters as TRPCMergeRouters,
   type AnySubscriptionProcedure as AnyTRPCSubscriptionProcedure,
   type CreateContextCallback,
   type MutationProcedure as TRPCMutationProcedure,
   type QueryProcedure as TRPCQueryProcedure,
+  type BuiltRouter as TRPCBuiltRouter,
   type SubscriptionProcedure as TRPCSubscriptionProcedure,
   type TRPCBuilder,
+  type ProcedureBuilder as TRPCProcedureBuilder,
+  type RuntimeConfigOptions as TRPCRuntimeConfigOptions,
+  type TRPCRootObject,
+  type ErrorFormatter as TRPCErrorFormatter,
+  type TRPCErrorShape,
+  type DefaultErrorShape as TRPCDefaultErrorShape,
+  type DefaultErrorData as TRPCDefaultErrorData,
+  type TRPC_ERROR_CODE_KEY,
+  type TRPC_ERROR_CODE_NUMBER,
+  type DecorateCreateRouterOptions as TRPCDecorateCreateRouterOptions,
+  type CreateRouterOptions as TRPCCreateRouterOptions,
+  type RouterCaller as TRPCRouterCaller,
   StandardSchemaV1Error,
   /**
    * @deprecated use `tracked(id, data)` instead
@@ -51,6 +71,11 @@ export {
    */
   lazy as experimental_lazy,
   callProcedure as callTRPCProcedure,
+
+  /**
+   * @internal
+   */
+  type UnsetMarker as TRPCUnsetMarker,
 } from '../../unstable-core-do-not-import';
 
 export type {
@@ -104,6 +129,7 @@ export {
    * @deprecated use `getTRPCErrorShape` instead
    */
   getErrorShape,
+  getErrorShape as getTRPCErrorShape,
 } from '../../unstable-core-do-not-import';
 
 /**

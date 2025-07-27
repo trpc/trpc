@@ -1,12 +1,14 @@
 {
   "name": "@trpc/server",
-  "version": "11.2.0",
+  "type": "module",
+  "sideEffects": false,
+  "version": "11.4.3",
   "description": "The tRPC server library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -14,9 +16,8 @@
     "directory": "packages/server"
   },
   "scripts": {
-    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
-    "dev": "pnpm build --watch",
-    "codegen-entrypoints": "tsx entrypoints.script.ts",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "benchmark": "tsc --project tsconfig.benchmark.json",
     "lint": "eslint --cache src",
     "ts-watch": "tsc --watch"
@@ -24,79 +25,154 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./adapters/aws-lambda": {
-      "import": "./dist/adapters/aws-lambda/index.mjs",
-      "require": "./dist/adapters/aws-lambda/index.js",
-      "default": "./dist/adapters/aws-lambda/index.js"
+      "import": {
+        "types": "./dist/adapters/aws-lambda/index.d.mts",
+        "default": "./dist/adapters/aws-lambda/index.mjs"
+      },
+      "require": {
+        "types": "./dist/adapters/aws-lambda/index.d.cts",
+        "default": "./dist/adapters/aws-lambda/index.cjs"
+      }
     },
     "./adapters/express": {
-      "import": "./dist/adapters/express.mjs",
-      "require": "./dist/adapters/express.js",
-      "default": "./dist/adapters/express.js"
+      "import": {
+        "types": "./dist/adapters/express.d.mts",
+        "default": "./dist/adapters/express.mjs"
+      },
+      "require": {
+        "types": "./dist/adapters/express.d.cts",
+        "default": "./dist/adapters/express.cjs"
+      }
     },
     "./adapters/fastify": {
-      "import": "./dist/adapters/fastify/index.mjs",
-      "require": "./dist/adapters/fastify/index.js",
-      "default": "./dist/adapters/fastify/index.js"
+      "import": {
+        "types": "./dist/adapters/fastify/index.d.mts",
+        "default": "./dist/adapters/fastify/index.mjs"
+      },
+      "require": {
+        "types": "./dist/adapters/fastify/index.d.cts",
+        "default": "./dist/adapters/fastify/index.cjs"
+      }
     },
     "./adapters/fetch": {
-      "import": "./dist/adapters/fetch/index.mjs",
-      "require": "./dist/adapters/fetch/index.js",
-      "default": "./dist/adapters/fetch/index.js"
+      "import": {
+        "types": "./dist/adapters/fetch/index.d.mts",
+        "default": "./dist/adapters/fetch/index.mjs"
+      },
+      "require": {
+        "types": "./dist/adapters/fetch/index.d.cts",
+        "default": "./dist/adapters/fetch/index.cjs"
+      }
     },
     "./adapters/next-app-dir": {
-      "import": "./dist/adapters/next-app-dir.mjs",
-      "require": "./dist/adapters/next-app-dir.js",
-      "default": "./dist/adapters/next-app-dir.js"
+      "import": {
+        "types": "./dist/adapters/next-app-dir.d.mts",
+        "default": "./dist/adapters/next-app-dir.mjs"
+      },
+      "require": {
+        "types": "./dist/adapters/next-app-dir.d.cts",
+        "default": "./dist/adapters/next-app-dir.cjs"
+      }
     },
     "./adapters/next": {
-      "import": "./dist/adapters/next.mjs",
-      "require": "./dist/adapters/next.js",
-      "default": "./dist/adapters/next.js"
+      "import": {
+        "types": "./dist/adapters/next.d.mts",
+        "default": "./dist/adapters/next.mjs"
+      },
+      "require": {
+        "types": "./dist/adapters/next.d.cts",
+        "default": "./dist/adapters/next.cjs"
+      }
     },
     "./adapters/node-http": {
-      "import": "./dist/adapters/node-http/index.mjs",
-      "require": "./dist/adapters/node-http/index.js",
-      "default": "./dist/adapters/node-http/index.js"
+      "import": {
+        "types": "./dist/adapters/node-http/index.d.mts",
+        "default": "./dist/adapters/node-http/index.mjs"
+      },
+      "require": {
+        "types": "./dist/adapters/node-http/index.d.cts",
+        "default": "./dist/adapters/node-http/index.cjs"
+      }
     },
     "./adapters/standalone": {
-      "import": "./dist/adapters/standalone.mjs",
-      "require": "./dist/adapters/standalone.js",
-      "default": "./dist/adapters/standalone.js"
+      "import": {
+        "types": "./dist/adapters/standalone.d.mts",
+        "default": "./dist/adapters/standalone.mjs"
+      },
+      "require": {
+        "types": "./dist/adapters/standalone.d.cts",
+        "default": "./dist/adapters/standalone.cjs"
+      }
     },
     "./adapters/ws": {
-      "import": "./dist/adapters/ws.mjs",
-      "require": "./dist/adapters/ws.js",
-      "default": "./dist/adapters/ws.js"
+      "import": {
+        "types": "./dist/adapters/ws.d.mts",
+        "default": "./dist/adapters/ws.mjs"
+      },
+      "require": {
+        "types": "./dist/adapters/ws.d.cts",
+        "default": "./dist/adapters/ws.cjs"
+      }
     },
     "./http": {
-      "import": "./dist/http.mjs",
-      "require": "./dist/http.js",
-      "default": "./dist/http.js"
+      "import": {
+        "types": "./dist/http.d.mts",
+        "default": "./dist/http.mjs"
+      },
+      "require": {
+        "types": "./dist/http.d.cts",
+        "default": "./dist/http.cjs"
+      }
     },
     "./observable": {
-      "import": "./dist/observable/index.mjs",
-      "require": "./dist/observable/index.js",
-      "default": "./dist/observable/index.js"
+      "import": {
+        "types": "./dist/observable/index.d.mts",
+        "default": "./dist/observable/index.mjs"
+      },
+      "require": {
+        "types": "./dist/observable/index.d.cts",
+        "default": "./dist/observable/index.cjs"
+      }
     },
     "./rpc": {
-      "import": "./dist/rpc.mjs",
-      "require": "./dist/rpc.js",
-      "default": "./dist/rpc.js"
+      "import": {
+        "types": "./dist/rpc.d.mts",
+        "default": "./dist/rpc.mjs"
+      },
+      "require": {
+        "types": "./dist/rpc.d.cts",
+        "default": "./dist/rpc.cjs"
+      }
     },
     "./shared": {
-      "import": "./dist/shared.mjs",
-      "require": "./dist/shared.js",
-      "default": "./dist/shared.js"
+      "import": {
+        "types": "./dist/shared.d.mts",
+        "default": "./dist/shared.mjs"
+      },
+      "require": {
+        "types": "./dist/shared.d.cts",
+        "default": "./dist/shared.cjs"
+      }
     },
     "./unstable-core-do-not-import": {
-      "import": "./dist/unstable-core-do-not-import.mjs",
-      "require": "./dist/unstable-core-do-not-import.js",
-      "default": "./dist/unstable-core-do-not-import.js"
+      "import": {
+        "types": "./dist/unstable-core-do-not-import.d.mts",
+        "default": "./dist/unstable-core-do-not-import.mjs"
+      },
+      "require": {
+        "types": "./dist/unstable-core-do-not-import.d.cts",
+        "default": "./dist/unstable-core-do-not-import.cjs"
+      }
     }
   },
   "files": [
@@ -117,8 +193,9 @@
     "access": "public"
   },
   "devDependencies": {
-    "@fastify/websocket": "^10.0.1",
-    "@tanstack/react-query": "^5.74.7",
+    "@fastify/websocket": "^11.0.0",
+    "@oxc-project/runtime": "0.69.0",
+    "@tanstack/react-query": "^5.80.3",
     "@types/aws-lambda": "^8.10.149",
     "@types/express": "^5.0.0",
     "@types/hash-sum": "^1.0.0",
@@ -129,22 +206,21 @@
     "devalue": "^5.0.0",
     "eslint": "^9.26.0",
     "express": "^5.0.0",
-    "fastify": "^4.16.0",
+    "fastify": "^5.0.0",
     "fastify-plugin": "^5.0.0",
     "hash-sum": "^2.0.0",
     "myzod": "^1.3.1",
     "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "rollup": "^4.34.8",
     "superjson": "^1.12.4",
     "superstruct": "^2.0.0",
-    "tsx": "^4.19.3",
+    "tsdown": "0.12.7",
     "typescript": "^5.8.2",
     "valibot": "1.1.0",
     "ws": "^8.0.0",
     "yup": "^1.0.0",
-    "zod": "^3.24.4"
+    "zod": "^3.25.51"
   },
   "funding": [
     "https://trpc.io/sponsor"

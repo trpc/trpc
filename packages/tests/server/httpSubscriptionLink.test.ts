@@ -1,6 +1,7 @@
 import { EventEmitter, on } from 'node:events';
 import { routerToServerAndClientNew } from './___testHelpers';
 import { IterableEventEmitter } from './../../server/src/__tests__/iterableEventEmitter';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { fakeTimersResource } from '@trpc/server/__tests__/fakeTimersResource';
 import {
   suppressLogs,
@@ -21,10 +22,17 @@ import type { TRPCConnectionState } from '@trpc/client/unstable-internals';
 import type { TRPCCombinedDataTransformer } from '@trpc/server';
 import { initTRPC, tracked } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
-import { makeAsyncResource } from '@trpc/server/unstable-core-do-not-import';
-import type { RootConfig } from '@trpc/server/unstable-core-do-not-import/rootConfig';
-import type { Deferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
-import { createDeferred } from '@trpc/server/unstable-core-do-not-import/stream/utils/createDeferred';
+import type {
+  Deferred,
+  RootConfig,
+  Serialize,
+  TrackedData,
+} from '@trpc/server/unstable-core-do-not-import';
+import {
+  createDeferred,
+  makeAsyncResource,
+  run,
+} from '@trpc/server/unstable-core-do-not-import';
 import { uneval } from 'devalue';
 import { konn } from 'konn';
 import superjson from 'superjson';
@@ -1083,11 +1091,9 @@ test('tracked() without transformer', async () => {
     const router = t.router({
       iterableInfinite: t.procedure
         .input(
-          z
-            .object({
-              lastEventId: z.coerce.number().min(0).optional(),
-            })
-            .optional(),
+          z.object({
+            lastEventId: z.coerce.number().min(0).optional(),
+          }),
         )
         .subscription(async function* (opts) {
           opts.signal?.addEventListener(
@@ -1099,8 +1105,8 @@ test('tracked() without transformer', async () => {
             { once: true },
           );
           try {
-            let idx = opts.input?.lastEventId ?? 0;
-            while (true) {
+            let idx = opts.input.lastEventId ?? 0;
+            while (!opts.signal!.aborted) {
               idx++;
               yield tracked(String(idx), idx);
               await puller;
@@ -1140,13 +1146,16 @@ test('tracked() without transformer', async () => {
 
   const results: number[] = [];
 
-  const sub = ctx.client.iterableInfinite.subscribe(undefined, {
-    onData: (envelope) => {
-      expectTypeOf(envelope.data).toBeNumber();
+  const sub = ctx.client.iterableInfinite.subscribe(
+    {},
+    {
+      onData: (envelope) => {
+        expectTypeOf(envelope.data).toBeNumber();
 
-      results.push(envelope.data);
+        results.push(envelope.data);
+      },
     },
-  });
+  );
 
   await vi.waitFor(() => {
     expect(results).toHaveLength(1);
@@ -1169,4 +1178,184 @@ test('tracked() without transformer', async () => {
   await vi.waitFor(() => {
     expect(ctx.finallySpy).toHaveBeenCalledTimes(1);
   });
+});
+
+// regression test for https://github.com/trpc/trpc/issues/6193
+test('server should not hang when client cancels subscription', async () => {
+  await using ctx = run(() => {
+    const t = initTRPC.create();
+
+    const onFinally = vi.fn();
+    const onError = vi.fn();
+    const router = t.router({
+      sub: t.procedure.subscription(async function* (opts) {
+        assert(opts.signal, 'no signal received');
+        try {
+          let idx = 0;
+          while (!opts.signal.aborted) {
+            yield `hi ${idx++}`;
+            // We must yield to the event loop to allow I/O events to be processed.
+            // `await sleep(0)` uses `setTimeout(..., 0)`, which schedules a "macrotask".
+            // This allows the event loop to complete its current work, process I/O (like a client disconnect),
+            // and then resume the generator.
+            //
+            // Using `await new Promise(resolve => process.nextTick(resolve))` or `await Promise.resolve()` would not work.
+            // They schedule "microtasks" which would execute before the next event loop phase,
+            // creating a "hot loop" that starves I/O and prevents the disconnect event from being processed.
+            await sleep(0);
+          }
+        } catch (err) {
+          onError(err);
+        } finally {
+          expect(opts.signal.aborted).toBe(true);
+          onFinally();
+        }
+      }),
+    });
+
+    const opts = testServerAndClientResource(router);
+    return {
+      ...opts,
+      onFinally,
+      onError,
+    };
+  });
+
+  const results = await new Promise<string[]>((resolve) => {
+    const results: string[] = [];
+
+    const sub = ctx.client.sub.subscribe(undefined, {
+      onData: (data) => {
+        results.push(data);
+        if (results.length === 3) {
+          sub.unsubscribe();
+          resolve(results);
+        }
+      },
+    });
+  });
+
+  await vi.waitFor(() => {
+    expect(ctx.onFinally).toHaveBeenCalledTimes(1);
+  });
+  expect(ctx.onError).not.toHaveBeenCalled();
+
+  expect(results).toMatchInlineSnapshot(`
+    Array [
+      "hi 0",
+      "hi 1",
+      "hi 2",
+    ]
+  `);
+});
+
+test('recipe: pull data in a loop', async () => {
+  type Post = {
+    id: string;
+    title: string;
+    createdAt: Date;
+  };
+  await using ctx = run(() => {
+    const t = initTRPC.create();
+
+    const posts: Post[] = [
+      {
+        id: '1',
+        title: 'Post 1',
+        createdAt: new Date('2021-01-01'),
+      },
+    ];
+
+    function addPost(post: Post) {
+      posts.push(post);
+    }
+
+    async function getPosts(lastEventId: Date | null): Promise<Post[]> {
+      if (!lastEventId) {
+        return posts;
+      }
+      return posts.filter((post) => post.createdAt > lastEventId);
+    }
+
+    const onFinally = vi.fn();
+    const onError = vi.fn();
+    const router = t.router({
+      sub: t.procedure
+        .input(
+          z.object({
+            lastEventId: z.coerce.date().nullish(),
+          }),
+        )
+        .subscription(async function* (opts) {
+          assert(opts.signal, 'no signal received');
+          try {
+            let lastEventId = opts.input.lastEventId ?? null;
+            while (!opts.signal.aborted) {
+              const posts = await getPosts(lastEventId);
+              for (const post of posts) {
+                yield tracked(post.createdAt.toJSON(), post);
+                lastEventId = post.createdAt;
+              }
+              // Sleep to allow I/O events to be processed.
+              // In a real app, it'd prob be `sleep(1000)` or similar
+              await sleep(0);
+            }
+          } catch (err) {
+            onError(err);
+          } finally {
+            expect(opts.signal.aborted).toBe(true);
+            onFinally();
+          }
+        }),
+    });
+
+    const opts = testServerAndClientResource(router);
+    return {
+      ...opts,
+      onFinally,
+      onError,
+      addPost,
+    };
+  });
+
+  const receivedPosts: TrackedData<Serialize<Post>>[] = [];
+
+  const sub = ctx.client.sub.subscribe(
+    {} /* initial input */,
+    {
+      onData: (data) => {
+        receivedPosts.push(data);
+      },
+    },
+  );
+
+  // wait for initial post
+  await vi.waitFor(() => {
+    expect(receivedPosts).toHaveLength(1);
+  });
+
+  // add a new post and wait for it to be received
+  ctx.addPost({
+    id: '2',
+    title: 'Post 2',
+    createdAt: new Date('2021-01-02'),
+  });
+
+  await vi.waitFor(() => {
+    expect(receivedPosts).toHaveLength(2);
+  });
+
+  sub.unsubscribe();
+
+  await vi.waitFor(() => {
+    expect(ctx.onFinally).toHaveBeenCalledTimes(1);
+  });
+  expect(ctx.onError).not.toHaveBeenCalled();
+
+  expect(receivedPosts.map((p) => p.data.title)).toMatchInlineSnapshot(`
+    Array [
+      "Post 1",
+      "Post 2",
+    ]
+  `);
 });

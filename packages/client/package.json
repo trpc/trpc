@@ -1,12 +1,13 @@
 {
   "name": "@trpc/client",
-  "version": "11.2.0",
+  "type": "module",
+  "version": "11.4.3",
   "description": "The tRPC client library",
   "author": "KATT",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",
@@ -22,48 +23,82 @@
     }
   },
   "scripts": {
-    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
-    "dev": "pnpm build --watch",
-    "codegen-entrypoints": "tsx entrypoints.script.ts",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "lint": "eslint --cache src",
     "ts-watch": "tsc --watch"
   },
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./links/httpBatchLink": {
-      "import": "./dist/links/httpBatchLink.mjs",
-      "require": "./dist/links/httpBatchLink.js",
-      "default": "./dist/links/httpBatchLink.js"
+      "import": {
+        "types": "./dist/links/httpBatchLink.d.mts",
+        "default": "./dist/links/httpBatchLink.mjs"
+      },
+      "require": {
+        "types": "./dist/links/httpBatchLink.d.cts",
+        "default": "./dist/links/httpBatchLink.cjs"
+      }
     },
     "./links/httpLink": {
-      "import": "./dist/links/httpLink.mjs",
-      "require": "./dist/links/httpLink.js",
-      "default": "./dist/links/httpLink.js"
+      "import": {
+        "types": "./dist/links/httpLink.d.mts",
+        "default": "./dist/links/httpLink.mjs"
+      },
+      "require": {
+        "types": "./dist/links/httpLink.d.cts",
+        "default": "./dist/links/httpLink.cjs"
+      }
     },
     "./links/loggerLink": {
-      "import": "./dist/links/loggerLink.mjs",
-      "require": "./dist/links/loggerLink.js",
-      "default": "./dist/links/loggerLink.js"
+      "import": {
+        "types": "./dist/links/loggerLink.d.mts",
+        "default": "./dist/links/loggerLink.mjs"
+      },
+      "require": {
+        "types": "./dist/links/loggerLink.d.cts",
+        "default": "./dist/links/loggerLink.cjs"
+      }
     },
     "./links/splitLink": {
-      "import": "./dist/links/splitLink.mjs",
-      "require": "./dist/links/splitLink.js",
-      "default": "./dist/links/splitLink.js"
+      "import": {
+        "types": "./dist/links/splitLink.d.mts",
+        "default": "./dist/links/splitLink.mjs"
+      },
+      "require": {
+        "types": "./dist/links/splitLink.d.cts",
+        "default": "./dist/links/splitLink.cjs"
+      }
     },
     "./links/wsLink/wsLink": {
-      "import": "./dist/links/wsLink/wsLink.mjs",
-      "require": "./dist/links/wsLink/wsLink.js",
-      "default": "./dist/links/wsLink/wsLink.js"
+      "import": {
+        "types": "./dist/links/wsLink/wsLink.d.mts",
+        "default": "./dist/links/wsLink/wsLink.mjs"
+      },
+      "require": {
+        "types": "./dist/links/wsLink/wsLink.d.cts",
+        "default": "./dist/links/wsLink/wsLink.cjs"
+      }
     },
     "./unstable-internals": {
-      "import": "./dist/unstable-internals.mjs",
-      "require": "./dist/unstable-internals.js",
-      "default": "./dist/unstable-internals.js"
+      "import": {
+        "types": "./dist/unstable-internals.d.mts",
+        "default": "./dist/unstable-internals.mjs"
+      },
+      "require": {
+        "types": "./dist/unstable-internals.d.cts",
+        "default": "./dist/unstable-internals.cjs"
+      }
     }
   },
   "files": [
@@ -77,20 +112,19 @@
     "!**/__tests__"
   ],
   "peerDependencies": {
-    "@trpc/server": "11.2.0",
+    "@trpc/server": "11.4.3",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@trpc/server": "11.2.0",
+    "@trpc/server": "11.4.3",
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/node": "^22.13.5",
     "dataloader": "^2.2.2",
     "eslint": "^9.26.0",
     "isomorphic-fetch": "^3.0.0",
     "node-fetch": "^3.3.0",
-    "rollup": "^4.34.8",
+    "tsdown": "0.12.7",
     "tslib": "^2.8.1",
-    "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "undici": "^7.0.0",
     "ws": "^8.0.0"

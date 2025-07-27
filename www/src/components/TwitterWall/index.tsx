@@ -4,7 +4,7 @@ import { popIn } from '../../animations/popIn';
 import { tweets } from './script.output';
 
 const knownGithubProfiles: Record<string, string> = {
-  t3dotgg: 't3dotgg',
+  theo: 't3dotgg',
 };
 
 const latestTweets = tweets.data

@@ -1,12 +1,13 @@
 {
   "name": "@trpc/tanstack-react-query",
-  "version": "11.2.0",
+  "type": "module",
+  "version": "11.4.3",
   "description": "TanStack React Query Integration for tRPC",
   "author": "juliusmarminge",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "typings": "dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "homepage": "https://trpc.io/docs/client/tanstack-react-query/setup",
   "repository": {
     "type": "git",
@@ -14,9 +15,8 @@
     "directory": "packages/tanstack-react-query"
   },
   "scripts": {
-    "build": "rollup --config rollup.config.ts --configPlugin rollup-plugin-swc3",
-    "dev": "pnpm build --watch",
-    "codegen-entrypoints": "tsx entrypoints.script.ts",
+    "build": "tsdown",
+    "dev": "tsdown --watch",
     "lint": "eslint --cache src",
     "test-run:tsc": "tsc --noEmit --pretty",
     "ts-watch": "tsc --watch"
@@ -24,9 +24,14 @@
   "exports": {
     "./package.json": "./package.json",
     ".": {
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "files": [
@@ -48,17 +53,17 @@
     }
   },
   "peerDependencies": {
-    "@tanstack/react-query": "^5.67.1",
-    "@trpc/client": "11.2.0",
-    "@trpc/server": "11.2.0",
+    "@tanstack/react-query": "^5.80.3",
+    "@trpc/client": "11.4.3",
+    "@trpc/server": "11.4.3",
     "react": ">=18.2.0",
     "react-dom": ">=18.2.0",
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/react-query": "^5.74.7",
-    "@trpc/client": "11.2.0",
-    "@trpc/server": "11.2.0",
+    "@tanstack/react-query": "^5.80.3",
+    "@trpc/client": "11.4.3",
+    "@trpc/server": "11.4.3",
     "@types/node": "^22.13.5",
     "@types/react": "^19.1.0",
     "eslint": "^9.26.0",
@@ -66,12 +71,11 @@
     "konn": "^0.7.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "rollup": "^4.34.8",
-    "tsx": "^4.19.3",
+    "tsdown": "0.12.7",
     "typescript": "^5.8.2",
     "vitest": "^3.1.2",
     "ws": "^8.0.0",
-    "zod": "^3.24.4"
+    "zod": "^3.25.51"
   },
   "publishConfig": {
     "access": "public"

@@ -51,7 +51,7 @@ export const client = createTRPCClient<AppRouter>({
 });
 ```
 
-## Using [devalue](https://github.com/richharris/devalue)
+## Using [devalue](https://github.com/Rich-Harris/devalue)
 
 Devalue works like superjson, but focus in performance and compact payloads, but at the cost of a less human readable body.
 

@@ -1,4 +1,5 @@
 import type { TRPCError } from './error/TRPCError';
+import type { Parser } from './parser';
 import type { ProcedureCallOptions } from './procedureBuilder';
 
 export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
@@ -38,6 +39,10 @@ export interface Procedure<
      */
     meta: unknown;
     experimental_caller: boolean;
+    /**
+     * The input parsers for the procedure
+     */
+    inputs: Parser[];
   };
   meta: TDef['meta'];
   /**

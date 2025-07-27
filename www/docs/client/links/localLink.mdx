@@ -1,0 +1,77 @@
+---
+id: localLink
+title: Local Link
+description: A link for direct procedure calls without HTTP overhead
+---
+
+`localLink` is a [**terminating link**](./overview.md#the-terminating-link) that allows you to make tRPC procedure calls directly in your application without going through HTTP.
+
+:::info
+We have prefixed this as `unstable_` as it's a new API, but you're safe to use it! [Read more](/docs/faq#unstable).
+:::
+
+## Usage
+
+```tsx
+import { createTRPCClient, unstable_localLink } from '@trpc/client';
+import type { AppRouter } from '../server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    unstable_localLink({
+      router: appRouter,
+      createContext: async () => {
+        // Create your context here
+        return {};
+      },
+      onError: (opts) => {
+        // Log errors here, similarly to how you would in an API route
+        console.error('Error:', opts.error);
+      },
+    }),
+  ],
+});
+```
+
+## Features
+
+- Direct procedure calls without HTTP overhead
+- Full support for queries, mutations, and subscriptions
+- Automatic error handling and transformation
+- Support for abort signals
+- Type-safe context creation
+
+## Options
+
+The `localLink` accepts the following options:
+
+```ts
+type LocalLinkOptions<TRouter extends AnyRouter> = {
+  router: TRouter;
+  createContext: () => Promise<inferRouterContext<TRouter>>;
+  onError?: (opts: ErrorHandlerOptions<inferRouterContext<TRouter>>) => void;
+} & TransformerOptions<inferClientTypes<TRouter>>;
+```
+
+### router
+
+The tRPC router instance to use for procedure calls.
+
+### createContext
+
+A function that creates the context for each procedure call. This is called for each request and should return a promise that resolves to the context object.
+
+### onError
+
+An optional error handler that is called when an error occurs during a procedure call. It receives the error, operation type, path, input, and context.
+
+### transformer
+
+Optional input/output transformers for serialization/deserialization of data.
+
+## Notes
+
+- It's recommended to use this link in scenarios where you need direct procedure calls without HTTP
+- For most client-side applications, you should use the `httpLink` or other HTTP-based links instead
+- The link supports all tRPC features including queries, mutations, and subscriptions
+- Error handling and transformation are handled automatically, just like with HTTP-based links

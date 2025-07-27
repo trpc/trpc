@@ -14,7 +14,7 @@
     "@trpc/client": "workspace:*",
     "@trpc/server": "workspace:*",
     "tsx": "^4.19.3",
-    "zod": "^3.24.4"
+    "zod": "^3.25.51"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.149",
@@ -25,5 +25,5 @@
     "serverless-esbuild": "^1.55.0",
     "typescript": "^5.8.2"
   },
-  "version": "11.2.0"
+  "version": "11.4.3"
 }

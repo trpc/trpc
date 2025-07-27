@@ -193,17 +193,16 @@ async function main() {
     );
 
     // add manual sponsors
-    // rawList.push({
-    //   __typename: 'Organization',
-    //   name: 'Tola',
-    //   imgSrc: 'https://github.com/tolahq.png',
-    //   monthlyPriceInDollars: 1110,
-    //   link: 'https://tolahq.com/?ref=trpc',
-    //   privacyLevel: 'PUBLIC',
-    //   login: 'tolahq',
-    //   // 8 months between 1st of sept and 1st of april
-    //   createdAt: Date.now() - 8 * 30 * 24 * 60 * 60 * 1000,
-    // });
+    rawList.push({
+      __typename: 'Organization',
+      name: 'Graphite',
+      imgSrc: 'https://github.com/withgraphite.png',
+      monthlyPriceInDollars: 1000,
+      link: 'https://graphite.dev/?utm_source=github&utm_medium=repo&utm_campaign=trpc',
+      privacyLevel: 'PUBLIC',
+      login: 'withgraphite',
+      createdAt: new Date(2025, 5, 12).getTime(),
+    });
     const list = rawList
       .map((sponsor) => {
         // calculate total value
@@ -224,6 +223,12 @@ async function main() {
         if (sponsor.login === 'greptileai') {
           // sponsored from private account for 3 months
           value += 500 * 3;
+        }
+        if (sponsor.login === 'madisonredtfeldt') {
+          sponsor.name = 'Mobb';
+          sponsor.login = 'mobb-dev';
+          sponsor.imgSrc = 'https://github.com/mobb-dev.png';
+          sponsor.link = 'https://mobb.ai';
         }
         return {
           ...sponsor,
