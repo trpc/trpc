@@ -226,7 +226,6 @@ async function* createBatchStreamProducer(
     return null;
   }
   function encode(value: unknown, path: (string | number)[]): EncodedValue {
-    console.log('encode', value);
     if (value === undefined) {
       return [[]];
     }
@@ -236,10 +235,8 @@ async function* createBatchStreamProducer(
     }
 
     if (!isPlainObject(value)) {
-      console.log('-> non plain');
       return [[value]];
     }
-    console.log('-> plain object');
 
     const newObj: Record<string, unknown> = {};
     const asyncValues: ChunkDefinition[] = [];
@@ -284,7 +281,6 @@ export function jsonlStreamProducer(opts: JSONLProducerOptions) {
     stream = stream.pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
-          console.log('transform', chunk);
           if (chunk === PING_SYM) {
             controller.enqueue(PING_SYM);
           } else {
@@ -299,7 +295,6 @@ export function jsonlStreamProducer(opts: JSONLProducerOptions) {
     .pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
-          console.log('stringify', chunk);
           if (chunk === PING_SYM) {
             controller.enqueue(' ');
           } else {

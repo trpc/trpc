@@ -556,7 +556,7 @@ describe('superjson - custom instance', async () => {
     }
   }
 
-  const transformer = new superjson();
+  const transformer = superjson;
   transformer.registerCustom(
     {
       isApplicable: (obj): obj is MyCustomThing => {
@@ -592,11 +592,6 @@ describe('superjson - custom instance', async () => {
           links: [httpLink({ url: httpUrl, transformer })],
         };
       },
-      server: {
-        onError: (opts) => {
-          console.log('onError', opts);
-        },
-      },
     });
 
     const res = await ctx.client.myCustomThing.query();
@@ -625,11 +620,6 @@ describe('superjson - custom instance', async () => {
         return {
           links: [httpBatchStreamLink({ url: httpUrl, transformer })],
         };
-      },
-      server: {
-        onError: (opts) => {
-          console.log('onError', opts.error);
-        },
       },
     });
 
