@@ -16,6 +16,7 @@
     "dev": "turbo --filter=\"@trpc/*\" dev",
     "dev-www": "turbo --filter www dev",
     "test": "vitest",
+    "test-ci": "MUTE_REACT_ACT_WARNINGS=1 vitest --coverage",
     "typecheck": "turbo typecheck",
     "ts-watch": "turbo run ts-watch",
     "lint": "turbo lint",

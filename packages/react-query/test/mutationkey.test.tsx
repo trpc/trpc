@@ -40,6 +40,7 @@ describe('mutation keys', () => {
         postCreate.mutate();
         const mutation = mutationCache.find({ mutationKey });
         expect(mutation).not.toBeUndefined();
+        // eslint-disable-next-line react-hooks/react-compiler
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
 
