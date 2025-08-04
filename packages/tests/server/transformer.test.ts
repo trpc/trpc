@@ -156,7 +156,7 @@ test('not batching: superjson up and devalue down', async () => {
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 });
 
-test('batching: superjson up and devalue down', async () => {
+describe('batching: superjson up and devalue down', () => {
   const transformer: CombinedDataTransformer = {
     input: superjson,
     output: {
@@ -176,16 +176,31 @@ test('batching: superjson up and devalue down', async () => {
     }),
   });
 
-  await using ctx = testServerAndClientResource(router, {
-    client({ httpUrl }) {
-      return {
-        links: [httpBatchLink({ url: httpUrl, transformer })],
-      };
-    },
+  test('httpBatchLink', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl }) {
+        return {
+          links: [httpBatchLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+    const res = await ctx.client.hello.query(date);
+    expect(res.getTime()).toBe(date.getTime());
+    expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
   });
-  const res = await ctx.client.hello.query(date);
-  expect(res.getTime()).toBe(date.getTime());
-  expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+
+  test('httpBatchStreamLink', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl }) {
+        return {
+          links: [httpBatchStreamLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+    const res = await ctx.client.hello.query(date);
+    expect(res.getTime()).toBe(date.getTime());
+    expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+  });
 });
 
 test('batching: superjson up and f down', async () => {
