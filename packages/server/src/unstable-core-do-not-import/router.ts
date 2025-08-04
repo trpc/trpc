@@ -74,8 +74,10 @@ export type RouterCaller<
   },
 ) => DecorateRouterRecord<TRecord>;
 
-const lazySymbol = Symbol('lazy');
-export type Lazy<TAny> = (() => Promise<TAny>) & { [lazySymbol]: true };
+const lazyMarker = 'lazyMarker' as 'lazyMarker' & {
+  __brand: 'lazyMarker';
+};
+export type Lazy<TAny> = (() => Promise<TAny>) & { [lazyMarker]: true };
 
 type LazyLoader<TAny> = {
   load: () => Promise<void>;
@@ -123,13 +125,14 @@ export function lazy<TRouter extends AnyRouter>(
 
     return routers[0];
   }
-  resolve[lazySymbol] = true as const;
 
-  return resolve;
+  (resolve as Lazy<NoInfer<TRouter>>)[lazyMarker] = true as const;
+
+  return resolve as Lazy<NoInfer<TRouter>>;
 }
 
 function isLazy<TAny>(input: unknown): input is Lazy<TAny> {
-  return typeof input === 'function' && lazySymbol in input;
+  return typeof input === 'function' && lazyMarker in input;
 }
 
 /**
