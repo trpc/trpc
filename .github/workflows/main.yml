@@ -27,6 +27,25 @@ jobs:
       - uses: ./.github/setup
 
       - run: pnpm build
+
+  typecheck:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/setup
+
+      - run: pnpm typecheck
+
   test:
     timeout-minutes: 10
     env:
@@ -41,7 +60,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm test
+      - run: pnpm test -- --coverage
 
       - uses: codecov/codecov-action@v5
         with:
