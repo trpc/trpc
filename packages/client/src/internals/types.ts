@@ -40,6 +40,7 @@ export interface RequestInitEsque {
     | null
     | ArrayBufferView<ArrayBuffer>
     | ArrayBuffer
+    | Uint8Array<ArrayBuffer>
     | Blob
     | File;
 
