@@ -16,6 +16,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { uneval } from 'devalue';
 import superjson from 'superjson';
+import SuperJSON from 'superjson';
 import { createTson, tsonDate } from 'tupleson';
 import { z } from 'zod';
 
@@ -544,4 +545,71 @@ test('tupleson', async () => {
   const res = await ctx.client.hello.query(date);
   expect(res.getTime()).toBe(date.getTime());
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+});
+
+describe.only('superjson - custom instance, regression #6863', async () => {
+  class MyCustomThing {
+    justDoinWhatIDo: number;
+
+    constructor(num: number) {
+      this.justDoinWhatIDo = num;
+    }
+  }
+
+  const transformer = new SuperJSON();
+  transformer.registerCustom(
+    {
+      isApplicable: (obj): obj is MyCustomThing => {
+        return obj instanceof MyCustomThing;
+      },
+      serialize: (instance) => {
+        return { num: instance.justDoinWhatIDo };
+      },
+      deserialize: (json) => {
+        return new MyCustomThing(json.num);
+      },
+    },
+    'MyCustomThing',
+  );
+
+  const t = initTRPC.create({ transformer });
+
+  const router = t.router({
+    myCustomThing: t.procedure.query(() => {
+      return new MyCustomThing(42);
+    }),
+    wrapped: t.procedure.query(() => {
+      return {
+        obj: new MyCustomThing(42),
+      };
+    }),
+  });
+
+  test('httpLink', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl, transformer }) {
+        return {
+          links: [httpLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+
+    const res = await ctx.client.myCustomThing.query();
+
+    expect(res).toBeInstanceOf(MyCustomThing);
+  });
+
+  test('httpBatchLink', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl, transformer }) {
+        return {
+          links: [httpBatchLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+
+    const res = await ctx.client.myCustomThing.query();
+
+    expect(res).toBeInstanceOf(MyCustomThing);
+  });
 });
