@@ -56,7 +56,6 @@ describe('mutation keys', () => {
       ctx.queryClient.getMutationCache().find({ mutationKey }),
     ).toBeUndefined();
 
-    // should be mutating due to effect
     await vi.waitFor(() => {
       expect(utils.getByTestId('status')).toHaveTextContent('0');
     });
