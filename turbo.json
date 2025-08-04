@@ -52,7 +52,7 @@
       "cache": false
     },
     "typecheck": {
-      "dependsOn": ["^build", "codegen-tests"],
+      "dependsOn": [],
       "cache": false
     },
     "test-start": {
