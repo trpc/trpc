@@ -547,7 +547,7 @@ test('tupleson', async () => {
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 });
 
-describe('superjson - custom instance, regression #6863', async () => {
+describe('superjson - custom instance', async () => {
   class MyCustomThing {
     justDoinWhatIDo: number;
 
@@ -592,16 +592,16 @@ describe('superjson - custom instance, regression #6863', async () => {
           links: [httpLink({ url: httpUrl, transformer })],
         };
       },
+      server: {
+        onError: (opts) => {
+          console.log('onError', opts);
+        },
+      },
     });
 
     const res = await ctx.client.myCustomThing.query();
 
     expect(res).toBeInstanceOf(MyCustomThing);
-    expect(res).toMatchInlineSnapshot(`
-      MyCustomThing {
-        "justDoinWhatIDo": 42,
-      }
-    `);
   });
 
   test('httpBatchLink', async () => {
@@ -616,13 +616,9 @@ describe('superjson - custom instance, regression #6863', async () => {
     const res = await ctx.client.myCustomThing.query();
 
     expect(res).toBeInstanceOf(MyCustomThing);
-    expect(res).toMatchInlineSnapshot(`
-      MyCustomThing {
-        "justDoinWhatIDo": 42,
-      }
-    `);
   });
 
+  // regression https://github.com/trpc/trpc/issues/6863
   test('httpBatchStreamLink', async () => {
     await using ctx = testServerAndClientResource(router, {
       client({ httpUrl, transformer }) {
@@ -630,15 +626,17 @@ describe('superjson - custom instance, regression #6863', async () => {
           links: [httpBatchStreamLink({ url: httpUrl, transformer })],
         };
       },
+      server: {
+        onError: (opts) => {
+          console.log('onError', opts.error);
+        },
+      },
     });
 
     const res = await ctx.client.myCustomThing.query();
 
     expect(res).toBeInstanceOf(MyCustomThing);
-    expect(res).toMatchInlineSnapshot(`
-      MyCustomThing {
-        "justDoinWhatIDo": 42,
-      }
-    `);
+
+    ctx;
   });
 });

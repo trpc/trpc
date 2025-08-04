@@ -1,3 +1,4 @@
+import { isPlainObject } from '@trpc/server/vendor/is-plain-object';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
@@ -21,10 +22,6 @@ export type NodeJSReadableStreamEsque = {
     listener: (...args: any[]) => void,
   ): NodeJSReadableStreamEsque;
 };
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Object.prototype.toString.call(value) === '[object Object]';
-}
 
 // ---------- types
 const CHUNK_VALUE_TYPE_PROMISE = 0;
@@ -229,6 +226,7 @@ async function* createBatchStreamProducer(
     return null;
   }
   function encode(value: unknown, path: (string | number)[]): EncodedValue {
+    console.log('encode', value);
     if (value === undefined) {
       return [[]];
     }
@@ -238,8 +236,10 @@ async function* createBatchStreamProducer(
     }
 
     if (!isPlainObject(value)) {
+      console.log('-> non plain');
       return [[value]];
     }
+    console.log('-> plain object');
 
     const newObj: Record<string, unknown> = {};
     const asyncValues: ChunkDefinition[] = [];
@@ -284,6 +284,7 @@ export function jsonlStreamProducer(opts: JSONLProducerOptions) {
     stream = stream.pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
+          console.log('transform', chunk);
           if (chunk === PING_SYM) {
             controller.enqueue(PING_SYM);
           } else {
@@ -298,6 +299,7 @@ export function jsonlStreamProducer(opts: JSONLProducerOptions) {
     .pipeThrough(
       new TransformStream({
         transform(chunk, controller) {
+          console.log('stringify', chunk);
           if (chunk === PING_SYM) {
             controller.enqueue(' ');
           } else {
