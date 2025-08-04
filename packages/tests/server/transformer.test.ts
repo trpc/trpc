@@ -4,6 +4,7 @@ import {
   createTRPCClient,
   createWSClient,
   httpBatchLink,
+  httpBatchStreamLink,
   httpLink,
   TRPCClientError,
   wsLink,
@@ -546,7 +547,7 @@ test('tupleson', async () => {
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 });
 
-describe.only('superjson - custom instance, regression #6863', async () => {
+describe('superjson - custom instance, regression #6863', async () => {
   class MyCustomThing {
     justDoinWhatIDo: number;
 
@@ -608,6 +609,25 @@ describe.only('superjson - custom instance, regression #6863', async () => {
       client({ httpUrl, transformer }) {
         return {
           links: [httpBatchLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+
+    const res = await ctx.client.myCustomThing.query();
+
+    expect(res).toBeInstanceOf(MyCustomThing);
+    expect(res).toMatchInlineSnapshot(`
+      MyCustomThing {
+        "justDoinWhatIDo": 42,
+      }
+    `);
+  });
+
+  test('httpBatchStreamLink', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl, transformer }) {
+        return {
+          links: [httpBatchStreamLink({ url: httpUrl, transformer })],
         };
       },
     });
