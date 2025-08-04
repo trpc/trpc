@@ -74,6 +74,9 @@ export type RouterCaller<
   },
 ) => DecorateRouterRecord<TRecord>;
 
+/**
+ * @internal
+ */
 const lazyMarker = 'lazyMarker' as 'lazyMarker' & {
   __brand: 'lazyMarker';
 };
