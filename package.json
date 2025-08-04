@@ -71,7 +71,7 @@
     "ts-prune": "^0.10.3",
     "tsx": "^4.19.3",
     "turbo": "^2.5.4",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "typescript-eslint": "^8.31.1",
     "vite": "^6.1.1",
     "vitest": "^3.1.2",

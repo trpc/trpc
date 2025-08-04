@@ -23,7 +23,7 @@
     "eslint": "^9.26.0",
     "serverless": "^3.38.0",
     "serverless-esbuild": "^1.55.0",
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.2"
   },
   "version": "11.4.3"
 }

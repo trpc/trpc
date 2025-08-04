@@ -33,7 +33,7 @@
     "supertest": "^7.0.0",
     "tsx": "^4.19.3",
     "tupleson": "0.23.1",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "undici": "^7.0.0",
     "valibot0": "npm:valibot@^0.42.0",
     "valibot1": "npm:valibot@^1.0.0-beta.14",
