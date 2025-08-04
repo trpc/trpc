@@ -679,8 +679,8 @@ importers:
         specifier: ^4.19.3
         version: 4.19.3
       typescript:
-        specifier: ^5.8.2
-        version: 5.8.2
+        specifier: ^5.9.2
+        version: 5.9.2
       wait-port:
         specifier: ^1.0.1
         version: 1.0.4
@@ -1082,8 +1082,8 @@ importers:
         specifier: ^9.26.0
         version: 9.26.0(jiti@2.4.2)
       typescript:
-        specifier: ^5.8.2
-        version: 5.8.2
+        specifier: ^5.9.2
+        version: 5.9.2
 
   examples/next-formdata:
     dependencies:
@@ -1140,8 +1140,8 @@ importers:
         specifier: ^9.26.0
         version: 9.26.0(jiti@2.4.2)
       typescript:
-        specifier: ^5.8.2
-        version: 5.8.2
+        specifier: ^5.9.2
+        version: 5.9.2
 
   examples/next-minimal-starter:
     dependencies:
@@ -1779,8 +1779,8 @@ importers:
         specifier: ^4.19.3
         version: 4.19.3
       typescript:
-        specifier: ^5.8.2
-        version: 5.8.2
+        specifier: ^5.9.2
+        version: 5.9.2
 
   packages/client:
     devDependencies:
@@ -2231,7 +2231,7 @@ importers:
         version: 5.0.0
       '@docusaurus/core':
         specifier: ^3.7.0
-        version: 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+        version: 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/faster':
         specifier: ^3.7.0
         version: 3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17)
@@ -2240,19 +2240,19 @@ importers:
         version: 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/plugin-content-blog':
         specifier: ^3.7.0
-        version: 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+        version: 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/plugin-content-docs':
         specifier: ^3.7.0
-        version: 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+        version: 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/preset-classic':
         specifier: ^3.7.0
-        version: 3.7.0(@algolia/client-search@5.0.0)(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(search-insights@2.17.2)(typescript@5.8.2)
+        version: 3.7.0(@algolia/client-search@5.0.0)(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(search-insights@2.17.2)(typescript@5.9.2)
       '@docusaurus/theme-classic':
         specifier: ^3.7.0
-        version: 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+        version: 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/theme-common':
         specifier: ^3.7.0
-        version: 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/types':
         specifier: ^3.7.0
         version: 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -2336,7 +2336,7 @@ importers:
         version: 3.2.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       remark-shiki-twoslash:
         specifier: ^3.1.3
-        version: 3.1.3(typescript@5.8.2)
+        version: 3.1.3(typescript@5.9.2)
       tailwind-merge:
         specifier: ^2.0.0
         version: 2.0.0
@@ -2382,7 +2382,7 @@ importers:
         version: 10.4.13(postcss@8.4.39)
       docusaurus-plugin-typedoc:
         specifier: 1.4.0
-        version: 1.4.0(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.8.2)))
+        version: 1.4.0(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2)))
       dotenv:
         specifier: ^16.0.1
         version: 16.0.3
@@ -2427,16 +2427,16 @@ importers:
         version: 4.19.3
       typedoc:
         specifier: 0.27.9
-        version: 0.27.9(typescript@5.8.2)
+        version: 0.27.9(typescript@5.9.2)
       typedoc-plugin-markdown:
         specifier: 4.4.2
-        version: 4.4.2(typedoc@0.27.9(typescript@5.8.2))
+        version: 4.4.2(typedoc@0.27.9(typescript@5.9.2))
       typescript:
-        specifier: ^5.8.2
-        version: 5.8.2
+        specifier: ^5.9.2
+        version: 5.9.2
       valibot:
         specifier: 1.1.0
-        version: 1.1.0(typescript@5.8.2)
+        version: 1.1.0(typescript@5.9.2)
       yup:
         specifier: ^1.0.0
         version: 1.0.0
@@ -2469,8 +2469,8 @@ importers:
         specifier: ^19.1.1
         version: 19.1.1(@types/react@19.1.0)
       typescript:
-        specifier: ^5.8.2
-        version: 5.8.2
+        specifier: ^5.9.2
+        version: 5.9.2
 
 packages:
 
@@ -19215,11 +19215,6 @@ packages:
       eslint: ^8.57.0 || ^9.0.0
       typescript: '>=4.8.4 <5.9.0'
 
-  typescript@5.8.2:
-    resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
-    engines: {node: '>=14.17'}
-    hasBin: true
-
   typescript@5.9.2:
     resolution: {integrity: sha512-CWBzXQrc/qOkhidw1OzBTQuYRbfyxDXJMVJ1XNwUHGROVmuaeiEm3OslpZ1RV96d7SKKjZKrSJu3+t/xlw3R9A==}
     engines: {node: '>=14.17'}
@@ -24653,7 +24648,7 @@ snapshots:
       - uglify-js
       - webpack-cli
 
-  '@docusaurus/bundler@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/bundler@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
       '@babel/core': 7.26.9
       '@docusaurus/babel': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -24672,9 +24667,9 @@ snapshots:
       mini-css-extract-plugin: 2.9.1(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
       null-loader: 4.0.1(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
       postcss: 8.4.39
-      postcss-loader: 7.3.4(postcss@8.4.39)(typescript@5.8.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
+      postcss-loader: 7.3.4(postcss@8.4.39)(typescript@5.9.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
       postcss-preset-env: 10.1.3(postcss@8.4.39)
-      react-dev-utils: 12.0.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.8.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
+      react-dev-utils: 12.0.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.9.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
       terser-webpack-plugin: 5.3.10(@swc/core@1.9.1(@swc/helpers@0.5.17))(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
       tslib: 2.8.1
       url-loader: 4.1.1(file-loader@6.2.0(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17))))(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
@@ -24699,10 +24694,10 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/core@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/core@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
       '@docusaurus/babel': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@docusaurus/bundler': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/bundler': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/logger': 3.7.0
       '@docusaurus/mdx-loader': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -24729,7 +24724,7 @@ snapshots:
       p-map: 4.0.0
       prompts: 2.4.2
       react: 19.1.0
-      react-dev-utils: 12.0.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.8.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
+      react-dev-utils: 12.0.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.9.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
       react-dom: 19.1.0(react@19.1.0)
       react-helmet-async: '@slorber/react-helmet-async@1.3.0(react-dom@19.1.0(react@19.1.0))(react@19.1.0)'
       react-loadable: '@docusaurus/react-loadable@6.0.0(react@19.1.0)'
@@ -24847,13 +24842,13 @@ snapshots:
       - uglify-js
       - webpack-cli
 
-  '@docusaurus/plugin-content-blog@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/plugin-content-blog@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/logger': 3.7.0
       '@docusaurus/mdx-loader': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@docusaurus/plugin-content-docs': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@docusaurus/plugin-content-docs': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/types': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils-common': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -24890,13 +24885,13 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/logger': 3.7.0
       '@docusaurus/mdx-loader': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/module-type-aliases': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/types': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils-common': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -24931,9 +24926,9 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/plugin-content-pages@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/plugin-content-pages@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/mdx-loader': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/types': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -24963,9 +24958,9 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/plugin-debug@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/plugin-debug@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/types': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       fs-extra: 11.2.0
@@ -24993,9 +24988,9 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/plugin-google-analytics@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/plugin-google-analytics@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/types': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils-validation': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
@@ -25021,9 +25016,9 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/plugin-google-gtag@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/plugin-google-gtag@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/types': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils-validation': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@types/gtag.js': 0.0.12
@@ -25050,9 +25045,9 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/plugin-google-tag-manager@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/plugin-google-tag-manager@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/types': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils-validation': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
@@ -25078,9 +25073,9 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/plugin-sitemap@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/plugin-sitemap@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/logger': 3.7.0
       '@docusaurus/types': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -25111,14 +25106,14 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/plugin-svgr@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/plugin-svgr@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/types': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils-validation': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@svgr/core': 8.1.0(typescript@5.8.2)
-      '@svgr/webpack': 8.1.0(typescript@5.8.2)
+      '@svgr/core': 8.1.0(typescript@5.9.2)
+      '@svgr/webpack': 8.1.0(typescript@5.9.2)
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
       tslib: 2.8.1
@@ -25143,21 +25138,21 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/preset-classic@3.7.0(@algolia/client-search@5.0.0)(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(search-insights@2.17.2)(typescript@5.8.2)':
+  '@docusaurus/preset-classic@3.7.0(@algolia/client-search@5.0.0)(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(search-insights@2.17.2)(typescript@5.9.2)':
     dependencies:
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/plugin-content-blog': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/plugin-content-docs': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/plugin-content-pages': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/plugin-debug': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/plugin-google-analytics': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/plugin-google-gtag': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/plugin-google-tag-manager': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/plugin-sitemap': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/plugin-svgr': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/theme-classic': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@docusaurus/theme-search-algolia': 3.7.0(@algolia/client-search@5.0.0)(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(search-insights@2.17.2)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/plugin-content-blog': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/plugin-content-docs': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/plugin-content-pages': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/plugin-debug': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/plugin-google-analytics': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/plugin-google-gtag': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/plugin-google-tag-manager': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/plugin-sitemap': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/plugin-svgr': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/theme-classic': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@docusaurus/theme-search-algolia': 3.7.0(@algolia/client-search@5.0.0)(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(search-insights@2.17.2)(typescript@5.9.2)
       '@docusaurus/types': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
@@ -25189,16 +25184,16 @@ snapshots:
       '@types/react': 19.1.0
       react: 19.1.0
 
-  '@docusaurus/theme-classic@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)':
+  '@docusaurus/theme-classic@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)':
     dependencies:
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/logger': 3.7.0
       '@docusaurus/mdx-loader': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/module-type-aliases': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@docusaurus/plugin-content-blog': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/plugin-content-docs': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/plugin-content-pages': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@docusaurus/plugin-content-blog': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/plugin-content-docs': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/plugin-content-pages': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/theme-translations': 3.7.0
       '@docusaurus/types': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -25239,11 +25234,11 @@ snapshots:
       - vue-template-compiler
       - webpack-cli
 
-  '@docusaurus/theme-common@3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@docusaurus/theme-common@3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@docusaurus/mdx-loader': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/module-type-aliases': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@docusaurus/plugin-content-docs': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/plugin-content-docs': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/utils': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils-common': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@types/history': 4.7.11
@@ -25263,13 +25258,13 @@ snapshots:
       - uglify-js
       - webpack-cli
 
-  '@docusaurus/theme-search-algolia@3.7.0(@algolia/client-search@5.0.0)(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(search-insights@2.17.2)(typescript@5.8.2)':
+  '@docusaurus/theme-search-algolia@3.7.0(@algolia/client-search@5.0.0)(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(@types/react@19.1.0)(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(search-insights@2.17.2)(typescript@5.9.2)':
     dependencies:
       '@docsearch/react': 3.8.3(@algolia/client-search@5.0.0)(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(search-insights@2.17.2)
-      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
+      '@docusaurus/core': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
       '@docusaurus/logger': 3.7.0
-      '@docusaurus/plugin-content-docs': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2)
-      '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@docusaurus/plugin-content-docs': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2)
+      '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(@swc/helpers@0.5.17))(@mdx-js/react@3.1.0(@types/react@19.1.0)(react@19.1.0))(@rspack/core@1.1.8(@swc/helpers@0.5.17))(@swc/core@1.9.1(@swc/helpers@0.5.17))(eslint@9.26.0(jiti@2.4.2))(lightningcss@1.28.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.2))(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/theme-translations': 3.7.0
       '@docusaurus/utils': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@docusaurus/utils-validation': 3.7.0(@swc/core@1.9.1(@swc/helpers@0.5.17))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -28860,12 +28855,12 @@ snapshots:
       '@svgr/babel-plugin-transform-react-native-svg': 8.1.0(@babel/core@7.26.9)
       '@svgr/babel-plugin-transform-svg-component': 8.0.0(@babel/core@7.26.9)
 
-  '@svgr/core@8.1.0(typescript@5.8.2)':
+  '@svgr/core@8.1.0(typescript@5.9.2)':
     dependencies:
       '@babel/core': 7.26.9
       '@svgr/babel-preset': 8.1.0(@babel/core@7.26.9)
       camelcase: 6.3.0
-      cosmiconfig: 8.3.6(typescript@5.8.2)
+      cosmiconfig: 8.3.6(typescript@5.9.2)
       snake-case: 3.0.4
     transitivePeerDependencies:
       - supports-color
@@ -28876,35 +28871,35 @@ snapshots:
       '@babel/types': 7.27.6
       entities: 4.4.0
 
-  '@svgr/plugin-jsx@8.1.0(@svgr/core@8.1.0(typescript@5.8.2))':
+  '@svgr/plugin-jsx@8.1.0(@svgr/core@8.1.0(typescript@5.9.2))':
     dependencies:
       '@babel/core': 7.26.9
       '@svgr/babel-preset': 8.1.0(@babel/core@7.26.9)
-      '@svgr/core': 8.1.0(typescript@5.8.2)
+      '@svgr/core': 8.1.0(typescript@5.9.2)
       '@svgr/hast-util-to-babel-ast': 8.0.0
       svg-parser: 2.0.4
     transitivePeerDependencies:
       - supports-color
 
-  '@svgr/plugin-svgo@8.1.0(@svgr/core@8.1.0(typescript@5.8.2))(typescript@5.8.2)':
+  '@svgr/plugin-svgo@8.1.0(@svgr/core@8.1.0(typescript@5.9.2))(typescript@5.9.2)':
     dependencies:
-      '@svgr/core': 8.1.0(typescript@5.8.2)
-      cosmiconfig: 8.3.6(typescript@5.8.2)
+      '@svgr/core': 8.1.0(typescript@5.9.2)
+      cosmiconfig: 8.3.6(typescript@5.9.2)
       deepmerge: 4.3.1
       svgo: 3.2.0
     transitivePeerDependencies:
       - typescript
 
-  '@svgr/webpack@8.1.0(typescript@5.8.2)':
+  '@svgr/webpack@8.1.0(typescript@5.9.2)':
     dependencies:
       '@babel/core': 7.26.9
       '@babel/plugin-transform-react-constant-elements': 7.25.1(@babel/core@7.26.9)
       '@babel/preset-env': 7.26.0(@babel/core@7.26.9)
       '@babel/preset-react': 7.26.3(@babel/core@7.26.9)
       '@babel/preset-typescript': 7.26.0(@babel/core@7.26.9)
-      '@svgr/core': 8.1.0(typescript@5.8.2)
-      '@svgr/plugin-jsx': 8.1.0(@svgr/core@8.1.0(typescript@5.8.2))
-      '@svgr/plugin-svgo': 8.1.0(@svgr/core@8.1.0(typescript@5.8.2))(typescript@5.8.2)
+      '@svgr/core': 8.1.0(typescript@5.9.2)
+      '@svgr/plugin-jsx': 8.1.0(@svgr/core@8.1.0(typescript@5.9.2))
+      '@svgr/plugin-svgo': 8.1.0(@svgr/core@8.1.0(typescript@5.9.2))(typescript@5.9.2)
     transitivePeerDependencies:
       - supports-color
       - typescript
@@ -32325,14 +32320,14 @@ snapshots:
       parse-json: 5.2.0
       path-type: 4.0.0
 
-  cosmiconfig@8.3.6(typescript@5.8.2):
+  cosmiconfig@8.3.6(typescript@5.9.2):
     dependencies:
       import-fresh: 3.3.0
       js-yaml: 4.1.0
       parse-json: 5.2.0
       path-type: 4.0.0
     optionalDependencies:
-      typescript: 5.8.2
+      typescript: 5.9.2
 
   crc-32@1.2.2: {}
 
@@ -33060,10 +33055,10 @@ snapshots:
     dependencies:
       esutils: 2.0.3
 
-  docusaurus-plugin-typedoc@1.4.0(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.8.2))):
+  docusaurus-plugin-typedoc@1.4.0(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2))):
     dependencies:
-      typedoc-docusaurus-theme: 1.4.0(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.8.2)))
-      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.8.2))
+      typedoc-docusaurus-theme: 1.4.0(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2)))
+      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.9.2))
 
   docusaurus-preset-shiki-twoslash@1.1.41:
     dependencies:
@@ -34624,7 +34619,7 @@ snapshots:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
 
-  fork-ts-checker-webpack-plugin@6.5.2(eslint@9.26.0(jiti@2.4.2))(typescript@5.8.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17))):
+  fork-ts-checker-webpack-plugin@6.5.2(eslint@9.26.0(jiti@2.4.2))(typescript@5.9.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17))):
     dependencies:
       '@babel/code-frame': 7.26.2
       '@types/json-schema': 7.0.15
@@ -34639,7 +34634,7 @@ snapshots:
       schema-utils: 2.7.0
       semver: 7.6.3
       tapable: 1.1.3
-      typescript: 5.8.2
+      typescript: 5.9.2
       webpack: 5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17))
     optionalDependencies:
       eslint: 9.26.0(jiti@2.4.2)
@@ -35375,7 +35370,7 @@ snapshots:
 
   history@4.10.1:
     dependencies:
-      '@babel/runtime': 7.26.0
+      '@babel/runtime': 7.27.6
       loose-envify: 1.4.0
       resolve-pathname: 3.0.0
       tiny-invariant: 1.3.3
@@ -39569,9 +39564,9 @@ snapshots:
     optionalDependencies:
       postcss: 8.4.47
 
-  postcss-loader@7.3.4(postcss@8.4.39)(typescript@5.8.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17))):
+  postcss-loader@7.3.4(postcss@8.4.39)(typescript@5.9.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17))):
     dependencies:
-      cosmiconfig: 8.3.6(typescript@5.8.2)
+      cosmiconfig: 8.3.6(typescript@5.9.2)
       jiti: 1.21.6
       postcss: 8.4.39
       semver: 7.6.3
@@ -40379,7 +40374,7 @@ snapshots:
       minimist: 1.2.8
       strip-json-comments: 2.0.1
 
-  react-dev-utils@12.0.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.8.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17))):
+  react-dev-utils@12.0.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.9.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17))):
     dependencies:
       '@babel/code-frame': 7.26.2
       address: 1.2.1
@@ -40390,7 +40385,7 @@ snapshots:
       escape-string-regexp: 4.0.0
       filesize: 8.0.7
       find-up: 5.0.0
-      fork-ts-checker-webpack-plugin: 6.5.2(eslint@9.26.0(jiti@2.4.2))(typescript@5.8.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
+      fork-ts-checker-webpack-plugin: 6.5.2(eslint@9.26.0(jiti@2.4.2))(typescript@5.9.2)(webpack@5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17)))
       global-modules: 2.0.0
       globby: 11.1.0
       gzip-size: 6.0.0
@@ -40407,7 +40402,7 @@ snapshots:
       text-table: 0.2.0
       webpack: 5.95.0(@swc/core@1.9.1(@swc/helpers@0.5.17))
     optionalDependencies:
-      typescript: 5.8.2
+      typescript: 5.9.2
     transitivePeerDependencies:
       - eslint
       - supports-color
@@ -40812,21 +40807,6 @@ snapshots:
       mdast-util-to-hast: 13.2.0
       unified: 11.0.5
       vfile: 6.0.3
-
-  remark-shiki-twoslash@3.1.3(typescript@5.8.2):
-    dependencies:
-      '@types/unist': 2.0.6
-      '@typescript/twoslash': 3.1.0
-      '@typescript/vfs': 1.3.4
-      fenceparser: 1.1.1
-      regenerator-runtime: 0.13.11
-      shiki: 0.10.1
-      shiki-twoslash: 3.1.2(typescript@5.8.2)
-      tslib: 2.1.0
-      typescript: 5.8.2
-      unist-util-visit: 2.0.3
-    transitivePeerDependencies:
-      - supports-color
 
   remark-shiki-twoslash@3.1.3(typescript@5.9.2):
     dependencies:
@@ -41606,16 +41586,6 @@ snapshots:
       glob: 7.2.3
       interpret: 1.4.0
       rechoir: 0.6.2
-
-  shiki-twoslash@3.1.2(typescript@5.8.2):
-    dependencies:
-      '@typescript/twoslash': 3.1.0
-      '@typescript/vfs': 1.3.4
-      fenceparser: 1.1.1
-      shiki: 0.10.1
-      typescript: 5.8.2
-    transitivePeerDependencies:
-      - supports-color
 
   shiki-twoslash@3.1.2(typescript@5.9.2):
     dependencies:
@@ -42887,21 +42857,21 @@ snapshots:
 
   typedarray@0.0.6: {}
 
-  typedoc-docusaurus-theme@1.4.0(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.8.2))):
+  typedoc-docusaurus-theme@1.4.0(typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2))):
     dependencies:
-      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.8.2))
+      typedoc-plugin-markdown: 4.4.2(typedoc@0.27.9(typescript@5.9.2))
 
-  typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.8.2)):
+  typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.2)):
     dependencies:
-      typedoc: 0.27.9(typescript@5.8.2)
+      typedoc: 0.27.9(typescript@5.9.2)
 
-  typedoc@0.27.9(typescript@5.8.2):
+  typedoc@0.27.9(typescript@5.9.2):
     dependencies:
       '@gerrit0/mini-shiki': 1.27.2
       lunr: 2.3.9
       markdown-it: 14.1.0
       minimatch: 9.0.5
-      typescript: 5.8.2
+      typescript: 5.9.2
       yaml: 2.7.0
 
   typescript-eslint@8.32.1(eslint@9.26.0(jiti@2.4.2))(typescript@5.9.2):
@@ -42913,8 +42883,6 @@ snapshots:
       typescript: 5.9.2
     transitivePeerDependencies:
       - supports-color
-
-  typescript@5.8.2: {}
 
   typescript@5.9.2: {}
 
@@ -43417,10 +43385,6 @@ snapshots:
   valibot@1.0.0-beta.14(typescript@5.9.2):
     optionalDependencies:
       typescript: 5.9.2
-
-  valibot@1.1.0(typescript@5.8.2):
-    optionalDependencies:
-      typescript: 5.8.2
 
   valibot@1.1.0(typescript@5.9.2):
     optionalDependencies:
