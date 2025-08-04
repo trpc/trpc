@@ -326,7 +326,7 @@ describe('infiniteQueryOptions', () => {
     await using ctx = testContext();
     const { useTRPC } = ctx;
 
-    // @ts-expect-error - unused, it's fine
+    // intended to be unused
     function Component() {
       const trpc = useTRPC();
 
