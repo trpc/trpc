@@ -58,11 +58,6 @@
     "test-start": {
       "dependsOn": ["^build", "build"],
       "cache": false
-    },
-    "test-watch": {
-      "cache": false,
-      "persistent": true,
-      "dependsOn": ["^build", "codegen-tests"]
     }
   }
 }
