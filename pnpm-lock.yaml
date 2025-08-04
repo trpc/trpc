@@ -424,16 +424,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: ^11.4.3
+        specifier: ^11.4.4
         version: link:../../../packages/client
       '@trpc/next':
-        specifier: ^11.4.3
+        specifier: ^11.4.4
         version: link:../../../packages/next
       '@trpc/react-query':
         specifier: npm:@trpc/react-query
         version: link:../../../packages/react-query
       '@trpc/server':
-        specifier: ^11.4.3
+        specifier: ^11.4.4
         version: link:../../../packages/server
       next:
         specifier: ^15.3.1
@@ -1782,7 +1782,7 @@ importers:
   packages/client:
     devDependencies:
       '@trpc/server':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../server
       '@types/isomorphic-fetch':
         specifier: ^0.0.39
@@ -1824,13 +1824,13 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../client
       '@trpc/react-query':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../react-query
       '@trpc/server':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -1896,10 +1896,10 @@ importers:
         specifier: ^14.4.3
         version: 14.4.3(@testing-library/dom@10.0.0)
       '@trpc/client':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../client
       '@trpc/server':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../server
       '@types/express':
         specifier: ^5.0.0
@@ -2034,10 +2034,10 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../client
       '@trpc/server':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../server
       '@types/node':
         specifier: ^22.13.5
@@ -2088,10 +2088,10 @@ importers:
         specifier: ^0.4.4
         version: 0.4.4
       '@trpc/client':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../client
       '@trpc/server':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../server
       '@types/node':
         specifier: ^22.13.5
@@ -2191,16 +2191,16 @@ importers:
         specifier: ^5.80.3
         version: 5.80.3(react@19.1.0)
       '@trpc/client':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../client
       '@trpc/react-query':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../react-query
       '@trpc/server':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../server
       '@trpc/tanstack-react-query':
-        specifier: 11.4.3
+        specifier: 11.4.4
         version: link:../tanstack-react-query
       '@types/jscodeshift':
         specifier: 0.12.0
@@ -9228,6 +9228,9 @@ packages:
 
   '@types/node@20.12.14':
     resolution: {integrity: sha512-scnD59RpYD91xngrQQLGkE+6UrHUPzeKZWhhjBSa3HSkwjbQc38+q3RoIVEwxQGRw3M+j5hpNAM+lgV3cVormg==}
+
+  '@types/node@20.17.17':
+    resolution: {integrity: sha512-/WndGO4kIfMicEQLTi/mDANUu/iVUhT7KboZPdEqqHQ4aTS+3qT3U5gIqWDFV+XouorjfgGqvKILJeHhuQgFYg==}
 
   '@types/node@22.17.0':
     resolution: {integrity: sha512-bbAKTCqX5aNVryi7qXVMi+OkB3w/OyblodicMbvE38blyAz7GxXf6XYhklokijuPwwVg9sDLKRxt0ZHXQwZVfQ==}
@@ -19265,6 +19268,9 @@ packages:
   undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
 
+  undici-types@6.19.8:
+    resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
+
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
@@ -26662,7 +26668,7 @@ snapshots:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.4
       '@types/istanbul-reports': 3.0.1
-      '@types/node': 22.17.0
+      '@types/node': 20.17.17
       '@types/yargs': 17.0.14
       chalk: 4.1.2
 
@@ -29864,14 +29870,14 @@ snapshots:
 
   '@types/express-serve-static-core@4.17.34':
     dependencies:
-      '@types/node': 22.17.0
+      '@types/node': 20.17.17
       '@types/qs': 6.9.7
       '@types/range-parser': 1.2.4
       '@types/send': 0.17.1
 
   '@types/express-serve-static-core@5.0.6':
     dependencies:
-      '@types/node': 22.17.0
+      '@types/node': 20.17.17
       '@types/qs': 6.9.7
       '@types/range-parser': 1.2.4
       '@types/send': 0.17.1
@@ -29960,6 +29966,10 @@ snapshots:
   '@types/node@20.12.14':
     dependencies:
       undici-types: 5.26.5
+
+  '@types/node@20.17.17':
+    dependencies:
+      undici-types: 6.19.8
 
   '@types/node@22.17.0':
     dependencies:
@@ -36226,13 +36236,13 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 22.17.0
+      '@types/node': 20.17.17
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
   jest-worker@29.7.0:
     dependencies:
-      '@types/node': 22.17.0
+      '@types/node': 20.17.17
       jest-util: 29.7.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
@@ -42944,6 +42954,8 @@ snapshots:
       unplugin: 2.2.0
 
   undici-types@5.26.5: {}
+
+  undici-types@6.19.8: {}
 
   undici-types@6.21.0: {}
 
