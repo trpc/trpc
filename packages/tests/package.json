@@ -5,7 +5,7 @@
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
     "codegen-tests": "run-p codegen:*",
     "lint": "eslint --cache .",
-    "test-run:tsc": "tsc --noEmit --pretty",
+    "typecheck": "tsc --noEmit --pretty",
     "ts-watch": "tsc --watch"
   },
   "dependencies": {
