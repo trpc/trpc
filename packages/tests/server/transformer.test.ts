@@ -16,7 +16,6 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { uneval } from 'devalue';
 import superjson from 'superjson';
-import SuperJSON from 'superjson';
 import { createTson, tsonDate } from 'tupleson';
 import { z } from 'zod';
 
@@ -556,7 +555,7 @@ describe.only('superjson - custom instance, regression #6863', async () => {
     }
   }
 
-  const transformer = new SuperJSON();
+  const transformer = new superjson();
   transformer.registerCustom(
     {
       isApplicable: (obj): obj is MyCustomThing => {
