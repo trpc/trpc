@@ -556,7 +556,7 @@ describe('superjson - custom instance', async () => {
     }
   }
 
-  const transformer = superjson;
+  const transformer = new superjson();
   transformer.registerCustom(
     {
       isApplicable: (obj): obj is MyCustomThing => {
@@ -626,7 +626,5 @@ describe('superjson - custom instance', async () => {
     const res = await ctx.client.myCustomThing.query();
 
     expect(res).toBeInstanceOf(MyCustomThing);
-
-    ctx;
   });
 });
