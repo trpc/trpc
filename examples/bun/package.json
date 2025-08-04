@@ -10,7 +10,7 @@
     "lint": "eslint src",
     "test-dev": "start-server-and-test 'bun run src/index.ts' 3000 'bun run src/client.ts'",
     "test-start": "start-server-and-test 'bun run dist/index.js' 3000 'bun run dist/client.js'",
-    "type-check": "tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@trpc/client": "npm:@trpc/client",
@@ -20,7 +20,7 @@
     "@types/bun": "^1.1.12",
     "eslint": "^9.26.0",
     "start-server-and-test": "^1.12.0",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "wait-port": "^1.0.1"
   },
   "version": "11.4.3"

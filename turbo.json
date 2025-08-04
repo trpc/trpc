@@ -47,35 +47,17 @@
     "lint-fix": {
       "cache": false
     },
-    "test": {
-      "dependsOn": ["^build", "codegen-tests"],
-      "cache": false
-    },
-    "test-ci": {
-      "dependsOn": ["^build", "codegen-tests"],
-      "cache": false
-    },
-    "test-run:tsc": {
-      "dependsOn": ["^build", "codegen-tests"],
-      "cache": false
-    },
     "test-dev": {
       "dependsOn": ["^build"],
+      "cache": false
+    },
+    "typecheck": {
+      "dependsOn": ["codegen-tests", "^build"],
       "cache": false
     },
     "test-start": {
       "dependsOn": ["^build", "build"],
       "cache": false
-    },
-    "test-watch": {
-      "cache": false,
-      "persistent": true,
-      "dependsOn": ["^build", "codegen-tests"]
-    },
-    "type-check": {
-      "dependsOn": ["^build"],
-      "outputs": [],
-      "cache": true
     }
   }
 }

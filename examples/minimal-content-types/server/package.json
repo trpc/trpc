@@ -17,7 +17,7 @@
     "@types/node": "^22.13.5",
     "eslint": "^9.26.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.2"
   },
   "version": "11.4.3"
 }

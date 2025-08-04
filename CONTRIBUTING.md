@@ -39,13 +39,13 @@ pnpm dev
 In a second terminal, you can run the tests in watch mode using
 
 ```bash
-pnpm test-watch
+pnpm test
 
 # example if you want to test a specific test file:
-pnpm test-watch react
+pnpm test react
 
 # run only a regression test while fixing a bug
-pnpm test-watch 3085
+pnpm test 3085
 ```
 
 Test are mainly coalesced in [./packages/tests](./packages/tests); we import the different libs from here, this makes it easier for us to do integration testing.

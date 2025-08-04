@@ -20,7 +20,8 @@
     "dev": "tsdown --watch",
     "benchmark": "tsc --project tsconfig.benchmark.json",
     "lint": "eslint --cache src",
-    "ts-watch": "tsc --watch"
+    "ts-watch": "tsc --watch",
+    "typecheck": "tsc --noEmit"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -216,7 +217,7 @@
     "superjson": "^1.12.4",
     "superstruct": "^2.0.0",
     "tsdown": "0.12.7",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "valibot": "1.1.0",
     "ws": "^8.0.0",
     "yup": "^1.0.0",

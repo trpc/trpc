@@ -40,7 +40,7 @@
     "eslint-plugin-react-hooks": "6.0.0-rc.1",
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.6",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "typescript-eslint": "^8.31.1",
     "vite": "^6.1.1",
     "vite-tsconfig-paths": "^4.3.2"

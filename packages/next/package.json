@@ -26,8 +26,9 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "ts-watch": "tsc --project tsconfig.watch.json --watch",
-    "lint": "eslint --cache src"
+    "ts-watch": "tsc --watch",
+    "lint": "eslint --cache src",
+    "typecheck": "tsc --noEmit"
   },
   "exports": {
     "./package.json": "./package.json",
@@ -136,7 +137,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tsdown": "0.12.7",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "zod": "^3.25.51"
   },
   "publishConfig": {
