@@ -596,6 +596,11 @@ describe.only('superjson - custom instance, regression #6863', async () => {
     const res = await ctx.client.myCustomThing.query();
 
     expect(res).toBeInstanceOf(MyCustomThing);
+    expect(res).toMatchInlineSnapshot(`
+      MyCustomThing {
+        "justDoinWhatIDo": 42,
+      }
+    `);
   });
 
   test('httpBatchLink', async () => {
@@ -610,5 +615,10 @@ describe.only('superjson - custom instance, regression #6863', async () => {
     const res = await ctx.client.myCustomThing.query();
 
     expect(res).toBeInstanceOf(MyCustomThing);
+    expect(res).toMatchInlineSnapshot(`
+      MyCustomThing {
+        "justDoinWhatIDo": 42,
+      }
+    `);
   });
 });
