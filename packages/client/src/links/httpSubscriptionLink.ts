@@ -105,7 +105,7 @@ export function httpSubscriptionLink<
             }),
           init: () => resultOf(opts.eventSourceOptions, { op }),
           signal,
-          deserialize: transformer.output.deserialize,
+          deserialize: (data) => transformer.output.deserialize(data),
           EventSource:
             opts.EventSource ??
             (globalThis.EventSource as never as TEventSource),

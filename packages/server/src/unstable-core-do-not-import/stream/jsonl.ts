@@ -1,3 +1,4 @@
+import { isPlainObject } from '@trpc/server/vendor/is-plain-object';
 import { isAsyncIterable, isFunction, isObject, run } from '../utils';
 import { iteratorResource } from './utils/asyncIterable';
 import type { Deferred } from './utils/createDeferred';
@@ -21,10 +22,6 @@ export type NodeJSReadableStreamEsque = {
     listener: (...args: any[]) => void,
   ): NodeJSReadableStreamEsque;
 };
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Object.prototype.toString.call(value) === '[object Object]';
-}
 
 // ---------- types
 const CHUNK_VALUE_TYPE_PROMISE = 0;
