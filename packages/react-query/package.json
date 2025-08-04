@@ -20,7 +20,8 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "lint": "eslint --cache src",
-    "ts-watch": "tsc --watch"
+    "ts-watch": "tsc --watch",
+    "typecheck": "tsc --noEmit"
   },
   "exports": {
     "./package.json": "./package.json",
