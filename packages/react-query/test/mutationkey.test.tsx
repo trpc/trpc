@@ -25,7 +25,7 @@ const ctx = konn()
 
 describe('mutation keys', () => {
   test('can grab from cache using correct key', async () => {
-    const { client, App, queryClient } = ctx;
+    const { client, App } = ctx;
     const mutationKey = [['post', 'create']];
 
     function MyComponent() {
@@ -53,7 +53,7 @@ describe('mutation keys', () => {
     );
 
     expect(
-      queryClient.getMutationCache().find({ mutationKey }),
+      ctx.queryClient.getMutationCache().find({ mutationKey }),
     ).toBeUndefined();
 
     // should be mutating due to effect
@@ -66,7 +66,7 @@ describe('mutation keys', () => {
     expect(utils.getByTestId('status')).toHaveTextContent('1');
 
     expect(
-      queryClient.getMutationCache().find({ mutationKey }),
+      ctx.queryClient.getMutationCache().find({ mutationKey }),
     ).not.toBeUndefined();
 
     // should be mutating due to effect
