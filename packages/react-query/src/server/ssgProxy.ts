@@ -94,7 +94,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     if ('router' in opts) {
       const { ctx, router } = opts;
       return {
-        serialize: transformer.output.serialize,
+        serialize: (obj) => transformer.output.serialize(obj),
         query: (queryOpts) => {
           return callProcedure({
             router,
