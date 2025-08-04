@@ -17,7 +17,7 @@
     "dev-www": "turbo --filter www dev",
     "test": "vitest",
     "test-ci": "MUTE_REACT_ACT_WARNINGS=1 vitest --coverage",
-    "typecheck": "turbo typecheck",
+    "typecheck": "turbo typecheck --filter {./packages/*}",
     "ts-watch": "turbo run ts-watch",
     "lint": "turbo lint",
     "lint-fix": "turbo lint --continue -- --fix && manypkg fix && pnpm format-fix",

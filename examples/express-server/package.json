@@ -6,7 +6,7 @@
     "dev:server": "tsx watch src/server",
     "dev:client": "wait-port 2021 && tsx watch src/client",
     "dev": "run-p dev:* --print-label",
-    "type-check": "tsc",
+    "typecheck": "tsc",
     "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "lint": "eslint --cache src",
     "start": "pnpm dev",

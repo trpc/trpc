@@ -31,6 +31,7 @@ jobs:
   typecheck:
     # only run on PRs
     if: github.event_name == 'pull_request'
+    needs: [build]
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -131,7 +132,7 @@ jobs:
 
       - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build typecheck
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
@@ -201,7 +202,7 @@ jobs:
       - run: bun --version
 
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build typecheck
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
@@ -254,7 +255,7 @@ jobs:
             then cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
           fi
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build typecheck
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
   # https://pkg.pr.new
   release-tmp:

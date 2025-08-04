@@ -21,7 +21,7 @@
     "benchmark": "tsc --project tsconfig.benchmark.json",
     "lint": "eslint --cache src",
     "ts-watch": "tsc --watch",
-    "type-check": "tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "exports": {
     "./package.json": "./package.json",

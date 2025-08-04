@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint --cache src",
-    "type-check": "tsc",
+    "typecheck": "tsc",
     "start-server": "serverless offline --httpPort 4050",
     "start-client": "tsx src/client.ts",
     "http-rest-client": "tsx src/payloadFormatVersionClient.ts"

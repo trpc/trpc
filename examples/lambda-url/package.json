@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "lint": "eslint --cache src",
-    "type-check": "tsc",
+    "typecheck": "tsc",
     "start": "tsx watch src/client.ts",
     "deploy": "serverless deploy"
   },

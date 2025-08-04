@@ -9,7 +9,7 @@
     "start": "pnpm dev",
     "build": "esbuild src/server.ts src/client.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "lint": "eslint --cache src",
-    "type-check": "tsc",
+    "typecheck": "tsc",
     "test-dev": "start-server-and-test 'tsx src/server' 2022 'tsx src/client'",
     "test-start": "start-server-and-test 'node dist/server' 2022 'node dist/client'"
   },
