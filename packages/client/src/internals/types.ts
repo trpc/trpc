@@ -34,7 +34,14 @@ export interface RequestInitEsque {
   /**
    * Sets the request's body.
    */
-  body?: FormData | string | null | Uint8Array | Blob | File;
+  body?:
+    | FormData
+    | string
+    | null
+    | ArrayBufferView<ArrayBuffer>
+    | ArrayBuffer
+    | Blob
+    | File;
 
   /**
    * Sets the request's associated headers.
