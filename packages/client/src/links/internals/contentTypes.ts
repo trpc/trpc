@@ -1,4 +1,6 @@
-export function isOctetType(input: unknown) {
+export function isOctetType(
+  input: unknown,
+): input is Uint8Array<ArrayBuffer> | Blob {
   return (
     input instanceof Uint8Array ||
     // File extends from Blob but is only available in nodejs from v20
