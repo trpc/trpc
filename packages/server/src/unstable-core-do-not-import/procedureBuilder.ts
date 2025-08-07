@@ -635,7 +635,7 @@ async function callRecursive(
       let result: MiddlewareResult<any>;
 
       await _def.asyncStorage.run(opts.ctx, async () => {
-        // Process the middleware chain without asyncStorage to prevent هnfinite recursion
+        // Process the middleware chain without asyncStorage to prevent infinite recursion
         result = await callRecursive(
           0,
           { ..._def, asyncStorage: undefined },
