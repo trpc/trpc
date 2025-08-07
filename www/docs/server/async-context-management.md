@@ -21,7 +21,7 @@ const router = t.router({
   getUser: t.procedure.query(() => {
     const ctx = t.asyncStorage.getStore(); // No prop drilling
     return ctx?.user;
-  })
+  }),
 });
 ```
 

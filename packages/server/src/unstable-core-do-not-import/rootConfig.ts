@@ -1,4 +1,4 @@
-import { AsyncLocalStorage } from 'async_hooks';
+import type { AsyncLocalStorage } from 'async_hooks';
 import type { CombinedDataTransformer } from '../unstable-core-do-not-import';
 import type { DefaultErrorShape, ErrorFormatter } from './error/formatter';
 import type { JSONLProducerOptions } from './stream/jsonl';

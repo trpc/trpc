@@ -1,4 +1,4 @@
-import { AsyncLocalStorage } from 'async_hooks';
+import type { AsyncLocalStorage } from 'async_hooks';
 import type { inferObservableValue, Observable } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
