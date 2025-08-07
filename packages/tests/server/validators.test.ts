@@ -705,6 +705,76 @@ test('async validator fn', async () => {
   await close();
 });
 
+test('Summon async local storage across all procedures with minimal configuration and boilerplate.', async () => {
+  type Context = {
+    foo: string;
+  };
+
+  const contextStorage = new AsyncLocalStorage<Context>();
+
+  const t = initTRPC.context<Context>().create({
+    asyncStorage: contextStorage,
+  });
+
+  // <initialize AsyncLocalStorage>
+  const getContext = () => {
+    const ctx = contextStorage.getStore();
+    if (!ctx) {
+      throw new Error('No context found');
+    }
+    return ctx;
+  };
+  // </initialize AsyncLocalStorage>
+
+  const publicProcedure = t.procedure;
+
+  const router = t.router({
+    proc: publicProcedure
+      .input((input) => {
+        // this input parser uses the context
+        const ctx = getContext();
+        expect(ctx.foo).toBe('bar');
+
+        return zod3.string().parse(input);
+      })
+      .query((opts) => {
+        expectTypeOf(opts.input).toBeString();
+        return opts.input;
+      }),
+  });
+
+  const ctx = routerToServerAndClientNew(router, {
+    server: {
+      createContext() {
+        return { foo: 'bar' };
+      },
+    },
+  });
+  const res = await ctx.client.proc.query('123');
+
+  expect(res).toMatchInlineSnapshot('"123"');
+
+  const err = await waitError(
+    ctx.client.proc.query(
+      // @ts-expect-error this only accepts a `number`
+      123,
+    ),
+  );
+  expect(err).toMatchInlineSnapshot(`
+    [TRPCClientError: [
+      {
+        "code": "invalid_type",
+        "expected": "string",
+        "received": "number",
+        "path": [],
+        "message": "Expected string, received number"
+      }
+    ]]
+  `);
+
+  await ctx.close();
+});
+
 test('recipe: summon context in input parser', async () => {
   type Context = {
     foo: string;

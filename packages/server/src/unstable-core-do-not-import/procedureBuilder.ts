@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'async_hooks';
 import type { inferObservableValue, Observable } from '../observable';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
@@ -87,6 +88,10 @@ type ProcedureBuilderDef<TMeta> = {
   subscription?: boolean;
   type?: ProcedureType;
   caller?: CallerOverride<unknown>;
+  /**
+   * option to enable async storage for all procedures
+   */
+  asyncStorage?: AsyncLocalStorage<any>;
 };
 
 type AnyProcedureBuilderDef = ProcedureBuilderDef<any>;
@@ -624,6 +629,24 @@ async function callRecursive(
   opts: ProcedureCallOptions<any>,
 ): Promise<MiddlewareResult<any>> {
   try {
+    // If this is the first call (index 0) and asyncStorage is configured, wrap the entire execution
+    if (index === 0 && _def.asyncStorage) {
+      // Store the result outside the run() callback
+      let result: MiddlewareResult<any>;
+
+      await _def.asyncStorage.run(opts.ctx, async () => {
+        // Process the middleware chain without asyncStorage to prevent هnfinite recursion
+        result = await callRecursive(
+          0,
+          { ..._def, asyncStorage: undefined },
+          opts,
+        );
+      });
+
+      // Return the result from the async context
+      return result!;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const middleware = _def.middlewares[index]!;
     const result = await middleware({
