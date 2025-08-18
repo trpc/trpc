@@ -46,6 +46,9 @@ export type ParserScaleEsque<TInput> = {
   assert(value: unknown): asserts value is TInput;
 };
 
+/**
+ * @deprecated we can drop support for non standard schema parsers in the next major version
+ */
 export type ParserWithoutInput<TInput> =
   | ParserCustomValidatorEsque<TInput>
   | ParserMyZodEsque<TInput>
@@ -53,16 +56,21 @@ export type ParserWithoutInput<TInput> =
   | ParserSuperstructEsque<TInput>
   | ParserYupEsque<TInput>;
 
+/**
+ * @deprecated we can drop support for non standard schema parsers in the next major version
+ */
 export type ParserWithInputOutput<TInput, TParsedInput> =
   | ParserZodEsque<TInput, TParsedInput>
   | ParserValibotEsque<TInput, TParsedInput>
-  | ParserArkTypeEsque<TInput, TParsedInput>
-  | ParserStandardSchemaEsque<TInput, TParsedInput>;
+  | ParserArkTypeEsque<TInput, TParsedInput>;
 
-export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
+export type Parser =
+  | StandardSchemaV1<any, any>
+  | ParserWithInputOutput<any, any>
+  | ParserWithoutInput<any>;
 
 export type inferParser<TParser extends Parser> =
-  TParser extends ParserStandardSchemaEsque<infer $TIn, infer $TOut>
+  TParser extends StandardSchemaV1<infer $TIn, infer $TOut>
     ? {
         in: $TIn;
         out: $TOut;
