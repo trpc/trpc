@@ -21,11 +21,6 @@ export type ParserArkTypeEsque<TInput, TParsedInput> = {
   infer: TParsedInput;
 };
 
-export type ParserStandardSchemaEsque<TInput, TParsedInput> = StandardSchemaV1<
-  TInput,
-  TParsedInput
->;
-
 export type ParserMyZodEsque<TInput> = {
   parse: (input: any) => TInput;
 };
@@ -56,13 +51,12 @@ export type ParserWithoutInput<TInput> =
 export type ParserWithInputOutput<TInput, TParsedInput> =
   | ParserZodEsque<TInput, TParsedInput>
   | ParserValibotEsque<TInput, TParsedInput>
-  | ParserArkTypeEsque<TInput, TParsedInput>
-  | ParserStandardSchemaEsque<TInput, TParsedInput>;
+  | ParserArkTypeEsque<TInput, TParsedInput>;
 
 export type Parser = ParserWithInputOutput<any, any> | ParserWithoutInput<any>;
 
 export type inferParser<TParser extends Parser> =
-  TParser extends ParserStandardSchemaEsque<infer $TIn, infer $TOut>
+  TParser extends StandardSchemaV1<infer $TIn, infer $TOut>
     ? {
         in: $TIn;
         out: $TOut;
