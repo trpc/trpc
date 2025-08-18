@@ -935,6 +935,11 @@ test('zod4 branded types', () => {
         expectTypeOf(opts.input.accountId).toEqualTypeOf<Types['output']>();
         return opts.input;
       }),
+
+    top: t.procedure.input(AccountId).query((opts) => {
+      expectTypeOf(opts.input).toEqualTypeOf<Types['output']>();
+      return opts.input;
+    }),
   });
 
   type RouterInput = inferRouterInputs<typeof router>;
