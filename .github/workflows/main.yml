@@ -31,7 +31,6 @@ jobs:
   typecheck:
     # only run on PRs
     if: github.event_name == 'pull_request'
-    needs: [build]
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
