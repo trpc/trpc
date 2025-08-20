@@ -18,7 +18,7 @@
     "pretest": "turbo codegen-tests",
     "test": "vitest",
     "tsc-check": "turbo tsc -- --noEmit --pretty --pretty",
-    "tsc-watch": "turbo run tsc -- --noEmit --preserveWatchOutput --pretty --noEmit",
+    "tsc-watch": "turbo run tsc -- --noEmit --preserveWatchOutput --pretty --noEmit --watch",
     "lint": "turbo lint",
     "lint-fix": "turbo lint --continue -- --fix && manypkg fix && pnpm format-fix",
     "format": "prettier \"**/*\" --ignore-unknown",
