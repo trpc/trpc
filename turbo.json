@@ -21,9 +21,6 @@
     "prebuild": {
       "cache": false
     },
-    "typecheck-lib": {
-      "dependsOn": ["codegen-tests", "^typecheck-lib"]
-    },
     "build": {
       "dependsOn": ["^build", "prebuild"],
       "outputs": [
