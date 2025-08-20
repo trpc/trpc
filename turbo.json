@@ -15,9 +15,6 @@
     "AUTH_GITHUB_SECRET"
   ],
   "tasks": {
-    "codegen-tests": {
-      "outputs": ["*/__generated__/bigBoi/**"]
-    },
     "prebuild": {
       "cache": false
     },

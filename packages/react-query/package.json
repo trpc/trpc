@@ -15,8 +15,6 @@
     "directory": "packages/react"
   },
   "scripts": {
-    "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
-    "codegen-tests": "run-p codegen:*",
     "build": "tsdown",
     "dev": "tsdown --watch",
     "lint": "eslint --cache src",
