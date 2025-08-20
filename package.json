@@ -17,7 +17,7 @@
     "dev-www": "turbo --filter www dev",
     "pretest": "turbo codegen-tests",
     "test": "vitest",
-    "tsc-check": "turbo tsc -- --noEmit --pretty --pretty",
+    "tsc-check": "turbo tsc --filter './packages/*' -- --noEmit --pretty --pretty",
     "tsc-watch": "pnpm run --parallel --filter './packages/*' tsc --noEmit --preserveWatchOutput --pretty --watch",
     "lint": "turbo lint",
     "lint-fix": "turbo lint --continue -- --fix && manypkg fix && pnpm format-fix",
