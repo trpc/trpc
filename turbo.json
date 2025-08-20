@@ -21,8 +21,8 @@
     "prebuild": {
       "cache": false
     },
-    "tsc": {
-      "dependsOn": ["codegen-tests"]
+    "typecheck-lib": {
+      "dependsOn": ["codegen-tests", "^typecheck-lib"]
     },
     "build": {
       "dependsOn": ["^build", "prebuild"],
