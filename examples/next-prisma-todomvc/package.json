@@ -18,6 +18,7 @@
     "test": "playwright test",
     "test-dev": "start-server-and-test dev http://127.0.0.1:3000 test",
     "test-start": "start-server-and-test start http://127.0.0.1:3000 test",
+    "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate"
   },
   "dependencies": {
