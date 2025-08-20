@@ -17,6 +17,7 @@
     "dev-www": "turbo --filter www dev",
     "test": "vitest",
     "typecheck-packages": "pnpm run --parallel --filter=./packages/* typecheck",
+    "typecheck-www": "turbo --filter www typecheck",
     "ts-watch": "pnpm typecheck-packages --watch",
     "lint": "turbo lint",
     "lint-fix": "turbo lint --continue -- --fix && manypkg fix && pnpm format-fix",

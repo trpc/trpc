@@ -18,7 +18,8 @@
     "postinstall:companies-using": "tsx ./src/components/CompaniesUsing.script.ts",
     "postinstall": "run-p postinstall:* --print-label",
     "tweetwall-pull": "tsx ./src/components/TwitterWall/script.ts",
-    "lint": "eslint --cache src"
+    "lint": "eslint --cache src",
+    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "dependencies": {
     "@algolia/client-search": "^5.0.0",
