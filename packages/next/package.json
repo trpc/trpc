@@ -26,7 +26,6 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "ts-watch": "tsc --watch",
     "lint": "eslint --cache src",
     "tsc": "tsc"
   },
