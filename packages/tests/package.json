@@ -5,8 +5,7 @@
     "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
     "codegen-tests": "run-p codegen:*",
     "lint": "eslint --cache .",
-    "typecheck": "tsc --noEmit --pretty",
-    "ts-watch": "tsc --watch"
+    "tsc": "tsc"
   },
   "dependencies": {
     "@fastify/busboy": "^3.0.0",

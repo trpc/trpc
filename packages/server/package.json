@@ -20,8 +20,7 @@
     "dev": "tsdown --watch",
     "benchmark": "tsc --project tsconfig.benchmark.json",
     "lint": "eslint --cache src",
-    "ts-watch": "tsc --watch",
-    "typecheck": "tsc --noEmit"
+    "tsc": "tsc"
   },
   "exports": {
     "./package.json": "./package.json",

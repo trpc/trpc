@@ -44,7 +44,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm typecheck
+      - run: pnpm tsc-check
 
   test:
     timeout-minutes: 10

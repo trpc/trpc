@@ -20,7 +20,8 @@
     "test-unit": "vitest",
     "test-e2e": "playwright test",
     "test-start": "run-s test-unit test-e2e",
-    "postinstall": "pnpm generate"
+    "postinstall": "pnpm generate",
+    "typecheck": "tsc --noEmit"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
