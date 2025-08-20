@@ -29,7 +29,6 @@ jobs:
       - run: pnpm build
 
   typecheck:
-    name: 'typecheck packages/*'
     # only run on PRs
     if: github.event_name == 'pull_request'
     timeout-minutes: 10
