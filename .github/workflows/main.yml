@@ -47,6 +47,12 @@ jobs:
       - run: pnpm typecheck-packages
 
   typecheck-www:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
     needs: [build]
     runs-on: ubuntu-latest
     steps:
