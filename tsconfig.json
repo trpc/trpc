@@ -3,8 +3,6 @@
   "include": ["packages", "types", "scripts", "examples"],
   "exclude": [],
   "compilerOptions": {
-    "incremental": true,
-    "tsBuildInfoFile": "${configDir}/.tsbuildinfo",
     "allowJs": false,
     "paths": {
       "@trpc/client": ["./packages/client/src"],
