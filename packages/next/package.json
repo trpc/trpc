@@ -28,7 +28,7 @@
     "dev": "tsdown --watch",
     "ts-watch": "tsc --watch",
     "lint": "eslint --cache src",
-    "typecheck": "tsc --noEmit"
+    "tsc": "tsc"
   },
   "exports": {
     "./package.json": "./package.json",

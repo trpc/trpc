@@ -29,6 +29,7 @@ jobs:
       - run: pnpm build
 
   typecheck:
+    name: "typecheck packages/*"
     # only run on PRs
     if: github.event_name == 'pull_request'
     timeout-minutes: 10
@@ -44,7 +45,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm typecheck
+      - run: pnpm tsc-check
 
   test:
     timeout-minutes: 10
