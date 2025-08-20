@@ -292,3 +292,29 @@ test('lazy', async () => {
   await using ctx = testServerAndClientResource(router);
   expect(await ctx.client.inSomeOtherFile.hello.query()).toBe('world');
 });
+
+test('query can return path', async () => {
+  const proc = procedure.query((opts) => opts.path);
+  const router = t.router({
+    hello: proc,
+    lazy: lazy(async () => {
+      return t.router({
+        hello2: proc,
+      });
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+  {
+    const result = await ctx.client.hello.query();
+    expect(result).toBe('hello');
+    expectTypeOf(result).not.toBeAny();
+    expectTypeOf(result).toEqualTypeOf<string>();
+  }
+  {
+    const result = await ctx.client.lazy.hello2.query();
+    expect(result).toBe('lazy.hello2');
+    expectTypeOf(result).not.toBeAny();
+    expectTypeOf(result).toEqualTypeOf<string>();
+  }
+});
