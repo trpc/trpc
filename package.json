@@ -10,10 +10,10 @@
   "scripts": {
     "clean-dev": "pnpm clean && pnpm install && pnpm build && pnpm dev",
     "clean-i": "pnpm clean && pnpm install",
-    "build": "turbo --filter={./packages/*} build",
+    "build": "turbo --filter=./packages/* build",
     "monotest-build": "turbo --filter='@monotest/*' build",
     "build-www": "turbo --filter www build",
-    "dev": "turbo --filter={./packages/*} dev",
+    "dev": "turbo --filter=./packages/* dev",
     "dev-www": "turbo --filter www dev",
     "test": "vitest",
     "typecheck-packages": "pnpm run --parallel --filter=./packages/* typecheck",
