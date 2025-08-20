@@ -44,7 +44,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm typecheck
+      - run: pnpm typecheck-lib
 
   test:
     timeout-minutes: 10
