@@ -23,7 +23,7 @@
     },
     "tsc": {
       "dependsOn": ["codegen-tests"],
-      "cache": false
+      "outputs": [".tsbuildinfo"]
     },
     "build": {
       "dependsOn": ["^build", "prebuild"],
