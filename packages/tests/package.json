@@ -2,8 +2,6 @@
   "name": "@trpc/tests",
   "private": true,
   "scripts": {
-    "codegen:bigBoi": "tsx ../../scripts/generateBigBoi.ts",
-    "codegen-tests": "run-p codegen:*",
     "lint": "eslint --cache .",
     "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
