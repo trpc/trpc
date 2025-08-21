@@ -47,7 +47,7 @@
       "dependsOn": ["^build"]
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "postinstall"]
     },
     "test-start": {
       "dependsOn": ["^build", "build"]
