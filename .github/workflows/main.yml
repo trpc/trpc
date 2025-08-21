@@ -31,7 +31,6 @@ jobs:
   typecheck:
     # only run on PRs
     if: github.event_name == 'pull_request'
-    needs: [build]
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -45,7 +44,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm typecheck
+      - run: pnpm tsc-check
 
   test:
     timeout-minutes: 10

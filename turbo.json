@@ -21,7 +21,10 @@
     "prebuild": {
       "cache": false
     },
-    "ts-watch": {},
+    "tsc": {
+      "dependsOn": ["codegen-tests"],
+      "cache": false
+    },
     "build": {
       "dependsOn": ["^build", "prebuild"],
       "outputs": [
@@ -52,7 +55,7 @@
       "cache": false
     },
     "typecheck": {
-      "dependsOn": ["codegen-tests", "^build"],
+      "dependsOn": ["^build"],
       "cache": false
     },
     "test-start": {

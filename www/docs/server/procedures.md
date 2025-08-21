@@ -135,7 +135,7 @@ export const appRouter = t.router({
       const { ctx } = opts;
       //       ^?
 
-      // input includes the validate email of the user being invited & the validated organizationId
+      // input includes the validated email of the user being invited & the validated organizationId
       const { input } = opts;
       //       ^?
 

@@ -107,6 +107,10 @@ export interface ProcedureResolverOptions<
    * The AbortSignal of the request
    */
   signal: AbortSignal | undefined;
+  /**
+   * The path of the procedure
+   */
+  path: string;
 }
 
 /**
