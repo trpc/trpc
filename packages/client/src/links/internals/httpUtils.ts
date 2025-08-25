@@ -197,7 +197,7 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
 
   const url = opts.getUrl(opts);
   const body = opts.getBody(opts);
-  const { type } = opts;
+  const method = opts.methodOverride ?? METHOD[opts.type];
   const resolvedHeaders = await (async () => {
     const heads = await opts.headers();
     if (Symbol.iterator in heads) {
@@ -206,7 +206,7 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
     return heads;
   })();
   const headers = {
-    ...(opts.contentTypeHeader
+    ...(opts.contentTypeHeader && method !== 'GET'
       ? { 'content-type': opts.contentTypeHeader }
       : {}),
     ...(opts.trpcAcceptHeader
@@ -216,7 +216,7 @@ export async function fetchHTTPResponse(opts: HTTPRequestOptions) {
   };
 
   return getFetch(opts.fetch)(url, {
-    method: opts.methodOverride ?? METHOD[type],
+    method,
     signal: opts.signal,
     body,
     headers,
