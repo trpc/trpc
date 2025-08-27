@@ -52,23 +52,6 @@ const t = initTRPC.create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-// @filename: routers/_app.ts
-import { router } from '../trpc';
-import { z } from 'zod';
-
-import { userRouter } from './user';
-import { postRouter } from './post';
-
-const appRouter = router({
-  user: userRouter, // put procedures under "user" namespace
-  post: postRouter, // put procedures under "post" namespace
-});
-
-// You can then access the merged route with
-// http://localhost:3000/trpc/<NAMESPACE>.<PROCEDURE>
-
-export type AppRouter = typeof appRouter;
-
 
 // @filename: routers/post.ts
 import { router, publicProcedure } from '../trpc';
@@ -101,6 +84,24 @@ export const userRouter = router({
   }),
 });
 
+
+// @filename: routers/_app.ts
+import { router } from '../trpc';
+import { z } from 'zod';
+
+import { userRouter } from './user';
+import { postRouter } from './post';
+
+const appRouter = router({
+  user: userRouter, // put procedures under "user" namespace
+  post: postRouter, // put procedures under "post" namespace
+});
+
+// You can then access the merged route with
+// http://localhost:3000/trpc/<NAMESPACE>.<PROCEDURE>
+
+export type AppRouter = typeof appRouter;
+
 ```
 
 ## Merging with `t.mergeRouters`
@@ -116,17 +117,6 @@ const t = initTRPC.create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 export const mergeRouters = t.mergeRouters;
-
-// @filename: routers/_app.ts
-import { router, publicProcedure, mergeRouters } from '../trpc';
-import { z } from 'zod';
-
-import { userRouter } from './user';
-import { postRouter } from './post';
-
-const appRouter = mergeRouters(userRouter, postRouter)
-
-export type AppRouter = typeof appRouter;
 
 // @filename: routers/post.ts
 import { router, publicProcedure } from '../trpc';
@@ -159,6 +149,17 @@ export const userRouter = router({
     return [];
   }),
 });
+
+// @filename: routers/_app.ts
+import { router, publicProcedure, mergeRouters } from '../trpc';
+import { z } from 'zod';
+
+import { userRouter } from './user';
+import { postRouter } from './post';
+
+const appRouter = mergeRouters(userRouter, postRouter)
+
+export type AppRouter = typeof appRouter;
 
 ```
 
