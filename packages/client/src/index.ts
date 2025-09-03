@@ -18,3 +18,4 @@ export {
 } from './createTRPCClient';
 
 export { type TRPCProcedureOptions } from './internals/types';
+export { type TRPCDataTransformer } from '@trpc/server';

@@ -33,6 +33,7 @@ export {
   type MiddlewareBuilder as TRPCMiddlewareBuilder,
   type AnyMiddlewareFunction as AnyTRPCMiddlewareFunction,
   type CombinedDataTransformer as TRPCCombinedDataTransformer,
+  type DataTransformer as TRPCDataTransformer,
   type ProcedureType as TRPCProcedureType,
   type AnyMutationProcedure as AnyTRPCMutationProcedure,
   type AnyQueryProcedure as AnyTRPCQueryProcedure,
