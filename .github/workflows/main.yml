@@ -147,7 +147,8 @@ jobs:
 
       - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build typecheck
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} typecheck
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
