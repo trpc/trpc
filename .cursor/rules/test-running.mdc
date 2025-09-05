@@ -1,0 +1,16 @@
+---
+alwaysApply: true
+---
+
+# Test without watch
+
+When running tests, use the `--watch false` flag to avoid watch mode:
+
+We're using Vitest workspaces for testing.
+
+Examples:
+
+- `pnpm test -- --watch false`
+- `pnpm test -- --watch false <test-file>`
+
+Tests are always run from the root of the project, even if you're in a subdirectory.

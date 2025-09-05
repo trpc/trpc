@@ -174,7 +174,7 @@ export const createPost = protectedAction
       title: z.string(),
     }),
   )
-  .mutation(async ({ ctx, input }) => {
+  .mutation(async (opts) => {
     // Do something with the input
   });
 
@@ -247,7 +247,7 @@ You can use `@baselime/node-opentelemtry`'s trpc plugin to add observability in 
         title: z.string(),
       }),
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async (opts) => {
       // Do something with the input
     });
 ```
@@ -311,9 +311,9 @@ export const commentOnPost = rateLimitedAction
       content: z.string(),
     }),
   )
-  .mutation(async ({ ctx, input }) => {
+  .mutation(async (opts) => {
     console.log(
-      `${ctx.user.name} commented on ${input.postId} saying ${input.content}`,
+      `${opts.ctx.user.name} commented on ${opts.input.postId} saying ${opts.input.content}`,
     );
   });
 ```

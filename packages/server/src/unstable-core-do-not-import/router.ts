@@ -449,7 +449,8 @@ export function createCallerFactory<
 
     return function createCaller(ctxOrCallback, opts) {
       return createRecursiveProxy<ReturnType<RouterCaller<any, any>>>(
-        async ({ path, args }) => {
+        async (innerOpts) => {
+          const { path, args } = innerOpts;
           const fullPath = path.join('.');
 
           if (path.length === 1 && path[0] === '_def') {

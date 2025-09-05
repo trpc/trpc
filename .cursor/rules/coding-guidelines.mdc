@@ -1,6 +1,6 @@
 ---
 description: tRPC coding style guidelines and conventions
-globs: ['**/*.ts', '**/*.tsx']
+globs: ['**/*.ts', '**/*.tsx', '**/*.mdx', '**/*.md']
 alwaysApply: false
 ---
 
@@ -36,16 +36,40 @@ import { AnyRouter, initTRPC } from '@trpc/server';
 
 ### Variable Declarations
 
-- **AVOID** destructuring in most cases (project convention)
-- Prefer explicit variable assignments for better readability
+- **AVOID** overzealous destructuring and use accessors instead
+- **EXCEPTION**: Object destructuring is acceptable when a variable is used 3+ times
+- **PREFER** array destructuring, but avoid sparse array destructuring
+- **NEVER** use destructuring in function parameter declarations
+- **AVOID** destructuring potentially nullish nested properties
+- Use destructuring sparingly - prefer direct property access
 
 ```typescript
-// ✅ PREFERRED (following project patterns)
-const client = ctx.client;
-const httpUrl = ctx.httpUrl;
+// ✅ BEST - access directly without extracting
+function createClient(opts: ClientOptions) {
+  // Use opts.url and opts.transformer directly
+  return new Client(opts.url, opts.transformer);
+}
 
-// ❌ AVOID destructuring (unless absolutely necessary)
+// ✅ ACCEPTABLE - object destructuring when variable used 3+ times
+const { client } = ctx;
+const result1 = client.query();
+const result2 = client.mutate();
+const result3 = client.subscribe();
+
+// ✅ PREFERRED - array destructuring (but use judiciously)
+const [text, setText] = useState('');
+const [first, second] = tuple;
+
+// ❌ AVOID object destructuring for variables used 1-2 times
 const { client, httpUrl } = ctx;
+
+// ❌ AVOID sparse array destructuring
+const [first, , , fourth] = someArray; // Don't skip unless needed
+
+// ❌ NEVER destructure in function parameters
+function createClient({ url, transformer }: ClientOptions) {
+  // Don't do this
+}
 ```
 
 ### Function Parameters

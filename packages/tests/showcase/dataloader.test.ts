@@ -37,7 +37,7 @@ const ctx = konn()
               id: z.number(),
             }),
           )
-          .query(({ input, ctx }) => ctx.postLoader.load(input.id)),
+          .query((opts) => opts.ctx.postLoader.load(opts.input.id)),
       }),
     });
     return routerToServerAndClientNew(appRouter, {

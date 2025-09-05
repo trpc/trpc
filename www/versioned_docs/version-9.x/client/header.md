@@ -21,7 +21,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 export default withTRPC<AppRouter>({
-  config({ ctx }) {
+  config(config) {
     return {
       links: [
         httpBatchLink({

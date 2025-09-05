@@ -154,7 +154,7 @@ test('middleware', async () => {
           },
         });
       })
-      .query(({ ctx }) => `${ctx.prefix} ${ctx.user}`),
+      .query((opts) => `${opts.ctx.prefix} ${opts.ctx.user}`),
   });
   await using ctx = testServerAndClientResource(router);
   expect(await ctx.client.greeting.query()).toBe('hello KATT');

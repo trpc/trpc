@@ -28,7 +28,7 @@ import type { AppRouter } from './api/trpc/[trpc]';
 export const trpc = createTRPCNext<AppRouter>({
   ssr: true,
   ssrPrepass,
-  config(opts) {
+  config(config) {
     const { ctx } = opts;
     if (typeof window !== 'undefined') {
       // during client requests
@@ -76,7 +76,7 @@ import superjson from 'superjson';
 import type { AppRouter } from './api/trpc/[trpc]';
 
 export const trpc = createTRPCNext<AppRouter>({
-  config(opts) {
+  config(config) {
     const { ctx } = opts;
     if (typeof window !== 'undefined') {
       // during client requests
