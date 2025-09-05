@@ -330,10 +330,9 @@ export const t = initTRPC.create();
 const publicProcedure = t.procedure;
 
 export const appRouter = t.router({
-  hello: publicProcedure.input(type({ name: 'string' })).query(({ input }) => {
-    //                                                            ^?
+  hello: publicProcedure.input(type({ name: 'string' })).query((opts) => {
     return {
-      greeting: `hello ${input.name}`,
+      greeting: `hello ${opts.input.name}`,
     };
   }),
 });

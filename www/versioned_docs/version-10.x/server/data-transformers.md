@@ -51,7 +51,7 @@ import superjson from 'superjson';
 // [...]
 
 export const trpc = createTRPCNext<AppRouter>({
-  config(opts) {
+  config(config) {
     return {
       transformer: superjson, // <--
     };

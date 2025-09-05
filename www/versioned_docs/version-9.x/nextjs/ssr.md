@@ -21,7 +21,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 export default withTRPC<AppRouter>({
-  config(opts) {
+  config(config) {
     if (typeof window !== 'undefined') {
       // during client requests
       return {
