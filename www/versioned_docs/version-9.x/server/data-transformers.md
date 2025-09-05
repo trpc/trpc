@@ -38,7 +38,7 @@ import superjson from 'superjson';
 // [...]
 
 export default withTRPC<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
     return {
       // [...]
       transformer: superjson,

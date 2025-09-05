@@ -23,7 +23,7 @@ If you turn on SSR in your app you might discover that your app loads slow on fo
 
 ```tsx title='pages/_app.tsx'
 export default withTRPC({
-  config({ ctx }) {
+  config(opts) {
     if (typeof window !== 'undefined') {
       return {
         url: '/api/trpc',
@@ -39,11 +39,11 @@ export default withTRPC({
     };
   },
   ssr: true,
-  responseMeta({ ctx, clientErrors }) {
-    if (clientErrors.length) {
+  responseMeta(opts) {
+    if (opts.clientErrors.length) {
       // propagate http first error from API calls
       return {
-        status: clientErrors[0].data?.httpStatus ?? 500,
+        status: opts.clientErrors[0].data?.httpStatus ?? 500,
       };
     }
 

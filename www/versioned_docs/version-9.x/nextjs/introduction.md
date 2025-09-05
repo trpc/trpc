@@ -142,7 +142,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
 };
 
 export default withTRPC<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
     /**
      * If you want to use SSR, you need to use the server's full URL
      * @see https://trpc.io/docs/ssr
@@ -214,7 +214,7 @@ Ability to set request headers and HTTP status when server-side rendering.
 
 ```tsx title='pages/_app.tsx'
 export default withTRPC<AppRouter>({
-  config({ ctx }) {
+  config(opts) {
     /* [...] */
   },
   ssr: true,
