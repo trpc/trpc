@@ -321,7 +321,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [ArkType](https://github.com/arktypeio/arktype#trpc)
 
-```ts twoslash
+```ts
 import { initTRPC } from '@trpc/server';
 import { type } from 'arktype';
 
