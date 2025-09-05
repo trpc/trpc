@@ -126,7 +126,6 @@ jobs:
             # next-sse-chat,
             soa,
             standalone-server,
-            tanstack-start,
             vercel-edge-runtime,
             nuxt,
           ]
