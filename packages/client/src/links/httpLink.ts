@@ -77,8 +77,8 @@ export function httpLink<TRouter extends AnyRouter = AnyRouter>(
 ): TRPCLink<TRouter> {
   const resolvedOpts = resolveHTTPLinkOptions(opts);
   return () => {
-    return (opts) => {
-      const { op } = opts;
+    return (operationOpts) => {
+      const { op } = operationOpts;
       return observable((observer) => {
         const { path, input, type } = op;
         /* istanbul ignore if -- @preserve */
