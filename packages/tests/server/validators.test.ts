@@ -26,8 +26,8 @@ test('no validator', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    hello: t.procedure.query(({ input }) => {
-      expectTypeOf(input).toBeUndefined();
+    hello: t.procedure.query((opts) => {
+      expectTypeOf(opts.input).toBeUndefined();
       return 'test';
     }),
   });
@@ -42,7 +42,8 @@ test('zod v3', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(zod3.number()).query(({ input }) => {
+    num: t.procedure.input(zod3.number()).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -73,7 +74,8 @@ test('zod v3 async', async () => {
   const input = zod3.string().refine(async (value) => value === 'foo');
 
   const router = t.router({
-    q: t.procedure.input(input).query(({ input }) => {
+    q: t.procedure.input(input).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeString();
       return {
         input,
@@ -108,7 +110,8 @@ test('zod v4 transform mixed input/output', async () => {
   });
 
   const router = t.router({
-    num: t.procedure.input(input).query(({ input }) => {
+    num: t.procedure.input(input).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input.length).toBeNumber();
       return {
         input,
@@ -150,7 +153,8 @@ test('zod v4', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(zod4.number()).query(({ input }) => {
+    num: t.procedure.input(zod4.number()).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -180,7 +184,8 @@ test('zod v4 async', async () => {
   const input = zod4.string().refine(async (value) => value === 'foo');
 
   const router = t.router({
-    q: t.procedure.input(input).query(({ input }) => {
+    q: t.procedure.input(input).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeString();
       return {
         input,
@@ -215,7 +220,8 @@ test('zod v4 transform mixed input/output', async () => {
   });
 
   const router = t.router({
-    num: t.procedure.input(input).query(({ input }) => {
+    num: t.procedure.input(input).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input.length).toBeNumber();
       return {
         input,
@@ -257,7 +263,8 @@ test('valibot v0', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(v0.parser(v0.number())).query(({ input }) => {
+    num: t.procedure.input(v0.parser(v0.number())).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -285,7 +292,8 @@ test('valibot v0 async', async () => {
   );
 
   const router = t.router({
-    q: t.procedure.input(input).query(({ input }) => {
+    q: t.procedure.input(input).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeString();
       return {
         input,
@@ -319,7 +327,8 @@ test('valibot v0 transform mixed input/output', async () => {
   );
 
   const router = t.router({
-    num: t.procedure.input(input).query(({ input }) => {
+    num: t.procedure.input(input).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input.length).toBeNumber();
       return {
         input,
@@ -352,7 +361,8 @@ test('valibot v1', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(v1.number()).query(({ input }) => {
+    num: t.procedure.input(v1.number()).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -377,7 +387,8 @@ test('valibot v1 error type', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(v1.number()).query(({ input }) => {
+    num: t.procedure.input(v1.number()).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -426,7 +437,8 @@ test('valibot v1 async', async () => {
   );
 
   const router = t.router({
-    q: t.procedure.input(input).query(({ input }) => {
+    q: t.procedure.input(input).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeString();
       return {
         input,
@@ -458,7 +470,8 @@ test('valibot v1 transform mixed input/output', async () => {
   });
 
   const router = t.router({
-    num: t.procedure.input(input).query(({ input }) => {
+    num: t.procedure.input(input).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input.length).toBeNumber();
       return {
         input,
@@ -491,7 +504,8 @@ test('superstruct', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(st.number()).query(({ input }) => {
+    num: t.procedure.input(st.number()).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -514,7 +528,8 @@ test('yup', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(yup.number().required()).query(({ input }) => {
+    num: t.procedure.input(yup.number().required()).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toMatchTypeOf<number>();
       return {
         input,
@@ -537,7 +552,8 @@ test('scale', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input($.i8).query(({ input }) => {
+    num: t.procedure.input($.i8).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toMatchTypeOf<number>();
       return {
         input,
@@ -560,7 +576,8 @@ test('myzod', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(myzod.number()).query(({ input }) => {
+    num: t.procedure.input(myzod.number()).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toMatchTypeOf<number>();
       return {
         input,
@@ -583,7 +600,8 @@ test('arktype v2 schema', async () => {
   const router = t.router({
     num: t.procedure
       .input(arktype.type({ text: 'string' }))
-      .query(({ input }) => {
+      .query((opts) => {
+        const { input } = opts;
         expectTypeOf(input).toEqualTypeOf<{ text: string }>();
         return {
           input,
@@ -608,7 +626,8 @@ test('effect schema', async () => {
   const router = t.router({
     num: t.procedure
       .input(Schema.standardSchemaV1(Schema.Struct({ text: Schema.String })))
-      .query(({ input }) => {
+      .query((opts) => {
+        const { input } = opts;
         expectTypeOf(input).toEqualTypeOf<{ readonly text: string }>();
         return {
           input,
@@ -631,7 +650,8 @@ test('runtypes', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure.input(T.Object({ text: T.String })).query(({ input }) => {
+    num: t.procedure.input(T.Object({ text: T.String })).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toMatchTypeOf<{ text: string }>();
       return {
         input,
@@ -661,7 +681,8 @@ test('validator fn', async () => {
   };
 
   const router = t.router({
-    num: t.procedure.input(numParser).query(({ input }) => {
+    num: t.procedure.input(numParser).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeNumber();
       return {
         input,
@@ -688,7 +709,8 @@ test('async validator fn', async () => {
   }
 
   const router = t.router({
-    num: t.procedure.input(numParser).query(({ input }) => {
+    num: t.procedure.input(numParser).query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toBeNumber();
       return {
         input,

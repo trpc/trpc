@@ -52,8 +52,8 @@ function createAppRouter() {
     ping: publicProcedure.query(() => {
       return 'pong';
     }),
-    echo: publicProcedure.input(z.string()).query(({ input }) => {
-      return input;
+    echo: publicProcedure.input(z.string()).query((opts) => {
+      return opts.input;
     }),
     hello: publicProcedure
       .input(
@@ -63,12 +63,12 @@ function createAppRouter() {
           })
           .nullish(),
       )
-      .query(({ input, ctx }) => ({
-        text: `hello ${input?.username ?? ctx.user?.name ?? 'world'}`,
+      .query((opts) => ({
+        text: `hello ${opts.input?.username ?? opts.ctx.user?.name ?? 'world'}`,
       })),
     helloMutation: publicProcedure
       .input(z.string())
-      .mutation(({ input }) => `hello ${input}`),
+      .mutation((opts) => `hello ${opts.input}`),
     editPost: publicProcedure
       .input(
         z.object({
@@ -79,11 +79,11 @@ function createAppRouter() {
           }),
         }),
       )
-      .mutation(async ({ input, ctx }) => {
-        if (ctx.user.name === 'anonymous') {
+      .mutation(async (opts) => {
+        if (opts.ctx.user.name === 'anonymous') {
           return { error: 'Unauthorized user' };
         }
-        const { id, data } = input;
+        const { id, data } = opts.input;
         return { id, ...data };
       }),
     onMessage: publicProcedure.input(z.string()).subscription(() => {
@@ -102,10 +102,10 @@ function createAppRouter() {
       return sub;
     }),
     request: router({
-      info: publicProcedure.query(({ ctx }) => {
+      info: publicProcedure.query((opts) => {
         return {
-          ...ctx.info,
-          url: ctx.info.url?.href ?? null,
+          ...opts.ctx.info,
+          url: opts.ctx.info.url?.href ?? null,
         };
       }),
     }),

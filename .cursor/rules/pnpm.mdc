@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+
+# Use pnpm
+
+Always use pnpm as a package manager instead of yarn, bun, or npm.

@@ -152,7 +152,10 @@ const protectedProcedure = publicProcedure.use(async function isAuthed(opts) {
   });
 });
 
-protectedProcedure.query(({ ctx }) => ctx.user);
+protectedProcedure.query((opts) => {
+  const { ctx } = opts;
+  return ctx.user;
+});
 //                                        ^?
 ```
 
@@ -283,7 +286,10 @@ const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
 });
 
 const barProcedure = publicProcedure.use(barMiddleware);
-barProcedure.query(({ ctx }) => ctx.bar);
+barProcedure.query((opts) => {
+  const { ctx } = opts;
+  return ctx.bar;
+});
 //                              ^?
 ```
 

@@ -58,8 +58,8 @@ test('decorate independently', () => {
     });
   });
 
-  t.procedure.use(bazMiddleware).query(({ ctx }) => {
-    expectTypeOf(ctx).toEqualTypeOf<{
+  t.procedure.use(bazMiddleware).query((opts) => {
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
       user: User;
       foo: 'foo';
       bar: 'bar';
@@ -244,8 +244,8 @@ test('pipe middlewares - inlined', async () => {
 
   const testProcedure = t.procedure.use(bazMiddleware);
   const router = t.router({
-    test: testProcedure.query(({ ctx }) => {
-      expect(ctx).toEqual({
+    test: testProcedure.query((opts) => {
+      expect(opts.ctx).toEqual({
         init: 'init',
         foo: 'foo',
         bar: 'bar',
@@ -315,8 +315,8 @@ test('pipe middlewares - standalone', async () => {
 
   const testProcedure = t.procedure.use(bazMiddleware);
   const router = t.router({
-    test: testProcedure.query(({ ctx }) => {
-      expect(ctx).toEqual({
+    test: testProcedure.query((opts) => {
+      expect(opts.ctx).toEqual({
         init: 'init',
         foo: 'foo',
         bar: 'bar',
@@ -389,8 +389,8 @@ test('pipe middlewares - failure', async () => {
   const bazMiddleware = fooMiddleware.unstable_pipe(barMiddleware);
 
   const testProcedure = t.procedure.use(bazMiddleware);
-  testProcedure.query(({ ctx }) => {
-    expectTypeOf(ctx).toEqualTypeOf<{
+  testProcedure.query((opts) => {
+    expectTypeOf(opts.ctx).toEqualTypeOf<{
       init: { a: 'a' };
       foo: 'foo';
       bar: 'bar';
@@ -432,8 +432,8 @@ test('pipe middlewares - override', async () => {
 
   const testProcedure = t.procedure.use(barMiddleware);
   const router = t.router({
-    test: testProcedure.query(({ ctx }) => {
-      expect(ctx).toEqual({
+    test: testProcedure.query((opts) => {
+      expect(opts.ctx).toEqual({
         init: 'override',
         foo: 'foo',
         bar: 'bar',
@@ -496,8 +496,8 @@ test('pipe middlewares - failure', async () => {
 
   const testProcedure = t.procedure.use(barMiddleware);
   const router = t.router({
-    test: testProcedure.query(({ ctx }) => {
-      expect(ctx).toEqual({
+    test: testProcedure.query((opts) => {
+      expect(opts.ctx).toEqual({
         init: 'override',
         foo: 'foo',
         bar: 'bar',

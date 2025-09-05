@@ -267,8 +267,8 @@ Object {
     const TEAPOT_ERROR_CODE = 418;
     const onError = vi.fn();
     const t = initTRPC.context<CreateHTTPContextOptions>().create({});
-    const middleware = t.middleware(({ ctx }) => {
-      ctx.res.statusCode = TEAPOT_ERROR_CODE;
+    const middleware = t.middleware((opts) => {
+      opts.ctx.res.statusCode = TEAPOT_ERROR_CODE;
       throw new Error('Some error');
     });
 

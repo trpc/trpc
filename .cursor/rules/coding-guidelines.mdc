@@ -36,7 +36,7 @@ import { AnyRouter, initTRPC } from '@trpc/server';
 
 ### Variable Declarations
 
-- **AVOID** object destructuring in most cases (project convention)
+- **AVOID** overzealous destructuring and use accessors instead
 - **EXCEPTION**: Object destructuring is acceptable when a variable is used 3+ times
 - **PREFER** array destructuring, but don't use it optimistically
 - **NEVER** use destructuring in function parameter declarations

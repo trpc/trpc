@@ -53,11 +53,11 @@ export const channelRouter = {
 
   create: authedProcedure
     .input(z.object({ name: z.string().trim().min(2) }))
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async (opts) => {
       const [channel] = await db
         .insert(Channel)
         .values({
-          name: input.name,
+          name: opts.input.name,
         })
         .returning();
 

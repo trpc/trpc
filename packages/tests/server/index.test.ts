@@ -56,7 +56,8 @@ test('merge', async () => {
 
   const posts = t.router({
     list: t.procedure.query(() => [{ text: 'initial' }]),
-    create: t.procedure.input(z.string()).mutation(({ input }) => {
+    create: t.procedure.input(z.string()).mutation((opts) => {
+      const { input } = opts;
       return { text: input };
     }),
   });
@@ -79,7 +80,8 @@ describe('integration tests', () => {
     const router = t.router({
       hello: t.procedure
         .input(z.object({ who: z.string() }).nullish())
-        .query(({ input }) => {
+        .query((opts) => {
+          const { input } = opts;
           return {
             text: `hello ${input?.who ?? 'world'}`,
           };
@@ -107,7 +109,8 @@ describe('integration tests', () => {
     const router = t.router({
       hello: t.procedure
         .input(z.object({ who: z.string() }).nullish())
-        .query(({ input }) => {
+        .query((opts) => {
+          const { input } = opts;
           expectTypeOf(input).toMatchTypeOf<Maybe<{ who: string }>>();
           return {
             text: `hello ${input?.who ?? 'world'}`,
@@ -142,11 +145,13 @@ describe('integration tests', () => {
 
     const snap = vi.fn();
     const router = t.router({
-      q: t.procedure.query(({ input }) => {
+      q: t.procedure.query((opts) => {
+        const { input } = opts;
         snap(input);
         return { text: 'hello' };
       }),
-      m: t.procedure.mutation(({ input }) => {
+      m: t.procedure.mutation((opts) => {
+        const { input } = opts;
         snap(input);
         return { text: 'hello' };
       }),
@@ -178,8 +183,9 @@ describe('integration tests', () => {
       const router = t.router({
         hello: t.procedure
           .input(z.object({ who: z.string() }))
-          .query(({ input }) => {
-            expectTypeOf(input).not.toBeAny();
+          .query((opts) => {
+          const { input } = opts;
+          expectTypeOf(input).not.toBeAny();
             expectTypeOf(input).toMatchTypeOf<{ who: string }>();
 
             return {
@@ -204,7 +210,8 @@ describe('integration tests', () => {
       const t = initTRPC.create();
 
       const router = t.router({
-        postById: t.procedure.input(z.number()).query(({ input }) => {
+        postById: t.procedure.input(z.number()).query((opts) => {
+          const { input } = opts;
           if (input === 1) {
             return {
               id: 1,
@@ -253,7 +260,8 @@ describe('integration tests', () => {
       const t = initTRPC.context<Context>().create();
 
       const router = t.router({
-        whoami: t.procedure.query(({ ctx }) => {
+        whoami: t.procedure.query((opts) => {
+          const { ctx } = opts;
           if (!ctx.user) {
             throw new TRPCError({ code: 'UNAUTHORIZED' });
           }
@@ -303,8 +311,9 @@ describe('integration tests', () => {
       const router = t.router({
         hello: t.procedure
           .input(z.object({ who: z.string() }).nullish())
-          .query(({ input }) => {
-            expectTypeOf(input).not.toBeAny();
+          .query((opts) => {
+          const { input } = opts;
+          expectTypeOf(input).not.toBeAny();
             expectTypeOf(input).toMatchTypeOf<Input>();
 
             return {
@@ -342,8 +351,9 @@ describe('integration tests', () => {
               })
               .nullish(),
           )
-          .mutation(({ input }) => {
-            expectTypeOf(input).not.toBeAny();
+          .mutation((opts) => {
+          const { input } = opts;
+          expectTypeOf(input).not.toBeAny();
             expectTypeOf(input).toMatchTypeOf<Input>();
 
             return {
@@ -368,13 +378,16 @@ describe('createCaller()', () => {
   const t = initTRPC.context<Context>().create();
 
   const router = t.router({
-    q: t.procedure.input(z.number()).query(({ input }) => {
+    q: t.procedure.input(z.number()).query((opts) => {
+      const { input } = opts;
       return { input };
     }),
-    m: t.procedure.input(z.number()).mutation(({ input }) => {
+    m: t.procedure.input(z.number()).mutation((opts) => {
+      const { input } = opts;
       return { input };
     }),
-    sub: t.procedure.input(z.number()).subscription(({ input }) => {
+    sub: t.procedure.input(z.number()).subscription((opts) => {
+      const { input } = opts;
       return observable<{ input: typeof input }>((emit) => {
         emit.next({ input });
         return () => {
@@ -413,13 +426,16 @@ describe('createCaller()', () => {
   const t = initTRPC.context<Context>().create();
 
   const router = t.router({
-    q: t.procedure.input(z.number()).query(({ input }) => {
+    q: t.procedure.input(z.number()).query((opts) => {
+      const { input } = opts;
       return { input };
     }),
-    m: t.procedure.input(z.number()).mutation(({ input }) => {
+    m: t.procedure.input(z.number()).mutation((opts) => {
+      const { input } = opts;
       return { input };
     }),
-    sub: t.procedure.input(z.number()).subscription(({ input }) => {
+    sub: t.procedure.input(z.number()).subscription((opts) => {
+      const { input } = opts;
       return observable<{ input: typeof input }>((emit) => {
         emit.next({ input });
         return () => {
@@ -556,7 +572,8 @@ test('regression: JSON.stringify([undefined]) gives [null] causes wrong type to 
   const t = initTRPC.create();
 
   const router = t.router({
-    q: t.procedure.input(z.string().optional()).query(({ input }) => {
+    q: t.procedure.input(z.string().optional()).query((opts) => {
+      const { input } = opts;
       return { input };
     }),
   });
@@ -595,7 +612,10 @@ describe('apply()', () => {
     const router = t.router({
       helloinput: t.procedure
         .input(z.string())
-        .query(({ input }) => `hello ${input}`),
+        .query((opts) => {
+          const { input } = opts;
+          return `hello ${input}`;
+        }),
     });
     const { close, client } = routerToServerAndClientNew(router);
     expect(await client.helloinput.query.apply(undefined, ['world'])).toBe(
@@ -621,7 +641,10 @@ describe('call()', () => {
     const router = t.router({
       helloinput: t.procedure
         .input(z.string())
-        .query(({ input }) => `hello ${input}`),
+        .query((opts) => {
+          const { input } = opts;
+          return `hello ${input}`;
+        }),
     });
     const { close, client } = routerToServerAndClientNew(router);
     expect(await client.helloinput.query.call(this, 'world')).toBe(
@@ -635,7 +658,10 @@ describe('call()', () => {
     const router = t.router({
       helloinput: t.procedure
         .input(z.object({ text: z.string() }))
-        .query(({ input }) => `hello ${input.text}`),
+        .query((opts) => {
+          const { input } = opts;
+          return `hello ${input.text}`;
+        }),
     });
     const { close, client } = routerToServerAndClientNew(router);
     expect(await client.helloinput.query.call(this, { text: 'world' })).toBe(
@@ -649,7 +675,10 @@ describe('call()', () => {
     const router = t.router({
       helloinput: t.procedure
         .input(z.string().array())
-        .query(({ input }) => `hello ${input.join(' ')}`),
+        .query((opts) => {
+          const { input } = opts;
+          return `hello ${input.join(' ')}`;
+        }),
     });
     const { close, client } = routerToServerAndClientNew(router);
     expect(await client.helloinput.query.call(this, ['world'])).toBe(

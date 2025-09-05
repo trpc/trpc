@@ -22,11 +22,9 @@ const publicProcedure = t.procedure;
 const router = t.router;
 
 const appRouter = router({
-  greet: publicProcedure
-    .input(z.object({ name: z.string() }))
-    .query(({ input, ctx }) => {
-      return `Greetings, ${input.name}. x-user?: ${ctx.user}.`;
-    }),
+  greet: publicProcedure.input(z.object({ name: z.string() })).query((opts) => {
+    return `Greetings, ${opts.input.name}. x-user?: ${opts.ctx.user}.`;
+  }),
 });
 
 export type AppRouter = typeof appRouter;

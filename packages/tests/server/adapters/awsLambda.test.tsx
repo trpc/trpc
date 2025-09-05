@@ -50,8 +50,8 @@ const router = t.router({
         })
         .nullish(),
     )
-    .query(({ input, ctx }) => ({
-      text: `hello ${input?.who ?? ctx?.user ?? 'world'}`,
+    .query((opts) => ({
+      text: `hello ${opts.input?.who ?? opts.ctx?.user ?? 'world'}`,
     })),
   echo: t.procedure
     .input(
@@ -75,7 +75,7 @@ const router = t.router({
       };
     }),
   request: t.router({
-    info: t.procedure.query(({ ctx }) => ctx.info),
+    info: t.procedure.query((opts) => opts.ctx.info),
   }),
   iterable: t.procedure.query(async function* () {
     for (let i = 0; i < 3; i++) {
