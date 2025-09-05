@@ -18,6 +18,3 @@ export {
 } from './createTRPCClient';
 
 export { type TRPCProcedureOptions } from './internals/types';
-
-// Export DataTransformer from server package for convenience
-export type { DataTransformer } from '@trpc/server';
