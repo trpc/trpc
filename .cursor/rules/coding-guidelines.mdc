@@ -38,8 +38,9 @@ import { AnyRouter, initTRPC } from '@trpc/server';
 
 - **AVOID** overzealous destructuring and use accessors instead
 - **EXCEPTION**: Object destructuring is acceptable when a variable is used 3+ times
-- **PREFER** array destructuring, but don't use it optimistically
+- **PREFER** array destructuring, but avoid sparse array destructuring
 - **NEVER** use destructuring in function parameter declarations
+- **AVOID** destructuring potentially nullish nested properties
 - Use destructuring sparingly - prefer direct property access
 
 ```typescript
@@ -62,7 +63,7 @@ const [first, second] = tuple;
 // ❌ AVOID object destructuring for variables used 1-2 times
 const { client, httpUrl } = ctx;
 
-// ❌ AVOID optimistic array destructuring
+// ❌ AVOID sparse array destructuring
 const [first, , , fourth] = someArray; // Don't skip unless needed
 
 // ❌ NEVER destructure in function parameters
