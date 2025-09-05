@@ -36,16 +36,39 @@ import { AnyRouter, initTRPC } from '@trpc/server';
 
 ### Variable Declarations
 
-- **AVOID** destructuring in most cases (project convention)
-- Prefer explicit variable assignments for better readability
+- **AVOID** object destructuring in most cases (project convention)
+- **EXCEPTION**: Object destructuring is acceptable when a variable is used 3+ times
+- **PREFER** array destructuring, but don't use it optimistically
+- **NEVER** use destructuring in function parameter declarations
+- Use destructuring sparingly - prefer direct property access
 
 ```typescript
-// ✅ PREFERRED (following project patterns)
-const client = ctx.client;
-const httpUrl = ctx.httpUrl;
+// ✅ BEST - access directly without extracting
+function createClient(opts: ClientOptions) {
+  // Use opts.url and opts.transformer directly
+  return new Client(opts.url, opts.transformer);
+}
 
-// ❌ AVOID destructuring (unless absolutely necessary)
+// ✅ ACCEPTABLE - object destructuring when variable used 3+ times
+const { client } = ctx;
+const result1 = client.query();
+const result2 = client.mutate();
+const result3 = client.subscribe();
+
+// ✅ PREFERRED - array destructuring (but use judiciously)
+const [text, setText] = useState('');
+const [first, second] = tuple;
+
+// ❌ AVOID object destructuring for variables used 1-2 times
 const { client, httpUrl } = ctx;
+
+// ❌ AVOID optimistic array destructuring
+const [first, , , fourth] = someArray; // Don't skip unless needed
+
+// ❌ NEVER destructure in function parameters
+function createClient({ url, transformer }: ClientOptions) {
+  // Don't do this
+}
 ```
 
 ### Function Parameters
