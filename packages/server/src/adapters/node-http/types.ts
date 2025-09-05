@@ -93,7 +93,7 @@ export type NodeHTTPHandlerOptions<
      * import cors from 'cors'
      *
      * nodeHTTPRequestHandler({
-     *   cors: cors()
+     *   middleware: cors()
      * })
      * ```
      *
