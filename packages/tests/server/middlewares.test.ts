@@ -245,7 +245,8 @@ test('pipe middlewares - inlined', async () => {
   const testProcedure = t.procedure.use(bazMiddleware);
   const router = t.router({
     test: testProcedure.query((opts) => {
-      expect(opts.ctx).toEqual({
+      const { ctx } = opts;
+      expect(ctx).toEqual({
         init: 'init',
         foo: 'foo',
         bar: 'bar',
@@ -316,7 +317,8 @@ test('pipe middlewares - standalone', async () => {
   const testProcedure = t.procedure.use(bazMiddleware);
   const router = t.router({
     test: testProcedure.query((opts) => {
-      expect(opts.ctx).toEqual({
+      const { ctx } = opts;
+      expect(ctx).toEqual({
         init: 'init',
         foo: 'foo',
         bar: 'bar',
@@ -433,7 +435,8 @@ test('pipe middlewares - override', async () => {
   const testProcedure = t.procedure.use(barMiddleware);
   const router = t.router({
     test: testProcedure.query((opts) => {
-      expect(opts.ctx).toEqual({
+      const { ctx } = opts;
+      expect(ctx).toEqual({
         init: 'override',
         foo: 'foo',
         bar: 'bar',
@@ -497,7 +500,8 @@ test('pipe middlewares - failure', async () => {
   const testProcedure = t.procedure.use(barMiddleware);
   const router = t.router({
     test: testProcedure.query((opts) => {
-      expect(opts.ctx).toEqual({
+      const { ctx } = opts;
+      expect(ctx).toEqual({
         init: 'override',
         foo: 'foo',
         bar: 'bar',
