@@ -4,7 +4,7 @@ alwaysApply: true
 
 # Test without watch
 
-When running tests, use the `--watch false` flag to to avoid watch mode:
+When running tests, use the `--watch false` flag to avoid watch mode:
 
 We're using Vitest workspaces for testing.
 
