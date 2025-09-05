@@ -1,19 +1,13 @@
-import { routerToServerAndClientNew } from './___testHelpers';
-import { createTRPCClient, httpLink } from '@trpc/client';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
+import { httpLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
-const mockFetch = vi.fn();
-
-beforeEach(() => {
-  mockFetch.mockClear();
-  mockFetch.mockImplementation((url, options) => {
-    return fetch(url, options);
-  });
-});
+const getMockFetch = () => vi.fn<typeof fetch>((...args) => fetch(...args));
 
 test('query should not have content-type header', async () => {
   const t = initTRPC.create();
+  const mockFetch = getMockFetch();
 
   const router = t.router({
     hello: t.procedure
@@ -21,26 +15,32 @@ test('query should not have content-type header', async () => {
       .query(({ input }) => `Hello ${input ?? 'world'}`),
   });
 
-  const { httpUrl, close } = routerToServerAndClientNew(router);
-
-  const client = createTRPCClient<typeof router>({
-    links: [httpLink({ url: httpUrl, fetch: mockFetch as any })],
+  await using ctx = testServerAndClientResource(router, {
+    client(opts) {
+      return {
+        links: [
+          httpLink({
+            url: opts.httpUrl,
+            fetch: mockFetch,
+          }),
+        ],
+      };
+    },
   });
 
-  const result = await client.hello.query('test');
+  const result = await ctx.client.hello.query('test');
   expect(result).toBe('Hello test');
 
   expect(mockFetch).toHaveBeenCalledTimes(1);
   const [url, options] = mockFetch.mock.calls[0]!;
 
-  expect(options.method).toBe('GET');
+  expect(options!.method).toBe('GET');
 
-  expect(options.headers).not.toHaveProperty('content-type');
-
-  await close();
+  expect(options!.headers).not.toHaveProperty('content-type');
 });
 
 test('mutation should have content-type header', async () => {
+  const mockFetch = getMockFetch();
   const t = initTRPC.create();
 
   const router = t.router({
@@ -49,57 +49,63 @@ test('mutation should have content-type header', async () => {
       .mutation(({ input }) => `Hello ${input}`),
   });
 
-  const { httpUrl, close } = routerToServerAndClientNew(router);
-
-  const client = createTRPCClient<typeof router>({
-    links: [httpLink({ url: httpUrl, fetch: mockFetch as any })],
+  await using ctx = testServerAndClientResource(router, {
+    client(opts) {
+      return {
+        links: [
+          httpLink({
+            url: opts.httpUrl,
+            fetch: mockFetch,
+          }),
+        ],
+      };
+    },
   });
 
-  const result = await client.hello.mutate('test');
+  const result = await ctx.client.hello.mutate('test');
   expect(result).toBe('Hello test');
 
   expect(mockFetch).toHaveBeenCalledTimes(1);
   const [url, options] = mockFetch.mock.calls[0]!;
 
-  expect(options.method).toBe('POST');
+  expect(options!.method).toBe('POST');
 
-  expect(options.headers).toHaveProperty('content-type', 'application/json');
-
-  await close();
+  expect(options!.headers).toHaveProperty('content-type', 'application/json');
 });
 
 test('query with methodOverride should have content-type header', async () => {
+  const mockFetch = getMockFetch();
   const t = initTRPC.create();
 
   const router = t.router({
     hello: t.procedure.input(z.string()).query(({ input }) => `Hello ${input}`),
   });
 
-  const { httpUrl, close } = routerToServerAndClientNew(router, {
+  await using ctx = testServerAndClientResource(router, {
     server: {
       allowMethodOverride: true,
     },
+    client(opts) {
+      return {
+        links: [
+          httpLink({
+            url: opts.httpUrl,
+            fetch: mockFetch,
+            methodOverride: 'POST',
+          }),
+        ],
+      };
+    },
   });
 
-  const client = createTRPCClient<typeof router>({
-    links: [
-      httpLink({
-        url: httpUrl,
-        methodOverride: 'POST',
-        fetch: mockFetch as any,
-      }),
-    ],
-  });
+  const result = await ctx.client.hello.query('test');
 
-  const result = await client.hello.query('test');
   expect(result).toBe('Hello test');
 
   expect(mockFetch).toHaveBeenCalledTimes(1);
   const [url, options] = mockFetch.mock.calls[0]!;
 
-  expect(options.method).toBe('POST');
+  expect(options!.method).toBe('POST');
 
-  expect(options.headers).toHaveProperty('content-type', 'application/json');
-
-  await close();
+  expect(options!.headers).toHaveProperty('content-type', 'application/json');
 });
