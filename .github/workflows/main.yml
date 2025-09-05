@@ -216,8 +216,7 @@ jobs:
           bun-version: latest
 
       - run: bun --version
-
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }}
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} typecheck
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
