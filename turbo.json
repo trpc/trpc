@@ -15,14 +15,7 @@
     "AUTH_GITHUB_SECRET"
   ],
   "tasks": {
-    "codegen-tests": {
-      "outputs": ["*/__generated__/bigBoi/**"]
-    },
     "prebuild": {
-      "cache": false
-    },
-    "tsc": {
-      "dependsOn": ["codegen-tests"],
       "cache": false
     },
     "build": {
@@ -51,16 +44,13 @@
       "cache": false
     },
     "test-dev": {
-      "dependsOn": ["^build"],
-      "cache": false
+      "dependsOn": ["^build"]
     },
     "typecheck": {
-      "dependsOn": ["^build"],
-      "cache": false
+      "dependsOn": ["^build"]
     },
     "test-start": {
-      "dependsOn": ["^build", "build"],
-      "cache": false
+      "dependsOn": ["^build", "build"]
     }
   }
 }
