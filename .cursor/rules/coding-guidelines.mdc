@@ -1,6 +1,6 @@
 ---
 description: tRPC coding style guidelines and conventions
-globs: ['**/*.ts', '**/*.tsx']
+globs: ['**/*.ts', '**/*.tsx', '**/*.mdx', '**/*.md']
 alwaysApply: false
 ---
 
