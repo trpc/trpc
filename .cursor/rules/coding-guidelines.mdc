@@ -6,6 +6,18 @@ alwaysApply: false
 
 # tRPC Coding Guidelines
 
+## Context & Expertise Level
+
+You are working on **tRPC** - a TypeScript-first RPC library that provides end-to-end type safety between client and server. As a TypeScript expert contributing to this library, you should:
+
+- Understand advanced TypeScript concepts including conditional types, mapped types, and template literal types
+- Leverage TypeScript's inference system to its fullest potential
+- Write code that maintains tRPC's core principle: **type safety without runtime overhead**
+- Consider the developer experience of library consumers who rely on tRPC's type inference magic
+- Think about how your code affects the library's public API and type signatures
+
+This codebase pushes TypeScript to its limits to provide seamless type safety across network boundaries. Every type decision impacts thousands of developers using tRPC in production.
+
 ## TypeScript & Code Style
 
 ### Type Imports
@@ -177,7 +189,55 @@ const method = options!.method;
 - **ALWAYS** handle all cases (`@typescript-eslint/switch-exhaustiveness-check`)
 - Use exhaustive checking for union types
 
-### Type Safety
+### Type Safety & Inference
+
+#### Rely on TypeScript Inference
+
+- **HEAVILY RELY** on TypeScript inference rather than declaring explicit output types
+- Let TypeScript infer return types from implementation
+- Only declare types when inference is insufficient or for public APIs
+
+```typescript
+// ✅ CORRECT - Let TypeScript infer the return type
+const myProcedure = t.procedure
+  .input(z.string())
+  .query(({ input }) => {
+    return { message: `Hello ${input}` }; // Type inferred as { message: string }
+  });
+
+// ❌ AVOID - Unnecessary explicit typing
+const myProcedure = t.procedure
+  .input(z.string())
+  .query(({ input }): { message: string } => {
+    return { message: `Hello ${input}` };
+  });
+```
+
+#### When to Use Explicit Types
+
+- Public API boundaries
+- Complex generic constraints
+- When inference fails or is ambiguous
+- For documentation purposes in critical interfaces
+
+#### Inference Best Practices
+
+- Trust TypeScript's inference engine
+- Use `satisfies` operator when you need both inference and type checking
+- Leverage `as const` for literal type inference when needed
+
+```typescript
+// ✅ GOOD - Using satisfies for both inference and validation
+const config = {
+  apiVersion: 'v1',
+  timeout: 5000,
+} satisfies ApiConfig;
+
+// ✅ GOOD - Using as const for literal types
+const routes = ['users', 'posts', 'comments'] as const;
+```
+
+#### General Type Safety
 
 - Prefer explicit typing over `any` (though `any` is allowed when needed)
 - Use type assertions sparingly
