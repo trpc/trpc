@@ -1,6 +1,6 @@
 {
   "name": "examples-test-ssg-infinite-serialization",
-  "version": "11.5.0",
+  "version": "11.5.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -13,10 +13,10 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.80.3",
-    "@trpc/client": "^11.5.0",
-    "@trpc/next": "^11.5.0",
+    "@trpc/client": "^11.5.1",
+    "@trpc/next": "^11.5.1",
     "@trpc/react-query": "npm:@trpc/react-query",
-    "@trpc/server": "^11.5.0",
+    "@trpc/server": "^11.5.1",
     "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
