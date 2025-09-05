@@ -598,15 +598,13 @@ test('arktype v2 schema', async () => {
   const t = initTRPC.create();
 
   const router = t.router({
-    num: t.procedure
-      .input(arktype.type({ text: 'string' }))
-      .query((opts) => {
-        const { input } = opts;
-        expectTypeOf(input).toEqualTypeOf<{ text: string }>();
-        return {
-          input,
-        };
-      }),
+    num: t.procedure.input(arktype.type({ text: 'string' })).query((opts) => {
+      const { input } = opts;
+      expectTypeOf(input).toEqualTypeOf<{ text: string }>();
+      return {
+        input,
+      };
+    }),
   });
 
   const { close, client } = routerToServerAndClientNew(router);
