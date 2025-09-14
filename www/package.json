@@ -79,7 +79,7 @@
     "@babel/core": "^7.23.2",
     "@babel/preset-env": "^7.23.2",
     "@docusaurus/tsconfig": "^3.7.0",
-    "@octokit/graphql": "^8.1.1",
+    "@octokit/graphql": "^9.0.0",
     "@octokit/graphql-schema": "^15.0.0",
     "@types/node": "^22.13.5",
     "@types/oauth": "^0.9.1",
