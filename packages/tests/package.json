@@ -16,7 +16,7 @@
     "arktype": "^2.0.1",
     "dataloader": "^2.2.2",
     "devalue": "^5.0.0",
-    "effect": "3.15.0",
+    "effect": "3.17.13",
     "eslint": "^9.26.0",
     "fastify": "^5.0.0",
     "fastify-plugin": "^5.0.0",
