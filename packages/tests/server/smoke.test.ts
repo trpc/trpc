@@ -367,8 +367,16 @@ test('post', async () => {
             return 'hello world';
           },
           {
-            onSuccess: successSpy,
-            onError: errorSpy,
+            onSuccess(res) {
+              expectTypeOf(res).toEqualTypeOf<string>();
+
+              successSpy(res);
+            },
+            onError(error) {
+              expectTypeOf(error).toEqualTypeOf<TRPCError>();
+
+              errorSpy(error);
+            },
           },
         ),
       ),
