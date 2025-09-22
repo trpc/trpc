@@ -351,29 +351,27 @@ test('post', async () => {
   const successSpy = vi.fn();
   const errorSpy = vi.fn();
 
-  const proc = procedure
-    .input(
-      z.object({
-        name: z.string(),
-      }),
-    )
-    .query(
-      postProc(
-        (opts) => {
-          if (opts.input.name === 'BAD') {
-            throw new Error('BAD');
-          }
-          return 'hello world';
-        },
-        {
-          onSuccess: successSpy,
-          onError: errorSpy,
-        },
-      ),
-    );
-
   const router = t.router({
-    hello: proc,
+    hello: procedure
+      .input(
+        z.object({
+          name: z.string(),
+        }),
+      )
+      .query(
+        postProc(
+          (opts) => {
+            if (opts.input.name === 'BAD') {
+              throw new Error('BAD');
+            }
+            return 'hello world';
+          },
+          {
+            onSuccess: successSpy,
+            onError: errorSpy,
+          },
+        ),
+      ),
   });
 
   await using ctx = testServerAndClientResource(router);
@@ -397,6 +395,8 @@ test('post', async () => {
     expect(result).toMatchInlineSnapshot(`[TRPCClientError: BAD]`);
 
     expect(errorSpy).toHaveBeenCalledTimes(1);
-    expect(errorSpy.mock.calls[0]![0]).toMatchInlineSnapshot(`[TRPCError: BAD]`);
+    expect(errorSpy.mock.calls[0]![0]).toMatchInlineSnapshot(
+      `[TRPCError: BAD]`,
+    );
   }
 });
