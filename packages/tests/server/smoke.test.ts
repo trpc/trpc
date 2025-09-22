@@ -333,7 +333,7 @@ test('post resolver', async () => {
       onSuccess: (res: ReturnType<T>) => void;
     },
   ): T {
-    async function wrappedFn(...args: Parameters<T>) {
+    async function wrappedResolver(...args: Parameters<T>) {
       try {
         const res = await fn(...args);
 
@@ -349,7 +349,7 @@ test('post resolver', async () => {
       }
     }
 
-    return wrappedFn as T;
+    return wrappedResolver as T;
   }
 
   const successSpy = vi.fn();
@@ -414,7 +414,8 @@ test('post resolver', async () => {
 });
 
 test('post procedure', async () => {
-  function postProc<T extends AnyProcedure>(
+  type AnyFunction = (...args: any[]) => any;
+  function postProc<T extends AnyFunction>(
     proc: T,
     opts: {
       onError: (error: TRPCError) => void;
@@ -475,6 +476,25 @@ test('post procedure', async () => {
         },
       },
     ),
+    worksForWrappingResolverToo: procedure.query(
+      postProc(
+        () => {
+          return 'hello world';
+        },
+        {
+          onSuccess(res) {
+            expectTypeOf(res).toEqualTypeOf<string>();
+
+            successSpy(res);
+          },
+          onError(error) {
+            expectTypeOf(error).toEqualTypeOf<TRPCError>();
+
+            errorSpy(error);
+          },
+        },
+      ),
+    ),
   });
 
   await using ctx = testServerAndClientResource(router);
@@ -501,5 +521,16 @@ test('post procedure', async () => {
     expect(errorSpy.mock.calls[0]![0]).toMatchInlineSnapshot(
       `[TRPCError: BAD]`,
     );
+  }
+
+  // clear mocks
+  successSpy.mockClear();
+  errorSpy.mockClear();
+
+  {
+    const result = await ctx.client.worksForWrappingResolverToo.query();
+    expect(result).toBe('hello world');
+    expectTypeOf(result).not.toBeAny();
+    expectTypeOf(result).toEqualTypeOf<string>();
   }
 });
