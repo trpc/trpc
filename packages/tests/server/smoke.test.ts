@@ -418,21 +418,21 @@ test('post procedure', async () => {
   function postProc<T extends AnyFunction>(
     fn: T,
     opts: {
-      onError: (error: TRPCError) => void;
-      onSuccess: (res: Awaited<ReturnType<T>>) => void;
+      onError?: (error: TRPCError) => void;
+      onSuccess?: (res: Awaited<ReturnType<T>>) => void;
     },
   ): T {
     async function wrapped(...args: Parameters<T>) {
       try {
         const res = await (fn as any)(...args);
 
-        opts.onSuccess(res);
+        opts.onSuccess?.(res);
 
         return res;
       } catch (cause) {
         const error = getTRPCErrorFromUnknown(cause);
 
-        opts.onError(error);
+        opts.onError?.(error);
 
         throw error;
       }
