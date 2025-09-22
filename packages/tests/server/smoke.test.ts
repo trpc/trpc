@@ -3,8 +3,8 @@ import { testServerAndClientResource } from '@trpc/client/__tests__/testClientRe
 import { waitError } from '@trpc/server/__tests__/waitError';
 import '@testing-library/react';
 import { getUntypedClient, TRPCClientError, wsLink } from '@trpc/client';
-import type { inferProcedureOutput } from '@trpc/server';
-import { initTRPC } from '@trpc/server';
+import type { inferProcedureOutput, TRPCError } from '@trpc/server';
+import { getTRPCErrorFromUnknown, initTRPC } from '@trpc/server';
 import type { Unsubscribable } from '@trpc/server/observable';
 import { observable } from '@trpc/server/observable';
 import { lazy } from '@trpc/server/unstable-core-do-not-import';
@@ -316,5 +316,87 @@ test('query can return path', async () => {
     expect(result).toBe('lazy.hello2');
     expectTypeOf(result).not.toBeAny();
     expectTypeOf(result).toEqualTypeOf<string>();
+  }
+});
+
+test('post', async () => {
+  type AnyFunction = (...args: any[]) => any;
+
+  function postProc<T extends AnyFunction>(
+    fn: T,
+    opts: {
+      onError: (error: TRPCError) => void;
+      onSuccess: (res: ReturnType<T>) => void;
+    },
+  ): T {
+    const wrappedFn = async (...args: Parameters<T>) => {
+      try {
+        const res = await fn(...args);
+
+        opts.onSuccess(res);
+
+        return res;
+      } catch (cause) {
+        const error = getTRPCErrorFromUnknown(cause);
+
+        opts.onError(error);
+
+        throw error;
+      }
+    };
+
+    return wrappedFn as T;
+  }
+
+  const successSpy = vi.fn();
+  const errorSpy = vi.fn();
+
+  const proc = procedure
+    .input(
+      z.object({
+        name: z.string(),
+      }),
+    )
+    .query(
+      postProc(
+        (opts) => {
+          if (opts.input.name === 'BAD') {
+            throw new Error('BAD');
+          }
+          return 'hello world';
+        },
+        {
+          onSuccess: successSpy,
+          onError: errorSpy,
+        },
+      ),
+    );
+
+  const router = t.router({
+    hello: proc,
+  });
+
+  await using ctx = testServerAndClientResource(router);
+  {
+    // good input
+    const result = await ctx.client.hello.query({ name: 'hello' });
+    expect(result).toBe('hello world');
+    expectTypeOf(result).not.toBeAny();
+    expectTypeOf(result).toEqualTypeOf<string>();
+
+    expect(successSpy).toHaveBeenCalledTimes(1);
+    expect(successSpy.mock.calls[0]![0]).toMatchInlineSnapshot(`"hello world"`);
+  }
+  {
+    // bad input
+    const result = await waitError(
+      ctx.client.hello.query({ name: 'BAD' }),
+      TRPCClientError,
+    );
+
+    expect(result).toMatchInlineSnapshot(`[TRPCClientError: BAD]`);
+
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy.mock.calls[0]![0]).toMatchInlineSnapshot(`[TRPCError: BAD]`);
   }
 });
