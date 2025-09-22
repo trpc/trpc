@@ -416,15 +416,15 @@ test('post resolver', async () => {
 test('post procedure', async () => {
   type AnyFunction = (...args: any[]) => any;
   function postProc<T extends AnyFunction>(
-    proc: T,
+    fn: T,
     opts: {
       onError: (error: TRPCError) => void;
       onSuccess: (res: Awaited<ReturnType<T>>) => void;
     },
   ): T {
-    async function wrappedProc(...args: Parameters<T>) {
+    async function wrapped(...args: Parameters<T>) {
       try {
-        const res = await (proc as any)(...args);
+        const res = await (fn as any)(...args);
 
         opts.onSuccess(res);
 
@@ -439,11 +439,11 @@ test('post procedure', async () => {
     }
 
     // retain metadata etc (i think this is necessary?)
-    for (const [key, value] of Object.entries(proc)) {
-      (wrappedProc as any)[key] = value;
+    for (const [key, value] of Object.entries(fn)) {
+      (wrapped as any)[key] = value;
     }
 
-    return wrappedProc as T;
+    return wrapped as T;
   }
 
   const successSpy = vi.fn();
@@ -476,7 +476,7 @@ test('post procedure', async () => {
         },
       },
     ),
-    worksForWrappingResolverToo: procedure.query(
+    worksForWrappingResolverToo: procedure.input(z.object({})).query(
       postProc(
         () => {
           return 'hello world';
@@ -528,7 +528,7 @@ test('post procedure', async () => {
   errorSpy.mockClear();
 
   {
-    const result = await ctx.client.worksForWrappingResolverToo.query();
+    const result = await ctx.client.worksForWrappingResolverToo.query({});
     expect(result).toBe('hello world');
     expectTypeOf(result).not.toBeAny();
     expectTypeOf(result).toEqualTypeOf<string>();
