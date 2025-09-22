@@ -333,7 +333,7 @@ test('post resolver', async () => {
       onSuccess: (res: ReturnType<T>) => void;
     },
   ): T {
-    const wrappedFn = async (...args: Parameters<T>) => {
+    async function wrappedFn(...args: Parameters<T>) {
       try {
         const res = await fn(...args);
 
@@ -347,7 +347,7 @@ test('post resolver', async () => {
 
         throw error;
       }
-    };
+    }
 
     return wrappedFn as T;
   }
@@ -421,7 +421,7 @@ test('post procedure', async () => {
       onSuccess: (res: Awaited<ReturnType<T>>) => void;
     },
   ): T {
-    const wrappedFn = async (...args: Parameters<T>) => {
+    async function wrappedProc(...args: Parameters<T>) {
       try {
         const res = await (proc as any)(...args);
 
@@ -435,14 +435,14 @@ test('post procedure', async () => {
 
         throw error;
       }
-    };
-
-    // retain metadata etc
-    for (const [key, value] of Object.entries(proc)) {
-      (wrappedFn as any)[key] = value;
     }
 
-    return wrappedFn as T;
+    // retain metadata etc (i think this is necessary?)
+    for (const [key, value] of Object.entries(proc)) {
+      (wrappedProc as any)[key] = value;
+    }
+
+    return wrappedProc as T;
   }
 
   const successSpy = vi.fn();
