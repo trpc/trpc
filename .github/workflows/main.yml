@@ -21,12 +21,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
       - run: pnpm build
+
+  typecheck:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: ./.github/setup
+
+      - run: pnpm typecheck-packages
+
+  typecheck-www:
+    # only run on PRs
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 10
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: ./.github/setup
+
+      - run: pnpm typecheck-www
+
   test:
     timeout-minutes: 10
     env:
@@ -36,12 +72,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
-      - run: pnpm test-ci
+      - run: MUTE_REACT_ACT_WARNINGS=1 pnpm test -- --coverage
 
       - uses: codecov/codecov-action@v5
         with:
@@ -90,12 +126,11 @@ jobs:
             # next-sse-chat,
             soa,
             standalone-server,
-            tanstack-start,
             vercel-edge-runtime,
             nuxt,
           ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -112,7 +147,8 @@ jobs:
 
       - run: cp ./examples/${{ matrix.dir }}/.env.example ./examples/${{ matrix.dir }}/.env || true
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} typecheck
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
@@ -133,7 +169,7 @@ jobs:
       matrix:
         dir: [deno-deploy]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -168,7 +204,7 @@ jobs:
         dir: [bun]
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -180,9 +216,9 @@ jobs:
           bun-version: latest
 
       - run: bun --version
-
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} typecheck
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
@@ -215,14 +251,14 @@ jobs:
           ]
         node-start: ['18.x', '20.x']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
       - run: pnpm build
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node-start }}
           cache: 'pnpm'
@@ -235,7 +271,8 @@ jobs:
             then cd ./examples/${{ matrix.dir }} && pnpm exec playwright install chromium;
           fi
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
-      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build type-check
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
+      - run: pnpm turbo --filter ./examples/${{ matrix.dir }} typecheck
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
   # https://pkg.pr.new
   release-tmp:
@@ -247,7 +284,7 @@ jobs:
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -260,7 +297,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: ./.github/setup

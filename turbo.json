@@ -15,13 +15,9 @@
     "AUTH_GITHUB_SECRET"
   ],
   "tasks": {
-    "codegen-tests": {
-      "outputs": ["*/__generated__/bigBoi/**"]
-    },
     "prebuild": {
       "cache": false
     },
-    "ts-watch": {},
     "build": {
       "dependsOn": ["^build", "prebuild"],
       "outputs": [
@@ -47,35 +43,14 @@
     "lint-fix": {
       "cache": false
     },
-    "test": {
-      "dependsOn": ["^build", "codegen-tests"],
-      "cache": false
-    },
-    "test-ci": {
-      "dependsOn": ["^build", "codegen-tests"],
-      "cache": false
-    },
-    "test-run:tsc": {
-      "dependsOn": ["^build", "codegen-tests"],
-      "cache": false
-    },
     "test-dev": {
-      "dependsOn": ["^build"],
-      "cache": false
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
     },
     "test-start": {
-      "dependsOn": ["^build", "build"],
-      "cache": false
-    },
-    "test-watch": {
-      "cache": false,
-      "persistent": true,
-      "dependsOn": ["^build", "codegen-tests"]
-    },
-    "type-check": {
-      "dependsOn": ["^build"],
-      "outputs": [],
-      "cache": true
+      "dependsOn": ["^build", "build"]
     }
   }
 }

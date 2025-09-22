@@ -58,7 +58,8 @@ export const postRouter = router({
         text: z.string().min(1),
       }),
     )
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async (opts) => {
+      const { input, ctx } = opts;
       const { name } = ctx.user;
       const post = await prisma.post.create({
         data: {
@@ -75,7 +76,8 @@ export const postRouter = router({
 
   isTyping: authedProcedure
     .input(z.object({ typing: z.boolean() }))
-    .mutation(({ input, ctx }) => {
+    .mutation((opts) => {
+      const { input, ctx } = opts;
       const { name } = ctx.user;
       if (!input.typing) {
         delete currentlyTyping[name];
@@ -94,7 +96,8 @@ export const postRouter = router({
         take: z.number().min(1).max(50).nullish(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async (opts) => {
+      const { input } = opts;
       const take = input.take ?? 10;
       const cursor = input.cursor;
 

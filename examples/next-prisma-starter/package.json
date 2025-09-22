@@ -20,7 +20,8 @@
     "test-unit": "vitest",
     "test-e2e": "playwright test",
     "test-start": "run-s test-unit test-e2e",
-    "postinstall": "pnpm generate"
+    "postinstall": "pnpm generate",
+    "typecheck": "tsc --noEmit"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -61,7 +62,7 @@
     "start-server-and-test": "^1.12.0",
     "tailwindcss": "^3.4.6",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "typescript-eslint": "^8.31.1",
     "vite": "^6.1.1",
     "vitest": "^3.1.2"
@@ -69,5 +70,5 @@
   "publishConfig": {
     "access": "restricted"
   },
-  "version": "11.4.3"
+  "version": "11.5.1"
 }

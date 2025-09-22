@@ -7,7 +7,7 @@
     "lint": "eslint --cache src",
     "start": "next start",
     "postinstall": "tsx scripts/codegen",
-    "tsc": "tsc"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.80.3",
@@ -26,7 +26,7 @@
     "@types/react-dom": "^19.1.1",
     "eslint": "^9.26.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.9.2"
   },
-  "version": "11.4.3"
+  "version": "11.5.1"
 }

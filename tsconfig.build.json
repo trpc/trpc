@@ -1,19 +1,14 @@
 {
   "compilerOptions": {
     "module": "Preserve",
-    "lib": [
-      "esnext",
-      "dom",
-      "dom.iterable",
-      "ES2018.AsyncGenerator",
-      "ES2018.AsyncIterable"
-    ],
-    "target": "es2020",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "target": "es2022",
     "declaration": true,
     "declarationMap": true,
     "outDir": "./dist",
     "strict": true,
-    "noUnusedLocals": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": false, // we have eslint for this where it's disabled in tests
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,

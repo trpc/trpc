@@ -561,7 +561,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             }),
           };
         }),
-        serialize: config.transformer.output.serialize,
+        serialize: (data) => config.transformer.output.serialize(data),
         onError: (cause) => {
           opts.onError?.({
             error: getTRPCErrorFromUnknown(cause),

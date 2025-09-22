@@ -19,8 +19,6 @@ export interface CreateInnerContextOptions
  */
 export async function createInnerTRPCContext(opts?: CreateInnerContextOptions) {
   return {
-    prisma,
-    task: prisma.task,
     ...opts,
   };
 }

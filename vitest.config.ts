@@ -41,6 +41,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    setupFiles: [__dirname + '/packages/tests/suppressActWarnings.ts'],
     snapshotFormat: {
       printBasicPrototype: true,
     },

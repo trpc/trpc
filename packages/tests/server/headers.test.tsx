@@ -11,9 +11,9 @@ describe('pass headers', () => {
   const t = initTRPC.context<Context>().create();
 
   const appRouter = t.router({
-    hello: t.procedure.query(({ ctx }) => {
+    hello: t.procedure.query((opts) => {
       return {
-        'x-special': ctx.headers['x-special'],
+        'x-special': opts.ctx.headers['x-special'],
       };
     }),
   });

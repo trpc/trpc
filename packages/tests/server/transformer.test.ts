@@ -4,6 +4,7 @@ import {
   createTRPCClient,
   createWSClient,
   httpBatchLink,
+  httpBatchStreamLink,
   httpLink,
   TRPCClientError,
   wsLink,
@@ -155,7 +156,7 @@ test('not batching: superjson up and devalue down', async () => {
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
 });
 
-test('batching: superjson up and devalue down', async () => {
+describe('batching: superjson up and devalue down', () => {
   const transformer: CombinedDataTransformer = {
     input: superjson,
     output: {
@@ -175,16 +176,31 @@ test('batching: superjson up and devalue down', async () => {
     }),
   });
 
-  await using ctx = testServerAndClientResource(router, {
-    client({ httpUrl }) {
-      return {
-        links: [httpBatchLink({ url: httpUrl, transformer })],
-      };
-    },
+  test('httpBatchLink', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl }) {
+        return {
+          links: [httpBatchLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+    const res = await ctx.client.hello.query(date);
+    expect(res.getTime()).toBe(date.getTime());
+    expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
   });
-  const res = await ctx.client.hello.query(date);
-  expect(res.getTime()).toBe(date.getTime());
-  expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+
+  test('httpBatchStreamLink', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl }) {
+        return {
+          links: [httpBatchStreamLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+    const res = await ctx.client.hello.query(date);
+    expect(res.getTime()).toBe(date.getTime());
+    expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+  });
 });
 
 test('batching: superjson up and f down', async () => {
@@ -544,4 +560,86 @@ test('tupleson', async () => {
   const res = await ctx.client.hello.query(date);
   expect(res.getTime()).toBe(date.getTime());
   expect((fn.mock.calls[0]![0]! as Date).getTime()).toBe(date.getTime());
+});
+
+describe('superjson - custom instance', async () => {
+  class MyCustomThing {
+    justDoinWhatIDo: number;
+
+    constructor(num: number) {
+      this.justDoinWhatIDo = num;
+    }
+  }
+
+  const transformer = new superjson();
+  transformer.registerCustom(
+    {
+      isApplicable: (obj): obj is MyCustomThing => {
+        return obj instanceof MyCustomThing;
+      },
+      serialize: (instance) => {
+        return { num: instance.justDoinWhatIDo };
+      },
+      deserialize: (json) => {
+        return new MyCustomThing(json.num);
+      },
+    },
+    'MyCustomThing',
+  );
+
+  const t = initTRPC.create({ transformer });
+
+  const router = t.router({
+    myCustomThing: t.procedure.query(() => {
+      return new MyCustomThing(42);
+    }),
+    wrapped: t.procedure.query(() => {
+      return {
+        obj: new MyCustomThing(42),
+      };
+    }),
+  });
+
+  test('httpLink', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl, transformer }) {
+        return {
+          links: [httpLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+
+    const res = await ctx.client.myCustomThing.query();
+
+    expect(res).toBeInstanceOf(MyCustomThing);
+  });
+
+  test('httpBatchLink', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl, transformer }) {
+        return {
+          links: [httpBatchLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+
+    const res = await ctx.client.myCustomThing.query();
+
+    expect(res).toBeInstanceOf(MyCustomThing);
+  });
+
+  // regression https://github.com/trpc/trpc/issues/6863
+  test('httpBatchStreamLink', async () => {
+    await using ctx = testServerAndClientResource(router, {
+      client({ httpUrl, transformer }) {
+        return {
+          links: [httpBatchStreamLink({ url: httpUrl, transformer })],
+        };
+      },
+    });
+
+    const res = await ctx.client.myCustomThing.query();
+
+    expect(res).toBeInstanceOf(MyCustomThing);
+  });
 });

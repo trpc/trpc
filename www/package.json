@@ -18,7 +18,8 @@
     "postinstall:companies-using": "tsx ./src/components/CompaniesUsing.script.ts",
     "postinstall": "run-p postinstall:* --print-label",
     "tweetwall-pull": "tsx ./src/components/TwitterWall/script.ts",
-    "lint": "eslint --cache src"
+    "lint": "eslint --cache src",
+    "typecheck": "tsc --noEmit --preserveWatchOutput --pretty"
   },
   "dependencies": {
     "@algolia/client-search": "^5.0.0",
@@ -78,7 +79,7 @@
     "@babel/core": "^7.23.2",
     "@babel/preset-env": "^7.23.2",
     "@docusaurus/tsconfig": "^3.7.0",
-    "@octokit/graphql": "^8.1.1",
+    "@octokit/graphql": "^9.0.0",
     "@octokit/graphql-schema": "^15.0.0",
     "@types/node": "^22.13.5",
     "@types/oauth": "^0.9.1",
@@ -86,7 +87,7 @@
     "@types/react-dom": "^19.1.1",
     "arktype": "^2.0.1",
     "autoprefixer": "^10.4.7",
-    "docusaurus-plugin-typedoc": "1.4.0",
+    "docusaurus-plugin-typedoc": "1.4.2",
     "dotenv": "^16.0.1",
     "eslint": "^9.26.0",
     "next": "^15.3.1",
@@ -103,9 +104,9 @@
     "tsx": "^4.19.3",
     "typedoc": "0.27.9",
     "typedoc-plugin-markdown": "4.4.2",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
     "valibot": "1.1.0",
     "yup": "^1.0.0"
   },
-  "version": "11.4.3"
+  "version": "11.5.1"
 }

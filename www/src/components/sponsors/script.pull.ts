@@ -184,7 +184,9 @@ async function main() {
   ]).then((parts) => {
     const rawList = parts
       .flat()
-      .filter((it) => it.privacyLevel === 'PUBLIC')
+      .filter(
+        (it) => it.privacyLevel === 'PUBLIC' || it.login === 'madisonredtfeldt',
+      )
       .sort((a, b) => a.createdAt - b.createdAt);
 
     fs.writeFileSync(

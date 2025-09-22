@@ -31,17 +31,17 @@ export const router = t.router({
         })
         .nullish(),
     )
-    .query(({ input, ctx }) => ({
-      text: `hello ${input?.who ?? ctx.user?.name ?? 'world'}`,
+    .query((opts) => ({
+      text: `hello ${opts.input?.who ?? opts.ctx.user?.name ?? 'world'}`,
     })),
   helloMutation: t.procedure
     .input(z.string())
-    .mutation(({ input }) => `hello ${input}`),
+    .mutation((opts) => `hello ${opts.input}`),
   request: t.router({
-    info: t.procedure.query(({ ctx }) => {
+    info: t.procedure.query((opts) => {
       return {
-        ...ctx.info,
-        url: ctx.info.url?.href ?? null,
+        ...opts.ctx.info,
+        url: opts.ctx.info.url?.href ?? null,
       };
     }),
   }),

@@ -91,7 +91,8 @@ export function httpBatchStreamLink<TRouter extends AnyRouter>(
           >({
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             from: res.body!,
-            deserialize: resolvedOpts.transformer.output.deserialize,
+            deserialize: (data) =>
+              resolvedOpts.transformer.output.deserialize(data),
             // onError: console.error,
             formatError(opts) {
               const error = opts.error as TRPCErrorShape;
