@@ -198,7 +198,6 @@ describe('integration tests', () => {
       expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
 
       expect(res.text).toEqual('hello katt');
-
     });
 
     test('mixed response', async () => {
@@ -227,7 +226,6 @@ describe('integration tests', () => {
         id: 1,
         title: 'helloo',
       });
-
     });
 
     test('propagate ctx', async () => {
@@ -294,7 +292,6 @@ describe('integration tests', () => {
           name: 'KATT',
         });
       }
-
     });
 
     test('optional input', async () => {
@@ -327,7 +324,6 @@ describe('integration tests', () => {
         expectTypeOf(res.input).toMatchTypeOf<Input>();
         expectTypeOf(res.input).not.toBeAny();
       }
-
     });
 
     test('mutation', async () => {
@@ -471,7 +467,9 @@ test('void mutation response', async () => {
 
   await using ctx2 = testServerAndClientResource(newRouter);
   const { wssPort, router } = ctx2;
-  expect(await ctx2.client.undefined.mutate()).toMatchInlineSnapshot(`undefined`);
+  expect(await ctx2.client.undefined.mutate()).toMatchInlineSnapshot(
+    `undefined`,
+  );
   expect(await ctx2.client.null.mutate()).toMatchInlineSnapshot(`null`);
 
   const ws = createWSClient({
@@ -517,7 +515,6 @@ describe('AbortError', () => {
     const err = onReject.mock.calls[0]![0]! as TRPCClientError<any>;
     expect(err.name).toBe('TRPCClientError');
     expect(err.cause?.name).toBe('AbortError');
-
   });
 
   test('cancelling batch request should throw AbortError', async () => {
@@ -552,7 +549,6 @@ describe('AbortError', () => {
 
     expect(err).toBeInstanceOf(TRPCClientError);
     expect(err.cause?.name).toBe('AbortError');
-
   });
 });
 
@@ -643,9 +639,9 @@ describe('call()', () => {
         }),
     });
     await using ctx = testServerAndClientResource(router);
-    expect(await ctx.client.helloinput.query.call(this, { text: 'world' })).toBe(
-      'hello world',
-    );
+    expect(
+      await ctx.client.helloinput.query.call(this, { text: 'world' }),
+    ).toBe('hello world');
   });
 
   test('query with array input', async () => {

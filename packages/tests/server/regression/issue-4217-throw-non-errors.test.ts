@@ -36,5 +36,5 @@ test('preserve `.cause` even on non-error objects', async () => {
   const error = onErrorSpy.mock.calls[0]![0].error;
   expect(error).toMatchInlineSnapshot('[TRPCError: Custom error message]');
   expect(error.cause!.message).toBe('Custom error message');
-  expect((error.cause as any).foo).toBe('bar');
+  expect(error.cause.foo).toBe('bar');
 });
