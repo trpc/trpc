@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type { inferRouterMeta } from '@trpc/server/unstable-core-do-not-import';
@@ -54,23 +54,22 @@ test('route meta in middleware', async () => {
     foo2: procedure.meta({ data: 'foo2' }).mutation(() => 'bar2'),
   });
 
-  const { close, client } = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
   const calls = middleware.mock.calls;
-  expect(await client.foo1.query()).toBe('bar1');
+  expect(await ctx.client.foo1.query()).toBe('bar1');
   expect(calls[0]![0]).toHaveProperty('meta');
   expect(calls[0]![0]!.meta).toEqual({
     data: 'foo1',
   });
 
-  expect(await client.foo2.mutate()).toBe('bar2');
+  expect(await ctx.client.foo2.mutate()).toBe('bar2');
   expect(calls[1]![0]).toHaveProperty('meta');
   expect(calls[1]![0].meta).toEqual({
     data: 'foo2',
   });
 
   expect(middleware).toHaveBeenCalledTimes(2);
-  await close();
 });
 
 test('default meta', async () => {
@@ -93,23 +92,22 @@ test('default meta', async () => {
     foo2: procedure.mutation(() => 'bar2'),
   });
 
-  const { close, client } = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
   const calls = middleware.mock.calls;
-  expect(await client.foo1.query()).toBe('bar1');
+  expect(await ctx.client.foo1.query()).toBe('bar1');
   expect(calls[0]![0]).toHaveProperty('meta');
   expect(calls[0]![0].meta).toEqual({
     data: 'foobar',
   });
 
-  expect(await client.foo2.mutate()).toBe('bar2');
+  expect(await ctx.client.foo2.mutate()).toBe('bar2');
   expect(calls[1]![0]).toHaveProperty('meta');
   expect(calls[1]![0].meta).toEqual({
     data: 'foobar',
   });
 
   expect(middleware).toHaveBeenCalledTimes(2);
-  await close();
 });
 
 test('default meta with merging', async () => {
@@ -130,23 +128,22 @@ test('default meta with merging', async () => {
     foo2: procedure.meta({ data: 'foo2' }).mutation(() => 'bar2'),
   });
 
-  const { close, client } = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
   const calls = middleware.mock.calls;
-  expect(await client.foo1.query()).toBe('bar1');
+  expect(await ctx.client.foo1.query()).toBe('bar1');
   expect(calls[0]![0]).toHaveProperty('meta');
   expect(calls[0]![0].meta).toEqual({
     data: 'foo1',
   });
 
-  expect(await client.foo2.mutate()).toBe('bar2');
+  expect(await ctx.client.foo2.mutate()).toBe('bar2');
   expect(calls[1]![0]).toHaveProperty('meta');
   expect(calls[1]![0].meta).toEqual({
     data: 'foo2',
   });
 
   expect(middleware).toHaveBeenCalledTimes(2);
-  await close();
 });
 
 test('meta chaining with merging', async () => {
@@ -169,17 +166,16 @@ test('meta chaining with merging', async () => {
       .query(() => 'bar1'),
   });
 
-  const { close, client } = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
   const calls = middleware.mock.calls;
-  expect(await client.foo1.query()).toBe('bar1');
+  expect(await ctx.client.foo1.query()).toBe('bar1');
   expect(calls[0]![0]).toHaveProperty('meta');
   expect(calls[0]![0].meta).toEqual({
     data: 'foo2',
   });
 
   expect(middleware).toHaveBeenCalledTimes(1);
-  await close();
 });
 
 test('complex meta merging', async () => {
@@ -211,10 +207,10 @@ test('complex meta merging', async () => {
       .query(() => 'bar1'),
   });
 
-  const { close, client } = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
   const calls = middleware.mock.calls;
-  expect(await client.foo1.query()).toBe('bar1');
+  expect(await ctx.client.foo1.query()).toBe('bar1');
   expect(calls[0]![0]).toHaveProperty('meta');
   expect(calls[0]![0].meta).toEqual({
     data1: 'bazbar',
@@ -226,5 +222,4 @@ test('complex meta merging', async () => {
   });
 
   expect(middleware).toHaveBeenCalledTimes(1);
-  await close();
 });

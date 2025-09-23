@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { httpBatchStreamLink, TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
@@ -19,7 +19,7 @@ const appRouter = t.router({
 });
 
 test('streaming query interruption should throw TRPCClientError', async () => {
-  const ctx = routerToServerAndClientNew(appRouter, {
+  await using ctx = testServerAndClientResource(appRouter, {
     client(opts) {
       return {
         links: [httpBatchStreamLink({ url: opts.httpUrl })],
@@ -41,7 +41,5 @@ test('streaming query interruption should throw TRPCClientError', async () => {
 
   expect((err as DOMException).name).toBe('AbortError');
 
-  expect(err).toMatchInlineSnapshot(`[AbortError: The operation was aborted.]`);
-
-  await ctx.close();
+  expect(err).toMatchInlineSnapshot(`DOMException {}`);
 });

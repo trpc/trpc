@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -28,10 +28,11 @@ const factory = () => {
         return { input };
       }),
   });
-  return routerToServerAndClientNew(router);
+  return testServerAndClientResource(router);
 };
 test('batching with raw batch', async () => {
-  const { close, httpUrl } = factory();
+  await using ctx = factory();
+  const { httpUrl } = ctx;
 
   {
     const res = await fetch(
@@ -53,6 +54,4 @@ Object {
 }
 `);
   }
-
-  await close();
 });

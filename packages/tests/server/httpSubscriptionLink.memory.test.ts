@@ -1,12 +1,11 @@
 import { EventEmitter, on } from 'node:events';
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { httpSubscriptionLink } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { sleep } from '@trpc/server/unstable-core-do-not-import';
-import { konn } from 'konn';
 
-const ctx = konn()
-  .beforeEach(() => {
+describe('http subscription memory', () => {
+  it('should free data after each iteration (#6156)', async () => {
     const ee = new EventEmitter();
     const t = initTRPC.create({
       sse: {
@@ -21,7 +20,7 @@ const ctx = konn()
       ),
     });
 
-    const opts = routerToServerAndClientNew(router, {
+    await using ctx = testServerAndClientResource(router, {
       server: {},
       client(opts) {
         return {
@@ -30,15 +29,6 @@ const ctx = konn()
       },
     });
 
-    return { ...opts, ee };
-  })
-  .afterEach(async (opts) => {
-    await opts.close?.();
-  })
-  .done();
-
-describe('http subscription memory', () => {
-  it('should free data after each iteration (#6156)', async () => {
     const onStartedMock = vi.fn();
     const onDataLengthMock = vi.fn();
     const subscription = ctx.client.onData.subscribe(undefined, {
@@ -72,7 +62,7 @@ describe('http subscription memory', () => {
     function emitData(): WeakRef<never[]> {
       const data: never[] = [];
       const ref = new WeakRef(data);
-      ctx.ee.emit('data', data);
+      ee.emit('data', data);
       return ref;
     }
   });

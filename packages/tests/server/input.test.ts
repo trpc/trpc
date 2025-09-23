@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import { createTRPCClient, TRPCClientError } from '@trpc/client';
 import type { inferProcedureInput, inferProcedureOutput } from '@trpc/server';
@@ -58,18 +58,9 @@ describe('double input validator', () => {
       }),
   });
   type AppRouter = typeof appRouter;
-  const ctx = konn()
-    .beforeEach(() => {
-      const opts = routerToServerAndClientNew(appRouter);
-
-      return opts;
-    })
-    .afterEach(async (ctx) => {
-      await ctx?.close?.();
-    })
-    .done();
 
   test('happy path', async () => {
+    await using ctx = testServerAndClientResource(appRouter);
     type Input = inferProcedureInput<AppRouter['sendMessage']>;
     const data: Input = {
       roomId: '123',
@@ -82,6 +73,7 @@ describe('double input validator', () => {
   });
 
   test('sad path', async () => {
+    await using ctx = testServerAndClientResource(appRouter);
     type Input = inferProcedureInput<AppRouter['sendMessage']>;
     {
       // @ts-expect-error missing input params
@@ -186,18 +178,16 @@ describe('multiple input validators with optionals', () => {
         }),
     });
 
-    const opts = routerToServerAndClientNew(webhookRouter);
+    await using ctx = testServerAndClientResource(webhookRouter);
 
-    await expect(opts.client.byId.query()).resolves.toBeUndefined();
-    await expect(opts.client.byId.query(undefined)).resolves.toBeUndefined();
+    await expect(ctx.client.byId.query()).resolves.toBeUndefined();
+    await expect(ctx.client.byId.query(undefined)).resolves.toBeUndefined();
     await expect(
-      opts.client.byId.query({ id: '123', webhookId: '456' }),
+      ctx.client.byId.query({ id: '123', webhookId: '456' }),
     ).resolves.toMatchObject({
       id: '123',
       webhookId: '456',
     });
-
-    await opts.close();
   });
 
   test('2nd parser required => merged required', async () => {
@@ -218,27 +208,25 @@ describe('multiple input validators with optionals', () => {
         }),
     });
 
-    const opts = routerToServerAndClientNew(webhookRouter);
+    await using ctx = testServerAndClientResource(webhookRouter);
 
     await expect(
-      opts.client.byId.query({ id: '123', webhookId: '456' }),
+      ctx.client.byId.query({ id: '123', webhookId: '456' }),
     ).resolves.toMatchObject({
       id: '123',
       webhookId: '456',
     });
     // @ts-expect-error - missing id and webhookId
-    await expect(opts.client.byId.query()).rejects.toThrow();
+    await expect(ctx.client.byId.query()).rejects.toThrow();
     // @ts-expect-error - missing id and webhookId
-    await expect(opts.client.byId.query(undefined)).rejects.toThrow();
+    await expect(ctx.client.byId.query(undefined)).rejects.toThrow();
     await expect(
-      opts.client.byId.query({ id: '123', eventTypeId: 1, webhookId: '456' }),
+      ctx.client.byId.query({ id: '123', eventTypeId: 1, webhookId: '456' }),
     ).resolves.toMatchObject({
       id: '123',
       eventTypeId: 1,
       webhookId: '456',
     });
-
-    await opts.close();
   });
 
   test('with optional keys', async () => {
@@ -261,22 +249,20 @@ describe('multiple input validators with optionals', () => {
         }),
     });
 
-    const opts = routerToServerAndClientNew(webhookRouter);
+    await using ctx = testServerAndClientResource(webhookRouter);
     await expect(
-      opts.client.byId.query({ id: '123', webhookId: '456' }),
+      ctx.client.byId.query({ id: '123', webhookId: '456' }),
     ).resolves.toMatchObject({
       id: '123',
       webhookId: '456',
     });
     await expect(
-      opts.client.byId.query({ id: '123', webhookId: '456', foo: 'bar' }),
+      ctx.client.byId.query({ id: '123', webhookId: '456', foo: 'bar' }),
     ).resolves.toMatchObject({
       id: '123',
       webhookId: '456',
       foo: 'bar',
     });
-
-    await opts.close();
   });
 
   test('cannot chain optional to required', async () => {
@@ -309,11 +295,9 @@ test('no input', async () => {
     proc,
   });
 
-  const opts = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
-  await expect(opts.client.proc.query()).resolves.toBeUndefined();
-
-  await opts.close();
+  await expect(ctx.client.proc.query()).resolves.toBeUndefined();
 });
 
 test('zod default() string', async () => {
@@ -336,12 +320,10 @@ test('zod default() string', async () => {
     proc,
   });
 
-  const opts = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
-  await expect(opts.client.proc.query()).resolves.toBe('bar');
-  await expect(opts.client.proc.query('hello')).resolves.toBe('hello');
-
-  await opts.close();
+  await expect(ctx.client.proc.query()).resolves.toBe('bar');
+  await expect(ctx.client.proc.query('hello')).resolves.toBe('hello');
 });
 
 test('zod default() required object', async () => {
@@ -368,14 +350,12 @@ test('zod default() required object', async () => {
     proc,
   });
 
-  const opts = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
-  await expect(opts.client.proc.query({ foo: 'bar' })).resolves.toEqual({
+  await expect(ctx.client.proc.query({ foo: 'bar' })).resolves.toEqual({
     foo: 'bar',
   });
-  await expect(opts.client.proc.query({})).resolves.toEqual({ foo: 'foo' });
-
-  await opts.close();
+  await expect(ctx.client.proc.query({})).resolves.toEqual({ foo: 'foo' });
 });
 
 test('zod default() mixed default object', async () => {
@@ -406,25 +386,23 @@ test('zod default() mixed default object', async () => {
     proc,
   });
 
-  const opts = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
   await expect(
-    opts.client.proc.query({ foo: 'bar', bar: 'foo' }),
+    ctx.client.proc.query({ foo: 'bar', bar: 'foo' }),
   ).resolves.toEqual({ foo: 'bar', bar: 'foo' });
-  await expect(opts.client.proc.query({ foo: 'fooFoo' })).resolves.toEqual({
+  await expect(ctx.client.proc.query({ foo: 'fooFoo' })).resolves.toEqual({
     foo: 'fooFoo',
     bar: 'barFoo',
   });
-  await expect(opts.client.proc.query({ foo: 'bar' })).resolves.toEqual({
+  await expect(ctx.client.proc.query({ foo: 'bar' })).resolves.toEqual({
     foo: 'bar',
     bar: 'barFoo',
   });
-  await expect(opts.client.proc.query(undefined)).resolves.toEqual({
+  await expect(ctx.client.proc.query(undefined)).resolves.toEqual({
     foo: 'fooBar',
     bar: 'barFoo',
   });
-
-  await opts.close();
 });
 
 test('zod default() defaults within object', async () => {
@@ -455,17 +433,15 @@ test('zod default() defaults within object', async () => {
     proc,
   });
 
-  const opts = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
   await expect(
-    opts.client.proc.query({ foo: 'bar', bar: 'foo' }),
+    ctx.client.proc.query({ foo: 'bar', bar: 'foo' }),
   ).resolves.toEqual({ foo: 'bar', bar: 'foo' });
-  await expect(opts.client.proc.query(undefined)).resolves.toEqual({
+  await expect(ctx.client.proc.query(undefined)).resolves.toEqual({
     foo: 'defaultFoo',
     bar: 'defaultBar',
   });
-
-  await opts.close();
 });
 
 test('double validators with undefined', async () => {
