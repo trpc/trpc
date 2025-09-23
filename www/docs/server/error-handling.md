@@ -45,6 +45,7 @@ tRPC defines a list of error codes that each represent a different type of error
 | PAYLOAD_TOO_LARGE      | Request entity is larger than limits defined by server.                                                                 | 413       |
 | UNSUPPORTED_MEDIA_TYPE | The server refuses to accept the request because the payload format is in an unsupported format.                        | 415       |
 | UNPROCESSABLE_CONTENT  | The server understands the request method, and the request entity is correct, but the server was unable to process it.  | 422       |
+| PRECONDITION_REQUIRED  | [The server cannot process the request because a required precondition header (such as `If-Match`) is missing. When a precondition header does not match the server-side state, the response should be `412 Precondition Failed.`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/428)                                     | 429       |
 | TOO_MANY_REQUESTS      | The rate limit has been exceeded or too many requests are being sent to the server.                                     | 429       |
 | CLIENT_CLOSED_REQUEST  | Access to the resource has been denied.                                                                                 | 499       |
 | INTERNAL_SERVER_ERROR  | An unspecified error occurred.                                                                                          | 500       |
