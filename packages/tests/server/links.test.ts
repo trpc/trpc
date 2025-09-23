@@ -356,7 +356,7 @@ describe('batching', () => {
     {
       // queries should be batched into a single request
       // url length: 2146 < 9999
-      const clientWithBigMaxURLLength = createTRPCClient<typeof router>({
+      const clientWithBigMaxURLLength = createTRPCClient<typeof appRouter>({
         links: [httpBatchLink({ url: ctx.httpUrl, maxURLLength: 9999 })],
       });
 
@@ -388,7 +388,7 @@ describe('batching', () => {
       },
     });
     const { httpUrl, trpcClientOptions } = ctx;
-    const client = createTRPCClient<typeof router>({
+    const client = createTRPCClient<typeof appRouter>({
       ...trpcClientOptions,
       links: [
         httpBatchLink({
@@ -423,7 +423,7 @@ test('create client with links', async () => {
   await using ctx = testServerAndClientResource(appRouter);
   const { httpUrl, trpcClientOptions } = ctx;
 
-  const client = createTRPCClient<typeof router>({
+  const client = createTRPCClient<typeof appRouter>({
     ...trpcClientOptions,
     links: [
       retryLink({ retry: (opts) => opts.attempts < 3 }),
