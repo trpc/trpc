@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import '@testing-library/react';
 import type { TRPCLink } from '@trpc/client';
@@ -14,7 +14,6 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import type { InferrableClientTypes } from '@trpc/server/unstable-core-do-not-import';
 import { createDeferred, run } from '@trpc/server/unstable-core-do-not-import';
-import { konn } from 'konn';
 import superjson from 'superjson';
 import { z } from 'zod';
 import { zAsyncIterable } from './zAsyncIterable';
@@ -28,153 +27,129 @@ async function waitTRPCClientError<TRoot extends InferrableClientTypes>(
 describe('no transformer', () => {
   const orderedResults: number[] = [];
 
-  const ctx = konn()
-    .beforeEach(() => {
-      const t = initTRPC.create({});
-      orderedResults.length = 0;
+  function createRouter() {
+    const t = initTRPC.create({});
+    const manualRelease = new Map<number, () => void>();
 
-      const manualRelease = new Map<number, () => void>();
+    let iterableDeferred = createDeferred();
+    const nextIterable = () => {
+      iterableDeferred.resolve();
+    };
+    const yieldSpy = vi.fn((v: number) => v);
 
-      let iterableDeferred = createDeferred();
-      const nextIterable = () => {
-        iterableDeferred.resolve();
-      };
-      const yieldSpy = vi.fn((v: number) => v);
-
-      const router = t.router({
-        deferred: t.procedure
-          .input(
-            z.object({
-              wait: z.number(),
-            }),
-          )
-          .query(async (opts) => {
-            await new Promise<void>((resolve) =>
-              setTimeout(resolve, opts.input.wait * 10),
-            );
-            return opts.input.wait;
+    const router = t.router({
+      deferred: t.procedure
+        .input(
+          z.object({
+            wait: z.number(),
           }),
-        embedPromise: t.procedure.query(() => {
-          return {
-            deeply: run(async () => {
-              return {
-                nested: run(async () => {
-                  return {
-                    promise: Promise.resolve('foo'),
-                  };
-                }),
-              };
-            }),
-          };
+        )
+        .query(async (opts) => {
+          await new Promise<void>((resolve) =>
+            setTimeout(resolve, opts.input.wait * 10),
+          );
+          return opts.input.wait;
         }),
-        error: t.procedure.query(() => {
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-        }),
-
-        manualRelease: t.procedure
-          .input(
-            z.object({
-              id: z.number(),
-            }),
-          )
-          .query(async (opts) => {
-            await new Promise<void>((resolve) => {
-              manualRelease.set(opts.input.id, resolve);
-            });
-            return opts.input.id;
-          }),
-
-        iterable: t.procedure
-          .input(
-            z
-              .object({
-                badYield: z.boolean(),
-                badReturn: z.boolean(),
-              })
-              .partial()
-              .optional(),
-          )
-          .output(
-            zAsyncIterable({
-              yield: z.number(),
-              return: z.string(),
-            }),
-          )
-          .query(async function* (opts) {
-            for (let i = 0; i < 10; i++) {
-              yield yieldSpy(i + 1);
-
-              await iterableDeferred.promise;
-
-              iterableDeferred = createDeferred();
-            }
-
-            if (opts.input?.badYield) {
-              yield 'ONLY_YIELDS_NUMBERS' as never;
-            }
-            if (opts.input?.badReturn) {
-              return 123 as never;
-            }
-            return 'done';
-          }),
-      });
-
-      const linkSpy: TRPCLink<typeof router> = () => {
-        // here we just got initialized in the app - this happens once per app
-        // useful for storing cache for instance
-        return ({ next, op }) => {
-          // this is when passing the result to the next link
-          // each link needs to return an observable which propagates results
-          return observable((observer) => {
-            const unsubscribe = next(op).subscribe({
-              next(value) {
-                orderedResults.push(value.result.data as number);
-                observer.next(value);
-              },
-              error: observer.error,
-            });
-            return unsubscribe;
-          });
-        };
-      };
-      const opts = routerToServerAndClientNew(router, {
-        server: {
-          createContext: (opts) => {
-            return opts;
-          },
-        },
-        wsClient: {
-          lazy: {
-            enabled: true,
-            closeMs: 1,
-          },
-        },
-        client(opts) {
-          return {
-            links: [
-              linkSpy,
-              httpBatchStreamLink({
-                url: opts.httpUrl,
+      embedPromise: t.procedure.query(() => {
+        return {
+          deeply: run(async () => {
+            return {
+              nested: run(async () => {
+                return {
+                  promise: Promise.resolve('foo'),
+                };
               }),
-            ],
-          };
-        },
-      });
-      return {
-        ...opts,
-        yieldSpy,
-        manualRelease,
-        nextIterable,
-        iterablePromise: iterableDeferred.promise,
+            };
+          }),
+        };
+      }),
+      error: t.procedure.query(() => {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      }),
+
+      manualRelease: t.procedure
+        .input(
+          z.object({
+            id: z.number(),
+          }),
+        )
+        .query(async (opts) => {
+          await new Promise<void>((resolve) => {
+            manualRelease.set(opts.input.id, resolve);
+          });
+          return opts.input.id;
+        }),
+
+      iterable: t.procedure
+        .input(
+          z
+            .object({
+              badYield: z.boolean(),
+              badReturn: z.boolean(),
+            })
+            .partial()
+            .optional(),
+        )
+        .output(
+          zAsyncIterable({
+            yield: z.number(),
+            return: z.string(),
+          }),
+        )
+        .query(async function* (opts) {
+          for (let i = 0; i < 10; i++) {
+            yield yieldSpy(i + 1);
+
+            await iterableDeferred.promise;
+
+            iterableDeferred = createDeferred();
+          }
+
+          if (opts.input?.badYield) {
+            yield 'ONLY_YIELDS_NUMBERS' as never;
+          }
+          if (opts.input?.badReturn) {
+            return 123 as never;
+          }
+          return 'done';
+        }),
+    });
+
+    return {
+      router,
+      yieldSpy,
+      manualRelease,
+      nextIterable,
+      iterablePromise: iterableDeferred.promise,
+    };
+  }
+
+  function createLinkSpy<
+    TRouter extends InferrableClientTypes,
+  >(): TRPCLink<TRouter> {
+    return () => {
+      // here we just got initialized in the app - this happens once per app
+      // useful for storing cache for instance
+      return ({ next, op }) => {
+        // this is when passing the result to the next link
+        // each link needs to return an observable which propagates results
+        return observable((observer) => {
+          const unsubscribe = next(op).subscribe({
+            next(value) {
+              orderedResults.push(value.result.data as number);
+              observer.next(value);
+            },
+            error: observer.error,
+          });
+          return unsubscribe;
+        });
       };
-    })
-    .afterEach(async (opts) => {
-      await opts?.close?.();
-    })
-    .done();
+    };
+  }
 
   test('server-side call', async () => {
-    const caller = ctx.router.createCaller({});
+    const { router, nextIterable } = createRouter();
+    const caller = router.createCaller({});
     const iterable = await caller.iterable();
     expectTypeOf(iterable).toEqualTypeOf<
       AsyncIterable<number, string, unknown>
@@ -182,19 +157,45 @@ describe('no transformer', () => {
 
     const aggregated: number[] = [];
     for await (const value of iterable) {
-      ctx.nextIterable();
+      nextIterable();
       aggregated.push(value);
     }
     expect(aggregated).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   test('out-of-order streaming', async () => {
-    const { client } = ctx;
+    orderedResults.length = 0;
+    const { router } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        createContext: (opts) => {
+          return opts;
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 1,
+        },
+      },
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+            }),
+          ],
+        };
+      },
+    });
 
     const results = await Promise.all([
-      client.deferred.query({ wait: 3 }),
-      client.deferred.query({ wait: 1 }),
-      client.deferred.query({ wait: 2 }),
+      ctx.client.deferred.query({ wait: 3 }),
+      ctx.client.deferred.query({ wait: 1 }),
+      ctx.client.deferred.query({ wait: 2 }),
     ]);
 
     // batch preserves request order
@@ -204,7 +205,33 @@ describe('no transformer', () => {
   });
 
   test('out-of-order streaming with manual release', async () => {
-    const { client } = ctx;
+    const { router, manualRelease } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        createContext: (opts) => {
+          return opts;
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 1,
+        },
+      },
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+            }),
+          ],
+        };
+      },
+    });
+
     const resolved: Record<number, boolean> = {
       0: false,
       1: false,
@@ -212,26 +239,26 @@ describe('no transformer', () => {
     };
 
     const promises = [
-      client.manualRelease.query({ id: 0 }).then((v) => {
+      ctx.client.manualRelease.query({ id: 0 }).then((v) => {
         resolved[0] = true;
         return v;
       }),
-      client.manualRelease.query({ id: 1 }).then((v) => {
+      ctx.client.manualRelease.query({ id: 1 }).then((v) => {
         resolved[1] = true;
         return v;
       }),
-      client.manualRelease.query({ id: 2 }).then((v) => {
+      ctx.client.manualRelease.query({ id: 2 }).then((v) => {
         resolved[2] = true;
         return v;
       }),
     ] as const;
 
     await vi.waitFor(() => {
-      expect(ctx.manualRelease.size).toBe(3);
+      expect(manualRelease.size).toBe(3);
     });
 
     // release 1
-    ctx.manualRelease.get(1)!();
+    manualRelease.get(1)!();
     await vi.waitFor(() => {
       expect(resolved[1]).toBe(true);
       expect(resolved[0]).toBe(false);
@@ -239,8 +266,8 @@ describe('no transformer', () => {
     });
 
     // release 0 + 2
-    ctx.manualRelease.get(0)!();
-    ctx.manualRelease.get(2)!();
+    manualRelease.get(0)!();
+    manualRelease.get(2)!();
 
     expect(ctx.createContextSpy).toHaveBeenCalledTimes(1);
 
@@ -248,11 +275,36 @@ describe('no transformer', () => {
   });
 
   test('out-of-order streaming with error', async () => {
-    const { client } = ctx;
+    const { router } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        createContext: (opts) => {
+          return opts;
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 1,
+        },
+      },
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+            }),
+          ],
+        };
+      },
+    });
 
     const results = await Promise.allSettled([
-      client.deferred.query({ wait: 1 }),
-      client.error.query(),
+      ctx.client.deferred.query({ wait: 1 }),
+      ctx.client.error.query(),
     ]);
 
     expect(results).toMatchInlineSnapshot(`
@@ -270,9 +322,34 @@ describe('no transformer', () => {
   });
 
   test('iterable', async () => {
-    const { client } = ctx;
+    const { router, nextIterable } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
 
-    const iterable = await client.iterable.query();
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        createContext: (opts) => {
+          return opts;
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 1,
+        },
+      },
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+            }),
+          ],
+        };
+      },
+    });
+
+    const iterable = await ctx.client.iterable.query();
 
     expectTypeOf(iterable).toEqualTypeOf<
       AsyncIterable<number, string, unknown>
@@ -280,7 +357,7 @@ describe('no transformer', () => {
     const aggregated: unknown[] = [];
     for await (const value of iterable) {
       aggregated.push(value);
-      ctx.nextIterable();
+      nextIterable();
     }
     expect(aggregated).toMatchInlineSnapshot(`
       Array [
@@ -299,9 +376,34 @@ describe('no transformer', () => {
   });
 
   test('iterable return', async () => {
-    const { client } = ctx;
+    const { router, nextIterable } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
 
-    const iterable = await client.iterable.query();
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        createContext: (opts) => {
+          return opts;
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 1,
+        },
+      },
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+            }),
+          ],
+        };
+      },
+    });
+
+    const iterable = await ctx.client.iterable.query();
     const iterator = iterable[Symbol.asyncIterator]();
 
     const aggregated: unknown[] = [];
@@ -309,41 +411,66 @@ describe('no transformer', () => {
     let r;
     while (!(r = await iterator.next()).done) {
       aggregated.push(r.value);
-      ctx.nextIterable();
+      nextIterable();
     }
     expect(r.value).toBe('done');
   });
 
   test('iterable cancellation', async () => {
-    const { client } = ctx;
+    const { router, nextIterable, yieldSpy, iterablePromise } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        createContext: (opts) => {
+          return opts;
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 1,
+        },
+      },
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+            }),
+          ],
+        };
+      },
+    });
+
     const ac = new AbortController();
 
-    const iterable = await client.iterable.query(undefined, {
+    const iterable = await ctx.client.iterable.query(undefined, {
       signal: ac.signal,
     });
     const aggregated: unknown[] = [];
-    ctx.nextIterable();
+    nextIterable();
     const err = await waitError(async () => {
       for await (const value of iterable) {
         aggregated.push(value);
         if (value === 2) {
           ac.abort();
         }
-        ctx.nextIterable();
+        nextIterable();
         await new Promise((resolve) => setTimeout(resolve, 5));
       }
     });
     for (let i = 0; i < 10; i++) {
       // release some more values, all shouldn't be yielded
-      await ctx.iterablePromise;
-      ctx.nextIterable();
+      await iterablePromise;
+      nextIterable();
     }
 
     await vi.waitFor(() => {
-      expect(ctx.connections.size).toBe(0);
+      expect(ctx.wsClient.connection).toBeNull();
     });
-    expect(ctx.yieldSpy.mock.calls.flatMap((it) => it[0]))
-      .toMatchInlineSnapshot(`
+    expect(yieldSpy.mock.calls.flatMap((it) => it[0])).toMatchInlineSnapshot(`
         Array [
           1,
           2,
@@ -352,23 +479,48 @@ describe('no transformer', () => {
           5,
         ]
       `);
-    expect(err).toMatchInlineSnapshot(
-      `[AbortError: The operation was aborted.]`,
-    );
+    expect(err).toMatchInlineSnapshot(`DOMException {}`);
     expect(err.message).toMatchInlineSnapshot(`"The operation was aborted."`);
   });
 
   test('output validation iterable yield error', async () => {
+    const { router, nextIterable } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        createContext: (opts) => {
+          return opts;
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 1,
+        },
+      },
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+            }),
+          ],
+        };
+      },
+    });
+
     const clientError = await waitError(
       async () => {
         const iterable = await ctx.client.iterable.query({
           badYield: true,
         });
         for await (const value of iterable) {
-          ctx.nextIterable();
+          nextIterable();
         }
       },
-      TRPCClientError<typeof ctx.router>,
+      TRPCClientError<typeof router>,
     );
 
     expect(clientError.data?.code).toBe('INTERNAL_SERVER_ERROR');
@@ -391,16 +543,43 @@ describe('no transformer', () => {
   });
 
   test('output validation iterable return error', async () => {
+    const { router, nextIterable } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        createContext: (opts) => {
+          return opts;
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 1,
+        },
+      },
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+            }),
+          ],
+        };
+      },
+    });
+
     const clientError = await waitError(
       async () => {
         const iterable = await ctx.client.iterable.query({
           badReturn: true,
         });
         for await (const value of iterable) {
-          ctx.nextIterable();
+          nextIterable();
         }
       },
-      TRPCClientError<typeof ctx.router>,
+      TRPCClientError<typeof router>,
     );
 
     expect(clientError.data?.code).toBe('INTERNAL_SERVER_ERROR');
@@ -423,9 +602,34 @@ describe('no transformer', () => {
   });
 
   test('embed promise', async () => {
-    const { client } = ctx;
+    const { router } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
 
-    const result = await client.embedPromise.query();
+    await using ctx = testServerAndClientResource(router, {
+      server: {
+        createContext: (opts) => {
+          return opts;
+        },
+      },
+      wsClient: {
+        lazy: {
+          enabled: true,
+          closeMs: 1,
+        },
+      },
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            httpBatchStreamLink({
+              url: opts.httpUrl,
+            }),
+          ],
+        };
+      },
+    });
+
+    const result = await ctx.client.embedPromise.query();
 
     expectTypeOf(result).toEqualTypeOf<{
       deeply: Promise<{
@@ -448,127 +652,111 @@ describe('no transformer', () => {
 
 describe('with transformer', () => {
   const orderedResults: number[] = [];
-  const ctx = konn()
-    .beforeEach(() => {
-      const onIterableInfiniteSpy = vi.fn<
-        (args: {
-          input: {
-            lastEventId?: number;
-          };
-        }) => void
-      >();
-      const ee = new EventEmitter();
-      const eeEmit = (data: number) => {
-        ee.emit('data', data);
-      };
 
-      const t = initTRPC.create({
-        transformer: superjson,
-      });
-      orderedResults.length = 0;
-      const infiniteYields = vi.fn();
+  function createRouter() {
+    const t = initTRPC.create({
+      transformer: superjson,
+    });
 
-      const router = t.router({
-        wait: t.procedure
-          .input(
-            z.object({
-              wait: z.number(),
-            }),
-          )
-          .query(async (opts) => {
-            await new Promise<typeof opts.input.wait>((resolve) =>
-              setTimeout(resolve, opts.input.wait * 10),
-            );
-            return opts.input.wait;
+    const router = t.router({
+      wait: t.procedure
+        .input(
+          z.object({
+            wait: z.number(),
           }),
-        deferred: t.procedure.query(() => {
-          return {
-            foo: Promise.resolve('bar'),
-          };
+        )
+        .query(async (opts) => {
+          await new Promise<typeof opts.input.wait>((resolve) =>
+            setTimeout(resolve, opts.input.wait * 10),
+          );
+          return opts.input.wait;
         }),
-        error: t.procedure.query(() => {
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-        }),
-        iterable: t.procedure.query(async function* () {
-          yield 1 as number;
-          yield 2;
-          yield 3;
-
-          return 'done';
-        }),
-        iterableWithError: t.procedure.query(async function* () {
-          yield 1;
-          yield 2;
-          throw new Error('foo');
-        }),
-      });
-
-      const linkSpy: TRPCLink<typeof router> = () => {
-        // here we just got initialized in the app - this happens once per app
-        // useful for storing cache for instance
-        return ({ next, op }) => {
-          // this is when passing the result to the next link
-          // each link needs to return an observable which propagates results
-          return observable((observer) => {
-            const unsubscribe = next(op).subscribe({
-              next(value) {
-                orderedResults.push(value.result.data as number);
-                observer.next(value);
-              },
-              error: observer.error,
-            });
-            return unsubscribe;
-          });
+      deferred: t.procedure.query(() => {
+        return {
+          foo: Promise.resolve('bar'),
         };
+      }),
+      error: t.procedure.query(() => {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      }),
+      iterable: t.procedure.query(async function* () {
+        yield 1 as number;
+        yield 2;
+        yield 3;
+
+        return 'done';
+      }),
+      iterableWithError: t.procedure.query(async function* () {
+        yield 1;
+        yield 2;
+        throw new Error('foo');
+      }),
+    });
+
+    return { router };
+  }
+
+  function createLinkSpy<
+    TRouter extends InferrableClientTypes,
+  >(): TRPCLink<TRouter> {
+    return () => {
+      // here we just got initialized in the app - this happens once per app
+      // useful for storing cache for instance
+      return ({ next, op }) => {
+        // this is when passing the result to the next link
+        // each link needs to return an observable which propagates results
+        return observable((observer) => {
+          const unsubscribe = next(op).subscribe({
+            next(value) {
+              orderedResults.push(value.result.data as number);
+              observer.next(value);
+            },
+            error: observer.error,
+          });
+          return unsubscribe;
+        });
       };
-      const opts = routerToServerAndClientNew(router, {
-        server: {},
-        client(opts) {
-          return {
-            links: [
-              linkSpy,
-              splitLink({
-                condition: (op) => !!op.context['httpBatchLink'],
-                true: httpBatchLink({
+    };
+  }
+
+  test('out-of-order streaming', async () => {
+    orderedResults.length = 0;
+    const { router } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            splitLink({
+              condition: (op) => !!op.context['httpBatchLink'],
+              true: httpBatchLink({
+                url: opts.httpUrl,
+                transformer: superjson,
+              }),
+              false: splitLink({
+                condition: (op) => op.type === 'subscription',
+                true: httpSubscriptionLink({
                   url: opts.httpUrl,
                   transformer: superjson,
                 }),
-                false: splitLink({
-                  condition: (op) => op.type === 'subscription',
-                  true: httpSubscriptionLink({
-                    url: opts.httpUrl,
-                    transformer: superjson,
-                  }),
-                  false: httpBatchStreamLink({
-                    url: opts.httpUrl,
-                    transformer: superjson,
-                  }),
+                false: httpBatchStreamLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
                 }),
               }),
-            ],
-          };
-        },
-      });
-      return {
-        ...opts,
-        ee,
-        eeEmit,
-        infiniteYields,
-        onIterableInfiniteSpy,
-      };
-    })
-    .afterEach(async (opts) => {
-      await opts?.close?.();
-    })
-    .done();
-
-  test('out-of-order streaming', async () => {
-    const { client } = ctx;
+            }),
+          ],
+        };
+      },
+    });
 
     const results = await Promise.all([
-      client.wait.query({ wait: 3 }),
-      client.wait.query({ wait: 1 }),
-      client.wait.query({ wait: 2 }),
+      ctx.client.wait.query({ wait: 3 }),
+      ctx.client.wait.query({ wait: 1 }),
+      ctx.client.wait.query({ wait: 2 }),
     ]);
 
     // batch preserves request order
@@ -577,11 +765,41 @@ describe('with transformer', () => {
     expect(orderedResults).toEqual([1, 2, 3]);
   });
   test('out-of-order streaming with error', async () => {
-    const { client } = ctx;
+    const { router } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
+
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            splitLink({
+              condition: (op) => !!op.context['httpBatchLink'],
+              true: httpBatchLink({
+                url: opts.httpUrl,
+                transformer: superjson,
+              }),
+              false: splitLink({
+                condition: (op) => op.type === 'subscription',
+                true: httpSubscriptionLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+                false: httpBatchStreamLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+              }),
+            }),
+          ],
+        };
+      },
+    });
 
     const results = await Promise.allSettled([
-      client.wait.query({ wait: 1 }),
-      client.error.query(),
+      ctx.client.wait.query({ wait: 1 }),
+      ctx.client.error.query(),
     ]);
 
     expect(results).toMatchInlineSnapshot(`
@@ -599,9 +817,39 @@ describe('with transformer', () => {
   });
 
   test('iterable', async () => {
-    const { client } = ctx;
+    const { router } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
 
-    const iterable = await client.iterable.query();
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            splitLink({
+              condition: (op) => !!op.context['httpBatchLink'],
+              true: httpBatchLink({
+                url: opts.httpUrl,
+                transformer: superjson,
+              }),
+              false: splitLink({
+                condition: (op) => op.type === 'subscription',
+                true: httpSubscriptionLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+                false: httpBatchStreamLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+              }),
+            }),
+          ],
+        };
+      },
+    });
+
+    const iterable = await ctx.client.iterable.query();
 
     expectTypeOf(iterable).toEqualTypeOf<
       AsyncIterable<number, string, unknown>
@@ -621,9 +869,39 @@ describe('with transformer', () => {
   });
 
   test('iterable return', async () => {
-    const { client } = ctx;
+    const { router } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
 
-    const iterable = await client.iterable.query();
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            splitLink({
+              condition: (op) => !!op.context['httpBatchLink'],
+              true: httpBatchLink({
+                url: opts.httpUrl,
+                transformer: superjson,
+              }),
+              false: splitLink({
+                condition: (op) => op.type === 'subscription',
+                true: httpSubscriptionLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+                false: httpBatchStreamLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+              }),
+            }),
+          ],
+        };
+      },
+    });
+
+    const iterable = await ctx.client.iterable.query();
     const iterator = iterable[Symbol.asyncIterator]();
 
     const aggregated: unknown[] = [];
@@ -643,12 +921,42 @@ describe('with transformer', () => {
   });
 
   test('call deferred procedures with httpBatchLink', async () => {
-    const { client } = ctx;
+    const { router } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
 
-    type AppRouter = (typeof ctx)['router'];
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            splitLink({
+              condition: (op) => !!op.context['httpBatchLink'],
+              true: httpBatchLink({
+                url: opts.httpUrl,
+                transformer: superjson,
+              }),
+              false: splitLink({
+                condition: (op) => op.type === 'subscription',
+                true: httpSubscriptionLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+                false: httpBatchStreamLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+              }),
+            }),
+          ],
+        };
+      },
+    });
+
+    type AppRouter = typeof router;
     {
       const err = await waitTRPCClientError<AppRouter>(
-        client.iterable.query(undefined, {
+        ctx.client.iterable.query(undefined, {
           context: {
             httpBatchLink: true,
           },
@@ -668,7 +976,7 @@ describe('with transformer', () => {
     }
     {
       const err = await waitTRPCClientError<AppRouter>(
-        client.deferred.query(undefined, {
+        ctx.client.deferred.query(undefined, {
           context: {
             httpBatchLink: true,
           },
@@ -690,9 +998,39 @@ describe('with transformer', () => {
   });
 
   test('iterable with error', async () => {
-    const { client, router } = ctx;
+    const { router } = createRouter();
+    const linkSpy = createLinkSpy<typeof router>();
 
-    const iterable = await client.iterableWithError.query();
+    await using ctx = testServerAndClientResource(router, {
+      server: {},
+      client(opts) {
+        return {
+          links: [
+            linkSpy,
+            splitLink({
+              condition: (op) => !!op.context['httpBatchLink'],
+              true: httpBatchLink({
+                url: opts.httpUrl,
+                transformer: superjson,
+              }),
+              false: splitLink({
+                condition: (op) => op.type === 'subscription',
+                true: httpSubscriptionLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+                false: httpBatchStreamLink({
+                  url: opts.httpUrl,
+                  transformer: superjson,
+                }),
+              }),
+            }),
+          ],
+        };
+      },
+    });
+
+    const iterable = await ctx.client.iterableWithError.query();
 
     const aggregated: unknown[] = [];
     const error = await waitError(
