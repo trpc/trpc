@@ -24,13 +24,32 @@ async function waitTRPCClientError<TRoot extends InferrableClientTypes>(
   return waitError<TRPCClientError<TRoot>>(fnOrPromise, TRPCClientError);
 }
 
-describe('no transformer', () => {
+function createLinkSpy<TRouter extends InferrableClientTypes>() {
   const orderedResults: number[] = [];
+  const link: TRPCLink<TRouter> = () => {
+    // here we just got initialized in the app - this happens once per app
+    // useful for storing cache for instance
+    return ({ next, op }) => {
+      // this is when passing the result to the next link
+      // each link needs to return an observable which propagates results
+      return observable((observer) => {
+        const unsubscribe = next(op).subscribe({
+          next(value) {
+            orderedResults.push(value.result.data as number);
+            observer.next(value);
+          },
+          error: observer.error,
+        });
+        return unsubscribe;
+      });
+    };
+  };
+  return { orderedResults, link };
+}
 
-  function createRouter() {
+describe('no transformer', () => {
+  test('server-side call', async () => {
     const t = initTRPC.create({});
-    const manualRelease = new Map<number, () => void>();
-
     let iterableDeferred = createDeferred();
     const nextIterable = () => {
       iterableDeferred.resolve();
@@ -38,48 +57,6 @@ describe('no transformer', () => {
     const yieldSpy = vi.fn((v: number) => v);
 
     const router = t.router({
-      deferred: t.procedure
-        .input(
-          z.object({
-            wait: z.number(),
-          }),
-        )
-        .query(async (opts) => {
-          await new Promise<void>((resolve) =>
-            setTimeout(resolve, opts.input.wait * 10),
-          );
-          return opts.input.wait;
-        }),
-      embedPromise: t.procedure.query(() => {
-        return {
-          deeply: run(async () => {
-            return {
-              nested: run(async () => {
-                return {
-                  promise: Promise.resolve('foo'),
-                };
-              }),
-            };
-          }),
-        };
-      }),
-      error: t.procedure.query(() => {
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-      }),
-
-      manualRelease: t.procedure
-        .input(
-          z.object({
-            id: z.number(),
-          }),
-        )
-        .query(async (opts) => {
-          await new Promise<void>((resolve) => {
-            manualRelease.set(opts.input.id, resolve);
-          });
-          return opts.input.id;
-        }),
-
       iterable: t.procedure
         .input(
           z
@@ -115,40 +92,6 @@ describe('no transformer', () => {
         }),
     });
 
-    return {
-      router,
-      yieldSpy,
-      manualRelease,
-      nextIterable,
-      iterablePromise: iterableDeferred.promise,
-    };
-  }
-
-  function createLinkSpy<
-    TRouter extends InferrableClientTypes,
-  >(): TRPCLink<TRouter> {
-    return () => {
-      // here we just got initialized in the app - this happens once per app
-      // useful for storing cache for instance
-      return ({ next, op }) => {
-        // this is when passing the result to the next link
-        // each link needs to return an observable which propagates results
-        return observable((observer) => {
-          const unsubscribe = next(op).subscribe({
-            next(value) {
-              orderedResults.push(value.result.data as number);
-              observer.next(value);
-            },
-            error: observer.error,
-          });
-          return unsubscribe;
-        });
-      };
-    };
-  }
-
-  test('server-side call', async () => {
-    const { router, nextIterable } = createRouter();
     const caller = router.createCaller({});
     const iterable = await caller.iterable();
     expectTypeOf(iterable).toEqualTypeOf<
@@ -164,8 +107,23 @@ describe('no transformer', () => {
   });
 
   test('out-of-order streaming', async () => {
-    orderedResults.length = 0;
-    const { router } = createRouter();
+    const t = initTRPC.create({});
+
+    const router = t.router({
+      deferred: t.procedure
+        .input(
+          z.object({
+            wait: z.number(),
+          }),
+        )
+        .query(async (opts) => {
+          await new Promise<void>((resolve) =>
+            setTimeout(resolve, opts.input.wait * 10),
+          );
+          return opts.input.wait;
+        }),
+    });
+
     const linkSpy = createLinkSpy<typeof router>();
 
     await using ctx = testServerAndClientResource(router, {
@@ -183,7 +141,7 @@ describe('no transformer', () => {
       client(opts) {
         return {
           links: [
-            linkSpy,
+            linkSpy.link,
             httpBatchStreamLink({
               url: opts.httpUrl,
             }),
@@ -201,12 +159,41 @@ describe('no transformer', () => {
     // batch preserves request order
     expect(results).toEqual([3, 1, 2]);
     // streaming preserves response order
-    expect(orderedResults).toEqual([1, 2, 3]);
+    expect(linkSpy.orderedResults).toEqual([1, 2, 3]);
   });
 
   test('out-of-order streaming with manual release', async () => {
-    const { router, manualRelease } = createRouter();
-    const linkSpy = createLinkSpy<typeof router>();
+    const t = initTRPC.create({});
+    const manualRelease = new Map<number, () => void>();
+
+    const router = t.router({
+      manualRelease: t.procedure
+        .input(
+          z.object({
+            id: z.number(),
+          }),
+        )
+        .query(async (opts) => {
+          await new Promise<void>((resolve) => {
+            manualRelease.set(opts.input.id, resolve);
+          });
+          return opts.input.id;
+        }),
+    });
+
+    const linkSpy: TRPCLink<typeof router> = () => {
+      return ({ next, op }) => {
+        return observable((observer) => {
+          const unsubscribe = next(op).subscribe({
+            next(value) {
+              observer.next(value);
+            },
+            error: observer.error,
+          });
+          return unsubscribe;
+        });
+      };
+    };
 
     await using ctx = testServerAndClientResource(router, {
       server: {
@@ -275,7 +262,26 @@ describe('no transformer', () => {
   });
 
   test('out-of-order streaming with error', async () => {
-    const { router } = createRouter();
+    const t = initTRPC.create({});
+
+    const router = t.router({
+      deferred: t.procedure
+        .input(
+          z.object({
+            wait: z.number(),
+          }),
+        )
+        .query(async (opts) => {
+          await new Promise<void>((resolve) =>
+            setTimeout(resolve, opts.input.wait * 10),
+          );
+          return opts.input.wait;
+        }),
+      error: t.procedure.query(() => {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      }),
+    });
+
     const linkSpy = createLinkSpy<typeof router>();
 
     await using ctx = testServerAndClientResource(router, {
@@ -293,7 +299,7 @@ describe('no transformer', () => {
       client(opts) {
         return {
           links: [
-            linkSpy,
+            linkSpy.link,
             httpBatchStreamLink({
               url: opts.httpUrl,
             }),
@@ -322,7 +328,49 @@ describe('no transformer', () => {
   });
 
   test('iterable', async () => {
-    const { router, nextIterable } = createRouter();
+    const t = initTRPC.create({});
+    let iterableDeferred = createDeferred();
+    const nextIterable = () => {
+      iterableDeferred.resolve();
+    };
+    const yieldSpy = vi.fn((v: number) => v);
+
+    const router = t.router({
+      iterable: t.procedure
+        .input(
+          z
+            .object({
+              badYield: z.boolean(),
+              badReturn: z.boolean(),
+            })
+            .partial()
+            .optional(),
+        )
+        .output(
+          zAsyncIterable({
+            yield: z.number(),
+            return: z.string(),
+          }),
+        )
+        .query(async function* (opts) {
+          for (let i = 0; i < 10; i++) {
+            yield yieldSpy(i + 1);
+
+            await iterableDeferred.promise;
+
+            iterableDeferred = createDeferred();
+          }
+
+          if (opts.input?.badYield) {
+            yield 'ONLY_YIELDS_NUMBERS' as never;
+          }
+          if (opts.input?.badReturn) {
+            return 123 as never;
+          }
+          return 'done';
+        }),
+    });
+
     const linkSpy = createLinkSpy<typeof router>();
 
     await using ctx = testServerAndClientResource(router, {
@@ -340,7 +388,7 @@ describe('no transformer', () => {
       client(opts) {
         return {
           links: [
-            linkSpy,
+            linkSpy.link,
             httpBatchStreamLink({
               url: opts.httpUrl,
             }),
@@ -376,7 +424,49 @@ describe('no transformer', () => {
   });
 
   test('iterable return', async () => {
-    const { router, nextIterable } = createRouter();
+    const t = initTRPC.create({});
+    let iterableDeferred = createDeferred();
+    const nextIterable = () => {
+      iterableDeferred.resolve();
+    };
+    const yieldSpy = vi.fn((v: number) => v);
+
+    const router = t.router({
+      iterable: t.procedure
+        .input(
+          z
+            .object({
+              badYield: z.boolean(),
+              badReturn: z.boolean(),
+            })
+            .partial()
+            .optional(),
+        )
+        .output(
+          zAsyncIterable({
+            yield: z.number(),
+            return: z.string(),
+          }),
+        )
+        .query(async function* (opts) {
+          for (let i = 0; i < 10; i++) {
+            yield yieldSpy(i + 1);
+
+            await iterableDeferred.promise;
+
+            iterableDeferred = createDeferred();
+          }
+
+          if (opts.input?.badYield) {
+            yield 'ONLY_YIELDS_NUMBERS' as never;
+          }
+          if (opts.input?.badReturn) {
+            return 123 as never;
+          }
+          return 'done';
+        }),
+    });
+
     const linkSpy = createLinkSpy<typeof router>();
 
     await using ctx = testServerAndClientResource(router, {
@@ -394,7 +484,7 @@ describe('no transformer', () => {
       client(opts) {
         return {
           links: [
-            linkSpy,
+            linkSpy.link,
             httpBatchStreamLink({
               url: opts.httpUrl,
             }),
@@ -417,7 +507,50 @@ describe('no transformer', () => {
   });
 
   test('iterable cancellation', async () => {
-    const { router, nextIterable, yieldSpy, iterablePromise } = createRouter();
+    const t = initTRPC.create({});
+    let iterableDeferred = createDeferred();
+    const nextIterable = () => {
+      iterableDeferred.resolve();
+    };
+    const yieldSpy = vi.fn((v: number) => v);
+    const iterablePromise = iterableDeferred.promise;
+
+    const router = t.router({
+      iterable: t.procedure
+        .input(
+          z
+            .object({
+              badYield: z.boolean(),
+              badReturn: z.boolean(),
+            })
+            .partial()
+            .optional(),
+        )
+        .output(
+          zAsyncIterable({
+            yield: z.number(),
+            return: z.string(),
+          }),
+        )
+        .query(async function* (opts) {
+          for (let i = 0; i < 10; i++) {
+            yield yieldSpy(i + 1);
+
+            await iterableDeferred.promise;
+
+            iterableDeferred = createDeferred();
+          }
+
+          if (opts.input?.badYield) {
+            yield 'ONLY_YIELDS_NUMBERS' as never;
+          }
+          if (opts.input?.badReturn) {
+            return 123 as never;
+          }
+          return 'done';
+        }),
+    });
+
     const linkSpy = createLinkSpy<typeof router>();
 
     await using ctx = testServerAndClientResource(router, {
@@ -435,7 +568,7 @@ describe('no transformer', () => {
       client(opts) {
         return {
           links: [
-            linkSpy,
+            linkSpy.link,
             httpBatchStreamLink({
               url: opts.httpUrl,
             }),
@@ -484,7 +617,49 @@ describe('no transformer', () => {
   });
 
   test('output validation iterable yield error', async () => {
-    const { router, nextIterable } = createRouter();
+    const t = initTRPC.create({});
+    let iterableDeferred = createDeferred();
+    const nextIterable = () => {
+      iterableDeferred.resolve();
+    };
+    const yieldSpy = vi.fn((v: number) => v);
+
+    const router = t.router({
+      iterable: t.procedure
+        .input(
+          z
+            .object({
+              badYield: z.boolean(),
+              badReturn: z.boolean(),
+            })
+            .partial()
+            .optional(),
+        )
+        .output(
+          zAsyncIterable({
+            yield: z.number(),
+            return: z.string(),
+          }),
+        )
+        .query(async function* (opts) {
+          for (let i = 0; i < 10; i++) {
+            yield yieldSpy(i + 1);
+
+            await iterableDeferred.promise;
+
+            iterableDeferred = createDeferred();
+          }
+
+          if (opts.input?.badYield) {
+            yield 'ONLY_YIELDS_NUMBERS' as never;
+          }
+          if (opts.input?.badReturn) {
+            return 123 as never;
+          }
+          return 'done';
+        }),
+    });
+
     const linkSpy = createLinkSpy<typeof router>();
 
     await using ctx = testServerAndClientResource(router, {
@@ -502,7 +677,7 @@ describe('no transformer', () => {
       client(opts) {
         return {
           links: [
-            linkSpy,
+            linkSpy.link,
             httpBatchStreamLink({
               url: opts.httpUrl,
             }),
@@ -543,7 +718,49 @@ describe('no transformer', () => {
   });
 
   test('output validation iterable return error', async () => {
-    const { router, nextIterable } = createRouter();
+    const t = initTRPC.create({});
+    let iterableDeferred = createDeferred();
+    const nextIterable = () => {
+      iterableDeferred.resolve();
+    };
+    const yieldSpy = vi.fn((v: number) => v);
+
+    const router = t.router({
+      iterable: t.procedure
+        .input(
+          z
+            .object({
+              badYield: z.boolean(),
+              badReturn: z.boolean(),
+            })
+            .partial()
+            .optional(),
+        )
+        .output(
+          zAsyncIterable({
+            yield: z.number(),
+            return: z.string(),
+          }),
+        )
+        .query(async function* (opts) {
+          for (let i = 0; i < 10; i++) {
+            yield yieldSpy(i + 1);
+
+            await iterableDeferred.promise;
+
+            iterableDeferred = createDeferred();
+          }
+
+          if (opts.input?.badYield) {
+            yield 'ONLY_YIELDS_NUMBERS' as never;
+          }
+          if (opts.input?.badReturn) {
+            return 123 as never;
+          }
+          return 'done';
+        }),
+    });
+
     const linkSpy = createLinkSpy<typeof router>();
 
     await using ctx = testServerAndClientResource(router, {
@@ -561,7 +778,7 @@ describe('no transformer', () => {
       client(opts) {
         return {
           links: [
-            linkSpy,
+            linkSpy.link,
             httpBatchStreamLink({
               url: opts.httpUrl,
             }),
@@ -602,7 +819,20 @@ describe('no transformer', () => {
   });
 
   test('embed promise', async () => {
-    const { router } = createRouter();
+    const t = initTRPC.create({});
+
+    const router = t.router({
+      embedPromise: t.procedure.query(() => {
+        return {
+          deeply: Promise.resolve({
+            nested: Promise.resolve({
+              promise: Promise.resolve('foo'),
+            }),
+          }),
+        };
+      }),
+    });
+
     const linkSpy = createLinkSpy<typeof router>();
 
     await using ctx = testServerAndClientResource(router, {
@@ -620,7 +850,7 @@ describe('no transformer', () => {
       client(opts) {
         return {
           links: [
-            linkSpy,
+            linkSpy.link,
             httpBatchStreamLink({
               url: opts.httpUrl,
             }),
@@ -651,9 +881,7 @@ describe('no transformer', () => {
 });
 
 describe('with transformer', () => {
-  const orderedResults: number[] = [];
-
-  function createRouter() {
+  test('out-of-order streaming', async () => {
     const t = initTRPC.create({
       transformer: superjson,
     });
@@ -671,57 +899,8 @@ describe('with transformer', () => {
           );
           return opts.input.wait;
         }),
-      deferred: t.procedure.query(() => {
-        return {
-          foo: Promise.resolve('bar'),
-        };
-      }),
-      error: t.procedure.query(() => {
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
-      }),
-      iterable: t.procedure.query(async function* () {
-        yield 1 as number;
-        yield 2;
-        yield 3;
-
-        return 'done';
-      }),
-      iterableWithError: t.procedure.query(async function* () {
-        yield 1;
-        yield 2;
-        throw new Error('foo');
-      }),
     });
 
-    return { router };
-  }
-
-  function createLinkSpy<
-    TRouter extends InferrableClientTypes,
-  >(): TRPCLink<TRouter> {
-    return () => {
-      // here we just got initialized in the app - this happens once per app
-      // useful for storing cache for instance
-      return ({ next, op }) => {
-        // this is when passing the result to the next link
-        // each link needs to return an observable which propagates results
-        return observable((observer) => {
-          const unsubscribe = next(op).subscribe({
-            next(value) {
-              orderedResults.push(value.result.data as number);
-              observer.next(value);
-            },
-            error: observer.error,
-          });
-          return unsubscribe;
-        });
-      };
-    };
-  }
-
-  test('out-of-order streaming', async () => {
-    orderedResults.length = 0;
-    const { router } = createRouter();
     const linkSpy = createLinkSpy<typeof router>();
 
     await using ctx = testServerAndClientResource(router, {
@@ -729,7 +908,7 @@ describe('with transformer', () => {
       client(opts) {
         return {
           links: [
-            linkSpy,
+            linkSpy.link,
             splitLink({
               condition: (op) => !!op.context['httpBatchLink'],
               true: httpBatchLink({
@@ -762,10 +941,31 @@ describe('with transformer', () => {
     // batch preserves request order
     expect(results).toEqual([3, 1, 2]);
     // streaming preserves response order
-    expect(orderedResults).toEqual([1, 2, 3]);
+    expect(linkSpy.orderedResults).toEqual([1, 2, 3]);
   });
   test('out-of-order streaming with error', async () => {
-    const { router } = createRouter();
+    const t = initTRPC.create({
+      transformer: superjson,
+    });
+
+    const router = t.router({
+      wait: t.procedure
+        .input(
+          z.object({
+            wait: z.number(),
+          }),
+        )
+        .query(async (opts) => {
+          await new Promise<typeof opts.input.wait>((resolve) =>
+            setTimeout(resolve, opts.input.wait * 10),
+          );
+          return opts.input.wait;
+        }),
+      error: t.procedure.query(() => {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      }),
+    });
+
     const linkSpy = createLinkSpy<typeof router>();
 
     await using ctx = testServerAndClientResource(router, {
@@ -773,7 +973,7 @@ describe('with transformer', () => {
       client(opts) {
         return {
           links: [
-            linkSpy,
+            linkSpy.link,
             splitLink({
               condition: (op) => !!op.context['httpBatchLink'],
               true: httpBatchLink({
@@ -817,7 +1017,20 @@ describe('with transformer', () => {
   });
 
   test('iterable', async () => {
-    const { router } = createRouter();
+    const t = initTRPC.create({
+      transformer: superjson,
+    });
+
+    const router = t.router({
+      iterable: t.procedure.query(async function* () {
+        yield 1 as number;
+        yield 2;
+        yield 3;
+
+        return 'done';
+      }),
+    });
+
     const linkSpy = createLinkSpy<typeof router>();
 
     await using ctx = testServerAndClientResource(router, {
@@ -825,7 +1038,7 @@ describe('with transformer', () => {
       client(opts) {
         return {
           links: [
-            linkSpy,
+            linkSpy.link,
             splitLink({
               condition: (op) => !!op.context['httpBatchLink'],
               true: httpBatchLink({
@@ -869,15 +1082,25 @@ describe('with transformer', () => {
   });
 
   test('iterable return', async () => {
-    const { router } = createRouter();
-    const linkSpy = createLinkSpy<typeof router>();
+    const t = initTRPC.create({
+      transformer: superjson,
+    });
+
+    const router = t.router({
+      iterable: t.procedure.query(async function* () {
+        yield 1 as number;
+        yield 2;
+        yield 3;
+
+        return 'done';
+      }),
+    });
 
     await using ctx = testServerAndClientResource(router, {
       server: {},
       client(opts) {
         return {
           links: [
-            linkSpy,
             splitLink({
               condition: (op) => !!op.context['httpBatchLink'],
               true: httpBatchLink({
@@ -921,15 +1144,30 @@ describe('with transformer', () => {
   });
 
   test('call deferred procedures with httpBatchLink', async () => {
-    const { router } = createRouter();
-    const linkSpy = createLinkSpy<typeof router>();
+    const t = initTRPC.create({
+      transformer: superjson,
+    });
+
+    const router = t.router({
+      iterable: t.procedure.query(async function* () {
+        yield 1 as number;
+        yield 2;
+        yield 3;
+
+        return 'done';
+      }),
+      deferred: t.procedure.query(() => {
+        return {
+          foo: Promise.resolve('bar'),
+        };
+      }),
+    });
 
     await using ctx = testServerAndClientResource(router, {
       server: {},
       client(opts) {
         return {
           links: [
-            linkSpy,
             splitLink({
               condition: (op) => !!op.context['httpBatchLink'],
               true: httpBatchLink({
@@ -998,15 +1236,23 @@ describe('with transformer', () => {
   });
 
   test('iterable with error', async () => {
-    const { router } = createRouter();
-    const linkSpy = createLinkSpy<typeof router>();
+    const t = initTRPC.create({
+      transformer: superjson,
+    });
+
+    const router = t.router({
+      iterableWithError: t.procedure.query(async function* () {
+        yield 1;
+        yield 2;
+        throw new Error('foo');
+      }),
+    });
 
     await using ctx = testServerAndClientResource(router, {
       server: {},
       client(opts) {
         return {
           links: [
-            linkSpy,
             splitLink({
               condition: (op) => !!op.context['httpBatchLink'],
               true: httpBatchLink({
