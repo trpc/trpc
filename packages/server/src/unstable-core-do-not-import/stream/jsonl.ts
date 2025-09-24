@@ -424,13 +424,6 @@ function createStreamsManager(abortController: AbortController) {
     const streamController = {
       enqueue: (v: ChunkData) => originalController.enqueue(v),
       close: () => {
-        if (streamController.closed) {
-          // https://github.com/trpc/trpc/issues/6955
-          // Already closed, prevent multiple close attempts
-
-          return;
-        }
-
         originalController.close();
 
         clear();
@@ -444,17 +437,11 @@ function createStreamsManager(abortController: AbortController) {
         const reader = stream.getReader();
 
         return makeResource(reader, () => {
-          reader.releaseLock();
           streamController.close();
+          reader.releaseLock();
         });
       },
       error: (reason: unknown) => {
-        if (streamController.closed) {
-          // https://github.com/trpc/trpc/issues/6955
-          // Already closed, prevent multiple close attempts
-          return;
-        }
-
         originalController.error(reason);
 
         clear();
