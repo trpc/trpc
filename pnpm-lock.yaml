@@ -1924,6 +1924,9 @@ importers:
       valibot:
         specifier: 1.1.0
         version: 1.1.0(typescript@5.9.2)
+      web-streams-polyfill:
+        specifier: ^4.2.0
+        version: 4.2.0
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -2068,9 +2071,6 @@ importers:
       valibot1:
         specifier: npm:valibot@^1.0.0-beta.14
         version: valibot@1.0.0-beta.14(typescript@5.9.2)
-      web-streams-polyfill:
-        specifier: ^4.2.0
-        version: 4.2.0
       ws:
         specifier: ^8.0.0
         version: 8.17.1
@@ -4131,10 +4131,6 @@ packages:
 
   '@babel/runtime@7.26.0':
     resolution: {integrity: sha512-FDSOghenHTiToteC/QRlv2q3DhPZ/oOXTBoirfWNx1Cx3TMVcGWQtMMmQcSvb/JjpNeGzx8Pq/b4fKEJuWm1sw==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/runtime@7.27.6':
-    resolution: {integrity: sha512-vbavdySgbTTrmFE+EsiqUTzlOr5bzlnJtUv9PynGCAKvfQqjIXbvFdumPM/GxMDfyuGMJaJAU6TO4zc1Jf1i8Q==}
     engines: {node: '>=6.9.0'}
 
   '@babel/runtime@7.28.4':
@@ -22350,8 +22346,6 @@ snapshots:
     dependencies:
       regenerator-runtime: 0.14.1
 
-  '@babel/runtime@7.27.6': {}
-
   '@babel/runtime@7.28.4': {}
 
   '@babel/template@7.22.15':
@@ -26900,7 +26894,7 @@ snapshots:
       lodash: 4.17.21
       redent: 3.0.0
     optionalDependencies:
-      vitest: 3.1.3(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@22.17.0)(@vitest/ui@3.1.3)(jiti@2.4.2)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.7.0)
+      vitest: 3.1.3(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@22.17.0)(@vitest/ui@3.1.3)(jiti@2.4.2)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.4)(yaml@2.7.0)
 
   '@testing-library/react@16.1.0(@testing-library/dom@10.0.0)(@types/react-dom@19.1.1(@types/react@19.1.0))(@types/react@19.1.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
@@ -27570,7 +27564,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.13
       tinyrainbow: 2.0.0
-      vitest: 3.1.3(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@22.17.0)(@vitest/ui@3.1.3)(jiti@2.4.2)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.3)(yaml@2.7.0)
+      vitest: 3.1.3(@edge-runtime/vm@2.0.2)(@types/debug@4.1.12)(@types/node@22.17.0)(@vitest/ui@3.1.3)(jiti@2.4.2)(jsdom@24.0.0)(lightningcss@1.28.2)(terser@5.34.0)(tsx@4.19.4)(yaml@2.7.0)
 
   '@vitest/utils@3.1.3':
     dependencies:
@@ -36985,7 +36979,7 @@ snapshots:
 
   regenerator-transform@0.15.2:
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
 
   regexp-tree@0.1.27: {}
 

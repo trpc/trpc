@@ -1,6 +1,8 @@
 import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
 import '@testing-library/react';
+import { aggregateAsyncIterable } from '@trpc/server/__tests__/aggregateAsyncIterable';
 import SuperJSON from 'superjson';
+import * as streamsPolyfill from 'web-streams-polyfill';
 import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
@@ -679,5 +681,44 @@ test('regression: encode/decode with superjson at top level', async () => {
     expect(value.getTime()).toBe(1);
   }
 
+  expect(meta.isEmpty()).toBe(true);
+});
+
+test('regression: #6955', async () => {
+  const data = {
+    0: Promise.resolve({
+      [Symbol.asyncIterator]: async function* () {
+        yield 1;
+        yield 2;
+        yield 3;
+      },
+    }),
+  } as const;
+  const stream = jsonlStreamProducer({
+    data,
+    serialize: (v) => SuperJSON.serialize(v),
+  });
+
+  await using server = serverResourceForStream(stream);
+
+  const res = await fetch(server.url);
+
+  const [head, meta] = await jsonlStreamConsumer<typeof data>({
+    from: res.body!,
+    deserialize: (v) => SuperJSON.deserialize(v),
+    abortController: new AbortController(),
+  });
+
+  {
+    expect(head[0]).toBeInstanceOf(Promise);
+
+    const iterable = await head[0];
+
+    const aggregated = await aggregateAsyncIterable(iterable);
+    expect(aggregated.ok).toBe(true);
+    expect(aggregated.items).toEqual([1, 2, 3]);
+  }
+
+  // await meta.reader.closed;
   expect(meta.isEmpty()).toBe(true);
 });

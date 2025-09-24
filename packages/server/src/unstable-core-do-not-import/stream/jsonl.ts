@@ -8,6 +8,12 @@ import { mergeAsyncIterables } from './utils/mergeAsyncIterables';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 import { PING_SYM, withPing } from './utils/withPing';
 
+interface StreamUtils {
+  ReadableStream: typeof ReadableStream;
+  TransformStream: typeof TransformStream;
+  WritableStream: typeof WritableStream;
+}
+
 /**
  * A subset of the standard ReadableStream properties needed by tRPC internally.
  * @see ReadableStream from lib.dom.d.ts
@@ -336,6 +342,7 @@ const nodeJsStreamToReaderEsque = (source: NodeJSReadableStreamEsque) => {
 
 function createLineAccumulator(
   from: NodeJSReadableStreamEsque | WebReadableStreamEsque,
+  streamUtils: StreamUtils,
 ) {
   const reader =
     'getReader' in from
@@ -344,7 +351,7 @@ function createLineAccumulator(
 
   let lineAggregate = '';
 
-  return new ReadableStream({
+  return new streamUtils.ReadableStream({
     async pull(controller) {
       const { done, value } = await reader.read();
 
@@ -358,9 +365,15 @@ function createLineAccumulator(
       return reader.cancel();
     },
   })
-    .pipeThrough(new TextDecoderStream())
     .pipeThrough(
-      new TransformStream<string, string>({
+      new streamUtils.TransformStream<Uint8Array, string>({
+        transform(chunk, controller) {
+          controller.enqueue(new TextDecoder().decode(chunk));
+        },
+      }),
+    )
+    .pipeThrough(
+      new streamUtils.TransformStream<string, string>({
         transform(chunk, controller) {
           lineAggregate += chunk;
           const parts = lineAggregate.split('\n');
@@ -374,12 +387,13 @@ function createLineAccumulator(
 }
 function createConsumerStream<THead>(
   from: NodeJSReadableStreamEsque | WebReadableStreamEsque,
+  streamUtils: StreamUtils,
 ) {
-  const stream = createLineAccumulator(from);
+  const stream = createLineAccumulator(from, streamUtils);
 
   let sentHead = false;
   return stream.pipeThrough(
-    new TransformStream<string, ChunkData | THead>({
+    new streamUtils.TransformStream<string, ChunkData | THead>({
       transform(line, controller) {
         if (!sentHead) {
           const head = JSON.parse(line);
@@ -424,13 +438,6 @@ function createStreamsManager(abortController: AbortController) {
     const streamController = {
       enqueue: (v: ChunkData) => originalController.enqueue(v),
       close: () => {
-        if (streamController.closed) {
-          // https://github.com/trpc/trpc/issues/6955
-          // Already closed, prevent multiple close attempts
-
-          return;
-        }
-
         originalController.close();
 
         clear();
@@ -449,12 +456,6 @@ function createStreamsManager(abortController: AbortController) {
         });
       },
       error: (reason: unknown) => {
-        if (streamController.closed) {
-          // https://github.com/trpc/trpc/issues/6955
-          // Already closed, prevent multiple close attempts
-          return;
-        }
-
         originalController.error(reason);
 
         clear();
@@ -520,13 +521,16 @@ export async function jsonlStreamConsumer<THead>(opts: {
    * This `AbortController` will be triggered when there are no more listeners to the stream.
    */
   abortController: AbortController;
+  ponyfills?: StreamUtils;
 }) {
   const { deserialize = (v) => v } = opts;
 
-  let source = createConsumerStream<Head>(opts.from);
+  const streamUtils = opts.ponyfills ?? globalThis;
+
+  let source = createConsumerStream<Head>(opts.from, streamUtils);
   if (deserialize) {
     source = source.pipeThrough(
-      new TransformStream({
+      new streamUtils.TransformStream({
         transform(chunk, controller) {
           controller.enqueue(deserialize(chunk));
         },
@@ -605,7 +609,7 @@ export async function jsonlStreamConsumer<THead>(opts: {
   };
   source
     .pipeTo(
-      new WritableStream({
+      new streamUtils.WritableStream({
         write(chunkOrHead) {
           if (headDeferred) {
             const head = chunkOrHead as Record<number | string, unknown>;
