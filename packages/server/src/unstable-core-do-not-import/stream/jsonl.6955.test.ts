@@ -4,7 +4,7 @@ import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource'
 import * as streamsPolyfill from 'web-streams-polyfill';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
 
-test('regression: #6955', async () => {
+test('regression: #6955', { repeats: 100 }, async () => {
   const data = {
     0: Promise.resolve(
       (async function* () {
