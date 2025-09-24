@@ -8,9 +8,9 @@ test('regression: #6955', { repeats: 100 }, async () => {
   const data = {
     0: Promise.resolve(
       (async function* () {
-        yield 1;
-        yield 2;
-        yield 3;
+        for (let i = 0; i < 100; i++) {
+          yield i;
+        }
       })(),
     ),
   } as const;
@@ -47,7 +47,8 @@ test('regression: #6955', { repeats: 100 }, async () => {
 
     const aggregated = await aggregateAsyncIterable(iterable);
     expect(aggregated.ok).toBe(true);
-    expect(aggregated.items).toEqual([1, 2, 3]);
+    expect(aggregated.items.at(0)).toEqual(0);
+    expect(aggregated.items.at(-1)).toEqual(99);
   }
 
   // await meta.reader.closed;
