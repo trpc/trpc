@@ -424,7 +424,20 @@ function createStreamsManager(abortController: AbortController) {
     const streamController = {
       enqueue: (v: ChunkData) => originalController.enqueue(v),
       close: () => {
-        originalController.close();
+        try {
+          originalController.close();
+        } catch (error) {
+          if (
+            error instanceof TypeError &&
+            error.message.includes(
+              'stream is not in a state that permits close',
+            )
+          ) {
+            // https://github.com/trpc/trpc/issues/6955
+            return;
+          }
+          throw error;
+        }
 
         clear();
 
