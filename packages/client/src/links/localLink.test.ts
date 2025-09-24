@@ -1,3 +1,4 @@
+import { aggregateAsyncIterable } from '@trpc/server/__tests__/aggregateAsyncIterable';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import type { AnyRouter } from '@trpc/server';
 import { initTRPC, tracked, TRPCError } from '@trpc/server';
@@ -8,34 +9,6 @@ import { createTRPCClient } from '../createTRPCClient';
 import { isTRPCClientError } from '../TRPCClientError';
 import type { LocalLinkOptions } from './localLink';
 import { experimental_localLink as localLink } from './localLink';
-
-async function aggregateAsyncIterable<TYield, TReturn>(
-  iterable: AsyncIterable<TYield, TReturn>,
-) {
-  const items: TYield[] = [];
-
-  try {
-    const iterator = iterable[Symbol.asyncIterator]();
-
-    while (true) {
-      const res = await iterator.next();
-      if (res.done) {
-        return {
-          items,
-          ok: true as const,
-          return: res.value,
-        };
-      }
-      items.push(res.value);
-    }
-  } catch (error: unknown) {
-    return {
-      error,
-      items,
-      ok: false as const,
-    };
-  }
-}
 
 function localLinkClient<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
