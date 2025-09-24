@@ -1,8 +1,6 @@
 import { fetchServerResource } from '@trpc/server/__tests__/fetchServerResource';
 import '@testing-library/react';
-import { aggregateAsyncIterable } from '@trpc/server/__tests__/aggregateAsyncIterable';
 import SuperJSON from 'superjson';
-import * as streamsPolyfill from 'web-streams-polyfill';
 import { run } from '../utils';
 import type { ConsumerOnError, ProducerOnError } from './jsonl';
 import { jsonlStreamConsumer, jsonlStreamProducer } from './jsonl';
