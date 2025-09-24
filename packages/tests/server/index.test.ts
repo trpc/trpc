@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { waitError } from '@trpc/server/__tests__/waitError';
 import '@testing-library/react';
 import type { HTTPHeaders } from '@trpc/client';
@@ -21,10 +21,9 @@ test('smoke test', async () => {
   const router = t.router({
     hello: t.procedure.query(() => 'world'),
   });
-  const { close, client } = routerToServerAndClientNew(router);
+  await using ctx = testServerAndClientResource(router);
 
-  expect(await client.hello.query()).toBe('world');
-  await close();
+  expect(await ctx.client.hello.query()).toBe('world');
 });
 
 test('mix query and mutation', async () => {
@@ -88,10 +87,10 @@ describe('integration tests', () => {
         }),
     });
 
-    const { close, client } = routerToServerAndClientNew(router);
+    await using ctx = testServerAndClientResource(router);
     const err = await waitError(
       // @ts-expect-error - expected missing query
-      client.notfound.query('notFound' as any),
+      ctx.client.notfound.query('notFound' as any),
       TRPCClientError,
     );
     expect(err.message).toMatchInlineSnapshot(
@@ -100,7 +99,6 @@ describe('integration tests', () => {
     expect(err.shape?.message).toMatchInlineSnapshot(
       `"No procedure found on path "notfound""`,
     );
-    await close();
   });
 
   test('invalid input', async () => {
@@ -118,9 +116,9 @@ describe('integration tests', () => {
         }),
     });
 
-    const { close, client } = routerToServerAndClientNew(router);
+    await using ctx = testServerAndClientResource(router);
     const err = await waitError(
-      client.hello.query({ who: 123 as any }),
+      ctx.client.hello.query({ who: 123 as any }),
       TRPCClientError,
     );
     expect(err.shape?.code).toMatchInlineSnapshot(`-32600`);
@@ -137,7 +135,6 @@ describe('integration tests', () => {
         }
       ]"
     `);
-    await close();
   });
 
   test('passing input to input w/o input', async () => {
@@ -157,22 +154,21 @@ describe('integration tests', () => {
       }),
     });
 
-    const { close, client } = routerToServerAndClientNew(router);
+    await using ctx = testServerAndClientResource(router);
 
-    await client.q.query();
-    await client.q.query(undefined);
-    await client.q.query(null as any); // treat null as undefined
+    await ctx.client.q.query();
+    await ctx.client.q.query(undefined);
+    await ctx.client.q.query(null as any); // treat null as undefined
 
-    await client.q.query('not-nullish' as any);
+    await ctx.client.q.query('not-nullish' as any);
 
-    await client.m.mutate();
-    await client.m.mutate(undefined);
-    await client.m.mutate(null as any); // treat null as undefined
+    await ctx.client.m.mutate();
+    await ctx.client.m.mutate(undefined);
+    await ctx.client.m.mutate(null as any); // treat null as undefined
 
-    await client.m.mutate('not-nullish' as any);
+    await ctx.client.m.mutate('not-nullish' as any);
 
     expect(snap.mock.calls.every((call) => call[0] === undefined)).toBe(true);
-    await close();
   });
 
   describe('type testing', () => {
@@ -195,15 +191,13 @@ describe('integration tests', () => {
           }),
       });
 
-      const { close, client } = routerToServerAndClientNew(router);
-      const res = await client.hello.query({ who: 'katt' });
+      await using ctx = testServerAndClientResource(router);
+      const res = await ctx.client.hello.query({ who: 'katt' });
       expectTypeOf(res.input).toMatchTypeOf<Input>();
       expectTypeOf(res.input).not.toBeAny();
       expectTypeOf(res).toMatchTypeOf<{ input: Input; text: string }>();
 
       expect(res.text).toEqual('hello katt');
-
-      await close();
     });
 
     test('mixed response', async () => {
@@ -225,15 +219,13 @@ describe('integration tests', () => {
         }),
       });
 
-      const { close, client } = routerToServerAndClientNew(router);
-      const res = await client.postById.query(1);
+      await using ctx = testServerAndClientResource(router);
+      const res = await ctx.client.postById.query(1);
       expectTypeOf(res).toMatchTypeOf<{ id: number; title: string } | null>();
       expect(res).toEqual({
         id: 1,
         title: 'helloo',
       });
-
-      await close();
     });
 
     test('propagate ctx', async () => {
@@ -269,7 +261,7 @@ describe('integration tests', () => {
         }),
       });
 
-      const { close, client } = routerToServerAndClientNew(router, {
+      await using ctx = testServerAndClientResource(router, {
         server: {
           createContext,
         },
@@ -287,21 +279,19 @@ describe('integration tests', () => {
 
       // no auth, should fail
       {
-        const err = await waitError(client.whoami.query(), TRPCClientError);
+        const err = await waitError(ctx.client.whoami.query(), TRPCClientError);
         expect(err.shape.message).toMatchInlineSnapshot(`"UNAUTHORIZED"`);
       }
       // auth, should work
       {
         headers['authorization'] = 'kattsecret';
-        const res = await client.whoami.query();
+        const res = await ctx.client.whoami.query();
         expectTypeOf(res).toMatchTypeOf<{ id: number; name: string }>();
         expect(res).toEqual({
           id: 1,
           name: 'KATT',
         });
       }
-
-      await close();
     });
 
     test('optional input', async () => {
@@ -323,19 +313,17 @@ describe('integration tests', () => {
           }),
       });
 
-      const { close, client } = routerToServerAndClientNew(router);
+      await using ctx = testServerAndClientResource(router);
       {
-        const res = await client.hello.query({ who: 'katt' });
+        const res = await ctx.client.hello.query({ who: 'katt' });
         expectTypeOf(res.input).toMatchTypeOf<Input>();
         expectTypeOf(res.input).not.toBeAny();
       }
       {
-        const res = await client.hello.query();
+        const res = await ctx.client.hello.query();
         expectTypeOf(res.input).toMatchTypeOf<Input>();
         expectTypeOf(res.input).not.toBeAny();
       }
-
-      await close();
     });
 
     test('mutation', async () => {
@@ -363,12 +351,11 @@ describe('integration tests', () => {
           }),
       });
 
-      const { close, client } = routerToServerAndClientNew(router);
-      const res = await client.hello.mutate({ who: 'katt' });
+      await using ctx = testServerAndClientResource(router);
+      const res = await ctx.client.hello.mutate({ who: 'katt' });
       expectTypeOf(res.input).toMatchTypeOf<Input>();
       expectTypeOf(res.input).not.toBeAny();
       expect(res.text).toBe('hello katt');
-      await close();
     });
   });
 });
@@ -478,10 +465,12 @@ test('void mutation response', async () => {
     null: t.procedure.mutation(() => null),
   });
 
-  const { close, client, wssPort, router } =
-    routerToServerAndClientNew(newRouter);
-  expect(await client.undefined.mutate()).toMatchInlineSnapshot(`undefined`);
-  expect(await client.null.mutate()).toMatchInlineSnapshot(`null`);
+  await using ctx2 = testServerAndClientResource(newRouter);
+  const { wssPort, router } = ctx2;
+  expect(await ctx2.client.undefined.mutate()).toMatchInlineSnapshot(
+    `undefined`,
+  );
+  expect(await ctx2.client.null.mutate()).toMatchInlineSnapshot(`null`);
 
   const ws = createWSClient({
     url: `ws://localhost:${wssPort}`,
@@ -494,7 +483,6 @@ test('void mutation response', async () => {
   expect(await wsClient.undefined.mutate()).toMatchInlineSnapshot(`undefined`);
   expect(await wsClient.null.mutate()).toMatchInlineSnapshot(`null`);
   ws.close();
-  await close();
 });
 
 // https://github.com/trpc/trpc/issues/559
@@ -509,10 +497,10 @@ describe('AbortError', () => {
       }),
     });
 
-    const { close, client } = routerToServerAndClientNew(router);
+    await using ctx = testServerAndClientResource(router);
     const onReject = vi.fn();
     const ac = new AbortController();
-    const req = client.slow.query(undefined, {
+    const req = ctx.client.slow.query(undefined, {
       signal: ac.signal,
     });
     req.catch(onReject);
@@ -527,8 +515,6 @@ describe('AbortError', () => {
     const err = onReject.mock.calls[0]![0]! as TRPCClientError<any>;
     expect(err.name).toBe('TRPCClientError');
     expect(err.cause?.name).toBe('AbortError');
-
-    await close();
   });
 
   test('cancelling batch request should throw AbortError', async () => {
@@ -546,7 +532,7 @@ describe('AbortError', () => {
       }),
     });
 
-    const { close, client } = routerToServerAndClientNew(router, {
+    await using ctx = testServerAndClientResource(router, {
       server: {},
       client({ httpUrl }) {
         return {
@@ -555,16 +541,14 @@ describe('AbortError', () => {
       },
     });
     const ac = new AbortController();
-    const req1 = client.slow1.query(undefined, { signal: ac.signal });
-    const req2 = client.slow2.query(undefined, { signal: ac.signal });
+    const req1 = ctx.client.slow1.query(undefined, { signal: ac.signal });
+    const req2 = ctx.client.slow2.query(undefined, { signal: ac.signal });
 
     ac.abort();
     const err = await waitError(Promise.all([req1, req2]), TRPCClientError);
 
     expect(err).toBeInstanceOf(TRPCClientError);
     expect(err.cause?.name).toBe('AbortError');
-
-    await close();
   });
 });
 
@@ -578,7 +562,7 @@ test('regression: JSON.stringify([undefined]) gives [null] causes wrong type to 
     }),
   });
 
-  const { close, client } = routerToServerAndClientNew(router, {
+  await using ctx = testServerAndClientResource(router, {
     client({ httpUrl }) {
       return {
         links: [httpBatchLink({ url: httpUrl })],
@@ -587,13 +571,12 @@ test('regression: JSON.stringify([undefined]) gives [null] causes wrong type to 
     server: {},
   });
 
-  expect(await client.q.query('foo')).toMatchInlineSnapshot(`
+  expect(await ctx.client.q.query('foo')).toMatchInlineSnapshot(`
     Object {
       "input": "foo",
     }
   `);
-  expect(await client.q.query()).toMatchInlineSnapshot(`Object {}`);
-  await close();
+  expect(await ctx.client.q.query()).toMatchInlineSnapshot(`Object {}`);
 });
 
 describe('apply()', () => {
@@ -602,9 +585,8 @@ describe('apply()', () => {
     const router = t.router({
       hello: t.procedure.query(() => 'world'),
     });
-    const { close, client } = routerToServerAndClientNew(router);
-    expect(await client.hello.query.apply(undefined)).toBe('world');
-    await close();
+    await using ctx = testServerAndClientResource(router);
+    expect(await ctx.client.hello.query.apply(undefined)).toBe('world');
   });
 
   test('query with input', async () => {
@@ -615,11 +597,10 @@ describe('apply()', () => {
         return `hello ${input}`;
       }),
     });
-    const { close, client } = routerToServerAndClientNew(router);
-    expect(await client.helloinput.query.apply(undefined, ['world'])).toBe(
+    await using ctx = testServerAndClientResource(router);
+    expect(await ctx.client.helloinput.query.apply(undefined, ['world'])).toBe(
       'hello world',
     );
-    await close();
   });
 });
 
@@ -629,9 +610,8 @@ describe('call()', () => {
     const router = t.router({
       hello: t.procedure.query(() => 'world'),
     });
-    const { close, client } = routerToServerAndClientNew(router);
-    expect(await client.hello.query.call(this)).toBe('world');
-    await close();
+    await using ctx = testServerAndClientResource(router);
+    expect(await ctx.client.hello.query.call(this)).toBe('world');
   });
 
   test('query with input', async () => {
@@ -642,11 +622,10 @@ describe('call()', () => {
         return `hello ${input}`;
       }),
     });
-    const { close, client } = routerToServerAndClientNew(router);
-    expect(await client.helloinput.query.call(this, 'world')).toBe(
+    await using ctx = testServerAndClientResource(router);
+    expect(await ctx.client.helloinput.query.call(this, 'world')).toBe(
       'hello world',
     );
-    await close();
   });
 
   test('query with object input', async () => {
@@ -659,11 +638,10 @@ describe('call()', () => {
           return `hello ${input.text}`;
         }),
     });
-    const { close, client } = routerToServerAndClientNew(router);
-    expect(await client.helloinput.query.call(this, { text: 'world' })).toBe(
-      'hello world',
-    );
-    await close();
+    await using ctx = testServerAndClientResource(router);
+    expect(
+      await ctx.client.helloinput.query.call(this, { text: 'world' }),
+    ).toBe('hello world');
   });
 
   test('query with array input', async () => {
@@ -674,10 +652,9 @@ describe('call()', () => {
         return `hello ${input.join(' ')}`;
       }),
     });
-    const { close, client } = routerToServerAndClientNew(router);
-    expect(await client.helloinput.query.call(this, ['world'])).toBe(
+    await using ctx = testServerAndClientResource(router);
+    expect(await ctx.client.helloinput.query.call(this, ['world'])).toBe(
       'hello world',
     );
-    await close();
   });
 });

@@ -1,4 +1,4 @@
-import { routerToServerAndClientNew } from './___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create();
@@ -18,27 +18,25 @@ describe('vanilla client procedure abortion', () => {
     const abortController = new AbortController();
     const signal = abortController.signal;
 
-    const { close, client } = routerToServerAndClientNew(router);
+    await using ctx = testServerAndClientResource(router);
 
-    const promise = client.testQuery.query(undefined, { signal });
+    const promise = ctx.client.testQuery.query(undefined, { signal });
 
     abortController.abort();
 
     await expect(promise).rejects.toThrowError(/aborted/);
-    await close();
   });
 
   test('mutation', async () => {
     const abortController = new AbortController();
     const signal = abortController.signal;
 
-    const { close, client } = routerToServerAndClientNew(router);
+    await using ctx = testServerAndClientResource(router);
 
-    const promise = client.testMutation.mutate(undefined, { signal });
+    const promise = ctx.client.testMutation.mutate(undefined, { signal });
 
     abortController.abort();
 
     await expect(promise).rejects.toThrowError(/aborted/);
-    await close();
   });
 });

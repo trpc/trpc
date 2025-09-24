@@ -1,22 +1,13 @@
-import { routerToServerAndClientNew } from '../___testHelpers';
+import { testServerAndClientResource } from '@trpc/client/__tests__/testClientResource';
 import { initTRPC } from '@trpc/server';
-import { konn } from 'konn';
-
-const ctx = konn()
-  .beforeEach(() => {
-    const t = initTRPC.create();
-    const appRouter = t.router({
-      a: t.procedure.query(() => 'a'),
-    });
-
-    return routerToServerAndClientNew(appRouter);
-  })
-  .afterEach(async (ctx) => {
-    await ctx?.close?.();
-  })
-  .done();
 
 test('allow ;charset=utf-8 after application/json in content-type', async () => {
+  const t = initTRPC.create();
+  const appRouter = t.router({
+    a: t.procedure.query(() => 'a'),
+  });
+
+  await using ctx = testServerAndClientResource(appRouter);
   const url = ctx.httpUrl;
 
   const json = await (
