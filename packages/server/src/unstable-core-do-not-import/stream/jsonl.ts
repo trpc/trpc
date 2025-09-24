@@ -424,21 +424,6 @@ function createStreamsManager(abortController: AbortController) {
     const streamController = {
       enqueue: (v: ChunkData) => originalController.enqueue(v),
       close: () => {
-        try {
-          originalController.close();
-        } catch (error) {
-          if (
-            error instanceof TypeError &&
-            error.message.includes(
-              'stream is not in a state that permits close',
-            )
-          ) {
-            // https://github.com/trpc/trpc/issues/6955
-            return;
-          }
-          throw error;
-        }
-
         clear();
 
         if (isEmpty()) {
@@ -450,7 +435,6 @@ function createStreamsManager(abortController: AbortController) {
         const reader = stream.getReader();
 
         return makeResource(reader, () => {
-          streamController.close();
           reader.releaseLock();
         });
       },
